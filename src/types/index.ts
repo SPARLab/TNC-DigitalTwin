@@ -21,3 +21,23 @@ export interface DataLayer {
   color: string;
   visible: boolean;
 }
+
+export interface ObservationGroup {
+  category: 'Flora' | 'Fauna';
+  count: number;
+  subcategories: {
+    name: string;
+    iconicTaxon: string;
+    count: number;
+    observations: Array<{
+      id: number;
+      commonName: string | null;
+      scientificName: string;
+      observedOn: string;
+      observer: string;
+      photoUrl: string | null;
+      qualityGrade: string;
+      uri: string;
+    }>;
+  }[];
+}

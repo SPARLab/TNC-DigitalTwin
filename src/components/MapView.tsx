@@ -4,15 +4,25 @@ import DataLayersPanel from './DataLayersPanel';
 import Map from '@arcgis/core/Map';
 import MapView from '@arcgis/core/views/MapView';
 import Basemap from '@arcgis/core/Basemap';
+import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
+import Graphic from '@arcgis/core/Graphic';
+import Point from '@arcgis/core/geometry/Point';
+import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
+import PopupTemplate from '@arcgis/core/PopupTemplate';
+import { iNaturalistAPI, iNaturalistObservation } from '../services/iNaturalistService';
 
 interface MapViewProps {
   dataLayers: DataLayer[];
   onLayerToggle: (layerId: string) => void;
+  onObservationsUpdate?: (observations: iNaturalistObservation[]) => void;
+  onLoadingChange?: (loading: boolean) => void;
 }
 
-const MapViewComponent: React.FC<MapViewProps> = ({ dataLayers, onLayerToggle }) => {
+const MapViewComponent: React.FC<MapViewProps> = ({ dataLayers, onLayerToggle, onObservationsUpdate, onLoadingChange }) => {
   const mapDiv = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<MapView | null>(null);
+  const [observations, setObservations] = useState<iNaturalistObservation[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (mapDiv.current) {
@@ -20,6 +30,14 @@ const MapViewComponent: React.FC<MapViewProps> = ({ dataLayers, onLayerToggle })
       const map = new Map({
         basemap: 'satellite'
       });
+
+      // Create graphics layer for iNaturalist observations
+      const observationsLayer = new GraphicsLayer({
+        id: 'inaturalist-observations',
+        title: 'iNaturalist Observations'
+      });
+
+      map.add(observationsLayer);
 
       // Create the map view centered on Dangermond Preserve
       // Coordinates: approximately 34.45°N, -120.2°W
@@ -35,6 +53,9 @@ const MapViewComponent: React.FC<MapViewProps> = ({ dataLayers, onLayerToggle })
 
       setView(mapView);
 
+      // Load iNaturalist observations
+      loadObservations(mapView, observationsLayer);
+
       // Cleanup function
       return () => {
         if (mapView) {
@@ -43,6 +64,139 @@ const MapViewComponent: React.FC<MapViewProps> = ({ dataLayers, onLayerToggle })
       };
     }
   }, []);
+
+  const loadObservations = async (mapView: MapView, observationsLayer: GraphicsLayer, filters?: {
+    qualityGrade?: 'research' | 'needs_id' | 'casual';
+    iconicTaxa?: string[];
+    daysBack?: number;
+  }) => {
+    setLoading(true);
+    onLoadingChange?.(true);
+    try {
+      const response = await iNaturalistAPI.getRecentObservations({
+        perPage: 100,
+        daysBack: filters?.daysBack || 30,
+        qualityGrade: filters?.qualityGrade,
+        iconicTaxa: filters?.iconicTaxa
+      });
+      
+      setObservations(response.results);
+      onObservationsUpdate?.(response.results);
+      
+      // Clear existing graphics
+      observationsLayer.removeAll();
+      
+      // Add observations to map
+      response.results.forEach(obs => {
+        if (obs.geojson && obs.geojson.coordinates) {
+          const [longitude, latitude] = obs.geojson.coordinates;
+          
+          // Create point geometry
+          const point = new Point({
+            longitude,
+            latitude
+          });
+
+          // Get icon based on taxon type
+          const iconInfo = getObservationIcon(obs);
+          
+          // Create symbol
+          const symbol = new SimpleMarkerSymbol({
+            style: 'circle',
+            color: iconInfo.color,
+            size: '12px',
+            outline: {
+              color: 'white',
+              width: 2
+            }
+          });
+
+          // Create popup template
+          const popupTemplate = new PopupTemplate({
+            title: obs.taxon?.preferred_common_name || obs.taxon?.name || 'Unknown Species',
+            content: `
+              <div class="observation-popup">
+                <p><strong>Scientific Name:</strong> ${obs.taxon?.name || 'Unknown'}</p>
+                <p><strong>Observed:</strong> ${new Date(obs.observed_on).toLocaleDateString()}</p>
+                <p><strong>Observer:</strong> ${obs.user.login}</p>
+                <p><strong>Quality Grade:</strong> ${obs.quality_grade}</p>
+                ${obs.photos.length > 0 ? `<img src="${obs.photos[0].square_url}" alt="Observation photo" style="max-width: 200px; border-radius: 4px;">` : ''}
+                <p><a href="${obs.uri}" target="_blank" style="color: #007AC2;">View on iNaturalist</a></p>
+              </div>
+            `
+          });
+
+          // Create graphic
+          const graphic = new Graphic({
+            geometry: point,
+            symbol: symbol,
+            popupTemplate: popupTemplate,
+            attributes: {
+              id: obs.id,
+              taxonName: obs.taxon?.name,
+              commonName: obs.taxon?.preferred_common_name,
+              observedOn: obs.observed_on,
+              observer: obs.user.login
+            }
+          });
+
+          observationsLayer.add(graphic);
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error loading iNaturalist observations:', error);
+    } finally {
+      setLoading(false);
+      onLoadingChange?.(false);
+    }
+  };
+
+  // Expose method to reload observations with filters
+  const reloadObservations = (filters?: {
+    qualityGrade?: 'research' | 'needs_id' | 'casual';
+    iconicTaxa?: string[];
+    daysBack?: number;
+  }) => {
+    if (view) {
+      const observationsLayer = view.map.findLayerById('inaturalist-observations') as GraphicsLayer;
+      if (observationsLayer) {
+        loadObservations(view, observationsLayer, filters);
+      }
+    }
+  };
+
+  // Expose reloadObservations method
+  React.useImperativeHandle(React.forwardRef(() => null), () => ({
+    reloadObservations
+  }));
+
+  const getObservationIcon = (obs: iNaturalistObservation) => {
+    const iconicTaxon = obs.taxon?.iconic_taxon_name?.toLowerCase();
+    
+    switch (iconicTaxon) {
+      case 'aves':
+        return { color: '#4A90E2', emoji: '🐦' };
+      case 'mammalia':
+        return { color: '#8B4513', emoji: '🦌' };
+      case 'reptilia':
+        return { color: '#228B22', emoji: '🦎' };
+      case 'amphibia':
+        return { color: '#32CD32', emoji: '🐸' };
+      case 'actinopterygii':
+        return { color: '#1E90FF', emoji: '🐟' };
+      case 'insecta':
+        return { color: '#FFD700', emoji: '🦋' };
+      case 'arachnida':
+        return { color: '#800080', emoji: '🕷️' };
+      case 'plantae':
+        return { color: '#228B22', emoji: '🌱' };
+      case 'mollusca':
+        return { color: '#DDA0DD', emoji: '🐚' };
+      default:
+        return { color: '#666666', emoji: '🔍' };
+    }
+  };
 
   // Custom zoom functions
   const handleZoomIn = () => {
@@ -78,6 +232,25 @@ const MapViewComponent: React.FC<MapViewProps> = ({ dataLayers, onLayerToggle })
         className="w-full h-full"
         style={{ minHeight: '400px' }}
       />
+
+      {/* Loading Indicator */}
+      {loading && (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-lg p-4 z-20">
+          <div className="flex items-center space-x-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            <span className="text-sm text-gray-600">Loading iNaturalist observations...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Observations Count */}
+      {observations.length > 0 && (
+        <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-md p-2 z-10">
+          <span className="text-xs text-gray-600">
+            {observations.length} recent observations
+          </span>
+        </div>
+      )}
 
       {/* Custom Map Controls */}
       <div id="map-controls" className="absolute top-4 right-4 flex flex-col space-y-2 z-10">
