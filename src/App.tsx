@@ -8,23 +8,38 @@ import Footer from './components/Footer';
 import { FilterState } from './types';
 import { mockDatasets, dataLayers as initialDataLayers } from './data/mockData';
 import { iNaturalistObservation } from './services/iNaturalistService';
+import { formatDateRangeCompact } from './utils/dateUtils';
+import { MapViewRef } from './components/MapView';
 
 function App() {
   const [filters, setFilters] = useState<FilterState>({
     category: 'Wildlife',
     source: 'iNaturalist',
     spatialFilter: 'Draw Area',
-    timeRange: '2020-2024'
+    timeRange: formatDateRangeCompact(30),
+    daysBack: 30
   });
 
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [dataLayers, setDataLayers] = useState(initialDataLayers);
   const [observations, setObservations] = useState<iNaturalistObservation[]>([]);
   const [observationsLoading, setObservationsLoading] = useState(false);
-  const mapViewRef = useRef<any>(null);
+  const mapViewRef = useRef<MapViewRef>(null);
 
   const handleFilterChange = (newFilters: FilterState) => {
     setFilters(newFilters);
+  };
+
+  const handleSearch = () => {
+    // Trigger a new search with current filter settings
+    const searchFilters = {
+      daysBack: filters.daysBack || 30,
+      qualityGrade: undefined as 'research' | 'needs_id' | 'casual' | undefined,
+      iconicTaxa: [] as string[]
+    };
+    
+    console.log('Searching with filters:', searchFilters); // Debug log
+    mapViewRef.current?.reloadObservations(searchFilters);
   };
 
   const handleLayerToggle = (layerId: string) => {
@@ -37,14 +52,28 @@ function App() {
     );
   };
 
-  const handleObservationFilterChange = (filters: {
+  const handleObservationFilterChange = (observationFilters: {
     qualityGrade?: 'research' | 'needs_id' | 'casual';
     iconicTaxa?: string[];
     daysBack?: number;
   }) => {
-    if (mapViewRef.current?.reloadObservations) {
-      mapViewRef.current.reloadObservations(filters);
+    // Update the main filter state if daysBack changed
+    if (observationFilters.daysBack && observationFilters.daysBack !== filters.daysBack) {
+      setFilters(prev => ({
+        ...prev,
+        timeRange: formatDateRangeCompact(observationFilters.daysBack!),
+        daysBack: observationFilters.daysBack
+      }));
     }
+    
+    // Use the current filter's daysBack if not provided in observationFilters
+    const finalFilters = {
+      ...observationFilters,
+      daysBack: observationFilters.daysBack || filters.daysBack || 30
+    };
+    
+    console.log('Filter change with filters:', finalFilters); // Debug log
+    mapViewRef.current?.reloadObservations(finalFilters);
   };
 
   const handleDownload = (format: 'csv' | 'json' | 'geojson') => {
@@ -149,12 +178,15 @@ function App() {
       <FilterBar 
         filters={filters}
         onFilterChange={handleFilterChange}
+        onSearch={handleSearch}
         resultCount={observations.length}
+        isSearching={observationsLoading}
       />
-      <div className="flex-1 flex">
+      <div id="main-content" className="flex-1 flex">
         <ObservationsSidebar 
           observations={observations}
           loading={observationsLoading}
+          currentDaysBack={filters.daysBack}
         />
         <MapView 
           ref={mapViewRef}
@@ -164,6 +196,7 @@ function App() {
           onLoadingChange={setObservationsLoading}
         />
         <FilterSidebar 
+          currentDaysBack={filters.daysBack}
           onFilterChange={handleObservationFilterChange}
           onDownload={handleDownload}
         />

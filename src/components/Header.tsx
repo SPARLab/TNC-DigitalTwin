@@ -3,25 +3,25 @@ import React from 'react';
 const Header: React.FC = () => {
   return (
     <header id="main-header" className="bg-white border-b border-gray-200 h-16">
-      <div className="px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-6">
-            <h1 className="text-xl font-semibold text-gray-900">
+      <div id="header-container" className="px-6 py-4">
+        <div id="header-content" className="flex items-center justify-between">
+          <div id="header-left" className="flex items-center space-x-6">
+            <h1 id="site-title" className="text-xl font-semibold text-gray-900">
               Dangermond Preserve Data Catalog
             </h1>
-            <nav className="flex space-x-6">
-              <a href="#" className="text-sm text-gray-600 hover:text-gray-900">
+            <nav id="main-navigation" className="flex space-x-6">
+              <a id="nav-browse" href="#" className="text-sm text-gray-600 hover:text-gray-900">
                 Browse
               </a>
-              <a href="#" className="text-sm text-gray-600 hover:text-gray-900">
+              <a id="nav-saved-searches" href="#" className="text-sm text-gray-600 hover:text-gray-900">
                 Saved Searches
               </a>
-              <a href="#" className="text-sm text-gray-600 hover:text-gray-900">
+              <a id="nav-export-queue" href="#" className="text-sm text-gray-600 hover:text-gray-900">
                 Export Queue
               </a>
             </nav>
           </div>
-          <div className="flex space-x-3">
+          <div id="header-right" className="flex space-x-3">
             <button 
               id="sign-in-btn"
               className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900"

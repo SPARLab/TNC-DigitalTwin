@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { DataLayer } from '../types';
 import DataLayersPanel from './DataLayersPanel';
 import Map from '@arcgis/core/Map';
@@ -18,7 +18,15 @@ interface MapViewProps {
   onLoadingChange?: (loading: boolean) => void;
 }
 
-const MapViewComponent: React.FC<MapViewProps> = ({ dataLayers, onLayerToggle, onObservationsUpdate, onLoadingChange }) => {
+export interface MapViewRef {
+  reloadObservations: (filters?: {
+    qualityGrade?: 'research' | 'needs_id' | 'casual';
+    iconicTaxa?: string[];
+    daysBack?: number;
+  }) => void;
+}
+
+const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({ dataLayers, onLayerToggle, onObservationsUpdate, onLoadingChange }, ref) => {
   const mapDiv = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<MapView | null>(null);
   const [observations, setObservations] = useState<iNaturalistObservation[]>([]);
@@ -74,10 +82,11 @@ const MapViewComponent: React.FC<MapViewProps> = ({ dataLayers, onLayerToggle, o
     onLoadingChange?.(true);
     try {
       const response = await iNaturalistAPI.getRecentObservations({
-        perPage: 100,
+        perPage: 200,
         daysBack: filters?.daysBack || 30,
         qualityGrade: filters?.qualityGrade,
-        iconicTaxa: filters?.iconicTaxa
+        iconicTaxa: filters?.iconicTaxa,
+        maxResults: 500 // Fetch up to 500 observations across multiple pages
       });
       
       setObservations(response.results);
@@ -166,8 +175,8 @@ const MapViewComponent: React.FC<MapViewProps> = ({ dataLayers, onLayerToggle, o
     }
   };
 
-  // Expose reloadObservations method
-  React.useImperativeHandle(React.forwardRef(() => null), () => ({
+  // Expose reloadObservations method via ref
+  useImperativeHandle(ref, () => ({
     reloadObservations
   }));
 
@@ -228,6 +237,7 @@ const MapViewComponent: React.FC<MapViewProps> = ({ dataLayers, onLayerToggle, o
     <div id="map-view" className="flex-1 relative">
       {/* ArcGIS Map Container */}
       <div 
+        id="arcgis-map-container"
         ref={mapDiv} 
         className="w-full h-full"
         style={{ minHeight: '400px' }}
@@ -235,18 +245,18 @@ const MapViewComponent: React.FC<MapViewProps> = ({ dataLayers, onLayerToggle, o
 
       {/* Loading Indicator */}
       {loading && (
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-lg p-4 z-20">
-          <div className="flex items-center space-x-2">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-            <span className="text-sm text-gray-600">Loading iNaturalist observations...</span>
+        <div id="map-loading-overlay" className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-lg p-4 z-20">
+          <div id="map-loading-content" className="flex items-center space-x-2">
+            <div id="map-loading-spinner" className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            <span id="map-loading-text" className="text-sm text-gray-600">Loading iNaturalist observations...</span>
           </div>
         </div>
       )}
 
       {/* Observations Count */}
       {observations.length > 0 && (
-        <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-md p-2 z-10">
-          <span className="text-xs text-gray-600">
+        <div id="map-observations-counter" className="absolute bottom-4 left-4 bg-white rounded-lg shadow-md p-2 z-10">
+          <span id="map-observations-count-text" className="text-xs text-gray-600">
             {observations.length} recent observations
           </span>
         </div>
@@ -287,6 +297,6 @@ const MapViewComponent: React.FC<MapViewProps> = ({ dataLayers, onLayerToggle, o
       />
     </div>
   );
-};
+});
 
 export default MapViewComponent;

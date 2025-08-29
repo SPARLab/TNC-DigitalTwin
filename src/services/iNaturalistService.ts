@@ -43,6 +43,8 @@ export interface iNaturalistResponse {
 
 class iNaturalistService {
   private readonly baseUrl = 'https://api.inaturalist.org/v1';
+  private lastRequestTime = 0;
+  private readonly minRequestInterval = 1000; // 1 second between requests for rate limiting
   
   // Dangermond Preserve bounding box coordinates
   private readonly dangermondBounds = {
@@ -55,19 +57,37 @@ class iNaturalistService {
   /**
    * Fetch recent observations from the Dangermond Preserve
    */
+  /**
+   * Rate limiting helper
+   */
+  private async waitForRateLimit(): Promise<void> {
+    const now = Date.now();
+    const timeSinceLastRequest = now - this.lastRequestTime;
+    
+    if (timeSinceLastRequest < this.minRequestInterval) {
+      const waitTime = this.minRequestInterval - timeSinceLastRequest;
+      console.log(`Rate limiting: waiting ${waitTime}ms`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+    
+    this.lastRequestTime = Date.now();
+  }
+
   async getRecentObservations(options: {
     perPage?: number;
     page?: number;
     qualityGrade?: 'research' | 'needs_id' | 'casual';
     iconicTaxa?: string[];
     daysBack?: number;
+    maxResults?: number; // Maximum total results to fetch across all pages
   } = {}): Promise<iNaturalistResponse> {
     const {
-      perPage = 100,
+      perPage = 200, // Increased from 100 to get more per request
       page = 1,
       qualityGrade,
       iconicTaxa,
-      daysBack = 30
+      daysBack = 30,
+      maxResults = 500 // Default max results across all pages
     } = options;
 
     // Calculate date range for recent observations
@@ -110,21 +130,62 @@ class iNaturalistService {
       params.append('iconic_taxa', iconicTaxa.join(','));
     }
 
+    // Fetch multiple pages if needed
+    let allResults: any[] = [];
+    let currentPage = page;
+    let totalResults = 0;
+    
     try {
-      const response = await fetch(`${this.baseUrl}/observations?${params}`);
-      
-      if (!response.ok) {
-        throw new Error(`iNaturalist API error: ${response.status} ${response.statusText}`);
-      }
+      while (allResults.length < maxResults) {
+        // Rate limiting
+        await this.waitForRateLimit();
+        
+        // Update page parameter
+        params.set('page', currentPage.toString());
+        
+        const apiUrl = `${this.baseUrl}/observations?${params}`;
+        console.log(`iNaturalist API URL (page ${currentPage}):`, apiUrl);
+        console.log('Query parameters:', Object.fromEntries(params));
+        
+        const response = await fetch(apiUrl);
+        
+        if (!response.ok) {
+          throw new Error(`iNaturalist API error: ${response.status} ${response.statusText}`);
+        }
 
-      const data = await response.json();
+        const data = await response.json();
+        totalResults = data.total_results;
+        
+        console.log(`Page ${currentPage}: ${data.results?.length || 0} observations (total available: ${totalResults})`);
+        
+        if (!data.results || data.results.length === 0) {
+          // No more results
+          break;
+        }
+        
+        allResults.push(...data.results);
+        
+        // Check if we've reached the end or our limit
+        if (data.results.length < perPage || allResults.length >= maxResults) {
+          break;
+        }
+        
+        currentPage++;
+      }
+      
+      // Trim to maxResults if we got too many
+      if (allResults.length > maxResults) {
+        allResults = allResults.slice(0, maxResults);
+      }
+      
+      console.log(`Total fetched: ${allResults.length} observations across ${currentPage - page + 1} pages`);
       
       // Transform the response to match our interface
       return {
-        total_results: data.total_results,
-        page: data.page,
-        per_page: data.per_page,
-        results: data.results.map(this.transformObservation)
+        total_results: totalResults,
+        page: page,
+        per_page: allResults.length,
+        results: allResults.map(this.transformObservation)
       };
     } catch (error) {
       console.error('Error fetching iNaturalist observations:', error);

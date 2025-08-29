@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Download, Filter, Calendar, Star, Eye, EyeOff } from 'lucide-react';
 
 interface FilterSidebarProps {
+  currentDaysBack?: number;
   onFilterChange: (filters: {
     qualityGrade?: 'research' | 'needs_id' | 'casual';
     iconicTaxa?: string[];
@@ -10,11 +11,11 @@ interface FilterSidebarProps {
   onDownload: (format: 'csv' | 'json' | 'geojson') => void;
 }
 
-const FilterSidebar: React.FC<FilterSidebarProps> = ({ onFilterChange, onDownload }) => {
+const FilterSidebar: React.FC<FilterSidebarProps> = ({ currentDaysBack = 30, onFilterChange, onDownload }) => {
   const [activeFilters, setActiveFilters] = useState({
     qualityGrade: undefined as 'research' | 'needs_id' | 'casual' | undefined,
     iconicTaxa: [] as string[],
-    daysBack: 30
+    daysBack: currentDaysBack
   });
 
   const [visibleTaxa, setVisibleTaxa] = useState<Set<string>>(new Set());
@@ -76,11 +77,18 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ onFilterChange, onDownloa
     setVisibleTaxa(newVisible);
   };
 
+  // Sync with external daysBack changes
+  useEffect(() => {
+    if (currentDaysBack !== activeFilters.daysBack) {
+      setActiveFilters(prev => ({ ...prev, daysBack: currentDaysBack }));
+    }
+  }, [currentDaysBack]);
+
   const clearAllFilters = () => {
     const newFilters = {
       qualityGrade: undefined,
       iconicTaxa: [],
-      daysBack: 30
+      daysBack: currentDaysBack
     };
     setActiveFilters(newFilters);
     onFilterChange(newFilters);
@@ -88,19 +96,19 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ onFilterChange, onDownloa
 
   return (
     <div id="filter-sidebar" className="bg-white w-80 border-l border-gray-200 h-full overflow-hidden">
-      <div className="p-4">
+      <div id="filter-sidebar-content" className="p-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <Filter className="w-4 h-4 text-gray-600" />
-            <h2 className="text-base font-medium text-gray-900">Filters & Export</h2>
+        <div id="filter-sidebar-header" className="flex items-center justify-between mb-4">
+          <div id="filter-sidebar-title-container" className="flex items-center space-x-2">
+            <Filter id="filter-sidebar-icon" className="w-4 h-4 text-gray-600" />
+            <h2 id="filter-sidebar-title" className="text-base font-medium text-gray-900">Filters & Export</h2>
           </div>
         </div>
 
-        <div className="space-y-6 overflow-y-auto max-h-[calc(100vh-200px)]">
+        <div id="filter-sections-container" className="space-y-6 overflow-y-auto max-h-[calc(100vh-200px)]">
           {/* Quality Grade Filter */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-900 mb-3">Quality Grade</h3>
+          <div id="quality-grade-section">
+            <h3 id="quality-grade-title" className="text-sm font-medium text-gray-900 mb-3">Quality Grade</h3>
             <div className="space-y-2">
               <button
                 onClick={() => handleQualityGradeChange(undefined)}
@@ -200,32 +208,35 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ onFilterChange, onDownloa
           </div>
 
           {/* Export Options */}
-          <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center space-x-2">
-              <Download className="w-4 h-4" />
-              <span>Export Data</span>
+          <div id="export-section" className="border-t border-gray-200 pt-6">
+            <h3 id="export-title" className="text-sm font-medium text-gray-900 mb-3 flex items-center space-x-2">
+              <Download id="export-icon" className="w-4 h-4" />
+              <span id="export-title-text">Export Data</span>
             </h3>
-            <div className="space-y-2">
+            <div id="export-buttons-container" className="space-y-2">
               <button
+                id="export-csv-button"
                 onClick={() => onDownload('csv')}
                 className="w-full p-2 text-sm text-left border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
               >
-                <div className="font-medium">CSV Format</div>
-                <div className="text-xs text-gray-500">Spreadsheet compatible</div>
+                <div id="export-csv-title" className="font-medium">CSV Format</div>
+                <div id="export-csv-description" className="text-xs text-gray-500">Spreadsheet compatible</div>
               </button>
               <button
+                id="export-json-button"
                 onClick={() => onDownload('json')}
                 className="w-full p-2 text-sm text-left border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
               >
-                <div className="font-medium">JSON Format</div>
-                <div className="text-xs text-gray-500">Raw data structure</div>
+                <div id="export-json-title" className="font-medium">JSON Format</div>
+                <div id="export-json-description" className="text-xs text-gray-500">Raw data structure</div>
               </button>
               <button
+                id="export-geojson-button"
                 onClick={() => onDownload('geojson')}
                 className="w-full p-2 text-sm text-left border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
               >
-                <div className="font-medium">GeoJSON Format</div>
-                <div className="text-xs text-gray-500">Geographic data for GIS</div>
+                <div id="export-geojson-title" className="font-medium">GeoJSON Format</div>
+                <div id="export-geojson-description" className="text-xs text-gray-500">Geographic data for GIS</div>
               </button>
             </div>
           </div>

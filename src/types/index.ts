@@ -13,6 +13,7 @@ export interface FilterState {
   source: string;
   spatialFilter: string;
   timeRange: string;
+  daysBack?: number; // Number of days back from current date
 }
 
 export interface DataLayer {
