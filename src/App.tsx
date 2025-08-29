@@ -24,6 +24,7 @@ function App() {
   const [dataLayers, setDataLayers] = useState(initialDataLayers);
   const [observations, setObservations] = useState<iNaturalistObservation[]>([]);
   const [observationsLoading, setObservationsLoading] = useState(false);
+  const [lastSearchedDaysBack, setLastSearchedDaysBack] = useState<number>(30); // Track the last searched time range
   const mapViewRef = useRef<MapViewRef>(null);
 
   const handleFilterChange = (newFilters: FilterState) => {
@@ -37,6 +38,9 @@ function App() {
       qualityGrade: undefined as 'research' | 'needs_id' | 'casual' | undefined,
       iconicTaxa: [] as string[]
     };
+    
+    // Update the last searched time range when search is performed
+    setLastSearchedDaysBack(filters.daysBack || 30);
     
     console.log('Searching with filters:', searchFilters); // Debug log
     mapViewRef.current?.reloadObservations(searchFilters);
@@ -186,7 +190,7 @@ function App() {
         <ObservationsSidebar 
           observations={observations}
           loading={observationsLoading}
-          currentDaysBack={filters.daysBack}
+          currentDaysBack={lastSearchedDaysBack}
         />
         <MapView 
           ref={mapViewRef}
