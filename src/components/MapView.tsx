@@ -120,6 +120,14 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({ dataLayers, onL
             }
           });
 
+          // Get the best available photo URL for popup
+          let popupPhotoUrl = null;
+          if (obs.photos && obs.photos.length > 0) {
+            popupPhotoUrl = obs.photos[0].medium_url || obs.photos[0].square_url || obs.photos[0].url;
+          } else if (obs.taxon?.default_photo) {
+            popupPhotoUrl = obs.taxon.default_photo.medium_url || obs.taxon.default_photo.square_url;
+          }
+
           // Create popup template
           const popupTemplate = new PopupTemplate({
             title: obs.taxon?.preferred_common_name || obs.taxon?.name || 'Unknown Species',
@@ -129,7 +137,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({ dataLayers, onL
                 <p><strong>Observed:</strong> ${new Date(obs.observed_on).toLocaleDateString()}</p>
                 <p><strong>Observer:</strong> ${obs.user.login}</p>
                 <p><strong>Quality Grade:</strong> ${obs.quality_grade}</p>
-                ${obs.photos.length > 0 ? `<img src="${obs.photos[0].square_url}" alt="Observation photo" style="max-width: 200px; border-radius: 4px;">` : ''}
+                ${popupPhotoUrl ? `<img src="${popupPhotoUrl}" alt="Observation photo" style="max-width: 200px; border-radius: 4px; margin: 8px 0;" onerror="this.style.display='none';">` : '<p style="color: #666; font-style: italic;">No photo available</p>'}
                 <p><a href="${obs.uri}" target="_blank" style="color: #007AC2;">View on iNaturalist</a></p>
               </div>
             `

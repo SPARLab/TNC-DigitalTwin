@@ -117,8 +117,9 @@ class iNaturalistService {
       // Only include observations with coordinates
       has: 'geo',
       
-      // Include photos when available
-      photos: 'true'
+      // Include photos when available - try different approaches
+      photos: 'true',
+      photo_license: 'any'
     });
 
     // Add optional filters
@@ -157,6 +158,19 @@ class iNaturalistService {
         totalResults = data.total_results;
         
         console.log(`Page ${currentPage}: ${data.results?.length || 0} observations (total available: ${totalResults})`);
+        
+        // Debug: Log photo information for first few observations
+        if (data.results && data.results.length > 0) {
+          console.log('Photo debug - First 3 observations:');
+          data.results.slice(0, 3).forEach((obs: any, index: number) => {
+            console.log(`Observation ${index + 1} (ID: ${obs.id}):`, {
+              hasPhotos: obs.photos && obs.photos.length > 0,
+              photoCount: obs.photos ? obs.photos.length : 0,
+              firstPhoto: obs.photos && obs.photos.length > 0 ? obs.photos[0] : null,
+              taxonPhoto: obs.taxon?.default_photo || null
+            });
+          });
+        }
         
         if (!data.results || data.results.length === 0) {
           // No more results

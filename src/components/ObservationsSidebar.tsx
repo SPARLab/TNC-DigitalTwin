@@ -57,13 +57,23 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ observations,
 
       const subcategory = subcategoryMap.get(iconicTaxon)!;
       subcategory.count++;
+      // Get the best available photo URL
+      let photoUrl = null;
+      if (obs.photos && obs.photos.length > 0) {
+        // Use the first observation photo
+        photoUrl = obs.photos[0].square_url || obs.photos[0].medium_url || obs.photos[0].url;
+      } else if (obs.taxon?.default_photo) {
+        // Fallback to taxon default photo if no observation photos
+        photoUrl = obs.taxon.default_photo.square_url || obs.taxon.default_photo.medium_url;
+      }
+
       subcategory.observations.push({
         id: obs.id,
         commonName: obs.taxon.preferred_common_name,
         scientificName: obs.taxon.name,
         observedOn: obs.observed_on,
         observer: obs.user.login,
-        photoUrl: obs.photos.length > 0 ? obs.photos[0].square_url : null,
+        photoUrl,
         qualityGrade: obs.quality_grade,
         uri: obs.uri
       });
@@ -233,12 +243,24 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ observations,
                                     src={obs.photoUrl}
                                     alt={obs.commonName || obs.scientificName}
                                     className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                                    onError={(e) => {
+                                      // Hide broken images and show placeholder
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                      const placeholder = target.nextElementSibling as HTMLElement;
+                                      if (placeholder) {
+                                        placeholder.style.display = 'flex';
+                                      }
+                                    }}
                                   />
-                                ) : (
-                                  <div id={`observation-no-photo-${obs.id}`} className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <span className="text-gray-400 text-xs">No photo</span>
-                                  </div>
-                                )}
+                                ) : null}
+                                <div 
+                                  id={`observation-no-photo-${obs.id}`} 
+                                  className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0"
+                                  style={{ display: obs.photoUrl ? 'none' : 'flex' }}
+                                >
+                                  <span className="text-gray-400 text-xs">No photo</span>
+                                </div>
 
                                 {/* Details */}
                                 <div id={`observation-details-${obs.id}`} className="flex-1 min-w-0">
