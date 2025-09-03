@@ -180,7 +180,7 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ observations,
 
   if (loading) {
     return (
-      <div id="observations-sidebar-loading" className="bg-white w-96 border-r border-gray-200 h-full overflow-hidden">
+      <div id="observations-sidebar-loading" className="bg-white w-96 border-r border-gray-200 flex flex-col h-full">
         <div id="observations-sidebar-loading-content" className="p-4">
           <h2 id="observations-sidebar-loading-title" className="text-base font-medium text-gray-900 mb-4">iNaturalist Observations</h2>
           <div id="observations-loading-container" className="flex items-center justify-center h-32">
@@ -192,10 +192,10 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ observations,
   }
 
   return (
-    <div id="observations-sidebar" className="bg-white w-96 border-r border-gray-200 h-full overflow-hidden">
-      <div id="observations-sidebar-content" className="p-4">
+    <div id="observations-sidebar" className="bg-white w-96 border-r border-gray-200 flex flex-col h-full">
+      <div id="observations-sidebar-content" className="flex flex-col h-full">
         {/* Header */}
-        <div id="observations-sidebar-header" className="mb-4">
+        <div id="observations-sidebar-header" className="p-4 pb-2 flex-shrink-0">
           <h2 id="observations-sidebar-title" className="text-base font-medium text-gray-900">iNaturalist Observations</h2>
           <p id="observations-count-text" className="text-sm text-gray-500 mt-1">
             {observations.length} observations from the {formatDateRangeCompact(currentDaysBack).toLowerCase()}
@@ -203,7 +203,7 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ observations,
         </div>
 
         {/* Grouped Observations */}
-        <div id="observations-groups-container" className="space-y-2 overflow-y-auto max-h-[calc(100vh-200px)]">
+        <div id="observations-groups-container" className="flex-1 px-4 pb-4 space-y-2 overflow-y-auto">
           {groupedObservations.map((group) => (
             <div key={group.category} id={`observation-group-${group.category.toLowerCase()}`} className="border border-gray-200 rounded-lg">
               {/* Category Header */}

@@ -95,17 +95,17 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ currentDaysBack = 30, onF
   };
 
   return (
-    <div id="filter-sidebar" className="bg-white w-80 border-l border-gray-200 h-full overflow-hidden">
-      <div id="filter-sidebar-content" className="p-4">
+    <div id="filter-sidebar" className="bg-white w-80 border-l border-gray-200 flex flex-col h-full">
+      <div id="filter-sidebar-content" className="flex flex-col h-full">
         {/* Header */}
-        <div id="filter-sidebar-header" className="flex items-center justify-between mb-4">
+        <div id="filter-sidebar-header" className="flex items-center justify-between p-4 pb-2 flex-shrink-0">
           <div id="filter-sidebar-title-container" className="flex items-center space-x-2">
             <Filter id="filter-sidebar-icon" className="w-4 h-4 text-gray-600" />
             <h2 id="filter-sidebar-title" className="text-base font-medium text-gray-900">Filters & Export</h2>
           </div>
         </div>
 
-        <div id="filter-sections-container" className="space-y-6 overflow-y-auto max-h-[calc(100vh-200px)]">
+        <div id="filter-sections-container" className="flex-1 px-4 pb-4 space-y-6 overflow-y-auto">
           {/* Quality Grade Filter */}
           <div id="quality-grade-section">
             <h3 id="quality-grade-title" className="text-sm font-medium text-gray-900 mb-3">Quality Grade</h3>

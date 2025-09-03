@@ -177,7 +177,7 @@ function App() {
   });
 
   return (
-    <div id="app" className="min-h-screen bg-gray-50 flex flex-col">
+    <div id="app" className="h-screen bg-gray-50 flex flex-col">
       <Header />
       <FilterBar 
         filters={filters}
@@ -186,7 +186,7 @@ function App() {
         resultCount={observations.length}
         isSearching={observationsLoading}
       />
-      <div id="main-content" className="flex-1 flex">
+      <div id="main-content" className="flex-1 flex min-h-0">
         <ObservationsSidebar 
           observations={observations}
           loading={observationsLoading}
