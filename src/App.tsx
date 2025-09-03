@@ -17,7 +17,9 @@ function App() {
     source: 'iNaturalist',
     spatialFilter: 'Draw Area',
     timeRange: formatDateRangeCompact(30),
-    daysBack: 30
+    daysBack: 30,
+    startDate: undefined,
+    endDate: undefined
   });
 
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
@@ -34,7 +36,9 @@ function App() {
   const handleSearch = () => {
     // Trigger a new search with current filter settings
     const searchFilters = {
-      daysBack: filters.daysBack || 30,
+      daysBack: filters.startDate && filters.endDate ? undefined : (filters.daysBack || 30),
+      startDate: filters.startDate,
+      endDate: filters.endDate,
       qualityGrade: undefined as 'research' | 'needs_id' | 'casual' | undefined,
       iconicTaxa: [] as string[]
     };
@@ -60,6 +64,8 @@ function App() {
     qualityGrade?: 'research' | 'needs_id' | 'casual';
     iconicTaxa?: string[];
     daysBack?: number;
+    startDate?: string;
+    endDate?: string;
   }) => {
     // Update the main filter state if daysBack changed
     if (observationFilters.daysBack && observationFilters.daysBack !== filters.daysBack) {
@@ -70,10 +76,25 @@ function App() {
       }));
     }
     
-    // Use the current filter's daysBack if not provided in observationFilters
+    // Handle custom date range - update timeRange display
+    if (observationFilters.startDate && observationFilters.endDate) {
+      const startDate = new Date(observationFilters.startDate);
+      const endDate = new Date(observationFilters.endDate);
+      const customTimeRange = `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
+      
+      setFilters(prev => ({
+        ...prev,
+        timeRange: customTimeRange,
+        daysBack: undefined // Clear daysBack when using custom dates
+      }));
+    }
+    
+    // Use the current filter's daysBack if not provided in observationFilters and no custom dates
     const finalFilters = {
       ...observationFilters,
-      daysBack: observationFilters.daysBack || filters.daysBack || 30
+      daysBack: observationFilters.startDate && observationFilters.endDate 
+        ? undefined 
+        : (observationFilters.daysBack || filters.daysBack || 30)
     };
     
     console.log('Filter change with filters:', finalFilters); // Debug log
@@ -191,6 +212,8 @@ function App() {
           observations={observations}
           loading={observationsLoading}
           currentDaysBack={lastSearchedDaysBack}
+          startDate={filters.startDate}
+          endDate={filters.endDate}
         />
         <MapView 
           ref={mapViewRef}

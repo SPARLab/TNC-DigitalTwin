@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, Database, MapPin, Calendar, Search } from 'lucide-react';
 import { FilterState } from '../types';
 import { formatDateRange, formatDateRangeCompact, getTimeRangeOptions } from '../utils/dateUtils';
@@ -13,18 +13,27 @@ interface FilterBarProps {
 
 const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch, resultCount, isSearching = false }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [isCustomDateRange, setIsCustomDateRange] = useState(false);
 
   const categoryOptions = ['Wildlife'];
   const sourceOptions = ['iNaturalist'];
   const timeRangeOptions = getTimeRangeOptions();
 
+  // Sync isCustomDateRange with filters state
+  useEffect(() => {
+    setIsCustomDateRange(!!(filters.startDate && filters.endDate));
+  }, [filters.startDate, filters.endDate]);
+
   const handleClearFilters = () => {
+    setIsCustomDateRange(false);
     onFilterChange({
       category: 'Wildlife',
       source: 'iNaturalist',
       spatialFilter: 'Draw Area',
       timeRange: formatDateRangeCompact(30),
-      daysBack: 30
+      daysBack: 30,
+      startDate: undefined,
+      endDate: undefined
     });
   };
 
@@ -42,13 +51,51 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch
     setOpenDropdown(null);
   };
 
-  const handleTimeRangeChange = (daysBack: number) => {
-    onFilterChange({ 
-      ...filters, 
-      timeRange: formatDateRangeCompact(daysBack),
-      daysBack 
-    });
-    setOpenDropdown(null);
+  const handleTimeRangeChange = (daysBack: number | string) => {
+    if (daysBack === 'custom') {
+      setIsCustomDateRange(true);
+      // Don't close dropdown for custom range to show date inputs
+      return;
+    } else {
+      setIsCustomDateRange(false);
+      onFilterChange({ 
+        ...filters, 
+        timeRange: formatDateRangeCompact(daysBack as number),
+        daysBack: daysBack as number,
+        startDate: undefined,
+        endDate: undefined
+      });
+      setOpenDropdown(null);
+    }
+  };
+
+  const handleCustomDateChange = (startDate?: string, endDate?: string) => {
+    // Basic validation: ensure end date is not before start date
+    if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
+      return;
+    }
+    
+    if (startDate && endDate) {
+      const customTimeRange = `${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}`;
+      onFilterChange({
+        ...filters,
+        timeRange: customTimeRange,
+        daysBack: undefined,
+        startDate,
+        endDate
+      });
+    } else {
+      onFilterChange({
+        ...filters,
+        startDate,
+        endDate
+      });
+    }
+  };
+
+  const isDateRangeValid = () => {
+    if (!filters.startDate || !filters.endDate) return true;
+    return new Date(filters.endDate) >= new Date(filters.startDate);
   };
 
   return (
@@ -156,7 +203,10 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
                     : 'bg-blue-600 text-white hover:bg-blue-700'
                 }`}
-                title="Search for observations in selected time range"
+                title={isSearching 
+                  ? "Searching... This may take time due to iNaturalist API rate limits" 
+                  : "Search for observations in selected time range"
+                }
               >
                 {isSearching ? (
                   <div id="search-loading-spinner" className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
@@ -167,13 +217,15 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch
             </div>
             
             {openDropdown === 'timeRange' && (
-              <div id="time-range-dropdown" className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10 w-64">
+              <div id="time-range-dropdown" className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10 w-80">
                 {timeRangeOptions.map((option) => (
                   <button
                     key={option.value}
                     id={`time-range-option-${option.value}-days`}
                     onClick={() => handleTimeRangeChange(option.value)}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 first:rounded-t-md last:rounded-b-md"
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${
+                      filters.daysBack === option.value ? 'bg-blue-50 text-blue-700' : ''
+                    }`}
                     title={formatDateRange(option.value)}
                   >
                     <div id={`time-range-option-${option.value}-label`} className="font-medium">{option.label}</div>
@@ -182,6 +234,83 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch
                     </div>
                   </button>
                 ))}
+                
+                {/* Custom Date Range Option */}
+                <button
+                  id="time-range-option-custom"
+                  onClick={() => handleTimeRangeChange('custom')}
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 border-t border-gray-100 ${
+                    isCustomDateRange ? 'bg-blue-50 text-blue-700' : ''
+                  }`}
+                >
+                  <div className="font-medium">Custom date range</div>
+                  <div className="text-xs text-gray-500 mt-0.5">Select specific start and end dates</div>
+                </button>
+                
+                {/* Custom Date Range Inputs */}
+                {isCustomDateRange && (
+                  <div id="custom-date-inputs-header" className="p-3 bg-gray-50 border-t border-gray-200">
+                    <div className="space-y-3">
+                      <div>
+                        <label htmlFor="header-start-date-input" className="block text-xs font-medium text-gray-700 mb-1">
+                          Start Date
+                        </label>
+                        <input
+                          id="header-start-date-input"
+                          type="date"
+                          value={filters.startDate || ''}
+                          onChange={(e) => handleCustomDateChange(e.target.value, filters.endDate)}
+                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="header-end-date-input" className="block text-xs font-medium text-gray-700 mb-1">
+                          End Date
+                        </label>
+                        <input
+                          id="header-end-date-input"
+                          type="date"
+                          value={filters.endDate || ''}
+                          onChange={(e) => handleCustomDateChange(filters.startDate, e.target.value)}
+                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      {filters.startDate && filters.endDate && (
+                        <div id="header-date-range-summary" className={`text-xs p-2 rounded border ${
+                          isDateRangeValid() 
+                            ? 'text-gray-600 bg-white' 
+                            : 'text-red-600 bg-red-50 border-red-200'
+                        }`}>
+                          {isDateRangeValid() ? (
+                            <>Range: {new Date(filters.startDate).toLocaleDateString()} - {new Date(filters.endDate).toLocaleDateString()}</>
+                          ) : (
+                            <>⚠️ End date must be after start date</>
+                          )}
+                        </div>
+                      )}
+                      <div className="flex justify-end space-x-2 pt-2">
+                        <button
+                          id="header-custom-date-cancel"
+                          onClick={() => {
+                            setIsCustomDateRange(false);
+                            setOpenDropdown(null);
+                          }}
+                          className="px-3 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          id="header-custom-date-apply"
+                          onClick={() => setOpenDropdown(null)}
+                          disabled={!isDateRangeValid() || !filters.startDate || !filters.endDate}
+                          className="px-3 py-1 text-xs text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed rounded"
+                        >
+                          Apply
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Filter, Calendar, Star, Eye, EyeOff } from 'lucide-react';
+import { Download, Filter, Calendar, Eye, EyeOff } from 'lucide-react';
 
 interface FilterSidebarProps {
   currentDaysBack?: number;
@@ -7,6 +7,8 @@ interface FilterSidebarProps {
     qualityGrade?: 'research' | 'needs_id' | 'casual';
     iconicTaxa?: string[];
     daysBack?: number;
+    startDate?: string;
+    endDate?: string;
   }) => void;
   onDownload: (format: 'csv' | 'json' | 'geojson') => void;
 }
@@ -15,8 +17,12 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ currentDaysBack = 30, onF
   const [activeFilters, setActiveFilters] = useState({
     qualityGrade: undefined as 'research' | 'needs_id' | 'casual' | undefined,
     iconicTaxa: [] as string[],
-    daysBack: currentDaysBack
+    daysBack: currentDaysBack as number | undefined,
+    startDate: undefined as string | undefined,
+    endDate: undefined as string | undefined
   });
+
+  const [isCustomDateRange, setIsCustomDateRange] = useState(false);
 
   const [visibleTaxa, setVisibleTaxa] = useState<Set<string>>(new Set());
 
@@ -42,7 +48,8 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ currentDaysBack = 30, onF
     { value: 7, label: 'Last 7 days' },
     { value: 30, label: 'Last 30 days' },
     { value: 90, label: 'Last 3 months' },
-    { value: 365, label: 'Last year' }
+    { value: 365, label: 'Last year' },
+    { value: 'custom', label: 'Custom date range' }
   ];
 
   const handleQualityGradeChange = (grade: 'research' | 'needs_id' | 'casual' | undefined) => {
@@ -61,10 +68,51 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ currentDaysBack = 30, onF
     onFilterChange(newFilters);
   };
 
-  const handleTimeRangeChange = (days: number) => {
-    const newFilters = { ...activeFilters, daysBack: days };
+  const handleTimeRangeChange = (days: number | string) => {
+    if (days === 'custom') {
+      setIsCustomDateRange(true);
+      // Clear daysBack when switching to custom range
+      const newFilters = { 
+        ...activeFilters, 
+        daysBack: undefined,
+        startDate: activeFilters.startDate,
+        endDate: activeFilters.endDate
+      };
+      setActiveFilters(newFilters);
+      onFilterChange(newFilters);
+    } else {
+      setIsCustomDateRange(false);
+      const newFilters = { 
+        ...activeFilters, 
+        daysBack: days as number,
+        startDate: undefined,
+        endDate: undefined
+      };
+      setActiveFilters(newFilters);
+      onFilterChange(newFilters);
+    }
+  };
+
+  const handleCustomDateChange = (startDate?: string, endDate?: string) => {
+    // Basic validation: ensure end date is not before start date
+    if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
+      // If end date is before start date, don't update
+      return;
+    }
+    
+    const newFilters = { 
+      ...activeFilters, 
+      startDate, 
+      endDate,
+      daysBack: undefined // Clear daysBack when using custom dates
+    };
     setActiveFilters(newFilters);
     onFilterChange(newFilters);
+  };
+
+  const isDateRangeValid = () => {
+    if (!activeFilters.startDate || !activeFilters.endDate) return true;
+    return new Date(activeFilters.endDate) >= new Date(activeFilters.startDate);
   };
 
   const toggleTaxaVisibility = (taxon: string) => {
@@ -88,9 +136,12 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ currentDaysBack = 30, onF
     const newFilters = {
       qualityGrade: undefined,
       iconicTaxa: [],
-      daysBack: currentDaysBack
+      daysBack: currentDaysBack,
+      startDate: undefined,
+      endDate: undefined
     };
     setActiveFilters(newFilters);
+    setIsCustomDateRange(false);
     onFilterChange(newFilters);
   };
 
@@ -138,15 +189,17 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ currentDaysBack = 30, onF
           </div>
 
           {/* Time Range Filter */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-900 mb-3">Time Range</h3>
+          <div id="time-range-section">
+            <h3 id="time-range-title" className="text-sm font-medium text-gray-900 mb-3">Time Range</h3>
             <div className="space-y-2">
               {timeRangeOptions.map((option) => (
                 <button
                   key={option.value}
+                  id={`time-range-${option.value}`}
                   onClick={() => handleTimeRangeChange(option.value)}
                   className={`w-full text-left p-2 rounded-md text-sm transition-colors flex items-center space-x-2 ${
-                    activeFilters.daysBack === option.value
+                    (option.value === 'custom' && isCustomDateRange) || 
+                    (option.value !== 'custom' && activeFilters.daysBack === option.value)
                       ? 'bg-blue-50 text-blue-700 border border-blue-200'
                       : 'hover:bg-gray-50 border border-gray-200'
                   }`}
@@ -155,6 +208,51 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ currentDaysBack = 30, onF
                   <span>{option.label}</span>
                 </button>
               ))}
+              
+              {/* Custom Date Range Inputs */}
+              {isCustomDateRange && (
+                <div id="custom-date-inputs" className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-200">
+                  <div className="space-y-3">
+                    <div>
+                      <label htmlFor="start-date-input" className="block text-xs font-medium text-gray-700 mb-1">
+                        Start Date
+                      </label>
+                      <input
+                        id="start-date-input"
+                        type="date"
+                        value={activeFilters.startDate || ''}
+                        onChange={(e) => handleCustomDateChange(e.target.value, activeFilters.endDate)}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="end-date-input" className="block text-xs font-medium text-gray-700 mb-1">
+                        End Date
+                      </label>
+                      <input
+                        id="end-date-input"
+                        type="date"
+                        value={activeFilters.endDate || ''}
+                        onChange={(e) => handleCustomDateChange(activeFilters.startDate, e.target.value)}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+                    {activeFilters.startDate && activeFilters.endDate && (
+                      <div id="date-range-summary" className={`text-xs p-2 rounded border ${
+                        isDateRangeValid() 
+                          ? 'text-gray-600 bg-white' 
+                          : 'text-red-600 bg-red-50 border-red-200'
+                      }`}>
+                        {isDateRangeValid() ? (
+                          <>Range: {new Date(activeFilters.startDate).toLocaleDateString()} - {new Date(activeFilters.endDate).toLocaleDateString()}</>
+                        ) : (
+                          <>⚠️ End date must be after start date</>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

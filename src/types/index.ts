@@ -14,6 +14,8 @@ export interface FilterState {
   spatialFilter: string;
   timeRange: string;
   daysBack?: number; // Number of days back from current date
+  startDate?: string; // Custom start date (YYYY-MM-DD)
+  endDate?: string; // Custom end date (YYYY-MM-DD)
 }
 
 export interface DataLayer {

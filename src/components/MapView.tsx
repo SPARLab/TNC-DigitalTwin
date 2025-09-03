@@ -22,6 +22,8 @@ export interface MapViewRef {
     qualityGrade?: 'research' | 'needs_id' | 'casual';
     iconicTaxa?: string[];
     daysBack?: number;
+    startDate?: string;
+    endDate?: string;
   }) => void;
 }
 
@@ -76,16 +78,49 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({ dataLayers, onL
     qualityGrade?: 'research' | 'needs_id' | 'casual';
     iconicTaxa?: string[];
     daysBack?: number;
+    startDate?: string;
+    endDate?: string;
   }) => {
     setLoading(true);
     onLoadingChange?.(true);
     try {
+      // Calculate appropriate maxResults based on date range
+      let maxResults = 500; // Default for short ranges
+      
+      if (filters?.startDate && filters?.endDate) {
+        const startDate = new Date(filters.startDate);
+        const endDate = new Date(filters.endDate);
+        const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        // Scale maxResults based on date range (roughly 15-20 observations per day on average)
+        if (daysDiff > 365) {
+          maxResults = Math.min(5000, daysDiff * 15); // Cap at 5000 for very long ranges
+        } else if (daysDiff > 90) {
+          maxResults = Math.min(2000, daysDiff * 18);
+        } else if (daysDiff > 30) {
+          maxResults = Math.min(1000, daysDiff * 20);
+        }
+      } else if (filters?.daysBack) {
+        // Use daysBack for calculation
+        if (filters.daysBack > 365) {
+          maxResults = Math.min(5000, filters.daysBack * 15);
+        } else if (filters.daysBack > 90) {
+          maxResults = Math.min(2000, filters.daysBack * 18);
+        } else if (filters.daysBack > 30) {
+          maxResults = Math.min(1000, filters.daysBack * 20);
+        }
+      }
+      
+      console.log(`Using maxResults: ${maxResults} for date range`);
+      
       const response = await iNaturalistAPI.getRecentObservations({
         perPage: 200,
         daysBack: filters?.daysBack || 30,
+        startDate: filters?.startDate,
+        endDate: filters?.endDate,
         qualityGrade: filters?.qualityGrade,
         iconicTaxa: filters?.iconicTaxa,
-        maxResults: 500 // Fetch up to 500 observations across multiple pages
+        maxResults
       });
       
       setObservations(response.results);
@@ -255,10 +290,17 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({ dataLayers, onL
 
       {/* Loading Indicator */}
       {loading && (
-        <div id="map-loading-overlay" className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-lg p-4 z-20">
-          <div id="map-loading-content" className="flex items-center space-x-2">
-            <div id="map-loading-spinner" className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-            <span id="map-loading-text" className="text-sm text-gray-600">Loading iNaturalist observations...</span>
+        <div id="map-loading-overlay" className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-lg p-4 z-20 max-w-sm">
+          <div id="map-loading-content" className="flex flex-col items-center space-y-3">
+            <div className="flex items-center space-x-2">
+              <div id="map-loading-spinner" className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+              <span id="map-loading-text" className="text-sm text-gray-700 font-medium">Loading observations...</span>
+            </div>
+            <div id="map-loading-note" className="text-center">
+              <p className="text-xs text-gray-500 leading-relaxed">
+                To respect iNaturalist's API rate limits, this process may take some time for large date ranges.
+              </p>
+            </div>
           </div>
         </div>
       )}

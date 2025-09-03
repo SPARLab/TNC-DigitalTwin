@@ -8,13 +8,25 @@ interface ObservationsSidebarProps {
   observations: iNaturalistObservation[];
   loading: boolean;
   currentDaysBack?: number;
+  startDate?: string;
+  endDate?: string;
 }
 
-const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ observations, loading, currentDaysBack = 30 }) => {
+const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ observations, loading, currentDaysBack = 30, startDate, endDate }) => {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [expandedSubcategories, setExpandedSubcategories] = useState<Set<string>>(new Set());
   const [selectedObservation, setSelectedObservation] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Generate appropriate date range text
+  const getDateRangeText = () => {
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      return `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`;
+    }
+    return formatDateRangeCompact(currentDaysBack).toLowerCase();
+  };
 
   // Group observations by Flora/Fauna and then by iconic taxon
   const groupObservations = (): ObservationGroup[] => {
@@ -183,8 +195,14 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ observations,
       <div id="observations-sidebar-loading" className="bg-white w-96 border-r border-gray-200 flex flex-col h-full">
         <div id="observations-sidebar-loading-content" className="p-4">
           <h2 id="observations-sidebar-loading-title" className="text-base font-medium text-gray-900 mb-4">iNaturalist Observations</h2>
-          <div id="observations-loading-container" className="flex items-center justify-center h-32">
+          <div id="observations-loading-container" className="flex flex-col items-center justify-center h-32 space-y-3">
             <div id="observations-loading-spinner" className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div id="observations-loading-text" className="text-center">
+              <p className="text-sm text-gray-600 font-medium">Loading observations...</p>
+              <p className="text-xs text-gray-500 mt-1 max-w-xs">
+                To respect iNaturalist's API rate limits, this process may take some time for large date ranges.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -198,7 +216,7 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ observations,
         <div id="observations-sidebar-header" className="p-4 pb-2 flex-shrink-0">
           <h2 id="observations-sidebar-title" className="text-base font-medium text-gray-900">iNaturalist Observations</h2>
           <p id="observations-count-text" className="text-sm text-gray-500 mt-1">
-            {observations.length} observations from the {formatDateRangeCompact(currentDaysBack).toLowerCase()}
+            {observations.length} observations from {getDateRangeText()}
           </p>
         </div>
 
