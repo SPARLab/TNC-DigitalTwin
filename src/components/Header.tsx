@@ -21,20 +21,7 @@ const Header: React.FC = () => {
               </a>
             </nav>
           </div>
-          <div id="header-right" className="flex space-x-3">
-            <button 
-              id="sign-in-btn"
-              className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900"
-            >
-              Sign In
-            </button>
-            <button 
-              id="register-btn"
-              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
-            >
-              Register
-            </button>
-          </div>
+
         </div>
       </div>
     </header>
