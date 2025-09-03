@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, ExternalLink, Calendar, User } from 'lucide-react';
+import { ChevronDown, ChevronRight, ExternalLink, Calendar, User, X } from 'lucide-react';
 import { ObservationGroup } from '../types';
 import { iNaturalistObservation } from '../services/iNaturalistService';
 import { formatDateRangeCompact } from '../utils/dateUtils';
@@ -13,6 +13,8 @@ interface ObservationsSidebarProps {
 const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ observations, loading, currentDaysBack = 30 }) => {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [expandedSubcategories, setExpandedSubcategories] = useState<Set<string>>(new Set());
+  const [selectedObservation, setSelectedObservation] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Group observations by Flora/Fauna and then by iconic taxon
   const groupObservations = (): ObservationGroup[] => {
@@ -32,7 +34,17 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ observations,
       name: string;
       iconicTaxon: string;
       count: number;
-      observations: any[];
+      observations: Array<{
+        id: number;
+        commonName: string | null;
+        scientificName: string;
+        observedOn: string;
+        observer: string;
+        photoUrl: string | null;
+        qualityGrade: string;
+        geoprivacy?: string | null;
+        uri: string;
+      }>;
       isFlora: boolean;
     }>();
 
@@ -75,6 +87,7 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ observations,
         observer: obs.user.login,
         photoUrl,
         qualityGrade: obs.quality_grade,
+        geoprivacy: obs.geoprivacy,
         uri: obs.uri
       });
     });
@@ -151,6 +164,16 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ observations,
       newExpanded.add(subcategory);
     }
     setExpandedSubcategories(newExpanded);
+  };
+
+  const handleObservationClick = (obs: any) => {
+    setSelectedObservation(obs);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedObservation(null);
   };
 
   const groupedObservations = groupObservations();
@@ -234,7 +257,12 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ observations,
                       {expandedSubcategories.has(subcategory.iconicTaxon) && (
                         <div id={`observations-list-${subcategory.iconicTaxon.toLowerCase()}`} className="bg-gray-50">
                           {subcategory.observations.map((obs) => (
-                            <div key={obs.id} id={`observation-${obs.id}`} className="p-3 pl-12 border-t border-gray-100 first:border-t-0">
+                            <div 
+                              key={obs.id} 
+                              id={`observation-${obs.id}`} 
+                              className="p-3 pl-12 border-t border-gray-100 first:border-t-0 cursor-pointer hover:bg-gray-100 transition-colors duration-150"
+                              onClick={() => handleObservationClick(obs)}
+                            >
                               <div id={`observation-content-${obs.id}`} className="flex space-x-3">
                                 {/* Photo */}
                                 {obs.photoUrl ? (
@@ -279,6 +307,7 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ observations,
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="ml-2 text-blue-600 hover:text-blue-800"
+                                      onClick={(e) => e.stopPropagation()}
                                     >
                                       <ExternalLink id={`observation-external-icon-${obs.id}`} className="w-3 h-3" />
                                     </a>
@@ -295,7 +324,7 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ observations,
                                     </div>
                                   </div>
 
-                                  <div id={`observation-quality-${obs.id}`} className="mt-1">
+                                  <div id={`observation-badges-${obs.id}`} className="mt-1 flex flex-wrap gap-1">
                                     <span id={`observation-quality-badge-${obs.id}`} className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
                                       obs.qualityGrade === 'research' 
                                         ? 'bg-green-100 text-green-800'
@@ -306,6 +335,11 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ observations,
                                       {obs.qualityGrade === 'research' ? 'Research Grade' : 
                                        obs.qualityGrade === 'needs_id' ? 'Needs ID' : 'Casual'}
                                     </span>
+                                    {((obs as any).geoprivacy === 'obscured' || (obs as any).geoprivacy === 'private') && (
+                                      <span id={`observation-geoprivacy-badge-${obs.id}`} className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800" title="Location obscured for privacy/conservation">
+                                        📍 Location Hidden
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                               </div>
@@ -327,6 +361,146 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ observations,
           )}
         </div>
       </div>
+
+      {/* Observation Detail Modal */}
+      {isModalOpen && selectedObservation && (
+        <div 
+          id="observation-modal-overlay" 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={closeModal}
+        >
+          <div 
+            id="observation-modal-content"
+            className="bg-white rounded-lg max-w-2xl max-h-[90vh] overflow-y-auto m-4 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div id="observation-modal-header" className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
+              <h2 id="observation-modal-title" className="text-lg font-semibold text-gray-900 truncate">
+                {selectedObservation.commonName || selectedObservation.scientificName || 'Unknown Species'}
+              </h2>
+              <button
+                id="observation-modal-close"
+                onClick={closeModal}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X id="observation-modal-close-icon" className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div id="observation-modal-body" className="p-6">
+              {/* Photo */}
+              {selectedObservation.photoUrl && (
+                <div id="observation-modal-photo-container" className="mb-6">
+                  <img
+                    id="observation-modal-photo"
+                    src={selectedObservation.photoUrl.replace('square', 'medium')} // Try to get larger image
+                    alt={selectedObservation.commonName || selectedObservation.scientificName}
+                    className="w-full max-w-md mx-auto rounded-lg shadow-sm"
+                    onError={(e) => {
+                      // Fallback to original URL if medium doesn't work
+                      const target = e.target as HTMLImageElement;
+                      if (target.src !== selectedObservation.photoUrl) {
+                        target.src = selectedObservation.photoUrl;
+                      }
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Species Information */}
+              <div id="observation-modal-species-info" className="mb-6">
+                <h3 id="observation-modal-species-title" className="text-lg font-medium text-gray-900 mb-3">Species Information</h3>
+                <div id="observation-modal-species-details" className="space-y-2">
+                  {selectedObservation.commonName && (
+                    <div id="observation-modal-common-name" className="flex items-start">
+                      <span className="font-medium text-gray-700 w-24 flex-shrink-0">Common:</span>
+                      <span className="text-gray-900">{selectedObservation.commonName}</span>
+                    </div>
+                  )}
+                  <div id="observation-modal-scientific-name" className="flex items-start">
+                    <span className="font-medium text-gray-700 w-24 flex-shrink-0">Scientific:</span>
+                    <span className="text-gray-900 italic">{selectedObservation.scientificName}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Observation Details */}
+              <div id="observation-modal-observation-details" className="mb-6">
+                <h3 id="observation-modal-details-title" className="text-lg font-medium text-gray-900 mb-3">Observation Details</h3>
+                <div id="observation-modal-details-grid" className="space-y-3">
+                  <div id="observation-modal-date" className="flex items-center space-x-2">
+                    <Calendar id="observation-modal-date-icon" className="w-4 h-4 text-gray-500" />
+                    <span className="font-medium text-gray-700">Observed:</span>
+                    <span className="text-gray-900">{new Date(selectedObservation.observedOn).toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}</span>
+                  </div>
+                  
+                  <div id="observation-modal-observer" className="flex items-center space-x-2">
+                    <User id="observation-modal-observer-icon" className="w-4 h-4 text-gray-500" />
+                    <span className="font-medium text-gray-700">Observer:</span>
+                    <span className="text-gray-900">{selectedObservation.observer}</span>
+                  </div>
+
+                  <div id="observation-modal-quality" className="flex items-center space-x-2">
+                    <span className="font-medium text-gray-700">Quality Grade:</span>
+                    <span className={`inline-flex px-2 py-1 rounded-full text-sm font-medium ${
+                      selectedObservation.qualityGrade === 'research' 
+                        ? 'bg-green-100 text-green-800'
+                        : selectedObservation.qualityGrade === 'needs_id'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {selectedObservation.qualityGrade === 'research' ? 'Research Grade' : 
+                       selectedObservation.qualityGrade === 'needs_id' ? 'Needs ID' : 'Casual'}
+                    </span>
+                  </div>
+
+                  {(selectedObservation.geoprivacy === 'obscured' || selectedObservation.geoprivacy === 'private') && (
+                    <div id="observation-modal-geoprivacy" className="flex items-start space-x-2">
+                      <span className="font-medium text-gray-700">Location:</span>
+                      <div className="flex flex-col">
+                        <span className="inline-flex px-2 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
+                          📍 Location Hidden
+                        </span>
+                        <span className="text-xs text-gray-500 mt-1">
+                          Exact coordinates obscured for privacy or conservation reasons
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div id="observation-modal-actions" className="flex space-x-3">
+                <a
+                  id="observation-modal-inaturalist-link"
+                  href={selectedObservation.uri}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  <ExternalLink id="observation-modal-external-icon" className="w-4 h-4" />
+                  <span>View on iNaturalist</span>
+                </a>
+                <button
+                  id="observation-modal-close-button"
+                  onClick={closeModal}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

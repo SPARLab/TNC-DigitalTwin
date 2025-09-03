@@ -9,6 +9,7 @@ export interface iNaturalistObservation {
     type: 'Point';
     coordinates: [number, number];
   };
+  geoprivacy: 'open' | 'obscured' | 'private' | null;
   taxon: {
     id: number;
     name: string;
@@ -46,7 +47,10 @@ class iNaturalistService {
   private lastRequestTime = 0;
   private readonly minRequestInterval = 1000; // 1 second between requests for rate limiting
   
-  // Dangermond Preserve bounding box coordinates
+  // Dangermond Preserve place ID from iNaturalist
+  private readonly dangermondPlaceId = 136122; // "Jack and Laura Dangermond Preserve"
+  
+  // Fallback bounding box coordinates (kept for reference)
   private readonly dangermondBounds = {
     swlat: 34.4,    // Southwest latitude
     swlng: -120.45, // Southwest longitude  
@@ -55,7 +59,8 @@ class iNaturalistService {
   };
 
   /**
-   * Fetch recent observations from the Dangermond Preserve
+   * Fetch recent observations from the Dangermond Preserve using place-based filtering
+   * for more accurate results than bounding box filtering.
    */
   /**
    * Rate limiting helper
@@ -96,11 +101,8 @@ class iNaturalistService {
     startDate.setDate(endDate.getDate() - daysBack);
 
     const params = new URLSearchParams({
-      // Geographic bounds for Dangermond Preserve
-      swlat: this.dangermondBounds.swlat.toString(),
-      swlng: this.dangermondBounds.swlng.toString(),
-      nelat: this.dangermondBounds.nelat.toString(),
-      nelng: this.dangermondBounds.nelng.toString(),
+      // Use place-based filtering for more accurate results
+      place_id: this.dangermondPlaceId.toString(),
       
       // Pagination
       per_page: perPage.toString(),
@@ -116,6 +118,9 @@ class iNaturalistService {
       
       // Only include observations with coordinates
       has: 'geo',
+      
+      // Filter out observations with poor location accuracy (> 1000m)
+      acc_below: '1000',
       
       // Include photos when available - try different approaches
       photos: 'true',
@@ -146,7 +151,7 @@ class iNaturalistService {
         
         const apiUrl = `${this.baseUrl}/observations?${params}`;
         console.log(`iNaturalist API URL (page ${currentPage}):`, apiUrl);
-        console.log('Query parameters:', Object.fromEntries(params));
+        console.log('Query parameters (using place-based filtering):', Object.fromEntries(params));
         
         const response = await fetch(apiUrl);
         
@@ -211,17 +216,24 @@ class iNaturalistService {
    * Transform raw iNaturalist observation to our interface
    */
   private transformObservation(obs: any): iNaturalistObservation {
+    // iNaturalist API returns location as "latitude,longitude" string
+    // We need [longitude, latitude] for GeoJSON and mapping libraries
+    const locationParts = obs.location ? obs.location.split(',') : ['0', '0'];
+    const latitude = parseFloat(locationParts[0]);
+    const longitude = parseFloat(locationParts[1]);
+    
     return {
       id: obs.id,
       observed_on: obs.observed_on,
       created_at: obs.created_at,
       updated_at: obs.updated_at,
       time_observed_at: obs.time_observed_at,
-      location: obs.location ? [obs.location.split(',')[1], obs.location.split(',')[0]] : [0, 0],
+      location: [longitude, latitude], // [longitude, latitude] format
       geojson: obs.geojson || {
         type: 'Point',
-        coordinates: obs.location ? [parseFloat(obs.location.split(',')[1]), parseFloat(obs.location.split(',')[0])] : [0, 0]
+        coordinates: [longitude, latitude] // GeoJSON format: [longitude, latitude]
       },
+      geoprivacy: obs.geoprivacy || null,
       taxon: obs.taxon ? {
         id: obs.taxon.id,
         name: obs.taxon.name,

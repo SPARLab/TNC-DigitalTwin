@@ -1,9 +1,8 @@
-import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { DataLayer } from '../types';
 import DataLayersPanel from './DataLayersPanel';
 import Map from '@arcgis/core/Map';
 import MapView from '@arcgis/core/views/MapView';
-import Basemap from '@arcgis/core/Basemap';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
@@ -137,6 +136,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({ dataLayers, onL
                 <p><strong>Observed:</strong> ${new Date(obs.observed_on).toLocaleDateString()}</p>
                 <p><strong>Observer:</strong> ${obs.user.login}</p>
                 <p><strong>Quality Grade:</strong> ${obs.quality_grade}</p>
+                ${(obs.geoprivacy === 'obscured' || obs.geoprivacy === 'private') ? 
+                  '<p style="color: #f59e0b; font-weight: bold; background: #fef3c7; padding: 4px 8px; border-radius: 4px; margin: 8px 0;">📍 Location obscured for privacy/conservation</p>' : 
+                  ''}
                 ${popupPhotoUrl ? `<img src="${popupPhotoUrl}" alt="Observation photo" style="max-width: 200px; border-radius: 4px; margin: 8px 0;" onerror="this.style.display='none';">` : '<p style="color: #666; font-style: italic;">No photo available</p>'}
                 <p><a href="${obs.uri}" target="_blank" style="color: #007AC2;">View on iNaturalist</a></p>
               </div>
@@ -175,7 +177,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({ dataLayers, onL
     iconicTaxa?: string[];
     daysBack?: number;
   }) => {
-    if (view) {
+    if (view && view.map) {
       const observationsLayer = view.map.findLayerById('inaturalist-observations') as GraphicsLayer;
       if (observationsLayer) {
         loadObservations(view, observationsLayer, filters);
