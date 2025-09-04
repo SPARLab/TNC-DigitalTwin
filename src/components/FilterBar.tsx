@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronDown, Database, MapPin, Calendar, Search } from 'lucide-react';
 import { FilterState } from '../types';
 import { formatDateRange, formatDateRangeCompact, getTimeRangeOptions } from '../utils/dateUtils';
+import { DATA_CATEGORIES, CATEGORY_DATA_SOURCES } from '../utils/constants';
 
 interface FilterBarProps {
   filters: FilterState;
@@ -15,8 +16,9 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isCustomDateRange, setIsCustomDateRange] = useState(false);
 
-  const categoryOptions = ['Wildlife'];
-  const sourceOptions = ['iNaturalist'];
+  const categoryOptions = DATA_CATEGORIES;
+  // Get available sources for the current category
+  const sourceOptions = CATEGORY_DATA_SOURCES[filters.category as keyof typeof CATEGORY_DATA_SOURCES] || [];
   const timeRangeOptions = getTimeRangeOptions();
 
   // Sync isCustomDateRange with filters state
@@ -42,7 +44,15 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch
   };
 
   const handleCategoryChange = (category: string) => {
-    onFilterChange({ ...filters, category });
+    // Auto-select the first available source for the new category
+    const availableSources = CATEGORY_DATA_SOURCES[category as keyof typeof CATEGORY_DATA_SOURCES] || [];
+    const newSource = availableSources[0] || filters.source;
+    
+    onFilterChange({ 
+      ...filters, 
+      category,
+      source: newSource
+    });
     setOpenDropdown(null);
   };
 
@@ -204,8 +214,8 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch
                     : 'bg-blue-600 text-white hover:bg-blue-700'
                 }`}
                 title={isSearching 
-                  ? "Searching... This may take time due to iNaturalist API rate limits" 
-                  : "Search for observations in selected time range"
+                  ? "Searching... This may take time due to API rate limits" 
+                  : "Search for data from selected source"
                 }
               >
                 {isSearching ? (
@@ -318,7 +328,7 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch
 
         <div id="filter-bar-right" className="flex items-center space-x-4">
           <span id="results-count" className="text-sm text-gray-500">
-            {resultCount} datasets found
+            {resultCount} records found
           </span>
           <button 
             id="clear-filters-button"

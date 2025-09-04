@@ -5,18 +5,19 @@ export const APP_VERSION = '1.0.0';
 // Filter options
 export const DATA_CATEGORIES = [
   'Wildlife',
-  'Vegetation', 
-  'Climate',
-  'Hydrology'
+  'Vegetation'
 ] as const;
 
 export const DATA_SOURCES = [
-  'All Sources',
   'iNaturalist',
-  'ArcGIS Hub', 
-  'USGS',
-  'NOAA'
+  'CalFlora'
 ] as const;
+
+// Map categories to their available data sources
+export const CATEGORY_DATA_SOURCES = {
+  'Wildlife': ['iNaturalist'],
+  'Vegetation': ['CalFlora']
+} as const;
 
 export const SPATIAL_FILTERS = [
   'Draw Area',

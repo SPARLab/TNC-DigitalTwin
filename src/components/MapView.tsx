@@ -9,12 +9,16 @@ import Point from '@arcgis/core/geometry/Point';
 import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
 import PopupTemplate from '@arcgis/core/PopupTemplate';
 import { iNaturalistAPI, iNaturalistObservation } from '../services/iNaturalistService';
+import { calFloraAPI, CalFloraPlant } from '../services/calFloraService';
 
 interface MapViewProps {
   dataLayers: DataLayer[];
   onLayerToggle: (layerId: string) => void;
   onObservationsUpdate?: (observations: iNaturalistObservation[]) => void;
   onLoadingChange?: (loading: boolean) => void;
+  calFloraPlants?: CalFloraPlant[];
+  onCalFloraUpdate?: (plants: CalFloraPlant[]) => void;
+  onCalFloraLoadingChange?: (loading: boolean) => void;
 }
 
 export interface MapViewRef {
@@ -25,13 +29,26 @@ export interface MapViewRef {
     startDate?: string;
     endDate?: string;
   }) => void;
+  reloadCalFloraData: (filters?: {
+    maxResults?: number;
+    plantType?: 'invasive' | 'native' | 'all';
+  }) => void;
 }
 
-const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({ dataLayers, onLayerToggle, onObservationsUpdate, onLoadingChange }, ref) => {
+const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({ 
+  dataLayers, 
+  onLayerToggle, 
+  onObservationsUpdate, 
+  onLoadingChange,
+  calFloraPlants = [],
+  onCalFloraUpdate,
+  onCalFloraLoadingChange
+}, ref) => {
   const mapDiv = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<MapView | null>(null);
   const [observations, setObservations] = useState<iNaturalistObservation[]>([]);
   const [loading, setLoading] = useState(false);
+  // CalFlora state is managed by parent component via props
 
   useEffect(() => {
     if (mapDiv.current) {
@@ -46,7 +63,14 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({ dataLayers, onL
         title: 'iNaturalist Observations'
       });
 
+      // Create graphics layer for CalFlora plants
+      const calFloraLayer = new GraphicsLayer({
+        id: 'calflora-plants',
+        title: 'CalFlora Plants'
+      });
+
       map.add(observationsLayer);
+      map.add(calFloraLayer);
 
       // Create the map view centered on Dangermond Preserve
       // Coordinates: approximately 34.45°N, -120.2°W
@@ -62,7 +86,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({ dataLayers, onL
 
       setView(mapView);
 
-      // Load iNaturalist observations
+      // Load initial data based on current data source
+      // Note: We'll load data based on the current filter state from the parent
       loadObservations(mapView, observationsLayer);
 
       // Cleanup function
@@ -74,7 +99,109 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({ dataLayers, onL
     }
   }, []);
 
-  const loadObservations = async (mapView: MapView, observationsLayer: GraphicsLayer, filters?: {
+  // Effect to handle CalFlora data when provided via props
+  useEffect(() => {
+    if (view && calFloraPlants.length > 0) {
+      const calFloraLayer = view.map?.findLayerById('calflora-plants') as GraphicsLayer;
+      if (calFloraLayer) {
+        // Clear existing graphics
+        calFloraLayer.removeAll();
+        
+        // Add CalFlora plants to map
+        calFloraPlants.forEach(plant => {
+          if (plant.geojson?.coordinates) {
+            const [longitude, latitude] = plant.geojson.coordinates;
+            
+            const point = new Point({
+              longitude: longitude,
+              latitude: latitude
+            });
+
+            // Choose symbol based on native status
+            const getPlantSymbol = (nativeStatus: string) => {
+              switch (nativeStatus) {
+                case 'native':
+                  return new SimpleMarkerSymbol({
+                    style: 'circle',
+                    color: [34, 197, 94, 0.8], // Green for native
+                    size: '10px',
+                    outline: {
+                      color: 'white',
+                      width: 2
+                    }
+                  });
+                case 'invasive':
+                  return new SimpleMarkerSymbol({
+                    style: 'triangle',
+                    color: [239, 68, 68, 0.8], // Red for invasive
+                    size: '12px',
+                    outline: {
+                      color: 'white',
+                      width: 2
+                    }
+                  });
+                default:
+                  return new SimpleMarkerSymbol({
+                    style: 'square',
+                    color: [156, 163, 175, 0.8], // Gray for unknown
+                    size: '8px',
+                    outline: {
+                      color: 'white',
+                      width: 1
+                    }
+                  });
+              }
+            };
+
+            const symbol = getPlantSymbol(plant.nativeStatus);
+
+            // Create popup template
+            const popupTemplate = new PopupTemplate({
+              title: plant.commonName || plant.scientificName,
+              content: `
+                <div class="calflora-popup">
+                  <p><strong>Scientific Name:</strong> ${plant.scientificName}</p>
+                  ${plant.family ? `<p><strong>Family:</strong> ${plant.family}</p>` : ''}
+                  <p><strong>Native Status:</strong> <span style="color: ${
+                    plant.nativeStatus === 'native' ? '#22c55e' : 
+                    plant.nativeStatus === 'invasive' ? '#ef4444' : '#6b7280'
+                  }; font-weight: bold;">${plant.nativeStatus}</span></p>
+                  ${plant.calIpcRating ? `<p><strong>Cal-IPC Rating:</strong> <span style="color: #ef4444; font-weight: bold;">${plant.calIpcRating}</span></p>` : ''}
+                  ${plant.county ? `<p><strong>County:</strong> ${plant.county}</p>` : ''}
+                  ${plant.observationDate ? `<p><strong>Observed:</strong> ${new Date(plant.observationDate).toLocaleDateString()}</p>` : ''}
+                  <p><strong>Data Source:</strong> CalFlora</p>
+                  ${plant.nativeStatus === 'invasive' ? 
+                    '<p style="color: #dc2626; font-weight: bold; background: #fef2f2; padding: 4px 8px; border-radius: 4px; margin: 8px 0;">⚠️ Invasive Species - Management Recommended</p>' : 
+                    ''}
+                </div>
+              `
+            });
+
+            // Create graphic
+            const graphic = new Graphic({
+              geometry: point,
+              symbol: symbol,
+              popupTemplate: popupTemplate,
+              attributes: {
+                id: plant.id,
+                scientificName: plant.scientificName,
+                commonName: plant.commonName,
+                nativeStatus: plant.nativeStatus,
+                family: plant.family,
+                county: plant.county
+              }
+            });
+
+            calFloraLayer.add(graphic);
+          }
+        });
+        
+        console.log(`✅ CalFlora: Updated map with ${calFloraPlants.length} plant records`);
+      }
+    }
+  }, [view, calFloraPlants]);
+
+  const loadObservations = async (_mapView: __esri.MapView, observationsLayer: GraphicsLayer, filters?: {
     qualityGrade?: 'research' | 'needs_id' | 'casual';
     iconicTaxa?: string[];
     daysBack?: number;
@@ -206,6 +333,130 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({ dataLayers, onL
     }
   };
 
+  const loadCalFloraData = async (_mapView: __esri.MapView, calFloraLayer: GraphicsLayer, filters?: {
+    maxResults?: number;
+    plantType?: 'invasive' | 'native' | 'all';
+  }) => {
+    onCalFloraLoadingChange?.(true);
+    
+    try {
+      const { maxResults = 1000, plantType = 'all' } = filters || {};
+      
+      let allPlants: CalFloraPlant[] = [];
+      
+      // Load plant data using the unified method
+      console.log('Loading CalFlora plant data...');
+      const response = await calFloraAPI.getAllPlants({ 
+        maxResults, 
+        plantType,
+        countyFilter: 'Santa Barbara' // Try Santa Barbara County first since Dangermond is there
+      });
+      allPlants.push(...response.results);
+
+      // Clear existing graphics
+      calFloraLayer.removeAll();
+      
+      // Update state via parent callback
+      onCalFloraUpdate?.(allPlants);
+
+      // Add graphics to map
+      allPlants.forEach(plant => {
+        if (plant.geojson?.coordinates) {
+          const [longitude, latitude] = plant.geojson.coordinates;
+          
+          const point = new Point({
+            longitude: longitude,
+            latitude: latitude
+          });
+
+          // Choose symbol based on native status
+          const getPlantSymbol = (nativeStatus: string) => {
+            switch (nativeStatus) {
+              case 'native':
+                return new SimpleMarkerSymbol({
+                  style: 'circle',
+                  color: [34, 197, 94, 0.8], // Green for native
+                  size: '10px',
+                  outline: {
+                    color: 'white',
+                    width: 2
+                  }
+                });
+              case 'invasive':
+                return new SimpleMarkerSymbol({
+                  style: 'triangle',
+                  color: [239, 68, 68, 0.8], // Red for invasive
+                  size: '12px',
+                  outline: {
+                    color: 'white',
+                    width: 2
+                  }
+                });
+              default:
+                return new SimpleMarkerSymbol({
+                  style: 'square',
+                  color: [156, 163, 175, 0.8], // Gray for unknown
+                  size: '8px',
+                  outline: {
+                    color: 'white',
+                    width: 1
+                  }
+                });
+            }
+          };
+
+          const symbol = getPlantSymbol(plant.nativeStatus);
+
+          // Create popup template
+          const popupTemplate = new PopupTemplate({
+            title: plant.commonName || plant.scientificName,
+            content: `
+              <div class="calflora-popup">
+                <p><strong>Scientific Name:</strong> ${plant.scientificName}</p>
+                ${plant.family ? `<p><strong>Family:</strong> ${plant.family}</p>` : ''}
+                <p><strong>Native Status:</strong> <span style="color: ${
+                  plant.nativeStatus === 'native' ? '#22c55e' : 
+                  plant.nativeStatus === 'invasive' ? '#ef4444' : '#6b7280'
+                }; font-weight: bold;">${plant.nativeStatus}</span></p>
+                ${plant.calIpcRating ? `<p><strong>Cal-IPC Rating:</strong> <span style="color: #ef4444; font-weight: bold;">${plant.calIpcRating}</span></p>` : ''}
+                ${plant.county ? `<p><strong>County:</strong> ${plant.county}</p>` : ''}
+                ${plant.observationDate ? `<p><strong>Observed:</strong> ${new Date(plant.observationDate).toLocaleDateString()}</p>` : ''}
+                <p><strong>Data Source:</strong> CalFlora</p>
+                ${plant.nativeStatus === 'invasive' ? 
+                  '<p style="color: #dc2626; font-weight: bold; background: #fef2f2; padding: 4px 8px; border-radius: 4px; margin: 8px 0;">⚠️ Invasive Species - Management Recommended</p>' : 
+                  ''}
+              </div>
+            `
+          });
+
+          // Create graphic
+          const graphic = new Graphic({
+            geometry: point,
+            symbol: symbol,
+            popupTemplate: popupTemplate,
+            attributes: {
+              id: plant.id,
+              scientificName: plant.scientificName,
+              commonName: plant.commonName,
+              nativeStatus: plant.nativeStatus,
+              family: plant.family,
+              county: plant.county
+            }
+          });
+
+          calFloraLayer.add(graphic);
+        }
+      });
+      
+      console.log(`✅ CalFlora: Added ${allPlants.length} plant records to map`);
+      
+    } catch (error) {
+      console.error('Error loading CalFlora data:', error);
+    } finally {
+      onCalFloraLoadingChange?.(false);
+    }
+  };
+
   // Expose method to reload observations with filters
   const reloadObservations = (filters?: {
     qualityGrade?: 'research' | 'needs_id' | 'casual';
@@ -220,9 +471,23 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({ dataLayers, onL
     }
   };
 
-  // Expose reloadObservations method via ref
+  // Expose method to reload CalFlora data with filters
+  const reloadCalFloraData = (filters?: {
+    maxResults?: number;
+    plantType?: 'invasive' | 'native' | 'all';
+  }) => {
+    if (view && view.map) {
+      const calFloraLayer = view.map.findLayerById('calflora-plants') as GraphicsLayer;
+      if (calFloraLayer) {
+        loadCalFloraData(view, calFloraLayer, filters);
+      }
+    }
+  };
+
+  // Expose methods via ref
   useImperativeHandle(ref, () => ({
-    reloadObservations
+    reloadObservations,
+    reloadCalFloraData
   }));
 
   const getObservationIcon = (obs: iNaturalistObservation) => {

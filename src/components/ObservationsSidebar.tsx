@@ -10,9 +10,19 @@ interface ObservationsSidebarProps {
   currentDaysBack?: number;
   startDate?: string;
   endDate?: string;
+  onExportCSV?: () => void;
+  onExportGeoJSON?: () => void;
 }
 
-const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ observations, loading, currentDaysBack = 30, startDate, endDate }) => {
+const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ 
+  observations, 
+  loading, 
+  currentDaysBack = 30, 
+  startDate, 
+  endDate,
+  onExportCSV,
+  onExportGeoJSON 
+}) => {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [expandedSubcategories, setExpandedSubcategories] = useState<Set<string>>(new Set());
   const [selectedObservation, setSelectedObservation] = useState<any>(null);
@@ -218,6 +228,30 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ observations,
           <p id="observations-count-text" className="text-sm text-gray-500 mt-1">
             {observations.length} observations from {getDateRangeText()}
           </p>
+          
+          {/* Export buttons */}
+          {observations.length > 0 && (onExportCSV || onExportGeoJSON) && (
+            <div id="observations-export-buttons" className="flex gap-2 mt-3">
+              {onExportCSV && (
+                <button
+                  id="observations-export-csv-btn"
+                  onClick={onExportCSV}
+                  className="flex-1 px-3 py-1.5 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors"
+                >
+                  Export CSV
+                </button>
+              )}
+              {onExportGeoJSON && (
+                <button
+                  id="observations-export-geojson-btn"
+                  onClick={onExportGeoJSON}
+                  className="flex-1 px-3 py-1.5 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors"
+                >
+                  Export GeoJSON
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Grouped Observations */}

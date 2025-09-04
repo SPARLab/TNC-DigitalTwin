@@ -44,3 +44,24 @@ export interface ObservationGroup {
     }>;
   }[];
 }
+
+export interface CalFloraGroup {
+  category: 'Native Plants' | 'Invasive Plants';
+  count: number;
+  subcategories: {
+    name: string;
+    nativeStatus: 'native' | 'invasive' | 'non-native' | 'unknown';
+    count: number;
+    plants: Array<{
+      id: string;
+      commonName: string | null;
+      scientificName: string;
+      family: string | null;
+      nativeStatus: 'native' | 'invasive' | 'non-native' | 'unknown';
+      calIpcRating: string | null;
+      county: string | null;
+      observationDate: string | null;
+      dataSource: string;
+    }>;
+  }[];
+}

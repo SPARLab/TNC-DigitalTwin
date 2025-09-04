@@ -1,13 +1,14 @@
 import React, { useState, useRef } from 'react';
 import Header from './components/Header';
 import FilterBar from './components/FilterBar';
-import ObservationsSidebar from './components/ObservationsSidebar';
+import DataView from './components/DataView';
 import FilterSidebar from './components/FilterSidebar';
 import MapView from './components/MapView';
 import Footer from './components/Footer';
 import { FilterState } from './types';
 import { mockDatasets, dataLayers as initialDataLayers } from './data/mockData';
 import { iNaturalistObservation } from './services/iNaturalistService';
+import { CalFloraPlant } from './services/calFloraService';
 import { formatDateRangeCompact } from './utils/dateUtils';
 import { MapViewRef } from './components/MapView';
 
@@ -25,7 +26,9 @@ function App() {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [dataLayers, setDataLayers] = useState(initialDataLayers);
   const [observations, setObservations] = useState<iNaturalistObservation[]>([]);
+  const [calFloraPlants, setCalFloraPlants] = useState<CalFloraPlant[]>([]);
   const [observationsLoading, setObservationsLoading] = useState(false);
+  const [calFloraLoading, setCalFloraLoading] = useState(false);
   const [lastSearchedDaysBack, setLastSearchedDaysBack] = useState<number>(30); // Track the last searched time range
   const mapViewRef = useRef<MapViewRef>(null);
 
@@ -34,20 +37,31 @@ function App() {
   };
 
   const handleSearch = () => {
-    // Trigger a new search with current filter settings
-    const searchFilters = {
-      daysBack: filters.startDate && filters.endDate ? undefined : (filters.daysBack || 30),
-      startDate: filters.startDate,
-      endDate: filters.endDate,
-      qualityGrade: undefined as 'research' | 'needs_id' | 'casual' | undefined,
-      iconicTaxa: [] as string[]
-    };
-    
-    // Update the last searched time range when search is performed
-    setLastSearchedDaysBack(filters.daysBack || 30);
-    
-    console.log('Searching with filters:', searchFilters); // Debug log
-    mapViewRef.current?.reloadObservations(searchFilters);
+    if (filters.source === 'CalFlora') {
+      // Handle CalFlora search
+      const calFloraFilters = {
+        maxResults: 1000,
+        plantType: 'all' as 'invasive' | 'native' | 'all'
+      };
+      
+      console.log('Searching CalFlora with filters:', calFloraFilters);
+      mapViewRef.current?.reloadCalFloraData(calFloraFilters);
+    } else {
+      // Handle iNaturalist search
+      const searchFilters = {
+        daysBack: filters.startDate && filters.endDate ? undefined : (filters.daysBack || 30),
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+        qualityGrade: undefined as 'research' | 'needs_id' | 'casual' | undefined,
+        iconicTaxa: [] as string[]
+      };
+      
+      // Update the last searched time range when search is performed
+      setLastSearchedDaysBack(filters.daysBack || 30);
+      
+      console.log('Searching iNaturalist with filters:', searchFilters);
+      mapViewRef.current?.reloadObservations(searchFilters);
+    }
   };
 
   const handleLayerToggle = (layerId: string) => {
@@ -188,6 +202,77 @@ function App() {
     }, null, 2);
   };
 
+  // CalFlora export functions
+  const convertCalFloraToCSV = (plants: CalFloraPlant[]): string => {
+    const headers = [
+      'ID', 'Common Name', 'Scientific Name', 'Family', 'Native Status', 
+      'Cal-IPC Rating', 'County', 'Observation Date', 'Latitude', 'Longitude', 'Data Source'
+    ];
+    
+    const rows = plants.map(plant => [
+      plant.id,
+      plant.commonName || '',
+      plant.scientificName,
+      plant.family || '',
+      plant.nativeStatus,
+      plant.calIpcRating || '',
+      plant.county || '',
+      plant.observationDate || '',
+      plant.geojson?.coordinates?.[1] || '',
+      plant.geojson?.coordinates?.[0] || '',
+      plant.dataSource
+    ]);
+
+    return [headers, ...rows].map(row => 
+      row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+    ).join('\n');
+  };
+
+  const convertCalFloraToGeoJSON = (plants: CalFloraPlant[]): string => {
+    const features = plants
+      .filter(plant => plant.geojson?.coordinates)
+      .map(plant => ({
+        type: 'Feature',
+        geometry: plant.geojson,
+        properties: {
+          id: plant.id,
+          commonName: plant.commonName,
+          scientificName: plant.scientificName,
+          family: plant.family,
+          nativeStatus: plant.nativeStatus,
+          calIpcRating: plant.calIpcRating,
+          county: plant.county,
+          observationDate: plant.observationDate,
+          dataSource: plant.dataSource
+        }
+      }));
+
+    return JSON.stringify({
+      type: 'FeatureCollection',
+      features
+    }, null, 2);
+  };
+
+  const handleCalFloraExportCSV = () => {
+    const csvData = convertCalFloraToCSV(calFloraPlants);
+    downloadFile(csvData, 'calflora-plants.csv', 'text/csv');
+  };
+
+  const handleCalFloraExportGeoJSON = () => {
+    const geoJsonData = convertCalFloraToGeoJSON(calFloraPlants);
+    downloadFile(geoJsonData, 'calflora-plants.geojson', 'application/geo+json');
+  };
+
+  const handleExportCSV = () => {
+    const csvData = convertToCSV(observations);
+    downloadFile(csvData, 'inaturalist-observations.csv', 'text/csv');
+  };
+
+  const handleExportGeoJSON = () => {
+    const geoJsonData = convertToGeoJSON(observations);
+    downloadFile(geoJsonData, 'inaturalist-observations.geojson', 'application/geo+json');
+  };
+
   // Filter datasets based on current filters
   const filteredDatasets = mockDatasets.filter(dataset => {
     if (filters.category !== 'Wildlife' && dataset.category !== filters.category) {
@@ -204,14 +289,21 @@ function App() {
         filters={filters}
         onFilterChange={handleFilterChange}
         onSearch={handleSearch}
-        resultCount={observations.length}
-        isSearching={observationsLoading}
+        resultCount={filters.source === 'CalFlora' ? calFloraPlants.length : observations.length}
+        isSearching={filters.source === 'CalFlora' ? calFloraLoading : observationsLoading}
       />
       <div id="main-content" className="flex-1 flex min-h-0">
-        <ObservationsSidebar 
+        <DataView
+          filters={filters}
           observations={observations}
-          loading={observationsLoading}
-          currentDaysBack={lastSearchedDaysBack}
+          observationsLoading={observationsLoading}
+          onObservationExportCSV={handleExportCSV}
+          onObservationExportGeoJSON={handleExportGeoJSON}
+          calFloraPlants={calFloraPlants}
+          calFloraLoading={calFloraLoading}
+          onCalFloraExportCSV={handleCalFloraExportCSV}
+          onCalFloraExportGeoJSON={handleCalFloraExportGeoJSON}
+          lastSearchedDaysBack={lastSearchedDaysBack}
           startDate={filters.startDate}
           endDate={filters.endDate}
         />
@@ -221,6 +313,9 @@ function App() {
           onLayerToggle={handleLayerToggle}
           onObservationsUpdate={setObservations}
           onLoadingChange={setObservationsLoading}
+          calFloraPlants={filters.source === 'CalFlora' ? calFloraPlants : []}
+          onCalFloraUpdate={setCalFloraPlants}
+          onCalFloraLoadingChange={setCalFloraLoading}
         />
         <FilterSidebar 
           currentDaysBack={filters.daysBack}
