@@ -16,7 +16,7 @@ export const DATA_SOURCES = [
 // Map categories to their available data sources
 export const CATEGORY_DATA_SOURCES = {
   'Wildlife': ['iNaturalist'],
-  'Vegetation': ['CalFlora']
+  'Vegetation': ['CalFlora', 'iNaturalist']
 } as const;
 
 export const SPATIAL_FILTERS = [

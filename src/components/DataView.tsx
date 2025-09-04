@@ -45,6 +45,7 @@ const DataView: React.FC<DataViewProps> = ({
     
     switch (key) {
       case 'Wildlife-iNaturalist':
+      case 'Vegetation-iNaturalist':
         return (
           <WildlifeINaturalistView
             observations={observations}

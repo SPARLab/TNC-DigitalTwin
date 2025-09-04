@@ -86,9 +86,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
 
       setView(mapView);
 
-      // Load initial data based on current data source
-      // Note: We'll load data based on the current filter state from the parent
-      loadObservations(mapView, observationsLayer);
+      // Note: We no longer load initial data automatically
+      // Data will only be loaded when the user clicks the search button
 
       // Cleanup function
       return () => {
@@ -211,6 +210,13 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     setLoading(true);
     onLoadingChange?.(true);
     try {
+      // Clear both iNaturalist and CalFlora layers when starting a new search
+      // This ensures no old data from different sources remains visible
+      const calFloraLayer = _mapView.map?.findLayerById('calflora-plants') as GraphicsLayer;
+      if (calFloraLayer) {
+        calFloraLayer.removeAll();
+      }
+      
       // Calculate appropriate maxResults based on date range
       let maxResults = 500; // Default for short ranges
       
@@ -343,6 +349,13 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       const { maxResults = 1000, plantType = 'all' } = filters || {};
       
       let allPlants: CalFloraPlant[] = [];
+      
+      // Clear both CalFlora and iNaturalist layers when starting a new search
+      // This ensures no old data from different sources remains visible
+      const observationsLayer = _mapView.map?.findLayerById('inaturalist-observations') as GraphicsLayer;
+      if (observationsLayer) {
+        observationsLayer.removeAll();
+      }
       
       // Load plant data using the unified method
       console.log('Loading CalFlora plant data...');

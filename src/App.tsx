@@ -23,6 +23,18 @@ function App() {
     endDate: undefined
   });
 
+  // Track the filters that were actually used for the last search
+  // This determines what data is shown in the sidebar/map
+  const [lastSearchedFilters, setLastSearchedFilters] = useState<FilterState>({
+    category: 'Wildlife',
+    source: 'iNaturalist',
+    spatialFilter: 'Draw Area',
+    timeRange: formatDateRangeCompact(30),
+    daysBack: 30,
+    startDate: undefined,
+    endDate: undefined
+  });
+
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [dataLayers, setDataLayers] = useState(initialDataLayers);
   const [observations, setObservations] = useState<iNaturalistObservation[]>([]);
@@ -37,6 +49,10 @@ function App() {
   };
 
   const handleSearch = () => {
+    // Update the last searched filters to match current filters
+    // This will cause the DataView to update to show the appropriate sidebar
+    setLastSearchedFilters({ ...filters });
+    
     if (filters.source === 'CalFlora') {
       // Handle CalFlora search
       const calFloraFilters = {
@@ -48,12 +64,19 @@ function App() {
       mapViewRef.current?.reloadCalFloraData(calFloraFilters);
     } else {
       // Handle iNaturalist search
+      // Filter by iconic taxa based on category
+      let iconicTaxa: string[] = [];
+      if (filters.category === 'Vegetation') {
+        iconicTaxa = ['Plantae']; // Only show Flora observations for Vegetation category
+      }
+      // For Wildlife category, don't filter by iconic taxa to show all animals
+      
       const searchFilters = {
         daysBack: filters.startDate && filters.endDate ? undefined : (filters.daysBack || 30),
         startDate: filters.startDate,
         endDate: filters.endDate,
         qualityGrade: undefined as 'research' | 'needs_id' | 'casual' | undefined,
-        iconicTaxa: [] as string[]
+        iconicTaxa
       };
       
       // Update the last searched time range when search is performed
@@ -103,16 +126,24 @@ function App() {
       }));
     }
     
+    // Apply category-based iconic taxa filtering if not already specified
+    let iconicTaxa = observationFilters.iconicTaxa;
+    if (!iconicTaxa && filters.source === 'iNaturalist' && filters.category === 'Vegetation') {
+      iconicTaxa = ['Plantae']; // Only show Flora observations for Vegetation category
+    }
+    
     // Use the current filter's daysBack if not provided in observationFilters and no custom dates
     const finalFilters = {
       ...observationFilters,
+      iconicTaxa,
       daysBack: observationFilters.startDate && observationFilters.endDate 
         ? undefined 
         : (observationFilters.daysBack || filters.daysBack || 30)
     };
     
     console.log('Filter change with filters:', finalFilters); // Debug log
-    mapViewRef.current?.reloadObservations(finalFilters);
+    // Note: We don't automatically reload observations here anymore
+    // Data will only update when the user clicks the search button
   };
 
   const handleDownload = (format: 'csv' | 'json' | 'geojson') => {
@@ -289,12 +320,12 @@ function App() {
         filters={filters}
         onFilterChange={handleFilterChange}
         onSearch={handleSearch}
-        resultCount={filters.source === 'CalFlora' ? calFloraPlants.length : observations.length}
+        resultCount={lastSearchedFilters.source === 'CalFlora' ? calFloraPlants.length : observations.length}
         isSearching={filters.source === 'CalFlora' ? calFloraLoading : observationsLoading}
       />
       <div id="main-content" className="flex-1 flex min-h-0">
         <DataView
-          filters={filters}
+          filters={lastSearchedFilters}
           observations={observations}
           observationsLoading={observationsLoading}
           onObservationExportCSV={handleExportCSV}
