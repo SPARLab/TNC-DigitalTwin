@@ -4,11 +4,13 @@ import DataLayersPanel from './DataLayersPanel';
 import Map from '@arcgis/core/Map';
 import MapView from '@arcgis/core/views/MapView';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
+import GeoJSONLayer from '@arcgis/core/layers/GeoJSONLayer';
 import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
 import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
 import PopupTemplate from '@arcgis/core/PopupTemplate';
 import { iNaturalistAPI, iNaturalistObservation } from '../services/iNaturalistService';
+import { tncINaturalistService, TNCArcGISObservation } from '../services/tncINaturalistService';
 import { calFloraAPI, CalFloraPlant } from '../services/calFloraService';
 
 interface MapViewProps {
@@ -16,6 +18,11 @@ interface MapViewProps {
   onLayerToggle: (layerId: string) => void;
   onObservationsUpdate?: (observations: iNaturalistObservation[]) => void;
   onLoadingChange?: (loading: boolean) => void;
+  tncObservations?: TNCArcGISObservation[];
+  onTNCObservationsUpdate?: (observations: TNCArcGISObservation[]) => void;
+  onTNCLoadingChange?: (loading: boolean) => void;
+  selectedTNCObservation?: TNCArcGISObservation | null;
+  onTNCObservationSelect?: (observation: TNCArcGISObservation | null) => void;
   calFloraPlants?: CalFloraPlant[];
   onCalFloraUpdate?: (plants: CalFloraPlant[]) => void;
   onCalFloraLoadingChange?: (loading: boolean) => void;
@@ -29,6 +36,15 @@ export interface MapViewRef {
     startDate?: string;
     endDate?: string;
   }) => void;
+  reloadTNCObservations: (filters?: {
+    taxonCategories?: string[];
+    startDate?: string;
+    endDate?: string;
+    maxResults?: number;
+    useFilters?: boolean;
+    page?: number;
+    pageSize?: number;
+  }) => void;
   reloadCalFloraData: (filters?: {
     maxResults?: number;
     plantType?: 'invasive' | 'native' | 'all';
@@ -40,6 +56,11 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   onLayerToggle, 
   onObservationsUpdate, 
   onLoadingChange,
+  tncObservations = [],
+  onTNCObservationsUpdate,
+  onTNCLoadingChange,
+  selectedTNCObservation,
+  onTNCObservationSelect,
   calFloraPlants = [],
   onCalFloraUpdate,
   onCalFloraLoadingChange
@@ -50,6 +71,154 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   const [loading, setLoading] = useState(false);
   // CalFlora state is managed by parent component via props
 
+  // Helper to build TNC popup content with photo carousel and attribution
+  const buildTNCPopupContent = (obs: TNCArcGISObservation) => {
+    const imageUrls = tncINaturalistService.parseImageUrlsFromObservation(obs);
+    const attribution = tncINaturalistService.getPhotoAttribution(obs);
+
+    return () => {
+      const container = document.createElement('div');
+      container.className = 'tnc-observation-popup';
+
+      // Photo section
+      if (imageUrls.length > 0) {
+        const photoWrapper = document.createElement('div');
+        photoWrapper.style.display = 'flex';
+        photoWrapper.style.flexDirection = 'column';
+        photoWrapper.style.alignItems = 'center';
+        photoWrapper.style.marginBottom = '8px';
+
+        const img = document.createElement('img');
+        img.src = imageUrls[0];
+        img.alt = obs.common_name || obs.scientific_name || 'Observation photo';
+        img.loading = 'lazy';
+        img.style.maxWidth = '260px';
+        img.style.borderRadius = '6px';
+        img.style.objectFit = 'cover';
+        img.onerror = () => { img.style.display = 'none'; };
+
+        const controls = document.createElement('div');
+        controls.style.display = 'flex';
+        controls.style.alignItems = 'center';
+        controls.style.justifyContent = 'space-between';
+        controls.style.width = '100%';
+        controls.style.maxWidth = '260px';
+        controls.style.marginTop = '6px';
+
+        let currentIndex = 0;
+        const label = document.createElement('span');
+        label.style.fontSize = '12px';
+        label.style.color = '#4b5563';
+        label.textContent = `Photo ${currentIndex + 1} of ${imageUrls.length}`;
+
+        const prevBtn = document.createElement('button');
+        prevBtn.textContent = '◀';
+        prevBtn.style.fontSize = '12px';
+        prevBtn.style.padding = '2px 6px';
+        prevBtn.style.border = '1px solid #e5e7eb';
+        prevBtn.style.borderRadius = '4px';
+        prevBtn.style.background = 'white';
+        prevBtn.disabled = imageUrls.length <= 1;
+        prevBtn.onclick = () => {
+          currentIndex = (currentIndex - 1 + imageUrls.length) % imageUrls.length;
+          img.src = imageUrls[currentIndex];
+          label.textContent = `Photo ${currentIndex + 1} of ${imageUrls.length}`;
+        };
+
+        const nextBtn = document.createElement('button');
+        nextBtn.textContent = '▶';
+        nextBtn.style.fontSize = '12px';
+        nextBtn.style.padding = '2px 6px';
+        nextBtn.style.border = '1px solid #e5e7eb';
+        nextBtn.style.borderRadius = '4px';
+        nextBtn.style.background = 'white';
+        nextBtn.disabled = imageUrls.length <= 1;
+        nextBtn.onclick = () => {
+          currentIndex = (currentIndex + 1) % imageUrls.length;
+          img.src = imageUrls[currentIndex];
+          label.textContent = `Photo ${currentIndex + 1} of ${imageUrls.length}`;
+        };
+
+        controls.appendChild(prevBtn);
+        controls.appendChild(label);
+        controls.appendChild(nextBtn);
+
+        photoWrapper.appendChild(img);
+        photoWrapper.appendChild(controls);
+
+        if (attribution) {
+          const credit = document.createElement('div');
+          credit.textContent = attribution;
+          credit.style.fontSize = '11px';
+          credit.style.color = '#6b7280';
+          credit.style.marginTop = '4px';
+          photoWrapper.appendChild(credit);
+        }
+
+        container.appendChild(photoWrapper);
+      } else {
+        const noPhoto = document.createElement('div');
+        noPhoto.textContent = 'No photo available';
+        noPhoto.style.fontSize = '12px';
+        noPhoto.style.color = '#6b7280';
+        noPhoto.style.marginBottom = '8px';
+        container.appendChild(noPhoto);
+      }
+
+      // Add details (reuse existing markup for taxonomy and links)
+      const details = document.createElement('div');
+      details.innerHTML = `
+        <div class="popup-header">
+          <h3>${obs.common_name || obs.scientific_name}</h3>
+          ${obs.common_name && obs.scientific_name ? `<p class="scientific-name"><em>${obs.scientific_name}</em></p>` : ''}
+        </div>
+        <div class="popup-details">
+          <p><strong>Taxon Category:</strong> ${obs.taxon_category_name}</p>
+          <p><strong>Observed:</strong> ${new Date(obs.observed_on).toLocaleDateString()}</p>
+          <p><strong>Observer:</strong> ${obs.user_name}</p>
+          <p><strong>Taxon ID:</strong> ${obs.taxon_id}</p>
+        </div>
+        <div class="taxonomic-hierarchy">
+          <h4>Taxonomic Classification</h4>
+          <div class="taxonomy-grid">
+            ${obs.taxon_kingdom_name ? `<div><strong>Kingdom:</strong> ${obs.taxon_kingdom_name}</div>` : ''}
+            ${obs.taxon_phylum_name ? `<div><strong>Phylum:</strong> ${obs.taxon_phylum_name}</div>` : ''}
+            ${obs.taxon_class_name ? `<div><strong>Class:</strong> ${obs.taxon_class_name}</div>` : ''}
+            ${obs.taxon_order_name ? `<div><strong>Order:</strong> ${obs.taxon_order_name}</div>` : ''}
+            ${obs.taxon_family_name ? `<div><strong>Family:</strong> ${obs.taxon_family_name}</div>` : ''}
+            ${obs.taxon_genus_name ? `<div><strong>Genus:</strong> ${obs.taxon_genus_name}</div>` : ''}
+            ${obs.taxon_species_name ? `<div><strong>Species:</strong> ${obs.taxon_species_name}</div>` : ''}
+          </div>
+        </div>
+        <div class="popup-actions">
+          ${obs.observation_uuid ? 
+            `<a href="https://www.inaturalist.org/observations/${obs.observation_uuid}" target="_blank" class="popup-link">View on iNaturalist →</a>` : 
+            `<span class="popup-link-disabled" style="color: #999; font-size: 13px;">iNaturalist link not available</span>`}
+        </div>
+      `;
+      container.appendChild(details);
+
+      // Basic styles for the popup content
+      const style = document.createElement('style');
+      style.textContent = `
+        .tnc-observation-popup { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 300px; }
+        .popup-header h3 { margin: 0 0 5px 0; color: #2c3e50; font-size: 16px; }
+        .scientific-name { margin: 0 0 10px 0; color: #7f8c8d; font-size: 14px; }
+        .popup-details p { margin: 5px 0; font-size: 13px; }
+        .taxonomic-hierarchy { margin-top: 15px; padding-top: 15px; border-top: 1px solid #ecf0f1; }
+        .taxonomic-hierarchy h4 { margin: 0 0 10px 0; font-size: 14px; color: #34495e; }
+        .taxonomy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 12px; }
+        .taxonomy-grid div { padding: 2px 0; }
+        .popup-actions { margin-top: 15px; padding-top: 15px; border-top: 1px solid #ecf0f1; }
+        .popup-link { color: #3498db; text-decoration: none; font-size: 13px; font-weight: 500; }
+        .popup-link:hover { text-decoration: underline; }
+      `;
+      container.appendChild(style);
+
+      return container;
+    };
+  };
+
   useEffect(() => {
     if (mapDiv.current) {
       // Create the map with a satellite basemap to show the preserve clearly
@@ -58,9 +227,40 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       });
 
       // Create graphics layer for iNaturalist observations
+      // Add Dangermond Preserve boundary (from public/ GeoJSON)
+      const boundaryLayer = new GeoJSONLayer({
+        id: 'dangermond-boundary',
+        title: 'Dangermond Preserve Boundary',
+        url: '/dangermond-preserve-boundary.geojson',
+        renderer: {
+          type: 'simple',
+          symbol: {
+            type: 'simple-fill',
+            color: [0, 0, 0, 0],
+            outline: {
+              color: [255, 255, 255, 1],
+              width: 2
+            }
+          }
+        },
+        popupTemplate: new PopupTemplate({
+          title: 'Jack and Laura Dangermond Preserve',
+          content: '2019 boundary inclusive of Coast Guard 33 acres at Point Conception.'
+        })
+      });
+
+      map.add(boundaryLayer);
+
+      // Create graphics layer for iNaturalist observations
       const observationsLayer = new GraphicsLayer({
         id: 'inaturalist-observations',
         title: 'iNaturalist Observations'
+      });
+
+      // Create graphics layer for TNC iNaturalist observations
+      const tncObservationsLayer = new GraphicsLayer({
+        id: 'tnc-inaturalist-observations',
+        title: 'TNC iNaturalist Observations'
       });
 
       // Create graphics layer for CalFlora plants
@@ -70,6 +270,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       });
 
       map.add(observationsLayer);
+      map.add(tncObservationsLayer);
       map.add(calFloraLayer);
 
       // Create the map view centered on Dangermond Preserve
@@ -199,6 +400,98 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       }
     }
   }, [view, calFloraPlants]);
+
+  // Effect to update TNC observations on map when data changes
+  useEffect(() => {
+    if (view && tncObservations.length > 0) {
+      const tncObservationsLayer = view.map?.findLayerById('tnc-inaturalist-observations') as GraphicsLayer;
+      if (tncObservationsLayer) {
+        // Clear existing graphics
+        tncObservationsLayer.removeAll();
+        
+        // Add TNC observations to map
+        tncObservations.forEach(obs => {
+          if (obs.geometry?.coordinates) {
+            const [longitude, latitude] = obs.geometry.coordinates;
+            
+            const point = new Point({
+              longitude: longitude,
+              latitude: latitude
+            });
+
+            // Get color based on taxon category
+            const color = tncINaturalistService.getTaxonColor(obs.taxon_category_name);
+            
+            // Create symbol - highlight selected observation
+            const isSelected = selectedTNCObservation?.observation_id === obs.observation_id;
+            const symbol = new SimpleMarkerSymbol({
+              style: 'circle',
+              color: color,
+              size: isSelected ? '14px' : '10px',
+              outline: {
+                color: isSelected ? '#FFD700' : 'white',
+                width: isSelected ? 3 : 1.5
+              }
+            });
+
+            // Create rich popup template
+            const popupTemplate = new PopupTemplate({
+              title: obs.common_name || obs.scientific_name,
+              content: buildTNCPopupContent(obs)
+            });
+
+            // Create graphic with click handler
+            const graphic = new Graphic({
+              geometry: point,
+              symbol: symbol,
+              popupTemplate: popupTemplate,
+              attributes: {
+                observation_id: obs.observation_id,
+                taxon_category: obs.taxon_category_name,
+                scientific_name: obs.scientific_name,
+                common_name: obs.common_name,
+                observed_on: obs.observed_on,
+                user_name: obs.user_name
+              }
+            });
+
+            tncObservationsLayer.add(graphic);
+            
+            // Debug: Log first few coordinates
+            if (tncObservations.indexOf(obs) < 3) {
+              console.log(`TNC Observation ${obs.observation_id}: ${obs.scientific_name} at [${longitude}, ${latitude}]`);
+            }
+          }
+        });
+        
+        console.log(`✅ TNC iNaturalist: Updated map with ${tncObservations.length} observation records`);
+        console.log(`TNC Layer graphics count: ${tncObservationsLayer.graphics.length}`);
+      }
+    }
+  }, [view, tncObservations, selectedTNCObservation]);
+
+  // Add click handler for TNC observations
+  useEffect(() => {
+    if (view) {
+      const clickHandler = view.on('click', (event) => {
+        view.hitTest(event).then((response) => {
+          const tncGraphic = response.results.find(result => 
+            'graphic' in result && result.graphic && result.graphic.layer?.id === 'tnc-inaturalist-observations'
+          );
+          
+          if (tncGraphic && 'graphic' in tncGraphic && onTNCObservationSelect) {
+            const observationId = tncGraphic.graphic.attributes.observation_id;
+            const observation = tncObservations.find(obs => obs.observation_id === observationId);
+            onTNCObservationSelect(observation || null);
+          }
+        });
+      });
+
+      return () => {
+        clickHandler.remove();
+      };
+    }
+  }, [view, tncObservations, onTNCObservationSelect]);
 
   const loadObservations = async (_mapView: __esri.MapView, observationsLayer: GraphicsLayer, filters?: {
     qualityGrade?: 'research' | 'needs_id' | 'casual';
@@ -497,9 +790,122 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   };
 
+  const loadTNCObservations = async (_mapView: __esri.MapView, tncObservationsLayer: GraphicsLayer, filters?: {
+    taxonCategories?: string[];
+    startDate?: string;
+    endDate?: string;
+    maxResults?: number;
+    useFilters?: boolean;
+    page?: number;
+    pageSize?: number;
+  }) => {
+    onTNCLoadingChange?.(true);
+    try {
+      // Clear other layers when starting a new TNC search
+      const observationsLayer = _mapView.map?.findLayerById('inaturalist-observations') as GraphicsLayer;
+      const calFloraLayer = _mapView.map?.findLayerById('calflora-plants') as GraphicsLayer;
+      if (observationsLayer) {
+        observationsLayer.removeAll();
+      }
+      if (calFloraLayer) {
+        calFloraLayer.removeAll();
+      }
+      
+      const response = await tncINaturalistService.queryObservations({
+        taxonCategories: filters?.taxonCategories,
+        startDate: filters?.startDate,
+        endDate: filters?.endDate,
+        maxResults: filters?.maxResults || 2000,
+        useFilters: filters?.useFilters !== undefined ? filters.useFilters : true,
+        page: filters?.page,
+        pageSize: filters?.pageSize
+      });
+      
+      onTNCObservationsUpdate?.(response);
+      
+      // Clear existing graphics
+      tncObservationsLayer.removeAll();
+      
+      // Add TNC observations to map
+      response.forEach(obs => {
+        if (obs.geometry && obs.geometry.coordinates) {
+          const [longitude, latitude] = obs.geometry.coordinates;
+          
+          // Create point geometry
+          const point = new Point({
+            longitude,
+            latitude
+          });
+
+          // Get color based on taxon category
+          const color = tncINaturalistService.getTaxonColor(obs.taxon_category_name);
+          
+          // Create symbol
+          const symbol = new SimpleMarkerSymbol({
+            style: 'circle',
+            color: color,
+            size: '10px',
+            outline: {
+              color: 'white',
+              width: 1.5
+            }
+          });
+
+          // Create rich popup template with taxonomic hierarchy
+          const popupTemplate = new PopupTemplate({
+            title: obs.common_name || obs.scientific_name,
+            content: buildTNCPopupContent(obs)
+          });
+
+          // Create graphic
+          const graphic = new Graphic({
+            geometry: point,
+            symbol: symbol,
+            popupTemplate: popupTemplate,
+            attributes: {
+              observation_id: obs.observation_id,
+              taxon_category: obs.taxon_category_name,
+              scientific_name: obs.scientific_name,
+              common_name: obs.common_name,
+              observed_on: obs.observed_on,
+              user_name: obs.user_name
+            }
+          });
+
+          tncObservationsLayer.add(graphic);
+        }
+      });
+      
+      console.log(`Added ${response.length} TNC iNaturalist observations to map`);
+      
+    } catch (error) {
+      console.error('Error loading TNC observations:', error);
+    } finally {
+      onTNCLoadingChange?.(false);
+    }
+  };
+
+  const reloadTNCObservations = (filters?: {
+    taxonCategories?: string[];
+    startDate?: string;
+    endDate?: string;
+    maxResults?: number;
+    useFilters?: boolean;
+    page?: number;
+    pageSize?: number;
+  }) => {
+    if (view && view.map) {
+      const tncObservationsLayer = view.map.findLayerById('tnc-inaturalist-observations') as GraphicsLayer;
+      if (tncObservationsLayer) {
+        loadTNCObservations(view, tncObservationsLayer, filters);
+      }
+    }
+  };
+
   // Expose methods via ref
   useImperativeHandle(ref, () => ({
     reloadObservations,
+    reloadTNCObservations,
     reloadCalFloraData
   }));
 
