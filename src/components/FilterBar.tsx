@@ -30,7 +30,7 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch
     setIsCustomDateRange(false);
     onFilterChange({
       category: 'Wildlife',
-      source: 'iNaturalist',
+      source: 'iNaturalist (Public API)',
       spatialFilter: 'Draw Area',
       timeRange: formatDateRangeCompact(30),
       daysBack: 30,

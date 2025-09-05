@@ -1,19 +1,28 @@
 import React from 'react';
 import { FilterState } from '../types';
 import { iNaturalistObservation } from '../services/iNaturalistService';
+import { TNCArcGISObservation } from '../services/tncINaturalistService';
 import { CalFloraPlant } from '../services/calFloraService';
 
 // Import specific data view components
 import WildlifeINaturalistView from './dataviews/WildlifeINaturalistView';
+import WildlifeTNCINaturalistView from './dataviews/WildlifeTNCINaturalistView';
 import VegetationCalFloraView from './dataviews/VegetationCalFloraView';
 
 interface DataViewProps {
   filters: FilterState;
-  // iNaturalist data
+  // iNaturalist Public API data
   observations: iNaturalistObservation[];
   observationsLoading: boolean;
   onObservationExportCSV?: () => void;
   onObservationExportGeoJSON?: () => void;
+  // TNC iNaturalist data
+  tncObservations: TNCArcGISObservation[];
+  tncObservationsLoading: boolean;
+  onTNCObservationExportCSV?: () => void;
+  onTNCObservationExportGeoJSON?: () => void;
+  selectedTNCObservation?: TNCArcGISObservation | null;
+  onTNCObservationSelect?: (observation: TNCArcGISObservation | null) => void;
   // CalFlora data
   calFloraPlants: CalFloraPlant[];
   calFloraLoading: boolean;
@@ -31,6 +40,12 @@ const DataView: React.FC<DataViewProps> = ({
   observationsLoading,
   onObservationExportCSV,
   onObservationExportGeoJSON,
+  tncObservations,
+  tncObservationsLoading,
+  onTNCObservationExportCSV,
+  onTNCObservationExportGeoJSON,
+  selectedTNCObservation,
+  onTNCObservationSelect,
   calFloraPlants,
   calFloraLoading,
   onCalFloraExportCSV,
@@ -44,8 +59,8 @@ const DataView: React.FC<DataViewProps> = ({
     const key = `${filters.category}-${filters.source}`;
     
     switch (key) {
-      case 'Wildlife-iNaturalist':
-      case 'Vegetation-iNaturalist':
+      case 'Wildlife-iNaturalist (Public API)':
+      case 'Vegetation-iNaturalist (Public API)':
         return (
           <WildlifeINaturalistView
             observations={observations}
@@ -55,6 +70,22 @@ const DataView: React.FC<DataViewProps> = ({
             endDate={endDate}
             onExportCSV={onObservationExportCSV}
             onExportGeoJSON={onObservationExportGeoJSON}
+          />
+        );
+
+      case 'Wildlife-iNaturalist (TNC Layers)':
+      case 'Vegetation-iNaturalist (TNC Layers)':
+        return (
+          <WildlifeTNCINaturalistView
+            observations={tncObservations}
+            loading={tncObservationsLoading}
+            currentDaysBack={lastSearchedDaysBack}
+            startDate={startDate}
+            endDate={endDate}
+            onExportCSV={onTNCObservationExportCSV}
+            onExportGeoJSON={onTNCObservationExportGeoJSON}
+            selectedObservation={selectedTNCObservation}
+            onObservationSelect={onTNCObservationSelect}
           />
         );
         

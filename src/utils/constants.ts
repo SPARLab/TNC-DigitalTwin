@@ -9,14 +9,15 @@ export const DATA_CATEGORIES = [
 ] as const;
 
 export const DATA_SOURCES = [
-  'iNaturalist',
+  'iNaturalist (Public API)',
+  'iNaturalist (TNC Layers)',
   'CalFlora'
 ] as const;
 
 // Map categories to their available data sources
 export const CATEGORY_DATA_SOURCES = {
-  'Wildlife': ['iNaturalist'],
-  'Vegetation': ['CalFlora', 'iNaturalist']
+  'Wildlife': ['iNaturalist (Public API)', 'iNaturalist (TNC Layers)'],
+  'Vegetation': ['CalFlora', 'iNaturalist (Public API)', 'iNaturalist (TNC Layers)']
 } as const;
 
 export const SPATIAL_FILTERS = [

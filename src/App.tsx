@@ -8,14 +8,16 @@ import Footer from './components/Footer';
 import { FilterState } from './types';
 import { mockDatasets, dataLayers as initialDataLayers } from './data/mockData';
 import { iNaturalistObservation } from './services/iNaturalistService';
+import { TNCArcGISObservation } from './services/tncINaturalistService';
 import { CalFloraPlant } from './services/calFloraService';
-import { formatDateRangeCompact } from './utils/dateUtils';
+import { formatDateRangeCompact, getDateRange, formatDateForAPI } from './utils/dateUtils';
+import { tncINaturalistService } from './services/tncINaturalistService';
 import { MapViewRef } from './components/MapView';
 
 function App() {
   const [filters, setFilters] = useState<FilterState>({
     category: 'Wildlife',
-    source: 'iNaturalist',
+    source: 'iNaturalist (Public API)',
     spatialFilter: 'Draw Area',
     timeRange: formatDateRangeCompact(30),
     daysBack: 30,
@@ -27,7 +29,7 @@ function App() {
   // This determines what data is shown in the sidebar/map
   const [lastSearchedFilters, setLastSearchedFilters] = useState<FilterState>({
     category: 'Wildlife',
-    source: 'iNaturalist',
+    source: 'iNaturalist (Public API)',
     spatialFilter: 'Draw Area',
     timeRange: formatDateRangeCompact(30),
     daysBack: 30,
@@ -38,10 +40,16 @@ function App() {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [dataLayers, setDataLayers] = useState(initialDataLayers);
   const [observations, setObservations] = useState<iNaturalistObservation[]>([]);
+  const [tncObservations, setTncObservations] = useState<TNCArcGISObservation[]>([]);
+  const [selectedTNCObservation, setSelectedTNCObservation] = useState<TNCArcGISObservation | null>(null);
   const [calFloraPlants, setCalFloraPlants] = useState<CalFloraPlant[]>([]);
   const [observationsLoading, setObservationsLoading] = useState(false);
+  const [tncObservationsLoading, setTncObservationsLoading] = useState(false);
   const [calFloraLoading, setCalFloraLoading] = useState(false);
   const [lastSearchedDaysBack, setLastSearchedDaysBack] = useState<number>(30); // Track the last searched time range
+  const [tncTotalCount, setTncTotalCount] = useState<number>(0);
+  const [tncPage, setTncPage] = useState<number>(1);
+  const [tncPageSize, setTncPageSize] = useState<number>(250);
   const mapViewRef = useRef<MapViewRef>(null);
 
   const handleFilterChange = (newFilters: FilterState) => {
@@ -62,8 +70,54 @@ function App() {
       
       console.log('Searching CalFlora with filters:', calFloraFilters);
       mapViewRef.current?.reloadCalFloraData(calFloraFilters);
+    } else if (filters.source === 'iNaturalist (TNC Layers)') {
+      // Handle TNC iNaturalist search
+      let taxonCategories: string[] = [];
+      if (filters.category === 'Vegetation') {
+        taxonCategories = ['Plantae']; // Only show plant observations for Vegetation category
+      }
+      // For Wildlife category, don't filter by taxon categories to show all animals
+      
+      // Compute start/end dates from filters (support daysBack or custom range)
+      let startDate = filters.startDate;
+      let endDate = filters.endDate;
+      if (!startDate || !endDate) {
+        const range = getDateRange(filters.daysBack || 30);
+        startDate = formatDateForAPI(range.startDate);
+        endDate = formatDateForAPI(range.endDate);
+      }
+
+      const tncSearchFilters = {
+        startDate,
+        endDate,
+        taxonCategories,
+        maxResults: tncPageSize,
+        useFilters: true,
+        page: tncPage,
+        pageSize: tncPageSize
+      };
+      
+      // Update the last searched time range when search is performed
+      setLastSearchedDaysBack(filters.daysBack || 30);
+      
+      console.log('Searching TNC iNaturalist with filters:', tncSearchFilters);
+      // Fetch count in parallel to show total records
+      tncINaturalistService
+        .queryObservationsCount({
+          startDate,
+          endDate,
+          taxonCategories,
+          useFilters: true
+        })
+        .then(setTncTotalCount)
+        .catch((e) => {
+          console.warn('Failed to fetch TNC total count:', e);
+          setTncTotalCount(0);
+        });
+
+      mapViewRef.current?.reloadTNCObservations(tncSearchFilters);
     } else {
-      // Handle iNaturalist search
+      // Handle iNaturalist Public API search
       // Filter by iconic taxa based on category
       let iconicTaxa: string[] = [];
       if (filters.category === 'Vegetation') {
@@ -82,7 +136,7 @@ function App() {
       // Update the last searched time range when search is performed
       setLastSearchedDaysBack(filters.daysBack || 30);
       
-      console.log('Searching iNaturalist with filters:', searchFilters);
+      console.log('Searching iNaturalist Public API with filters:', searchFilters);
       mapViewRef.current?.reloadObservations(searchFilters);
     }
   };
@@ -304,6 +358,95 @@ function App() {
     downloadFile(geoJsonData, 'inaturalist-observations.geojson', 'application/geo+json');
   };
 
+  // TNC export functions
+  const convertTNCToCSV = (observations: TNCArcGISObservation[]): string => {
+    const headers = [
+      'Observation ID', 'UUID', 'Common Name', 'Scientific Name', 'Taxon Category', 'Taxon ID',
+      'Observed On', 'Observer', 'User Login', 'Latitude', 'Longitude', 
+      'Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus', 'Species'
+    ];
+    
+    const rows = observations.map(obs => [
+      obs.observation_id,
+      obs.observation_uuid,
+      obs.common_name || '',
+      obs.scientific_name,
+      obs.taxon_category_name,
+      obs.taxon_id,
+      obs.observed_on,
+      obs.user_name,
+      obs.user_login,
+      obs.geometry?.coordinates?.[1] || '',
+      obs.geometry?.coordinates?.[0] || '',
+      obs.taxon_kingdom_name || '',
+      obs.taxon_phylum_name || '',
+      obs.taxon_class_name || '',
+      obs.taxon_order_name || '',
+      obs.taxon_family_name || '',
+      obs.taxon_genus_name || '',
+      obs.taxon_species_name || ''
+    ]);
+
+    return [headers, ...rows].map(row => 
+      row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+    ).join('\n');
+  };
+
+  const convertTNCToGeoJSON = (observations: TNCArcGISObservation[]): string => {
+    const features = observations
+      .filter(obs => obs.geometry?.coordinates)
+      .map(obs => ({
+        type: 'Feature',
+        geometry: obs.geometry,
+        properties: {
+          observation_id: obs.observation_id,
+          observation_uuid: obs.observation_uuid,
+          commonName: obs.common_name,
+          scientificName: obs.scientific_name,
+          taxonCategory: obs.taxon_category_name,
+          taxonId: obs.taxon_id,
+          observedOn: obs.observed_on,
+          observer: obs.user_name,
+          userLogin: obs.user_login,
+          kingdom: obs.taxon_kingdom_name,
+          phylum: obs.taxon_phylum_name,
+          class: obs.taxon_class_name,
+          order: obs.taxon_order_name,
+          family: obs.taxon_family_name,
+          genus: obs.taxon_genus_name,
+          species: obs.taxon_species_name
+        }
+      }));
+
+    return JSON.stringify({
+      type: 'FeatureCollection',
+      features
+    }, null, 2);
+  };
+
+  const handleTNCExportCSV = () => {
+    const csvData = convertTNCToCSV(tncObservations);
+    downloadFile(csvData, 'tnc-inaturalist-observations.csv', 'text/csv');
+  };
+
+  const handleTNCExportGeoJSON = () => {
+    const geoJsonData = convertTNCToGeoJSON(tncObservations);
+    downloadFile(geoJsonData, 'tnc-inaturalist-observations.geojson', 'application/geo+json');
+  };
+
+  // Helper function to download files
+  const downloadFile = (data: string, filename: string, mimeType: string) => {
+    const blob = new Blob([data], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   // Filter datasets based on current filters
   const filteredDatasets = mockDatasets.filter(dataset => {
     if (filters.category !== 'Wildlife' && dataset.category !== filters.category) {
@@ -320,8 +463,16 @@ function App() {
         filters={filters}
         onFilterChange={handleFilterChange}
         onSearch={handleSearch}
-        resultCount={lastSearchedFilters.source === 'CalFlora' ? calFloraPlants.length : observations.length}
-        isSearching={filters.source === 'CalFlora' ? calFloraLoading : observationsLoading}
+        resultCount={
+          lastSearchedFilters.source === 'CalFlora' ? calFloraPlants.length :
+          lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations.length :
+          observations.length
+        }
+        isSearching={
+          filters.source === 'CalFlora' ? calFloraLoading :
+          filters.source === 'iNaturalist (TNC Layers)' ? tncObservationsLoading :
+          observationsLoading
+        }
       />
       <div id="main-content" className="flex-1 flex min-h-0">
         <DataView
@@ -330,6 +481,12 @@ function App() {
           observationsLoading={observationsLoading}
           onObservationExportCSV={handleExportCSV}
           onObservationExportGeoJSON={handleExportGeoJSON}
+          tncObservations={tncObservations}
+          tncObservationsLoading={tncObservationsLoading}
+          onTNCObservationExportCSV={handleTNCExportCSV}
+          onTNCObservationExportGeoJSON={handleTNCExportGeoJSON}
+          selectedTNCObservation={selectedTNCObservation}
+          onTNCObservationSelect={setSelectedTNCObservation}
           calFloraPlants={calFloraPlants}
           calFloraLoading={calFloraLoading}
           onCalFloraExportCSV={handleCalFloraExportCSV}
@@ -344,6 +501,11 @@ function App() {
           onLayerToggle={handleLayerToggle}
           onObservationsUpdate={setObservations}
           onLoadingChange={setObservationsLoading}
+          tncObservations={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations : []}
+          onTNCObservationsUpdate={setTncObservations}
+          onTNCLoadingChange={setTncObservationsLoading}
+          selectedTNCObservation={selectedTNCObservation}
+          onTNCObservationSelect={setSelectedTNCObservation}
           calFloraPlants={filters.source === 'CalFlora' ? calFloraPlants : []}
           onCalFloraUpdate={setCalFloraPlants}
           onCalFloraLoadingChange={setCalFloraLoading}
