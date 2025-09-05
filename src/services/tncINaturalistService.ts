@@ -224,12 +224,34 @@ class TNCArcGISService {
       }
 
       const queryUrl = `${this.baseUrl}/${this.observationsLayerId}/query`;
-      const fullUrl = `${queryUrl}?${new URLSearchParams(params as any)}`;
       
-      console.log('TNC ArcGIS Query URL:', fullUrl);
-      console.log('TNC ArcGIS Query Params:', params);
+      let response: Response;
       
-      const response = await fetch(fullUrl);
+      // Use POST request for preserve-only mode to avoid URL length limits
+      if (searchMode === 'preserve-only') {
+        console.log('TNC ArcGIS Query (POST):', queryUrl);
+        console.log('TNC ArcGIS Query Params:', params);
+        
+        // Create form data for POST request
+        const formData = new FormData();
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== undefined) {
+            formData.append(key, String(value));
+          }
+        });
+        
+        response = await fetch(queryUrl, {
+          method: 'POST',
+          body: formData
+        });
+      } else {
+        // Use GET request for bounding box queries (shorter URLs)
+        const fullUrl = `${queryUrl}?${new URLSearchParams(params as any)}`;
+        console.log('TNC ArcGIS Query (GET):', fullUrl);
+        console.log('TNC ArcGIS Query Params:', params);
+        
+        response = await fetch(fullUrl);
+      }
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -328,8 +350,27 @@ class TNCArcGISService {
       }
 
       const queryUrl = `${this.baseUrl}/${this.observationsLayerId}/query`;
-      const fullUrl = `${queryUrl}?${new URLSearchParams(params as any)}`;
-      const response = await fetch(fullUrl);
+      
+      let response: Response;
+      
+      // Use POST request for preserve-only mode to avoid URL length limits
+      if (searchMode === 'preserve-only') {
+        const formData = new FormData();
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== undefined) {
+            formData.append(key, String(value));
+          }
+        });
+        
+        response = await fetch(queryUrl, {
+          method: 'POST',
+          body: formData
+        });
+      } else {
+        // Use GET request for bounding box queries
+        const fullUrl = `${queryUrl}?${new URLSearchParams(params as any)}`;
+        response = await fetch(fullUrl);
+      }
       if (!response.ok) {
         const errorText = await response.text();
         console.error('TNC ArcGIS Count Error Response:', errorText);
