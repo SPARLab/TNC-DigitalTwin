@@ -97,24 +97,59 @@ class TNCArcGISService {
 
   /**
    * Get the Dangermond Preserve boundary extent for spatial filtering
-   * Use hardcoded WGS84 coordinates that we know work
+   * Returns different extents based on search mode
    */
-  async getPreserveExtent(): Promise<{ xmin: number; ymin: number; xmax: number; ymax: number }> {
-    if (this.preserveExtent) {
-      return this.preserveExtent;
+  async getPreserveExtent(searchMode: 'preserve-only' | 'expanded' = 'expanded'): Promise<{ xmin: number; ymin: number; xmax: number; ymax: number }> {
+    if (searchMode === 'preserve-only') {
+      // Tight bounds based on actual preserve boundary GeoJSON
+      // Extracted from the boundary coordinates in public/dangermond-preserve-boundary.geojson
+      return {
+        xmin: -120.498,  // West longitude (preserve western edge)
+        ymin: 34.415,    // South latitude (preserve southern edge)
+        xmax: -120.357,  // East longitude (preserve eastern edge)
+        ymax: 34.570     // North latitude (preserve northern edge)
+      };
+    } else {
+      // Expanded rectangle for observations around the preserve
+      // Extends ~10km beyond preserve boundaries for regional context
+      return {
+        xmin: -120.55,   // West longitude (expanded)
+        ymin: 34.35,     // South latitude (expanded)
+        xmax: -120.30,   // East longitude (expanded)
+        ymax: 34.62      // North latitude (expanded)
+      };
     }
+  }
 
-    // Use hardcoded Dangermond Preserve bounds in WGS84 (EPSG:4326)
-    // These coordinates are known to work and cover the preserve area
-    this.preserveExtent = {
-      xmin: -120.45,  // West longitude
-      ymin: 34.4,     // South latitude  
-      xmax: -120.0,   // East longitude
-      ymax: 34.55     // North latitude
-    };
-
-    console.log('Using hardcoded preserve extent (WGS84):', this.preserveExtent);
-    return this.preserveExtent;
+  /**
+   * Get the actual preserve boundary polygon for precise spatial filtering
+   */
+  async getPreserveBoundaryPolygon(): Promise<string> {
+    try {
+      // Fetch the preserve boundary from our local GeoJSON file
+      const response = await fetch('/dangermond-preserve-boundary.geojson');
+      const geojson = await response.json();
+      
+      if (geojson.features && geojson.features.length > 0) {
+        const coordinates = geojson.features[0].geometry.coordinates[0]; // Get outer ring
+        
+        // Convert to ArcGIS polygon format: [[x1,y1],[x2,y2],...,[x1,y1]]
+        const rings = coordinates.map((coord: number[]) => [coord[0], coord[1]]);
+        
+        // Return as JSON string for ArcGIS geometry parameter
+        return JSON.stringify({
+          rings: [rings],
+          spatialReference: { wkid: 4326 }
+        });
+      }
+      
+      throw new Error('No boundary polygon found in GeoJSON');
+    } catch (error) {
+      console.error('Error fetching preserve boundary polygon:', error);
+      // Fallback to bounding box if polygon fetch fails
+      const extent = await this.getPreserveExtent('preserve-only');
+      return `${extent.xmin},${extent.ymin},${extent.xmax},${extent.ymax}`;
+    }
   }
 
   /**
@@ -129,6 +164,7 @@ class TNCArcGISService {
     useFilters?: boolean; // Enable/disable filtering
     page?: number;
     pageSize?: number;
+    searchMode?: 'preserve-only' | 'expanded'; // Search area mode
   } = {}): Promise<TNCArcGISObservation[]> {
     const {
       taxonCategories = [],
@@ -138,7 +174,8 @@ class TNCArcGISService {
       maxResults = 2000,
       useFilters = true, // Default to applying filters when provided
       page,
-      pageSize
+      pageSize,
+      searchMode = 'expanded' // Default to expanded search
     } = options;
 
     try {
@@ -170,11 +207,21 @@ class TNCArcGISService {
         // Remove spatial filtering for now to get all data
       };
 
-      // Always apply spatial filtering to get preserve data only
-      const extent = spatialExtent || await this.getPreserveExtent();
-      params.geometry = `${extent.xmin},${extent.ymin},${extent.xmax},${extent.ymax}`;
-      params.geometryType = 'esriGeometryEnvelope';
-      params.spatialRel = 'esriSpatialRelIntersects';
+      // Apply spatial filtering based on search mode
+      if (searchMode === 'preserve-only') {
+        // Use actual preserve polygon for precise filtering
+        params.geometry = await this.getPreserveBoundaryPolygon();
+        params.geometryType = 'esriGeometryPolygon';
+        params.spatialRel = 'esriSpatialRelWithin'; // Only observations WITHIN the preserve
+        console.log('🎯 Using preserve polygon for spatial filtering');
+      } else {
+        // Use bounding box for expanded search
+        const extent = spatialExtent || await this.getPreserveExtent(searchMode);
+        params.geometry = `${extent.xmin},${extent.ymin},${extent.xmax},${extent.ymax}`;
+        params.geometryType = 'esriGeometryEnvelope';
+        params.spatialRel = 'esriSpatialRelIntersects';
+        console.log('📦 Using bounding box for spatial filtering:', extent);
+      }
 
       const queryUrl = `${this.baseUrl}/${this.observationsLayerId}/query`;
       const fullUrl = `${queryUrl}?${new URLSearchParams(params as any)}`;
@@ -235,13 +282,15 @@ class TNCArcGISService {
     endDate?: string;
     spatialExtent?: { xmin: number; ymin: number; xmax: number; ymax: number };
     useFilters?: boolean;
+    searchMode?: 'preserve-only' | 'expanded';
   } = {}): Promise<number> {
     const {
       taxonCategories = [],
       startDate,
       endDate,
       spatialExtent,
-      useFilters = true
+      useFilters = true,
+      searchMode = 'expanded'
     } = options;
 
     try {
@@ -264,10 +313,19 @@ class TNCArcGISService {
         f: 'json'
       };
 
-      const extent = spatialExtent || await this.getPreserveExtent();
-      (params as any).geometry = `${extent.xmin},${extent.ymin},${extent.xmax},${extent.ymax}`;
-      (params as any).geometryType = 'esriGeometryEnvelope';
-      (params as any).spatialRel = 'esriSpatialRelIntersects';
+      // Apply same spatial filtering logic as main query
+      if (searchMode === 'preserve-only') {
+        // Use actual preserve polygon for precise filtering
+        (params as any).geometry = await this.getPreserveBoundaryPolygon();
+        (params as any).geometryType = 'esriGeometryPolygon';
+        (params as any).spatialRel = 'esriSpatialRelWithin';
+      } else {
+        // Use bounding box for expanded search
+        const extent = spatialExtent || await this.getPreserveExtent(searchMode);
+        (params as any).geometry = `${extent.xmin},${extent.ymin},${extent.xmax},${extent.ymax}`;
+        (params as any).geometryType = 'esriGeometryEnvelope';
+        (params as any).spatialRel = 'esriSpatialRelIntersects';
+      }
 
       const queryUrl = `${this.baseUrl}/${this.observationsLayerId}/query`;
       const fullUrl = `${queryUrl}?${new URLSearchParams(params as any)}`;

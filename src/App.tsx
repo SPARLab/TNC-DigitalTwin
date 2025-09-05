@@ -18,7 +18,7 @@ function App() {
   const [filters, setFilters] = useState<FilterState>({
     category: 'Wildlife',
     source: 'iNaturalist (Public API)',
-    spatialFilter: 'Draw Area',
+    spatialFilter: 'Dangermond + Margin',
     timeRange: formatDateRangeCompact(30),
     daysBack: 30,
     startDate: undefined,
@@ -30,7 +30,7 @@ function App() {
   const [lastSearchedFilters, setLastSearchedFilters] = useState<FilterState>({
     category: 'Wildlife',
     source: 'iNaturalist (Public API)',
-    spatialFilter: 'Draw Area',
+    spatialFilter: 'Dangermond + Margin',
     timeRange: formatDateRangeCompact(30),
     daysBack: 30,
     startDate: undefined,
@@ -87,6 +87,10 @@ function App() {
         endDate = formatDateForAPI(range.endDate);
       }
 
+      // Map spatial filter to search mode
+      const searchMode = filters.spatialFilter === 'Dangermond Preserve' ? 'preserve-only' : 'expanded';
+      const showSearchArea = filters.spatialFilter === 'Dangermond + Margin';
+
       const tncSearchFilters = {
         startDate,
         endDate,
@@ -94,7 +98,9 @@ function App() {
         maxResults: tncPageSize,
         useFilters: true,
         page: tncPage,
-        pageSize: tncPageSize
+        pageSize: tncPageSize,
+        searchMode,
+        showSearchArea
       };
       
       // Update the last searched time range when search is performed
@@ -107,7 +113,8 @@ function App() {
           startDate,
           endDate,
           taxonCategories,
-          useFilters: true
+          useFilters: true,
+          searchMode
         })
         .then(setTncTotalCount)
         .catch((e) => {

@@ -22,8 +22,9 @@ export const CATEGORY_DATA_SOURCES = {
 
 export const SPATIAL_FILTERS = [
   'Draw Area',
-  'Current View',
-  'Preserve Boundary'
+  'Current View', 
+  'Dangermond Preserve',
+  'Dangermond + Margin'
 ] as const;
 
 export const TIME_RANGES = [

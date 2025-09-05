@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronDown, Database, MapPin, Calendar, Search } from 'lucide-react';
 import { FilterState } from '../types';
 import { formatDateRange, formatDateRangeCompact, getTimeRangeOptions } from '../utils/dateUtils';
-import { DATA_CATEGORIES, CATEGORY_DATA_SOURCES } from '../utils/constants';
+import { DATA_CATEGORIES, CATEGORY_DATA_SOURCES, SPATIAL_FILTERS } from '../utils/constants';
 
 interface FilterBarProps {
   filters: FilterState;
@@ -31,7 +31,7 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch
     onFilterChange({
       category: 'Wildlife',
       source: 'iNaturalist (Public API)',
-      spatialFilter: 'Draw Area',
+      spatialFilter: 'Dangermond + Margin',
       timeRange: formatDateRangeCompact(30),
       daysBack: 30,
       startDate: undefined,
@@ -58,6 +58,11 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch
 
   const handleSourceChange = (source: string) => {
     onFilterChange({ ...filters, source });
+    setOpenDropdown(null);
+  };
+
+  const handleSpatialFilterChange = (spatialFilter: string) => {
+    onFilterChange({ ...filters, spatialFilter });
     setOpenDropdown(null);
   };
 
@@ -173,17 +178,37 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch
           </div>
 
           {/* Spatial Filter */}
-          <div id="spatial-filter-container" className="flex flex-col">
+          <div id="spatial-filter-container" className="flex flex-col relative">
             <label id="spatial-filter-label" className="text-xs font-medium text-gray-500 mb-1">
               SPATIAL FILTER
             </label>
             <button 
               id="spatial-filter-button"
+              onClick={() => handleDropdownToggle('spatialFilter')}
               className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50"
             >
               <MapPin id="spatial-filter-icon" className="w-4 h-4 text-gray-400" />
               <span id="spatial-filter-text" className="text-sm text-black">{filters.spatialFilter}</span>
+              <ChevronDown id="spatial-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform ${openDropdown === 'spatialFilter' ? 'rotate-180' : ''}`} />
             </button>
+            
+            {/* Spatial Filter Dropdown */}
+            {openDropdown === 'spatialFilter' && (
+              <div id="spatial-filter-dropdown" className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-20">
+                {SPATIAL_FILTERS.map((option) => (
+                  <button
+                    key={option}
+                    id={`spatial-filter-option-${option.toLowerCase().replace(/\s+/g, '-')}`}
+                    onClick={() => handleSpatialFilterChange(option)}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${
+                      filters.spatialFilter === option ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                    }`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Time Range Filter with Search Button */}
