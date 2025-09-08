@@ -4,7 +4,7 @@ import { FilterState } from '../types';
 import { formatDateRange, formatDateRangeCompact, getTimeRangeOptions, formatDateToUS } from '../utils/dateUtils';
 import { DATA_CATEGORIES, CATEGORY_DATA_SOURCES, SPATIAL_FILTERS } from '../utils/constants';
 
-interface FilterBarProps {
+interface FilterSubheaderProps {
   filters: FilterState;
   onFilterChange: (filters: FilterState) => void;
   onSearch?: () => void;
@@ -12,7 +12,7 @@ interface FilterBarProps {
   isSearching?: boolean;
 }
 
-const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch, resultCount, isSearching = false }) => {
+const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChange, onSearch, resultCount, isSearching = false }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   const categoryOptions = DATA_CATEGORIES;
@@ -365,4 +365,4 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch
   );
 };
 
-export default FilterBar;
+export default FilterSubheader;

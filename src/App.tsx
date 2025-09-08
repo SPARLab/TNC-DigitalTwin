@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import Header from './components/Header';
-import FilterBar from './components/FilterBar';
+import FilterSubheader from './components/FilterSubheader';
 import DataView from './components/DataView';
 import FilterSidebar from './components/FilterSidebar';
 import MapView from './components/MapView';
@@ -445,7 +445,7 @@ function App() {
   return (
     <div id="app" className="h-screen bg-gray-50 flex flex-col">
       <Header />
-      <FilterBar 
+      <FilterSubheader 
         filters={filters}
         onFilterChange={handleFilterChange}
         onSearch={handleSearch}

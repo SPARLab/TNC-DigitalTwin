@@ -58,7 +58,7 @@ npm run dev
 src/
 ├── components/          # React components
 │   ├── Header.tsx      # Main navigation header
-│   ├── FilterBar.tsx   # Data filtering controls
+│   ├── FilterSubheader.tsx   # Data filtering controls
 │   ├── SearchResults.tsx # Dataset search results
 │   ├── DatasetCard.tsx # Individual dataset card
 │   ├── MapView.tsx     # Interactive map component
