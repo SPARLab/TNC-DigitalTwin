@@ -7,7 +7,9 @@ import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import GeoJSONLayer from '@arcgis/core/layers/GeoJSONLayer';
 import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
+import Polygon from '@arcgis/core/geometry/Polygon';
 import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
+import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 import PopupTemplate from '@arcgis/core/PopupTemplate';
 import { iNaturalistAPI, iNaturalistObservation } from '../services/iNaturalistService';
 import { tncINaturalistService, TNCArcGISObservation } from '../services/tncINaturalistService';
@@ -44,6 +46,8 @@ export interface MapViewRef {
     useFilters?: boolean;
     page?: number;
     pageSize?: number;
+    searchMode?: 'preserve-only' | 'expanded';
+    showSearchArea?: boolean;
   }) => void;
   reloadCalFloraData: (filters?: {
     maxResults?: number;
@@ -250,6 +254,15 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       });
 
       map.add(boundaryLayer);
+
+      // Create graphics layer for search area rectangle (initially hidden)
+      const searchAreaLayer = new GraphicsLayer({
+        id: 'search-area-rectangle',
+        title: 'TNC Search Area',
+        visible: false // Hidden by default
+      });
+
+      map.add(searchAreaLayer);
 
       // Create graphics layer for iNaturalist observations
       const observationsLayer = new GraphicsLayer({
@@ -798,17 +811,66 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     useFilters?: boolean;
     page?: number;
     pageSize?: number;
+    searchMode?: 'preserve-only' | 'expanded';
+    showSearchArea?: boolean;
   }) => {
     onTNCLoadingChange?.(true);
     try {
       // Clear other layers when starting a new TNC search
       const observationsLayer = _mapView.map?.findLayerById('inaturalist-observations') as GraphicsLayer;
       const calFloraLayer = _mapView.map?.findLayerById('calflora-plants') as GraphicsLayer;
+      const searchAreaLayer = _mapView.map?.findLayerById('search-area-rectangle') as GraphicsLayer;
+      
       if (observationsLayer) {
         observationsLayer.removeAll();
       }
       if (calFloraLayer) {
         calFloraLayer.removeAll();
+      }
+      
+      // Handle search area visualization
+      if (searchAreaLayer) {
+        searchAreaLayer.removeAll();
+        
+        if (filters?.showSearchArea && filters?.searchMode === 'expanded') {
+          // Get the expanded search extent and create a rectangle graphic
+          const extent = await tncINaturalistService.getPreserveExtent('expanded');
+          
+          // Create a polygon rectangle from the extent coordinates
+          const rectangle = new Polygon({
+            rings: [[
+              [extent.xmin, extent.ymin], // Bottom-left
+              [extent.xmax, extent.ymin], // Bottom-right
+              [extent.xmax, extent.ymax], // Top-right
+              [extent.xmin, extent.ymax], // Top-left
+              [extent.xmin, extent.ymin]  // Close the ring
+            ]],
+            spatialReference: { wkid: 4326 }
+          });
+          
+          const rectangleGraphic = new Graphic({
+            geometry: rectangle,
+            symbol: new SimpleFillSymbol({
+              color: [255, 165, 0, 0.15], // Orange with low opacity
+              outline: {
+                color: [255, 165, 0, 0.9], // Orange outline
+                width: 3,
+                style: 'dash'
+              }
+            }),
+            popupTemplate: new PopupTemplate({
+              title: 'TNC Search Area (Expanded)',
+              content: `This rectangle shows the expanded search area around the Dangermond Preserve.<br/>
+                       Coordinates: ${extent.xmin.toFixed(3)}, ${extent.ymin.toFixed(3)} to ${extent.xmax.toFixed(3)}, ${extent.ymax.toFixed(3)}`
+            })
+          });
+          
+          searchAreaLayer.add(rectangleGraphic);
+          searchAreaLayer.visible = true;
+          console.log('✅ Added search area rectangle:', extent);
+        } else {
+          searchAreaLayer.visible = false;
+        }
       }
       
       const response = await tncINaturalistService.queryObservations({
@@ -818,7 +880,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         maxResults: filters?.maxResults || 2000,
         useFilters: filters?.useFilters !== undefined ? filters.useFilters : true,
         page: filters?.page,
-        pageSize: filters?.pageSize
+        pageSize: filters?.pageSize,
+        searchMode: filters?.searchMode || 'expanded'
       });
       
       onTNCObservationsUpdate?.(response);
@@ -893,6 +956,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     useFilters?: boolean;
     page?: number;
     pageSize?: number;
+    searchMode?: 'preserve-only' | 'expanded';
+    showSearchArea?: boolean;
   }) => {
     if (view && view.map) {
       const tncObservationsLayer = view.map.findLayerById('tnc-inaturalist-observations') as GraphicsLayer;

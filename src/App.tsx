@@ -95,12 +95,16 @@ function App() {
         startDate,
         endDate,
         taxonCategories,
-        maxResults: tncPageSize,
+        maxResults: 10000, // Allow up to 10,000 total results with pagination
         useFilters: true,
         page: tncPage,
-        pageSize: tncPageSize,
+        pageSize: tncPageSize, // Keep page size at 250 for reasonable loading
         searchMode,
-        showSearchArea
+        showSearchArea,
+        onProgress: (current: number, total: number, percentage: number) => {
+          console.log(`📊 TNC Progress: ${current}/${total} observations (${percentage}%)`);
+          // Could add UI progress indicator here in the future
+        }
       };
       
       // Update the last searched time range when search is performed

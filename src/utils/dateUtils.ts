@@ -56,6 +56,8 @@ export const formatDateRangeCompact = (daysBack: number): string => {
     return 'Last 3 months';
   } else if (daysBack === 365) {
     return 'Last year';
+  } else if (daysBack === 1825) {
+    return 'Last 5 years';
   } else {
     return `Last ${daysBack} days`;
   }
@@ -69,7 +71,8 @@ export const getTimeRangeOptions = () => [
   { value: 7, label: 'Last 7 days', compact: 'Last 7 days' },
   { value: 30, label: 'Last 30 days', compact: 'Last 30 days' },
   { value: 90, label: 'Last 3 months', compact: 'Last 3 months' },
-  { value: 365, label: 'Last year', compact: 'Last year' }
+  { value: 365, label: 'Last year', compact: 'Last year' },
+  { value: 1825, label: 'Last 5 years', compact: 'Last 5 years' }
 ];
 
 /**

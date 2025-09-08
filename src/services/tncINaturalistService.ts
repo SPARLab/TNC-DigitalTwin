@@ -122,9 +122,97 @@ class TNCArcGISService {
   }
 
   /**
+   * Simplify a polygon by reducing the number of points
+   * Uses a simple distance-based approach to remove intermediate points
+   */
+  simplifyPolygon(coordinates: number[][], tolerance: number = 0.001): number[][] {
+    if (coordinates.length <= 3) return coordinates;
+    
+    const simplified = [coordinates[0]]; // Always keep first point
+    
+    for (let i = 1; i < coordinates.length - 1; i++) {
+      const prev = coordinates[i - 1];
+      const curr = coordinates[i];
+      const next = coordinates[i + 1];
+      
+      // Calculate distance from current point to line between prev and next
+      const distance = this.pointToLineDistance(curr, prev, next);
+      
+      if (distance > tolerance) {
+        simplified.push(curr);
+      }
+    }
+    
+    simplified.push(coordinates[coordinates.length - 1]); // Always keep last point
+    return simplified;
+  }
+  
+  /**
+   * Calculate perpendicular distance from point to line
+   */
+  private pointToLineDistance(point: number[], lineStart: number[], lineEnd: number[]): number {
+    const [px, py] = point;
+    const [x1, y1] = lineStart;
+    const [x2, y2] = lineEnd;
+    
+    const A = px - x1;
+    const B = py - y1;
+    const C = x2 - x1;
+    const D = y2 - y1;
+    
+    const dot = A * C + B * D;
+    const lenSq = C * C + D * D;
+    
+    if (lenSq === 0) return Math.sqrt(A * A + B * B);
+    
+    const param = dot / lenSq;
+    
+    let xx, yy;
+    if (param < 0) {
+      xx = x1;
+      yy = y1;
+    } else if (param > 1) {
+      xx = x2;
+      yy = y2;
+    } else {
+      xx = x1 + param * C;
+      yy = y1 + param * D;
+    }
+    
+    const dx = px - xx;
+    const dy = py - yy;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  /**
+   * Get a simple test polygon for debugging
+   */
+  getTestPolygon(): string {
+    // Simple rectangle around part of the preserve for testing
+    const testPolygon = {
+      rings: [[
+        [-120.45, 34.45],
+        [-120.40, 34.45],
+        [-120.40, 34.50],
+        [-120.45, 34.50],
+        [-120.45, 34.45]
+      ]],
+      spatialReference: { wkid: 4326 }
+    };
+    
+    console.log('🧪 DEBUG: Using test polygon:', testPolygon);
+    return JSON.stringify(testPolygon);
+  }
+
+  /**
    * Get the actual preserve boundary polygon for precise spatial filtering
    */
-  async getPreserveBoundaryPolygon(): Promise<string> {
+  async getPreserveBoundaryPolygon(useTestPolygon: boolean = false): Promise<string> {
+    // Use test polygon for debugging if requested
+    if (useTestPolygon) {
+      return this.getTestPolygon();
+    }
+    
     try {
       // Fetch the preserve boundary from our local GeoJSON file
       const response = await fetch('/dangermond-preserve-boundary.geojson');
@@ -133,14 +221,55 @@ class TNCArcGISService {
       if (geojson.features && geojson.features.length > 0) {
         const coordinates = geojson.features[0].geometry.coordinates[0]; // Get outer ring
         
-        // Convert to ArcGIS polygon format: [[x1,y1],[x2,y2],...,[x1,y1]]
-        const rings = coordinates.map((coord: number[]) => [coord[0], coord[1]]);
+        // Simplify polygon if it has too many points (ArcGIS services can have issues with very detailed polygons)
+        let processedCoordinates = coordinates;
+        if (coordinates.length > 1000) {
+          console.log('🔍 DEBUG: Polygon has', coordinates.length, 'points, simplifying...');
+          processedCoordinates = this.simplifyPolygon(coordinates, 0.0005); // ~50m tolerance
+          console.log('🔍 DEBUG: Simplified to', processedCoordinates.length, 'points');
+        }
         
-        // Return as JSON string for ArcGIS geometry parameter
-        return JSON.stringify({
+        // Convert to ArcGIS polygon format: [[x1,y1],[x2,y2],...,[x1,y1]]
+        const rings = processedCoordinates.map((coord: number[]) => [coord[0], coord[1]]);
+        
+        // Create ArcGIS polygon geometry
+        const arcgisPolygon = {
           rings: [rings],
           spatialReference: { wkid: 4326 }
+        };
+        
+        // Debug logging
+        console.log('🔍 DEBUG: Original GeoJSON coordinates count:', coordinates.length);
+        console.log('🔍 DEBUG: Processed coordinates count:', processedCoordinates.length);
+        console.log('🔍 DEBUG: First few coordinates:', processedCoordinates.slice(0, 3));
+        console.log('🔍 DEBUG: Last few coordinates:', processedCoordinates.slice(-3));
+        console.log('🔍 DEBUG: ArcGIS polygon structure:', {
+          ringCount: arcgisPolygon.rings.length,
+          firstRingPointCount: arcgisPolygon.rings[0].length,
+          firstFewPoints: arcgisPolygon.rings[0].slice(0, 3),
+          lastFewPoints: arcgisPolygon.rings[0].slice(-3),
+          spatialReference: arcgisPolygon.spatialReference
         });
+        
+        // Check if polygon is properly closed
+        const firstPoint = arcgisPolygon.rings[0][0];
+        const lastPoint = arcgisPolygon.rings[0][arcgisPolygon.rings[0].length - 1];
+        const isClosed = firstPoint[0] === lastPoint[0] && firstPoint[1] === lastPoint[1];
+        console.log('🔍 DEBUG: Polygon closed?', isClosed, 'First:', firstPoint, 'Last:', lastPoint);
+        
+        // Calculate rough bounds for verification
+        const lons = arcgisPolygon.rings[0].map(p => p[0]);
+        const lats = arcgisPolygon.rings[0].map(p => p[1]);
+        const bounds = {
+          minLon: Math.min(...lons),
+          maxLon: Math.max(...lons),
+          minLat: Math.min(...lats),
+          maxLat: Math.max(...lats)
+        };
+        console.log('🔍 DEBUG: Polygon bounds:', bounds);
+        
+        // Return as JSON string for ArcGIS geometry parameter
+        return JSON.stringify(arcgisPolygon);
       }
       
       throw new Error('No boundary polygon found in GeoJSON');
@@ -153,7 +282,7 @@ class TNCArcGISService {
   }
 
   /**
-   * Query observations from TNC's ArcGIS service
+   * Query observations from TNC's ArcGIS service with automatic pagination
    */
   async queryObservations(options: {
     taxonCategories?: string[];
@@ -165,129 +294,219 @@ class TNCArcGISService {
     page?: number;
     pageSize?: number;
     searchMode?: 'preserve-only' | 'expanded'; // Search area mode
+    onProgress?: (current: number, total: number, percentage: number) => void; // Progress callback
   } = {}): Promise<TNCArcGISObservation[]> {
     const {
       taxonCategories = [],
       startDate,
       endDate,
       spatialExtent,
-      maxResults = 2000,
-      useFilters = true, // Default to applying filters when provided
+      maxResults = 10000, // Increase default to allow for more comprehensive datasets
+      useFilters = true,
       page,
       pageSize,
-      searchMode = 'expanded' // Default to expanded search
+      searchMode = 'expanded',
+      onProgress
     } = options;
 
     try {
-      // Build where clause - start simple
+      // Build where clause
       let whereClause = '1=1';
 
-      // Only apply filters if explicitly requested
       if (useFilters) {
-        // Filter by taxon categories
         if (taxonCategories.length > 0) {
           const categoryFilter = taxonCategories.map(cat => `'${cat}'`).join(',');
           whereClause += ` AND taxon_category_name IN (${categoryFilter})`;
         }
 
-        // Filter by date range
         if (startDate && endDate) {
           whereClause += ` AND observed_on >= DATE '${startDate}' AND observed_on <= DATE '${endDate}'`;
         }
       }
 
-      const params: TNCArcGISQueryOptions = {
-        where: whereClause,
-        outFields: 'OBJECTID,observation_id,observation_uuid,scientific_name,common_name,taxon_category_name,observed_on,user_name,taxon_kingdom_name,taxon_phylum_name,taxon_class_name,taxon_order_name,taxon_family_name,taxon_genus_name,taxon_species_name,image_url,image_license',
-        returnGeometry: true,
-        f: 'json',
-        resultRecordCount: Math.min(pageSize || maxResults, 1000),
-        resultOffset: page && pageSize ? Math.max(0, (page - 1) * pageSize) : undefined,
-        orderByFields: 'OBJECTID DESC' // Use OBJECTID for ordering since observed_on might be causing issues
-        // Remove spatial filtering for now to get all data
-      };
+      // Set up pagination parameters
+      const pageSize_internal = 1000; // Reduce page size to avoid transfer limits
+      let allObservations: TNCArcGISObservation[] = [];
+      let currentOffset = 0;
+      let hasMoreData = true;
+      let pageNumber = 1;
 
-      // Apply spatial filtering based on search mode
+      // Apply spatial filtering
+      let geometryParams: any = {};
       if (searchMode === 'preserve-only') {
-        // Use actual preserve polygon for precise filtering
-        params.geometry = await this.getPreserveBoundaryPolygon();
-        params.geometryType = 'esriGeometryPolygon';
-        params.spatialRel = 'esriSpatialRelWithin'; // Only observations WITHIN the preserve
-        console.log('🎯 Using preserve polygon for spatial filtering');
+        geometryParams.geometry = await this.getPreserveBoundaryPolygon(false);
+        geometryParams.geometryType = 'esriGeometryPolygon';
+        geometryParams.spatialRel = 'esriSpatialRelIntersects';
+        console.log('🎯 Using preserve polygon for spatial filtering with intersects relationship');
+        console.log('🔍 DEBUG: Polygon geometry length:', geometryParams.geometry.length);
       } else {
-        // Use bounding box for expanded search
         const extent = spatialExtent || await this.getPreserveExtent(searchMode);
-        params.geometry = `${extent.xmin},${extent.ymin},${extent.xmax},${extent.ymax}`;
-        params.geometryType = 'esriGeometryEnvelope';
-        params.spatialRel = 'esriSpatialRelIntersects';
+        geometryParams.geometry = `${extent.xmin},${extent.ymin},${extent.xmax},${extent.ymax}`;
+        geometryParams.geometryType = 'esriGeometryEnvelope';
+        geometryParams.spatialRel = 'esriSpatialRelIntersects';
         console.log('📦 Using bounding box for spatial filtering:', extent);
       }
 
       const queryUrl = `${this.baseUrl}/${this.observationsLayerId}/query`;
-      
-      let response: Response;
-      
-      // Use POST request for preserve-only mode to avoid URL length limits
-      if (searchMode === 'preserve-only') {
-        console.log('TNC ArcGIS Query (POST):', queryUrl);
-        console.log('TNC ArcGIS Query Params:', params);
-        
-        // Create form data for POST request
-        const formData = new FormData();
-        Object.entries(params).forEach(([key, value]) => {
-          if (value !== undefined) {
-            formData.append(key, String(value));
+
+      // Debug: Query service info on first run to understand limits
+      if (pageNumber === 1) {
+        await this.getServiceInfo();
+      }
+
+      // Pagination loop
+      while (hasMoreData && allObservations.length < maxResults) {
+        const remainingResults = maxResults - allObservations.length;
+        const currentPageSize = Math.min(pageSize_internal, remainingResults);
+
+        const params: TNCArcGISQueryOptions = {
+          where: whereClause,
+          outFields: 'OBJECTID,observation_id,observation_uuid,scientific_name,common_name,taxon_category_name,observed_on,user_name,taxon_kingdom_name,taxon_phylum_name,taxon_class_name,taxon_order_name,taxon_family_name,taxon_genus_name,taxon_species_name,image_url,image_license',
+          returnGeometry: true,
+          f: 'json',
+          resultRecordCount: currentPageSize,
+          resultOffset: currentOffset,
+          orderByFields: 'OBJECTID DESC',
+          ...geometryParams
+        };
+
+        console.log(`📄 TNC ArcGIS: Fetching page ${pageNumber} (offset: ${currentOffset}, limit: ${currentPageSize})`);
+
+        let response: Response;
+
+        // Use POST for preserve-only mode to avoid URL length limits
+        if (searchMode === 'preserve-only') {
+          const formBody = new URLSearchParams();
+          Object.entries(params).forEach(([key, value]) => {
+            if (value !== undefined) {
+              formBody.append(key, String(value));
+            }
+          });
+
+          if (pageNumber === 1) {
+            console.log('🔍 DEBUG: TNC ArcGIS Query (POST):', queryUrl);
+            console.log('🔍 DEBUG: POST body preview:', formBody.toString().substring(0, 500) + '...');
           }
-        });
-        
-        response = await fetch(queryUrl, {
-          method: 'POST',
-          body: formData
-        });
-      } else {
-        // Use GET request for bounding box queries (shorter URLs)
-        const fullUrl = `${queryUrl}?${new URLSearchParams(params as any)}`;
-        console.log('TNC ArcGIS Query (GET):', fullUrl);
-        console.log('TNC ArcGIS Query Params:', params);
-        
-        response = await fetch(fullUrl);
-      }
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('TNC ArcGIS Error Response:', errorText);
-        throw new Error(`TNC ArcGIS query failed: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      
-      // Debug: Log the actual response structure
-      console.log('TNC ArcGIS Response:', data);
-      console.log('Response keys:', Object.keys(data));
-      
-      // Check if we have features
-      if (!data.features) {
-        console.warn('TNC ArcGIS: No features property in response');
-        return [];
-      }
-      
-      console.log(`TNC ArcGIS: Fetched ${data.features.length} observations`);
-      if (data.exceededTransferLimit) {
-        console.warn('TNC ArcGIS: Transfer limit exceeded, results may be incomplete');
-      }
-
-      // Transform features to our interface
-      return data.features.map((feature: any) => ({
-        ...feature.attributes,
-        // Use OBJECTID as fallback if observation_id is null (for internal use)
-        observation_id: feature.attributes.observation_id || feature.attributes.OBJECTID,
-        // Keep the original UUID for iNaturalist links
-        observation_uuid: feature.attributes.observation_uuid,
-        geometry: {
-          type: 'Point',
-          coordinates: [feature.geometry.x, feature.geometry.y]
+          response = await fetch(queryUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formBody
+          });
+        } else {
+          const fullUrl = `${queryUrl}?${new URLSearchParams(params as any)}`;
+          if (pageNumber === 1) {
+            console.log('🔍 DEBUG: TNC ArcGIS Query (GET):', fullUrl);
+          }
+          response = await fetch(fullUrl);
         }
-      }));
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('TNC ArcGIS Error Response:', errorText);
+          throw new Error(`TNC ArcGIS query failed: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        if (!data.features) {
+          console.warn('TNC ArcGIS: No features property in response');
+          break;
+        }
+
+        const pageObservations = data.features.map((feature: any) => ({
+          ...feature.attributes,
+          observation_id: feature.attributes.observation_id || feature.attributes.OBJECTID,
+          observation_uuid: feature.attributes.observation_uuid,
+          geometry: {
+            type: 'Point',
+            coordinates: [feature.geometry.x, feature.geometry.y]
+          }
+        }));
+
+        allObservations.push(...pageObservations);
+
+        console.log(`📄 TNC ArcGIS: Page ${pageNumber} fetched ${pageObservations.length} observations (total: ${allObservations.length})`);
+
+        // Debug: Log response details
+        console.log('🔍 DEBUG: Response details:', {
+          featuresLength: data.features?.length,
+          exceededTransferLimit: data.exceededTransferLimit,
+          hasMoreData: pageObservations.length === currentPageSize,
+          currentPageSize,
+          pageObservationsLength: pageObservations.length
+        });
+
+        // Report progress
+        if (onProgress) {
+          const percentage = Math.min(100, Math.round((allObservations.length / maxResults) * 100));
+          onProgress(allObservations.length, maxResults, percentage);
+        }
+
+        // Check if we should continue
+        // Continue if we got a full page, regardless of exceededTransferLimit
+        // The service may set exceededTransferLimit even when more pages are available
+        hasMoreData = pageObservations.length === currentPageSize;
+        
+        if (data.exceededTransferLimit) {
+          console.warn('⚠️ TNC ArcGIS: Transfer limit exceeded on page', pageNumber);
+          console.warn('🔍 DEBUG: Service reports transfer limit, but continuing pagination if we got full page');
+        }
+        
+        // Additional debug for pagination logic
+        console.log('🔍 DEBUG: Pagination decision:', {
+          hasMoreData,
+          pageObservationsLength: pageObservations.length,
+          currentPageSize,
+          exceededTransferLimit: data.exceededTransferLimit,
+          willContinue: hasMoreData && allObservations.length < maxResults
+        });
+
+        currentOffset += pageObservations.length;
+        pageNumber++;
+
+        // Safety break to prevent infinite loops
+        if (pageNumber > 50) {
+          console.warn('⚠️ TNC ArcGIS: Reached maximum page limit (50), stopping pagination');
+          break;
+        }
+      }
+
+      console.log(`✅ TNC ArcGIS: Completed pagination. Fetched ${allObservations.length} total observations across ${pageNumber - 1} pages`);
+
+      // Debug: Check if we should query the total count to see how many records are actually available
+      if (allObservations.length >= 1000) {
+        console.log('🔍 DEBUG: Fetched 1000+ records, checking total count available...');
+        try {
+          const totalCount = await this.queryObservationsCount({
+            taxonCategories,
+            startDate,
+            endDate,
+            spatialExtent,
+            useFilters,
+            searchMode
+          });
+          console.log(`🔍 DEBUG: Total records available in service: ${totalCount}`);
+          if (totalCount > allObservations.length) {
+            const missing = totalCount - allObservations.length;
+            console.warn(`⚠️ WARNING: Service has ${totalCount} total records, but we only fetched ${allObservations.length} (missing ${missing})`);
+            
+            // If we're only missing a few records, try one more page with smaller size
+            if (missing <= 100 && pageNumber <= 10) {
+              console.log('🔄 Attempting to fetch remaining records with smaller page size...');
+              // This could be implemented as a final small request
+            }
+          } else {
+            console.log('✅ Successfully fetched all available records');
+          }
+        } catch (error) {
+          console.warn('🔍 DEBUG: Could not query total count:', error);
+        }
+      }
+
+      return allObservations;
 
     } catch (error) {
       console.error('Error querying TNC ArcGIS observations:', error);
@@ -297,6 +516,7 @@ class TNCArcGISService {
 
   /**
    * Query total count for observations with the same filters.
+   * Note: This returns the actual count from the service, which may be higher than our pagination limits.
    */
   async queryObservationsCount(options: {
     taxonCategories?: string[];
@@ -338,15 +558,15 @@ class TNCArcGISService {
       // Apply same spatial filtering logic as main query
       if (searchMode === 'preserve-only') {
         // Use actual preserve polygon for precise filtering
-        (params as any).geometry = await this.getPreserveBoundaryPolygon();
-        (params as any).geometryType = 'esriGeometryPolygon';
-        (params as any).spatialRel = 'esriSpatialRelWithin';
+        params.geometry = await this.getPreserveBoundaryPolygon(false);
+        params.geometryType = 'esriGeometryPolygon';
+        params.spatialRel = 'esriSpatialRelIntersects';
       } else {
         // Use bounding box for expanded search
         const extent = spatialExtent || await this.getPreserveExtent(searchMode);
-        (params as any).geometry = `${extent.xmin},${extent.ymin},${extent.xmax},${extent.ymax}`;
-        (params as any).geometryType = 'esriGeometryEnvelope';
-        (params as any).spatialRel = 'esriSpatialRelIntersects';
+        params.geometry = `${extent.xmin},${extent.ymin},${extent.xmax},${extent.ymax}`;
+        params.geometryType = 'esriGeometryEnvelope';
+        params.spatialRel = 'esriSpatialRelIntersects';
       }
 
       const queryUrl = `${this.baseUrl}/${this.observationsLayerId}/query`;
@@ -355,16 +575,19 @@ class TNCArcGISService {
       
       // Use POST request for preserve-only mode to avoid URL length limits
       if (searchMode === 'preserve-only') {
-        const formData = new FormData();
+        const formBody = new URLSearchParams();
         Object.entries(params).forEach(([key, value]) => {
           if (value !== undefined) {
-            formData.append(key, String(value));
+            formBody.append(key, String(value));
           }
         });
         
         response = await fetch(queryUrl, {
           method: 'POST',
-          body: formData
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: formBody
         });
       } else {
         // Use GET request for bounding box queries
@@ -494,6 +717,34 @@ class TNCArcGISService {
 
     } catch (error) {
       console.error('Error fetching observation details:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Query service information to understand limits and capabilities
+   */
+  async getServiceInfo(): Promise<any> {
+    try {
+      const serviceUrl = `${this.baseUrl}/${this.observationsLayerId}?f=json`;
+      const response = await fetch(serviceUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Service info query failed: ${response.status}`);
+      }
+      
+      const serviceInfo = await response.json();
+      console.log('🔍 DEBUG: ArcGIS Service Info:', {
+        maxRecordCount: serviceInfo.maxRecordCount,
+        standardMaxRecordCount: serviceInfo.standardMaxRecordCount,
+        tileMaxRecordCount: serviceInfo.tileMaxRecordCount,
+        maxRecordCountFactor: serviceInfo.maxRecordCountFactor,
+        capabilities: serviceInfo.capabilities
+      });
+      
+      return serviceInfo;
+    } catch (error) {
+      console.error('Error querying service info:', error);
       return null;
     }
   }

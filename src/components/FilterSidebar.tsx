@@ -49,6 +49,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({ currentDaysBack = 30, onF
     { value: 30, label: 'Last 30 days' },
     { value: 90, label: 'Last 3 months' },
     { value: 365, label: 'Last year' },
+    { value: 1825, label: 'Last 5 years' }, // 365 * 5 = 1825 days
     { value: 'custom', label: 'Custom date range' }
   ];
 
