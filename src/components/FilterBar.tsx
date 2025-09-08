@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ChevronDown, Database, MapPin, Calendar, Search } from 'lucide-react';
 import { FilterState } from '../types';
-import { formatDateRange, formatDateRangeCompact, getTimeRangeOptions } from '../utils/dateUtils';
+import { formatDateRange, formatDateRangeCompact, getTimeRangeOptions, formatDateToUS } from '../utils/dateUtils';
 import { DATA_CATEGORIES, CATEGORY_DATA_SOURCES, SPATIAL_FILTERS } from '../utils/constants';
 
 interface FilterBarProps {
@@ -14,20 +14,17 @@ interface FilterBarProps {
 
 const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch, resultCount, isSearching = false }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [isCustomDateRange, setIsCustomDateRange] = useState(false);
 
   const categoryOptions = DATA_CATEGORIES;
   // Get available sources for the current category
   const sourceOptions = CATEGORY_DATA_SOURCES[filters.category as keyof typeof CATEGORY_DATA_SOURCES] || [];
   const timeRangeOptions = getTimeRangeOptions();
 
-  // Sync isCustomDateRange with filters state
-  useEffect(() => {
-    setIsCustomDateRange(!!(filters.startDate && filters.endDate));
-  }, [filters.startDate, filters.endDate]);
+  // DERIVED STATE: The component is in "custom date range" mode if daysBack is not defined.
+  // This is the single source of truth, derived directly from props.
+  const isCustomDateRange = useMemo(() => filters.daysBack === undefined, [filters.daysBack]);
 
   const handleClearFilters = () => {
-    setIsCustomDateRange(false);
     onFilterChange({
       category: 'Wildlife',
       source: 'iNaturalist (Public API)',
@@ -68,11 +65,14 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch
 
   const handleTimeRangeChange = (daysBack: number | string) => {
     if (daysBack === 'custom') {
-      setIsCustomDateRange(true);
-      // Don't close dropdown for custom range to show date inputs
-      return;
+      // To enter custom mode, we just need to tell the parent that daysBack is undefined.
+      // We don't manage any internal state here.
+      onFilterChange({ 
+        ...filters, 
+        daysBack: undefined 
+      });
+      // We keep the dropdown open so the user can see the date inputs.
     } else {
-      setIsCustomDateRange(false);
       onFilterChange({ 
         ...filters, 
         timeRange: formatDateRangeCompact(daysBack as number),
@@ -84,26 +84,23 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch
     }
   };
 
-  const handleCustomDateChange = (startDate?: string, endDate?: string) => {
-    // Basic validation: ensure end date is not before start date
-    if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
-      return;
-    }
-    
-    if (startDate && endDate) {
-      const customTimeRange = `${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}`;
+  const handleDateInputChange = (field: 'startDate' | 'endDate', value: string) => {
+    const newFilters = {
+      ...filters,
+      daysBack: undefined, // Ensure we stay in custom mode
+      [field]: value,
+    };
+
+    // Update the parent immediately with the partial date change
+    onFilterChange(newFilters);
+
+    // If both dates are now present, update the timeRange display string
+    const { startDate, endDate } = newFilters;
+    if (startDate && endDate && new Date(endDate) >= new Date(startDate)) {
+      const customTimeRange = `${formatDateToUS(new Date(startDate))} - ${formatDateToUS(new Date(endDate))}`;
       onFilterChange({
-        ...filters,
+        ...newFilters,
         timeRange: customTimeRange,
-        daysBack: undefined,
-        startDate,
-        endDate
-      });
-    } else {
-      onFilterChange({
-        ...filters,
-        startDate,
-        endDate
       });
     }
   };
@@ -259,12 +256,12 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch
                     id={`time-range-option-${option.value}-days`}
                     onClick={() => handleTimeRangeChange(option.value)}
                     className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${
-                      filters.daysBack === option.value ? 'bg-blue-50 text-blue-700' : ''
+                      filters.daysBack === option.value && !isCustomDateRange ? 'bg-blue-50 text-blue-700' : ''
                     }`}
                     title={formatDateRange(option.value)}
                   >
-                    <div id={`time-range-option-${option.value}-label`} className="font-medium">{option.label}</div>
-                    <div id={`time-range-option-${option.value}-dates`} className="text-xs text-gray-500 mt-0.5 truncate">
+                    <div id={`time-range-label-${option.value}-days`} className="font-medium">{option.label}</div>
+                    <div id={`time-range-dates-${option.value}-days`} className="text-xs text-gray-500 mt-0.5 truncate">
                       {formatDateRange(option.value)}
                     </div>
                   </button>
@@ -278,8 +275,8 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch
                     isCustomDateRange ? 'bg-blue-50 text-blue-700' : ''
                   }`}
                 >
-                  <div className="font-medium">Custom date range</div>
-                  <div className="text-xs text-gray-500 mt-0.5">Select specific start and end dates</div>
+                  <div id="time-range-label-custom" className="font-medium">Custom date range</div>
+                  <div id="time-range-desc-custom" className="text-xs text-gray-500 mt-0.5">Select specific start and end dates</div>
                 </button>
                 
                 {/* Custom Date Range Inputs */}
@@ -294,7 +291,7 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch
                           id="header-start-date-input"
                           type="date"
                           value={filters.startDate || ''}
-                          onChange={(e) => handleCustomDateChange(e.target.value, filters.endDate)}
+                          onInput={(e) => handleDateInputChange('startDate', e.currentTarget.value)}
                           className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
@@ -306,7 +303,7 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch
                           id="header-end-date-input"
                           type="date"
                           value={filters.endDate || ''}
-                          onChange={(e) => handleCustomDateChange(filters.startDate, e.target.value)}
+                          onInput={(e) => handleDateInputChange('endDate', e.currentTarget.value)}
                           className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
@@ -317,7 +314,7 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch
                             : 'text-red-600 bg-red-50 border-red-200'
                         }`}>
                           {isDateRangeValid() ? (
-                            <>Range: {new Date(filters.startDate).toLocaleDateString()} - {new Date(filters.endDate).toLocaleDateString()}</>
+                            <>Range: {formatDateToUS(new Date(filters.startDate))} - {formatDateToUS(new Date(filters.endDate))}</>
                           ) : (
                             <>⚠️ End date must be after start date</>
                           )}
@@ -327,7 +324,7 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, onFilterChange, onSearch
                         <button
                           id="header-custom-date-cancel"
                           onClick={() => {
-                            setIsCustomDateRange(false);
+                            onFilterChange({ ...filters, daysBack: 30 }); // Revert to default
                             setOpenDropdown(null);
                           }}
                           className="px-3 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50"

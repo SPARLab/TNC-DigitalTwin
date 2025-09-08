@@ -64,6 +64,20 @@ export const formatDateRangeCompact = (daysBack: number): string => {
 };
 
 /**
+ * Format a single date to a US-style MM/DD/YYYY string.
+ * @param date The date to format.
+ * @returns The formatted date string.
+ */
+export const formatDateToUS = (date: Date): string => {
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'UTC' // Ensure consistency regardless of user's timezone
+  });
+};
+
+/**
  * Get time range options for dropdown
  */
 export const getTimeRangeOptions = () => [

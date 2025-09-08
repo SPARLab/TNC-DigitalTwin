@@ -10,7 +10,7 @@ import { mockDatasets, dataLayers as initialDataLayers } from './data/mockData';
 import { iNaturalistObservation } from './services/iNaturalistService';
 import { TNCArcGISObservation } from './services/tncINaturalistService';
 import { CalFloraPlant } from './services/calFloraService';
-import { formatDateRangeCompact, getDateRange, formatDateForAPI } from './utils/dateUtils';
+import { formatDateRangeCompact, getDateRange, formatDateForAPI, formatDateToUS } from './utils/dateUtils';
 import { tncINaturalistService } from './services/tncINaturalistService';
 import { MapViewRef } from './components/MapView';
 
@@ -162,51 +162,26 @@ function App() {
     );
   };
 
-  const handleObservationFilterChange = (observationFilters: {
-    qualityGrade?: 'research' | 'needs_id' | 'casual';
-    iconicTaxa?: string[];
-    daysBack?: number;
-    startDate?: string;
-    endDate?: string;
-  }) => {
-    // Update the main filter state if daysBack changed
-    if (observationFilters.daysBack && observationFilters.daysBack !== filters.daysBack) {
-      setFilters(prev => ({
-        ...prev,
-        timeRange: formatDateRangeCompact(observationFilters.daysBack!),
-        daysBack: observationFilters.daysBack
-      }));
+  const handleObservationFilterChange = (observationFilters: Partial<FilterState>) => {
+    // Merge the new filter changes into the existing filter state
+    const newFilters = { ...filters, ...observationFilters };
+
+    // Handle special logic for time range display
+    if (newFilters.daysBack) {
+      // If a preset day range is selected, clear custom dates and update timeRange string
+      newFilters.startDate = undefined;
+      newFilters.endDate = undefined;
+      newFilters.timeRange = formatDateRangeCompact(newFilters.daysBack);
+    } else if (newFilters.startDate && newFilters.endDate) {
+      // If a custom date range is complete, update the timeRange string
+      const startDate = new Date(newFilters.startDate);
+      const endDate = new Date(newFilters.endDate);
+      newFilters.timeRange = `${formatDateToUS(startDate)} - ${formatDateToUS(endDate)}`;
     }
+    // Note: if only one custom date is set, we don't update the timeRange string yet.
+
+    setFilters(newFilters);
     
-    // Handle custom date range - update timeRange display
-    if (observationFilters.startDate && observationFilters.endDate) {
-      const startDate = new Date(observationFilters.startDate);
-      const endDate = new Date(observationFilters.endDate);
-      const customTimeRange = `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
-      
-      setFilters(prev => ({
-        ...prev,
-        timeRange: customTimeRange,
-        daysBack: undefined // Clear daysBack when using custom dates
-      }));
-    }
-    
-    // Apply category-based iconic taxa filtering if not already specified
-    let iconicTaxa = observationFilters.iconicTaxa;
-    if (!iconicTaxa && filters.source === 'iNaturalist' && filters.category === 'Vegetation') {
-      iconicTaxa = ['Plantae']; // Only show Flora observations for Vegetation category
-    }
-    
-    // Use the current filter's daysBack if not provided in observationFilters and no custom dates
-    const finalFilters = {
-      ...observationFilters,
-      iconicTaxa,
-      daysBack: observationFilters.startDate && observationFilters.endDate 
-        ? undefined 
-        : (observationFilters.daysBack || filters.daysBack || 30)
-    };
-    
-    console.log('Filter change with filters:', finalFilters); // Debug log
     // Note: We don't automatically reload observations here anymore
     // Data will only update when the user clicks the search button
   };
@@ -522,7 +497,7 @@ function App() {
           onCalFloraLoadingChange={setCalFloraLoading}
         />
         <FilterSidebar 
-          currentDaysBack={filters.daysBack}
+          filters={filters}
           onFilterChange={handleObservationFilterChange}
           onDownload={handleDownload}
         />
