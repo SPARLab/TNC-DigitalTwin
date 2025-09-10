@@ -368,27 +368,97 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
 
             const symbol = getPlantSymbol(plant.nativeStatus);
 
-            // Create popup template
-            const popupTemplate = new PopupTemplate({
-              title: plant.commonName || plant.scientificName,
-              content: `
-                <div class="calflora-popup">
-                  <p><strong>Scientific Name:</strong> ${plant.scientificName}</p>
-                  ${plant.family ? `<p><strong>Family:</strong> ${plant.family}</p>` : ''}
-                  <p><strong>Native Status:</strong> <span style="color: ${
-                    plant.nativeStatus === 'native' ? '#22c55e' : 
-                    plant.nativeStatus === 'invasive' ? '#ef4444' : '#6b7280'
-                  }; font-weight: bold;">${plant.nativeStatus}</span></p>
-                  ${plant.calIpcRating ? `<p><strong>Cal-IPC Rating:</strong> <span style="color: #ef4444; font-weight: bold;">${plant.calIpcRating}</span></p>` : ''}
-                  ${plant.county ? `<p><strong>County:</strong> ${plant.county}</p>` : ''}
-                  ${plant.observationDate ? `<p><strong>Observed:</strong> ${new Date(plant.observationDate).toLocaleDateString()}</p>` : ''}
-                  <p><strong>Data Source:</strong> CalFlora</p>
-                  ${plant.nativeStatus === 'invasive' ? 
-                    '<p style="color: #dc2626; font-weight: bold; background: #fef2f2; padding: 4px 8px; border-radius: 4px; margin: 8px 0;">⚠️ Invasive Species - Management Recommended</p>' : 
-                    ''}
+          // Create popup template with photo support
+          const popupTemplate = new PopupTemplate({
+            title: plant.commonName || plant.scientificName,
+            content: () => {
+              const container = document.createElement('div');
+              container.className = 'calflora-popup';
+
+              // Photo section
+              if (plant.attributes?.photo) {
+                const photoWrapper = document.createElement('div');
+                photoWrapper.style.display = 'flex';
+                photoWrapper.style.flexDirection = 'column';
+                photoWrapper.style.alignItems = 'center';
+                photoWrapper.style.marginBottom = '12px';
+
+                const img = document.createElement('img');
+                img.src = plant.attributes.photo;
+                img.alt = plant.commonName || plant.scientificName || 'CalFlora plant photo';
+                img.loading = 'lazy';
+                img.style.maxWidth = '200px';
+                img.style.borderRadius = '6px';
+                img.style.objectFit = 'cover';
+                img.style.margin = '0 0 6px 0';
+                img.onerror = () => { 
+                  img.style.display = 'none';
+                  const noPhoto = document.createElement('div');
+                  noPhoto.textContent = 'Photo unavailable';
+                  noPhoto.style.fontSize = '12px';
+                  noPhoto.style.color = '#6b7280';
+                  noPhoto.style.fontStyle = 'italic';
+                  noPhoto.style.marginBottom = '8px';
+                  photoWrapper.appendChild(noPhoto);
+                };
+
+                const attribution = document.createElement('div');
+                attribution.textContent = 'Photo courtesy of CalFlora.org';
+                attribution.style.fontSize = '11px';
+                attribution.style.color = '#6b7280';
+                attribution.style.fontStyle = 'italic';
+
+                photoWrapper.appendChild(img);
+                photoWrapper.appendChild(attribution);
+                container.appendChild(photoWrapper);
+              } else {
+                const noPhoto = document.createElement('div');
+                noPhoto.textContent = 'No photo available';
+                noPhoto.style.fontSize = '12px';
+                noPhoto.style.color = '#6b7280';
+                noPhoto.style.fontStyle = 'italic';
+                noPhoto.style.marginBottom = '12px';
+                container.appendChild(noPhoto);
+              }
+
+              // Plant details
+              const details = document.createElement('div');
+              details.innerHTML = `
+                <p><strong>Scientific Name:</strong> ${plant.scientificName}</p>
+                ${plant.family ? `<p><strong>Family:</strong> ${plant.family}</p>` : ''}
+                <p><strong>Native Status:</strong> <span style="color: ${
+                  plant.nativeStatus === 'native' ? '#22c55e' : 
+                  plant.nativeStatus === 'invasive' ? '#ef4444' : '#6b7280'
+                }; font-weight: bold;">${plant.nativeStatus}</span></p>
+                ${plant.calIpcRating ? `<p><strong>Cal-IPC Rating:</strong> <span style="color: #ef4444; font-weight: bold;">${plant.calIpcRating}</span></p>` : ''}
+                ${plant.county ? `<p><strong>County:</strong> ${plant.county}</p>` : ''}
+                ${plant.observationDate ? `<p><strong>Observed:</strong> ${new Date(plant.observationDate).toLocaleDateString()}</p>` : ''}
+                ${plant.attributes?.observer ? `<p><strong>Observer:</strong> ${plant.attributes.observer}</p>` : ''}
+                <p><strong>Data Source:</strong> CalFlora</p>
+                ${plant.nativeStatus === 'invasive' ? 
+                  '<p style="color: #dc2626; font-weight: bold; background: #fef2f2; padding: 4px 8px; border-radius: 4px; margin: 8px 0;">⚠️ Invasive Species - Management Recommended</p>' : 
+                  ''}
+                <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                  <button onclick="window.openCalFloraModal && window.openCalFloraModal('${plant.id}')" 
+                          style="background: #22c55e; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 500;">
+                    View Details
+                  </button>
                 </div>
-              `
-            });
+              `;
+              container.appendChild(details);
+
+              // Basic styles for the popup content
+              const style = document.createElement('style');
+              style.textContent = `
+                .calflora-popup { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 280px; }
+                .calflora-popup p { margin: 5px 0; font-size: 13px; }
+                .calflora-popup strong { color: #374151; }
+              `;
+              container.appendChild(style);
+
+              return container;
+            }
+          });
 
             // Create graphic
             const graphic = new Graphic({
@@ -726,11 +796,62 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
 
           const symbol = getPlantSymbol(plant.nativeStatus);
 
-          // Create popup template
+          // Create popup template with photo support
           const popupTemplate = new PopupTemplate({
             title: plant.commonName || plant.scientificName,
-            content: `
-              <div class="calflora-popup">
+            content: () => {
+              const container = document.createElement('div');
+              container.className = 'calflora-popup';
+
+              // Photo section
+              if (plant.attributes?.photo) {
+                const photoWrapper = document.createElement('div');
+                photoWrapper.style.display = 'flex';
+                photoWrapper.style.flexDirection = 'column';
+                photoWrapper.style.alignItems = 'center';
+                photoWrapper.style.marginBottom = '12px';
+
+                const img = document.createElement('img');
+                img.src = plant.attributes.photo;
+                img.alt = plant.commonName || plant.scientificName || 'CalFlora plant photo';
+                img.loading = 'lazy';
+                img.style.maxWidth = '200px';
+                img.style.borderRadius = '6px';
+                img.style.objectFit = 'cover';
+                img.style.margin = '0 0 6px 0';
+                img.onerror = () => { 
+                  img.style.display = 'none';
+                  const noPhoto = document.createElement('div');
+                  noPhoto.textContent = 'Photo unavailable';
+                  noPhoto.style.fontSize = '12px';
+                  noPhoto.style.color = '#6b7280';
+                  noPhoto.style.fontStyle = 'italic';
+                  noPhoto.style.marginBottom = '8px';
+                  photoWrapper.appendChild(noPhoto);
+                };
+
+                const attribution = document.createElement('div');
+                attribution.textContent = 'Photo courtesy of CalFlora.org';
+                attribution.style.fontSize = '11px';
+                attribution.style.color = '#6b7280';
+                attribution.style.fontStyle = 'italic';
+
+                photoWrapper.appendChild(img);
+                photoWrapper.appendChild(attribution);
+                container.appendChild(photoWrapper);
+              } else {
+                const noPhoto = document.createElement('div');
+                noPhoto.textContent = 'No photo available';
+                noPhoto.style.fontSize = '12px';
+                noPhoto.style.color = '#6b7280';
+                noPhoto.style.fontStyle = 'italic';
+                noPhoto.style.marginBottom = '12px';
+                container.appendChild(noPhoto);
+              }
+
+              // Plant details
+              const details = document.createElement('div');
+              details.innerHTML = `
                 <p><strong>Scientific Name:</strong> ${plant.scientificName}</p>
                 ${plant.family ? `<p><strong>Family:</strong> ${plant.family}</p>` : ''}
                 <p><strong>Native Status:</strong> <span style="color: ${
@@ -740,12 +861,31 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                 ${plant.calIpcRating ? `<p><strong>Cal-IPC Rating:</strong> <span style="color: #ef4444; font-weight: bold;">${plant.calIpcRating}</span></p>` : ''}
                 ${plant.county ? `<p><strong>County:</strong> ${plant.county}</p>` : ''}
                 ${plant.observationDate ? `<p><strong>Observed:</strong> ${new Date(plant.observationDate).toLocaleDateString()}</p>` : ''}
+                ${plant.attributes?.observer ? `<p><strong>Observer:</strong> ${plant.attributes.observer}</p>` : ''}
                 <p><strong>Data Source:</strong> CalFlora</p>
                 ${plant.nativeStatus === 'invasive' ? 
                   '<p style="color: #dc2626; font-weight: bold; background: #fef2f2; padding: 4px 8px; border-radius: 4px; margin: 8px 0;">⚠️ Invasive Species - Management Recommended</p>' : 
                   ''}
-              </div>
-            `
+                <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                  <button onclick="window.openCalFloraModal && window.openCalFloraModal('${plant.id}')" 
+                          style="background: #22c55e; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 500;">
+                    View Details
+                  </button>
+                </div>
+              `;
+              container.appendChild(details);
+
+              // Basic styles for the popup content
+              const style = document.createElement('style');
+              style.textContent = `
+                .calflora-popup { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 280px; }
+                .calflora-popup p { margin: 5px 0; font-size: 13px; }
+                .calflora-popup strong { color: #374151; }
+              `;
+              container.appendChild(style);
+
+              return container;
+            }
           });
 
           // Create graphic

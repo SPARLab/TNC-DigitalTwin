@@ -28,6 +28,7 @@ interface DataViewProps {
   calFloraLoading: boolean;
   onCalFloraExportCSV?: () => void;
   onCalFloraExportGeoJSON?: () => void;
+  onCalFloraPlantSelect?: (plant: CalFloraPlant) => void;
   // Common props
   lastSearchedDaysBack?: number;
   startDate?: string;
@@ -50,6 +51,7 @@ const DataView: React.FC<DataViewProps> = ({
   calFloraLoading,
   onCalFloraExportCSV,
   onCalFloraExportGeoJSON,
+  onCalFloraPlantSelect,
   lastSearchedDaysBack,
   startDate,
   endDate
@@ -96,6 +98,7 @@ const DataView: React.FC<DataViewProps> = ({
             loading={calFloraLoading}
             onExportCSV={onCalFloraExportCSV}
             onExportGeoJSON={onCalFloraExportGeoJSON}
+            onPlantSelect={onCalFloraPlantSelect}
           />
         );
         

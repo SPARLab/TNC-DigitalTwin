@@ -1,10 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Header from './components/Header';
 import FilterSubheader from './components/FilterSubheader';
 import DataView from './components/DataView';
 import FilterSidebar from './components/FilterSidebar';
 import MapView from './components/MapView';
 import Footer from './components/Footer';
+import CalFloraPlantModal from './components/CalFloraPlantModal';
 import { FilterState } from './types';
 import { mockDatasets, dataLayers as initialDataLayers } from './data/mockData';
 import { iNaturalistObservation } from './services/iNaturalistService';
@@ -51,6 +52,33 @@ function App() {
   const [tncPage, setTncPage] = useState<number>(1);
   const [tncPageSize, setTncPageSize] = useState<number>(250);
   const mapViewRef = useRef<MapViewRef>(null);
+
+  // CalFlora modal state
+  const [selectedCalFloraPlant, setSelectedCalFloraPlant] = useState<CalFloraPlant | null>(null);
+  const [isCalFloraModalOpen, setIsCalFloraModalOpen] = useState(false);
+
+  // CalFlora modal handlers
+  const openCalFloraModal = (plantId: string) => {
+    const plant = calFloraPlants.find(p => p.id === plantId);
+    if (plant) {
+      setSelectedCalFloraPlant(plant);
+      setIsCalFloraModalOpen(true);
+    }
+  };
+
+  const closeCalFloraModal = () => {
+    setIsCalFloraModalOpen(false);
+    setSelectedCalFloraPlant(null);
+  };
+
+  // Set up global function for popup buttons to access
+  useEffect(() => {
+    (window as any).openCalFloraModal = openCalFloraModal;
+    
+    return () => {
+      delete (window as any).openCalFloraModal;
+    };
+  }, [calFloraPlants]);
 
   const handleFilterChange = (newFilters: FilterState) => {
     setFilters(newFilters);
@@ -477,6 +505,10 @@ function App() {
           calFloraLoading={calFloraLoading}
           onCalFloraExportCSV={handleCalFloraExportCSV}
           onCalFloraExportGeoJSON={handleCalFloraExportGeoJSON}
+          onCalFloraPlantSelect={(plant) => {
+            setSelectedCalFloraPlant(plant);
+            setIsCalFloraModalOpen(true);
+          }}
           lastSearchedDaysBack={lastSearchedDaysBack}
           startDate={filters.startDate}
           endDate={filters.endDate}
@@ -503,6 +535,13 @@ function App() {
         />
       </div>
       <Footer />
+      
+      {/* CalFlora Plant Modal */}
+      <CalFloraPlantModal
+        plant={selectedCalFloraPlant}
+        isOpen={isCalFloraModalOpen}
+        onClose={closeCalFloraModal}
+      />
     </div>
   );
 }

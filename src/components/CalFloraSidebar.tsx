@@ -8,13 +8,15 @@ interface CalFloraSidebarProps {
   isLoading?: boolean;
   onExportCSV?: () => void;
   onExportGeoJSON?: () => void;
+  onPlantSelect?: (plant: CalFloraPlant) => void;
 }
 
 const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
   plants,
   isLoading = false,
   onExportCSV,
-  onExportGeoJSON
+  onExportGeoJSON,
+  onPlantSelect
 }) => {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['Native Plants', 'Invasive Plants']));
   const [viewMode, setViewMode] = useState<'recent' | 'grouped'>('recent');
@@ -200,7 +202,20 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
             </div>
             <div className="space-y-3">
               {topPlants.map((plant, index) => (
-                <div key={plant.id} id={`recent-plant-${plant.id}`} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
+                <div 
+                  key={plant.id} 
+                  id={`recent-plant-${plant.id}`} 
+                  className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() => onPlantSelect?.(plant)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onPlantSelect?.(plant);
+                    }
+                  }}
+                >
                   <div className="flex gap-3">
                     {/* Plant Image */}
                     <div className="flex-shrink-0">
@@ -325,7 +340,20 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
                         </div>
                         <div className="divide-y divide-gray-100">
                           {subcategory.plants.slice(0, 10).map((plant) => (
-                            <div key={plant.id} id={`plant-${plant.id}`} className="p-3 hover:bg-gray-50 transition-colors">
+                            <div 
+                              key={plant.id} 
+                              id={`plant-${plant.id}`} 
+                              className="p-3 hover:bg-gray-50 transition-colors cursor-pointer"
+                              onClick={() => onPlantSelect?.(plants.find(p => p.id === plant.id)!)}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  onPlantSelect?.(plants.find(p => p.id === plant.id)!);
+                                }
+                              }}
+                            >
                               <div className="flex items-start gap-3">
                                 {/* Small thumbnail for grouped view */}
                                 {plant.photoUrl && (
