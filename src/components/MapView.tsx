@@ -667,8 +667,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       console.log('Loading CalFlora plant data...');
       const response = await calFloraAPI.getAllPlants({ 
         maxResults, 
-        plantType,
-        countyFilter: 'Santa Barbara' // Try Santa Barbara County first since Dangermond is there
+        plantType
+        // No county filter - get all plants from Dangermond dataset
       });
       allPlants.push(...response.results);
 

@@ -62,6 +62,7 @@ export interface CalFloraGroup {
       county: string | null;
       observationDate: string | null;
       dataSource: string;
+      photoUrl?: string | null;
     }>;
   }[];
 }

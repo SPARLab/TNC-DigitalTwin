@@ -15,7 +15,7 @@ export interface CalFloraPlant {
   elevation: number | null;
   observationDate: string | null;
   lastUpdated: string;
-  dataSource: 'calflora-invasive' | 'calflora-native' | 'calflora-vegetation';
+  dataSource: 'calflora-invasive' | 'calflora-native' | 'calflora-vegetation' | 'calflora-dangermond';
   attributes: Record<string, any>; // Store additional ArcGIS attributes
 }
 
@@ -26,12 +26,13 @@ export interface CalFloraResponse {
 }
 
 class CalFloraService {
-  private readonly invasivePlantsUrl = 'https://services2.arcgis.com/Uq9r85Potqm3MfRV/arcgis/rest/services/biosds763_fmu/FeatureServer/0';
-  private readonly nativePlantsUrl = 'https://services3.arcgis.com/21H3muniXm83m5hZ/ArcGIS/rest/services/Native_Plant_Richness_WFL1/FeatureServer/0';
-  private readonly vegetationUrl = 'https://services1.arcgis.com/X1hcdGx5Fxqn4d0j/arcgis/rest/services/Vegetation/FeatureServer/0';
+  private readonly dangermondCalFloraUrl = 'https://dangermondpreserve-spatial.com/server/rest/services/Hosted/CalFlora_Dangermond_Observations_Clean/FeatureServer/0';
+  private readonly tokenUrl = 'https://dangermondpreserve-spatial.com/server/rest/generateToken';
   
   private lastRequestTime = 0;
   private readonly minRequestInterval = 500; // 0.5 second between requests (conservative rate limiting)
+  private token: string | null = null;
+  private tokenExpiry: number = 0;
   
   // Dangermond Preserve bounding box
   private readonly dangermondBounds = {
@@ -58,9 +59,76 @@ class CalFloraService {
   }
 
   /**
-   * Fetch invasive plant data from CalFlora's ArcGIS service
+   * Generate authentication token for ArcGIS Server
+   * Note: This assumes the service allows anonymous token generation
+   * You may need to provide credentials if required
    */
-  async getInvasivePlants(options: {
+  private async getAuthToken(): Promise<string> {
+    // Check if we have a valid token
+    if (this.token && Date.now() < this.tokenExpiry) {
+      return this.token;
+    }
+
+    console.log('🔐 Generating new CalFlora authentication token...');
+
+    try {
+      const params = new URLSearchParams({
+        f: 'json',
+        client: 'requestip',
+        expiration: '60' // Token valid for 60 minutes
+        // Note: If your server requires authentication, you'll need to add:
+        // username: 'your_username',
+        // password: 'your_password',
+      });
+
+      const response = await fetch(this.tokenUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: params
+      });
+
+      if (!response.ok) {
+        throw new Error(`Token generation failed: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(`Token generation error: ${data.error.message}`);
+      }
+
+      if (!data.token) {
+        throw new Error('No token returned from server');
+      }
+
+      this.token = data.token;
+      // Set expiry to 5 minutes before actual expiry for safety
+      this.tokenExpiry = Date.now() + ((data.expires || 3600) - 300) * 1000;
+      
+      console.log('✅ CalFlora authentication token generated successfully');
+      return this.token;
+
+    } catch (error) {
+      console.error('❌ Failed to generate CalFlora authentication token:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      // Provide helpful guidance based on common issues
+      if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
+        throw new Error(`Authentication failed: Server requires valid credentials. Please add username/password to the token generation.`);
+      } else if (errorMessage.includes('403') || errorMessage.includes('Forbidden')) {
+        throw new Error(`Authentication failed: Access denied. Check if the service allows token generation.`);
+      } else {
+        throw new Error(`Authentication failed: ${errorMessage}`);
+      }
+    }
+  }
+
+  /**
+   * Fetch CalFlora plant observations from Dangermond Preserve feature layer
+   */
+  async getPlantObservations(options: {
     maxResults?: number;
     boundingBox?: {
       swlat: number;
@@ -69,20 +137,23 @@ class CalFloraService {
       nelng: number;
     };
     countyFilter?: string;
+    plantFilter?: string;
   } = {}): Promise<CalFloraResponse> {
     const {
       maxResults = 1000,
       boundingBox = this.dangermondBounds,
-      countyFilter
+      countyFilter,
+      plantFilter
     } = options;
 
     await this.waitForRateLimit();
 
-    // Build WHERE clause - try county filter first, then spatial if that fails
+    // Build WHERE clause with available filters - default to get all plants
     let whereClause = '1=1';
-    if (countyFilter) {
-      whereClause = `County = '${countyFilter}'`;
+    if (plantFilter) {
+      whereClause = `plant LIKE '%${plantFilter}%'`;
     }
+    // Note: Removed county filter to get all plants by default
     
     const params = new URLSearchParams({
       where: whereClause,
@@ -91,21 +162,16 @@ class CalFloraService {
       outSR: '4326', // Request WGS84 coordinates
       resultRecordCount: maxResults.toString(),
       f: 'json'
+      // Try without token first - it's your own hosted data
     });
 
-    // Only add spatial filter if no county filter and we want to try spatial
-    if (!countyFilter) {
-      // Try broader California extent first
-      const californiaExtent = '-124.4096,32.5343,-114.1308,42.0095';
-      params.append('geometry', californiaExtent);
-      params.append('geometryType', 'esriGeometryEnvelope');
-      params.append('spatialRel', 'esriSpatialRelIntersects');
-    }
+    // No spatial filtering needed - get all plants from the Dangermond dataset
 
-    const apiUrl = `${this.invasivePlantsUrl}/query?${params}`;
-    console.log('CalFlora Invasive Plants API URL:', apiUrl);
+    const apiUrl = `${this.dangermondCalFloraUrl}/query?${params}`;
+    console.log('CalFlora Dangermond Preserve API URL:', apiUrl);
 
     try {
+      console.log('🌱 Trying to access CalFlora data without authentication...');
       const response = await fetch(apiUrl);
       
       if (!response.ok) {
@@ -115,121 +181,132 @@ class CalFloraService {
       const data = await response.json();
       
       if (data.error) {
+        // If we get a token error, provide helpful guidance
+        if (data.error.message && data.error.message.includes('Token')) {
+          throw new Error(`🔒 Your CalFlora feature service requires authentication. 
+
+To fix this:
+1. Log into ArcGIS Server Manager at: https://dangermondpreserve-spatial.com/server/manager
+2. Navigate to: Services → Hosted → CalFlora_Dangermond_Observations_Clean
+3. Edit the service → Security settings
+4. Change from "Private" to "Public" or add "Everyone" to allowed roles
+5. Save and restart the service
+
+This will make your own CalFlora data publicly accessible without authentication.`);
+        }
         throw new Error(`CalFlora API error: ${data.error.message}`);
       }
 
-      console.log(`📊 CalFlora Invasive Plants: ${data.features?.length || 0} records fetched`);
+      console.log(`📊 CalFlora Dangermond Preserve: ${data.features?.length || 0} records fetched`);
       
-      // Filter by Dangermond area if we got broader results
-      let filteredFeatures = data.features || [];
-      if (!countyFilter && filteredFeatures.length > 0) {
-        filteredFeatures = filteredFeatures.filter((feature: any) => {
-          const lat = feature.attributes?.Latitude;
-          const lng = feature.attributes?.Longitude;
-          if (lat && lng) {
-            return lat >= boundingBox.swlat && lat <= boundingBox.nelat &&
-                   lng >= boundingBox.swlng && lng <= boundingBox.nelng;
-          }
-          return false;
-        });
-        console.log(`🎯 Filtered to Dangermond area: ${filteredFeatures.length} records`);
-      }
+      // Use all features from the Dangermond dataset (no additional filtering needed)
+      const filteredFeatures = data.features || [];
       
       return {
         total_results: filteredFeatures.length,
-        results: filteredFeatures.map((feature: any) => this.transformInvasivePlant(feature)),
-        dataSource: 'CalFlora Invasive Plants'
+        results: filteredFeatures.map((feature: any) => this.transformDangermondPlant(feature)),
+        dataSource: 'CalFlora Dangermond Preserve'
       };
     } catch (error) {
-      console.error('Error fetching CalFlora invasive plants:', error);
+      console.error('Error fetching CalFlora Dangermond plants:', error);
       throw error;
     }
   }
 
   /**
-   * Get all CalFlora plant data (currently only invasive plants)
-   * Note: Native plant service provides richness data, not individual observations
+   * Get all CalFlora plant data from Dangermond Preserve
    */
   async getAllPlants(options: {
     maxResults?: number;
     plantType?: 'invasive' | 'native' | 'all';
     countyFilter?: string;
+    plantFilter?: string;
   } = {}): Promise<CalFloraResponse> {
-    const { maxResults = 1000, plantType = 'invasive', countyFilter } = options;
+    const { maxResults = 1000, countyFilter, plantFilter } = options;
     
-    // For now, only invasive plants are available as individual observations
-    // The "native plants" service is actually richness data, not individual plants
-    if (plantType === 'invasive' || plantType === 'all') {
-      return await this.getInvasivePlants({ 
-        maxResults, 
-        countyFilter,
-        boundingBox: this.dangermondBounds 
-      });
-    }
-    
-    // Return empty result for native plants since we don't have individual observations
-    return {
-      total_results: 0,
-      results: [],
-      dataSource: 'CalFlora Plants'
-    };
+    return await this.getPlantObservations({ 
+      maxResults, 
+      countyFilter,
+      plantFilter,
+      boundingBox: this.dangermondBounds 
+    });
   }
 
   /**
-   * Transform ArcGIS invasive plant feature to our interface
+   * Transform Dangermond CalFlora feature to our interface
    */
-  private transformInvasivePlant(feature: any): CalFloraPlant {
+  private transformDangermondPlant(feature: any): CalFloraPlant {
     const attrs = feature.attributes || {};
     const geom = feature.geometry;
     
-    // Handle different geometry types - use lat/lng from attributes if geometry not available
+    // Handle geometry - should be Point geometry from the feature layer
     let coordinates: [number, number];
     if (geom?.x !== undefined && geom?.y !== undefined) {
       coordinates = [geom.x, geom.y];
-    } else if (attrs.Longitude && attrs.Latitude) {
-      coordinates = [attrs.Longitude, attrs.Latitude];
     } else {
       coordinates = [0, 0];
     }
     
-    // Convert observation date from timestamp to ISO string
+    // Parse plant name to extract scientific and common names
+    const plantName = attrs.plant || 'Unknown';
+    let scientificName = plantName;
+    let commonName = null;
+    
+    // Try to parse if format is "Scientific Name (Common Name)" or similar
+    const nameMatch = plantName.match(/^([^(]+?)(?:\s*\(([^)]+)\))?$/);
+    if (nameMatch) {
+      scientificName = nameMatch[1].trim();
+      commonName = nameMatch[2] ? nameMatch[2].trim() : null;
+    }
+    
+    // Convert date string to ISO format if available
     let observationDate = null;
-    if (attrs.Obs_Date) {
+    if (attrs.date_) {
       try {
-        observationDate = new Date(attrs.Obs_Date).toISOString().split('T')[0];
+        // Handle various date formats
+        const date = new Date(attrs.date_);
+        if (!isNaN(date.getTime())) {
+          observationDate = date.toISOString().split('T')[0];
+        }
       } catch (e) {
         observationDate = null;
       }
     }
     
+    // Determine native status - this would need to be enhanced based on your data
+    // For now, we'll set it as unknown since the field schema doesn't specify
+    const nativeStatus = 'unknown';
+    
     return {
-      id: `calflora-invasive-${attrs.OBJECTID || attrs.ID || Math.random()}`,
-      scientificName: attrs.SName || 'Unknown', // SName = Scientific Name
-      commonName: attrs.CName || null, // CName = Common Name
-      family: null, // Not available in this dataset
-      nativeStatus: 'invasive',
-      calIpcRating: null, // Not available in this dataset
+      id: `calflora-dangermond-${attrs.objectid || attrs.fid || attrs.id || Math.random()}`,
+      scientificName: scientificName,
+      commonName: commonName,
+      family: null, // Not available in current schema
+      nativeStatus: nativeStatus as 'native' | 'non-native' | 'invasive' | 'unknown',
+      calIpcRating: null, // Not available in current schema
       location: coordinates,
       geojson: {
         type: 'Point',
         coordinates: coordinates
       },
-      county: attrs.County || null,
-      quad: null, // Not available in this dataset
-      elevation: null, // Not available in this dataset
+      county: attrs.county || null,
+      quad: null, // Not available in current schema
+      elevation: attrs.elevation ? parseFloat(attrs.elevation) : null,
       observationDate: observationDate,
       lastUpdated: new Date().toISOString(),
-      dataSource: 'calflora-invasive',
+      dataSource: 'calflora-dangermond',
       attributes: {
         ...attrs,
-        source: attrs.Source,
-        phenology: attrs.Phenology,
-        infestationArea: attrs.InfestAre,
-        percentCover: attrs.Pct_Cover,
-        distribution: attrs.Dist,
-        owner: attrs.Owner,
-        locationQuality: attrs.Loc_Qal,
-        recordQuality: attrs.Rec_Qal
+        // Map the new field names for easy access
+        associatedSpecies: attrs.associated_species,
+        citation: attrs.citation,
+        habitat: attrs.habitat,
+        locationDescription: attrs.location_description,
+        locationQuality: attrs.location_quality,
+        notes: attrs.notes,
+        observer: attrs.observer,
+        photo: attrs.photo,
+        source: attrs.source
       }
     };
   }
@@ -240,9 +317,9 @@ class CalFloraService {
    */
   getPlantCategories(): Array<{ value: string; label: string; icon: string }> {
     return [
+      { value: 'all', label: 'All Plants', icon: '🌱' },
       { value: 'invasive', label: 'Invasive Plants', icon: '🚨' },
-      { value: 'native', label: 'Native Plants', icon: '🌿' },
-      { value: 'all', label: 'All Plants', icon: '🌱' }
+      { value: 'native', label: 'Native Plants', icon: '🌿' }
     ];
   }
 

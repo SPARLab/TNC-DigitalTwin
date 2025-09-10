@@ -17,13 +17,27 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
   onExportGeoJSON
 }) => {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['Native Plants', 'Invasive Plants']));
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [viewMode, setViewMode] = useState<'recent' | 'grouped'>('recent');
 
-  // Group plants by native status
+  // Get top 10 most recent plants for display
+  const topPlants = useMemo(() => {
+    return plants
+      .sort((a, b) => {
+        // Sort by observation date (most recent first), then by ID
+        const dateA = a.observationDate ? new Date(a.observationDate).getTime() : 0;
+        const dateB = b.observationDate ? new Date(b.observationDate).getTime() : 0;
+        if (dateA !== dateB) return dateB - dateA;
+        return b.id.localeCompare(a.id);
+      })
+      .slice(0, 10);
+  }, [plants]);
+
+  // Group plants by native status for the full view
   const groupedPlants = useMemo((): CalFloraGroup[] => {
     const groups: { [key: string]: CalFloraPlant[] } = {
       'Native Plants': [],
-      'Invasive Plants': []
+      'Invasive Plants': [],
+      'Unknown Status': []
     };
 
     plants.forEach(plant => {
@@ -31,6 +45,8 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
         groups['Native Plants'].push(plant);
       } else if (plant.nativeStatus === 'invasive') {
         groups['Invasive Plants'].push(plant);
+      } else {
+        groups['Unknown Status'].push(plant);
       }
     });
 
@@ -59,7 +75,8 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
           calIpcRating: plant.calIpcRating,
           county: plant.county,
           observationDate: plant.observationDate,
-          dataSource: plant.dataSource
+          dataSource: plant.dataSource,
+          photoUrl: plant.attributes?.photo || null
         }))
       }));
 
@@ -123,22 +140,22 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
           </h2>
           <div className="flex gap-1">
             <button
-              id="list-view-btn"
-              onClick={() => setViewMode('list')}
+              id="recent-view-btn"
+              onClick={() => setViewMode('recent')}
               className={`px-2 py-1 text-xs rounded ${
-                viewMode === 'list' ? 'bg-green-100 text-green-700' : 'text-gray-500 hover:text-gray-700'
+                viewMode === 'recent' ? 'bg-green-100 text-green-700' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              List
+              Recent
             </button>
             <button
-              id="grid-view-btn"
-              onClick={() => setViewMode('grid')}
+              id="grouped-view-btn"
+              onClick={() => setViewMode('grouped')}
               className={`px-2 py-1 text-xs rounded ${
-                viewMode === 'grid' ? 'bg-green-100 text-green-700' : 'text-gray-500 hover:text-gray-700'
+                viewMode === 'grouped' ? 'bg-green-100 text-green-700' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              Grid
+              Grouped
             </button>
           </div>
         </div>
@@ -175,6 +192,104 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
             <p>No plant data available</p>
             <p className="text-xs mt-1">Try adjusting your search filters</p>
           </div>
+        ) : viewMode === 'recent' ? (
+          <div id="recent-plants" className="p-4">
+            <div className="mb-3">
+              <h3 className="text-sm font-medium text-gray-700 mb-1">Recent Observations</h3>
+              <p className="text-xs text-gray-500">Showing top {Math.min(topPlants.length, 10)} most recent plant records</p>
+            </div>
+            <div className="space-y-3">
+              {topPlants.map((plant, index) => (
+                <div key={plant.id} id={`recent-plant-${plant.id}`} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
+                  <div className="flex gap-3">
+                    {/* Plant Image */}
+                    <div className="flex-shrink-0">
+                      {plant.attributes?.photo ? (
+                        <img
+                          src={plant.attributes.photo}
+                          alt={plant.commonName || plant.scientificName}
+                          className="w-16 h-16 rounded-lg object-cover bg-gray-100"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const placeholder = target.nextElementSibling as HTMLElement;
+                            if (placeholder) placeholder.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className={`w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center ${
+                          plant.attributes?.photo ? 'hidden' : 'flex'
+                        }`}
+                      >
+                        <Leaf className="w-6 h-6 text-gray-400" />
+                      </div>
+                    </div>
+                    
+                    {/* Plant Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm text-gray-900 truncate">
+                            {plant.commonName || plant.scientificName}
+                          </h4>
+                          {plant.commonName && (
+                            <p className="text-xs text-gray-600 italic mt-0.5 truncate">
+                              {plant.scientificName}
+                            </p>
+                          )}
+                        </div>
+                        <div className={`ml-2 px-2 py-1 text-xs rounded-full ${getNativeStatusColor(plant.nativeStatus)}`}>
+                          {plant.nativeStatus}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                        {plant.county && (
+                          <div className="flex items-center gap-1">
+                            <MapPin className="w-3 h-3" />
+                            <span>{plant.county}</span>
+                          </div>
+                        )}
+                        {plant.observationDate && (
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            <span>{new Date(plant.observationDate).toLocaleDateString()}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {plant.attributes?.observer && (
+                        <div className="mt-1 text-xs text-gray-500">
+                          Observer: {plant.attributes.observer}
+                        </div>
+                      )}
+
+                      {plant.attributes?.habitat && (
+                        <div className="mt-1 text-xs text-gray-600 truncate">
+                          Habitat: {plant.attributes.habitat}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {plants.length > 10 && (
+              <div className="mt-4 p-3 bg-gray-50 rounded-lg text-center">
+                <p className="text-xs text-gray-600">
+                  Showing 10 of {plants.length} total records
+                </p>
+                <button
+                  onClick={() => setViewMode('grouped')}
+                  className="mt-1 text-xs text-green-600 hover:text-green-700 font-medium"
+                >
+                  View all grouped by category →
+                </button>
+              </div>
+            )}
+          </div>
         ) : (
           <div id="plant-groups" className="p-4 space-y-4">
             {groupedPlants.map((group) => (
@@ -187,7 +302,8 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
                     {getNativeStatusIcon(group.category === 'Native Plants' ? 'native' : 'invasive')}
                     <span className="font-medium text-gray-900">{group.category}</span>
                     <span className={`px-2 py-0.5 text-xs rounded-full ${
-                      group.category === 'Native Plants' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      group.category === 'Native Plants' ? 'bg-green-100 text-green-700' : 
+                      group.category === 'Invasive Plants' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
                     }`}>
                       {group.count}
                     </span>
@@ -208,18 +324,37 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
                           <span className="text-xs text-gray-500">{subcategory.count} species</span>
                         </div>
                         <div className="divide-y divide-gray-100">
-                          {subcategory.plants.slice(0, viewMode === 'grid' ? 6 : 10).map((plant) => (
+                          {subcategory.plants.slice(0, 10).map((plant) => (
                             <div key={plant.id} id={`plant-${plant.id}`} className="p-3 hover:bg-gray-50 transition-colors">
-                              <div className="flex items-start justify-between">
+                              <div className="flex items-start gap-3">
+                                {/* Small thumbnail for grouped view */}
+                                {plant.photoUrl && (
+                                  <img
+                                    src={plant.photoUrl}
+                                    alt={plant.commonName || plant.scientificName}
+                                    className="w-10 h-10 rounded object-cover bg-gray-100 flex-shrink-0"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).style.display = 'none';
+                                    }}
+                                  />
+                                )}
+                                
                                 <div className="flex-1 min-w-0">
-                                  <h4 className="font-medium text-sm text-gray-900 truncate">
-                                    {plant.commonName || plant.scientificName}
-                                  </h4>
-                                  {plant.commonName && (
-                                    <p className="text-xs text-gray-600 italic mt-0.5 truncate">
-                                      {plant.scientificName}
-                                    </p>
-                                  )}
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1 min-w-0">
+                                      <h4 className="font-medium text-sm text-gray-900 truncate">
+                                        {plant.commonName || plant.scientificName}
+                                      </h4>
+                                      {plant.commonName && (
+                                        <p className="text-xs text-gray-600 italic mt-0.5 truncate">
+                                          {plant.scientificName}
+                                        </p>
+                                      )}
+                                    </div>
+                                    <div className={`ml-2 px-2 py-1 text-xs rounded-full ${getNativeStatusColor(plant.nativeStatus)}`}>
+                                      {plant.nativeStatus}
+                                    </div>
+                                  </div>
                                   
                                   <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
                                     {plant.county && (
@@ -235,28 +370,15 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
                                       </div>
                                     )}
                                   </div>
-
-                                  {plant.calIpcRating && (
-                                    <div className="mt-2">
-                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded">
-                                        <AlertTriangle className="w-3 h-3" />
-                                        Cal-IPC: {plant.calIpcRating}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-                                
-                                <div className={`ml-2 px-2 py-1 text-xs rounded-full ${getNativeStatusColor(plant.nativeStatus)}`}>
-                                  {plant.nativeStatus}
                                 </div>
                               </div>
                             </div>
                           ))}
                           
-                          {subcategory.plants.length > (viewMode === 'grid' ? 6 : 10) && (
+                          {subcategory.plants.length > 10 && (
                             <div className="p-2 text-center">
                               <span className="text-xs text-gray-500">
-                                +{subcategory.plants.length - (viewMode === 'grid' ? 6 : 10)} more species
+                                +{subcategory.plants.length - 10} more species
                               </span>
                             </div>
                           )}
