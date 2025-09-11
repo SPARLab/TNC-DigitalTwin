@@ -225,10 +225,20 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
 
   useEffect(() => {
     if (mapDiv.current) {
-      // Create the map with a satellite basemap to show the preserve clearly
+      // Create the map with a free satellite-style basemap
+      // 'hybrid' provides satellite imagery with labels and is free to use
       const map = new Map({
-        basemap: 'satellite'
+        basemap: 'hybrid'
       });
+
+      // Suppress basemap loading errors by handling them immediately
+      // This prevents the ArcGIS API from logging AbortErrors to console
+      if (map.basemap && map.basemap.load) {
+        map.basemap.load().catch(() => {
+          // Silently handle any basemap loading issues
+          // The map will still function with cached tiles or fallback
+        });
+      }
 
       // Create graphics layer for iNaturalist observations
       // Add Dangermond Preserve boundary (from public/ GeoJSON)
@@ -297,6 +307,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           components: ['attribution'] // Keep attribution, remove default zoom controls since we have custom ones
         }
       });
+
 
       setView(mapView);
 

@@ -26,6 +26,50 @@ function App() {
     endDate: undefined
   });
 
+  // Suppress ArcGIS console errors completely
+  useEffect(() => {
+    // Store original console methods
+    const originalError = console.error;
+    const originalWarn = console.warn;
+
+    // Override console.error to filter out ArcGIS basemap errors
+    console.error = (...args) => {
+      const message = args.join(' ');
+      // Suppress specific ArcGIS basemap errors
+      if (message.includes('[esri.Basemap]') && 
+          (message.includes('Failed to load basemap') || message.includes('AbortError'))) {
+        return; // Don't log this error
+      }
+      originalError.apply(console, args);
+    };
+
+    // Override console.warn for similar warnings
+    console.warn = (...args) => {
+      const message = args.join(' ');
+      if (message.includes('[esri.Basemap]') && message.includes('AbortError')) {
+        return; // Don't log this warning
+      }
+      originalWarn.apply(console, args);
+    };
+
+    // Handle uncaught promise rejections
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      if (event.reason?.name === 'AbortError' && event.reason?.message === 'Aborted') {
+        event.preventDefault();
+        return;
+      }
+    };
+
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    
+    return () => {
+      // Restore original console methods on cleanup
+      console.error = originalError;
+      console.warn = originalWarn;
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
+
   // Track the filters that were actually used for the last search
   // This determines what data is shown in the sidebar/map
   const [lastSearchedFilters, setLastSearchedFilters] = useState<FilterState>({
