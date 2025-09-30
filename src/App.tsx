@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Header from './components/Header';
 import FilterSubheader from './components/FilterSubheader';
 import DataView from './components/DataView';
@@ -7,7 +7,7 @@ import MapView from './components/MapView';
 import Footer from './components/Footer';
 import CalFloraPlantModal from './components/CalFloraPlantModal';
 import { FilterState } from './types';
-import { mockDatasets, dataLayers as initialDataLayers } from './data/mockData';
+import { dataLayers as initialDataLayers } from './data/mockData';
 import { iNaturalistObservation } from './services/iNaturalistService';
 import { TNCArcGISObservation } from './services/tncINaturalistService';
 import { CalFloraPlant } from './services/calFloraService';
@@ -23,7 +23,8 @@ function App() {
     timeRange: formatDateRangeCompact(30),
     daysBack: 30,
     startDate: undefined,
-    endDate: undefined
+    endDate: undefined,
+    iconicTaxa: []
   });
 
   // Suppress ArcGIS console errors completely
@@ -79,10 +80,11 @@ function App() {
     timeRange: formatDateRangeCompact(30),
     daysBack: 30,
     startDate: undefined,
-    endDate: undefined
+    endDate: undefined,
+    iconicTaxa: []
   });
 
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  // const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [dataLayers, setDataLayers] = useState(initialDataLayers);
   const [observations, setObservations] = useState<iNaturalistObservation[]>([]);
   const [tncObservations, setTncObservations] = useState<TNCArcGISObservation[]>([]);
@@ -92,9 +94,9 @@ function App() {
   const [tncObservationsLoading, setTncObservationsLoading] = useState(false);
   const [calFloraLoading, setCalFloraLoading] = useState(false);
   const [lastSearchedDaysBack, setLastSearchedDaysBack] = useState<number>(30); // Track the last searched time range
-  const [tncTotalCount, setTncTotalCount] = useState<number>(0);
-  const [tncPage, setTncPage] = useState<number>(1);
-  const [tncPageSize, setTncPageSize] = useState<number>(250);
+  const [, setTncTotalCount] = useState<number>(0);
+  const [tncPage] = useState<number>(1);
+  const [tncPageSize] = useState<number>(250);
   const mapViewRef = useRef<MapViewRef>(null);
 
   // CalFlora modal state
@@ -160,7 +162,7 @@ function App() {
       }
 
       // Map spatial filter to search mode
-      const searchMode = filters.spatialFilter === 'Dangermond Preserve' ? 'preserve-only' : 'expanded';
+      const searchMode: 'preserve-only' | 'expanded' = filters.spatialFilter === 'Dangermond Preserve' ? 'preserve-only' : 'expanded';
       const showSearchArea = filters.spatialFilter === 'Dangermond + Margin';
 
       const tncSearchFilters = {
@@ -505,14 +507,14 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
-  // Filter datasets based on current filters
-  const filteredDatasets = mockDatasets.filter(dataset => {
-    if (filters.category !== 'Wildlife' && dataset.category !== filters.category) {
-      return false;
-    }
-    // Add more filtering logic here as needed
-    return true;
-  });
+  // Filter datasets based on current filters (currently unused but may be needed later)
+  // const filteredDatasets = mockDatasets.filter(dataset => {
+  //   if (filters.category !== 'Wildlife' && dataset.category !== filters.category) {
+  //     return false;
+  //   }
+  //   // Add more filtering logic here as needed
+  //   return true;
+  // });
 
   return (
     <div id="app" className="h-screen bg-gray-50 flex flex-col">

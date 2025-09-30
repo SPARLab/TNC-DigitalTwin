@@ -1,14 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 import { Download, Filter, Calendar } from 'lucide-react';
 import { formatDateToUS } from '../utils/dateUtils';
-
-interface FilterState {
-  qualityGrade?: 'research' | 'needs_id' | 'casual';
-  iconicTaxa: string[];
-  daysBack?: number;
-  startDate?: string;
-  endDate?: string;
-}
+import { FilterState } from '../types';
 
 interface FilterSidebarProps {
   filters: FilterState;
@@ -91,13 +84,14 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     // We need a default state to reset to. 
     // The parent should be responsible for this, but for now we can define a sensible default.
     onFilterChange({
+      ...filters, // Keep existing properties
       qualityGrade: undefined,
       iconicTaxa: [],
       daysBack: 30, // Default to 30 days
       startDate: undefined,
       endDate: undefined
     });
-  }, [onFilterChange]);
+  }, [onFilterChange, filters]);
 
   // Note: Taxa visibility toggle removed as it wasn't being used
 

@@ -54,12 +54,12 @@ class iNaturalistService {
   private readonly dangermondPlaceId = 136122; // "Jack and Laura Dangermond Preserve"
   
   // Fallback bounding box coordinates (kept for reference)
-  private readonly dangermondBounds = {
-    swlat: 34.4,    // Southwest latitude
-    swlng: -120.45, // Southwest longitude  
-    nelat: 34.55,   // Northeast latitude
-    nelng: -120.0   // Northeast longitude
-  };
+  // private readonly dangermondBounds = {
+  //   swlat: 34.4,    // Southwest latitude
+  //   swlng: -120.45, // Southwest longitude  
+  //   nelat: 34.55,   // Northeast latitude
+  //   nelng: -120.0   // Northeast longitude
+  // };
 
   /**
    * Fetch recent observations from the Dangermond Preserve using place-based filtering

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Calendar, User, ExternalLink, MapPin, Layers, Info, Download } from 'lucide-react';
+import { Calendar, User, ExternalLink, MapPin, Info, Download } from 'lucide-react';
 import { TNCArcGISObservation } from '../../services/tncINaturalistService';
 import LoadingSpinner from '../LoadingSpinner';
 import ThumbnailImage from '../ThumbnailImage';

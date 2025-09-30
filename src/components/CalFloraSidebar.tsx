@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronDown, ChevronRight, Leaf, AlertTriangle, MapPin, Calendar, Building } from 'lucide-react';
+import { ChevronDown, ChevronRight, Leaf, AlertTriangle, MapPin, Calendar } from 'lucide-react';
 import { CalFloraPlant } from '../services/calFloraService';
 import { CalFloraGroup } from '../types';
 
@@ -201,7 +201,7 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
               <p className="text-xs text-gray-500">Showing top {Math.min(topPlants.length, 10)} most recent plant records</p>
             </div>
             <div className="space-y-3">
-              {topPlants.map((plant, index) => (
+              {topPlants.map((plant) => (
                 <div 
                   key={plant.id} 
                   id={`recent-plant-${plant.id}`} 

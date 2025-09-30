@@ -16,6 +16,8 @@ export interface FilterState {
   daysBack?: number; // Number of days back from current date
   startDate?: string; // Custom start date (YYYY-MM-DD)
   endDate?: string; // Custom end date (YYYY-MM-DD)
+  qualityGrade?: 'research' | 'needs_id' | 'casual';
+  iconicTaxa?: string[];
 }
 
 export interface DataLayer {

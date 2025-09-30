@@ -27,12 +27,12 @@ export interface CalFloraResponse {
 
 class CalFloraService {
   private readonly dangermondCalFloraUrl = 'https://dangermondpreserve-spatial.com/server/rest/services/Hosted/CalFlora_Dangermond_Observations_Clean/FeatureServer/0';
-  private readonly tokenUrl = 'https://dangermondpreserve-spatial.com/server/rest/generateToken';
+  // private readonly tokenUrl = 'https://dangermondpreserve-spatial.com/server/rest/generateToken';
   
   private lastRequestTime = 0;
   private readonly minRequestInterval = 500; // 0.5 second between requests (conservative rate limiting)
-  private token: string | null = null;
-  private tokenExpiry: number = 0;
+  // private token: string | null = null;
+  // private tokenExpiry: number = 0;
   
   // Dangermond Preserve bounding box
   private readonly dangermondBounds = {
@@ -63,7 +63,9 @@ class CalFloraService {
    * Note: This assumes the service allows anonymous token generation
    * You may need to provide credentials if required
    */
-  private async getAuthToken(): Promise<string> {
+  /*
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private async _getAuthToken(): Promise<string> {
     // Check if we have a valid token
     if (this.token && Date.now() < this.tokenExpiry) {
       return this.token;
@@ -108,7 +110,7 @@ class CalFloraService {
       this.tokenExpiry = Date.now() + ((data.expires || 3600) - 300) * 1000;
       
       console.log('✅ CalFlora authentication token generated successfully');
-      return this.token;
+      return this.token || '';
 
     } catch (error) {
       console.error('❌ Failed to generate CalFlora authentication token:', error);
@@ -124,6 +126,7 @@ class CalFloraService {
       }
     }
   }
+  */
 
   /**
    * Fetch CalFlora plant observations from Dangermond Preserve feature layer
@@ -141,8 +144,8 @@ class CalFloraService {
   } = {}): Promise<CalFloraResponse> {
     const {
       maxResults = 1000,
-      boundingBox = this.dangermondBounds,
-      countyFilter,
+      // boundingBox = this.dangermondBounds,
+      // countyFilter,
       plantFilter
     } = options;
 

@@ -66,17 +66,17 @@ export interface TNCArcGISQueryOptions {
 class TNCArcGISService {
   private readonly baseUrl = 'https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/iNat_PreUC_View/FeatureServer';
   private readonly observationsLayerId = 0; // Individual observations layer
-  private readonly hexbinLayers = [1, 2, 3, 4, 5, 6]; // H3 hexbin layers by resolution
+  // private readonly hexbinLayers = [1, 2, 3, 4, 5, 6]; // H3 hexbin layers by resolution
   
   // Preserve boundary service for spatial filtering
-  private readonly preserveBoundaryUrl = 'https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_boundary/FeatureServer/2';
+  // private readonly preserveBoundaryUrl = 'https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_boundary/FeatureServer/2';
   
   // Context layers
-  private readonly contextLayers = {
-    federalLands: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Federal_Lands/FeatureServer/0',
-    ecoregions: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/Resolve_Ecoregions/FeatureServer/0',
-    conservationEasements: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/nced_DO_NOT_DELETE_240308_view/FeatureServer/0'
-  };
+  // private readonly contextLayers = {
+  //   federalLands: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Federal_Lands/FeatureServer/0',
+  //   ecoregions: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/Resolve_Ecoregions/FeatureServer/0',
+  //   conservationEasements: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/nced_DO_NOT_DELETE_240308_view/FeatureServer/0'
+  // };
 
   // Taxon category colors matching the original viewer
   private readonly taxonColors = {
@@ -93,7 +93,7 @@ class TNCArcGISService {
     "Reptilia": "#ff9896"        // Light Red (Reptiles)
   };
 
-  private preserveExtent: { xmin: number; ymin: number; xmax: number; ymax: number } | null = null;
+  // private preserveExtent: { xmin: number; ymin: number; xmax: number; ymax: number } | null = null;
 
   /**
    * Get the Dangermond Preserve boundary extent for spatial filtering
@@ -258,8 +258,8 @@ class TNCArcGISService {
         console.log('🔍 DEBUG: Polygon closed?', isClosed, 'First:', firstPoint, 'Last:', lastPoint);
         
         // Calculate rough bounds for verification
-        const lons = arcgisPolygon.rings[0].map(p => p[0]);
-        const lats = arcgisPolygon.rings[0].map(p => p[1]);
+        const lons = arcgisPolygon.rings[0].map((p: number[]) => p[0]);
+        const lats = arcgisPolygon.rings[0].map((p: number[]) => p[1]);
         const bounds = {
           minLon: Math.min(...lons),
           maxLon: Math.max(...lons),
@@ -303,8 +303,8 @@ class TNCArcGISService {
       spatialExtent,
       maxResults = 10000, // Increase default to allow for more comprehensive datasets
       useFilters = true,
-      page,
-      pageSize,
+      // page,
+      // pageSize,
       searchMode = 'expanded',
       onProgress
     } = options;
@@ -631,8 +631,8 @@ class TNCArcGISService {
 
     const {
       taxonCategories = [],
-      startDate,
-      endDate,
+      // startDate,
+      // endDate,
       spatialExtent
     } = options;
 
