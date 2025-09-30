@@ -293,7 +293,8 @@ class TNCArcGISService {
     useFilters?: boolean; // Enable/disable filtering
     page?: number;
     pageSize?: number;
-    searchMode?: 'preserve-only' | 'expanded'; // Search area mode
+    searchMode?: 'preserve-only' | 'expanded' | 'custom'; // Search area mode
+    customPolygon?: string; // Custom polygon geometry as JSON string
     onProgress?: (current: number, total: number, percentage: number) => void; // Progress callback
   } = {}): Promise<TNCArcGISObservation[]> {
     const {
@@ -306,6 +307,7 @@ class TNCArcGISService {
       // page,
       // pageSize,
       searchMode = 'expanded',
+      customPolygon,
       onProgress
     } = options;
 
@@ -333,7 +335,13 @@ class TNCArcGISService {
 
       // Apply spatial filtering
       let geometryParams: any = {};
-      if (searchMode === 'preserve-only') {
+      if (searchMode === 'custom' && customPolygon) {
+        // Use custom drawn polygon
+        geometryParams.geometry = customPolygon;
+        geometryParams.geometryType = 'esriGeometryPolygon';
+        geometryParams.spatialRel = 'esriSpatialRelIntersects';
+        console.log('🎨 Using custom drawn polygon for spatial filtering');
+      } else if (searchMode === 'preserve-only') {
         geometryParams.geometry = await this.getPreserveBoundaryPolygon(false);
         geometryParams.geometryType = 'esriGeometryPolygon';
         geometryParams.spatialRel = 'esriSpatialRelIntersects';
@@ -524,7 +532,8 @@ class TNCArcGISService {
     endDate?: string;
     spatialExtent?: { xmin: number; ymin: number; xmax: number; ymax: number };
     useFilters?: boolean;
-    searchMode?: 'preserve-only' | 'expanded';
+    searchMode?: 'preserve-only' | 'expanded' | 'custom';
+    customPolygon?: string;
   } = {}): Promise<number> {
     const {
       taxonCategories = [],
@@ -532,7 +541,8 @@ class TNCArcGISService {
       endDate,
       spatialExtent,
       useFilters = true,
-      searchMode = 'expanded'
+      searchMode = 'expanded',
+      customPolygon
     } = options;
 
     try {
@@ -556,7 +566,12 @@ class TNCArcGISService {
       };
 
       // Apply same spatial filtering logic as main query
-      if (searchMode === 'preserve-only') {
+      if (searchMode === 'custom' && customPolygon) {
+        // Use custom drawn polygon
+        params.geometry = customPolygon;
+        params.geometryType = 'esriGeometryPolygon';
+        params.spatialRel = 'esriSpatialRelIntersects';
+      } else if (searchMode === 'preserve-only') {
         // Use actual preserve polygon for precise filtering
         params.geometry = await this.getPreserveBoundaryPolygon(false);
         params.geometryType = 'esriGeometryPolygon';
@@ -573,8 +588,8 @@ class TNCArcGISService {
       
       let response: Response;
       
-      // Use POST request for preserve-only mode to avoid URL length limits
-      if (searchMode === 'preserve-only') {
+      // Use POST request for preserve-only or custom mode to avoid URL length limits
+      if (searchMode === 'preserve-only' || searchMode === 'custom') {
         const formBody = new URLSearchParams();
         Object.entries(params).forEach(([key, value]) => {
           if (value !== undefined) {

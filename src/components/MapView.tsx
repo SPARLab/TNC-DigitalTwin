@@ -41,6 +41,7 @@ export interface MapViewRef {
     daysBack?: number;
     startDate?: string;
     endDate?: string;
+    customPolygon?: string;
   }) => void;
   reloadTNCObservations: (filters?: {
     taxonCategories?: string[];
@@ -50,8 +51,9 @@ export interface MapViewRef {
     useFilters?: boolean;
     page?: number;
     pageSize?: number;
-    searchMode?: 'preserve-only' | 'expanded';
+    searchMode?: 'preserve-only' | 'expanded' | 'custom';
     showSearchArea?: boolean;
+    customPolygon?: string;
   }) => void;
   reloadCalFloraData: (filters?: {
     maxResults?: number;
@@ -805,6 +807,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     daysBack?: number;
     startDate?: string;
     endDate?: string;
+    customPolygon?: string;
   }) => {
     setLoading(true);
     onLoadingChange?.(true);
@@ -856,13 +859,44 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       });
       
       setObservations(response.results);
-      onObservationsUpdate?.(response.results);
       
       // Clear existing graphics
       observationsLayer.removeAll();
       
+      // Filter by custom polygon if provided (client-side filtering for iNaturalist Public API)
+      let filteredResults = response.results;
+      if (filters?.customPolygon) {
+        try {
+          const polygonGeometry = JSON.parse(filters.customPolygon);
+          const polygon = new Polygon({
+            rings: polygonGeometry.rings,
+            spatialReference: polygonGeometry.spatialReference
+          });
+          
+          filteredResults = response.results.filter(obs => {
+            if (obs.geojson && obs.geojson.coordinates) {
+              const point = new Point({
+                longitude: obs.geojson.coordinates[0],
+                latitude: obs.geojson.coordinates[1],
+                spatialReference: { wkid: 4326 }
+              });
+              return polygon.contains(point);
+            }
+            return false;
+          });
+          
+          console.log(`🎯 Filtered ${response.results.length} observations to ${filteredResults.length} within custom polygon`);
+        } catch (error) {
+          console.error('Error filtering by custom polygon:', error);
+          filteredResults = response.results;
+        }
+      }
+      
+      // Update parent with filtered results
+      onObservationsUpdate?.(filteredResults);
+      
       // Add observations to map
-      response.results.forEach(obs => {
+      filteredResults.forEach(obs => {
         if (obs.geojson && obs.geojson.coordinates) {
           const [longitude, latitude] = obs.geojson.coordinates;
           
@@ -1174,8 +1208,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     useFilters?: boolean;
     page?: number;
     pageSize?: number;
-    searchMode?: 'preserve-only' | 'expanded';
+    searchMode?: 'preserve-only' | 'expanded' | 'custom';
     showSearchArea?: boolean;
+    customPolygon?: string;
   }) => {
     onTNCLoadingChange?.(true);
     try {
@@ -1244,7 +1279,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         useFilters: filters?.useFilters !== undefined ? filters.useFilters : true,
         page: filters?.page,
         pageSize: filters?.pageSize,
-        searchMode: filters?.searchMode || 'expanded'
+        searchMode: filters?.searchMode || 'expanded',
+        customPolygon: filters?.customPolygon
       });
       
       onTNCObservationsUpdate?.(response);

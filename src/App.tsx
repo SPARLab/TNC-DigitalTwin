@@ -191,8 +191,20 @@ function App() {
       }
 
       // Map spatial filter to search mode
-      const searchMode: 'preserve-only' | 'expanded' = filters.spatialFilter === 'Dangermond Preserve' ? 'preserve-only' : 'expanded';
+      let searchMode: 'preserve-only' | 'expanded' | 'custom' = filters.spatialFilter === 'Dangermond Preserve' ? 'preserve-only' : 'expanded';
       const showSearchArea = filters.spatialFilter === 'Dangermond + Margin';
+      
+      // If custom polygon exists, use it
+      let customPolygonGeometry: string | undefined = undefined;
+      if (filters.customPolygon && filters.spatialFilter === 'Draw Area') {
+        searchMode = 'custom';
+        // Convert polygon to ArcGIS geometry format (JSON string)
+        customPolygonGeometry = JSON.stringify({
+          rings: filters.customPolygon.rings,
+          spatialReference: filters.customPolygon.spatialReference
+        });
+        console.log('🎯 Using custom drawn polygon for spatial filtering');
+      }
 
       const tncSearchFilters = {
         startDate,
@@ -204,6 +216,7 @@ function App() {
         pageSize: tncPageSize, // Keep page size at 250 for reasonable loading
         searchMode,
         showSearchArea,
+        customPolygon: customPolygonGeometry,
         onProgress: (current: number, total: number, percentage: number) => {
           console.log(`📊 TNC Progress: ${current}/${total} observations (${percentage}%)`);
           // Could add UI progress indicator here in the future
@@ -221,7 +234,8 @@ function App() {
           endDate,
           taxonCategories,
           useFilters: true,
-          searchMode
+          searchMode,
+          customPolygon: customPolygonGeometry
         })
         .then(setTncTotalCount)
         .catch((e) => {
@@ -239,12 +253,23 @@ function App() {
       }
       // For Wildlife category, don't filter by iconic taxa to show all animals
       
+      // Check for custom polygon (client-side filtering for iNaturalist Public API)
+      let customPolygonGeometry: string | undefined = undefined;
+      if (filters.customPolygon && filters.spatialFilter === 'Draw Area') {
+        customPolygonGeometry = JSON.stringify({
+          rings: filters.customPolygon.rings,
+          spatialReference: filters.customPolygon.spatialReference
+        });
+        console.log('🎯 Will apply client-side polygon filtering for iNaturalist Public API');
+      }
+      
       const searchFilters = {
         daysBack: filters.startDate && filters.endDate ? undefined : (filters.daysBack || 30),
         startDate: filters.startDate,
         endDate: filters.endDate,
         qualityGrade: undefined as 'research' | 'needs_id' | 'casual' | undefined,
-        iconicTaxa
+        iconicTaxa,
+        customPolygon: customPolygonGeometry
       };
       
       // Update the last searched time range when search is performed
