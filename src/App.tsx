@@ -98,6 +98,7 @@ function App() {
   const [tncPage] = useState<number>(1);
   const [tncPageSize] = useState<number>(250);
   const mapViewRef = useRef<MapViewRef>(null);
+  const [isDrawMode, setIsDrawMode] = useState(false);
 
   // CalFlora modal state
   const [selectedCalFloraPlant, setSelectedCalFloraPlant] = useState<CalFloraPlant | null>(null);
@@ -128,6 +129,34 @@ function App() {
 
   const handleFilterChange = (newFilters: FilterState) => {
     setFilters(newFilters);
+    
+    // If user selects "Draw Area" spatial filter, activate draw mode
+    if (newFilters.spatialFilter === 'Draw Area' && filters.spatialFilter !== 'Draw Area') {
+      // Small delay to ensure dropdown closes first
+      setTimeout(() => {
+        mapViewRef.current?.activateDrawMode();
+      }, 100);
+    }
+  };
+
+  const handlePolygonDrawn = (polygon: __esri.Polygon) => {
+    // Store polygon in filters for search
+    const polygonData = {
+      rings: polygon.rings,
+      spatialReference: { wkid: polygon.spatialReference.wkid || 4326 }
+    };
+    setFilters(prev => ({ ...prev, customPolygon: polygonData }));
+    console.log('Polygon stored in filters:', polygonData);
+  };
+
+  const handlePolygonCleared = () => {
+    setIsDrawMode(false);
+    // Clear polygon from filters and reset to default spatial filter
+    setFilters(prev => ({ 
+      ...prev, 
+      customPolygon: undefined,
+      spatialFilter: 'Dangermond + Margin' 
+    }));
   };
 
   const handleSearch = () => {
@@ -573,6 +602,10 @@ function App() {
           calFloraPlants={filters.source === 'CalFlora' ? calFloraPlants : []}
           onCalFloraUpdate={setCalFloraPlants}
           onCalFloraLoadingChange={setCalFloraLoading}
+          isDrawMode={isDrawMode}
+          onDrawModeChange={setIsDrawMode}
+          onPolygonDrawn={handlePolygonDrawn}
+          onPolygonCleared={handlePolygonCleared}
         />
         <FilterSidebar 
           filters={filters}

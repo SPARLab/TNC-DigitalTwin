@@ -28,6 +28,10 @@ interface MapViewProps {
   calFloraPlants?: CalFloraPlant[];
   onCalFloraUpdate?: (plants: CalFloraPlant[]) => void;
   onCalFloraLoadingChange?: (loading: boolean) => void;
+  isDrawMode?: boolean;
+  onDrawModeChange?: (isDrawMode: boolean) => void;
+  onPolygonDrawn?: (polygon: __esri.Polygon) => void;
+  onPolygonCleared?: () => void;
 }
 
 export interface MapViewRef {
@@ -53,6 +57,8 @@ export interface MapViewRef {
     maxResults?: number;
     plantType?: 'invasive' | 'native' | 'all';
   }) => void;
+  activateDrawMode: () => void;
+  clearPolygon: () => void;
 }
 
 const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({ 
@@ -67,12 +73,20 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   onTNCObservationSelect,
   calFloraPlants = [],
   onCalFloraUpdate,
-  onCalFloraLoadingChange
+  onCalFloraLoadingChange,
+  isDrawMode = false,
+  onDrawModeChange,
+  onPolygonDrawn,
+  onPolygonCleared
 }, ref) => {
   const mapDiv = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<MapView | null>(null);
   const [observations, setObservations] = useState<iNaturalistObservation[]>([]);
   const [loading, setLoading] = useState(false);
+  const [drawnPolygon, setDrawnPolygon] = useState<__esri.Polygon | null>(null);
+  const drawingPointsRef = useRef<number[][]>([]);
+  const clickHandlerRef = useRef<__esri.Handle | null>(null);
+  const pointerMoveHandlerRef = useRef<__esri.Handle | null>(null);
   // CalFlora state is managed by parent component via props
 
   // Helper to build TNC popup content with photo carousel and attribution
@@ -322,6 +336,204 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       };
     }
   }, []);
+
+  // Set up draw layer for polygon drawing
+  useEffect(() => {
+    if (!view) return;
+    
+    view.when(() => {
+      const map = view.map;
+      
+      // Create or get the draw layer
+      let drawLayer = map?.findLayerById('draw-polygon-layer') as GraphicsLayer;
+      if (!drawLayer) {
+        drawLayer = new GraphicsLayer({
+          id: 'draw-polygon-layer',
+          title: 'Custom Draw Area',
+          listMode: 'hide' // Hide from layer list
+        });
+        map?.add(drawLayer);
+      }
+      
+      console.log('✅ Draw layer initialized successfully');
+    }).catch((error) => {
+      console.error('Error initializing draw layer:', error);
+    });
+  }, [view]);
+
+  // Add keyboard listener for Delete key
+  useEffect(() => {
+    if (!drawnPolygon) return;
+    
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        event.preventDefault();
+        clearPolygon();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [drawnPolygon, view, onPolygonCleared, onDrawModeChange]);
+
+  // Function to activate draw mode with manual click handling
+  const activateDrawMode = () => {
+    if (!view) {
+      console.warn('View not available');
+      return;
+    }
+    
+    // Clear any existing polygon and points
+    const drawLayer = view.map?.findLayerById('draw-polygon-layer') as GraphicsLayer;
+    if (drawLayer) {
+      drawLayer.removeAll();
+    }
+    setDrawnPolygon(null);
+    drawingPointsRef.current = [];
+    
+    // Remove any existing handlers
+    if (clickHandlerRef.current) {
+      clickHandlerRef.current.remove();
+    }
+    if (pointerMoveHandlerRef.current) {
+      pointerMoveHandlerRef.current.remove();
+    }
+    
+    // Add pointer-move handler for live preview
+    pointerMoveHandlerRef.current = view.on('pointer-move', (event) => {
+      // Only show preview if we have at least one point
+      if (drawingPointsRef.current.length === 0) return;
+      
+      const point = view.toMap({ x: event.x, y: event.y });
+      if (!point) return;
+      
+      const currentPoint = [point.longitude, point.latitude];
+      const previewPoints = [...drawingPointsRef.current, currentPoint];
+      
+      // Create preview polygon
+      let rings: number[][][];
+      if (previewPoints.length >= 2) {
+        // Close the ring by adding the first point at the end
+        rings = [[...previewPoints, previewPoints[0]]];
+      } else {
+        // Just one point, can't make a polygon yet
+        return;
+      }
+      
+      const polygon = new Polygon({
+        rings: rings,
+        spatialReference: { wkid: 4326 }
+      });
+      
+      const symbol = new SimpleFillSymbol({
+        color: [51, 136, 255, 0.15],
+        outline: {
+          color: [51, 136, 255, 1],
+          width: 2,
+          style: 'dash'
+        }
+      });
+      
+      const graphic = new Graphic({
+        geometry: polygon,
+        symbol: symbol
+      });
+      
+      if (drawLayer) {
+        drawLayer.removeAll();
+        drawLayer.add(graphic);
+      }
+    });
+    
+    // Add click handler for drawing
+    clickHandlerRef.current = view.on('click', (event) => {
+      event.stopPropagation();
+      
+      const point = [event.mapPoint.longitude, event.mapPoint.latitude];
+      drawingPointsRef.current.push(point);
+      
+      console.log(`Point ${drawingPointsRef.current.length} added`);
+    });
+    
+    // Add double-click handler to finish drawing
+    const dblClickHandler = view.on('double-click', (event) => {
+      event.stopPropagation();
+      
+      if (drawingPointsRef.current.length >= 3) {
+        const polygon = new Polygon({
+          rings: [[...drawingPointsRef.current, drawingPointsRef.current[0]]], // Close the ring
+          spatialReference: { wkid: 4326 }
+        });
+        
+        // Create final graphic with solid style
+        const symbol = new SimpleFillSymbol({
+          color: [51, 136, 255, 0.2],
+          outline: {
+            color: [51, 136, 255, 1],
+            width: 2
+          }
+        });
+        
+        const graphic = new Graphic({
+          geometry: polygon,
+          symbol: symbol
+        });
+        
+        if (drawLayer) {
+          drawLayer.removeAll();
+          drawLayer.add(graphic);
+        }
+        
+        setDrawnPolygon(polygon);
+        onPolygonDrawn?.(polygon);
+        
+        // Remove handlers
+        if (clickHandlerRef.current) {
+          clickHandlerRef.current.remove();
+          clickHandlerRef.current = null;
+        }
+        if (pointerMoveHandlerRef.current) {
+          pointerMoveHandlerRef.current.remove();
+          pointerMoveHandlerRef.current = null;
+        }
+        dblClickHandler.remove();
+        
+        onDrawModeChange?.(false);
+        console.log('✅ Polygon completed with', drawingPointsRef.current.length, 'points');
+      }
+    });
+    
+    onDrawModeChange?.(true);
+    console.log('✏️ Draw mode activated - Click to add points, double-click to finish');
+  };
+
+  // Function to clear the drawn polygon
+  const clearPolygon = () => {
+    if (view) {
+      const drawLayer = view.map?.findLayerById('draw-polygon-layer') as GraphicsLayer;
+      if (drawLayer) {
+        drawLayer.removeAll();
+      }
+      
+      // Remove any active handlers
+      if (clickHandlerRef.current) {
+        clickHandlerRef.current.remove();
+        clickHandlerRef.current = null;
+      }
+      if (pointerMoveHandlerRef.current) {
+        pointerMoveHandlerRef.current.remove();
+        pointerMoveHandlerRef.current = null;
+      }
+      
+      drawingPointsRef.current = [];
+      setDrawnPolygon(null);
+      onPolygonCleared?.();
+      onDrawModeChange?.(false);
+      console.log('🗑️ Polygon cleared');
+    }
+  };
 
   // Effect to handle CalFlora data when provided via props
   useEffect(() => {
@@ -1122,7 +1334,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   useImperativeHandle(ref, () => ({
     reloadObservations,
     reloadTNCObservations,
-    reloadCalFloraData
+    reloadCalFloraData,
+    activateDrawMode,
+    clearPolygon
   }));
 
   const getObservationIcon = (obs: iNaturalistObservation) => {
@@ -1241,6 +1455,35 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           <span className="text-gray-600 text-sm">⛶</span>
         </button>
       </div>
+
+      {/* Drawn Polygon Indicator & Clear Button */}
+      {drawnPolygon && (
+        <div id="polygon-indicator" className="absolute bottom-16 left-4 bg-white rounded-lg shadow-md p-3 z-10 flex items-center space-x-3">
+          <div id="polygon-status" className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+            <span className="text-sm text-gray-700 font-medium">Custom area drawn</span>
+          </div>
+          <button
+            id="clear-polygon-btn"
+            onClick={clearPolygon}
+            className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded transition-colors flex items-center space-x-1"
+            title="Clear drawn area (or press Delete)"
+          >
+            <span>✕</span>
+            <span>Clear</span>
+          </button>
+        </div>
+      )}
+
+      {/* Draw Mode Active Indicator */}
+      {isDrawMode && (
+        <div id="draw-mode-indicator" className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white rounded-lg shadow-lg p-3 z-20">
+          <div className="flex items-center space-x-2">
+            <div className="animate-pulse">✏️</div>
+            <span className="text-sm font-medium">Click on map to draw polygon. Double-click to finish.</span>
+          </div>
+        </div>
+      )}
 
       {/* Data Layers Panel */}
       <DataLayersPanel 
