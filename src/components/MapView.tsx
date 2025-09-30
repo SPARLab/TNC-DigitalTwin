@@ -311,11 +311,11 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       map.add(calFloraLayer);
 
       // Create the map view centered on Dangermond Preserve
-      // Coordinates: approximately 34.45°N, -120.2°W
+      // Coordinates: approximately 34.47°N, -120.47°W (Point Conception area)
       const mapView = new MapView({
         container: mapDiv.current,
         map: map,
-        center: [-120.2, 34.45], // Longitude, Latitude for Dangermond Preserve
+        center: [-120.47, 34.47], // Longitude, Latitude for Dangermond Preserve
         zoom: 12, // Good zoom level to see the preserve area
         ui: {
           components: ['attribution'] // Keep attribution, remove default zoom controls since we have custom ones
