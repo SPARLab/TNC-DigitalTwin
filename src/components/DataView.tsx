@@ -3,11 +3,13 @@ import { FilterState } from '../types';
 import { iNaturalistObservation } from '../services/iNaturalistService';
 import { TNCArcGISObservation } from '../services/tncINaturalistService';
 import { CalFloraPlant } from '../services/calFloraService';
+import { TNCArcGISItem } from '../services/tncArcGISService';
 
 // Import specific data view components
 import WildlifeINaturalistView from './dataviews/WildlifeINaturalistView';
 import WildlifeTNCINaturalistView from './dataviews/WildlifeTNCINaturalistView';
 import VegetationCalFloraView from './dataviews/VegetationCalFloraView';
+import TNCArcGISView from './dataviews/TNCArcGISView';
 
 interface DataViewProps {
   filters: FilterState;
@@ -29,6 +31,20 @@ interface DataViewProps {
   onCalFloraExportCSV?: () => void;
   onCalFloraExportGeoJSON?: () => void;
   onCalFloraPlantSelect?: (plant: CalFloraPlant) => void;
+  // TNC ArcGIS Hub data
+  tncArcGISItems: TNCArcGISItem[];
+  tncArcGISLoading: boolean;
+  onTNCArcGISExportCSV?: () => void;
+  onTNCArcGISExportGeoJSON?: () => void;
+  onTNCArcGISItemSelect?: (item: TNCArcGISItem) => void;
+  // Map layer management for TNC ArcGIS
+  activeLayerIds?: string[];
+  onLayerToggle?: (itemId: string) => void;
+  onLayerOpacityChange?: (itemId: string, opacity: number) => void;
+  // Modal management for TNC ArcGIS
+  selectedModalItem?: TNCArcGISItem | null;
+  onModalOpen?: (item: TNCArcGISItem) => void;
+  onModalClose?: () => void;
   // Common props
   lastSearchedDaysBack?: number;
   startDate?: string;
@@ -52,6 +68,17 @@ const DataView: React.FC<DataViewProps> = ({
   onCalFloraExportCSV,
   onCalFloraExportGeoJSON,
   onCalFloraPlantSelect,
+  tncArcGISItems,
+  tncArcGISLoading,
+  onTNCArcGISExportCSV,
+  onTNCArcGISExportGeoJSON,
+  onTNCArcGISItemSelect,
+  activeLayerIds,
+  onLayerToggle,
+  onLayerOpacityChange,
+  selectedModalItem,
+  onModalOpen,
+  onModalClose,
   lastSearchedDaysBack,
   startDate,
   endDate
@@ -99,6 +126,34 @@ const DataView: React.FC<DataViewProps> = ({
             onExportCSV={onCalFloraExportCSV}
             onExportGeoJSON={onCalFloraExportGeoJSON}
             onPlantSelect={onCalFloraPlantSelect}
+          />
+        );
+
+      // TNC ArcGIS Hub cases
+      case 'Vegetation / habitat-TNC ArcGIS Hub':
+      case 'Ecological / Biological (Species?)-TNC ArcGIS Hub':
+      case 'Real-time & Remote Sensing-TNC ArcGIS Hub':
+      case 'Land use and land (geography?)-TNC ArcGIS Hub':
+      case 'Climate / weather-TNC ArcGIS Hub':
+      case 'Hydrological-TNC ArcGIS Hub':
+      case 'Topographic-TNC ArcGIS Hub':
+      case 'Marine-TNC ArcGIS Hub':
+      case 'Fire-TNC ArcGIS Hub':
+      case 'Infrastructure-TNC ArcGIS Hub':
+      case 'Hazards & Resilience-TNC ArcGIS Hub':
+        return (
+          <TNCArcGISView
+            items={tncArcGISItems}
+            loading={tncArcGISLoading}
+            onExportCSV={onTNCArcGISExportCSV}
+            onExportGeoJSON={onTNCArcGISExportGeoJSON}
+            onItemSelect={onTNCArcGISItemSelect}
+            activeLayerIds={activeLayerIds}
+            onLayerToggle={onLayerToggle}
+            onLayerOpacityChange={onLayerOpacityChange}
+            selectedModalItem={selectedModalItem}
+            onModalOpen={onModalOpen}
+            onModalClose={onModalClose}
           />
         );
         

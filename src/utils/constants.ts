@@ -1,24 +1,51 @@
 // Application constants
+import categoryMappings from '../data-sources/tnc-arcgis/category_mappings.json';
+
 export const APP_NAME = 'Dangermond Preserve Data Catalog';
 export const APP_VERSION = '1.0.0';
 
-// Filter options
+// Import main categories from the TNC category mappings (single source of truth)
+// These are the master categories that all data sources map onto
+const TNC_MAIN_CATEGORIES = categoryMappings.main_categories as readonly string[];
+
+// Add Wildlife and Vegetation as legacy categories for iNaturalist/CalFlora compatibility
+// All categories will map external data onto these master categories
 export const DATA_CATEGORIES = [
   'Wildlife',
-  'Vegetation'
+  'Vegetation',
+  ...TNC_MAIN_CATEGORIES
 ] as const;
 
 export const DATA_SOURCES = [
   'iNaturalist (Public API)',
   'iNaturalist (TNC Layers)',
-  'CalFlora'
+  'CalFlora',
+  'TNC ArcGIS Hub'
 ] as const;
 
 // Map categories to their available data sources
-export const CATEGORY_DATA_SOURCES = {
+// Wildlife and Vegetation are legacy categories that map to older data sources
+// All TNC main categories map to TNC ArcGIS Hub
+export const CATEGORY_DATA_SOURCES: Record<string, readonly string[]> = {
+  // Legacy categories for iNaturalist and CalFlora
   'Wildlife': ['iNaturalist (Public API)', 'iNaturalist (TNC Layers)'],
-  'Vegetation': ['CalFlora', 'iNaturalist (Public API)', 'iNaturalist (TNC Layers)']
+  'Vegetation': ['CalFlora', 'iNaturalist (Public API)', 'iNaturalist (TNC Layers)'],
+  
+  // TNC main categories - all map to TNC ArcGIS Hub
+  ...TNC_MAIN_CATEGORIES.reduce((acc, category) => {
+    acc[category] = ['TNC ArcGIS Hub'];
+    return acc;
+  }, {} as Record<string, string[]>)
 } as const;
+
+// Validate that all data categories have a source mapping
+DATA_CATEGORIES.forEach(category => {
+  if (!CATEGORY_DATA_SOURCES[category]) {
+    console.warn(`⚠️ Category "${category}" is missing a data source mapping in CATEGORY_DATA_SOURCES.`);
+  }
+});
+
+console.log(`✅ Loaded ${TNC_MAIN_CATEGORIES.length} TNC main categories + 2 legacy categories = ${DATA_CATEGORIES.length} total categories`);
 
 export const SPATIAL_FILTERS = [
   'Draw Area',

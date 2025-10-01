@@ -32,7 +32,8 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
       timeRange: formatDateRangeCompact(30),
       daysBack: 30,
       startDate: undefined,
-      endDate: undefined
+      endDate: undefined,
+      iconicTaxa: []
     });
   };
 
@@ -40,15 +41,17 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
     setOpenDropdown(openDropdown === dropdown ? null : dropdown);
   };
 
-  const handleCategoryChange = (category: string) => {
+  const handleCategoryChange = (category: typeof DATA_CATEGORIES[number]) => {
     // Auto-select the first available source for the new category
-    const availableSources = CATEGORY_DATA_SOURCES[category as keyof typeof CATEGORY_DATA_SOURCES] || [];
+    const availableSources = CATEGORY_DATA_SOURCES[category] || [];
     const newSource = availableSources[0] || filters.source;
     
     onFilterChange({ 
       ...filters, 
       category,
-      source: newSource
+      source: newSource,
+      // Reset iconic taxa when category changes to avoid invalid states
+      iconicTaxa: [] 
     });
     setOpenDropdown(null);
   };

@@ -11,6 +11,7 @@ import { dataLayers as initialDataLayers } from './data/mockData';
 import { iNaturalistObservation } from './services/iNaturalistService';
 import { TNCArcGISObservation } from './services/tncINaturalistService';
 import { CalFloraPlant } from './services/calFloraService';
+import { TNCArcGISItem, tncArcGISAPI } from './services/tncArcGISService';
 import { formatDateRangeCompact, getDateRange, formatDateForAPI, formatDateToUS } from './utils/dateUtils';
 import { tncINaturalistService } from './services/tncINaturalistService';
 import { MapViewRef } from './components/MapView';
@@ -90,9 +91,11 @@ function App() {
   const [tncObservations, setTncObservations] = useState<TNCArcGISObservation[]>([]);
   const [selectedTNCObservation, setSelectedTNCObservation] = useState<TNCArcGISObservation | null>(null);
   const [calFloraPlants, setCalFloraPlants] = useState<CalFloraPlant[]>([]);
+  const [tncArcGISItems, setTncArcGISItems] = useState<TNCArcGISItem[]>([]);
   const [observationsLoading, setObservationsLoading] = useState(false);
   const [tncObservationsLoading, setTncObservationsLoading] = useState(false);
   const [calFloraLoading, setCalFloraLoading] = useState(false);
+  const [tncArcGISLoading, setTncArcGISLoading] = useState(false);
   const [lastSearchedDaysBack, setLastSearchedDaysBack] = useState<number>(30); // Track the last searched time range
   const [, setTncTotalCount] = useState<number>(0);
   const [tncPage] = useState<number>(1);
@@ -102,6 +105,10 @@ function App() {
   // CalFlora modal state
   const [selectedCalFloraPlant, setSelectedCalFloraPlant] = useState<CalFloraPlant | null>(null);
   const [isCalFloraModalOpen, setIsCalFloraModalOpen] = useState(false);
+
+  // TNC ArcGIS state
+  const [activeLayerIds, setActiveLayerIds] = useState<string[]>([]);
+  const [selectedModalItem, setSelectedModalItem] = useState<TNCArcGISItem | null>(null);
 
   // CalFlora modal handlers
   const openCalFloraModal = (plantId: string) => {
@@ -115,6 +122,34 @@ function App() {
   const closeCalFloraModal = () => {
     setIsCalFloraModalOpen(false);
     setSelectedCalFloraPlant(null);
+  };
+
+  // TNC ArcGIS handlers
+  const handleLayerToggle = (itemId: string) => {
+    setActiveLayerIds(prev => {
+      if (prev.includes(itemId)) {
+        return prev.filter(id => id !== itemId);
+      } else {
+        return [...prev, itemId];
+      }
+    });
+  };
+
+  const handleLayerOpacityChange = (itemId: string, opacity: number) => {
+    // This would be handled by the map component
+    console.log(`Layer ${itemId} opacity changed to ${opacity}%`);
+  };
+
+  const handleModalOpen = (item: TNCArcGISItem) => {
+    setSelectedModalItem(item);
+  };
+
+  const handleModalClose = () => {
+    setSelectedModalItem(null);
+  };
+
+  const handleTNCArcGISItemSelect = (item: TNCArcGISItem) => {
+    console.log('TNC ArcGIS item selected:', item);
   };
 
   // Set up global function for popup buttons to access
@@ -135,7 +170,45 @@ function App() {
     // This will cause the DataView to update to show the appropriate sidebar
     setLastSearchedFilters({ ...filters });
     
-    if (filters.source === 'CalFlora') {
+    if (filters.source === 'TNC ArcGIS Hub') {
+      // Handle TNC ArcGIS Hub search
+      const searchTNCArcGIS = async () => {
+        setTncArcGISLoading(true);
+        try {
+          const categoryFilter = filters.category !== 'Wildlife' && filters.category !== 'Vegetation' 
+            ? [filters.category] 
+            : undefined;
+          
+          console.log(`🔍 TNC ArcGIS Hub Search:`, {
+            category: filters.category,
+            categoryFilter,
+            spatialFilter: filters.spatialFilter,
+            timeRange: filters.timeRange
+          });
+          
+          const response = await tncArcGISAPI.getAllItems({
+            maxResults: 1000,
+            categoryFilter,
+            searchQuery: undefined // Could add search query from filters if needed
+          });
+          
+          console.log(`📊 TNC ArcGIS Hub Results:`, {
+            totalItems: response.results.length,
+            dataSource: response.dataSource,
+            sampleTitles: response.results.slice(0, 3).map(item => item.title)
+          });
+          
+          setTncArcGISItems(response.results);
+        } catch (error) {
+          console.error('❌ Error loading TNC ArcGIS data:', error);
+          setTncArcGISItems([]);
+        } finally {
+          setTncArcGISLoading(false);
+        }
+      };
+      
+      searchTNCArcGIS();
+    } else if (filters.source === 'CalFlora') {
       // Handle CalFlora search
       const calFloraFilters = {
         maxResults: 1000,
@@ -226,7 +299,7 @@ function App() {
     }
   };
 
-  const handleLayerToggle = (layerId: string) => {
+  const handleDataLayerToggle = (layerId: string) => {
     setDataLayers(layers => 
       layers.map(layer => 
         layer.id === layerId 
@@ -484,6 +557,75 @@ function App() {
     }, null, 2);
   };
 
+  // TNC ArcGIS export functions
+  const convertTNCArcGISToCSV = (items: TNCArcGISItem[]): string => {
+    const headers = [
+      'ID', 'Title', 'Type', 'Description', 'Snippet', 'URL', 'Owner',
+      'Collection', 'Views', 'Size', 'Created', 'Modified', 'UI Pattern',
+      'Main Categories', 'Tags', 'Categories'
+    ];
+    
+    const rows = items.map(item => [
+      item.id,
+      item.title,
+      item.type,
+      item.description,
+      item.snippet,
+      item.url,
+      item.owner,
+      item.collection,
+      item.num_views,
+      item.size,
+      new Date(item.created).toISOString(),
+      new Date(item.modified).toISOString(),
+      item.uiPattern,
+      item.mainCategories.join('; '),
+      item.tags.join('; '),
+      item.categories.join('; ')
+    ]);
+
+    return [headers, ...rows].map(row => 
+      row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+    ).join('\n');
+  };
+
+  const convertTNCArcGISToGeoJSON = (items: TNCArcGISItem[]): string => {
+    // For TNC ArcGIS items, we don't have direct geometry, but we can create a point
+    // at the Dangermond Preserve center for visualization purposes
+    const dangermondCenter = [-120.0707, 34.4669]; // [lng, lat]
+    
+    const features = items.map(item => ({
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: dangermondCenter
+      },
+      properties: {
+        id: item.id,
+        title: item.title,
+        type: item.type,
+        description: item.description,
+        snippet: item.snippet,
+        url: item.url,
+        owner: item.owner,
+        collection: item.collection,
+        views: item.num_views,
+        size: item.size,
+        created: new Date(item.created).toISOString(),
+        modified: new Date(item.modified).toISOString(),
+        uiPattern: item.uiPattern,
+        mainCategories: item.mainCategories,
+        tags: item.tags,
+        categories: item.categories
+      }
+    }));
+
+    return JSON.stringify({
+      type: 'FeatureCollection',
+      features
+    }, null, 2);
+  };
+
   const handleTNCExportCSV = () => {
     const csvData = convertTNCToCSV(tncObservations);
     downloadFile(csvData, 'tnc-inaturalist-observations.csv', 'text/csv');
@@ -492,6 +634,16 @@ function App() {
   const handleTNCExportGeoJSON = () => {
     const geoJsonData = convertTNCToGeoJSON(tncObservations);
     downloadFile(geoJsonData, 'tnc-inaturalist-observations.geojson', 'application/geo+json');
+  };
+
+  const handleTNCArcGISExportCSV = () => {
+    const csvData = convertTNCArcGISToCSV(tncArcGISItems);
+    downloadFile(csvData, 'tnc-arcgis-items.csv', 'text/csv');
+  };
+
+  const handleTNCArcGISExportGeoJSON = () => {
+    const geoJsonData = convertTNCArcGISToGeoJSON(tncArcGISItems);
+    downloadFile(geoJsonData, 'tnc-arcgis-items.geojson', 'application/geo+json');
   };
 
   // Helper function to download files
@@ -524,11 +676,13 @@ function App() {
         onFilterChange={handleFilterChange}
         onSearch={handleSearch}
         resultCount={
+          lastSearchedFilters.source === 'TNC ArcGIS Hub' ? tncArcGISItems.length :
           lastSearchedFilters.source === 'CalFlora' ? calFloraPlants.length :
           lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations.length :
           observations.length
         }
         isSearching={
+          filters.source === 'TNC ArcGIS Hub' ? tncArcGISLoading :
           filters.source === 'CalFlora' ? calFloraLoading :
           filters.source === 'iNaturalist (TNC Layers)' ? tncObservationsLoading :
           observationsLoading
@@ -555,6 +709,17 @@ function App() {
             setSelectedCalFloraPlant(plant);
             setIsCalFloraModalOpen(true);
           }}
+          tncArcGISItems={tncArcGISItems}
+          tncArcGISLoading={tncArcGISLoading}
+          onTNCArcGISExportCSV={handleTNCArcGISExportCSV}
+          onTNCArcGISExportGeoJSON={handleTNCArcGISExportGeoJSON}
+          onTNCArcGISItemSelect={handleTNCArcGISItemSelect}
+          activeLayerIds={activeLayerIds}
+          onLayerToggle={handleLayerToggle}
+          onLayerOpacityChange={handleLayerOpacityChange}
+          selectedModalItem={selectedModalItem}
+          onModalOpen={handleModalOpen}
+          onModalClose={handleModalClose}
           lastSearchedDaysBack={lastSearchedDaysBack}
           startDate={filters.startDate}
           endDate={filters.endDate}
@@ -562,7 +727,7 @@ function App() {
         <MapView 
           ref={mapViewRef}
           dataLayers={dataLayers}
-          onLayerToggle={handleLayerToggle}
+          onLayerToggle={handleDataLayerToggle}
           onObservationsUpdate={setObservations}
           onLoadingChange={setObservationsLoading}
           tncObservations={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations : []}

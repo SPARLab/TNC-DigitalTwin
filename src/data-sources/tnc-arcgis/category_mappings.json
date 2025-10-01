@@ -1,0 +1,275 @@
+{
+  "version": "1.0",
+  "description": "TNC Dangermond Preserve tag and category mappings to main data catalog categories",
+  "created": "2025-09-30",
+  "main_categories": [
+    "Vegetation / habitat",
+    "Ecological / Biological (Species?)",
+    "Real-time & Remote Sensing",
+    "Land use and land (geography?)",
+    "Climate / weather",
+    "Hydrological",
+    "Topographic",
+    "Marine",
+    "Fire",
+    "Infrastructure",
+    "Hazards & Resilience"
+  ],
+  "mappings": {
+    "tags": {
+      "Vegetation / habitat": [
+        "Vegetation",
+        "Habitat",
+        "Habitat_species_diversity",
+        "Forest",
+        "Landcover",
+        "Land Cover",
+        "Cropland",
+        "Botany",
+        "Restoration",
+        "Conservation",
+        "Conservation_status",
+        "Conserved Areas",
+        "Terrestrial",
+        "Landscape",
+        "Communities",
+        "Ecosystems"
+      ],
+      "Ecological / Biological (Species?)": [
+        "Species",
+        "Biodiversity",
+        "Fish",
+        "Cattle",
+        "Ecological_intactness",
+        "Physical_intactness",
+        "CDFW",
+        "California Department Of Fish And Wildlife",
+        "FWS",
+        "Fish And Wildlife Service",
+        "Marine_protected_areas",
+        "ESA",
+        "Endangered Species Act",
+        "Essential Fish Habitat",
+        "EFH",
+        "HAPC",
+        "Habitat Areas Of Particular Concern",
+        "PEFA",
+        "Falco Peregrinus"
+      ],
+      "Real-time & Remote Sensing": [
+        "Imagery",
+        "NAIP",
+        "Earth Observations",
+        "Basemap Imagery",
+        "European Space Agency",
+        "Live Feeds",
+        "Esri",
+        "Living Atlas",
+        "Raster Analysis Result",
+        "Raster Function Template Result",
+        "WeightedOverlayService",
+        "Weighted_raster_overlay",
+        "Analysis Result",
+        "Digital_coast",
+        "2005",
+        "2050"
+      ],
+      "Land use and land (geography?)": [
+        "Administrative",
+        "Boundary",
+        "Boundaries",
+        "California",
+        "CA",
+        "Federal",
+        "CAOpenData",
+        "California Natural Resources Agency",
+        "Ownership",
+        "Location",
+        "Developed",
+        "Human_disturbance",
+        "Operations",
+        "Management",
+        "Access",
+        "Point Conception",
+        "Santa Barbara County",
+        "North America"
+      ],
+      "Climate / weather": [
+        "Climate",
+        "Climate Change",
+        "Change",
+        "NWS",
+        "NWS_Watches_Warnings",
+        "Severe Weather",
+        "Flash Flood",
+        "Thunderstorm",
+        "Tornado",
+        "NOAA",
+        "National Oceanic And Atmospheric Administration",
+        "Weather"
+      ],
+      "Hydrological": [
+        "Water",
+        "Freshwater",
+        "Freshwater_public",
+        "Hydrology",
+        "Hydrography",
+        "Basins",
+        "Watershed",
+        "Stream",
+        "Streams",
+        "Creek",
+        "River",
+        "Lake",
+        "Pond",
+        "Reservoir",
+        "Canal",
+        "Aqueduct",
+        "Dams",
+        "Impediment",
+        "NHD",
+        "NHDPlus",
+        "Chlorophyll",
+        "Chlorophyll A",
+        "Chlorophyll-a"
+      ],
+      "Topographic": [
+        "Topography",
+        "Geology",
+        "Soils",
+        "Soils And Geology",
+        "USGS",
+        "U.S. Geological Survey",
+        "Dibblee",
+        "SoilGrids250m",
+        "ISRIC",
+        "Earthquake Hazards Program",
+        "EHP"
+      ],
+      "Marine": [
+        "Marine",
+        "Oceans",
+        "Esri_oceans",
+        "Wild_coast",
+        "Marine Conservation Areas",
+        "Marine Boundaries",
+        "Ocean Conservation",
+        "OSC",
+        "Coastal",
+        "BOEM"
+      ],
+      "Fire": [
+        "Fire",
+        "JLDP_FireData",
+        "Jldp_firedata",
+        "Fire And Fuels",
+        "CAL FIRE",
+        "California Forestry And Fire Protection",
+        "FRAP",
+        "Fire Hazard Severity Zones",
+        "FHSZ",
+        "Control Burns",
+        "Prescribed Fire",
+        "SRA",
+        "State Responsibility Area"
+      ],
+      "Infrastructure": [
+        "Infrastructure",
+        "Transportation",
+        "Rail",
+        "Railroad",
+        "Structures",
+        "Utilities",
+        "Building Standards",
+        "Agriculture"
+      ],
+      "Hazards & Resilience": [
+        "Wells",
+        "Oil",
+        "Gas",
+        "Energy Resources",
+        "DOC",
+        "Department Of Commerce",
+        "U.S. Department Of Commerce",
+        "CCED",
+        "Areas Of Conservation Emphasis",
+        "ACE",
+        "30x30"
+      ]
+    },
+    "categories": {
+      "Vegetation / habitat": [
+        "Habitat",
+        "Land Cover",
+        "Ecosystems",
+        "Agriculture",
+        "Conserved Areas"
+      ],
+      "Ecological / Biological (Species?)": [
+        "Biodiversity",
+        "Environment",
+        "Environmental"
+      ],
+      "Real-time & Remote Sensing": [
+        "Earth Observations",
+        "Imagery",
+        "Basemap Imagery",
+        "Basemaps"
+      ],
+      "Land use and land (geography?)": [
+        "Boundaries",
+        "Administrative",
+        "Reference Maps",
+        "Access"
+      ],
+      "Climate / weather": [
+        "Climate"
+      ],
+      "Hydrological": [
+        "Freshwater",
+        "Hydrography"
+      ],
+      "Topographic": [
+        "Soils And Geology"
+      ],
+      "Marine": [
+        "Oceans"
+      ],
+      "Fire": [
+        "Fire And Fuels"
+      ],
+      "Infrastructure": [
+        "Infrastructure",
+        "Structures",
+        "Transportation",
+        "Utilities"
+      ],
+      "Hazards & Resilience": [
+        "Energy Resources"
+      ]
+    }
+  },
+  "metadata": {
+    "total_tnc_tags_analyzed": 84,
+    "total_tnc_categories_analyzed": 30,
+    "mapped_tags": 157,
+    "mapped_categories": 27,
+    "unmapped_tnc_categories": [
+      "Status",
+      "Beta", 
+      "General Availability"
+    ],
+    "notes": {
+      "tag_mapping_strategy": "Semantic analysis based on domain knowledge and keyword matching",
+      "category_mapping_strategy": "Direct semantic matching to main categories",
+      "usage": "Use this mapping to categorize TNC data items based on their tags and categories fields"
+    }
+  },
+  "usage_example": {
+    "description": "How to use this mapping in your frontend",
+    "code_example": {
+      "javascript": "// Load the mapping\nconst mappings = require('./category_mappings.json');\n\n// Function to categorize an item\nfunction categorizeItem(item) {\n  const itemTags = item.tags || [];\n  const itemCategories = item.categories || [];\n  const matchedCategories = new Set();\n  \n  // Check tag mappings\n  for (const [mainCategory, tags] of Object.entries(mappings.mappings.tags)) {\n    if (itemTags.some(tag => tags.includes(tag))) {\n      matchedCategories.add(mainCategory);\n    }\n  }\n  \n  // Check category mappings\n  for (const [mainCategory, categories] of Object.entries(mappings.mappings.categories)) {\n    if (itemCategories.some(cat => categories.includes(cat))) {\n      matchedCategories.add(mainCategory);\n    }\n  }\n  \n  return Array.from(matchedCategories);\n}"
+    }
+  }
+}
+
