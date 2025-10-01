@@ -7,7 +7,6 @@ import MapView from './components/MapView';
 import Footer from './components/Footer';
 import CalFloraPlantModal from './components/CalFloraPlantModal';
 import { FilterState } from './types';
-import { dataLayers as initialDataLayers } from './data/mockData';
 import { iNaturalistObservation } from './services/iNaturalistService';
 import { TNCArcGISObservation } from './services/tncINaturalistService';
 import { CalFloraPlant } from './services/calFloraService';
@@ -85,7 +84,6 @@ function App() {
   });
 
   // const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
-  const [dataLayers, setDataLayers] = useState(initialDataLayers);
   const [observations, setObservations] = useState<iNaturalistObservation[]>([]);
   const [tncObservations, setTncObservations] = useState<TNCArcGISObservation[]>([]);
   const [selectedTNCObservation, setSelectedTNCObservation] = useState<TNCArcGISObservation | null>(null);
@@ -166,9 +164,20 @@ function App() {
     
     if (filters.source === 'CalFlora') {
       // Handle CalFlora search
+      // Check for custom polygon
+      let customPolygonGeometry: string | undefined = undefined;
+      if (filters.customPolygon && filters.spatialFilter === 'Draw Area') {
+        customPolygonGeometry = JSON.stringify({
+          rings: filters.customPolygon.rings,
+          spatialReference: filters.customPolygon.spatialReference
+        });
+        console.log('🎯 Using custom drawn polygon for CalFlora spatial filtering');
+      }
+      
       const calFloraFilters = {
         maxResults: 1000,
-        plantType: 'all' as 'invasive' | 'native' | 'all'
+        plantType: 'all' as 'invasive' | 'native' | 'all',
+        customPolygon: customPolygonGeometry
       };
       
       console.log('Searching CalFlora with filters:', calFloraFilters);
@@ -278,16 +287,6 @@ function App() {
       console.log('Searching iNaturalist Public API with filters:', searchFilters);
       mapViewRef.current?.reloadObservations(searchFilters);
     }
-  };
-
-  const handleLayerToggle = (layerId: string) => {
-    setDataLayers(layers => 
-      layers.map(layer => 
-        layer.id === layerId 
-          ? { ...layer, visible: !layer.visible }
-          : layer
-      )
-    );
   };
 
   const handleObservationFilterChange = (observationFilters: Partial<FilterState>) => {
@@ -615,8 +614,6 @@ function App() {
         />
         <MapView 
           ref={mapViewRef}
-          dataLayers={dataLayers}
-          onLayerToggle={handleLayerToggle}
           onObservationsUpdate={setObservations}
           onLoadingChange={setObservationsLoading}
           tncObservations={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations : []}

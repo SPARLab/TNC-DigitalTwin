@@ -1,6 +1,4 @@
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
-import { DataLayer } from '../types';
-import DataLayersPanel from './DataLayersPanel';
 import Map from '@arcgis/core/Map';
 import MapView from '@arcgis/core/views/MapView';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
@@ -16,8 +14,6 @@ import { tncINaturalistService, TNCArcGISObservation } from '../services/tncINat
 import { calFloraAPI, CalFloraPlant } from '../services/calFloraService';
 
 interface MapViewProps {
-  dataLayers: DataLayer[];
-  onLayerToggle: (layerId: string) => void;
   onObservationsUpdate?: (observations: iNaturalistObservation[]) => void;
   onLoadingChange?: (loading: boolean) => void;
   tncObservations?: TNCArcGISObservation[];
@@ -58,14 +54,13 @@ export interface MapViewRef {
   reloadCalFloraData: (filters?: {
     maxResults?: number;
     plantType?: 'invasive' | 'native' | 'all';
+    customPolygon?: string;
   }) => void;
   activateDrawMode: () => void;
   clearPolygon: () => void;
 }
 
 const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({ 
-  dataLayers, 
-  onLayerToggle, 
   onObservationsUpdate, 
   onLoadingChange,
   tncObservations = [],
@@ -409,9 +404,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       if (drawingPointsRef.current.length === 0) return;
       
       const point = view.toMap({ x: event.x, y: event.y });
-      if (!point) return;
+      if (!point || point.longitude == null || point.latitude == null) return;
       
-      const currentPoint = [point.longitude, point.latitude];
+      const currentPoint: [number, number] = [point.longitude, point.latitude];
       const previewPoints = [...drawingPointsRef.current, currentPoint];
       
       // Create preview polygon
@@ -453,7 +448,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     clickHandlerRef.current = view.on('click', (event) => {
       event.stopPropagation();
       
-      const point = [event.mapPoint.longitude, event.mapPoint.latitude];
+      if (event.mapPoint.longitude == null || event.mapPoint.latitude == null) return;
+      const point: [number, number] = [event.mapPoint.longitude, event.mapPoint.latitude];
       drawingPointsRef.current.push(point);
       
       console.log(`Point ${drawingPointsRef.current.length} added`);
@@ -975,11 +971,12 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   const loadCalFloraData = async (_mapView: __esri.MapView, calFloraLayer: GraphicsLayer, filters?: {
     maxResults?: number;
     plantType?: 'invasive' | 'native' | 'all';
+    customPolygon?: string;
   }) => {
     onCalFloraLoadingChange?.(true);
     
     try {
-      const { maxResults = 1000, plantType = 'all' } = filters || {};
+      const { maxResults = 1000, plantType = 'all', customPolygon } = filters || {};
       
       let allPlants: CalFloraPlant[] = [];
       
@@ -994,7 +991,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       console.log('Loading CalFlora plant data...');
       const response = await calFloraAPI.getAllPlants({ 
         maxResults, 
-        plantType
+        plantType,
+        customPolygon
         // No county filter - get all plants from Dangermond dataset
       });
       allPlants.push(...response.results);
@@ -1355,8 +1353,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     useFilters?: boolean;
     page?: number;
     pageSize?: number;
-    searchMode?: 'preserve-only' | 'expanded';
+    searchMode?: 'preserve-only' | 'expanded' | 'custom';
     showSearchArea?: boolean;
+    customPolygon?: string;
   }) => {
     if (view && view.map) {
       const tncObservationsLayer = view.map.findLayerById('tnc-inaturalist-observations') as GraphicsLayer;
@@ -1457,7 +1456,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
 
       {/* Observations Count */}
       {observations.length > 0 && (
-        <div id="map-observations-counter" className="absolute bottom-4 left-4 bg-white rounded-lg shadow-md p-2 z-10">
+        <div id="map-observations-counter" className="absolute top-4 left-4 bg-white rounded-lg shadow-md p-2 z-10">
           <span id="map-observations-count-text" className="text-xs text-gray-600">
             {observations.length} recent observations
           </span>
@@ -1494,7 +1493,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
 
       {/* Drawn Polygon Indicator & Clear Button */}
       {drawnPolygon && (
-        <div id="polygon-indicator" className="absolute bottom-16 left-4 bg-white rounded-lg shadow-md p-3 z-10 flex items-center space-x-3">
+        <div id="polygon-indicator" className="absolute bottom-16 right-4 bg-white rounded-lg shadow-md p-3 z-10 flex items-center space-x-3">
           <div id="polygon-status" className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
             <span className="text-sm text-gray-700 font-medium">Custom area drawn</span>
@@ -1520,12 +1519,6 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           </div>
         </div>
       )}
-
-      {/* Data Layers Panel */}
-      <DataLayersPanel 
-        dataLayers={dataLayers}
-        onLayerToggle={onLayerToggle}
-      />
     </div>
   );
 });

@@ -141,12 +141,14 @@ class CalFloraService {
     };
     countyFilter?: string;
     plantFilter?: string;
+    customPolygon?: string; // Custom polygon geometry as JSON string
   } = {}): Promise<CalFloraResponse> {
     const {
       maxResults = 1000,
       // boundingBox = this.dangermondBounds,
       // countyFilter,
-      plantFilter
+      plantFilter,
+      customPolygon
     } = options;
 
     await this.waitForRateLimit();
@@ -158,7 +160,7 @@ class CalFloraService {
     }
     // Note: Removed county filter to get all plants by default
     
-    const params = new URLSearchParams({
+    const params: any = {
       where: whereClause,
       outFields: '*', // Get all fields
       returnGeometry: 'true',
@@ -166,16 +168,46 @@ class CalFloraService {
       resultRecordCount: maxResults.toString(),
       f: 'json'
       // Try without token first - it's your own hosted data
-    });
+    };
 
-    // No spatial filtering needed - get all plants from the Dangermond dataset
+    // Add spatial filtering if custom polygon is provided
+    if (customPolygon) {
+      params.geometry = customPolygon;
+      params.geometryType = 'esriGeometryPolygon';
+      params.spatialRel = 'esriSpatialRelIntersects';
+      console.log('🎨 Using custom drawn polygon for CalFlora spatial filtering');
+    }
 
-    const apiUrl = `${this.dangermondCalFloraUrl}/query?${params}`;
-    console.log('CalFlora Dangermond Preserve API URL:', apiUrl);
+    let apiUrl: string;
+    let response: Response;
 
     try {
       console.log('🌱 Trying to access CalFlora data without authentication...');
-      const response = await fetch(apiUrl);
+      
+      // Use POST request for custom polygon to avoid URL length limits
+      if (customPolygon) {
+        apiUrl = `${this.dangermondCalFloraUrl}/query`;
+        const formBody = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== undefined) {
+            formBody.append(key, String(value));
+          }
+        });
+        
+        response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: formBody
+        });
+      } else {
+        // Use GET for non-polygon queries
+        const urlParams = new URLSearchParams(params);
+        apiUrl = `${this.dangermondCalFloraUrl}/query?${urlParams}`;
+        console.log('CalFlora Dangermond Preserve API URL:', apiUrl);
+        response = await fetch(apiUrl);
+      }
       
       if (!response.ok) {
         throw new Error(`CalFlora API error: ${response.status} ${response.statusText}`);
@@ -224,12 +256,14 @@ This will make your own CalFlora data publicly accessible without authentication
     plantType?: 'invasive' | 'native' | 'all';
     countyFilter?: string;
     plantFilter?: string;
+    customPolygon?: string;
   } = {}): Promise<CalFloraResponse> {
-    const { maxResults = 1000, countyFilter, plantFilter } = options;
+    const { maxResults = 1000, countyFilter, plantFilter, customPolygon } = options;
     
     return await this.getPlantObservations({ 
       maxResults, 
       countyFilter,
+      customPolygon,
       plantFilter,
       boundingBox: this.dangermondBounds 
     });
