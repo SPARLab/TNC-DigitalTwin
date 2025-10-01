@@ -738,6 +738,8 @@ function App() {
           calFloraPlants={filters.source === 'CalFlora' ? calFloraPlants : []}
           onCalFloraUpdate={setCalFloraPlants}
           onCalFloraLoadingChange={setCalFloraLoading}
+          tncArcGISItems={tncArcGISItems}
+          activeLayerIds={activeLayerIds}
         />
         <FilterSidebar 
           filters={filters}

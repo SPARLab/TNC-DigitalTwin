@@ -47,6 +47,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
   onModalClose
 }) => {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [selectedUIPatterns, setSelectedUIPatterns] = useState<Set<string>>(new Set());
@@ -186,15 +187,28 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
     }
   };
 
+  const toggleItemExpansion = (itemId: string) => {
+    const newExpanded = new Set(expandedItems);
+    if (newExpanded.has(itemId)) {
+      newExpanded.delete(itemId);
+    } else {
+      newExpanded.add(itemId);
+    }
+    setExpandedItems(newExpanded);
+  };
+
   const handleItemClick = (item: TNCArcGISItem) => {
     onItemSelect?.(item);
+    
+    // Always expand the card when clicked
+    toggleItemExpansion(item.id);
 
     switch (item.uiPattern) {
       case 'MAP_LAYER':
         onLayerToggle?.(item.id);
         break;
       case 'EXTERNAL_LINK':
-        window.open(item.url, '_blank', 'noopener,noreferrer');
+        // Don't open immediately on click, let user use the button in expanded view
         break;
       case 'MODAL':
         onModalOpen?.(item);
@@ -204,6 +218,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
 
   const renderItem = (item: TNCArcGISItem) => {
     const isActiveLayer = activeLayerIds.includes(item.id);
+    const isExpanded = expandedItems.has(item.id);
     
     return (
       <div
@@ -219,6 +234,11 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
+              {isExpanded ? (
+                <ChevronDown className="w-4 h-4 text-gray-600 flex-shrink-0" />
+              ) : (
+                <ChevronRight className="w-4 h-4 text-gray-600 flex-shrink-0" />
+              )}
               {getUIPatternIcon(item.uiPattern)}
               <h3 className="font-medium text-gray-900 truncate" title={item.title}>
                 {item.title}
@@ -229,7 +249,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
             </div>
             
             {item.snippet && (
-              <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+              <p className={`text-sm text-gray-600 mb-2 ${isExpanded ? '' : 'line-clamp-2'}`}>
                 {item.snippet}
               </p>
             )}
@@ -241,7 +261,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
               <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">
                 {item.type}
               </span>
-              {item.mainCategories.slice(0, 2).map(category => (
+              {item.mainCategories.slice(0, isExpanded ? undefined : 2).map(category => (
                 <span key={category} className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">
                   {category}
                 </span>
@@ -267,17 +287,96 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
           {item.uiPattern === 'MAP_LAYER' && (
             <div className="flex items-center gap-2 ml-2">
               {isActiveLayer ? (
-                <EyeOff className="w-4 h-4 text-blue-600" />
+                <Eye className="w-5 h-5 text-blue-600" />
               ) : (
-                <Eye className="w-4 h-4 text-gray-400" />
+                <EyeOff className="w-5 h-5 text-gray-400" />
               )}
             </div>
           )}
         </div>
         
+        {/* Expanded content */}
+        {isExpanded && (
+          <div className="mt-3 pt-3 border-t border-gray-200 space-y-3" onClick={(e) => e.stopPropagation()}>
+            {/* Description */}
+            {item.description && (
+              <div>
+                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
+                  Description
+                </h4>
+                <div 
+                  className="text-sm text-gray-700 prose prose-sm max-w-none line-clamp-4"
+                  dangerouslySetInnerHTML={{ __html: item.description }}
+                />
+              </div>
+            )}
+            
+            {/* Tags */}
+            {item.tags.length > 0 && (
+              <div>
+                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
+                  Tags
+                </h4>
+                <div className="flex flex-wrap gap-1">
+                  {item.tags.slice(0, 5).map((tag, index) => (
+                    <span
+                      key={index}
+                      className="px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                  {item.tags.length > 5 && (
+                    <span className="px-2 py-0.5 text-xs text-gray-500">
+                      +{item.tags.length - 5} more
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Action buttons */}
+            <div className="flex gap-2 pt-2">
+              {item.uiPattern === 'EXTERNAL_LINK' && (
+                <a
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Open Resource
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              )}
+              {item.uiPattern === 'MODAL' && (
+                <button
+                  className="flex-1 px-3 py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onModalOpen?.(item);
+                  }}
+                >
+                  View Details
+                  <FileText className="w-4 h-4" />
+                </button>
+              )}
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
+          </div>
+        )}
+        
         {/* Layer opacity control for active map layers */}
         {item.uiPattern === 'MAP_LAYER' && isActiveLayer && onLayerOpacityChange && (
-          <div className="mt-3 pt-3 border-t border-blue-200">
+          <div className="mt-3 pt-3 border-t border-blue-200" onClick={(e) => e.stopPropagation()}>
             <label className="block text-xs text-gray-600 mb-1">Opacity</label>
             <input
               type="range"

@@ -1,5 +1,6 @@
 import React from 'react';
 import TNCArcGISSidebar from '../TNCArcGISSidebar';
+import TNCArcGISModal from '../TNCArcGISModal';
 import { TNCArcGISItem } from '../../services/tncArcGISService';
 
 interface TNCArcGISViewProps {
@@ -32,19 +33,22 @@ const TNCArcGISView: React.FC<TNCArcGISViewProps> = ({
   onModalClose
 }) => {
   return (
-    <TNCArcGISSidebar
-      items={items}
-      isLoading={loading}
-      onExportCSV={onExportCSV}
-      onExportGeoJSON={onExportGeoJSON}
-      onItemSelect={onItemSelect}
-      activeLayerIds={activeLayerIds}
-      onLayerToggle={onLayerToggle}
-      onLayerOpacityChange={onLayerOpacityChange}
-      selectedModalItem={selectedModalItem}
-      onModalOpen={onModalOpen}
-      onModalClose={onModalClose}
-    />
+    <>
+      <TNCArcGISSidebar
+        items={items}
+        isLoading={loading}
+        onExportCSV={onExportCSV}
+        onExportGeoJSON={onExportGeoJSON}
+        onItemSelect={onItemSelect}
+        activeLayerIds={activeLayerIds}
+        onLayerToggle={onLayerToggle}
+        onLayerOpacityChange={onLayerOpacityChange}
+        selectedModalItem={selectedModalItem}
+        onModalOpen={onModalOpen}
+        onModalClose={onModalClose}
+      />
+      <TNCArcGISModal item={selectedModalItem} onClose={onModalClose || (() => {})} />
+    </>
   );
 };
 

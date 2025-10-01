@@ -5,6 +5,8 @@ import Map from '@arcgis/core/Map';
 import MapView from '@arcgis/core/views/MapView';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import GeoJSONLayer from '@arcgis/core/layers/GeoJSONLayer';
+import MapImageLayer from '@arcgis/core/layers/MapImageLayer';
+import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
 import Polygon from '@arcgis/core/geometry/Polygon';
@@ -14,6 +16,7 @@ import PopupTemplate from '@arcgis/core/PopupTemplate';
 import { iNaturalistAPI, iNaturalistObservation } from '../services/iNaturalistService';
 import { tncINaturalistService, TNCArcGISObservation } from '../services/tncINaturalistService';
 import { calFloraAPI, CalFloraPlant } from '../services/calFloraService';
+import { TNCArcGISItem } from '../services/tncArcGISService';
 
 interface MapViewProps {
   dataLayers: DataLayer[];
@@ -28,6 +31,10 @@ interface MapViewProps {
   calFloraPlants?: CalFloraPlant[];
   onCalFloraUpdate?: (plants: CalFloraPlant[]) => void;
   onCalFloraLoadingChange?: (loading: boolean) => void;
+  // TNC ArcGIS Hub layer management
+  tncArcGISItems?: TNCArcGISItem[];
+  activeLayerIds?: string[];
+  layerOpacities?: Record<string, number>;
 }
 
 export interface MapViewRef {
@@ -67,12 +74,16 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   onTNCObservationSelect,
   calFloraPlants = [],
   onCalFloraUpdate,
-  onCalFloraLoadingChange
+  onCalFloraLoadingChange,
+  tncArcGISItems = [],
+  activeLayerIds = [],
+  layerOpacities = {}
 }, ref) => {
   const mapDiv = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<MapView | null>(null);
   const [observations, setObservations] = useState<iNaturalistObservation[]>([]);
   const [loading, setLoading] = useState(false);
+  const tncArcGISLayersRef = useRef<globalThis.Map<string, __esri.Layer>>(new globalThis.Map());
   // CalFlora state is managed by parent component via props
 
   // Helper to build TNC popup content with photo carousel and attribution
@@ -322,6 +333,90 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       };
     }
   }, []);
+
+  // Effect to manage TNC ArcGIS Hub map layers
+  useEffect(() => {
+    if (!view) return;
+
+    const handleLayerLoading = async () => {
+      // Get active items that should be displayed
+      const activeItems = tncArcGISItems.filter(item => 
+        activeLayerIds.includes(item.id) && item.uiPattern === 'MAP_LAYER'
+      );
+
+      // Remove layers that are no longer active
+      const layersToRemove: string[] = [];
+      tncArcGISLayersRef.current.forEach((_layer: __esri.Layer, itemId: string) => {
+        if (!activeLayerIds.includes(itemId)) {
+          layersToRemove.push(itemId);
+        }
+      });
+
+      layersToRemove.forEach(itemId => {
+        const layer = tncArcGISLayersRef.current.get(itemId);
+        if (layer && view.map) {
+          view.map.remove(layer);
+          tncArcGISLayersRef.current.delete(itemId);
+          console.log(`🗑️ Removed TNC layer: ${itemId}`);
+        }
+      });
+
+      // Add new layers that aren't already loaded
+      for (const item of activeItems) {
+        if (!tncArcGISLayersRef.current.has(item.id)) {
+          try {
+            // Try to determine layer type from URL
+            const url = item.url;
+            let layer: __esri.Layer | null = null;
+
+            if (url.includes('/MapServer') || url.includes('/ImageServer')) {
+              // It's a map image service
+              layer = new MapImageLayer({
+                id: `tnc-layer-${item.id}`,
+                url: url,
+                title: item.title,
+                opacity: (layerOpacities[item.id] ?? 80) / 100
+              });
+            } else if (url.includes('/FeatureServer')) {
+              // It's a feature service
+              layer = new FeatureLayer({
+                id: `tnc-layer-${item.id}`,
+                url: url,
+                title: item.title,
+                opacity: (layerOpacities[item.id] ?? 80) / 100
+              });
+            }
+
+            if (layer) {
+              // Load the layer and check for errors
+              await layer.load().catch(err => {
+                console.warn(`⚠️ Could not load TNC layer ${item.title}:`, err.message);
+                throw err;
+              });
+
+              if (view.map) {
+                view.map.add(layer);
+                tncArcGISLayersRef.current.set(item.id, layer);
+                console.log(`✅ Added TNC layer: ${item.title}`);
+              }
+            } else {
+              console.warn(`⚠️ Could not determine layer type for: ${item.title} (${url})`);
+            }
+          } catch (error) {
+            console.error(`❌ Error loading TNC layer ${item.title}:`, error);
+          }
+        } else {
+          // Update opacity for existing layer
+          const layer = tncArcGISLayersRef.current.get(item.id);
+          if (layer && 'opacity' in layer) {
+            (layer as any).opacity = (layerOpacities[item.id] ?? 80) / 100;
+          }
+        }
+      }
+    };
+
+    handleLayerLoading();
+  }, [view, tncArcGISItems, activeLayerIds, layerOpacities]);
 
   // Effect to handle CalFlora data when provided via props
   useEffect(() => {
