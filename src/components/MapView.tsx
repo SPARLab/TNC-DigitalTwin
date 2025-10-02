@@ -12,6 +12,7 @@ import PopupTemplate from '@arcgis/core/PopupTemplate';
 import { iNaturalistAPI, iNaturalistObservation } from '../services/iNaturalistService';
 import { tncINaturalistService, TNCArcGISObservation } from '../services/tncINaturalistService';
 import { calFloraAPI, CalFloraPlant } from '../services/calFloraService';
+import { eBirdService, EBirdObservation } from '../services/eBirdService';
 
 interface MapViewProps {
   onObservationsUpdate?: (observations: iNaturalistObservation[]) => void;
@@ -21,6 +22,9 @@ interface MapViewProps {
   onTNCLoadingChange?: (loading: boolean) => void;
   selectedTNCObservation?: TNCArcGISObservation | null;
   onTNCObservationSelect?: (observation: TNCArcGISObservation | null) => void;
+  eBirdObservations?: EBirdObservation[];
+  onEBirdObservationsUpdate?: (observations: EBirdObservation[]) => void;
+  onEBirdLoadingChange?: (loading: boolean) => void;
   calFloraPlants?: CalFloraPlant[];
   onCalFloraUpdate?: (plants: CalFloraPlant[]) => void;
   onCalFloraLoadingChange?: (loading: boolean) => void;
@@ -51,6 +55,15 @@ export interface MapViewRef {
     showSearchArea?: boolean;
     customPolygon?: string;
   }) => void;
+  reloadEBirdObservations: (filters?: {
+    startDate?: string;
+    endDate?: string;
+    maxResults?: number;
+    page?: number;
+    pageSize?: number;
+    searchMode?: 'preserve-only' | 'expanded' | 'custom';
+    customPolygon?: string;
+  }) => void;
   reloadCalFloraData: (filters?: {
     maxResults?: number;
     plantType?: 'invasive' | 'native' | 'all';
@@ -68,6 +81,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   onTNCLoadingChange,
   selectedTNCObservation,
   onTNCObservationSelect,
+  eBirdObservations = [],
+  onEBirdObservationsUpdate,
+  onEBirdLoadingChange,
   calFloraPlants = [],
   onCalFloraUpdate,
   onCalFloraLoadingChange,
@@ -297,6 +313,12 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         title: 'TNC iNaturalist Observations'
       });
 
+      // Create graphics layer for eBird observations
+      const eBirdObservationsLayer = new GraphicsLayer({
+        id: 'ebird-observations',
+        title: 'eBird Observations'
+      });
+
       // Create graphics layer for CalFlora plants
       const calFloraLayer = new GraphicsLayer({
         id: 'calflora-plants',
@@ -305,6 +327,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
 
       map.add(observationsLayer);
       map.add(tncObservationsLayer);
+      map.add(eBirdObservationsLayer);
       map.add(calFloraLayer);
 
       // Create the map view centered on Dangermond Preserve
@@ -774,6 +797,83 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   }, [view, tncObservations, selectedTNCObservation]);
 
+  // Effect to update eBird observations on map when data changes
+  useEffect(() => {
+    if (view && eBirdObservations.length > 0) {
+      const eBirdObservationsLayer = view.map?.findLayerById('ebird-observations') as GraphicsLayer;
+      if (eBirdObservationsLayer) {
+        // Clear existing graphics
+        eBirdObservationsLayer.removeAll();
+        
+        // Add eBird observations to map
+        eBirdObservations.forEach(obs => {
+          if (obs.geometry?.coordinates) {
+            const [longitude, latitude] = obs.geometry.coordinates;
+            
+            const point = new Point({
+              longitude: longitude,
+              latitude: latitude
+            });
+
+            // Create symbol - red color for birds
+            const symbol = new SimpleMarkerSymbol({
+              style: 'circle',
+              color: '#d62728', // Red color for birds
+              size: '10px',
+              outline: {
+                color: 'white',
+                width: 1.5
+              }
+            });
+
+            // Create popup template
+            const popupTemplate = new PopupTemplate({
+              title: obs.common_name || obs.scientific_name,
+              content: `
+                <div style="font-family: sans-serif;">
+                  <p><strong>Scientific Name:</strong> ${obs.scientific_name}</p>
+                  ${obs.common_name ? `<p><strong>Common Name:</strong> ${obs.common_name}</p>` : ''}
+                  <p><strong>Count:</strong> ${obs.count_observed}</p>
+                  <p><strong>Date:</strong> ${obs.observation_date}</p>
+                  ${obs.obstime ? `<p><strong>Time:</strong> ${obs.obstime}</p>` : ''}
+                  <p><strong>Location:</strong> ${obs.location_name}</p>
+                  <p><strong>County:</strong> ${obs.county}, ${obs.state}</p>
+                  <p><strong>Protocol:</strong> ${obs.protocol_name}</p>
+                  <p><strong>Data Source:</strong> ${obs.data_source}</p>
+                  <p><strong>Coordinates:</strong> ${obs.lat.toFixed(6)}, ${obs.lng.toFixed(6)}</p>
+                </div>
+              `
+            });
+
+            // Create graphic
+            const graphic = new Graphic({
+              geometry: point,
+              symbol: symbol,
+              popupTemplate: popupTemplate,
+              attributes: {
+                obs_id: obs.obs_id,
+                common_name: obs.common_name,
+                scientific_name: obs.scientific_name,
+                observation_date: obs.observation_date,
+                location_name: obs.location_name
+              }
+            });
+
+            eBirdObservationsLayer.add(graphic);
+            
+            // Debug: Log first few coordinates
+            if (eBirdObservations.indexOf(obs) < 3) {
+              console.log(`eBird Observation ${obs.obs_id}: ${obs.scientific_name} at [${longitude}, ${latitude}]`);
+            }
+          }
+        });
+        
+        console.log(`✅ eBird: Updated map with ${eBirdObservations.length} observation records`);
+        console.log(`eBird Layer graphics count: ${eBirdObservationsLayer.graphics.length}`);
+      }
+    }
+  }, [view, eBirdObservations]);
+
   // Add click handler for TNC observations
   useEffect(() => {
     if (view) {
@@ -1198,6 +1298,115 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   };
 
+  const loadEBirdObservations = async (_mapView: __esri.MapView, eBirdObservationsLayer: GraphicsLayer, filters?: {
+    startDate?: string;
+    endDate?: string;
+    maxResults?: number;
+    page?: number;
+    pageSize?: number;
+    searchMode?: 'preserve-only' | 'expanded' | 'custom';
+    customPolygon?: string;
+  }) => {
+    onEBirdLoadingChange?.(true);
+    try {
+      // Clear other layers when starting a new eBird search
+      const observationsLayer = _mapView.map?.findLayerById('inaturalist-observations') as GraphicsLayer;
+      const tncObservationsLayer = _mapView.map?.findLayerById('tnc-inaturalist-observations') as GraphicsLayer;
+      const calFloraLayer = _mapView.map?.findLayerById('calflora-plants') as GraphicsLayer;
+      
+      if (observationsLayer) {
+        observationsLayer.removeAll();
+      }
+      if (tncObservationsLayer) {
+        tncObservationsLayer.removeAll();
+      }
+      if (calFloraLayer) {
+        calFloraLayer.removeAll();
+      }
+      
+      const response = await eBirdService.queryObservations({
+        startDate: filters?.startDate,
+        endDate: filters?.endDate,
+        maxResults: filters?.maxResults || 2000,
+        page: filters?.page,
+        pageSize: filters?.pageSize,
+        searchMode: filters?.searchMode || 'expanded',
+        customPolygon: filters?.customPolygon
+      });
+      
+      onEBirdObservationsUpdate?.(response.observations);
+      
+      // Clear existing graphics
+      eBirdObservationsLayer.removeAll();
+      
+      // Add eBird observations to map
+      response.observations.forEach(obs => {
+        if (obs.geometry && obs.geometry.coordinates) {
+          const [longitude, latitude] = obs.geometry.coordinates;
+          
+          // Create point geometry
+          const point = new Point({
+            longitude,
+            latitude
+          });
+          
+          // Create symbol - using red color for birds
+          const symbol = new SimpleMarkerSymbol({
+            style: 'circle',
+            color: '#d62728', // Red color for birds
+            size: '10px',
+            outline: {
+              color: 'white',
+              width: 1.5
+            }
+          });
+
+          // Create popup template
+          const popupTemplate = new PopupTemplate({
+            title: obs.common_name || obs.scientific_name,
+            content: `
+              <div style="font-family: sans-serif;">
+                <p><strong>Scientific Name:</strong> ${obs.scientific_name}</p>
+                ${obs.common_name ? `<p><strong>Common Name:</strong> ${obs.common_name}</p>` : ''}
+                <p><strong>Count:</strong> ${obs.count_observed}</p>
+                <p><strong>Date:</strong> ${obs.observation_date}</p>
+                ${obs.obstime ? `<p><strong>Time:</strong> ${obs.obstime}</p>` : ''}
+                <p><strong>Location:</strong> ${obs.location_name}</p>
+                <p><strong>County:</strong> ${obs.county}, ${obs.state}</p>
+                <p><strong>Protocol:</strong> ${obs.protocol_name}</p>
+                <p><strong>Data Source:</strong> ${obs.data_source}</p>
+                <p><strong>Coordinates:</strong> ${obs.lat.toFixed(6)}, ${obs.lng.toFixed(6)}</p>
+              </div>
+            `
+          });
+
+          // Create graphic
+          const graphic = new Graphic({
+            geometry: point,
+            symbol: symbol,
+            popupTemplate: popupTemplate,
+            attributes: {
+              obs_id: obs.obs_id,
+              common_name: obs.common_name,
+              scientific_name: obs.scientific_name,
+              observation_date: obs.observation_date,
+              location_name: obs.location_name
+            }
+          });
+
+          eBirdObservationsLayer.add(graphic);
+        }
+      });
+      
+      console.log(`Added ${response.observations.length} eBird observations to map`);
+      
+    } catch (error) {
+      console.error('Error loading eBird observations:', error);
+    } finally {
+      onEBirdLoadingChange?.(false);
+    }
+  };
+
   const loadTNCObservations = async (_mapView: __esri.MapView, tncObservationsLayer: GraphicsLayer, filters?: {
     taxonCategories?: string[];
     startDate?: string;
@@ -1365,10 +1574,28 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   };
 
+  const reloadEBirdObservations = (filters?: {
+    startDate?: string;
+    endDate?: string;
+    maxResults?: number;
+    page?: number;
+    pageSize?: number;
+    searchMode?: 'preserve-only' | 'expanded' | 'custom';
+    customPolygon?: string;
+  }) => {
+    if (view && view.map) {
+      const eBirdObservationsLayer = view.map.findLayerById('ebird-observations') as GraphicsLayer;
+      if (eBirdObservationsLayer) {
+        loadEBirdObservations(view, eBirdObservationsLayer, filters);
+      }
+    }
+  };
+
   // Expose methods via ref
   useImperativeHandle(ref, () => ({
     reloadObservations,
     reloadTNCObservations,
+    reloadEBirdObservations,
     reloadCalFloraData,
     activateDrawMode,
     clearPolygon

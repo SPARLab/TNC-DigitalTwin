@@ -9,6 +9,7 @@ import CalFloraPlantModal from './components/CalFloraPlantModal';
 import { FilterState } from './types';
 import { iNaturalistObservation } from './services/iNaturalistService';
 import { TNCArcGISObservation } from './services/tncINaturalistService';
+import { EBirdObservation, eBirdService } from './services/eBirdService';
 import { CalFloraPlant } from './services/calFloraService';
 import { formatDateRangeCompact, getDateRange, formatDateForAPI, formatDateToUS } from './utils/dateUtils';
 import { tncINaturalistService } from './services/tncINaturalistService';
@@ -87,9 +88,11 @@ function App() {
   const [observations, setObservations] = useState<iNaturalistObservation[]>([]);
   const [tncObservations, setTncObservations] = useState<TNCArcGISObservation[]>([]);
   const [selectedTNCObservation, setSelectedTNCObservation] = useState<TNCArcGISObservation | null>(null);
+  const [eBirdObservations, setEBirdObservations] = useState<EBirdObservation[]>([]);
   const [calFloraPlants, setCalFloraPlants] = useState<CalFloraPlant[]>([]);
   const [observationsLoading, setObservationsLoading] = useState(false);
   const [tncObservationsLoading, setTncObservationsLoading] = useState(false);
+  const [eBirdObservationsLoading, setEBirdObservationsLoading] = useState(false);
   const [calFloraLoading, setCalFloraLoading] = useState(false);
   const [lastSearchedDaysBack, setLastSearchedDaysBack] = useState<number>(30); // Track the last searched time range
   const [, setTncTotalCount] = useState<number>(0);
@@ -253,6 +256,63 @@ function App() {
         });
 
       mapViewRef.current?.reloadTNCObservations(tncSearchFilters);
+    } else if (filters.source === 'eBird') {
+      // Handle eBird search
+      // Compute start/end dates from filters (support daysBack or custom range)
+      let startDate = filters.startDate;
+      let endDate = filters.endDate;
+      if (!startDate || !endDate) {
+        const range = getDateRange(filters.daysBack || 30);
+        startDate = formatDateForAPI(range.startDate);
+        endDate = formatDateForAPI(range.endDate);
+      }
+
+      // Map spatial filter to search mode
+      let searchMode: 'preserve-only' | 'expanded' | 'custom' = filters.spatialFilter === 'Dangermond Preserve' ? 'preserve-only' : 'expanded';
+      
+      // If custom polygon exists, use it
+      let customPolygonGeometry: string | undefined = undefined;
+      if (filters.customPolygon && filters.spatialFilter === 'Draw Area') {
+        searchMode = 'custom';
+        // Convert polygon to ArcGIS geometry format (JSON string)
+        customPolygonGeometry = JSON.stringify({
+          rings: filters.customPolygon.rings,
+          spatialReference: filters.customPolygon.spatialReference
+        });
+        console.log('🎯 Using custom drawn polygon for spatial filtering');
+      }
+
+      const eBirdSearchFilters = {
+        startDate,
+        endDate,
+        maxResults: 2000,
+        page: 1,
+        pageSize: 500,
+        searchMode,
+        customPolygon: customPolygonGeometry
+      };
+      
+      // Update the last searched time range when search is performed
+      setLastSearchedDaysBack(filters.daysBack || 30);
+      
+      console.log('Searching eBird with filters:', eBirdSearchFilters);
+      
+      // Fetch count in parallel to show total records
+      eBirdService
+        .queryObservationsCount({
+          startDate,
+          endDate,
+          searchMode,
+          customPolygon: customPolygonGeometry
+        })
+        .then((count) => {
+          console.log(`eBird: Found ${count} total observations`);
+        })
+        .catch((e) => {
+          console.warn('Failed to fetch eBird total count:', e);
+        });
+
+      mapViewRef.current?.reloadEBirdObservations(eBirdSearchFilters);
     } else {
       // Handle iNaturalist Public API search
       // Filter by iconic taxa based on category
@@ -579,11 +639,13 @@ function App() {
         resultCount={
           lastSearchedFilters.source === 'CalFlora' ? calFloraPlants.length :
           lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations.length :
+          lastSearchedFilters.source === 'eBird' ? eBirdObservations.length :
           observations.length
         }
         isSearching={
           filters.source === 'CalFlora' ? calFloraLoading :
           filters.source === 'iNaturalist (TNC Layers)' ? tncObservationsLoading :
+          filters.source === 'eBird' ? eBirdObservationsLoading :
           observationsLoading
         }
       />
@@ -600,6 +662,8 @@ function App() {
           onTNCObservationExportGeoJSON={handleTNCExportGeoJSON}
           selectedTNCObservation={selectedTNCObservation}
           onTNCObservationSelect={setSelectedTNCObservation}
+          eBirdObservations={eBirdObservations}
+          eBirdObservationsLoading={eBirdObservationsLoading}
           calFloraPlants={calFloraPlants}
           calFloraLoading={calFloraLoading}
           onCalFloraExportCSV={handleCalFloraExportCSV}
@@ -621,6 +685,9 @@ function App() {
           onTNCLoadingChange={setTncObservationsLoading}
           selectedTNCObservation={selectedTNCObservation}
           onTNCObservationSelect={setSelectedTNCObservation}
+          eBirdObservations={lastSearchedFilters.source === 'eBird' ? eBirdObservations : []}
+          onEBirdObservationsUpdate={setEBirdObservations}
+          onEBirdLoadingChange={setEBirdObservationsLoading}
           calFloraPlants={filters.source === 'CalFlora' ? calFloraPlants : []}
           onCalFloraUpdate={setCalFloraPlants}
           onCalFloraLoadingChange={setCalFloraLoading}

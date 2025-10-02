@@ -11,12 +11,13 @@ export const DATA_CATEGORIES = [
 export const DATA_SOURCES = [
   'iNaturalist (Public API)',
   'iNaturalist (TNC Layers)',
+  'eBird',
   'CalFlora'
 ] as const;
 
 // Map categories to their available data sources
 export const CATEGORY_DATA_SOURCES = {
-  'Wildlife': ['iNaturalist (Public API)', 'iNaturalist (TNC Layers)'],
+  'Wildlife': ['iNaturalist (Public API)', 'iNaturalist (TNC Layers)', 'eBird'],
   'Vegetation': ['CalFlora', 'iNaturalist (Public API)', 'iNaturalist (TNC Layers)']
 } as const;
 
