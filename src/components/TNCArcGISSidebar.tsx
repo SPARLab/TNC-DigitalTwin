@@ -239,8 +239,10 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
               ) : (
                 <ChevronRight className="w-4 h-4 text-gray-600 flex-shrink-0" />
               )}
-              {getUIPatternIcon(item.uiPattern)}
-              <h3 className="font-medium text-gray-900 truncate" title={item.title}>
+              <div className="flex-shrink-0">
+                {getUIPatternIcon(item.uiPattern)}
+              </div>
+              <h3 className="font-medium text-gray-900 break-words flex-1 min-w-0" title={item.title}>
                 {item.title}
               </h3>
               {item.uiPattern === 'EXTERNAL_LINK' && (
@@ -249,7 +251,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
             </div>
             
             {item.snippet && (
-              <p className={`text-sm text-gray-600 mb-2 ${isExpanded ? '' : 'line-clamp-2'}`}>
+              <p className={`text-sm text-gray-600 mb-2 break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
                 {item.snippet}
               </p>
             )}
@@ -305,7 +307,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
                   Description
                 </h4>
                 <div 
-                  className="text-sm text-gray-700 prose prose-sm max-w-none line-clamp-4"
+                  className="text-sm text-gray-700 prose prose-sm max-w-none overflow-hidden break-words max-h-32 overflow-y-auto"
                   dangerouslySetInnerHTML={{ __html: item.description }}
                 />
               </div>
@@ -318,17 +320,17 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
                   Tags
                 </h4>
                 <div className="flex flex-wrap gap-1">
-                  {item.tags.slice(0, 5).map((tag, index) => (
+                  {item.tags.slice(0, 8).map((tag, index) => (
                     <span
                       key={index}
-                      className="px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded"
+                      className="px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded break-words max-w-full"
                     >
                       {tag}
                     </span>
                   ))}
-                  {item.tags.length > 5 && (
+                  {item.tags.length > 8 && (
                     <span className="px-2 py-0.5 text-xs text-gray-500">
-                      +{item.tags.length - 5} more
+                      +{item.tags.length - 8} more
                     </span>
                   )}
                 </div>
@@ -394,7 +396,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
   };
 
   return (
-    <div id="tnc-arcgis-sidebar" className="w-80 bg-white border-r border-gray-200 flex flex-col h-full">
+    <div id="tnc-arcgis-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col h-full">
       {/* Header */}
       <div id="tnc-header" className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between mb-3">
@@ -601,7 +603,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
                 <div className="space-y-4">
                   <div>
                     <h4 className="font-medium text-gray-900 mb-2">Description</h4>
-                    <p className="text-gray-700">{selectedModalItem.description || selectedModalItem.snippet}</p>
+                    <p className="text-gray-700 break-words">{selectedModalItem.description || selectedModalItem.snippet}</p>
                   </div>
                   
                   {selectedModalItem.tags.length > 0 && (
@@ -609,7 +611,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
                       <h4 className="font-medium text-gray-900 mb-2">Tags</h4>
                       <div className="flex flex-wrap gap-1">
                         {selectedModalItem.tags.map(tag => (
-                          <span key={tag} className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
+                          <span key={tag} className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded break-words">
                             {tag}
                           </span>
                         ))}
@@ -617,9 +619,9 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
                     </div>
                   )}
                   
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
-                    <span>Owner: {selectedModalItem.owner}</span>
-                    <span>Type: {selectedModalItem.type}</span>
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                    <span className="break-words">Owner: {selectedModalItem.owner}</span>
+                    <span className="break-words">Type: {selectedModalItem.type}</span>
                     <span>Views: {selectedModalItem.num_views}</span>
                   </div>
                   
