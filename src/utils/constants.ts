@@ -19,6 +19,7 @@ export const DATA_CATEGORIES = [
 export const DATA_SOURCES = [
   'iNaturalist (Public API)',
   'iNaturalist (TNC Layers)',
+  'eBird',
   'CalFlora',
   'TNC ArcGIS Hub'
 ] as const;
@@ -27,8 +28,8 @@ export const DATA_SOURCES = [
 // Wildlife and Vegetation are legacy categories that map to older data sources
 // All TNC main categories map to TNC ArcGIS Hub
 export const CATEGORY_DATA_SOURCES: Record<string, readonly string[]> = {
-  // Legacy categories for iNaturalist and CalFlora
-  'Wildlife': ['iNaturalist (Public API)', 'iNaturalist (TNC Layers)'],
+  // Legacy categories for iNaturalist, eBird, and CalFlora
+  'Wildlife': ['iNaturalist (Public API)', 'iNaturalist (TNC Layers)', 'eBird'],
   'Vegetation': ['CalFlora', 'iNaturalist (Public API)', 'iNaturalist (TNC Layers)'],
   
   // TNC main categories - all map to TNC ArcGIS Hub

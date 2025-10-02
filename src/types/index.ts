@@ -18,6 +18,10 @@ export interface FilterState {
   endDate?: string; // Custom end date (YYYY-MM-DD)
   qualityGrade?: 'research' | 'needs_id' | 'casual';
   iconicTaxa?: string[];
+  customPolygon?: {
+    rings: number[][][];
+    spatialReference: { wkid: number };
+  };
 }
 
 export interface DataLayer {

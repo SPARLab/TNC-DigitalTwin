@@ -7,9 +7,9 @@ import MapView from './components/MapView';
 import Footer from './components/Footer';
 import CalFloraPlantModal from './components/CalFloraPlantModal';
 import { FilterState } from './types';
-import { dataLayers as initialDataLayers } from './data/mockData';
 import { iNaturalistObservation } from './services/iNaturalistService';
 import { TNCArcGISObservation } from './services/tncINaturalistService';
+import { EBirdObservation, eBirdService } from './services/eBirdService';
 import { CalFloraPlant } from './services/calFloraService';
 import { TNCArcGISItem, tncArcGISAPI } from './services/tncArcGISService';
 import { formatDateRangeCompact, getDateRange, formatDateForAPI, formatDateToUS } from './utils/dateUtils';
@@ -86,14 +86,15 @@ function App() {
   });
 
   // const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
-  const [dataLayers, setDataLayers] = useState(initialDataLayers);
   const [observations, setObservations] = useState<iNaturalistObservation[]>([]);
   const [tncObservations, setTncObservations] = useState<TNCArcGISObservation[]>([]);
   const [selectedTNCObservation, setSelectedTNCObservation] = useState<TNCArcGISObservation | null>(null);
+  const [eBirdObservations, setEBirdObservations] = useState<EBirdObservation[]>([]);
   const [calFloraPlants, setCalFloraPlants] = useState<CalFloraPlant[]>([]);
   const [tncArcGISItems, setTncArcGISItems] = useState<TNCArcGISItem[]>([]);
   const [observationsLoading, setObservationsLoading] = useState(false);
   const [tncObservationsLoading, setTncObservationsLoading] = useState(false);
+  const [eBirdObservationsLoading, setEBirdObservationsLoading] = useState(false);
   const [calFloraLoading, setCalFloraLoading] = useState(false);
   const [tncArcGISLoading, setTncArcGISLoading] = useState(false);
   const [lastSearchedDaysBack, setLastSearchedDaysBack] = useState<number>(30); // Track the last searched time range
@@ -101,6 +102,7 @@ function App() {
   const [tncPage] = useState<number>(1);
   const [tncPageSize] = useState<number>(250);
   const mapViewRef = useRef<MapViewRef>(null);
+  const [isDrawMode, setIsDrawMode] = useState(false);
 
   // CalFlora modal state
   const [selectedCalFloraPlant, setSelectedCalFloraPlant] = useState<CalFloraPlant | null>(null);
@@ -163,6 +165,34 @@ function App() {
 
   const handleFilterChange = (newFilters: FilterState) => {
     setFilters(newFilters);
+    
+    // If user selects "Draw Area" spatial filter, activate draw mode
+    if (newFilters.spatialFilter === 'Draw Area' && filters.spatialFilter !== 'Draw Area') {
+      // Small delay to ensure dropdown closes first
+      setTimeout(() => {
+        mapViewRef.current?.activateDrawMode();
+      }, 100);
+    }
+  };
+
+  const handlePolygonDrawn = (polygon: __esri.Polygon) => {
+    // Store polygon in filters for search
+    const polygonData = {
+      rings: polygon.rings,
+      spatialReference: { wkid: polygon.spatialReference.wkid || 4326 }
+    };
+    setFilters(prev => ({ ...prev, customPolygon: polygonData }));
+    console.log('Polygon stored in filters:', polygonData);
+  };
+
+  const handlePolygonCleared = () => {
+    setIsDrawMode(false);
+    // Clear polygon from filters and reset to default spatial filter
+    setFilters(prev => ({ 
+      ...prev, 
+      customPolygon: undefined,
+      spatialFilter: 'Dangermond + Margin' 
+    }));
   };
 
   const handleSearch = () => {
@@ -210,9 +240,20 @@ function App() {
       searchTNCArcGIS();
     } else if (filters.source === 'CalFlora') {
       // Handle CalFlora search
+      // Check for custom polygon
+      let customPolygonGeometry: string | undefined = undefined;
+      if (filters.customPolygon && filters.spatialFilter === 'Draw Area') {
+        customPolygonGeometry = JSON.stringify({
+          rings: filters.customPolygon.rings,
+          spatialReference: filters.customPolygon.spatialReference
+        });
+        console.log('🎯 Using custom drawn polygon for CalFlora spatial filtering');
+      }
+      
       const calFloraFilters = {
         maxResults: 1000,
-        plantType: 'all' as 'invasive' | 'native' | 'all'
+        plantType: 'all' as 'invasive' | 'native' | 'all',
+        customPolygon: customPolygonGeometry
       };
       
       console.log('Searching CalFlora with filters:', calFloraFilters);
@@ -235,8 +276,20 @@ function App() {
       }
 
       // Map spatial filter to search mode
-      const searchMode: 'preserve-only' | 'expanded' = filters.spatialFilter === 'Dangermond Preserve' ? 'preserve-only' : 'expanded';
+      let searchMode: 'preserve-only' | 'expanded' | 'custom' = filters.spatialFilter === 'Dangermond Preserve' ? 'preserve-only' : 'expanded';
       const showSearchArea = filters.spatialFilter === 'Dangermond + Margin';
+      
+      // If custom polygon exists, use it
+      let customPolygonGeometry: string | undefined = undefined;
+      if (filters.customPolygon && filters.spatialFilter === 'Draw Area') {
+        searchMode = 'custom';
+        // Convert polygon to ArcGIS geometry format (JSON string)
+        customPolygonGeometry = JSON.stringify({
+          rings: filters.customPolygon.rings,
+          spatialReference: filters.customPolygon.spatialReference
+        });
+        console.log('🎯 Using custom drawn polygon for spatial filtering');
+      }
 
       const tncSearchFilters = {
         startDate,
@@ -248,6 +301,7 @@ function App() {
         pageSize: tncPageSize, // Keep page size at 250 for reasonable loading
         searchMode,
         showSearchArea,
+        customPolygon: customPolygonGeometry,
         onProgress: (current: number, total: number, percentage: number) => {
           console.log(`📊 TNC Progress: ${current}/${total} observations (${percentage}%)`);
           // Could add UI progress indicator here in the future
@@ -265,7 +319,8 @@ function App() {
           endDate,
           taxonCategories,
           useFilters: true,
-          searchMode
+          searchMode,
+          customPolygon: customPolygonGeometry
         })
         .then(setTncTotalCount)
         .catch((e) => {
@@ -274,6 +329,63 @@ function App() {
         });
 
       mapViewRef.current?.reloadTNCObservations(tncSearchFilters);
+    } else if (filters.source === 'eBird') {
+      // Handle eBird search
+      // Compute start/end dates from filters (support daysBack or custom range)
+      let startDate = filters.startDate;
+      let endDate = filters.endDate;
+      if (!startDate || !endDate) {
+        const range = getDateRange(filters.daysBack || 30);
+        startDate = formatDateForAPI(range.startDate);
+        endDate = formatDateForAPI(range.endDate);
+      }
+
+      // Map spatial filter to search mode
+      let searchMode: 'preserve-only' | 'expanded' | 'custom' = filters.spatialFilter === 'Dangermond Preserve' ? 'preserve-only' : 'expanded';
+      
+      // If custom polygon exists, use it
+      let customPolygonGeometry: string | undefined = undefined;
+      if (filters.customPolygon && filters.spatialFilter === 'Draw Area') {
+        searchMode = 'custom';
+        // Convert polygon to ArcGIS geometry format (JSON string)
+        customPolygonGeometry = JSON.stringify({
+          rings: filters.customPolygon.rings,
+          spatialReference: filters.customPolygon.spatialReference
+        });
+        console.log('🎯 Using custom drawn polygon for spatial filtering');
+      }
+
+      const eBirdSearchFilters = {
+        startDate,
+        endDate,
+        maxResults: 2000,
+        page: 1,
+        pageSize: 500,
+        searchMode,
+        customPolygon: customPolygonGeometry
+      };
+      
+      // Update the last searched time range when search is performed
+      setLastSearchedDaysBack(filters.daysBack || 30);
+      
+      console.log('Searching eBird with filters:', eBirdSearchFilters);
+      
+      // Fetch count in parallel to show total records
+      eBirdService
+        .queryObservationsCount({
+          startDate,
+          endDate,
+          searchMode,
+          customPolygon: customPolygonGeometry
+        })
+        .then((count) => {
+          console.log(`eBird: Found ${count} total observations`);
+        })
+        .catch((e) => {
+          console.warn('Failed to fetch eBird total count:', e);
+        });
+
+      mapViewRef.current?.reloadEBirdObservations(eBirdSearchFilters);
     } else {
       // Handle iNaturalist Public API search
       // Filter by iconic taxa based on category
@@ -283,12 +395,23 @@ function App() {
       }
       // For Wildlife category, don't filter by iconic taxa to show all animals
       
+      // Check for custom polygon (client-side filtering for iNaturalist Public API)
+      let customPolygonGeometry: string | undefined = undefined;
+      if (filters.customPolygon && filters.spatialFilter === 'Draw Area') {
+        customPolygonGeometry = JSON.stringify({
+          rings: filters.customPolygon.rings,
+          spatialReference: filters.customPolygon.spatialReference
+        });
+        console.log('🎯 Will apply client-side polygon filtering for iNaturalist Public API');
+      }
+      
       const searchFilters = {
         daysBack: filters.startDate && filters.endDate ? undefined : (filters.daysBack || 30),
         startDate: filters.startDate,
         endDate: filters.endDate,
         qualityGrade: undefined as 'research' | 'needs_id' | 'casual' | undefined,
-        iconicTaxa
+        iconicTaxa,
+        customPolygon: customPolygonGeometry
       };
       
       // Update the last searched time range when search is performed
@@ -297,16 +420,6 @@ function App() {
       console.log('Searching iNaturalist Public API with filters:', searchFilters);
       mapViewRef.current?.reloadObservations(searchFilters);
     }
-  };
-
-  const handleDataLayerToggle = (layerId: string) => {
-    setDataLayers(layers => 
-      layers.map(layer => 
-        layer.id === layerId 
-          ? { ...layer, visible: !layer.visible }
-          : layer
-      )
-    );
   };
 
   const handleObservationFilterChange = (observationFilters: Partial<FilterState>) => {
@@ -679,12 +792,14 @@ function App() {
           lastSearchedFilters.source === 'TNC ArcGIS Hub' ? tncArcGISItems.length :
           lastSearchedFilters.source === 'CalFlora' ? calFloraPlants.length :
           lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations.length :
+          lastSearchedFilters.source === 'eBird' ? eBirdObservations.length :
           observations.length
         }
         isSearching={
           filters.source === 'TNC ArcGIS Hub' ? tncArcGISLoading :
           filters.source === 'CalFlora' ? calFloraLoading :
           filters.source === 'iNaturalist (TNC Layers)' ? tncObservationsLoading :
+          filters.source === 'eBird' ? eBirdObservationsLoading :
           observationsLoading
         }
       />
@@ -701,6 +816,8 @@ function App() {
           onTNCObservationExportGeoJSON={handleTNCExportGeoJSON}
           selectedTNCObservation={selectedTNCObservation}
           onTNCObservationSelect={setSelectedTNCObservation}
+          eBirdObservations={eBirdObservations}
+          eBirdObservationsLoading={eBirdObservationsLoading}
           calFloraPlants={calFloraPlants}
           calFloraLoading={calFloraLoading}
           onCalFloraExportCSV={handleCalFloraExportCSV}
@@ -726,8 +843,6 @@ function App() {
         />
         <MapView 
           ref={mapViewRef}
-          dataLayers={dataLayers}
-          onLayerToggle={handleDataLayerToggle}
           onObservationsUpdate={setObservations}
           onLoadingChange={setObservationsLoading}
           tncObservations={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations : []}
@@ -735,11 +850,18 @@ function App() {
           onTNCLoadingChange={setTncObservationsLoading}
           selectedTNCObservation={selectedTNCObservation}
           onTNCObservationSelect={setSelectedTNCObservation}
+          eBirdObservations={lastSearchedFilters.source === 'eBird' ? eBirdObservations : []}
+          onEBirdObservationsUpdate={setEBirdObservations}
+          onEBirdLoadingChange={setEBirdObservationsLoading}
           calFloraPlants={filters.source === 'CalFlora' ? calFloraPlants : []}
           onCalFloraUpdate={setCalFloraPlants}
           onCalFloraLoadingChange={setCalFloraLoading}
           tncArcGISItems={tncArcGISItems}
           activeLayerIds={activeLayerIds}
+          isDrawMode={isDrawMode}
+          onDrawModeChange={setIsDrawMode}
+          onPolygonDrawn={handlePolygonDrawn}
+          onPolygonCleared={handlePolygonCleared}
         />
         <FilterSidebar 
           filters={filters}

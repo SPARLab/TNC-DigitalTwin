@@ -1,6 +1,4 @@
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
-import { DataLayer } from '../types';
-import DataLayersPanel from './DataLayersPanel';
 import Map from '@arcgis/core/Map';
 import MapView from '@arcgis/core/views/MapView';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
@@ -17,10 +15,9 @@ import { iNaturalistAPI, iNaturalistObservation } from '../services/iNaturalistS
 import { tncINaturalistService, TNCArcGISObservation } from '../services/tncINaturalistService';
 import { calFloraAPI, CalFloraPlant } from '../services/calFloraService';
 import { TNCArcGISItem } from '../services/tncArcGISService';
+import { eBirdService, EBirdObservation } from '../services/eBirdService';
 
 interface MapViewProps {
-  dataLayers: DataLayer[];
-  onLayerToggle: (layerId: string) => void;
   onObservationsUpdate?: (observations: iNaturalistObservation[]) => void;
   onLoadingChange?: (loading: boolean) => void;
   tncObservations?: TNCArcGISObservation[];
@@ -28,6 +25,9 @@ interface MapViewProps {
   onTNCLoadingChange?: (loading: boolean) => void;
   selectedTNCObservation?: TNCArcGISObservation | null;
   onTNCObservationSelect?: (observation: TNCArcGISObservation | null) => void;
+  eBirdObservations?: EBirdObservation[];
+  onEBirdObservationsUpdate?: (observations: EBirdObservation[]) => void;
+  onEBirdLoadingChange?: (loading: boolean) => void;
   calFloraPlants?: CalFloraPlant[];
   onCalFloraUpdate?: (plants: CalFloraPlant[]) => void;
   onCalFloraLoadingChange?: (loading: boolean) => void;
@@ -35,6 +35,11 @@ interface MapViewProps {
   tncArcGISItems?: TNCArcGISItem[];
   activeLayerIds?: string[];
   layerOpacities?: Record<string, number>;
+  // Draw mode props
+  isDrawMode?: boolean;
+  onDrawModeChange?: (isDrawMode: boolean) => void;
+  onPolygonDrawn?: (polygon: __esri.Polygon) => void;
+  onPolygonCleared?: () => void;
 }
 
 export interface MapViewRef {
@@ -44,6 +49,7 @@ export interface MapViewRef {
     daysBack?: number;
     startDate?: string;
     endDate?: string;
+    customPolygon?: string;
   }) => void;
   reloadTNCObservations: (filters?: {
     taxonCategories?: string[];
@@ -53,18 +59,29 @@ export interface MapViewRef {
     useFilters?: boolean;
     page?: number;
     pageSize?: number;
-    searchMode?: 'preserve-only' | 'expanded';
+    searchMode?: 'preserve-only' | 'expanded' | 'custom';
     showSearchArea?: boolean;
+    customPolygon?: string;
+  }) => void;
+  reloadEBirdObservations: (filters?: {
+    startDate?: string;
+    endDate?: string;
+    maxResults?: number;
+    page?: number;
+    pageSize?: number;
+    searchMode?: 'preserve-only' | 'expanded' | 'custom';
+    customPolygon?: string;
   }) => void;
   reloadCalFloraData: (filters?: {
     maxResults?: number;
     plantType?: 'invasive' | 'native' | 'all';
+    customPolygon?: string;
   }) => void;
+  activateDrawMode: () => void;
+  clearPolygon: () => void;
 }
 
 const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({ 
-  dataLayers, 
-  onLayerToggle, 
   onObservationsUpdate, 
   onLoadingChange,
   tncObservations = [],
@@ -72,18 +89,29 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   onTNCLoadingChange,
   selectedTNCObservation,
   onTNCObservationSelect,
+  eBirdObservations = [],
+  onEBirdObservationsUpdate,
+  onEBirdLoadingChange,
   calFloraPlants = [],
   onCalFloraUpdate,
   onCalFloraLoadingChange,
   tncArcGISItems = [],
   activeLayerIds = [],
-  layerOpacities = {}
+  layerOpacities = {},
+  isDrawMode = false,
+  onDrawModeChange,
+  onPolygonDrawn,
+  onPolygonCleared
 }, ref) => {
   const mapDiv = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<MapView | null>(null);
   const [observations, setObservations] = useState<iNaturalistObservation[]>([]);
   const [loading, setLoading] = useState(false);
   const tncArcGISLayersRef = useRef<globalThis.Map<string, __esri.Layer>>(new globalThis.Map());
+  const [drawnPolygon, setDrawnPolygon] = useState<__esri.Polygon | null>(null);
+  const drawingPointsRef = useRef<number[][]>([]);
+  const clickHandlerRef = useRef<__esri.Handle | null>(null);
+  const pointerMoveHandlerRef = useRef<__esri.Handle | null>(null);
   // CalFlora state is managed by parent component via props
 
   // Helper to build TNC popup content with photo carousel and attribution
@@ -297,6 +325,12 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         title: 'TNC iNaturalist Observations'
       });
 
+      // Create graphics layer for eBird observations
+      const eBirdObservationsLayer = new GraphicsLayer({
+        id: 'ebird-observations',
+        title: 'eBird Observations'
+      });
+
       // Create graphics layer for CalFlora plants
       const calFloraLayer = new GraphicsLayer({
         id: 'calflora-plants',
@@ -305,14 +339,15 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
 
       map.add(observationsLayer);
       map.add(tncObservationsLayer);
+      map.add(eBirdObservationsLayer);
       map.add(calFloraLayer);
 
       // Create the map view centered on Dangermond Preserve
-      // Coordinates: approximately 34.45°N, -120.2°W
+      // Coordinates: approximately 34.47°N, -120.47°W (Point Conception area)
       const mapView = new MapView({
         container: mapDiv.current,
         map: map,
-        center: [-120.2, 34.45], // Longitude, Latitude for Dangermond Preserve
+        center: [-120.47, 34.47], // Longitude, Latitude for Dangermond Preserve
         zoom: 12, // Good zoom level to see the preserve area
         ui: {
           components: ['attribution'] // Keep attribution, remove default zoom controls since we have custom ones
@@ -417,6 +452,205 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
 
     handleLayerLoading();
   }, [view, tncArcGISItems, activeLayerIds, layerOpacities]);
+
+  // Set up draw layer for polygon drawing
+  useEffect(() => {
+    if (!view) return;
+    
+    view.when(() => {
+      const map = view.map;
+      
+      // Create or get the draw layer
+      let drawLayer = map?.findLayerById('draw-polygon-layer') as GraphicsLayer;
+      if (!drawLayer) {
+        drawLayer = new GraphicsLayer({
+          id: 'draw-polygon-layer',
+          title: 'Custom Draw Area',
+          listMode: 'hide' // Hide from layer list
+        });
+        map?.add(drawLayer);
+      }
+      
+      console.log('✅ Draw layer initialized successfully');
+    }).catch((error) => {
+      console.error('Error initializing draw layer:', error);
+    });
+  }, [view]);
+
+  // Add keyboard listener for Delete key
+  useEffect(() => {
+    if (!drawnPolygon) return;
+    
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        event.preventDefault();
+        clearPolygon();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [drawnPolygon, view, onPolygonCleared, onDrawModeChange]);
+
+  // Function to activate draw mode with manual click handling
+  const activateDrawMode = () => {
+    if (!view) {
+      console.warn('View not available');
+      return;
+    }
+    
+    // Clear any existing polygon and points
+    const drawLayer = view.map?.findLayerById('draw-polygon-layer') as GraphicsLayer;
+    if (drawLayer) {
+      drawLayer.removeAll();
+    }
+    setDrawnPolygon(null);
+    drawingPointsRef.current = [];
+    
+    // Remove any existing handlers
+    if (clickHandlerRef.current) {
+      clickHandlerRef.current.remove();
+    }
+    if (pointerMoveHandlerRef.current) {
+      pointerMoveHandlerRef.current.remove();
+    }
+    
+    // Add pointer-move handler for live preview
+    pointerMoveHandlerRef.current = view.on('pointer-move', (event) => {
+      // Only show preview if we have at least one point
+      if (drawingPointsRef.current.length === 0) return;
+      
+      const point = view.toMap({ x: event.x, y: event.y });
+      if (!point || point.longitude == null || point.latitude == null) return;
+      
+      const currentPoint: [number, number] = [point.longitude, point.latitude];
+      const previewPoints = [...drawingPointsRef.current, currentPoint];
+      
+      // Create preview polygon
+      let rings: number[][][];
+      if (previewPoints.length >= 2) {
+        // Close the ring by adding the first point at the end
+        rings = [[...previewPoints, previewPoints[0]]];
+      } else {
+        // Just one point, can't make a polygon yet
+        return;
+      }
+      
+      const polygon = new Polygon({
+        rings: rings,
+        spatialReference: { wkid: 4326 }
+      });
+      
+      const symbol = new SimpleFillSymbol({
+        color: [51, 136, 255, 0.15],
+        outline: {
+          color: [51, 136, 255, 1],
+          width: 2,
+          style: 'dash'
+        }
+      });
+      
+      const graphic = new Graphic({
+        geometry: polygon,
+        symbol: symbol
+      });
+      
+      if (drawLayer) {
+        drawLayer.removeAll();
+        drawLayer.add(graphic);
+      }
+    });
+    
+    // Add click handler for drawing
+    clickHandlerRef.current = view.on('click', (event) => {
+      event.stopPropagation();
+      
+      if (event.mapPoint.longitude == null || event.mapPoint.latitude == null) return;
+      const point: [number, number] = [event.mapPoint.longitude, event.mapPoint.latitude];
+      drawingPointsRef.current.push(point);
+      
+      console.log(`Point ${drawingPointsRef.current.length} added`);
+    });
+    
+    // Add double-click handler to finish drawing
+    const dblClickHandler = view.on('double-click', (event) => {
+      event.stopPropagation();
+      
+      if (drawingPointsRef.current.length >= 3) {
+        const polygon = new Polygon({
+          rings: [[...drawingPointsRef.current, drawingPointsRef.current[0]]], // Close the ring
+          spatialReference: { wkid: 4326 }
+        });
+        
+        // Create final graphic with solid style
+        const symbol = new SimpleFillSymbol({
+          color: [51, 136, 255, 0.2],
+          outline: {
+            color: [51, 136, 255, 1],
+            width: 2
+          }
+        });
+        
+        const graphic = new Graphic({
+          geometry: polygon,
+          symbol: symbol
+        });
+        
+        if (drawLayer) {
+          drawLayer.removeAll();
+          drawLayer.add(graphic);
+        }
+        
+        setDrawnPolygon(polygon);
+        onPolygonDrawn?.(polygon);
+        
+        // Remove handlers
+        if (clickHandlerRef.current) {
+          clickHandlerRef.current.remove();
+          clickHandlerRef.current = null;
+        }
+        if (pointerMoveHandlerRef.current) {
+          pointerMoveHandlerRef.current.remove();
+          pointerMoveHandlerRef.current = null;
+        }
+        dblClickHandler.remove();
+        
+        onDrawModeChange?.(false);
+        console.log('✅ Polygon completed with', drawingPointsRef.current.length, 'points');
+      }
+    });
+    
+    onDrawModeChange?.(true);
+    console.log('✏️ Draw mode activated - Click to add points, double-click to finish');
+  };
+
+  // Function to clear the drawn polygon
+  const clearPolygon = () => {
+    if (view) {
+      const drawLayer = view.map?.findLayerById('draw-polygon-layer') as GraphicsLayer;
+      if (drawLayer) {
+        drawLayer.removeAll();
+      }
+      
+      // Remove any active handlers
+      if (clickHandlerRef.current) {
+        clickHandlerRef.current.remove();
+        clickHandlerRef.current = null;
+      }
+      if (pointerMoveHandlerRef.current) {
+        pointerMoveHandlerRef.current.remove();
+        pointerMoveHandlerRef.current = null;
+      }
+      
+      drawingPointsRef.current = [];
+      setDrawnPolygon(null);
+      onPolygonCleared?.();
+      onDrawModeChange?.(false);
+      console.log('🗑️ Polygon cleared');
+    }
+  };
 
   // Effect to handle CalFlora data when provided via props
   useEffect(() => {
@@ -659,6 +893,83 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   }, [view, tncObservations, selectedTNCObservation]);
 
+  // Effect to update eBird observations on map when data changes
+  useEffect(() => {
+    if (view && eBirdObservations.length > 0) {
+      const eBirdObservationsLayer = view.map?.findLayerById('ebird-observations') as GraphicsLayer;
+      if (eBirdObservationsLayer) {
+        // Clear existing graphics
+        eBirdObservationsLayer.removeAll();
+        
+        // Add eBird observations to map
+        eBirdObservations.forEach(obs => {
+          if (obs.geometry?.coordinates) {
+            const [longitude, latitude] = obs.geometry.coordinates;
+            
+            const point = new Point({
+              longitude: longitude,
+              latitude: latitude
+            });
+
+            // Create symbol - red color for birds
+            const symbol = new SimpleMarkerSymbol({
+              style: 'circle',
+              color: '#d62728', // Red color for birds
+              size: '10px',
+              outline: {
+                color: 'white',
+                width: 1.5
+              }
+            });
+
+            // Create popup template
+            const popupTemplate = new PopupTemplate({
+              title: obs.common_name || obs.scientific_name,
+              content: `
+                <div style="font-family: sans-serif;">
+                  <p><strong>Scientific Name:</strong> ${obs.scientific_name}</p>
+                  ${obs.common_name ? `<p><strong>Common Name:</strong> ${obs.common_name}</p>` : ''}
+                  <p><strong>Count:</strong> ${obs.count_observed}</p>
+                  <p><strong>Date:</strong> ${obs.observation_date}</p>
+                  ${obs.obstime ? `<p><strong>Time:</strong> ${obs.obstime}</p>` : ''}
+                  <p><strong>Location:</strong> ${obs.location_name}</p>
+                  <p><strong>County:</strong> ${obs.county}, ${obs.state}</p>
+                  <p><strong>Protocol:</strong> ${obs.protocol_name}</p>
+                  <p><strong>Data Source:</strong> ${obs.data_source}</p>
+                  <p><strong>Coordinates:</strong> ${obs.lat.toFixed(6)}, ${obs.lng.toFixed(6)}</p>
+                </div>
+              `
+            });
+
+            // Create graphic
+            const graphic = new Graphic({
+              geometry: point,
+              symbol: symbol,
+              popupTemplate: popupTemplate,
+              attributes: {
+                obs_id: obs.obs_id,
+                common_name: obs.common_name,
+                scientific_name: obs.scientific_name,
+                observation_date: obs.observation_date,
+                location_name: obs.location_name
+              }
+            });
+
+            eBirdObservationsLayer.add(graphic);
+            
+            // Debug: Log first few coordinates
+            if (eBirdObservations.indexOf(obs) < 3) {
+              console.log(`eBird Observation ${obs.obs_id}: ${obs.scientific_name} at [${longitude}, ${latitude}]`);
+            }
+          }
+        });
+        
+        console.log(`✅ eBird: Updated map with ${eBirdObservations.length} observation records`);
+        console.log(`eBird Layer graphics count: ${eBirdObservationsLayer.graphics.length}`);
+      }
+    }
+  }, [view, eBirdObservations]);
+
   // Add click handler for TNC observations
   useEffect(() => {
     if (view) {
@@ -688,6 +999,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     daysBack?: number;
     startDate?: string;
     endDate?: string;
+    customPolygon?: string;
   }) => {
     setLoading(true);
     onLoadingChange?.(true);
@@ -739,13 +1051,44 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       });
       
       setObservations(response.results);
-      onObservationsUpdate?.(response.results);
       
       // Clear existing graphics
       observationsLayer.removeAll();
       
+      // Filter by custom polygon if provided (client-side filtering for iNaturalist Public API)
+      let filteredResults = response.results;
+      if (filters?.customPolygon) {
+        try {
+          const polygonGeometry = JSON.parse(filters.customPolygon);
+          const polygon = new Polygon({
+            rings: polygonGeometry.rings,
+            spatialReference: polygonGeometry.spatialReference
+          });
+          
+          filteredResults = response.results.filter(obs => {
+            if (obs.geojson && obs.geojson.coordinates) {
+              const point = new Point({
+                longitude: obs.geojson.coordinates[0],
+                latitude: obs.geojson.coordinates[1],
+                spatialReference: { wkid: 4326 }
+              });
+              return polygon.contains(point);
+            }
+            return false;
+          });
+          
+          console.log(`🎯 Filtered ${response.results.length} observations to ${filteredResults.length} within custom polygon`);
+        } catch (error) {
+          console.error('Error filtering by custom polygon:', error);
+          filteredResults = response.results;
+        }
+      }
+      
+      // Update parent with filtered results
+      onObservationsUpdate?.(filteredResults);
+      
       // Add observations to map
-      response.results.forEach(obs => {
+      filteredResults.forEach(obs => {
         if (obs.geojson && obs.geojson.coordinates) {
           const [longitude, latitude] = obs.geojson.coordinates;
           
@@ -824,11 +1167,12 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   const loadCalFloraData = async (_mapView: __esri.MapView, calFloraLayer: GraphicsLayer, filters?: {
     maxResults?: number;
     plantType?: 'invasive' | 'native' | 'all';
+    customPolygon?: string;
   }) => {
     onCalFloraLoadingChange?.(true);
     
     try {
-      const { maxResults = 1000, plantType = 'all' } = filters || {};
+      const { maxResults = 1000, plantType = 'all', customPolygon } = filters || {};
       
       let allPlants: CalFloraPlant[] = [];
       
@@ -843,7 +1187,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       console.log('Loading CalFlora plant data...');
       const response = await calFloraAPI.getAllPlants({ 
         maxResults, 
-        plantType
+        plantType,
+        customPolygon
         // No county filter - get all plants from Dangermond dataset
       });
       allPlants.push(...response.results);
@@ -1049,6 +1394,115 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   };
 
+  const loadEBirdObservations = async (_mapView: __esri.MapView, eBirdObservationsLayer: GraphicsLayer, filters?: {
+    startDate?: string;
+    endDate?: string;
+    maxResults?: number;
+    page?: number;
+    pageSize?: number;
+    searchMode?: 'preserve-only' | 'expanded' | 'custom';
+    customPolygon?: string;
+  }) => {
+    onEBirdLoadingChange?.(true);
+    try {
+      // Clear other layers when starting a new eBird search
+      const observationsLayer = _mapView.map?.findLayerById('inaturalist-observations') as GraphicsLayer;
+      const tncObservationsLayer = _mapView.map?.findLayerById('tnc-inaturalist-observations') as GraphicsLayer;
+      const calFloraLayer = _mapView.map?.findLayerById('calflora-plants') as GraphicsLayer;
+      
+      if (observationsLayer) {
+        observationsLayer.removeAll();
+      }
+      if (tncObservationsLayer) {
+        tncObservationsLayer.removeAll();
+      }
+      if (calFloraLayer) {
+        calFloraLayer.removeAll();
+      }
+      
+      const response = await eBirdService.queryObservations({
+        startDate: filters?.startDate,
+        endDate: filters?.endDate,
+        maxResults: filters?.maxResults || 2000,
+        page: filters?.page,
+        pageSize: filters?.pageSize,
+        searchMode: filters?.searchMode || 'expanded',
+        customPolygon: filters?.customPolygon
+      });
+      
+      onEBirdObservationsUpdate?.(response.observations);
+      
+      // Clear existing graphics
+      eBirdObservationsLayer.removeAll();
+      
+      // Add eBird observations to map
+      response.observations.forEach(obs => {
+        if (obs.geometry && obs.geometry.coordinates) {
+          const [longitude, latitude] = obs.geometry.coordinates;
+          
+          // Create point geometry
+          const point = new Point({
+            longitude,
+            latitude
+          });
+          
+          // Create symbol - using red color for birds
+          const symbol = new SimpleMarkerSymbol({
+            style: 'circle',
+            color: '#d62728', // Red color for birds
+            size: '10px',
+            outline: {
+              color: 'white',
+              width: 1.5
+            }
+          });
+
+          // Create popup template
+          const popupTemplate = new PopupTemplate({
+            title: obs.common_name || obs.scientific_name,
+            content: `
+              <div style="font-family: sans-serif;">
+                <p><strong>Scientific Name:</strong> ${obs.scientific_name}</p>
+                ${obs.common_name ? `<p><strong>Common Name:</strong> ${obs.common_name}</p>` : ''}
+                <p><strong>Count:</strong> ${obs.count_observed}</p>
+                <p><strong>Date:</strong> ${obs.observation_date}</p>
+                ${obs.obstime ? `<p><strong>Time:</strong> ${obs.obstime}</p>` : ''}
+                <p><strong>Location:</strong> ${obs.location_name}</p>
+                <p><strong>County:</strong> ${obs.county}, ${obs.state}</p>
+                <p><strong>Protocol:</strong> ${obs.protocol_name}</p>
+                <p><strong>Data Source:</strong> ${obs.data_source}</p>
+                <p><strong>Coordinates:</strong> ${obs.lat.toFixed(6)}, ${obs.lng.toFixed(6)}</p>
+              </div>
+            `
+          });
+
+          // Create graphic
+          const graphic = new Graphic({
+            geometry: point,
+            symbol: symbol,
+            popupTemplate: popupTemplate,
+            attributes: {
+              obs_id: obs.obs_id,
+              common_name: obs.common_name,
+              scientific_name: obs.scientific_name,
+              observation_date: obs.observation_date,
+              location_name: obs.location_name
+            }
+          });
+
+          eBirdObservationsLayer.add(graphic);
+        }
+      });
+      
+      console.log(`Added ${response.observations.length} eBird observations to map`);
+      
+    } catch (error) {
+      console.error('Error loading eBird observations:', error);
+    } finally {
+      onEBirdLoadingChange?.(false);
+    }
+  };
+
   const loadTNCObservations = async (_mapView: __esri.MapView, tncObservationsLayer: GraphicsLayer, filters?: {
     taxonCategories?: string[];
     startDate?: string;
@@ -1057,8 +1511,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     useFilters?: boolean;
     page?: number;
     pageSize?: number;
-    searchMode?: 'preserve-only' | 'expanded';
+    searchMode?: 'preserve-only' | 'expanded' | 'custom';
     showSearchArea?: boolean;
+    customPolygon?: string;
   }) => {
     onTNCLoadingChange?.(true);
     try {
@@ -1127,7 +1582,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         useFilters: filters?.useFilters !== undefined ? filters.useFilters : true,
         page: filters?.page,
         pageSize: filters?.pageSize,
-        searchMode: filters?.searchMode || 'expanded'
+        searchMode: filters?.searchMode || 'expanded',
+        customPolygon: filters?.customPolygon
       });
       
       onTNCObservationsUpdate?.(response);
@@ -1202,8 +1658,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     useFilters?: boolean;
     page?: number;
     pageSize?: number;
-    searchMode?: 'preserve-only' | 'expanded';
+    searchMode?: 'preserve-only' | 'expanded' | 'custom';
     showSearchArea?: boolean;
+    customPolygon?: string;
   }) => {
     if (view && view.map) {
       const tncObservationsLayer = view.map.findLayerById('tnc-inaturalist-observations') as GraphicsLayer;
@@ -1213,11 +1670,31 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   };
 
+  const reloadEBirdObservations = (filters?: {
+    startDate?: string;
+    endDate?: string;
+    maxResults?: number;
+    page?: number;
+    pageSize?: number;
+    searchMode?: 'preserve-only' | 'expanded' | 'custom';
+    customPolygon?: string;
+  }) => {
+    if (view && view.map) {
+      const eBirdObservationsLayer = view.map.findLayerById('ebird-observations') as GraphicsLayer;
+      if (eBirdObservationsLayer) {
+        loadEBirdObservations(view, eBirdObservationsLayer, filters);
+      }
+    }
+  };
+
   // Expose methods via ref
   useImperativeHandle(ref, () => ({
     reloadObservations,
     reloadTNCObservations,
-    reloadCalFloraData
+    reloadEBirdObservations,
+    reloadCalFloraData,
+    activateDrawMode,
+    clearPolygon
   }));
 
   const getObservationIcon = (obs: iNaturalistObservation) => {
@@ -1302,7 +1779,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
 
       {/* Observations Count */}
       {observations.length > 0 && (
-        <div id="map-observations-counter" className="absolute bottom-4 left-4 bg-white rounded-lg shadow-md p-2 z-10">
+        <div id="map-observations-counter" className="absolute top-4 left-4 bg-white rounded-lg shadow-md p-2 z-10">
           <span id="map-observations-count-text" className="text-xs text-gray-600">
             {observations.length} recent observations
           </span>
@@ -1337,11 +1814,34 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         </button>
       </div>
 
-      {/* Data Layers Panel */}
-      <DataLayersPanel 
-        dataLayers={dataLayers}
-        onLayerToggle={onLayerToggle}
-      />
+      {/* Drawn Polygon Indicator & Clear Button */}
+      {drawnPolygon && (
+        <div id="polygon-indicator" className="absolute bottom-16 right-4 bg-white rounded-lg shadow-md p-3 z-10 flex items-center space-x-3">
+          <div id="polygon-status" className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+            <span className="text-sm text-gray-700 font-medium">Custom area drawn</span>
+          </div>
+          <button
+            id="clear-polygon-btn"
+            onClick={clearPolygon}
+            className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded transition-colors flex items-center space-x-1"
+            title="Clear drawn area (or press Delete)"
+          >
+            <span>✕</span>
+            <span>Clear</span>
+          </button>
+        </div>
+      )}
+
+      {/* Draw Mode Active Indicator */}
+      {isDrawMode && (
+        <div id="draw-mode-indicator" className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white rounded-lg shadow-lg p-3 z-20">
+          <div className="flex items-center space-x-2">
+            <div className="animate-pulse">✏️</div>
+            <span className="text-sm font-medium">Click on map to draw polygon. Double-click to finish.</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 });

@@ -2,12 +2,14 @@ import React from 'react';
 import { FilterState } from '../types';
 import { iNaturalistObservation } from '../services/iNaturalistService';
 import { TNCArcGISObservation } from '../services/tncINaturalistService';
+import { EBirdObservation } from '../services/eBirdService';
 import { CalFloraPlant } from '../services/calFloraService';
 import { TNCArcGISItem } from '../services/tncArcGISService';
 
 // Import specific data view components
 import WildlifeINaturalistView from './dataviews/WildlifeINaturalistView';
 import WildlifeTNCINaturalistView from './dataviews/WildlifeTNCINaturalistView';
+import WildlifeEBirdView from './dataviews/WildlifeEBirdView';
 import VegetationCalFloraView from './dataviews/VegetationCalFloraView';
 import TNCArcGISView from './dataviews/TNCArcGISView';
 
@@ -25,6 +27,11 @@ interface DataViewProps {
   onTNCObservationExportGeoJSON?: () => void;
   selectedTNCObservation?: TNCArcGISObservation | null;
   onTNCObservationSelect?: (observation: TNCArcGISObservation | null) => void;
+  // eBird data
+  eBirdObservations?: EBirdObservation[];
+  eBirdObservationsLoading?: boolean;
+  onEBirdExportCSV?: () => void;
+  onEBirdExportGeoJSON?: () => void;
   // CalFlora data
   calFloraPlants: CalFloraPlant[];
   calFloraLoading: boolean;
@@ -63,6 +70,10 @@ const DataView: React.FC<DataViewProps> = ({
   onTNCObservationExportGeoJSON,
   selectedTNCObservation,
   onTNCObservationSelect,
+  eBirdObservations = [],
+  eBirdObservationsLoading = false,
+  onEBirdExportCSV,
+  onEBirdExportGeoJSON,
   calFloraPlants,
   calFloraLoading,
   onCalFloraExportCSV,
@@ -115,6 +126,19 @@ const DataView: React.FC<DataViewProps> = ({
             onExportGeoJSON={onTNCObservationExportGeoJSON}
             selectedObservation={selectedTNCObservation}
             onObservationSelect={onTNCObservationSelect}
+          />
+        );
+        
+      case 'Wildlife-eBird':
+        return (
+          <WildlifeEBirdView
+            observations={eBirdObservations}
+            loading={eBirdObservationsLoading}
+            currentDaysBack={lastSearchedDaysBack}
+            startDate={startDate}
+            endDate={endDate}
+            onExportCSV={onEBirdExportCSV}
+            onExportGeoJSON={onEBirdExportGeoJSON}
           />
         );
         
