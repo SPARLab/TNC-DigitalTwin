@@ -233,53 +233,53 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
       >
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
+            <div id={`item-header-${item.id}`} className="flex items-center gap-2 mb-2">
               {isExpanded ? (
-                <ChevronDown className="w-4 h-4 text-gray-600 flex-shrink-0" />
+                <ChevronDown id={`item-chevron-down-${item.id}`} className="w-4 h-4 text-gray-600 flex-shrink-0" />
               ) : (
-                <ChevronRight className="w-4 h-4 text-gray-600 flex-shrink-0" />
+                <ChevronRight id={`item-chevron-right-${item.id}`} className="w-4 h-4 text-gray-600 flex-shrink-0" />
               )}
-              <div className="flex-shrink-0">
+              <div id={`item-ui-pattern-icon-${item.id}`} className="flex-shrink-0">
                 {getUIPatternIcon(item.uiPattern)}
               </div>
-              <h3 className="font-medium text-gray-900 break-words flex-1 min-w-0" title={item.title}>
+              <h3 id={`item-title-${item.id}`} className="font-medium text-gray-900 break-words flex-1 min-w-0" title={item.title}>
                 {item.title}
               </h3>
               {item.uiPattern === 'EXTERNAL_LINK' && (
-                <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                <ExternalLink id={`item-external-link-indicator-${item.id}`} className="w-3 h-3 text-gray-400 flex-shrink-0" />
               )}
             </div>
             
             {item.snippet && (
-              <p className={`text-sm text-gray-600 mb-2 break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
+              <p id={`item-snippet-${item.id}`} className={`text-sm text-gray-600 mb-2 break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
                 {item.snippet}
               </p>
             )}
             
-            <div className="flex flex-wrap gap-1 mb-2">
-              <span className={`px-2 py-1 text-xs rounded-full ${getUIPatternColor(item.uiPattern)}`}>
+            <div id={`item-badges-${item.id}`} className="flex flex-wrap gap-1 mb-2">
+              <span id={`item-ui-pattern-badge-${item.id}`} className={`px-2 py-1 text-xs rounded-full ${getUIPatternColor(item.uiPattern)}`}>
                 {item.uiPattern.replace('_', ' ')}
               </span>
-              <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">
+              <span id={`item-type-badge-${item.id}`} className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">
                 {item.type}
               </span>
-              {item.mainCategories.slice(0, isExpanded ? undefined : 2).map(category => (
-                <span key={category} className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">
+              {item.mainCategories.slice(0, isExpanded ? undefined : 2).map((category, idx) => (
+                <span key={category} id={`item-category-badge-${item.id}-${idx}`} className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">
                   {category}
                 </span>
               ))}
             </div>
             
-            <div className="flex items-center gap-4 text-xs text-gray-500">
-              <div className="flex items-center gap-1">
+            <div id={`item-metadata-${item.id}`} className="flex items-center gap-4 text-xs text-gray-500">
+              <div id={`item-owner-${item.id}`} className="flex items-center gap-1">
                 <User className="w-3 h-3" />
                 {item.owner}
               </div>
-              <div className="flex items-center gap-1">
+              <div id={`item-modified-date-${item.id}`} className="flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
                 {new Date(item.modified).toLocaleDateString()}
               </div>
-              <div className="flex items-center gap-1">
+              <div id={`item-view-count-${item.id}`} className="flex items-center gap-1">
                 <Eye className="w-3 h-3" />
                 {item.num_views}
               </div>
@@ -287,11 +287,11 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
           </div>
           
           {item.uiPattern === 'MAP_LAYER' && (
-            <div className="flex items-center gap-2 ml-2">
+            <div id={`item-map-layer-visibility-toggle-${item.id}`} className="flex items-center gap-2 ml-2">
               {isActiveLayer ? (
-                <Eye className="w-5 h-5 text-blue-600" />
+                <Eye id={`item-layer-visible-icon-${item.id}`} className="w-5 h-5 text-blue-600" />
               ) : (
-                <EyeOff className="w-5 h-5 text-gray-400" />
+                <EyeOff id={`item-layer-hidden-icon-${item.id}`} className="w-5 h-5 text-gray-400" />
               )}
             </div>
           )}
@@ -299,14 +299,15 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
         
         {/* Expanded content */}
         {isExpanded && (
-          <div className="mt-3 pt-3 border-t border-gray-200 space-y-3" onClick={(e) => e.stopPropagation()}>
+          <div id={`item-expanded-content-${item.id}`} className="mt-3 pt-3 border-t border-gray-200 space-y-3" onClick={(e) => e.stopPropagation()}>
             {/* Description */}
             {item.description && (
-              <div>
-                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
+              <div id={`item-description-section-${item.id}`}>
+                <h4 id={`item-description-label-${item.id}`} className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
                   Description
                 </h4>
                 <div 
+                  id={`item-description-content-${item.id}`}
                   className="text-sm text-gray-700 prose prose-sm max-w-none overflow-hidden break-words max-h-32 overflow-y-auto"
                   dangerouslySetInnerHTML={{ __html: item.description }}
                 />
@@ -315,21 +316,22 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
             
             {/* Tags */}
             {item.tags.length > 0 && (
-              <div>
-                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
+              <div id={`item-tags-section-${item.id}`}>
+                <h4 id={`item-tags-label-${item.id}`} className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
                   Tags
                 </h4>
-                <div className="flex flex-wrap gap-1">
+                <div id={`item-tags-list-${item.id}`} className="flex flex-wrap gap-1">
                   {item.tags.slice(0, 8).map((tag, index) => (
                     <span
                       key={index}
+                      id={`item-tag-${item.id}-${index}`}
                       className="px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded break-words max-w-full"
                     >
                       {tag}
                     </span>
                   ))}
                   {item.tags.length > 8 && (
-                    <span className="px-2 py-0.5 text-xs text-gray-500">
+                    <span id={`item-tags-more-indicator-${item.id}`} className="px-2 py-0.5 text-xs text-gray-500">
                       +{item.tags.length - 8} more
                     </span>
                   )}
@@ -338,9 +340,10 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
             )}
             
             {/* Action buttons */}
-            <div className="flex gap-2 pt-2">
+            <div id={`item-action-buttons-${item.id}`} className="flex gap-2 pt-2">
               {item.uiPattern === 'EXTERNAL_LINK' && (
                 <a
+                  id={`item-open-resource-button-${item.id}`}
                   href={item.url}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -353,6 +356,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
               )}
               {item.uiPattern === 'MODAL' && (
                 <button
+                  id={`item-view-details-button-${item.id}`}
                   className="flex-1 px-3 py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -364,6 +368,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
                 </button>
               )}
               <a
+                id={`item-external-link-button-${item.id}`}
                 href={item.url}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -378,9 +383,10 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
         
         {/* Layer opacity control for active map layers */}
         {item.uiPattern === 'MAP_LAYER' && isActiveLayer && onLayerOpacityChange && (
-          <div className="mt-3 pt-3 border-t border-blue-200" onClick={(e) => e.stopPropagation()}>
-            <label className="block text-xs text-gray-600 mb-1">Opacity</label>
+          <div id={`item-opacity-control-${item.id}`} className="mt-3 pt-3 border-t border-blue-200" onClick={(e) => e.stopPropagation()}>
+            <label id={`item-opacity-label-${item.id}`} className="block text-xs text-gray-600 mb-1">Opacity</label>
             <input
+              id={`item-opacity-slider-${item.id}`}
               type="range"
               min="0"
               max="100"
@@ -399,10 +405,11 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
     <div id="tnc-arcgis-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col h-full">
       {/* Header */}
       <div id="tnc-header" className="p-4 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-900">TNC Data Catalog</h2>
-          <div className="flex items-center gap-2">
+        <div id="tnc-header-top" className="flex items-center justify-between mb-3">
+          <h2 id="tnc-catalog-title" className="text-lg font-semibold text-gray-900">TNC Data Catalog</h2>
+          <div id="tnc-header-controls" className="flex items-center gap-2">
             <button
+              id="tnc-toggle-filters-button"
               onClick={() => setShowFilters(!showFilters)}
               className={`p-2 rounded-lg transition-colors ${
                 showFilters ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -415,9 +422,10 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
         </div>
         
         {/* Search */}
-        <div className="relative mb-3">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <div id="tnc-search-container" className="relative mb-3">
+          <Search id="tnc-search-icon" className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
+            id="tnc-search-input"
             type="text"
             placeholder="Search datasets..."
             value={searchQuery}
@@ -427,18 +435,18 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
         </div>
         
         {/* Stats */}
-        <div className="flex items-center justify-between text-sm text-gray-600">
-          <span>{stats.total} items</span>
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1">
+        <div id="tnc-stats-bar" className="flex items-center justify-between text-sm text-gray-600">
+          <span id="tnc-total-items-count">{stats.total} items</span>
+          <div id="tnc-stats-by-pattern" className="flex items-center gap-3">
+            <span id="tnc-map-layer-count" className="flex items-center gap-1">
               <Map className="w-3 h-3" />
               {stats.byPattern.MAP_LAYER}
             </span>
-            <span className="flex items-center gap-1">
+            <span id="tnc-external-link-count" className="flex items-center gap-1">
               <ExternalLink className="w-3 h-3" />
               {stats.byPattern.EXTERNAL_LINK}
             </span>
-            <span className="flex items-center gap-1">
+            <span id="tnc-modal-count" className="flex items-center gap-1">
               <FileText className="w-3 h-3" />
               {stats.byPattern.MODAL}
             </span>
@@ -447,11 +455,12 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
         
         {/* Filters */}
         {showFilters && (
-          <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">Filters</span>
+          <div id="tnc-filters-panel" className="mt-3 p-3 bg-gray-50 rounded-lg">
+            <div id="tnc-filters-header" className="flex items-center justify-between mb-2">
+              <span id="tnc-filters-label" className="text-sm font-medium text-gray-700">Filters</span>
               {(selectedCategories.size > 0 || selectedUIPatterns.size > 0) && (
                 <button
+                  id="tnc-clear-all-filters-button"
                   onClick={clearFilters}
                   className="text-xs text-blue-600 hover:text-blue-800"
                 >
@@ -461,12 +470,13 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
             </div>
             
             {/* Category filters */}
-            <div className="mb-3">
-              <span className="text-xs text-gray-600 mb-1 block">Categories</span>
-              <div className="flex flex-wrap gap-1">
+            <div id="tnc-category-filters-section" className="mb-3">
+              <span id="tnc-category-filters-label" className="text-xs text-gray-600 mb-1 block">Categories</span>
+              <div id="tnc-category-filters-list" className="flex flex-wrap gap-1">
                 {availableCategories.map(category => (
                   <button
                     key={category}
+                    id={`tnc-category-filter-${category.toLowerCase().replace(/\s+/g, '-')}`}
                     onClick={() => toggleCategoryFilter(category)}
                     className={`px-2 py-1 text-xs rounded transition-colors ${
                       selectedCategories.has(category)
@@ -481,12 +491,13 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
             </div>
             
             {/* UI Pattern filters */}
-            <div>
-              <span className="text-xs text-gray-600 mb-1 block">Data Types</span>
-              <div className="flex flex-wrap gap-1">
+            <div id="tnc-data-type-filters-section">
+              <span id="tnc-data-type-filters-label" className="text-xs text-gray-600 mb-1 block">Data Types</span>
+              <div id="tnc-data-type-filters-list" className="flex flex-wrap gap-1">
                 {availableUIPatterns.map(pattern => (
                   <button
                     key={pattern}
+                    id={`tnc-data-type-filter-${pattern.toLowerCase().replace(/_/g, '-')}`}
                     onClick={() => toggleUIPatternFilter(pattern)}
                     className={`px-2 py-1 text-xs rounded transition-colors flex items-center gap-1 ${
                       selectedUIPatterns.has(pattern)
@@ -507,9 +518,10 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
       {/* Export buttons */}
       {(onExportCSV || onExportGeoJSON) && (
         <div id="tnc-export-controls" className="p-4 border-b border-gray-200">
-          <div className="flex gap-2">
+          <div id="tnc-export-buttons" className="flex gap-2">
             {onExportCSV && (
               <button
+                id="tnc-export-csv-button"
                 onClick={onExportCSV}
                 className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
               >
@@ -519,6 +531,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
             )}
             {onExportGeoJSON && (
               <button
+                id="tnc-export-geojson-button"
                 onClick={onExportGeoJSON}
                 className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
               >
@@ -533,14 +546,14 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
       {/* Content */}
       <div id="tnc-content" className="flex-1 overflow-y-auto">
         {isLoading ? (
-          <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div id="tnc-loading-state" className="flex items-center justify-center p-8">
+            <div id="tnc-loading-spinner" className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
         ) : filteredItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-8 text-gray-500">
-            <Database className="w-12 h-12 mb-4 text-gray-300" />
-            <p className="font-medium">No items found</p>
-            <p className="text-sm text-center mt-1">
+          <div id="tnc-empty-state" className="flex flex-col items-center justify-center p-8 text-gray-500">
+            <Database id="tnc-empty-state-icon" className="w-12 h-12 mb-4 text-gray-300" />
+            <p id="tnc-empty-state-title" className="font-medium">No items found</p>
+            <p id="tnc-empty-state-message" className="text-sm text-center mt-1">
               {searchQuery || selectedCategories.size > 0 || selectedUIPatterns.size > 0
                 ? 'Try adjusting your search or filters'
                 : 'No data available'
@@ -548,26 +561,27 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
             </p>
           </div>
         ) : (
-          <div className="p-4 space-y-6">
+          <div id="tnc-items-list" className="p-4 space-y-6">
             {Object.entries(groupedItems).map(([category, categoryItems]) => (
-              <div key={category} id={`tnc-category-${category.replace(/\s+/g, '-').toLowerCase()}`}>
+              <div key={category} id={`tnc-category-group-${category.replace(/\s+/g, '-').toLowerCase()}`}>
                 <button
+                  id={`tnc-category-toggle-${category.replace(/\s+/g, '-').toLowerCase()}`}
                   onClick={() => toggleCategory(category)}
                   className="flex items-center justify-between w-full p-2 text-left hover:bg-gray-50 rounded-lg transition-colors"
                 >
-                  <div className="flex items-center gap-2">
+                  <div id={`tnc-category-header-${category.replace(/\s+/g, '-').toLowerCase()}`} className="flex items-center gap-2">
                     {expandedCategories.has(category) ? (
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                      <ChevronDown id={`tnc-category-chevron-down-${category.replace(/\s+/g, '-').toLowerCase()}`} className="w-4 h-4 text-gray-400" />
                     ) : (
-                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                      <ChevronRight id={`tnc-category-chevron-right-${category.replace(/\s+/g, '-').toLowerCase()}`} className="w-4 h-4 text-gray-400" />
                     )}
-                    <span className="font-medium text-gray-900">{category}</span>
-                    <span className="text-sm text-gray-500">({categoryItems.length})</span>
+                    <span id={`tnc-category-name-${category.replace(/\s+/g, '-').toLowerCase()}`} className="font-medium text-gray-900">{category}</span>
+                    <span id={`tnc-category-count-${category.replace(/\s+/g, '-').toLowerCase()}`} className="text-sm text-gray-500">({categoryItems.length})</span>
                   </div>
                 </button>
                 
                 {expandedCategories.has(category) && (
-                  <div className="mt-2 space-y-2 pl-6">
+                  <div id={`tnc-category-items-${category.replace(/\s+/g, '-').toLowerCase()}`} className="mt-2 space-y-2 pl-6">
                     {categoryItems.map(renderItem)}
                   </div>
                 )}
@@ -579,11 +593,12 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
 
       {/* Modal */}
       {selectedModalItem && onModalClose && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl max-h-[90vh] w-full mx-4 flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">{selectedModalItem.title}</h3>
+        <div id="tnc-modal-overlay" className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div id="tnc-modal-container" className="bg-white rounded-lg shadow-xl max-w-4xl max-h-[90vh] w-full mx-4 flex flex-col">
+            <div id="tnc-modal-header" className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 id="tnc-modal-title" className="text-lg font-semibold text-gray-900">{selectedModalItem.title}</h3>
               <button
+                id="tnc-modal-close-button"
                 onClick={onModalClose}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
@@ -591,27 +606,28 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
               </button>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-4">
+            <div id="tnc-modal-content" className="flex-1 overflow-y-auto p-4">
               {selectedModalItem.type === 'StoryMap' ? (
                 <iframe
+                  id="tnc-modal-storymap-iframe"
                   src={selectedModalItem.url}
                   className="w-full h-96 border rounded-lg"
                   title={selectedModalItem.title}
                   sandbox="allow-scripts allow-same-origin"
                 />
               ) : (
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Description</h4>
-                    <p className="text-gray-700 break-words">{selectedModalItem.description || selectedModalItem.snippet}</p>
+                <div id="tnc-modal-details" className="space-y-4">
+                  <div id="tnc-modal-description-section">
+                    <h4 id="tnc-modal-description-label" className="font-medium text-gray-900 mb-2">Description</h4>
+                    <p id="tnc-modal-description-text" className="text-gray-700 break-words">{selectedModalItem.description || selectedModalItem.snippet}</p>
                   </div>
                   
                   {selectedModalItem.tags.length > 0 && (
-                    <div>
-                      <h4 className="font-medium text-gray-900 mb-2">Tags</h4>
-                      <div className="flex flex-wrap gap-1">
-                        {selectedModalItem.tags.map(tag => (
-                          <span key={tag} className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded break-words">
+                    <div id="tnc-modal-tags-section">
+                      <h4 id="tnc-modal-tags-label" className="font-medium text-gray-900 mb-2">Tags</h4>
+                      <div id="tnc-modal-tags-list" className="flex flex-wrap gap-1">
+                        {selectedModalItem.tags.map((tag, idx) => (
+                          <span key={tag} id={`tnc-modal-tag-${idx}`} className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded break-words">
                             {tag}
                           </span>
                         ))}
@@ -619,14 +635,15 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
                     </div>
                   )}
                   
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                    <span className="break-words">Owner: {selectedModalItem.owner}</span>
-                    <span className="break-words">Type: {selectedModalItem.type}</span>
-                    <span>Views: {selectedModalItem.num_views}</span>
+                  <div id="tnc-modal-metadata" className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                    <span id="tnc-modal-owner" className="break-words">Owner: {selectedModalItem.owner}</span>
+                    <span id="tnc-modal-type" className="break-words">Type: {selectedModalItem.type}</span>
+                    <span id="tnc-modal-views">Views: {selectedModalItem.num_views}</span>
                   </div>
                   
-                  <div className="pt-4 border-t border-gray-200">
+                  <div id="tnc-modal-actions" className="pt-4 border-t border-gray-200">
                     <a
+                      id="tnc-modal-view-in-arcgis-button"
                       href={selectedModalItem.url}
                       target="_blank"
                       rel="noopener noreferrer"
