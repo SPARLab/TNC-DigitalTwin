@@ -5,7 +5,6 @@ import {
   Map, 
   ExternalLink, 
   FileText, 
-  Download, 
   Search,
   Filter,
   Eye,
@@ -20,8 +19,6 @@ import { TNCArcGISItem } from '../services/tncArcGISService';
 interface TNCArcGISSidebarProps {
   items: TNCArcGISItem[];
   isLoading?: boolean;
-  onExportCSV?: () => void;
-  onExportGeoJSON?: () => void;
   onItemSelect?: (item: TNCArcGISItem) => void;
   // Map layer management
   activeLayerIds?: string[];
@@ -36,8 +33,6 @@ interface TNCArcGISSidebarProps {
 const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
   items,
   isLoading = false,
-  onExportCSV,
-  onExportGeoJSON,
   onItemSelect,
   activeLayerIds = [],
   onLayerToggle,
@@ -514,34 +509,6 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
           </div>
         )}
       </div>
-
-      {/* Export buttons */}
-      {(onExportCSV || onExportGeoJSON) && (
-        <div id="tnc-export-controls" className="p-4 border-b border-gray-200">
-          <div id="tnc-export-buttons" className="flex gap-2">
-            {onExportCSV && (
-              <button
-                id="tnc-export-csv-button"
-                onClick={onExportCSV}
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-              >
-                <Download className="w-4 h-4" />
-                CSV
-              </button>
-            )}
-            {onExportGeoJSON && (
-              <button
-                id="tnc-export-geojson-button"
-                onClick={onExportGeoJSON}
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
-              >
-                <Download className="w-4 h-4" />
-                GeoJSON
-              </button>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Content */}
       <div id="tnc-content" className="flex-1 overflow-y-auto">

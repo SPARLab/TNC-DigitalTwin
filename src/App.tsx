@@ -196,6 +196,9 @@ function App() {
   };
 
   const handleSearch = () => {
+    // Clear all active TNC ArcGIS layers when searching
+    setActiveLayerIds([]);
+    
     // Update the last searched filters to match current filters
     // This will cause the DataView to update to show the appropriate sidebar
     setLastSearchedFilters({ ...filters });
