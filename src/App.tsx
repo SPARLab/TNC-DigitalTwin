@@ -6,6 +6,7 @@ import FilterSidebar from './components/FilterSidebar';
 import MapView from './components/MapView';
 import Footer from './components/Footer';
 import CalFloraPlantModal from './components/CalFloraPlantModal';
+import HubPagePreview from './components/HubPagePreview';
 import { FilterState } from './types';
 import { iNaturalistObservation } from './services/iNaturalistService';
 import { TNCArcGISObservation } from './services/tncINaturalistService';
@@ -223,6 +224,7 @@ function App() {
             maxResults: 1000,
             categoryFilter,
             searchQuery: undefined // Could add search query from filters if needed
+            // Note: Not including appAndMap collection for now
           });
           
           console.log(`📊 TNC ArcGIS Hub Results:`, {
@@ -844,28 +846,34 @@ function App() {
           startDate={filters.startDate}
           endDate={filters.endDate}
         />
-        <MapView 
-          ref={mapViewRef}
-          onObservationsUpdate={setObservations}
-          onLoadingChange={setObservationsLoading}
-          tncObservations={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations : []}
-          onTNCObservationsUpdate={setTncObservations}
-          onTNCLoadingChange={setTncObservationsLoading}
-          selectedTNCObservation={selectedTNCObservation}
-          onTNCObservationSelect={setSelectedTNCObservation}
-          eBirdObservations={lastSearchedFilters.source === 'eBird' ? eBirdObservations : []}
-          onEBirdObservationsUpdate={setEBirdObservations}
-          onEBirdLoadingChange={setEBirdObservationsLoading}
-          calFloraPlants={filters.source === 'CalFlora' ? calFloraPlants : []}
-          onCalFloraUpdate={setCalFloraPlants}
-          onCalFloraLoadingChange={setCalFloraLoading}
-          tncArcGISItems={tncArcGISItems}
-          activeLayerIds={activeLayerIds}
-          isDrawMode={isDrawMode}
-          onDrawModeChange={setIsDrawMode}
-          onPolygonDrawn={handlePolygonDrawn}
-          onPolygonCleared={handlePolygonCleared}
-        />
+        <div id="map-container" className="flex-1 relative flex">
+          <MapView 
+            ref={mapViewRef}
+            onObservationsUpdate={setObservations}
+            onLoadingChange={setObservationsLoading}
+            tncObservations={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations : []}
+            onTNCObservationsUpdate={setTncObservations}
+            onTNCLoadingChange={setTncObservationsLoading}
+            selectedTNCObservation={selectedTNCObservation}
+            onTNCObservationSelect={setSelectedTNCObservation}
+            eBirdObservations={lastSearchedFilters.source === 'eBird' ? eBirdObservations : []}
+            onEBirdObservationsUpdate={setEBirdObservations}
+            onEBirdLoadingChange={setEBirdObservationsLoading}
+            calFloraPlants={filters.source === 'CalFlora' ? calFloraPlants : []}
+            onCalFloraUpdate={setCalFloraPlants}
+            onCalFloraLoadingChange={setCalFloraLoading}
+            tncArcGISItems={tncArcGISItems}
+            activeLayerIds={activeLayerIds}
+            isDrawMode={isDrawMode}
+            onDrawModeChange={setIsDrawMode}
+            onPolygonDrawn={handlePolygonDrawn}
+            onPolygonCleared={handlePolygonCleared}
+          />
+          {/* Hub Page Preview Overlay */}
+          {selectedModalItem && (
+            <HubPagePreview item={selectedModalItem} onClose={handleModalClose} />
+          )}
+        </div>
         <FilterSidebar 
           filters={filters}
           onFilterChange={handleObservationFilterChange}

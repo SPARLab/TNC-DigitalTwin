@@ -41,7 +41,9 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
   onModalOpen,
   onModalClose
 }) => {
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    new Set(['Map Layers', 'Documents', 'External Links'])
+  );
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
@@ -78,25 +80,44 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
     return filtered;
   }, [items, searchQuery, selectedCategories, selectedUIPatterns]);
 
-  // Group items by main categories
+  // Group items by UI pattern (data type)
   const groupedItems = useMemo(() => {
-    const groups: { [key: string]: TNCArcGISItem[] } = {};
+    const groups: { [key: string]: TNCArcGISItem[] } = {
+      'Map Layers': [],
+      'Documents': [],
+      'External Links': []
+    };
     
     filteredItems.forEach(item => {
-      // If item has no main categories, put it in "Other"
-      const categories = item.mainCategories.length > 0 ? item.mainCategories : ['Other'];
-      
-      categories.forEach(category => {
-        if (!groups[category]) {
-          groups[category] = [];
-        }
-        groups[category].push(item);
-      });
+      switch (item.uiPattern) {
+        case 'MAP_LAYER':
+          groups['Map Layers'].push(item);
+          break;
+        case 'MODAL':
+          groups['Documents'].push(item);
+          break;
+        case 'EXTERNAL_LINK':
+          groups['External Links'].push(item);
+          break;
+        default:
+          // Fallback for any unknown patterns
+          if (!groups['Other']) {
+            groups['Other'] = [];
+          }
+          groups['Other'].push(item);
+      }
     });
 
     // Sort items within each group by title
-    Object.keys(groups).forEach(category => {
-      groups[category].sort((a, b) => a.title.localeCompare(b.title));
+    Object.keys(groups).forEach(groupName => {
+      groups[groupName].sort((a, b) => a.title.localeCompare(b.title));
+    });
+
+    // Remove empty groups
+    Object.keys(groups).forEach(groupName => {
+      if (groups[groupName].length === 0) {
+        delete groups[groupName];
+      }
     });
 
     return groups;
@@ -195,17 +216,19 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
   const handleItemClick = (item: TNCArcGISItem) => {
     onItemSelect?.(item);
     
-    // Always expand the card when clicked
-    toggleItemExpansion(item.id);
-
     switch (item.uiPattern) {
       case 'MAP_LAYER':
+        // Expand the card to show details and toggle layer
+        toggleItemExpansion(item.id);
         onLayerToggle?.(item.id);
         break;
       case 'EXTERNAL_LINK':
-        // Don't open immediately on click, let user use the button in expanded view
+        // Expand to show details and external link button
+        toggleItemExpansion(item.id);
         break;
       case 'MODAL':
+        // Expand card to show metadata and open preview in main area
+        toggleItemExpansion(item.id);
         onModalOpen?.(item);
         break;
     }
@@ -350,28 +373,51 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
                 </a>
               )}
               {item.uiPattern === 'MODAL' && (
-                <button
-                  id={`item-view-details-button-${item.id}`}
-                  className="flex-1 px-3 py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onModalOpen?.(item);
-                  }}
-                >
-                  View Details
-                  <FileText className="w-4 h-4" />
-                </button>
+                <>
+                  <button
+                    id={`item-view-preview-button-${item.id}`}
+                    className={`flex-1 px-3 py-2 text-white text-sm rounded transition-colors flex items-center justify-center gap-2 ${
+                      selectedModalItem?.id === item.id 
+                        ? 'bg-purple-700' 
+                        : 'bg-purple-600 hover:bg-purple-700'
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (selectedModalItem?.id === item.id) {
+                        onModalClose?.();
+                      } else {
+                        onModalOpen?.(item);
+                      }
+                    }}
+                  >
+                    {selectedModalItem?.id === item.id ? 'Close Preview' : 'View Preview'}
+                    {selectedModalItem?.id === item.id ? <X className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                  <a
+                    id={`item-open-in-arcgis-button-${item.id}`}
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+                    onClick={(e) => e.stopPropagation()}
+                    title="Open in ArcGIS Hub"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </>
               )}
-              <a
-                id={`item-external-link-button-${item.id}`}
-                href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <ExternalLink className="w-4 h-4" />
-              </a>
+              {item.uiPattern === 'EXTERNAL_LINK' && (
+                <a
+                  id={`item-external-link-button-${item.id}`}
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              )}
             </div>
           </div>
         )}
@@ -529,103 +575,52 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
           </div>
         ) : (
           <div id="tnc-items-list" className="p-4 space-y-6">
-            {Object.entries(groupedItems).map(([category, categoryItems]) => (
-              <div key={category} id={`tnc-category-group-${category.replace(/\s+/g, '-').toLowerCase()}`}>
-                <button
-                  id={`tnc-category-toggle-${category.replace(/\s+/g, '-').toLowerCase()}`}
-                  onClick={() => toggleCategory(category)}
-                  className="flex items-center justify-between w-full p-2 text-left hover:bg-gray-50 rounded-lg transition-colors"
-                >
-                  <div id={`tnc-category-header-${category.replace(/\s+/g, '-').toLowerCase()}`} className="flex items-center gap-2">
-                    {expandedCategories.has(category) ? (
-                      <ChevronDown id={`tnc-category-chevron-down-${category.replace(/\s+/g, '-').toLowerCase()}`} className="w-4 h-4 text-gray-400" />
-                    ) : (
-                      <ChevronRight id={`tnc-category-chevron-right-${category.replace(/\s+/g, '-').toLowerCase()}`} className="w-4 h-4 text-gray-400" />
-                    )}
-                    <span id={`tnc-category-name-${category.replace(/\s+/g, '-').toLowerCase()}`} className="font-medium text-gray-900">{category}</span>
-                    <span id={`tnc-category-count-${category.replace(/\s+/g, '-').toLowerCase()}`} className="text-sm text-gray-500">({categoryItems.length})</span>
-                  </div>
-                </button>
-                
-                {expandedCategories.has(category) && (
-                  <div id={`tnc-category-items-${category.replace(/\s+/g, '-').toLowerCase()}`} className="mt-2 space-y-2 pl-6">
-                    {categoryItems.map(renderItem)}
-                  </div>
-                )}
-              </div>
-            ))}
+            {Object.entries(groupedItems).map(([dataType, typeItems]) => {
+              // Determine icon and color for each data type group
+              const getGroupIcon = () => {
+                switch (dataType) {
+                  case 'Map Layers':
+                    return <Map className="w-4 h-4 text-blue-600" />;
+                  case 'Documents':
+                    return <FileText className="w-4 h-4 text-purple-600" />;
+                  case 'External Links':
+                    return <ExternalLink className="w-4 h-4 text-green-600" />;
+                  default:
+                    return <Database className="w-4 h-4 text-gray-600" />;
+                }
+              };
+
+              return (
+                <div key={dataType} id={`tnc-data-type-group-${dataType.replace(/\s+/g, '-').toLowerCase()}`}>
+                  <button
+                    id={`tnc-data-type-toggle-${dataType.replace(/\s+/g, '-').toLowerCase()}`}
+                    onClick={() => toggleCategory(dataType)}
+                    className="flex items-center justify-between w-full p-2 text-left hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    <div id={`tnc-data-type-header-${dataType.replace(/\s+/g, '-').toLowerCase()}`} className="flex items-center gap-2">
+                      {expandedCategories.has(dataType) ? (
+                        <ChevronDown id={`tnc-data-type-chevron-down-${dataType.replace(/\s+/g, '-').toLowerCase()}`} className="w-4 h-4 text-gray-400" />
+                      ) : (
+                        <ChevronRight id={`tnc-data-type-chevron-right-${dataType.replace(/\s+/g, '-').toLowerCase()}`} className="w-4 h-4 text-gray-400" />
+                      )}
+                      {getGroupIcon()}
+                      <span id={`tnc-data-type-name-${dataType.replace(/\s+/g, '-').toLowerCase()}`} className="font-medium text-gray-900">{dataType}</span>
+                      <span id={`tnc-data-type-count-${dataType.replace(/\s+/g, '-').toLowerCase()}`} className="text-sm text-gray-500">({typeItems.length})</span>
+                    </div>
+                  </button>
+                  
+                  {expandedCategories.has(dataType) && (
+                    <div id={`tnc-data-type-items-${dataType.replace(/\s+/g, '-').toLowerCase()}`} className="mt-2 space-y-2 pl-6">
+                      {typeItems.map(renderItem)}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* Modal */}
-      {selectedModalItem && onModalClose && (
-        <div id="tnc-modal-overlay" className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div id="tnc-modal-container" className="bg-white rounded-lg shadow-xl max-w-4xl max-h-[90vh] w-full mx-4 flex flex-col">
-            <div id="tnc-modal-header" className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 id="tnc-modal-title" className="text-lg font-semibold text-gray-900">{selectedModalItem.title}</h3>
-              <button
-                id="tnc-modal-close-button"
-                onClick={onModalClose}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <div id="tnc-modal-content" className="flex-1 overflow-y-auto p-4">
-              {selectedModalItem.type === 'StoryMap' ? (
-                <iframe
-                  id="tnc-modal-storymap-iframe"
-                  src={selectedModalItem.url}
-                  className="w-full h-96 border rounded-lg"
-                  title={selectedModalItem.title}
-                  sandbox="allow-scripts allow-same-origin"
-                />
-              ) : (
-                <div id="tnc-modal-details" className="space-y-4">
-                  <div id="tnc-modal-description-section">
-                    <h4 id="tnc-modal-description-label" className="font-medium text-gray-900 mb-2">Description</h4>
-                    <p id="tnc-modal-description-text" className="text-gray-700 break-words">{selectedModalItem.description || selectedModalItem.snippet}</p>
-                  </div>
-                  
-                  {selectedModalItem.tags.length > 0 && (
-                    <div id="tnc-modal-tags-section">
-                      <h4 id="tnc-modal-tags-label" className="font-medium text-gray-900 mb-2">Tags</h4>
-                      <div id="tnc-modal-tags-list" className="flex flex-wrap gap-1">
-                        {selectedModalItem.tags.map((tag, idx) => (
-                          <span key={tag} id={`tnc-modal-tag-${idx}`} className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded break-words">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div id="tnc-modal-metadata" className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                    <span id="tnc-modal-owner" className="break-words">Owner: {selectedModalItem.owner}</span>
-                    <span id="tnc-modal-type" className="break-words">Type: {selectedModalItem.type}</span>
-                    <span id="tnc-modal-views">Views: {selectedModalItem.num_views}</span>
-                  </div>
-                  
-                  <div id="tnc-modal-actions" className="pt-4 border-t border-gray-200">
-                    <a
-                      id="tnc-modal-view-in-arcgis-button"
-                      href={selectedModalItem.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      View in ArcGIS
-                    </a>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

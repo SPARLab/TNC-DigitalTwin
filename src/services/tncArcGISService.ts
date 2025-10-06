@@ -56,6 +56,7 @@ class TNCArcGISService {
     MODAL: [
       'StoryMap',
       'Web Map',
+      'Hub Page',
       'Feature Collection',
       'CSV',
       'Shapefile',
@@ -90,6 +91,7 @@ class TNCArcGISService {
   private categorizeItem(item: any): string[] {
     const itemTags = item.tags || [];
     const itemCategories = item.categories || [];
+    const itemTitle = item.title || '';
     const matchedCategories = new Set<string>();
     
     // Check tag mappings
@@ -104,6 +106,17 @@ class TNCArcGISService {
     for (const [mainCategory, categories] of Object.entries(categoryMappings.mappings.categories)) {
       if (itemCategoryNames.some((cat: string) => categories.includes(cat))) {
         matchedCategories.add(mainCategory);
+      }
+    }
+    
+    // Check title-based mappings (for Hub Pages and other items without tags/categories)
+    if (categoryMappings.mappings.titles) {
+      for (const [mainCategory, titlePatterns] of Object.entries(categoryMappings.mappings.titles)) {
+        if (titlePatterns.some((pattern: string) => 
+          itemTitle.toLowerCase().includes(pattern.toLowerCase())
+        )) {
+          matchedCategories.add(mainCategory);
+        }
       }
     }
     
@@ -136,10 +149,17 @@ class TNCArcGISService {
     
     const mainCategories = this.categorizeItem({
       tags: attrs.tags,
-      categories: categories
+      categories: categories,
+      title: attrs.title
     });
 
     const uiPattern = this.getUIPattern(attrs.type);
+
+    // Construct URL for Hub Pages (they don't have URLs in the API response)
+    let url = attrs.url || attrs.itemURL || '';
+    if (attrs.type === 'Hub Page' && !url && feature.id) {
+      url = `https://dangermondpreserve-tnc.hub.arcgis.com/pages/${feature.id}`;
+    }
 
     return {
       id: feature.id || attrs.id || `tnc-${Math.random().toString(36).substr(2, 9)}`,
@@ -147,7 +167,7 @@ class TNCArcGISService {
       type: attrs.type || 'Unknown',
       description: attrs.description || attrs.snippet || '',
       snippet: attrs.snippet || attrs.description || '',
-      url: attrs.url || attrs.itemURL || '',
+      url,
       owner: attrs.owner || 'TNC',
       tags: attrs.tags || [],
       categories: categories,
@@ -266,12 +286,8 @@ class TNCArcGISService {
     try {
       const features = await this.fetchCollection('document', maxResults);
       
-      // Filter out Hub Pages as requested
-      const filteredFeatures = features.filter(feature => 
-        feature.attributes?.type !== 'Hub Page'
-      );
-      
-      const results = filteredFeatures.map(feature => 
+      // Include Hub Pages now that we can construct URLs for them
+      const results = features.map(feature => 
         this.transformItem(feature, 'document')
       );
 

@@ -16,6 +16,40 @@
     "Hazards & Resilience"
   ],
   "mappings": {
+    "titles": {
+      "Vegetation / habitat": [
+        "Oak Restoration",
+        "Rangeland Management"
+      ],
+      "Ecological / Biological (Species?)": [
+        "Species Lists",
+        "Ecology",
+        "Wildlife Cameras"
+      ],
+      "Real-time & Remote Sensing": [
+        "Imagery",
+        "Time-Series Data"
+      ],
+      "Land use and land (geography?)": [
+        "Overview Maps",
+        "Maps and Apps"
+      ],
+      "Hydrological": [
+        "Freshwater",
+        "Jalachichi Ponds Restoration"
+      ],
+      "Marine": [
+        "Wild Coast"
+      ],
+      "Fire": [
+        "Preserve Fire"
+      ],
+      "Infrastructure": [
+        "Mobile Data Collection",
+        "Analytical Tools",
+        "Preserve Operations"
+      ]
+    },
     "tags": {
       "Vegetation / habitat": [
         "Vegetation",

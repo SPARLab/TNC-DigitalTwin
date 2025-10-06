@@ -188,7 +188,6 @@ describe('TNCArcGISSidebar', () => {
     })
 
     it('should handle EXTERNAL_LINK item clicks', async () => {
-      const { mockOpen } = mockWindowMethods()
       const user = userEvent.setup()
       
       const externalLinkItem = createMockTNCArcGISItem({
@@ -206,11 +205,7 @@ describe('TNCArcGISSidebar', () => {
       await user.click(itemElement)
 
       expect(mockProps.onItemSelect).toHaveBeenCalledWith(externalLinkItem)
-      expect(mockOpen).toHaveBeenCalledWith(
-        'https://example.com/app',
-        '_blank',
-        'noopener,noreferrer'
-      )
+      // External links don't auto-open on click - user needs to use the button in expanded view
     })
 
     it('should handle MODAL item clicks', async () => {
