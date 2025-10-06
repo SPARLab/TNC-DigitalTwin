@@ -4,6 +4,7 @@ import MapView from '@arcgis/core/views/MapView';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import GeoJSONLayer from '@arcgis/core/layers/GeoJSONLayer';
 import MapImageLayer from '@arcgis/core/layers/MapImageLayer';
+import ImageryLayer from '@arcgis/core/layers/ImageryLayer';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
@@ -404,8 +405,16 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
             const url = item.url;
             let layer: __esri.Layer | null = null;
 
-            if (url.includes('/MapServer') || url.includes('/ImageServer')) {
-              // It's a map image service
+            if (url.includes('/ImageServer')) {
+              // It's an image service - use ImageryLayer
+              layer = new ImageryLayer({
+                id: `tnc-layer-${item.id}`,
+                url: url,
+                title: item.title,
+                opacity: (layerOpacities[item.id] ?? 80) / 100
+              });
+            } else if (url.includes('/MapServer')) {
+              // It's a map service
               layer = new MapImageLayer({
                 id: `tnc-layer-${item.id}`,
                 url: url,
@@ -424,21 +433,29 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
 
             if (layer) {
               // Load the layer and check for errors
-              await layer.load().catch(err => {
-                console.warn(`⚠️ Could not load TNC layer ${item.title}:`, err.message);
-                throw err;
-              });
-
-              if (view.map) {
-                view.map.add(layer);
-                tncArcGISLayersRef.current.set(item.id, layer);
-                console.log(`✅ Added TNC layer: ${item.title}`);
+              try {
+                await layer.load();
+                
+                if (view.map) {
+                  view.map.add(layer);
+                  tncArcGISLayersRef.current.set(item.id, layer);
+                  console.log(`✅ Added TNC layer: ${item.title}`);
+                }
+              } catch (err: any) {
+                // Handle specific error cases
+                if (err?.message?.includes('400') || err?.details?.httpStatus === 400) {
+                  console.warn(`⚠️ Skipping incompatible layer "${item.title}": This layer may be retired or use an incompatible projection. Please contact the data provider to update the catalog.`);
+                } else {
+                  console.warn(`⚠️ Could not load TNC layer "${item.title}":`, err.message);
+                }
+                // Don't throw - continue loading other layers
               }
             } else {
               console.warn(`⚠️ Could not determine layer type for: ${item.title} (${url})`);
             }
           } catch (error) {
             console.error(`❌ Error loading TNC layer ${item.title}:`, error);
+            // Don't throw - continue loading other layers
           }
         } else {
           // Update opacity for existing layer
