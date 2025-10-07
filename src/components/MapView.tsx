@@ -1985,7 +1985,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         return (
           <div 
             id="floating-legend-panel"
-            className="absolute bottom-4 right-4 bg-white rounded-lg shadow-lg z-10 max-w-sm"
+            className="absolute bottom-8 right-4 bg-white rounded-lg shadow-lg z-10 max-w-sm"
             style={{ maxHeight: '60vh' }}
           >
             {/* Legend Header */}
@@ -2023,7 +2023,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                   <div 
                     key={item.id}
                     id={`legend-layer-${item.id}`}
-                    className={`p-3 ${index < activeLayers.length - 1 ? 'border-b border-gray-200' : ''}`}
+                    className={`p-1 ${index < activeLayers.length - 1 ? 'border-b border-gray-200' : ''}`}
                   >
                     {/* Layer name if multiple layers */}
                     {activeLayers.length > 1 && (

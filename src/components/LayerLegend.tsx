@@ -70,7 +70,7 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false }) 
         return (
           <div
             id={`legend-swatch-polygon-${legend.layerId}`}
-            className="w-5 h-5 rounded flex-shrink-0"
+            className="w-8 h-8 rounded flex-shrink-0"
             style={{
               backgroundColor: fillStyle,
               border: outlineWidth ? `${outlineWidth}px solid ${outlineStyle}` : 'none'
@@ -82,7 +82,7 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false }) 
         return (
           <div
             id={`legend-swatch-line-${legend.layerId}`}
-            className="w-5 h-5 flex items-center justify-center flex-shrink-0"
+            className="w-8 h-8 flex items-center justify-center flex-shrink-0"
           >
             <div
               style={{
@@ -99,7 +99,7 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false }) 
         return (
           <div
             id={`legend-swatch-point-${legend.layerId}`}
-            className="w-5 h-5 flex items-center justify-center flex-shrink-0"
+            className="w-8 h-8 flex items-center justify-center flex-shrink-0"
           >
             <div
               className="rounded-full"
@@ -122,13 +122,17 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false }) 
         // Apply rotation if angle is specified
         const rotationStyle = symbol.angle ? `rotate(${symbol.angle}deg)` : undefined;
         
+        // Make picture marker symbols larger for better visibility
+        const displayWidth = symbol.width ? Math.max(symbol.width * 1.5, 32) : 32;
+        const displayHeight = symbol.height ? Math.max(symbol.height * 1.5, 32) : 32;
+        
         return (
           <div
             id={`legend-swatch-image-${legend.layerId}`}
             className="flex items-center justify-center flex-shrink-0"
             style={{
-              width: `${symbol.width || 20}px`,
-              height: `${symbol.height || 20}px`
+              width: `${displayWidth}px`,
+              height: `${displayHeight}px`
             }}
           >
             <img 
@@ -154,6 +158,25 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false }) 
     }
   };
 
+  // Helper function to make labels more human-readable
+  const formatLabel = (label: string): string => {
+    if (!label) return '';
+    
+    // Remove common prefixes like "jldp_", "tnc_", etc.
+    let cleaned = label.replace(/^(jldp|tnc|dangermond)_/i, '');
+    
+    // Replace underscores with spaces
+    cleaned = cleaned.replace(/_/g, ' ');
+    
+    // Capitalize first letter of each word
+    cleaned = cleaned
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+    
+    return cleaned;
+  };
+
   // Render a single legend item
   const renderLegendItem = (item: LegendItem, index: number) => {
     let label = item.label;
@@ -162,18 +185,21 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false }) 
     if (legend.rendererType === 'classBreaks' && item.minValue !== undefined && item.maxValue !== undefined) {
       label = `${item.minValue.toLocaleString()} - ${item.maxValue.toLocaleString()}`;
       if (item.label && item.label !== label) {
-        label = `${label} (${item.label})`;
+        label = `${label} (${formatLabel(item.label)})`;
       }
+    } else {
+      // Format the label for better readability
+      label = formatLabel(label);
     }
 
     return (
       <div
         key={`${legend.layerId}-legend-item-${index}`}
         id={`legend-item-${legend.layerId}-${index}`}
-        className="flex items-start gap-2 py-1 hover:bg-gray-50 rounded px-1 transition-colors"
+        className="flex items-center gap-3 py-1.5 hover:bg-gray-50 rounded px-1 transition-colors"
       >
         {renderSymbolSwatch(item.symbol)}
-        <span className="text-xs text-gray-700 leading-5 break-words flex-1 min-w-0">
+        <span className="text-sm text-gray-700 break-words flex-1 min-w-0">
           {label}
         </span>
       </div>
@@ -266,11 +292,7 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false }) 
 
   return (
     <div id={`layer-legend-${legend.layerId}`} className="w-full">
-      <div id={`legend-header-${legend.layerId}`} className="mb-2">
-        <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-          Legend
-        </h4>
-      </div>
+
       {renderLegendContent()}
     </div>
   );
