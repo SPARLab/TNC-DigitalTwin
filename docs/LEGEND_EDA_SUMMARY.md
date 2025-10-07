@@ -116,6 +116,21 @@ NOT found in current TNC data, but should support for completeness.
 }
 ```
 
+### `esriPFS` - Picture Fill Symbol (Textured Polygons)
+```json
+{
+  "type": "esriPFS",
+  "url": "https://...",       // URL to image
+  "imageData": "base64...",   // OR base64 encoded image
+  "contentType": "image/png",
+  "width": 20,
+  "height": 20,
+  "xoffset": 0,
+  "yoffset": 0,
+  "angle": 0
+}
+```
+
 ### `esriSLS` - Simple Line Symbol (Lines)
 ```json
 {
@@ -137,6 +152,22 @@ NOT found in current TNC data, but should support for completeness.
     "color": [R, G, B, A],
     "width": 1
   }
+}
+```
+
+### `esriPMS` - Picture Marker Symbol (Icon Points)
+**Used for stock ponds, stream crossings, and other custom icons**
+```json
+{
+  "type": "esriPMS",
+  "url": "https://...",       // URL to icon image
+  "imageData": "base64...",   // OR base64 encoded icon
+  "contentType": "image/png",
+  "width": 20,
+  "height": 20,
+  "xoffset": 0,               // Horizontal offset
+  "yoffset": 0,               // Vertical offset
+  "angle": 0                  // Rotation angle in degrees
 }
 ```
 
@@ -219,11 +250,33 @@ const legend = transformRendererToLegend(renderer);
 
 ## Next Steps
 
-1. Remove the built-in ArcGIS Legend widget
-2. Create custom `LayerLegend` component with:
-   - Support for simple/uniqueValue/classBreaks renderers
-   - Color swatch rendering for each symbol type
-   - Collapsible UI for large legends
-   - Tailwind styling
-3. Add legend fetching to `MapView.tsx` when layers load
-4. Display legend in `TNCArcGISSidebar.tsx` within expanded layer cards
+1. ✅ Remove the built-in ArcGIS Legend widget
+2. ✅ Create custom `LayerLegend` component with:
+   - ✅ Support for simple/uniqueValue/classBreaks renderers
+   - ✅ Color swatch rendering for each symbol type (including picture markers)
+   - ✅ Collapsible UI for large legends
+   - ✅ Tailwind styling
+3. ✅ Add legend fetching to `MapView.tsx` when layers load
+4. ✅ Display legend in floating panel in bottom-right corner
+
+## Recent Updates (October 2025)
+
+### Picture Marker Symbol Support
+Added support for `esriPMS` (Picture Marker Symbol) and `esriPFS` (Picture Fill Symbol) to display actual icon images in legends instead of generic color squares.
+
+**Changes made:**
+- Updated `tncArcGISService.transformSymbol()` to extract image URLs and base64 data from picture marker symbols
+- Enhanced `LayerLegend.tsx` to render images with proper dimensions and rotation
+- Added support for symbol rotation (`angle` property) in legend display
+- Added debug logging to track picture marker symbol detection
+
+**Affected layers:**
+- Stock Ponds (water well icons)
+- Stream Crossings (custom icons)
+- Any other layers using custom SVG/PNG icons
+
+**Technical details:**
+- Picture markers can provide either a `url` (HTTP link to icon) or `imageData` (base64-encoded image)
+- Icons can be rotated using the `angle` property
+- Icons can have custom dimensions (`width`, `height`) and offsets (`xoffset`, `yoffset`)
+- The legend now dynamically displays the same icons that appear on the map

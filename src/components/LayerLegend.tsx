@@ -2,18 +2,21 @@ import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, Search } from 'lucide-react';
 
 export interface LegendSymbol {
-  type: 'polygon' | 'line' | 'point' | 'image';
+  type: 'polygon' | 'line' | 'point' | 'image' | 'text';
   fillColor?: [number, number, number, number]; // RGBA
   outlineColor?: [number, number, number, number]; // RGBA
   outlineWidth?: number;
   size?: number; // for points
   lineWidth?: number; // for lines
-  // For image-based symbols (from /legend endpoint)
+  // For image-based symbols (from /legend endpoint or picture marker symbols)
   imageData?: string; // base64 encoded image
   url?: string; // URL to image
   contentType?: string;
   width?: number;
   height?: number;
+  xoffset?: number; // offset for positioning picture markers
+  yoffset?: number; // offset for positioning picture markers
+  angle?: number; // rotation angle for picture markers
 }
 
 export interface LegendItem {
@@ -111,10 +114,13 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false }) 
         );
 
       case 'image':
-        // Render image-based legend symbol (from /legend endpoint)
+        // Render image-based legend symbol (from /legend endpoint or picture marker symbols)
         const imgSrc = symbol.imageData 
           ? `data:${symbol.contentType || 'image/png'};base64,${symbol.imageData}`
           : symbol.url;
+        
+        // Apply rotation if angle is specified
+        const rotationStyle = symbol.angle ? `rotate(${symbol.angle}deg)` : undefined;
         
         return (
           <div
@@ -131,7 +137,8 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false }) 
               style={{
                 width: '100%',
                 height: '100%',
-                objectFit: 'contain'
+                objectFit: 'contain',
+                transform: rotationStyle
               }}
             />
           </div>

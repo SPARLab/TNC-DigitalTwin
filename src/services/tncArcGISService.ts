@@ -635,20 +635,31 @@ class TNCArcGISService {
 
     // Determine symbol type
     if (symbol.type === 'esriSFS') {
-      // Polygon
+      // Polygon - Simple Fill Symbol
       transformed.type = 'polygon';
       transformed.fillColor = symbol.color;
       if (symbol.outline) {
         transformed.outlineColor = symbol.outline.color;
         transformed.outlineWidth = symbol.outline.width;
       }
+    } else if (symbol.type === 'esriPFS') {
+      // Polygon - Picture Fill Symbol
+      transformed.type = 'image';
+      transformed.imageData = symbol.imageData;
+      transformed.url = symbol.url;
+      transformed.contentType = symbol.contentType || 'image/png';
+      transformed.width = symbol.width || 20;
+      transformed.height = symbol.height || 20;
+      transformed.xoffset = symbol.xoffset || 0;
+      transformed.yoffset = symbol.yoffset || 0;
+      transformed.angle = symbol.angle || 0;
     } else if (symbol.type === 'esriSLS') {
-      // Line
+      // Line - Simple Line Symbol
       transformed.type = 'line';
       transformed.fillColor = symbol.color;
       transformed.lineWidth = symbol.width;
     } else if (symbol.type === 'esriSMS') {
-      // Point
+      // Point - Simple Marker Symbol
       transformed.type = 'point';
       transformed.fillColor = symbol.color;
       transformed.size = symbol.size;
@@ -656,6 +667,33 @@ class TNCArcGISService {
         transformed.outlineColor = symbol.outline.color;
         transformed.outlineWidth = symbol.outline.width;
       }
+    } else if (symbol.type === 'esriPMS') {
+      // Point - Picture Marker Symbol (icons like water wells, stream crossings)
+      transformed.type = 'image';
+      transformed.imageData = symbol.imageData;
+      transformed.url = symbol.url;
+      transformed.contentType = symbol.contentType || 'image/png';
+      transformed.width = symbol.width || 20;
+      transformed.height = symbol.height || 20;
+      transformed.xoffset = symbol.xoffset || 0;
+      transformed.yoffset = symbol.yoffset || 0;
+      transformed.angle = symbol.angle || 0;
+      
+      // Debug log for picture marker symbols
+      console.log(`🖼️ Picture Marker Symbol found:`, {
+        hasImageData: !!symbol.imageData,
+        hasUrl: !!symbol.url,
+        url: symbol.url,
+        width: transformed.width,
+        height: transformed.height,
+        angle: transformed.angle
+      });
+    } else if (symbol.type === 'esriTS') {
+      // Text Symbol - typically for labels, not legends
+      console.log('Text symbol found, skipping for legend');
+      transformed.type = 'text';
+    } else {
+      console.warn(`Unknown symbol type: ${symbol.type}`);
     }
 
     return transformed;
