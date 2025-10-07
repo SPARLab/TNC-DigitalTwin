@@ -24,6 +24,7 @@ interface TNCArcGISSidebarProps {
   // Map layer management
   activeLayerIds?: string[];
   loadingLayerIds?: string[];
+  layerOpacities?: Record<string, number>;
   onLayerToggle?: (itemId: string) => void;
   onLayerOpacityChange?: (itemId: string, opacity: number) => void;
   // Modal management
@@ -38,6 +39,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
   onItemSelect,
   activeLayerIds = [],
   loadingLayerIds = [],
+  layerOpacities = {},
   onLayerToggle,
   onLayerOpacityChange,
   selectedModalItem,
@@ -431,13 +433,16 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
         {/* Layer opacity control for active map layers */}
         {item.uiPattern === 'MAP_LAYER' && isActiveLayer && onLayerOpacityChange && (
           <div id={`item-opacity-control-${item.id}`} className="mt-3 pt-3 border-t border-blue-200" onClick={(e) => e.stopPropagation()}>
-            <label id={`item-opacity-label-${item.id}`} className="block text-xs text-gray-600 mb-1">Opacity</label>
+            <div className="flex items-center justify-between mb-1">
+              <label id={`item-opacity-label-${item.id}`} className="block text-xs text-gray-600">Opacity</label>
+              <span id={`item-opacity-value-${item.id}`} className="text-xs text-gray-500">{layerOpacities[item.id] ?? 80}%</span>
+            </div>
             <input
               id={`item-opacity-slider-${item.id}`}
               type="range"
               min="0"
               max="100"
-              defaultValue="80"
+              value={layerOpacities[item.id] ?? 80}
               className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
               onChange={(e) => onLayerOpacityChange(item.id, Number(e.target.value))}
               onClick={(e) => e.stopPropagation()}

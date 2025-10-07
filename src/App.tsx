@@ -112,6 +112,7 @@ function App() {
   // TNC ArcGIS state
   const [activeLayerIds, setActiveLayerIds] = useState<string[]>([]);
   const [loadingLayerIds, setLoadingLayerIds] = useState<string[]>([]);
+  const [layerOpacities, setLayerOpacities] = useState<Record<string, number>>({});
   const [selectedModalItem, setSelectedModalItem] = useState<TNCArcGISItem | null>(null);
 
   // CalFlora modal handlers
@@ -155,8 +156,10 @@ function App() {
   };
 
   const handleLayerOpacityChange = (itemId: string, opacity: number) => {
-    // This would be handled by the map component
-    console.log(`Layer ${itemId} opacity changed to ${opacity}%`);
+    setLayerOpacities(prev => ({
+      ...prev,
+      [itemId]: opacity
+    }));
   };
 
   const handleModalOpen = (item: TNCArcGISItem) => {
@@ -854,6 +857,7 @@ function App() {
           onTNCArcGISItemSelect={handleTNCArcGISItemSelect}
           activeLayerIds={activeLayerIds}
           loadingLayerIds={loadingLayerIds}
+          layerOpacities={layerOpacities}
           onLayerToggle={handleLayerToggle}
           onLayerOpacityChange={handleLayerOpacityChange}
           selectedModalItem={selectedModalItem}
@@ -881,7 +885,7 @@ function App() {
             onCalFloraLoadingChange={setCalFloraLoading}
             tncArcGISItems={tncArcGISItems}
             activeLayerIds={activeLayerIds}
-            layerOpacities={{}}
+            layerOpacities={layerOpacities}
             onLayerLoadComplete={handleLayerLoadComplete}
             onLayerLoadError={handleLayerLoadError}
             isDrawMode={isDrawMode}
