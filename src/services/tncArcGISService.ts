@@ -155,10 +155,30 @@ class TNCArcGISService {
 
     const uiPattern = this.getUIPattern(attrs.type);
 
-    // Construct URL for Hub Pages (they don't have URLs in the API response)
+    // Construct URL for items that don't have URLs in the API response
     let url = attrs.url || attrs.itemURL || '';
-    if (attrs.type === 'Hub Page' && !url && feature.id) {
-      url = `https://dangermondpreserve-tnc.hub.arcgis.com/pages/${feature.id}`;
+    if (!url && feature.id) {
+      const itemId = feature.id;
+      const orgId = attrs.orgId || 'F7DSX1DSNSiWmOqh';
+      
+      // Different URL patterns for different content types
+      if (attrs.type === 'Hub Page') {
+        url = `https://dangermondpreserve-tnc.hub.arcgis.com/pages/${itemId}`;
+      } else if (attrs.type === 'Feature Collection' || attrs.type === 'CSV' || 
+                 attrs.type === 'Shapefile' || attrs.type === 'File Geodatabase' || 
+                 attrs.type === 'CAD Drawing') {
+        // For datasets, use the Hub datasets page
+        url = `https://dangermondpreserve-tnc.hub.arcgis.com/datasets/${itemId}`;
+      } else if (attrs.type === 'StoryMap') {
+        url = `https://storymaps.arcgis.com/stories/${itemId}`;
+      } else if (attrs.type === 'Web Map') {
+        url = `https://tnc.maps.arcgis.com/home/webmap/viewer.html?webmap=${itemId}`;
+      } else if (attrs.type === 'Dashboard') {
+        url = `https://tnc.maps.arcgis.com/apps/dashboards/${itemId}`;
+      } else {
+        // Generic fallback to ArcGIS Online item page
+        url = `https://tnc.maps.arcgis.com/home/item.html?id=${itemId}`;
+      }
     }
 
     return {

@@ -47,7 +47,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
   onModalClose
 }) => {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set(['Map Layers', 'Documents', 'External Links'])
+    new Set(['Map Layers', 'Pages', 'External Links'])
   );
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
@@ -89,7 +89,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
   const groupedItems = useMemo(() => {
     const groups: { [key: string]: TNCArcGISItem[] } = {
       'Map Layers': [],
-      'Documents': [],
+      'Pages': [],
       'External Links': []
     };
     
@@ -99,7 +99,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
           groups['Map Layers'].push(item);
           break;
         case 'MODAL':
-          groups['Documents'].push(item);
+          groups['Pages'].push(item);
           break;
         case 'EXTERNAL_LINK':
           groups['External Links'].push(item);
@@ -592,7 +592,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
                 switch (dataType) {
                   case 'Map Layers':
                     return <Map className="w-4 h-4 text-blue-600" />;
-                  case 'Documents':
+                  case 'Pages':
                     return <FileText className="w-4 h-4 text-purple-600" />;
                   case 'External Links':
                     return <ExternalLink className="w-4 h-4 text-green-600" />;

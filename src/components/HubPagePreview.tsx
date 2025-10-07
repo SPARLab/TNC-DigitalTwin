@@ -8,6 +8,9 @@ interface HubPagePreviewProps {
 }
 
 const HubPagePreview: React.FC<HubPagePreviewProps> = ({ item, onClose }) => {
+  // Check if URL is available and valid
+  const hasValidUrl = item.url && item.url.trim() !== '';
+  
   return (
     <div 
       id="hub-page-preview-container" 
@@ -27,16 +30,18 @@ const HubPagePreview: React.FC<HubPagePreviewProps> = ({ item, onClose }) => {
         </div>
         
         <div id="hub-page-preview-actions" className="flex items-center gap-2">
-          <a
-            id="hub-page-open-in-arcgis-button"
-            href={item.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-          >
-            View on ArcGIS Hub
-            <ExternalLink className="w-4 h-4" />
-          </a>
+          {hasValidUrl && (
+            <a
+              id="hub-page-open-in-arcgis-button"
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            >
+              View on ArcGIS Hub
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          )}
           <button
             id="hub-page-close-button"
             onClick={onClose}
@@ -48,15 +53,38 @@ const HubPagePreview: React.FC<HubPagePreviewProps> = ({ item, onClose }) => {
         </div>
       </div>
       
-      {/* Iframe */}
+      {/* Content Area */}
       <div id="hub-page-preview-iframe-wrapper" className="flex-1 relative">
-        <iframe
-          id="hub-page-preview-iframe"
-          src={item.url}
-          className="absolute inset-0 w-full h-full border-0"
-          title={item.title}
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
-        />
+        {hasValidUrl ? (
+          <iframe
+            id="hub-page-preview-iframe"
+            src={item.url}
+            className="absolute inset-0 w-full h-full border-0"
+            title={item.title}
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+          />
+        ) : (
+          <div id="hub-page-no-preview" className="absolute inset-0 flex items-center justify-center p-8">
+            <div className="max-w-2xl text-center space-y-4">
+              <div className="text-6xl mb-4">📄</div>
+              <h3 className="text-xl font-semibold text-gray-900">Preview Not Available</h3>
+              <p className="text-gray-600">
+                This item doesn't have a preview URL available. It may be a data file that needs to be downloaded or viewed through ArcGIS Online.
+              </p>
+              <div className="pt-4 space-y-2">
+                <p className="text-sm text-gray-500">
+                  <strong>Type:</strong> {item.type}
+                </p>
+                {item.description && (
+                  <p className="text-sm text-gray-700 bg-gray-50 p-4 rounded-lg text-left">
+                    <strong>Description:</strong><br />
+                    <span dangerouslySetInnerHTML={{ __html: item.description }} />
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
