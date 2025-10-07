@@ -10,6 +10,7 @@ import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import VectorTileLayer from '@arcgis/core/layers/VectorTileLayer';
 import SceneLayer from '@arcgis/core/layers/SceneLayer';
 import StreamLayer from '@arcgis/core/layers/StreamLayer';
+import Legend from '@arcgis/core/widgets/Legend';
 import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
 import Polygon from '@arcgis/core/geometry/Polygon';
@@ -378,6 +379,58 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   }, []);
 
+  // Effect to add Legend widget to the map
+  useEffect(() => {
+    if (!view) return;
+
+    // Create legend widget
+    const legend = new Legend({
+      view: view,
+      container: document.createElement('div'),
+      // Configure legend to exclude graphics layers (observations, CalFlora, etc.)
+      layerInfos: [],
+      // Style property to configure the legend appearance
+      style: 'card' // Can be 'classic' or 'card'
+    });
+
+    // Add the legend to the bottom-right corner
+    view.ui.add(legend, {
+      position: 'bottom-right'
+    });
+
+    console.log('✅ Legend widget added to map');
+
+    // Cleanup function
+    return () => {
+      if (view && view.ui) {
+        view.ui.remove(legend);
+      }
+      legend.destroy();
+    };
+  }, [view]);
+
+  // Effect to update legend when TNC ArcGIS layers change
+  useEffect(() => {
+    if (!view || !view.map) return;
+
+    // Find the legend widget
+    const legendWidget = view.ui.find('esri-legend') as Legend | undefined;
+    
+    if (legendWidget) {
+      // Get only TNC ArcGIS layers (exclude graphics layers)
+      const tncLayers = view.map.layers.filter((layer) => {
+        return layer.id?.startsWith('tnc-layer-') || layer.id === 'dangermond-boundary';
+      });
+
+      // Update legend to show only TNC layers
+      legendWidget.layerInfos = tncLayers.map((layer) => ({
+        layer: layer
+      })).toArray();
+
+      console.log(`🗺️ Legend updated with ${tncLayers.length} layers`);
+    }
+  }, [view, activeLayerIds, tncArcGISItems]);
+
   // Effect to manage TNC ArcGIS Hub map layers
   useEffect(() => {
     if (!view) return;
@@ -458,6 +511,29 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
               
             } else if (url.includes('/FeatureServer')) {
               // Feature service (vector data: points, lines, polygons)
+              // Check if URL has a layer index (e.g., /FeatureServer/0)
+              const hasLayerIndex = /\/FeatureServer\/\d+/.test(url);
+              
+              if (!hasLayerIndex) {
+                // No layer index specified - need to query the service to find the first available layer
+                console.log(`🔍 FeatureServer URL missing layer index, querying service for: ${item.title}`);
+                try {
+                  const serviceResponse = await fetch(`${url}?f=json`);
+                  const serviceData = await serviceResponse.json();
+                  
+                  if (serviceData.layers && serviceData.layers.length > 0) {
+                    // Use the first available layer ID
+                    const firstLayerId = serviceData.layers[0].id;
+                    layerConfig.url = `${url}/${firstLayerId}`;
+                    console.log(`✓ Using layer index ${firstLayerId} for: ${item.title}`);
+                  } else {
+                    console.warn(`⚠️ No layers found in FeatureServer for: ${item.title}`);
+                  }
+                } catch (err) {
+                  console.warn(`⚠️ Could not query FeatureServer metadata for: ${item.title}`, err);
+                }
+              }
+              
               layer = new FeatureLayer(layerConfig);
               console.log(`📍 Creating FeatureLayer for: ${item.title}`);
               
