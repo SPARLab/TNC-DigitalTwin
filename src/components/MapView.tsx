@@ -5,7 +5,11 @@ import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import GeoJSONLayer from '@arcgis/core/layers/GeoJSONLayer';
 import MapImageLayer from '@arcgis/core/layers/MapImageLayer';
 import ImageryLayer from '@arcgis/core/layers/ImageryLayer';
+import ImageryTileLayer from '@arcgis/core/layers/ImageryTileLayer';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
+import VectorTileLayer from '@arcgis/core/layers/VectorTileLayer';
+import SceneLayer from '@arcgis/core/layers/SceneLayer';
+import StreamLayer from '@arcgis/core/layers/StreamLayer';
 import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
 import Polygon from '@arcgis/core/geometry/Polygon';
@@ -405,34 +409,63 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       for (const item of activeItems) {
         if (!tncArcGISLayersRef.current.has(item.id)) {
           try {
-            // Try to determine layer type from URL
+            // Comprehensive service type detection and layer creation
             const url = item.url;
             let layer: __esri.Layer | null = null;
+            const layerConfig = {
+              id: `tnc-layer-${item.id}`,
+              url: url,
+              title: item.title,
+              opacity: (layerOpacities[item.id] ?? 80) / 100
+            };
 
-            if (url.includes('/ImageServer')) {
-              // It's an image service - use ImageryLayer
-              layer = new ImageryLayer({
-                id: `tnc-layer-${item.id}`,
-                url: url,
-                title: item.title,
-                opacity: (layerOpacities[item.id] ?? 80) / 100
-              });
+            // Detect service type and create appropriate layer
+            // Order matters: check more specific patterns first
+            
+            if (url.includes('/SceneServer')) {
+              // 3D scene service (buildings, 3D objects, meshes, point clouds)
+              layer = new SceneLayer(layerConfig);
+              console.log(`🏗️ Creating SceneLayer for: ${item.title}`);
+              
+            } else if (url.includes('/StreamServer')) {
+              // Real-time streaming data service (WebSocket-based)
+              layer = new StreamLayer(layerConfig);
+              console.log(`📡 Creating StreamLayer for: ${item.title}`);
+              
+            } else if (url.includes('/VectorTileServer')) {
+              // Vector tile service (modern styleable basemaps)
+              layer = new VectorTileLayer(layerConfig);
+              console.log(`🗺️ Creating VectorTileLayer for: ${item.title}`);
+              
+            } else if (url.includes('/ImageServer')) {
+              // Image service - need to distinguish between dynamic and tiled
+              if (url.includes('tiledimageservices')) {
+                // Tiled image service (pre-cached tiles for performance)
+                layer = new ImageryTileLayer(layerConfig);
+                console.log(`🎨 Creating ImageryTileLayer (cached) for: ${item.title}`);
+              } else {
+                // Dynamic image service (on-the-fly processing)
+                layer = new ImageryLayer(layerConfig);
+                console.log(`🎨 Creating ImageryLayer (dynamic) for: ${item.title}`);
+              }
+              
             } else if (url.includes('/MapServer')) {
-              // It's a map service
-              layer = new MapImageLayer({
-                id: `tnc-layer-${item.id}`,
-                url: url,
-                title: item.title,
-                opacity: (layerOpacities[item.id] ?? 80) / 100
-              });
+              // Map service - typically use MapImageLayer
+              // Note: Could potentially check for cached/tiled capabilities and use TileLayer
+              // but MapImageLayer handles both dynamic and cached services well
+              layer = new MapImageLayer(layerConfig);
+              console.log(`🗺️ Creating MapImageLayer for: ${item.title}`);
+              
             } else if (url.includes('/FeatureServer')) {
-              // It's a feature service
-              layer = new FeatureLayer({
-                id: `tnc-layer-${item.id}`,
-                url: url,
-                title: item.title,
-                opacity: (layerOpacities[item.id] ?? 80) / 100
-              });
+              // Feature service (vector data: points, lines, polygons)
+              layer = new FeatureLayer(layerConfig);
+              console.log(`📍 Creating FeatureLayer for: ${item.title}`);
+              
+            } else {
+              // Unknown service type - log detailed warning
+              console.warn(`⚠️ Unknown service type for "${item.title}". URL: ${url}`);
+              console.warn(`   Supported types: FeatureServer, MapServer, ImageServer, VectorTileServer, SceneServer, StreamServer`);
+              console.warn(`   This layer will be skipped. Please contact the data provider if this is unexpected.`);
             }
 
             if (layer) {
