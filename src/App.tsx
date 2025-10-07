@@ -111,6 +111,7 @@ function App() {
 
   // TNC ArcGIS state
   const [activeLayerIds, setActiveLayerIds] = useState<string[]>([]);
+  const [loadingLayerIds, setLoadingLayerIds] = useState<string[]>([]);
   const [selectedModalItem, setSelectedModalItem] = useState<TNCArcGISItem | null>(null);
 
   // CalFlora modal handlers
@@ -131,11 +132,26 @@ function App() {
   const handleLayerToggle = (itemId: string) => {
     setActiveLayerIds(prev => {
       if (prev.includes(itemId)) {
+        // Removing layer - remove from loading state too
+        setLoadingLayerIds(loadingPrev => loadingPrev.filter(id => id !== itemId));
         return prev.filter(id => id !== itemId);
       } else {
+        // Adding layer - add to loading state
+        setLoadingLayerIds(loadingPrev => [...loadingPrev, itemId]);
         return [...prev, itemId];
       }
     });
+  };
+
+  const handleLayerLoadComplete = (itemId: string) => {
+    // Remove from loading state when layer finishes loading
+    setLoadingLayerIds(prev => prev.filter(id => id !== itemId));
+  };
+
+  const handleLayerLoadError = (itemId: string) => {
+    // Remove from both active and loading states on error
+    setLoadingLayerIds(prev => prev.filter(id => id !== itemId));
+    setActiveLayerIds(prev => prev.filter(id => id !== itemId));
   };
 
   const handleLayerOpacityChange = (itemId: string, opacity: number) => {
@@ -837,6 +853,7 @@ function App() {
           onTNCArcGISExportGeoJSON={handleTNCArcGISExportGeoJSON}
           onTNCArcGISItemSelect={handleTNCArcGISItemSelect}
           activeLayerIds={activeLayerIds}
+          loadingLayerIds={loadingLayerIds}
           onLayerToggle={handleLayerToggle}
           onLayerOpacityChange={handleLayerOpacityChange}
           selectedModalItem={selectedModalItem}
@@ -864,6 +881,9 @@ function App() {
             onCalFloraLoadingChange={setCalFloraLoading}
             tncArcGISItems={tncArcGISItems}
             activeLayerIds={activeLayerIds}
+            layerOpacities={{}}
+            onLayerLoadComplete={handleLayerLoadComplete}
+            onLayerLoadError={handleLayerLoadError}
             isDrawMode={isDrawMode}
             onDrawModeChange={setIsDrawMode}
             onPolygonDrawn={handlePolygonDrawn}

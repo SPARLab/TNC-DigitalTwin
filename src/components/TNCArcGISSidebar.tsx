@@ -12,7 +12,8 @@ import {
   Database,
   Calendar,
   User,
-  X
+  X,
+  Loader2
 } from 'lucide-react';
 import { TNCArcGISItem } from '../services/tncArcGISService';
 
@@ -22,6 +23,7 @@ interface TNCArcGISSidebarProps {
   onItemSelect?: (item: TNCArcGISItem) => void;
   // Map layer management
   activeLayerIds?: string[];
+  loadingLayerIds?: string[];
   onLayerToggle?: (itemId: string) => void;
   onLayerOpacityChange?: (itemId: string, opacity: number) => void;
   // Modal management
@@ -35,6 +37,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
   isLoading = false,
   onItemSelect,
   activeLayerIds = [],
+  loadingLayerIds = [],
   onLayerToggle,
   onLayerOpacityChange,
   selectedModalItem,
@@ -236,6 +239,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
 
   const renderItem = (item: TNCArcGISItem) => {
     const isActiveLayer = activeLayerIds.includes(item.id);
+    const isLoadingLayer = loadingLayerIds.includes(item.id);
     const isExpanded = expandedItems.has(item.id);
     
     return (
@@ -306,7 +310,9 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
           
           {item.uiPattern === 'MAP_LAYER' && (
             <div id={`item-map-layer-visibility-toggle-${item.id}`} className="flex items-center gap-2 ml-2">
-              {isActiveLayer ? (
+              {isLoadingLayer ? (
+                <Loader2 id={`item-layer-loading-spinner-${item.id}`} className="w-5 h-5 text-blue-600 animate-spin" />
+              ) : isActiveLayer ? (
                 <Eye id={`item-layer-visible-icon-${item.id}`} className="w-5 h-5 text-blue-600" />
               ) : (
                 <EyeOff id={`item-layer-hidden-icon-${item.id}`} className="w-5 h-5 text-gray-400" />

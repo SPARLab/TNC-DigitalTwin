@@ -36,6 +36,8 @@ interface MapViewProps {
   tncArcGISItems?: TNCArcGISItem[];
   activeLayerIds?: string[];
   layerOpacities?: Record<string, number>;
+  onLayerLoadComplete?: (itemId: string) => void;
+  onLayerLoadError?: (itemId: string) => void;
   // Draw mode props
   isDrawMode?: boolean;
   onDrawModeChange?: (isDrawMode: boolean) => void;
@@ -99,6 +101,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   tncArcGISItems = [],
   activeLayerIds = [],
   layerOpacities = {},
+  onLayerLoadComplete,
+  onLayerLoadError,
   isDrawMode = false,
   onDrawModeChange,
   onPolygonDrawn,
@@ -440,6 +444,28 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                   view.map.add(layer);
                   tncArcGISLayersRef.current.set(item.id, layer);
                   console.log(`✅ Added TNC layer: ${item.title}`);
+                  
+                  // Wait for the layer to be rendered before removing loading spinner
+                  try {
+                    const layerView = await view.whenLayerView(layer);
+                    
+                    // Watch for when the layer is done updating (rendering)
+                    layerView.when(() => {
+                      // Wait for initial rendering to complete
+                      const watchHandle = layerView.watch('updating', (isUpdating: boolean) => {
+                        if (!isUpdating) {
+                          // Layer has finished rendering
+                          console.log(`🎨 Layer rendered: ${item.title}`);
+                          onLayerLoadComplete?.(item.id);
+                          watchHandle.remove(); // Stop watching once rendered
+                        }
+                      });
+                    });
+                  } catch (layerViewErr) {
+                    // If we can't get the layerView, still complete the loading
+                    console.warn(`⚠️ Could not get layerView for "${item.title}", but layer was added`);
+                    onLayerLoadComplete?.(item.id);
+                  }
                 }
               } catch (err: any) {
                 // Handle specific error cases
@@ -448,13 +474,20 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                 } else {
                   console.warn(`⚠️ Could not load TNC layer "${item.title}":`, err.message);
                 }
+                
+                // Notify parent that layer failed to load
+                onLayerLoadError?.(item.id);
                 // Don't throw - continue loading other layers
               }
             } else {
               console.warn(`⚠️ Could not determine layer type for: ${item.title} (${url})`);
+              // Notify parent that layer failed to load
+              onLayerLoadError?.(item.id);
             }
           } catch (error) {
             console.error(`❌ Error loading TNC layer ${item.title}:`, error);
+            // Notify parent that layer failed to load
+            onLayerLoadError?.(item.id);
             // Don't throw - continue loading other layers
           }
         } else {

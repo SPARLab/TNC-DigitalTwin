@@ -10,6 +10,7 @@ interface TNCArcGISViewProps {
   onItemSelect?: (item: TNCArcGISItem) => void;
   // Map layer management
   activeLayerIds?: string[];
+  loadingLayerIds?: string[];
   onLayerToggle?: (itemId: string) => void;
   onLayerOpacityChange?: (itemId: string, opacity: number) => void;
   // Modal management
@@ -25,6 +26,7 @@ const TNCArcGISView: React.FC<TNCArcGISViewProps> = ({
   onExportGeoJSON,
   onItemSelect,
   activeLayerIds = [],
+  loadingLayerIds = [],
   onLayerToggle,
   onLayerOpacityChange,
   selectedModalItem,
@@ -39,6 +41,7 @@ const TNCArcGISView: React.FC<TNCArcGISViewProps> = ({
       onExportGeoJSON={onExportGeoJSON}
       onItemSelect={onItemSelect}
       activeLayerIds={activeLayerIds}
+      loadingLayerIds={loadingLayerIds}
       onLayerToggle={onLayerToggle}
       onLayerOpacityChange={onLayerOpacityChange}
       selectedModalItem={selectedModalItem}
