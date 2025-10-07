@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ChevronDown, Database, MapPin, Calendar, Search } from 'lucide-react';
 import { FilterState } from '../types';
 import { formatDateRange, formatDateRangeCompact, getTimeRangeOptions, formatDateToUS } from '../utils/dateUtils';
@@ -15,6 +15,12 @@ interface FilterSubheaderProps {
 const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChange, onSearch, resultCount, isSearching = false }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
+  // Refs for click-outside detection
+  const categoryRef = useRef<HTMLDivElement>(null);
+  const sourceRef = useRef<HTMLDivElement>(null);
+  const spatialFilterRef = useRef<HTMLDivElement>(null);
+  const timeRangeRef = useRef<HTMLDivElement>(null);
+
   const categoryOptions = DATA_CATEGORIES;
   // Get available sources for the current category
   const sourceOptions = CATEGORY_DATA_SOURCES[filters.category as keyof typeof CATEGORY_DATA_SOURCES] || [];
@@ -23,6 +29,32 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
   // DERIVED STATE: The component is in "custom date range" mode if daysBack is not defined.
   // This is the single source of truth, derived directly from props.
   const isCustomDateRange = useMemo(() => filters.daysBack === undefined, [filters.daysBack]);
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    if (!openDropdown) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const refMap = {
+        'category': categoryRef,
+        'source': sourceRef,
+        'spatialFilter': spatialFilterRef,
+        'timeRange': timeRangeRef
+      };
+
+      const activeRef = refMap[openDropdown as keyof typeof refMap];
+      
+      if (activeRef?.current && !activeRef.current.contains(event.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openDropdown]);
 
   const handleClearFilters = () => {
     onFilterChange({
@@ -118,7 +150,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
       <div className="flex items-center justify-between">
         <div className="flex space-x-6">
           {/* Data Category Filter */}
-          <div id="category-filter-container" className="flex flex-col relative">
+          <div ref={categoryRef} id="category-filter-container" className="flex flex-col relative">
             <label id="category-filter-label" className="text-xs font-medium text-gray-500 mb-1">
               DATA CATEGORY
             </label>
@@ -148,7 +180,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
           </div>
 
           {/* Data Source Filter */}
-          <div id="source-filter-container" className="flex flex-col relative">
+          <div ref={sourceRef} id="source-filter-container" className="flex flex-col relative">
             <label id="source-filter-label" className="text-xs font-medium text-gray-500 mb-1">
               DATA SOURCE
             </label>
@@ -178,7 +210,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
           </div>
 
           {/* Spatial Filter */}
-          <div id="spatial-filter-container" className="flex flex-col relative">
+          <div ref={spatialFilterRef} id="spatial-filter-container" className="flex flex-col relative">
             <label id="spatial-filter-label" className="text-xs font-medium text-gray-500 mb-1">
               SPATIAL FILTER
             </label>
@@ -222,7 +254,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
           </div>
 
           {/* Time Range Filter with Search Button */}
-          <div id="time-range-filter-container" className="flex flex-col relative">
+          <div ref={timeRangeRef} id="time-range-filter-container" className="flex flex-col relative">
             <label id="time-range-filter-label" className="text-xs font-medium text-gray-500 mb-1">
               TIME RANGE
             </label>
