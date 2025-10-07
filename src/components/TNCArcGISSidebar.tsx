@@ -288,18 +288,18 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
               ))}
             </div>
             
-            <div id={`item-metadata-${item.id}`} className="flex items-center gap-4 text-xs text-gray-500">
-              <div id={`item-owner-${item.id}`} className="flex items-center gap-1">
-                <User className="w-3 h-3" />
-                {item.owner}
+            <div id={`item-metadata-${item.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+              <div id={`item-owner-${item.id}`} className="flex items-center gap-1 min-w-0">
+                <User className="w-3 h-3 flex-shrink-0" />
+                <span className="truncate">{item.owner}</span>
               </div>
-              <div id={`item-modified-date-${item.id}`} className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                {new Date(item.modified).toLocaleDateString()}
+              <div id={`item-modified-date-${item.id}`} className="flex items-center gap-1 flex-shrink-0">
+                <Calendar className="w-3 h-3 flex-shrink-0" />
+                <span className="whitespace-nowrap">{new Date(item.modified).toLocaleDateString()}</span>
               </div>
-              <div id={`item-view-count-${item.id}`} className="flex items-center gap-1">
-                <Eye className="w-3 h-3" />
-                {item.num_views}
+              <div id={`item-view-count-${item.id}`} className="flex items-center gap-1 flex-shrink-0">
+                <Eye className="w-3 h-3 flex-shrink-0" />
+                <span>{item.num_views}</span>
               </div>
             </div>
           </div>
