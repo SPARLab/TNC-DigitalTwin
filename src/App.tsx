@@ -155,6 +155,13 @@ function App() {
     setActiveLayerIds(prev => prev.filter(id => id !== itemId));
   };
 
+  const handleLegendDataFetched = (itemId: string, legendData: any) => {
+    // Update the item with legend data
+    setTncArcGISItems(prev => prev.map(item => 
+      item.id === itemId ? { ...item, legendData } : item
+    ));
+  };
+
   const handleLayerOpacityChange = (itemId: string, opacity: number) => {
     setLayerOpacities(prev => ({
       ...prev,
@@ -888,6 +895,7 @@ function App() {
             layerOpacities={layerOpacities}
             onLayerLoadComplete={handleLayerLoadComplete}
             onLayerLoadError={handleLayerLoadError}
+            onLegendDataFetched={handleLegendDataFetched}
             isDrawMode={isDrawMode}
             onDrawModeChange={setIsDrawMode}
             onPolygonDrawn={handlePolygonDrawn}

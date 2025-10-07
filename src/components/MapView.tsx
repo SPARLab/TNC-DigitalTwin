@@ -10,7 +10,6 @@ import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import VectorTileLayer from '@arcgis/core/layers/VectorTileLayer';
 import SceneLayer from '@arcgis/core/layers/SceneLayer';
 import StreamLayer from '@arcgis/core/layers/StreamLayer';
-import Legend from '@arcgis/core/widgets/Legend';
 import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
 import Polygon from '@arcgis/core/geometry/Polygon';
@@ -20,8 +19,10 @@ import PopupTemplate from '@arcgis/core/PopupTemplate';
 import { iNaturalistAPI, iNaturalistObservation } from '../services/iNaturalistService';
 import { tncINaturalistService, TNCArcGISObservation } from '../services/tncINaturalistService';
 import { calFloraAPI, CalFloraPlant } from '../services/calFloraService';
-import { TNCArcGISItem } from '../services/tncArcGISService';
+import { TNCArcGISItem, tncArcGISAPI } from '../services/tncArcGISService';
 import { eBirdService, EBirdObservation } from '../services/eBirdService';
+import LayerLegend from './LayerLegend';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface MapViewProps {
   onObservationsUpdate?: (observations: iNaturalistObservation[]) => void;
@@ -43,6 +44,7 @@ interface MapViewProps {
   layerOpacities?: Record<string, number>;
   onLayerLoadComplete?: (itemId: string) => void;
   onLayerLoadError?: (itemId: string) => void;
+  onLegendDataFetched?: (itemId: string, legendData: any) => void;
   // Draw mode props
   isDrawMode?: boolean;
   onDrawModeChange?: (isDrawMode: boolean) => void;
@@ -108,6 +110,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   layerOpacities = {},
   onLayerLoadComplete,
   onLayerLoadError,
+  onLegendDataFetched,
   isDrawMode = false,
   onDrawModeChange,
   onPolygonDrawn,
@@ -122,6 +125,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   const drawingPointsRef = useRef<number[][]>([]);
   const clickHandlerRef = useRef<__esri.Handle | null>(null);
   const pointerMoveHandlerRef = useRef<__esri.Handle | null>(null);
+  const [isLegendExpanded, setIsLegendExpanded] = useState(true);
   // CalFlora state is managed by parent component via props
 
   // Helper to build TNC popup content with photo carousel and attribution
@@ -379,58 +383,6 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   }, []);
 
-  // Effect to add Legend widget to the map
-  useEffect(() => {
-    if (!view) return;
-
-    // Create legend widget
-    const legend = new Legend({
-      view: view,
-      container: document.createElement('div'),
-      // Configure legend to exclude graphics layers (observations, CalFlora, etc.)
-      layerInfos: [],
-      // Style property to configure the legend appearance
-      style: 'card' // Can be 'classic' or 'card'
-    });
-
-    // Add the legend to the bottom-right corner
-    view.ui.add(legend, {
-      position: 'bottom-right'
-    });
-
-    console.log('✅ Legend widget added to map');
-
-    // Cleanup function
-    return () => {
-      if (view && view.ui) {
-        view.ui.remove(legend);
-      }
-      legend.destroy();
-    };
-  }, [view]);
-
-  // Effect to update legend when TNC ArcGIS layers change
-  useEffect(() => {
-    if (!view || !view.map) return;
-
-    // Find the legend widget
-    const legendWidget = view.ui.find('esri-legend') as Legend | undefined;
-    
-    if (legendWidget) {
-      // Get only TNC ArcGIS layers (exclude graphics layers)
-      const tncLayers = view.map.layers.filter((layer) => {
-        return layer.id?.startsWith('tnc-layer-') || layer.id === 'dangermond-boundary';
-      });
-
-      // Update legend to show only TNC layers
-      legendWidget.layerInfos = tncLayers.map((layer) => ({
-        layer: layer
-      })).toArray();
-
-      console.log(`🗺️ Legend updated with ${tncLayers.length} layers`);
-    }
-  }, [view, activeLayerIds, tncArcGISItems]);
-
   // Effect to manage TNC ArcGIS Hub map layers
   useEffect(() => {
     if (!view) return;
@@ -553,6 +505,23 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                   view.map.add(layer);
                   tncArcGISLayersRef.current.set(item.id, layer);
                   console.log(`✅ Added TNC layer: ${item.title}`);
+                  
+                  // Fetch legend data for layers that support it
+                  if (url.includes('/FeatureServer') || url.includes('/MapServer') || url.includes('/ImageServer')) {
+                    try {
+                      // Extract layer ID from the configured layer URL (FeatureServer and MapServer)
+                      const layerIdMatch = layerConfig.url.match(/\/(\d+)$/);
+                      const layerId = layerIdMatch ? parseInt(layerIdMatch[1]) : 0;
+                      
+                      const legendData = await tncArcGISAPI.fetchLegendInfo(url, layerId);
+                      if (legendData) {
+                        console.log(`🎨 Legend data fetched for: ${item.title}`);
+                        onLegendDataFetched?.(item.id, legendData);
+                      }
+                    } catch (legendErr) {
+                      console.warn(`⚠️ Could not fetch legend for ${item.title}:`, legendErr);
+                    }
+                  }
                   
                   // Wait for the layer to be rendered before removing loading spinner
                   try {
@@ -2001,6 +1970,75 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           </div>
         </div>
       )}
+
+      {/* Floating Legend Panel */}
+      {(() => {
+        // Get active layers with legend data
+        const activeLayers = tncArcGISItems.filter(item => 
+          activeLayerIds.includes(item.id) && 
+          item.legendData && 
+          item.uiPattern === 'MAP_LAYER'
+        );
+
+        if (activeLayers.length === 0) return null;
+
+        return (
+          <div 
+            id="floating-legend-panel"
+            className="absolute bottom-4 right-4 bg-white rounded-lg shadow-lg z-10 max-w-sm"
+            style={{ maxHeight: '60vh' }}
+          >
+            {/* Legend Header */}
+            <div 
+              id="legend-panel-header"
+              className="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
+              onClick={() => setIsLegendExpanded(!isLegendExpanded)}
+            >
+              <h3 className="text-sm font-semibold text-gray-900">
+                Legend {activeLayers.length > 1 && `(${activeLayers.length} layers)`}
+              </h3>
+              <button 
+                className="p-1 hover:bg-gray-100 rounded transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsLegendExpanded(!isLegendExpanded);
+                }}
+              >
+                {isLegendExpanded ? (
+                  <ChevronDown className="w-4 h-4 text-gray-600" />
+                ) : (
+                  <ChevronUp className="w-4 h-4 text-gray-600" />
+                )}
+              </button>
+            </div>
+
+            {/* Legend Content */}
+            {isLegendExpanded && (
+              <div 
+                id="legend-panel-content"
+                className="overflow-y-auto"
+                style={{ maxHeight: 'calc(60vh - 60px)' }}
+              >
+                {activeLayers.map((item, index) => (
+                  <div 
+                    key={item.id}
+                    id={`legend-layer-${item.id}`}
+                    className={`p-3 ${index < activeLayers.length - 1 ? 'border-b border-gray-200' : ''}`}
+                  >
+                    {/* Layer name if multiple layers */}
+                    {activeLayers.length > 1 && (
+                      <h4 className="text-xs font-medium text-gray-700 mb-2">
+                        {item.title}
+                      </h4>
+                    )}
+                    <LayerLegend legend={item.legendData} isCompact={activeLayers.length > 1} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 });

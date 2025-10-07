@@ -19,6 +19,7 @@ export interface TNCArcGISItem {
   // Additional fields for UI patterns
   uiPattern: 'MAP_LAYER' | 'EXTERNAL_LINK' | 'MODAL';
   mainCategories: string[]; // Mapped categories using our mapping system
+  legendData?: any; // Legend information fetched for map layers
 }
 
 export interface TNCArcGISResponse {
@@ -489,6 +490,175 @@ class TNCArcGISService {
       console.error('Error getting UI pattern stats:', error);
       return { MAP_LAYER: 0, EXTERNAL_LINK: 0, MODAL: 0 };
     }
+  }
+
+  /**
+   * Fetch legend information for a layer
+   * Supports FeatureServer, MapServer, and ImageServer
+   */
+  async fetchLegendInfo(serviceUrl: string, layerId: number = 0): Promise<any> {
+    try {
+      // Try /legend endpoint first (works for MapServer and ImageServer)
+      const legendUrl = `${serviceUrl}/legend?f=json`;
+      console.log(`🎨 Fetching legend info from: ${legendUrl}`);
+      
+      const legendResponse = await fetch(legendUrl);
+      
+      if (legendResponse.ok) {
+        const legendData = await legendResponse.json();
+        
+        if (!legendData.error && legendData.layers && legendData.layers.length > 0) {
+          // Find the requested layer in the legend response
+          const layerLegend = legendData.layers.find((l: any) => l.layerId === layerId) || legendData.layers[0];
+          
+          if (layerLegend && layerLegend.legend) {
+            // Transform legend items to our format
+            return {
+              layerId: layerLegend.layerId.toString(),
+              layerName: layerLegend.layerName,
+              rendererType: layerLegend.legend.length === 1 ? 'simple' : 'uniqueValue',
+              items: layerLegend.legend.map((item: any) => ({
+                label: item.label,
+                symbol: this.transformLegendSymbol(item)
+              }))
+            };
+          }
+        }
+      }
+      
+      // Fallback: Try layer metadata endpoint (for FeatureServers)
+      const layerUrl = `${serviceUrl}/${layerId}?f=json`;
+      console.log(`🎨 Trying layer metadata from: ${layerUrl}`);
+      
+      const layerResponse = await fetch(layerUrl);
+      
+      if (!layerResponse.ok) {
+        throw new Error(`Legend fetch error: ${layerResponse.status} ${layerResponse.statusText}`);
+      }
+      
+      const data = await layerResponse.json();
+      
+      if (data.error) {
+        throw new Error(`Legend API error: ${data.error.message}`);
+      }
+      
+      // Extract renderer from drawingInfo
+      const renderer = data.drawingInfo?.renderer;
+      
+      if (!renderer) {
+        console.warn(`No renderer found for layer ${layerId}`);
+        return null;
+      }
+      
+      // Transform renderer to legend format
+      return this.transformRendererToLegend(renderer, data.name || `Layer ${layerId}`, layerId);
+      
+    } catch (error) {
+      console.error(`Error fetching legend for ${serviceUrl}/${layerId}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Transform legend item from /legend endpoint to our symbol format
+   */
+  private transformLegendSymbol(legendItem: any): any {
+    // Legend endpoint provides imageData as base64
+    // We'll store this for rendering
+    return {
+      type: 'image',
+      imageData: legendItem.imageData,
+      url: legendItem.url,
+      contentType: legendItem.contentType,
+      width: legendItem.width || 20,
+      height: legendItem.height || 20
+    };
+  }
+
+  /**
+   * Transform ArcGIS renderer to our legend format
+   */
+  private transformRendererToLegend(renderer: any, layerName: string, layerId: number): any {
+    const legend: any = {
+      layerId: layerId.toString(),
+      layerName,
+      rendererType: renderer.type,
+      items: []
+    };
+
+    switch (renderer.type) {
+      case 'simple':
+        // Single symbol for all features
+        legend.items.push({
+          label: renderer.label || layerName,
+          symbol: this.transformSymbol(renderer.symbol)
+        });
+        break;
+
+      case 'uniqueValue':
+        // Categorical renderer
+        if (renderer.uniqueValueInfos) {
+          legend.items = renderer.uniqueValueInfos.map((info: any) => ({
+            label: info.label || info.value,
+            value: info.value,
+            symbol: this.transformSymbol(info.symbol)
+          }));
+        }
+        break;
+
+      case 'classBreaks':
+        // Graduated renderer
+        if (renderer.classBreakInfos) {
+          legend.items = renderer.classBreakInfos.map((info: any) => ({
+            label: info.label,
+            minValue: info.classMinValue,
+            maxValue: info.classMaxValue,
+            symbol: this.transformSymbol(info.symbol)
+          }));
+        }
+        break;
+
+      default:
+        console.warn(`Unknown renderer type: ${renderer.type}`);
+    }
+
+    return legend;
+  }
+
+  /**
+   * Transform ArcGIS symbol to our simplified format
+   */
+  private transformSymbol(symbol: any): any {
+    if (!symbol) return {};
+
+    const transformed: any = {};
+
+    // Determine symbol type
+    if (symbol.type === 'esriSFS') {
+      // Polygon
+      transformed.type = 'polygon';
+      transformed.fillColor = symbol.color;
+      if (symbol.outline) {
+        transformed.outlineColor = symbol.outline.color;
+        transformed.outlineWidth = symbol.outline.width;
+      }
+    } else if (symbol.type === 'esriSLS') {
+      // Line
+      transformed.type = 'line';
+      transformed.fillColor = symbol.color;
+      transformed.lineWidth = symbol.width;
+    } else if (symbol.type === 'esriSMS') {
+      // Point
+      transformed.type = 'point';
+      transformed.fillColor = symbol.color;
+      transformed.size = symbol.size;
+      if (symbol.outline) {
+        transformed.outlineColor = symbol.outline.color;
+        transformed.outlineWidth = symbol.outline.width;
+      }
+    }
+
+    return transformed;
   }
 }
 
