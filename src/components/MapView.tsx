@@ -531,6 +531,15 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                 if (url.includes('/ImageServer') && 'fullExtent' in layer) {
                   console.log(`   ImageServer fullExtent:`, (layer as any).fullExtent);
                   console.log(`   ImageServer spatialReference:`, (layer as any).spatialReference);
+                  
+                  // Auto-zoom to ImageServer extent if it's outside current view
+                  const layerExtent = (layer as any).fullExtent;
+                  if (layerExtent && view) {
+                    console.log(`   🔍 Zooming to ImageServer extent for better visibility`);
+                    view.goTo(layerExtent, { duration: 1000 }).catch((err) => {
+                      console.warn(`   ⚠️ Could not zoom to extent:`, err);
+                    });
+                  }
                 }
                 
                 if (view.map) {
