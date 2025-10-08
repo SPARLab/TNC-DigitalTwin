@@ -498,6 +498,32 @@ class TNCArcGISService {
    */
   async fetchLegendInfo(serviceUrl: string, layerId: number = 0): Promise<any> {
     try {
+      // For ImageServer, metadata is at base URL (no layer ID)
+      // For FeatureServer/MapServer, metadata is at serviceUrl/layerId
+      const isImageServer = serviceUrl.includes('/ImageServer');
+      const layerUrl = isImageServer ? `${serviceUrl}?f=json` : `${serviceUrl}/${layerId}?f=json`;
+      
+      console.log(`🎨 Fetching layer metadata from: ${layerUrl}`);
+      
+      const layerResponse = await fetch(layerUrl);
+      let layerMetadata: any = null;
+      
+      if (layerResponse.ok) {
+        layerMetadata = await layerResponse.json();
+        
+        // Log metadata to help identify where units might be
+        console.log(`📊 Layer metadata for ${layerMetadata.name || layerMetadata.serviceDescription}:`, {
+          units: layerMetadata.units,
+          pixelType: layerMetadata.pixelType,
+          serviceDescription: layerMetadata.serviceDescription,
+          description: layerMetadata.description,
+          minValues: layerMetadata.minValues,
+          maxValues: layerMetadata.maxValues,
+          hasRenderer: !!layerMetadata.drawingInfo?.renderer,
+          fields: layerMetadata.fields?.slice(0, 3).map((f: any) => ({ name: f.name, type: f.type, alias: f.alias }))
+        });
+      }
+      
       // Try /legend endpoint first (works for MapServer and ImageServer)
       const legendUrl = `${serviceUrl}/legend?f=json`;
       console.log(`🎨 Fetching legend info from: ${legendUrl}`);
@@ -512,11 +538,15 @@ class TNCArcGISService {
           const layerLegend = legendData.layers.find((l: any) => l.layerId === layerId) || legendData.layers[0];
           
           if (layerLegend && layerLegend.legend) {
+            // Extract units from metadata AND legend labels
+            const units = this.extractUnits(layerMetadata, layerLegend);
+            
             // Transform legend items to our format
             return {
               layerId: layerLegend.layerId.toString(),
               layerName: layerLegend.layerName,
               rendererType: layerLegend.legend.length === 1 ? 'simple' : 'uniqueValue',
+              units: units, // Add units to legend data
               items: layerLegend.legend.map((item: any) => ({
                 label: item.label,
                 symbol: this.transformLegendSymbol(item)
@@ -526,37 +556,85 @@ class TNCArcGISService {
         }
       }
       
-      // Fallback: Try layer metadata endpoint (for FeatureServers)
-      const layerUrl = `${serviceUrl}/${layerId}?f=json`;
-      console.log(`🎨 Trying layer metadata from: ${layerUrl}`);
-      
-      const layerResponse = await fetch(layerUrl);
-      
-      if (!layerResponse.ok) {
-        throw new Error(`Legend fetch error: ${layerResponse.status} ${layerResponse.statusText}`);
+      // Fallback: Use layer metadata endpoint (for FeatureServers)
+      if (!layerMetadata) {
+        const response = await fetch(layerUrl);
+        if (!response.ok) {
+          throw new Error(`Legend fetch error: ${response.status} ${response.statusText}`);
+        }
+        layerMetadata = await response.json();
       }
       
-      const data = await layerResponse.json();
-      
-      if (data.error) {
-        throw new Error(`Legend API error: ${data.error.message}`);
+      if (layerMetadata.error) {
+        throw new Error(`Legend API error: ${layerMetadata.error.message}`);
       }
       
       // Extract renderer from drawingInfo
-      const renderer = data.drawingInfo?.renderer;
+      const renderer = layerMetadata.drawingInfo?.renderer;
       
       if (!renderer) {
         console.warn(`No renderer found for layer ${layerId}`);
         return null;
       }
       
+      // Extract units from metadata
+      const units = this.extractUnits(layerMetadata);
+      
       // Transform renderer to legend format
-      return this.transformRendererToLegend(renderer, data.name || `Layer ${layerId}`, layerId);
+      return this.transformRendererToLegend(renderer, layerMetadata.name || `Layer ${layerId}`, layerId, units);
       
     } catch (error) {
       console.error(`Error fetching legend for ${serviceUrl}/${layerId}:`, error);
       return null;
     }
+  }
+
+  /**
+   * Extract units of measurement from layer metadata
+   * Only returns explicit unit information - no interpretation or inference
+   */
+  private extractUnits(metadata: any, legendLayer?: any): string | null {
+    if (!metadata && !legendLayer) return null;
+    
+    // 1. Check for explicit units field in metadata (most reliable)
+    if (metadata?.units) {
+      console.log(`📊 Found explicit units field: ${metadata.units}`);
+      return metadata.units;
+    }
+    
+    // 2. Check fields for unit information
+    if (metadata?.fields && Array.isArray(metadata.fields)) {
+      for (const field of metadata.fields) {
+        if (field.units) {
+          console.log(`📊 Found units in field ${field.name}: ${field.units}`);
+          return field.units;
+        }
+      }
+    }
+    
+    // 3. Parse description for explicit unit declarations only
+    const description = metadata?.description || metadata?.serviceDescription || '';
+    
+    // Look for explicit unit patterns in description
+    const unitPatterns = [
+      /units?:\s*([^\n,;.]+)/i,  // "units: meters" or "unit: kg/hectare"
+      /measured in\s+([^\n,;.]+)/i,  // "measured in meters"
+      /\(([^)]+)\)\s*$/  // Units in parentheses at end: "Elevation (meters)"
+    ];
+    
+    for (const pattern of unitPatterns) {
+      const match = description.match(pattern);
+      if (match && match[1]) {
+        const units = match[1].trim();
+        console.log(`📊 Found units in description: ${units}`);
+        return units;
+      }
+    }
+    
+    // No explicit units found - return null
+    // Users should refer to layer descriptions for context
+    console.log('📊 No explicit units found - refer to layer description for context');
+    return null;
   }
 
   /**
@@ -578,11 +656,12 @@ class TNCArcGISService {
   /**
    * Transform ArcGIS renderer to our legend format
    */
-  private transformRendererToLegend(renderer: any, layerName: string, layerId: number): any {
+  private transformRendererToLegend(renderer: any, layerName: string, layerId: number, units: string | null = null): any {
     const legend: any = {
       layerId: layerId.toString(),
       layerName,
       rendererType: renderer.type,
+      units: units, // Add units to legend
       items: []
     };
 
@@ -638,6 +717,7 @@ class TNCArcGISService {
       // Polygon - Simple Fill Symbol
       transformed.type = 'polygon';
       transformed.fillColor = symbol.color;
+      transformed.style = symbol.style; // Capture style (solid, diagonal, etc.)
       if (symbol.outline) {
         transformed.outlineColor = symbol.outline.color;
         transformed.outlineWidth = symbol.outline.width;

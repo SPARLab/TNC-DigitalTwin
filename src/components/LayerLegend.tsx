@@ -8,6 +8,7 @@ export interface LegendSymbol {
   outlineWidth?: number;
   size?: number; // for points
   lineWidth?: number; // for lines
+  style?: string; // ArcGIS symbol style (esriSFSSolid, esriSFSBackwardDiagonal, etc.)
   // For image-based symbols (from /legend endpoint or picture marker symbols)
   imageData?: string; // base64 encoded image
   url?: string; // URL to image
@@ -31,6 +32,7 @@ export interface LayerLegendData {
   layerId: string;
   layerName: string;
   rendererType: 'simple' | 'uniqueValue' | 'classBreaks';
+  units?: string | null; // Units of measurement (e.g., "meters", "0-1 scale", "percent")
   items: LegendItem[];
 }
 
@@ -54,7 +56,7 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false }) 
 
   // Render a color swatch for a symbol
   const renderSymbolSwatch = (symbol: LegendSymbol) => {
-    const { type, fillColor, outlineColor, outlineWidth, size, lineWidth } = symbol;
+    const { type, fillColor, outlineColor, outlineWidth, size, lineWidth, style } = symbol;
 
     // Convert RGBA array to CSS rgba string
     const toRGBA = (color?: [number, number, number, number]) => {
@@ -65,6 +67,30 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false }) 
     const fillStyle = toRGBA(fillColor);
     const outlineStyle = toRGBA(outlineColor);
 
+    // Generate pattern style for hatched/patterned fills using CSS
+    const getPatternStyle = (style?: string) => {
+      if (!style || style === 'esriSFSSolid') {
+        return { backgroundColor: fillStyle };
+      }
+      
+      // For patterned fills, create a visual representation with CSS gradients
+      if (style.includes('Diagonal') || style.includes('Horizontal') || style.includes('Vertical')) {
+        return {
+          backgroundImage: `repeating-linear-gradient(
+            ${style.includes('Backward') ? '135deg' : style.includes('Forward') ? '45deg' : style.includes('Horizontal') ? '0deg' : '90deg'},
+            ${fillStyle},
+            ${fillStyle} 2px,
+            transparent 2px,
+            transparent 6px
+          )`,
+          border: outlineWidth ? `${outlineWidth}px solid ${outlineStyle}` : '1px solid rgba(0,0,0,0.2)'
+        };
+      }
+      
+      // Default to solid if pattern not recognized
+      return { backgroundColor: fillStyle };
+    };
+
     switch (type) {
       case 'polygon':
         return (
@@ -72,8 +98,10 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false }) 
             id={`legend-swatch-polygon-${legend.layerId}`}
             className="w-8 h-8 rounded flex-shrink-0"
             style={{
-              backgroundColor: fillStyle,
-              border: outlineWidth ? `${outlineWidth}px solid ${outlineStyle}` : 'none'
+              ...getPatternStyle(style),
+              border: outlineWidth && !style?.includes('Diagonal') && !style?.includes('Horizontal') && !style?.includes('Vertical')
+                ? `${outlineWidth}px solid ${outlineStyle}` 
+                : getPatternStyle(style).border || 'none'
             }}
           />
         );
@@ -292,7 +320,14 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false }) 
 
   return (
     <div id={`layer-legend-${legend.layerId}`} className="w-full">
-
+      {/* Display units if available */}
+      {legend.units && (
+        <div id={`legend-units-${legend.layerId}`} className="mb-2 px-1">
+          <p className="text-xs text-gray-600 italic">
+            Units: <span className="font-medium text-gray-700">{legend.units}</span>
+          </p>
+        </div>
+      )}
       {renderLegendContent()}
     </div>
   );
