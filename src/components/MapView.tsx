@@ -531,14 +531,11 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                 if (url.includes('/ImageServer') && 'fullExtent' in layer) {
                   console.log(`   ImageServer fullExtent:`, (layer as any).fullExtent);
                   console.log(`   ImageServer spatialReference:`, (layer as any).spatialReference);
-                  
-                  // Auto-zoom to ImageServer extent if it's outside current view
-                  const layerExtent = (layer as any).fullExtent;
-                  if (layerExtent && view) {
-                    console.log(`   🔍 Zooming to ImageServer extent for better visibility`);
-                    view.goTo(layerExtent, { duration: 1000 }).catch((err) => {
-                      console.warn(`   ⚠️ Could not zoom to extent:`, err);
-                    });
+                  if ('pixelSizeX' in layer && 'pixelSizeY' in layer) {
+                    console.log(`   ImageServer pixel size: ${(layer as any).pixelSizeX} x ${(layer as any).pixelSizeY}`);
+                  }
+                  if ('minScale' in layer && 'maxScale' in layer) {
+                    console.log(`   ImageServer scale range: ${(layer as any).minScale} to ${(layer as any).maxScale}`);
                   }
                 }
                 
