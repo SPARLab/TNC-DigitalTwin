@@ -29,7 +29,7 @@ const TNCArcGISDetailsSidebar: React.FC<TNCArcGISDetailsSidebarProps> = ({
   const effectivelyActive = isActive || isReloading;
 
   return (
-    <div id="tnc-details-sidebar" className="w-96 bg-white border-l border-gray-200 flex flex-col h-full shadow-lg">
+    <div id="tnc-details-sidebar" className="w-96 bg-white border-l border-gray-200 flex flex-col h-full">
       {/* Header */}
       <div id="tnc-details-header" className="p-4 border-b border-gray-200 flex items-start justify-between">
         <div className="flex-1 min-w-0 pr-3">

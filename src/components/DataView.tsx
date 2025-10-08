@@ -184,7 +184,7 @@ const DataView: React.FC<DataViewProps> = ({
         
       default:
         return (
-          <div id="unsupported-data-view" className="w-80 bg-white border-r border-gray-200 flex flex-col">
+          <div id="unsupported-data-view" className="w-96 bg-white border-r border-gray-200 flex flex-col">
             <div id="unsupported-header" className="p-4 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900">Data View</h2>
               <p className="text-sm text-gray-600">

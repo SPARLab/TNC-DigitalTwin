@@ -7,12 +7,18 @@ interface FilterSidebarProps {
   filters: FilterState;
   onFilterChange: (filters: FilterState) => void;
   onDownload: (format: 'csv' | 'json' | 'geojson') => void;
+  hasSearched: boolean;
+  hasResults: boolean;
+  dataSource: string;
 }
 
 const FilterSidebar: React.FC<FilterSidebarProps> = ({ 
   filters, 
   onFilterChange, 
-  onDownload 
+  onDownload,
+  hasSearched,
+  hasResults,
+  dataSource
 }) => {
 
   // Note: Taxa visibility state removed as it wasn't being used
@@ -95,8 +101,65 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
   // Note: Taxa visibility toggle removed as it wasn't being used
 
+  // Show message if no search has been performed
+  if (!hasSearched) {
+    return (
+      <div id="filter-sidebar" className="bg-white w-96 border-l border-gray-200 flex flex-col h-full">
+        <div id="filter-sidebar-empty-state" className="flex flex-col items-center justify-center h-full p-8 text-center">
+          <div id="search-icon" className="mb-4">
+            <svg className="w-16 h-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Search Yet</h3>
+          <p className="text-sm text-gray-600">
+            Search for a data item using the filters above to get started
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if search was performed but no results
+  if (!hasResults) {
+    return (
+      <div id="filter-sidebar" className="bg-white w-96 border-l border-gray-200 flex flex-col h-full">
+        <div id="filter-sidebar-empty-results" className="flex flex-col items-center justify-center h-full p-8 text-center">
+          <div id="no-results-icon" className="mb-4">
+            <svg className="w-16 h-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Results Found</h3>
+          <p className="text-sm text-gray-600">
+            Try adjusting your search filters or time range to find more data items
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // For TNC ArcGIS Hub, show selection prompt when results exist but nothing is selected
+  if (dataSource === 'TNC ArcGIS Hub' && hasResults) {
+    return (
+      <div id="filter-sidebar" className="bg-white w-96 border-l border-gray-200 flex flex-col h-full">
+        <div id="filter-sidebar-select-prompt" className="flex flex-col items-center justify-center h-full p-8 text-center">
+          <div id="select-icon" className="mb-4">
+            <svg className="w-16 h-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Data Item</h3>
+          <p className="text-sm text-gray-600">
+            Click on a data item in the left sidebar to view details and options
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div id="filter-sidebar" className="bg-white w-80 border-l border-gray-200 flex flex-col h-full">
+    <div id="filter-sidebar" className="bg-white w-96 border-l border-gray-200 flex flex-col h-full">
       <div id="filter-sidebar-content" className="flex flex-col h-full">
         {/* Header */}
         <div id="filter-sidebar-header" className="p-4 border-b border-gray-200">

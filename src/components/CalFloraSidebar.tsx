@@ -119,7 +119,7 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
 
   if (isLoading) {
     return (
-      <div id="calflora-sidebar" className="w-80 bg-white border-r border-gray-200 flex flex-col">
+      <div id="calflora-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col">
         <div id="calflora-header" className="p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">CalFlora Plant Data</h2>
           <p className="text-sm text-gray-600">Loading plant observations...</p>
@@ -132,7 +132,7 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
   }
 
   return (
-    <div id="calflora-sidebar" className="w-80 bg-white border-r border-gray-200 flex flex-col">
+    <div id="calflora-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col">
       {/* Header */}
       <div id="calflora-header" className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between mb-2">

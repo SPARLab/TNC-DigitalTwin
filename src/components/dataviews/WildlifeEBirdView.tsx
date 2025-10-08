@@ -45,7 +45,7 @@ const WildlifeEBirdView: React.FC<WildlifeEBirdViewProps> = ({
   }, [observations]);
 
   return (
-    <div id="ebird-wildlife-view" className="w-80 bg-white border-r border-gray-200 flex flex-col">
+    <div id="ebird-wildlife-view" className="w-96 bg-white border-r border-gray-200 flex flex-col">
       {/* Header */}
       <div id="ebird-view-header" className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between mb-2">

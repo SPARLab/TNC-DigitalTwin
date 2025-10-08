@@ -86,6 +86,9 @@ function App() {
     endDate: undefined,
     iconicTaxa: []
   });
+  
+  // Track whether a search has been performed
+  const [hasSearched, setHasSearched] = useState(false);
 
   // const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [observations, setObservations] = useState<iNaturalistObservation[]>([]);
@@ -298,6 +301,9 @@ function App() {
   const handleSearch = () => {
     // Clear all active TNC ArcGIS layers when searching
     setActiveLayerIds([]);
+    
+    // Mark that a search has been performed
+    setHasSearched(true);
     
     // Update the last searched filters to match current filters
     // This will cause the DataView to update to show the appropriate sidebar
@@ -1046,6 +1052,15 @@ function App() {
             filters={filters}
             onFilterChange={handleObservationFilterChange}
             onDownload={handleDownload}
+            hasSearched={hasSearched}
+            hasResults={
+              lastSearchedFilters.source === 'TNC ArcGIS Hub' ? tncArcGISItems.length > 0 :
+              lastSearchedFilters.source === 'CalFlora' ? calFloraPlants.length > 0 :
+              lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations.length > 0 :
+              lastSearchedFilters.source === 'eBird' ? eBirdObservations.length > 0 :
+              observations.length > 0
+            }
+            dataSource={lastSearchedFilters.source}
           />
         )}
       </div>
