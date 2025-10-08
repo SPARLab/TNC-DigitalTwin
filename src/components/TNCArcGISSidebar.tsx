@@ -27,6 +27,7 @@ interface TNCArcGISSidebarProps {
   layerOpacities?: Record<string, number>;
   onLayerToggle?: (itemId: string) => void;
   onLayerOpacityChange?: (itemId: string, opacity: number) => void;
+  onLayerSelect?: (itemId: string, layerId: number) => void; // For selecting which sublayer to display
   // Modal management
   selectedModalItem?: TNCArcGISItem | null;
   onModalOpen?: (item: TNCArcGISItem) => void;
@@ -42,6 +43,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
   layerOpacities = {},
   onLayerToggle,
   onLayerOpacityChange,
+  onLayerSelect,
   selectedModalItem,
   onModalOpen,
   onModalClose
@@ -426,6 +428,52 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
                   <ExternalLink className="w-4 h-4" />
                 </a>
               )}
+            </div>
+          </div>
+        )}
+        
+        {/* Layer selector for services with multiple layers */}
+        {item.uiPattern === 'MAP_LAYER' && isExpanded && item.availableLayers && item.availableLayers.length > 1 && onLayerSelect && (
+          <div id={`item-layer-selector-${item.id}`} className="mt-3 pt-3 border-t border-gray-200" onClick={(e) => e.stopPropagation()}>
+            <label id={`item-layer-selector-label-${item.id}`} className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">
+              Available Layers ({item.availableLayers.length})
+            </label>
+            <div id={`item-layer-options-${item.id}`} className="space-y-1 max-h-40 overflow-y-auto">
+              {item.availableLayers.map((layer) => {
+                const isSelected = (item.selectedLayerId ?? 0) === layer.id;
+                return (
+                  <button
+                    key={layer.id}
+                    id={`item-layer-option-${item.id}-${layer.id}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onLayerSelect(item.id, layer.id);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded text-xs transition-colors ${
+                      isSelected 
+                        ? 'bg-blue-100 border-2 border-blue-500 text-blue-900 font-semibold' 
+                        : 'bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{layer.name}</div>
+                        {layer.type && (
+                          <div className="text-gray-500 text-xs mt-0.5">{layer.type}</div>
+                        )}
+                        {layer.geometryType && (
+                          <div className="text-gray-400 text-xs mt-0.5">
+                            {layer.geometryType.replace('esriGeometry', '')}
+                          </div>
+                        )}
+                      </div>
+                      {isSelected && (
+                        <div className="flex-shrink-0 text-blue-600">✓</div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}

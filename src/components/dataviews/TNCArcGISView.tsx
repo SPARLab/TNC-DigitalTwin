@@ -14,6 +14,7 @@ interface TNCArcGISViewProps {
   layerOpacities?: Record<string, number>;
   onLayerToggle?: (itemId: string) => void;
   onLayerOpacityChange?: (itemId: string, opacity: number) => void;
+  onLayerSelect?: (itemId: string, layerId: number) => void;
   // Modal management
   selectedModalItem?: TNCArcGISItem | null;
   onModalOpen?: (item: TNCArcGISItem) => void;
@@ -31,6 +32,7 @@ const TNCArcGISView: React.FC<TNCArcGISViewProps> = ({
   layerOpacities = {},
   onLayerToggle,
   onLayerOpacityChange,
+  onLayerSelect,
   selectedModalItem,
   onModalOpen,
   onModalClose
@@ -47,6 +49,7 @@ const TNCArcGISView: React.FC<TNCArcGISViewProps> = ({
       layerOpacities={layerOpacities}
       onLayerToggle={onLayerToggle}
       onLayerOpacityChange={onLayerOpacityChange}
+      onLayerSelect={onLayerSelect}
       selectedModalItem={selectedModalItem}
       onModalOpen={onModalOpen}
       onModalClose={onModalClose}

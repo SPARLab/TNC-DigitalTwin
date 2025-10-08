@@ -1,5 +1,15 @@
 import categoryMappings from '../data-sources/tnc-arcgis/category_mappings.json';
 
+export interface ServiceLayerInfo {
+  id: number;
+  name: string;
+  type: string; // "Feature Layer", "Raster Layer", "Group Layer", etc.
+  description?: string;
+  geometryType?: string; // "esriGeometryPoint", "esriGeometryPolygon", etc.
+  minScale?: number;
+  maxScale?: number;
+}
+
 export interface TNCArcGISItem {
   id: string;
   title: string;
@@ -20,6 +30,9 @@ export interface TNCArcGISItem {
   uiPattern: 'MAP_LAYER' | 'EXTERNAL_LINK' | 'MODAL';
   mainCategories: string[]; // Mapped categories using our mapping system
   legendData?: any; // Legend information fetched for map layers
+  // Multi-layer support
+  availableLayers?: ServiceLayerInfo[]; // Available layers in the service
+  selectedLayerId?: number; // Currently selected layer ID (for services with multiple layers)
 }
 
 export interface TNCArcGISResponse {
@@ -489,6 +502,65 @@ class TNCArcGISService {
     } catch (error) {
       console.error('Error getting UI pattern stats:', error);
       return { MAP_LAYER: 0, EXTERNAL_LINK: 0, MODAL: 0 };
+    }
+  }
+
+  /**
+   * Fetch all available layers from a service
+   * Works with FeatureServer, MapServer, and ImageServer
+   */
+  async fetchServiceLayers(serviceUrl: string): Promise<ServiceLayerInfo[]> {
+    try {
+      // Query the service metadata to get all layers
+      const metadataUrl = `${serviceUrl}?f=json`;
+      console.log(`🔍 Fetching service layers from: ${metadataUrl}`);
+      
+      const response = await fetch(metadataUrl);
+      if (!response.ok) {
+        console.warn(`⚠️ Could not fetch service metadata: ${response.status}`);
+        return [];
+      }
+      
+      const data = await response.json();
+      
+      if (data.error) {
+        console.warn(`⚠️ Service metadata error: ${data.error.message}`);
+        return [];
+      }
+      
+      // Check for layers array (MapServer, FeatureServer)
+      if (data.layers && Array.isArray(data.layers)) {
+        console.log(`✅ Found ${data.layers.length} layers in service`);
+        return data.layers.map((layer: any) => ({
+          id: layer.id,
+          name: layer.name,
+          type: layer.type || 'Feature Layer',
+          description: layer.description,
+          geometryType: layer.geometryType,
+          minScale: layer.minScale,
+          maxScale: layer.maxScale
+        }));
+      }
+      
+      // For ImageServer, there's typically just one "layer" (the service itself)
+      if (data.name && serviceUrl.includes('/ImageServer')) {
+        console.log(`✅ ImageServer detected: ${data.name}`);
+        return [{
+          id: 0,
+          name: data.name,
+          type: 'Image Service',
+          description: data.description || data.serviceDescription,
+          geometryType: undefined,
+          minScale: data.minScale,
+          maxScale: data.maxScale
+        }];
+      }
+      
+      console.log('ℹ️ No layers found in service metadata');
+      return [];
+    } catch (error) {
+      console.error(`Error fetching service layers for ${serviceUrl}:`, error);
+      return [];
     }
   }
 

@@ -455,11 +455,23 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
               }
               
             } else if (url.includes('/MapServer')) {
-              // Map service - typically use MapImageLayer
-              // Note: Could potentially check for cached/tiled capabilities and use TileLayer
-              // but MapImageLayer handles both dynamic and cached services well
-              layer = new MapImageLayer(layerConfig);
-              console.log(`🗺️ Creating MapImageLayer for: ${item.title}`);
+              // Map service - use MapImageLayer
+              // MapImageLayer can show specific sublayers using the sublayers property
+              const mapLayerConfig: any = { ...layerConfig };
+              
+              // If a specific layer is selected, configure sublayers to only show that one
+              if (item.selectedLayerId !== undefined && item.availableLayers && item.availableLayers.length > 1) {
+                mapLayerConfig.sublayers = [{
+                  id: item.selectedLayerId,
+                  visible: true
+                }];
+                const selectedLayer = item.availableLayers.find(l => l.id === item.selectedLayerId);
+                console.log(`🗺️ Creating MapImageLayer with sublayer ${item.selectedLayerId} (${selectedLayer?.name || 'unknown'}) for: ${item.title}`);
+              } else {
+                console.log(`🗺️ Creating MapImageLayer (all layers) for: ${item.title}`);
+              }
+              
+              layer = new MapImageLayer(mapLayerConfig);
               
             } else if (url.includes('/FeatureServer')) {
               // Feature service (vector data: points, lines, polygons)
@@ -467,22 +479,34 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
               const hasLayerIndex = /\/FeatureServer\/\d+/.test(url);
               
               if (!hasLayerIndex) {
-                // No layer index specified - need to query the service to find the first available layer
-                console.log(`🔍 FeatureServer URL missing layer index, querying service for: ${item.title}`);
-                try {
-                  const serviceResponse = await fetch(`${url}?f=json`);
-                  const serviceData = await serviceResponse.json();
-                  
-                  if (serviceData.layers && serviceData.layers.length > 0) {
-                    // Use the first available layer ID
-                    const firstLayerId = serviceData.layers[0].id;
-                    layerConfig.url = `${url}/${firstLayerId}`;
-                    console.log(`✓ Using layer index ${firstLayerId} for: ${item.title}`);
-                  } else {
-                    console.warn(`⚠️ No layers found in FeatureServer for: ${item.title}`);
+                // No layer index specified - use selectedLayerId if available, otherwise use first layer
+                const layerId = item.selectedLayerId ?? 0;
+                
+                // If we have available layers info, use that; otherwise query the service
+                if (item.availableLayers && item.availableLayers.length > 0) {
+                  layerConfig.url = `${url}/${layerId}`;
+                  const selectedLayer = item.availableLayers.find(l => l.id === layerId);
+                  console.log(`✓ Using layer ${layerId} (${selectedLayer?.name || 'unknown'}) for: ${item.title}`);
+                } else {
+                  // Query the service to find available layers
+                  console.log(`🔍 FeatureServer URL missing layer index, querying service for: ${item.title}`);
+                  try {
+                    const serviceResponse = await fetch(`${url}?f=json`);
+                    const serviceData = await serviceResponse.json();
+                    
+                    if (serviceData.layers && serviceData.layers.length > 0) {
+                      // Use selectedLayerId if it exists in the layers, otherwise use first
+                      const targetLayerId = serviceData.layers.find((l: any) => l.id === layerId) 
+                        ? layerId 
+                        : serviceData.layers[0].id;
+                      layerConfig.url = `${url}/${targetLayerId}`;
+                      console.log(`✓ Using layer index ${targetLayerId} for: ${item.title}`);
+                    } else {
+                      console.warn(`⚠️ No layers found in FeatureServer for: ${item.title}`);
+                    }
+                  } catch (err) {
+                    console.warn(`⚠️ Could not query FeatureServer metadata for: ${item.title}`, err);
                   }
-                } catch (err) {
-                  console.warn(`⚠️ Could not query FeatureServer metadata for: ${item.title}`, err);
                 }
               }
               
@@ -509,13 +533,21 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                   // Fetch legend data for layers that support it
                   if (url.includes('/FeatureServer') || url.includes('/MapServer') || url.includes('/ImageServer')) {
                     try {
-                      // Extract layer ID from the configured layer URL (FeatureServer and MapServer)
-                      const layerIdMatch = layerConfig.url.match(/\/(\d+)$/);
-                      const layerId = layerIdMatch ? parseInt(layerIdMatch[1]) : 0;
+                      // Determine which layer ID to use for legend
+                      let layerId = 0;
+                      
+                      if (url.includes('/FeatureServer')) {
+                        // Extract layer ID from the configured layer URL
+                        const layerIdMatch = layerConfig.url.match(/\/(\d+)$/);
+                        layerId = layerIdMatch ? parseInt(layerIdMatch[1]) : (item.selectedLayerId ?? 0);
+                      } else if (url.includes('/MapServer')) {
+                        // For MapServer, use the selected layer ID
+                        layerId = item.selectedLayerId ?? 0;
+                      }
                       
                       const legendData = await tncArcGISAPI.fetchLegendInfo(url, layerId);
                       if (legendData) {
-                        console.log(`🎨 Legend data fetched for: ${item.title}`);
+                        console.log(`🎨 Legend data fetched for: ${item.title} (layer ${layerId})`);
                         onLegendDataFetched?.(item.id, legendData);
                       }
                     } catch (legendErr) {

@@ -169,6 +169,26 @@ function App() {
     }));
   };
 
+  const handleLayerSelect = (itemId: string, layerId: number) => {
+    console.log(`Layer selected for item ${itemId}: layer ${layerId}`);
+    
+    // Update the item with the selected layer ID
+    setTncArcGISItems(prev => prev.map(item => 
+      item.id === itemId ? { ...item, selectedLayerId: layerId } : item
+    ));
+    
+    // If the layer is currently active, we need to reload it with the new layer selection
+    if (activeLayerIds.includes(itemId)) {
+      // Toggle off and then back on to force reload with new layer
+      setActiveLayerIds(prev => prev.filter(id => id !== itemId));
+      // Small delay to ensure layer is removed before adding again
+      setTimeout(() => {
+        setLoadingLayerIds(prev => [...prev, itemId]);
+        setActiveLayerIds(prev => [...prev, itemId]);
+      }, 100);
+    }
+  };
+
   const handleModalOpen = (item: TNCArcGISItem) => {
     setSelectedModalItem(item);
   };
@@ -259,7 +279,30 @@ function App() {
             sampleTitles: response.results.slice(0, 3).map(item => item.title)
           });
           
-          setTncArcGISItems(response.results);
+          // Fetch available layers for MAP_LAYER items
+          const itemsWithLayers = await Promise.all(
+            response.results.map(async (item) => {
+              if (item.uiPattern === 'MAP_LAYER' && 
+                  (item.url.includes('/FeatureServer') || item.url.includes('/MapServer'))) {
+                try {
+                  const availableLayers = await tncArcGISAPI.fetchServiceLayers(item.url);
+                  if (availableLayers.length > 0) {
+                    console.log(`🔍 Found ${availableLayers.length} layers for: ${item.title}`);
+                    return {
+                      ...item,
+                      availableLayers,
+                      selectedLayerId: availableLayers[0].id // Default to first layer
+                    };
+                  }
+                } catch (err) {
+                  console.warn(`⚠️ Could not fetch layers for ${item.title}:`, err);
+                }
+              }
+              return item;
+            })
+          );
+          
+          setTncArcGISItems(itemsWithLayers);
         } catch (error) {
           console.error('❌ Error loading TNC ArcGIS data:', error);
           setTncArcGISItems([]);
@@ -867,6 +910,7 @@ function App() {
           layerOpacities={layerOpacities}
           onLayerToggle={handleLayerToggle}
           onLayerOpacityChange={handleLayerOpacityChange}
+          onLayerSelect={handleLayerSelect}
           selectedModalItem={selectedModalItem}
           onModalOpen={handleModalOpen}
           onModalClose={handleModalClose}

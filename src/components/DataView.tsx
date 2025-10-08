@@ -50,6 +50,7 @@ interface DataViewProps {
   layerOpacities?: Record<string, number>;
   onLayerToggle?: (itemId: string) => void;
   onLayerOpacityChange?: (itemId: string, opacity: number) => void;
+  onLayerSelect?: (itemId: string, layerId: number) => void;
   // Modal management for TNC ArcGIS
   selectedModalItem?: TNCArcGISItem | null;
   onModalOpen?: (item: TNCArcGISItem) => void;
@@ -91,6 +92,7 @@ const DataView: React.FC<DataViewProps> = ({
   layerOpacities = {},
   onLayerToggle,
   onLayerOpacityChange,
+  onLayerSelect,
   selectedModalItem,
   onModalOpen,
   onModalClose,
@@ -181,6 +183,7 @@ const DataView: React.FC<DataViewProps> = ({
             layerOpacities={layerOpacities}
             onLayerToggle={onLayerToggle}
             onLayerOpacityChange={onLayerOpacityChange}
+            onLayerSelect={onLayerSelect}
             selectedModalItem={selectedModalItem}
             onModalOpen={onModalOpen}
             onModalClose={onModalClose}
