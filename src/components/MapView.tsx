@@ -16,6 +16,7 @@ import Polygon from '@arcgis/core/geometry/Polygon';
 import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
 import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 import PopupTemplate from '@arcgis/core/PopupTemplate';
+import * as reactiveUtils from '@arcgis/core/core/reactiveUtils';
 import { iNaturalistAPI, iNaturalistObservation } from '../services/iNaturalistService';
 import { tncINaturalistService, TNCArcGISObservation } from '../services/tncINaturalistService';
 import { calFloraAPI, CalFloraPlant } from '../services/calFloraService';
@@ -452,6 +453,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                 // Dynamic image service (on-the-fly processing)
                 layer = new ImageryLayer(layerConfig);
                 console.log(`🎨 Creating ImageryLayer (dynamic) for: ${item.title}`);
+                console.log(`   URL: ${url}`);
               }
               
             } else if (url.includes('/MapServer')) {
@@ -525,6 +527,12 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
               try {
                 await layer.load();
                 
+                // Log additional info for ImageServer layers to help debug rendering issues
+                if (url.includes('/ImageServer') && 'fullExtent' in layer) {
+                  console.log(`   ImageServer fullExtent:`, (layer as any).fullExtent);
+                  console.log(`   ImageServer spatialReference:`, (layer as any).spatialReference);
+                }
+                
                 if (view.map) {
                   view.map.add(layer);
                   tncArcGISLayersRef.current.set(item.id, layer);
@@ -561,15 +569,18 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                     
                     // Watch for when the layer is done updating (rendering)
                     layerView.when(() => {
-                      // Wait for initial rendering to complete
-                      const watchHandle = layerView.watch('updating', (isUpdating: boolean) => {
-                        if (!isUpdating) {
-                          // Layer has finished rendering
-                          console.log(`🎨 Layer rendered: ${item.title}`);
-                          onLayerLoadComplete?.(item.id);
-                          watchHandle.remove(); // Stop watching once rendered
+                      // Wait for initial rendering to complete using reactiveUtils
+                      const watchHandle = reactiveUtils.watch(
+                        () => layerView.updating,
+                        (isUpdating: boolean) => {
+                          if (!isUpdating) {
+                            // Layer has finished rendering
+                            console.log(`🎨 Layer rendered: ${item.title}`);
+                            onLayerLoadComplete?.(item.id);
+                            watchHandle.remove(); // Stop watching once rendered
+                          }
                         }
-                      });
+                      );
                     });
                   } catch (layerViewErr) {
                     // If we can't get the layerView, still complete the loading
