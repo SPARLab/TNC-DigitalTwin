@@ -7,6 +7,7 @@ import MapView from './components/MapView';
 import Footer from './components/Footer';
 import CalFloraPlantModal from './components/CalFloraPlantModal';
 import HubPagePreview from './components/HubPagePreview';
+import TNCArcGISDetailsSidebar from './components/TNCArcGISDetailsSidebar';
 import { FilterState } from './types';
 import { iNaturalistObservation } from './services/iNaturalistService';
 import { TNCArcGISObservation } from './services/tncINaturalistService';
@@ -112,8 +113,10 @@ function App() {
   // TNC ArcGIS state
   const [activeLayerIds, setActiveLayerIds] = useState<string[]>([]);
   const [loadingLayerIds, setLoadingLayerIds] = useState<string[]>([]);
+  const [reloadingLayerIds, setReloadingLayerIds] = useState<string[]>([]); // Track layers being reloaded
   const [layerOpacities, setLayerOpacities] = useState<Record<string, number>>({});
   const [selectedModalItem, setSelectedModalItem] = useState<TNCArcGISItem | null>(null);
+  const [selectedDetailsItem, setSelectedDetailsItem] = useState<TNCArcGISItem | null>(null);
 
   // CalFlora modal handlers
   const openCalFloraModal = (plantId: string) => {
@@ -173,18 +176,35 @@ function App() {
     console.log(`Layer selected for item ${itemId}: layer ${layerId}`);
     
     // Update the item with the selected layer ID
-    setTncArcGISItems(prev => prev.map(item => 
-      item.id === itemId ? { ...item, selectedLayerId: layerId } : item
-    ));
+    setTncArcGISItems(prev => {
+      const updated = prev.map(item => 
+        item.id === itemId ? { ...item, selectedLayerId: layerId } : item
+      );
+      
+      // Also update selectedDetailsItem if this is the item being viewed
+      if (selectedDetailsItem?.id === itemId) {
+        const updatedItem = updated.find(item => item.id === itemId);
+        if (updatedItem) {
+          setSelectedDetailsItem(updatedItem);
+        }
+      }
+      
+      return updated;
+    });
     
     // If the layer is currently active, we need to reload it with the new layer selection
     if (activeLayerIds.includes(itemId)) {
+      // Mark as reloading to prevent button flicker
+      setReloadingLayerIds(prev => [...prev, itemId]);
+      
       // Toggle off and then back on to force reload with new layer
       setActiveLayerIds(prev => prev.filter(id => id !== itemId));
       // Small delay to ensure layer is removed before adding again
       setTimeout(() => {
         setLoadingLayerIds(prev => [...prev, itemId]);
         setActiveLayerIds(prev => [...prev, itemId]);
+        // Remove from reloading state after reload starts
+        setReloadingLayerIds(prev => prev.filter(id => id !== itemId));
       }, 100);
     }
   };
@@ -199,6 +219,39 @@ function App() {
 
   const handleTNCArcGISItemSelect = (item: TNCArcGISItem) => {
     console.log('TNC ArcGIS item selected:', item);
+    // Open details sidebar for MAP_LAYER items, otherwise use existing modal behavior
+    if (item.uiPattern === 'MAP_LAYER') {
+      setSelectedDetailsItem(item);
+      // Auto-show on map when selected
+      if (!activeLayerIds.includes(item.id)) {
+        setLoadingLayerIds(prev => [...prev, item.id]);
+        setActiveLayerIds(prev => [...prev, item.id]);
+      }
+    } else if (item.uiPattern === 'MODAL') {
+      handleModalOpen(item);
+    }
+  };
+
+  const handleDetailsClose = () => {
+    setSelectedDetailsItem(null);
+  };
+
+  const handleDetailsLayerToggle = () => {
+    if (selectedDetailsItem) {
+      handleLayerToggle(selectedDetailsItem.id);
+    }
+  };
+
+  const handleDetailsOpacityChange = (opacity: number) => {
+    if (selectedDetailsItem) {
+      handleLayerOpacityChange(selectedDetailsItem.id, opacity);
+    }
+  };
+
+  const handleDetailsLayerSelect = (layerId: number) => {
+    if (selectedDetailsItem) {
+      handleLayerSelect(selectedDetailsItem.id, layerId);
+    }
   };
 
   // Set up global function for popup buttons to access
@@ -259,11 +312,25 @@ function App() {
             ? [filters.category] 
             : undefined;
           
+          // Calculate date range for filtering
+          let startDate = filters.startDate;
+          let endDate = filters.endDate;
+          if (!startDate || !endDate) {
+            const range = getDateRange(filters.daysBack || 30);
+            startDate = formatDateForAPI(range.startDate);
+            endDate = formatDateForAPI(range.endDate);
+          }
+          
+          // Convert to timestamps for comparison
+          const startTimestamp = new Date(startDate).getTime();
+          const endTimestamp = new Date(endDate).getTime() + (24 * 60 * 60 * 1000 - 1); // End of day
+          
           console.log(`🔍 TNC ArcGIS Hub Search:`, {
             category: filters.category,
             categoryFilter,
             spatialFilter: filters.spatialFilter,
-            timeRange: filters.timeRange
+            timeRange: filters.timeRange,
+            dateFilter: `${startDate} to ${endDate}`
           });
           
           const response = await tncArcGISAPI.getAllItems({
@@ -273,15 +340,23 @@ function App() {
             // Note: Not including appAndMap collection for now
           });
           
+          // Filter by date range (using modified timestamp)
+          const dateFilteredResults = response.results.filter(item => {
+            const itemModified = item.modified;
+            return itemModified >= startTimestamp && itemModified <= endTimestamp;
+          });
+          
           console.log(`📊 TNC ArcGIS Hub Results:`, {
             totalItems: response.results.length,
+            afterDateFilter: dateFilteredResults.length,
             dataSource: response.dataSource,
-            sampleTitles: response.results.slice(0, 3).map(item => item.title)
+            dateRange: `${startDate} to ${endDate}`,
+            sampleTitles: dateFilteredResults.slice(0, 3).map(item => item.title)
           });
           
           // Fetch available layers for MAP_LAYER items
           const itemsWithLayers = await Promise.all(
-            response.results.map(async (item) => {
+            dateFilteredResults.map(async (item) => {
               if (item.uiPattern === 'MAP_LAYER' && 
                   (item.url.includes('/FeatureServer') || item.url.includes('/MapServer'))) {
                 try {
@@ -907,10 +982,8 @@ function App() {
           onTNCArcGISItemSelect={handleTNCArcGISItemSelect}
           activeLayerIds={activeLayerIds}
           loadingLayerIds={loadingLayerIds}
-          layerOpacities={layerOpacities}
+          selectedDetailsItemId={selectedDetailsItem?.id}
           onLayerToggle={handleLayerToggle}
-          onLayerOpacityChange={handleLayerOpacityChange}
-          onLayerSelect={handleLayerSelect}
           selectedModalItem={selectedModalItem}
           onModalOpen={handleModalOpen}
           onModalClose={handleModalClose}
@@ -950,11 +1023,25 @@ function App() {
             <HubPagePreview item={selectedModalItem} onClose={handleModalClose} />
           )}
         </div>
-        <FilterSidebar 
-          filters={filters}
-          onFilterChange={handleObservationFilterChange}
-          onDownload={handleDownload}
-        />
+        {/* Conditionally show TNC ArcGIS Details Sidebar or Filter Sidebar */}
+        {selectedDetailsItem && lastSearchedFilters.source === 'TNC ArcGIS Hub' ? (
+          <TNCArcGISDetailsSidebar
+            item={selectedDetailsItem}
+            isActive={activeLayerIds.includes(selectedDetailsItem.id)}
+            isReloading={reloadingLayerIds.includes(selectedDetailsItem.id)}
+            opacity={layerOpacities[selectedDetailsItem.id] ?? 80}
+            onToggleLayer={handleDetailsLayerToggle}
+            onOpacityChange={handleDetailsOpacityChange}
+            onLayerSelect={handleDetailsLayerSelect}
+            onClose={handleDetailsClose}
+          />
+        ) : (
+          <FilterSidebar 
+            filters={filters}
+            onFilterChange={handleObservationFilterChange}
+            onDownload={handleDownload}
+          />
+        )}
       </div>
       <Footer />
       

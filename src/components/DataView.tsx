@@ -47,10 +47,8 @@ interface DataViewProps {
   // Map layer management for TNC ArcGIS
   activeLayerIds?: string[];
   loadingLayerIds?: string[];
-  layerOpacities?: Record<string, number>;
+  selectedDetailsItemId?: string;
   onLayerToggle?: (itemId: string) => void;
-  onLayerOpacityChange?: (itemId: string, opacity: number) => void;
-  onLayerSelect?: (itemId: string, layerId: number) => void;
   // Modal management for TNC ArcGIS
   selectedModalItem?: TNCArcGISItem | null;
   onModalOpen?: (item: TNCArcGISItem) => void;
@@ -89,10 +87,8 @@ const DataView: React.FC<DataViewProps> = ({
   onTNCArcGISItemSelect,
   activeLayerIds,
   loadingLayerIds = [],
-  layerOpacities = {},
+  selectedDetailsItemId,
   onLayerToggle,
-  onLayerOpacityChange,
-  onLayerSelect,
   selectedModalItem,
   onModalOpen,
   onModalClose,
@@ -175,15 +171,11 @@ const DataView: React.FC<DataViewProps> = ({
           <TNCArcGISView
             items={tncArcGISItems}
             loading={tncArcGISLoading}
-            onExportCSV={onTNCArcGISExportCSV}
-            onExportGeoJSON={onTNCArcGISExportGeoJSON}
             onItemSelect={onTNCArcGISItemSelect}
             activeLayerIds={activeLayerIds}
             loadingLayerIds={loadingLayerIds}
-            layerOpacities={layerOpacities}
+            selectedDetailsItemId={selectedDetailsItemId}
             onLayerToggle={onLayerToggle}
-            onLayerOpacityChange={onLayerOpacityChange}
-            onLayerSelect={onLayerSelect}
             selectedModalItem={selectedModalItem}
             onModalOpen={onModalOpen}
             onModalClose={onModalClose}

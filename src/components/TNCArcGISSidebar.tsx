@@ -24,10 +24,8 @@ interface TNCArcGISSidebarProps {
   // Map layer management
   activeLayerIds?: string[];
   loadingLayerIds?: string[];
-  layerOpacities?: Record<string, number>;
-  onLayerToggle?: (itemId: string) => void;
-  onLayerOpacityChange?: (itemId: string, opacity: number) => void;
-  onLayerSelect?: (itemId: string, layerId: number) => void; // For selecting which sublayer to display
+  selectedDetailsItemId?: string; // ID of item showing in details sidebar
+  onLayerToggle?: (itemId: string) => void; // For eye icon toggle
   // Modal management
   selectedModalItem?: TNCArcGISItem | null;
   onModalOpen?: (item: TNCArcGISItem) => void;
@@ -40,10 +38,8 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
   onItemSelect,
   activeLayerIds = [],
   loadingLayerIds = [],
-  layerOpacities = {},
+  selectedDetailsItemId,
   onLayerToggle,
-  onLayerOpacityChange,
-  onLayerSelect,
   selectedModalItem,
   onModalOpen,
   onModalClose
@@ -225,9 +221,8 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
     
     switch (item.uiPattern) {
       case 'MAP_LAYER':
-        // Expand the card to show details and toggle layer
-        toggleItemExpansion(item.id);
-        onLayerToggle?.(item.id);
+        // For map layers, just select the item (details will show in right sidebar)
+        // Don't toggle expansion or layer visibility here
         break;
       case 'EXTERNAL_LINK':
         // Expand to show details and external link button
@@ -245,15 +240,18 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
     const isActiveLayer = activeLayerIds.includes(item.id);
     const isLoadingLayer = loadingLayerIds.includes(item.id);
     const isExpanded = expandedItems.has(item.id);
+    const isSelectedForDetails = selectedDetailsItemId === item.id;
     
     return (
       <div
         key={item.id}
         id={`tnc-item-${item.id}`}
-        className={`p-3 border rounded-lg cursor-pointer transition-all duration-200 ${
-          isActiveLayer 
-            ? 'bg-blue-50 border-blue-300 shadow-md' 
-            : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-sm'
+        className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${
+          isSelectedForDetails
+            ? 'bg-blue-50 border-2 border-blue-500 shadow-lg' 
+            : isActiveLayer 
+              ? 'bg-blue-50/50 border border-blue-300 shadow-md' 
+              : 'bg-white border border-gray-200 hover:border-blue-300 hover:shadow-sm'
         }`}
         onClick={() => handleItemClick(item)}
       >
@@ -313,13 +311,34 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
           </div>
           
           {item.uiPattern === 'MAP_LAYER' && (
-            <div id={`item-map-layer-visibility-toggle-${item.id}`} className="flex items-center gap-2 ml-2">
+            <div 
+              id={`item-map-layer-visibility-toggle-${item.id}`} 
+              className="flex items-center gap-2 ml-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!isActiveLayer) {
+                  // Layer not visible yet - select for details (which auto-shows it)
+                  onItemSelect?.(item);
+                } else {
+                  // Layer already visible - just toggle it off (hide it)
+                  // Don't change the details selection
+                  onLayerToggle?.(item.id);
+                }
+              }}
+              title={isActiveLayer ? "Hide from map" : "Show on map"}
+            >
               {isLoadingLayer ? (
                 <Loader2 id={`item-layer-loading-spinner-${item.id}`} className="w-5 h-5 text-blue-600 animate-spin" />
               ) : isActiveLayer ? (
-                <Eye id={`item-layer-visible-icon-${item.id}`} className="w-5 h-5 text-blue-600" />
+                <Eye 
+                  id={`item-layer-visible-icon-${item.id}`} 
+                  className="w-5 h-5 text-blue-600 hover:text-blue-700 cursor-pointer"
+                />
               ) : (
-                <EyeOff id={`item-layer-hidden-icon-${item.id}`} className="w-5 h-5 text-gray-400" />
+                <EyeOff 
+                  id={`item-layer-hidden-icon-${item.id}`} 
+                  className="w-5 h-5 text-gray-400 hover:text-gray-600 cursor-pointer"
+                />
               )}
             </div>
           )}
@@ -432,71 +451,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
           </div>
         )}
         
-        {/* Layer selector for services with multiple layers */}
-        {item.uiPattern === 'MAP_LAYER' && isExpanded && item.availableLayers && item.availableLayers.length > 1 && onLayerSelect && (
-          <div id={`item-layer-selector-${item.id}`} className="mt-3 pt-3 border-t border-gray-200" onClick={(e) => e.stopPropagation()}>
-            <label id={`item-layer-selector-label-${item.id}`} className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">
-              Available Layers ({item.availableLayers.length})
-            </label>
-            <div id={`item-layer-options-${item.id}`} className="space-y-1 max-h-40 overflow-y-auto">
-              {item.availableLayers.map((layer) => {
-                const isSelected = (item.selectedLayerId ?? 0) === layer.id;
-                return (
-                  <button
-                    key={layer.id}
-                    id={`item-layer-option-${item.id}-${layer.id}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onLayerSelect(item.id, layer.id);
-                    }}
-                    className={`w-full text-left px-3 py-2 rounded text-xs transition-colors ${
-                      isSelected 
-                        ? 'bg-blue-100 border-2 border-blue-500 text-blue-900 font-semibold' 
-                        : 'bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate">{layer.name}</div>
-                        {layer.type && (
-                          <div className="text-gray-500 text-xs mt-0.5">{layer.type}</div>
-                        )}
-                        {layer.geometryType && (
-                          <div className="text-gray-400 text-xs mt-0.5">
-                            {layer.geometryType.replace('esriGeometry', '')}
-                          </div>
-                        )}
-                      </div>
-                      {isSelected && (
-                        <div className="flex-shrink-0 text-blue-600">✓</div>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-        
-        {/* Layer opacity control for active map layers */}
-        {item.uiPattern === 'MAP_LAYER' && isActiveLayer && onLayerOpacityChange && (
-          <div id={`item-opacity-control-${item.id}`} className="mt-3 pt-3 border-t border-blue-200" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-1">
-              <label id={`item-opacity-label-${item.id}`} className="block text-xs text-gray-600">Opacity</label>
-              <span id={`item-opacity-value-${item.id}`} className="text-xs text-gray-500">{layerOpacities[item.id] ?? 80}%</span>
-            </div>
-            <input
-              id={`item-opacity-slider-${item.id}`}
-              type="range"
-              min="0"
-              max="100"
-              value={layerOpacities[item.id] ?? 80}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-              onChange={(e) => onLayerOpacityChange(item.id, Number(e.target.value))}
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        )}
+        {/* Note: Layer controls moved to right sidebar for better UX */}
       </div>
     );
   };

@@ -11,10 +11,8 @@ interface TNCArcGISViewProps {
   // Map layer management
   activeLayerIds?: string[];
   loadingLayerIds?: string[];
-  layerOpacities?: Record<string, number>;
+  selectedDetailsItemId?: string;
   onLayerToggle?: (itemId: string) => void;
-  onLayerOpacityChange?: (itemId: string, opacity: number) => void;
-  onLayerSelect?: (itemId: string, layerId: number) => void;
   // Modal management
   selectedModalItem?: TNCArcGISItem | null;
   onModalOpen?: (item: TNCArcGISItem) => void;
@@ -24,15 +22,11 @@ interface TNCArcGISViewProps {
 const TNCArcGISView: React.FC<TNCArcGISViewProps> = ({
   items,
   loading,
-  onExportCSV,
-  onExportGeoJSON,
   onItemSelect,
   activeLayerIds = [],
   loadingLayerIds = [],
-  layerOpacities = {},
+  selectedDetailsItemId,
   onLayerToggle,
-  onLayerOpacityChange,
-  onLayerSelect,
   selectedModalItem,
   onModalOpen,
   onModalClose
@@ -41,15 +35,11 @@ const TNCArcGISView: React.FC<TNCArcGISViewProps> = ({
     <TNCArcGISSidebar
       items={items}
       isLoading={loading}
-      onExportCSV={onExportCSV}
-      onExportGeoJSON={onExportGeoJSON}
       onItemSelect={onItemSelect}
       activeLayerIds={activeLayerIds}
       loadingLayerIds={loadingLayerIds}
-      layerOpacities={layerOpacities}
+      selectedDetailsItemId={selectedDetailsItemId}
       onLayerToggle={onLayerToggle}
-      onLayerOpacityChange={onLayerOpacityChange}
-      onLayerSelect={onLayerSelect}
       selectedModalItem={selectedModalItem}
       onModalOpen={onModalOpen}
       onModalClose={onModalClose}
