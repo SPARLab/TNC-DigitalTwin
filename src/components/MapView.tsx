@@ -42,6 +42,7 @@ interface MapViewProps {
   // TNC ArcGIS Hub layer management
   tncArcGISItems?: TNCArcGISItem[];
   activeLayerIds?: string[];
+  loadingLayerIds?: string[]; // Track which layers are loading (for synchronizing banner with eye icon)
   layerOpacities?: Record<string, number>;
   onLayerLoadComplete?: (itemId: string) => void;
   onLayerLoadError?: (itemId: string) => void;
@@ -108,6 +109,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   onCalFloraLoadingChange,
   tncArcGISItems = [],
   activeLayerIds = [],
+  loadingLayerIds = [],
   layerOpacities = {},
   onLayerLoadComplete,
   onLayerLoadError,
@@ -127,7 +129,28 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   const clickHandlerRef = useRef<__esri.Handle | null>(null);
   const pointerMoveHandlerRef = useRef<__esri.Handle | null>(null);
   const [isLegendExpanded, setIsLegendExpanded] = useState(true);
+  // ImageServer loading banner state
+  const [imageServerLoading, setImageServerLoading] = useState<{
+    isLoading: boolean;
+    itemId: string;
+    layerTitle: string;
+    hasTimedOut: boolean;
+  } | null>(null);
+  const imageServerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // CalFlora state is managed by parent component via props
+
+  // Synchronize ImageServer banner with loadingLayerIds (same as eye icon timing)
+  useEffect(() => {
+    if (imageServerLoading && !loadingLayerIds.includes(imageServerLoading.itemId)) {
+      // The item finished loading (removed from loadingLayerIds) - dismiss banner NOW
+      console.log(`   ✅ ImageServer finished loading (synchronized with eye icon): ${imageServerLoading.layerTitle}`);
+      setImageServerLoading(null);
+      if (imageServerTimeoutRef.current) {
+        clearTimeout(imageServerTimeoutRef.current);
+        imageServerTimeoutRef.current = null;
+      }
+    }
+  }, [loadingLayerIds, imageServerLoading]);
 
   // Helper to build TNC popup content with photo carousel and attribution
   const buildTNCPopupContent = (obs: TNCArcGISObservation) => {
@@ -450,10 +473,32 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                 layer = new ImageryTileLayer(layerConfig);
                 console.log(`🎨 Creating ImageryTileLayer (cached) for: ${item.title}`);
               } else {
-                // Dynamic image service (on-the-fly processing)
+                // Dynamic image service (on-the-fly processing) - these can be slow
                 layer = new ImageryLayer(layerConfig);
                 console.log(`🎨 Creating ImageryLayer (dynamic) for: ${item.title}`);
                 console.log(`   URL: ${url}`);
+                console.log(`   ⏳ This untiled image service may take 30-60s to load`);
+                
+                // Show loading banner for large untiled image services
+                setImageServerLoading({
+                  isLoading: true,
+                  itemId: item.id, // Track by item ID for precise synchronization
+                  layerTitle: item.title,
+                  hasTimedOut: false
+                });
+                
+                // Set 30-second timeout warning
+                if (imageServerTimeoutRef.current) {
+                  clearTimeout(imageServerTimeoutRef.current);
+                }
+                imageServerTimeoutRef.current = setTimeout(() => {
+                  setImageServerLoading(prev => {
+                    if (prev && prev.isLoading && prev.itemId === item.id) {
+                      return { ...prev, hasTimedOut: true };
+                    }
+                    return prev;
+                  });
+                }, 30000); // 30 seconds
               }
               
             } else if (url.includes('/MapServer')) {
@@ -531,12 +576,6 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                 if (url.includes('/ImageServer') && 'fullExtent' in layer) {
                   console.log(`   ImageServer fullExtent:`, (layer as any).fullExtent);
                   console.log(`   ImageServer spatialReference:`, (layer as any).spatialReference);
-                  if ('pixelSizeX' in layer && 'pixelSizeY' in layer) {
-                    console.log(`   ImageServer pixel size: ${(layer as any).pixelSizeX} x ${(layer as any).pixelSizeY}`);
-                  }
-                  if ('minScale' in layer && 'maxScale' in layer) {
-                    console.log(`   ImageServer scale range: ${(layer as any).minScale} to ${(layer as any).maxScale}`);
-                  }
                 }
                 
                 if (view.map) {
@@ -582,7 +621,20 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                           if (!isUpdating) {
                             // Layer has finished rendering
                             console.log(`🎨 Layer rendered: ${item.title}`);
+                            
+                            // Hide ImageServer loading banner IMMEDIATELY (synchronized with eye icon)
+                            if (imageServerLoading?.itemId === item.id) {
+                              console.log(`   ✅ Hiding ImageServer banner for: ${item.title}`);
+                              setImageServerLoading(null);
+                              if (imageServerTimeoutRef.current) {
+                                clearTimeout(imageServerTimeoutRef.current);
+                                imageServerTimeoutRef.current = null;
+                              }
+                            }
+                            
+                            // Call completion callback (this removes spinner and shows eye)
                             onLayerLoadComplete?.(item.id);
+                            
                             watchHandle.remove(); // Stop watching once rendered
                           }
                         }
@@ -591,6 +643,16 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                   } catch (layerViewErr) {
                     // If we can't get the layerView, still complete the loading
                     console.warn(`⚠️ Could not get layerView for "${item.title}", but layer was added`);
+                    
+                    // Hide ImageServer loading banner (synchronized with eye icon)
+                    if (imageServerLoading?.itemId === item.id) {
+                      setImageServerLoading(null);
+                      if (imageServerTimeoutRef.current) {
+                        clearTimeout(imageServerTimeoutRef.current);
+                        imageServerTimeoutRef.current = null;
+                      }
+                    }
+                    
                     onLayerLoadComplete?.(item.id);
                   }
                 }
@@ -600,6 +662,15 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                   console.warn(`⚠️ Skipping incompatible layer "${item.title}": This layer may be retired or use an incompatible projection. Please contact the data provider to update the catalog.`);
                 } else {
                   console.warn(`⚠️ Could not load TNC layer "${item.title}":`, err.message);
+                }
+                
+                // Hide ImageServer loading banner on error (synchronized with eye icon)
+                if (imageServerLoading?.itemId === item.id) {
+                  setImageServerLoading(null);
+                  if (imageServerTimeoutRef.current) {
+                    clearTimeout(imageServerTimeoutRef.current);
+                    imageServerTimeoutRef.current = null;
+                  }
                 }
                 
                 // Notify parent that layer failed to load
@@ -1936,6 +2007,71 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         className="w-full h-full"
         style={{ minHeight: '400px' }}
       />
+
+      {/* ImageServer Loading Banner - Floating over map */}
+      {imageServerLoading && (
+        <div 
+          id="imageserver-loading-banner"
+          className="absolute top-4 left-1/2 transform -translate-x-1/2 z-30 max-w-md w-auto"
+          style={{ minWidth: '300px' }}
+        >
+          <div className={`rounded-lg shadow-xl p-4 border-l-4 ${
+            imageServerLoading.hasTimedOut 
+              ? 'bg-amber-50 border-amber-500' 
+              : 'bg-blue-50 border-blue-500'
+          }`}>
+            <div className="flex items-start gap-3">
+              {!imageServerLoading.hasTimedOut && (
+                <div className="flex-shrink-0 mt-0.5">
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-semibold mb-1 ${
+                  imageServerLoading.hasTimedOut ? 'text-amber-900' : 'text-blue-900'
+                }`}>
+                  {imageServerLoading.hasTimedOut 
+                    ? '⏱️ Large Image Service - Still Loading' 
+                    : '🗺️ Loading High-Resolution Imagery'}
+                </p>
+                <p className={`text-xs mb-2 ${
+                  imageServerLoading.hasTimedOut ? 'text-amber-800' : 'text-blue-800'
+                }`}>
+                  <strong>{imageServerLoading.layerTitle}</strong>
+                </p>
+                <p className={`text-xs ${
+                  imageServerLoading.hasTimedOut ? 'text-amber-700' : 'text-blue-700'
+                }`}>
+                  {imageServerLoading.hasTimedOut 
+                    ? 'This untiled image service is taking longer than expected (>30s). The service may be slow or overloaded. Imagery will appear progressively as you zoom and pan.' 
+                    : 'This large imagery service may load slowly. Please wait...'}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setImageServerLoading(null);
+                  if (imageServerTimeoutRef.current) {
+                    clearTimeout(imageServerTimeoutRef.current);
+                    imageServerTimeoutRef.current = null;
+                  }
+                }}
+                className={`flex-shrink-0 p-1 rounded hover:bg-opacity-20 transition-colors ${
+                  imageServerLoading.hasTimedOut 
+                    ? 'hover:bg-amber-900' 
+                    : 'hover:bg-blue-900'
+                }`}
+                title="Dismiss"
+              >
+                <svg className={`w-4 h-4 ${
+                  imageServerLoading.hasTimedOut ? 'text-amber-700' : 'text-blue-700'
+                }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Loading Indicator */}
       {loading && (

@@ -33,6 +33,16 @@ export interface TNCArcGISItem {
   // Multi-layer support
   availableLayers?: ServiceLayerInfo[]; // Available layers in the service
   selectedLayerId?: number; // Currently selected layer ID (for services with multiple layers)
+  // Performance warnings
+  renderingWarning?: {
+    type: 'large-untiled-image' | 'high-density';
+    message: string;
+    details?: {
+      isTiled?: boolean;
+      pixelCount?: number;
+      sizeDescription?: string;
+    };
+  };
 }
 
 export interface TNCArcGISResponse {
@@ -561,6 +571,90 @@ class TNCArcGISService {
     } catch (error) {
       console.error(`Error fetching service layers for ${serviceUrl}:`, error);
       return [];
+    }
+  }
+
+  /**
+   * Check if an ImageServer is too large/dense to render efficiently
+   * Returns a warning object if the service should display a warning
+   */
+  async checkImageServerPerformance(serviceUrl: string): Promise<TNCArcGISItem['renderingWarning'] | undefined> {
+    try {
+      const metadataUrl = `${serviceUrl}?f=json`;
+      console.log(`🔍 Checking ImageServer performance for: ${serviceUrl}`);
+      
+      const response = await fetch(metadataUrl);
+      if (!response.ok) {
+        console.warn(`⚠️ Could not fetch ImageServer metadata: ${response.status}`);
+        return undefined;
+      }
+      
+      const data = await response.json();
+      
+      if (data.error) {
+        console.warn(`⚠️ ImageServer metadata error: ${data.error.message}`);
+        return undefined;
+      }
+      
+      // Check if the service is tiled
+      const isTiled = data.capabilities?.includes('Tiles') || data.cacheType !== undefined;
+      
+      // Get pixel dimensions
+      const pixelWidth = data.extent?.width || 0;
+      const pixelHeight = data.extent?.height || 0;
+      const cols = data.cols || pixelWidth;
+      const rows = data.rows || pixelHeight;
+      const pixelCount = cols * rows;
+      
+      // Get pixel size (resolution)
+      const pixelSizeX = data.pixelSizeX || 0;
+      const pixelSizeY = data.pixelSizeY || 0;
+      
+      console.log(`📊 ImageServer Analysis:`);
+      console.log(`   - Tiled: ${isTiled}`);
+      console.log(`   - Dimensions: ${cols} x ${rows} pixels`);
+      console.log(`   - Total pixels: ${pixelCount.toLocaleString()}`);
+      console.log(`   - Pixel size: ${pixelSizeX} x ${pixelSizeY}`);
+      console.log(`   - Cache type: ${data.cacheType || 'none'}`);
+      console.log(`   - Capabilities: ${data.capabilities || 'none'}`);
+      
+      // Thresholds for warnings
+      const LARGE_PIXEL_THRESHOLD = 100000000; // 100 million pixels
+      const VERY_LARGE_PIXEL_THRESHOLD = 1000000000; // 1 billion pixels
+      
+      // If not tiled and very large, show warning
+      if (!isTiled && pixelCount > LARGE_PIXEL_THRESHOLD) {
+        const sizeGB = (pixelCount * 3) / (1024 * 1024 * 1024); // Rough estimate: 3 bytes per pixel (RGB)
+        const sizeDescription = sizeGB > 1 
+          ? `~${sizeGB.toFixed(1)} GB` 
+          : `~${(sizeGB * 1024).toFixed(0)} MB`;
+        
+        const warningMessage = pixelCount > VERY_LARGE_PIXEL_THRESHOLD
+          ? `⚠️ This image service is not tiled and extremely large (${sizeDescription}). Rendering will be very slow or may fail. Consider opening in ArcGIS Pro or viewing directly in ArcGIS Hub.`
+          : `⚠️ This image service is not tiled and very large (${sizeDescription}). Rendering may be slow. The preview will load data as you zoom and pan.`;
+        
+        console.warn(`🚨 ${warningMessage}`);
+        
+        return {
+          type: 'large-untiled-image',
+          message: warningMessage,
+          details: {
+            isTiled: false,
+            pixelCount,
+            sizeDescription
+          }
+        };
+      }
+      
+      // If tiled, it should render fine
+      if (isTiled) {
+        console.log(`✅ ImageServer is tiled - should render efficiently`);
+      }
+      
+      return undefined;
+    } catch (error) {
+      console.error(`Error checking ImageServer performance:`, error);
+      return undefined;
     }
   }
 
