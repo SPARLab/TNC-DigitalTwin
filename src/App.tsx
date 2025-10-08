@@ -358,7 +358,9 @@ function App() {
           const itemsWithLayers = await Promise.all(
             dateFilteredResults.map(async (item) => {
               if (item.uiPattern === 'MAP_LAYER' && 
-                  (item.url.includes('/FeatureServer') || item.url.includes('/MapServer'))) {
+                  (item.url.includes('/FeatureServer') || 
+                   item.url.includes('/MapServer') || 
+                   item.url.includes('/ImageServer'))) {
                 try {
                   const availableLayers = await tncArcGISAPI.fetchServiceLayers(item.url);
                   if (availableLayers.length > 0) {
