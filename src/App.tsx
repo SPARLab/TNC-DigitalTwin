@@ -217,11 +217,36 @@ function App() {
     setSelectedModalItem(null);
   };
 
-  const handleTNCArcGISItemSelect = (item: TNCArcGISItem) => {
+  const handleTNCArcGISItemSelect = async (item: TNCArcGISItem) => {
     console.log('TNC ArcGIS item selected:', item);
     // Open details sidebar for MAP_LAYER items, otherwise use existing modal behavior
     if (item.uiPattern === 'MAP_LAYER') {
-      setSelectedDetailsItem(item);
+      // Lazy-load layers for ImageServers if not already fetched
+      if (item.url.includes('/ImageServer') && !item.availableLayers) {
+        try {
+          const availableLayers = await tncArcGISAPI.fetchServiceLayers(item.url);
+          if (availableLayers.length > 0) {
+            const updatedItem = {
+              ...item,
+              availableLayers,
+              selectedLayerId: availableLayers[0].id
+            };
+            // Update the item in the list
+            setTncArcGISItems(prev => 
+              prev.map(i => i.id === item.id ? updatedItem : i)
+            );
+            setSelectedDetailsItem(updatedItem);
+          } else {
+            setSelectedDetailsItem(item);
+          }
+        } catch (err) {
+          console.warn(`⚠️ Could not fetch layers for ${item.title}:`, err);
+          setSelectedDetailsItem(item);
+        }
+      } else {
+        setSelectedDetailsItem(item);
+      }
+      
       // Auto-show on map when selected
       if (!activeLayerIds.includes(item.id)) {
         setLoadingLayerIds(prev => [...prev, item.id]);
@@ -354,13 +379,13 @@ function App() {
             sampleTitles: dateFilteredResults.slice(0, 3).map(item => item.title)
           });
           
-          // Fetch available layers for MAP_LAYER items
+          // Fetch available layers for MAP_LAYER items (only FeatureServer and MapServer)
+          // ImageServers typically have only one layer, so we'll fetch those lazily when needed
           const itemsWithLayers = await Promise.all(
             dateFilteredResults.map(async (item) => {
               if (item.uiPattern === 'MAP_LAYER' && 
                   (item.url.includes('/FeatureServer') || 
-                   item.url.includes('/MapServer') || 
-                   item.url.includes('/ImageServer'))) {
+                   item.url.includes('/MapServer'))) {
                 try {
                   const availableLayers = await tncArcGISAPI.fetchServiceLayers(item.url);
                   if (availableLayers.length > 0) {
