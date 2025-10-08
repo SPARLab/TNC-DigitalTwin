@@ -9,6 +9,7 @@ interface CalFloraSidebarProps {
   onExportCSV?: () => void;
   onExportGeoJSON?: () => void;
   onPlantSelect?: (plant: CalFloraPlant) => void;
+  hasSearched?: boolean;
 }
 
 const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
@@ -16,7 +17,8 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
   isLoading = false,
   onExportCSV,
   onExportGeoJSON,
-  onPlantSelect
+  onPlantSelect,
+  hasSearched = false
 }) => {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['Native Plants', 'Invasive Plants']));
   const [viewMode, setViewMode] = useState<'recent' | 'grouped'>('recent');
@@ -116,6 +118,25 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
       default: return <Leaf className="w-4 h-4" />;
     }
   };
+
+  // Show empty state if no search has been performed
+  if (!hasSearched) {
+    return (
+      <div id="calflora-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col">
+        <div id="calflora-empty-state" className="flex flex-col items-center justify-center h-full p-8 text-center">
+          <div id="search-prompt-icon" className="mb-4">
+            <svg className="w-16 h-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Start Your Search</h3>
+          <p className="text-sm text-gray-600">
+            Enter selection criteria and hit search to see results
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

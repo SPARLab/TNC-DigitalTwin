@@ -8,6 +8,7 @@ interface VegetationCalFloraViewProps {
   onExportCSV?: () => void;
   onExportGeoJSON?: () => void;
   onPlantSelect?: (plant: CalFloraPlant) => void;
+  hasSearched?: boolean;
 }
 
 const VegetationCalFloraView: React.FC<VegetationCalFloraViewProps> = ({
@@ -15,7 +16,8 @@ const VegetationCalFloraView: React.FC<VegetationCalFloraViewProps> = ({
   loading,
   onExportCSV,
   onExportGeoJSON,
-  onPlantSelect
+  onPlantSelect,
+  hasSearched = false
 }) => {
   return (
     <CalFloraSidebar
@@ -24,6 +26,7 @@ const VegetationCalFloraView: React.FC<VegetationCalFloraViewProps> = ({
       onExportCSV={onExportCSV}
       onExportGeoJSON={onExportGeoJSON}
       onPlantSelect={onPlantSelect}
+      hasSearched={hasSearched}
     />
   );
 };

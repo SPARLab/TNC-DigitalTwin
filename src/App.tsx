@@ -1001,6 +1001,7 @@ function App() {
           lastSearchedDaysBack={lastSearchedDaysBack}
           startDate={filters.startDate}
           endDate={filters.endDate}
+          hasSearched={hasSearched}
         />
         <div id="map-container" className="flex-1 relative flex">
           <MapView 

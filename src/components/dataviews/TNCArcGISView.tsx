@@ -17,6 +17,7 @@ interface TNCArcGISViewProps {
   selectedModalItem?: TNCArcGISItem | null;
   onModalOpen?: (item: TNCArcGISItem) => void;
   onModalClose?: () => void;
+  hasSearched?: boolean;
 }
 
 const TNCArcGISView: React.FC<TNCArcGISViewProps> = ({
@@ -29,7 +30,8 @@ const TNCArcGISView: React.FC<TNCArcGISViewProps> = ({
   onLayerToggle,
   selectedModalItem,
   onModalOpen,
-  onModalClose
+  onModalClose,
+  hasSearched = false
 }) => {
   return (
     <TNCArcGISSidebar
@@ -43,6 +45,7 @@ const TNCArcGISView: React.FC<TNCArcGISViewProps> = ({
       selectedModalItem={selectedModalItem}
       onModalOpen={onModalOpen}
       onModalClose={onModalClose}
+      hasSearched={hasSearched}
     />
   );
 };

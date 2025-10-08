@@ -15,6 +15,7 @@ interface WildlifeTNCINaturalistViewProps {
   onExportGeoJSON?: () => void;
   selectedObservation?: TNCArcGISObservation | null;
   onObservationSelect?: (observation: TNCArcGISObservation | null) => void;
+  hasSearched?: boolean;
 }
 
 const WildlifeTNCINaturalistView: React.FC<WildlifeTNCINaturalistViewProps> = ({
@@ -26,7 +27,8 @@ const WildlifeTNCINaturalistView: React.FC<WildlifeTNCINaturalistViewProps> = ({
   onExportCSV,
   onExportGeoJSON,
   selectedObservation,
-  onObservationSelect
+  onObservationSelect,
+  hasSearched = false
 }) => {
   const [expandedObservation, setExpandedObservation] = useState<number | null>(null);
   const [selectedTaxonFilter, setSelectedTaxonFilter] = useState<string>('all');
@@ -197,6 +199,25 @@ const WildlifeTNCINaturalistView: React.FC<WildlifeTNCINaturalistViewProps> = ({
       </div>
     );
   };
+
+  // Show empty state if no search has been performed
+  if (!hasSearched) {
+    return (
+      <div id="tnc-inaturalist-view" className="w-96 bg-white border-r border-gray-200 flex flex-col">
+        <div id="tnc-inaturalist-empty-state" className="flex flex-col items-center justify-center h-full p-8 text-center">
+          <div id="search-prompt-icon" className="mb-4">
+            <svg className="w-16 h-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Start Your Search</h3>
+          <p className="text-sm text-gray-600">
+            Enter selection criteria and hit search to see results
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

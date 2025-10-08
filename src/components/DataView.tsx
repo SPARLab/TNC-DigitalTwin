@@ -57,6 +57,7 @@ interface DataViewProps {
   lastSearchedDaysBack?: number;
   startDate?: string;
   endDate?: string;
+  hasSearched?: boolean;
 }
 
 const DataView: React.FC<DataViewProps> = ({
@@ -94,7 +95,8 @@ const DataView: React.FC<DataViewProps> = ({
   onModalClose,
   lastSearchedDaysBack,
   startDate,
-  endDate
+  endDate,
+  hasSearched = false
 }) => {
   // Route to appropriate data view based on category + source combination
   const getDataView = () => {
@@ -112,6 +114,7 @@ const DataView: React.FC<DataViewProps> = ({
             endDate={endDate}
             onExportCSV={onObservationExportCSV}
             onExportGeoJSON={onObservationExportGeoJSON}
+            hasSearched={hasSearched}
           />
         );
 
@@ -128,6 +131,7 @@ const DataView: React.FC<DataViewProps> = ({
             onExportGeoJSON={onTNCObservationExportGeoJSON}
             selectedObservation={selectedTNCObservation}
             onObservationSelect={onTNCObservationSelect}
+            hasSearched={hasSearched}
           />
         );
         
@@ -141,6 +145,7 @@ const DataView: React.FC<DataViewProps> = ({
             endDate={endDate}
             onExportCSV={onEBirdExportCSV}
             onExportGeoJSON={onEBirdExportGeoJSON}
+            hasSearched={hasSearched}
           />
         );
         
@@ -152,6 +157,7 @@ const DataView: React.FC<DataViewProps> = ({
             onExportCSV={onCalFloraExportCSV}
             onExportGeoJSON={onCalFloraExportGeoJSON}
             onPlantSelect={onCalFloraPlantSelect}
+            hasSearched={hasSearched}
           />
         );
 
@@ -179,6 +185,7 @@ const DataView: React.FC<DataViewProps> = ({
             selectedModalItem={selectedModalItem}
             onModalOpen={onModalOpen}
             onModalClose={onModalClose}
+            hasSearched={hasSearched}
           />
         );
         

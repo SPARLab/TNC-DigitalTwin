@@ -10,6 +10,7 @@ interface WildlifeINaturalistViewProps {
   endDate?: string;
   onExportCSV?: () => void;
   onExportGeoJSON?: () => void;
+  hasSearched?: boolean;
 }
 
 const WildlifeINaturalistView: React.FC<WildlifeINaturalistViewProps> = ({
@@ -19,7 +20,8 @@ const WildlifeINaturalistView: React.FC<WildlifeINaturalistViewProps> = ({
   startDate,
   endDate,
   onExportCSV,
-  onExportGeoJSON
+  onExportGeoJSON,
+  hasSearched = false
 }) => {
   return (
     <ObservationsSidebar
@@ -28,6 +30,7 @@ const WildlifeINaturalistView: React.FC<WildlifeINaturalistViewProps> = ({
       currentDaysBack={currentDaysBack}
       startDate={startDate}
       endDate={endDate}
+      hasSearched={hasSearched}
       onExportCSV={onExportCSV}
       onExportGeoJSON={onExportGeoJSON}
     />
