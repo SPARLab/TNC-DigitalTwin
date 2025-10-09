@@ -124,6 +124,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   const [observations, setObservations] = useState<iNaturalistObservation[]>([]);
   const [loading, setLoading] = useState(false);
   const tncArcGISLayersRef = useRef<globalThis.Map<string, __esri.Layer>>(new globalThis.Map());
+  const boundaryLayerRef = useRef<__esri.GeoJSONLayer | null>(null);
   const [drawnPolygon, setDrawnPolygon] = useState<__esri.Polygon | null>(null);
   const drawingPointsRef = useRef<number[][]>([]);
   const clickHandlerRef = useRef<__esri.Handle | null>(null);
@@ -340,6 +341,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         })
       });
 
+      // Store reference to boundary layer for popup management
+      boundaryLayerRef.current = boundaryLayer;
+      
       map.add(boundaryLayer);
 
       // Create graphics layer for search area rectangle (initially hidden)
@@ -392,6 +396,18 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         }
       });
 
+      // Configure popup widget for better UX with multiple features
+      // Note: Popups auto-open by default when clicking features with popupTemplates
+      if (mapView.popup) {
+        // Disable docking to allow dynamic positioning near clicked features
+        mapView.popup.dockEnabled = false;
+        mapView.popup.visibleElements = {
+          featureNavigation: true,  // Show arrows to navigate between features
+          closeButton: true
+        };
+        mapView.popup.actions = [];  // Remove default actions for cleaner UI
+        console.log('✅ Popup widget configured: dynamic positioning, feature navigation enabled');
+      }
 
       setView(mapView);
 
@@ -445,7 +461,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
               id: `tnc-layer-${item.id}`,
               url: url,
               title: item.title,
-              opacity: (layerOpacities[item.id] ?? 80) / 100
+              opacity: (layerOpacities[item.id] ?? 80) / 100,
+              popupEnabled: true  // Enable auto-generated popups for all fields
             };
 
             // Detect service type and create appropriate layer
@@ -511,6 +528,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                 mapLayerConfig.sublayers = [{
                   id: item.selectedLayerId,
                   visible: true
+                  // Note: Popup templates will be created after layer loads using createPopupTemplate()
                 }];
                 const selectedLayer = item.availableLayers.find(l => l.id === item.selectedLayerId);
                 console.log(`🗺️ Creating MapImageLayer with sublayer ${item.selectedLayerId} (${selectedLayer?.name || 'unknown'}) for: ${item.title}`);
@@ -558,7 +576,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
               }
               
               layer = new FeatureLayer(layerConfig);
-              console.log(`📍 Creating FeatureLayer for: ${item.title}`);
+              console.log(`📍 Creating FeatureLayer for: ${item.title} (will create popup template after load)`);
               
             } else {
               // Unknown service type - log detailed warning
@@ -572,16 +590,124 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
               try {
                 await layer.load();
                 
+                // For FeatureLayer, create a popup template showing all fields
+                if (url.includes('/FeatureServer') && 'fields' in layer) {
+                  const featureLayer = layer as __esri.FeatureLayer;
+                  
+                  if (!featureLayer.popupTemplate && featureLayer.fields) {
+                    try {
+                      // Try using createPopupTemplate() if available
+                      if (typeof (featureLayer as any).createPopupTemplate === 'function') {
+                        featureLayer.popupTemplate = (featureLayer as any).createPopupTemplate();
+                        console.log(`   ✅ Created auto popup template for FeatureLayer`);
+                      } else {
+                        // Manual popup template creation with all fields
+                        const fieldInfos = featureLayer.fields
+                          .filter(field => field.name !== featureLayer.objectIdField && field.type !== 'geometry')
+                          .map(field => ({
+                            fieldName: field.name,
+                            label: field.alias || field.name,
+                            visible: true
+                          }));
+                        
+                        featureLayer.popupTemplate = new PopupTemplate({
+                          title: `{${featureLayer.displayField || featureLayer.objectIdField}}`,
+                          content: [{
+                            type: 'fields',
+                            fieldInfos: fieldInfos
+                          }]
+                        });
+                        console.log(`   ✅ Created manual popup template with ${fieldInfos.length} fields for FeatureLayer`);
+                      }
+                    } catch (err) {
+                      console.warn(`   ⚠️ Could not create popup template for FeatureLayer:`, err);
+                    }
+                  }
+                }
+                
+                // For MapImageLayer, create popup templates for all sublayers
+                // This is required because MapImageLayer doesn't auto-generate popups like FeatureLayer
+                if (url.includes('/MapServer') && 'allSublayers' in layer) {
+                  const mapImageLayer = layer as __esri.MapImageLayer;
+                  
+                  // Use loadAll() to ensure all sublayers are loaded
+                  await mapImageLayer.loadAll();
+                  
+                  // Create popup templates for each sublayer
+                  // MapImageLayer sublayers need explicit popup configuration
+                  if (mapImageLayer.allSublayers && mapImageLayer.allSublayers.length > 0) {
+                    let createdCount = 0;
+                    mapImageLayer.allSublayers.forEach((sublayer: any) => {
+                      try {
+                        // Try using the built-in createPopupTemplate() first
+                        let popupTemplate = null;
+                        if (typeof sublayer.createPopupTemplate === 'function') {
+                          popupTemplate = sublayer.createPopupTemplate();
+                        }
+                        
+                        // If that didn't work, create a manual popup template
+                        if (!popupTemplate) {
+                          popupTemplate = new PopupTemplate({
+                            title: `{${sublayer.displayField || 'OBJECTID'}}`,
+                            content: [{
+                              type: 'fields',
+                              fieldInfos: [{
+                                fieldName: '*'  // Show all fields
+                              }]
+                            }]
+                          });
+                        }
+                        
+                        if (popupTemplate) {
+                          sublayer.popupTemplate = popupTemplate;
+                          createdCount++;
+                          console.log(`   ✓ Created popup for sublayer: "${sublayer.title}" (id: ${sublayer.id})`);
+                        }
+                      } catch (err) {
+                        // Some sublayers might not support popups (e.g., group layers)
+                        console.log(`   ℹ️ Sublayer "${sublayer.title}" does not support popups:`, err);
+                      }
+                    });
+                    console.log(`   ✅ Created ${createdCount} popup template(s) from ${mapImageLayer.allSublayers.length} total sublayer(s)`);
+                  }
+                }
+                
                 // Log additional info for ImageServer layers to help debug rendering issues
                 if (url.includes('/ImageServer') && 'fullExtent' in layer) {
                   console.log(`   ImageServer fullExtent:`, (layer as any).fullExtent);
                   console.log(`   ImageServer spatialReference:`, (layer as any).spatialReference);
+                  console.log(`   ⚠️ Note: ImageryLayers (raster data) do not support feature-based popups`);
                 }
                 
                 if (view.map) {
                   view.map.add(layer);
                   tncArcGISLayersRef.current.set(item.id, layer);
                   console.log(`✅ Added TNC layer: ${item.title}`);
+                  
+                  // Verify popup configuration for FeatureLayer
+                  if (url.includes('/FeatureServer') && 'popupTemplate' in layer) {
+                    const featureLayer = layer as __esri.FeatureLayer;
+                    if (featureLayer.popupTemplate) {
+                      console.log(`   ✓ FeatureLayer has popupTemplate with ${featureLayer.fields?.length || 0} fields`);
+                    } else {
+                      console.log(`   ✗ FeatureLayer MISSING popupTemplate!`);
+                    }
+                  }
+                  
+                  // Verify popup configuration for MapImageLayer
+                  if (url.includes('/MapServer') && 'allSublayers' in layer) {
+                    const mapImageLayer = layer as __esri.MapImageLayer;
+                    console.log(`   🔍 Verifying popups for MapImageLayer...`);
+                    if (mapImageLayer.allSublayers) {
+                      mapImageLayer.allSublayers.forEach((sublayer: any) => {
+                        if (sublayer.popupTemplate) {
+                          console.log(`   ✓ Sublayer "${sublayer.title}" has popupTemplate`);
+                        } else {
+                          console.log(`   ✗ Sublayer "${sublayer.title}" MISSING popupTemplate`);
+                        }
+                      });
+                    }
+                  }
                   
                   // Fetch legend data for layers that support it
                   if (url.includes('/FeatureServer') || url.includes('/MapServer') || url.includes('/ImageServer')) {
@@ -700,6 +826,41 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
 
     handleLayerLoading();
   }, [view, tncArcGISItems, activeLayerIds, layerOpacities]);
+
+  // Manage boundary popup based on active TNC ArcGIS layers
+  // Disable boundary popup when TNC layers are active to prevent it from interfering
+  useEffect(() => {
+    if (boundaryLayerRef.current) {
+      const hasTNCLayers = activeLayerIds.length > 0;
+      boundaryLayerRef.current.popupEnabled = !hasTNCLayers;
+      
+      if (hasTNCLayers) {
+        console.log('🚫 Boundary popup disabled (TNC layers are active)');
+      } else {
+        console.log('✅ Boundary popup enabled (no TNC layers active)');
+      }
+    }
+    
+    // Close popup if the layer it belongs to was toggled off
+    if (view && view.popup && view.popup.visible) {
+      const popupFeature = view.popup.selectedFeature;
+      if (popupFeature && popupFeature.layer) {
+        const layerId = popupFeature.layer.id;
+        
+        // Check if this layer is a TNC layer that's been toggled off
+        if (typeof layerId === 'string') {
+          const isTNCLayer = layerId.startsWith('tnc-layer-');
+          if (isTNCLayer) {
+            const itemId = layerId.replace('tnc-layer-', '');
+            if (!activeLayerIds.includes(itemId)) {
+              view.popup.close();
+              console.log('🔒 Closed popup - layer was toggled off');
+            }
+          }
+        }
+      }
+    }
+  }, [activeLayerIds, view]);
 
   // Set up draw layer for polygon drawing
   useEffect(() => {

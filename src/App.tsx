@@ -220,15 +220,45 @@ function App() {
     setSelectedModalItem(null);
   };
 
-  const handleTNCArcGISItemSelect = (item: TNCArcGISItem) => {
+  const handleTNCArcGISItemSelect = async (item: TNCArcGISItem) => {
     console.log('TNC ArcGIS item selected:', item);
     // Open details sidebar for MAP_LAYER items, otherwise use existing modal behavior
     if (item.uiPattern === 'MAP_LAYER') {
+      // IMMEDIATELY show the selected state and loading spinner
       setSelectedDetailsItem(item);
-      // Auto-show on map when selected
+      
+      // Auto-show on map when selected - this triggers the loading spinner immediately
       if (!activeLayerIds.includes(item.id)) {
         setLoadingLayerIds(prev => [...prev, item.id]);
         setActiveLayerIds(prev => [...prev, item.id]);
+      }
+      
+      // THEN fetch service layers in background if not already fetched
+      if (!item.availableLayers && 
+          (item.url.includes('/FeatureServer') || 
+           item.url.includes('/MapServer') || 
+           item.url.includes('/ImageServer'))) {
+        try {
+          console.log(`🔍 Fetching layers for: ${item.title}`);
+          const availableLayers = await tncArcGISAPI.fetchServiceLayers(item.url);
+          
+          if (availableLayers.length > 0) {
+            console.log(`✅ Found ${availableLayers.length} layers for: ${item.title}`);
+            const itemWithLayers = {
+              ...item,
+              availableLayers,
+              selectedLayerId: availableLayers[0].id // Default to first layer
+            };
+            
+            // Update the item in the list
+            setTncArcGISItems(prev => prev.map(i => i.id === item.id ? itemWithLayers : i));
+            
+            // Update the selected details item with the fetched layers
+            setSelectedDetailsItem(itemWithLayers);
+          }
+        } catch (err) {
+          console.warn(`⚠️ Could not fetch layers for ${item.title}:`, err);
+        }
       }
     } else if (item.uiPattern === 'MODAL') {
       handleModalOpen(item);
@@ -360,35 +390,43 @@ function App() {
             sampleTitles: dateFilteredResults.slice(0, 3).map(item => item.title)
           });
           
-          // Fetch available layers for MAP_LAYER items (non-blocking)
-          const itemsWithLayers = await Promise.all(
+          // Set items immediately without fetching service layers
+          // This ensures fast search results display
+          setTncArcGISItems(dateFilteredResults);
+          
+          // Start background prefetching of service layers (non-blocking)
+          // This makes clicking "View" potentially instant if prefetch succeeds
+          console.log(`🚀 Starting background prefetch for ${dateFilteredResults.length} items...`);
+          
+          // Prefetch in background - don't await
+          Promise.allSettled(
             dateFilteredResults.map(async (item) => {
               if (item.uiPattern === 'MAP_LAYER' && 
                   (item.url.includes('/FeatureServer') || 
                    item.url.includes('/MapServer') || 
                    item.url.includes('/ImageServer'))) {
                 try {
-                  // Fetch available layers
-                  const availableLayers = await tncArcGISAPI.fetchServiceLayers(item.url);
+                  // Use prefetch method with shorter timeout (4s)
+                  const availableLayers = await tncArcGISAPI.prefetchServiceLayers(item.url);
                   
                   if (availableLayers.length > 0) {
-                    console.log(`🔍 Found ${availableLayers.length} layers for: ${item.title}`);
-                    return {
-                      ...item,
-                      availableLayers,
-                      selectedLayerId: availableLayers[0].id // Default to first layer
-                    };
+                    console.log(`✨ Prefetched ${availableLayers.length} layers for: ${item.title}`);
+                    // Update the item in state with prefetched layers
+                    setTncArcGISItems(prev => prev.map(i => 
+                      i.id === item.id 
+                        ? { ...i, availableLayers, selectedLayerId: availableLayers[0].id }
+                        : i
+                    ));
                   }
                 } catch (err) {
-                  console.warn(`⚠️ Could not fetch layers for ${item.title}:`, err);
+                  // Silently fail - user can still fetch on-demand
+                  console.log(`⏭️ Prefetch skipped for ${item.title} - will fetch on-demand`);
                 }
               }
-              return item;
             })
-          );
-          
-          // Set items immediately - don't wait for performance checks
-          setTncArcGISItems(itemsWithLayers);
+          ).then(() => {
+            console.log(`✅ Background prefetch complete`);
+          });
         } catch (error) {
           console.error('❌ Error loading TNC ArcGIS data:', error);
           setTncArcGISItems([]);

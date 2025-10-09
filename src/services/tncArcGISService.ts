@@ -516,30 +516,52 @@ class TNCArcGISService {
   }
 
   /**
+   * Fetch all available layers from a service (with shorter timeout for prefetching)
+   * Works with FeatureServer, MapServer, and ImageServer
+   */
+  async prefetchServiceLayers(serviceUrl: string): Promise<ServiceLayerInfo[]> {
+    return this._fetchServiceLayersWithTimeout(serviceUrl, 4000); // 4 second timeout for prefetch
+  }
+
+  /**
    * Fetch all available layers from a service
    * Works with FeatureServer, MapServer, and ImageServer
    */
   async fetchServiceLayers(serviceUrl: string): Promise<ServiceLayerInfo[]> {
+    return this._fetchServiceLayersWithTimeout(serviceUrl, 10000); // 10 second timeout for on-demand
+  }
+
+  /**
+   * Internal method to fetch service layers with configurable timeout
+   */
+  private async _fetchServiceLayersWithTimeout(serviceUrl: string, timeoutMs: number): Promise<ServiceLayerInfo[]> {
     try {
       // Query the service metadata to get all layers
       const metadataUrl = `${serviceUrl}?f=json`;
-      console.log(`🔍 Fetching service layers from: ${metadataUrl}`);
+      console.log(`🔍 Fetching service layers from: ${metadataUrl} (timeout: ${timeoutMs}ms)`);
       
-      const response = await fetch(metadataUrl);
-      if (!response.ok) {
-        console.warn(`⚠️ Could not fetch service metadata: ${response.status}`);
-        return [];
-      }
+      // Add timeout to prevent hanging on slow/unresponsive external services
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
       
-      const data = await response.json();
-      
-      if (data.error) {
-        console.warn(`⚠️ Service metadata error: ${data.error.message}`);
-        return [];
-      }
-      
-      // Check for layers array (MapServer, FeatureServer)
-      if (data.layers && Array.isArray(data.layers)) {
+      try {
+        const response = await fetch(metadataUrl, { signal: controller.signal });
+        clearTimeout(timeout);
+        
+        if (!response.ok) {
+          console.warn(`⚠️ Could not fetch service metadata: ${response.status}`);
+          return [];
+        }
+        
+        const data = await response.json();
+        
+        if (data.error) {
+          console.warn(`⚠️ Service metadata error: ${data.error.message}`);
+          return [];
+        }
+        
+        // Check for layers array (MapServer, FeatureServer)
+        if (data.layers && Array.isArray(data.layers)) {
         console.log(`✅ Found ${data.layers.length} layers in service`);
         return data.layers.map((layer: any) => ({
           id: layer.id,
@@ -566,8 +588,18 @@ class TNCArcGISService {
         }];
       }
       
-      console.log('ℹ️ No layers found in service metadata');
-      return [];
+        console.log('ℹ️ No layers found in service metadata');
+        return [];
+        
+      } catch (fetchError: any) {
+        clearTimeout(timeout);
+        if (fetchError.name === 'AbortError') {
+          console.warn(`⏱️ Service request timed out after ${timeoutMs / 1000}s: ${serviceUrl}`);
+        } else {
+          console.error(`Error in fetch request for ${serviceUrl}:`, fetchError);
+        }
+        return [];
+      }
     } catch (error) {
       console.error(`Error fetching service layers for ${serviceUrl}:`, error);
       return [];
