@@ -38,8 +38,15 @@ export default function DendraDetailsSidebar({
     let min = Infinity;
     let max = -Infinity;
     for (const dp of datapoints) {
-      if (dp.value < min) min = dp.value;
-      if (dp.value > max) max = dp.value;
+      // Skip null/undefined values
+      if (dp.value != null && !isNaN(dp.value)) {
+        if (dp.value < min) min = dp.value;
+        if (dp.value > max) max = dp.value;
+      }
+    }
+    // If no valid values found, return 0
+    if (min === Infinity || max === -Infinity) {
+      return { minValue: 0, maxValue: 0 };
     }
     return { minValue: min, maxValue: max };
   }, [datapoints]);
@@ -280,7 +287,7 @@ export default function DendraDetailsSidebar({
       {station && (
         <div id="station-info-section" className="p-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900 mb-2">{station.name}</h2>
-          {station.description && (
+          {station.description && !station.description.includes('NO DATA') && station.description.trim() !== '' && (
             <p className="text-sm text-gray-600 mb-4">{station.description}</p>
           )}
           
@@ -403,13 +410,17 @@ export default function DendraDetailsSidebar({
                   <div>
                     <span className="text-gray-500">Min Value:</span>
                     <div className="font-semibold text-gray-900">
-                      {minValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                      {minValue != null && isFinite(minValue)
+                        ? minValue.toLocaleString(undefined, { maximumFractionDigits: 2 })
+                        : 'N/A'}
                     </div>
                   </div>
                   <div>
                     <span className="text-gray-500">Max Value:</span>
                     <div className="font-semibold text-gray-900">
-                      {maxValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                      {maxValue != null && isFinite(maxValue)
+                        ? maxValue.toLocaleString(undefined, { maximumFractionDigits: 2 })
+                        : 'N/A'}
                     </div>
                   </div>
                 </div>

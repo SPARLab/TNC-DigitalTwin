@@ -138,6 +138,9 @@ function App() {
   const [dendraDatapoints, setDendraDatapoints] = useState<DendraDatapoint[]>([]);
   const [isDendraLoadingDatapoints, setIsDendraLoadingDatapoints] = useState(false);
   const [isDendraLoadingHistorical, setIsDendraLoadingHistorical] = useState(false);
+  
+  // Ref to track the currently loading datastream (for race condition prevention)
+  const currentLoadingDatastreamRef = useRef<number | null>(null);
 
   // CalFlora modal handlers
   const openCalFloraModal = (plantId: string) => {
@@ -307,19 +310,25 @@ function App() {
 
   // Dendra Stations handlers
   const handleDendraStationSelect = async (station: DendraStation) => {
-    setSelectedDendraStation(station);
+    // Clear previous state first
     setSelectedDendraDatastream(null);
     setDendraDatapoints([]);
+    setIsDendraLoadingDatapoints(false);
+    setIsDendraLoadingHistorical(false);
+    
+    // Set the new station
+    setSelectedDendraStation(station);
     
     // Fetch datastreams for this station
     try {
       const datastreams = await fetchDatastreamsForStation(station.id);
       setAvailableDendraDatastreams(datastreams);
       
-      // Auto-select the first datastream
+      // Auto-select the first datastream and load its data
       if (datastreams.length > 0) {
         const firstDatastream = datastreams[0];
         setSelectedDendraDatastream(firstDatastream);
+        // Load datapoints immediately (no setTimeout needed)
         await loadDendraDatapoints(firstDatastream.id);
       }
     } catch (error) {
@@ -329,12 +338,28 @@ function App() {
   };
 
   const handleDendraDatastreamSelect = async (datastream: DendraDatastreamWithStation) => {
-    setSelectedDendraDatastream(datastream);
-    setSelectedDendraStation(null);
-    setAvailableDendraDatastreams([]);
+    // Clear previous data
     setDendraDatapoints([]);
+    setIsDendraLoadingDatapoints(false);
+    setIsDendraLoadingHistorical(false);
+    
+    // Set the selected datastream
+    setSelectedDendraDatastream(datastream);
+    
+    // Keep the station reference for map highlighting
+    const station = dendraStations.find(s => s.id === datastream.station_id);
+    setSelectedDendraStation(station || null);
+    
+    // Fetch all datastreams for this station to populate the dropdown
+    try {
+      const datastreams = await fetchDatastreamsForStation(datastream.station_id);
+      setAvailableDendraDatastreams(datastreams);
+    } catch (error) {
+      console.error('Error fetching datastreams for station:', error);
+      setAvailableDendraDatastreams([]);
+    }
 
-    // Load all datapoints for this datastream
+    // Load datapoints for this datastream
     await loadDendraDatapoints(datastream.id);
   };
 
@@ -348,6 +373,9 @@ function App() {
   };
 
   const loadDendraDatapoints = async (datastreamId: number) => {
+    // Set the ref to track this is the current loading operation
+    currentLoadingDatastreamRef.current = datastreamId;
+    
     setIsDendraLoadingDatapoints(true);
     setIsDendraLoadingHistorical(false);
     setDendraDatapoints([]);
@@ -362,9 +390,21 @@ function App() {
         true // From most recent timestamp
       );
       
+      // SAFETY CHECK: Only update if this is still the current loading operation
+      if (currentLoadingDatastreamRef.current !== datastreamId) {
+        console.log(`⚠️ Datastream changed during Phase 1 load. Discarding results for DS ${datastreamId}`);
+        return; // User switched to a different datastream, discard these results
+      }
+      
       // Show the initial data immediately and stop initial loading
       setDendraDatapoints([...recentPoints]);
       setIsDendraLoadingDatapoints(false); // Chart can render now!
+      
+      // If no data in Phase 1, don't bother with Phase 2
+      if (recentPoints.length === 0) {
+        setIsDendraLoadingHistorical(false);
+        return;
+      }
       
       // PHASE 2: Load all remaining data in background
       setIsDendraLoadingHistorical(true); // Show background loading indicator
@@ -375,6 +415,12 @@ function App() {
         undefined, // No progressive updates to avoid jitter
         false // Don't use most recent timestamp filter
       );
+      
+      // SAFETY CHECK: Only update if this is still the current loading operation
+      if (currentLoadingDatastreamRef.current !== datastreamId) {
+        console.log(`⚠️ Datastream changed during Phase 2 load. Discarding results for DS ${datastreamId}`);
+        return; // User switched to a different datastream, discard these results
+      }
       
       // Combine with recent data and deduplicate
       const combinedPoints = [...recentPoints, ...allPoints];
@@ -1207,6 +1253,8 @@ function App() {
                 onLayerLoadError={handleLayerLoadError}
                 onLegendDataFetched={handleLegendDataFetched}
                 dendraStations={lastSearchedFilters.source === 'Dendra Stations' ? dendraStations : []}
+                selectedDendraStationId={selectedDendraStation?.id}
+                onDendraStationClick={handleDendraStationSelect}
                 isDrawMode={isDrawMode}
                 onDrawModeChange={setIsDrawMode}
                 onPolygonDrawn={handlePolygonDrawn}
