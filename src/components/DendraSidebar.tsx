@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import type { DendraStation, DendraDatastream, DendraDatastreamWithStation } from '../types';
 
 interface DendraSidebarProps {
@@ -29,6 +29,9 @@ export default function DendraSidebar({
   const [stationsWithoutDataExpanded, setStationsWithoutDataExpanded] = useState(true);
   const [datastreamsWithDataExpanded, setDatastreamsWithDataExpanded] = useState(true);
   const [datastreamsWithoutDataExpanded, setDatastreamsWithoutDataExpanded] = useState(true);
+  
+  // Ref to track previous selectedStationId to avoid triggering on other state changes
+  const prevSelectedStationIdRef = useRef<number | null>(null);
 
   // Create a map of station IDs to station names for quick lookup
   const stationMap = useMemo(() => {
@@ -110,41 +113,47 @@ export default function DendraSidebar({
   const totalFilteredDatastreams = datastreamsWithData.length + datastreamsWithoutData.length;
 
   // Auto-scroll to selected station when clicked from map
+  // Only runs when selectedStationId actually changes, not when expansion states change
   useEffect(() => {
-    if (selectedStationId) {
-      // Switch to stations tab if not already there
-      if (activeTab !== 'stations') {
-        setActiveTab('stations');
-      }
+    // Only proceed if selectedStationId has actually changed
+    if (selectedStationId !== prevSelectedStationIdRef.current) {
+      prevSelectedStationIdRef.current = selectedStationId;
       
-      // Small delay to ensure DOM is updated
-      setTimeout(() => {
-        const cardElement = document.getElementById(`station-card-${selectedStationId}`);
-        if (cardElement) {
-          // Check which section the station is in and expand it if collapsed
-          const isInWithData = stationsWithData.some(s => s.id === selectedStationId);
-          const isInWithoutData = stationsWithoutData.some(s => s.id === selectedStationId);
-          
-          if (isInWithData && !stationsWithDataExpanded) {
-            setStationsWithDataExpanded(true);
-            // Additional delay for expansion animation
-            setTimeout(() => {
-              cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 350);
-          } else if (isInWithoutData && !stationsWithoutDataExpanded) {
-            setStationsWithoutDataExpanded(true);
-            // Additional delay for expansion animation
-            setTimeout(() => {
-              cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 350);
-          } else {
-            // Section is already expanded, just scroll
-            cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
+      if (selectedStationId) {
+        // Switch to stations tab if not already there
+        if (activeTab !== 'stations') {
+          setActiveTab('stations');
         }
-      }, 100);
+        
+        // Small delay to ensure DOM is updated
+        setTimeout(() => {
+          const cardElement = document.getElementById(`station-card-${selectedStationId}`);
+          if (cardElement) {
+            // Check which section the station is in and expand it if collapsed
+            const isInWithData = stationsWithData.some(s => s.id === selectedStationId);
+            const isInWithoutData = stationsWithoutData.some(s => s.id === selectedStationId);
+            
+            if (isInWithData && !stationsWithDataExpanded) {
+              setStationsWithDataExpanded(true);
+              // Additional delay for expansion animation
+              setTimeout(() => {
+                cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }, 350);
+            } else if (isInWithoutData && !stationsWithoutDataExpanded) {
+              setStationsWithoutDataExpanded(true);
+              // Additional delay for expansion animation
+              setTimeout(() => {
+                cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }, 350);
+            } else {
+              // Section is already expanded, just scroll
+              cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }
+        }, 100);
+      }
     }
-  }, [selectedStationId, activeTab, stationsWithData, stationsWithoutData, stationsWithDataExpanded, stationsWithoutDataExpanded]);
+  }, [selectedStationId, activeTab, stationsWithData, stationsWithoutData]);
 
   return (
     <div id="dendra-sidebar" className="h-full flex flex-col bg-white w-96">
@@ -247,11 +256,12 @@ export default function DendraSidebar({
                   </svg>
                 </button>
                 <div 
-                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                    stationsWithDataExpanded ? 'max-h-[10000px] opacity-100' : 'max-h-0 opacity-0'
+                  className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+                    stationsWithDataExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
                   }`}
                 >
-                  <div className="p-4 space-y-3">
+                  <div className="overflow-hidden">
+                    <div className="p-4 space-y-3">
                   {stationsWithData.map(station => (
                     <button
                       key={station.id}
@@ -293,6 +303,7 @@ export default function DendraSidebar({
                       </div>
                     </button>
                   ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -318,11 +329,12 @@ export default function DendraSidebar({
                   </svg>
                 </button>
                 <div 
-                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                    stationsWithoutDataExpanded ? 'max-h-[10000px] opacity-100' : 'max-h-0 opacity-0'
+                  className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+                    stationsWithoutDataExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
                   }`}
                 >
-                  <div className="p-4 space-y-3">
+                  <div className="overflow-hidden">
+                    <div className="p-4 space-y-3">
                   {stationsWithoutData.map(station => (
                     <button
                       key={station.id}
@@ -364,6 +376,7 @@ export default function DendraSidebar({
                       </div>
                     </button>
                   ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -397,11 +410,12 @@ export default function DendraSidebar({
                   </svg>
                 </button>
                 <div 
-                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                    datastreamsWithDataExpanded ? 'max-h-[10000px] opacity-100' : 'max-h-0 opacity-0'
+                  className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+                    datastreamsWithDataExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
                   }`}
                 >
-                  <div className="p-4 space-y-3">
+                  <div className="overflow-hidden">
+                    <div className="p-4 space-y-3">
             {datastreamsWithData.map(datastream => (
               <button
                 key={datastream.id}
@@ -440,6 +454,7 @@ export default function DendraSidebar({
                 </div>
               </button>
             ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -465,11 +480,12 @@ export default function DendraSidebar({
                   </svg>
                 </button>
                 <div 
-                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                    datastreamsWithoutDataExpanded ? 'max-h-[10000px] opacity-100' : 'max-h-0 opacity-0'
+                  className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+                    datastreamsWithoutDataExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
                   }`}
                 >
-                  <div className="p-4 space-y-3">
+                  <div className="overflow-hidden">
+                    <div className="p-4 space-y-3">
             {datastreamsWithoutData.map(datastream => (
               <button
                 key={datastream.id}
@@ -508,6 +524,7 @@ export default function DendraSidebar({
                 </div>
               </button>
             ))}
+                    </div>
                   </div>
                 </div>
               </div>
