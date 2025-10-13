@@ -1257,8 +1257,17 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         // Clear existing graphics
         dendraLayer.removeAll();
         
+        // Sort stations so selected station is added last (appears on top)
+        const sortedStations = [...dendraStations].sort((a, b) => {
+          const aSelected = selectedDendraStationId === a.id;
+          const bSelected = selectedDendraStationId === b.id;
+          if (aSelected && !bSelected) return 1;  // a comes after b
+          if (!aSelected && bSelected) return -1; // b comes after a
+          return 0; // maintain original order
+        });
+        
         // Add Dendra stations to map
-        dendraStations.forEach(station => {
+        sortedStations.forEach(station => {
           const point = new Point({
             longitude: station.geometry.x,
             latitude: station.geometry.y
@@ -1490,7 +1499,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           dendraLayer.add(graphic);
         });
         
-        console.log(`✅ Dendra: Updated map with ${dendraStations.length} station records`);
+        console.log(`✅ Dendra: Updated map with ${sortedStations.length} station records (selected on top)`);
       }
     }
   }, [view, dendraStations, selectedDendraStationId]);
