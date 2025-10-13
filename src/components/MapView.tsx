@@ -1269,10 +1269,10 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           
           // ===== COLOR CONFIGURATION =====
           // Change these colors to customize the icon appearance
-          const ICON_COLOR_UNSELECTED = '#60a5fa'; // Lighter Blue (blue-400)
-          const ICON_COLOR_SELECTED = '#fbbf24';   // Lighter Yellow (amber-400)
-          const BORDER_COLOR_UNSELECTED = '#000000';  // Black border for blue icons
-          const BORDER_COLOR_SELECTED = '#fde68a';    // Lighter yellow border (amber-200) for selected icons
+          const ICON_COLOR_UNSELECTED = '#000000'; // Black
+          const ICON_COLOR_SELECTED = '#fbbf24';   // Bright Yellow for selected
+          const BORDER_COLOR_UNSELECTED = '#ffffff';  // White border for contrast
+          const BORDER_COLOR_SELECTED = '#fde68a';    // Light yellow border for selected
           const BORDER_WIDTH = '1.5';              // Border thickness (in px) - thin border
           const ADD_BORDER = true;                 // Set to false to remove borders
           
@@ -1285,7 +1285,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           // 'option2' = Sensor Node / IoT Device  
           // 'option3' = Modern Broadcast Tower (default, cleaner look)
           // 'option4' = Weather Station Style
-          const iconStyle: string = 'option4';
+          const iconStyle: string = 'option1';
           
           let iconSvg = '';
           
@@ -1460,16 +1460,11 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           });
 
           // Create popup template
-          // Filter out "NO DATA" descriptions
-          const hasValidDescription = station.description && 
-                                       !station.description.includes('NO DATA') && 
-                                       station.description.trim() !== '';
-          
           const popupTemplate = new PopupTemplate({
             title: station.name,
             content: `
               <div class="dendra-station-popup">
-                ${hasValidDescription ? `<p><strong>Description:</strong> ${station.description}</p>` : ''}
+                ${station.description && station.description.trim() !== '' ? `<p><strong>Description:</strong> ${station.description}</p>` : ''}
                 <p><strong>Type:</strong> ${station.station_type}</p>
                 <p><strong>Location:</strong> ${station.latitude.toFixed(4)}, ${station.longitude.toFixed(4)}</p>
                 ${station.elevation ? `<p><strong>Elevation:</strong> ${station.elevation}m</p>` : ''}

@@ -287,7 +287,7 @@ export default function DendraDetailsSidebar({
       {station && (
         <div id="station-info-section" className="p-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900 mb-2">{station.name}</h2>
-          {station.description && !station.description.includes('NO DATA') && station.description.trim() !== '' && (
+          {station.description && station.description.trim() !== '' && (
             <p className="text-sm text-gray-600 mb-4">{station.description}</p>
           )}
           

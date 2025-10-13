@@ -21,6 +21,12 @@ export default function DendraSidebar({
   const [activeTab, setActiveTab] = useState<'stations' | 'datastreams'>('stations');
   const [stationSearch, setStationSearch] = useState('');
   const [datastreamSearch, setDatastreamSearch] = useState('');
+  
+  // Collapsible section state
+  const [stationsWithDataExpanded, setStationsWithDataExpanded] = useState(true);
+  const [stationsWithoutDataExpanded, setStationsWithoutDataExpanded] = useState(true);
+  const [datastreamsWithDataExpanded, setDatastreamsWithDataExpanded] = useState(true);
+  const [datastreamsWithoutDataExpanded, setDatastreamsWithoutDataExpanded] = useState(true);
 
   // Create a map of station IDs to station names for quick lookup
   const stationMap = useMemo(() => {
@@ -31,16 +37,35 @@ export default function DendraSidebar({
     return map;
   }, [stations]);
 
-  // Filter stations based on search
-  const filteredStations = useMemo(() => {
-    if (!stationSearch.trim()) return stations;
-    const searchLower = stationSearch.toLowerCase();
-    return stations.filter(station =>
-      station.name.toLowerCase().includes(searchLower) ||
-      (station.description && station.description.toLowerCase().includes(searchLower)) ||
-      station.station_type.toLowerCase().includes(searchLower)
-    );
+  // Filter and group stations based on search and data availability
+  const { stationsWithData, stationsWithoutData } = useMemo(() => {
+    // First apply search filter
+    let filtered = stations;
+    if (stationSearch.trim()) {
+      const searchLower = stationSearch.toLowerCase();
+      filtered = stations.filter(station =>
+        station.name.toLowerCase().includes(searchLower) ||
+        (station.description && station.description.toLowerCase().includes(searchLower)) ||
+        station.station_type.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    // Then group by data availability
+    const withData: DendraStation[] = [];
+    const withoutData: DendraStation[] = [];
+    
+    filtered.forEach(station => {
+      if (station.description && station.description.includes('NO DATA')) {
+        withoutData.push(station);
+      } else {
+        withData.push(station);
+      }
+    });
+    
+    return { stationsWithData: withData, stationsWithoutData: withoutData };
   }, [stations, stationSearch]);
+  
+  const totalFilteredStations = stationsWithData.length + stationsWithoutData.length;
 
   // Create datastreams with station names and filter based on search
   const datastreamswithStations = useMemo(() => {
@@ -50,16 +75,37 @@ export default function DendraSidebar({
     }));
   }, [datastreams, stationMap]);
 
-  const filteredDatastreams = useMemo(() => {
-    if (!datastreamSearch.trim()) return datastreamswithStations;
-    const searchLower = datastreamSearch.toLowerCase();
-    return datastreamswithStations.filter(ds =>
-      ds.name.toLowerCase().includes(searchLower) ||
-      ds.stationName.toLowerCase().includes(searchLower) ||
-      ds.variable.toLowerCase().includes(searchLower) ||
-      ds.medium.toLowerCase().includes(searchLower)
-    );
-  }, [datastreamswithStations, datastreamSearch]);
+  // Filter and group datastreams based on search and parent station data availability
+  const { datastreamsWithData, datastreamsWithoutData } = useMemo(() => {
+    // First apply search filter
+    let filtered = datastreamswithStations;
+    if (datastreamSearch.trim()) {
+      const searchLower = datastreamSearch.toLowerCase();
+      filtered = datastreamswithStations.filter(ds =>
+        ds.name.toLowerCase().includes(searchLower) ||
+        ds.stationName.toLowerCase().includes(searchLower) ||
+        ds.variable.toLowerCase().includes(searchLower) ||
+        ds.medium.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    // Then group by parent station's data availability
+    const withData: DendraDatastreamWithStation[] = [];
+    const withoutData: DendraDatastreamWithStation[] = [];
+    
+    filtered.forEach(ds => {
+      const parentStation = stations.find(s => s.id === ds.station_id);
+      if (parentStation?.description && parentStation.description.includes('NO DATA')) {
+        withoutData.push(ds);
+      } else {
+        withData.push(ds);
+      }
+    });
+    
+    return { datastreamsWithData: withData, datastreamsWithoutData: withoutData };
+  }, [datastreamswithStations, datastreamSearch, stations]);
+  
+  const totalFilteredDatastreams = datastreamsWithData.length + datastreamsWithoutData.length;
 
   return (
     <div id="dendra-sidebar" className="h-full flex flex-col bg-white w-96">
@@ -115,64 +161,190 @@ export default function DendraSidebar({
       {/* Results Count */}
       <div id="dendra-results-count" className="px-4 py-2 text-sm text-gray-600 bg-gray-50">
         {activeTab === 'stations'
-          ? `${filteredStations.length} station${filteredStations.length !== 1 ? 's' : ''}`
-          : `${filteredDatastreams.length} datastream${filteredDatastreams.length !== 1 ? 's' : ''}`}
+          ? `${totalFilteredStations} station${totalFilteredStations !== 1 ? 's' : ''}`
+          : `${totalFilteredDatastreams} datastream${totalFilteredDatastreams !== 1 ? 's' : ''}`}
       </div>
 
       {/* Scrollable List */}
       <div id="dendra-list-container" className="flex-1 overflow-y-auto">
         {activeTab === 'stations' ? (
-          <div id="stations-list" className="p-4 space-y-3">
-            {filteredStations.map(station => (
-              <button
-                key={station.id}
-                id={`station-card-${station.id}`}
-                onClick={() => onStationSelect(station)}
-                className={`w-full text-left p-4 rounded-lg border transition-all ${
-                  selectedStationId === station.id
-                    ? 'border-blue-500 bg-blue-50 shadow-md'
-                    : 'border-gray-200 hover:border-blue-300 hover:shadow-sm bg-white'
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1">{station.name}</h3>
-                    {station.description && (
-                      <p className="text-sm text-gray-600 line-clamp-2 mb-2">
-                        {station.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <span className="px-2 py-1 bg-gray-100 rounded">
-                        {station.station_type}
-                      </span>
-                      <span>•</span>
-                      <span>{datastreams.filter(ds => ds.station_id === station.id).length} streams</span>
-                    </div>
+          <div id="stations-list" className="space-y-6">
+            {/* Stations With Data Section */}
+            {stationsWithData.length > 0 && (
+              <div id="stations-with-data-section">
+                <button
+                  onClick={() => setStationsWithDataExpanded(!stationsWithDataExpanded)}
+                  className="sticky top-0 z-10 w-full bg-green-50 border-b border-green-200 px-4 py-2 hover:bg-green-100 transition-colors flex items-center justify-between"
+                >
+                  <h3 className="text-sm font-semibold text-green-800">
+                    With Data ({stationsWithData.length})
+                  </h3>
+                  <svg
+                    className={`w-4 h-4 text-green-800 transition-transform ${stationsWithDataExpanded ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                <div 
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    stationsWithDataExpanded ? 'max-h-[10000px] opacity-100' : 'max-h-0 opacity-0'
+                  }`}
+                >
+                  <div className="p-4 space-y-3">
+                  {stationsWithData.map(station => (
+                    <button
+                      key={station.id}
+                      id={`station-card-${station.id}`}
+                      onClick={() => onStationSelect(station)}
+                      className={`w-full text-left p-4 rounded-lg border transition-all ${
+                        selectedStationId === station.id
+                          ? 'border-blue-500 bg-blue-50 shadow-md'
+                          : 'border-gray-200 hover:border-blue-300 hover:shadow-sm bg-white'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900 mb-1">{station.name}</h3>
+                          {station.description && (
+                            <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                              {station.description}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span className="px-2 py-1 bg-gray-100 rounded">
+                              {station.station_type}
+                            </span>
+                            <span>•</span>
+                            <span>{datastreams.filter(ds => ds.station_id === station.id).length} streams</span>
+                          </div>
+                        </div>
+                        {selectedStationId === station.id && (
+                          <div className="ml-2 text-blue-600">
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                              <path
+                                fillRule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  ))}
                   </div>
-                  {selectedStationId === station.id && (
-                    <div className="ml-2 text-blue-600">
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                          fillRule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                  )}
                 </div>
-              </button>
-            ))}
-            {filteredStations.length === 0 && (
+              </div>
+            )}
+            
+            {/* Stations Without Data Section */}
+            {stationsWithoutData.length > 0 && (
+              <div id="stations-without-data-section">
+                <button
+                  onClick={() => setStationsWithoutDataExpanded(!stationsWithoutDataExpanded)}
+                  className="sticky top-0 z-10 w-full bg-gray-100 border-b border-gray-300 px-4 py-2 hover:bg-gray-200 transition-colors flex items-center justify-between"
+                >
+                  <h3 className="text-sm font-semibold text-gray-700">
+                    No Data ({stationsWithoutData.length})
+                  </h3>
+                  <svg
+                    className={`w-4 h-4 text-gray-700 transition-transform ${stationsWithoutDataExpanded ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                <div 
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    stationsWithoutDataExpanded ? 'max-h-[10000px] opacity-100' : 'max-h-0 opacity-0'
+                  }`}
+                >
+                  <div className="p-4 space-y-3">
+                  {stationsWithoutData.map(station => (
+                    <button
+                      key={station.id}
+                      id={`station-card-${station.id}`}
+                      onClick={() => onStationSelect(station)}
+                      className={`w-full text-left p-4 rounded-lg border transition-all ${
+                        selectedStationId === station.id
+                          ? 'border-blue-500 bg-blue-50 shadow-md'
+                          : 'border-gray-200 hover:border-blue-300 hover:shadow-sm bg-white'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900 mb-1">{station.name}</h3>
+                          {station.description && (
+                            <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                              {station.description}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span className="px-2 py-1 bg-gray-100 rounded">
+                              {station.station_type}
+                            </span>
+                            <span>•</span>
+                            <span>{datastreams.filter(ds => ds.station_id === station.id).length} streams</span>
+                          </div>
+                        </div>
+                        {selectedStationId === station.id && (
+                          <div className="ml-2 text-blue-600">
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                              <path
+                                fillRule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {totalFilteredStations === 0 && (
               <div id="no-stations-message" className="text-center py-8 text-gray-500">
                 No stations found matching "{stationSearch}"
               </div>
             )}
           </div>
         ) : (
-          <div id="datastreams-list" className="p-4 space-y-3">
-            {filteredDatastreams.map(datastream => (
+          <div id="datastreams-list" className="space-y-6">
+            {/* Datastreams With Data Section */}
+            {datastreamsWithData.length > 0 && (
+              <div id="datastreams-with-data-section">
+                <button
+                  onClick={() => setDatastreamsWithDataExpanded(!datastreamsWithDataExpanded)}
+                  className="sticky top-0 z-10 w-full bg-green-50 border-b border-green-200 px-4 py-2 hover:bg-green-100 transition-colors flex items-center justify-between"
+                >
+                  <h3 className="text-sm font-semibold text-green-800">
+                    With Data ({datastreamsWithData.length})
+                  </h3>
+                  <svg
+                    className={`w-4 h-4 text-green-800 transition-transform ${datastreamsWithDataExpanded ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                <div 
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    datastreamsWithDataExpanded ? 'max-h-[10000px] opacity-100' : 'max-h-0 opacity-0'
+                  }`}
+                >
+                  <div className="p-4 space-y-3">
+            {datastreamsWithData.map(datastream => (
               <button
                 key={datastream.id}
                 id={`datastream-card-${datastream.id}`}
@@ -210,7 +382,80 @@ export default function DendraSidebar({
                 </div>
               </button>
             ))}
-            {filteredDatastreams.length === 0 && (
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Datastreams Without Data Section */}
+            {datastreamsWithoutData.length > 0 && (
+              <div id="datastreams-without-data-section">
+                <button
+                  onClick={() => setDatastreamsWithoutDataExpanded(!datastreamsWithoutDataExpanded)}
+                  className="sticky top-0 z-10 w-full bg-gray-100 border-b border-gray-300 px-4 py-2 hover:bg-gray-200 transition-colors flex items-center justify-between"
+                >
+                  <h3 className="text-sm font-semibold text-gray-700">
+                    No Data ({datastreamsWithoutData.length})
+                  </h3>
+                  <svg
+                    className={`w-4 h-4 text-gray-700 transition-transform ${datastreamsWithoutDataExpanded ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                <div 
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    datastreamsWithoutDataExpanded ? 'max-h-[10000px] opacity-100' : 'max-h-0 opacity-0'
+                  }`}
+                >
+                  <div className="p-4 space-y-3">
+            {datastreamsWithoutData.map(datastream => (
+              <button
+                key={datastream.id}
+                id={`datastream-card-${datastream.id}`}
+                onClick={() => onDatastreamSelect(datastream)}
+                className={`w-full text-left p-4 rounded-lg border transition-all ${
+                  selectedDatastreamId === datastream.id
+                    ? 'border-blue-500 bg-blue-50 shadow-md'
+                    : 'border-gray-200 hover:border-blue-300 hover:shadow-sm bg-white'
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900 mb-1">{datastream.name}</h3>
+                    <p className="text-sm text-gray-600 mb-2">{datastream.stationName}</p>
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded">
+                        {datastream.variable}
+                      </span>
+                      <span className="px-2 py-1 bg-green-100 text-green-700 rounded">
+                        {datastream.medium}
+                      </span>
+                    </div>
+                  </div>
+                  {selectedDatastreamId === datastream.id && (
+                    <div className="ml-2 text-blue-600">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+              </button>
+            ))}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {totalFilteredDatastreams === 0 && (
               <div id="no-datastreams-message" className="text-center py-8 text-gray-500">
                 No datastreams found matching "{datastreamSearch}"
               </div>
