@@ -1,5 +1,5 @@
 import React from 'react';
-import { FilterState } from '../types';
+import { FilterState, DendraStation, DendraDatastream, DendraDatastreamWithStation } from '../types';
 import { iNaturalistObservation } from '../services/iNaturalistService';
 import { TNCArcGISObservation } from '../services/tncINaturalistService';
 import { EBirdObservation } from '../services/eBirdService';
@@ -12,6 +12,7 @@ import WildlifeTNCINaturalistView from './dataviews/WildlifeTNCINaturalistView';
 import WildlifeEBirdView from './dataviews/WildlifeEBirdView';
 import VegetationCalFloraView from './dataviews/VegetationCalFloraView';
 import TNCArcGISView from './dataviews/TNCArcGISView';
+import DendraSidebar from './DendraSidebar';
 
 interface DataViewProps {
   filters: FilterState;
@@ -58,6 +59,14 @@ interface DataViewProps {
   startDate?: string;
   endDate?: string;
   hasSearched?: boolean;
+  // Dendra Stations data
+  dendraStations?: DendraStation[];
+  dendraDatastreams?: DendraDatastream[];
+  dendraLoading?: boolean;
+  selectedDendraStationId?: number | null;
+  selectedDendraDatastreamId?: number | null;
+  onDendraStationSelect?: (station: DendraStation) => void;
+  onDendraDatastreamSelect?: (datastream: DendraDatastreamWithStation) => void;
 }
 
 const DataView: React.FC<DataViewProps> = ({
@@ -96,7 +105,14 @@ const DataView: React.FC<DataViewProps> = ({
   lastSearchedDaysBack,
   startDate,
   endDate,
-  hasSearched = false
+  hasSearched = false,
+  dendraStations = [],
+  dendraDatastreams = [],
+  dendraLoading = false,
+  selectedDendraStationId,
+  selectedDendraDatastreamId,
+  onDendraStationSelect,
+  onDendraDatastreamSelect
 }) => {
   // Route to appropriate data view based on category + source combination
   const getDataView = () => {
@@ -186,6 +202,19 @@ const DataView: React.FC<DataViewProps> = ({
             onModalOpen={onModalOpen}
             onModalClose={onModalClose}
             hasSearched={hasSearched}
+          />
+        );
+      
+      // Dendra Stations case
+      case 'Real-time & Remote Sensing-Dendra Stations':
+        return (
+          <DendraSidebar
+            stations={dendraStations}
+            datastreams={dendraDatastreams}
+            onStationSelect={onDendraStationSelect!}
+            onDatastreamSelect={onDendraDatastreamSelect!}
+            selectedStationId={selectedDendraStationId || null}
+            selectedDatastreamId={selectedDendraDatastreamId || null}
           />
         );
         

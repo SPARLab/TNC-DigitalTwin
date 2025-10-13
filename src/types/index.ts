@@ -72,3 +72,80 @@ export interface CalFloraGroup {
     }>;
   }[];
 }
+
+// Dendra Station Types
+export interface DendraStation {
+  id: number;
+  dendra_st_id: string;
+  name: string;
+  full_name: string | null;
+  description: string | null;
+  slug: string;
+  station_type: string;
+  latitude: number;
+  longitude: number;
+  elevation: number | null;
+  time_zone: string;
+  utc_offset: number;
+  is_active: number;
+  is_stationary: number;
+  is_enabled: number;
+  is_geo_protected: number;
+  is_hidden: number;
+  state: string;
+  organization_id: string;
+  version_id: string;
+  created_at: number;
+  updated_at: number;
+  created_by: string;
+  updated_by: string;
+  geometry: {
+    x: number;
+    y: number;
+  };
+}
+
+export interface DendraDatastream {
+  id: number;
+  dendra_ds_id: string;
+  station_id: number;
+  name: string;
+  description: string | null;
+  variable: string;
+  medium: string;
+  unit: string | null;
+  source_type: string;
+  state: string;
+  is_enabled: number;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface DendraDatapoint {
+  id: number;
+  datastream_id: number;
+  timestamp_utc: number;
+  value: number;
+}
+
+export interface DendraDatastreamMetadata {
+  firstTimestamp: number | null;
+  lastTimestamp: number | null;
+  datapointCount: number;
+  minValue: number | null;
+  maxValue: number | null;
+}
+
+export interface DendraDatastreamWithMetadata extends DendraDatastream {
+  metadata: DendraDatastreamMetadata;
+}
+
+export interface DendraDatastreamWithStation extends DendraDatastream {
+  stationName: string;
+}
+
+export interface DendraStationWithMetadata extends DendraStation {
+  datastreamCount: number;
+  firstTimestamp: number | null;
+  lastTimestamp: number | null;
+}

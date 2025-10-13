@@ -8,7 +8,8 @@ import Footer from './components/Footer';
 import CalFloraPlantModal from './components/CalFloraPlantModal';
 import HubPagePreview from './components/HubPagePreview';
 import TNCArcGISDetailsSidebar from './components/TNCArcGISDetailsSidebar';
-import { FilterState } from './types';
+import DendraDetailsSidebar from './components/DendraDetailsSidebar';
+import { FilterState, DendraStation, DendraDatastream, DendraDatastreamWithStation, DendraDatapoint } from './types';
 import { iNaturalistObservation } from './services/iNaturalistService';
 import { TNCArcGISObservation } from './services/tncINaturalistService';
 import { EBirdObservation, eBirdService } from './services/eBirdService';
@@ -17,6 +18,12 @@ import { TNCArcGISItem, tncArcGISAPI } from './services/tncArcGISService';
 import { formatDateRangeCompact, getDateRange, formatDateForAPI, formatDateToUS } from './utils/dateUtils';
 import { tncINaturalistService } from './services/tncINaturalistService';
 import { MapViewRef } from './components/MapView';
+import { 
+  fetchDendraStations,
+  fetchDendraDatastreams,
+  fetchDatastreamsForStation,
+  fetchDatapointsForDatastream,
+} from './services/dendraService';
 
 function App() {
   const [filters, setFilters] = useState<FilterState>({
@@ -120,6 +127,17 @@ function App() {
   const [layerOpacities, setLayerOpacities] = useState<Record<string, number>>({});
   const [selectedModalItem, setSelectedModalItem] = useState<TNCArcGISItem | null>(null);
   const [selectedDetailsItem, setSelectedDetailsItem] = useState<TNCArcGISItem | null>(null);
+
+  // Dendra Stations state
+  const [dendraStations, setDendraStations] = useState<DendraStation[]>([]);
+  const [dendraDatastreams, setDendraDatastreams] = useState<DendraDatastream[]>([]);
+  const [dendraLoading, setDendraLoading] = useState(false);
+  const [selectedDendraStation, setSelectedDendraStation] = useState<DendraStation | null>(null);
+  const [selectedDendraDatastream, setSelectedDendraDatastream] = useState<DendraDatastream | null>(null);
+  const [availableDendraDatastreams, setAvailableDendraDatastreams] = useState<DendraDatastream[]>([]);
+  const [dendraDatapoints, setDendraDatapoints] = useState<DendraDatapoint[]>([]);
+  const [isDendraLoadingDatapoints, setIsDendraLoadingDatapoints] = useState(false);
+  const [isDendraLoadingHistorical, setIsDendraLoadingHistorical] = useState(false);
 
   // CalFlora modal handlers
   const openCalFloraModal = (plantId: string) => {
@@ -287,6 +305,94 @@ function App() {
     }
   };
 
+  // Dendra Stations handlers
+  const handleDendraStationSelect = async (station: DendraStation) => {
+    setSelectedDendraStation(station);
+    setSelectedDendraDatastream(null);
+    setDendraDatapoints([]);
+    
+    // Fetch datastreams for this station
+    try {
+      const datastreams = await fetchDatastreamsForStation(station.id);
+      setAvailableDendraDatastreams(datastreams);
+      
+      // Auto-select the first datastream
+      if (datastreams.length > 0) {
+        const firstDatastream = datastreams[0];
+        setSelectedDendraDatastream(firstDatastream);
+        await loadDendraDatapoints(firstDatastream.id);
+      }
+    } catch (error) {
+      console.error('Error fetching datastreams:', error);
+      setAvailableDendraDatastreams([]);
+    }
+  };
+
+  const handleDendraDatastreamSelect = async (datastream: DendraDatastreamWithStation) => {
+    setSelectedDendraDatastream(datastream);
+    setSelectedDendraStation(null);
+    setAvailableDendraDatastreams([]);
+    setDendraDatapoints([]);
+
+    // Load all datapoints for this datastream
+    await loadDendraDatapoints(datastream.id);
+  };
+
+  const handleDendraDatastreamChange = async (datastreamId: number) => {
+    const datastream = availableDendraDatastreams.find(ds => ds.id === datastreamId);
+    if (datastream) {
+      setSelectedDendraDatastream(datastream);
+      setDendraDatapoints([]);
+      await loadDendraDatapoints(datastreamId);
+    }
+  };
+
+  const loadDendraDatapoints = async (datastreamId: number) => {
+    setIsDendraLoadingDatapoints(true);
+    setIsDendraLoadingHistorical(false);
+    setDendraDatapoints([]);
+
+    try {
+      // PHASE 1: Load last 30 days FIRST for immediate display
+      const recentPoints = await fetchDatapointsForDatastream(
+        datastreamId,
+        30, // Last 30 days only
+        2000, // Batch size
+        undefined, // No callback during initial load
+        true // From most recent timestamp
+      );
+      
+      // Show the initial data immediately and stop initial loading
+      setDendraDatapoints([...recentPoints]);
+      setIsDendraLoadingDatapoints(false); // Chart can render now!
+      
+      // PHASE 2: Load all remaining data in background
+      setIsDendraLoadingHistorical(true); // Show background loading indicator
+      const allPoints = await fetchDatapointsForDatastream(
+        datastreamId,
+        undefined, // All available data
+        2000, // Batch size
+        undefined, // No progressive updates to avoid jitter
+        false // Don't use most recent timestamp filter
+      );
+      
+      // Combine with recent data and deduplicate
+      const combinedPoints = [...recentPoints, ...allPoints];
+      const uniquePoints = Array.from(
+        new Map(combinedPoints.map(p => [p.id, p])).values()
+      ).sort((a, b) => a.timestamp_utc - b.timestamp_utc);
+      
+      // Final update with all data
+      setDendraDatapoints(uniquePoints);
+      setIsDendraLoadingHistorical(false); // Hide background loading indicator
+      
+    } catch (error) {
+      console.error('Error loading datapoints:', error);
+      setIsDendraLoadingDatapoints(false);
+      setIsDendraLoadingHistorical(false);
+    }
+  };
+
   // Set up global function for popup buttons to access
   useEffect(() => {
     (window as any).openCalFloraModal = openCalFloraModal;
@@ -339,7 +445,34 @@ function App() {
     // This will cause the DataView to update to show the appropriate sidebar
     setLastSearchedFilters({ ...filters });
     
-    if (filters.source === 'TNC ArcGIS Hub') {
+    if (filters.source === 'Dendra Stations') {
+      // Handle Dendra Stations search
+      const searchDendra = async () => {
+        setDendraLoading(true);
+        try {
+          const [stationsData, datastreamsData] = await Promise.all([
+            fetchDendraStations(),
+            fetchDendraDatastreams(),
+          ]);
+          
+          // Sort alphabetically for now (metadata fields needed on backend for better sorting)
+          const sortedStations = [...stationsData].sort((a, b) => a.name.localeCompare(b.name));
+          const sortedDatastreams = [...datastreamsData].sort((a, b) => a.name.localeCompare(b.name));
+          
+          setDendraStations(sortedStations);
+          setDendraDatastreams(sortedDatastreams);
+          console.log(`✅ Loaded ${stationsData.length} Dendra stations and ${datastreamsData.length} datastreams`);
+        } catch (error) {
+          console.error('❌ Error loading Dendra data:', error);
+          setDendraStations([]);
+          setDendraDatastreams([]);
+        } finally {
+          setDendraLoading(false);
+        }
+      };
+      
+      searchDendra();
+    } else if (filters.source === 'TNC ArcGIS Hub') {
       // Handle TNC ArcGIS Hub search
       const searchTNCArcGIS = async () => {
         setTncArcGISLoading(true);
@@ -991,6 +1124,7 @@ function App() {
           lastSearchedFilters.source === 'CalFlora' ? calFloraPlants.length :
           lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations.length :
           lastSearchedFilters.source === 'eBird' ? eBirdObservations.length :
+          lastSearchedFilters.source === 'Dendra Stations' ? dendraStations.length :
           observations.length
         }
         isSearching={
@@ -998,83 +1132,92 @@ function App() {
           filters.source === 'CalFlora' ? calFloraLoading :
           filters.source === 'iNaturalist (TNC Layers)' ? tncObservationsLoading :
           filters.source === 'eBird' ? eBirdObservationsLoading :
+          filters.source === 'Dendra Stations' ? dendraLoading :
           observationsLoading
         }
       />
       <div id="main-content" className="flex-1 flex min-h-0">
         <DataView
-          filters={lastSearchedFilters}
-          observations={observations}
-          observationsLoading={observationsLoading}
-          onObservationExportCSV={handleExportCSV}
-          onObservationExportGeoJSON={handleExportGeoJSON}
-          tncObservations={tncObservations}
-          tncObservationsLoading={tncObservationsLoading}
-          onTNCObservationExportCSV={handleTNCExportCSV}
-          onTNCObservationExportGeoJSON={handleTNCExportGeoJSON}
-          selectedTNCObservation={selectedTNCObservation}
-          onTNCObservationSelect={setSelectedTNCObservation}
-          eBirdObservations={eBirdObservations}
-          eBirdObservationsLoading={eBirdObservationsLoading}
-          calFloraPlants={calFloraPlants}
-          calFloraLoading={calFloraLoading}
-          onCalFloraExportCSV={handleCalFloraExportCSV}
-          onCalFloraExportGeoJSON={handleCalFloraExportGeoJSON}
-          onCalFloraPlantSelect={(plant) => {
-            setSelectedCalFloraPlant(plant);
-            setIsCalFloraModalOpen(true);
-          }}
-          tncArcGISItems={tncArcGISItems}
-          tncArcGISLoading={tncArcGISLoading}
-          onTNCArcGISExportCSV={handleTNCArcGISExportCSV}
-          onTNCArcGISExportGeoJSON={handleTNCArcGISExportGeoJSON}
-          onTNCArcGISItemSelect={handleTNCArcGISItemSelect}
-          activeLayerIds={activeLayerIds}
-          loadingLayerIds={loadingLayerIds}
-          selectedDetailsItemId={selectedDetailsItem?.id}
-          onLayerToggle={handleLayerToggle}
-          selectedModalItem={selectedModalItem}
-          onModalOpen={handleModalOpen}
-          onModalClose={handleModalClose}
-          lastSearchedDaysBack={lastSearchedDaysBack}
-          startDate={filters.startDate}
-          endDate={filters.endDate}
-          hasSearched={hasSearched}
-        />
+              filters={lastSearchedFilters}
+              observations={observations}
+              observationsLoading={observationsLoading}
+              onObservationExportCSV={handleExportCSV}
+              onObservationExportGeoJSON={handleExportGeoJSON}
+              tncObservations={tncObservations}
+              tncObservationsLoading={tncObservationsLoading}
+              onTNCObservationExportCSV={handleTNCExportCSV}
+              onTNCObservationExportGeoJSON={handleTNCExportGeoJSON}
+              selectedTNCObservation={selectedTNCObservation}
+              onTNCObservationSelect={setSelectedTNCObservation}
+              eBirdObservations={eBirdObservations}
+              eBirdObservationsLoading={eBirdObservationsLoading}
+              calFloraPlants={calFloraPlants}
+              calFloraLoading={calFloraLoading}
+              onCalFloraExportCSV={handleCalFloraExportCSV}
+              onCalFloraExportGeoJSON={handleCalFloraExportGeoJSON}
+              onCalFloraPlantSelect={(plant) => {
+                setSelectedCalFloraPlant(plant);
+                setIsCalFloraModalOpen(true);
+              }}
+              tncArcGISItems={tncArcGISItems}
+              tncArcGISLoading={tncArcGISLoading}
+              onTNCArcGISExportCSV={handleTNCArcGISExportCSV}
+              onTNCArcGISExportGeoJSON={handleTNCArcGISExportGeoJSON}
+              onTNCArcGISItemSelect={handleTNCArcGISItemSelect}
+              activeLayerIds={activeLayerIds}
+              loadingLayerIds={loadingLayerIds}
+              selectedDetailsItemId={selectedDetailsItem?.id}
+              onLayerToggle={handleLayerToggle}
+              selectedModalItem={selectedModalItem}
+              onModalOpen={handleModalOpen}
+              onModalClose={handleModalClose}
+              lastSearchedDaysBack={lastSearchedDaysBack}
+              startDate={filters.startDate}
+              endDate={filters.endDate}
+              hasSearched={hasSearched}
+              dendraStations={dendraStations}
+              dendraDatastreams={dendraDatastreams}
+              dendraLoading={dendraLoading}
+              selectedDendraStationId={selectedDendraStation?.id}
+              selectedDendraDatastreamId={selectedDendraDatastream?.id}
+              onDendraStationSelect={handleDendraStationSelect}
+              onDendraDatastreamSelect={handleDendraDatastreamSelect}
+            />
         <div id="map-container" className="flex-1 relative flex">
-          <MapView 
-            ref={mapViewRef}
-            onObservationsUpdate={setObservations}
-            onLoadingChange={setObservationsLoading}
-            tncObservations={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations : []}
-            onTNCObservationsUpdate={setTncObservations}
-            onTNCLoadingChange={setTncObservationsLoading}
-            selectedTNCObservation={selectedTNCObservation}
-            onTNCObservationSelect={setSelectedTNCObservation}
-            eBirdObservations={lastSearchedFilters.source === 'eBird' ? eBirdObservations : []}
-            onEBirdObservationsUpdate={setEBirdObservations}
-            onEBirdLoadingChange={setEBirdObservationsLoading}
-            calFloraPlants={filters.source === 'CalFlora' ? calFloraPlants : []}
-            onCalFloraUpdate={setCalFloraPlants}
-            onCalFloraLoadingChange={setCalFloraLoading}
-            tncArcGISItems={tncArcGISItems}
-            activeLayerIds={activeLayerIds}
-            loadingLayerIds={loadingLayerIds}
-            layerOpacities={layerOpacities}
-            onLayerLoadComplete={handleLayerLoadComplete}
-            onLayerLoadError={handleLayerLoadError}
-            onLegendDataFetched={handleLegendDataFetched}
-            isDrawMode={isDrawMode}
-            onDrawModeChange={setIsDrawMode}
-            onPolygonDrawn={handlePolygonDrawn}
-            onPolygonCleared={handlePolygonCleared}
-          />
-          {/* Hub Page Preview Overlay */}
-          {selectedModalItem && (
-            <HubPagePreview item={selectedModalItem} onClose={handleModalClose} />
-          )}
+              <MapView 
+                ref={mapViewRef}
+                onObservationsUpdate={setObservations}
+                onLoadingChange={setObservationsLoading}
+                tncObservations={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations : []}
+                onTNCObservationsUpdate={setTncObservations}
+                onTNCLoadingChange={setTncObservationsLoading}
+                selectedTNCObservation={selectedTNCObservation}
+                onTNCObservationSelect={setSelectedTNCObservation}
+                eBirdObservations={lastSearchedFilters.source === 'eBird' ? eBirdObservations : []}
+                onEBirdObservationsUpdate={setEBirdObservations}
+                onEBirdLoadingChange={setEBirdObservationsLoading}
+                calFloraPlants={filters.source === 'CalFlora' ? calFloraPlants : []}
+                onCalFloraUpdate={setCalFloraPlants}
+                onCalFloraLoadingChange={setCalFloraLoading}
+                tncArcGISItems={tncArcGISItems}
+                activeLayerIds={activeLayerIds}
+                loadingLayerIds={loadingLayerIds}
+                layerOpacities={layerOpacities}
+                onLayerLoadComplete={handleLayerLoadComplete}
+                onLayerLoadError={handleLayerLoadError}
+                onLegendDataFetched={handleLegendDataFetched}
+                dendraStations={lastSearchedFilters.source === 'Dendra Stations' ? dendraStations : []}
+                isDrawMode={isDrawMode}
+                onDrawModeChange={setIsDrawMode}
+                onPolygonDrawn={handlePolygonDrawn}
+                onPolygonCleared={handlePolygonCleared}
+              />
+              {/* Hub Page Preview Overlay */}
+              {selectedModalItem && (
+                <HubPagePreview item={selectedModalItem} onClose={handleModalClose} />
+              )}
         </div>
-        {/* Conditionally show TNC ArcGIS Details Sidebar or Filter Sidebar */}
+        {/* Conditionally show appropriate right sidebar */}
         {selectedDetailsItem && lastSearchedFilters.source === 'TNC ArcGIS Hub' ? (
           <TNCArcGISDetailsSidebar
             item={selectedDetailsItem}
@@ -1085,6 +1228,16 @@ function App() {
             onOpacityChange={handleDetailsOpacityChange}
             onLayerSelect={handleDetailsLayerSelect}
             onClose={handleDetailsClose}
+          />
+        ) : (selectedDendraStation || selectedDendraDatastream) && lastSearchedFilters.source === 'Dendra Stations' ? (
+          <DendraDetailsSidebar
+            station={selectedDendraStation}
+            selectedDatastream={selectedDendraDatastream}
+            availableDatastreams={availableDendraDatastreams}
+            datapoints={dendraDatapoints}
+            isLoadingDatapoints={isDendraLoadingDatapoints}
+            isLoadingHistorical={isDendraLoadingHistorical}
+            onDatastreamChange={handleDendraDatastreamChange}
           />
         ) : (
           <FilterSidebar 
@@ -1097,6 +1250,7 @@ function App() {
               lastSearchedFilters.source === 'CalFlora' ? calFloraPlants.length > 0 :
               lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations.length > 0 :
               lastSearchedFilters.source === 'eBird' ? eBirdObservations.length > 0 :
+              lastSearchedFilters.source === 'Dendra Stations' ? dendraStations.length > 0 :
               observations.length > 0
             }
             dataSource={lastSearchedFilters.source}

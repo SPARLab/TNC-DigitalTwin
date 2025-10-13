@@ -21,7 +21,8 @@ export const DATA_SOURCES = [
   'iNaturalist (TNC Layers)',
   'eBird',
   'CalFlora',
-  'TNC ArcGIS Hub'
+  'TNC ArcGIS Hub',
+  'Dendra Stations'
 ] as const;
 
 // Map categories to their available data sources
@@ -36,7 +37,10 @@ export const CATEGORY_DATA_SOURCES: Record<string, readonly string[]> = {
   ...TNC_MAIN_CATEGORIES.reduce((acc, category) => {
     acc[category] = ['TNC ArcGIS Hub'];
     return acc;
-  }, {} as Record<string, string[]>)
+  }, {} as Record<string, string[]>),
+  
+  // Override for Real-time & Remote Sensing to add Dendra Stations
+  'Real-time & Remote Sensing': ['TNC ArcGIS Hub', 'Dendra Stations']
 } as const;
 
 // Validate that all data categories have a source mapping

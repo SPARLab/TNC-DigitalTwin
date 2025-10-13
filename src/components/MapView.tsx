@@ -22,6 +22,7 @@ import { tncINaturalistService, TNCArcGISObservation } from '../services/tncINat
 import { calFloraAPI, CalFloraPlant } from '../services/calFloraService';
 import { TNCArcGISItem, tncArcGISAPI } from '../services/tncArcGISService';
 import { eBirdService, EBirdObservation } from '../services/eBirdService';
+import type { DendraStation } from '../types';
 import LayerLegend from './LayerLegend';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -47,6 +48,8 @@ interface MapViewProps {
   onLayerLoadComplete?: (itemId: string) => void;
   onLayerLoadError?: (itemId: string) => void;
   onLegendDataFetched?: (itemId: string, legendData: any) => void;
+  // Dendra Stations
+  dendraStations?: DendraStation[];
   // Draw mode props
   isDrawMode?: boolean;
   onDrawModeChange?: (isDrawMode: boolean) => void;
@@ -114,6 +117,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   onLayerLoadComplete,
   onLayerLoadError,
   onLegendDataFetched,
+  dendraStations = [],
   isDrawMode = false,
   onDrawModeChange,
   onPolygonDrawn,
@@ -379,10 +383,17 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         title: 'CalFlora Plants'
       });
 
+      // Create graphics layer for Dendra stations
+      const dendraStationsLayer = new GraphicsLayer({
+        id: 'dendra-stations',
+        title: 'Dendra Stations'
+      });
+
       map.add(observationsLayer);
       map.add(tncObservationsLayer);
       map.add(eBirdObservationsLayer);
       map.add(calFloraLayer);
+      map.add(dendraStationsLayer);
 
       // Create the map view centered on Dangermond Preserve
       // Coordinates: approximately 34.47°N, -120.47°W (Point Conception area)
@@ -1232,6 +1243,68 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       }
     }
   }, [view, calFloraPlants]);
+
+  // Effect to handle Dendra stations when provided via props
+  useEffect(() => {
+    if (view && dendraStations.length > 0) {
+      const dendraLayer = view.map?.findLayerById('dendra-stations') as GraphicsLayer;
+      if (dendraLayer) {
+        // Clear existing graphics
+        dendraLayer.removeAll();
+        
+        // Add Dendra stations to map
+        dendraStations.forEach(station => {
+          const point = new Point({
+            longitude: station.geometry.x,
+            latitude: station.geometry.y
+          });
+
+          // Create symbol for Dendra station - use diamond shape to represent station/tower
+          const symbol = new SimpleMarkerSymbol({
+            style: 'diamond',
+            color: [59, 130, 246, 0.9], // Blue color
+            size: '14px',
+            outline: {
+              color: 'white',
+              width: 2
+            }
+          });
+
+          // Create popup template
+          const popupTemplate = new PopupTemplate({
+            title: station.name,
+            content: `
+              <div class="dendra-station-popup">
+                ${station.description ? `<p><strong>Description:</strong> ${station.description}</p>` : ''}
+                <p><strong>Type:</strong> ${station.station_type}</p>
+                <p><strong>Location:</strong> ${station.latitude.toFixed(4)}, ${station.longitude.toFixed(4)}</p>
+                ${station.elevation ? `<p><strong>Elevation:</strong> ${station.elevation}m</p>` : ''}
+                <p><strong>Timezone:</strong> ${station.time_zone}</p>
+                <p><strong>Status:</strong> ${station.is_active ? 'Active' : 'Inactive'}</p>
+                <p style="margin-top: 8px; color: #6b7280; font-size: 11px;">Click station in sidebar to view data streams</p>
+              </div>
+            `
+          });
+
+          // Create graphic
+          const graphic = new Graphic({
+            geometry: point,
+            symbol: symbol,
+            popupTemplate: popupTemplate,
+            attributes: {
+              stationId: station.id,
+              stationName: station.name,
+              stationType: station.station_type
+            }
+          });
+
+          dendraLayer.add(graphic);
+        });
+        
+        console.log(`✅ Dendra: Updated map with ${dendraStations.length} station records`);
+      }
+    }
+  }, [view, dendraStations]);
 
   // Effect to update TNC observations on map when data changes
   useEffect(() => {
