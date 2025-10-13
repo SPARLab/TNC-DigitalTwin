@@ -138,6 +138,8 @@ function App() {
   const [dendraDatapoints, setDendraDatapoints] = useState<DendraDatapoint[]>([]);
   const [isDendraLoadingDatapoints, setIsDendraLoadingDatapoints] = useState(false);
   const [isDendraLoadingHistorical, setIsDendraLoadingHistorical] = useState(false);
+  const [showDendraWebsite, setShowDendraWebsite] = useState(false);
+  const [isDendraWebsiteLoading, setIsDendraWebsiteLoading] = useState(false);
   
   // Ref to track the currently loading datastream (for race condition prevention)
   const currentLoadingDatastreamRef = useRef<number | null>(null);
@@ -1228,6 +1230,10 @@ function App() {
               selectedDendraDatastreamId={selectedDendraDatastream?.id}
               onDendraStationSelect={handleDendraStationSelect}
               onDendraDatastreamSelect={handleDendraDatastreamSelect}
+              onShowDendraWebsite={() => {
+                setShowDendraWebsite(true);
+                setIsDendraWebsiteLoading(true);
+              }}
             />
         <div id="map-container" className="flex-1 relative flex">
               <MapView 
@@ -1263,6 +1269,70 @@ function App() {
               {/* Hub Page Preview Overlay */}
               {selectedModalItem && (
                 <HubPagePreview item={selectedModalItem} onClose={handleModalClose} />
+              )}
+              
+              {/* Dendra.science Website Iframe Overlay */}
+              {showDendraWebsite && (
+                <div className="absolute inset-0 z-40 bg-white flex flex-col">
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+                    <div className="flex items-center gap-3">
+                      <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                      </svg>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">Dendra.science</h3>
+                        <p className="text-xs text-gray-500">The Nature Conservancy Stations</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href="https://dendra.science/orgs/tnc"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        Open in New Tab
+                      </a>
+                      <button
+                        onClick={() => {
+                          setShowDendraWebsite(false);
+                          setIsDendraWebsiteLoading(false);
+                        }}
+                        className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                        title="Close"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Iframe Container with Loading Spinner */}
+                  <div className="flex-1 overflow-hidden relative">
+                    {/* Loading Spinner Overlay */}
+                    {isDendraWebsiteLoading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
+                        <div className="flex flex-col items-center gap-4">
+                          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                          <p className="text-sm text-gray-600 font-medium">Loading Dendra.science...</p>
+                        </div>
+                      </div>
+                    )}
+                    {/* Iframe */}
+                    <iframe
+                      src="https://dendra.science/orgs/tnc"
+                      className="w-full h-full border-0"
+                      title="Dendra.science - The Nature Conservancy"
+                      allow="fullscreen"
+                      onLoad={() => setIsDendraWebsiteLoading(false)}
+                    />
+                  </div>
+                </div>
               )}
         </div>
         {/* Conditionally show appropriate right sidebar */}

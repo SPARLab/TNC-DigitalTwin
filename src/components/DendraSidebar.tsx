@@ -8,6 +8,7 @@ interface DendraSidebarProps {
   onDatastreamSelect: (datastream: DendraDatastreamWithStation) => void;
   selectedStationId: number | null;
   selectedDatastreamId: number | null;
+  onShowDendraWebsite?: () => void;
 }
 
 export default function DendraSidebar({
@@ -17,6 +18,7 @@ export default function DendraSidebar({
   onDatastreamSelect,
   selectedStationId,
   selectedDatastreamId,
+  onShowDendraWebsite,
 }: DendraSidebarProps) {
   const [activeTab, setActiveTab] = useState<'stations' | 'datastreams'>('stations');
   const [stationSearch, setStationSearch] = useState('');
@@ -146,31 +148,50 @@ export default function DendraSidebar({
 
   return (
     <div id="dendra-sidebar" className="h-full flex flex-col bg-white w-96">
-      {/* Tabs */}
-      <div id="dendra-sidebar-tabs" className="flex border-b border-gray-200">
-        <button
-          id="stations-tab-button"
-          className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-            activeTab === 'stations'
-              ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-          }`}
-          onClick={() => setActiveTab('stations')}
-        >
-          By Station ({stations.length})
-        </button>
-        <button
-          id="datastreams-tab-button"
-          className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-            activeTab === 'datastreams'
-              ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-          }`}
-          onClick={() => setActiveTab('datastreams')}
-        >
-          By Datastream ({datastreams.length})
-        </button>
+      {/* Header with Dendra.science link */}
+      <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-gray-700">Dendra Stations</h2>
+          {onShowDendraWebsite && (
+            <button
+              onClick={onShowDendraWebsite}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors border border-blue-200"
+              title="View full Dendra website"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+              View on Dendra.science
+            </button>
+          )}
+        </div>
       </div>
+        
+        {/* Tabs */}
+        <div id="dendra-sidebar-tabs" className="flex border-b border-gray-200">
+          <button
+            id="stations-tab-button"
+            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'stations'
+                ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+            }`}
+            onClick={() => setActiveTab('stations')}
+          >
+            By Station ({stations.length})
+          </button>
+          <button
+            id="datastreams-tab-button"
+            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'datastreams'
+                ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+            }`}
+            onClick={() => setActiveTab('datastreams')}
+          >
+            By Datastream ({datastreams.length})
+          </button>
+        </div>
 
       {/* Search Bar */}
       <div id="dendra-search-container" className="p-4 border-b border-gray-200">

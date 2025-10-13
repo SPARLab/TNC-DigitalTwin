@@ -67,6 +67,7 @@ interface DataViewProps {
   selectedDendraDatastreamId?: number | null;
   onDendraStationSelect?: (station: DendraStation) => void;
   onDendraDatastreamSelect?: (datastream: DendraDatastreamWithStation) => void;
+  onShowDendraWebsite?: () => void;
 }
 
 const DataView: React.FC<DataViewProps> = ({
@@ -112,7 +113,8 @@ const DataView: React.FC<DataViewProps> = ({
   selectedDendraStationId,
   selectedDendraDatastreamId,
   onDendraStationSelect,
-  onDendraDatastreamSelect
+  onDendraDatastreamSelect,
+  onShowDendraWebsite
 }) => {
   // Route to appropriate data view based on category + source combination
   const getDataView = () => {
@@ -215,6 +217,7 @@ const DataView: React.FC<DataViewProps> = ({
             onDatastreamSelect={onDendraDatastreamSelect!}
             selectedStationId={selectedDendraStationId || null}
             selectedDatastreamId={selectedDendraDatastreamId || null}
+            onShowDendraWebsite={onShowDendraWebsite}
           />
         );
         
