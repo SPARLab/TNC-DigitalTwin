@@ -157,7 +157,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
             <button 
               id="category-filter-button"
               onClick={() => handleDropdownToggle('category')}
-              className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50"
+              className="flex items-center space-x-2 px-3 min-w-[19rem] py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50"
             >
               <Database id="category-filter-icon" className="w-4 h-4 text-gray-400" />
               <span id="category-filter-text" className="text-sm text-black">{filters.category}</span>

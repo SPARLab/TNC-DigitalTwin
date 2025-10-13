@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { DendraStation, DendraDatastream, DendraDatastreamWithStation } from '../types';
 
 interface DendraSidebarProps {
@@ -106,6 +106,43 @@ export default function DendraSidebar({
   }, [datastreamswithStations, datastreamSearch, stations]);
   
   const totalFilteredDatastreams = datastreamsWithData.length + datastreamsWithoutData.length;
+
+  // Auto-scroll to selected station when clicked from map
+  useEffect(() => {
+    if (selectedStationId) {
+      // Switch to stations tab if not already there
+      if (activeTab !== 'stations') {
+        setActiveTab('stations');
+      }
+      
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        const cardElement = document.getElementById(`station-card-${selectedStationId}`);
+        if (cardElement) {
+          // Check which section the station is in and expand it if collapsed
+          const isInWithData = stationsWithData.some(s => s.id === selectedStationId);
+          const isInWithoutData = stationsWithoutData.some(s => s.id === selectedStationId);
+          
+          if (isInWithData && !stationsWithDataExpanded) {
+            setStationsWithDataExpanded(true);
+            // Additional delay for expansion animation
+            setTimeout(() => {
+              cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 350);
+          } else if (isInWithoutData && !stationsWithoutDataExpanded) {
+            setStationsWithoutDataExpanded(true);
+            // Additional delay for expansion animation
+            setTimeout(() => {
+              cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 350);
+          } else {
+            // Section is already expanded, just scroll
+            cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+      }, 100);
+    }
+  }, [selectedStationId, activeTab, stationsWithData, stationsWithoutData, stationsWithDataExpanded, stationsWithoutDataExpanded]);
 
   return (
     <div id="dendra-sidebar" className="h-full flex flex-col bg-white w-96">
