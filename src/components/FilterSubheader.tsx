@@ -58,14 +58,15 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
 
   const handleClearFilters = () => {
     onFilterChange({
-      category: 'Wildlife',
-      source: 'iNaturalist (Public API)',
-      spatialFilter: 'Dangermond + Margin',
-      timeRange: formatDateRangeCompact(30),
-      daysBack: 30,
+      category: '',
+      source: '',
+      spatialFilter: '',
+      timeRange: '',
+      daysBack: undefined,
       startDate: undefined,
       endDate: undefined,
-      iconicTaxa: []
+      iconicTaxa: [],
+      customPolygon: undefined
     });
   };
 
@@ -173,7 +174,9 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
               className="flex items-center space-x-2 px-3 min-w-[19rem] py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50"
             >
               <Database id="category-filter-icon" className="w-4 h-4 text-gray-400 flex-shrink-0" />
-              <span id="category-filter-text" className="text-sm text-black truncate">{filters.category}</span>
+              <span id="category-filter-text" className={`text-sm truncate ${filters.category ? 'text-black' : 'text-gray-400'}`}>
+                {filters.category || 'Select category...'}
+              </span>
               <ChevronDown id="category-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ${openDropdown === 'category' ? 'rotate-180' : ''}`} />
             </button>
             {openDropdown === 'category' && (
@@ -203,7 +206,9 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
               className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 w-64"
             >
               <Database id="source-filter-icon" className="w-4 h-4 text-gray-400 flex-shrink-0" />
-              <span id="source-filter-text" className="text-sm text-black truncate">{filters.source}</span>
+              <span id="source-filter-text" className={`text-sm truncate ${filters.source ? 'text-black' : 'text-gray-400'}`}>
+                {filters.source || 'Select data source...'}
+              </span>
               <ChevronDown id="source-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ${openDropdown === 'source' ? 'rotate-180' : ''}`} />
             </button>
             {openDropdown === 'source' && (
@@ -240,8 +245,8 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
               }`}
             >
               <MapPin id="spatial-filter-icon" className={`w-4 h-4 flex-shrink-0 ${filters.customPolygon ? 'text-blue-600' : 'text-gray-400'}`} />
-              <span id="spatial-filter-text" className={`text-sm truncate ${filters.customPolygon ? 'text-blue-700 font-medium' : 'text-black'}`}>
-                {filters.spatialFilter}
+              <span id="spatial-filter-text" className={`text-sm truncate ${filters.customPolygon ? 'text-blue-700 font-medium' : filters.spatialFilter ? 'text-black' : 'text-gray-400'}`}>
+                {filters.spatialFilter || 'Select spatial filter...'}
                 {filters.customPolygon && ' ✓'}
               </span>
               <ChevronDown id="spatial-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ${openDropdown === 'spatialFilter' ? 'rotate-180' : ''}`} />
@@ -282,7 +287,9 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
                 title={filters.daysBack ? formatDateRange(filters.daysBack) : 'Select time range'}
               >
                 <Calendar id="time-range-filter-icon" className="w-4 h-4 text-gray-400" />
-                <span id="time-range-filter-text" className="text-sm text-black">{filters.timeRange}</span>
+                <span id="time-range-filter-text" className={`text-sm ${filters.timeRange ? 'text-black' : 'text-gray-400'}`}>
+                  {filters.timeRange || 'Select time range...'}
+                </span>
                 <ChevronDown id="time-range-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform ${openDropdown === 'timeRange' ? 'rotate-180' : ''}`} />
               </button>
               
