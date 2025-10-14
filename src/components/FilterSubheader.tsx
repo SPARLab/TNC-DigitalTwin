@@ -177,7 +177,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
               <ChevronDown id="category-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ${openDropdown === 'category' ? 'rotate-180' : ''}`} />
             </button>
             {openDropdown === 'category' && (
-              <div id="category-filter-dropdown" className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg z-10">
+              <div id="category-filter-dropdown" className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg z-50">
                 {categoryOptions.map((option) => (
                   <button
                     key={option}
@@ -207,7 +207,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
               <ChevronDown id="source-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ${openDropdown === 'source' ? 'rotate-180' : ''}`} />
             </button>
             {openDropdown === 'source' && (
-              <div id="source-filter-dropdown" className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg z-10">
+              <div id="source-filter-dropdown" className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg z-50">
                 {sourceOptions.map((option) => (
                   <button
                     key={option}
@@ -249,7 +249,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
             
             {/* Spatial Filter Dropdown */}
             {openDropdown === 'spatialFilter' && filters.source !== 'Dendra Stations' && filters.source !== 'TNC ArcGIS Hub' && filters.source !== 'LiDAR' && (
-              <div id="spatial-filter-dropdown" className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-20">
+              <div id="spatial-filter-dropdown" className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-50">
                 {SPATIAL_FILTERS.map((option) => (
                   <button
                     key={option}
@@ -310,7 +310,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
             </div>
             
             {openDropdown === 'timeRange' && (
-              <div id="time-range-dropdown" className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10 w-80">
+              <div id="time-range-dropdown" className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 w-80">
                 {timeRangeOptions.map((option) => (
                   <button
                     key={option.value}
