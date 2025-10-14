@@ -251,6 +251,10 @@ function App() {
 
   const handleTNCArcGISItemSelect = async (item: TNCArcGISItem) => {
     console.log('TNC ArcGIS item selected:', item);
+    
+    // Clear the orange search area rectangle when selecting a data item
+    mapViewRef.current?.clearSearchArea();
+    
     // Open details sidebar for MAP_LAYER items, otherwise use existing modal behavior
     if (item.uiPattern === 'MAP_LAYER') {
       // IMMEDIATELY show the selected state and loading spinner
@@ -326,6 +330,9 @@ function App() {
     // Close the Dendra iframe if it's showing a different station's dashboard
     setShowDendraWebsite(false);
     
+    // Clear the orange search area rectangle when selecting a station
+    mapViewRef.current?.clearSearchArea();
+    
     // Clear previous state first
     setSelectedDendraDatastream(null);
     setDendraDatapoints([]);
@@ -356,6 +363,9 @@ function App() {
   const handleDendraDatastreamSelect = async (datastream: DendraDatastreamWithStation) => {
     // Close the Dendra iframe when selecting a new datastream
     setShowDendraWebsite(false);
+    
+    // Clear the orange search area rectangle when selecting a datastream
+    mapViewRef.current?.clearSearchArea();
     
     // Clear previous data
     setDendraDatapoints([]);
@@ -471,6 +481,11 @@ function App() {
   }, [calFloraPlants]);
 
   const handleFilterChange = (newFilters: FilterState) => {
+    // Clear the orange search area rectangle if spatial filter changes away from "Dangermond + Margin"
+    if (filters.spatialFilter === 'Dangermond + Margin' && newFilters.spatialFilter !== 'Dangermond + Margin') {
+      mapViewRef.current?.clearSearchArea();
+    }
+    
     setFilters(newFilters);
     
     // If user selects "Draw Area" spatial filter, activate draw mode
@@ -652,7 +667,8 @@ function App() {
       const calFloraFilters = {
         maxResults: 1000,
         plantType: 'all' as 'invasive' | 'native' | 'all',
-        customPolygon: customPolygonGeometry
+        customPolygon: customPolygonGeometry,
+        showSearchArea: filters.spatialFilter === 'Dangermond + Margin'
       };
       
       console.log('Searching CalFlora with filters:', calFloraFilters);
@@ -761,7 +777,8 @@ function App() {
         page: 1,
         pageSize: 500,
         searchMode,
-        customPolygon: customPolygonGeometry
+        customPolygon: customPolygonGeometry,
+        showSearchArea: filters.spatialFilter === 'Dangermond + Margin'
       };
       
       // Update the last searched time range when search is performed
@@ -810,7 +827,8 @@ function App() {
         endDate: filters.endDate,
         qualityGrade: undefined as 'research' | 'needs_id' | 'casual' | undefined,
         iconicTaxa,
-        customPolygon: customPolygonGeometry
+        customPolygon: customPolygonGeometry,
+        showSearchArea: filters.spatialFilter === 'Dangermond + Margin'
       };
       
       // Update the last searched time range when search is performed

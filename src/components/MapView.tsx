@@ -68,6 +68,7 @@ export interface MapViewRef {
     startDate?: string;
     endDate?: string;
     customPolygon?: string;
+    showSearchArea?: boolean;
   }) => void;
   reloadTNCObservations: (filters?: {
     taxonCategories?: string[];
@@ -89,14 +90,17 @@ export interface MapViewRef {
     pageSize?: number;
     searchMode?: 'preserve-only' | 'expanded' | 'custom';
     customPolygon?: string;
+    showSearchArea?: boolean;
   }) => void;
   reloadCalFloraData: (filters?: {
     maxResults?: number;
     plantType?: 'invasive' | 'native' | 'all';
     customPolygon?: string;
+    showSearchArea?: boolean;
   }) => void;
   activateDrawMode: () => void;
   clearPolygon: () => void;
+  clearSearchArea: () => void;
 }
 
 const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({ 
@@ -1725,6 +1729,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     startDate?: string;
     endDate?: string;
     customPolygon?: string;
+    showSearchArea?: boolean;
   }) => {
     setLoading(true);
     onLoadingChange?.(true);
@@ -1735,6 +1740,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       if (calFloraLayer) {
         calFloraLayer.removeAll();
       }
+      
+      // Handle search area visualization for "Dangermond + Margin"
+      await drawSearchAreaRectangle(_mapView, filters?.showSearchArea || false, 'expanded');
       
       // Calculate appropriate maxResults based on date range
       let maxResults = 500; // Default for short ranges
@@ -1893,11 +1901,12 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     maxResults?: number;
     plantType?: 'invasive' | 'native' | 'all';
     customPolygon?: string;
+    showSearchArea?: boolean;
   }) => {
     onCalFloraLoadingChange?.(true);
     
     try {
-      const { maxResults = 1000, plantType = 'all', customPolygon } = filters || {};
+      const { maxResults = 1000, plantType = 'all', customPolygon, showSearchArea = false } = filters || {};
       
       let allPlants: CalFloraPlant[] = [];
       
@@ -1907,6 +1916,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       if (observationsLayer) {
         observationsLayer.removeAll();
       }
+      
+      // Handle search area visualization for "Dangermond + Margin"
+      await drawSearchAreaRectangle(_mapView, showSearchArea, 'expanded');
       
       // Load plant data using the unified method
       console.log('Loading CalFlora plant data...');
@@ -2127,6 +2139,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     pageSize?: number;
     searchMode?: 'preserve-only' | 'expanded' | 'custom';
     customPolygon?: string;
+    showSearchArea?: boolean;
   }) => {
     onEBirdLoadingChange?.(true);
     try {
@@ -2144,6 +2157,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       if (calFloraLayer) {
         calFloraLayer.removeAll();
       }
+      
+      // Handle search area visualization for "Dangermond + Margin"
+      await drawSearchAreaRectangle(_mapView, filters?.showSearchArea || false, filters?.searchMode || '');
       
       const response = await eBirdService.queryObservations({
         startDate: filters?.startDate,
@@ -2245,7 +2261,6 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       // Clear other layers when starting a new TNC search
       const observationsLayer = _mapView.map?.findLayerById('inaturalist-observations') as GraphicsLayer;
       const calFloraLayer = _mapView.map?.findLayerById('calflora-plants') as GraphicsLayer;
-      const searchAreaLayer = _mapView.map?.findLayerById('search-area-rectangle') as GraphicsLayer;
       
       if (observationsLayer) {
         observationsLayer.removeAll();
@@ -2254,50 +2269,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         calFloraLayer.removeAll();
       }
       
-      // Handle search area visualization
-      if (searchAreaLayer) {
-        searchAreaLayer.removeAll();
-        
-        if (filters?.showSearchArea && filters?.searchMode === 'expanded') {
-          // Get the expanded search extent and create a rectangle graphic
-          const extent = await tncINaturalistService.getPreserveExtent('expanded');
-          
-          // Create a polygon rectangle from the extent coordinates
-          const rectangle = new Polygon({
-            rings: [[
-              [extent.xmin, extent.ymin], // Bottom-left
-              [extent.xmax, extent.ymin], // Bottom-right
-              [extent.xmax, extent.ymax], // Top-right
-              [extent.xmin, extent.ymax], // Top-left
-              [extent.xmin, extent.ymin]  // Close the ring
-            ]],
-            spatialReference: { wkid: 4326 }
-          });
-          
-          const rectangleGraphic = new Graphic({
-            geometry: rectangle,
-            symbol: new SimpleFillSymbol({
-              color: [255, 165, 0, 0.15], // Orange with low opacity
-              outline: {
-                color: [255, 165, 0, 0.9], // Orange outline
-                width: 3,
-                style: 'dash'
-              }
-            }),
-            popupTemplate: new PopupTemplate({
-              title: 'TNC Search Area (Expanded)',
-              content: `This rectangle shows the expanded search area around the Dangermond Preserve.<br/>
-                       Coordinates: ${extent.xmin.toFixed(3)}, ${extent.ymin.toFixed(3)} to ${extent.xmax.toFixed(3)}, ${extent.ymax.toFixed(3)}`
-            })
-          });
-          
-          searchAreaLayer.add(rectangleGraphic);
-          searchAreaLayer.visible = true;
-          console.log('✅ Added search area rectangle:', extent);
-        } else {
-          searchAreaLayer.visible = false;
-        }
-      }
+      // Handle search area visualization using helper
+      await drawSearchAreaRectangle(_mapView, filters?.showSearchArea || false, filters?.searchMode || '');
       
       const response = await tncINaturalistService.queryObservations({
         taxonCategories: filters?.taxonCategories,
@@ -2412,6 +2385,71 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   };
 
+  // Helper to draw search area rectangle for "Dangermond + Margin" spatial filter
+  const drawSearchAreaRectangle = async (_mapView: __esri.MapView, showSearchArea: boolean, searchMode: string) => {
+    const searchAreaLayer = _mapView.map?.findLayerById('search-area-rectangle') as GraphicsLayer;
+    
+    if (!searchAreaLayer) return;
+    
+    searchAreaLayer.removeAll();
+    
+    if (showSearchArea && searchMode === 'expanded') {
+      try {
+        // Get the expanded search extent and create a rectangle graphic
+        const extent = await tncINaturalistService.getPreserveExtent('expanded');
+        
+        // Create a polygon rectangle from the extent coordinates
+        const rectangle = new Polygon({
+          rings: [[
+            [extent.xmin, extent.ymin], // Bottom-left
+            [extent.xmax, extent.ymin], // Bottom-right
+            [extent.xmax, extent.ymax], // Top-right
+            [extent.xmin, extent.ymax], // Top-left
+            [extent.xmin, extent.ymin]  // Close the ring
+          ]],
+          spatialReference: { wkid: 4326 }
+        });
+        
+        const rectangleGraphic = new Graphic({
+          geometry: rectangle,
+          symbol: new SimpleFillSymbol({
+            color: [255, 165, 0, 0.15], // Orange with low opacity
+            outline: {
+              color: [255, 165, 0, 0.9], // Orange outline
+              width: 3,
+              style: 'dash'
+            }
+          }),
+          popupTemplate: new PopupTemplate({
+            title: 'Search Area (Dangermond + Margin)',
+            content: `This rectangle shows the expanded search area around the Dangermond Preserve.<br/>
+                     Coordinates: ${extent.xmin.toFixed(3)}, ${extent.ymin.toFixed(3)} to ${extent.xmax.toFixed(3)}, ${extent.ymax.toFixed(3)}`
+          })
+        });
+        
+        searchAreaLayer.add(rectangleGraphic);
+        searchAreaLayer.visible = true;
+        console.log('✅ Added search area rectangle:', extent);
+      } catch (error) {
+        console.error('Error drawing search area rectangle:', error);
+      }
+    } else {
+      searchAreaLayer.visible = false;
+    }
+  };
+
+  // Clear search area helper
+  const clearSearchArea = () => {
+    if (!view) return;
+    
+    const searchAreaLayer = view.map?.findLayerById('search-area-rectangle') as GraphicsLayer;
+    if (searchAreaLayer) {
+      searchAreaLayer.removeAll();
+      searchAreaLayer.visible = false;
+      console.log('✅ Cleared search area rectangle');
+    }
+  };
+
   // Expose methods via ref
   useImperativeHandle(ref, () => ({
     reloadObservations,
@@ -2419,7 +2457,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     reloadEBirdObservations,
     reloadCalFloraData,
     activateDrawMode,
-    clearPolygon
+    clearPolygon,
+    clearSearchArea
   }));
 
   const getObservationIcon = (obs: iNaturalistObservation) => {

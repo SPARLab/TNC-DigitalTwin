@@ -78,18 +78,31 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
     const availableSources = CATEGORY_DATA_SOURCES[category] || [];
     const newSource = availableSources[0] || filters.source;
     
-    onFilterChange({ 
+    // Check if the new source requires a locked spatial filter
+    const newFilters: FilterState = {
       ...filters, 
       category,
       source: newSource,
       // Reset iconic taxa when category changes to avoid invalid states
-      iconicTaxa: [] 
-    });
+      iconicTaxa: []
+    };
+    
+    // Auto-set spatial filter to "Dangermond Preserve" for locked sources
+    if (newSource === 'Dendra Stations' || newSource === 'TNC ArcGIS Hub' || newSource === 'LiDAR') {
+      newFilters.spatialFilter = 'Dangermond Preserve';
+    }
+    
+    onFilterChange(newFilters);
     setOpenDropdown(null);
   };
 
   const handleSourceChange = (source: string) => {
-    onFilterChange({ ...filters, source });
+    // Auto-set spatial filter to "Dangermond Preserve" for Dendra Stations, TNC ArcGIS Hub, and LiDAR
+    if (source === 'Dendra Stations' || source === 'TNC ArcGIS Hub' || source === 'LiDAR') {
+      onFilterChange({ ...filters, source, spatialFilter: 'Dangermond Preserve' });
+    } else {
+      onFilterChange({ ...filters, source });
+    }
     setOpenDropdown(null);
   };
 
@@ -217,10 +230,13 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
             <button 
               id="spatial-filter-button"
               onClick={() => handleDropdownToggle('spatialFilter')}
-              className={`flex items-center space-x-2 px-3 py-2 border rounded-md hover:bg-gray-50 w-64 ${
-                filters.customPolygon 
-                  ? 'border-blue-500 bg-blue-50' 
-                  : 'border-gray-300 bg-white'
+              disabled={filters.source === 'Dendra Stations' || filters.source === 'TNC ArcGIS Hub' || filters.source === 'LiDAR'}
+              className={`flex items-center space-x-2 px-3 py-2 border rounded-md w-64 ${
+                filters.source === 'Dendra Stations' || filters.source === 'TNC ArcGIS Hub' || filters.source === 'LiDAR'
+                  ? 'bg-gray-100 cursor-not-allowed opacity-60'
+                  : filters.customPolygon 
+                    ? 'border-blue-500 bg-blue-50 hover:bg-gray-50' 
+                    : 'border-gray-300 bg-white hover:bg-gray-50'
               }`}
             >
               <MapPin id="spatial-filter-icon" className={`w-4 h-4 flex-shrink-0 ${filters.customPolygon ? 'text-blue-600' : 'text-gray-400'}`} />
@@ -232,7 +248,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
             </button>
             
             {/* Spatial Filter Dropdown */}
-            {openDropdown === 'spatialFilter' && (
+            {openDropdown === 'spatialFilter' && filters.source !== 'Dendra Stations' && filters.source !== 'TNC ArcGIS Hub' && filters.source !== 'LiDAR' && (
               <div id="spatial-filter-dropdown" className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-20">
                 {SPATIAL_FILTERS.map((option) => (
                   <button
