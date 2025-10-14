@@ -29,11 +29,11 @@ import {
 
 function App() {
   const [filters, setFilters] = useState<FilterState>({
-    category: 'Wildlife',
-    source: 'iNaturalist (Public API)',
-    spatialFilter: 'Dangermond + Margin',
-    timeRange: formatDateRangeCompact(30),
-    daysBack: 30,
+    category: '',
+    source: '',
+    spatialFilter: '',
+    timeRange: '',
+    daysBack: undefined,
     startDate: undefined,
     endDate: undefined,
     iconicTaxa: []
@@ -86,11 +86,11 @@ function App() {
   // Track the filters that were actually used for the last search
   // This determines what data is shown in the sidebar/map
   const [lastSearchedFilters, setLastSearchedFilters] = useState<FilterState>({
-    category: 'Wildlife',
-    source: 'iNaturalist (Public API)',
-    spatialFilter: 'Dangermond + Margin',
-    timeRange: formatDateRangeCompact(30),
-    daysBack: 30,
+    category: '',
+    source: '',
+    spatialFilter: '',
+    timeRange: '',
+    daysBack: undefined,
     startDate: undefined,
     endDate: undefined,
     iconicTaxa: []

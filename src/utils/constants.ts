@@ -8,13 +8,8 @@ export const APP_VERSION = '1.0.0';
 // These are the master categories that all data sources map onto
 const TNC_MAIN_CATEGORIES = categoryMappings.main_categories as readonly string[];
 
-// Add Wildlife and Vegetation as legacy categories for iNaturalist/CalFlora compatibility
-// All categories will map external data onto these master categories
-export const DATA_CATEGORIES = [
-  'Wildlife',
-  'Vegetation',
-  ...TNC_MAIN_CATEGORIES
-] as const;
+// Use TNC main categories as the official data categories
+export const DATA_CATEGORIES = TNC_MAIN_CATEGORIES;
 
 export const DATA_SOURCES = [
   'iNaturalist (Public API)',
@@ -27,23 +22,24 @@ export const DATA_SOURCES = [
 ] as const;
 
 // Map categories to their available data sources
-// Wildlife and Vegetation are legacy categories that map to older data sources
-// All TNC main categories map to TNC ArcGIS Hub
+// Merges TNC ArcGIS Hub data with legacy sources (iNaturalist, eBird, CalFlora) into official TNC categories
 export const CATEGORY_DATA_SOURCES: Record<string, readonly string[]> = {
-  // Legacy categories for iNaturalist, eBird, and CalFlora
-  'Wildlife': ['iNaturalist (Public API)', 'iNaturalist (TNC Layers)', 'eBird'],
-  'Vegetation': ['CalFlora', 'iNaturalist (Public API)', 'iNaturalist (TNC Layers)'],
-  
-  // TNC main categories - all map to TNC ArcGIS Hub
+  // All TNC main categories map to TNC ArcGIS Hub by default
   ...TNC_MAIN_CATEGORIES.reduce((acc, category) => {
     acc[category] = ['TNC ArcGIS Hub'];
     return acc;
   }, {} as Record<string, string[]>),
   
-  // Override for Land use category to add LiDAR
+  // Ecological / Biological category includes wildlife observation sources
+  'Ecological / Biological (Species?)': ['TNC ArcGIS Hub', 'iNaturalist (Public API)', 'iNaturalist (TNC Layers)', 'eBird'],
+  
+  // Vegetation / habitat category includes plant observation sources
+  'Vegetation / habitat': ['TNC ArcGIS Hub', 'CalFlora', 'iNaturalist (Public API)', 'iNaturalist (TNC Layers)'],
+  
+  // Land use category includes LiDAR
   'Land use and land (geography?)': ['TNC ArcGIS Hub', 'LiDAR'],
   
-  // Override for Real-time & Remote Sensing to add Dendra Stations
+  // Real-time & Remote Sensing includes Dendra Stations
   'Real-time & Remote Sensing': ['TNC ArcGIS Hub', 'Dendra Stations']
 } as const;
 
@@ -54,7 +50,7 @@ DATA_CATEGORIES.forEach(category => {
   }
 });
 
-console.log(`✅ Loaded ${TNC_MAIN_CATEGORIES.length} TNC main categories + 2 legacy categories = ${DATA_CATEGORIES.length} total categories`);
+console.log(`✅ Loaded ${DATA_CATEGORIES.length} TNC main categories`);
 
 export const SPATIAL_FILTERS = [
   'Draw Area',

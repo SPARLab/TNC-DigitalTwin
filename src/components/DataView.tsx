@@ -122,11 +122,29 @@ const DataView: React.FC<DataViewProps> = ({
 }) => {
   // Route to appropriate data view based on category + source combination
   const getDataView = () => {
+    // Show blank state if no filters selected OR before first search
+    if (!hasSearched || !filters.category || !filters.source) {
+      return (
+        <div id="no-search-blank-state" className="w-96 bg-white border-r border-gray-200 flex items-center justify-center">
+          <div id="blank-state-content" className="text-center p-8">
+            <svg className="mx-auto w-16 h-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Ready to Search</h3>
+            <p className="text-sm text-gray-600 max-w-sm">
+              Select your data category, source, spatial filter, and time range above, then click the search button to view results.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     const key = `${filters.category}-${filters.source}`;
     
     switch (key) {
-      case 'Wildlife-iNaturalist (Public API)':
-      case 'Vegetation-iNaturalist (Public API)':
+      // iNaturalist Public API - supports both Ecological/Biological and Vegetation categories
+      case 'Ecological / Biological (Species?)-iNaturalist (Public API)':
+      case 'Vegetation / habitat-iNaturalist (Public API)':
         return (
           <WildlifeINaturalistView
             observations={observations}
@@ -140,8 +158,9 @@ const DataView: React.FC<DataViewProps> = ({
           />
         );
 
-      case 'Wildlife-iNaturalist (TNC Layers)':
-      case 'Vegetation-iNaturalist (TNC Layers)':
+      // iNaturalist TNC Layers - supports both Ecological/Biological and Vegetation categories
+      case 'Ecological / Biological (Species?)-iNaturalist (TNC Layers)':
+      case 'Vegetation / habitat-iNaturalist (TNC Layers)':
         return (
           <WildlifeTNCINaturalistView
             observations={tncObservations}
@@ -157,7 +176,8 @@ const DataView: React.FC<DataViewProps> = ({
           />
         );
         
-      case 'Wildlife-eBird':
+      // eBird - Ecological/Biological category
+      case 'Ecological / Biological (Species?)-eBird':
         return (
           <WildlifeEBirdView
             observations={eBirdObservations}
@@ -171,7 +191,8 @@ const DataView: React.FC<DataViewProps> = ({
           />
         );
         
-      case 'Vegetation-CalFlora':
+      // CalFlora - Vegetation/habitat category
+      case 'Vegetation / habitat-CalFlora':
         return (
           <VegetationCalFloraView
             plants={calFloraPlants}
