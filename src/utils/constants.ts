@@ -22,7 +22,8 @@ export const DATA_SOURCES = [
   'eBird',
   'CalFlora',
   'TNC ArcGIS Hub',
-  'LiDAR'
+  'LiDAR',
+  'Dendra Stations'
 ] as const;
 
 // Map categories to their available data sources
@@ -35,14 +36,15 @@ export const CATEGORY_DATA_SOURCES: Record<string, readonly string[]> = {
   
   // TNC main categories - all map to TNC ArcGIS Hub
   ...TNC_MAIN_CATEGORIES.reduce((acc, category) => {
-    // Land use category gets LiDAR in addition to TNC ArcGIS Hub
-    if (category === 'Land use and land (geography?)') {
-      acc[category] = ['TNC ArcGIS Hub', 'LiDAR'];
-    } else {
-      acc[category] = ['TNC ArcGIS Hub'];
-    }
+    acc[category] = ['TNC ArcGIS Hub'];
     return acc;
-  }, {} as Record<string, string[]>)
+  }, {} as Record<string, string[]>),
+  
+  // Override for Land use category to add LiDAR
+  'Land use and land (geography?)': ['TNC ArcGIS Hub', 'LiDAR'],
+  
+  // Override for Real-time & Remote Sensing to add Dendra Stations
+  'Real-time & Remote Sensing': ['TNC ArcGIS Hub', 'Dendra Stations']
 } as const;
 
 // Validate that all data categories have a source mapping

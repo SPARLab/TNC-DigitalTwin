@@ -9,7 +9,8 @@ import Footer from './components/Footer';
 import CalFloraPlantModal from './components/CalFloraPlantModal';
 import HubPagePreview from './components/HubPagePreview';
 import TNCArcGISDetailsSidebar from './components/TNCArcGISDetailsSidebar';
-import { FilterState } from './types';
+import DendraDetailsSidebar from './components/DendraDetailsSidebar';
+import { FilterState, DendraStation, DendraDatastream, DendraDatastreamWithStation, DendraDatapoint } from './types';
 import { LiDARViewMode } from './components/dataviews/LiDARView';
 import { iNaturalistObservation } from './services/iNaturalistService';
 import { TNCArcGISObservation } from './services/tncINaturalistService';
@@ -19,6 +20,12 @@ import { TNCArcGISItem, tncArcGISAPI } from './services/tncArcGISService';
 import { formatDateRangeCompact, getDateRange, formatDateForAPI, formatDateToUS } from './utils/dateUtils';
 import { tncINaturalistService } from './services/tncINaturalistService';
 import { MapViewRef } from './components/MapView';
+import { 
+  fetchDendraStations,
+  fetchDendraDatastreams,
+  fetchDatastreamsForStation,
+  fetchDatapointsForDatastream,
+} from './services/dendraService';
 
 function App() {
   const [filters, setFilters] = useState<FilterState>({
@@ -125,6 +132,23 @@ function App() {
 
   // LiDAR view mode state
   const [lidarViewMode, setLidarViewMode] = useState<LiDARViewMode>('virtual-tour');
+
+  // Dendra Stations state
+  const [dendraStations, setDendraStations] = useState<DendraStation[]>([]);
+  const [dendraDatastreams, setDendraDatastreams] = useState<DendraDatastream[]>([]);
+  const [dendraLoading, setDendraLoading] = useState(false);
+  const [selectedDendraStation, setSelectedDendraStation] = useState<DendraStation | null>(null);
+  const [selectedDendraDatastream, setSelectedDendraDatastream] = useState<DendraDatastream | null>(null);
+  const [availableDendraDatastreams, setAvailableDendraDatastreams] = useState<DendraDatastream[]>([]);
+  const [dendraDatapoints, setDendraDatapoints] = useState<DendraDatapoint[]>([]);
+  const [isDendraLoadingDatapoints, setIsDendraLoadingDatapoints] = useState(false);
+  const [isDendraLoadingHistorical, setIsDendraLoadingHistorical] = useState(false);
+  const [showDendraWebsite, setShowDendraWebsite] = useState(false);
+  const [isDendraWebsiteLoading, setIsDendraWebsiteLoading] = useState(false);
+  const [dendraWebsiteUrl, setDendraWebsiteUrl] = useState<string>('https://dendra.science/orgs/tnc');
+  
+  // Ref to track the currently loading datastream (for race condition prevention)
+  const currentLoadingDatastreamRef = useRef<number | null>(null);
 
   // CalFlora modal handlers
   const openCalFloraModal = (plantId: string) => {
@@ -297,6 +321,146 @@ function App() {
     setLidarViewMode(mode);
   };
 
+  // Dendra Stations handlers
+  const handleDendraStationSelect = async (station: DendraStation) => {
+    // Close the Dendra iframe if it's showing a different station's dashboard
+    setShowDendraWebsite(false);
+    
+    // Clear previous state first
+    setSelectedDendraDatastream(null);
+    setDendraDatapoints([]);
+    setIsDendraLoadingDatapoints(false);
+    setIsDendraLoadingHistorical(false);
+    
+    // Set the new station
+    setSelectedDendraStation(station);
+    
+    // Fetch datastreams for this station
+    try {
+      const datastreams = await fetchDatastreamsForStation(station.id);
+      setAvailableDendraDatastreams(datastreams);
+      
+      // Auto-select the first datastream and load its data
+      if (datastreams.length > 0) {
+        const firstDatastream = datastreams[0];
+        setSelectedDendraDatastream(firstDatastream);
+        // Load datapoints immediately (no setTimeout needed)
+        await loadDendraDatapoints(firstDatastream.id);
+      }
+    } catch (error) {
+      console.error('Error fetching datastreams:', error);
+      setAvailableDendraDatastreams([]);
+    }
+  };
+
+  const handleDendraDatastreamSelect = async (datastream: DendraDatastreamWithStation) => {
+    // Close the Dendra iframe when selecting a new datastream
+    setShowDendraWebsite(false);
+    
+    // Clear previous data
+    setDendraDatapoints([]);
+    setIsDendraLoadingDatapoints(false);
+    setIsDendraLoadingHistorical(false);
+    
+    // Set the selected datastream
+    setSelectedDendraDatastream(datastream);
+    
+    // Keep the station reference for map highlighting
+    const station = dendraStations.find(s => s.id === datastream.station_id);
+    setSelectedDendraStation(station || null);
+    
+    // Fetch all datastreams for this station to populate the dropdown
+    try {
+      const datastreams = await fetchDatastreamsForStation(datastream.station_id);
+      setAvailableDendraDatastreams(datastreams);
+    } catch (error) {
+      console.error('Error fetching datastreams for station:', error);
+      setAvailableDendraDatastreams([]);
+    }
+
+    // Load datapoints for this datastream
+    await loadDendraDatapoints(datastream.id);
+  };
+
+  const handleDendraDatastreamChange = async (datastreamId: number) => {
+    // Close the Dendra iframe when changing datastream via dropdown
+    setShowDendraWebsite(false);
+    
+    const datastream = availableDendraDatastreams.find(ds => ds.id === datastreamId);
+    if (datastream) {
+      setSelectedDendraDatastream(datastream);
+      setDendraDatapoints([]);
+      await loadDendraDatapoints(datastreamId);
+    }
+  };
+
+  const loadDendraDatapoints = async (datastreamId: number) => {
+    // Set the ref to track this is the current loading operation
+    currentLoadingDatastreamRef.current = datastreamId;
+    
+    setIsDendraLoadingDatapoints(true);
+    setIsDendraLoadingHistorical(false);
+    setDendraDatapoints([]);
+
+    try {
+      // PHASE 1: Load last 30 days FIRST for immediate display
+      const recentPoints = await fetchDatapointsForDatastream(
+        datastreamId,
+        30, // Last 30 days only
+        2000, // Batch size
+        undefined, // No callback during initial load
+        true // From most recent timestamp
+      );
+      
+      // SAFETY CHECK: Only update if this is still the current loading operation
+      if (currentLoadingDatastreamRef.current !== datastreamId) {
+        console.log(`⚠️ Datastream changed during Phase 1 load. Discarding results for DS ${datastreamId}`);
+        return; // User switched to a different datastream, discard these results
+      }
+      
+      // Show the initial data immediately and stop initial loading
+      setDendraDatapoints([...recentPoints]);
+      setIsDendraLoadingDatapoints(false); // Chart can render now!
+      
+      // If no data in Phase 1, don't bother with Phase 2
+      if (recentPoints.length === 0) {
+        setIsDendraLoadingHistorical(false);
+        return;
+      }
+      
+      // PHASE 2: Load all remaining data in background
+      setIsDendraLoadingHistorical(true); // Show background loading indicator
+      const allPoints = await fetchDatapointsForDatastream(
+        datastreamId,
+        undefined, // All available data
+        2000, // Batch size
+        undefined, // No progressive updates to avoid jitter
+        false // Don't use most recent timestamp filter
+      );
+      
+      // SAFETY CHECK: Only update if this is still the current loading operation
+      if (currentLoadingDatastreamRef.current !== datastreamId) {
+        console.log(`⚠️ Datastream changed during Phase 2 load. Discarding results for DS ${datastreamId}`);
+        return; // User switched to a different datastream, discard these results
+      }
+      
+      // Combine with recent data and deduplicate
+      const combinedPoints = [...recentPoints, ...allPoints];
+      const uniquePoints = Array.from(
+        new Map(combinedPoints.map(p => [p.id, p])).values()
+      ).sort((a, b) => a.timestamp_utc - b.timestamp_utc);
+      
+      // Final update with all data
+      setDendraDatapoints(uniquePoints);
+      setIsDendraLoadingHistorical(false); // Hide background loading indicator
+      
+    } catch (error) {
+      console.error('Error loading datapoints:', error);
+      setIsDendraLoadingDatapoints(false);
+      setIsDendraLoadingHistorical(false);
+    }
+  };
+
   // Set up global function for popup buttons to access
   useEffect(() => {
     (window as any).openCalFloraModal = openCalFloraModal;
@@ -349,7 +513,34 @@ function App() {
     // This will cause the DataView to update to show the appropriate sidebar
     setLastSearchedFilters({ ...filters });
     
-    if (filters.source === 'TNC ArcGIS Hub') {
+    if (filters.source === 'Dendra Stations') {
+      // Handle Dendra Stations search
+      const searchDendra = async () => {
+        setDendraLoading(true);
+        try {
+          const [stationsData, datastreamsData] = await Promise.all([
+            fetchDendraStations(),
+            fetchDendraDatastreams(),
+          ]);
+          
+          // Sort alphabetically for now (metadata fields needed on backend for better sorting)
+          const sortedStations = [...stationsData].sort((a, b) => a.name.localeCompare(b.name));
+          const sortedDatastreams = [...datastreamsData].sort((a, b) => a.name.localeCompare(b.name));
+          
+          setDendraStations(sortedStations);
+          setDendraDatastreams(sortedDatastreams);
+          console.log(`✅ Loaded ${stationsData.length} Dendra stations and ${datastreamsData.length} datastreams`);
+        } catch (error) {
+          console.error('❌ Error loading Dendra data:', error);
+          setDendraStations([]);
+          setDendraDatastreams([]);
+        } finally {
+          setDendraLoading(false);
+        }
+      };
+      
+      searchDendra();
+    } else if (filters.source === 'TNC ArcGIS Hub') {
       // Handle TNC ArcGIS Hub search
       const searchTNCArcGIS = async () => {
         setTncArcGISLoading(true);
@@ -1001,6 +1192,7 @@ function App() {
           lastSearchedFilters.source === 'CalFlora' ? calFloraPlants.length :
           lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations.length :
           lastSearchedFilters.source === 'eBird' ? eBirdObservations.length :
+          lastSearchedFilters.source === 'Dendra Stations' ? dendraStations.length :
           observations.length
         }
         isSearching={
@@ -1008,6 +1200,7 @@ function App() {
           filters.source === 'CalFlora' ? calFloraLoading :
           filters.source === 'iNaturalist (TNC Layers)' ? tncObservationsLoading :
           filters.source === 'eBird' ? eBirdObservationsLoading :
+          filters.source === 'Dendra Stations' ? dendraLoading :
           observationsLoading
         }
       />
@@ -1051,6 +1244,18 @@ function App() {
           startDate={filters.startDate}
           endDate={filters.endDate}
           hasSearched={hasSearched}
+          dendraStations={dendraStations}
+          dendraDatastreams={dendraDatastreams}
+          dendraLoading={dendraLoading}
+          selectedDendraStationId={selectedDendraStation?.id}
+          selectedDendraDatastreamId={selectedDendraDatastream?.id}
+          onDendraStationSelect={handleDendraStationSelect}
+          onDendraDatastreamSelect={handleDendraDatastreamSelect}
+          onShowDendraWebsite={() => {
+            setDendraWebsiteUrl('https://dendra.science/orgs/tnc');
+            setShowDendraWebsite(true);
+            setIsDendraWebsiteLoading(true);
+          }}
         />
         <div id="map-container" className="flex-1 relative flex">
           {/* Conditionally render based on data source and LiDAR mode */}
@@ -1102,6 +1307,9 @@ function App() {
                 onLayerLoadComplete={handleLayerLoadComplete}
                 onLayerLoadError={handleLayerLoadError}
                 onLegendDataFetched={handleLegendDataFetched}
+                dendraStations={lastSearchedFilters.source === 'Dendra Stations' ? dendraStations : []}
+                selectedDendraStationId={selectedDendraStation?.id}
+                onDendraStationClick={handleDendraStationSelect}
                 isDrawMode={isDrawMode}
                 onDrawModeChange={setIsDrawMode}
                 onPolygonDrawn={handlePolygonDrawn}
@@ -1111,10 +1319,79 @@ function App() {
               {selectedModalItem && (
                 <HubPagePreview item={selectedModalItem} onClose={handleModalClose} />
               )}
+              
+              {/* Dendra.science Website Iframe Overlay */}
+              {showDendraWebsite && (
+                <div className="absolute inset-0 z-40 bg-white flex flex-col">
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+                    <div className="flex items-center gap-3">
+                      <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                      </svg>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">Dendra.science</h3>
+                        <p className="text-xs text-gray-500">
+                          {selectedDendraStation 
+                            ? `${selectedDendraStation.name} ${dendraWebsiteUrl.includes('/status/') ? '- Dashboard' : '- Details'}`
+                            : 'The Nature Conservancy Stations'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={dendraWebsiteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        Open in New Tab
+                      </a>
+                      <button
+                        id="dendra-iframe-close-button"
+                        onClick={() => {
+                          setShowDendraWebsite(false);
+                          setIsDendraWebsiteLoading(false);
+                        }}
+                        className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                        title="Close"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Iframe Container with Loading Spinner */}
+                  <div className="flex-1 overflow-hidden relative">
+                    {/* Loading Spinner Overlay */}
+                    {isDendraWebsiteLoading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
+                        <div className="flex flex-col items-center gap-4">
+                          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                          <p className="text-sm text-gray-600 font-medium">Loading Dendra.science...</p>
+                        </div>
+                      </div>
+                    )}
+                    {/* Iframe */}
+                    <iframe
+                      src={dendraWebsiteUrl}
+                      className="w-full h-full border-0"
+                      title="Dendra.science - The Nature Conservancy"
+                      allow="fullscreen"
+                      onLoad={() => setIsDendraWebsiteLoading(false)}
+                    />
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
-        {/* Conditionally show TNC ArcGIS Details Sidebar or Filter Sidebar */}
+        {/* Conditionally show appropriate right sidebar */}
         {selectedDetailsItem && lastSearchedFilters.source === 'TNC ArcGIS Hub' ? (
           <TNCArcGISDetailsSidebar
             item={selectedDetailsItem}
@@ -1125,6 +1402,32 @@ function App() {
             onOpacityChange={handleDetailsOpacityChange}
             onLayerSelect={handleDetailsLayerSelect}
             onClose={handleDetailsClose}
+          />
+        ) : (selectedDendraStation || selectedDendraDatastream) && lastSearchedFilters.source === 'Dendra Stations' ? (
+          <DendraDetailsSidebar
+            station={selectedDendraStation}
+            selectedDatastream={selectedDendraDatastream}
+            availableDatastreams={availableDendraDatastreams}
+            datapoints={dendraDatapoints}
+            isLoadingDatapoints={isDendraLoadingDatapoints}
+            isLoadingHistorical={isDendraLoadingHistorical}
+            onDatastreamChange={handleDendraDatastreamChange}
+            onShowStationDashboard={() => {
+              if (selectedDendraStation) {
+                // Use the slug field for the status/dashboard page
+                setDendraWebsiteUrl(`https://dendra.science/orgs/tnc/status/${selectedDendraStation.slug}`);
+                setShowDendraWebsite(true);
+                setIsDendraWebsiteLoading(true);
+              }
+            }}
+            onShowStationDetails={() => {
+              if (selectedDendraStation) {
+                // Use the dendra_st_id for the station details page
+                setDendraWebsiteUrl(`https://dendra.science/orgs/tnc/stations/${selectedDendraStation.dendra_st_id}`);
+                setShowDendraWebsite(true);
+                setIsDendraWebsiteLoading(true);
+              }
+            }}
           />
         ) : (
           <FilterSidebar 
@@ -1137,6 +1440,7 @@ function App() {
               lastSearchedFilters.source === 'CalFlora' ? calFloraPlants.length > 0 :
               lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations.length > 0 :
               lastSearchedFilters.source === 'eBird' ? eBirdObservations.length > 0 :
+              lastSearchedFilters.source === 'Dendra Stations' ? dendraStations.length > 0 :
               observations.length > 0
             }
             dataSource={lastSearchedFilters.source}

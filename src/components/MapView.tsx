@@ -14,6 +14,7 @@ import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
 import Polygon from '@arcgis/core/geometry/Polygon';
 import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
+import PictureMarkerSymbol from '@arcgis/core/symbols/PictureMarkerSymbol';
 import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 import PopupTemplate from '@arcgis/core/PopupTemplate';
 import * as reactiveUtils from '@arcgis/core/core/reactiveUtils';
@@ -22,6 +23,7 @@ import { tncINaturalistService, TNCArcGISObservation } from '../services/tncINat
 import { calFloraAPI, CalFloraPlant } from '../services/calFloraService';
 import { TNCArcGISItem, tncArcGISAPI } from '../services/tncArcGISService';
 import { eBirdService, EBirdObservation } from '../services/eBirdService';
+import type { DendraStation } from '../types';
 import LayerLegend from './LayerLegend';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -47,6 +49,10 @@ interface MapViewProps {
   onLayerLoadComplete?: (itemId: string) => void;
   onLayerLoadError?: (itemId: string) => void;
   onLegendDataFetched?: (itemId: string, legendData: any) => void;
+  // Dendra Stations
+  dendraStations?: DendraStation[];
+  selectedDendraStationId?: number;
+  onDendraStationClick?: (station: DendraStation) => void;
   // Draw mode props
   isDrawMode?: boolean;
   onDrawModeChange?: (isDrawMode: boolean) => void;
@@ -114,6 +120,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   onLayerLoadComplete,
   onLayerLoadError,
   onLegendDataFetched,
+  dendraStations = [],
+  selectedDendraStationId,
+  onDendraStationClick,
   isDrawMode = false,
   onDrawModeChange,
   onPolygonDrawn,
@@ -379,10 +388,17 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         title: 'CalFlora Plants'
       });
 
+      // Create graphics layer for Dendra stations
+      const dendraStationsLayer = new GraphicsLayer({
+        id: 'dendra-stations',
+        title: 'Dendra Stations'
+      });
+
       map.add(observationsLayer);
       map.add(tncObservationsLayer);
       map.add(eBirdObservationsLayer);
       map.add(calFloraLayer);
+      map.add(dendraStationsLayer);
 
       // Create the map view centered on Dangermond Preserve
       // Coordinates: approximately 34.47°N, -120.47°W (Point Conception area)
@@ -1232,6 +1248,286 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       }
     }
   }, [view, calFloraPlants]);
+
+  // Effect to handle Dendra stations when provided via props
+  useEffect(() => {
+    if (view && dendraStations.length > 0) {
+      const dendraLayer = view.map?.findLayerById('dendra-stations') as GraphicsLayer;
+      if (dendraLayer) {
+        // Clear existing graphics
+        dendraLayer.removeAll();
+        
+        // Sort stations so selected station is added last (appears on top)
+        const sortedStations = [...dendraStations].sort((a, b) => {
+          const aSelected = selectedDendraStationId === a.id;
+          const bSelected = selectedDendraStationId === b.id;
+          if (aSelected && !bSelected) return 1;  // a comes after b
+          if (!aSelected && bSelected) return -1; // b comes after a
+          return 0; // maintain original order
+        });
+        
+        // Add Dendra stations to map
+        sortedStations.forEach(station => {
+          const point = new Point({
+            longitude: station.geometry.x,
+            latitude: station.geometry.y
+          });
+
+          // Check if this station is selected
+          const isSelected = selectedDendraStationId === station.id;
+          
+          // ===== COLOR CONFIGURATION =====
+          // Change these colors to customize the icon appearance
+          const ICON_COLOR_UNSELECTED = '#000000'; // Black
+          const ICON_COLOR_SELECTED = '#fbbf24';   // Bright Yellow for selected
+          const BORDER_COLOR_UNSELECTED = '#ffffff';  // White border for contrast
+          const BORDER_COLOR_SELECTED = '#fde68a';    // Light yellow border for selected
+          const BORDER_WIDTH = '1.5';              // Border thickness (in px) - thin border
+          const ADD_BORDER = true;                 // Set to false to remove borders
+          
+          // Current icon color and border based on selection state
+          const iconColor = isSelected ? ICON_COLOR_SELECTED : ICON_COLOR_UNSELECTED;
+          const borderColor = isSelected ? BORDER_COLOR_SELECTED : BORDER_COLOR_UNSELECTED;
+          
+          // Icon Style Options - Choose one by changing the value:
+          // 'option1' = Classic Radio Tower
+          // 'option2' = Sensor Node / IoT Device  
+          // 'option3' = Modern Broadcast Tower (default, cleaner look)
+          // 'option4' = Weather Station Style
+          const iconStyle: string = 'option1';
+          
+          let iconSvg = '';
+          
+          if (iconStyle === 'option1') {
+            // OPTION 1: Classic Radio Tower
+            iconSvg = `
+              <g transform="translate(12, 12)">
+                ${ADD_BORDER ? `
+                  <!-- Border layer -->
+                  <path d="M0,-10 L0,-6 M-4,-6 L4,-6 M-3,-6 L-3,-2 M3,-6 L3,-2 M-5,-2 L5,-2 M-2,-2 L-2,2 M2,-2 L2,2 M-6,2 L6,2 M-1,2 L-1,6 M1,2 L1,6 M-8,6 L8,6 M0,6 L0,10" 
+                        stroke="${borderColor}" 
+                        stroke-width="${parseFloat(BORDER_WIDTH) + 1.5}" 
+                        fill="none" 
+                        stroke-linecap="round"/>
+                  <circle cx="0" cy="-10" r="${1.5 + parseFloat(BORDER_WIDTH)/2}" fill="${borderColor}"/>
+                  <circle cx="0" cy="0" r="${2 + parseFloat(BORDER_WIDTH)/2}" fill="${borderColor}" opacity="0.8"/>
+                ` : ''}
+                <!-- Main icon -->
+                <path d="M0,-10 L0,-6 M-4,-6 L4,-6 M-3,-6 L-3,-2 M3,-6 L3,-2 M-5,-2 L5,-2 M-2,-2 L-2,2 M2,-2 L2,2 M-6,2 L6,2 M-1,2 L-1,6 M1,2 L1,6 M-8,6 L8,6 M0,6 L0,10" 
+                      stroke="${iconColor}" 
+                      stroke-width="1.5" 
+                      fill="none" 
+                      stroke-linecap="round"/>
+                <circle cx="0" cy="-10" r="1.5" fill="${iconColor}"/>
+                <circle cx="0" cy="0" r="2" fill="${iconColor}" opacity="0.5"/>
+              </g>
+            `;
+          } else if (iconStyle === 'option2') {
+            // OPTION 2: Sensor Node / IoT Device
+            iconSvg = `
+              <g transform="translate(12, 12)">
+                ${ADD_BORDER ? `
+                  <!-- Border layer -->
+                  <rect x="${-6 - parseFloat(BORDER_WIDTH)/2}" y="${-6 - parseFloat(BORDER_WIDTH)/2}" 
+                        width="${12 + parseFloat(BORDER_WIDTH)}" height="${12 + parseFloat(BORDER_WIDTH)}" rx="2" 
+                        fill="${borderColor}" opacity="0.9"/>
+                  <circle cx="0" cy="-10" r="${1 + parseFloat(BORDER_WIDTH)/2}" fill="${borderColor}"/>
+                  <path d="M0,-9 L0,-6.5" stroke="${borderColor}" stroke-width="${1 + parseFloat(BORDER_WIDTH)}"/>
+                ` : ''}
+                <!-- Main icon -->
+                <rect x="-6" y="-6" width="12" height="12" rx="2" 
+                      fill="${iconColor}" 
+                      opacity="0.9"/>
+                <rect x="-4" y="-4" width="8" height="8" rx="1" 
+                      fill="white" 
+                      opacity="0.3"/>
+                <circle cx="0" cy="0" r="2" fill="white"/>
+                <line x1="-6" y1="-6" x2="6" y2="6" stroke="white" stroke-width="0.5" opacity="0.3"/>
+                <line x1="6" y1="-6" x2="-6" y2="6" stroke="white" stroke-width="0.5" opacity="0.3"/>
+                <circle cx="0" cy="-10" r="1" fill="${iconColor}"/>
+                <path d="M0,-9 L0,-6.5" stroke="${iconColor}" stroke-width="1"/>
+              </g>
+            `;
+          } else if (iconStyle === 'option3') {
+            // OPTION 3: Modern Broadcast Tower (cleaner, more iconic)
+            iconSvg = `
+              <g transform="translate(12, 12)">
+                ${ADD_BORDER ? `
+                  <!-- Border layer -->
+                  <!-- Base border -->
+                  <path d="M-7,9 L-2,9 L-1,2 L1,2 L2,9 L7,9" 
+                        stroke="${borderColor}" 
+                        stroke-width="${BORDER_WIDTH}" 
+                        fill="${borderColor}" 
+                        opacity="0.9"/>
+                  <!-- Tower body border -->
+                  <path d="M-1,2 L-2,-4 L-1,-8 L0,-10 L1,-8 L2,-4 L1,2 Z" 
+                        stroke="${borderColor}" 
+                        stroke-width="${BORDER_WIDTH}" 
+                        fill="none"/>
+                  <!-- Antenna border -->
+                  <line x1="0" y1="-10" x2="0" y2="-12" 
+                        stroke="${borderColor}" 
+                        stroke-width="${parseFloat(BORDER_WIDTH) + 1.5}"/>
+                  <circle cx="0" cy="-12" r="${1 + parseFloat(BORDER_WIDTH)/2}" fill="${borderColor}"/>
+                ` : ''}
+                <!-- Main icon -->
+                <!-- Base -->
+                <path d="M-7,9 L-2,9 L-1,2 L1,2 L2,9 L7,9" 
+                      fill="${iconColor}" 
+                      opacity="0.8"/>
+                <!-- Tower body -->
+                <path d="M-1,2 L-2,-4 L-1,-8 L0,-10 L1,-8 L2,-4 L1,2 Z" 
+                      fill="${iconColor}"/>
+                <!-- Antenna -->
+                <line x1="0" y1="-10" x2="0" y2="-12" 
+                      stroke="${iconColor}" 
+                      stroke-width="1.5"/>
+                <circle cx="0" cy="-12" r="1" fill="${iconColor}"/>
+                <!-- Signal waves -->
+                <path d="M-4,-6 Q-6,-8 -6,-10" fill="none" 
+                      stroke="${iconColor}" 
+                      stroke-width="1" 
+                      opacity="0.5"/>
+                <path d="M4,-6 Q6,-8 6,-10" fill="none" 
+                      stroke="${iconColor}" 
+                      stroke-width="1" 
+                      opacity="0.5"/>
+              </g>
+            `;
+          } else if (iconStyle === 'option4') {
+            // OPTION 4: Weather Station Style
+            iconSvg = `
+              <g transform="translate(12, 12)">
+                ${ADD_BORDER ? `
+                  <!-- Border layer -->
+                  <!-- Pole border -->
+                  <rect x="${-0.5 - parseFloat(BORDER_WIDTH)/2}" y="-10" 
+                        width="${1 + parseFloat(BORDER_WIDTH)}" height="20" 
+                        fill="${borderColor}"/>
+                  <!-- Top sensor border -->
+                  <circle cx="0" cy="-10" r="${2 + parseFloat(BORDER_WIDTH)/2}" 
+                          fill="${borderColor}"/>
+                  <!-- Middle sensors border -->
+                  <line x1="-5" y1="-5" x2="5" y2="-5" 
+                        stroke="${borderColor}" 
+                        stroke-width="${2 + parseFloat(BORDER_WIDTH)}" 
+                        stroke-linecap="round"/>
+                  <circle cx="-5" cy="-5" r="${1.5 + parseFloat(BORDER_WIDTH)/2}" 
+                          fill="${borderColor}"/>
+                  <circle cx="5" cy="-5" r="${1.5 + parseFloat(BORDER_WIDTH)/2}" 
+                          fill="${borderColor}"/>
+                  <!-- Lower sensor border -->
+                  <rect x="${-3 - parseFloat(BORDER_WIDTH)/2}" y="${0 - parseFloat(BORDER_WIDTH)/2}" 
+                        width="${6 + parseFloat(BORDER_WIDTH)}" height="${4 + parseFloat(BORDER_WIDTH)}" rx="1" 
+                        fill="${borderColor}" 
+                        opacity="0.9"/>
+                  <!-- Base border -->
+                  <path d="M-4,9 L-2,5 L2,5 L4,9 Z" 
+                        stroke="${borderColor}" 
+                        stroke-width="${BORDER_WIDTH}" 
+                        fill="${borderColor}" 
+                        opacity="0.8"/>
+                ` : ''}
+                <!-- Main icon -->
+                <!-- Pole -->
+                <rect x="-0.5" y="-10" width="1" height="20" 
+                      fill="${iconColor}"/>
+                <!-- Top sensor -->
+                <circle cx="0" cy="-10" r="2" 
+                        fill="${iconColor}"/>
+                <!-- Middle sensors -->
+                <line x1="-5" y1="-5" x2="5" y2="-5" 
+                      stroke="${iconColor}" 
+                      stroke-width="2" 
+                      stroke-linecap="round"/>
+                <circle cx="-5" cy="-5" r="1.5" 
+                        fill="${iconColor}"/>
+                <circle cx="5" cy="-5" r="1.5" 
+                        fill="${iconColor}"/>
+                <!-- Lower sensor -->
+                <rect x="-3" y="0" width="6" height="4" rx="1" 
+                      fill="${iconColor}" 
+                      opacity="0.8"/>
+                <!-- Base -->
+                <path d="M-4,9 L-2,5 L2,5 L4,9 Z" 
+                      fill="${iconColor}" 
+                      opacity="0.6"/>
+              </g>
+            `;
+          }
+          
+          // Create symbol for Dendra station - simple color change for selected state
+          const symbol = new PictureMarkerSymbol({
+            url: `data:image/svg+xml;base64,${btoa(`
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32">
+                ${iconSvg}
+              </svg>
+            `)}`,
+            width: isSelected ? '42px' : '36px',
+            height: isSelected ? '42px' : '36px'
+          });
+
+          // Create popup template
+          const popupTemplate = new PopupTemplate({
+            title: station.name,
+            content: `
+              <div class="dendra-station-popup">
+                ${station.description && station.description.trim() !== '' ? `<p><strong>Description:</strong> ${station.description}</p>` : ''}
+                <p><strong>Type:</strong> ${station.station_type}</p>
+                <p><strong>Location:</strong> ${station.latitude.toFixed(4)}, ${station.longitude.toFixed(4)}</p>
+                ${station.elevation ? `<p><strong>Elevation:</strong> ${station.elevation}m</p>` : ''}
+                <p><strong>Timezone:</strong> ${station.time_zone}</p>
+                <p><strong>Status:</strong> ${station.is_active ? 'Active' : 'Inactive'}</p>
+                <p style="margin-top: 8px; color: #6b7280; font-size: 11px;">Click station icon to select</p>
+              </div>
+            `
+          });
+
+          // Create graphic
+          const graphic = new Graphic({
+            geometry: point,
+            symbol: symbol,
+            popupTemplate: popupTemplate,
+            attributes: {
+              stationId: station.id,
+              stationName: station.name,
+              stationType: station.station_type
+            }
+          });
+
+          dendraLayer.add(graphic);
+        });
+        
+        console.log(`✅ Dendra: Updated map with ${sortedStations.length} station records (selected on top)`);
+      }
+    }
+  }, [view, dendraStations, selectedDendraStationId]);
+
+  // Add click handler for Dendra stations
+  useEffect(() => {
+    if (view && onDendraStationClick) {
+      const clickHandler = view.on('click', (event) => {
+        view.hitTest(event).then((response) => {
+          const dendraGraphic = response.results.find(result => 
+            'graphic' in result && result.graphic && result.graphic.layer?.id === 'dendra-stations'
+          );
+          
+          if (dendraGraphic && 'graphic' in dendraGraphic) {
+            const stationId = dendraGraphic.graphic.attributes.stationId;
+            const station = dendraStations.find(s => s.id === stationId);
+            if (station) {
+              onDendraStationClick(station);
+            }
+          }
+        });
+      });
+
+      return () => {
+        clickHandler.remove();
+      };
+    }
+  }, [view, onDendraStationClick, dendraStations]);
 
   // Effect to update TNC observations on map when data changes
   useEffect(() => {
