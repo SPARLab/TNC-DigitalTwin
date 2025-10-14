@@ -21,7 +21,8 @@ export const DATA_SOURCES = [
   'iNaturalist (TNC Layers)',
   'eBird',
   'CalFlora',
-  'TNC ArcGIS Hub'
+  'TNC ArcGIS Hub',
+  'LiDAR'
 ] as const;
 
 // Map categories to their available data sources
@@ -34,7 +35,12 @@ export const CATEGORY_DATA_SOURCES: Record<string, readonly string[]> = {
   
   // TNC main categories - all map to TNC ArcGIS Hub
   ...TNC_MAIN_CATEGORIES.reduce((acc, category) => {
-    acc[category] = ['TNC ArcGIS Hub'];
+    // Land use category gets LiDAR in addition to TNC ArcGIS Hub
+    if (category === 'Land use and land (geography?)') {
+      acc[category] = ['TNC ArcGIS Hub', 'LiDAR'];
+    } else {
+      acc[category] = ['TNC ArcGIS Hub'];
+    }
     return acc;
   }, {} as Record<string, string[]>)
 } as const;

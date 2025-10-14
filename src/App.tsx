@@ -4,11 +4,13 @@ import FilterSubheader from './components/FilterSubheader';
 import DataView from './components/DataView';
 import FilterSidebar from './components/FilterSidebar';
 import MapView from './components/MapView';
+import Scene3DView from './components/Scene3DView';
 import Footer from './components/Footer';
 import CalFloraPlantModal from './components/CalFloraPlantModal';
 import HubPagePreview from './components/HubPagePreview';
 import TNCArcGISDetailsSidebar from './components/TNCArcGISDetailsSidebar';
 import { FilterState } from './types';
+import { LiDARViewMode } from './components/dataviews/LiDARView';
 import { iNaturalistObservation } from './services/iNaturalistService';
 import { TNCArcGISObservation } from './services/tncINaturalistService';
 import { EBirdObservation, eBirdService } from './services/eBirdService';
@@ -120,6 +122,9 @@ function App() {
   const [layerOpacities, setLayerOpacities] = useState<Record<string, number>>({});
   const [selectedModalItem, setSelectedModalItem] = useState<TNCArcGISItem | null>(null);
   const [selectedDetailsItem, setSelectedDetailsItem] = useState<TNCArcGISItem | null>(null);
+
+  // LiDAR view mode state
+  const [lidarViewMode, setLidarViewMode] = useState<LiDARViewMode>('virtual-tour');
 
   // CalFlora modal handlers
   const openCalFloraModal = (plantId: string) => {
@@ -285,6 +290,11 @@ function App() {
     if (selectedDetailsItem) {
       handleLayerSelect(selectedDetailsItem.id, layerId);
     }
+  };
+
+  const handleLiDARModeChange = (mode: LiDARViewMode) => {
+    console.log('LiDAR view mode changed to:', mode);
+    setLidarViewMode(mode);
   };
 
   // Set up global function for popup buttons to access
@@ -1036,42 +1046,72 @@ function App() {
           selectedModalItem={selectedModalItem}
           onModalOpen={handleModalOpen}
           onModalClose={handleModalClose}
+          onLiDARModeChange={handleLiDARModeChange}
           lastSearchedDaysBack={lastSearchedDaysBack}
           startDate={filters.startDate}
           endDate={filters.endDate}
           hasSearched={hasSearched}
         />
         <div id="map-container" className="flex-1 relative flex">
-          <MapView 
-            ref={mapViewRef}
-            onObservationsUpdate={setObservations}
-            onLoadingChange={setObservationsLoading}
-            tncObservations={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations : []}
-            onTNCObservationsUpdate={setTncObservations}
-            onTNCLoadingChange={setTncObservationsLoading}
-            selectedTNCObservation={selectedTNCObservation}
-            onTNCObservationSelect={setSelectedTNCObservation}
-            eBirdObservations={lastSearchedFilters.source === 'eBird' ? eBirdObservations : []}
-            onEBirdObservationsUpdate={setEBirdObservations}
-            onEBirdLoadingChange={setEBirdObservationsLoading}
-            calFloraPlants={filters.source === 'CalFlora' ? calFloraPlants : []}
-            onCalFloraUpdate={setCalFloraPlants}
-            onCalFloraLoadingChange={setCalFloraLoading}
-            tncArcGISItems={tncArcGISItems}
-            activeLayerIds={activeLayerIds}
-            loadingLayerIds={loadingLayerIds}
-            layerOpacities={layerOpacities}
-            onLayerLoadComplete={handleLayerLoadComplete}
-            onLayerLoadError={handleLayerLoadError}
-            onLegendDataFetched={handleLegendDataFetched}
-            isDrawMode={isDrawMode}
-            onDrawModeChange={setIsDrawMode}
-            onPolygonDrawn={handlePolygonDrawn}
-            onPolygonCleared={handlePolygonCleared}
-          />
-          {/* Hub Page Preview Overlay */}
-          {selectedModalItem && (
-            <HubPagePreview item={selectedModalItem} onClose={handleModalClose} />
+          {/* Conditionally render based on data source and LiDAR mode */}
+          {lastSearchedFilters.source === 'LiDAR' && hasSearched ? (
+            <>
+              {/* LiDAR Virtual Tour Mode */}
+              {lidarViewMode === 'virtual-tour' && (
+                <div id="lidar-3d-viewer-container" className="flex-1 relative">
+                  <iframe
+                    id="lidar-3d-viewer-iframe"
+                    src="https://geoxc-apps.bd.esri.com/DangermondPreserve/VirtualTour/index.html"
+                    title="Jack & Laura Dangermond Preserve - 3D LiDAR Virtual Tour"
+                    className="w-full h-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              )}
+              
+              {/* LiDAR Interactive 3D Mode */}
+              {lidarViewMode === 'interactive-3d' && (
+                <Scene3DView 
+                  onViewReady={(view) => console.log('Scene3DView ready', view)}
+                />
+              )}
+            </>
+          ) : (
+            <>
+              {/* Regular 2D MapView for all other data sources */}
+              <MapView 
+                ref={mapViewRef}
+                onObservationsUpdate={setObservations}
+                onLoadingChange={setObservationsLoading}
+                tncObservations={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations : []}
+                onTNCObservationsUpdate={setTncObservations}
+                onTNCLoadingChange={setTncObservationsLoading}
+                selectedTNCObservation={selectedTNCObservation}
+                onTNCObservationSelect={setSelectedTNCObservation}
+                eBirdObservations={lastSearchedFilters.source === 'eBird' ? eBirdObservations : []}
+                onEBirdObservationsUpdate={setEBirdObservations}
+                onEBirdLoadingChange={setEBirdObservationsLoading}
+                calFloraPlants={filters.source === 'CalFlora' ? calFloraPlants : []}
+                onCalFloraUpdate={setCalFloraPlants}
+                onCalFloraLoadingChange={setCalFloraLoading}
+                tncArcGISItems={tncArcGISItems}
+                activeLayerIds={activeLayerIds}
+                loadingLayerIds={loadingLayerIds}
+                layerOpacities={layerOpacities}
+                onLayerLoadComplete={handleLayerLoadComplete}
+                onLayerLoadError={handleLayerLoadError}
+                onLegendDataFetched={handleLegendDataFetched}
+                isDrawMode={isDrawMode}
+                onDrawModeChange={setIsDrawMode}
+                onPolygonDrawn={handlePolygonDrawn}
+                onPolygonCleared={handlePolygonCleared}
+              />
+              {/* Hub Page Preview Overlay */}
+              {selectedModalItem && (
+                <HubPagePreview item={selectedModalItem} onClose={handleModalClose} />
+              )}
+            </>
           )}
         </div>
         {/* Conditionally show TNC ArcGIS Details Sidebar or Filter Sidebar */}

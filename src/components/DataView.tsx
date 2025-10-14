@@ -12,6 +12,7 @@ import WildlifeTNCINaturalistView from './dataviews/WildlifeTNCINaturalistView';
 import WildlifeEBirdView from './dataviews/WildlifeEBirdView';
 import VegetationCalFloraView from './dataviews/VegetationCalFloraView';
 import TNCArcGISView from './dataviews/TNCArcGISView';
+import LiDARView, { LiDARViewMode } from './dataviews/LiDARView';
 
 interface DataViewProps {
   filters: FilterState;
@@ -53,6 +54,8 @@ interface DataViewProps {
   selectedModalItem?: TNCArcGISItem | null;
   onModalOpen?: (item: TNCArcGISItem) => void;
   onModalClose?: () => void;
+  // LiDAR mode management
+  onLiDARModeChange?: (mode: LiDARViewMode) => void;
   // Common props
   lastSearchedDaysBack?: number;
   startDate?: string;
@@ -93,6 +96,7 @@ const DataView: React.FC<DataViewProps> = ({
   selectedModalItem,
   onModalOpen,
   onModalClose,
+  onLiDARModeChange,
   lastSearchedDaysBack,
   startDate,
   endDate,
@@ -186,6 +190,15 @@ const DataView: React.FC<DataViewProps> = ({
             onModalOpen={onModalOpen}
             onModalClose={onModalClose}
             hasSearched={hasSearched}
+          />
+        );
+
+      // LiDAR case
+      case 'Land use and land (geography?)-LiDAR':
+        return (
+          <LiDARView
+            hasSearched={hasSearched}
+            onModeChange={onLiDARModeChange}
           />
         );
         
