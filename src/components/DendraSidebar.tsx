@@ -233,7 +233,7 @@ export default function DendraSidebar({
       </div>
 
       {/* Scrollable List */}
-      <div id="dendra-list-container" className="flex-1 overflow-y-auto">
+      <div id="dendra-list-container" className="flex-1 overflow-y-auto" style={{ paddingRight: '0px', marginRight: '0px' }}>
         {activeTab === 'stations' ? (
           <div id="stations-list" className="space-y-6">
             {/* Stations With Data Section */}
@@ -256,7 +256,7 @@ export default function DendraSidebar({
                   </svg>
                 </button>
                 <div 
-                  className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+                  className={`grid transition-[grid-template-rows] duration-500 ease-in-out ${
                     stationsWithDataExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
                   }`}
                 >
@@ -329,7 +329,7 @@ export default function DendraSidebar({
                   </svg>
                 </button>
                 <div 
-                  className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+                  className={`grid transition-[grid-template-rows] duration-500 ease-in-out ${
                     stationsWithoutDataExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
                   }`}
                 >
@@ -410,7 +410,7 @@ export default function DendraSidebar({
                   </svg>
                 </button>
                 <div 
-                  className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+                  className={`grid transition-[grid-template-rows] duration-500 ease-in-out ${
                     datastreamsWithDataExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
                   }`}
                 >
@@ -480,7 +480,7 @@ export default function DendraSidebar({
                   </svg>
                 </button>
                 <div 
-                  className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+                  className={`grid transition-[grid-template-rows] duration-500 ease-in-out ${
                     datastreamsWithoutDataExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
                   }`}
                 >

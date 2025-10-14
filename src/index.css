@@ -13,26 +13,39 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom scrollbar - hide track, show only thumb */
-.scrollbar-thin-no-track {
+/* Hover-only scrollbar - appears on hover/scroll, fades when idle */
+#dendra-list-container {
   scrollbar-width: thin;
-  scrollbar-color: rgba(156, 163, 175, 0.5) transparent; /* thumb color / track color (transparent) */
+  scrollbar-color: transparent transparent; /* Hidden by default */
+  transition: scrollbar-color 0.3s ease;
+}
+
+#dendra-list-container:hover,
+#dendra-list-container:focus-within {
+  scrollbar-color: rgba(156, 163, 175, 0.6) transparent; /* Show on hover */
 }
 
 /* Webkit browsers (Chrome, Safari, Edge) */
-.scrollbar-thin-no-track::-webkit-scrollbar {
-  width: 6px;
+#dendra-list-container::-webkit-scrollbar {
+  width: 10px;
 }
 
-.scrollbar-thin-no-track::-webkit-scrollbar-track {
-  background: transparent; /* Hide the track */
+#dendra-list-container::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.scrollbar-thin-no-track::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.5); /* Gray thumb */
-  border-radius: 3px;
+#dendra-list-container::-webkit-scrollbar-thumb {
+  background-color: transparent; /* Hidden by default */
+  background-clip: padding-box;
+  border: 3px solid transparent;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
 }
 
-.scrollbar-thin-no-track::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(107, 114, 128, 0.7); /* Darker gray on hover */
+#dendra-list-container:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.6); /* Show on hover */
+}
+
+#dendra-list-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(107, 114, 128, 0.8); /* Darker when directly hovering thumb */
 }
