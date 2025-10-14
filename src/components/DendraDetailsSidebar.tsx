@@ -10,6 +10,8 @@ interface DendraDetailsSidebarProps {
   isLoadingDatapoints: boolean;
   isLoadingHistorical?: boolean;
   onDatastreamChange: (datastreamId: number) => void;
+  onShowStationDashboard?: () => void;
+  onShowStationDetails?: () => void;
   loadProgress?: {
     current: number;
     total: number;
@@ -24,6 +26,8 @@ export default function DendraDetailsSidebar({
   isLoadingDatapoints,
   isLoadingHistorical = false,
   onDatastreamChange,
+  onShowStationDashboard,
+  onShowStationDetails,
   loadProgress,
 }: DendraDetailsSidebarProps) {
   const chartRef = useRef<HTMLDivElement>(null);
@@ -309,6 +313,41 @@ export default function DendraDetailsSidebar({
               <span className="ml-2 font-medium text-gray-900">{station.longitude.toFixed(4)}</span>
             </div>
           </div>
+
+          {/* Dendra.science View Options */}
+          {(onShowStationDashboard || onShowStationDetails) && (
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {/* Station Dashboard Button */}
+              {onShowStationDashboard && (
+                <button
+                  id="dendra-station-dashboard-button"
+                  onClick={onShowStationDashboard}
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors"
+                  title="View station status dashboard with live data"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  Dendra Dashboard
+                </button>
+              )}
+              
+              {/* Station Details Button */}
+              {onShowStationDetails && (
+                <button
+                  id="dendra-station-details-button"
+                  onClick={onShowStationDetails}
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-green-600 bg-green-50 hover:bg-green-100 border border-green-200 rounded-md transition-colors"
+                  title="View complete station details and metadata"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Dendra Details
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Datastream Dropdown */}
           <div>

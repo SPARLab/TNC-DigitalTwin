@@ -140,6 +140,7 @@ function App() {
   const [isDendraLoadingHistorical, setIsDendraLoadingHistorical] = useState(false);
   const [showDendraWebsite, setShowDendraWebsite] = useState(false);
   const [isDendraWebsiteLoading, setIsDendraWebsiteLoading] = useState(false);
+  const [dendraWebsiteUrl, setDendraWebsiteUrl] = useState<string>('https://dendra.science/orgs/tnc');
   
   // Ref to track the currently loading datastream (for race condition prevention)
   const currentLoadingDatastreamRef = useRef<number | null>(null);
@@ -312,6 +313,9 @@ function App() {
 
   // Dendra Stations handlers
   const handleDendraStationSelect = async (station: DendraStation) => {
+    // Close the Dendra iframe if it's showing a different station's dashboard
+    setShowDendraWebsite(false);
+    
     // Clear previous state first
     setSelectedDendraDatastream(null);
     setDendraDatapoints([]);
@@ -340,6 +344,9 @@ function App() {
   };
 
   const handleDendraDatastreamSelect = async (datastream: DendraDatastreamWithStation) => {
+    // Close the Dendra iframe when selecting a new datastream
+    setShowDendraWebsite(false);
+    
     // Clear previous data
     setDendraDatapoints([]);
     setIsDendraLoadingDatapoints(false);
@@ -366,6 +373,9 @@ function App() {
   };
 
   const handleDendraDatastreamChange = async (datastreamId: number) => {
+    // Close the Dendra iframe when changing datastream via dropdown
+    setShowDendraWebsite(false);
+    
     const datastream = availableDendraDatastreams.find(ds => ds.id === datastreamId);
     if (datastream) {
       setSelectedDendraDatastream(datastream);
@@ -1231,6 +1241,7 @@ function App() {
               onDendraStationSelect={handleDendraStationSelect}
               onDendraDatastreamSelect={handleDendraDatastreamSelect}
               onShowDendraWebsite={() => {
+                setDendraWebsiteUrl('https://dendra.science/orgs/tnc');
                 setShowDendraWebsite(true);
                 setIsDendraWebsiteLoading(true);
               }}
@@ -1282,12 +1293,16 @@ function App() {
                       </svg>
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">Dendra.science</h3>
-                        <p className="text-xs text-gray-500">The Nature Conservancy Stations</p>
+                        <p className="text-xs text-gray-500">
+                          {selectedDendraStation 
+                            ? `${selectedDendraStation.name} ${dendraWebsiteUrl.includes('/status/') ? '- Dashboard' : '- Details'}`
+                            : 'The Nature Conservancy Stations'}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <a
-                        href="https://dendra.science/orgs/tnc"
+                        href={dendraWebsiteUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
@@ -1298,6 +1313,7 @@ function App() {
                         Open in New Tab
                       </a>
                       <button
+                        id="dendra-iframe-close-button"
                         onClick={() => {
                           setShowDendraWebsite(false);
                           setIsDendraWebsiteLoading(false);
@@ -1325,7 +1341,7 @@ function App() {
                     )}
                     {/* Iframe */}
                     <iframe
-                      src="https://dendra.science/orgs/tnc"
+                      src={dendraWebsiteUrl}
                       className="w-full h-full border-0"
                       title="Dendra.science - The Nature Conservancy"
                       allow="fullscreen"
@@ -1356,6 +1372,22 @@ function App() {
             isLoadingDatapoints={isDendraLoadingDatapoints}
             isLoadingHistorical={isDendraLoadingHistorical}
             onDatastreamChange={handleDendraDatastreamChange}
+            onShowStationDashboard={() => {
+              if (selectedDendraStation) {
+                // Use the slug field for the status/dashboard page
+                setDendraWebsiteUrl(`https://dendra.science/orgs/tnc/status/${selectedDendraStation.slug}`);
+                setShowDendraWebsite(true);
+                setIsDendraWebsiteLoading(true);
+              }
+            }}
+            onShowStationDetails={() => {
+              if (selectedDendraStation) {
+                // Use the dendra_st_id for the station details page
+                setDendraWebsiteUrl(`https://dendra.science/orgs/tnc/stations/${selectedDendraStation.dendra_st_id}`);
+                setShowDendraWebsite(true);
+                setIsDendraWebsiteLoading(true);
+              }
+            }}
           />
         ) : (
           <FilterSidebar 
