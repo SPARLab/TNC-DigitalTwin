@@ -1,5 +1,22 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ChevronDown, Database, MapPin, Calendar, Search } from 'lucide-react';
+import { 
+  ChevronDown, 
+  Database, 
+  MapPin, 
+  Calendar, 
+  Search,
+  TreeDeciduous,
+  Bug,
+  Radio,
+  Globe,
+  CloudRain,
+  Droplets,
+  Mountain,
+  Waves,
+  Flame,
+  Truck,
+  ShieldAlert
+} from 'lucide-react';
 import { FilterState } from '../types';
 import { formatDateRange, formatDateRangeCompact, getTimeRangeOptions, formatDateToUS } from '../utils/dateUtils';
 import { DATA_CATEGORIES, CATEGORY_DATA_SOURCES, SPATIAL_FILTERS } from '../utils/constants';
@@ -25,6 +42,36 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
   // Get available sources for the current category
   const sourceOptions = CATEGORY_DATA_SOURCES[filters.category as keyof typeof CATEGORY_DATA_SOURCES] || [];
   const timeRangeOptions = getTimeRangeOptions();
+
+  // Map categories to icons with colors
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'Vegetation / habitat':
+        return <TreeDeciduous className="w-4 h-4 flex-shrink-0 text-green-600" />;
+      case 'Ecological / Biological (Species?)':
+        return <Bug className="w-4 h-4 flex-shrink-0 text-blue-500" />;
+      case 'Real-time & Remote Sensing':
+        return <Radio className="w-4 h-4 flex-shrink-0 text-purple-600" />;
+      case 'Land use and land (geography?)':
+        return <Globe className="w-4 h-4 flex-shrink-0 text-amber-600" />;
+      case 'Climate / weather':
+        return <CloudRain className="w-4 h-4 flex-shrink-0 text-sky-500" />;
+      case 'Hydrological':
+        return <Droplets className="w-4 h-4 flex-shrink-0 text-blue-600" />;
+      case 'Topographic':
+        return <Mountain className="w-4 h-4 flex-shrink-0 text-orange-600" />;
+      case 'Marine':
+        return <Waves className="w-4 h-4 flex-shrink-0 text-teal-600" />;
+      case 'Fire':
+        return <Flame className="w-4 h-4 flex-shrink-0 text-red-600" />;
+      case 'Infrastructure':
+        return <Truck className="w-4 h-4 flex-shrink-0 text-slate-600" />;
+      case 'Hazards & Resilience':
+        return <ShieldAlert className="w-4 h-4 flex-shrink-0 text-yellow-600" />;
+      default:
+        return <Database className="w-4 h-4 flex-shrink-0 text-gray-400" />;
+    }
+  };
 
   // DERIVED STATE: The component is in "custom date range" mode if daysBack is not defined.
   // This is the single source of truth, derived directly from props.
@@ -173,7 +220,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
               onClick={() => handleDropdownToggle('category')}
               className="flex items-center space-x-2 px-3 min-w-[19rem] py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50"
             >
-              <Database id="category-filter-icon" className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              {filters.category ? getCategoryIcon(filters.category) : <Database className="w-4 h-4 flex-shrink-0 text-gray-400" />}
               <span id="category-filter-text" className={`text-sm truncate ${filters.category ? 'text-black' : 'text-gray-400'}`}>
                 {filters.category || 'Select category...'}
               </span>
@@ -186,9 +233,10 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
                     key={option}
                     id={`category-option-${option.toLowerCase().replace(/\s+/g, '-')}`}
                     onClick={() => handleCategoryChange(option)}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 first:rounded-t-md last:rounded-b-md"
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 first:rounded-t-md last:rounded-b-md flex items-center gap-2"
                   >
-                    {option}
+                    {getCategoryIcon(option)}
+                    <span>{option}</span>
                   </button>
                 ))}
               </div>
