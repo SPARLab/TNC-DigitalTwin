@@ -331,12 +331,16 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
               <button 
                 id="time-range-filter-button"
                 onClick={() => handleDropdownToggle('timeRange')}
-                className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 flex-1"
-                title={filters.daysBack ? formatDateRange(filters.daysBack) : 'Select time range'}
+                disabled={filters.source === 'Dendra Stations'}
+                className={`flex items-center space-x-2 px-3 py-2 border rounded-md flex-1 ${
+                  filters.source === 'Dendra Stations'
+                    ? 'bg-gray-100 cursor-not-allowed opacity-60'
+                    : 'border-gray-300 bg-white hover:bg-gray-50'
+                }`}
               >
                 <Calendar id="time-range-filter-icon" className="w-4 h-4 text-gray-400" />
-                <span id="time-range-filter-text" className={`text-sm ${filters.timeRange ? 'text-black' : 'text-gray-400'}`}>
-                  {filters.timeRange || 'Select time range...'}
+                <span id="time-range-filter-text" className={`text-sm ${filters.source === 'Dendra Stations' || filters.timeRange ? 'text-black' : 'text-gray-400'}`}>
+                  {filters.source === 'Dendra Stations' ? 'All Time' : (filters.timeRange || 'Select time range...')}
                 </span>
                 <ChevronDown id="time-range-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform ${openDropdown === 'timeRange' ? 'rotate-180' : ''}`} />
               </button>
@@ -345,15 +349,18 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
               <button
                 id="observations-search-button"
                 onClick={onSearch}
-                disabled={isSearching}
+                disabled={isSearching || (filters.source !== 'Dendra Stations' && !filters.timeRange)}
                 className={`px-3 py-2 border border-gray-300 rounded-md transition-colors ${
-                  isSearching 
+                  isSearching || (filters.source !== 'Dendra Stations' && !filters.timeRange)
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
                     : 'bg-blue-600 text-white hover:bg-blue-700'
                 }`}
-                title={isSearching 
-                  ? "Searching... This may take time due to API rate limits" 
-                  : "Search for data from selected source"
+                title={
+                  isSearching 
+                    ? "Searching... This may take time due to API rate limits" 
+                    : filters.source !== 'Dendra Stations' && !filters.timeRange
+                      ? "Please select a time range before searching"
+                      : "Search for data from selected source"
                 }
               >
                 {isSearching ? (
@@ -364,7 +371,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
               </button>
             </div>
             
-            {openDropdown === 'timeRange' && (
+            {openDropdown === 'timeRange' && filters.source !== 'Dendra Stations' && (
               <div id="time-range-dropdown" className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 w-80">
                 {timeRangeOptions.map((option) => (
                   <button
