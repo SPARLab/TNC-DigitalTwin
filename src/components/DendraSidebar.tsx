@@ -270,7 +270,7 @@ export default function DendraSidebar({
                       className={`w-full text-left p-4 rounded-lg border transition-all ${
                         selectedStationId === station.id
                           ? 'border-blue-500 bg-blue-50 shadow-md'
-                          : 'border-gray-200 hover:border-blue-300 hover:shadow-sm bg-white'
+                          : 'border-green-200 hover:border-green-400 hover:shadow-sm bg-white'
                       }`}
                     >
                       <div className="flex items-start justify-between">
@@ -343,7 +343,7 @@ export default function DendraSidebar({
                       className={`w-full text-left p-4 rounded-lg border transition-all ${
                         selectedStationId === station.id
                           ? 'border-blue-500 bg-blue-50 shadow-md'
-                          : 'border-gray-200 hover:border-blue-300 hover:shadow-sm bg-white'
+                          : 'border-gray-300 hover:border-gray-400 hover:shadow-sm bg-gray-50'
                       }`}
                     >
                       <div className="flex items-start justify-between">

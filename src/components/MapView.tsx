@@ -1287,18 +1287,31 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           // Check if this station is selected
           const isSelected = selectedDendraStationId === station.id;
           
+          // Check if this station has data (stations without data have "NO DATA" in description)
+          const hasData = !(station.description && station.description.includes('NO DATA'));
+          
           // ===== COLOR CONFIGURATION =====
           // Change these colors to customize the icon appearance
-          const ICON_COLOR_UNSELECTED = '#000000'; // Black
-          const ICON_COLOR_SELECTED = '#fbbf24';   // Bright Yellow for selected
-          const BORDER_COLOR_UNSELECTED = '#ffffff';  // White border for contrast
-          const BORDER_COLOR_SELECTED = '#fde68a';    // Light yellow border for selected
-          const BORDER_WIDTH = '1.5';              // Border thickness (in px) - thin border
-          const ADD_BORDER = true;                 // Set to false to remove borders
+          const ICON_COLOR_WITH_DATA = '#15803d';    // Darker green for stations with data
+          const ICON_COLOR_WITHOUT_DATA = '#9ca3af'; // Gray for stations without data
+          const ICON_COLOR_SELECTED = '#fbbf24';     // Yellow for selected stations
+          const BORDER_COLOR_WITH_DATA = '#ffffff';  // White border for contrast
+          const BORDER_COLOR_WITHOUT_DATA = '#ffffff'; // White border for contrast
+          const BORDER_COLOR_SELECTED = '#fde68a';   // Light yellow border for selected
+          const BORDER_WIDTH = '1.5';                // Border thickness (in px) - thin border
+          const ADD_BORDER = true;                   // Set to false to remove borders
           
-          // Current icon color and border based on selection state
-          const iconColor = isSelected ? ICON_COLOR_SELECTED : ICON_COLOR_UNSELECTED;
-          const borderColor = isSelected ? BORDER_COLOR_SELECTED : BORDER_COLOR_UNSELECTED;
+          // Current icon color and border based on selection state and data availability
+          const iconColor = isSelected 
+            ? ICON_COLOR_SELECTED 
+            : hasData 
+              ? ICON_COLOR_WITH_DATA 
+              : ICON_COLOR_WITHOUT_DATA;
+          const borderColor = isSelected 
+            ? BORDER_COLOR_SELECTED 
+            : hasData 
+              ? BORDER_COLOR_WITH_DATA 
+              : BORDER_COLOR_WITHOUT_DATA;
           
           // Icon Style Options - Choose one by changing the value:
           // 'option1' = Classic Radio Tower
