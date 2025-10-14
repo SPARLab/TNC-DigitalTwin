@@ -1421,7 +1421,7 @@ function App() {
             onLayerSelect={handleDetailsLayerSelect}
             onClose={handleDetailsClose}
           />
-        ) : (selectedDendraStation || selectedDendraDatastream) && lastSearchedFilters.source === 'Dendra Stations' ? (
+        ) : lastSearchedFilters.source === 'Dendra Stations' ? (
           <DendraDetailsSidebar
             station={selectedDendraStation}
             selectedDatastream={selectedDendraDatastream}
@@ -1430,6 +1430,8 @@ function App() {
             isLoadingDatapoints={isDendraLoadingDatapoints}
             isLoadingHistorical={isDendraLoadingHistorical}
             onDatastreamChange={handleDendraDatastreamChange}
+            hasSearched={hasSearched}
+            isLoading={dendraLoading}
             onShowStationDashboard={() => {
               if (selectedDendraStation) {
                 // Use the slug field for the status/dashboard page

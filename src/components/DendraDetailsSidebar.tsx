@@ -2,6 +2,7 @@ import { useEffect, useRef, useMemo, useState } from 'react';
 import * as echarts from 'echarts';
 import type { DendraStation, DendraDatastream, DendraDatapoint } from '../types';
 
+// Props for Dendra details sidebar including blank state management
 interface DendraDetailsSidebarProps {
   station: DendraStation | null;
   selectedDatastream: DendraDatastream | null;
@@ -12,6 +13,8 @@ interface DendraDetailsSidebarProps {
   onDatastreamChange: (datastreamId: number) => void;
   onShowStationDashboard?: () => void;
   onShowStationDetails?: () => void;
+  hasSearched?: boolean;
+  isLoading?: boolean;
   loadProgress?: {
     current: number;
     total: number;
@@ -28,6 +31,8 @@ export default function DendraDetailsSidebar({
   onDatastreamChange,
   onShowStationDashboard,
   onShowStationDetails,
+  hasSearched = false,
+  isLoading = false,
   loadProgress,
 }: DendraDetailsSidebarProps) {
   const chartRef = useRef<HTMLDivElement>(null);
@@ -252,11 +257,64 @@ export default function DendraDetailsSidebar({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // No selection state
+  // Different blank states based on search/loading status
   if (!station && !selectedDatastream) {
+    // No search performed yet
+    if (!hasSearched) {
+      return (
+        <div
+          id="dendra-details-no-search"
+          className="h-full flex items-center justify-center bg-gray-50 p-8 w-96"
+        >
+          <div className="text-center max-w-md">
+            <svg
+              className="w-16 h-16 mx-auto mb-4 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              No Search Yet
+            </h3>
+            <p className="text-sm text-gray-600">
+              Search for a data item using the filters above to get started.
+            </p>
+          </div>
+        </div>
+      );
+    }
+    
+    // Loading data
+    if (isLoading) {
+      return (
+        <div
+          id="dendra-details-loading"
+          className="h-full flex items-center justify-center bg-gray-50 p-8 w-96"
+        >
+          <div className="text-center max-w-md">
+            <div className="w-16 h-16 mx-auto mb-4 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Loading Data
+            </h3>
+            <p className="text-sm text-gray-600">
+              Please select a data item once data finishes loading.
+            </p>
+          </div>
+        </div>
+      );
+    }
+    
+    // Search complete, waiting for selection
     return (
       <div
-        id="dendra-details-empty-state"
+        id="dendra-details-select-item"
         className="h-full flex items-center justify-center bg-gray-50 p-8 w-96"
       >
         <div className="text-center max-w-md">
@@ -274,11 +332,10 @@ export default function DendraDetailsSidebar({
             />
           </svg>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Select a Station or Datastream
+            Select a Data Item
           </h3>
           <p className="text-sm text-gray-600">
-            Choose a station from the "By Station" tab or a datastream from the "By Datastream" tab
-            to view time series data.
+            Click on a data item in the left sidebar to view details and options.
           </p>
         </div>
       </div>
