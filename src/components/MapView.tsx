@@ -1079,14 +1079,16 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
 
   // Effect to handle CalFlora data when provided via props
   useEffect(() => {
-    if (view && calFloraPlants.length > 0) {
+    if (view) {
       const calFloraLayer = view.map?.findLayerById('calflora-plants') as GraphicsLayer;
       if (calFloraLayer) {
-        // Clear existing graphics
+        // Clear existing graphics first (important: do this even if calFloraPlants is empty)
         calFloraLayer.removeAll();
         
-        // Add CalFlora plants to map
-        calFloraPlants.forEach(plant => {
+        // Only add markers if we have plants to show
+        if (calFloraPlants.length > 0) {
+          // Add CalFlora plants to map
+          calFloraPlants.forEach(plant => {
           if (plant.geojson?.coordinates) {
             const [longitude, latitude] = plant.geojson.coordinates;
             
@@ -1245,29 +1247,34 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         });
         
         console.log(`✅ CalFlora: Updated map with ${calFloraPlants.length} plant records`);
+        } else {
+          console.log(`🧹 CalFlora: Cleared map (no plants to display)`);
+        }
       }
     }
   }, [view, calFloraPlants]);
 
   // Effect to handle Dendra stations when provided via props
   useEffect(() => {
-    if (view && dendraStations.length > 0) {
+    if (view) {
       const dendraLayer = view.map?.findLayerById('dendra-stations') as GraphicsLayer;
       if (dendraLayer) {
-        // Clear existing graphics
+        // Clear existing graphics first (important: do this even if dendraStations is empty)
         dendraLayer.removeAll();
         
-        // Sort stations so selected station is added last (appears on top)
-        const sortedStations = [...dendraStations].sort((a, b) => {
-          const aSelected = selectedDendraStationId === a.id;
-          const bSelected = selectedDendraStationId === b.id;
-          if (aSelected && !bSelected) return 1;  // a comes after b
-          if (!aSelected && bSelected) return -1; // b comes after a
-          return 0; // maintain original order
-        });
-        
-        // Add Dendra stations to map
-        sortedStations.forEach(station => {
+        // Only add markers if we have stations to show
+        if (dendraStations.length > 0) {
+          // Sort stations so selected station is added last (appears on top)
+          const sortedStations = [...dendraStations].sort((a, b) => {
+            const aSelected = selectedDendraStationId === a.id;
+            const bSelected = selectedDendraStationId === b.id;
+            if (aSelected && !bSelected) return 1;  // a comes after b
+            if (!aSelected && bSelected) return -1; // b comes after a
+            return 0; // maintain original order
+          });
+          
+          // Add Dendra stations to map
+          sortedStations.forEach(station => {
           const point = new Point({
             longitude: station.geometry.x,
             latitude: station.geometry.y
@@ -1500,6 +1507,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         });
         
         console.log(`✅ Dendra: Updated map with ${sortedStations.length} station records (selected on top)`);
+        } else {
+          console.log(`🧹 Dendra: Cleared map (no stations to display)`);
+        }
       }
     }
   }, [view, dendraStations, selectedDendraStationId]);
@@ -1531,14 +1541,16 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
 
   // Effect to update TNC observations on map when data changes
   useEffect(() => {
-    if (view && tncObservations.length > 0) {
+    if (view) {
       const tncObservationsLayer = view.map?.findLayerById('tnc-inaturalist-observations') as GraphicsLayer;
       if (tncObservationsLayer) {
-        // Clear existing graphics
+        // Clear existing graphics first (important: do this even if tncObservations is empty)
         tncObservationsLayer.removeAll();
         
-        // Add TNC observations to map
-        tncObservations.forEach(obs => {
+        // Only add markers if we have observations to show
+        if (tncObservations.length > 0) {
+          // Add TNC observations to map
+          tncObservations.forEach(obs => {
           if (obs.geometry?.coordinates) {
             const [longitude, latitude] = obs.geometry.coordinates;
             
@@ -1594,20 +1606,25 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         
         console.log(`✅ TNC iNaturalist: Updated map with ${tncObservations.length} observation records`);
         console.log(`TNC Layer graphics count: ${tncObservationsLayer.graphics.length}`);
+        } else {
+          console.log(`🧹 TNC iNaturalist: Cleared map (no observations to display)`);
+        }
       }
     }
   }, [view, tncObservations, selectedTNCObservation]);
 
   // Effect to update eBird observations on map when data changes
   useEffect(() => {
-    if (view && eBirdObservations.length > 0) {
+    if (view) {
       const eBirdObservationsLayer = view.map?.findLayerById('ebird-observations') as GraphicsLayer;
       if (eBirdObservationsLayer) {
-        // Clear existing graphics
+        // Clear existing graphics first (important: do this even if eBirdObservations is empty)
         eBirdObservationsLayer.removeAll();
         
-        // Add eBird observations to map
-        eBirdObservations.forEach(obs => {
+        // Only add markers if we have observations to show
+        if (eBirdObservations.length > 0) {
+          // Add eBird observations to map
+          eBirdObservations.forEach(obs => {
           if (obs.geometry?.coordinates) {
             const [longitude, latitude] = obs.geometry.coordinates;
             
@@ -1671,6 +1688,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         
         console.log(`✅ eBird: Updated map with ${eBirdObservations.length} observation records`);
         console.log(`eBird Layer graphics count: ${eBirdObservationsLayer.graphics.length}`);
+        } else {
+          console.log(`🧹 eBird: Cleared map (no observations to display)`);
+        }
       }
     }
   }, [view, eBirdObservations]);
