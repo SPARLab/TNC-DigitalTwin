@@ -1,5 +1,6 @@
 import { useEffect, useRef, useMemo, useState } from 'react';
 import * as echarts from 'echarts';
+import { FileSpreadsheet, FileDown } from 'lucide-react';
 import type { DendraStation, DendraDatastream, DendraDatapoint } from '../types';
 
 // Props for Dendra details sidebar including blank state management
@@ -19,6 +20,8 @@ interface DendraDetailsSidebarProps {
     current: number;
     total: number;
   };
+  onExportCSV?: () => void;
+  onExportExcel?: () => void;
 }
 
 export default function DendraDetailsSidebar({
@@ -34,6 +37,8 @@ export default function DendraDetailsSidebar({
   hasSearched = false,
   isLoading = false,
   loadProgress,
+  onExportCSV,
+  onExportExcel,
 }: DendraDetailsSidebarProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
@@ -464,9 +469,39 @@ export default function DendraDetailsSidebar({
       {/* Chart Section */}
       {selectedDatastream && (
         <div id="chart-section" className="flex-1 flex flex-col p-6 min-h-0">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Time Series Data {loadProgress ? `(Loading: ${loadProgress.current} points)` : ''}
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Time Series Data {loadProgress ? `(Loading: ${loadProgress.current} points)` : ''}
+            </h3>
+            
+            {/* Export Buttons */}
+            {datapoints.length > 0 && (onExportCSV || onExportExcel) && (
+              <div className="flex gap-2">
+                {onExportCSV && (
+                  <button
+                    id="dendra-export-csv-btn"
+                    onClick={onExportCSV}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-green-50 text-green-700 rounded hover:bg-green-100 transition-colors border border-green-200"
+                    title="Export data as CSV"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5" />
+                    CSV
+                  </button>
+                )}
+                {onExportExcel && (
+                  <button
+                    id="dendra-export-excel-btn"
+                    onClick={onExportExcel}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors border border-blue-200"
+                    title="Export data as Excel (XLSX)"
+                  >
+                    <FileDown className="w-3.5 h-3.5" />
+                    Excel
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
           
           {/* Loading State */}
           {isLoadingDatapoints && datapoints.length === 0 && (

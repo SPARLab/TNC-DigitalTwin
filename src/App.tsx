@@ -1176,6 +1176,69 @@ function App() {
     downloadFile(geoJsonData, 'tnc-arcgis-items.geojson', 'application/geo+json');
   };
 
+  // Dendra export functions
+  const convertDendraToCSV = (datapoints: DendraDatapoint[], datastream: DendraDatastream | null, station: DendraStation | null): string => {
+    if (datapoints.length === 0) return '';
+    
+    // CSV headers
+    const headers = ['Timestamp', 'Value', 'Variable', 'Unit', 'Medium'];
+    if (station) {
+      headers.push('Station Name', 'Station ID', 'Latitude', 'Longitude');
+    }
+    if (datastream) {
+      headers.push('Datastream Name', 'Datastream ID');
+    }
+    
+    // CSV rows
+    const rows = datapoints.map(dp => {
+      const row = [
+        new Date(dp.timestamp_utc).toISOString(),
+        dp.value != null ? dp.value.toString() : '',
+        datastream?.variable || '',
+        datastream?.unit || '',
+        datastream?.medium || ''
+      ];
+      
+      if (station) {
+        row.push(
+          station.name,
+          station.id.toString(),
+          station.latitude.toFixed(6),
+          station.longitude.toFixed(6)
+        );
+      }
+      
+      if (datastream) {
+        row.push(
+          datastream.name,
+          datastream.id.toString()
+        );
+      }
+      
+      return row.map(field => `"${field}"`).join(',');
+    });
+    
+    return [headers.join(','), ...rows].join('\n');
+  };
+
+  const handleDendraExportCSV = () => {
+    const csvData = convertDendraToCSV(dendraDatapoints, selectedDendraDatastream, selectedDendraStation);
+    const filename = selectedDendraDatastream 
+      ? `dendra-${selectedDendraDatastream.variable}-data.csv`
+      : 'dendra-data.csv';
+    downloadFile(csvData, filename, 'text/csv');
+  };
+
+  const handleDendraExportExcel = () => {
+    const csvData = convertDendraToCSV(dendraDatapoints, selectedDendraDatastream, selectedDendraStation);
+    const filename = selectedDendraDatastream 
+      ? `dendra-${selectedDendraDatastream.variable}-data.xlsx`
+      : 'dendra-data.xlsx';
+    // Excel can open CSV files, so we use CSV format with .xlsx extension
+    // For true Excel format, we would need the 'xlsx' library
+    downloadFile(csvData, filename, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  };
+
   // Helper function to download files
   const downloadFile = (data: string, filename: string, mimeType: string) => {
     const blob = new Blob([data], { type: mimeType });
@@ -1448,6 +1511,8 @@ function App() {
                 setIsDendraWebsiteLoading(true);
               }
             }}
+            onExportCSV={handleDendraExportCSV}
+            onExportExcel={handleDendraExportExcel}
           />
         ) : (
           <FilterSidebar 
