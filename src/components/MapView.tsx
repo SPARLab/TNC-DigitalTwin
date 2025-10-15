@@ -2811,7 +2811,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         return (
           <div 
             id="floating-legend-panel"
-            className="absolute bottom-8 right-4 bg-white rounded-lg shadow-lg z-10 max-w-sm"
+            className="absolute bottom-8 right-4 bg-white rounded-lg shadow-lg z-10 max-w-sm overflow-hidden"
             style={{ maxHeight: '60vh' }}
           >
             {/* Legend Header */}
