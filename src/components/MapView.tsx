@@ -101,6 +101,7 @@ export interface MapViewRef {
   activateDrawMode: () => void;
   clearPolygon: () => void;
   clearSearchArea: () => void;
+  clearAllObservationLayers: () => void;
 }
 
 const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({ 
@@ -2463,6 +2464,29 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   };
 
+  // Clear all observation/data layers (for switching between data sources)
+  const clearAllObservationLayers = () => {
+    if (!view || !view.map) return;
+    
+    console.log('🧹 Clearing all observation layers from map');
+    
+    const layerIds = [
+      'inaturalist-observations',
+      'tnc-inaturalist-observations',
+      'ebird-observations',
+      'calflora-plants',
+      'dendra-stations'
+    ];
+    
+    layerIds.forEach(layerId => {
+      const layer = view.map?.findLayerById(layerId) as GraphicsLayer;
+      if (layer) {
+        layer.removeAll();
+        console.log(`  ✓ Cleared ${layerId}`);
+      }
+    });
+  };
+
   // Expose methods via ref
   useImperativeHandle(ref, () => ({
     reloadObservations,
@@ -2471,7 +2495,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     reloadCalFloraData,
     activateDrawMode,
     clearPolygon,
-    clearSearchArea
+    clearSearchArea,
+    clearAllObservationLayers
   }));
 
   const getObservationIcon = (obs: iNaturalistObservation) => {
@@ -2616,15 +2641,6 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
               </p>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Observations Count */}
-      {observations.length > 0 && (
-        <div id="map-observations-counter" className="absolute top-4 left-4 bg-white rounded-lg shadow-md p-2 z-10">
-          <span id="map-observations-count-text" className="text-xs text-gray-600">
-            {observations.length} recent observations
-          </span>
         </div>
       )}
 

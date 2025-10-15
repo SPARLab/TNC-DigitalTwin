@@ -538,6 +538,26 @@ function App() {
     // Clear all active TNC ArcGIS layers when searching
     setActiveLayerIds([]);
     
+    // Clear all data from previous searches to prevent old map icons from showing
+    setObservations([]);
+    setTncObservations([]);
+    setEBirdObservations([]);
+    setCalFloraPlants([]);
+    setDendraStations([]);
+    setDendraDatastreams([]);
+    setTncArcGISItems([]);
+    
+    // Clear any selected items
+    setSelectedTNCObservation(null);
+    setSelectedDetailsItem(null);
+    setSelectedDownloadItem(null);
+    setSelectedModalItem(null);
+    setSelectedDendraStation(null);
+    setSelectedDendraDatastream(null);
+    
+    // Clear all map layers (removes all observation icons from map)
+    mapViewRef.current?.clearAllObservationLayers();
+    
     // Mark that a search has been performed
     setHasSearched(true);
     
