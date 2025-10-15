@@ -46,6 +46,79 @@ export default function DendraDetailsSidebar({
   const lastUpdateRef = useRef<number>(0);
   const [chartReady, setChartReady] = useState(false);
   
+  // Time window state (in days, null = full dataset)
+  const [timeWindowDays, setTimeWindowDays] = useState<number | null>(30); // Default to last 30 days
+  
+  // Zoom window state for displaying date range labels
+  const [zoomStartDate, setZoomStartDate] = useState<string>('');
+  const [zoomEndDate, setZoomEndDate] = useState<string>('');
+  
+  // Debounce timer for y-axis adjustment
+  const zoomDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Reset to "Last Month" when datastream changes
+  useEffect(() => {
+    setTimeWindowDays(30);
+  }, [selectedDatastream?.id]);
+  
+  // Calculate available data range to enable/disable buttons
+  const dataTimeRangeDays = useMemo(() => {
+    if (datapoints.length === 0) return 0;
+    
+    let oldestTimestamp = Infinity;
+    let newestTimestamp = -Infinity;
+    
+    for (const dp of datapoints) {
+      if (dp.timestamp_utc < oldestTimestamp) oldestTimestamp = dp.timestamp_utc;
+      if (dp.timestamp_utc > newestTimestamp) newestTimestamp = dp.timestamp_utc;
+    }
+    
+    if (oldestTimestamp === Infinity || newestTimestamp === -Infinity) return 0;
+    
+    const rangeDays = (newestTimestamp - oldestTimestamp) / (24 * 60 * 60 * 1000);
+    
+    return rangeDays;
+  }, [datapoints]);
+  
+  // Handle time window change and update zoom
+  const handleTimeWindowChange = (days: number | null) => {
+    setTimeWindowDays(days);
+    
+    // Calculate the zoom range based on time window
+    if (chartInstanceRef.current && datapoints.length > 0) {
+      if (days === null) {
+        // Show full dataset
+        chartInstanceRef.current.dispatchAction({
+          type: 'dataZoom',
+          start: 0,
+          end: 100
+        });
+      } else {
+        // Get newest timestamp (datapoints are sorted, so last element is newest)
+        const newestTimestamp = datapoints[datapoints.length - 1].timestamp_utc;
+        const cutoffTimestamp = newestTimestamp - (days * 24 * 60 * 60 * 1000);
+        
+        // Find the index where data starts for this time window
+        let startIndex = 0;
+        for (let i = datapoints.length - 1; i >= 0; i--) {
+          if (datapoints[i].timestamp_utc < cutoffTimestamp) {
+            startIndex = i + 1;
+            break;
+          }
+        }
+        
+        // Calculate percentage
+        const startPercent = (startIndex / datapoints.length) * 100;
+        
+        chartInstanceRef.current.dispatchAction({
+          type: 'dataZoom',
+          start: startPercent,
+          end: 100
+        });
+      }
+    }
+  };
+  
   // Memoize min/max calculations to avoid expensive operations on every render
   const { minValue, maxValue } = useMemo(() => {
     if (datapoints.length === 0) return { minValue: 0, maxValue: 0 };
@@ -186,8 +259,36 @@ export default function DendraDetailsSidebar({
           left: '15%',
           right: '5%',
           top: '15%',
-          bottom: '15%',
+          bottom: '20%', // More space for dataZoom slider with labels below
         },
+        dataZoom: [
+          {
+            type: 'slider',
+            show: true,
+            xAxisIndex: [0],
+            start: 0,
+            end: 100,
+            height: 30,
+            bottom: 10, // More space for labels below
+            borderColor: '#e5e7eb',
+            fillerColor: 'rgba(59, 130, 246, 0.15)',
+            handleStyle: {
+              color: '#3b82f6',
+              borderColor: '#3b82f6',
+            },
+            moveHandleStyle: {
+              color: '#3b82f6',
+            },
+            showDetail: false, // Hide text labels to prevent overflow
+            showDataShadow: 'auto', // Show miniature chart for context
+          },
+          {
+            type: 'inside',
+            xAxisIndex: [0],
+            start: 0,
+            end: 100,
+          },
+        ],
         xAxis: {
           type: 'category',
           data: timestamps.map(t => t.toISOString()),
@@ -207,8 +308,11 @@ export default function DendraDetailsSidebar({
           nameGap: 40,
           min: yAxisMin,
           max: yAxisMax,
+          nameTextStyle: {
+            fontSize: 12,
+          },
           axisLabel: {
-            fontSize: 10,
+            fontSize: 11,
             formatter: (value: number) => {
               return value.toFixed(1);
             },
@@ -236,10 +340,89 @@ export default function DendraDetailsSidebar({
 
       chartInstanceRef.current.setOption(option, { notMerge: true });
       chartInstanceRef.current.resize();
+      
+      // Listen for dataZoom events to update date labels and y-axis
+      chartInstanceRef.current.on('dataZoom', (params: any) => {
+        const startIdx = Math.floor((params.start / 100) * timestamps.length);
+        const endIdx = Math.floor((params.end / 100) * timestamps.length) - 1;
+        
+        const startDate = timestamps[Math.max(0, startIdx)];
+        const endDate = timestamps[Math.min(timestamps.length - 1, endIdx)];
+        
+        if (startDate && endDate) {
+          setZoomStartDate(startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+          setZoomEndDate(endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+        }
+        
+        // Debounce y-axis adjustment - wait 400ms after user stops zooming
+        if (zoomDebounceTimerRef.current) {
+          clearTimeout(zoomDebounceTimerRef.current);
+        }
+        
+        zoomDebounceTimerRef.current = setTimeout(() => {
+          if (!chartInstanceRef.current) return;
+          
+          // Calculate min/max for visible data range only
+          const visibleStartIdx = Math.max(0, startIdx);
+          const visibleEndIdx = Math.min(datapoints.length - 1, endIdx);
+          
+          let visibleMin = Infinity;
+          let visibleMax = -Infinity;
+          
+          for (let i = visibleStartIdx; i <= visibleEndIdx; i++) {
+            const value = datapoints[i].value;
+            if (value != null && !isNaN(value)) {
+              if (value < visibleMin) visibleMin = value;
+              if (value > visibleMax) visibleMax = value;
+            }
+          }
+          
+          if (visibleMin !== Infinity && visibleMax !== -Infinity) {
+            const visibleRange = visibleMax - visibleMin;
+            const yMin = visibleMin - (visibleRange * 0.05); // 5% padding
+            const yMax = visibleMax + (visibleRange * 0.05);
+            
+            chartInstanceRef.current.setOption({
+              yAxis: {
+                min: yMin,
+                max: yMax
+              }
+            });
+          }
+        }, 400); // 400ms debounce
+      });
+      
+      // Set initial date labels
+      if (timestamps.length > 0) {
+        setZoomStartDate(timestamps[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+        setZoomEndDate(timestamps[timestamps.length - 1].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+      }
+      // After setting option, apply the time window zoom if not full dataset
+      if (timeWindowDays !== null && datapoints.length > 0) {
+        const newestTimestamp = datapoints[datapoints.length - 1].timestamp_utc;
+        const cutoffTimestamp = newestTimestamp - (timeWindowDays * 24 * 60 * 60 * 1000);
+        
+        let startIndex = 0;
+        for (let i = datapoints.length - 1; i >= 0; i--) {
+          if (datapoints[i].timestamp_utc < cutoffTimestamp) {
+            startIndex = i + 1;
+            break;
+          }
+        }
+        
+        const startPercent = (startIndex / datapoints.length) * 100;
+        
+        chartInstanceRef.current.setOption({
+          dataZoom: [{
+            start: startPercent,
+            end: 100
+          }]
+        });
+      }
     } catch (error) {
       console.error('Error updating chart:', error);
     }
-  }, [datapoints, selectedDatastream, isLoadingDatapoints, isLoadingHistorical, minValue, maxValue, chartReady]);
+  }, [datapoints, selectedDatastream, isLoadingDatapoints, isLoadingHistorical, minValue, maxValue, chartReady, timeWindowDays]);
 
   // Cleanup chart when datastream changes or unmount
   useEffect(() => {
@@ -476,15 +659,16 @@ export default function DendraDetailsSidebar({
             
             {/* Export Buttons */}
             {datapoints.length > 0 && (onExportCSV || onExportExcel) && (
-              <div className="flex gap-2">
+              <div id="dendra-export-buttons" className="flex gap-2" role="group" aria-label="Data export options">
                 {onExportCSV && (
                   <button
                     id="dendra-export-csv-btn"
                     onClick={onExportCSV}
+                    aria-label={`Export ${datapoints.length} data points as CSV file`}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-green-50 text-green-700 rounded hover:bg-green-100 transition-colors border border-green-200"
                     title="Export data as CSV"
                   >
-                    <FileSpreadsheet className="w-3.5 h-3.5" />
+                    <FileSpreadsheet className="w-3.5 h-3.5" aria-hidden="true" />
                     CSV
                   </button>
                 )}
@@ -492,16 +676,112 @@ export default function DendraDetailsSidebar({
                   <button
                     id="dendra-export-excel-btn"
                     onClick={onExportExcel}
+                    aria-label={`Export ${datapoints.length} data points as Excel file`}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors border border-blue-200"
                     title="Export data as Excel (XLSX)"
                   >
-                    <FileDown className="w-3.5 h-3.5" />
+                    <FileDown className="w-3.5 h-3.5" aria-hidden="true" />
                     Excel
                   </button>
                 )}
               </div>
             )}
           </div>
+          
+          {/* Time Window Buttons */}
+          {datapoints.length > 0 && (
+            <div id="time-window-buttons" className="flex gap-2 mb-4 flex-wrap" role="group" aria-label="Time window selection">
+              <button
+                id="time-window-30-days"
+                onClick={() => handleTimeWindowChange(30)}
+                disabled={dataTimeRangeDays < 30 && !isLoadingHistorical}
+                aria-pressed={timeWindowDays === 30}
+                aria-label="Show last 30 days of data"
+                className={`min-w-[3.75rem] px-1 py-1.5 text-xs font-medium rounded transition-colors ${
+                  timeWindowDays === 30
+                    ? 'bg-blue-600 text-white'
+                    : dataTimeRangeDays < 30 && !isLoadingHistorical
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+                title={dataTimeRangeDays < 30 && !isLoadingHistorical ? "Not enough data available" : "Show last 30 days"}
+              >
+                30 Days
+              </button>
+              <button
+                id="time-window-3-months"
+                onClick={() => handleTimeWindowChange(90)}
+                disabled={isLoadingHistorical}
+                aria-pressed={timeWindowDays === 90}
+                aria-label="Show last 3 months of data"
+                aria-disabled={isLoadingHistorical}
+                className={`min-w-[3.75rem] px-1 py-1.5 text-xs font-medium rounded transition-colors ${
+                  timeWindowDays === 90
+                    ? 'bg-blue-600 text-white'
+                    : isLoadingHistorical
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+                title={isLoadingHistorical ? "Loading full dataset..." : "Show last 3 months"}
+              >
+                3 Months
+              </button>
+              <button
+                id="time-window-6-months"
+                onClick={() => handleTimeWindowChange(180)}
+                disabled={isLoadingHistorical}
+                aria-pressed={timeWindowDays === 180}
+                aria-label="Show last 6 months of data"
+                aria-disabled={isLoadingHistorical}
+                className={`min-w-[3.75rem] px-1 py-1.5 text-xs font-medium rounded transition-colors ${
+                  timeWindowDays === 180
+                    ? 'bg-blue-600 text-white'
+                    : isLoadingHistorical
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+                title={isLoadingHistorical ? "Loading full dataset..." : "Show last 6 months"}
+              >
+                6 Months
+              </button>
+              <button
+                id="time-window-1-year"
+                onClick={() => handleTimeWindowChange(365)}
+                disabled={isLoadingHistorical}
+                aria-pressed={timeWindowDays === 365}
+                aria-label="Show last year of data"
+                aria-disabled={isLoadingHistorical}
+                className={`min-w-[3.75rem] px-1 py-1.5 text-xs font-medium rounded transition-colors ${
+                  timeWindowDays === 365
+                    ? 'bg-blue-600 text-white'
+                    : isLoadingHistorical
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+                title={isLoadingHistorical ? "Loading full dataset..." : "Show last year"}
+              >
+                Year
+              </button>
+              <button
+                id="time-window-full-dataset"
+                onClick={() => handleTimeWindowChange(null)}
+                disabled={isLoadingHistorical}
+                aria-pressed={timeWindowDays === null}
+                aria-label="Show full dataset"
+                aria-disabled={isLoadingHistorical}
+                className={`min-w-[3.75rem] px-1 py-1.5 text-xs font-medium rounded transition-colors ${
+                  timeWindowDays === null
+                    ? 'bg-blue-600 text-white'
+                    : isLoadingHistorical
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+                title={isLoadingHistorical ? "Loading full dataset..." : "Show all available data"}
+              >
+                Full
+              </button>
+            </div>
+          )}
           
           {/* Loading State */}
           {isLoadingDatapoints && datapoints.length === 0 && (
@@ -514,12 +794,12 @@ export default function DendraDetailsSidebar({
           {/* Chart */}
           {datapoints.length > 0 && (
             <>
-              <div className="relative">
+              <div className="relative border border-gray-200 rounded bg-white">
                 <div
                   id="dendra-chart"
                   ref={chartRef}
-                  className="w-full bg-white border border-gray-200 rounded"
-                  style={{ height: '400px', minHeight: '400px', width: '100%' }}
+                  className="w-full"
+                  style={{ height: '350px', minHeight: '375px', width: '100%' }}
                 />
                 {/* Background Loading Indicator - Positioned above chart */}
                 {isLoadingHistorical && (
@@ -531,12 +811,27 @@ export default function DendraDetailsSidebar({
                     <span className="text-xs text-blue-700 font-medium">Loading historical data...</span>
                   </div>
                 )}
+                
+                {/* Date Range Labels Below Slider - Inside chart container */}
+                {zoomStartDate && zoomEndDate && (
+                  <div 
+                    id="dendra-chart-date-range-labels" 
+                    className="flex justify-between pl-14 pr-[0.5rem] pb-2 text-xs text-gray-500"
+                    role="status"
+                    aria-label={`Currently viewing data from ${zoomStartDate} to ${zoomEndDate}`}
+                  >
+                    <span id="dendra-chart-start-date" aria-label="Start date">{zoomStartDate}</span>
+                    <span id="dendra-chart-end-date" aria-label="End date">{zoomEndDate}</span>
+                  </div>
+                )}
               </div>
               <div id="chart-stats" className="mt-4 pt-4 border-t border-gray-200">
                 <div className="grid grid-cols-3 gap-4 text-sm mb-3">
                   <div>
                     <span className="text-gray-500">Data Points:</span>
-                    <div className="font-semibold text-gray-900">{datapoints.length.toLocaleString()}</div>
+                    <div className="font-semibold text-gray-900">
+                      {datapoints.length.toLocaleString()}
+                    </div>
                   </div>
                   <div>
                     <span className="text-gray-500">Min Value:</span>
