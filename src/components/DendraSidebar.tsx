@@ -225,13 +225,6 @@ export default function DendraSidebar({
         )}
       </div>
 
-      {/* Results Count */}
-      <div id="dendra-results-count" className="px-4 py-2 text-sm text-gray-600 bg-gray-50">
-        {activeTab === 'stations'
-          ? `${totalFilteredStations} station${totalFilteredStations !== 1 ? 's' : ''}`
-          : `${totalFilteredDatastreams} datastream${totalFilteredDatastreams !== 1 ? 's' : ''}`}
-      </div>
-
       {/* Scrollable List */}
       <div id="dendra-list-container" className="flex-1 overflow-y-auto" style={{ paddingRight: '0px', marginRight: '0px' }}>
         {activeTab === 'stations' ? (
