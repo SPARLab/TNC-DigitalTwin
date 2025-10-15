@@ -343,8 +343,22 @@ export default function DendraDetailsSidebar({
       
       // Listen for dataZoom events to update date labels and y-axis
       chartInstanceRef.current.on('dataZoom', (params: any) => {
-        const startIdx = Math.floor((params.start / 100) * timestamps.length);
-        const endIdx = Math.floor((params.end / 100) * timestamps.length) - 1;
+        // Handle both 'inside' (mouse wheel) and 'slider' zoom events
+        // 'inside' zoom events come in a batch array, 'slider' events are direct
+        let start, end;
+        
+        if (params.batch && params.batch.length > 0) {
+          // Mouse wheel / inside zoom - use first item in batch
+          start = params.batch[0].start;
+          end = params.batch[0].end;
+        } else {
+          // Slider zoom - direct properties
+          start = params.start;
+          end = params.end;
+        }
+        
+        const startIdx = Math.floor((start / 100) * timestamps.length);
+        const endIdx = Math.floor((end / 100) * timestamps.length) - 1;
         
         const startDate = timestamps[Math.max(0, startIdx)];
         const endDate = timestamps[Math.min(timestamps.length - 1, endIdx)];
