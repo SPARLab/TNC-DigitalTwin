@@ -28,35 +28,86 @@ const DatasetDownloadView: React.FC<DatasetDownloadViewProps> = ({ item, onClose
     return owner; // Return as-is if no underscore
   };
 
+  // Helper to fix known broken org prefixes in TNC Hub URLs
+  // The API returns owner values that don't match TNC Hub's URL structure
+  const fixOrgPrefix = (owner: string): string => {
+    const orgMappings: Record<string, string> = {
+      'egis.CALFIRE': 'CALFIRE-Forestry',  // California fire data uses this format
+      'environment': 'esri',                // Environment org maps to Esri
+      'dangermond_preserve@tnc.org_TNC': 'TNC'  // Email format should be TNC
+    };
+    
+    return orgMappings[owner] || owner;
+  };
+
   // Construct the TNC Hub dataset download/explore page URL
-  // Multi-layer Feature Services use explore format, others use direct datasets format
+  // Prefer using the API-provided URL, which has the correct slug/org structure
   const downloadPageUrl = (() => {
     const isMultiLayerService = item.availableLayers && item.availableLayers.length > 1;
     const isFeatureService = item.type === 'Feature Service' || 
                             item.type === 'Map Service' || 
                             item.type === 'Image Service';
     
+    // If API provided a URL and it's already a /datasets/ URL, use it
+    if (item.url && item.url.includes('/datasets/')) {
+      if (isFeatureService && isMultiLayerService) {
+        // Multi-layer service: Convert to explore format and add layer parameter
+        // Replace /datasets/{anything} with /datasets/{anything}/explore?layer={id}
+        const layerId = item.selectedLayerId ?? 0;
+        let url = item.url;
+        
+        // If URL doesn't already have /explore, add it
+        if (!url.includes('/explore')) {
+          url = `${url}/explore`;
+        }
+        
+        // Add or update layer parameter
+        if (url.includes('?')) {
+          // URL has query params - update or add layer param
+          const urlObj = new URL(url);
+          urlObj.searchParams.set('layer', layerId.toString());
+          url = urlObj.toString();
+        } else {
+          // No query params - add layer param
+          url = `${url}?layer=${layerId}`;
+        }
+        
+        console.log(`🔗 Multi-layer service URL (from API): ${url}`, {
+          title: item.title,
+          layerId,
+          totalLayers: item.availableLayers?.length,
+          apiUrl: item.url
+        });
+        return url;
+      } else {
+        // Single-layer: Use API URL as-is
+        console.log(`🔗 Single-layer dataset URL (from API): ${item.url}`, {
+          title: item.title,
+          type: item.type
+        });
+        return item.url;
+      }
+    }
+    
+    // Fallback: Construct URL if API didn't provide one
     if (isFeatureService && isMultiLayerService) {
-      // Multi-layer Feature Service: Use explore page with layer selector
-      // Format: https://dangermondpreserve-tnc.hub.arcgis.com/datasets/{orgId}::{slug}/explore?layer={layerId}
-      const orgId = extractOrgId(item.owner);
+      const rawOrgId = extractOrgId(item.owner);
+      const orgId = fixOrgPrefix(rawOrgId);  // Fix known broken prefixes
       const slug = createSlug(item.title);
       const layerId = item.selectedLayerId ?? 0;
       const url = `https://dangermondpreserve-tnc.hub.arcgis.com/datasets/${orgId}::${slug}/explore?layer=${layerId}`;
-      console.log(`🔗 Multi-layer service URL: ${url}`, {
+      console.log(`🔗 Multi-layer service URL (constructed): ${url}`, {
         title: item.title,
-        orgId,
+        rawOwner: item.owner,
+        rawOrgId,
+        fixedOrgId: orgId,
         slug,
-        layerId,
-        totalLayers: item.availableLayers?.length,
-        rawOwner: item.owner
+        layerId
       });
       return url;
     } else {
-      // Single-layer or non-service dataset: Use direct download page
-      // Format: https://dangermondpreserve-tnc.hub.arcgis.com/datasets/{itemId}
       const url = `https://dangermondpreserve-tnc.hub.arcgis.com/datasets/${item.id}`;
-      console.log(`🔗 Single-layer dataset URL: ${url}`, {
+      console.log(`🔗 Single-layer dataset URL (constructed): ${url}`, {
         title: item.title,
         type: item.type
       });
