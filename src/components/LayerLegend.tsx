@@ -39,11 +39,31 @@ export interface LayerLegendData {
 interface LayerLegendProps {
   legend: LayerLegendData;
   isCompact?: boolean;
+  onFilterChange?: (selectedValues: (string | number)[]) => void;
 }
 
-const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false }) => {
+const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false, onFilterChange }) => {
   const [isExpanded, setIsExpanded] = useState(!isCompact);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedValues, setSelectedValues] = useState<(string | number)[]>([]);
+
+  // Handle clicking a legend item to toggle filter
+  const handleItemClick = (item: LegendItem) => {
+    if (!item.value && item.value !== 0) return; // Only allow filtering for unique-value renderers
+    
+    const newSelection = selectedValues.includes(item.value)
+      ? selectedValues.filter(v => v !== item.value) // Deselect
+      : [...selectedValues, item.value]; // Select
+    
+    setSelectedValues(newSelection);
+    onFilterChange?.(newSelection);
+  };
+
+  // Clear all filters
+  const handleClearFilters = () => {
+    setSelectedValues([]);
+    onFilterChange?.([]);
+  };
 
   // Filter legend items based on search
   const filteredItems = legend.items.filter(item =>
@@ -220,16 +240,30 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false }) 
       label = formatLabel(label);
     }
 
+    const isFilterable = (item.value !== undefined && item.value !== null) && onFilterChange;
+    const isSelected = item.value !== undefined && selectedValues.includes(item.value);
+    const isAnySelected = selectedValues.length > 0;
+
     return (
       <div
         key={`${legend.layerId}-legend-item-${index}`}
         id={`legend-item-${legend.layerId}-${index}`}
-        className="flex items-center gap-3 py-1.5 hover:bg-gray-50 rounded px-1 transition-colors"
+        onClick={() => isFilterable && handleItemClick(item)}
+        className={`flex items-center gap-3 py-1.5 rounded px-1 transition-all
+          ${isFilterable ? 'cursor-pointer hover:bg-blue-50' : ''}
+          ${isSelected ? 'bg-blue-100 border border-blue-300' : 'hover:bg-gray-50'}
+          ${isAnySelected && !isSelected ? 'opacity-50' : 'opacity-100'}`}
+        role={isFilterable ? 'button' : undefined}
+        aria-pressed={isFilterable ? isSelected : undefined}
+        tabIndex={isFilterable ? 0 : undefined}
       >
         {renderSymbolSwatch(item.symbol)}
         <span className="text-sm text-gray-700 break-words flex-1 min-w-0">
           {label}
         </span>
+        {isFilterable && isSelected && (
+          <span className="text-blue-600 text-xs font-medium">✓</span>
+        )}
       </div>
     );
   };
@@ -328,6 +362,24 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false }) 
           </p>
         </div>
       )}
+      
+      {/* Clear filter button - only show for unique-value renderers when filters are active */}
+      {onFilterChange && legend.rendererType === 'uniqueValue' && selectedValues.length > 0 && (
+        <div id={`legend-filter-controls-${legend.layerId}`} className="mb-2 px-1">
+          <button
+            id={`legend-clear-filter-${legend.layerId}`}
+            onClick={handleClearFilters}
+            className="w-full px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors flex items-center justify-center gap-1"
+            aria-label="Clear legend filters"
+          >
+            Show All ({legend.items.length})
+          </button>
+          <p className="text-xs text-gray-600 italic mt-1">
+            Showing {selectedValues.length} of {legend.items.length} categories
+          </p>
+        </div>
+      )}
+      
       {renderLegendContent()}
     </div>
   );

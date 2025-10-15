@@ -2782,6 +2782,32 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
 
         if (activeLayers.length === 0) return null;
 
+        // Handler for legend filtering - using FeatureLayerView (client-side)
+        const handleLegendFilter = async (itemId: string, field: string, selectedValues: (string | number)[]) => {
+          const layer = tncArcGISLayersRef.current.get(itemId);
+          if (!layer || !view) return;
+          
+          try {
+            const layerView = await view.whenLayerView(layer) as any;
+            
+            if (selectedValues.length === 0) {
+              // Clear filter - show all features
+              layerView.filter = null;
+            } else {
+              // Create client-side filter using SQL WHERE clause
+              // Match field values that start with the selected value (e.g., "1950-1959" matches "1950")
+              const conditions = selectedValues.map(v => `${field} LIKE '${v}%'`).join(' OR ');
+              const whereClause = selectedValues.length > 1 ? `(${conditions})` : conditions;
+              
+              layerView.filter = {
+                where: whereClause
+              };
+            }
+          } catch (error) {
+            console.error(`Error applying legend filter:`, error);
+          }
+        };
+
         return (
           <div 
             id="floating-legend-panel"
@@ -2831,7 +2857,34 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                         {item.title}
                       </h4>
                     )}
-                    <LayerLegend legend={item.legendData} isCompact={activeLayers.length > 1} />
+                    <LayerLegend 
+                      legend={item.legendData} 
+                      isCompact={activeLayers.length > 1}
+                      onFilterChange={(selectedValues) => {
+                        // Get the field name from the renderer to use for filtering
+                        const layer = tncArcGISLayersRef.current.get(item.id);
+                        if (layer && 'renderer' in layer) {
+                          const renderer = (layer as any).renderer;
+                          
+                          if (renderer?.type === 'unique-value') {
+                            // Extract field name from either direct field or valueExpression
+                            let fieldName = renderer.field;
+                            
+                            if (!fieldName && renderer.valueExpression) {
+                              // Extract field from valueExpression like "Left($feature.DECADES, 4)"
+                              const match = renderer.valueExpression.match(/\$feature\.(\w+)/);
+                              if (match) {
+                                fieldName = match[1];
+                              }
+                            }
+                            
+                            if (fieldName) {
+                              handleLegendFilter(item.id, fieldName, selectedValues);
+                            }
+                          }
+                        }
+                      }}
+                    />
                   </div>
                 ))}
               </div>
