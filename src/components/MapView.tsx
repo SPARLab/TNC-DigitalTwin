@@ -135,7 +135,6 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
 }, ref) => {
   const mapDiv = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<MapView | null>(null);
-  const [observations, setObservations] = useState<iNaturalistObservation[]>([]);
   const [loading, setLoading] = useState(false);
   const tncArcGISLayersRef = useRef<globalThis.Map<string, __esri.Layer>>(new globalThis.Map());
   const boundaryLayerRef = useRef<__esri.GeoJSONLayer | null>(null);
@@ -611,6 +610,77 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
               try {
                 await layer.load();
                 
+                // Disable scale-dependent rendering restrictions
+                // Many layers have arbitrary scale restrictions that prevent them from displaying
+                // We override these to allow users to view layers at any zoom level
+                if ('minScale' in layer || 'maxScale' in layer) {
+                  const originalScale = {
+                    minScale: (layer as any).minScale,
+                    maxScale: (layer as any).maxScale
+                  };
+                  
+                  if (originalScale.minScale || originalScale.maxScale) {
+                    (layer as any).minScale = 0;  // 0 = no minimum scale (always visible when zoomed out)
+                    (layer as any).maxScale = 0;  // 0 = no maximum scale (always visible when zoomed in)
+                  }
+                }
+                
+                // FIX: Reconstruct unique-value renderers with native ArcGIS classes
+                // Some FeatureServer layers have renderers that don't render without reconstruction
+                if (url.includes('/FeatureServer') && 'renderer' in layer) {
+                  try {
+                    const featureLayer = layer as any;
+                    if (featureLayer.renderer?.type === 'unique-value') {
+                      const uniqueValueInfos = featureLayer.renderer.uniqueValueInfos || [];
+                      
+                      if (uniqueValueInfos.length > 0) {
+                        // Import renderer classes
+                        const { default: UniqueValueRenderer } = await import('@arcgis/core/renderers/UniqueValueRenderer');
+                        const { default: SimpleFillSymbol } = await import('@arcgis/core/symbols/SimpleFillSymbol');
+                        
+                        // FIX: Reconstruct UniqueValueRenderer with valueExpression to extract decade
+                        // Some layers have field values that don't match uniqueValueInfo values
+                        // Example: field has "2020-January 2025" but renderer expects "2020"
+                        const field = featureLayer.renderer.field;
+                        
+                        // Reconstruct each symbol, preserving original style (patterns)
+                        const reconstructedInfos = uniqueValueInfos.map((info: any) => {
+                          const color = info.symbol?.color;
+                          const outline = info.symbol?.outline;
+                          const style = info.symbol?.style || 'solid';  // Preserve patterns like 'backward-diagonal'
+                          
+                          return {
+                            value: info.value,
+                            label: info.label || info.value,
+                            symbol: new SimpleFillSymbol({
+                              style: style,  // Use original pattern style
+                              color: color ? [color.r, color.g, color.b, Math.max(0.3, color.a || 0.5)] : [200, 200, 200, 0.5],
+                              outline: outline ? {
+                                color: [outline.color.r, outline.color.g, outline.color.b, Math.max(0.5, outline.color.a || 0.8)],
+                                width: outline.width || 1
+                              } : {
+                                color: [128, 128, 128, 0.8],
+                                width: 0.5
+                              }
+                            })
+                          };
+                        });
+                        
+                        // Create renderer with valueExpression to extract starting year/decade
+                        // Example: "2020-January 2025" → "2020", "1950-1959" → "1950"
+                        const newRenderer = new UniqueValueRenderer({
+                          valueExpression: `Left($feature.${field}, 4)`,  // Extract first 4 chars (the year)
+                          uniqueValueInfos: reconstructedInfos
+                        });
+                        
+                        featureLayer.renderer = newRenderer;
+                      }
+                    }
+                  } catch (err) {
+                    console.warn(`⚠️ Could not reconstruct renderer for ${item.title}:`, err);
+                  }
+                }
+                
                 // For FeatureLayer, create a popup template showing all fields
                 if (url.includes('/FeatureServer') && 'fields' in layer) {
                   const featureLayer = layer as __esri.FeatureLayer;
@@ -701,7 +771,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                 }
                 
                 if (view.map) {
-                  view.map.add(layer);
+                  // Add layer to the TOP of the layer stack (index = highest position)
+                  // In ArcGIS, layers are drawn bottom-to-top, so higher index = more visible
+                  view.map.layers.add(layer);  // Adds to end of collection (top of visual stack)
                   tncArcGISLayersRef.current.set(item.id, layer);
                   console.log(`✅ Added TNC layer: ${item.title}`);
                   
@@ -1796,8 +1868,6 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         iconicTaxa: filters?.iconicTaxa,
         maxResults
       });
-      
-      setObservations(response.results);
       
       // Clear existing graphics
       observationsLayer.removeAll();
