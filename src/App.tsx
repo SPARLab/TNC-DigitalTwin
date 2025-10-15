@@ -8,6 +8,7 @@ import Scene3DView from './components/Scene3DView';
 import Footer from './components/Footer';
 import CalFloraPlantModal from './components/CalFloraPlantModal';
 import HubPagePreview from './components/HubPagePreview';
+import DatasetDownloadView from './components/DatasetDownloadView';
 import TNCArcGISDetailsSidebar from './components/TNCArcGISDetailsSidebar';
 import DendraDetailsSidebar from './components/DendraDetailsSidebar';
 import { FilterState, DendraStation, DendraDatastream, DendraDatastreamWithStation, DendraDatapoint } from './types';
@@ -129,6 +130,7 @@ function App() {
   const [layerOpacities, setLayerOpacities] = useState<Record<string, number>>({});
   const [selectedModalItem, setSelectedModalItem] = useState<TNCArcGISItem | null>(null);
   const [selectedDetailsItem, setSelectedDetailsItem] = useState<TNCArcGISItem | null>(null);
+  const [selectedDownloadItem, setSelectedDownloadItem] = useState<TNCArcGISItem | null>(null);
 
   // LiDAR view mode state
   const [lidarViewMode, setLidarViewMode] = useState<LiDARViewMode>('virtual-tour');
@@ -249,11 +251,24 @@ function App() {
     setSelectedModalItem(null);
   };
 
+  const handleDownloadViewOpen = () => {
+    if (selectedDetailsItem) {
+      setSelectedDownloadItem(selectedDetailsItem);
+    }
+  };
+
+  const handleDownloadViewClose = () => {
+    setSelectedDownloadItem(null);
+  };
+
   const handleTNCArcGISItemSelect = async (item: TNCArcGISItem) => {
     console.log('TNC ArcGIS item selected:', item);
     
     // Clear the orange search area rectangle when selecting a data item
     mapViewRef.current?.clearSearchArea();
+    
+    // Close download view if open
+    setSelectedDownloadItem(null);
     
     // Open details sidebar for MAP_LAYER items, otherwise use existing modal behavior
     if (item.uiPattern === 'MAP_LAYER') {
@@ -316,6 +331,8 @@ function App() {
 
   const handleDetailsLayerSelect = (layerId: number) => {
     if (selectedDetailsItem) {
+      // Close download view when switching layers
+      setSelectedDownloadItem(null);
       handleLayerSelect(selectedDetailsItem.id, layerId);
     }
   };
@@ -1401,6 +1418,11 @@ function App() {
                 <HubPagePreview item={selectedModalItem} onClose={handleModalClose} />
               )}
               
+              {/* Dataset Download View Overlay */}
+              {selectedDownloadItem && (
+                <DatasetDownloadView item={selectedDownloadItem} onClose={handleDownloadViewClose} />
+              )}
+              
               {/* Dendra.science Website Iframe Overlay */}
               {showDendraWebsite && (
                 <div className="absolute inset-0 z-40 bg-white flex flex-col">
@@ -1483,6 +1505,7 @@ function App() {
             onOpacityChange={handleDetailsOpacityChange}
             onLayerSelect={handleDetailsLayerSelect}
             onClose={handleDetailsClose}
+            onDownloadDataset={handleDownloadViewOpen}
           />
         ) : lastSearchedFilters.source === 'Dendra Stations' ? (
           <DendraDetailsSidebar

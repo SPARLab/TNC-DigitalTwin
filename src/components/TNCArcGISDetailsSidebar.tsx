@@ -1,6 +1,6 @@
 import React from 'react';
 import { TNCArcGISItem } from '../services/tncArcGISService';
-import { X, Eye, EyeOff, Calendar, User, ExternalLink, Layers } from 'lucide-react';
+import { X, Eye, EyeOff, Calendar, User, ExternalLink, Layers, Download } from 'lucide-react';
 
 interface TNCArcGISDetailsSidebarProps {
   item: TNCArcGISItem | null;
@@ -11,6 +11,7 @@ interface TNCArcGISDetailsSidebarProps {
   onOpacityChange: (opacity: number) => void;
   onLayerSelect?: (layerId: number) => void;
   onClose: () => void;
+  onDownloadDataset?: () => void; // Trigger download view
 }
 
 const TNCArcGISDetailsSidebar: React.FC<TNCArcGISDetailsSidebarProps> = ({
@@ -21,7 +22,8 @@ const TNCArcGISDetailsSidebar: React.FC<TNCArcGISDetailsSidebarProps> = ({
   onToggleLayer,
   onOpacityChange,
   onLayerSelect,
-  onClose
+  onClose,
+  onDownloadDataset
 }) => {
   if (!item) return null;
   
@@ -236,6 +238,21 @@ const TNCArcGISDetailsSidebar: React.FC<TNCArcGISDetailsSidebarProps> = ({
               </button>
             </div>
           </>
+        )}
+
+        {/* View Download Page Button - Only for datasets (collection = 'dataset') */}
+        {item.collection === 'dataset' && onDownloadDataset && (
+          <div id="tnc-details-download-section" className="pt-4 border-t border-gray-200">
+            <button
+              id="tnc-details-download-btn"
+              onClick={onDownloadDataset}
+              className="w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2 shadow-md"
+              aria-label={`View download page for ${item.title}`}
+            >
+              <Download className="w-4 h-4" />
+              View Download Page
+            </button>
+          </div>
         )}
 
         {/* External Link */}
