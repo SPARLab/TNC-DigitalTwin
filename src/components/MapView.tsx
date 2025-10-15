@@ -157,7 +157,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   useEffect(() => {
     if (imageServerLoading && !loadingLayerIds.includes(imageServerLoading.itemId)) {
       // The item finished loading (removed from loadingLayerIds) - dismiss banner NOW
-      console.log(`   ✅ ImageServer finished loading (synchronized with eye icon): ${imageServerLoading.layerTitle}`);
+      // console.log(`   ✅ ImageServer finished loading (synchronized with eye icon): ${imageServerLoading.layerTitle}`);
       setImageServerLoading(null);
       if (imageServerTimeoutRef.current) {
         clearTimeout(imageServerTimeoutRef.current);
@@ -426,7 +426,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           closeButton: true
         };
         mapView.popup.actions = [];  // Remove default actions for cleaner UI
-        console.log('✅ Popup widget configured: dynamic positioning, feature navigation enabled');
+      // console.log('✅ Popup widget configured: dynamic positioning, feature navigation enabled');
       }
 
       setView(mapView);
@@ -466,7 +466,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         if (layer && view.map) {
           view.map.remove(layer);
           tncArcGISLayersRef.current.delete(itemId);
-          console.log(`🗑️ Removed TNC layer: ${itemId}`);
+      // console.log(`🗑️ Removed TNC layer: ${itemId}`);
         }
       });
 
@@ -491,30 +491,30 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
             if (url.includes('/SceneServer')) {
               // 3D scene service (buildings, 3D objects, meshes, point clouds)
               layer = new SceneLayer(layerConfig);
-              console.log(`🏗️ Creating SceneLayer for: ${item.title}`);
+      // console.log(`🏗️ Creating SceneLayer for: ${item.title}`);
               
             } else if (url.includes('/StreamServer')) {
               // Real-time streaming data service (WebSocket-based)
               layer = new StreamLayer(layerConfig);
-              console.log(`📡 Creating StreamLayer for: ${item.title}`);
+      // console.log(`📡 Creating StreamLayer for: ${item.title}`);
               
             } else if (url.includes('/VectorTileServer')) {
               // Vector tile service (modern styleable basemaps)
               layer = new VectorTileLayer(layerConfig);
-              console.log(`🗺️ Creating VectorTileLayer for: ${item.title}`);
+      // console.log(`🗺️ Creating VectorTileLayer for: ${item.title}`);
               
             } else if (url.includes('/ImageServer')) {
               // Image service - need to distinguish between dynamic and tiled
               if (url.includes('tiledimageservices')) {
                 // Tiled image service (pre-cached tiles for performance)
                 layer = new ImageryTileLayer(layerConfig);
-                console.log(`🎨 Creating ImageryTileLayer (cached) for: ${item.title}`);
+      // console.log(`🎨 Creating ImageryTileLayer (cached) for: ${item.title}`);
               } else {
                 // Dynamic image service (on-the-fly processing) - these can be slow
                 layer = new ImageryLayer(layerConfig);
-                console.log(`🎨 Creating ImageryLayer (dynamic) for: ${item.title}`);
-                console.log(`   URL: ${url}`);
-                console.log(`   ⏳ This untiled image service may take 30-60s to load`);
+      // console.log(`🎨 Creating ImageryLayer (dynamic) for: ${item.title}`);
+      // console.log(`   URL: ${url}`);
+      // console.log(`   ⏳ This untiled image service may take 30-60s to load`);
                 
                 // Show loading banner for large untiled image services
                 setImageServerLoading({
@@ -550,10 +550,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                   visible: true
                   // Note: Popup templates will be created after layer loads using createPopupTemplate()
                 }];
-                const selectedLayer = item.availableLayers.find(l => l.id === item.selectedLayerId);
-                console.log(`🗺️ Creating MapImageLayer with sublayer ${item.selectedLayerId} (${selectedLayer?.name || 'unknown'}) for: ${item.title}`);
+      // console.log(`🗺️ Creating MapImageLayer with sublayer ${item.selectedLayerId} for: ${item.title}`);
               } else {
-                console.log(`🗺️ Creating MapImageLayer (all layers) for: ${item.title}`);
+      // console.log(`🗺️ Creating MapImageLayer (all layers) for: ${item.title}`);
               }
               
               layer = new MapImageLayer(mapLayerConfig);
@@ -570,11 +569,10 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                 // If we have available layers info, use that; otherwise query the service
                 if (item.availableLayers && item.availableLayers.length > 0) {
                   layerConfig.url = `${url}/${layerId}`;
-                  const selectedLayer = item.availableLayers.find(l => l.id === layerId);
-                  console.log(`✓ Using layer ${layerId} (${selectedLayer?.name || 'unknown'}) for: ${item.title}`);
+      // console.log(`✓ Using layer ${layerId} for: ${item.title}`);
                 } else {
                   // Query the service to find available layers
-                  console.log(`🔍 FeatureServer URL missing layer index, querying service for: ${item.title}`);
+      // console.log(`🔍 FeatureServer URL missing layer index, querying service for: ${item.title}`);
                   try {
                     const serviceResponse = await fetch(`${url}?f=json`);
                     const serviceData = await serviceResponse.json();
@@ -585,7 +583,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                         ? layerId 
                         : serviceData.layers[0].id;
                       layerConfig.url = `${url}/${targetLayerId}`;
-                      console.log(`✓ Using layer index ${targetLayerId} for: ${item.title}`);
+      // console.log(`✓ Using layer index ${targetLayerId} for: ${item.title}`);
                     } else {
                       console.warn(`⚠️ No layers found in FeatureServer for: ${item.title}`);
                     }
@@ -596,7 +594,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
               }
               
               layer = new FeatureLayer(layerConfig);
-              console.log(`📍 Creating FeatureLayer for: ${item.title} (will create popup template after load)`);
+      // console.log(`📍 Creating FeatureLayer for: ${item.title} (will create popup template after load)`);
               
             } else {
               // Unknown service type - log detailed warning
@@ -638,10 +636,46 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                         const { default: UniqueValueRenderer } = await import('@arcgis/core/renderers/UniqueValueRenderer');
                         const { default: SimpleFillSymbol } = await import('@arcgis/core/symbols/SimpleFillSymbol');
                         
-                        // FIX: Reconstruct UniqueValueRenderer with valueExpression to extract decade
-                        // Some layers have field values that don't match uniqueValueInfo values
-                        // Example: field has "2020-January 2025" but renderer expects "2020"
                         const field = featureLayer.renderer.field;
+                        
+                        // Check if we need a valueExpression by sampling actual data
+                        let needsValueExpression = false;
+                        let sampleFieldValues: string[] = [];
+                        
+                        try {
+                          const sampleQuery = await featureLayer.queryFeatures({
+                            where: '1=1',
+                            outFields: [field],
+                            returnGeometry: false,
+                            num: 10
+                          });
+                          
+                          sampleFieldValues = sampleQuery.features.map((f: any) => f.attributes[field]);
+                          const uniqueActual = [...new Set(sampleFieldValues)];
+                          const rendererValues = uniqueValueInfos.map((info: any) => info.value);
+                          
+                          // Check if field values are longer and start with renderer values
+                          // Example: field has "2020-January 2025", renderer expects "2020"
+                          const exactMatches = uniqueActual.filter((actual: string) => 
+                            rendererValues.includes(actual)
+                          );
+                          
+                          const prefixMatches = uniqueActual.filter((actual: string) => 
+                            rendererValues.some((rv: string) => actual.startsWith(rv))
+                          );
+                          
+                          // If we have prefix matches but not exact matches, we need valueExpression
+                          if (prefixMatches.length > 0 && exactMatches.length === 0) {
+                            needsValueExpression = true;
+                            console.log(`🔧 Layer "${item.title}" needs valueExpression (field values are longer than renderer values)`);
+                            console.log(`   Expected:`, rendererValues);
+                            console.log(`   Actual:`, uniqueActual);
+                          } else {
+                            console.log(`✓ Layer "${item.title}" values match exactly (no valueExpression needed)`);
+                          }
+                        } catch (e) {
+                          console.warn(`⚠️ Could not determine if valueExpression is needed for ${item.title}:`, e);
+                        }
                         
                         // Reconstruct each symbol, preserving original style (patterns)
                         const reconstructedInfos = uniqueValueInfos.map((info: any) => {
@@ -666,12 +700,17 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                           };
                         });
                         
-                        // Create renderer with valueExpression to extract starting year/decade
-                        // Example: "2020-January 2025" → "2020", "1950-1959" → "1950"
-                        const newRenderer = new UniqueValueRenderer({
-                          valueExpression: `Left($feature.${field}, 4)`,  // Extract first 4 chars (the year)
-                          uniqueValueInfos: reconstructedInfos
-                        });
+                        // Only use valueExpression for layers where field values don't match exactly
+                        // Example: fire perimeters with "2020-January 2025" → "2020"
+                        const newRenderer = needsValueExpression 
+                          ? new UniqueValueRenderer({
+                              valueExpression: `Left($feature.${field}, 4)`,  // Extract first 4 chars (the year)
+                              uniqueValueInfos: reconstructedInfos
+                            })
+                          : new UniqueValueRenderer({
+                              field: field,  // Use field directly for exact matching
+                              uniqueValueInfos: reconstructedInfos
+                            });
                         
                         featureLayer.renderer = newRenderer;
                       }
@@ -690,7 +729,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                       // Try using createPopupTemplate() if available
                       if (typeof (featureLayer as any).createPopupTemplate === 'function') {
                         featureLayer.popupTemplate = (featureLayer as any).createPopupTemplate();
-                        console.log(`   ✅ Created auto popup template for FeatureLayer`);
+      // console.log(`   ✅ Created auto popup template for FeatureLayer`);
                       } else {
                         // Manual popup template creation with all fields
                         const fieldInfos = featureLayer.fields
@@ -708,7 +747,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                             fieldInfos: fieldInfos
                           }]
                         });
-                        console.log(`   ✅ Created manual popup template with ${fieldInfos.length} fields for FeatureLayer`);
+      // console.log(`   ✅ Created manual popup template with ${fieldInfos.length} fields for FeatureLayer`);
                       }
                     } catch (err) {
                       console.warn(`   ⚠️ Could not create popup template for FeatureLayer:`, err);
@@ -752,22 +791,22 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                         if (popupTemplate) {
                           sublayer.popupTemplate = popupTemplate;
                           createdCount++;
-                          console.log(`   ✓ Created popup for sublayer: "${sublayer.title}" (id: ${sublayer.id})`);
+      // console.log(`   ✓ Created popup for sublayer: "${sublayer.title}" (id: ${sublayer.id})`);
                         }
                       } catch (err) {
                         // Some sublayers might not support popups (e.g., group layers)
-                        console.log(`   ℹ️ Sublayer "${sublayer.title}" does not support popups:`, err);
+      // console.log(`   ℹ️ Sublayer "${sublayer.title}" does not support popups:`, err);
                       }
                     });
-                    console.log(`   ✅ Created ${createdCount} popup template(s) from ${mapImageLayer.allSublayers.length} total sublayer(s)`);
+      // console.log(`   ✅ Created ${createdCount} popup template(s) from ${mapImageLayer.allSublayers.length} total sublayer(s)`);
                   }
                 }
                 
                 // Log additional info for ImageServer layers to help debug rendering issues
                 if (url.includes('/ImageServer') && 'fullExtent' in layer) {
-                  console.log(`   ImageServer fullExtent:`, (layer as any).fullExtent);
-                  console.log(`   ImageServer spatialReference:`, (layer as any).spatialReference);
-                  console.log(`   ⚠️ Note: ImageryLayers (raster data) do not support feature-based popups`);
+      // console.log(`   ImageServer fullExtent:`, (layer as any).fullExtent);
+      // console.log(`   ImageServer spatialReference:`, (layer as any).spatialReference);
+      // console.log(`   ⚠️ Note: ImageryLayers (raster data) do not support feature-based popups`);
                 }
                 
                 if (view.map) {
@@ -775,28 +814,28 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                   // In ArcGIS, layers are drawn bottom-to-top, so higher index = more visible
                   view.map.layers.add(layer);  // Adds to end of collection (top of visual stack)
                   tncArcGISLayersRef.current.set(item.id, layer);
-                  console.log(`✅ Added TNC layer: ${item.title}`);
+      // console.log(`✅ Added TNC layer: ${item.title}`);
                   
                   // Verify popup configuration for FeatureLayer
                   if (url.includes('/FeatureServer') && 'popupTemplate' in layer) {
                     const featureLayer = layer as __esri.FeatureLayer;
                     if (featureLayer.popupTemplate) {
-                      console.log(`   ✓ FeatureLayer has popupTemplate with ${featureLayer.fields?.length || 0} fields`);
+      // console.log(`   ✓ FeatureLayer has popupTemplate with ${featureLayer.fields?.length || 0} fields`);
                     } else {
-                      console.log(`   ✗ FeatureLayer MISSING popupTemplate!`);
+      // console.log(`   ✗ FeatureLayer MISSING popupTemplate!`);
                     }
                   }
                   
                   // Verify popup configuration for MapImageLayer
                   if (url.includes('/MapServer') && 'allSublayers' in layer) {
                     const mapImageLayer = layer as __esri.MapImageLayer;
-                    console.log(`   🔍 Verifying popups for MapImageLayer...`);
+      // console.log(`   🔍 Verifying popups for MapImageLayer...`);
                     if (mapImageLayer.allSublayers) {
                       mapImageLayer.allSublayers.forEach((sublayer: any) => {
                         if (sublayer.popupTemplate) {
-                          console.log(`   ✓ Sublayer "${sublayer.title}" has popupTemplate`);
+      // console.log(`   ✓ Sublayer "${sublayer.title}" has popupTemplate`);
                         } else {
-                          console.log(`   ✗ Sublayer "${sublayer.title}" MISSING popupTemplate`);
+      // console.log(`   ✗ Sublayer "${sublayer.title}" MISSING popupTemplate`);
                         }
                       });
                     }
@@ -819,7 +858,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                       
                       const legendData = await tncArcGISAPI.fetchLegendInfo(url, layerId);
                       if (legendData) {
-                        console.log(`🎨 Legend data fetched for: ${item.title} (layer ${layerId})`);
+      // console.log(`🎨 Legend data fetched for: ${item.title} (layer ${layerId})`);
                         onLegendDataFetched?.(item.id, legendData);
                       }
                     } catch (legendErr) {
@@ -839,11 +878,11 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                         (isUpdating: boolean) => {
                           if (!isUpdating) {
                             // Layer has finished rendering
-                            console.log(`🎨 Layer rendered: ${item.title}`);
+      // console.log(`🎨 Layer rendered: ${item.title}`);
                             
                             // Hide ImageServer loading banner IMMEDIATELY (synchronized with eye icon)
                             if (imageServerLoading?.itemId === item.id) {
-                              console.log(`   ✅ Hiding ImageServer banner for: ${item.title}`);
+      // console.log(`   ✅ Hiding ImageServer banner for: ${item.title}`);
                               setImageServerLoading(null);
                               if (imageServerTimeoutRef.current) {
                                 clearTimeout(imageServerTimeoutRef.current);
@@ -928,9 +967,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       boundaryLayerRef.current.popupEnabled = !hasTNCLayers;
       
       if (hasTNCLayers) {
-        console.log('🚫 Boundary popup disabled (TNC layers are active)');
+      // console.log('🚫 Boundary popup disabled (TNC layers are active)');
       } else {
-        console.log('✅ Boundary popup enabled (no TNC layers active)');
+      // console.log('✅ Boundary popup enabled (no TNC layers active)');
       }
     }
     
@@ -947,7 +986,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
             const itemId = layerId.replace('tnc-layer-', '');
             if (!activeLayerIds.includes(itemId)) {
               view.popup.close();
-              console.log('🔒 Closed popup - layer was toggled off');
+      // console.log('🔒 Closed popup - layer was toggled off');
             }
           }
         }
@@ -973,7 +1012,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         map?.add(drawLayer);
       }
       
-      console.log('✅ Draw layer initialized successfully');
+      // console.log('✅ Draw layer initialized successfully');
     }).catch((error) => {
       console.error('Error initializing draw layer:', error);
     });
@@ -1073,7 +1112,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       const point: [number, number] = [event.mapPoint.longitude, event.mapPoint.latitude];
       drawingPointsRef.current.push(point);
       
-      console.log(`Point ${drawingPointsRef.current.length} added`);
+      // console.log(`Point ${drawingPointsRef.current.length} added`);
     });
     
     // Add double-click handler to finish drawing
@@ -1120,12 +1159,12 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         dblClickHandler.remove();
         
         onDrawModeChange?.(false);
-        console.log('✅ Polygon completed with', drawingPointsRef.current.length, 'points');
+      // console.log('✅ Polygon completed with', drawingPointsRef.current.length, 'points');
       }
     });
     
     onDrawModeChange?.(true);
-    console.log('✏️ Draw mode activated - Click to add points, double-click to finish');
+      // console.log('✏️ Draw mode activated - Click to add points, double-click to finish');
   };
 
   // Function to clear the drawn polygon
@@ -1150,7 +1189,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       setDrawnPolygon(null);
       onPolygonCleared?.();
       onDrawModeChange?.(false);
-      console.log('🗑️ Polygon cleared');
+      // console.log('🗑️ Polygon cleared');
     }
   };
 
@@ -1323,9 +1362,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           }
         });
         
-        console.log(`✅ CalFlora: Updated map with ${calFloraPlants.length} plant records`);
+      // console.log(`✅ CalFlora: Updated map with ${calFloraPlants.length} plant records`);
         } else {
-          console.log(`🧹 CalFlora: Cleared map (no plants to display)`);
+      // console.log(`🧹 CalFlora: Cleared map (no plants to display)`);
         }
       }
     }
@@ -1596,9 +1635,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           dendraLayer.add(graphic);
         });
         
-        console.log(`✅ Dendra: Updated map with ${sortedStations.length} station records (selected on top)`);
+      // console.log(`✅ Dendra: Updated map with ${sortedStations.length} station records (selected on top)`);
         } else {
-          console.log(`🧹 Dendra: Cleared map (no stations to display)`);
+      // console.log(`🧹 Dendra: Cleared map (no stations to display)`);
         }
       }
     }
@@ -1689,15 +1728,15 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
             
             // Debug: Log first few coordinates
             if (tncObservations.indexOf(obs) < 3) {
-              console.log(`TNC Observation ${obs.observation_id}: ${obs.scientific_name} at [${longitude}, ${latitude}]`);
+      // console.log(`TNC Observation ${obs.observation_id}: ${obs.scientific_name} at [${longitude}, ${latitude}]`);
             }
           }
         });
         
-        console.log(`✅ TNC iNaturalist: Updated map with ${tncObservations.length} observation records`);
-        console.log(`TNC Layer graphics count: ${tncObservationsLayer.graphics.length}`);
+      // console.log(`✅ TNC iNaturalist: Updated map with ${tncObservations.length} observation records`);
+      // console.log(`TNC Layer graphics count: ${tncObservationsLayer.graphics.length}`);
         } else {
-          console.log(`🧹 TNC iNaturalist: Cleared map (no observations to display)`);
+      // console.log(`🧹 TNC iNaturalist: Cleared map (no observations to display)`);
         }
       }
     }
@@ -1771,15 +1810,15 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
             
             // Debug: Log first few coordinates
             if (eBirdObservations.indexOf(obs) < 3) {
-              console.log(`eBird Observation ${obs.obs_id}: ${obs.scientific_name} at [${longitude}, ${latitude}]`);
+      // console.log(`eBird Observation ${obs.obs_id}: ${obs.scientific_name} at [${longitude}, ${latitude}]`);
             }
           }
         });
         
-        console.log(`✅ eBird: Updated map with ${eBirdObservations.length} observation records`);
-        console.log(`eBird Layer graphics count: ${eBirdObservationsLayer.graphics.length}`);
+      // console.log(`✅ eBird: Updated map with ${eBirdObservations.length} observation records`);
+      // console.log(`eBird Layer graphics count: ${eBirdObservationsLayer.graphics.length}`);
         } else {
-          console.log(`🧹 eBird: Cleared map (no observations to display)`);
+      // console.log(`🧹 eBird: Cleared map (no observations to display)`);
         }
       }
     }
@@ -1857,7 +1896,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         }
       }
       
-      console.log(`Using maxResults: ${maxResults} for date range`);
+      // console.log(`Using maxResults: ${maxResults} for date range`);
       
       const response = await iNaturalistAPI.getRecentObservations({
         perPage: 200,
@@ -1894,7 +1933,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
             return false;
           });
           
-          console.log(`🎯 Filtered ${response.results.length} observations to ${filteredResults.length} within custom polygon`);
+      // console.log(`🎯 Filtered ${response.results.length} observations to ${filteredResults.length} within custom polygon`);
         } catch (error) {
           console.error('Error filtering by custom polygon:', error);
           filteredResults = response.results;
@@ -2005,7 +2044,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       await drawSearchAreaRectangle(_mapView, showSearchArea, 'expanded');
       
       // Load plant data using the unified method
-      console.log('Loading CalFlora plant data...');
+      // console.log('Loading CalFlora plant data...');
       const response = await calFloraAPI.getAllPlants({ 
         maxResults, 
         plantType,
@@ -2179,7 +2218,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         }
       });
       
-      console.log(`✅ CalFlora: Added ${allPlants.length} plant records to map`);
+      // console.log(`✅ CalFlora: Added ${allPlants.length} plant records to map`);
       
     } catch (error) {
       console.error('Error loading CalFlora data:', error);
@@ -2319,7 +2358,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         }
       });
       
-      console.log(`Added ${response.observations.length} eBird observations to map`);
+      // console.log(`Added ${response.observations.length} eBird observations to map`);
       
     } catch (error) {
       console.error('Error loading eBird observations:', error);
@@ -2423,7 +2462,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         }
       });
       
-      console.log(`Added ${response.length} TNC iNaturalist observations to map`);
+      // console.log(`Added ${response.length} TNC iNaturalist observations to map`);
       
     } catch (error) {
       console.error('Error loading TNC observations:', error);
@@ -2513,7 +2552,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         
         searchAreaLayer.add(rectangleGraphic);
         searchAreaLayer.visible = true;
-        console.log('✅ Added search area rectangle:', extent);
+      // console.log('✅ Added search area rectangle:', extent);
       } catch (error) {
         console.error('Error drawing search area rectangle:', error);
       }
@@ -2530,7 +2569,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     if (searchAreaLayer) {
       searchAreaLayer.removeAll();
       searchAreaLayer.visible = false;
-      console.log('✅ Cleared search area rectangle');
+      // console.log('✅ Cleared search area rectangle');
     }
   };
 
@@ -2538,7 +2577,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   const clearAllObservationLayers = () => {
     if (!view || !view.map) return;
     
-    console.log('🧹 Clearing all observation layers from map');
+      // console.log('🧹 Clearing all observation layers from map');
     
     const layerIds = [
       'inaturalist-observations',
@@ -2552,7 +2591,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       const layer = view.map?.findLayerById(layerId) as GraphicsLayer;
       if (layer) {
         layer.removeAll();
-        console.log(`  ✓ Cleared ${layerId}`);
+      // console.log(`  ✓ Cleared ${layerId}`);
       }
     });
   };

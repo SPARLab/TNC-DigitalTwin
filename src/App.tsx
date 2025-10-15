@@ -207,7 +207,7 @@ function App() {
   };
 
   const handleLayerSelect = (itemId: string, layerId: number) => {
-    console.log(`Layer selected for item ${itemId}: layer ${layerId}`);
+    // console.log(`Layer selected for item ${itemId}: layer ${layerId}`);
     
     // Update the item with the selected layer ID
     setTncArcGISItems(prev => {
@@ -262,7 +262,7 @@ function App() {
   };
 
   const handleTNCArcGISItemSelect = async (item: TNCArcGISItem) => {
-    console.log('TNC ArcGIS item selected:', item);
+    // console.log('TNC ArcGIS item selected:', item);
     
     // Clear the orange search area rectangle when selecting a data item
     mapViewRef.current?.clearSearchArea();
@@ -287,11 +287,11 @@ function App() {
            item.url.includes('/MapServer') || 
            item.url.includes('/ImageServer'))) {
         try {
-          console.log(`🔍 Fetching layers for: ${item.title}`);
+    // console.log(`🔍 Fetching layers for: ${item.title}`);
           const availableLayers = await tncArcGISAPI.fetchServiceLayers(item.url);
           
           if (availableLayers.length > 0) {
-            console.log(`✅ Found ${availableLayers.length} layers for: ${item.title}`);
+    // console.log(`✅ Found ${availableLayers.length} layers for: ${item.title}`);
             const itemWithLayers = {
               ...item,
               availableLayers,
@@ -338,7 +338,7 @@ function App() {
   };
 
   const handleLiDARModeChange = (mode: LiDARViewMode) => {
-    console.log('LiDAR view mode changed to:', mode);
+    // console.log('LiDAR view mode changed to:', mode);
     setLidarViewMode(mode);
   };
 
@@ -441,7 +441,7 @@ function App() {
       
       // SAFETY CHECK: Only update if this is still the current loading operation
       if (currentLoadingDatastreamRef.current !== datastreamId) {
-        console.log(`⚠️ Datastream changed during Phase 1 load. Discarding results for DS ${datastreamId}`);
+    // console.log(`⚠️ Datastream changed during Phase 1 load. Discarding results for DS ${datastreamId}`);
         return; // User switched to a different datastream, discard these results
       }
       
@@ -467,7 +467,7 @@ function App() {
       
       // SAFETY CHECK: Only update if this is still the current loading operation
       if (currentLoadingDatastreamRef.current !== datastreamId) {
-        console.log(`⚠️ Datastream changed during Phase 2 load. Discarding results for DS ${datastreamId}`);
+    // console.log(`⚠️ Datastream changed during Phase 2 load. Discarding results for DS ${datastreamId}`);
         return; // User switched to a different datastream, discard these results
       }
       
@@ -521,7 +521,7 @@ function App() {
       spatialReference: { wkid: polygon.spatialReference.wkid || 4326 }
     };
     setFilters(prev => ({ ...prev, customPolygon: polygonData }));
-    console.log('Polygon stored in filters:', polygonData);
+    // console.log('Polygon stored in filters:', polygonData);
   };
 
   const handlePolygonCleared = () => {
@@ -581,7 +581,7 @@ function App() {
           
           setDendraStations(sortedStations);
           setDendraDatastreams(sortedDatastreams);
-          console.log(`✅ Loaded ${stationsData.length} Dendra stations and ${datastreamsData.length} datastreams`);
+    // console.log(`✅ Loaded ${stationsData.length} Dendra stations and ${datastreamsData.length} datastreams`);
         } catch (error) {
           console.error('❌ Error loading Dendra data:', error);
           setDendraStations([]);
@@ -614,13 +614,13 @@ function App() {
           const startTimestamp = new Date(startDate).getTime();
           const endTimestamp = new Date(endDate).getTime() + (24 * 60 * 60 * 1000 - 1); // End of day
           
-          console.log(`🔍 TNC ArcGIS Hub Search:`, {
-            category: filters.category,
-            categoryFilter,
-            spatialFilter: filters.spatialFilter,
-            timeRange: filters.timeRange,
-            dateFilter: `${startDate} to ${endDate}`
-          });
+          // console.log(`🔍 TNC ArcGIS Hub Search:`, {
+          //   category: filters.category,
+          //   categoryFilter,
+          //   spatialFilter: filters.spatialFilter,
+          //   timeRange: filters.timeRange,
+          //   dateFilter: `${startDate} to ${endDate}`
+          // });
           
           const response = await tncArcGISAPI.getAllItems({
             maxResults: 1000,
@@ -635,13 +635,13 @@ function App() {
             return itemModified >= startTimestamp && itemModified <= endTimestamp;
           });
           
-          console.log(`📊 TNC ArcGIS Hub Results:`, {
-            totalItems: response.results.length,
-            afterDateFilter: dateFilteredResults.length,
-            dataSource: response.dataSource,
-            dateRange: `${startDate} to ${endDate}`,
-            sampleTitles: dateFilteredResults.slice(0, 3).map(item => item.title)
-          });
+          // console.log(`📊 TNC ArcGIS Hub Results:`, {
+          //   totalItems: response.results.length,
+          //   afterDateFilter: dateFilteredResults.length,
+          //   dataSource: response.dataSource,
+          //   dateRange: `${startDate} to ${endDate}`,
+          //   sampleTitles: dateFilteredResults.slice(0, 3).map(item => item.title)
+          // });
           
           // Set items immediately without fetching service layers
           // This ensures fast search results display
@@ -649,7 +649,7 @@ function App() {
           
           // Start background prefetching of service layers (non-blocking)
           // This makes clicking "View" potentially instant if prefetch succeeds
-          console.log(`🚀 Starting background prefetch for ${dateFilteredResults.length} items...`);
+    // console.log(`🚀 Starting background prefetch for ${dateFilteredResults.length} items...`);
           
           // Prefetch in background - don't await
           Promise.allSettled(
@@ -663,7 +663,7 @@ function App() {
                   const availableLayers = await tncArcGISAPI.prefetchServiceLayers(item.url);
                   
                   if (availableLayers.length > 0) {
-                    console.log(`✨ Prefetched ${availableLayers.length} layers for: ${item.title}`);
+    // console.log(`✨ Prefetched ${availableLayers.length} layers for: ${item.title}`);
                     // Update the item in state with prefetched layers
                     setTncArcGISItems(prev => prev.map(i => 
                       i.id === item.id 
@@ -673,12 +673,12 @@ function App() {
                   }
                 } catch (err) {
                   // Silently fail - user can still fetch on-demand
-                  console.log(`⏭️ Prefetch skipped for ${item.title} - will fetch on-demand`);
+    // console.log(`⏭️ Prefetch skipped for ${item.title} - will fetch on-demand`);
                 }
               }
             })
           ).then(() => {
-            console.log(`✅ Background prefetch complete`);
+    // console.log(`✅ Background prefetch complete`);
           });
         } catch (error) {
           console.error('❌ Error loading TNC ArcGIS data:', error);
@@ -698,7 +698,7 @@ function App() {
           rings: filters.customPolygon.rings,
           spatialReference: filters.customPolygon.spatialReference
         });
-        console.log('🎯 Using custom drawn polygon for CalFlora spatial filtering');
+    // console.log('🎯 Using custom drawn polygon for CalFlora spatial filtering');
       }
       
       const calFloraFilters = {
@@ -708,7 +708,7 @@ function App() {
         showSearchArea: filters.spatialFilter === 'Dangermond + Margin'
       };
       
-      console.log('Searching CalFlora with filters:', calFloraFilters);
+    // console.log('Searching CalFlora with filters:', calFloraFilters);
       mapViewRef.current?.reloadCalFloraData(calFloraFilters);
     } else if (filters.source === 'iNaturalist (TNC Layers)') {
       // Handle TNC iNaturalist search
@@ -740,7 +740,7 @@ function App() {
           rings: filters.customPolygon.rings,
           spatialReference: filters.customPolygon.spatialReference
         });
-        console.log('🎯 Using custom drawn polygon for spatial filtering');
+    // console.log('🎯 Using custom drawn polygon for spatial filtering');
       }
 
       const tncSearchFilters = {
@@ -754,8 +754,8 @@ function App() {
         searchMode,
         showSearchArea,
         customPolygon: customPolygonGeometry,
-        onProgress: (current: number, total: number, percentage: number) => {
-          console.log(`📊 TNC Progress: ${current}/${total} observations (${percentage}%)`);
+        onProgress: (/* current: number, total: number, percentage: number */) => {
+          // console.log(`📊 TNC Progress: ${current}/${total} observations (${percentage}%)`);
           // Could add UI progress indicator here in the future
         }
       };
@@ -763,7 +763,7 @@ function App() {
       // Update the last searched time range when search is performed
       setLastSearchedDaysBack(filters.daysBack || 30);
       
-      console.log('Searching TNC iNaturalist with filters:', tncSearchFilters);
+    // console.log('Searching TNC iNaturalist with filters:', tncSearchFilters);
       // Fetch count in parallel to show total records
       tncINaturalistService
         .queryObservationsCount({
@@ -804,7 +804,7 @@ function App() {
           rings: filters.customPolygon.rings,
           spatialReference: filters.customPolygon.spatialReference
         });
-        console.log('🎯 Using custom drawn polygon for spatial filtering');
+    // console.log('🎯 Using custom drawn polygon for spatial filtering');
       }
 
       const eBirdSearchFilters = {
@@ -821,7 +821,7 @@ function App() {
       // Update the last searched time range when search is performed
       setLastSearchedDaysBack(filters.daysBack || 30);
       
-      console.log('Searching eBird with filters:', eBirdSearchFilters);
+    // console.log('Searching eBird with filters:', eBirdSearchFilters);
       
       // Fetch count in parallel to show total records
       eBirdService
@@ -831,8 +831,8 @@ function App() {
           searchMode,
           customPolygon: customPolygonGeometry
         })
-        .then((count) => {
-          console.log(`eBird: Found ${count} total observations`);
+        .then((/* count */) => {
+          // console.log(`eBird: Found ${count} total observations`);
         })
         .catch((e) => {
           console.warn('Failed to fetch eBird total count:', e);
@@ -855,7 +855,7 @@ function App() {
           rings: filters.customPolygon.rings,
           spatialReference: filters.customPolygon.spatialReference
         });
-        console.log('🎯 Will apply client-side polygon filtering for iNaturalist Public API');
+    // console.log('🎯 Will apply client-side polygon filtering for iNaturalist Public API');
       }
       
       const searchFilters = {
@@ -871,7 +871,7 @@ function App() {
       // Update the last searched time range when search is performed
       setLastSearchedDaysBack(filters.daysBack || 30);
       
-      console.log('Searching iNaturalist Public API with filters:', searchFilters);
+    // console.log('Searching iNaturalist Public API with filters:', searchFilters);
       mapViewRef.current?.reloadObservations(searchFilters);
     }
   };

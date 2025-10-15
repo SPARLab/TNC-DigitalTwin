@@ -102,7 +102,7 @@ class TNCArcGISService {
     
     if (timeSinceLastRequest < this.minRequestInterval) {
       const waitTime = this.minRequestInterval - timeSinceLastRequest;
-      console.log(`TNC ArcGIS rate limiting: waiting ${waitTime}ms`);
+      // console.log(`TNC ArcGIS rate limiting: waiting ${waitTime}ms`);
       await new Promise(resolve => setTimeout(resolve, waitTime));
     }
     
@@ -183,7 +183,7 @@ class TNCArcGISService {
     let url = attrs.url || attrs.itemURL || '';
     if (!url && feature.id) {
       const itemId = feature.id;
-      const orgId = attrs.orgId || 'F7DSX1DSNSiWmOqh';
+      // const orgId = attrs.orgId || 'F7DSX1DSNSiWmOqh';
       
       // Different URL patterns for different content types
       if (attrs.type === 'Hub Page') {
@@ -233,7 +233,7 @@ class TNCArcGISService {
     await this.waitForRateLimit();
 
     const url = `${this.baseUrl}/${collection}/items?limit=${limit}`;
-    console.log(`🌐 Fetching TNC ${collection} data from:`, url);
+      // console.log(`🌐 Fetching TNC ${collection} data from:`, url);
 
     try {
       const response = await fetch(url);
@@ -250,7 +250,7 @@ class TNCArcGISService {
 
       // API returns { features: [...] } not { data: [...] }
       const items = data.features || data.data || [];
-      console.log(`📊 TNC ${collection}: ${items.length} items fetched`);
+      // console.log(`📊 TNC ${collection}: ${items.length} items fetched`);
       
       return items;
     } catch (error) {
@@ -538,7 +538,7 @@ class TNCArcGISService {
     try {
       // Query the service metadata to get all layers
       const metadataUrl = `${serviceUrl}?f=json`;
-      console.log(`🔍 Fetching service layers from: ${metadataUrl} (timeout: ${timeoutMs}ms)`);
+      // console.log(`🔍 Fetching service layers from: ${metadataUrl} (timeout: ${timeoutMs}ms)`);
       
       // Add timeout to prevent hanging on slow/unresponsive external services
       const controller = new AbortController();
@@ -562,7 +562,7 @@ class TNCArcGISService {
         
         // Check for layers array (MapServer, FeatureServer)
         if (data.layers && Array.isArray(data.layers)) {
-        console.log(`✅ Found ${data.layers.length} layers in service`);
+      // console.log(`✅ Found ${data.layers.length} layers in service`);
         return data.layers.map((layer: any) => ({
           id: layer.id,
           name: layer.name,
@@ -576,7 +576,7 @@ class TNCArcGISService {
       
       // For ImageServer, there's typically just one "layer" (the service itself)
       if (data.name && serviceUrl.includes('/ImageServer')) {
-        console.log(`✅ ImageServer detected: ${data.name}`);
+      // console.log(`✅ ImageServer detected: ${data.name}`);
         return [{
           id: 0,
           name: data.name,
@@ -588,7 +588,7 @@ class TNCArcGISService {
         }];
       }
       
-        console.log('ℹ️ No layers found in service metadata');
+      // console.log('ℹ️ No layers found in service metadata');
         return [];
         
       } catch (fetchError: any) {
@@ -613,7 +613,7 @@ class TNCArcGISService {
   async checkImageServerPerformance(serviceUrl: string): Promise<TNCArcGISItem['renderingWarning'] | undefined> {
     try {
       const metadataUrl = `${serviceUrl}?f=json`;
-      console.log(`🔍 Checking ImageServer performance for: ${serviceUrl}`);
+      // console.log(`🔍 Checking ImageServer performance for: ${serviceUrl}`);
       
       const response = await fetch(metadataUrl);
       if (!response.ok) {
@@ -639,16 +639,16 @@ class TNCArcGISService {
       const pixelCount = cols * rows;
       
       // Get pixel size (resolution)
-      const pixelSizeX = data.pixelSizeX || 0;
-      const pixelSizeY = data.pixelSizeY || 0;
+      // const pixelSizeX = data.pixelSizeX || 0;
+      // const pixelSizeY = data.pixelSizeY || 0;
       
-      console.log(`📊 ImageServer Analysis:`);
-      console.log(`   - Tiled: ${isTiled}`);
-      console.log(`   - Dimensions: ${cols} x ${rows} pixels`);
-      console.log(`   - Total pixels: ${pixelCount.toLocaleString()}`);
-      console.log(`   - Pixel size: ${pixelSizeX} x ${pixelSizeY}`);
-      console.log(`   - Cache type: ${data.cacheType || 'none'}`);
-      console.log(`   - Capabilities: ${data.capabilities || 'none'}`);
+      // console.log(`📊 ImageServer Analysis:`);
+      // console.log(`   - Tiled: ${isTiled}`);
+      // console.log(`   - Dimensions: ${cols} x ${rows} pixels`);
+      // console.log(`   - Total pixels: ${pixelCount.toLocaleString()}`);
+      // console.log(`   - Pixel size: ${pixelSizeX} x ${pixelSizeY}`);
+      // console.log(`   - Cache type: ${data.cacheType || 'none'}`);
+      // console.log(`   - Capabilities: ${data.capabilities || 'none'}`);
       
       // Thresholds for warnings
       const LARGE_PIXEL_THRESHOLD = 100000000; // 100 million pixels
@@ -680,7 +680,7 @@ class TNCArcGISService {
       
       // If tiled, it should render fine
       if (isTiled) {
-        console.log(`✅ ImageServer is tiled - should render efficiently`);
+      // console.log(`✅ ImageServer is tiled - should render efficiently`);
       }
       
       return undefined;
@@ -701,7 +701,7 @@ class TNCArcGISService {
       const isImageServer = serviceUrl.includes('/ImageServer');
       const layerUrl = isImageServer ? `${serviceUrl}?f=json` : `${serviceUrl}/${layerId}?f=json`;
       
-      console.log(`🎨 Fetching layer metadata from: ${layerUrl}`);
+      // console.log(`🎨 Fetching layer metadata from: ${layerUrl}`);
       
       const layerResponse = await fetch(layerUrl);
       let layerMetadata: any = null;
@@ -710,21 +710,21 @@ class TNCArcGISService {
         layerMetadata = await layerResponse.json();
         
         // Log metadata to help identify where units might be
-        console.log(`📊 Layer metadata for ${layerMetadata.name || layerMetadata.serviceDescription}:`, {
-          units: layerMetadata.units,
-          pixelType: layerMetadata.pixelType,
-          serviceDescription: layerMetadata.serviceDescription,
-          description: layerMetadata.description,
-          minValues: layerMetadata.minValues,
-          maxValues: layerMetadata.maxValues,
-          hasRenderer: !!layerMetadata.drawingInfo?.renderer,
-          fields: layerMetadata.fields?.slice(0, 3).map((f: any) => ({ name: f.name, type: f.type, alias: f.alias }))
-        });
+        // console.log(`📊 Layer metadata for ${layerMetadata.name || layerMetadata.serviceDescription}:`, {
+        //   units: layerMetadata.units,
+        //   pixelType: layerMetadata.pixelType,
+        //   serviceDescription: layerMetadata.serviceDescription,
+        //   description: layerMetadata.description,
+        //   minValues: layerMetadata.minValues,
+        //   maxValues: layerMetadata.maxValues,
+        //   hasRenderer: !!layerMetadata.drawingInfo?.renderer,
+        //   fields: layerMetadata.fields?.slice(0, 3).map((f: any) => ({ name: f.name, type: f.type, alias: f.alias }))
+        // });
       }
       
       // Try /legend endpoint first (works for MapServer and ImageServer)
       const legendUrl = `${serviceUrl}/legend?f=json`;
-      console.log(`🎨 Fetching legend info from: ${legendUrl}`);
+      // console.log(`🎨 Fetching legend info from: ${legendUrl}`);
       
       const legendResponse = await fetch(legendUrl);
       
@@ -796,7 +796,7 @@ class TNCArcGISService {
     
     // 1. Check for explicit units field in metadata (most reliable)
     if (metadata?.units) {
-      console.log(`📊 Found explicit units field: ${metadata.units}`);
+      // console.log(`📊 Found explicit units field: ${metadata.units}`);
       return metadata.units;
     }
     
@@ -804,7 +804,7 @@ class TNCArcGISService {
     if (metadata?.fields && Array.isArray(metadata.fields)) {
       for (const field of metadata.fields) {
         if (field.units) {
-          console.log(`📊 Found units in field ${field.name}: ${field.units}`);
+      // console.log(`📊 Found units in field ${field.name}: ${field.units}`);
           return field.units;
         }
       }
@@ -824,14 +824,14 @@ class TNCArcGISService {
       const match = description.match(pattern);
       if (match && match[1]) {
         const units = match[1].trim();
-        console.log(`📊 Found units in description: ${units}`);
+      // console.log(`📊 Found units in description: ${units}`);
         return units;
       }
     }
     
     // No explicit units found - return null
     // Users should refer to layer descriptions for context
-    console.log('📊 No explicit units found - refer to layer description for context');
+      // console.log('📊 No explicit units found - refer to layer description for context');
     return null;
   }
 
@@ -958,17 +958,17 @@ class TNCArcGISService {
       transformed.angle = symbol.angle || 0;
       
       // Debug log for picture marker symbols
-      console.log(`🖼️ Picture Marker Symbol found:`, {
-        hasImageData: !!symbol.imageData,
-        hasUrl: !!symbol.url,
-        url: symbol.url,
-        width: transformed.width,
-        height: transformed.height,
-        angle: transformed.angle
-      });
+      // console.log(`🖼️ Picture Marker Symbol found:`, {
+      //   hasImageData: !!symbol.imageData,
+      //   hasUrl: !!symbol.url,
+      //   url: symbol.url,
+      //   width: transformed.width,
+      //   height: transformed.height,
+      //   angle: transformed.angle
+      // });
     } else if (symbol.type === 'esriTS') {
       // Text Symbol - typically for labels, not legends
-      console.log('Text symbol found, skipping for legend');
+      // console.log('Text symbol found, skipping for legend');
       transformed.type = 'text';
     } else {
       console.warn(`Unknown symbol type: ${symbol.type}`);
