@@ -528,7 +528,7 @@ class TNCArcGISService {
    * Works with FeatureServer, MapServer, and ImageServer
    */
   async fetchServiceLayers(serviceUrl: string): Promise<ServiceLayerInfo[]> {
-    return this._fetchServiceLayersWithTimeout(serviceUrl, 10000); // 10 second timeout for on-demand
+    return this._fetchServiceLayersWithTimeout(serviceUrl, 45000); // 45 second timeout for on-demand (increased for slow services like NAIP imagery)
   }
 
   /**

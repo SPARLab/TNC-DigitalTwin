@@ -149,8 +149,17 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     itemId: string;
     layerTitle: string;
     hasTimedOut: boolean;
+    showSlowWarning: boolean; // Show "taking longer than expected" after 10s
   } | null>(null);
   const imageServerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const imageServerSlowWarningRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Layer load error state - shows persistent error banner
+  const [layerLoadError, setLayerLoadError] = useState<{
+    itemId: string;
+    layerTitle: string;
+    errorMessage: string;
+  } | null>(null);
   // CalFlora state is managed by parent component via props
 
   // Synchronize ImageServer banner with loadingLayerIds (same as eye icon timing)
@@ -162,6 +171,10 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       if (imageServerTimeoutRef.current) {
         clearTimeout(imageServerTimeoutRef.current);
         imageServerTimeoutRef.current = null;
+      }
+      if (imageServerSlowWarningRef.current) {
+        clearTimeout(imageServerSlowWarningRef.current);
+        imageServerSlowWarningRef.current = null;
       }
     }
   }, [loadingLayerIds, imageServerLoading]);
@@ -468,11 +481,15 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           
           // Clear ImageServer loading state if this layer was loading
           if (imageServerLoading?.itemId === itemId) {
-            // console.log(`   🧹 Clearing ImageServer loading banner for removed layer`);
+            console.log(`   🧹 Clearing ImageServer loading banner for removed layer`);
             setImageServerLoading(null);
             if (imageServerTimeoutRef.current) {
               clearTimeout(imageServerTimeoutRef.current);
               imageServerTimeoutRef.current = null;
+            }
+            if (imageServerSlowWarningRef.current) {
+              clearTimeout(imageServerSlowWarningRef.current);
+              imageServerSlowWarningRef.current = null;
             }
           }
           
@@ -542,10 +559,24 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                   isLoading: true,
                   itemId: item.id, // Track by item ID for precise synchronization
                   layerTitle: item.title,
-                  hasTimedOut: false
+                  hasTimedOut: false,
+                  showSlowWarning: false
                 });
                 
-                // Set 30-second timeout warning
+                // Set 10-second "taking longer than expected" warning
+                if (imageServerSlowWarningRef.current) {
+                  clearTimeout(imageServerSlowWarningRef.current);
+                }
+                imageServerSlowWarningRef.current = setTimeout(() => {
+                  setImageServerLoading(prev => {
+                    if (prev && prev.isLoading && prev.itemId === item.id) {
+                      return { ...prev, showSlowWarning: true };
+                    }
+                    return prev;
+                  });
+                }, 10000); // 10 seconds
+                
+                // Set 30-second "still loading, might timeout" warning
                 if (imageServerTimeoutRef.current) {
                   clearTimeout(imageServerTimeoutRef.current);
                 }
@@ -627,7 +658,20 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
             if (layer) {
               // Load the layer and check for errors
               try {
-                await layer.load();
+                // Wrap layer.load() with a generous timeout (45 seconds) for slow services like NAIP imagery
+                const loadTimeout = 45000; // 45 seconds
+                const loadStartTime = Date.now();
+                console.log(`⏳ Loading layer "${item.title}" (timeout: ${loadTimeout / 1000}s)...`);
+                
+                const loadPromise = layer.load();
+                const timeoutPromise = new Promise((_, reject) => 
+                  setTimeout(() => reject(new Error(`Layer load timeout after ${loadTimeout / 1000} seconds`)), loadTimeout)
+                );
+                
+                await Promise.race([loadPromise, timeoutPromise]);
+                
+                const loadDuration = ((Date.now() - loadStartTime) / 1000).toFixed(1);
+                console.log(`✅ Layer "${item.title}" loaded successfully in ${loadDuration}s`);
                 
                 // Disable scale-dependent rendering restrictions
                 // Many layers have arbitrary scale restrictions that prevent them from displaying
@@ -909,6 +953,10 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                                 clearTimeout(imageServerTimeoutRef.current);
                                 imageServerTimeoutRef.current = null;
                               }
+                              if (imageServerSlowWarningRef.current) {
+                                clearTimeout(imageServerSlowWarningRef.current);
+                                imageServerSlowWarningRef.current = null;
+                              }
                             }
                             
                             // Call completion callback (this removes spinner and shows eye)
@@ -930,6 +978,10 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                         clearTimeout(imageServerTimeoutRef.current);
                         imageServerTimeoutRef.current = null;
                       }
+                      if (imageServerSlowWarningRef.current) {
+                        clearTimeout(imageServerSlowWarningRef.current);
+                        imageServerSlowWarningRef.current = null;
+                      }
                     }
                     
                     onLayerLoadComplete?.(item.id);
@@ -937,11 +989,25 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                 }
               } catch (err: any) {
                 // Handle specific error cases
+                let errorMessage = '';
                 if (err?.message?.includes('400') || err?.details?.httpStatus === 400) {
-                  console.warn(`⚠️ Skipping incompatible layer "${item.title}": This layer may be retired or use an incompatible projection. Please contact the data provider to update the catalog.`);
+                  errorMessage = 'This layer may be retired or use an incompatible projection.';
+                  console.warn(`⚠️ Skipping incompatible layer "${item.title}": ${errorMessage}`);
+                } else if (err?.message?.includes('timeout')) {
+                  errorMessage = `Load timeout after 45 seconds. The service may be slow or unresponsive.`;
+                  console.warn(`⚠️ Could not load TNC layer "${item.title}": ${err.message}`);
+                  console.warn(`   This layer is taking longer than expected to load. The service may be slow or unresponsive.`);
                 } else {
+                  errorMessage = err.message || 'Unknown error occurred';
                   console.warn(`⚠️ Could not load TNC layer "${item.title}":`, err.message);
                 }
+                
+                // Show persistent error banner
+                setLayerLoadError({
+                  itemId: item.id,
+                  layerTitle: item.title,
+                  errorMessage: errorMessage
+                });
                 
                 // Hide ImageServer loading banner on error (synchronized with eye icon)
                 if (imageServerLoading?.itemId === item.id) {
@@ -949,6 +1015,10 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                   if (imageServerTimeoutRef.current) {
                     clearTimeout(imageServerTimeoutRef.current);
                     imageServerTimeoutRef.current = null;
+                  }
+                  if (imageServerSlowWarningRef.current) {
+                    clearTimeout(imageServerSlowWarningRef.current);
+                    imageServerSlowWarningRef.current = null;
                   }
                 }
                 
@@ -2702,7 +2772,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           <div className={`rounded-lg shadow-xl p-4 border-l-4 ${
             imageServerLoading.hasTimedOut 
               ? 'bg-amber-50 border-amber-500' 
-              : 'bg-blue-50 border-blue-500'
+              : imageServerLoading.showSlowWarning
+                ? 'bg-orange-50 border-orange-500'
+                : 'bg-blue-50 border-blue-500'
           }`}>
             <div className="flex items-start gap-3">
               {!imageServerLoading.hasTimedOut && (
@@ -2712,23 +2784,27 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
               )}
               <div className="flex-1 min-w-0">
                 <p className={`text-sm font-semibold mb-1 ${
-                  imageServerLoading.hasTimedOut ? 'text-amber-900' : 'text-blue-900'
+                  imageServerLoading.hasTimedOut ? 'text-amber-900' : imageServerLoading.showSlowWarning ? 'text-orange-900' : 'text-blue-900'
                 }`}>
                   {imageServerLoading.hasTimedOut 
-                    ? '⏱️ Large Image Service - Still Loading' 
-                    : '🗺️ Loading High-Resolution Imagery'}
+                    ? '⏱️ Large Image Service - Still Loading (>30s)' 
+                    : imageServerLoading.showSlowWarning 
+                      ? '⏳ Layer Taking Longer Than Expected (>10s)'
+                      : '🗺️ Loading High-Resolution Imagery'}
                 </p>
                 <p className={`text-xs mb-2 ${
-                  imageServerLoading.hasTimedOut ? 'text-amber-800' : 'text-blue-800'
+                  imageServerLoading.hasTimedOut ? 'text-amber-800' : imageServerLoading.showSlowWarning ? 'text-orange-800' : 'text-blue-800'
                 }`}>
                   <strong>{imageServerLoading.layerTitle}</strong>
                 </p>
                 <p className={`text-xs ${
-                  imageServerLoading.hasTimedOut ? 'text-amber-700' : 'text-blue-700'
+                  imageServerLoading.hasTimedOut ? 'text-amber-700' : imageServerLoading.showSlowWarning ? 'text-orange-700' : 'text-blue-700'
                 }`}>
                   {imageServerLoading.hasTimedOut 
-                    ? 'This untiled image service is taking longer than expected (>30s). The service may be slow or overloaded. Imagery will appear progressively as you zoom and pan.' 
-                    : 'This large imagery service may load slowly. Please wait...'}
+                    ? 'This layer is taking longer than expected (>30s). The service may be slow or overloaded. Layer will timeout after 45 seconds.' 
+                    : imageServerLoading.showSlowWarning
+                      ? 'This layer is taking longer than 10 seconds to load. Will timeout after 45 seconds if not loaded.'
+                      : 'This large imagery service may load slowly. Please wait...'}
                 </p>
               </div>
               <button
@@ -2738,17 +2814,65 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                     clearTimeout(imageServerTimeoutRef.current);
                     imageServerTimeoutRef.current = null;
                   }
+                  if (imageServerSlowWarningRef.current) {
+                    clearTimeout(imageServerSlowWarningRef.current);
+                    imageServerSlowWarningRef.current = null;
+                  }
                 }}
                 className={`flex-shrink-0 p-1 rounded hover:bg-opacity-20 transition-colors ${
                   imageServerLoading.hasTimedOut 
                     ? 'hover:bg-amber-900' 
-                    : 'hover:bg-blue-900'
+                    : imageServerLoading.showSlowWarning
+                      ? 'hover:bg-orange-900'
+                      : 'hover:bg-blue-900'
                 }`}
                 title="Dismiss"
               >
                 <svg className={`w-4 h-4 ${
-                  imageServerLoading.hasTimedOut ? 'text-amber-700' : 'text-blue-700'
+                  imageServerLoading.hasTimedOut ? 'text-amber-700' : imageServerLoading.showSlowWarning ? 'text-orange-700' : 'text-blue-700'
                 }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Layer Load Error Banner - Persistent red error message */}
+      {layerLoadError && (
+        <div 
+          id="layer-error-banner"
+          className="absolute top-4 left-1/2 transform -translate-x-1/2 z-30 max-w-md w-auto"
+          style={{ minWidth: '300px' }}
+        >
+          <div className="rounded-lg shadow-xl p-4 border-l-4 bg-red-50 border-red-500">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 mt-0.5">
+                <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold mb-1 text-red-900">
+                  ❌ Failed to Load Layer
+                </p>
+                <p className="text-xs mb-2 text-red-800">
+                  <strong>{layerLoadError.layerTitle}</strong>
+                </p>
+                <p className="text-xs text-red-700">
+                  {layerLoadError.errorMessage}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setLayerLoadError(null);
+                }}
+                className="flex-shrink-0 p-1 rounded hover:bg-red-900 hover:bg-opacity-20 transition-colors"
+                title="Dismiss"
+                aria-label="Dismiss error"
+              >
+                <svg className="w-4 h-4 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
