@@ -594,9 +594,9 @@ class TNCArcGISService {
       } catch (fetchError: any) {
         clearTimeout(timeout);
         if (fetchError.name === 'AbortError') {
-          console.warn(`⏱️ Service request timed out after ${timeoutMs / 1000}s: ${serviceUrl}`);
+          // console.warn(`⏱️ Service request timed out after ${timeoutMs / 1000}s: ${serviceUrl}`);
         } else {
-          console.error(`Error in fetch request for ${serviceUrl}:`, fetchError);
+          // console.error(`Error in fetch request for ${serviceUrl}:`, fetchError);
         }
         return [];
       }

@@ -464,11 +464,11 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       layersToRemove.forEach(itemId => {
         const layer = tncArcGISLayersRef.current.get(itemId);
         if (layer && view.map) {
-          console.log(`🗑️ Removing TNC layer: ${itemId} (${layer.title})`);
+          // console.log(`🗑️ Removing TNC layer: ${itemId} (${layer.title})`);
           
           // Clear ImageServer loading state if this layer was loading
           if (imageServerLoading?.itemId === itemId) {
-            console.log(`   🧹 Clearing ImageServer loading banner for removed layer`);
+            // console.log(`   🧹 Clearing ImageServer loading banner for removed layer`);
             setImageServerLoading(null);
             if (imageServerTimeoutRef.current) {
               clearTimeout(imageServerTimeoutRef.current);
@@ -481,13 +481,13 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           
           // Destroy the layer to free resources and ensure it's fully cleaned up
           if (typeof (layer as any).destroy === 'function') {
-            console.log(`   💥 Destroying layer instance`);
+            // console.log(`   💥 Destroying layer instance`);
             (layer as any).destroy();
           }
           
           // Remove from our tracking map
           tncArcGISLayersRef.current.delete(itemId);
-          console.log(`   ✅ Layer removed successfully`);
+          // console.log(`   ✅ Layer removed successfully`);
         }
       });
 
@@ -688,14 +688,14 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                           // If we have prefix matches but not exact matches, we need valueExpression
                           if (prefixMatches.length > 0 && exactMatches.length === 0) {
                             needsValueExpression = true;
-                            console.log(`🔧 Layer "${item.title}" needs valueExpression (field values are longer than renderer values)`);
-                            console.log(`   Expected:`, rendererValues);
-                            console.log(`   Actual:`, uniqueActual);
+                            // console.log(`🔧 Layer "${item.title}" needs valueExpression (field values are longer than renderer values)`);
+                            // console.log(`   Expected:`, rendererValues);
+                            // console.log(`   Actual:`, uniqueActual);
                           } else {
-                            console.log(`✓ Layer "${item.title}" values match exactly (no valueExpression needed)`);
+                            // console.log(`✓ Layer "${item.title}" values match exactly (no valueExpression needed)`);
                           }
                         } catch (e) {
-                          console.warn(`⚠️ Could not determine if valueExpression is needed for ${item.title}:`, e);
+                          // console.warn(`⚠️ Could not determine if valueExpression is needed for ${item.title}:`, e);
                         }
                         
                         // Reconstruct each symbol, preserving original style (patterns)
