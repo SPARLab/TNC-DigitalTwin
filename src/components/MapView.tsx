@@ -464,9 +464,30 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       layersToRemove.forEach(itemId => {
         const layer = tncArcGISLayersRef.current.get(itemId);
         if (layer && view.map) {
+          console.log(`🗑️ Removing TNC layer: ${itemId} (${layer.title})`);
+          
+          // Clear ImageServer loading state if this layer was loading
+          if (imageServerLoading?.itemId === itemId) {
+            console.log(`   🧹 Clearing ImageServer loading banner for removed layer`);
+            setImageServerLoading(null);
+            if (imageServerTimeoutRef.current) {
+              clearTimeout(imageServerTimeoutRef.current);
+              imageServerTimeoutRef.current = null;
+            }
+          }
+          
+          // Remove from map first
           view.map.remove(layer);
+          
+          // Destroy the layer to free resources and ensure it's fully cleaned up
+          if (typeof (layer as any).destroy === 'function') {
+            console.log(`   💥 Destroying layer instance`);
+            (layer as any).destroy();
+          }
+          
+          // Remove from our tracking map
           tncArcGISLayersRef.current.delete(itemId);
-      // console.log(`🗑️ Removed TNC layer: ${itemId}`);
+          console.log(`   ✅ Layer removed successfully`);
         }
       });
 
