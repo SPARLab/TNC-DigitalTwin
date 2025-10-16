@@ -20,6 +20,7 @@ import {
 import { FilterState } from '../types';
 import { formatDateRange, formatDateRangeCompact, getTimeRangeOptions, formatDateToUS } from '../utils/dateUtils';
 import { DATA_CATEGORIES, CATEGORY_DATA_SOURCES, SPATIAL_FILTERS } from '../utils/constants';
+import { THEMES } from '../utils/themes';
 
 interface FilterSubheaderProps {
   filters: FilterState;
@@ -27,10 +28,12 @@ interface FilterSubheaderProps {
   onSearch?: () => void;
   resultCount: number;
   isSearching?: boolean;
+  theme: string;
 }
 
-const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChange, onSearch, resultCount, isSearching = false }) => {
+const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChange, onSearch, resultCount, isSearching = false, theme }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const currentTheme = THEMES[theme] || THEMES.coastal;
 
   // Refs for click-outside detection
   const categoryRef = useRef<HTMLDivElement>(null);
@@ -207,7 +210,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
   };
 
   return (
-    <div id="filter-bar" className="bg-white border-b border-gray-200 px-6 py-4">
+    <div id="filter-bar" className={`${currentTheme.subheader} border-b border-gray-200 px-6 py-4 transition-colors duration-200`}>
       <div className="flex items-center justify-between">
         <div className="flex space-x-6">
           {/* Data Category Filter */}

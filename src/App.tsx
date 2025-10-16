@@ -21,6 +21,8 @@ import { TNCArcGISItem, tncArcGISAPI } from './services/tncArcGISService';
 import { formatDateRangeCompact, getDateRange, formatDateForAPI, formatDateToUS } from './utils/dateUtils';
 import { tncINaturalistService } from './services/tncINaturalistService';
 import { MapViewRef } from './components/MapView';
+import { DEFAULT_THEME } from './utils/themes';
+import { useLocalStorage } from './hooks/useLocalStorage';
 import { 
   fetchDendraStations,
   fetchDendraDatastreams,
@@ -29,6 +31,9 @@ import {
 } from './services/dendraService';
 
 function App() {
+  // Theme state with localStorage persistence
+  const [theme, setTheme] = useLocalStorage('dashboard-theme', DEFAULT_THEME);
+
   const [filters, setFilters] = useState<FilterState>({
     category: '',
     source: '',
@@ -1300,11 +1305,12 @@ function App() {
 
   return (
     <div id="app" className="h-screen bg-gray-50 flex flex-col">
-      <Header />
+      <Header theme={theme} onThemeChange={setTheme} />
       <FilterSubheader 
         filters={filters}
         onFilterChange={handleFilterChange}
         onSearch={handleSearch}
+        theme={theme}
         resultCount={
           lastSearchedFilters.source === 'TNC ArcGIS Hub' ? tncArcGISItems.length :
           lastSearchedFilters.source === 'CalFlora' ? calFloraPlants.length :
