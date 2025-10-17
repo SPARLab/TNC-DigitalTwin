@@ -208,8 +208,8 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
 
   return (
     <div id="filter-bar" className="bg-white border-b border-gray-200 px-6 py-4">
-      <div className="flex items-center justify-between">
-        <div className="flex space-x-6">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {/* Data Category Filter */}
           <div ref={categoryRef} id="category-filter-container" className="flex flex-col relative">
             <label id="category-filter-label" className="text-xs font-medium text-gray-500 mb-1">
@@ -218,13 +218,13 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
             <button 
               id="category-filter-button"
               onClick={() => handleDropdownToggle('category')}
-              className="flex items-center space-x-2 px-3 min-w-[19rem] py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50"
+              className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 w-full"
             >
               {filters.category ? getCategoryIcon(filters.category) : <Database className="w-4 h-4 flex-shrink-0 text-gray-400" />}
               <span id="category-filter-text" className={`text-sm truncate ${filters.category ? 'text-black' : 'text-gray-400'}`}>
-                {filters.category || 'Select category...'}
+                {filters.category || <><span className="hidden xl:inline">Select </span><span className="xl:lowercase">Category</span></>}
               </span>
-              <ChevronDown id="category-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ${openDropdown === 'category' ? 'rotate-180' : ''}`} />
+              <ChevronDown id="category-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ml-auto ${openDropdown === 'category' ? 'rotate-180' : ''}`} />
             </button>
             {openDropdown === 'category' && (
               <div id="category-filter-dropdown" className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg z-50">
@@ -251,13 +251,13 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
             <button 
               id="source-filter-button"
               onClick={() => handleDropdownToggle('source')}
-              className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 w-64"
+              className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 w-full"
             >
               <Database id="source-filter-icon" className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <span id="source-filter-text" className={`text-sm truncate ${filters.source ? 'text-black' : 'text-gray-400'}`}>
-                {filters.source || 'Select data source...'}
+                {filters.source || <><span className="hidden xl:inline">Select </span><span className="xl:lowercase">Data Source</span></>}
               </span>
-              <ChevronDown id="source-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ${openDropdown === 'source' ? 'rotate-180' : ''}`} />
+              <ChevronDown id="source-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ml-auto ${openDropdown === 'source' ? 'rotate-180' : ''}`} />
             </button>
             {openDropdown === 'source' && (
               <div id="source-filter-dropdown" className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg z-50">
@@ -284,7 +284,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
               id="spatial-filter-button"
               onClick={() => handleDropdownToggle('spatialFilter')}
               disabled={filters.source === 'Dendra Stations' || filters.source === 'TNC ArcGIS Hub' || filters.source === 'LiDAR'}
-              className={`flex items-center space-x-2 px-3 py-2 border rounded-md w-64 ${
+              className={`flex items-center space-x-2 px-3 py-2 border rounded-md w-full ${
                 filters.source === 'Dendra Stations' || filters.source === 'TNC ArcGIS Hub' || filters.source === 'LiDAR'
                   ? 'bg-gray-100 cursor-not-allowed opacity-60'
                   : filters.customPolygon 
@@ -294,10 +294,10 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
             >
               <MapPin id="spatial-filter-icon" className={`w-4 h-4 flex-shrink-0 ${filters.customPolygon ? 'text-blue-600' : 'text-gray-400'}`} />
               <span id="spatial-filter-text" className={`text-sm truncate ${filters.customPolygon ? 'text-blue-700 font-medium' : filters.spatialFilter ? 'text-black' : 'text-gray-400'}`}>
-                {filters.spatialFilter || 'Select spatial filter...'}
+                {filters.spatialFilter || <><span className="hidden xl:inline">Select </span><span className="xl:lowercase">Spatial Filter</span></>}
                 {filters.customPolygon && ' ✓'}
               </span>
-              <ChevronDown id="spatial-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ${openDropdown === 'spatialFilter' ? 'rotate-180' : ''}`} />
+              <ChevronDown id="spatial-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ml-auto ${openDropdown === 'spatialFilter' ? 'rotate-180' : ''}`} />
             </button>
             
             {/* Spatial Filter Dropdown */}
@@ -338,11 +338,11 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
                     : 'border-gray-300 bg-white hover:bg-gray-50'
                 }`}
               >
-                <Calendar id="time-range-filter-icon" className="w-4 h-4 text-gray-400" />
-                <span id="time-range-filter-text" className={`text-sm ${filters.source === 'Dendra Stations' || filters.timeRange ? 'text-black' : 'text-gray-400'}`}>
-                  {filters.source === 'Dendra Stations' ? 'All Time' : (filters.timeRange || 'Select time range...')}
+                <Calendar id="time-range-filter-icon" className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <span id="time-range-filter-text" className={`text-sm truncate ${filters.source === 'Dendra Stations' || filters.timeRange ? 'text-black' : 'text-gray-400'}`}>
+                  {filters.source === 'Dendra Stations' ? 'All Time' : (filters.timeRange || <><span className="hidden xl:inline">Select </span><span className="xl:lowercase">Time Range</span></>)}
                 </span>
-                <ChevronDown id="time-range-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform ${openDropdown === 'timeRange' ? 'rotate-180' : ''}`} />
+                <ChevronDown id="time-range-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ml-auto ${openDropdown === 'timeRange' ? 'rotate-180' : ''}`} />
               </button>
               
               {/* Search Button */}
@@ -372,7 +372,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
             </div>
             
             {openDropdown === 'timeRange' && filters.source !== 'Dendra Stations' && (
-              <div id="time-range-dropdown" className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 w-80">
+              <div id="time-range-dropdown" className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 min-w-full sm:w-80">
                 {timeRangeOptions.map((option) => (
                   <button
                     key={option.value}
