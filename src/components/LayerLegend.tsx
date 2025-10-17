@@ -258,7 +258,10 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false, on
         tabIndex={isFilterable ? 0 : undefined}
       >
         {renderSymbolSwatch(item.symbol)}
-        <span className="text-sm text-gray-700 break-words flex-1 min-w-0">
+        <span 
+          data-testid="legend-item-label"
+          className="text-sm text-gray-700 break-words flex-1 min-w-0"
+        >
           {label}
         </span>
         {isFilterable && isSelected && (

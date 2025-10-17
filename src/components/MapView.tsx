@@ -2753,7 +2753,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   };
 
   return (
-    <div id="map-view" className="flex-1 relative">
+    <div id="map-view" data-testid="map-view" className="flex-1 relative">
       {/* ArcGIS Map Container */}
       <div 
         id="arcgis-map-container"

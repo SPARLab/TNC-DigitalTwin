@@ -1,0 +1,76 @@
+{
+  "layers": [
+    {
+      "id": "jldp-fire-perimeters",
+      "title": "JLDP Fire Perimeters",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/Fire_Perimeters/FeatureServer",
+      "type": "FeatureService",
+      "category": "Fire",
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "descriptionMatches": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "knownIssues": [],
+      "testCoordinates": { "x": 960, "y": 540 },
+      "notes": "Clean passing layer - use as reference for expected behavior"
+    },
+    {
+      "id": "flammap-burn-probability",
+      "title": "FlamMap Burn Probability Based on 500 Random Ignitions",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/FlamMap_Burn_Probability_Based_on_500_Random_Ignitions/FeatureServer",
+      "type": "FeatureService",
+      "category": "Fire",
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "descriptionMatches": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": false,
+        "legendFiltersWork": false
+      },
+      "knownIssues": [
+        "ISSUE-8: Legend labels missing units (shows '0-2' with no measurement)",
+        "ISSUE-16: Legend filters don't work"
+      ],
+      "testCoordinates": { "x": 960, "y": 540 },
+      "notes": "Has known issues with legend - use to test known issue tracking"
+    },
+    {
+      "id": "usa-offshore-pipelines",
+      "title": "USA Offshore Pipelines",
+      "url": "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_OCS_Oil_and_Gas_Pipelines/FeatureServer",
+      "type": "FeatureService",
+      "category": "Marine",
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": false,
+        "downloadLinkWorks": false,
+        "descriptionMatches": false,
+        "tooltipsPopUp": false,
+        "legendExists": false,
+        "legendLabelsDescriptive": false,
+        "legendFiltersWork": false
+      },
+      "knownIssues": [
+        "ISSUE-13: Requires authentication/login credentials"
+      ],
+      "testCoordinates": null,
+      "notes": "Requires login - use to test auth detection"
+    }
+  ],
+  "testSuites": {
+    "smoke": ["jldp-fire-perimeters"],
+    "representative": ["jldp-fire-perimeters", "flammap-burn-probability", "usa-offshore-pipelines"],
+    "passing": ["jldp-fire-perimeters"],
+    "failing": ["flammap-burn-probability", "usa-offshore-pipelines"]
+  }
+}
+
