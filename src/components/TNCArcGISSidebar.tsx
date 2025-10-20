@@ -276,11 +276,14 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
               )}
             </div>
             
-            {item.snippet && (
-              <p id={`item-snippet-${item.id}`} className={`text-sm text-gray-600 mb-2 break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
-                {item.snippet}
-              </p>
-            )}
+            {item.snippet && (() => {
+              console.log(`📄 Snippet for "${item.title}":`, item.snippet.substring(0, 300));
+              return (
+                <p id={`item-snippet-${item.id}`} className={`text-sm text-gray-600 mb-2 break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
+                  {item.snippet}
+                </p>
+              );
+            })()}
             
             <div id={`item-badges-${item.id}`} className="flex flex-wrap gap-1 mb-2">
               <span id={`item-ui-pattern-badge-${item.id}`} className={`px-2 py-1 text-xs rounded-full ${getUIPatternColor(item.uiPattern)}`}>
@@ -350,18 +353,21 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
         {isExpanded && (
           <div id={`item-expanded-content-${item.id}`} className="mt-3 pt-3 border-t border-gray-200 space-y-3" onClick={(e) => e.stopPropagation()}>
             {/* Description */}
-            {item.description && (
-              <div id={`item-description-section-${item.id}`}>
-                <h4 id={`item-description-label-${item.id}`} className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
-                  Description
-                </h4>
-                <div 
-                  id={`item-description-content-${item.id}`}
-                  className="text-sm text-gray-700 prose prose-sm max-w-none overflow-hidden break-words max-h-32 overflow-y-auto"
-                  dangerouslySetInnerHTML={{ __html: item.description }}
-                />
-              </div>
-            )}
+            {item.description && (() => {
+              console.log(`📋 Left Sidebar Card Description for "${item.title}":`, item.description.substring(0, 500));
+              return (
+                <div id={`item-description-section-${item.id}`}>
+                  <h4 id={`item-description-label-${item.id}`} className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
+                    Description
+                  </h4>
+                  <div 
+                    id={`item-description-content-${item.id}`}
+                    className="text-sm text-gray-700 prose prose-sm max-w-none overflow-hidden break-words max-h-32 overflow-y-auto"
+                    dangerouslySetInnerHTML={{ __html: item.description }}
+                  />
+                </div>
+              );
+            })()}
             
             {/* Tags */}
             {item.tags.length > 0 && (

@@ -411,6 +411,33 @@ class TNCArcGISService {
   }
 
   /**
+   * Fetch full item details from ArcGIS Online REST API
+   * Hub API truncates descriptions, so we fetch the complete metadata here
+   */
+  async fetchFullItemDetails(itemId: string): Promise<{ description: string; snippet: string } | null> {
+    try {
+      const url = `https://www.arcgis.com/sharing/rest/content/items/${itemId}?f=json`;
+      console.log(`🔍 Fetching full metadata for item: ${itemId}`);
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        console.warn(`Failed to fetch full item details: ${response.status}`);
+        return null;
+      }
+      
+      const data = await response.json();
+      
+      return {
+        description: data.description || '',
+        snippet: data.snippet || ''
+      };
+    } catch (error) {
+      console.error('Error fetching full item details:', error);
+      return null;
+    }
+  }
+
+  /**
    * Get apps and maps (for future use if needed)
    */
   async getAppsAndMaps(options: {

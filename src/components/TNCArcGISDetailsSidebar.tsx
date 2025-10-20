@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { TNCArcGISItem } from '../services/tncArcGISService';
+import { tncArcGISAPI } from '../services/tncArcGISService';
 import { X, Eye, EyeOff, Calendar, User, ExternalLink, Layers, Download } from 'lucide-react';
 
 interface TNCArcGISDetailsSidebarProps {
@@ -25,7 +26,41 @@ const TNCArcGISDetailsSidebar: React.FC<TNCArcGISDetailsSidebarProps> = ({
   onClose,
   onDownloadDataset
 }) => {
+  const [fullDescription, setFullDescription] = useState<string | null>(null);
+  const [isLoadingDescription, setIsLoadingDescription] = useState(false);
+  
+  // Fetch full description from ArcGIS Online when item changes
+  useEffect(() => {
+    if (!item) {
+      setFullDescription(null);
+      return;
+    }
+    
+    // If description seems truncated (less than 200 chars), fetch full version
+    if (item.description && item.description.length < 500) {
+      setIsLoadingDescription(true);
+      tncArcGISAPI.fetchFullItemDetails(item.id)
+        .then((details) => {
+          if (details && details.description) {
+            setFullDescription(details.description);
+            console.log(`✅ Fetched full description (${details.description.length} chars)`);
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to fetch full description:', error);
+        })
+        .finally(() => {
+          setIsLoadingDescription(false);
+        });
+    } else {
+      setFullDescription(null); // Use original if it's already long
+    }
+  }, [item?.id]);
+  
   if (!item) return null;
+  
+  // Use full description if available, otherwise fall back to truncated version
+  const displayDescription = fullDescription || item.description;
   
   // Treat reloading layers as active to prevent button flicker
   const effectivelyActive = isActive || isReloading;
@@ -65,21 +100,8 @@ const TNCArcGISDetailsSidebar: React.FC<TNCArcGISDetailsSidebarProps> = ({
 
       {/* Content - Scrollable */}
       <div id="tnc-details-content" className="flex-1 overflow-y-auto p-2 space-y-4">
-        {/* Description */}
-        {item.description && (
-          <div id="tnc-details-description-section">
-            <h3 id="tnc-details-description-label" className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">
-              Description
-            </h3>
-            <div 
-              id="tnc-details-description-content"
-              className="text-sm text-gray-700 prose prose-sm max-w-none break-words"
-              dangerouslySetInnerHTML={{ __html: item.description }}
-            />
-          </div>
-        )}
-
-        {item.snippet && !item.description && (
+        {/* Snippet as Summary (if available) */}
+        {item.snippet && (
           <div id="tnc-details-snippet-section">
             <h3 id="tnc-details-snippet-label" className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">
               Summary
@@ -87,6 +109,21 @@ const TNCArcGISDetailsSidebar: React.FC<TNCArcGISDetailsSidebarProps> = ({
             <p id="tnc-details-snippet-content" className="text-sm text-gray-700 break-words">
               {item.snippet}
             </p>
+          </div>
+        )}
+        
+        {/* Description as Additional Details (if different from snippet) */}
+        {displayDescription && displayDescription !== item.snippet && (
+          <div id="tnc-details-description-section">
+            <h3 id="tnc-details-description-label" className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">
+              Additional Details
+              {isLoadingDescription && <span className="ml-2 text-xs text-gray-500">(loading full...)</span>}
+            </h3>
+            <div 
+              id="tnc-details-description-content"
+              className="text-sm text-gray-700 prose prose-sm max-w-none break-words"
+              dangerouslySetInnerHTML={{ __html: displayDescription }}
+            />
           </div>
         )}
 
