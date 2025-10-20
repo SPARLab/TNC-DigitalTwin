@@ -47,19 +47,37 @@ npx playwright show-report
 
 ## Test Structure
 
+```
+e2e/
+├── tnc-arcgis-layers/              # Individual layer test files
+│   ├── calfire-frap-fire-threat-2019.spec.ts  # Complete 8-criteria test
+│   ├── earthquake-faults-folds-usa.spec.ts    # TRUE NEGATIVE test (404)
+│   └── ...more layer tests
+├── helpers/
+│   └── tnc-arcgis-test-helpers.ts  # Shared test utilities
+├── test-data/
+│   └── arcgis-layers.json          # Layer configs & expected results
+└── README.md
+```
+
+### Organization Philosophy
+
+**One test file per layer** - Each ArcGIS layer gets its own test file named after the layer. This:
+- Makes it easy to run tests for specific layers
+- Scales to hundreds of layers without massive files
+- Allows parallel execution (when ready)
+- Simplifies tracking layer-specific issues
+
 ### Test Data Configuration
 - **`test-data/arcgis-layers.json`** - Defines layers, expected results, and known issues
 - Easily editable to add new layers or update expectations
 - Supports test suites (smoke, representative, full, passing, failing)
 
-### Test Helpers
-- **`helpers/arcgis-test-helpers.ts`** - Reusable test functions for 8 quality checks
+### Shared Test Helpers (`helpers/tnc-arcgis-test-helpers.ts`)
+- `navigateToLayer()` - Complete search workflow to find a layer
+- `testDownloadLink()` - Verify download works OR detects 404 (for true negatives)
+- `checkForColors()` - Pixel-based verification that layer rendered
 - Functions test user-visible behavior, not implementation details
-- Can be used across different test files
-
-### Test Files
-- **`arcgis-layer-quality.spec.ts`** - Main QA tests for ArcGIS layers
-- Additional test files can be added for specific features
 
 ## Adding New Layers to Test
 

@@ -29,3 +29,13 @@ dist-ssr
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Playwright test artifacts
+/test-results/
+/playwright-report/
+/playwright/.cache/
+.last-run.json
+*.webm
+*-screenshot.png
+*-before-filter.png
+*-after-filter.png

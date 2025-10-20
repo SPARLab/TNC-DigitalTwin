@@ -1,9 +1,37 @@
 {
   "layers": [
     {
-      "id": "jldp-fire-perimeters",
-      "title": "JLDP Fire Perimeters",
-      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/Fire_Perimeters/FeatureServer",
+      "id": "calfire-frap-fire-threat",
+      "title": "CalFire FRAP Fire Threat 2019",
+      "itemId": "22db2b3b4e0444cbb9cfc3cd18a51cc5",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/CalFire_FRAP_Fire_Threat_2019/FeatureServer",
+      "type": "FeatureService",
+      "category": "Fire",
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "descriptionMatches": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": false
+      },
+      "knownIssues": ["ISSUE-16: Legend filters don't work"],
+      "testCoordinates": { "x": 1280, "y": 720 },
+      "layerColors": [
+        { "r": 255, "g": 0, "b": 0, "label": "Red (high threat)" },
+        { "r": 255, "g": 165, "b": 0, "label": "Orange (moderate-high)" },
+        { "r": 255, "g": 255, "b": 0, "label": "Yellow (moderate)" },
+        { "r": 255, "g": 255, "b": 190, "label": "Light yellow (low-moderate)" }
+      ],
+      "notes": "TRUE POSITIVE test - all features should work (except known issue with filters)"
+    },
+    {
+      "id": "calfire-fire-hazard-severity-zones",
+      "title": "CalFire Fire Hazard Severity Zones 2023",
+      "itemId": "f556d4041d984b1fb07c78b21b152872",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/CalFire_Fire_Hazard_Severity_Zones_2023/FeatureServer",
       "type": "FeatureService",
       "category": "Fire",
       "expectedResults": {
@@ -16,61 +44,47 @@
         "legendLabelsDescriptive": true,
         "legendFiltersWork": true
       },
-      "knownIssues": [],
-      "testCoordinates": { "x": 960, "y": 540 },
-      "notes": "Clean passing layer - use as reference for expected behavior"
+      "knownIssues": ["Description in left sidebar doesn't match right sidebar"],
+      "testCoordinates": { "x": 1280, "y": 720 },
+      "layerColors": [
+        { "r": 230, "g": 0, "b": 0, "label": "Red (Very High)" },
+        { "r": 255, "g": 170, "b": 0, "label": "Orange (High)" },
+        { "r": 255, "g": 235, "b": 0, "label": "Yellow (Moderate)" },
+        { "r": 200, "g": 0, "b": 0, "label": "Dark Red (Very High alt)" },
+        { "r": 255, "g": 140, "b": 0, "label": "Orange (High alt)" }
+      ],
+      "notes": "TRUE POSITIVE test - legend filters SHOULD work (verified manually)"
     },
     {
-      "id": "flammap-burn-probability",
-      "title": "FlamMap Burn Probability Based on 500 Random Ignitions",
-      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/FlamMap_Burn_Probability_Based_on_500_Random_Ignitions/FeatureServer",
+      "id": "earthquake-faults-folds-usa",
+      "title": "Earthquake Faults and Folds in the USA",
+      "itemId": "7ba828df977745f1a1e4b6cc79d6486a",
+      "url": "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/Earthquake_Faults_and_Folds_in_the_USA/FeatureServer",
       "type": "FeatureService",
-      "category": "Fire",
+      "category": "Topographic",
       "expectedResults": {
         "showsInCategories": true,
         "layersLoad": true,
-        "downloadLinkWorks": true,
+        "downloadLinkWorks": false,
         "descriptionMatches": true,
         "tooltipsPopUp": true,
         "legendExists": true,
-        "legendLabelsDescriptive": false,
-        "legendFiltersWork": false
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
       },
       "knownIssues": [
-        "ISSUE-8: Legend labels missing units (shows '0-2' with no measurement)",
-        "ISSUE-16: Legend filters don't work"
+        "Download link redirects to 404 - broken link"
       ],
-      "testCoordinates": { "x": 960, "y": 540 },
-      "notes": "Has known issues with legend - use to test known issue tracking"
-    },
-    {
-      "id": "usa-offshore-pipelines",
-      "title": "USA Offshore Pipelines",
-      "url": "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_OCS_Oil_and_Gas_Pipelines/FeatureServer",
-      "type": "FeatureService",
-      "category": "Marine",
-      "expectedResults": {
-        "showsInCategories": true,
-        "layersLoad": false,
-        "downloadLinkWorks": false,
-        "descriptionMatches": false,
-        "tooltipsPopUp": false,
-        "legendExists": false,
-        "legendLabelsDescriptive": false,
-        "legendFiltersWork": false
-      },
-      "knownIssues": [
-        "ISSUE-13: Requires authentication/login credentials"
-      ],
-      "testCoordinates": null,
-      "notes": "Requires login - use to test auth detection"
+      "testCoordinates": { "x": 1280, "y": 720 },
+      "notes": "TRUE NEGATIVE test - download should fail with 404"
     }
   ],
   "testSuites": {
-    "smoke": ["jldp-fire-perimeters"],
-    "representative": ["jldp-fire-perimeters", "flammap-burn-probability", "usa-offshore-pipelines"],
-    "passing": ["jldp-fire-perimeters"],
-    "failing": ["flammap-burn-probability", "usa-offshore-pipelines"]
+    "current": ["calfire-frap-fire-threat", "calfire-fire-hazard-severity-zones", "earthquake-faults-folds-usa"],
+    "truePositive": ["calfire-frap-fire-threat", "calfire-fire-hazard-severity-zones"],
+    "trueNegative": ["earthquake-faults-folds-usa"],
+    "filterWorks": ["calfire-fire-hazard-severity-zones"],
+    "filterBroken": ["calfire-frap-fire-threat"]
   }
 }
 
