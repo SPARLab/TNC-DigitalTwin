@@ -7,12 +7,37 @@ import { PNG } from 'pngjs';
  */
 
 /**
+ * Switch basemap from satellite to topographic (cleaner background for testing)
+ * @param page - Playwright page object
+ */
+export async function switchToTopoBasemap(page: Page): Promise<void> {
+  const basemapToggle = page.locator('#basemap-toggle-btn');
+  
+  if (await basemapToggle.isVisible()) {
+    // Check current basemap by looking at button title
+    const title = await basemapToggle.getAttribute('title');
+    
+    // If currently showing satellite, click to switch to topo
+    if (title?.includes('Topo')) {
+      await basemapToggle.click();
+      await page.waitForTimeout(1000); // Wait for basemap to load
+      console.log('✅ Switched to topographic basemap');
+    } else {
+      console.log('✅ Already on topographic basemap');
+    }
+  }
+}
+
+/**
  * Navigate to a layer by performing the complete search workflow
  * @param page - Playwright page object
  * @param layerTitle - Title of the layer to find
  * @param category - Category to search in (e.g., "Fire", "Topographic")
  */
 export async function navigateToLayer(page: Page, layerTitle: string, category: string): Promise<void> {
+  // Switch to topographic basemap for cleaner testing background
+  await switchToTopoBasemap(page);
+  
   // Click "Select Category" button
   const selectCategoryBtn = page.getByRole('button', { name: /select category/i });
   await selectCategoryBtn.click();
