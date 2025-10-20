@@ -143,11 +143,18 @@ test.describe('CalFire Fire Hazard Severity Zones 2023', () => {
     });
 
     // ===== TEST 5: Tooltips Pop-Up =====
-    await test.step('5. Tooltips Pop-Up (click map feature) - TODO', async () => {
-      // TODO: Tooltips not yet implemented in the app
-      // When implemented, this test should click the map and verify popup appears
-      // For now, just pass as known unimplemented feature
-      expect.soft(true).toBe(true);
+    await test.step('5. Tooltips Pop-Up (click map feature)', async () => {
+      // Extract legend colors for finding a feature to click
+      const legendColors = await helpers.extractLegendColors(page);
+      
+      if (legendColors.length > 0) {
+        // Test feature popup (finds colored pixel, clicks it, checks for popup)
+        const popupAppeared = await helpers.testFeaturePopup(page, legendColors);
+        expect.soft(popupAppeared).toBe(layer.expectedResults.tooltipsPopUp);
+      } else {
+        console.warn('No legend colors found, skipping tooltip test');
+        expect.soft(false).toBe(layer.expectedResults.tooltipsPopUp);
+      }
     });
 
     // ===== TEST 6: Legend Exists =====

@@ -198,8 +198,8 @@ export function checkForColors(
 ): boolean {
   const png = PNG.sync.read(screenshot);
   
-  // Tolerance for color variation (increased to account for ArcGIS rendering/anti-aliasing)
-  const tolerance = 30;
+  // Tolerance for color variation (lower tolerance since opacity fixed to 100%)
+  const tolerance = 10;
   const foundColors = new Set<string>();
   
   // Sample every 5th pixel for better coverage
@@ -226,6 +226,92 @@ export function checkForColors(
 }
 
 /**
+ * Test if clicking on a feature shows a popup
+ * Finds a pixel with layer color, clicks it, checks for ArcGIS popup
+ */
+export async function testFeaturePopup(page: Page, legendColors: Array<{ r: number; g: number; b: number }>): Promise<boolean> {
+  const mapContainer = page.locator('#map-view');
+  const mapBox = await mapContainer.boundingBox();
+  
+  if (!mapBox) {
+    console.warn('Map container not found');
+    return false;
+  }
+  
+  // Take screenshot of map area (excluding legend - 142px from right)
+  const screenshot = await page.screenshot({
+    clip: {
+      x: mapBox.x,
+      y: mapBox.y,
+      width: mapBox.width - 142,
+      height: mapBox.height
+    }
+  });
+  
+  // Find first pixel matching any legend color
+  const png = PNG.sync.read(screenshot);
+  const tolerance = 10; // Lower tolerance since we fixed opacity to 100%
+  let clickX: number | null = null;
+  let clickY: number | null = null;
+  
+  // Sample pixels to find a colored feature
+  outerLoop: for (let y = 0; y < png.height; y += 5) {
+    for (let x = 0; x < png.width; x += 5) {
+      const idx = (png.width * y + x) << 2;
+      const r = png.data[idx];
+      const g = png.data[idx + 1];
+      const b = png.data[idx + 2];
+      
+      // Check if this pixel matches any legend color
+      for (const target of legendColors) {
+        if (
+          Math.abs(r - target.r) <= tolerance &&
+          Math.abs(g - target.g) <= tolerance &&
+          Math.abs(b - target.b) <= tolerance
+        ) {
+          // Found a colored pixel! Convert screenshot coords to page coords
+          clickX = mapBox.x + x;
+          clickY = mapBox.y + y;
+          console.log(`🎯 Found feature pixel at (${clickX}, ${clickY}) with color rgb(${r},${g},${b})`);
+          break outerLoop;
+        }
+      }
+    }
+  }
+  
+  if (clickX === null || clickY === null) {
+    console.warn('No colored pixels found to click');
+    return false;
+  }
+  
+  // Click the feature
+  await page.mouse.click(clickX, clickY);
+  await page.waitForTimeout(1000); // Wait for popup to appear
+  
+  // Check if ArcGIS popup appeared
+  const popup = page.locator('.esri-popup');
+  const popupVisible = await popup.isVisible().catch(() => false);
+  
+  if (popupVisible) {
+    console.log('✅ Popup appeared after clicking feature');
+    
+    // Close popup for next test using the id="close" button
+    const closeButton = page.locator('#close');
+    if (await closeButton.isVisible().catch(() => false)) {
+      await closeButton.click({ force: true }); // Force click to bypass legend overlay
+      await page.waitForTimeout(500);
+      console.log('✅ Popup closed');
+    } else {
+      console.warn('⚠️ Close button not found, popup may still be open');
+    }
+  } else {
+    console.warn('❌ No popup appeared after clicking feature');
+  }
+  
+  return popupVisible;
+}
+
+/**
  * Check which colors are present in a screenshot
  * Returns array of found colors from the target list
  */
@@ -234,7 +320,7 @@ export function checkWhichColorsPresent(
   targetColors: Array<{ r: number; g: number; b: number; label?: string }>
 ): Array<{ r: number; g: number; b: number; label?: string; found: boolean }> {
   const png = PNG.sync.read(screenshot);
-  const tolerance = 30;
+  const tolerance = 10; // Lower tolerance since opacity fixed to 100%
   const foundColors = new Set<string>();
   
   // Sample every 5th pixel for better coverage
