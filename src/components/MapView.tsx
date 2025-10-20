@@ -48,6 +48,7 @@ interface MapViewProps {
   layerOpacities?: Record<string, number>;
   onLayerLoadComplete?: (itemId: string) => void;
   onLayerLoadError?: (itemId: string) => void;
+  onLayerOpacityChange?: (itemId: string, opacity: number) => void;
   onLegendDataFetched?: (itemId: string, legendData: any) => void;
   // Dendra Stations
   dendraStations?: DendraStation[];
@@ -124,6 +125,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   layerOpacities = {},
   onLayerLoadComplete,
   onLayerLoadError,
+  onLayerOpacityChange,
   onLegendDataFetched,
   dendraStations = [],
   selectedDendraStationId,
@@ -153,6 +155,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   } | null>(null);
   const imageServerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const imageServerSlowWarningRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Basemap selection state
+  const [currentBasemap, setCurrentBasemap] = useState<'hybrid' | 'topo-vector'>('hybrid');
   
   // Layer load error state - shows persistent error banner
   const [layerLoadError, setLayerLoadError] = useState<{
@@ -332,7 +337,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       // Create the map with a free satellite-style basemap
       // 'hybrid' provides satellite imagery with labels and is free to use
       const map = new Map({
-        basemap: 'hybrid'
+        basemap: currentBasemap
       });
 
       // Suppress basemap loading errors by handling them immediately
@@ -455,6 +460,13 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       };
     }
   }, []);
+
+  // Effect to update basemap when selection changes
+  useEffect(() => {
+    if (view && view.map) {
+      view.map.basemap = currentBasemap as any;
+    }
+  }, [currentBasemap, view]);
 
   // Effect to manage TNC ArcGIS Hub map layers
   useEffect(() => {
@@ -742,6 +754,13 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                           // console.warn(`⚠️ Could not determine if valueExpression is needed for ${item.title}:`, e);
                         }
                         
+                        // Capture the original alpha from the first symbol to use as default layer opacity
+                        // This respects the researcher's intended visualization as the default
+                        let detectedAlpha: number | null = null;
+                        if (uniqueValueInfos.length > 0 && uniqueValueInfos[0].symbol?.color?.a !== undefined) {
+                          detectedAlpha = uniqueValueInfos[0].symbol.color.a;
+                        }
+                        
                         // Reconstruct each symbol, preserving original style (patterns)
                         const reconstructedInfos = uniqueValueInfos.map((info: any) => {
                           const color = info.symbol?.color;
@@ -753,7 +772,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                             label: info.label || info.value,
                             symbol: new SimpleFillSymbol({
                               style: style,  // Use original pattern style
-                              color: color ? [color.r, color.g, color.b, Math.max(0.3, color.a || 0.5)] : [200, 200, 200, 0.5],
+                              // Force symbols to 100% opacity - let layer-level opacity slider control transparency
+                              color: color ? [color.r, color.g, color.b, 1.0] : [200, 200, 200, 1.0],
                               outline: outline ? {
                                 color: [outline.color.r, outline.color.g, outline.color.b, Math.max(0.5, outline.color.a || 0.8)],
                                 width: outline.width || 1
@@ -778,6 +798,25 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                             });
                         
                         featureLayer.renderer = newRenderer;
+                        
+                        // Apply detected alpha as layer's default opacity if this is the first load
+                        // This respects the researcher's intended visualization
+                        if (detectedAlpha !== null && layerOpacities[item.id] === undefined) {
+                          const detectedOpacity = Math.round(detectedAlpha * 100);
+                          console.log(`🎨 Using detected opacity ${detectedOpacity}% for "${item.title}"`);
+                          
+                          // Update layer opacity immediately
+                          (layer as any).opacity = detectedAlpha;
+                          
+                          // Notify parent to update state (so slider shows correct value)
+                          if (onLegendDataFetched) {
+                            // Piggyback on legend callback to pass opacity info
+                            // We'll need to handle this in App.tsx
+                            setTimeout(() => {
+                              onLayerOpacityChange?.(item.id, detectedOpacity);
+                            }, 0);
+                          }
+                        }
                       }
                     }
                   } catch (err) {
@@ -2924,6 +2963,16 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         >
           <span className="text-gray-600 text-sm">⛶</span>
         </button>
+        <button 
+          id="basemap-toggle-btn"
+          onClick={() => setCurrentBasemap(prev => prev === 'hybrid' ? 'topo-vector' : 'hybrid')}
+          className="w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors"
+          title={`Switch to ${currentBasemap === 'hybrid' ? 'Topo' : 'Satellite'} Map`}
+        >
+          <span className="text-gray-600 text-xs font-medium">
+            {currentBasemap === 'hybrid' ? '🗺️' : '🛰️'}
+          </span>
+        </button>
       </div>
 
       {/* Drawn Polygon Indicator & Clear Button */}
@@ -3044,6 +3093,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                     <LayerLegend 
                       legend={item.legendData} 
                       isCompact={activeLayers.length > 1}
+                      layerOpacity={layerOpacities[item.id] ?? 80}
                       onFilterChange={(selectedValues) => {
                         // Get the field name from the renderer to use for filtering
                         const layer = tncArcGISLayersRef.current.get(item.id);

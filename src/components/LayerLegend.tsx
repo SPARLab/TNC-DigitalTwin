@@ -39,10 +39,11 @@ export interface LayerLegendData {
 interface LayerLegendProps {
   legend: LayerLegendData;
   isCompact?: boolean;
+  layerOpacity?: number; // Layer opacity percentage (0-100)
   onFilterChange?: (selectedValues: (string | number)[]) => void;
 }
 
-const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false, onFilterChange }) => {
+const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false, layerOpacity = 100, onFilterChange }) => {
   const [isExpanded, setIsExpanded] = useState(!isCompact);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedValues, setSelectedValues] = useState<(string | number)[]>([]);
@@ -78,10 +79,12 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false, on
   const renderSymbolSwatch = (symbol: LegendSymbol) => {
     const { type, fillColor, outlineColor, outlineWidth, size, lineWidth, style } = symbol;
 
-    // Convert RGBA array to CSS rgba string
+    // Convert RGBA array to CSS rgba string, applying layer opacity
     const toRGBA = (color?: [number, number, number, number]) => {
       if (!color) return 'transparent';
-      return `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${color[3] / 255})`;
+      // Apply layer opacity to the alpha channel (layerOpacity is 0-100, convert to 0-1)
+      const alphaWithLayerOpacity = (color[3] / 255) * (layerOpacity / 100);
+      return `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alphaWithLayerOpacity})`;
     };
 
     const fillStyle = toRGBA(fillColor);

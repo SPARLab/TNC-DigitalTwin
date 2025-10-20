@@ -1430,6 +1430,7 @@ function App() {
                 layerOpacities={layerOpacities}
                 onLayerLoadComplete={handleLayerLoadComplete}
                 onLayerLoadError={handleLayerLoadError}
+                onLayerOpacityChange={handleLayerOpacityChange}
                 onLegendDataFetched={handleLegendDataFetched}
                 dendraStations={lastSearchedFilters.source === 'Dendra Stations' ? dendraStations : []}
                 selectedDendraStationId={selectedDendraStation?.id}
