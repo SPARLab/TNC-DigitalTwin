@@ -168,8 +168,11 @@ export async function testDownloadLink(page: Page, expectedToWork: boolean): Pro
 }
 
 /**
- * Extract colors from legend swatches
- * Reads the background color of each legend-swatch-polygon element
+ * Extract colors from legend swatches (polygons, lines, or icons)
+ * Adaptable to handle different legend types:
+ * - Polygon fills (legend-swatch-polygon-*)
+ * - Line strokes (legend-swatch-line-* with nested div)
+ * - Icons (skipped - no color extraction)
  */
 export async function extractLegendColors(page: Page): Promise<Array<{ r: number; g: number; b: number; label: string }>> {
   const legend = page.locator('#floating-legend-panel');
@@ -184,18 +187,35 @@ export async function extractLegendColors(page: Page): Promise<Array<{ r: number
   
   for (let i = 0; i < count; i++) {
     const item = legendItems.nth(i);
+    let bgColor: string | null = null;
     
-    // Get the swatch (polygon color indicator)
-    const swatch = item.locator('[id^="legend-swatch-polygon-"]');
-    
-    if (await swatch.isVisible().catch(() => false)) {
-      // Get computed background color
-      const bgColor = await swatch.evaluate((el) => {
+    // Try polygon swatch first
+    const polygonSwatch = item.locator('[id^="legend-swatch-polygon-"]');
+    if (await polygonSwatch.isVisible().catch(() => false)) {
+      bgColor = await polygonSwatch.evaluate((el) => {
         const style = window.getComputedStyle(el);
         return style.backgroundColor;
       });
-      
-      // Parse rgb(r, g, b) or rgba(r, g, b, a)
+    }
+    
+    // Try line swatch if polygon not found
+    if (!bgColor) {
+      const lineSwatch = item.locator('[id^="legend-swatch-line-"]');
+      if (await lineSwatch.isVisible().catch(() => false)) {
+        // For lines, color is in the nested div
+        bgColor = await lineSwatch.evaluate((el) => {
+          const nestedDiv = el.querySelector('div');
+          if (nestedDiv) {
+            const style = window.getComputedStyle(nestedDiv);
+            return style.backgroundColor;
+          }
+          return null;
+        });
+      }
+    }
+    
+    // Parse color if found
+    if (bgColor) {
       const match = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
       if (match) {
         const r = parseInt(match[1]);
@@ -209,6 +229,7 @@ export async function extractLegendColors(page: Page): Promise<Array<{ r: number
         colors.push({ r, g, b, label: label || 'Unknown' });
       }
     }
+    // Icons (legend-swatch-icon-*) are skipped - no color to extract
   }
   
   return colors;
@@ -280,6 +301,7 @@ export async function testFeaturePopup(page: Page, legendColors: Array<{ r: numb
   let clickY: number | null = null;
   
   // Sample pixels to find a colored feature
+  // Sample every 5th pixel for better coverage
   outerLoop: for (let y = 0; y < png.height; y += 5) {
     for (let x = 0; x < png.width; x += 5) {
       const idx = (png.width * y + x) << 2;
@@ -309,17 +331,38 @@ export async function testFeaturePopup(page: Page, legendColors: Array<{ r: numb
     return false;
   }
   
-  // Click the feature
-  await page.mouse.click(clickX, clickY);
-  await page.waitForTimeout(1000); // Wait for popup to appear
-  
-  // Check if ArcGIS popup appeared
+  // Click the feature precisely (with retry for thin lines)
+  let popupVisible = false;
   const popup = page.locator('.esri-popup');
-  const popupVisible = await popup.isVisible().catch(() => false);
+  
+  // Try clicking the exact pixel first
+  await page.mouse.click(clickX, clickY);
+  await page.waitForTimeout(1000);
+  popupVisible = await popup.isVisible().catch(() => false);
+  
+  // If popup didn't appear, try nearby pixels (important for thin lines)
+  if (!popupVisible) {
+    console.log('🔄 Retrying with wider click area for thin features...');
+    const offsets = [
+      { x: 1, y: 1 },   // Diagonal
+      { x: -1, y: -1 }  // Opposite diagonal
+    ];
+    
+    for (const offset of offsets) {
+      await page.mouse.click(clickX + offset.x, clickY + offset.y);
+      await page.waitForTimeout(500);
+      popupVisible = await popup.isVisible().catch(() => false);
+      
+      if (popupVisible) {
+        console.log(`✅ Popup appeared after retry at offset (${offset.x}, ${offset.y})`);
+        break;
+      }
+    }
+  } else {
+    console.log('✅ Popup appeared after clicking feature');
+  }
   
   if (popupVisible) {
-    console.log('✅ Popup appeared after clicking feature');
-    
     // Close popup for next test using the id="close" button
     const closeButton = page.locator('#close');
     if (await closeButton.isVisible().catch(() => false)) {
@@ -330,7 +373,7 @@ export async function testFeaturePopup(page: Page, legendColors: Array<{ r: numb
       console.warn('⚠️ Close button not found, popup may still be open');
     }
   } else {
-    console.warn('❌ No popup appeared after clicking feature');
+    console.warn('❌ No popup appeared even after retrying nearby pixels');
   }
   
   return popupVisible;
@@ -374,4 +417,6 @@ export function checkWhichColorsPresent(
     found: foundColors.has(`${color.r},${color.g},${color.b}`)
   }));
 }
+
+
 
