@@ -1,0 +1,1310 @@
+{
+  "generated": "2025-10-21T18:39:09.009Z",
+  "source": "TNC Digital Catalog Manual Verification - tnc_frontend_test_data.csv",
+  "description": "Expected test results from manual QA performed on Oct 17, 2025",
+  "layers": [
+    {
+      "id": "calfire-frap-fire-threat-2019",
+      "title": "CalFire FRAP Fire Threat 2019",
+      "itemId": "calfire-frap-fire-threat-2019",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/CalFire_FRAP_Fire_Threat_2019/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Fire"
+      ],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": false
+      },
+      "notes": ""
+    },
+    {
+      "id": "calfire-fire-hazard-severity-zones-2023",
+      "title": "CalFire Fire Hazard Severity Zones 2023",
+      "itemId": "calfire-fire-hazard-severity-zones-2023",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/CalFire_Fire_Hazard_Severity_Zones_2023/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Infrastructure",
+        "Fire",
+        "Land use and land (geography?)",
+        "Vegetation / habitat"
+      ],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": "Description in left sidebar card doesn't match description in right sidebar. Check TNC link to use the right summary."
+    },
+    {
+      "id": "california-historic-fire-perimeters",
+      "title": "California Historical Fire Perimeters",
+      "itemId": "california-historic-fire-perimeters",
+      "url": "https://services1.arcgis.com/jUJYIo9tSA7EHvfZ/arcgis/rest/services/California_Historic_Fire_Perimeters/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Fire",
+        "Land use and land (geography?)"
+      ],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": "Right sidebar summary matches the Feature Service summary, not the Feature Layer summary. May want to show a Feature Layer summary. Note: May want to give people the link to the Feature Service page as opposed to the download page for the individual feature layers... Unless that's information overload. View Full Feature Service Page vs View Individual Feature Layer Page... But maybe we just show the individual layers. Although would be nice to get a sense of the hierarchy."
+    },
+    {
+      "id": "jldp-cattle-guards-public-",
+      "title": "Cattle Guards",
+      "itemId": "jldp-cattle-guards-public-",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_cattle_guards_(Public)/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Infrastructure"
+      ],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": "Visibility is bad. May want to add feature to make the base layer not a satellite image, something white, to make features pop better."
+    },
+    {
+      "id": "jldp-pastures-public-",
+      "title": "Cattle Pastures",
+      "itemId": "jldp-pastures-public-",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_pastures_(Public)/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Ecological / Biological (Species?)",
+        "Vegetation / habitat"
+      ],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": ""
+    },
+    {
+      "id": "dp-coastal",
+      "title": "Coastal Data for at Natures Crossroads Story Map",
+      "itemId": "dp-coastal",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/DP_COASTAL/FeatureServer",
+      "type": "FeatureService",
+      "categories": [],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": null,
+        "downloadLinkWorks": null,
+        "tooltipsPopUp": null,
+        "legendExists": null,
+        "legendLabelsDescriptive": null,
+        "legendFiltersWork": null
+      },
+      "notes": ""
+    },
+    {
+      "id": "coastal-and-marine",
+      "title": "Coastal and Marine Data",
+      "itemId": "coastal-and-marine",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/Coastal_and_Marine/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Marine",
+        "Ecological / Biological (Species?)"
+      ],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": "Should add a button to remove DP boundary. Right sidebar description seems to be the second to last paragraphs of the description in the feature service website description. Interesting."
+    },
+    {
+      "id": "jldp-2m-contours",
+      "title": "Contours (2m)",
+      "itemId": "jldp-2m-contours",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_2m_contours/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Real-time & Remote Sensing"
+      ],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": ""
+    },
+    {
+      "id": "usfws-critical-habitat",
+      "title": "Critical Habitat for Threatened and Endangered Species",
+      "itemId": "usfws-critical-habitat",
+      "url": "https://services.arcgis.com/QVENGdaPbd4LUkLV/arcgis/rest/services/USFWS_Critical_Habitat/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Ecological / Biological (Species?)"
+      ],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": true,
+        "downloadLinkWorks": false,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": ""
+    },
+    {
+      "id": "jldp-staticdatalayers-public-",
+      "title": "Dangermond Data Stories",
+      "itemId": "jldp-staticdatalayers-public-",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_staticdatalayers_(Public)/FeatureServer",
+      "type": "FeatureService",
+      "categories": [],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": null,
+        "downloadLinkWorks": null,
+        "tooltipsPopUp": null,
+        "legendExists": null,
+        "legendLabelsDescriptive": null,
+        "legendFiltersWork": null
+      },
+      "notes": ""
+    },
+    {
+      "id": "jldp-boundary-wgs",
+      "title": "Dangermond Preserve Boundary (WGS)",
+      "itemId": "jldp-boundary-wgs",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_boundary_WGS/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Land use and land (geography?)"
+      ],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": false,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": false,
+        "legendExists": true,
+        "legendLabelsDescriptive": false,
+        "legendFiltersWork": true
+      },
+      "notes": "We already have a boundary layer, so it's probably loading under that. No tooltip. Not a high priority, but whatever. Legend says Wgs."
+    },
+    {
+      "id": "jldp-boundary",
+      "title": "Dangermond Preserve Simple Boundary",
+      "itemId": "jldp-boundary",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_boundary/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Land use and land (geography?)"
+      ],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": ""
+    },
+    {
+      "id": "jldp-dibblee-geology",
+      "title": "Dibblee Geology",
+      "itemId": "jldp-dibblee-geology",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_dibblee_geology/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Topographic",
+        "Land use and land (geography?)"
+      ],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": false,
+        "legendFiltersWork": true
+      },
+      "notes": "Yes, but I don't understand what the legend labels mean."
+    },
+    {
+      "id": "earthquake-faults-and-folds-in-the-usa",
+      "title": "Earthquake Faults and Folds in the USA",
+      "itemId": "earthquake-faults-and-folds-in-the-usa",
+      "url": "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/Earthquake_Faults_and_Folds_in_the_USA/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Topographic"
+      ],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": true,
+        "downloadLinkWorks": false,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": ""
+    },
+    {
+      "id": "jldp-fish-passage-barriers",
+      "title": "Fish Passage Barriers Assessment",
+      "itemId": "jldp-fish-passage-barriers",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_fish_passage_barriers/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Hydrological"
+      ],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": ""
+    },
+    {
+      "id": "flammap-burn-probability-based-on-500-random-ignitions",
+      "title": "FlamMap Burn Probability Based on 500 Random Ignitions",
+      "itemId": "flammap-burn-probability-based-on-500-random-ignitions",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/FlamMap_Burn_Probability_Based_on_500_Random_Ignitions/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Fire"
+      ],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": false,
+        "legendFiltersWork": false
+      },
+      "notes": "Legend labels say things like 0-2, not units. Legend filters don't work."
+    },
+    {
+      "id": "jldp-managementzones-public-",
+      "title": "Generalized Management Zones",
+      "itemId": "jldp-managementzones-public-",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_managementzones_(Public)/FeatureServer",
+      "type": "FeatureService",
+      "categories": [],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": null,
+        "downloadLinkWorks": null,
+        "tooltipsPopUp": null,
+        "legendExists": null,
+        "legendLabelsDescriptive": null,
+        "legendFiltersWork": null
+      },
+      "notes": ""
+    },
+    {
+      "id": "jldp-wells-public-",
+      "title": "Groundwater Wells",
+      "itemId": "jldp-wells-public-",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_wells_(Public)/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Infrastructure",
+        "Hydrological"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": false,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": "The Water Well Quality is an associated table, not something we can draw on the map. We need to figure this one out."
+    },
+    {
+      "id": "habitat-areas-of-particular-concern-1",
+      "title": "Habitat Areas of Particular Concern",
+      "itemId": "habitat-areas-of-particular-concern-1",
+      "url": "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/Habitat_Areas_of_Particular_Concern_1/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Climate / weather",
+        "Ecological / Biological (Species?)",
+        "Hazards & Resilience"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": false,
+        "legendFiltersWork": true
+      },
+      "notes": "HTML description. Consider parsing, maybe? Legend is weird, says Nationwide Hapc B."
+    },
+    {
+      "id": "botany-1-view",
+      "title": "Herbacous Vegatation",
+      "itemId": "botany-1-view",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/BOTANY_1_view/FeatureServer",
+      "type": "FeatureService",
+      "categories": [],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": null,
+        "downloadLinkWorks": null,
+        "tooltipsPopUp": null,
+        "legendExists": null,
+        "legendLabelsDescriptive": null,
+        "legendFiltersWork": null
+      },
+      "notes": ""
+    },
+    {
+      "id": "jldp-historicfarmingareas",
+      "title": "Historic Farming Areas",
+      "itemId": "jldp-historicfarmingareas",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_historicfarmingareas/FeatureServer",
+      "type": "FeatureService",
+      "categories": [],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": null,
+        "downloadLinkWorks": null,
+        "tooltipsPopUp": null,
+        "legendExists": null,
+        "legendLabelsDescriptive": null,
+        "legendFiltersWork": null
+      },
+      "notes": ""
+    },
+    {
+      "id": "jdlp-pastures-rdm-annual-averages",
+      "title": "JDLP Pastures RDM Annual Averages",
+      "itemId": "jdlp-pastures-rdm-annual-averages",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/JDLP_Pastures_RDM_Annual_Averages/FeatureServer",
+      "type": "FeatureService",
+      "categories": [],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": null,
+        "downloadLinkWorks": null,
+        "tooltipsPopUp": null,
+        "legendExists": null,
+        "legendLabelsDescriptive": null,
+        "legendFiltersWork": null
+      },
+      "notes": ""
+    },
+    {
+      "id": "fire-perimeters",
+      "title": "JLDP Fire Perimeters",
+      "itemId": "fire-perimeters",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/Fire_Perimeters/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Fire"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": ""
+    },
+    {
+      "id": "jldp-invasives-eucalyptus-groves",
+      "title": "JLDP Invasives Eucalyptus groves",
+      "itemId": "jldp-invasives-eucalyptus-groves",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/JLDP_Invasives_Eucalyptus_groves/FeatureServer",
+      "type": "FeatureService",
+      "categories": [],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": null,
+        "downloadLinkWorks": null,
+        "tooltipsPopUp": null,
+        "legendExists": null,
+        "legendLabelsDescriptive": null,
+        "legendFiltersWork": null
+      },
+      "notes": ""
+    },
+    {
+      "id": "prescribed-burns",
+      "title": "JLDP Prescribed Burns",
+      "itemId": "prescribed-burns",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/Prescribed_Burns/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Fire",
+        "Land use and land (geography?)"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": ""
+    },
+    {
+      "id": "jldpinvasives-ice-plant-mats",
+      "title": "JLDPInvasives Ice plant mats",
+      "itemId": "jldpinvasives-ice-plant-mats",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/JLDPInvasives_Ice_plant_mats/FeatureServer",
+      "type": "FeatureService",
+      "categories": [],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": null,
+        "downloadLinkWorks": null,
+        "tooltipsPopUp": null,
+        "legendExists": null,
+        "legendLabelsDescriptive": null,
+        "legendFiltersWork": null
+      },
+      "notes": ""
+    },
+    {
+      "id": "jalama-20watershed-20flowlines",
+      "title": "Jalama Watershed Flowlines",
+      "itemId": "jalama-20watershed-20flowlines",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/Jalama%20Watershed%20Flowlines/FeatureServer",
+      "type": "FeatureService",
+      "categories": [],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": null,
+        "downloadLinkWorks": null,
+        "tooltipsPopUp": null,
+        "legendExists": null,
+        "legendLabelsDescriptive": null,
+        "legendFiltersWork": null
+      },
+      "notes": ""
+    },
+    {
+      "id": "jldp-jalamawatershed",
+      "title": "Jalama Watershed Outline",
+      "itemId": "jldp-jalamawatershed",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_jalamawatershed/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Ecological / Biological (Species?)",
+        "Hydrological"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": ""
+    },
+    {
+      "id": "marine-multiagency-rocky-intertidal-network-research-sites",
+      "title": "MARINe MultiAgency Rocky Intertidal Network Research Sites",
+      "itemId": "marine-multiagency-rocky-intertidal-network-research-sites",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/MARINe_MultiAgency_Rocky_Intertidal_Network_Research_Sites/FeatureServer",
+      "type": "FeatureService",
+      "categories": [],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": null,
+        "downloadLinkWorks": null,
+        "tooltipsPopUp": null,
+        "legendExists": null,
+        "legendLabelsDescriptive": null,
+        "legendFiltersWork": null
+      },
+      "notes": ""
+    },
+    {
+      "id": "jldp-major-watersheds-public-",
+      "title": "Major Watersheds",
+      "itemId": "jldp-major-watersheds-public-",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_major_watersheds_(Public)/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Ecological / Biological (Species?)"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": "Should probably have the color not be red, but be blue (cuz water blue)."
+    },
+    {
+      "id": "jldp-minor-watersheds",
+      "title": "Minor Watersheds",
+      "itemId": "jldp-minor-watersheds",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_minor_watersheds/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Ecological / Biological (Species?)"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": ""
+    },
+    {
+      "id": "noaa-mpa-inventory-2023",
+      "title": "NOAA Marine Protected Areas Inventory 2024",
+      "itemId": "noaa-mpa-inventory-2023",
+      "url": "https://services2.arcgis.com/C8EMgrsFcRFL6LrL/arcgis/rest/services/NOAA_MPA_Inventory_2023/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Marine",
+        "Land use and land (geography?)"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": ""
+    },
+    {
+      "id": "nhdplus-high-resolution-9march2023-view",
+      "title": "National Hydrography Dataset Plus High Resolution",
+      "itemId": "nhdplus-high-resolution-9march2023-view",
+      "url": "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/NHDPlus_High_Resolution_9March2023_view/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Hydrological"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": false,
+        "downloadLinkWorks": false,
+        "tooltipsPopUp": false,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": "Going to want that non-satellite imagery layer behind to make things pop-more. Also will want the DP boundary to not be white, but like... blue or something."
+    },
+    {
+      "id": "natural-20limits-20to-20anadromy",
+      "title": "Natural Limits to Anadromy",
+      "itemId": "natural-20limits-20to-20anadromy",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/Natural%20Limits%20to%20Anadromy/FeatureServer",
+      "type": "FeatureService",
+      "categories": [],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": null,
+        "downloadLinkWorks": null,
+        "tooltipsPopUp": null,
+        "legendExists": null,
+        "legendLabelsDescriptive": null,
+        "legendFiltersWork": null
+      },
+      "notes": ""
+    },
+    {
+      "id": "jldp-oak-restoration-areas-public-",
+      "title": "Oak Restoration Areas",
+      "itemId": "jldp-oak-restoration-areas-public-",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_oak_restoration_areas_(Public)/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Ecological / Biological (Species?)"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": "Let's just have a Layer Description under Description that has the layer description. Something like Full Service Description and Selected Layer Description"
+    },
+    {
+      "id": "jlpd-offshore-oil-and-natural-gas-platforms",
+      "title": "Offshore Oil and Natural Gas Platforms",
+      "itemId": "jlpd-offshore-oil-and-natural-gas-platforms",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jlpd_offshore_oil_and_natural_gas_platforms/FeatureServer",
+      "type": "FeatureService",
+      "categories": [],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": null,
+        "downloadLinkWorks": null,
+        "tooltipsPopUp": null,
+        "legendExists": null,
+        "legendLabelsDescriptive": null,
+        "legendFiltersWork": null
+      },
+      "notes": ""
+    },
+    {
+      "id": "biosds2968-fpu",
+      "title": "Peregrine Falcon Observations Generalized [ds2968]",
+      "itemId": "biosds2968-fpu",
+      "url": "https://services2.arcgis.com/Uq9r85Potqm3MfRV/arcgis/rest/services/biosds2968_fpu/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Ecological / Biological (Species?)",
+        "Land use and land (geography?)"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": ""
+    },
+    {
+      "id": "perennial-20flow",
+      "title": "Perennial Flow",
+      "itemId": "perennial-20flow",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/Perennial%20Flow/FeatureServer",
+      "type": "FeatureService",
+      "categories": [],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": null,
+        "downloadLinkWorks": null,
+        "tooltipsPopUp": null,
+        "legendExists": null,
+        "legendLabelsDescriptive": null,
+        "legendFiltersWork": null
+      },
+      "notes": ""
+    },
+    {
+      "id": "point-conception-offshore-geology",
+      "title": "Point Conception Offshore Geology",
+      "itemId": "point-conception-offshore-geology",
+      "url": "https://www.sciencebase.gov/arcgis/rest/services/Catalog/58a37135e4b0c8251287616d/MapServer/3",
+      "type": "FeatureService",
+      "categories": [
+        "Marine",
+        "Land use and land (geography?)"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": false,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": false,
+        "legendExists": false,
+        "legendLabelsDescriptive": false,
+        "legendFiltersWork": false
+      },
+      "notes": "Error! But it's okay because their website is having the same issue. Note: The Layer failed to load error needs to go away if we switch over to a new selected layer."
+    },
+    {
+      "id": "jldp-restoration-areas",
+      "title": "Restoration Areas",
+      "itemId": "jldp-restoration-areas",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_restoration_areas/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Land use and land (geography?)"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": ""
+    },
+    {
+      "id": "jldp-roads-public-",
+      "title": "Roads",
+      "itemId": "jldp-roads-public-",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_roads_(Public)/FeatureServer",
+      "type": "FeatureService",
+      "categories": [],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": null,
+        "downloadLinkWorks": null,
+        "tooltipsPopUp": null,
+        "legendExists": null,
+        "legendLabelsDescriptive": null,
+        "legendFiltersWork": null
+      },
+      "notes": ""
+    },
+    {
+      "id": "jldp-sensitive-vegcommunites",
+      "title": "Sensitive Vegetation Communities",
+      "itemId": "jldp-sensitive-vegcommunites",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_sensitive_vegcommunites/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Vegetation / habitat"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": "Another situation where we need the base layer to be a light gray, not satellite. These polygons don't pop."
+    },
+    {
+      "id": "shrub-vegetation",
+      "title": "Shrub Vegetation",
+      "itemId": "shrub-vegetation",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/Shrub_Vegetation/FeatureServer",
+      "type": "FeatureService",
+      "categories": [],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": null,
+        "downloadLinkWorks": null,
+        "tooltipsPopUp": null,
+        "legendExists": null,
+        "legendLabelsDescriptive": null,
+        "legendFiltersWork": null
+      },
+      "notes": ""
+    },
+    {
+      "id": "geology-1",
+      "title": "Soils",
+      "itemId": "geology-1",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/GEOLOGY_1/FeatureServer",
+      "type": "FeatureService",
+      "categories": [],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": null,
+        "downloadLinkWorks": null,
+        "tooltipsPopUp": null,
+        "legendExists": null,
+        "legendLabelsDescriptive": null,
+        "legendFiltersWork": null
+      },
+      "notes": ""
+    },
+    {
+      "id": "jldp-springs-public-",
+      "title": "Springs",
+      "itemId": "jldp-springs-public-",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_springs_(Public)/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Hydrological"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": ""
+    },
+    {
+      "id": "jldp-water-stock-ponds-public-",
+      "title": "Stock Ponds",
+      "itemId": "jldp-water-stock-ponds-public-",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_water_stock_ponds_(Public)/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Infrastructure",
+        "Hydrological",
+        "Vegetation / habitat"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": ""
+    },
+    {
+      "id": "jldp-stream-crossings-internal-",
+      "title": "Stream Crossings",
+      "itemId": "jldp-stream-crossings-internal-",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_stream_crossings_(Internal)/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Hydrological",
+        "Vegetation / habitat"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": ""
+    },
+    {
+      "id": "jldp-nhd24kflowlines-streams",
+      "title": "Streams",
+      "itemId": "jldp-nhd24kflowlines-streams",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_nhd24kflowlines_streams/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Hydrological"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": ""
+    },
+    {
+      "id": "trex-burn-units",
+      "title": "TREX Burn Units",
+      "itemId": "trex-burn-units",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/TREX_Burn_Units/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Fire"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": ""
+    },
+    {
+      "id": "trex-burn-units-vegetation-classes",
+      "title": "TREX Burn Units Vegetation Classes",
+      "itemId": "trex-burn-units-vegetation-classes",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/TREX_Burn_Units_Vegetation_Classes/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Fire"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": ""
+    },
+    {
+      "id": "tree-dominated-vegetation",
+      "title": "Tree Dominated Vegetation",
+      "itemId": "tree-dominated-vegetation",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/Tree_Dominated_Vegetation/FeatureServer",
+      "type": "FeatureService",
+      "categories": [],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": null,
+        "downloadLinkWorks": null,
+        "tooltipsPopUp": null,
+        "legendExists": null,
+        "legendLabelsDescriptive": null,
+        "legendFiltersWork": null
+      },
+      "notes": ""
+    },
+    {
+      "id": "usa-ocs-oil-and-gas-pipelines",
+      "title": "USA Offshore Pipelines",
+      "itemId": "usa-ocs-oil-and-gas-pipelines",
+      "url": "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_OCS_Oil_and_Gas_Pipelines/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Marine"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": false,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": false,
+        "legendExists": false,
+        "legendLabelsDescriptive": false,
+        "legendFiltersWork": false
+      },
+      "notes": "Requires login! Try to see if there's some way of dynamically detecting that a login is required."
+    },
+    {
+      "id": "nws-watches-warnings-v1",
+      "title": "USA Weather Watches and Warnings",
+      "itemId": "nws-watches-warnings-v1",
+      "url": "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/NWS_Watches_Warnings_v1/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Climate / weather",
+        "Real-time & Remote Sensing"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": false,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": "May want to suggest that the user zoom out."
+    },
+    {
+      "id": "jldp-railroad",
+      "title": "Union Pacific Railroad",
+      "itemId": "jldp-railroad",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_railroad/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Infrastructure"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": "Hard to see the railroad lines! Again, we need that light colored base layer."
+    },
+    {
+      "id": "jldp-vegetation-public-",
+      "title": "Vegetation",
+      "itemId": "jldp-vegetation-public-",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_vegetation_(Public)/FeatureServer",
+      "type": "FeatureService",
+      "categories": [],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": null,
+        "downloadLinkWorks": null,
+        "tooltipsPopUp": null,
+        "legendExists": null,
+        "legendLabelsDescriptive": null,
+        "legendFiltersWork": null
+      },
+      "notes": ""
+    },
+    {
+      "id": "jldp-vegcommunites",
+      "title": "Vegetation Communities",
+      "itemId": "jldp-vegcommunites",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_vegcommunites/FeatureServer",
+      "type": "FeatureService",
+      "categories": [],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": null,
+        "downloadLinkWorks": null,
+        "tooltipsPopUp": null,
+        "legendExists": null,
+        "legendLabelsDescriptive": null,
+        "legendFiltersWork": null
+      },
+      "notes": ""
+    },
+    {
+      "id": "jldp-vegcommunites-public-",
+      "title": "Vegetation Communities",
+      "itemId": "jldp-vegcommunites-public-",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_vegcommunites_(Public)/FeatureServer",
+      "type": "FeatureService",
+      "categories": [],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": null,
+        "downloadLinkWorks": null,
+        "tooltipsPopUp": null,
+        "legendExists": null,
+        "legendLabelsDescriptive": null,
+        "legendFiltersWork": null
+      },
+      "notes": ""
+    },
+    {
+      "id": "jldp-water-tanks-view",
+      "title": "Water Tanks",
+      "itemId": "jldp-water-tanks-view",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_water_tanks_VIEW/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Infrastructure",
+        "Vegetation / habitat"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": true,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": ""
+    },
+    {
+      "id": "wild-coast-project-webmap-wfl1",
+      "title": "Wild Coast Project Feature Layer",
+      "itemId": "wild-coast-project-webmap-wfl1",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/Wild_Coast_Project_WebMap_WFL1/FeatureServer",
+      "type": "FeatureService",
+      "categories": [],
+      "expectedResults": {
+        "showsInCategories": null,
+        "layersLoad": null,
+        "downloadLinkWorks": null,
+        "tooltipsPopUp": null,
+        "legendExists": null,
+        "legendLabelsDescriptive": null,
+        "legendFiltersWork": null
+      },
+      "notes": ""
+    },
+    {
+      "id": "join-features-to-jldp-oak-restoration-plantings",
+      "title": "jldp_oak_restoration_plantings_SURVEYJOIN_view-ACTIVE",
+      "itemId": "join-features-to-jldp-oak-restoration-plantings",
+      "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/Join_Features_to_jldp_oak_restoration_plantings/FeatureServer",
+      "type": "FeatureService",
+      "categories": [
+        "Real-time & Remote Sensing"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": false,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": false,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": true
+      },
+      "notes": "Hard to see! Doesn't look like the points got styled correctly."
+    },
+    {
+      "id": "chlorophyll",
+      "title": "Chlorophyll-a",
+      "itemId": "chlorophyll",
+      "url": "https://earthobs3.arcgis.com/arcgis/rest/services/Chlorophyll/ImageServer",
+      "type": "ImageService",
+      "categories": [
+        "Hydrological"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": false,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": false,
+        "legendExists": false,
+        "legendLabelsDescriptive": false,
+        "legendFiltersWork": false
+      },
+      "notes": "Unable to access. Requires login."
+    },
+    {
+      "id": "land-cover-vulnerability-2050",
+      "title": "Land Cover Vulnerability Change 2050 - Country",
+      "itemId": "land-cover-vulnerability-2050",
+      "url": "https://env1.arcgis.com/arcgis/rest/services/Land_Cover_Vulnerability_2050/ImageServer",
+      "type": "ImageService",
+      "categories": [
+        "Ecological / Biological (Species?)",
+        "Real-time & Remote Sensing",
+        "Vegetation / habitat"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": false,
+        "legendExists": true,
+        "legendLabelsDescriptive": false,
+        "legendFiltersWork": false
+      },
+      "notes": ""
+    },
+    {
+      "id": "naip-2005-1m-california",
+      "title": "NAIP 2005 1m California",
+      "itemId": "naip-2005-1m-california",
+      "url": "https://map.dfg.ca.gov/ArcGIS/rest/services/Base_Remote_Sensing/NAIP_2005/ImageServer",
+      "type": "ImageService",
+      "categories": [
+        "Land use and land (geography?)",
+        "Ecological / Biological (Species?)",
+        "Real-time & Remote Sensing"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": false,
+        "legendExists": true,
+        "legendLabelsDescriptive": false,
+        "legendFiltersWork": false
+      },
+      "notes": "But slowly! Seems to be super large. Seems to load faster on their website."
+    },
+    {
+      "id": "usa-nlcd-annual-landcover",
+      "title": "USA Annual NLCD Land Cover",
+      "itemId": "usa-nlcd-annual-landcover",
+      "url": "https://di-nlcd.img.arcgis.com/arcgis/rest/services/USA_NLCD_Annual_LandCover/ImageServer",
+      "type": "ImageService",
+      "categories": [
+        "Topographic"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": false,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": false,
+        "legendExists": false,
+        "legendLabelsDescriptive": false,
+        "legendFiltersWork": false
+      },
+      "notes": "Requires login. Authorization issue, probably."
+    },
+    {
+      "id": "usa-nlcd-land-cover",
+      "title": "USA NLCD Land Cover",
+      "itemId": "usa-nlcd-land-cover",
+      "url": "https://landscape10.arcgis.com/arcgis/rest/services/USA_NLCD_Land_Cover/ImageServer",
+      "type": "ImageService",
+      "categories": [
+        "Topographic"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": false,
+        "legendExists": true,
+        "legendLabelsDescriptive": true,
+        "legendFiltersWork": false
+      },
+      "notes": "Loads slowly. The ArcGIS web viewer (the Download page that gives the preview) seems to load much quicker. We may be using the wrong methods on our front-end. This service also seems to have different imagery based off a time component. So should probably show that as well. Although maybe we don't want to recreate that logic as well."
+    },
+    {
+      "id": "worldsoils250m-ph1",
+      "title": "World Soils 250m pH",
+      "itemId": "worldsoils250m-ph1",
+      "url": "https://tiledimageservices.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/WorldSoils250m_pH1/ImageServer",
+      "type": "ImageService",
+      "categories": [
+        "Topographic",
+        "Real-time & Remote Sensing"
+      ],
+      "expectedResults": {
+        "showsInCategories": true,
+        "layersLoad": true,
+        "downloadLinkWorks": true,
+        "tooltipsPopUp": false,
+        "legendExists": false,
+        "legendLabelsDescriptive": false,
+        "legendFiltersWork": null
+      },
+      "notes": "Fast loading image service! This is good."
+    }
+  ]
+}

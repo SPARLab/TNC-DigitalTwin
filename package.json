@@ -15,7 +15,11 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:smoke": "playwright test --grep='Smoke Tests'",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "test:e2e:generate-data": "tsx e2e/scripts/parse-manual-test-csv.ts",
+    "test:e2e:checkpoint": "playwright test --config=playwright.checkpoint.config.ts",
+    "test:e2e:validate": "tsx e2e/scripts/validate-tests.ts",
+    "test:e2e:progress": "tsx e2e/scripts/progress-report.ts"
   },
   "dependencies": {
     "@arcgis/core": "^4.33.12",
@@ -43,6 +47,7 @@
     "pngjs": "^7.0.0",
     "postcss": "^8.4.27",
     "tailwindcss": "^3.3.3",
+    "tsx": "^4.20.6",
     "typescript": "^5.0.2",
     "vite": "^4.4.5",
     "vitest": "^3.2.4"

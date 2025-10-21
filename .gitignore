@@ -33,9 +33,15 @@ dist-ssr
 # Playwright test artifacts
 /test-results/
 /playwright-report/
+/playwright-report-checkpoint/
 /playwright/.cache/
 .last-run.json
 *.webm
 *-screenshot.png
 *-before-filter.png
 *-after-filter.png
+
+# Checkpoint test artifacts
+# Keep test-results-history.csv for tracking
+# But exclude large JSON snapshots
+e2e/checkpoints/*.json

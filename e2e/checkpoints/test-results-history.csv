@@ -1,0 +1,85 @@
+timestamp,layer_id,layer_title,type,test_1_shows_in_categories,test_2_layers_load,test_3_download_works,test_4_description_matches,test_5_tooltips_popup,test_6_legend_exists,test_7_legend_labels_descriptive,test_8_filters_work,notes
+2025-10-21T18:42:03.929Z,unknown,"Unknown",FeatureService,PASS,FAIL,PASS,PASS,FAIL,FAIL,PASS,FAIL,"Error: Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32mtrue[39m
+Received: [31mfalse[39m"
+2025-10-21T18:45:27.183Z,calfire-frap-fire-threat-2019,"CalFire FRAP Fire Threat 2019",FeatureService,PASS,FAIL,PASS,PASS,FAIL,FAIL,PASS,FAIL,"Error: Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32mtrue[39m
+Received: [31mfalse[39m"
+2025-10-21T18:55:08.642Z,calfire-frap-fire-threat-2019,"CalFire FRAP Fire Threat 2019",FeatureService,PASS,FAIL,PASS,PASS,FAIL,FAIL,PASS,FAIL,"Error: Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32mtrue[39m
+Received: [31mfalse[39m"
+2025-10-21T18:55:08.642Z,calfire-fire-hazard-severity-zones-2023,"CalFire Fire Hazard Severity Zones 2023",FeatureService,PASS,FAIL,PASS,PASS,FAIL,FAIL,PASS,PASS,"Error: Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32mtrue[39m
+Received: [31mfalse[39m"
+2025-10-21T18:55:08.642Z,california-historic-fire-perimeters,"California Historical Fire Perimeters",FeatureService,PASS,FAIL,PASS,PASS,FAIL,FAIL,PASS,PASS,"Error: Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32mtrue[39m
+Received: [31mfalse[39m"
+2025-10-21T19:00:52.919Z,calfire-frap-fire-threat-2019,"CalFire FRAP Fire Threat 2019",FeatureService,PASS,FAIL,PASS,PASS,FAIL,FAIL,PASS,FAIL,"Error: Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32mtrue[39m
+Received: [31mfalse[39m"
+2025-10-21T19:02:07.463Z,calfire-frap-fire-threat-2019,"CalFire FRAP Fire Threat 2019",FeatureService,PASS,PASS,PASS,PASS,PASS,PASS,PASS,PASS,""
+2025-10-21T19:02:50.366Z,calfire-frap-fire-threat-2019,"CalFire FRAP Fire Threat 2019",FeatureService,PASS,PASS,PASS,PASS,PASS,PASS,PASS,PASS,""
+2025-10-21T19:02:50.366Z,calfire-fire-hazard-severity-zones-2023,"CalFire Fire Hazard Severity Zones 2023",FeatureService,PASS,PASS,PASS,PASS,PASS,PASS,PASS,PASS,""
+2025-10-21T19:02:50.366Z,california-historic-fire-perimeters,"California Historical Fire Perimeters",FeatureService,PASS,PASS,PASS,PASS,PASS,PASS,FAIL,PASS,"Error: Error: Expected PASS, got FAIL: No legend labels found
+
+[2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32mtrue[39m
+Received: [31mfalse[39m"
+2025-10-21T19:04:53.200Z,calfire-frap-fire-threat-2019,"CalFire FRAP Fire Threat 2019",FeatureService,PASS,PASS,PASS,PASS,PASS,PASS,PASS,PASS,""
+2025-10-21T19:04:53.200Z,calfire-fire-hazard-severity-zones-2023,"CalFire Fire Hazard Severity Zones 2023",FeatureService,PASS,PASS,PASS,PASS,PASS,PASS,PASS,PASS,""
+2025-10-21T19:04:53.200Z,california-historic-fire-perimeters,"California Historical Fire Perimeters",FeatureService,PASS,PASS,PASS,PASS,PASS,PASS,FAIL,PASS,"Error: Error: Expected PASS, got FAIL: No legend labels found
+
+[2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32mtrue[39m
+Received: [31mfalse[39m"
+2025-10-21T19:15:33.914Z,calfire-frap-fire-threat-2019,"CalFire FRAP Fire Threat 2019",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,PASS,FAIL,""
+2025-10-21T19:15:33.914Z,calfire-fire-hazard-severity-zones-2023,"CalFire Fire Hazard Severity Zones 2023",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,PASS,PASS,""
+2025-10-21T19:15:33.914Z,california-historic-fire-perimeters,"California Historical Fire Perimeters",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,FAIL,PASS,"Error: Error: Expected PASS, got FAIL: No legend labels found
+
+[2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32mtrue[39m
+Received: [31mfalse[39m"
+2025-10-21T19:27:43.624Z,calfire-frap-fire-threat-2019,"CalFire FRAP Fire Threat 2019",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,PASS,FAIL,""
+2025-10-21T19:27:43.624Z,calfire-fire-hazard-severity-zones-2023,"CalFire Fire Hazard Severity Zones 2023",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,PASS,PASS,""
+2025-10-21T19:27:43.624Z,california-historic-fire-perimeters,"California Historical Fire Perimeters",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,FAIL,PASS,"Error: Error: Expected PASS, got FAIL: No legend labels found (even after retry)
+
+[2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32mtrue[39m
+Received: [31mfalse[39m"
+2025-10-21T19:34:45.022Z,calfire-frap-fire-threat-2019,"CalFire FRAP Fire Threat 2019",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,PASS,FAIL,""
+2025-10-21T19:34:45.022Z,calfire-fire-hazard-severity-zones-2023,"CalFire Fire Hazard Severity Zones 2023",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,PASS,PASS,""
+2025-10-21T19:34:45.022Z,california-historic-fire-perimeters,"California Historical Fire Perimeters",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,FAIL,PASS,"Error: Error: Expected PASS, got FAIL: No legend labels found (even after retry)
+
+[2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32mtrue[39m
+Received: [31mfalse[39m"
+2025-10-21T19:37:38.541Z,calfire-frap-fire-threat-2019,"CalFire FRAP Fire Threat 2019",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,PASS,FAIL,""
+2025-10-21T19:37:38.541Z,calfire-fire-hazard-severity-zones-2023,"CalFire Fire Hazard Severity Zones 2023",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,PASS,PASS,""
+2025-10-21T19:37:38.541Z,california-historic-fire-perimeters,"California Historical Fire Perimeters",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,FAIL,PASS,"Error: Error: Expected PASS, got FAIL: No legend labels found (even after retry)
+
+[2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32mtrue[39m
+Received: [31mfalse[39m"
+2025-10-21T19:45:24.475Z,calfire-frap-fire-threat-2019,"CalFire FRAP Fire Threat 2019",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,PASS,FAIL,""
+2025-10-21T19:45:24.475Z,calfire-fire-hazard-severity-zones-2023,"CalFire Fire Hazard Severity Zones 2023",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,PASS,PASS,""
+2025-10-21T19:45:24.475Z,california-historic-fire-perimeters,"California Historical Fire Perimeters",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,FAIL,PASS,"Error: Error: Expected PASS, got FAIL: 8/8 labels are non-descriptive
+
+[2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32mtrue[39m
+Received: [31mfalse[39m"
+2025-10-21T19:49:51.140Z,calfire-frap-fire-threat-2019,"CalFire FRAP Fire Threat 2019",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,PASS,FAIL,""
+2025-10-21T19:49:51.140Z,calfire-fire-hazard-severity-zones-2023,"CalFire Fire Hazard Severity Zones 2023",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,PASS,PASS,""
+2025-10-21T19:49:51.140Z,california-historic-fire-perimeters,"California Historical Fire Perimeters",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,PASS,PASS,""

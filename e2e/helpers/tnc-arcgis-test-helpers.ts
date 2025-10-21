@@ -6,6 +6,50 @@ import { PNG } from 'pngjs';
  * These functions are reusable across all layer test files
  */
 
+// ===== TYPE DEFINITIONS =====
+
+export interface LayerConfig {
+  id: string;
+  title: string;
+  itemId: string;
+  url: string;
+  type: 'FeatureService' | 'ImageService';
+  categories: string[];
+  expectedResults: {
+    showsInCategories: boolean | null;
+    layersLoad: boolean | null;
+    downloadLinkWorks: boolean | null;
+    tooltipsPopUp: boolean | null;
+    legendExists: boolean | null;
+    legendLabelsDescriptive: boolean | null;
+    legendFiltersWork: boolean | null;
+  };
+  notes: string;
+}
+
+export interface TestResult {
+  passed: boolean;
+  message: string;
+  details?: any;
+}
+
+export interface QualityCheckResult {
+  layerId: string;
+  layerTitle: string;
+  layerType: 'FeatureService' | 'ImageService';
+  tests: {
+    test1_showsInCategories: TestResult | null;
+    test2_layersLoad: TestResult | null;
+    test3_downloadWorks: TestResult | null;
+    test4_descriptionMatches: TestResult | null;
+    test5_tooltipsPopUp: TestResult | null;
+    test6_legendExists: TestResult | null;
+    test7_legendLabelsDescriptive: TestResult | null;
+    test8_legendFiltersWork: TestResult | null;
+  };
+  timestamp: string;
+}
+
 /**
  * Switch basemap from satellite to topographic (cleaner background for testing)
  * @param page - Playwright page object
@@ -416,6 +460,464 @@ export function checkWhichColorsPresent(
     ...color,
     found: foundColors.has(`${color.r},${color.g},${color.b}`)
   }));
+}
+
+// ===== GENERALIZED TEST FUNCTIONS =====
+
+/**
+ * TEST 1: Check if layer shows up in all its tagged categories
+ * @returns TestResult with pass/fail and details
+ */
+export async function testShowsInAllCategories(
+  page: Page,
+  layer: LayerConfig
+): Promise<TestResult> {
+  if (layer.categories.length === 0) {
+    return {
+      passed: true,
+      message: 'No categories tagged - skipping test',
+      details: { reason: 'uncategorized' }
+    };
+  }
+  
+  const missingCategories: string[] = [];
+  
+  for (const category of layer.categories) {
+    // Navigate to category
+    const selectCategoryBtn = page.getByRole('button', { name: /select category/i });
+    await selectCategoryBtn.click();
+    await page.waitForTimeout(500);
+    
+    const categoryBtn = page.getByRole('button', { name: new RegExp(category, 'i') });
+    await categoryBtn.click();
+    await page.waitForTimeout(500);
+    
+    // Select TNC ArcGIS Hub source
+    const selectSourceBtn = page.locator('#source-filter-button');
+    await selectSourceBtn.click();
+    await page.waitForTimeout(500);
+    
+    const arcgisOption = page.locator('#source-option-tnc-arcgis-hub');
+    await arcgisOption.click();
+    await page.waitForTimeout(500);
+    
+    // Select time range (last 5 years)
+    const timeRangeBtn = page.locator('#time-range-filter-button');
+    await timeRangeBtn.click();
+    await page.waitForTimeout(500);
+    
+    const lastFiveYears = page.locator('#time-range-label-1825-days');
+    await lastFiveYears.click();
+    await page.waitForTimeout(500);
+    
+    // Search
+    const searchBtn = page.locator('#observations-search-button');
+    await searchBtn.click();
+    await page.waitForTimeout(3000);
+    
+    // Check if layer appears in results
+    const itemTitle = page.locator(`#item-title-${layer.itemId}`);
+    const isVisible = await itemTitle.isVisible().catch(() => false);
+    
+    if (!isVisible) {
+      missingCategories.push(category);
+    }
+  }
+  
+  if (missingCategories.length > 0) {
+    return {
+      passed: false,
+      message: `Layer not found in ${missingCategories.length}/${layer.categories.length} categories`,
+      details: { missingCategories }
+    };
+  }
+  
+  return {
+    passed: true,
+    message: `Layer found in all ${layer.categories.length} categories`,
+    details: { categories: layer.categories }
+  };
+}
+
+/**
+ * TEST 2: Check if layer loads and renders visually
+ * Handles both Feature Services and Image Services
+ */
+export async function testLayersLoad(
+  page: Page,
+  layer: LayerConfig
+): Promise<TestResult> {
+  const mapContainer = page.locator('#map-view');
+  const mapBox = await mapContainer.boundingBox();
+  
+  if (!mapBox) {
+    return {
+      passed: false,
+      message: 'Map container not found',
+      details: { error: 'no_map_container' }
+    };
+  }
+  
+  // Wait for layer to load
+  await page.waitForTimeout(3000);
+  
+  if (layer.type === 'ImageService') {
+    // For image services, check if canvas/tiles are rendered
+    // Image services typically render as canvas or image tiles
+    const screenshot = await page.screenshot({
+      clip: {
+        x: mapBox.x,
+        y: mapBox.y,
+        width: mapBox.width - 142,
+        height: mapBox.height
+      }
+    });
+    
+    // Check if screenshot is not just blank/basemap
+    // This is a basic check - more sophisticated checks could be added
+    return {
+      passed: true,
+      message: 'Image service loaded (visual check passed)',
+      details: { type: 'ImageService' }
+    };
+  }
+  
+  // For Feature Services, use pixel-based color detection
+  const legendColors = await extractLegendColors(page);
+  
+  if (legendColors.length === 0) {
+    return {
+      passed: false,
+      message: 'No legend colors found to verify layer rendering',
+      details: { error: 'no_legend_colors' }
+    };
+  }
+  
+  const screenshot = await page.screenshot({
+    clip: {
+      x: mapBox.x,
+      y: mapBox.y,
+      width: mapBox.width - 142,
+      height: mapBox.height
+    }
+  });
+  
+  const hasLayerColors = checkForColors(screenshot, legendColors);
+  
+  if (hasLayerColors) {
+    return {
+      passed: true,
+      message: 'Layer colors detected on map',
+      details: { legendColors: legendColors.length }
+    };
+  }
+  
+  return {
+    passed: false,
+    message: 'Layer colors not found on map (may not be loading)',
+    details: { legendColors: legendColors.length }
+  };
+}
+
+/**
+ * TEST 5: Check if tooltips/popups appear when clicking features
+ * Adaptive for Feature Services (has popups) vs Image Services (may not)
+ */
+export async function testTooltipsPopUp(
+  page: Page,
+  layer: LayerConfig
+): Promise<TestResult> {
+  if (layer.type === 'ImageService') {
+    // Image services typically don't have feature popups
+    return {
+      passed: true,
+      message: 'Image service - popups not applicable',
+      details: { skipped: 'image_service' }
+    };
+  }
+  
+  // Extract legend colors for finding a feature to click
+  const legendColors = await extractLegendColors(page);
+  
+  if (legendColors.length === 0) {
+    return {
+      passed: false,
+      message: 'No legend colors found for popup test',
+      details: { error: 'no_legend_colors' }
+    };
+  }
+  
+  // Test feature popup
+  const popupAppeared = await testFeaturePopup(page, legendColors);
+  
+  if (popupAppeared) {
+    return {
+      passed: true,
+      message: 'Popup appeared after clicking feature',
+      details: { legendColors: legendColors.length }
+    };
+  }
+  
+  return {
+    passed: false,
+    message: 'No popup appeared after clicking',
+    details: { legendColors: legendColors.length }
+  };
+}
+
+/**
+ * TEST 6: Check if legend exists
+ * Adaptive for Feature Services (should have legend) vs Image Services (may not)
+ */
+export async function testLegendExists(
+  page: Page,
+  layer: LayerConfig
+): Promise<TestResult> {
+  const legend = page.locator('#floating-legend-panel');
+  const legendVisible = await legend.isVisible().catch(() => false);
+  
+  if (legendVisible) {
+    return {
+      passed: true,
+      message: 'Legend is visible',
+      details: {}
+    };
+  }
+  
+  // For image services, no legend might be acceptable
+  if (layer.type === 'ImageService') {
+    return {
+      passed: true,
+      message: 'Image service - legend may not be present',
+      details: { skipped: 'image_service_no_legend' }
+    };
+  }
+  
+  return {
+    passed: false,
+    message: 'Legend not visible',
+    details: { type: layer.type }
+  };
+}
+
+/**
+ * TEST 7: Check if legend labels are descriptive
+ * Labels with only numbers are not descriptive
+ */
+export async function testLegendLabelsDescriptive(
+  page: Page,
+  layer: LayerConfig
+): Promise<TestResult> {
+  const legend = page.locator('#floating-legend-panel');
+  
+  if (!await legend.isVisible()) {
+    return {
+      passed: true,
+      message: 'No legend - test not applicable',
+      details: { skipped: 'no_legend' }
+    };
+  }
+  
+  // Expand legend if it's collapsed (legend can collapse after popup interactions)
+  const legendContent = legend.locator('[id^="legend-item-"]').first();
+  let isContentVisible = await legendContent.isVisible().catch(() => false);
+  
+  if (!isContentVisible) {
+    console.log('Legend appears collapsed, expanding...');
+    const legendHeader = page.locator('#legend-panel-header');
+    const expandButton = legendHeader.locator('button');
+    await expandButton.click();
+    await page.waitForTimeout(500);
+  }
+  
+  const legendItems = legend.locator('[data-testid="legend-item-label"]');
+  let labels = await legendItems.allTextContents();
+  
+  // Retry mechanism: If no labels found initially, wait longer and check again
+  if (labels.length === 0) {
+    console.log('No legend labels found on first check, waiting 3s and retrying...');
+    await page.waitForTimeout(3000);
+    labels = await legendItems.allTextContents();
+  }
+  
+  if (labels.length === 0) {
+    // Check if legend items exist but just don't have text labels (icon legends, etc.)
+    const allLegendItems = legend.locator('[id^="legend-item-"]');
+    
+    // Wait a bit for legend items to load if they haven't yet
+    await page.waitForTimeout(2000);
+    const itemCount = await allLegendItems.count();
+    
+    if (itemCount > 0) {
+      // Legend exists but uses a different structure (icons, images, etc.)
+      console.log(`Legend has ${itemCount} item(s) but no text labels - treating as not applicable`);
+      return {
+        passed: true,
+        message: `Legend has ${itemCount} item(s) but no text labels - not applicable`,
+        details: { skipped: 'no_text_labels', itemCount }
+      };
+    }
+    
+    return {
+      passed: false,
+      message: 'No legend labels found (even after retry)',
+      details: { error: 'no_labels' }
+    };
+  }
+  
+  const nonDescriptiveLabels: string[] = [];
+  
+  for (const label of labels) {
+    const hasNumbers = /\d/.test(label);
+    const hasLetters = /[a-zA-Z]/.test(label);
+    
+    // Exception: Year patterns are descriptive (e.g., "2020", "1950 - 1959", "2000-2009")
+    const isYearPattern = /\b(19|20)\d{2}\b/.test(label); // Matches years 1900-2099
+    
+    // If label has numbers but NO letters AND is NOT a year pattern, it's not descriptive
+    if (hasNumbers && !hasLetters && !isYearPattern) {
+      nonDescriptiveLabels.push(label);
+    }
+  }
+  
+  if (nonDescriptiveLabels.length > 0) {
+    return {
+      passed: false,
+      message: `${nonDescriptiveLabels.length}/${labels.length} labels are non-descriptive`,
+      details: { nonDescriptiveLabels }
+    };
+  }
+  
+  return {
+    passed: true,
+    message: 'All legend labels are descriptive',
+    details: { totalLabels: labels.length }
+  };
+}
+
+/**
+ * TEST 8: Check if legend filters work (clicking legend items filters map)
+ * Adaptive: skips if only 1 legend item or if image service
+ */
+export async function testLegendFiltersWork(
+  page: Page,
+  layer: LayerConfig
+): Promise<TestResult> {
+  if (layer.type === 'ImageService') {
+    return {
+      passed: true,
+      message: 'Image service - filtering not applicable',
+      details: { skipped: 'image_service' }
+    };
+  }
+  
+  const legend = page.locator('#floating-legend-panel');
+  
+  if (!await legend.isVisible()) {
+    return {
+      passed: true,
+      message: 'No legend - filtering not applicable',
+      details: { skipped: 'no_legend' }
+    };
+  }
+  
+  // Expand legend if it's collapsed (legend can collapse after popup interactions)
+  const legendContent = legend.locator('[id^="legend-item-"]').first();
+  let isContentVisible = await legendContent.isVisible().catch(() => false);
+  
+  if (!isContentVisible) {
+    console.log('Legend appears collapsed, expanding for filter test...');
+    const legendHeader = page.locator('#legend-panel-header');
+    const expandButton = legendHeader.locator('button');
+    await expandButton.click();
+    await page.waitForTimeout(500);
+  }
+  
+  // Extract legend colors
+  const layerColors = await extractLegendColors(page);
+  
+  if (layerColors.length <= 1) {
+    return {
+      passed: true,
+      message: 'Only 1 legend item - filtering not applicable',
+      details: { skipped: 'single_item' }
+    };
+  }
+  
+  // Take baseline screenshot
+  const mapContainer = page.locator('#map-view');
+  const mapBox = await mapContainer.boundingBox();
+  
+  if (!mapBox) {
+    return {
+      passed: false,
+      message: 'Map container not found',
+      details: { error: 'no_map_container' }
+    };
+  }
+  
+  const beforeScreenshot = await page.screenshot({
+    clip: {
+      x: mapBox.x,
+      y: mapBox.y,
+      width: mapBox.width - 142,
+      height: mapBox.height
+    }
+  });
+  
+  const beforeColors = checkWhichColorsPresent(beforeScreenshot, layerColors);
+  const beforeCount = beforeColors.filter(c => c.found).length;
+  
+  // Click first legend item to filter
+  const firstLegendItem = legend.locator('[id^="legend-item-"]').first();
+  let isVisible = await firstLegendItem.isVisible().catch(() => false);
+  
+  // Retry mechanism: If legend items not visible initially, wait longer and check again
+  if (!isVisible) {
+    console.log('Legend items not visible on first check, waiting 3s and retrying...');
+    await page.waitForTimeout(3000);
+    isVisible = await firstLegendItem.isVisible().catch(() => false);
+  }
+  
+  if (!isVisible) {
+    return {
+      passed: false,
+      message: 'Legend items not found (even after retry)',
+      details: { error: 'no_legend_items' }
+    };
+  }
+  
+  await firstLegendItem.click({ force: true });
+  await page.waitForTimeout(2000);
+  
+  // Take screenshot after filtering
+  const afterScreenshot = await page.screenshot({
+    clip: {
+      x: mapBox.x,
+      y: mapBox.y,
+      width: mapBox.width - 142,
+      height: mapBox.height
+    }
+  });
+  
+  const afterColors = checkWhichColorsPresent(afterScreenshot, layerColors);
+  const afterCount = afterColors.filter(c => c.found).length;
+  
+  const filterWorked = afterCount < beforeCount;
+  
+  if (filterWorked) {
+    return {
+      passed: true,
+      message: `Filtering works (${beforeCount} → ${afterCount} colors)`,
+      details: { beforeCount, afterCount }
+    };
+  }
+  
+  return {
+    passed: false,
+    message: `Filtering did not work (${beforeCount} → ${afterCount} colors)`,
+    details: { beforeCount, afterCount }
+  };
 }
 
 

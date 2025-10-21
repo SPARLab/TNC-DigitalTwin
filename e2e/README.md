@@ -45,6 +45,162 @@ npx playwright test
 npx playwright show-report
 ```
 
+## Checkpoint Testing System
+
+The checkpoint system allows you to run comprehensive tests on all layers, track progress over time, and validate test accuracy.
+
+### Quick Start
+
+```bash
+# 1. Generate test data from manual QA results
+npm run test:e2e:generate-data
+
+# 2. Run checkpoint tests (all 66 layers)
+npm run test:e2e:checkpoint
+
+# 3. Validate test accuracy (true positives/negatives)
+npm run test:e2e:validate
+
+# 4. View progress over time
+npm run test:e2e:progress
+```
+
+### Workflow
+
+#### Initial Setup (One-Time)
+```bash
+npm run test:e2e:generate-data  # Parse CSV → JSON
+```
+This reads `src/data/manual_test_of_tnc_arcgis_layers_oct_17_2025/TNC Digital Catalog Manual Verification - tnc_frontend_test_data.csv` and generates `e2e/test-data/all-arcgis-layers.json` with expected test results.
+
+#### Test Development (Iterative)
+Refine manual tests (e.g., `calfire-frap-fire-threat-2019.spec.ts`) until they accurately detect bugs:
+```bash
+npx playwright test calfire-frap-fire-threat-2019
+```
+
+#### Checkpoint (After Major Changes or Bug Fixes)
+```bash
+# Run all layers and save results
+npm run test:e2e:checkpoint
+
+# Check test accuracy
+npm run test:e2e:validate
+
+# View historical trends
+npm run test:e2e:progress
+```
+
+### Understanding Test Validation
+
+The validation script compares actual test results against expected results to ensure tests are accurate:
+
+- **True Positive (TP)**: Expected pass, actual pass ✅
+- **True Negative (TN)**: Expected fail, actual fail ✅
+- **False Positive (FP)**: Expected fail, actual pass ⚠️ **TEST BUG** (test is too lenient)
+- **False Negative (FN)**: Expected pass, actual fail ⚠️ **TEST or APP BUG**
+
+**Example Output:**
+```
+═══════════════════════════════════════════
+   TEST VALIDATION REPORT
+═══════════════════════════════════════════
+
+📅 Latest checkpoint: 2025-10-21T18:30:00.000Z
+📊 Found 66 layer results
+
+Total Tests: 320 (40 skipped)
+True Positives: 250 (78.1%)
+True Negatives: 50 (15.6%)
+False Positives: 5 (1.6%) ⚠️ TESTS NEED FIXING
+False Negatives: 15 (4.7%) ⚠️ TESTS NEED FIXING
+
+Overall Accuracy: 93.8%
+
+═══════════════════════════════════════════
+   TESTS NEEDING REFINEMENT
+═══════════════════════════════════════════
+
+❌ FALSE NEGATIVE
+   Layer: Cattle Guards
+   Test: Test 5 (Tooltips)
+   Issue: Expected PASS, got FAIL (test or app bug)
+```
+
+### Progress Tracking Over Time
+
+The progress report shows improvements and regressions across checkpoints:
+
+```
+═══════════════════════════════════════════
+   QUALITY PROGRESS REPORT
+═══════════════════════════════════════════
+
+Found 3 checkpoint(s)
+
+───────────────────────────────────────────
+Checkpoint 1: Oct 20, 2025, 10:00 AM
+───────────────────────────────────────────
+Layers passing all tests: 25/40 (62.5%)
+Total bugs: 52
+
+───────────────────────────────────────────
+Checkpoint 2: Oct 21, 2025, 02:30 PM
+───────────────────────────────────────────
+Layers passing all tests: 28/40 (70.0%)
+Total bugs: 45
+⬆️  +3 layers improved
+⬇️  7 fewer bugs
+
+✅ Fixed layers (3):
+   - CalFire FRAP Fire Threat 2019
+   - Earthquake Faults and Folds in the USA
+   - Cattle Guards
+```
+
+### Updating Expected Results
+
+After fixing bugs in the app, update expected results:
+
+1. Fix bugs in app code
+2. Run checkpoint: `npm run test:e2e:checkpoint`
+3. Update CSV: Manually edit the source CSV or regenerate from new QA
+4. Re-generate JSON: `npm run test:e2e:generate-data`
+5. Verify: `npm run test:e2e:validate`
+
+### File Structure
+
+```
+e2e/
+├── tnc-arcgis-layers/              # Individual layer test files
+│   ├── calfire-frap-fire-threat-2019.spec.ts
+│   ├── calfire-fire-hazard-severity-zones-2023.spec.ts
+│   ├── earthquake-faults-folds-usa.spec.ts
+│   └── all-layers-dynamic.spec.ts  # 🆕 Dynamic tests for ALL layers
+├── helpers/
+│   ├── tnc-arcgis-test-helpers.ts  # Test utilities & generalized functions
+│   └── run-quality-check.ts        # 🆕 Main test orchestrator
+├── reporters/
+│   └── checkpoint-reporter.ts      # 🆕 Custom reporter for CSV tracking
+├── scripts/
+│   ├── parse-manual-test-csv.ts    # 🆕 CSV → JSON converter
+│   ├── validate-tests.ts           # 🆕 Test accuracy validator
+│   └── progress-report.ts          # 🆕 Historical trend analyzer
+├── test-data/
+│   └── all-arcgis-layers.json      # 🆕 Expected results for all layers
+├── checkpoints/
+│   └── test-results-history.csv    # 🆕 Historical test results
+└── README.md
+```
+
+### Key Design Decisions
+
+1. **CSV as source of truth**: Manual QA findings remain intact and easy to update
+2. **JSON for test execution**: Fast parsing, programmatic access
+3. **Reusable test functions**: Single implementation tested across all layers
+4. **CSV for checkpoint history**: Human-readable, easy to diff, works with spreadsheets
+5. **True positive/negative validation**: Ensures tests are accurate before bug fixing
+
 ## Test Structure
 
 ```
