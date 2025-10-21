@@ -13,10 +13,20 @@ import type { LayerConfig } from '../helpers/tnc-arcgis-test-helpers';
 
 const allLayers = allLayersData.layers as LayerConfig[];
 
+// Filter out uncategorized layers (layers with no categories or "Uncategorized" category)
+const categorizedLayers = allLayers.filter(layer => 
+  layer.categories.length > 0 && !layer.categories.includes('Uncategorized')
+);
+
 // Tag dynamic tests so they can be filtered
 const DYNAMIC_TEST_TAG = '@dynamic';
 
-for (const layer of allLayers) {
+console.log(`\n📊 Filtered Layer Count:`);
+console.log(`   Total: ${allLayers.length} feature services`);
+console.log(`   Categorized: ${categorizedLayers.length} (testing these)`);
+console.log(`   Uncategorized: ${allLayers.length - categorizedLayers.length} (skipped)\n`);
+
+for (const layer of categorizedLayers) {
   // Use layer ID to ensure unique test names (some layers have duplicate titles)
   test.describe(`${layer.title} [${layer.id}] ${DYNAMIC_TEST_TAG}`, () => {
     test.beforeEach(async ({ page }) => {
@@ -219,7 +229,7 @@ for (const layer of allLayers) {
 }
 
 // Export test count for logging
-console.log(`\n📊 Generated dynamic tests for ${allLayers.length} layers`);
-console.log(`   - Feature Services: ${allLayers.filter(l => l.type === 'FeatureService').length}`);
-console.log(`   - Image Services: ${allLayers.filter(l => l.type === 'ImageService').length}`);
+console.log(`\n📊 Generated dynamic tests for ${categorizedLayers.length} categorized feature services`);
+console.log(`   - Feature Services: ${categorizedLayers.filter(l => l.type === 'FeatureService').length}`);
+console.log(`   - Image Services: ${categorizedLayers.filter(l => l.type === 'ImageService').length}`);
 

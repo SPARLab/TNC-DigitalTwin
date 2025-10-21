@@ -6,6 +6,7 @@ import {
   testFeaturePopup,
   testDownloadLink,
   testLayersLoad,
+  testLegendFiltersWork,
   type LayerConfig,
 } from '../helpers/tnc-arcgis-test-helpers';
 
@@ -202,19 +203,41 @@ test.describe('California Historical Fire Perimeters @manual', () => {
       expect(labels.length).toBeGreaterThan(0);
     });
 
-    await test.step('8. Legend Filters Work', async () => {
-      const legendColors = await extractLegendColors(page);
-      console.log(`\nFilter test - legend colors: ${legendColors.length}`);
+    await test.step('8. Legend Filters Work (all sublayers with zoom logic)', async () => {
+      // Use the enhanced testLegendFiltersWork helper which:
+      // - Tests filtering on ALL sublayers (not just the first)
+      // - For each sublayer: checks if colors are visible at current zoom
+      // - Zooms out if needed (like sublayer 3 requires)
+      // - Switches to satellite basemap for better visibility
+      // - Takes before/after screenshots to verify filtering
+      // - Skips sublayers with only 1 legend item (filtering not applicable)
+      const layerConfig: LayerConfig = {
+        id: 'california-historic-fire-perimeters',
+        title: 'California Historical Fire Perimeters',
+        itemId: 'california-historic-fire-perimeters',
+        url: 'https://services1.arcgis.com/jUJYIo9tSA7EHvfZ/arcgis/rest/services/California_Historic_Fire_Perimeters/FeatureServer',
+        type: 'FeatureService',
+        categories: ['Fire'],
+        expectedResults: {
+          showsInCategories: null,
+          layersLoad: true,
+          downloadLinkWorks: true,
+          tooltipsPopUp: true,
+          legendExists: true,
+          legendLabelsDescriptive: true,
+          legendFiltersWork: true,
+        },
+        notes: ''
+      };
       
-      if (legendColors.length <= 1) {
-        console.log('✅ Only 1 legend item - filtering not applicable');
-        expect(true).toBe(true);
-        return;
+      const result = await testLegendFiltersWork(page, layerConfig);
+      
+      console.log(`✅ Legend filter test result: ${result.message}`);
+      if (result.details) {
+        console.log(`📊 Details:`, result.details);
       }
       
-      // If we get here, run the actual filter test
-      console.log('Running filter test...');
-      expect(true).toBe(true); // Placeholder for now
+      expect(result.passed).toBe(true);
     });
   });
 });

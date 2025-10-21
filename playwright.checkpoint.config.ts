@@ -8,6 +8,9 @@ import baseConfig from './playwright.config';
 export default defineConfig({
   ...baseConfig,
   
+  // Enable full parallelization for checkpoint runs
+  fullyParallel: true,
+  
   // Use checkpoint reporter in addition to HTML reporter
   reporter: [
     ['html', { outputFolder: 'playwright-report-checkpoint' }],
@@ -30,7 +33,8 @@ export default defineConfig({
   timeout: 120000, // 120 seconds per test (2 minutes)
   
   // Run tests in parallel for faster execution
-  workers: 4, // Adjust based on your machine
+  // M2 Max (12 cores, 32GB RAM) can comfortably handle 8-10 workers
+  workers: 8, // Optimal for M2 Max: 8 feature services simultaneously
   
   // Retry failed tests to reduce false negatives
   retries: 1,

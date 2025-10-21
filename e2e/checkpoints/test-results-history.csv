@@ -101,3 +101,78 @@ Received: [31mfalse[39m"
 
 Expected: [32mtrue[39m
 Received: [31mfalse[39m"
+2025-10-21T21:18:28.865Z,jldp-cattle-guards-public-,"Cattle Guards",FeatureService,SKIP,FAIL,PASS,SKIP,FAIL,PASS,PASS,PASS,"Error: Error: Expected PASS, got FAIL: 0/1 sublayer(s) loaded (failed: jldp_cattleguards)
+
+[2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32mtrue[39m
+Received: [31mfalse[39m"
+2025-10-21T21:18:28.865Z,jldp-2m-contours,"Contours (2m)",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,PASS,PASS,""
+2025-10-21T21:18:28.865Z,calfire-frap-fire-threat-2019,"CalFire FRAP Fire Threat 2019",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,PASS,FAIL,""
+2025-10-21T21:18:28.865Z,calfire-fire-hazard-severity-zones-2023,"CalFire Fire Hazard Severity Zones 2023",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,PASS,PASS,""
+2025-10-21T21:18:28.865Z,california-historic-fire-perimeters,"California Historical Fire Perimeters",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,PASS,FAIL,"Error: Error: Expected PASS, got FAIL: Filtering did not work (1 → 1 colors)
+
+[2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32mtrue[39m
+Received: [31mfalse[39m"
+2025-10-21T21:18:28.865Z,jldp-dibblee-geology,"Dibblee Geology",FeatureService,SKIP,PASS,PASS,SKIP,FAIL,PASS,PASS,PASS,"Error: Error: Expected PASS, got FAIL: No popup appeared after clicking
+
+[2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32mtrue[39m
+Received: [31mfalse[39m"
+2025-10-21T21:18:28.865Z,coastal-and-marine,"Coastal and Marine Data",FeatureService,SKIP,FAIL,PASS,SKIP,FAIL,PASS,PASS,PASS,"Error: Error: Expected PASS, got FAIL: 18/20 sublayer(s) loaded (failed: Oil Seeps (USGS 2009), Deep Sea Corals & Sponges (NOAA 2017))
+
+[2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32mtrue[39m
+Received: [31mfalse[39m"
+2025-10-21T21:18:28.865Z,earthquake-faults-and-folds-in-the-usa,"Earthquake Faults and Folds in the USA",FeatureService,SKIP,PASS,PASS,SKIP,FAIL,PASS,PASS,FAIL,"Error: Error: Expected FAIL, got PASS: Download link worked as expected
+
+[2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32mtrue[39m
+Received: [31mfalse[39m"
+2025-10-21T21:18:28.865Z,jldp-pastures-public-,"Cattle Pastures",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,usfws-critical-habitat,"Critical Habitat for Threatened and Endangered Species",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,jldp-fish-passage-barriers,"Fish Passage Barriers Assessment",FeatureService,SKIP,FAIL,PASS,SKIP,FAIL,PASS,PASS,PASS,"Error: Error: Expected PASS, got FAIL: 0/1 sublayer(s) loaded (failed: jldp_fish_passage_barriers)
+
+[2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32mtrue[39m
+Received: [31mfalse[39m"
+2025-10-21T21:18:28.865Z,flammap-burn-probability-based-on-500-random-ignitions,"FlamMap Burn Probability Based on 500 Random Ignitions",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,FAIL,FAIL,""
+2025-10-21T21:18:28.865Z,jldp-boundary-wgs,"Dangermond Preserve Boundary (WGS)",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,jldp-boundary,"Dangermond Preserve Simple Boundary",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,jldp-wells-public-,"Groundwater Wells",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,habitat-areas-of-particular-concern-1,"Habitat Areas of Particular Concern",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,fire-perimeters,"JLDP Fire Perimeters",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,prescribed-burns,"JLDP Prescribed Burns",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,jldp-major-watersheds-public-,"Major Watersheds",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,jldp-jalamawatershed,"Jalama Watershed Outline",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,jldp-minor-watersheds,"Minor Watersheds",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,noaa-mpa-inventory-2023,"NOAA Marine Protected Areas Inventory 2024",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,nhdplus-high-resolution-9march2023-view,"National Hydrography Dataset Plus High Resolution",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,jldp-oak-restoration-areas-public-,"Oak Restoration Areas",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,ds2968,"Peregrine Falcon Observations Generalized",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,point-conception-offshore-geology,"Point Conception Offshore Geology",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,jldp-sensitive-vegcommunites,"Sensitive Vegetation Communities",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,jldp-restoration-areas,"Restoration Areas",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,jldp-springs-public-,"Springs",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,jldp-water-stock-ponds-public-,"Stock Ponds",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,jldp-stream-crossings-internal-,"Stream Crossings",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,jldp-nhd24kflowlines-streams,"Streams",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,trex-burn-units,"TREX Burn Units",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,trex-burn-units-vegetation-classes,"TREX Burn Units Vegetation Classes",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,usa-ocs-oil-and-gas-pipelines,"USA Offshore Pipelines",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,nws-watches-warnings-v1,"USA Weather Watches and Warnings",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,jldp-railroad,"Union Pacific Railroad",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,jldp-water-tanks-view,"Water Tanks",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,join-features-to-jldp-oak-restoration-plantings,"jldp_oak_restoration_plantings_SURVEYJOIN_view-ACTIVE",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,chlorophyll,"Chlorophyll-a",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,land-cover-vulnerability-2050,"Land Cover Vulnerability Change 2050 - Country",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,naip-2005-1m-california,"NAIP 2005 1m California",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,usa-nlcd-annual-landcover,"USA Annual NLCD Land Cover",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,usa-nlcd-land-cover,"USA NLCD Land Cover",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"
+2025-10-21T21:18:28.865Z,worldsoils250m-ph1,"World Soils 250m pH",FeatureService,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,SKIP,"Error: [31mTest timeout of 120000ms exceeded.[39m"

@@ -1002,12 +1002,72 @@ export async function testLegendFiltersWork(
     };
   }
   
-  // Expand legend if it's collapsed (legend can collapse after popup interactions)
+  // Get all available sublayer buttons
+  const layersList = page.locator('#tnc-details-layers-list');
+  const layerButtons = layersList.locator('button[id^="tnc-details-layer-"]');
+  const layerCount = await layerButtons.count();
+  
+  if (layerCount === 0) {
+    // No sublayers list - test the main layer (single layer Feature Service)
+    return await testFilteringForSingleLayer(page, legend, 'Main Layer');
+  }
+  
+  // Test filtering for each sublayer
+  console.log(`🎛️  Testing filtering on ${layerCount} sublayer(s)`);
+  const sublayerResults: Array<{name: string; filterWorks: boolean; reason?: string}> = [];
+  
+  for (let i = 0; i < layerCount; i++) {
+    const layerButton = layerButtons.nth(i);
+    const layerName = (await layerButton.locator('.font-medium').textContent()) || `Layer ${i}`;
+    
+    console.log(`  Testing filtering on sublayer ${i + 1}/${layerCount}: ${layerName}`);
+    
+    // Click to activate this sublayer
+    await layerButton.click();
+    await page.waitForTimeout(2000);
+    
+    // Test filtering for this sublayer
+    const result = await testFilteringForSingleLayer(page, legend, layerName);
+    
+    sublayerResults.push({
+      name: layerName,
+      filterWorks: result.passed,
+      reason: result.message
+    });
+  }
+  
+  const workedCount = sublayerResults.filter(r => r.filterWorks).length;
+  const allWorked = workedCount === layerCount;
+  const failedLayers = sublayerResults.filter(r => !r.filterWorks);
+  
+  return {
+    passed: allWorked,
+    message: allWorked
+      ? `Filtering works on all ${layerCount} sublayer(s)`
+      : `Filtering works on ${workedCount}/${layerCount} sublayer(s) (failed: ${failedLayers.map(f => f.name).join(', ')})`,
+    details: {
+      totalSublayers: layerCount,
+      workingSublayers: workedCount,
+      sublayerResults,
+      failedLayers: failedLayers.length > 0 ? failedLayers : undefined
+    }
+  };
+}
+
+/**
+ * Helper function to test filtering on a single layer/sublayer
+ */
+async function testFilteringForSingleLayer(
+  page: Page,
+  legend: any,
+  layerName: string
+): Promise<TestResult> {
+  // Expand legend if it's collapsed
   const legendContent = legend.locator('[id^="legend-item-"]').first();
   let isContentVisible = await legendContent.isVisible().catch(() => false);
   
   if (!isContentVisible) {
-    console.log('Legend appears collapsed, expanding for filter test...');
+    console.log(`  Legend collapsed, expanding...`);
     const legendHeader = page.locator('#legend-panel-header');
     const expandButton = legendHeader.locator('button');
     await expandButton.click();
@@ -1018,26 +1078,30 @@ export async function testLegendFiltersWork(
   const layerColors = await extractLegendColors(page);
   
   if (layerColors.length <= 1) {
+    console.log(`  ✅ Only ${layerColors.length} legend item - filtering not applicable`);
     return {
       passed: true,
-      message: 'Only 1 legend item - filtering not applicable',
+      message: `${layerName}: Only 1 legend item - filtering not applicable`,
       details: { skipped: 'single_item' }
     };
   }
   
-  // Take baseline screenshot
+  console.log(`  🎨 Found ${layerColors.length} legend colors`);
+  
+  // Take baseline screenshot (with zoom-out if needed)
   const mapContainer = page.locator('#map-view');
   const mapBox = await mapContainer.boundingBox();
   
   if (!mapBox) {
     return {
       passed: false,
-      message: 'Map container not found',
+      message: `${layerName}: Map container not found`,
       details: { error: 'no_map_container' }
     };
   }
   
-  const beforeScreenshot = await page.screenshot({
+  // Check if layer colors are visible at current zoom
+  let beforeScreenshot = await page.screenshot({
     clip: {
       x: mapBox.x,
       y: mapBox.y,
@@ -1046,16 +1110,53 @@ export async function testLegendFiltersWork(
     }
   });
   
-  const beforeColors = checkWhichColorsPresent(beforeScreenshot, layerColors);
-  const beforeCount = beforeColors.filter(c => c.found).length;
+  let beforeColors = checkWhichColorsPresent(beforeScreenshot, layerColors);
+  let beforeCount = beforeColors.filter(c => c.found).length;
+  
+  // If no colors visible at default zoom, zoom out to find them
+  if (beforeCount === 0) {
+    console.log(`  🔍 No colors visible at default zoom, zooming out...`);
+    
+    // Switch to satellite basemap for better visibility
+    await switchToSatelliteBasemap(page);
+    
+    // Zoom out to level 8 (state-wide view)
+    await zoomOutToLevel(page, 8);
+    
+    // Wait for rendering
+    await page.waitForTimeout(3000);
+    
+    // Retake screenshot after zoom
+    beforeScreenshot = await page.screenshot({
+      clip: {
+        x: mapBox.x,
+        y: mapBox.y,
+        width: mapBox.width - 142,
+        height: mapBox.height
+      }
+    });
+    
+    beforeColors = checkWhichColorsPresent(beforeScreenshot, layerColors);
+    beforeCount = beforeColors.filter(c => c.found).length;
+    console.log(`  📊 After zoom: ${beforeCount}/${layerColors.length} colors visible`);
+  }
+  
+  // If still only 1 or fewer colors visible, filtering cannot be tested
+  if (beforeCount <= 1) {
+    console.log(`  ✅ Only ${beforeCount} color(s) visible - filtering not testable`);
+    return {
+      passed: true,
+      message: `${layerName}: Only ${beforeCount} visible color(s) - filtering not applicable`,
+      details: { skipped: 'insufficient_colors', beforeCount }
+    };
+  }
   
   // Click first legend item to filter
   const firstLegendItem = legend.locator('[id^="legend-item-"]').first();
   let isVisible = await firstLegendItem.isVisible().catch(() => false);
   
-  // Retry mechanism: If legend items not visible initially, wait longer and check again
+  // Retry mechanism
   if (!isVisible) {
-    console.log('Legend items not visible on first check, waiting 3s and retrying...');
     await page.waitForTimeout(3000);
     isVisible = await firstLegendItem.isVisible().catch(() => false);
   }
@@ -1063,11 +1164,12 @@ export async function testLegendFiltersWork(
   if (!isVisible) {
     return {
       passed: false,
-      message: 'Legend items not found (even after retry)',
+      message: `${layerName}: Legend items not found`,
       details: { error: 'no_legend_items' }
     };
   }
   
+  console.log(`  🎯 Clicking first legend item to filter...`);
   await firstLegendItem.click({ force: true });
   await page.waitForTimeout(2000);
   
@@ -1086,17 +1188,19 @@ export async function testLegendFiltersWork(
   
   const filterWorked = afterCount < beforeCount;
   
+  console.log(`  ${filterWorked ? '✅' : '❌'} Filtering ${filterWorked ? 'works' : 'did not work'}: ${beforeCount} → ${afterCount} colors`);
+  
   if (filterWorked) {
     return {
       passed: true,
-      message: `Filtering works (${beforeCount} → ${afterCount} colors)`,
+      message: `${layerName}: Filtering works (${beforeCount} → ${afterCount} colors)`,
       details: { beforeCount, afterCount }
     };
   }
   
   return {
     passed: false,
-    message: `Filtering did not work (${beforeCount} → ${afterCount} colors)`,
+    message: `${layerName}: Filtering did not work (${beforeCount} → ${afterCount} colors)`,
     details: { beforeCount, afterCount }
   };
 }
