@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import testData from '../test-data/arcgis-layers.json' with { type: 'json' };
 import * as helpers from '../helpers/tnc-arcgis-test-helpers';
+import type { LayerConfig } from '../helpers/tnc-arcgis-test-helpers';
 
 /**
  * ArcGIS Layer Quality Assurance Tests
@@ -18,6 +19,8 @@ import * as helpers from '../helpers/tnc-arcgis-test-helpers';
  */
 
 test.describe('CalFire Fire Hazard Severity Zones 2023', () => {
+  test.setTimeout(120000); // 2 minutes for multi-layer testing with zoom
+  
   const layer = testData.layers.find(l => l.id === 'calfire-fire-hazard-severity-zones')!;
   
   test.beforeEach(async ({ page }) => {
@@ -100,32 +103,31 @@ test.describe('CalFire Fire Hazard Severity Zones 2023', () => {
     });
 
     // ===== TEST 2: All Layers Load =====
-    await test.step('2. All Layers Load (pixel color check)', async () => {
-      const mapContainer = page.locator('#map-view');
-      const mapBox = await mapContainer.boundingBox();
+    await test.step('2. All Layers Load (multi-layer + zoom + border detection)', async () => {
+      // Use the enhanced testLayersLoad helper which:
+      // - Tests ALL sublayers in a Feature Service
+      // - Switches to satellite basemap for border detection
+      // - Zooms out if pixels not found at default zoom
+      // - Detects both fill and border colors
+      const layerConfig: LayerConfig = {
+        id: layer.id,
+        title: layer.title,
+        itemId: layer.itemId,
+        url: '', // Not needed for this test
+        type: 'FeatureService',
+        categories: [],
+        expectedResults: layer.expectedResults,
+        notes: ''
+      };
       
-      if (!mapBox) {
-        throw new Error('Map container not found');
+      const result = await helpers.testLayersLoad(page, layerConfig);
+      
+      console.log(`Layer load test result: ${result.message}`);
+      if (result.details) {
+        console.log(`Details:`, result.details);
       }
       
-      // Extract actual colors from legend swatches
-      const legendColors = await helpers.extractLegendColors(page);
-      console.log('Extracted legend colors:', legendColors.map(c => `${c.label}: rgb(${c.r},${c.g},${c.b})`));
-      
-      // Screenshot map area, excluding legend (142px from right)
-      const screenshot = await page.screenshot({
-        clip: {
-          x: mapBox.x,
-          y: mapBox.y,
-          width: mapBox.width - 142,
-          height: mapBox.height
-        }
-      });
-      
-      // Check if any legend colors are present in the screenshot
-      const hasLayerColors = helpers.checkForColors(screenshot, legendColors);
-      
-      expect(hasLayerColors).toBe(true);
+      expect(result.passed).toBe(true);
     });
 
     // ===== TEST 3: ArcGIS Download Link Works (No 404) =====

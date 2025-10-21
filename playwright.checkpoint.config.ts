@@ -26,8 +26,8 @@ export default defineConfig({
     video: 'on',
   },
   
-  // Increase timeout for checkpoint runs (some layers may be slow)
-  timeout: 90000, // 90 seconds per test
+  // Increase timeout for checkpoint runs (multi-layer testing with zoom can be slow)
+  timeout: 120000, // 120 seconds per test (2 minutes)
   
   // Run tests in parallel for faster execution
   workers: 4, // Adjust based on your machine

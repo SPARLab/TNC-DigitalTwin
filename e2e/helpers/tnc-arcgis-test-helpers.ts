@@ -233,13 +233,53 @@ export async function extractLegendColors(page: Page): Promise<Array<{ r: number
     const item = legendItems.nth(i);
     let bgColor: string | null = null;
     
-    // Try polygon swatch first
+    // Try polygon swatch first - extract BOTH fill and border colors
     const polygonSwatch = item.locator('[id^="legend-swatch-polygon-"]');
     if (await polygonSwatch.isVisible().catch(() => false)) {
-      bgColor = await polygonSwatch.evaluate((el) => {
+      const colorData = await polygonSwatch.evaluate((el) => {
         const style = window.getComputedStyle(el);
-        return style.backgroundColor;
+        return {
+          fill: style.backgroundColor,
+          border: style.borderColor
+        };
       });
+      
+      // Get label text once for both colors
+      const labelEl = item.locator('[data-testid="legend-item-label"]');
+      const label = await labelEl.textContent().catch(() => 'Unknown');
+      
+      // Parse and add fill color if it exists and isn't black
+      const fillMatch = colorData.fill.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+      if (fillMatch) {
+        const r = parseInt(fillMatch[1]);
+        const g = parseInt(fillMatch[2]);
+        const b = parseInt(fillMatch[3]);
+        
+        // Add fill color if it's not black
+        if (!(r === 0 && g === 0 && b === 0)) {
+          colors.push({ r, g, b, label: label || 'Unknown' });
+        }
+      }
+      
+      // Parse and add border color if it exists and is different from fill
+      const borderMatch = colorData.border.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+      if (borderMatch) {
+        const r = parseInt(borderMatch[1]);
+        const g = parseInt(borderMatch[2]);
+        const b = parseInt(borderMatch[3]);
+        
+        // Add border color if it's not black and different from fill
+        const isDifferent = !fillMatch || 
+          (r !== parseInt(fillMatch[1]) || 
+           g !== parseInt(fillMatch[2]) || 
+           b !== parseInt(fillMatch[3]));
+        
+        if (!(r === 0 && g === 0 && b === 0) && isDifferent) {
+          colors.push({ r, g, b, label: `${label || 'Unknown'} (border)` });
+        }
+      }
+      
+      continue; // Skip the rest of the loop for this item
     }
     
     // Try line swatch if polygon not found
@@ -543,6 +583,78 @@ export async function testShowsInAllCategories(
  * TEST 2: Check if layer loads and renders visually
  * Handles both Feature Services and Image Services
  */
+/**
+ * Helper: Zoom out using mouse wheel scroll on the map
+ */
+async function zoomOutToLevel(page: Page, targetLevel: number): Promise<void> {
+  // Get the map container
+  const mapContainer = page.locator('#map-view');
+  const mapBox = await mapContainer.boundingBox();
+  
+  if (!mapBox) {
+    console.warn('Map container not found for zooming');
+    return;
+  }
+  
+  // Move mouse to center of map
+  const centerX = mapBox.x + mapBox.width / 2;
+  const centerY = mapBox.y + mapBox.height / 2;
+  await page.mouse.move(centerX, centerY);
+  
+  // Calculate scroll amount based on target zoom level
+  // Default zoom is ~12-15, target level 8 means ~4-7 zoom outs
+  // Each mouse wheel scroll changes zoom by ~1 level
+  const zoomOutSteps = targetLevel <= 5 ? 10 : targetLevel <= 7 ? 6 : targetLevel <= 8 ? 5 : 3;
+  
+  console.log(`    Zooming out ${zoomOutSteps} levels using mouse wheel...`);
+  
+  // Scroll out (positive deltaY = zoom out)
+  for (let i = 0; i < zoomOutSteps; i++) {
+    await page.mouse.wheel(0, 200); // Positive = zoom out
+    await page.waitForTimeout(500); // Wait for each zoom step
+  }
+  
+  // Extra wait for final zoom to settle and render
+  await page.waitForTimeout(2000);
+}
+
+/**
+ * Helper: Switch to satellite basemap for better border detection
+ */
+async function switchToSatelliteBasemap(page: Page): Promise<void> {
+  const basemapButton = page.locator('button:has-text("Satellite")');
+  const isVisible = await basemapButton.isVisible().catch(() => false);
+  
+  if (isVisible) {
+    await basemapButton.click();
+    await page.waitForTimeout(1000);
+    console.log('✅ Switched to satellite basemap for border detection');
+  }
+}
+
+/**
+ * Helper: Check if any legend colors appear in map screenshot
+ */
+async function checkForLayerPixels(page: Page, legendColors: Array<{ r: number; g: number; b: number }>): Promise<boolean> {
+  const mapContainer = page.locator('#map-view');
+  const mapBox = await mapContainer.boundingBox();
+  
+  if (!mapBox) {
+    return false;
+  }
+  
+  const screenshot = await page.screenshot({
+    clip: {
+      x: mapBox.x,
+      y: mapBox.y,
+      width: mapBox.width - 142, // Exclude legend panel on right
+      height: mapBox.height
+    }
+  });
+  
+  return checkForColors(screenshot, legendColors);
+}
+
 export async function testLayersLoad(
   page: Page,
   layer: LayerConfig
@@ -582,40 +694,109 @@ export async function testLayersLoad(
     };
   }
   
-  // For Feature Services, use pixel-based color detection
-  const legendColors = await extractLegendColors(page);
+  // Switch to satellite basemap for better border/outline detection
+  await switchToSatelliteBasemap(page);
   
-  if (legendColors.length === 0) {
-    return {
-      passed: false,
-      message: 'No legend colors found to verify layer rendering',
-      details: { error: 'no_legend_colors' }
-    };
-  }
+  // Get all available sublayer buttons
+  const layersList = page.locator('#tnc-details-layers-list');
+  const layerButtons = layersList.locator('button[id^="tnc-details-layer-"]');
+  const layerCount = await layerButtons.count();
   
-  const screenshot = await page.screenshot({
-    clip: {
-      x: mapBox.x,
-      y: mapBox.y,
-      width: mapBox.width - 142,
-      height: mapBox.height
+  if (layerCount === 0) {
+    // No sublayers list - test the main layer (single layer Feature Service)
+    const legendColors = await extractLegendColors(page);
+    
+    if (legendColors.length === 0) {
+      return {
+        passed: false,
+        message: 'No legend colors found to verify layer rendering',
+        details: { error: 'no_legend_colors' }
+      };
     }
-  });
-  
-  const hasLayerColors = checkForColors(screenshot, legendColors);
-  
-  if (hasLayerColors) {
+    
+    const colorsFound = await checkForLayerPixels(page, legendColors);
+    
     return {
-      passed: true,
-      message: 'Layer colors detected on map',
+      passed: colorsFound,
+      message: colorsFound ? 'Layer colors detected on map' : 'Layer colors not found on map',
       details: { legendColors: legendColors.length }
     };
   }
   
+  // Test each sublayer
+  console.log(`📊 Found ${layerCount} sublayers to test`);
+  const sublayerResults: Array<{name: string; loaded: boolean; zoomLevel?: number}> = [];
+  
+  for (let i = 0; i < layerCount; i++) {
+    const layerButton = layerButtons.nth(i);
+    const layerName = (await layerButton.locator('.font-medium').textContent()) || `Layer ${i}`;
+    
+    console.log(`  Testing sublayer ${i + 1}/${layerCount}: ${layerName}`);
+    
+    // Click to activate this sublayer
+    await layerButton.click();
+    await page.waitForTimeout(2000);
+    
+    // Get legend colors for this sublayer
+    const legendColors = await extractLegendColors(page);
+    
+    if (legendColors.length === 0) {
+      console.log(`    ⚠️  No legend colors for sublayer: ${layerName}`);
+      sublayerResults.push({ name: layerName, loaded: false });
+      continue;
+    }
+    
+    console.log(`    🎨 Extracted ${legendColors.length} colors:`, legendColors.map(c => `rgb(${c.r},${c.g},${c.b})`).join(', '));
+    
+    // Try pixel detection at current zoom (default ~12-15)
+    let colorsFound = await checkForLayerPixels(page, legendColors);
+    let zoomUsed = undefined;
+    
+    // If no colors found, try zooming out progressively (state-wide, then region-wide)
+    if (!colorsFound) {
+      console.log(`    🔍 No pixels at default zoom, zooming out to state-wide view...`);
+      
+      // Zoom out to level 8 (state-wide view)
+      await zoomOutToLevel(page, 8);
+      
+      // Wait extra time for layer to fully render after zoom
+      console.log(`    ⏳ Waiting for layer to render after zoom...`);
+      await page.waitForTimeout(3000);
+      
+      colorsFound = await checkForLayerPixels(page, legendColors);
+      
+      if (colorsFound) {
+        console.log(`    ✅ Found pixels at state-wide zoom (level ~8)`);
+        zoomUsed = 8;
+      } else {
+        console.log(`    ❌ No pixels found even at state-wide zoom`);
+      }
+    } else {
+      console.log(`    ✅ Pixels found at default zoom`);
+    }
+    
+    sublayerResults.push({ 
+      name: layerName, 
+      loaded: colorsFound,
+      zoomLevel: zoomUsed
+    });
+  }
+  
+  const loadedCount = sublayerResults.filter(r => r.loaded).length;
+  const allLoaded = loadedCount === layerCount;
+  const failedLayers = sublayerResults.filter(r => !r.loaded).map(r => r.name);
+  
   return {
-    passed: false,
-    message: 'Layer colors not found on map (may not be loading)',
-    details: { legendColors: legendColors.length }
+    passed: allLoaded,
+    message: allLoaded 
+      ? `All ${layerCount} sublayer(s) loaded successfully`
+      : `${loadedCount}/${layerCount} sublayer(s) loaded (failed: ${failedLayers.join(', ')})`,
+    details: { 
+      totalSublayers: layerCount,
+      loadedSublayers: loadedCount,
+      sublayerResults,
+      failedLayers: failedLayers.length > 0 ? failedLayers : undefined
+    }
   };
 }
 

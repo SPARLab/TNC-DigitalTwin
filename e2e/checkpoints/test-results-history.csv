@@ -83,3 +83,21 @@ Received: [31mfalse[39m"
 2025-10-21T19:49:51.140Z,calfire-frap-fire-threat-2019,"CalFire FRAP Fire Threat 2019",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,PASS,FAIL,""
 2025-10-21T19:49:51.140Z,calfire-fire-hazard-severity-zones-2023,"CalFire Fire Hazard Severity Zones 2023",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,PASS,PASS,""
 2025-10-21T19:49:51.140Z,california-historic-fire-perimeters,"California Historical Fire Perimeters",FeatureService,SKIP,PASS,PASS,SKIP,PASS,PASS,PASS,PASS,""
+2025-10-21T20:35:50.673Z,california-historic-fire-perimeters,"California Historical Fire Perimeters",FeatureService,SKIP,FAIL,PASS,SKIP,FAIL,PASS,PASS,FAIL,"Error: Error: Expected PASS, got FAIL: 2/3 sublayer(s) loaded (failed: Recent Large Fire Perimeters (GT 5000 acres))
+
+[2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32mtrue[39m
+Received: [31mfalse[39m"
+2025-10-21T20:43:19.099Z,california-historic-fire-perimeters,"California Historical Fire Perimeters",FeatureService,SKIP,FAIL,PASS,SKIP,FAIL,PASS,PASS,FAIL,"Error: Error: Expected PASS, got FAIL: 2/3 sublayer(s) loaded (failed: Recent Large Fire Perimeters (GT 5000 acres))
+
+[2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32mtrue[39m
+Received: [31mfalse[39m"
+2025-10-21T20:46:16.417Z,california-historic-fire-perimeters,"California Historical Fire Perimeters",FeatureService,SKIP,FAIL,PASS,SKIP,FAIL,PASS,PASS,FAIL,"Error: Error: Expected PASS, got FAIL: 2/3 sublayer(s) loaded (failed: Recent Large Fire Perimeters (GT 5000 acres))
+
+[2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+Expected: [32mtrue[39m
+Received: [31mfalse[39m"

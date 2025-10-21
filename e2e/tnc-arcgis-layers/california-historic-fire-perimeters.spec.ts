@@ -5,6 +5,8 @@ import {
   extractLegendColors,
   testFeaturePopup,
   testDownloadLink,
+  testLayersLoad,
+  type LayerConfig,
 } from '../helpers/tnc-arcgis-test-helpers';
 
 /**
@@ -15,6 +17,8 @@ import {
  */
 
 test.describe('California Historical Fire Perimeters @manual', () => {
+  test.setTimeout(120000); // 2 minutes for multi-layer testing with zoom
+  
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
@@ -47,13 +51,39 @@ test.describe('California Historical Fire Perimeters @manual', () => {
       await page.waitForTimeout(3000);
     });
 
-    await test.step('2. All Layers Load (Visual Check)', async () => {
-      // Take screenshot of map to verify colors are present
-      const mapContainer = page.locator('#map-view');
-      const screenshot = await mapContainer.screenshot();
+    await test.step('2. All Layers Load (multi-layer + zoom + border detection)', async () => {
+      // Use the enhanced testLayersLoad helper which:
+      // - Tests ALL 3 sublayers in this Feature Service
+      // - Switches to satellite basemap for border detection
+      // - Zooms out if pixels not found at default zoom
+      // - Detects both fill and border colors
+      const layerConfig: LayerConfig = {
+        id: 'california-historic-fire-perimeters',
+        title: 'California Historical Fire Perimeters',
+        itemId: 'california-historic-fire-perimeters',
+        url: 'https://services1.arcgis.com/jUJYIo9tSA7EHvfZ/arcgis/rest/services/California_Historic_Fire_Perimeters/FeatureServer',
+        type: 'FeatureService',
+        categories: ['Fire'],
+        expectedResults: {
+          showsInCategories: null,
+          layersLoad: true,
+          downloadLinkWorks: true,
+          tooltipsPopUp: true,
+          legendExists: true,
+          legendLabelsDescriptive: true,
+          legendFiltersWork: true,
+        },
+        notes: ''
+      };
       
-      expect(screenshot.length).toBeGreaterThan(0);
-      console.log('✅ Layer rendered on map');
+      const result = await testLayersLoad(page, layerConfig);
+      
+      console.log(`Layer load test result: ${result.message}`);
+      if (result.details) {
+        console.log(`Details:`, result.details);
+      }
+      
+      expect(result.passed).toBe(true);
     });
 
     await test.step('3. Download Link Works', async () => {
