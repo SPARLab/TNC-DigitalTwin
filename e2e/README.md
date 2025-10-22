@@ -181,7 +181,7 @@ e2e/
 │   ├── tnc-arcgis-test-helpers.ts  # Test utilities & generalized functions
 │   └── run-quality-check.ts        # 🆕 Main test orchestrator
 ├── reporters/
-│   └── checkpoint-reporter.ts      # 🆕 Custom reporter for CSV tracking
+│   └── checkpoint-reporter.ts      # 🆕 Custom reporter for progress tracking
 ├── scripts/
 │   ├── parse-manual-test-csv.ts    # 🆕 CSV → JSON converter
 │   ├── validate-tests.ts           # 🆕 Test accuracy validator
@@ -189,9 +189,46 @@ e2e/
 ├── test-data/
 │   └── all-arcgis-layers.json      # 🆕 Expected results for all layers
 ├── checkpoints/
-│   └── test-results-history.csv    # 🆕 Historical test results
+│   ├── checkpoint-history.csv      # 🎯 Summary: one row per test run
+│   └── checkpoint-TIMESTAMP.json   # 📋 Detailed: full results per run (git-ignored)
 └── README.md
 ```
+
+**Checkpoint Results Structure:**
+- **`checkpoint-history.csv`**: Summary metrics for **FULL runs only** (tracked in git)
+  ```csv
+  timestamp, run_type, total_layers_tested, feature_services_tested, image_services_tested,
+  true_positives, true_negatives, false_positives, false_negatives, overall_accuracy,
+  passing_services, failing_services, failing_service_names, detailed_results_file
+  ```
+  - **One row per FULL checkpoint run** (PARTIAL runs NOT saved)
+  - **Run Type**: Always "FULL" (all 45 categorized layers)
+  - **Layer Counts**: Total, FeatureServices, ImageServices tested
+  - **Test Accuracy**: TP/TN/FP/FN and overall accuracy percentage
+  - **Service Status**: Count of passing/failing services, with names if ≤5 failing
+  - **Reference**: Links to detailed JSON file for investigation
+  
+- **`checkpoint-TIMESTAMP.json`**: Detailed test results for each run (git-ignored, for debugging)
+  - Saved for **both FULL and PARTIAL runs**
+  - Full pass/fail status for every test in every layer
+  - Complete list of tested layer IDs
+  - PARTIAL run JSONs are for manual review only
+
+**Using the History:**
+- No filtering needed - all rows are FULL checkpoint runs
+- Track progress over time: accuracy trending up, failing services trending down
+- Identify problematic layers from `failing_service_names` column
+- PARTIAL runs: Review the JSON file manually, not tracked in CSV
+
+**Example History Evolution:**
+```
+timestamp              | run_type | total | FS | IS | TP | TN | FP | FN | accuracy | passing | failing | names
+2025-10-20T10:00:00Z  | FULL     | 45    | 39 | 6  | 38 | 2  | 3  | 12 | 72.7%    | 32      | 13      | More than 5 failing, see...
+2025-10-21T14:30:00Z  | FULL     | 45    | 39 | 6  | 46 | 3  | 2  | 9  | 81.7%    | 38      | 7       | Cattle Guards; Dibblee...
+2025-10-22T16:00:00Z  | FULL     | 45    | 39 | 6  | 52 | 3  | 0  | 5  | 91.7%    | 41      | 4       | Cattle Guards; Coastal...
+```
+**Progress:** 72.7% → 81.7% → 91.7% accuracy, 13 → 7 → 4 failing services 🎉
+**Note:** PARTIAL runs (e.g., testing 1-3 layers for debugging) are NOT shown in this CSV
 
 ### Key Design Decisions
 

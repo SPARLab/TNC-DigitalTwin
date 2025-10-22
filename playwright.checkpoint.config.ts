@@ -30,11 +30,12 @@ export default defineConfig({
   },
   
   // Increase timeout for checkpoint runs (multi-layer testing with zoom can be slow)
-  timeout: 120000, // 120 seconds per test (2 minutes)
+  // Base: 60s + ~30s per sublayer (avg 3-5 sublayers = 150-210s)
+  timeout: 240000, // 240 seconds per test (4 minutes)
   
   // Run tests in parallel for faster execution
-  // M2 Max (12 cores, 32GB RAM) can comfortably handle 8-10 workers
-  workers: 8, // Optimal for M2 Max: 8 feature services simultaneously
+  // Reduced from 8 to 6 workers to minimize resource contention
+  workers: 6, // 6 parallel workers for stable execution
   
   // Retry failed tests to reduce false negatives
   retries: 1,

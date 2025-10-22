@@ -1,0 +1,2 @@
+timestamp,total_tests_passing,total_tests_failing,feature_services_passing,feature_services_failing,image_services_passing,image_services_failing,failing_service_names,details_file
+Oct 21 2025 3:30 PM,48,12,31,7,6,0,"More than 5 failing, see checkpoint-2025-10-21T22-30-26-411Z.json",checkpoint-2025-10-21T22-30-26-411Z.json
