@@ -1,6 +1,6 @@
 import { useEffect, useRef, useMemo, useState } from 'react';
 import * as echarts from 'echarts';
-import { FileSpreadsheet, FileDown } from 'lucide-react';
+import { FileSpreadsheet, FileDown, ShoppingCart } from 'lucide-react';
 import type { DendraStation, DendraDatastream, DendraDatapoint } from '../types';
 
 // Props for Dendra details sidebar including blank state management
@@ -22,6 +22,7 @@ interface DendraDetailsSidebarProps {
   };
   onExportCSV?: () => void;
   onExportExcel?: () => void;
+  onAddToCart?: () => void;
 }
 
 export default function DendraDetailsSidebar({
@@ -39,6 +40,7 @@ export default function DendraDetailsSidebar({
   loadProgress,
   onExportCSV,
   onExportExcel,
+  onAddToCart,
 }: DendraDetailsSidebarProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
@@ -672,7 +674,7 @@ export default function DendraDetailsSidebar({
             </h3>
             
             {/* Export Buttons */}
-            {datapoints.length > 0 && (onExportCSV || onExportExcel) && (
+            {datapoints.length > 0 && (onExportCSV || onExportExcel || onAddToCart) && (
               <div id="dendra-export-buttons" className="flex gap-2" role="group" aria-label="Data export options">
                 {onExportCSV && (
                   <button
@@ -696,6 +698,18 @@ export default function DendraDetailsSidebar({
                   >
                     <FileDown className="w-3.5 h-3.5" aria-hidden="true" />
                     Excel
+                  </button>
+                )}
+                {onAddToCart && (
+                  <button
+                    id="dendra-add-to-cart-btn"
+                    onClick={onAddToCart}
+                    aria-label="Add current datastream to export cart"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-purple-50 text-purple-700 rounded hover:bg-purple-100 transition-colors border border-purple-200"
+                    title="Add to cart"
+                  >
+                    <ShoppingCart className="w-3.5 h-3.5" aria-hidden="true" />
+                    Add to Cart
                   </button>
                 )}
               </div>

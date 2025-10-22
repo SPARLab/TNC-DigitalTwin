@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, ExternalLink, Calendar, User, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, ExternalLink, Calendar, User, X, ShoppingCart } from 'lucide-react';
 import { ObservationGroup } from '../types';
 import { iNaturalistObservation } from '../services/iNaturalistService';
 import { formatDateRangeCompact } from '../utils/dateUtils';
@@ -12,6 +12,7 @@ interface ObservationsSidebarProps {
   endDate?: string;
   onExportCSV?: () => void;
   onExportGeoJSON?: () => void;
+  onAddToCart?: () => void;
   hasSearched?: boolean;
 }
 
@@ -23,6 +24,7 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({
   endDate,
   onExportCSV,
   onExportGeoJSON,
+  onAddToCart,
   hasSearched = false
 }) => {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
@@ -251,7 +253,7 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({
           </p>
           
           {/* Export buttons */}
-          {observations.length > 0 && (onExportCSV || onExportGeoJSON) && (
+          {observations.length > 0 && (onExportCSV || onExportGeoJSON || onAddToCart) && (
             <div id="observations-export-buttons" className="flex gap-2 mt-3">
               {onExportCSV && (
                 <button
@@ -269,6 +271,17 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({
                   className="flex-1 px-3 py-1.5 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors"
                 >
                   Export GeoJSON
+                </button>
+              )}
+              {onAddToCart && (
+                <button
+                  id="observations-add-to-cart-btn"
+                  onClick={onAddToCart}
+                  className="flex-1 px-3 py-1.5 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100 transition-colors flex items-center justify-center gap-1"
+                  title="Add current search to export cart"
+                >
+                  <ShoppingCart className="w-3 h-3" />
+                  Add to Cart
                 </button>
               )}
             </div>

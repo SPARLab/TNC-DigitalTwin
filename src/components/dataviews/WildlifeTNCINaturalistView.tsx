@@ -41,7 +41,11 @@ const WildlifeTNCINaturalistView: React.FC<WildlifeTNCINaturalistViewProps> = ({
     const groups: { [key: string]: TNCArcGISObservation[] } = {};
     
     observations.forEach(obs => {
-      const category = obs.taxon_category_name || 'Unknown';
+      // Normalize category name - replace "Other" with "Unknown"
+      let category = obs.taxon_category_name || 'Unknown';
+      if (category === 'Other') {
+        category = 'Unknown';
+      }
       if (!groups[category]) {
         groups[category] = [];
       }
@@ -61,7 +65,13 @@ const WildlifeTNCINaturalistView: React.FC<WildlifeTNCINaturalistViewProps> = ({
   const filteredObservations = useMemo(() => {
     const byTaxon = selectedTaxonFilter === 'all' 
       ? observations 
-      : observations.filter(obs => obs.taxon_category_name === selectedTaxonFilter);
+      : observations.filter(obs => {
+          // Handle "Unknown" filter - match both null/empty and "Other"
+          if (selectedTaxonFilter === 'Unknown') {
+            return !obs.taxon_category_name || obs.taxon_category_name === 'Other';
+          }
+          return obs.taxon_category_name === selectedTaxonFilter;
+        });
     if (!searchText.trim()) return byTaxon;
     const q = searchText.toLowerCase();
     return byTaxon.filter(obs => (
@@ -101,9 +111,11 @@ const WildlifeTNCINaturalistView: React.FC<WildlifeTNCINaturalistViewProps> = ({
       'Mollusca': '🐚',
       'Plantae': '🌱',
       'Protozoa': '🦠',
-      'Reptilia': '🦎'
+      'Reptilia': '🦎',
+      'Unknown': '🔍',
+      'Other': '🔍'
     };
-    return icons[category] || '🔬';
+    return icons[category] || '🔍';
   };
 
   const getTaxonColor = (category: string) => {
@@ -118,7 +130,9 @@ const WildlifeTNCINaturalistView: React.FC<WildlifeTNCINaturalistViewProps> = ({
       'Mollusca': '#7f7f7f',
       'Plantae': '#bcbd22',
       'Protozoa': '#17becf',
-      'Reptilia': '#ff9896'
+      'Reptilia': '#ff9896',
+      'Unknown': '#666666',
+      'Other': '#666666'
     };
     return colors[category] || '#666666';
   };

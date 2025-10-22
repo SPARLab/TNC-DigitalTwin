@@ -1818,19 +1818,15 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
               latitude: latitude
             });
 
-            // Get color based on taxon category
-            const color = tncINaturalistService.getTaxonColor(obs.taxon_category_name);
+            // Get emoji based on taxon category
+            const emoji = getTNCObservationEmoji(obs.taxon_category_name);
             
-            // Create symbol - highlight selected observation
+            // Create symbol with emoji icon - larger if selected
             const isSelected = selectedTNCObservation?.observation_id === obs.observation_id;
-            const symbol = new SimpleMarkerSymbol({
-              style: 'circle',
-              color: color,
-              size: isSelected ? '14px' : '10px',
-              outline: {
-                color: isSelected ? '#FFD700' : 'white',
-                width: isSelected ? 3 : 1.5
-              }
+            const symbol = new PictureMarkerSymbol({
+              url: getEmojiDataUri(emoji),
+              width: isSelected ? '28px' : '24px',
+              height: isSelected ? '28px' : '24px'
             });
 
             // Create rich popup template
@@ -2087,15 +2083,11 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           // Get icon based on taxon type
           const iconInfo = getObservationIcon(obs);
           
-          // Create symbol
-          const symbol = new SimpleMarkerSymbol({
-            style: 'circle',
-            color: iconInfo.color,
-            size: '12px',
-            outline: {
-              color: 'white',
-              width: 2
-            }
+          // Create symbol with emoji icon (matching sidebar)
+          const symbol = new PictureMarkerSymbol({
+            url: getEmojiDataUri(iconInfo.emoji),
+            width: '24px',
+            height: '24px'
           });
 
           // Get the best available photo URL for popup
@@ -2553,18 +2545,14 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
             latitude
           });
 
-          // Get color based on taxon category
-          const color = tncINaturalistService.getTaxonColor(obs.taxon_category_name);
+          // Get emoji based on taxon category
+          const emoji = getTNCObservationEmoji(obs.taxon_category_name);
           
-          // Create symbol
-          const symbol = new SimpleMarkerSymbol({
-            style: 'circle',
-            color: color,
-            size: '10px',
-            outline: {
-              color: 'white',
-              width: 1.5
-            }
+          // Create symbol with emoji icon
+          const symbol = new PictureMarkerSymbol({
+            url: getEmojiDataUri(emoji),
+            width: '24px',
+            height: '24px'
           });
 
           // Create rich popup template with taxonomic hierarchy
@@ -2760,9 +2748,52 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         return { color: '#228B22', emoji: '🌱' };
       case 'mollusca':
         return { color: '#DDA0DD', emoji: '🐚' };
+      case 'animalia':
+        return { color: '#666666', emoji: '🐾' };
+      case 'fungi':
+        return { color: '#FF6B6B', emoji: '🍄' };
+      case 'chromista':
+        return { color: '#4ECDC4', emoji: '🦠' };
+      case 'protozoa':
+        return { color: '#95E1D3', emoji: '🔬' };
       default:
         return { color: '#666666', emoji: '🔍' };
     }
+  };
+
+  // Helper to get emoji from TNC taxon category name
+  const getTNCObservationEmoji = (taxonCategory: string): string => {
+    const category = taxonCategory?.toLowerCase() || '';
+    
+    // Map TNC category names to emojis
+    if (category.includes('bird') || category.includes('aves')) return '🐦';
+    if (category.includes('mammal')) return '🦌';
+    if (category.includes('reptil')) return '🦎';
+    if (category.includes('amphibi')) return '🐸';
+    if (category.includes('fish')) return '🐟';
+    if (category.includes('insect')) return '🦋';
+    if (category.includes('spider') || category.includes('arachnid')) return '🕷️';
+    if (category.includes('plant') || category.includes('flora')) return '🌱';
+    if (category.includes('mollus')) return '🐚';
+    if (category.includes('fungi') || category.includes('mushroom')) return '🍄';
+    if (category.includes('protozoa')) return '🔬';
+    
+    // Default for unknown/other categories
+    return '🔍';
+  };
+
+  // Helper function to convert emoji to SVG data URI for map markers
+  const getEmojiDataUri = (emoji: string): string => {
+    // Create SVG with just the emoji (no background circle)
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">
+        <text x="14" y="14" text-anchor="middle" dominant-baseline="central" font-size="20" font-family="Arial, sans-serif">
+          ${emoji}
+        </text>
+      </svg>
+    `;
+    // Use URL encoding instead of base64 to handle emojis properly
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   };
 
   // Custom zoom functions

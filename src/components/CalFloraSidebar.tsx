@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronDown, ChevronRight, Leaf, AlertTriangle, MapPin, Calendar } from 'lucide-react';
+import { ChevronDown, ChevronRight, Leaf, AlertTriangle, MapPin, Calendar, ShoppingCart } from 'lucide-react';
 import { CalFloraPlant } from '../services/calFloraService';
 import { CalFloraGroup } from '../types';
 
@@ -8,6 +8,7 @@ interface CalFloraSidebarProps {
   isLoading?: boolean;
   onExportCSV?: () => void;
   onExportGeoJSON?: () => void;
+  onAddToCart?: () => void;
   onPlantSelect?: (plant: CalFloraPlant) => void;
   hasSearched?: boolean;
 }
@@ -17,6 +18,7 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
   isLoading = false,
   onExportCSV,
   onExportGeoJSON,
+  onAddToCart,
   onPlantSelect,
   hasSearched = false
 }) => {
@@ -187,22 +189,37 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
         </p>
         
         {/* Export buttons */}
-        {plants.length > 0 && (
+        {plants.length > 0 && (onExportCSV || onExportGeoJSON || onAddToCart) && (
           <div id="export-buttons" className="flex gap-2 mt-3">
-            <button
-              id="export-csv-btn"
-              onClick={onExportCSV}
-              className="flex-1 px-3 py-1.5 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100 transition-colors"
-            >
-              Export CSV
-            </button>
-            <button
-              id="export-geojson-btn"
-              onClick={onExportGeoJSON}
-              className="flex-1 px-3 py-1.5 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100 transition-colors"
-            >
-              Export GeoJSON
-            </button>
+            {onExportCSV && (
+              <button
+                id="export-csv-btn"
+                onClick={onExportCSV}
+                className="flex-1 px-3 py-1.5 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100 transition-colors"
+              >
+                Export CSV
+              </button>
+            )}
+            {onExportGeoJSON && (
+              <button
+                id="export-geojson-btn"
+                onClick={onExportGeoJSON}
+                className="flex-1 px-3 py-1.5 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100 transition-colors"
+              >
+                Export GeoJSON
+              </button>
+            )}
+            {onAddToCart && (
+              <button
+                id="calflora-add-to-cart-btn"
+                onClick={onAddToCart}
+                className="flex-1 px-3 py-1.5 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors flex items-center justify-center gap-1"
+                title="Add current search to export cart"
+              >
+                <ShoppingCart className="w-3 h-3" />
+                Add to Cart
+              </button>
+            )}
           </div>
         )}
       </div>

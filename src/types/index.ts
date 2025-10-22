@@ -149,3 +149,32 @@ export interface DendraStationWithMetadata extends DendraStation {
   firstTimestamp: number | null;
   lastTimestamp: number | null;
 }
+
+// Shopping Cart Types
+export interface CartItem {
+  id: string;                    // unique ID (timestamp + source)
+  dataSource: 'inaturalist' | 'dendra' | 'calflora' | 'ebird';
+  title: string;                 // user-friendly description
+  query: {
+    // Spatial filters
+    spatialFilter?: 'preserve-only' | 'expanded' | 'custom';
+    customPolygon?: string;      // GeoJSON string if custom
+    
+    // Time range
+    timeRange?: string;           // e.g., "Last 30 days"
+    startDate?: string;
+    endDate?: string;
+    
+    // Data source-specific filters
+    additionalFilters?: Record<string, any>;
+  };
+  itemCount: number;             // number of records in this query
+  addedAt: number;               // timestamp when added
+  previewData?: any[];           // first 5-10 records for preview
+}
+
+export interface ExportFormat {
+  format: 'csv' | 'json' | 'geojson';
+  filename: string;
+  data: any[];
+}
