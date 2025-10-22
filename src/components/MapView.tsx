@@ -104,6 +104,8 @@ export interface MapViewRef {
   clearPolygon: () => void;
   clearSearchArea: () => void;
   clearAllObservationLayers: () => void;
+  highlightObservation: (id: number | string) => void;
+  clearObservationHighlight: () => void;
 }
 
 const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({ 
@@ -171,6 +173,11 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   // Map legend filtering state for iNaturalist observations
   const [currentObservations, setCurrentObservations] = useState<iNaturalistObservation[]>([]);
   const [visibleObservationCategories, setVisibleObservationCategories] = useState<Set<string>>(new Set());
+  
+  // Highlighted observation state
+  const [highlightedObservationId, setHighlightedObservationId] = useState<number | string | null>(null);
+  const highlightHandleRef = useRef<__esri.Handle | null>(null);
+  const highlightOperationRef = useRef<Promise<void> | null>(null);
 
   // Synchronize ImageServer banner with loadingLayerIds (same as eye icon timing)
   useEffect(() => {
@@ -1175,7 +1182,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           if (isTNCLayer) {
             const itemId = layerId.replace('tnc-layer-', '');
             if (!activeLayerIds.includes(itemId)) {
-              view.popup.close();
+              view.popup.visible = false;
       // console.log('🔒 Closed popup - layer was toggled off');
             }
           }
@@ -2821,6 +2828,112 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     setVisibleObservationCategories(new Set());
   };
 
+  // Highlight observation method using ArcGIS native highlighting
+  const highlightObservation = (id: number | string) => {
+    if (!view || !view.map) {
+      console.warn('❌ View or map not available');
+      return;
+    }
+    
+    console.log('🎯 Highlighting observation:', id);
+    
+    // Create the async operation
+    const operation = (async () => {
+      // Wait for any pending highlight operation to complete before clearing
+      if (highlightOperationRef.current) {
+        console.log('⏸️ Waiting for previous highlight operation to complete...');
+        await highlightOperationRef.current;
+      }
+      
+      // Now clear any existing highlight
+      if (highlightHandleRef.current) {
+        console.log('🧹 Clearing previous highlight');
+        highlightHandleRef.current.remove();
+        highlightHandleRef.current = null;
+      }
+      
+      // Find the observation graphic in either layer
+      const inatLayer = view.map.findLayerById('inaturalist-observations') as GraphicsLayer;
+      const tncLayer = view.map.findLayerById('tnc-inaturalist-observations') as GraphicsLayer;
+      
+      let targetGraphic: __esri.Graphic | undefined;
+      let targetLayer: GraphicsLayer | undefined;
+      
+      // Search in iNaturalist Public API layer
+      if (inatLayer) {
+        targetGraphic = inatLayer.graphics.find(g => g.attributes?.id === id);
+        if (targetGraphic) {
+          targetLayer = inatLayer;
+          console.log('✅ Found in iNaturalist Public API layer');
+        }
+      }
+      
+      // Search in TNC layer if not found
+      if (!targetGraphic && tncLayer) {
+        targetGraphic = tncLayer.graphics.find(g => g.attributes?.observation_id === id);
+        if (targetGraphic) {
+          targetLayer = tncLayer;
+          console.log('✅ Found in TNC layer');
+        }
+      }
+      
+      if (!targetGraphic || !targetLayer) {
+        console.warn(`❌ Observation with id ${id} not found on map`);
+        return;
+      }
+      
+      try {
+        // Ensure the layer is loaded and the layer view is ready
+        console.log('⏳ Waiting for layer view to be ready...');
+        const layerView = await view.whenLayerView(targetLayer);
+        console.log('✅ Layer view obtained');
+        
+        // Use ArcGIS's native highlight method - this creates the blue highlight ring automatically!
+        console.log('🚀 About to call layerView.highlight()');
+        const highlightHandle = (layerView as any).highlight(targetGraphic);
+        console.log('🎯 Highlight handle returned:', highlightHandle);
+        
+        highlightHandleRef.current = highlightHandle;
+        setHighlightedObservationId(id);
+        
+        console.log('✨ Applied native ArcGIS highlight - handle stored');
+        
+        // Open the popup/tooltip to show observation details
+        if (view.popup && targetGraphic.geometry) {
+          view.popup.features = [targetGraphic];
+          view.popup.location = targetGraphic.geometry as __esri.Point;
+          view.popup.visible = true;
+          console.log('💬 Opened popup/tooltip');
+        }
+        
+      } catch (error) {
+        console.error('❌ Error highlighting observation:', error);
+      }
+    })();
+    
+    // Store the operation so we can wait for it if needed
+    highlightOperationRef.current = operation;
+  };
+  
+  // Clear observation highlight method
+  const clearObservationHighlight = () => {
+    console.log('🧹 Clearing highlight');
+    
+    // Remove the ArcGIS native highlight
+    if (highlightHandleRef.current) {
+      highlightHandleRef.current.remove();
+      highlightHandleRef.current = null;
+      console.log('✅ Removed native highlight');
+    }
+    
+    setHighlightedObservationId(null);
+    
+    // Close popup
+    if (view && view.popup) {
+      view.popup.visible = false;
+    }
+  };
+
   // Expose methods via ref
   useImperativeHandle(ref, () => ({
     reloadObservations,
@@ -2830,7 +2943,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     activateDrawMode,
     clearPolygon,
     clearSearchArea,
-    clearAllObservationLayers
+    clearAllObservationLayers,
+    highlightObservation,
+    clearObservationHighlight
   }));
 
   const getObservationIcon = (obs: iNaturalistObservation) => {

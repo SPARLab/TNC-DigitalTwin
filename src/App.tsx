@@ -188,15 +188,21 @@ function App() {
 
   // iNaturalist observation selection handlers
   const handleINatObservationClick = (obs: INaturalistUnifiedObservation) => {
+    console.log('🖱️ App: Observation clicked in sidebar:', obs.id);
     setSelectedINatObservation(obs);
-    // TODO: Trigger map highlight + tooltip (Phase 2)
-    // mapViewRef.current?.highlightObservation(obs.id);
+    // Trigger map highlight immediately
+    if (mapViewRef.current) {
+      console.log('🗺️ App: Calling highlightObservation');
+      mapViewRef.current.highlightObservation(obs.id);
+    } else {
+      console.warn('⚠️ App: mapViewRef.current is not available');
+    }
   };
 
   const handleINatDetailsClose = () => {
     setSelectedINatObservation(null);
-    // TODO: Clear map highlight (Phase 2)
-    // mapViewRef.current?.clearObservationHighlight();
+    // Clear map highlight
+    mapViewRef.current?.clearObservationHighlight();
   };
 
   // TNC ArcGIS handlers

@@ -142,13 +142,16 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
 
   // Handle observation click
   const handleObservationClick = (obs: INaturalistUnifiedObservation) => {
+    console.log('📋 INaturalistSidebar: Observation clicked:', obs.id, 'Currently expanded:', expandedObservation);
+    
     if (expandedObservation === obs.id) {
       setExpandedObservation(null);
     } else {
       setExpandedObservation(obs.id);
     }
     
-    // Call parent callback if provided
+    // Call parent callback if provided (should happen on EVERY click)
+    console.log('📋 INaturalistSidebar: Calling onObservationClick callback');
     onObservationClick?.(obs);
   };
 
