@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import Header from './components/Header';
 import FilterSubheader from './components/FilterSubheader';
 import DataView from './components/DataView';
@@ -11,6 +11,8 @@ import HubPagePreview from './components/HubPagePreview';
 import DatasetDownloadView from './components/DatasetDownloadView';
 import TNCArcGISDetailsSidebar from './components/TNCArcGISDetailsSidebar';
 import DendraDetailsSidebar from './components/DendraDetailsSidebar';
+import INaturalistDetailsSidebar from './components/INaturalistDetailsSidebar';
+import { INaturalistUnifiedObservation } from './components/INaturalistSidebar';
 import { FilterState, DendraStation, DendraDatastream, DendraDatastreamWithStation, DendraDatapoint } from './types';
 import { LiDARViewMode } from './components/dataviews/LiDARView';
 import { iNaturalistObservation } from './services/iNaturalistService';
@@ -157,6 +159,19 @@ function App() {
   // Ref to track the currently loading datastream (for race condition prevention)
   const currentLoadingDatastreamRef = useRef<number | null>(null);
 
+  // iNaturalist observation selection state
+  const [selectedINatObservation, setSelectedINatObservation] = useState<INaturalistUnifiedObservation | null>(null);
+
+  // Compute date range text for iNaturalist sidebar
+  const inatDateRangeText = useMemo(() => {
+    if (filters.startDate && filters.endDate) {
+      const start = new Date(filters.startDate);
+      const end = new Date(filters.endDate);
+      return `from ${start.toLocaleDateString()} - ${end.toLocaleDateString()}`;
+    }
+    return `from ${formatDateRangeCompact(lastSearchedDaysBack).toLowerCase()}`;
+  }, [filters.startDate, filters.endDate, lastSearchedDaysBack]);
+
   // CalFlora modal handlers
   const openCalFloraModal = (plantId: string) => {
     const plant = calFloraPlants.find(p => p.id === plantId);
@@ -169,6 +184,19 @@ function App() {
   const closeCalFloraModal = () => {
     setIsCalFloraModalOpen(false);
     setSelectedCalFloraPlant(null);
+  };
+
+  // iNaturalist observation selection handlers
+  const handleINatObservationClick = (obs: INaturalistUnifiedObservation) => {
+    setSelectedINatObservation(obs);
+    // TODO: Trigger map highlight + tooltip (Phase 2)
+    // mapViewRef.current?.highlightObservation(obs.id);
+  };
+
+  const handleINatDetailsClose = () => {
+    setSelectedINatObservation(null);
+    // TODO: Clear map highlight (Phase 2)
+    // mapViewRef.current?.clearObservationHighlight();
   };
 
   // TNC ArcGIS handlers
@@ -1380,6 +1408,11 @@ function App() {
             setShowDendraWebsite(true);
             setIsDendraWebsiteLoading(true);
           }}
+          selectedINatObservation={selectedINatObservation}
+          onINatObservationClick={handleINatObservationClick}
+          onINatDetailsClose={handleINatDetailsClose}
+          qualityGrade={filters.qualityGrade}
+          onQualityGradeChange={(grade) => setFilters(prev => ({ ...prev, qualityGrade: grade }))}
         />
         <div id="map-container" className="flex-1 relative flex">
           {/* Conditionally render based on data source and LiDAR mode */}
@@ -1563,6 +1596,57 @@ function App() {
             }}
             onExportCSV={handleDendraExportCSV}
             onExportExcel={handleDendraExportExcel}
+          />
+        ) : (lastSearchedFilters.source === 'iNaturalist (Public API)' || 
+            lastSearchedFilters.source === 'iNaturalist (TNC Layers)') ? (
+          <INaturalistDetailsSidebar
+            dataSourceLabel={lastSearchedFilters.source}
+            selectedObservation={selectedINatObservation}
+            observations={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' 
+              ? tncObservations.map(obs => ({
+                  id: obs.observation_id,
+                  observedOn: obs.observed_on,
+                  observerName: obs.user_name || 'Unknown',
+                  commonName: obs.common_name || null,
+                  scientificName: obs.scientific_name || 'Unknown',
+                  photoUrl: tncINaturalistService.getPrimaryImageUrl(obs) || null,
+                  photoAttribution: tncINaturalistService.getPhotoAttribution(obs) || null,
+                  iconicTaxon: obs.taxon_category_name || 'Unknown',
+                  qualityGrade: null,
+                  location: null,
+                  uri: `https://www.inaturalist.org/observations/${obs.observation_id}`,
+                  taxonId: obs.taxon_id
+                }))
+              : observations.map(obs => ({
+                  id: obs.id,
+                  observedOn: obs.observed_on,
+                  observerName: obs.user?.login || 'Unknown',
+                  commonName: obs.taxon?.preferred_common_name || null,
+                  scientificName: obs.taxon?.name || 'Unknown',
+                  photoUrl: obs.photos && obs.photos.length > 0 
+                    ? obs.photos[0].url.replace('square', 'medium') 
+                    : null,
+                  photoAttribution: obs.photos && obs.photos.length > 0 
+                    ? obs.photos[0].attribution 
+                    : null,
+                  iconicTaxon: obs.taxon?.iconic_taxon_name || 'Unknown',
+                  qualityGrade: obs.quality_grade || null,
+                  location: obs.place_guess || null,
+                  uri: obs.uri,
+                  taxonId: obs.taxon?.id
+                }))
+            }
+            dateRangeText={inatDateRangeText}
+            qualityGrade={filters.qualityGrade}
+            onQualityGradeChange={(grade) => setFilters(prev => ({ ...prev, qualityGrade: grade }))}
+            onExportCSV={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? handleTNCExportCSV : handleExportCSV}
+            onExportGeoJSON={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? handleTNCExportGeoJSON : handleExportGeoJSON}
+            onAddToCart={() => {
+              // TODO: Implement shopping cart functionality
+              console.log('Add to cart clicked');
+            }}
+            onClose={handleINatDetailsClose}
+            hasSearched={hasSearched}
           />
         ) : (
           <FilterSidebar 

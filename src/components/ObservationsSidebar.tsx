@@ -13,6 +13,8 @@ interface ObservationsSidebarProps {
   onExportGeoJSON?: () => void;
   onAddToCart?: () => void;
   hasSearched?: boolean;
+  onObservationClick?: (obs: INaturalistUnifiedObservation) => void;
+  selectedObservationId?: number | string | null;
 }
 
 const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ 
@@ -24,7 +26,9 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({
   onExportCSV,
   onExportGeoJSON,
   onAddToCart,
-  hasSearched = false
+  hasSearched = false,
+  onObservationClick,
+  selectedObservationId
 }) => {
   // Generate appropriate date range text
   const dateRangeText = useMemo(() => {
@@ -66,6 +70,8 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({
       dateRangeText={dateRangeText}
       onAddToCart={onAddToCart}
       hasSearched={hasSearched}
+      onObservationClick={onObservationClick}
+      selectedObservationId={selectedObservationId}
     />
   );
 };

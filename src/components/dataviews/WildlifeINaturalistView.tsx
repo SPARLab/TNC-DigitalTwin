@@ -1,6 +1,7 @@
 import React from 'react';
 import ObservationsSidebar from '../ObservationsSidebar';
 import { iNaturalistObservation } from '../../services/iNaturalistService';
+import { INaturalistUnifiedObservation } from '../INaturalistSidebar';
 
 interface WildlifeINaturalistViewProps {
   observations: iNaturalistObservation[];
@@ -11,6 +12,8 @@ interface WildlifeINaturalistViewProps {
   onExportCSV?: () => void;
   onExportGeoJSON?: () => void;
   hasSearched?: boolean;
+  onObservationClick?: (obs: INaturalistUnifiedObservation) => void;
+  selectedObservationId?: number | string | null;
 }
 
 const WildlifeINaturalistView: React.FC<WildlifeINaturalistViewProps> = ({
@@ -21,7 +24,9 @@ const WildlifeINaturalistView: React.FC<WildlifeINaturalistViewProps> = ({
   endDate,
   onExportCSV,
   onExportGeoJSON,
-  hasSearched = false
+  hasSearched = false,
+  onObservationClick,
+  selectedObservationId
 }) => {
   return (
     <ObservationsSidebar
@@ -33,6 +38,8 @@ const WildlifeINaturalistView: React.FC<WildlifeINaturalistViewProps> = ({
       hasSearched={hasSearched}
       onExportCSV={onExportCSV}
       onExportGeoJSON={onExportGeoJSON}
+      onObservationClick={onObservationClick}
+      selectedObservationId={selectedObservationId}
     />
   );
 };

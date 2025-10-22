@@ -5,6 +5,7 @@ import { TNCArcGISObservation } from '../services/tncINaturalistService';
 import { EBirdObservation } from '../services/eBirdService';
 import { CalFloraPlant } from '../services/calFloraService';
 import { TNCArcGISItem } from '../services/tncArcGISService';
+import { INaturalistUnifiedObservation } from './INaturalistSidebar';
 
 // Import specific data view components
 import WildlifeINaturalistView from './dataviews/WildlifeINaturalistView';
@@ -71,6 +72,12 @@ interface DataViewProps {
   onDendraStationSelect?: (station: DendraStation) => void;
   onDendraDatastreamSelect?: (datastream: DendraDatastreamWithStation) => void;
   onShowDendraWebsite?: () => void;
+  // iNaturalist observation selection
+  selectedINatObservation?: INaturalistUnifiedObservation | null;
+  onINatObservationClick?: (obs: INaturalistUnifiedObservation) => void;
+  onINatDetailsClose?: () => void;
+  qualityGrade?: 'research' | 'needs_id' | 'casual' | undefined;
+  onQualityGradeChange?: (grade: 'research' | 'needs_id' | 'casual' | undefined) => void;
 }
 
 const DataView: React.FC<DataViewProps> = ({
@@ -118,7 +125,12 @@ const DataView: React.FC<DataViewProps> = ({
   selectedDendraDatastreamId,
   onDendraStationSelect,
   onDendraDatastreamSelect,
-  onShowDendraWebsite
+  onShowDendraWebsite,
+  selectedINatObservation,
+  onINatObservationClick,
+  onINatDetailsClose,
+  qualityGrade,
+  onQualityGradeChange
 }) => {
   // Route to appropriate data view based on category + source combination
   const getDataView = () => {
@@ -155,6 +167,8 @@ const DataView: React.FC<DataViewProps> = ({
             onExportCSV={onObservationExportCSV}
             onExportGeoJSON={onObservationExportGeoJSON}
             hasSearched={hasSearched}
+            onObservationClick={onINatObservationClick}
+            selectedObservationId={selectedINatObservation?.id}
           />
         );
 
@@ -173,6 +187,8 @@ const DataView: React.FC<DataViewProps> = ({
             selectedObservation={selectedTNCObservation}
             onObservationSelect={onTNCObservationSelect}
             hasSearched={hasSearched}
+            onObservationClick={onINatObservationClick}
+            selectedObservationId={selectedINatObservation?.id}
           />
         );
         

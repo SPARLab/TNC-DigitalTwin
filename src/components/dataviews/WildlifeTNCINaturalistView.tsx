@@ -14,6 +14,8 @@ interface WildlifeTNCINaturalistViewProps {
   selectedObservation?: TNCArcGISObservation | null;
   onObservationSelect?: (observation: TNCArcGISObservation | null) => void;
   hasSearched?: boolean;
+  onObservationClick?: (obs: INaturalistUnifiedObservation) => void;
+  selectedObservationId?: number | string | null;
 }
 
 const WildlifeTNCINaturalistView: React.FC<WildlifeTNCINaturalistViewProps> = ({
@@ -26,7 +28,9 @@ const WildlifeTNCINaturalistView: React.FC<WildlifeTNCINaturalistViewProps> = ({
   onExportGeoJSON,
   selectedObservation,
   onObservationSelect,
-  hasSearched = false
+  hasSearched = false,
+  onObservationClick,
+  selectedObservationId
 }) => {
   // Helper function to format date
   const formatDate = (dateString: string) => {
@@ -78,6 +82,10 @@ const WildlifeTNCINaturalistView: React.FC<WildlifeTNCINaturalistViewProps> = ({
     if (tncObs && onObservationSelect) {
       onObservationSelect(tncObs);
     }
+    // Also call the unified observation click handler if provided
+    if (onObservationClick) {
+      onObservationClick(obs);
+    }
   };
 
   return (
@@ -87,7 +95,7 @@ const WildlifeTNCINaturalistView: React.FC<WildlifeTNCINaturalistViewProps> = ({
       loading={loading}
       dateRangeText={dateRangeText}
       onObservationClick={handleObservationClick}
-      selectedObservationId={selectedObservation?.observation_id}
+      selectedObservationId={selectedObservationId || selectedObservation?.observation_id}
       hasSearched={hasSearched}
     />
   );
