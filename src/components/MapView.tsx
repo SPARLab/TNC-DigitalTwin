@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle, useMemo } from 'react';
 import Map from '@arcgis/core/Map';
 import MapView from '@arcgis/core/views/MapView';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
@@ -25,6 +25,7 @@ import { TNCArcGISItem, tncArcGISAPI } from '../services/tncArcGISService';
 import { eBirdService, EBirdObservation } from '../services/eBirdService';
 import type { DendraStation } from '../types';
 import LayerLegend from './LayerLegend';
+import { MapLegend } from './MapLegend';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface MapViewProps {
@@ -166,6 +167,10 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     errorMessage: string;
   } | null>(null);
   // CalFlora state is managed by parent component via props
+
+  // Map legend filtering state for iNaturalist observations
+  const [currentObservations, setCurrentObservations] = useState<iNaturalistObservation[]>([]);
+  const [visibleObservationCategories, setVisibleObservationCategories] = useState<Set<string>>(new Set());
 
   // Synchronize ImageServer banner with loadingLayerIds (same as eye icon timing)
   useEffect(() => {
@@ -467,6 +472,61 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       view.map.basemap = currentBasemap as any;
     }
   }, [currentBasemap, view]);
+
+  // Effect to re-render observations when visibility changes
+  useEffect(() => {
+    if (!view || !view.map || currentObservations.length === 0) return;
+    
+    const observationsLayer = view.map.findLayerById('inaturalist-observations') as GraphicsLayer;
+    if (!observationsLayer) return;
+    
+    // Clear and re-add filtered observations
+    observationsLayer.removeAll();
+    
+    currentObservations.forEach(obs => {
+      if (obs.geojson && obs.geojson.coordinates) {
+        const iconicTaxon = obs.taxon?.iconic_taxon_name || 'unknown';
+        
+        // Skip if this category is hidden (but show all if none are set yet)
+        if (visibleObservationCategories.size > 0 && !visibleObservationCategories.has(iconicTaxon)) {
+          return;
+        }
+
+        const [longitude, latitude] = obs.geojson.coordinates;
+        const point = new Point({ longitude, latitude });
+        const iconInfo = getObservationIcon(obs);
+        
+        const symbol = new PictureMarkerSymbol({
+          url: getEmojiDataUri(iconInfo.emoji),
+          width: '24px',
+          height: '24px'
+        });
+
+        const popupTemplate = new PopupTemplate({
+          title: obs.taxon?.preferred_common_name || obs.taxon?.name || 'Unknown Species',
+          content: `
+            <div class="observation-popup">
+              <p><strong>Scientific Name:</strong> ${obs.taxon?.name || 'Unknown'}</p>
+              <p><strong>Observed:</strong> ${new Date(obs.observed_on).toLocaleDateString()}</p>
+              <p><strong>Observer:</strong> ${obs.user.login}</p>
+            </div>
+          `
+        });
+
+        const graphic = new Graphic({
+          geometry: point,
+          symbol: symbol,
+          popupTemplate: popupTemplate,
+          attributes: {
+            id: obs.id,
+            iconicTaxon: iconicTaxon
+          }
+        });
+
+        observationsLayer.add(graphic);
+      }
+    });
+  }, [visibleObservationCategories, currentObservations, view]);
 
   // Effect to manage TNC ArcGIS Hub map layers
   useEffect(() => {
@@ -1808,8 +1868,14 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         
         // Only add markers if we have observations to show
         if (tncObservations.length > 0) {
-          // Add TNC observations to map
-          tncObservations.forEach(obs => {
+          // Filter TNC observations based on visible categories (show all if none set yet)
+          const filteredTNCObservations = tncObservations.filter(obs => {
+            const iconicTaxon = normalizeTNCCategoryToIconicTaxon(obs.taxon_category_name);
+            return visibleObservationCategories.size === 0 || visibleObservationCategories.has(iconicTaxon);
+          });
+          
+          // Add filtered TNC observations to map
+          filteredTNCObservations.forEach(obs => {
           if (obs.geometry?.coordinates) {
             const [longitude, latitude] = obs.geometry.coordinates;
             
@@ -1853,20 +1919,46 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
             tncObservationsLayer.add(graphic);
             
             // Debug: Log first few coordinates
-            if (tncObservations.indexOf(obs) < 3) {
+            if (filteredTNCObservations.indexOf(obs) < 3) {
       // console.log(`TNC Observation ${obs.observation_id}: ${obs.scientific_name} at [${longitude}, ${latitude}]`);
             }
           }
         });
         
-      // console.log(`✅ TNC iNaturalist: Updated map with ${tncObservations.length} observation records`);
+      // console.log(`✅ TNC iNaturalist: Updated map with ${filteredTNCObservations.length}/${tncObservations.length} filtered observation records`);
       // console.log(`TNC Layer graphics count: ${tncObservationsLayer.graphics.length}`);
         } else {
       // console.log(`🧹 TNC iNaturalist: Cleared map (no observations to display)`);
         }
       }
     }
-  }, [view, tncObservations, selectedTNCObservation]);
+  }, [view, tncObservations, selectedTNCObservation, visibleObservationCategories]);
+
+  // Initialize visible categories when regular iNaturalist observations load
+  // This ensures legend shows all categories as selected on first load
+  useEffect(() => {
+    if (currentObservations.length > 0 && visibleObservationCategories.size === 0) {
+      const categories = new Set<string>();
+      currentObservations.forEach(obs => {
+        const iconicTaxon = obs.taxon?.iconic_taxon_name || 'unknown';
+        categories.add(iconicTaxon);
+      });
+      setVisibleObservationCategories(categories);
+    }
+  }, [currentObservations, visibleObservationCategories.size]);
+
+  // Initialize visible categories when TNC observations load
+  // This ensures legend shows all categories as selected on first load
+  useEffect(() => {
+    if (tncObservations.length > 0 && visibleObservationCategories.size === 0) {
+      const categories = new Set<string>();
+      tncObservations.forEach(obs => {
+        const iconicTaxon = normalizeTNCCategoryToIconicTaxon(obs.taxon_category_name);
+        categories.add(iconicTaxon);
+      });
+      setVisibleObservationCategories(categories);
+    }
+  }, [tncObservations, visibleObservationCategories.size]);
 
   // Effect to update eBird observations on map when data changes
   useEffect(() => {
@@ -2069,9 +2161,19 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       // Update parent with filtered results
       onObservationsUpdate?.(filteredResults);
       
-      // Add observations to map
+      // Store observations locally for legend (useEffect will initialize categories)
+      setCurrentObservations(filteredResults);
+      
+      // Add observations to map (show all on first load, filter afterwards)
       filteredResults.forEach(obs => {
         if (obs.geojson && obs.geojson.coordinates) {
+          const iconicTaxon = obs.taxon?.iconic_taxon_name || 'unknown';
+          
+          // Skip if this category is hidden (but show all if none are set yet)
+          if (visibleObservationCategories.size > 0 && !visibleObservationCategories.has(iconicTaxon)) {
+            return;
+          }
+
           const [longitude, latitude] = obs.geojson.coordinates;
           
           // Create point geometry
@@ -2126,7 +2228,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
               taxonName: obs.taxon?.name,
               commonName: obs.taxon?.preferred_common_name,
               observedOn: obs.observed_on,
-              observer: obs.user.login
+              observer: obs.user.login,
+              iconicTaxon: iconicTaxon // For filtering
             }
           });
 
@@ -2712,6 +2815,10 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       // console.log(`  ✓ Cleared ${layerId}`);
       }
     });
+    
+    // Clear legend state for iNaturalist observations
+    setCurrentObservations([]);
+    setVisibleObservationCategories(new Set());
   };
 
   // Expose methods via ref
@@ -2762,10 +2869,29 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   };
 
   // Helper to get emoji from TNC taxon category name
+  // Helper function to normalize TNC category names to iconic taxon names (for legend consistency)
+  const normalizeTNCCategoryToIconicTaxon = (taxonCategory: string): string => {
+    const category = taxonCategory?.toLowerCase() || '';
+    
+    if (category.includes('bird') || category.includes('aves')) return 'aves';
+    if (category.includes('mammal')) return 'mammalia';
+    if (category.includes('reptil')) return 'reptilia';
+    if (category.includes('amphibi')) return 'amphibia';
+    if (category.includes('fish')) return 'actinopterygii';
+    if (category.includes('insect')) return 'insecta';
+    if (category.includes('spider') || category.includes('arachnid')) return 'arachnida';
+    if (category.includes('plant') || category.includes('flora')) return 'plantae';
+    if (category.includes('mollus')) return 'mollusca';
+    if (category.includes('fungi') || category.includes('mushroom')) return 'fungi';
+    if (category.includes('protozoa')) return 'protozoa';
+    
+    return 'unknown';
+  };
+
   const getTNCObservationEmoji = (taxonCategory: string): string => {
     const category = taxonCategory?.toLowerCase() || '';
     
-    // Map TNC category names to emojis
+    // Map TNC category names to emojis (matching regular iNaturalist)
     if (category.includes('bird') || category.includes('aves')) return '🐦';
     if (category.includes('mammal')) return '🦌';
     if (category.includes('reptil')) return '🦎';
@@ -2819,6 +2945,117 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       if (element.requestFullscreen) {
         element.requestFullscreen();
       }
+    }
+  };
+
+  // Build legend categories from current observations (both regular and TNC)
+  const legendCategories = useMemo(() => {
+    // Use plain object instead of Map to avoid conflict with ArcGIS Map class
+    const categoryMap: Record<string, { count: number; name: string; emoji: string; group: 'fauna' | 'flora' }> = {};
+    
+    // Add regular iNaturalist observations
+    currentObservations.forEach(obs => {
+      const iconicTaxon = obs.taxon?.iconic_taxon_name || 'unknown';
+      const iconInfo = getObservationIcon(obs);
+      
+      if (categoryMap[iconicTaxon]) {
+        categoryMap[iconicTaxon].count++;
+      } else {
+        // Determine if flora or fauna
+        const group = iconicTaxon.toLowerCase() === 'plantae' || iconicTaxon.toLowerCase() === 'fungi' ? 'flora' : 'fauna';
+        const name = iconicTaxon === 'unknown' ? 'Unknown' : 
+                    iconicTaxon.charAt(0).toUpperCase() + iconicTaxon.slice(1);
+        
+        categoryMap[iconicTaxon] = {
+          count: 1,
+          name: name,
+          emoji: iconInfo.emoji,
+          group: group
+        };
+      }
+    });
+    
+    // Add TNC iNaturalist observations (normalized to same iconic taxon names)
+    tncObservations.forEach(obs => {
+      const iconicTaxon = normalizeTNCCategoryToIconicTaxon(obs.taxon_category_name);
+      const emoji = getTNCObservationEmoji(obs.taxon_category_name);
+      
+      if (categoryMap[iconicTaxon]) {
+        categoryMap[iconicTaxon].count++;
+      } else {
+        // Determine if flora or fauna
+        const group = iconicTaxon.toLowerCase() === 'plantae' || iconicTaxon.toLowerCase() === 'fungi' ? 'flora' : 'fauna';
+        const name = iconicTaxon === 'unknown' ? 'Unknown' : 
+                    iconicTaxon.charAt(0).toUpperCase() + iconicTaxon.slice(1);
+        
+        categoryMap[iconicTaxon] = {
+          count: 1,
+          name: name,
+          emoji: emoji,
+          group: group
+        };
+      }
+    });
+    
+    return Object.entries(categoryMap)
+      .map(([key, data]) => ({
+        key,
+        name: data.name,
+        emoji: data.emoji,
+        count: data.count,
+        group: data.group
+      }))
+      .sort((a, b) => {
+        // First sort by group: fauna first, then flora
+        if (a.group !== b.group) {
+          return a.group === 'fauna' ? -1 : 1;
+        }
+        // Within same group, sort alphabetically by name
+        return a.name.localeCompare(b.name);
+      });
+  }, [currentObservations, tncObservations]);
+
+  // Handlers for legend interactions
+  const handleToggleCategory = (categoryKey: string) => {
+    const allCategories = legendCategories.map(cat => cat.key);
+    const allVisible = allCategories.every(key => visibleObservationCategories.has(key));
+    const isCurrentlyVisible = visibleObservationCategories.has(categoryKey);
+    
+    // Case 1: All are visible, click one → show only that one
+    if (allVisible) {
+      setVisibleObservationCategories(new Set([categoryKey]));
+      return;
+    }
+    
+    // Case 2: Only this one is visible, click it again → show all
+    if (isCurrentlyVisible && visibleObservationCategories.size === 1) {
+      setVisibleObservationCategories(new Set(allCategories));
+      return;
+    }
+    
+    // Case 3: Some are visible, clicking a non-visible one → add it (multi-select)
+    if (!isCurrentlyVisible) {
+      const newVisible = new Set(visibleObservationCategories);
+      newVisible.add(categoryKey);
+      setVisibleObservationCategories(newVisible);
+      return;
+    }
+    
+    // Case 4: Some are visible, clicking a visible one → remove it (unless it would leave none)
+    if (isCurrentlyVisible && visibleObservationCategories.size > 1) {
+      const newVisible = new Set(visibleObservationCategories);
+      newVisible.delete(categoryKey);
+      setVisibleObservationCategories(newVisible);
+      return;
+    }
+  };
+
+  const handleToggleAllCategories = (visible: boolean) => {
+    if (visible) {
+      const allCategories = new Set(legendCategories.map(cat => cat.key));
+      setVisibleObservationCategories(allCategories);
+    } else {
+      setVisibleObservationCategories(new Set());
     }
   };
 
@@ -3157,6 +3394,16 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           </div>
         );
       })()}
+
+      {/* Map Legend for iNaturalist Observations (both regular and TNC) */}
+      {(currentObservations.length > 0 || tncObservations.length > 0) && (
+        <MapLegend
+          categories={legendCategories}
+          visibleCategories={visibleObservationCategories}
+          onToggleCategory={handleToggleCategory}
+          onToggleAll={handleToggleAllCategories}
+        />
+      )}
     </div>
   );
 });
