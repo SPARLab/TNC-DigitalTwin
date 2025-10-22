@@ -42,8 +42,7 @@ dist-ssr
 *-after-filter.png
 
 # Checkpoint test artifacts
-# Keep checkpoint-history.csv for tracking progress over time
-# Exclude detailed JSON snapshots (large files, one per checkpoint run)
-# Exclude old deprecated CSV file
-e2e/checkpoints/*.json
-e2e/checkpoints/test-results-history-OLD-DEPRECATED.csv
+# Keep CSVs at checkpoint root for tracking progress over time
+# Exclude detailed JSON snapshots in full/ and partial/ folders (large files)
+e2e/checkpoints/full/
+e2e/checkpoints/partial/

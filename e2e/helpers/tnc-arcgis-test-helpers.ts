@@ -1,5 +1,6 @@
 import { Page, expect } from '@playwright/test';
 import { PNG } from 'pngjs';
+import pixelmatch from 'pixelmatch';
 
 /**
  * Shared test helpers for TNC ArcGIS layer testing
@@ -581,6 +582,38 @@ export async function testShowsInAllCategories(
 
 /**
  * TEST 2: Check if layer loads and renders visually
+ * 
+ * HYBRID DETECTION APPROACH:
+ * ════════════════════════════════════════════════════════════════════════════
+ * 
+ * This test intelligently chooses between TWO detection methods:
+ * 
+ * METHOD 1: FAST COLOR DETECTION (~60-120ms)
+ * ──────────────────────────────────────────
+ * - Used when legend has extractable colors (solid polygons, lines)
+ * - Searches for expected RGB values in map screenshot
+ * - Fast: single screenshot + pixel search
+ * - Works for: solid-color polygons, lines, borders
+ * 
+ * METHOD 2: BEFORE/AFTER VISUAL DIFF (~730-840ms)
+ * ─────────────────────────────────────────────────
+ * - Used when legend has no extractable colors (icons, points, styled features)
+ * - Compares "before" (layer hidden) vs "after" (layer shown) screenshots
+ * - Uses pixelmatch to count changed pixels
+ * - Works for: icons, points, complex styled features, anything visual
+ * - Includes zoom-out retry logic (max 2 attempts to county/state level)
+ * 
+ * PERFORMANCE:
+ * ────────────
+ * - Typical layer with solid colors: ~60-120ms (METHOD 1)
+ * - Icon/point layer: ~730-840ms (METHOD 2, no zoom)
+ * - Icon/point layer (with zoom retries): ~2-2.5s (METHOD 2, worst case)
+ * 
+ * This hybrid approach gives us:
+ * ✅ Speed for simple layers (solid colors)
+ * ✅ Reliability for complex layers (icons, points)
+ * ✅ 100% coverage for all layer types
+ * 
  * Handles both Feature Services and Image Services
  */
 /**
@@ -655,6 +688,118 @@ async function checkForLayerPixels(page: Page, legendColors: Array<{ r: number; 
   return checkForColors(screenshot, legendColors);
 }
 
+/**
+ * Helper: Check if layer rendered using before/after toggle comparison
+ * 
+ * ALGORITHM:
+ * 1. Hide layer (click toggle button)
+ * 2. Wait for map to settle (300ms)
+ * 3. Screenshot "before" state
+ * 4. Show layer (click toggle button again)
+ * 5. Wait for layer to load (300ms)
+ * 6. Screenshot "after" state
+ * 7. Run pixelmatch to compare
+ * 8. If >100 pixels changed → layer rendered ✅
+ * 9. If ≤100 pixels changed → zoom out and retry (max 2 zoom attempts)
+ * 
+ * FAST: ~730-840ms per check (no zoom)
+ * WORKS FOR: Icons, points, styled features, anything visual
+ * 
+ * @param page - Playwright page
+ * @param maxZoomRetries - Maximum number of zoom-out retries (default: 2)
+ * @returns true if visual change detected, false otherwise
+ */
+async function checkForVisualChangeUsingToggle(
+  page: Page,
+  maxZoomRetries: number = 2
+): Promise<{ changed: boolean; pixelDiff: number; zoomLevel?: number }> {
+  const mapContainer = page.locator('#map-view');
+  const mapBox = await mapContainer.boundingBox();
+  
+  if (!mapBox) {
+    return { changed: false, pixelDiff: 0 };
+  }
+  
+  const toggleButton = page.locator('#tnc-details-toggle-btn');
+  const PIXEL_CHANGE_THRESHOLD = 100; // Minimum pixels that must change to count as "rendered"
+  
+  // Try at current zoom level first
+  let attempt = 0;
+  let zoomUsed: number | undefined = undefined;
+  
+  while (attempt <= maxZoomRetries) {
+    // Step 1: Hide layer
+    console.log(`    🔘 Attempt ${attempt + 1}: Hiding layer...`);
+    await toggleButton.click();
+    await page.waitForTimeout(300);
+    
+    // Step 2: Screenshot "before" state
+    const beforeScreenshot = await page.screenshot({
+      clip: {
+        x: mapBox.x,
+        y: mapBox.y,
+        width: mapBox.width - 142,
+        height: mapBox.height
+      }
+    });
+    
+    // Step 3: Show layer
+    console.log(`    🔘 Showing layer...`);
+    await toggleButton.click();
+    await page.waitForTimeout(300);
+    
+    // Step 4: Screenshot "after" state
+    const afterScreenshot = await page.screenshot({
+      clip: {
+        x: mapBox.x,
+        y: mapBox.y,
+        width: mapBox.width - 142,
+        height: mapBox.height
+      }
+    });
+    
+    // Step 5: Run pixelmatch
+    const beforePNG = PNG.sync.read(beforeScreenshot);
+    const afterPNG = PNG.sync.read(afterScreenshot);
+    const diffPNG = new PNG({ width: beforePNG.width, height: beforePNG.height });
+    
+    const pixelDiff = pixelmatch(
+      beforePNG.data,
+      afterPNG.data,
+      diffPNG.data,
+      beforePNG.width,
+      beforePNG.height,
+      { threshold: 0.1 } // 10% tolerance for anti-aliasing
+    );
+    
+    console.log(`    📊 Pixel diff: ${pixelDiff} pixels changed`);
+    
+    // Step 6: Check if significant change detected
+    if (pixelDiff > PIXEL_CHANGE_THRESHOLD) {
+      console.log(`    ✅ Visual change detected (${pixelDiff} > ${PIXEL_CHANGE_THRESHOLD})`);
+      return { changed: true, pixelDiff, zoomLevel: zoomUsed };
+    }
+    
+    // Step 7: If no change and more retries available, zoom out
+    if (attempt < maxZoomRetries) {
+      console.log(`    🔍 No significant change, zooming out...`);
+      
+      // Zoom out to different levels: first to county (8), then to state (6)
+      const targetZoom = attempt === 0 ? 8 : 6;
+      await zoomOutToLevel(page, targetZoom);
+      zoomUsed = targetZoom;
+      
+      attempt++;
+    } else {
+      // All retries exhausted
+      console.log(`    ❌ No visual change detected after ${maxZoomRetries + 1} attempts`);
+      return { changed: false, pixelDiff, zoomLevel: zoomUsed };
+    }
+  }
+  
+  return { changed: false, pixelDiff: 0, zoomLevel: zoomUsed };
+}
+
 export async function testLayersLoad(
   page: Page,
   layer: LayerConfig
@@ -706,26 +851,48 @@ export async function testLayersLoad(
     // No sublayers list - test the main layer (single layer Feature Service)
     const legendColors = await extractLegendColors(page);
     
+    // HYBRID APPROACH: Choose detection method based on legend type
     if (legendColors.length === 0) {
+      // No extractable colors (likely icons/points) → use before/after diff
+      console.log('  📸 No legend colors - using before/after visual change detection');
+      const result = await checkForVisualChangeUsingToggle(page);
+      
       return {
-        passed: false,
-        message: 'No legend colors found to verify layer rendering',
-        details: { error: 'no_legend_colors' }
+        passed: result.changed,
+        message: result.changed 
+          ? `Layer rendered (${result.pixelDiff} pixels changed)${result.zoomLevel ? ` at zoom level ${result.zoomLevel}` : ''}`
+          : `Layer did not render (only ${result.pixelDiff} pixels changed)`,
+        details: { 
+          method: 'visual_change_detection',
+          pixelDiff: result.pixelDiff,
+          zoomLevel: result.zoomLevel
+        }
       };
     }
     
+    // Has extractable colors → use fast color detection
+    console.log('  🎨 Found legend colors - using fast color detection');
     const colorsFound = await checkForLayerPixels(page, legendColors);
     
     return {
       passed: colorsFound,
       message: colorsFound ? 'Layer colors detected on map' : 'Layer colors not found on map',
-      details: { legendColors: legendColors.length }
+      details: { 
+        method: 'color_detection',
+        legendColors: legendColors.length 
+      }
     };
   }
   
   // Test each sublayer
   console.log(`📊 Found ${layerCount} sublayers to test`);
-  const sublayerResults: Array<{name: string; loaded: boolean; zoomLevel?: number}> = [];
+  const sublayerResults: Array<{
+    name: string; 
+    loaded: boolean; 
+    zoomLevel?: number; 
+    method?: string; 
+    pixelDiff?: number
+  }> = [];
   
   for (let i = 0; i < layerCount; i++) {
     const layerButton = layerButtons.nth(i);
@@ -740,17 +907,29 @@ export async function testLayersLoad(
     // Get legend colors for this sublayer
     const legendColors = await extractLegendColors(page);
     
+    // HYBRID APPROACH: Choose detection method based on legend type
     if (legendColors.length === 0) {
-      console.log(`    ⚠️  No legend colors for sublayer: ${layerName}`);
-      sublayerResults.push({ name: layerName, loaded: false });
+      // No extractable colors (likely icons/points) → use before/after diff
+      console.log(`    📸 No legend colors - using visual change detection`);
+      const result = await checkForVisualChangeUsingToggle(page);
+      
+      sublayerResults.push({
+        name: layerName,
+        loaded: result.changed,
+        zoomLevel: result.zoomLevel,
+        method: 'visual_change',
+        pixelDiff: result.pixelDiff
+      });
+      
       continue;
     }
     
-    console.log(`    🎨 Extracted ${legendColors.length} colors:`, legendColors.map(c => `rgb(${c.r},${c.g},${c.b})`).join(', '));
+    // Has extractable colors → use fast color detection
+    console.log(`    🎨 Extracted ${legendColors.length} colors - using fast color detection`);
     
     // Try pixel detection at current zoom (default ~12-15)
     let colorsFound = await checkForLayerPixels(page, legendColors);
-    let zoomUsed = undefined;
+    let zoomUsed: number | undefined = undefined;
     
     // If no colors found, try zooming out progressively (state-wide, then region-wide)
     if (!colorsFound) {
@@ -778,7 +957,8 @@ export async function testLayersLoad(
     sublayerResults.push({ 
       name: layerName, 
       loaded: colorsFound,
-      zoomLevel: zoomUsed
+      zoomLevel: zoomUsed,
+      method: 'color_detection'
     });
   }
   

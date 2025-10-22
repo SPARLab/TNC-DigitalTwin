@@ -147,12 +147,6 @@ class CheckpointReporter implements Reporter {
   onEnd() {
     console.log('\n📝 Checkpoint Reporter: Writing results...');
     
-    // Save detailed JSON snapshot first
-    const jsonFilename = this.saveJSONSnapshot();
-    
-    // Calculate summary statistics
-    const stats = this.calculateSummaryStats();
-    
     // Load expected data to determine if this is a full run
     const expectedResultsPath = path.join(__dirname, '../test-data/all-arcgis-layers.json');
     const expectedData = JSON.parse(fs.readFileSync(expectedResultsPath, 'utf-8'));
@@ -161,10 +155,16 @@ class CheckpointReporter implements Reporter {
     // Determine run type
     const runType = this.results.size === totalCategorizedLayers ? 'FULL' : 'PARTIAL';
     
+    // Save detailed JSON snapshot to appropriate folder
+    const jsonFilename = this.saveJSONSnapshot(runType);
+    
+    // Calculate summary statistics
+    const stats = this.calculateSummaryStats();
+    
     console.log(`📊 Run Type: ${runType} (${this.results.size}/${totalCategorizedLayers} layers)`);
     console.log(`📊 Test Validation: TP=${stats.truePositives}, TN=${stats.trueNegatives}, FP=${stats.falsePositives}, FN=${stats.falseNegatives}, Accuracy=${stats.overallAccuracy}%`);
     console.log(`📊 Actual Quality: ${stats.totalPassingTests} passing, ${stats.totalFailingTests} failing tests`);
-    console.log(`💾 Detailed results: ${jsonFilename}`);
+    console.log(`💾 Detailed results: ${runType.toLowerCase()}/${jsonFilename}`);
     
     // Only save FULL runs to history CSVs
     if (runType === 'FULL') {
@@ -213,7 +213,7 @@ class CheckpointReporter implements Reporter {
       stats.passingServices.length,
       stats.failingServices.length,
       `"${failingServiceNames.replace(/"/g, '""')}"`,
-      jsonFilename
+      `full/${jsonFilename}`
     ].join(',') + '\n';
     
     fs.appendFileSync(validationPath, row, 'utf-8');
@@ -260,13 +260,24 @@ class CheckpointReporter implements Reporter {
   /**
    * Save detailed JSON snapshot for this checkpoint
    */
-  private saveJSONSnapshot(): string {
+  private saveJSONSnapshot(runType: 'FULL' | 'PARTIAL'): string {
     const jsonFilename = `checkpoint-${this.timestampISO.replace(/[:.]/g, '-')}.json`;
-    const jsonPath = path.join(this.checkpointDir, jsonFilename);
+    
+    // Save to full/ or partial/ subfolder
+    const subfolder = runType.toLowerCase();
+    const subfolderPath = path.join(this.checkpointDir, subfolder);
+    
+    // Ensure subfolder exists
+    if (!fs.existsSync(subfolderPath)) {
+      fs.mkdirSync(subfolderPath, { recursive: true });
+    }
+    
+    const jsonPath = path.join(subfolderPath, jsonFilename);
     
     const snapshot = {
       timestamp: this.timestamp, // Human-readable timestamp
       timestampISO: this.timestampISO, // ISO timestamp for reference
+      runType, // FULL or PARTIAL
       totalLayers: this.results.size,
       results: Array.from(this.results.values())
     };

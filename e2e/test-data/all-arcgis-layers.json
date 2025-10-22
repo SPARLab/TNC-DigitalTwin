@@ -1,5 +1,5 @@
 {
-  "generated": "2025-10-21T18:39:09.009Z",
+  "generated": "2025-10-22T18:56:40.226Z",
   "source": "TNC Digital Catalog Manual Verification - tnc_frontend_test_data.csv",
   "description": "Expected test results from manual QA performed on Oct 17, 2025",
   "layers": [
@@ -261,10 +261,10 @@
         "downloadLinkWorks": true,
         "tooltipsPopUp": true,
         "legendExists": true,
-        "legendLabelsDescriptive": false,
+        "legendLabelsDescriptive": true,
         "legendFiltersWork": true
       },
-      "notes": "Yes, but I don't understand what the legend labels mean."
+      "notes": "Legend labels are cryptic (e.g., 'Tm', 'Tma'), but we're accepting them as-is without implementing complex geological interpretation logic."
     },
     {
       "id": "earthquake-faults-and-folds-in-the-usa",

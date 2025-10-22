@@ -26,6 +26,47 @@ console.log(`   Total: ${allLayers.length} feature services`);
 console.log(`   Categorized: ${categorizedLayers.length} (testing these)`);
 console.log(`   Uncategorized: ${allLayers.length - categorizedLayers.length} (skipped)\n`);
 
+/**
+ * Calculate dynamic timeout based on layer metadata
+ * 
+ * FORMULA: base_timeout + (estimated_sublayers × time_per_sublayer)
+ * 
+ * - Base timeout: 60s (navigation, setup, single-layer tests)
+ * - Per sublayer: 5s (layer load test + filter test)
+ * - Feature Services: typically have multiple sublayers
+ * - Image Services: typically single layer
+ */
+function calculateTimeout(layer: LayerConfig): number {
+  const BASE_TIMEOUT = 60000; // 60 seconds
+  const TIME_PER_SUBLAYER = 5000; // 5 seconds per sublayer
+  
+  // Estimate sublayer count based on layer type and known patterns
+  let estimatedSublayers = 1;
+  
+  // Known multi-sublayer services (from manual testing)
+  const MULTI_SUBLAYER_SERVICES: Record<string, number> = {
+    'coastal-and-marine': 20,
+    'california-historic-fire-perimeters': 10,
+    'groundwater-wells': 5,
+    // Add more as we discover them
+  };
+  
+  if (MULTI_SUBLAYER_SERVICES[layer.id]) {
+    estimatedSublayers = MULTI_SUBLAYER_SERVICES[layer.id];
+  } else if (layer.type === 'FeatureService') {
+    // Most Feature Services have 1-3 sublayers
+    estimatedSublayers = 3;
+  } else {
+    // Image Services typically have 1 layer
+    estimatedSublayers = 1;
+  }
+  
+  const calculatedTimeout = BASE_TIMEOUT + (estimatedSublayers * TIME_PER_SUBLAYER);
+  
+  // Cap at 240 seconds (4 minutes) max
+  return Math.min(calculatedTimeout, 240000);
+}
+
 for (const layer of categorizedLayers) {
   // Use layer ID to ensure unique test names (some layers have duplicate titles)
   test.describe(`${layer.title} [${layer.id}] ${DYNAMIC_TEST_TAG}`, () => {
@@ -41,9 +82,14 @@ for (const layer of categorizedLayers) {
     });
 
     test(`Complete Quality Check (8 Criteria)`, async ({ page }) => {
+      // 🎯 DYNAMIC TIMEOUT: Adjust based on layer complexity
+      const timeout = calculateTimeout(layer);
+      test.setTimeout(timeout);
+      
       console.log(`\n=== Testing: ${layer.title} ===`);
       console.log(`Type: ${layer.type}`);
       console.log(`Categories: ${layer.categories.join(', ') || 'None'}`);
+      console.log(`⏱️  Timeout: ${timeout / 1000}s (dynamic)`);
       
       // Run the complete quality check
       const result = await runQualityCheck(page, layer);

@@ -277,7 +277,6 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
             </div>
             
             {item.snippet && (() => {
-              console.log(`📄 Snippet for "${item.title}":`, item.snippet.substring(0, 300));
               return (
                 <p id={`item-snippet-${item.id}`} className={`text-sm text-gray-600 mb-2 break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
                   {item.snippet}
