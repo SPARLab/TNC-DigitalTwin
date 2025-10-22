@@ -150,7 +150,9 @@ class CheckpointReporter implements Reporter {
     // Load expected data to determine if this is a full run
     const expectedResultsPath = path.join(__dirname, '../test-data/all-arcgis-layers.json');
     const expectedData = JSON.parse(fs.readFileSync(expectedResultsPath, 'utf-8'));
-    const totalCategorizedLayers = expectedData.layers.filter((l: any) => l.category !== 'Uncategorized').length;
+    const totalCategorizedLayers = expectedData.layers.filter((l: any) => 
+      l.categories.length > 0 && !l.categories.includes('Uncategorized')
+    ).length;
     
     // Determine run type
     const runType = this.results.size === totalCategorizedLayers ? 'FULL' : 'PARTIAL';
@@ -326,16 +328,16 @@ class CheckpointReporter implements Reporter {
       // Check each test (skip test 1 and 4 as they're not quality tests)
       const tests = [
         { actual: layerResult.test_2_layers_load, expected: expected.expectedResults.layersLoad },
-        { actual: layerResult.test_3_download_works, expected: expected.expectedResults.downloadWorks },
-        { actual: layerResult.test_5_tooltips_popup, expected: expected.expectedResults.tooltipsPopup },
+        { actual: layerResult.test_3_download_works, expected: expected.expectedResults.downloadLinkWorks },
+        { actual: layerResult.test_5_tooltips_popup, expected: expected.expectedResults.tooltipsPopUp },
         { actual: layerResult.test_6_legend_exists, expected: expected.expectedResults.legendExists },
         { actual: layerResult.test_7_legend_labels_descriptive, expected: expected.expectedResults.legendLabelsDescriptive },
-        { actual: layerResult.test_8_filters_work, expected: expected.expectedResults.filtersWork },
+        { actual: layerResult.test_8_filters_work, expected: expected.expectedResults.legendFiltersWork },
       ];
       
       let layerHasFailure = false;
       for (const test of tests) {
-        if (test.expected === undefined || test.actual === 'SKIP') continue;
+        if (test.expected === null || test.expected === undefined || test.actual === 'SKIP') continue;
         totalTests++;
         
         const actualPass = test.actual === 'PASS';

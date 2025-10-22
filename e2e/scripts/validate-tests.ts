@@ -70,7 +70,7 @@ function parseCSVRow(line: string): string[] {
 }
 
 /**
- * Read latest checkpoint from CSV
+ * Read latest checkpoint from validation history CSV and load JSON details
  */
 function readLatestCheckpoint(csvPath: string): Map<string, CheckpointRow> {
   if (!fs.existsSync(csvPath)) {
@@ -84,48 +84,46 @@ function readLatestCheckpoint(csvPath: string): Map<string, CheckpointRow> {
     throw new Error('No checkpoint data found in CSV');
   }
   
-  // Get all rows from the latest timestamp
-  const allRows: CheckpointRow[] = [];
+  // Get the last line (latest checkpoint)
+  const lastLine = lines[lines.length - 1];
+  const values = parseCSVRow(lastLine);
   
-  for (let i = 1; i < lines.length; i++) {
-    const values = parseCSVRow(lines[i]);
-    if (values.length < 13) continue; // Skip incomplete rows
-    
-    allRows.push({
-      timestamp: values[0],
-      layerId: values[1],
-      layerTitle: values[2],
-      type: values[3],
-      test1: values[4],
-      test2: values[5],
-      test3: values[6],
-      test4: values[7],
-      test5: values[8],
-      test6: values[9],
-      test7: values[10],
-      test8: values[11],
-      notes: values[12],
+  // Extract the JSON filename from the last column
+  const jsonFilePath = values[values.length - 1];
+  
+  // Load the JSON checkpoint file
+  const checkpointDir = path.join(__dirname, '../checkpoints');
+  const fullJsonPath = path.join(checkpointDir, jsonFilePath);
+  
+  if (!fs.existsSync(fullJsonPath)) {
+    throw new Error(`Checkpoint JSON not found: ${fullJsonPath}`);
+  }
+  
+  const jsonContent = fs.readFileSync(fullJsonPath, 'utf-8');
+  const checkpointData = JSON.parse(jsonContent);
+  
+  // Convert JSON results to Map format
+  const resultsMap = new Map<string, CheckpointRow>();
+  
+  for (const result of checkpointData.results) {
+    resultsMap.set(result.layerId, {
+      timestamp: checkpointData.timestamp,
+      layerId: result.layerId,
+      layerTitle: result.layerTitle,
+      type: result.layerType,
+      test1: result.test_1_shows_in_categories,
+      test2: result.test_2_layers_load,
+      test3: result.test_3_download_works,
+      test4: result.test_4_description_matches,
+      test5: result.test_5_tooltips_popup,
+      test6: result.test_6_legend_exists,
+      test7: result.test_7_legend_labels_descriptive,
+      test8: result.test_8_filters_work,
+      notes: result.notes || '',
     });
   }
   
-  if (allRows.length === 0) {
-    throw new Error('No valid checkpoint rows found');
-  }
-  
-  // Find latest timestamp
-  const latestTimestamp = allRows.reduce((latest, row) => {
-    return row.timestamp > latest ? row.timestamp : latest;
-  }, allRows[0].timestamp);
-  
-  // Filter rows from latest timestamp
-  const latestRows = allRows.filter(row => row.timestamp === latestTimestamp);
-  
-  const resultsMap = new Map<string, CheckpointRow>();
-  latestRows.forEach(row => {
-    resultsMap.set(row.layerId, row);
-  });
-  
-  console.log(`📅 Latest checkpoint: ${latestTimestamp}`);
+  console.log(`📅 Latest checkpoint: ${checkpointData.timestamp}`);
   console.log(`📊 Found ${resultsMap.size} layer results`);
   
   return resultsMap;
@@ -180,7 +178,7 @@ function compareResult(actual: string, expected: boolean | null): {
  * Main validation logic
  */
 function main() {
-  const checkpointCSV = path.join(__dirname, '../checkpoints/test-results-history.csv');
+  const checkpointCSV = path.join(__dirname, '../checkpoints/test-validation-history.csv');
   const expectedJSON = path.join(__dirname, '../test-data/all-arcgis-layers.json');
   
   console.log('\n═══════════════════════════════════════════');

@@ -34,8 +34,8 @@ export default defineConfig({
   timeout: 240000, // 240 seconds per test (4 minutes)
   
   // Run tests in parallel for faster execution
-  // Reduced from 8 to 6 workers to minimize resource contention
-  workers: 6, // 6 parallel workers for stable execution
+  // Optimized for 12-core machine with 32GB RAM
+  workers: 9, // 9 parallel workers for faster execution
   
   // Retry failed tests to reduce false negatives
   retries: 1,
