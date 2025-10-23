@@ -70,7 +70,7 @@ const WildlifeTNCINaturalistView: React.FC<WildlifeTNCINaturalistViewProps> = ({
       iconicTaxon: normalizeTaxonCategory(obs.taxon_category_name),
       qualityGrade: null, // TNC data doesn't have quality grade
       location: null, // TNC data doesn't have place_guess
-      uri: `https://www.inaturalist.org/observations/${obs.observation_id}`,
+      uri: `https://www.inaturalist.org/observations/${obs.observation_uuid}`,
       taxonId: obs.taxon_id
     }));
   }, [observations]);

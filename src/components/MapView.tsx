@@ -196,6 +196,137 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   }, [loadingLayerIds, imageServerLoading]);
 
+  // Helper to build Public API popup content with photo carousel
+  const buildPublicAPIPopupContent = (obs: iNaturalistObservation) => {
+    return () => {
+      const container = document.createElement('div');
+      container.className = 'inaturalist-observation-popup';
+
+      // Photo section
+      if (obs.photos && obs.photos.length > 0) {
+        const photoWrapper = document.createElement('div');
+        photoWrapper.style.display = 'flex';
+        photoWrapper.style.flexDirection = 'column';
+        photoWrapper.style.alignItems = 'center';
+        photoWrapper.style.marginBottom = '8px';
+
+        const img = document.createElement('img');
+        img.src = obs.photos[0].medium_url || obs.photos[0].square_url || obs.photos[0].url;
+        img.alt = obs.taxon?.preferred_common_name || obs.taxon?.name || 'Observation photo';
+        img.loading = 'lazy';
+        img.style.width = '100%';
+        img.style.maxWidth = '350px';
+        img.style.borderRadius = '6px';
+        img.style.objectFit = 'cover';
+        img.onerror = () => { img.style.display = 'none'; };
+
+        photoWrapper.appendChild(img);
+
+        // Only show controls if there are multiple photos
+        if (obs.photos.length > 1) {
+          const controls = document.createElement('div');
+          controls.style.display = 'flex';
+          controls.style.alignItems = 'center';
+          controls.style.justifyContent = 'space-between';
+          controls.style.width = '100%';
+          controls.style.maxWidth = '350px';
+          controls.style.marginTop = '6px';
+
+          let currentIndex = 0;
+          const label = document.createElement('span');
+          label.style.fontSize = '12px';
+          label.style.color = '#4b5563';
+          label.textContent = `Photo ${currentIndex + 1} of ${obs.photos.length}`;
+
+          const prevBtn = document.createElement('button');
+          prevBtn.textContent = '◀';
+          prevBtn.style.fontSize = '12px';
+          prevBtn.style.padding = '2px 6px';
+          prevBtn.style.border = '1px solid #e5e7eb';
+          prevBtn.style.borderRadius = '4px';
+          prevBtn.style.background = 'white';
+          prevBtn.style.cursor = 'pointer';
+          prevBtn.onclick = () => {
+            currentIndex = (currentIndex - 1 + obs.photos.length) % obs.photos.length;
+            const photo = obs.photos[currentIndex];
+            img.src = photo.medium_url || photo.square_url || photo.url;
+            label.textContent = `Photo ${currentIndex + 1} of ${obs.photos.length}`;
+          };
+
+          const nextBtn = document.createElement('button');
+          nextBtn.textContent = '▶';
+          nextBtn.style.fontSize = '12px';
+          nextBtn.style.padding = '2px 6px';
+          nextBtn.style.border = '1px solid #e5e7eb';
+          nextBtn.style.borderRadius = '4px';
+          nextBtn.style.background = 'white';
+          nextBtn.style.cursor = 'pointer';
+          nextBtn.onclick = () => {
+            currentIndex = (currentIndex + 1) % obs.photos.length;
+            const photo = obs.photos[currentIndex];
+            img.src = photo.medium_url || photo.square_url || photo.url;
+            label.textContent = `Photo ${currentIndex + 1} of ${obs.photos.length}`;
+          };
+
+          controls.appendChild(prevBtn);
+          controls.appendChild(label);
+          controls.appendChild(nextBtn);
+
+          photoWrapper.appendChild(controls);
+        }
+
+        container.appendChild(photoWrapper);
+      } else {
+        const noPhoto = document.createElement('div');
+        noPhoto.textContent = 'No photo available';
+        noPhoto.style.fontSize = '12px';
+        noPhoto.style.color = '#6b7280';
+        noPhoto.style.marginBottom = '8px';
+        container.appendChild(noPhoto);
+      }
+
+      // Add details
+      const details = document.createElement('div');
+      const commonName = obs.taxon?.preferred_common_name;
+      const scientificName = obs.taxon?.name;
+      const iconicTaxon = obs.taxon?.iconic_taxon_name || 'Unknown';
+      const qualityGrade = obs.quality_grade ? obs.quality_grade.charAt(0).toUpperCase() + obs.quality_grade.slice(1).replace('_', ' ') : 'Unknown';
+      
+      details.innerHTML = `
+        <div class="popup-header">
+          <h3>${commonName || scientificName || 'Unknown Species'}</h3>
+          ${commonName && scientificName ? `<p class="scientific-name"><em>${scientificName}</em></p>` : ''}
+        </div>
+        <div class="popup-details">
+          <p><strong>Taxon Category:</strong> ${iconicTaxon}</p>
+          <p><strong>Quality Grade:</strong> ${qualityGrade}</p>
+          <p><strong>Observed:</strong> ${new Date(obs.observed_on).toLocaleDateString()}</p>
+          <p><strong>Observer:</strong> ${obs.user.login}</p>
+          ${obs.taxon?.id ? `<p><strong>Taxon ID:</strong> ${obs.taxon.id}</p>` : ''}
+        </div>
+        <div class="popup-actions">
+          <a href="${obs.uri}" target="_blank" class="popup-link">View on iNaturalist →</a>
+        </div>
+      `;
+      container.appendChild(details);
+
+      // Basic styles for the popup content
+      const style = document.createElement('style');
+      style.textContent = `
+        .inaturalist-observation-popup { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 300px; }
+        .popup-header h3 { margin: 0 0 5px 0; color: #2c3e50; font-size: 16px; }
+        .scientific-name { margin: 0 0 10px 0; color: #7f8c8d; font-size: 14px; }
+        .popup-details p { margin: 5px 0; font-size: 13px; }
+        .popup-actions { margin-top: 15px; padding-top: 15px; border-top: 1px solid #ecf0f1; }
+        .popup-link { color: #3498db; text-decoration: none; font-size: 13px; font-weight: 500; }
+        .popup-link:hover { text-decoration: underline; }
+      `;
+      container.appendChild(style);
+
+      return container;
+    };
+  };
+
   // Helper to build TNC popup content with photo carousel and attribution
   const buildTNCPopupContent = (obs: TNCArcGISObservation) => {
     const imageUrls = tncINaturalistService.parseImageUrlsFromObservation(obs);
@@ -505,19 +636,13 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         
         const symbol = new PictureMarkerSymbol({
           url: getEmojiDataUri(iconInfo.emoji),
-          width: '24px',
-          height: '24px'
+          width: '32px',
+          height: '32px'
         });
 
         const popupTemplate = new PopupTemplate({
           title: obs.taxon?.preferred_common_name || obs.taxon?.name || 'Unknown Species',
-          content: `
-            <div class="observation-popup">
-              <p><strong>Scientific Name:</strong> ${obs.taxon?.name || 'Unknown'}</p>
-              <p><strong>Observed:</strong> ${new Date(obs.observed_on).toLocaleDateString()}</p>
-              <p><strong>Observer:</strong> ${obs.user.login}</p>
-            </div>
-          `
+          content: buildPublicAPIPopupContent(obs)
         });
 
         const graphic = new Graphic({
@@ -1897,8 +2022,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
             // Create symbol with emoji icon
             const symbol = new PictureMarkerSymbol({
               url: getEmojiDataUri(emoji),
-              width: '24px',
-              height: '24px'
+              width: '32px',
+              height: '32px'
             });
 
             // Create rich popup template
@@ -2194,8 +2319,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           // Create symbol with emoji icon (matching sidebar)
           const symbol = new PictureMarkerSymbol({
             url: getEmojiDataUri(iconInfo.emoji),
-            width: '24px',
-            height: '24px'
+            width: '32px',
+            height: '32px'
           });
 
           // Get the best available photo URL for popup
@@ -2660,8 +2785,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           // Create symbol with emoji icon
           const symbol = new PictureMarkerSymbol({
             url: getEmojiDataUri(emoji),
-            width: '24px',
-            height: '24px'
+            width: '32px',
+            height: '32px'
           });
 
           // Create rich popup template with taxonomic hierarchy
