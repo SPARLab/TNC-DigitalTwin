@@ -54,8 +54,8 @@ const INaturalistDetailsSidebar: React.FC<INaturalistDetailsSidebarProps> = ({
         onClick={() => setActiveTab('details')}
         className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
           activeTab === 'details'
-            ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+            ? 'text-blue-600 bg-white border-x border-gray-200 relative z-10 -mb-px'
+            : 'text-gray-600 hover:text-gray-900 bg-gray-50 shadow-[inset_-4px_0_6px_-2px_rgba(0,0,0,0.12),inset_0_-4px_6px_-2px_rgba(0,0,0,0.08)]'
         }`}
       >
         Details
@@ -65,8 +65,8 @@ const INaturalistDetailsSidebar: React.FC<INaturalistDetailsSidebarProps> = ({
         onClick={() => setActiveTab('export')}
         className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
           activeTab === 'export'
-            ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
-            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+            ? 'text-blue-600 bg-white border-x border-gray-200 relative z-10 -mb-px'
+            : 'text-gray-600 hover:text-gray-900 bg-gray-50 shadow-[inset_4px_0_6px_-2px_rgba(0,0,0,0.12),inset_0_-4px_6px_-2px_rgba(0,0,0,0.08)]'
         }`}
       >
         Export
@@ -96,7 +96,7 @@ const INaturalistDetailsSidebar: React.FC<INaturalistDetailsSidebarProps> = ({
     return (
       <div id="details-content" className="flex-1 overflow-y-auto">
         {/* Header with close button */}
-        <div id="details-header" className="p-4 border-b border-gray-200 bg-gray-50">
+        <div id="details-header" className="p-4 border-b border-gray-200 bg-white">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
@@ -257,7 +257,7 @@ const INaturalistDetailsSidebar: React.FC<INaturalistDetailsSidebarProps> = ({
     return (
       <div id="export-content" className="flex flex-col h-full">
         {/* Header */}
-        <div id="export-header" className="p-4 border-b border-gray-200 bg-gray-50">
+        <div id="export-header" className="p-4 border-b border-gray-200 bg-white">
           <h3 className="text-sm font-medium text-gray-900 mb-2">{dataSourceLabel}</h3>
           <p className="text-sm text-gray-600">
             {observations.length} observations {dateRangeText}
