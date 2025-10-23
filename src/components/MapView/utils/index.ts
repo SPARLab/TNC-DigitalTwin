@@ -4,4 +4,5 @@ export * from './iconUtils';
 export * from './layerFactory';
 export * from './searchAreaUtils';
 export * from './mapControls';
+export * from './highlightUtils';
 
