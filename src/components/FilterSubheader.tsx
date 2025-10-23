@@ -115,7 +115,8 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
       daysBack: undefined,
       startDate: undefined,
       endDate: undefined,
-      iconicTaxa: [],
+      // Reset to all taxonomic groups (representing "no filter")
+      iconicTaxa: ['Aves', 'Mammalia', 'Reptilia', 'Amphibia', 'Actinopterygii', 'Insecta', 'Plantae', 'Fungi'],
       customPolygon: undefined
     });
   };
@@ -134,8 +135,8 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
       ...filters, 
       category,
       source: newSource,
-      // Reset iconic taxa when category changes to avoid invalid states
-      iconicTaxa: []
+      // Reset iconic taxa to all when category changes
+      iconicTaxa: ['Aves', 'Mammalia', 'Reptilia', 'Amphibia', 'Actinopterygii', 'Insecta', 'Plantae', 'Fungi']
     };
     
     // Auto-set spatial filter to "Dangermond Preserve" for locked sources

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, Calendar, User, MapPin, ExternalLink, Download, ShoppingCart, Filter } from 'lucide-react';
 import { INaturalistUnifiedObservation } from './INaturalistSidebar';
 
@@ -23,7 +23,7 @@ interface INaturalistDetailsSidebarProps {
   // Export & cart actions
   onExportCSV: () => void;
   onExportGeoJSON: () => void;
-  onAddToCart?: () => void;
+  onAddToCart?: (filteredCount: number) => void;
   onClose: () => void;
   hasSearched: boolean;
 }
@@ -54,6 +54,61 @@ const INaturalistDetailsSidebar: React.FC<INaturalistDetailsSidebarProps> = ({
   hasSearched
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('export');
+
+  // All available taxonomic groups
+  const allTaxonomicGroups = ['Aves', 'Mammalia', 'Reptilia', 'Amphibia', 'Actinopterygii', 'Insecta', 'Plantae', 'Fungi'];
+
+  // Calculate filtered observations based on custom filters
+  const filteredObservations = useMemo(() => {
+    let filtered = observations;
+
+    // Apply quality grade filter
+    if (qualityGrade) {
+      filtered = filtered.filter(obs => obs.qualityGrade === qualityGrade);
+    }
+
+    // Apply iconic taxa filter (only if specific taxa selected, not if all or none selected)
+    const isIconicTaxaFiltering = iconicTaxa && iconicTaxa.length > 0 && iconicTaxa.length < allTaxonomicGroups.length;
+    if (isIconicTaxaFiltering) {
+      filtered = filtered.filter(obs => 
+        iconicTaxa.some(taxon => obs.iconicTaxon?.toLowerCase() === taxon.toLowerCase())
+      );
+    }
+
+    // Apply taxon name filter
+    if (taxonName && taxonName.trim()) {
+      const searchTerm = taxonName.toLowerCase();
+      filtered = filtered.filter(obs =>
+        obs.commonName?.toLowerCase().includes(searchTerm) ||
+        obs.scientificName?.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Apply has photos filter
+    if (hasPhotos) {
+      filtered = filtered.filter(obs => obs.photoUrl !== null);
+    }
+
+    // Note: geoprivacy and accBelow would need to be applied server-side
+    // These are stored for the query but don't filter the current results
+
+    return filtered;
+  }, [observations, qualityGrade, iconicTaxa, taxonName, hasPhotos, allTaxonomicGroups.length]);
+  
+  // Check if iconic taxa is actually filtering (not all selected or empty)
+  const isIconicTaxaFiltering = iconicTaxa && iconicTaxa.length > 0 && iconicTaxa.length < allTaxonomicGroups.length;
+  
+  // Check if any additional filters are active
+  const hasAdditionalFilters = useMemo(() => {
+    return !!(
+      qualityGrade ||
+      isIconicTaxaFiltering ||
+      (taxonName && taxonName.trim()) ||
+      hasPhotos ||
+      geoprivacy ||
+      (accBelow && accBelow !== 1000)
+    );
+  }, [qualityGrade, isIconicTaxaFiltering, taxonName, hasPhotos, geoprivacy, accBelow]);
 
   // Switch to details tab when an observation is selected
   useEffect(() => {
@@ -91,7 +146,7 @@ const INaturalistDetailsSidebar: React.FC<INaturalistDetailsSidebarProps> = ({
             : 'text-gray-600 hover:text-gray-900 bg-gray-50 shadow-[inset_4px_0_6px_-2px_rgba(0,0,0,0.12),inset_0_-4px_6px_-2px_rgba(0,0,0,0.08)]'
         }`}
       >
-        Export
+        Export All
       </button>
     </div>
   );
@@ -281,8 +336,17 @@ const INaturalistDetailsSidebar: React.FC<INaturalistDetailsSidebarProps> = ({
         {/* Header */}
         <div id="export-header" className="p-4 border-b border-gray-200 bg-white">
           <h3 className="text-sm font-medium text-gray-900 mb-2">{dataSourceLabel}</h3>
-          <p className="text-sm text-gray-600">
-            {observations.length} observations {dateRangeText}
+          <p className="text-sm">
+            {hasAdditionalFilters && filteredObservations.length !== observations.length ? (
+              <>
+                <span className="font-semibold text-blue-600">{filteredObservations.length} filtered</span>
+                <span className="text-gray-400 mx-1">/</span>
+                <span className="text-gray-600">{observations.length} total observations</span>
+                <span className="text-gray-600"> {dateRangeText}</span>
+              </>
+            ) : (
+              <span className="text-gray-600">{observations.length} total observations {dateRangeText}</span>
+            )}
           </p>
         </div>
 
@@ -479,11 +543,31 @@ const INaturalistDetailsSidebar: React.FC<INaturalistDetailsSidebarProps> = ({
 
           {/* Add to Cart Button */}
           {onAddToCart && (
-            <div id="add-to-cart-section">
+            <div id="add-to-cart-section" className="space-y-3">
+              {/* Summary message */}
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm font-medium text-blue-900">
+                  {hasAdditionalFilters && filteredObservations.length !== observations.length ? (
+                    <>
+                      <span className="text-lg font-bold">{filteredObservations.length}</span> observations will be saved after applying additional filters
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-lg font-bold">{observations.length}</span> observations will be saved
+                    </>
+                  )}
+                </p>
+                {hasAdditionalFilters && filteredObservations.length !== observations.length && (
+                  <p className="text-xs text-blue-700 mt-1">
+                    Filtered from {observations.length} total observations
+                  </p>
+                )}
+              </div>
+              
               <button
                 id="add-to-cart-button"
-                onClick={onAddToCart}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                onClick={() => onAddToCart(filteredObservations.length)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={observations.length === 0}
               >
                 <ShoppingCart className="w-4 h-4" />

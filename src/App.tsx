@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
 import Header from './components/Header';
 import FilterSubheader from './components/FilterSubheader';
 import DataView from './components/DataView';
@@ -70,7 +71,8 @@ function App() {
     daysBack: undefined,
     startDate: undefined,
     endDate: undefined,
-    iconicTaxa: []
+    // Default to all taxonomic groups (representing "no filter" - everything included)
+    iconicTaxa: ['Aves', 'Mammalia', 'Reptilia', 'Amphibia', 'Actinopterygii', 'Insecta', 'Plantae', 'Fungi']
   });
 
   // Suppress ArcGIS console errors completely
@@ -127,7 +129,7 @@ function App() {
     daysBack: undefined,
     startDate: undefined,
     endDate: undefined,
-    iconicTaxa: []
+    iconicTaxa: ['Aves', 'Mammalia', 'Reptilia', 'Amphibia', 'Actinopterygii', 'Insecta', 'Plantae', 'Fungi']
   });
   
   // Track whether a search has been performed
@@ -1365,6 +1367,9 @@ function App() {
 
   return (
     <div id="app" className="h-screen bg-gray-50 flex flex-col">
+      {/* Toast notifications */}
+      <Toaster />
+      
       <Header theme={theme} onThemeChange={setTheme} />
       <FilterSubheader 
         filters={filters}
@@ -1738,11 +1743,11 @@ function App() {
             onAccBelowChange={(value) => setINatCustomFilters(prev => ({ ...prev, accBelow: value }))}
             onExportCSV={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? handleTNCExportCSV : handleExportCSV}
             onExportGeoJSON={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? handleTNCExportGeoJSON : handleExportGeoJSON}
-            onAddToCart={() => {
+            onAddToCart={(filteredCount: number) => {
               const currentObservations = lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations : observations;
               const result = addToCart({
                 dataSource: 'inaturalist',
-                title: `iNaturalist: ${currentObservations.length} observations - ${inatDateRangeText}`,
+                title: `iNaturalist: ${filteredCount} observations - ${inatDateRangeText}`,
                 coreFilters: {
                   category: lastSearchedFilters.category,
                   source: lastSearchedFilters.source,
@@ -1756,7 +1761,8 @@ function App() {
                 customFilters: {
                   inaturalist: {
                     qualityGrade: filters.qualityGrade,
-                    iconicTaxa: filters.iconicTaxa && filters.iconicTaxa.length > 0 ? filters.iconicTaxa : undefined,
+                    // Only include iconicTaxa if it's actually filtering (not all 8 selected)
+                    iconicTaxa: filters.iconicTaxa && filters.iconicTaxa.length > 0 && filters.iconicTaxa.length < 8 ? filters.iconicTaxa : undefined,
                     taxonName: iNatCustomFilters.taxonName || undefined,
                     hasPhotos: iNatCustomFilters.hasPhotos || undefined,
                     geoprivacy: iNatCustomFilters.geoprivacy,
@@ -1765,14 +1771,43 @@ function App() {
                     outOfRange: iNatCustomFilters.outOfRange
                   }
                 },
-                estimatedCount: currentObservations.length,
+                estimatedCount: filteredCount,
                 addedAt: Date.now()
               });
 
               if (result.success) {
-                alert(`Added ${currentObservations.length} observations query to cart`);
+                toast.success(
+                  (t) => (
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">
+                          Added {filteredCount} observations to cart
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setIsCartOpen(true);
+                          toast.dismiss(t.id);
+                        }}
+                        className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium rounded transition-colors"
+                      >
+                        View Cart
+                      </button>
+                    </div>
+                  ),
+                  {
+                    duration: 3000,
+                    position: 'bottom-right',
+                    style: {
+                      minWidth: '350px',
+                    },
+                  }
+                );
               } else {
-                alert(result.error);
+                toast.error(result.error || 'Failed to add to cart', {
+                  duration: 4000,
+                  position: 'bottom-right',
+                });
               }
             }}
             onClose={handleINatDetailsClose}
@@ -1816,10 +1851,20 @@ function App() {
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
         cartItems={cartItems}
-        onRemoveItem={removeFromCart}
+        onRemoveItem={(id) => {
+          removeFromCart(id);
+          toast.success('Removed item from cart', {
+            duration: 2000,
+            position: 'bottom-right',
+          });
+        }}
         onClearCart={() => {
           if (window.confirm('Clear all items from cart?')) {
             clearCart();
+            toast.success('Cart cleared', {
+              duration: 2000,
+              position: 'bottom-right',
+            });
           }
         }}
         onExport={() => {

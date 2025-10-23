@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { Download, X, FileText, Braces, Map } from 'lucide-react';
 import { CartItem } from '../../types';
 import { exportData } from '../../utils/exportUtils';
@@ -53,13 +54,19 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         }
       }
       
-      alert(`Successfully exported ${cartItems.length} ${cartItems.length === 1 ? 'query' : 'queries'}!`);
+      toast.success(`Successfully exported ${cartItems.length} ${cartItems.length === 1 ? 'query' : 'queries'}!`, {
+        duration: 3000,
+        position: 'bottom-right',
+      });
       onExportComplete?.();
       onClose();
       
     } catch (error: any) {
       console.error('Error exporting data:', error);
-      alert(`Failed to export data: ${error.message}\n\nPlease try again.`);
+      toast.error(`Failed to export data: ${error.message}`, {
+        duration: 5000,
+        position: 'bottom-right',
+      });
     } finally {
       setIsExporting(false);
     }
