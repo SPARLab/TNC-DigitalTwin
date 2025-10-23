@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Calendar, User, ExternalLink, MapPin, Info, ShoppingCart } from 'lucide-react';
 import ThumbnailImage from './ThumbnailImage';
 
@@ -44,6 +44,9 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
   const [expandedObservation, setExpandedObservation] = useState<number | string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
+  
+  // Ref to track previous selectedObservationId
+  const prevSelectedObservationIdRef = useRef<number | string | null>(null);
 
   // Helper function to format date
   const formatDate = (dateString: string) => {
@@ -139,6 +142,55 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
   }, [filteredObservations, currentPage, pageSize]);
 
   const totalPages = Math.ceil(filteredObservations.length / pageSize);
+
+  // Auto-scroll to selected observation when clicked from map
+  useEffect(() => {
+    console.log('🔄 INaturalistSidebar: selectedObservationId changed to:', selectedObservationId);
+    console.log('🔄 INaturalistSidebar: previous was:', prevSelectedObservationIdRef.current);
+    
+    // Only proceed if selectedObservationId has actually changed
+    if (selectedObservationId !== prevSelectedObservationIdRef.current) {
+      prevSelectedObservationIdRef.current = selectedObservationId;
+      
+      if (selectedObservationId) {
+        console.log('📜 INaturalistSidebar: Attempting to scroll to:', selectedObservationId);
+        
+        // Find which page the observation is on
+        const observationIndex = filteredObservations.findIndex(
+          obs => String(obs.id) === String(selectedObservationId)
+        );
+        
+        if (observationIndex !== -1) {
+          const targetPage = Math.floor(observationIndex / pageSize) + 1;
+          console.log(`📄 INaturalistSidebar: Observation at index ${observationIndex}, page ${targetPage}`);
+          
+          // Change to the correct page if needed
+          if (currentPage !== targetPage) {
+            console.log(`📄 INaturalistSidebar: Changing from page ${currentPage} to page ${targetPage}`);
+            setCurrentPage(targetPage);
+          }
+          
+          // Small delay to ensure DOM is updated after page change
+          setTimeout(() => {
+            const cardElement = document.getElementById(`inaturalist-observation-${selectedObservationId}`);
+            console.log('📜 INaturalistSidebar: Found card element:', cardElement);
+            if (cardElement) {
+              cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              // Also expand the card
+              setExpandedObservation(selectedObservationId);
+              console.log('✅ INaturalistSidebar: Scrolled and expanded');
+            } else {
+              console.warn('⚠️ INaturalistSidebar: Card element not found in DOM');
+            }
+          }, currentPage !== targetPage ? 200 : 100); // Longer delay if we changed pages
+        } else {
+          console.warn('⚠️ INaturalistSidebar: Observation not found in filtered list');
+        }
+      }
+    } else {
+      console.log('⏭️ INaturalistSidebar: No change detected, skipping scroll');
+    }
+  }, [selectedObservationId, filteredObservations, currentPage, pageSize]);
 
   // Handle observation click
   const handleObservationClick = (obs: INaturalistUnifiedObservation) => {
@@ -262,7 +314,7 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
                 key={observation.id}
                 id={`inaturalist-observation-${observation.id}`}
                 className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                  (selectedObservationId === observation.id || expandedObservation === observation.id) ? 'bg-blue-50 border-l-4 border-blue-500' : ''
+                  (selectedObservationId !== null && selectedObservationId !== undefined && String(selectedObservationId) === String(observation.id)) || expandedObservation === observation.id ? 'bg-blue-50 border-l-4 border-blue-500' : ''
                 }`}
                 onClick={() => handleObservationClick(observation)}
               >
@@ -311,24 +363,6 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
                     {/* Expanded Details */}
                     {expandedObservation === observation.id && (
                       <div id={`inaturalist-expanded-details-${observation.id}`} className="mt-3 space-y-3">
-                        {/* Large photo */}
-                        {observation.photoUrl && (
-                          <div className="flex flex-col">
-                            <img
-                              id={`inaturalist-expanded-photo-${observation.id}`}
-                              src={observation.photoUrl}
-                              alt={observation.commonName || observation.scientificName}
-                              className="w-full max-w-xs rounded-md"
-                              loading="lazy"
-                            />
-                            {observation.photoAttribution && (
-                              <span className="mt-1 text-xs text-gray-500">
-                                {observation.photoAttribution}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                        
                         {/* Quality Grade */}
                         {observation.qualityGrade && (
                           <div className="text-xs">

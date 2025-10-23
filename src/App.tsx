@@ -1456,7 +1456,62 @@ function App() {
                 onTNCObservationsUpdate={setTncObservations}
                 onTNCLoadingChange={setTncObservationsLoading}
                 selectedTNCObservation={selectedTNCObservation}
-                onTNCObservationSelect={setSelectedTNCObservation}
+                onTNCObservationSelect={(obs) => {
+                  setSelectedTNCObservation(obs);
+                  // Also set the unified observation for right sidebar
+                  if (obs) {
+                    const unifiedObs: INaturalistUnifiedObservation = {
+                      id: obs.observation_id,
+                      observedOn: obs.observed_on,
+                      observerName: obs.user_name,
+                      commonName: obs.common_name,
+                      scientificName: obs.scientific_name,
+                      photoUrl: tncINaturalistService.getPrimaryImageUrl(obs) || null,
+                      photoAttribution: tncINaturalistService.getPhotoAttribution(obs) || null,
+                      iconicTaxon: obs.taxon_category_name,
+                      qualityGrade: null,
+                      location: null,
+                      uri: `https://www.inaturalist.org/observations/${obs.observation_uuid}`,
+                      taxonId: obs.taxon_id
+                    };
+                    handleINatObservationClick(unifiedObs);
+                  } else {
+                    handleINatDetailsClose();
+                  }
+                }}
+                selectedINaturalistObservation={selectedINatObservation ? observations.find(o => o.id === selectedINatObservation.id) : null}
+                onINaturalistObservationSelect={(obs) => {
+                  if (obs) {
+                    // Get high-quality photo URL (large instead of medium)
+                    let photoUrl = null;
+                    if (obs.photos && obs.photos.length > 0) {
+                      const photo = obs.photos[0];
+                      photoUrl = photo.url; // Start with original URL
+                      // Try to get large quality (1024px)
+                      if (photoUrl && typeof photoUrl === 'string') {
+                        photoUrl = photoUrl.replace('/medium.', '/large.').replace('/square.', '/large.');
+                      }
+                    }
+                    
+                    const unifiedObs: INaturalistUnifiedObservation = {
+                      id: obs.id,
+                      observedOn: obs.observed_on,
+                      observerName: obs.user.login,
+                      commonName: obs.taxon?.preferred_common_name || null,
+                      scientificName: obs.taxon?.name || 'Unknown',
+                      photoUrl,
+                      photoAttribution: null,
+                      iconicTaxon: obs.taxon?.iconic_taxon_name || 'Unknown',
+                      qualityGrade: obs.quality_grade,
+                      location: null,
+                      uri: obs.uri,
+                      taxonId: obs.taxon?.id || 0
+                    };
+                    handleINatObservationClick(unifiedObs);
+                  } else {
+                    handleINatDetailsClose();
+                  }
+                }}
                 eBirdObservations={lastSearchedFilters.source === 'eBird' ? eBirdObservations : []}
                 onEBirdObservationsUpdate={setEBirdObservations}
                 onEBirdLoadingChange={setEBirdObservationsLoading}

@@ -36,6 +36,9 @@ interface MapViewProps {
   onTNCLoadingChange?: (loading: boolean) => void;
   selectedTNCObservation?: TNCArcGISObservation | null;
   onTNCObservationSelect?: (observation: TNCArcGISObservation | null) => void;
+  // iNaturalist Public API observations
+  selectedINaturalistObservation?: iNaturalistObservation | null;
+  onINaturalistObservationSelect?: (observation: iNaturalistObservation | null) => void;
   eBirdObservations?: EBirdObservation[];
   onEBirdObservationsUpdate?: (observations: EBirdObservation[]) => void;
   onEBirdLoadingChange?: (loading: boolean) => void;
@@ -116,6 +119,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   onTNCLoadingChange,
   selectedTNCObservation,
   onTNCObservationSelect,
+  selectedINaturalistObservation,
+  onINaturalistObservationSelect,
   eBirdObservations = [],
   onEBirdObservationsUpdate,
   onEBirdLoadingChange,
@@ -172,6 +177,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
 
   // Map legend filtering state for iNaturalist observations
   const [currentObservations, setCurrentObservations] = useState<iNaturalistObservation[]>([]);
+  const currentObservationsRef = useRef<iNaturalistObservation[]>([]);
   const [visibleObservationCategories, setVisibleObservationCategories] = useState<Set<string>>(new Set());
   
   // Highlighted observation state
@@ -639,6 +645,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   // Effect to re-render observations when visibility changes
   useEffect(() => {
     if (!view || !view.map || currentObservations.length === 0) return;
+    
+    // Update ref for click handler access
+    currentObservationsRef.current = currentObservations;
     
     const observationsLayer = view.map.findLayerById('inaturalist-observations') as GraphicsLayer;
     if (!observationsLayer) return;
@@ -2221,6 +2230,31 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   }, [view, tncObservations, onTNCObservationSelect]);
 
+  // Add click handler for Public API iNaturalist observations
+  useEffect(() => {
+    if (view) {
+      const clickHandler = view.on('click', (event) => {
+        view.hitTest(event).then((response) => {
+          const inatGraphic = response.results.find(result => 
+            'graphic' in result && result.graphic && result.graphic.layer?.id === 'inaturalist-observations'
+          );
+          
+          if (inatGraphic && 'graphic' in inatGraphic && onINaturalistObservationSelect) {
+            const observationId = inatGraphic.graphic.attributes.id;
+            const observation = currentObservationsRef.current.find(obs => obs.id === observationId);
+            if (observation) {
+              onINaturalistObservationSelect(observation);
+            }
+          }
+        });
+      });
+
+      return () => {
+        clickHandler.remove();
+      };
+    }
+  }, [view, onINaturalistObservationSelect]);
+
   const loadObservations = async (_mapView: __esri.MapView, observationsLayer: GraphicsLayer, filters?: {
     qualityGrade?: 'research' | 'needs_id' | 'casual';
     iconicTaxa?: string[];
@@ -3070,11 +3104,18 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         console.log('✨ Applied native ArcGIS highlight - handle stored');
         
         // Open the popup/tooltip to show observation details
+        console.log('💬 Checking popup availability:', { 
+          hasPopup: !!view.popup, 
+          hasGeometry: !!targetGraphic.geometry,
+          popupVisible: view.popup?.visible 
+        });
         if (view.popup && targetGraphic.geometry) {
           view.popup.features = [targetGraphic];
           view.popup.location = targetGraphic.geometry as __esri.Point;
           view.popup.visible = true;
-          console.log('💬 Opened popup/tooltip');
+          console.log('💬 Opened popup/tooltip - visible:', view.popup.visible, 'features:', view.popup.features.length);
+        } else {
+          console.warn('⚠️ Cannot open popup - missing popup or geometry');
         }
         
       } catch (error) {
