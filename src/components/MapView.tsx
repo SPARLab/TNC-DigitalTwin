@@ -34,6 +34,13 @@ import {
   normalizeTNCCategoryToIconicTaxon, 
   getEmojiDataUri 
 } from './MapView/utils/iconUtils';
+import { 
+  createLayerFromItem, 
+  configureLayerPopups, 
+  reconstructRenderer, 
+  disableScaleRestrictions,
+  type LayerConfig 
+} from './MapView/utils/layerFactory';
 
 interface MapViewProps {
   onObservationsUpdate?: (observations: iNaturalistObservation[]) => void;
@@ -453,148 +460,48 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       for (const item of activeItems) {
         if (!tncArcGISLayersRef.current.has(item.id)) {
           try {
-            // Comprehensive service type detection and layer creation
+            // Create layer using factory
             const url = item.url;
-            let layer: __esri.Layer | null = null;
-            const layerConfig = {
+            const layerConfig: LayerConfig = {
               id: `tnc-layer-${item.id}`,
               url: url,
               title: item.title,
               opacity: (layerOpacities[item.id] ?? 80) / 100,
-              popupEnabled: true  // Enable auto-generated popups for all fields
+              popupEnabled: true
             };
 
-            // Detect service type and create appropriate layer
-            // Order matters: check more specific patterns first
-            
-            if (url.includes('/SceneServer')) {
-              // 3D scene service (buildings, 3D objects, meshes, point clouds)
-              layer = new SceneLayer(layerConfig);
-      // console.log(`🏗️ Creating SceneLayer for: ${item.title}`);
+            // Setup ImageServer loading callbacks
+            const handleImageServerLoading = (state: any) => {
+              setImageServerLoading(state);
               
-            } else if (url.includes('/StreamServer')) {
-              // Real-time streaming data service (WebSocket-based)
-              layer = new StreamLayer(layerConfig);
-      // console.log(`📡 Creating StreamLayer for: ${item.title}`);
-              
-            } else if (url.includes('/VectorTileServer')) {
-              // Vector tile service (modern styleable basemaps)
-              layer = new VectorTileLayer(layerConfig);
-      // console.log(`🗺️ Creating VectorTileLayer for: ${item.title}`);
-              
-            } else if (url.includes('/ImageServer')) {
-              // Image service - need to distinguish between dynamic and tiled
-              if (url.includes('tiledimageservices')) {
-                // Tiled image service (pre-cached tiles for performance)
-                layer = new ImageryTileLayer(layerConfig);
-      // console.log(`🎨 Creating ImageryTileLayer (cached) for: ${item.title}`);
-              } else {
-                // Dynamic image service (on-the-fly processing) - these can be slow
-                layer = new ImageryLayer(layerConfig);
-      // console.log(`🎨 Creating ImageryLayer (dynamic) for: ${item.title}`);
-      // console.log(`   URL: ${url}`);
-      // console.log(`   ⏳ This untiled image service may take 30-60s to load`);
-                
-                // Show loading banner for large untiled image services
-                setImageServerLoading({
-                  isLoading: true,
-                  itemId: item.id, // Track by item ID for precise synchronization
-                  layerTitle: item.title,
-                  hasTimedOut: false,
-                  showSlowWarning: false
-                });
-                
-                // Set 10-second "taking longer than expected" warning
-                if (imageServerSlowWarningRef.current) {
-                  clearTimeout(imageServerSlowWarningRef.current);
-                }
-                imageServerSlowWarningRef.current = setTimeout(() => {
-                  setImageServerLoading(prev => {
-                    if (prev && prev.isLoading && prev.itemId === item.id) {
-                      return { ...prev, showSlowWarning: true };
-                    }
-                    return prev;
-                  });
-                }, 10000); // 10 seconds
-                
-                // Set 30-second "still loading, might timeout" warning
-                if (imageServerTimeoutRef.current) {
-                  clearTimeout(imageServerTimeoutRef.current);
-                }
-                imageServerTimeoutRef.current = setTimeout(() => {
-                  setImageServerLoading(prev => {
-                    if (prev && prev.isLoading && prev.itemId === item.id) {
-                      return { ...prev, hasTimedOut: true };
-                    }
-                    return prev;
-                  });
-                }, 30000); // 30 seconds
+              // Set 10-second "taking longer than expected" warning
+              if (imageServerSlowWarningRef.current) {
+                clearTimeout(imageServerSlowWarningRef.current);
               }
-              
-            } else if (url.includes('/MapServer')) {
-              // Map service - use MapImageLayer
-              // MapImageLayer can show specific sublayers using the sublayers property
-              const mapLayerConfig: any = { ...layerConfig };
-              
-              // If a specific layer is selected, configure sublayers to only show that one
-              if (item.selectedLayerId !== undefined && item.availableLayers && item.availableLayers.length > 1) {
-                mapLayerConfig.sublayers = [{
-                  id: item.selectedLayerId,
-                  visible: true
-                  // Note: Popup templates will be created after layer loads using createPopupTemplate()
-                }];
-      // console.log(`🗺️ Creating MapImageLayer with sublayer ${item.selectedLayerId} for: ${item.title}`);
-              } else {
-      // console.log(`🗺️ Creating MapImageLayer (all layers) for: ${item.title}`);
-              }
-              
-              layer = new MapImageLayer(mapLayerConfig);
-              
-            } else if (url.includes('/FeatureServer')) {
-              // Feature service (vector data: points, lines, polygons)
-              // Check if URL has a layer index (e.g., /FeatureServer/0)
-              const hasLayerIndex = /\/FeatureServer\/\d+/.test(url);
-              
-              if (!hasLayerIndex) {
-                // No layer index specified - use selectedLayerId if available, otherwise use first layer
-                const layerId = item.selectedLayerId ?? 0;
-                
-                // If we have available layers info, use that; otherwise query the service
-                if (item.availableLayers && item.availableLayers.length > 0) {
-                  layerConfig.url = `${url}/${layerId}`;
-      // console.log(`✓ Using layer ${layerId} for: ${item.title}`);
-                } else {
-                  // Query the service to find available layers
-      // console.log(`🔍 FeatureServer URL missing layer index, querying service for: ${item.title}`);
-                  try {
-                    const serviceResponse = await fetch(`${url}?f=json`);
-                    const serviceData = await serviceResponse.json();
-                    
-                    if (serviceData.layers && serviceData.layers.length > 0) {
-                      // Use selectedLayerId if it exists in the layers, otherwise use first
-                      const targetLayerId = serviceData.layers.find((l: any) => l.id === layerId) 
-                        ? layerId 
-                        : serviceData.layers[0].id;
-                      layerConfig.url = `${url}/${targetLayerId}`;
-      // console.log(`✓ Using layer index ${targetLayerId} for: ${item.title}`);
-                    } else {
-                      console.warn(`⚠️ No layers found in FeatureServer for: ${item.title}`);
-                    }
-                  } catch (err) {
-                    console.warn(`⚠️ Could not query FeatureServer metadata for: ${item.title}`, err);
+              imageServerSlowWarningRef.current = setTimeout(() => {
+                setImageServerLoading(prev => {
+                  if (prev && prev.isLoading && prev.itemId === item.id) {
+                    return { ...prev, showSlowWarning: true };
                   }
-                }
+                  return prev;
+                });
+              }, 10000);
+              
+              // Set 30-second timeout warning
+              if (imageServerTimeoutRef.current) {
+                clearTimeout(imageServerTimeoutRef.current);
               }
-              
-              layer = new FeatureLayer(layerConfig);
-      // console.log(`📍 Creating FeatureLayer for: ${item.title} (will create popup template after load)`);
-              
-            } else {
-              // Unknown service type - log detailed warning
-              console.warn(`⚠️ Unknown service type for "${item.title}". URL: ${url}`);
-              console.warn(`   Supported types: FeatureServer, MapServer, ImageServer, VectorTileServer, SceneServer, StreamServer`);
-              console.warn(`   This layer will be skipped. Please contact the data provider if this is unexpected.`);
-            }
+              imageServerTimeoutRef.current = setTimeout(() => {
+                setImageServerLoading(prev => {
+                  if (prev && prev.isLoading && prev.itemId === item.id) {
+                    return { ...prev, hasTimedOut: true };
+                  }
+                  return prev;
+                });
+              }, 30000);
+            };
+
+            const layer = await createLayerFromItem(item, layerConfig, handleImageServerLoading);
 
             if (layer) {
               // Load the layer and check for errors
@@ -615,232 +522,13 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
                 console.log(`✅ Layer "${item.title}" loaded successfully in ${loadDuration}s`);
                 
                 // Disable scale-dependent rendering restrictions
-                // Many layers have arbitrary scale restrictions that prevent them from displaying
-                // We override these to allow users to view layers at any zoom level
-                if ('minScale' in layer || 'maxScale' in layer) {
-                  const originalScale = {
-                    minScale: (layer as any).minScale,
-                    maxScale: (layer as any).maxScale
-                  };
-                  
-                  if (originalScale.minScale || originalScale.maxScale) {
-                    (layer as any).minScale = 0;  // 0 = no minimum scale (always visible when zoomed out)
-                    (layer as any).maxScale = 0;  // 0 = no maximum scale (always visible when zoomed in)
-                  }
-                }
+                disableScaleRestrictions(layer);
                 
-                // FIX: Reconstruct unique-value renderers with native ArcGIS classes
-                // Some FeatureServer layers have renderers that don't render without reconstruction
-                if (url.includes('/FeatureServer') && 'renderer' in layer) {
-                  try {
-                    const featureLayer = layer as any;
-                    if (featureLayer.renderer?.type === 'unique-value') {
-                      const uniqueValueInfos = featureLayer.renderer.uniqueValueInfos || [];
-                      
-                      if (uniqueValueInfos.length > 0) {
-                        // Import renderer classes
-                        const { default: UniqueValueRenderer } = await import('@arcgis/core/renderers/UniqueValueRenderer');
-                        const { default: SimpleFillSymbol } = await import('@arcgis/core/symbols/SimpleFillSymbol');
-                        
-                        const field = featureLayer.renderer.field;
-                        
-                        // Check if we need a valueExpression by sampling actual data
-                        let needsValueExpression = false;
-                        let sampleFieldValues: string[] = [];
-                        
-                        try {
-                          const sampleQuery = await featureLayer.queryFeatures({
-                            where: '1=1',
-                            outFields: [field],
-                            returnGeometry: false,
-                            num: 10
-                          });
-                          
-                          sampleFieldValues = sampleQuery.features.map((f: any) => f.attributes[field]);
-                          const uniqueActual = [...new Set(sampleFieldValues)];
-                          const rendererValues = uniqueValueInfos.map((info: any) => info.value);
-                          
-                          // Check if field values are longer and start with renderer values
-                          // Example: field has "2020-January 2025", renderer expects "2020"
-                          const exactMatches = uniqueActual.filter((actual: string) => 
-                            rendererValues.includes(actual)
-                          );
-                          
-                          const prefixMatches = uniqueActual.filter((actual: string) => 
-                            rendererValues.some((rv: string) => actual.startsWith(rv))
-                          );
-                          
-                          // If we have prefix matches but not exact matches, we need valueExpression
-                          if (prefixMatches.length > 0 && exactMatches.length === 0) {
-                            needsValueExpression = true;
-                            // console.log(`🔧 Layer "${item.title}" needs valueExpression (field values are longer than renderer values)`);
-                            // console.log(`   Expected:`, rendererValues);
-                            // console.log(`   Actual:`, uniqueActual);
-                          } else {
-                            // console.log(`✓ Layer "${item.title}" values match exactly (no valueExpression needed)`);
-                          }
-                        } catch (e) {
-                          // console.warn(`⚠️ Could not determine if valueExpression is needed for ${item.title}:`, e);
-                        }
-                        
-                        // Capture the original alpha from the first symbol to use as default layer opacity
-                        // This respects the researcher's intended visualization as the default
-                        let detectedAlpha: number | null = null;
-                        if (uniqueValueInfos.length > 0 && uniqueValueInfos[0].symbol?.color?.a !== undefined) {
-                          detectedAlpha = uniqueValueInfos[0].symbol.color.a;
-                        }
-                        
-                        // Reconstruct each symbol, preserving original style (patterns)
-                        const reconstructedInfos = uniqueValueInfos.map((info: any) => {
-                          const color = info.symbol?.color;
-                          const outline = info.symbol?.outline;
-                          const style = info.symbol?.style || 'solid';  // Preserve patterns like 'backward-diagonal'
-                          
-                          return {
-                            value: info.value,
-                            label: info.label || info.value,
-                            symbol: new SimpleFillSymbol({
-                              style: style,  // Use original pattern style
-                              // Force symbols to 100% opacity - let layer-level opacity slider control transparency
-                              color: color ? [color.r, color.g, color.b, 1.0] : [200, 200, 200, 1.0],
-                              outline: outline ? {
-                                color: [outline.color.r, outline.color.g, outline.color.b, Math.max(0.5, outline.color.a || 0.8)],
-                                width: outline.width || 1
-                              } : {
-                                color: [128, 128, 128, 0.8],
-                                width: 0.5
-                              }
-                            })
-                          };
-                        });
-                        
-                        // Only use valueExpression for layers where field values don't match exactly
-                        // Example: fire perimeters with "2020-January 2025" → "2020"
-                        const newRenderer = needsValueExpression 
-                          ? new UniqueValueRenderer({
-                              valueExpression: `Left($feature.${field}, 4)`,  // Extract first 4 chars (the year)
-                              uniqueValueInfos: reconstructedInfos
-                            })
-                          : new UniqueValueRenderer({
-                              field: field,  // Use field directly for exact matching
-                              uniqueValueInfos: reconstructedInfos
-                            });
-                        
-                        featureLayer.renderer = newRenderer;
-                        
-                        // Apply detected alpha as layer's default opacity if this is the first load
-                        // This respects the researcher's intended visualization
-                        if (detectedAlpha !== null && layerOpacities[item.id] === undefined) {
-                          const detectedOpacity = Math.round(detectedAlpha * 100);
-                          console.log(`🎨 Using detected opacity ${detectedOpacity}% for "${item.title}"`);
-                          
-                          // Update layer opacity immediately
-                          (layer as any).opacity = detectedAlpha;
-                          
-                          // Notify parent to update state (so slider shows correct value)
-                          if (onLegendDataFetched) {
-                            // Piggyback on legend callback to pass opacity info
-                            // We'll need to handle this in App.tsx
-                            setTimeout(() => {
-                              onLayerOpacityChange?.(item.id, detectedOpacity);
-                            }, 0);
-                          }
-                        }
-                      }
-                    }
-                  } catch (err) {
-                    console.warn(`⚠️ Could not reconstruct renderer for ${item.title}:`, err);
-                  }
-                }
+                // Reconstruct unique-value renderers with native ArcGIS classes
+                await reconstructRenderer(layer, url, item, layerOpacities, onLayerOpacityChange);
                 
-                // For FeatureLayer, create a popup template showing all fields
-                if (url.includes('/FeatureServer') && 'fields' in layer) {
-                  const featureLayer = layer as __esri.FeatureLayer;
-                  
-                  if (!featureLayer.popupTemplate && featureLayer.fields) {
-                    try {
-                      // Try using createPopupTemplate() if available
-                      if (typeof (featureLayer as any).createPopupTemplate === 'function') {
-                        featureLayer.popupTemplate = (featureLayer as any).createPopupTemplate();
-      // console.log(`   ✅ Created auto popup template for FeatureLayer`);
-                      } else {
-                        // Manual popup template creation with all fields
-                        const fieldInfos = featureLayer.fields
-                          .filter(field => field.name !== featureLayer.objectIdField && field.type !== 'geometry')
-                          .map(field => ({
-                            fieldName: field.name,
-                            label: field.alias || field.name,
-                            visible: true
-                          }));
-                        
-                        featureLayer.popupTemplate = new PopupTemplate({
-                          title: `{${featureLayer.displayField || featureLayer.objectIdField}}`,
-                          content: [{
-                            type: 'fields',
-                            fieldInfos: fieldInfos
-                          }]
-                        });
-      // console.log(`   ✅ Created manual popup template with ${fieldInfos.length} fields for FeatureLayer`);
-                      }
-                    } catch (err) {
-                      console.warn(`   ⚠️ Could not create popup template for FeatureLayer:`, err);
-                    }
-                  }
-                }
-                
-                // For MapImageLayer, create popup templates for all sublayers
-                // This is required because MapImageLayer doesn't auto-generate popups like FeatureLayer
-                if (url.includes('/MapServer') && 'allSublayers' in layer) {
-                  const mapImageLayer = layer as __esri.MapImageLayer;
-                  
-                  // Use loadAll() to ensure all sublayers are loaded
-                  await mapImageLayer.loadAll();
-                  
-                  // Create popup templates for each sublayer
-                  // MapImageLayer sublayers need explicit popup configuration
-                  if (mapImageLayer.allSublayers && mapImageLayer.allSublayers.length > 0) {
-                    let createdCount = 0;
-                    mapImageLayer.allSublayers.forEach((sublayer: any) => {
-                      try {
-                        // Try using the built-in createPopupTemplate() first
-                        let popupTemplate = null;
-                        if (typeof sublayer.createPopupTemplate === 'function') {
-                          popupTemplate = sublayer.createPopupTemplate();
-                        }
-                        
-                        // If that didn't work, create a manual popup template
-                        if (!popupTemplate) {
-                          popupTemplate = new PopupTemplate({
-                            title: `{${sublayer.displayField || 'OBJECTID'}}`,
-                            content: [{
-                              type: 'fields',
-                              fieldInfos: [{
-                                fieldName: '*'  // Show all fields
-                              }]
-                            }]
-                          });
-                        }
-                        
-                        if (popupTemplate) {
-                          sublayer.popupTemplate = popupTemplate;
-                          createdCount++;
-      // console.log(`   ✓ Created popup for sublayer: "${sublayer.title}" (id: ${sublayer.id})`);
-                        }
-                      } catch (err) {
-                        // Some sublayers might not support popups (e.g., group layers)
-      // console.log(`   ℹ️ Sublayer "${sublayer.title}" does not support popups:`, err);
-                      }
-                    });
-      // console.log(`   ✅ Created ${createdCount} popup template(s) from ${mapImageLayer.allSublayers.length} total sublayer(s)`);
-                  }
-                }
-                
-                // Log additional info for ImageServer layers to help debug rendering issues
-                if (url.includes('/ImageServer') && 'fullExtent' in layer) {
-      // console.log(`   ImageServer fullExtent:`, (layer as any).fullExtent);
-      // console.log(`   ImageServer spatialReference:`, (layer as any).spatialReference);
-      // console.log(`   ⚠️ Note: ImageryLayers (raster data) do not support feature-based popups`);
-                }
+                // Configure popups for different layer types
+                await configureLayerPopups(layer, url, item);
                 
                 if (view.map) {
                   // Add layer to the TOP of the layer stack (index = highest position)
