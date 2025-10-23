@@ -211,7 +211,22 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         photoWrapper.style.marginBottom = '8px';
 
         const img = document.createElement('img');
-        img.src = obs.photos[0].medium_url || obs.photos[0].square_url || obs.photos[0].url;
+        // Try to get the highest quality image: original > large > medium
+        const photo = obs.photos[0];
+        let photoUrl = photo.url; // Default to original URL
+        
+        // If URL contains 'medium', try to replace with 'large' or 'original' for better quality
+        if (photo.url && typeof photo.url === 'string') {
+          // iNaturalist URLs often follow pattern: /photos/{id}/{size}.jpg
+          // Try 'large' first (1024px), then 'original' (2048px)
+          photoUrl = photo.url.replace('/medium.', '/large.').replace('/square.', '/large.');
+          if (!photoUrl.includes('/large.') && !photoUrl.includes('/original.')) {
+            // If no size in URL, use the URL as-is (might already be original)
+            photoUrl = photo.url;
+          }
+        }
+        
+        img.src = photoUrl;
         img.alt = obs.taxon?.preferred_common_name || obs.taxon?.name || 'Observation photo';
         img.loading = 'lazy';
         img.style.width = '100%';
@@ -249,7 +264,12 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           prevBtn.onclick = () => {
             currentIndex = (currentIndex - 1 + obs.photos.length) % obs.photos.length;
             const photo = obs.photos[currentIndex];
-            img.src = photo.medium_url || photo.square_url || photo.url;
+            // Use large quality for carousel images too
+            let url = photo.url;
+            if (url && typeof url === 'string') {
+              url = url.replace('/medium.', '/large.').replace('/square.', '/large.');
+            }
+            img.src = url;
             label.textContent = `Photo ${currentIndex + 1} of ${obs.photos.length}`;
           };
 
@@ -264,7 +284,12 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           nextBtn.onclick = () => {
             currentIndex = (currentIndex + 1) % obs.photos.length;
             const photo = obs.photos[currentIndex];
-            img.src = photo.medium_url || photo.square_url || photo.url;
+            // Use large quality for carousel images too
+            let url = photo.url;
+            if (url && typeof url === 'string') {
+              url = url.replace('/medium.', '/large.').replace('/square.', '/large.');
+            }
+            img.src = url;
             label.textContent = `Photo ${currentIndex + 1} of ${obs.photos.length}`;
           };
 
