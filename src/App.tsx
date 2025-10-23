@@ -13,7 +13,7 @@ import TNCArcGISDetailsSidebar from './components/TNCArcGISDetailsSidebar';
 import DendraDetailsSidebar from './components/DendraDetailsSidebar';
 import INaturalistDetailsSidebar from './components/INaturalistDetailsSidebar';
 import { INaturalistUnifiedObservation } from './components/INaturalistSidebar';
-import { FilterState, DendraStation, DendraDatastream, DendraDatastreamWithStation, DendraDatapoint } from './types';
+import { FilterState, DendraStation, DendraDatastream, DendraDatastreamWithStation, DendraDatapoint, INaturalistCustomFilters } from './types';
 import { LiDARViewMode } from './components/dataviews/LiDARView';
 import { iNaturalistObservation } from './services/iNaturalistService';
 import { TNCArcGISObservation } from './services/tncINaturalistService';
@@ -25,6 +25,10 @@ import { tncINaturalistService } from './services/tncINaturalistService';
 import { MapViewRef } from './components/MapView';
 import { DEFAULT_THEME } from './utils/themes';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { useShoppingCart } from './hooks/useShoppingCart';
+import { CartButton } from './components/ShoppingCart/CartButton';
+import { CartPanel } from './components/ShoppingCart/CartPanel';
+import { ExportModal } from './components/ShoppingCart/ExportModal';
 import { 
   fetchDendraStations,
   fetchDendraDatastreams,
@@ -35,6 +39,28 @@ import {
 function App() {
   // Theme state with localStorage persistence
   const [theme, setTheme] = useLocalStorage('dashboard-theme', DEFAULT_THEME);
+
+  // Shopping cart state
+  const {
+    cartItems,
+    addToCart,
+    removeFromCart,
+    clearCart,
+    getCartCount
+  } = useShoppingCart();
+
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
+  // iNaturalist custom filters state (for export tab)
+  const [iNatCustomFilters, setINatCustomFilters] = useState<INaturalistCustomFilters>({
+    taxonName: '',
+    hasPhotos: false,
+    geoprivacy: undefined,
+    accBelow: 1000,
+    photoLicense: undefined,
+    outOfRange: undefined
+  });
 
   const [filters, setFilters] = useState<FilterState>({
     category: '',
@@ -1700,11 +1726,54 @@ function App() {
             dateRangeText={inatDateRangeText}
             qualityGrade={filters.qualityGrade}
             onQualityGradeChange={(grade) => setFilters(prev => ({ ...prev, qualityGrade: grade }))}
+            iconicTaxa={filters.iconicTaxa}
+            onIconicTaxaChange={(taxa) => setFilters(prev => ({ ...prev, iconicTaxa: taxa }))}
+            taxonName={iNatCustomFilters.taxonName}
+            onTaxonNameChange={(name) => setINatCustomFilters(prev => ({ ...prev, taxonName: name }))}
+            hasPhotos={iNatCustomFilters.hasPhotos}
+            onHasPhotosChange={(value) => setINatCustomFilters(prev => ({ ...prev, hasPhotos: value }))}
+            geoprivacy={iNatCustomFilters.geoprivacy}
+            onGeoprivacyChange={(value) => setINatCustomFilters(prev => ({ ...prev, geoprivacy: value }))}
+            accBelow={iNatCustomFilters.accBelow}
+            onAccBelowChange={(value) => setINatCustomFilters(prev => ({ ...prev, accBelow: value }))}
             onExportCSV={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? handleTNCExportCSV : handleExportCSV}
             onExportGeoJSON={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? handleTNCExportGeoJSON : handleExportGeoJSON}
             onAddToCart={() => {
-              // TODO: Implement shopping cart functionality
-              console.log('Add to cart clicked');
+              const currentObservations = lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations : observations;
+              const result = addToCart({
+                dataSource: 'inaturalist',
+                title: `iNaturalist: ${currentObservations.length} observations - ${inatDateRangeText}`,
+                coreFilters: {
+                  category: lastSearchedFilters.category,
+                  source: lastSearchedFilters.source,
+                  spatialFilter: lastSearchedFilters.spatialFilter,
+                  timeRange: lastSearchedFilters.timeRange,
+                  daysBack: lastSearchedFilters.daysBack,
+                  startDate: lastSearchedFilters.startDate,
+                  endDate: lastSearchedFilters.endDate,
+                  customPolygon: lastSearchedFilters.customPolygon
+                },
+                customFilters: {
+                  inaturalist: {
+                    qualityGrade: filters.qualityGrade,
+                    iconicTaxa: filters.iconicTaxa && filters.iconicTaxa.length > 0 ? filters.iconicTaxa : undefined,
+                    taxonName: iNatCustomFilters.taxonName || undefined,
+                    hasPhotos: iNatCustomFilters.hasPhotos || undefined,
+                    geoprivacy: iNatCustomFilters.geoprivacy,
+                    accBelow: iNatCustomFilters.accBelow,
+                    photoLicense: iNatCustomFilters.photoLicense,
+                    outOfRange: iNatCustomFilters.outOfRange
+                  }
+                },
+                estimatedCount: currentObservations.length,
+                addedAt: Date.now()
+              });
+
+              if (result.success) {
+                alert(`Added ${currentObservations.length} observations query to cart`);
+              } else {
+                alert(result.error);
+              }
             }}
             onClose={handleINatDetailsClose}
             hasSearched={hasSearched}
@@ -1734,6 +1803,39 @@ function App() {
         plant={selectedCalFloraPlant}
         isOpen={isCalFloraModalOpen}
         onClose={closeCalFloraModal}
+      />
+
+      {/* Shopping Cart Button */}
+      <CartButton
+        itemCount={getCartCount()}
+        onClick={() => setIsCartOpen(true)}
+      />
+
+      {/* Shopping Cart Panel */}
+      <CartPanel
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        cartItems={cartItems}
+        onRemoveItem={removeFromCart}
+        onClearCart={() => {
+          if (window.confirm('Clear all items from cart?')) {
+            clearCart();
+          }
+        }}
+        onExport={() => {
+          setIsExportModalOpen(true);
+        }}
+      />
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        cartItems={cartItems}
+        onExportComplete={() => {
+          // Optional: clear cart after successful export
+          // clearCart();
+        }}
       />
     </div>
   );

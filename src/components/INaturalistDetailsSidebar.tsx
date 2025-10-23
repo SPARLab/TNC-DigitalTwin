@@ -9,6 +9,18 @@ interface INaturalistDetailsSidebarProps {
   dateRangeText: string;
   qualityGrade?: 'research' | 'needs_id' | 'casual' | undefined;
   onQualityGradeChange: (grade: 'research' | 'needs_id' | 'casual' | undefined) => void;
+  // Custom filter props
+  iconicTaxa?: string[];
+  onIconicTaxaChange?: (taxa: string[]) => void;
+  taxonName?: string;
+  onTaxonNameChange?: (name: string) => void;
+  hasPhotos?: boolean;
+  onHasPhotosChange?: (value: boolean) => void;
+  geoprivacy?: 'open' | 'obscured' | 'private' | undefined;
+  onGeoprivacyChange?: (value: 'open' | 'obscured' | 'private' | undefined) => void;
+  accBelow?: number;
+  onAccBelowChange?: (value: number) => void;
+  // Export & cart actions
   onExportCSV: () => void;
   onExportGeoJSON: () => void;
   onAddToCart?: () => void;
@@ -25,6 +37,16 @@ const INaturalistDetailsSidebar: React.FC<INaturalistDetailsSidebarProps> = ({
   dateRangeText,
   qualityGrade,
   onQualityGradeChange,
+  iconicTaxa = [],
+  onIconicTaxaChange,
+  taxonName = '',
+  onTaxonNameChange,
+  hasPhotos = false,
+  onHasPhotosChange,
+  geoprivacy,
+  onGeoprivacyChange,
+  accBelow = 1000,
+  onAccBelowChange,
   onExportCSV,
   onExportGeoJSON,
   onAddToCart,
@@ -292,6 +314,128 @@ const INaturalistDetailsSidebar: React.FC<INaturalistDetailsSidebarProps> = ({
               ))}
             </div>
           </div>
+
+          {/* Iconic Taxa Filter */}
+          {onIconicTaxaChange && (
+            <div id="iconic-taxa-filter-section" className="space-y-3">
+              <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                <Filter className="w-4 h-4 mr-2" />
+                Taxonomic Groups
+              </h4>
+              <div className="space-y-2">
+                {[
+                  { value: 'Aves', label: 'Birds', icon: '🐦' },
+                  { value: 'Mammalia', label: 'Mammals', icon: '🦌' },
+                  { value: 'Reptilia', label: 'Reptiles', icon: '🦎' },
+                  { value: 'Amphibia', label: 'Amphibians', icon: '🐸' },
+                  { value: 'Actinopterygii', label: 'Fish', icon: '🐟' },
+                  { value: 'Insecta', label: 'Insects', icon: '🦋' },
+                  { value: 'Plantae', label: 'Plants', icon: '🌱' },
+                  { value: 'Fungi', label: 'Fungi', icon: '🍄' }
+                ].map((taxon) => (
+                  <label key={taxon.value} id={`iconic-taxon-option-${taxon.value.toLowerCase()}`} className="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={iconicTaxa.includes(taxon.value)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          onIconicTaxaChange([...iconicTaxa, taxon.value]);
+                        } else {
+                          onIconicTaxaChange(iconicTaxa.filter(t => t !== taxon.value));
+                        }
+                      }}
+                      className="mr-2 cursor-pointer"
+                    />
+                    <span className="text-lg mr-2">{taxon.icon}</span>
+                    <span className="text-sm text-gray-700">{taxon.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Taxon Name Search */}
+          {onTaxonNameChange && (
+            <div id="taxon-name-filter-section" className="space-y-3">
+              <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                <Filter className="w-4 h-4 mr-2" />
+                Species Search
+              </h4>
+              <input
+                id="taxon-name-input"
+                type="text"
+                value={taxonName}
+                onChange={(e) => onTaxonNameChange(e.target.value)}
+                placeholder="e.g., Quercus agrifolia"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <p className="text-xs text-gray-500">
+                Search by scientific or common name
+              </p>
+            </div>
+          )}
+
+          {/* Observation Attributes */}
+          {onHasPhotosChange && (
+            <div id="observation-attrs-filter-section" className="space-y-3">
+              <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                <Filter className="w-4 h-4 mr-2" />
+                Observation Attributes
+              </h4>
+              <label className="flex items-center cursor-pointer">
+                <input
+                  id="has-photos-checkbox"
+                  type="checkbox"
+                  checked={hasPhotos}
+                  onChange={(e) => onHasPhotosChange(e.target.checked)}
+                  className="mr-2 cursor-pointer"
+                />
+                <span className="text-sm text-gray-700">Has photos</span>
+              </label>
+            </div>
+          )}
+
+          {/* Geoprivacy */}
+          {onGeoprivacyChange && (
+            <div id="geoprivacy-filter-section" className="space-y-3">
+              <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                <Filter className="w-4 h-4 mr-2" />
+                Location Privacy
+              </h4>
+              <select
+                id="geoprivacy-select"
+                value={geoprivacy || 'any'}
+                onChange={(e) => onGeoprivacyChange(e.target.value === 'any' ? undefined : e.target.value as 'open' | 'obscured' | 'private')}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="any">Any</option>
+                <option value="open">Open</option>
+                <option value="obscured">Obscured</option>
+                <option value="private">Private</option>
+              </select>
+            </div>
+          )}
+
+          {/* Accuracy Threshold */}
+          {onAccBelowChange && (
+            <div id="accuracy-filter-section" className="space-y-3">
+              <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                <Filter className="w-4 h-4 mr-2" />
+                Location Accuracy
+              </h4>
+              <select
+                id="accuracy-select"
+                value={accBelow}
+                onChange={(e) => onAccBelowChange(Number(e.target.value))}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value={100}>Within 100m</option>
+                <option value={500}>Within 500m</option>
+                <option value={1000}>Within 1km (default)</option>
+                <option value={5000}>Within 5km</option>
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Export Actions Footer */}

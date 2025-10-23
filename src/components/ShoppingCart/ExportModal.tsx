@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Download, X, FileText, Braces, Map } from 'lucide-react';
 import { CartItem } from '../../types';
 import { exportData } from '../../utils/exportUtils';
+import { executeCartQuery } from '../../services/cartQueryExecutor';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -20,29 +21,45 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [exportMode, setExportMode] = useState<'combined' | 'separate'>('combined');
   const [isExporting, setIsExporting] = useState(false);
 
-  const handleExport = () => {
+  const handleExport = async () => {
     setIsExporting(true);
     
     try {
       if (exportMode === 'combined') {
-        // Combine all cart items into single file
-        const allData = cartItems.flatMap(item => item.previewData || []);
+        // Execute all queries and combine results
+        const allData: any[] = [];
+        
+        for (let i = 0; i < cartItems.length; i++) {
+          const item = cartItems[i];
+          console.log(`Fetching data for query ${i + 1}/${cartItems.length}: ${item.title}`);
+          
+          const data = await executeCartQuery(item);
+          allData.push(...data);
+        }
+        
         const timestamp = Date.now();
-        exportData(allData, selectedFormat, `tnc-data-export-${timestamp}`);
+        exportData(allData, selectedFormat, `tnc-combined-export-${timestamp}`);
+        
       } else {
-        // Create separate files for each data source
-        cartItems.forEach((item, index) => {
+        // Execute and export each query separately
+        for (let i = 0; i < cartItems.length; i++) {
+          const item = cartItems[i];
+          console.log(`Exporting query ${i + 1}/${cartItems.length}: ${item.title}`);
+          
+          const data = await executeCartQuery(item);
           const timestamp = Date.now();
-          const filename = `${item.dataSource}-${timestamp}-${index + 1}`;
-          exportData(item.previewData || [], selectedFormat, filename);
-        });
+          const filename = `${item.dataSource}-${timestamp}-${i + 1}`;
+          exportData(data, selectedFormat, filename);
+        }
       }
       
+      alert(`Successfully exported ${cartItems.length} ${cartItems.length === 1 ? 'query' : 'queries'}!`);
       onExportComplete?.();
       onClose();
-    } catch (error) {
+      
+    } catch (error: any) {
       console.error('Error exporting data:', error);
-      alert('Failed to export data. Please try again.');
+      alert(`Failed to export data: ${error.message}\n\nPlease try again.`);
     } finally {
       setIsExporting(false);
     }

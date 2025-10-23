@@ -110,6 +110,13 @@ private async waitForRateLimit(): Promise<void> {
     startDate?: string;
     endDate?: string;
     maxResults?: number; // Maximum total results to fetch across all pages
+    // Custom filter parameters
+    taxonName?: string;
+    hasPhotos?: boolean;
+    geoprivacy?: 'open' | 'obscured' | 'private';
+    accBelow?: number;
+    photoLicense?: string;
+    outOfRange?: boolean;
   } = {}): Promise<iNaturalistResponse> {
     const {
       perPage = 200, // Increased from 100 to get more per request
@@ -119,7 +126,14 @@ private async waitForRateLimit(): Promise<void> {
       daysBack = 30,
       startDate: customStartDate,
       endDate: customEndDate,
-      maxResults = 500 // Default max results across all pages
+      maxResults = 500, // Default max results across all pages
+      // Custom filters
+      taxonName,
+      hasPhotos,
+      geoprivacy,
+      accBelow,
+      photoLicense,
+      outOfRange
     } = options;
 
     // Calculate date range - use custom dates if provided, otherwise use daysBack
@@ -171,6 +185,31 @@ private async waitForRateLimit(): Promise<void> {
 
     if (iconicTaxa && iconicTaxa.length > 0) {
       params.append('iconic_taxa', iconicTaxa.join(','));
+    }
+
+    // Add custom filters
+    if (taxonName) {
+      params.append('taxon_name', taxonName);
+    }
+
+    if (hasPhotos) {
+      params.append('has[]', 'photos');
+    }
+
+    if (geoprivacy) {
+      params.append('geoprivacy', geoprivacy);
+    }
+
+    if (accBelow !== undefined) {
+      params.set('acc_below', accBelow.toString());
+    }
+
+    if (photoLicense) {
+      params.append('photo_license', photoLicense);
+    }
+
+    if (outOfRange !== undefined) {
+      params.append('out_of_range', outOfRange.toString());
     }
 
     // Fetch multiple pages if needed
