@@ -12,7 +12,7 @@ import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 import PopupTemplate from '@arcgis/core/PopupTemplate';
 import * as reactiveUtils from '@arcgis/core/core/reactiveUtils';
 import { iNaturalistObservation } from '../services/iNaturalistService';
-import { TNCArcGISObservation, tncINaturalistService } from '../services/tncINaturalistService';
+import { TNCArcGISObservation } from '../services/tncINaturalistService';
 import { CalFloraPlant } from '../services/calFloraService';
 import { TNCArcGISItem, tncArcGISAPI } from '../services/tncArcGISService';
 import { EBirdObservation } from '../services/eBirdService';
@@ -32,8 +32,12 @@ import {
   configureLayerPopups, 
   reconstructRenderer, 
   disableScaleRestrictions,
+  drawSearchAreaRectangle,
+  zoomIn,
+  zoomOut,
+  enterFullscreen,
   type LayerConfig 
-} from './MapView/utils/layerFactory';
+} from './MapView/utils';
 import {
   loadObservations as loadObservationsImpl,
   loadCalFloraData as loadCalFloraDataImpl,
@@ -1782,57 +1786,6 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   };
 
   // Helper to draw search area rectangle for "Dangermond + Margin" spatial filter
-  const drawSearchAreaRectangle = async (_mapView: __esri.MapView, showSearchArea: boolean, searchMode: string) => {
-    const searchAreaLayer = _mapView.map?.findLayerById('search-area-rectangle') as GraphicsLayer;
-    
-    if (!searchAreaLayer) return;
-    
-    searchAreaLayer.removeAll();
-    
-    if (showSearchArea && searchMode === 'expanded') {
-      try {
-        // Get the expanded search extent and create a rectangle graphic
-        const extent = await tncINaturalistService.getPreserveExtent('expanded');
-        
-        // Create a polygon rectangle from the extent coordinates
-        const rectangle = new Polygon({
-          rings: [[
-            [extent.xmin, extent.ymin], // Bottom-left
-            [extent.xmax, extent.ymin], // Bottom-right
-            [extent.xmax, extent.ymax], // Top-right
-            [extent.xmin, extent.ymax], // Top-left
-            [extent.xmin, extent.ymin]  // Close the ring
-          ]],
-          spatialReference: { wkid: 4326 }
-        });
-        
-        const rectangleGraphic = new Graphic({
-          geometry: rectangle,
-          symbol: new SimpleFillSymbol({
-            color: [255, 165, 0, 0.15], // Orange with low opacity
-            outline: {
-              color: [255, 165, 0, 0.9], // Orange outline
-              width: 3,
-              style: 'dash'
-            }
-          }),
-          popupTemplate: new PopupTemplate({
-            title: 'Search Area (Dangermond + Margin)',
-            content: `This rectangle shows the expanded search area around the Dangermond Preserve.<br/>
-                     Coordinates: ${extent.xmin.toFixed(3)}, ${extent.ymin.toFixed(3)} to ${extent.xmax.toFixed(3)}, ${extent.ymax.toFixed(3)}`
-          })
-        });
-        
-        searchAreaLayer.add(rectangleGraphic);
-        searchAreaLayer.visible = true;
-      // console.log('✅ Added search area rectangle:', extent);
-      } catch (error) {
-        console.error('Error drawing search area rectangle:', error);
-      }
-    } else {
-      searchAreaLayer.visible = false;
-    }
-  };
 
   // Clear search area helper
   const clearSearchArea = () => {
@@ -2039,31 +1992,10 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     clearObservationHighlight
   }));
 
-  // Custom zoom functions
-  const handleZoomIn = () => {
-    if (view) {
-      view.goTo({
-        zoom: view.zoom + 1
-      });
-    }
-  };
-
-  const handleZoomOut = () => {
-    if (view) {
-      view.goTo({
-        zoom: view.zoom - 1
-      });
-    }
-  };
-
-  const handleFullscreen = () => {
-    if (view && view.container) {
-      const element = view.container as HTMLElement;
-      if (element.requestFullscreen) {
-        element.requestFullscreen();
-      }
-    }
-  };
+  // Custom zoom functions (using extracted utilities)
+  const handleZoomIn = () => zoomIn(view);
+  const handleZoomOut = () => zoomOut(view);
+  const handleFullscreen = () => enterFullscreen(view);
 
   // Build legend categories from current observations (both regular and TNC)
   const legendCategories = useMemo(() => {
