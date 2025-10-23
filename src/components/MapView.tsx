@@ -1894,12 +1894,11 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
             // Get emoji based on taxon category
             const emoji = getTNCObservationEmoji(obs.taxon_category_name);
             
-            // Create symbol with emoji icon - larger if selected
-            const isSelected = selectedTNCObservation?.observation_id === obs.observation_id;
+            // Create symbol with emoji icon
             const symbol = new PictureMarkerSymbol({
               url: getEmojiDataUri(emoji),
-              width: isSelected ? '28px' : '24px',
-              height: isSelected ? '28px' : '24px'
+              width: '24px',
+              height: '24px'
             });
 
             // Create rich popup template
@@ -1939,7 +1938,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         }
       }
     }
-  }, [view, tncObservations, selectedTNCObservation, visibleObservationCategories]);
+  }, [view, tncObservations, visibleObservationCategories]);
 
   // Initialize visible categories when regular iNaturalist observations load
   // This ensures legend shows all categories as selected on first load
@@ -2886,7 +2885,29 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         // Ensure the layer is loaded and the layer view is ready
         console.log('⏳ Waiting for layer view to be ready...');
         const layerView = await view.whenLayerView(targetLayer);
-        console.log('✅ Layer view obtained');
+        console.log('✅ Layer view obtained, checking if updating...');
+        
+        // Wait for the layer view to finish any pending updates using reactiveUtils
+        // This is especially important on the very first interaction when graphics were just added
+        if ((layerView as any).updating) {
+          console.log('⏳ Layer view is updating (first time), waiting for it to finish...');
+          await reactiveUtils.whenOnce(() => !(layerView as any).updating);
+          console.log('✅ First update cycle complete');
+          
+          // Wait for one more frame - sometimes the layer triggers another update right after
+          await new Promise(resolve => setTimeout(resolve, 50));
+          
+          // If it started updating again, wait for that too
+          if ((layerView as any).updating) {
+            console.log('⏳ Layer view is updating again (second time), waiting...');
+            await reactiveUtils.whenOnce(() => !(layerView as any).updating);
+            console.log('✅ Second update cycle complete');
+          }
+        }
+        
+        // Add a small delay to ensure rendering pipeline is completely stable
+        await new Promise(resolve => setTimeout(resolve, 100));
+        console.log('✅ Ready to highlight');
         
         // Use ArcGIS's native highlight method - this creates the blue highlight ring automatically!
         console.log('🚀 About to call layerView.highlight()');
