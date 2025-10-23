@@ -10,11 +10,10 @@ import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
 import PictureMarkerSymbol from '@arcgis/core/symbols/PictureMarkerSymbol';
 import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 import PopupTemplate from '@arcgis/core/PopupTemplate';
-import * as reactiveUtils from '@arcgis/core/core/reactiveUtils';
 import { iNaturalistObservation } from '../services/iNaturalistService';
 import { TNCArcGISObservation } from '../services/tncINaturalistService';
 import { CalFloraPlant } from '../services/calFloraService';
-import { TNCArcGISItem, tncArcGISAPI } from '../services/tncArcGISService';
+import { TNCArcGISItem } from '../services/tncArcGISService';
 import { EBirdObservation } from '../services/eBirdService';
 import type { DendraStation } from '../types';
 import LayerLegend from './LayerLegend';
@@ -28,17 +27,12 @@ import {
   getEmojiDataUri 
 } from './MapView/utils/iconUtils';
 import { 
-  createLayerFromItem, 
-  configureLayerPopups, 
-  reconstructRenderer, 
-  disableScaleRestrictions,
   drawSearchAreaRectangle,
   zoomIn,
   zoomOut,
   enterFullscreen,
   highlightObservation as highlightObservationImpl,
-  clearObservationHighlight as clearObservationHighlightImpl,
-  type LayerConfig 
+  clearObservationHighlight as clearObservationHighlightImpl
 } from './MapView/utils';
 import {
   loadObservations as loadObservationsImpl,
@@ -50,6 +44,11 @@ import {
   type EBirdFilters,
   type TNCObservationsFilters
 } from './MapView/loaders';
+import {
+  useTNCArcGISLayers,
+  type ImageServerLoadingState,
+  type LayerLoadError
+} from './MapView/hooks';
 
 interface MapViewProps {
   onObservationsUpdate?: (observations: iNaturalistObservation[]) => void;
@@ -177,25 +176,13 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   const pointerMoveHandlerRef = useRef<__esri.Handle | null>(null);
   const [isLegendExpanded, setIsLegendExpanded] = useState(true);
   // ImageServer loading banner state
-  const [imageServerLoading, setImageServerLoading] = useState<{
-    isLoading: boolean;
-    itemId: string;
-    layerTitle: string;
-    hasTimedOut: boolean;
-    showSlowWarning: boolean; // Show "taking longer than expected" after 10s
-  } | null>(null);
-  const imageServerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const imageServerSlowWarningRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [imageServerLoading, setImageServerLoading] = useState<ImageServerLoadingState | null>(null);
   
   // Basemap selection state
   const [currentBasemap, setCurrentBasemap] = useState<'hybrid' | 'topo-vector'>('hybrid');
   
   // Layer load error state - shows persistent error banner
-  const [layerLoadError, setLayerLoadError] = useState<{
-    itemId: string;
-    layerTitle: string;
-    errorMessage: string;
-  } | null>(null);
+  const [layerLoadError, setLayerLoadError] = useState<LayerLoadError | null>(null);
   // CalFlora state is managed by parent component via props
 
   // Map legend filtering state for iNaturalist observations
@@ -209,19 +196,11 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   const highlightOperationRef = useRef<Promise<void> | null>(null);
 
   // Synchronize ImageServer banner with loadingLayerIds (same as eye icon timing)
+  // Note: Timeout refs are now managed inside useTNCArcGISLayers hook
   useEffect(() => {
     if (imageServerLoading && !loadingLayerIds.includes(imageServerLoading.itemId)) {
       // The item finished loading (removed from loadingLayerIds) - dismiss banner NOW
-      // console.log(`   ✅ ImageServer finished loading (synchronized with eye icon): ${imageServerLoading.layerTitle}`);
       setImageServerLoading(null);
-      if (imageServerTimeoutRef.current) {
-        clearTimeout(imageServerTimeoutRef.current);
-        imageServerTimeoutRef.current = null;
-      }
-      if (imageServerSlowWarningRef.current) {
-        clearTimeout(imageServerSlowWarningRef.current);
-        imageServerSlowWarningRef.current = null;
-      }
     }
   }, [loadingLayerIds, imageServerLoading]);
 
@@ -413,307 +392,20 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     });
   }, [visibleObservationCategories, currentObservations, view]);
 
-  // Effect to manage TNC ArcGIS Hub map layers
-  useEffect(() => {
-    if (!view) return;
-
-    const handleLayerLoading = async () => {
-      // Get active items that should be displayed
-      const activeItems = tncArcGISItems.filter(item => 
-        activeLayerIds.includes(item.id) && item.uiPattern === 'MAP_LAYER'
-      );
-
-      // Remove layers that are no longer active
-      const layersToRemove: string[] = [];
-      tncArcGISLayersRef.current.forEach((_layer: __esri.Layer, itemId: string) => {
-        if (!activeLayerIds.includes(itemId)) {
-          layersToRemove.push(itemId);
-        }
-      });
-
-      layersToRemove.forEach(itemId => {
-        const layer = tncArcGISLayersRef.current.get(itemId);
-        if (layer && view.map) {
-          // console.log(`🗑️ Removing TNC layer: ${itemId} (${layer.title})`);
-          
-          // Clear ImageServer loading state if this layer was loading
-          if (imageServerLoading?.itemId === itemId) {
-            console.log(`   🧹 Clearing ImageServer loading banner for removed layer`);
-            setImageServerLoading(null);
-            if (imageServerTimeoutRef.current) {
-              clearTimeout(imageServerTimeoutRef.current);
-              imageServerTimeoutRef.current = null;
-            }
-            if (imageServerSlowWarningRef.current) {
-              clearTimeout(imageServerSlowWarningRef.current);
-              imageServerSlowWarningRef.current = null;
-            }
-          }
-          
-          // Remove from map first
-          view.map.remove(layer);
-          
-          // Destroy the layer to free resources and ensure it's fully cleaned up
-          if (typeof (layer as any).destroy === 'function') {
-            // console.log(`   💥 Destroying layer instance`);
-            (layer as any).destroy();
-          }
-          
-          // Remove from our tracking map
-          tncArcGISLayersRef.current.delete(itemId);
-          // console.log(`   ✅ Layer removed successfully`);
-        }
-      });
-
-      // Add new layers that aren't already loaded
-      for (const item of activeItems) {
-        if (!tncArcGISLayersRef.current.has(item.id)) {
-          try {
-            // Create layer using factory
-            const url = item.url;
-            const layerConfig: LayerConfig = {
-              id: `tnc-layer-${item.id}`,
-              url: url,
-              title: item.title,
-              opacity: (layerOpacities[item.id] ?? 80) / 100,
-              popupEnabled: true
-            };
-
-            // Setup ImageServer loading callbacks
-            const handleImageServerLoading = (state: any) => {
-              setImageServerLoading(state);
-              
-              // Set 10-second "taking longer than expected" warning
-              if (imageServerSlowWarningRef.current) {
-                clearTimeout(imageServerSlowWarningRef.current);
-              }
-              imageServerSlowWarningRef.current = setTimeout(() => {
-                setImageServerLoading(prev => {
-                  if (prev && prev.isLoading && prev.itemId === item.id) {
-                    return { ...prev, showSlowWarning: true };
-                  }
-                  return prev;
-                });
-              }, 10000);
-              
-              // Set 30-second timeout warning
-              if (imageServerTimeoutRef.current) {
-                clearTimeout(imageServerTimeoutRef.current);
-              }
-              imageServerTimeoutRef.current = setTimeout(() => {
-                setImageServerLoading(prev => {
-                  if (prev && prev.isLoading && prev.itemId === item.id) {
-                    return { ...prev, hasTimedOut: true };
-                  }
-                  return prev;
-                });
-              }, 30000);
-            };
-
-            const layer = await createLayerFromItem(item, layerConfig, handleImageServerLoading);
-
-            if (layer) {
-              // Load the layer and check for errors
-              try {
-                // Wrap layer.load() with a generous timeout (45 seconds) for slow services like NAIP imagery
-                const loadTimeout = 45000; // 45 seconds
-                const loadStartTime = Date.now();
-                console.log(`⏳ Loading layer "${item.title}" (timeout: ${loadTimeout / 1000}s)...`);
-                
-                const loadPromise = layer.load();
-                const timeoutPromise = new Promise((_, reject) => 
-                  setTimeout(() => reject(new Error(`Layer load timeout after ${loadTimeout / 1000} seconds`)), loadTimeout)
-                );
-                
-                await Promise.race([loadPromise, timeoutPromise]);
-                
-                const loadDuration = ((Date.now() - loadStartTime) / 1000).toFixed(1);
-                console.log(`✅ Layer "${item.title}" loaded successfully in ${loadDuration}s`);
-                
-                // Disable scale-dependent rendering restrictions
-                disableScaleRestrictions(layer);
-                
-                // Reconstruct unique-value renderers with native ArcGIS classes
-                await reconstructRenderer(layer, url, item, layerOpacities, onLayerOpacityChange);
-                
-                // Configure popups for different layer types
-                await configureLayerPopups(layer, url, item);
-                
-                if (view.map) {
-                  // Add layer to the TOP of the layer stack (index = highest position)
-                  // In ArcGIS, layers are drawn bottom-to-top, so higher index = more visible
-                  view.map.layers.add(layer);  // Adds to end of collection (top of visual stack)
-                  tncArcGISLayersRef.current.set(item.id, layer);
-      // console.log(`✅ Added TNC layer: ${item.title}`);
-                  
-                  // Verify popup configuration for FeatureLayer
-                  if (url.includes('/FeatureServer') && 'popupTemplate' in layer) {
-                    const featureLayer = layer as __esri.FeatureLayer;
-                    if (featureLayer.popupTemplate) {
-      // console.log(`   ✓ FeatureLayer has popupTemplate with ${featureLayer.fields?.length || 0} fields`);
-                    } else {
-      // console.log(`   ✗ FeatureLayer MISSING popupTemplate!`);
-                    }
-                  }
-                  
-                  // Verify popup configuration for MapImageLayer
-                  if (url.includes('/MapServer') && 'allSublayers' in layer) {
-                    const mapImageLayer = layer as __esri.MapImageLayer;
-      // console.log(`   🔍 Verifying popups for MapImageLayer...`);
-                    if (mapImageLayer.allSublayers) {
-                      mapImageLayer.allSublayers.forEach((sublayer: any) => {
-                        if (sublayer.popupTemplate) {
-      // console.log(`   ✓ Sublayer "${sublayer.title}" has popupTemplate`);
-                        } else {
-      // console.log(`   ✗ Sublayer "${sublayer.title}" MISSING popupTemplate`);
-                        }
-                      });
-                    }
-                  }
-                  
-                  // Fetch legend data for layers that support it
-                  if (url.includes('/FeatureServer') || url.includes('/MapServer') || url.includes('/ImageServer')) {
-                    try {
-                      // Determine which layer ID to use for legend
-                      let layerId = 0;
-                      
-                      if (url.includes('/FeatureServer')) {
-                        // Extract layer ID from the configured layer URL
-                        const layerIdMatch = layerConfig.url.match(/\/(\d+)$/);
-                        layerId = layerIdMatch ? parseInt(layerIdMatch[1]) : (item.selectedLayerId ?? 0);
-                      } else if (url.includes('/MapServer')) {
-                        // For MapServer, use the selected layer ID
-                        layerId = item.selectedLayerId ?? 0;
-                      }
-                      
-                      const legendData = await tncArcGISAPI.fetchLegendInfo(url, layerId);
-                      if (legendData) {
-      // console.log(`🎨 Legend data fetched for: ${item.title} (layer ${layerId})`);
-                        onLegendDataFetched?.(item.id, legendData);
-                      }
-                    } catch (legendErr) {
-                      console.warn(`⚠️ Could not fetch legend for ${item.title}:`, legendErr);
-                    }
-                  }
-                  
-                  // Wait for the layer to be rendered before removing loading spinner
-                  try {
-                    const layerView = await view.whenLayerView(layer);
-                    
-                    // Watch for when the layer is done updating (rendering)
-                    layerView.when(() => {
-                      // Wait for initial rendering to complete using reactiveUtils
-                      const watchHandle = reactiveUtils.watch(
-                        () => layerView.updating,
-                        (isUpdating: boolean) => {
-                          if (!isUpdating) {
-                            // Layer has finished rendering
-      // console.log(`🎨 Layer rendered: ${item.title}`);
-                            
-                            // Hide ImageServer loading banner IMMEDIATELY (synchronized with eye icon)
-                            if (imageServerLoading?.itemId === item.id) {
-      // console.log(`   ✅ Hiding ImageServer banner for: ${item.title}`);
-                              setImageServerLoading(null);
-                              if (imageServerTimeoutRef.current) {
-                                clearTimeout(imageServerTimeoutRef.current);
-                                imageServerTimeoutRef.current = null;
-                              }
-                              if (imageServerSlowWarningRef.current) {
-                                clearTimeout(imageServerSlowWarningRef.current);
-                                imageServerSlowWarningRef.current = null;
-                              }
-                            }
-                            
-                            // Call completion callback (this removes spinner and shows eye)
-                            onLayerLoadComplete?.(item.id);
-                            
-                            watchHandle.remove(); // Stop watching once rendered
-                          }
-                        }
-                      );
-                    });
-                  } catch (layerViewErr) {
-                    // If we can't get the layerView, still complete the loading
-                    console.warn(`⚠️ Could not get layerView for "${item.title}", but layer was added`);
-                    
-                    // Hide ImageServer loading banner (synchronized with eye icon)
-                    if (imageServerLoading?.itemId === item.id) {
-                      setImageServerLoading(null);
-                      if (imageServerTimeoutRef.current) {
-                        clearTimeout(imageServerTimeoutRef.current);
-                        imageServerTimeoutRef.current = null;
-                      }
-                      if (imageServerSlowWarningRef.current) {
-                        clearTimeout(imageServerSlowWarningRef.current);
-                        imageServerSlowWarningRef.current = null;
-                      }
-                    }
-                    
-                    onLayerLoadComplete?.(item.id);
-                  }
-                }
-              } catch (err: any) {
-                // Handle specific error cases
-                let errorMessage = '';
-                if (err?.message?.includes('400') || err?.details?.httpStatus === 400) {
-                  errorMessage = 'This layer may be retired or use an incompatible projection.';
-                  console.warn(`⚠️ Skipping incompatible layer "${item.title}": ${errorMessage}`);
-                } else if (err?.message?.includes('timeout')) {
-                  errorMessage = `Load timeout after 45 seconds. The service may be slow or unresponsive.`;
-                  console.warn(`⚠️ Could not load TNC layer "${item.title}": ${err.message}`);
-                  console.warn(`   This layer is taking longer than expected to load. The service may be slow or unresponsive.`);
-                } else {
-                  errorMessage = err.message || 'Unknown error occurred';
-                  console.warn(`⚠️ Could not load TNC layer "${item.title}":`, err.message);
-                }
-                
-                // Show persistent error banner
-                setLayerLoadError({
-                  itemId: item.id,
-                  layerTitle: item.title,
-                  errorMessage: errorMessage
-                });
-                
-                // Hide ImageServer loading banner on error (synchronized with eye icon)
-                if (imageServerLoading?.itemId === item.id) {
-                  setImageServerLoading(null);
-                  if (imageServerTimeoutRef.current) {
-                    clearTimeout(imageServerTimeoutRef.current);
-                    imageServerTimeoutRef.current = null;
-                  }
-                  if (imageServerSlowWarningRef.current) {
-                    clearTimeout(imageServerSlowWarningRef.current);
-                    imageServerSlowWarningRef.current = null;
-                  }
-                }
-                
-                // Notify parent that layer failed to load
-                onLayerLoadError?.(item.id);
-                // Don't throw - continue loading other layers
-              }
-            } else {
-              console.warn(`⚠️ Could not determine layer type for: ${item.title} (${url})`);
-              // Notify parent that layer failed to load
-              onLayerLoadError?.(item.id);
-            }
-          } catch (error) {
-            console.error(`❌ Error loading TNC layer ${item.title}:`, error);
-            // Notify parent that layer failed to load
-            onLayerLoadError?.(item.id);
-            // Don't throw - continue loading other layers
-          }
-        } else {
-          // Update opacity for existing layer
-          const layer = tncArcGISLayersRef.current.get(item.id);
-          if (layer && 'opacity' in layer) {
-            (layer as any).opacity = (layerOpacities[item.id] ?? 80) / 100;
-          }
-        }
-      }
-    };
-
-    handleLayerLoading();
-  }, [view, tncArcGISItems, activeLayerIds, layerOpacities]);
+  // Use custom hook to manage TNC ArcGIS Hub map layers
+  useTNCArcGISLayers({
+    view,
+    tncArcGISItems,
+    activeLayerIds,
+    layerOpacities,
+    tncArcGISLayersRef,
+    onLayerOpacityChange,
+    onLayerLoadComplete,
+    onLayerLoadError,
+    onLegendDataFetched,
+    onImageServerLoadingChange: setImageServerLoading,
+    onLayerLoadErrorChange: setLayerLoadError
+  });
 
   // Manage boundary popup based on active TNC ArcGIS layers
   // Disable boundary popup when TNC layers are active to prevent it from interfering
@@ -2038,15 +1730,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
               </div>
               <button
                 onClick={() => {
+                  // Dismiss banner (timeout refs managed inside useTNCArcGISLayers hook)
                   setImageServerLoading(null);
-                  if (imageServerTimeoutRef.current) {
-                    clearTimeout(imageServerTimeoutRef.current);
-                    imageServerTimeoutRef.current = null;
-                  }
-                  if (imageServerSlowWarningRef.current) {
-                    clearTimeout(imageServerSlowWarningRef.current);
-                    imageServerSlowWarningRef.current = null;
-                  }
                 }}
                 className={`flex-shrink-0 p-1 rounded hover:bg-opacity-20 transition-colors ${
                   imageServerLoading.hasTimedOut 
