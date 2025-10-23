@@ -3351,7 +3351,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       <div 
         id="arcgis-map-container"
         ref={mapDiv} 
-        className="w-full h-full"
+        className="w-full h-full outline-none"
         style={{ minHeight: '400px' }}
       />
 
