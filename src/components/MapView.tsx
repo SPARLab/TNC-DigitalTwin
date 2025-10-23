@@ -3,13 +3,6 @@ import Map from '@arcgis/core/Map';
 import MapView from '@arcgis/core/views/MapView';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import GeoJSONLayer from '@arcgis/core/layers/GeoJSONLayer';
-import MapImageLayer from '@arcgis/core/layers/MapImageLayer';
-import ImageryLayer from '@arcgis/core/layers/ImageryLayer';
-import ImageryTileLayer from '@arcgis/core/layers/ImageryTileLayer';
-import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
-import VectorTileLayer from '@arcgis/core/layers/VectorTileLayer';
-import SceneLayer from '@arcgis/core/layers/SceneLayer';
-import StreamLayer from '@arcgis/core/layers/StreamLayer';
 import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
 import Polygon from '@arcgis/core/geometry/Polygon';
@@ -18,11 +11,11 @@ import PictureMarkerSymbol from '@arcgis/core/symbols/PictureMarkerSymbol';
 import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 import PopupTemplate from '@arcgis/core/PopupTemplate';
 import * as reactiveUtils from '@arcgis/core/core/reactiveUtils';
-import { iNaturalistAPI, iNaturalistObservation } from '../services/iNaturalistService';
-import { tncINaturalistService, TNCArcGISObservation } from '../services/tncINaturalistService';
-import { calFloraAPI, CalFloraPlant } from '../services/calFloraService';
+import { iNaturalistObservation } from '../services/iNaturalistService';
+import { TNCArcGISObservation, tncINaturalistService } from '../services/tncINaturalistService';
+import { CalFloraPlant } from '../services/calFloraService';
 import { TNCArcGISItem, tncArcGISAPI } from '../services/tncArcGISService';
-import { eBirdService, EBirdObservation } from '../services/eBirdService';
+import { EBirdObservation } from '../services/eBirdService';
 import type { DendraStation } from '../types';
 import LayerLegend from './LayerLegend';
 import { MapLegend } from './MapLegend';
@@ -41,6 +34,16 @@ import {
   disableScaleRestrictions,
   type LayerConfig 
 } from './MapView/utils/layerFactory';
+import {
+  loadObservations as loadObservationsImpl,
+  loadCalFloraData as loadCalFloraDataImpl,
+  loadEBirdObservations as loadEBirdObservationsImpl,
+  loadTNCObservations as loadTNCObservationsImpl,
+  type ObservationsFilters,
+  type CalFloraFilters,
+  type EBirdFilters,
+  type TNCObservationsFilters
+} from './MapView/loaders';
 
 interface MapViewProps {
   onObservationsUpdate?: (observations: iNaturalistObservation[]) => void;
@@ -1646,178 +1649,18 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   }, [view, onINaturalistObservationSelect]);
 
-  const loadObservations = async (_mapView: __esri.MapView, observationsLayer: GraphicsLayer, filters?: {
-    qualityGrade?: 'research' | 'needs_id' | 'casual';
-    iconicTaxa?: string[];
-    daysBack?: number;
-    startDate?: string;
-    endDate?: string;
-    customPolygon?: string;
-    showSearchArea?: boolean;
-  }) => {
+  const loadObservations = async (_mapView: __esri.MapView, observationsLayer: GraphicsLayer, filters?: ObservationsFilters) => {
     setLoading(true);
     onLoadingChange?.(true);
     try {
-      // Clear both iNaturalist and CalFlora layers when starting a new search
-      // This ensures no old data from different sources remains visible
-      const calFloraLayer = _mapView.map?.findLayerById('calflora-plants') as GraphicsLayer;
-      if (calFloraLayer) {
-        calFloraLayer.removeAll();
-      }
-      
-      // Handle search area visualization for "Dangermond + Margin"
-      await drawSearchAreaRectangle(_mapView, filters?.showSearchArea || false, 'expanded');
-      
-      // Calculate appropriate maxResults based on date range
-      let maxResults = 500; // Default for short ranges
-      
-      if (filters?.startDate && filters?.endDate) {
-        const startDate = new Date(filters.startDate);
-        const endDate = new Date(filters.endDate);
-        const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-        
-        // Scale maxResults based on date range (roughly 15-20 observations per day on average)
-        if (daysDiff > 365) {
-          maxResults = Math.min(5000, daysDiff * 15); // Cap at 5000 for very long ranges
-        } else if (daysDiff > 90) {
-          maxResults = Math.min(2000, daysDiff * 18);
-        } else if (daysDiff > 30) {
-          maxResults = Math.min(1000, daysDiff * 20);
-        }
-      } else if (filters?.daysBack) {
-        // Use daysBack for calculation
-        if (filters.daysBack > 365) {
-          maxResults = Math.min(5000, filters.daysBack * 15);
-        } else if (filters.daysBack > 90) {
-          maxResults = Math.min(2000, filters.daysBack * 18);
-        } else if (filters.daysBack > 30) {
-          maxResults = Math.min(1000, filters.daysBack * 20);
-        }
-      }
-      
-      // console.log(`Using maxResults: ${maxResults} for date range`);
-      
-      const response = await iNaturalistAPI.getRecentObservations({
-        perPage: 200,
-        daysBack: filters?.daysBack || 30,
-        startDate: filters?.startDate,
-        endDate: filters?.endDate,
-        qualityGrade: filters?.qualityGrade,
-        iconicTaxa: filters?.iconicTaxa,
-        maxResults
-      });
-      
-      // Clear existing graphics
-      observationsLayer.removeAll();
-      
-      // Filter by custom polygon if provided (client-side filtering for iNaturalist Public API)
-      let filteredResults = response.results;
-      if (filters?.customPolygon) {
-        try {
-          const polygonGeometry = JSON.parse(filters.customPolygon);
-          const polygon = new Polygon({
-            rings: polygonGeometry.rings,
-            spatialReference: polygonGeometry.spatialReference
-          });
-          
-          filteredResults = response.results.filter(obs => {
-            if (obs.geojson && obs.geojson.coordinates) {
-              const point = new Point({
-                longitude: obs.geojson.coordinates[0],
-                latitude: obs.geojson.coordinates[1],
-                spatialReference: { wkid: 4326 }
-              });
-              return polygon.contains(point);
-            }
-            return false;
-          });
-          
-      // console.log(`🎯 Filtered ${response.results.length} observations to ${filteredResults.length} within custom polygon`);
-        } catch (error) {
-          console.error('Error filtering by custom polygon:', error);
-          filteredResults = response.results;
-        }
-      }
-      
-      // Update parent with filtered results
-      onObservationsUpdate?.(filteredResults);
-      
-      // Store observations locally for legend (useEffect will initialize categories)
-      setCurrentObservations(filteredResults);
-      
-      // Add observations to map (show all on first load, filter afterwards)
-      filteredResults.forEach(obs => {
-        if (obs.geojson && obs.geojson.coordinates) {
-          const iconicTaxon = obs.taxon?.iconic_taxon_name || 'unknown';
-          
-          // Skip if this category is hidden (but show all if none are set yet)
-          if (visibleObservationCategories.size > 0 && !visibleObservationCategories.has(iconicTaxon)) {
-            return;
-          }
-
-          const [longitude, latitude] = obs.geojson.coordinates;
-          
-          // Create point geometry
-          const point = new Point({
-            longitude,
-            latitude
-          });
-
-          // Get icon based on taxon type
-          const iconInfo = getObservationIcon(obs);
-          
-          // Create symbol with emoji icon (matching sidebar)
-          const symbol = new PictureMarkerSymbol({
-            url: getEmojiDataUri(iconInfo.emoji),
-            width: '32px',
-            height: '32px'
-          });
-
-          // Get the best available photo URL for popup
-          let popupPhotoUrl = null;
-          if (obs.photos && obs.photos.length > 0) {
-            popupPhotoUrl = obs.photos[0].medium_url || obs.photos[0].square_url || obs.photos[0].url;
-          } else if (obs.taxon?.default_photo) {
-            popupPhotoUrl = obs.taxon.default_photo.medium_url || obs.taxon.default_photo.square_url;
-          }
-
-          // Create popup template
-          const popupTemplate = new PopupTemplate({
-            title: obs.taxon?.preferred_common_name || obs.taxon?.name || 'Unknown Species',
-            content: `
-              <div class="observation-popup">
-                <p><strong>Scientific Name:</strong> ${obs.taxon?.name || 'Unknown'}</p>
-                <p><strong>Observed:</strong> ${new Date(obs.observed_on).toLocaleDateString()}</p>
-                <p><strong>Observer:</strong> ${obs.user.login}</p>
-                <p><strong>Quality Grade:</strong> ${obs.quality_grade}</p>
-                ${(obs.geoprivacy === 'obscured' || obs.geoprivacy === 'private') ? 
-                  '<p style="color: #f59e0b; font-weight: bold; background: #fef3c7; padding: 4px 8px; border-radius: 4px; margin: 8px 0;">📍 Location obscured for privacy/conservation</p>' : 
-                  ''}
-                ${popupPhotoUrl ? `<img src="${popupPhotoUrl}" alt="Observation photo" style="max-width: 200px; border-radius: 4px; margin: 8px 0;" onerror="this.style.display='none';">` : '<p style="color: #666; font-style: italic;">No photo available</p>'}
-                <p><a href="${obs.uri}" target="_blank" style="color: #007AC2;">View on iNaturalist</a></p>
-              </div>
-            `
-          });
-
-          // Create graphic
-          const graphic = new Graphic({
-            geometry: point,
-            symbol: symbol,
-            popupTemplate: popupTemplate,
-            attributes: {
-              id: obs.id,
-              taxonName: obs.taxon?.name,
-              commonName: obs.taxon?.preferred_common_name,
-              observedOn: obs.observed_on,
-              observer: obs.user.login,
-              iconicTaxon: iconicTaxon // For filtering
-            }
-          });
-
-          observationsLayer.add(graphic);
-        }
-      });
-      
+      await loadObservationsImpl({
+        mapView: _mapView,
+        observationsLayer,
+        visibleCategories: visibleObservationCategories,
+        onUpdate: onObservationsUpdate,
+        onLocalUpdate: setCurrentObservations,
+        drawSearchArea: drawSearchAreaRectangle
+      }, filters);
     } catch (error) {
       console.error('Error loading iNaturalist observations:', error);
     } finally {
@@ -1826,206 +1669,15 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   };
 
-  const loadCalFloraData = async (_mapView: __esri.MapView, calFloraLayer: GraphicsLayer, filters?: {
-    maxResults?: number;
-    plantType?: 'invasive' | 'native' | 'all';
-    customPolygon?: string;
-    showSearchArea?: boolean;
-  }) => {
+  const loadCalFloraData = async (_mapView: __esri.MapView, calFloraLayer: GraphicsLayer, filters?: CalFloraFilters) => {
     onCalFloraLoadingChange?.(true);
-    
     try {
-      const { maxResults = 1000, plantType = 'all', customPolygon, showSearchArea = false } = filters || {};
-      
-      let allPlants: CalFloraPlant[] = [];
-      
-      // Clear both CalFlora and iNaturalist layers when starting a new search
-      // This ensures no old data from different sources remains visible
-      const observationsLayer = _mapView.map?.findLayerById('inaturalist-observations') as GraphicsLayer;
-      if (observationsLayer) {
-        observationsLayer.removeAll();
-      }
-      
-      // Handle search area visualization for "Dangermond + Margin"
-      await drawSearchAreaRectangle(_mapView, showSearchArea, 'expanded');
-      
-      // Load plant data using the unified method
-      // console.log('Loading CalFlora plant data...');
-      const response = await calFloraAPI.getAllPlants({ 
-        maxResults, 
-        plantType,
-        customPolygon
-        // No county filter - get all plants from Dangermond dataset
-      });
-      allPlants.push(...response.results);
-
-      // Clear existing graphics
-      calFloraLayer.removeAll();
-      
-      // Update state via parent callback
-      onCalFloraUpdate?.(allPlants);
-
-      // Add graphics to map
-      allPlants.forEach(plant => {
-        if (plant.geojson?.coordinates) {
-          const [longitude, latitude] = plant.geojson.coordinates;
-          
-          const point = new Point({
-            longitude: longitude,
-            latitude: latitude
-          });
-
-          // Choose symbol based on native status
-          const getPlantSymbol = (nativeStatus: string) => {
-            switch (nativeStatus) {
-              case 'native':
-                return new SimpleMarkerSymbol({
-                  style: 'circle',
-                  color: [34, 197, 94, 0.8], // Green for native
-                  size: '10px',
-                  outline: {
-                    color: 'white',
-                    width: 2
-                  }
-                });
-              case 'invasive':
-                return new SimpleMarkerSymbol({
-                  style: 'triangle',
-                  color: [239, 68, 68, 0.8], // Red for invasive
-                  size: '12px',
-                  outline: {
-                    color: 'white',
-                    width: 2
-                  }
-                });
-              default:
-                return new SimpleMarkerSymbol({
-                  style: 'square',
-                  color: [156, 163, 175, 0.8], // Gray for unknown
-                  size: '8px',
-                  outline: {
-                    color: 'white',
-                    width: 1
-                  }
-                });
-            }
-          };
-
-          const symbol = getPlantSymbol(plant.nativeStatus);
-
-          // Create popup template with photo support
-          const popupTemplate = new PopupTemplate({
-            title: plant.commonName || plant.scientificName,
-            content: () => {
-              const container = document.createElement('div');
-              container.className = 'calflora-popup';
-
-              // Photo section
-              if (plant.attributes?.photo) {
-                const photoWrapper = document.createElement('div');
-                photoWrapper.style.display = 'flex';
-                photoWrapper.style.flexDirection = 'column';
-                photoWrapper.style.alignItems = 'center';
-                photoWrapper.style.marginBottom = '12px';
-
-                const img = document.createElement('img');
-                img.src = plant.attributes.photo;
-                img.alt = plant.commonName || plant.scientificName || 'CalFlora plant photo';
-                img.loading = 'lazy';
-                img.style.maxWidth = '200px';
-                img.style.borderRadius = '6px';
-                img.style.objectFit = 'cover';
-                img.style.margin = '0 0 6px 0';
-                img.onerror = () => { 
-                  img.style.display = 'none';
-                  const noPhoto = document.createElement('div');
-                  noPhoto.textContent = 'Photo unavailable';
-                  noPhoto.style.fontSize = '12px';
-                  noPhoto.style.color = '#6b7280';
-                  noPhoto.style.fontStyle = 'italic';
-                  noPhoto.style.marginBottom = '8px';
-                  photoWrapper.appendChild(noPhoto);
-                };
-
-                const attribution = document.createElement('div');
-                attribution.textContent = 'Photo courtesy of CalFlora.org';
-                attribution.style.fontSize = '11px';
-                attribution.style.color = '#6b7280';
-                attribution.style.fontStyle = 'italic';
-
-                photoWrapper.appendChild(img);
-                photoWrapper.appendChild(attribution);
-                container.appendChild(photoWrapper);
-              } else {
-                const noPhoto = document.createElement('div');
-                noPhoto.textContent = 'No photo available';
-                noPhoto.style.fontSize = '12px';
-                noPhoto.style.color = '#6b7280';
-                noPhoto.style.fontStyle = 'italic';
-                noPhoto.style.marginBottom = '12px';
-                container.appendChild(noPhoto);
-              }
-
-              // Plant details
-              const details = document.createElement('div');
-              details.innerHTML = `
-                <p><strong>Scientific Name:</strong> ${plant.scientificName}</p>
-                ${plant.family ? `<p><strong>Family:</strong> ${plant.family}</p>` : ''}
-                <p><strong>Native Status:</strong> <span style="color: ${
-                  plant.nativeStatus === 'native' ? '#22c55e' : 
-                  plant.nativeStatus === 'invasive' ? '#ef4444' : '#6b7280'
-                }; font-weight: bold;">${plant.nativeStatus}</span></p>
-                ${plant.calIpcRating ? `<p><strong>Cal-IPC Rating:</strong> <span style="color: #ef4444; font-weight: bold;">${plant.calIpcRating}</span></p>` : ''}
-                ${plant.county ? `<p><strong>County:</strong> ${plant.county}</p>` : ''}
-                ${plant.observationDate ? `<p><strong>Observed:</strong> ${new Date(plant.observationDate).toLocaleDateString()}</p>` : ''}
-                ${plant.attributes?.observer ? `<p><strong>Observer:</strong> ${plant.attributes.observer}</p>` : ''}
-                <p><strong>Data Source:</strong> CalFlora</p>
-                ${plant.nativeStatus === 'invasive' ? 
-                  '<p style="color: #dc2626; font-weight: bold; background: #fef2f2; padding: 4px 8px; border-radius: 4px; margin: 8px 0;">⚠️ Invasive Species - Management Recommended</p>' : 
-                  ''}
-                <div style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
-                  <button onclick="window.openCalFloraModal && window.openCalFloraModal('${plant.id}')" 
-                          style="background: #22c55e; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 500;">
-                    View Details
-                  </button>
-                </div>
-              `;
-              container.appendChild(details);
-
-              // Basic styles for the popup content
-              const style = document.createElement('style');
-              style.textContent = `
-                .calflora-popup { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 280px; }
-                .calflora-popup p { margin: 5px 0; font-size: 13px; }
-                .calflora-popup strong { color: #374151; }
-              `;
-              container.appendChild(style);
-
-              return container;
-            }
-          });
-
-          // Create graphic
-          const graphic = new Graphic({
-            geometry: point,
-            symbol: symbol,
-            popupTemplate: popupTemplate,
-            attributes: {
-              id: plant.id,
-              scientificName: plant.scientificName,
-              commonName: plant.commonName,
-              nativeStatus: plant.nativeStatus,
-              family: plant.family,
-              county: plant.county
-            }
-          });
-
-          calFloraLayer.add(graphic);
-        }
-      });
-      
-      // console.log(`✅ CalFlora: Added ${allPlants.length} plant records to map`);
-      
+      await loadCalFloraDataImpl({
+        mapView: _mapView,
+        calFloraLayer,
+        onUpdate: onCalFloraUpdate,
+        drawSearchArea: drawSearchAreaRectangle
+      }, filters);
     } catch (error) {
       console.error('Error loading CalFlora data:', error);
     } finally {
@@ -2060,112 +1712,15 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   };
 
-  const loadEBirdObservations = async (_mapView: __esri.MapView, eBirdObservationsLayer: GraphicsLayer, filters?: {
-    startDate?: string;
-    endDate?: string;
-    maxResults?: number;
-    page?: number;
-    pageSize?: number;
-    searchMode?: 'preserve-only' | 'expanded' | 'custom';
-    customPolygon?: string;
-    showSearchArea?: boolean;
-  }) => {
+  const loadEBirdObservations = async (_mapView: __esri.MapView, eBirdObservationsLayer: GraphicsLayer, filters?: EBirdFilters) => {
     onEBirdLoadingChange?.(true);
     try {
-      // Clear other layers when starting a new eBird search
-      const observationsLayer = _mapView.map?.findLayerById('inaturalist-observations') as GraphicsLayer;
-      const tncObservationsLayer = _mapView.map?.findLayerById('tnc-inaturalist-observations') as GraphicsLayer;
-      const calFloraLayer = _mapView.map?.findLayerById('calflora-plants') as GraphicsLayer;
-      
-      if (observationsLayer) {
-        observationsLayer.removeAll();
-      }
-      if (tncObservationsLayer) {
-        tncObservationsLayer.removeAll();
-      }
-      if (calFloraLayer) {
-        calFloraLayer.removeAll();
-      }
-      
-      // Handle search area visualization for "Dangermond + Margin"
-      await drawSearchAreaRectangle(_mapView, filters?.showSearchArea || false, filters?.searchMode || '');
-      
-      const response = await eBirdService.queryObservations({
-        startDate: filters?.startDate,
-        endDate: filters?.endDate,
-        maxResults: filters?.maxResults || 2000,
-        page: filters?.page,
-        pageSize: filters?.pageSize,
-        searchMode: filters?.searchMode || 'expanded',
-        customPolygon: filters?.customPolygon
-      });
-      
-      onEBirdObservationsUpdate?.(response.observations);
-      
-      // Clear existing graphics
-      eBirdObservationsLayer.removeAll();
-      
-      // Add eBird observations to map
-      response.observations.forEach(obs => {
-        if (obs.geometry && obs.geometry.coordinates) {
-          const [longitude, latitude] = obs.geometry.coordinates;
-          
-          // Create point geometry
-          const point = new Point({
-            longitude,
-            latitude
-          });
-          
-          // Create symbol - using red color for birds
-          const symbol = new SimpleMarkerSymbol({
-            style: 'circle',
-            color: '#d62728', // Red color for birds
-            size: '10px',
-            outline: {
-              color: 'white',
-              width: 1.5
-            }
-          });
-
-          // Create popup template
-          const popupTemplate = new PopupTemplate({
-            title: obs.common_name || obs.scientific_name,
-            content: `
-              <div style="font-family: sans-serif;">
-                <p><strong>Scientific Name:</strong> ${obs.scientific_name}</p>
-                ${obs.common_name ? `<p><strong>Common Name:</strong> ${obs.common_name}</p>` : ''}
-                <p><strong>Count:</strong> ${obs.count_observed}</p>
-                <p><strong>Date:</strong> ${obs.observation_date}</p>
-                ${obs.obstime ? `<p><strong>Time:</strong> ${obs.obstime}</p>` : ''}
-                <p><strong>Location:</strong> ${obs.location_name}</p>
-                <p><strong>County:</strong> ${obs.county}, ${obs.state}</p>
-                <p><strong>Protocol:</strong> ${obs.protocol_name}</p>
-                <p><strong>Data Source:</strong> ${obs.data_source}</p>
-                <p><strong>Coordinates:</strong> ${obs.lat.toFixed(6)}, ${obs.lng.toFixed(6)}</p>
-              </div>
-            `
-          });
-
-          // Create graphic
-          const graphic = new Graphic({
-            geometry: point,
-            symbol: symbol,
-            popupTemplate: popupTemplate,
-            attributes: {
-              obs_id: obs.obs_id,
-              common_name: obs.common_name,
-              scientific_name: obs.scientific_name,
-              observation_date: obs.observation_date,
-              location_name: obs.location_name
-            }
-          });
-
-          eBirdObservationsLayer.add(graphic);
-        }
-      });
-      
-      // console.log(`Added ${response.observations.length} eBird observations to map`);
-      
+      await loadEBirdObservationsImpl({
+        mapView: _mapView,
+        eBirdLayer: eBirdObservationsLayer,
+        onUpdate: onEBirdObservationsUpdate,
+        drawSearchArea: drawSearchAreaRectangle
+      }, filters);
     } catch (error) {
       console.error('Error loading eBird observations:', error);
     } finally {
@@ -2173,99 +1728,15 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   };
 
-  const loadTNCObservations = async (_mapView: __esri.MapView, tncObservationsLayer: GraphicsLayer, filters?: {
-    taxonCategories?: string[];
-    startDate?: string;
-    endDate?: string;
-    maxResults?: number;
-    useFilters?: boolean;
-    page?: number;
-    pageSize?: number;
-    searchMode?: 'preserve-only' | 'expanded' | 'custom';
-    showSearchArea?: boolean;
-    customPolygon?: string;
-  }) => {
+  const loadTNCObservations = async (_mapView: __esri.MapView, tncObservationsLayer: GraphicsLayer, filters?: TNCObservationsFilters) => {
     onTNCLoadingChange?.(true);
     try {
-      // Clear other layers when starting a new TNC search
-      const observationsLayer = _mapView.map?.findLayerById('inaturalist-observations') as GraphicsLayer;
-      const calFloraLayer = _mapView.map?.findLayerById('calflora-plants') as GraphicsLayer;
-      
-      if (observationsLayer) {
-        observationsLayer.removeAll();
-      }
-      if (calFloraLayer) {
-        calFloraLayer.removeAll();
-      }
-      
-      // Handle search area visualization using helper
-      await drawSearchAreaRectangle(_mapView, filters?.showSearchArea || false, filters?.searchMode || '');
-      
-      const response = await tncINaturalistService.queryObservations({
-        taxonCategories: filters?.taxonCategories,
-        startDate: filters?.startDate,
-        endDate: filters?.endDate,
-        maxResults: filters?.maxResults || 2000,
-        useFilters: filters?.useFilters !== undefined ? filters.useFilters : true,
-        page: filters?.page,
-        pageSize: filters?.pageSize,
-        searchMode: filters?.searchMode || 'expanded',
-        customPolygon: filters?.customPolygon
-      });
-      
-      onTNCObservationsUpdate?.(response);
-      
-      // Clear existing graphics
-      tncObservationsLayer.removeAll();
-      
-      // Add TNC observations to map
-      response.forEach(obs => {
-        if (obs.geometry && obs.geometry.coordinates) {
-          const [longitude, latitude] = obs.geometry.coordinates;
-          
-          // Create point geometry
-          const point = new Point({
-            longitude,
-            latitude
-          });
-
-          // Get emoji based on taxon category
-          const emoji = getTNCObservationEmoji(obs.taxon_category_name);
-          
-          // Create symbol with emoji icon
-          const symbol = new PictureMarkerSymbol({
-            url: getEmojiDataUri(emoji),
-            width: '32px',
-            height: '32px'
-          });
-
-          // Create rich popup template with taxonomic hierarchy
-          const popupTemplate = new PopupTemplate({
-            title: obs.common_name || obs.scientific_name,
-            content: buildTNCPopupContent(obs)
-          });
-
-          // Create graphic
-          const graphic = new Graphic({
-            geometry: point,
-            symbol: symbol,
-            popupTemplate: popupTemplate,
-            attributes: {
-              observation_id: obs.observation_id,
-              taxon_category: obs.taxon_category_name,
-              scientific_name: obs.scientific_name,
-              common_name: obs.common_name,
-              observed_on: obs.observed_on,
-              user_name: obs.user_name
-            }
-          });
-
-          tncObservationsLayer.add(graphic);
-        }
-      });
-      
-      // console.log(`Added ${response.length} TNC iNaturalist observations to map`);
-      
+      await loadTNCObservationsImpl({
+        mapView: _mapView,
+        tncObservationsLayer,
+        onUpdate: onTNCObservationsUpdate,
+        drawSearchArea: drawSearchAreaRectangle
+      }, filters);
     } catch (error) {
       console.error('Error loading TNC observations:', error);
     } finally {
@@ -2427,8 +1898,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       }
       
       // Find the observation graphic in either layer
-      const inatLayer = view.map.findLayerById('inaturalist-observations') as GraphicsLayer;
-      const tncLayer = view.map.findLayerById('tnc-inaturalist-observations') as GraphicsLayer;
+      const inatLayer = view.map?.findLayerById('inaturalist-observations') as GraphicsLayer;
+      const tncLayer = view.map?.findLayerById('tnc-inaturalist-observations') as GraphicsLayer;
       
       let targetGraphic: __esri.Graphic | undefined;
       let targetLayer: GraphicsLayer | undefined;
