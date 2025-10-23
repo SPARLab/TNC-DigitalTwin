@@ -3103,19 +3103,36 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         
         console.log('✨ Applied native ArcGIS highlight - handle stored');
         
-        // Open the popup/tooltip to show observation details
-        console.log('💬 Checking popup availability:', { 
-          hasPopup: !!view.popup, 
-          hasGeometry: !!targetGraphic.geometry,
-          popupVisible: view.popup?.visible 
-        });
-        if (view.popup && targetGraphic.geometry) {
-          view.popup.features = [targetGraphic];
-          view.popup.location = targetGraphic.geometry as __esri.Point;
-          view.popup.visible = true;
-          console.log('💬 Opened popup/tooltip - visible:', view.popup.visible, 'features:', view.popup.features.length);
+        // Open the popup using the proper ArcGIS API method
+        // Important: Since ArcGIS JS API 4.27+, popup is lazily loaded
+        // Use view.openPopup() (not view.popup.open()) to properly initialize it
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        if (view && targetGraphic.geometry) {
+          console.log('💬 Opening popup programmatically using view.openPopup()...');
+          
+          try {
+            // Use view.openPopup() method which handles lazy-loading properly
+            // This properly initializes the popup and sets selectedFeature
+            view.openPopup({
+              features: [targetGraphic],
+              location: targetGraphic.geometry as __esri.Point
+            });
+            
+            console.log('✅ Popup opened successfully');
+            
+            // Check popup state after a brief delay to let it initialize
+            await new Promise(resolve => setTimeout(resolve, 50));
+            console.log('💬 Popup state after openPopup():', {
+              visible: view.popup?.visible,
+              selectedFeature: view.popup?.selectedFeature ? 'EXISTS' : 'NULL/UNDEFINED',
+              features: view.popup?.features?.length
+            });
+          } catch (error) {
+            console.error('❌ Error opening popup:', error);
+          }
         } else {
-          console.warn('⚠️ Cannot open popup - missing popup or geometry');
+          console.warn('⚠️ Cannot open popup - missing view or geometry');
         }
         
       } catch (error) {
