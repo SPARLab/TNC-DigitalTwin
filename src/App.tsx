@@ -27,7 +27,6 @@ import { MapViewRef } from './components/MapView';
 import { DEFAULT_THEME } from './utils/themes';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useShoppingCart } from './hooks/useShoppingCart';
-import { CartButton } from './components/ShoppingCart/CartButton';
 import { CartPanel } from './components/ShoppingCart/CartPanel';
 import { ExportModal } from './components/ShoppingCart/ExportModal';
 import { 
@@ -1370,7 +1369,12 @@ function App() {
       {/* Toast notifications */}
       <Toaster />
       
-      <Header theme={theme} onThemeChange={setTheme} />
+      <Header 
+        theme={theme} 
+        onThemeChange={setTheme}
+        cartItemCount={getCartCount()}
+        onCartClick={() => setIsCartOpen(true)}
+      />
       <FilterSubheader 
         filters={filters}
         onFilterChange={handleFilterChange}
@@ -1838,12 +1842,6 @@ function App() {
         plant={selectedCalFloraPlant}
         isOpen={isCalFloraModalOpen}
         onClose={closeCalFloraModal}
-      />
-
-      {/* Shopping Cart Button */}
-      <CartButton
-        itemCount={getCartCount()}
-        onClick={() => setIsCartOpen(true)}
       />
 
       {/* Shopping Cart Panel */}
