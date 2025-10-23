@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as reactiveUtils from '@arcgis/core/core/reactiveUtils';
-import { TNCArcGISItem, tncArcGISAPI } from '../../services/tncArcGISService';
+import { TNCArcGISItem, tncArcGISAPI } from '../../../services/tncArcGISService';
 import {
   createLayerFromItem,
   disableScaleRestrictions,
