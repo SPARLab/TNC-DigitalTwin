@@ -39,12 +39,23 @@ for (const layer of categorizedLayers) {
     
     test.setTimeout(timeout);
     
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ page, context }) => {
+      // Clear cookies (can be done before navigation)
+      await context.clearCookies();
+      
       // Navigate to the app
       await page.goto('/');
       
       // Wait for app to fully load
       await page.waitForLoadState('networkidle');
+      
+      // Clear storage AFTER navigation (prevents SecurityError on about:blank)
+      await page.evaluate(() => {
+        localStorage.clear();
+        sessionStorage.clear();
+      }).catch(() => {
+        // Ignore errors if localStorage not accessible
+      });
       
       // Give ArcGIS extra time to initialize
       await page.waitForTimeout(2000);

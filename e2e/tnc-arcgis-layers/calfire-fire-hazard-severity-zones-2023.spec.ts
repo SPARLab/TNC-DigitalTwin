@@ -17,9 +17,22 @@ test.describe('CalFire Fire Hazard Severity Zones 2023 @manual', () => {
   
   test.setTimeout(timeout);
   
-  test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:5173');
+  test.beforeEach(async ({ page, context }) => {
+    // Clear cookies (can be done before navigation)
+    await context.clearCookies();
+    
+    // Navigate using baseURL from config (consistent with dynamic tests)
+    await page.goto('/');
     await page.waitForLoadState('networkidle');
+    
+    // Clear storage AFTER navigation (prevents SecurityError on about:blank)
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    }).catch(() => {
+      // Ignore errors if localStorage not accessible
+    });
+    
     await page.waitForTimeout(2000);
   });
 

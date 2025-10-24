@@ -76,6 +76,104 @@ export async function switchToTopoBasemap(page: Page): Promise<void> {
 }
 
 /**
+ * Verify page is in a healthy state (no gray artifacts, overlays, etc.)
+ * 
+ * Checks for common issues that cause visual artifacts:
+ * - Map view is fully rendered
+ * - No blocking overlays or modals
+ * - Page is not mid-hot-reload
+ * 
+ * @param page - Playwright page object
+ * @returns true if page is healthy, false otherwise
+ */
+export async function verifyPageHealth(page: Page): Promise<boolean> {
+  // Check 1: Map view exists and has valid bounds
+  const mapView = page.locator('#map-view');
+  const mapBox = await mapView.boundingBox();
+  if (!mapBox || mapBox.width < 100 || mapBox.height < 100) {
+    console.warn('    ⚠️ Page health: Map view has invalid dimensions');
+    return false;
+  }
+  
+  // Check 2: No blocking modals/overlays (download modal, etc.)
+  const downloadModal = page.locator('#dataset-download-view-container');
+  const modalVisible = await downloadModal.isVisible().catch(() => false);
+  if (modalVisible) {
+    console.warn('    ⚠️ Page health: Download modal still open');
+    return false;
+  }
+  
+  // NOTE: Removed details panel check - it's too strict
+  // The panel can be legitimately hidden during zoom operations, etc.
+  // Only check for critical blocking issues
+  
+  console.log('    ✅ Page health: All checks passed');
+  return true;
+}
+
+/**
+ * Get map screenshot clipping area (dynamically calculates right offset)
+ * 
+ * This fixes the "gray artifact" issue by checking if the floating legend panel
+ * is visible and calculating its width dynamically, rather than using a hardcoded
+ * 142px offset that may be wrong after hot-reload or zoom operations.
+ * 
+ * Also verifies page health before returning clip area.
+ * 
+ * @param page - Playwright page object
+ * @returns Clipping area for screenshots, or null if map not found
+ */
+export async function getMapScreenshotArea(page: Page): Promise<{ x: number; y: number; width: number; height: number } | null> {
+  // Verify page is in good state first
+  const isHealthy = await verifyPageHealth(page);
+  if (!isHealthy) {
+    console.warn('    ⚠️ Page not healthy, waiting 2s for recovery...');
+    await page.waitForTimeout(2000);
+    
+    // Retry health check
+    const isHealthyRetry = await verifyPageHealth(page);
+    if (!isHealthyRetry) {
+      console.error('    ❌ Page still unhealthy after retry');
+      return null;
+    }
+  }
+  
+  const mapContainer = page.locator('#map-view');
+  const mapBox = await mapContainer.boundingBox();
+  
+  if (!mapBox) {
+    console.warn('⚠️ Map container not found for screenshot');
+    return null;
+  }
+  
+  // Check if floating legend panel is visible and get its width
+  const legendPanel = page.locator('#floating-legend-panel');
+  const legendVisible = await legendPanel.isVisible().catch(() => false);
+  
+  let rightOffset = 0;
+  if (legendVisible) {
+    const legendBox = await legendPanel.boundingBox();
+    if (legendBox) {
+      rightOffset = legendBox.width;
+      console.log(`    📏 Legend panel detected: ${rightOffset}px wide`);
+    } else {
+      // Fallback to approximate legend width if bounding box fails
+      rightOffset = 142;
+      console.log(`    📏 Legend panel visible but bounds unknown, using fallback: ${rightOffset}px`);
+    }
+  } else {
+    console.log(`    📏 Legend panel not visible, using full map width`);
+  }
+  
+  return {
+    x: mapBox.x,
+    y: mapBox.y,
+    width: mapBox.width - rightOffset,
+    height: mapBox.height
+  };
+}
+
+/**
  * Navigate to a layer by performing the complete search workflow
  * @param page - Playwright page object
  * @param layerTitle - Title of the layer to find
@@ -384,21 +482,17 @@ export function checkForColors(
  */
 export async function testFeaturePopup(page: Page, legendColors: Array<{ r: number; g: number; b: number }>): Promise<boolean> {
   const mapContainer = page.locator('#map-view');
-  const mapBox = await mapContainer.boundingBox();
+  // Get screenshot area (dynamically calculated)
+  const clipArea = await getMapScreenshotArea(page);
   
-  if (!mapBox) {
+  if (!clipArea) {
     console.warn('Map container not found');
     return false;
   }
   
-  // Take screenshot of map area (excluding legend - 142px from right)
+  // Take screenshot of map area (excluding legend panel if visible)
   const screenshot = await page.screenshot({
-    clip: {
-      x: mapBox.x,
-      y: mapBox.y,
-      width: mapBox.width - 142,
-      height: mapBox.height
-    }
+    clip: clipArea
   });
   
   // Find first pixel matching any legend color
@@ -429,8 +523,8 @@ export async function testFeaturePopup(page: Page, legendColors: Array<{ r: numb
           Math.abs(b - target.b) <= tolerance
         ) {
           colorLocations.push({
-            x: mapBox.x + x,
-            y: mapBox.y + y,
+            x: clipArea.x + x,
+            y: clipArea.y + y,
             color: `rgb(${r},${g},${b})`
           });
           found = true;
@@ -709,14 +803,6 @@ async function zoomInToDefault(page: Page): Promise<void> {
  * And incorrectly detect the rendering completion as a filtering effect.
  */
 async function waitForMapStability(page: Page, maxAttempts = 8): Promise<void> {
-  const mapContainer = page.locator('#map-view');
-  const mapBox = await mapContainer.boundingBox();
-  
-  if (!mapBox) {
-    console.warn('Map container not found for stability check');
-    return;
-  }
-  
   console.log(`    ⏳ Waiting for map rendering to stabilize...`);
   
   let previousScreenshot: Buffer | null = null;
@@ -728,13 +814,15 @@ async function waitForMapStability(page: Page, maxAttempts = 8): Promise<void> {
     // Wait longer between checks to allow tile loading
     await page.waitForTimeout(1500); // Increased from 1000ms
     
+    // Recalculate screenshot area each iteration (fixes gray artifact after hot-reload)
+    const clipArea = await getMapScreenshotArea(page);
+    if (!clipArea) {
+      console.warn('    ⚠️ Map container not found for stability check');
+      return;
+    }
+    
     const currentScreenshot = await page.screenshot({
-      clip: {
-        x: mapBox.x,
-        y: mapBox.y,
-        width: mapBox.width - 142,
-        height: mapBox.height
-      }
+      clip: clipArea
     });
     
     if (previousScreenshot) {
@@ -791,19 +879,15 @@ async function switchToSatelliteBasemap(page: Page): Promise<void> {
  */
 async function checkForLayerPixels(page: Page, legendColors: Array<{ r: number; g: number; b: number }>): Promise<boolean> {
   const mapContainer = page.locator('#map-view');
-  const mapBox = await mapContainer.boundingBox();
+  // Get screenshot area (dynamically calculated)
+  const clipArea = await getMapScreenshotArea(page);
   
-  if (!mapBox) {
+  if (!clipArea) {
     return false;
   }
   
   const screenshot = await page.screenshot({
-    clip: {
-      x: mapBox.x,
-      y: mapBox.y,
-      width: mapBox.width - 142, // Exclude legend panel on right
-      height: mapBox.height
-    }
+    clip: clipArea
   });
   
   return checkForColors(screenshot, legendColors);
@@ -854,14 +938,14 @@ async function checkForVisualChangeUsingToggle(
     await toggleButton.click();
     await page.waitForTimeout(300);
     
-    // Step 2: Screenshot "before" state
+    // Step 2: Screenshot "before" state (dynamically calculated clip area)
+    const clipAreaBefore = await getMapScreenshotArea(page);
+    if (!clipAreaBefore) {
+      console.warn('    ⚠️ Map container not found for before screenshot');
+      continue;
+    }
     const beforeScreenshot = await page.screenshot({
-      clip: {
-        x: mapBox.x,
-        y: mapBox.y,
-        width: mapBox.width - 142,
-        height: mapBox.height
-      }
+      clip: clipAreaBefore
     });
     
     // Step 3: Show layer
@@ -869,14 +953,14 @@ async function checkForVisualChangeUsingToggle(
     await toggleButton.click();
     await page.waitForTimeout(300);
     
-    // Step 4: Screenshot "after" state
+    // Step 4: Screenshot "after" state (recalculate in case layout changed)
+    const clipAreaAfter = await getMapScreenshotArea(page);
+    if (!clipAreaAfter) {
+      console.warn('    ⚠️ Map container not found for after screenshot');
+      continue;
+    }
     const afterScreenshot = await page.screenshot({
-      clip: {
-        x: mapBox.x,
-        y: mapBox.y,
-        width: mapBox.width - 142,
-        height: mapBox.height
-      }
+      clip: clipAreaAfter
     });
     
     // Step 5: Run pixelmatch
@@ -942,13 +1026,16 @@ export async function testLayersLoad(
   if (layer.type === 'ImageService') {
     // For image services, check if canvas/tiles are rendered
     // Image services typically render as canvas or image tiles
+    const clipArea = await getMapScreenshotArea(page);
+    if (!clipArea) {
+      return {
+        passed: false,
+        message: 'Map container not found for screenshot',
+        details: { error: 'no_map_container' }
+      };
+    }
     const screenshot = await page.screenshot({
-      clip: {
-        x: mapBox.x,
-        y: mapBox.y,
-        width: mapBox.width - 142,
-        height: mapBox.height
-      }
+      clip: clipArea
     });
     
     // Check if screenshot is not just blank/basemap
@@ -1802,11 +1889,13 @@ async function testFilteringForSingleLayer(
   
   console.log(`  🎨 Found ${itemCount} legend items`);
   
-  // Get map container for screenshots
-  const mapContainer = page.locator('#map-view');
-  const mapBox = await mapContainer.boundingBox();
+  // CRITICAL: Wait for map to finish rendering BEFORE taking "before" screenshot
+  // This prevents false positives from comparing partially-rendered vs fully-rendered states
+  await waitForMapStability(page);
   
-  if (!mapBox) {
+  // Get map screenshot area (dynamically calculated to avoid gray artifacts)
+  const clipArea = await getMapScreenshotArea(page);
+  if (!clipArea) {
     return {
       passed: false,
       message: `${layerName}: Map container not found`,
@@ -1814,19 +1903,10 @@ async function testFilteringForSingleLayer(
     };
   }
   
-  // CRITICAL: Wait for map to finish rendering BEFORE taking "before" screenshot
-  // This prevents false positives from comparing partially-rendered vs fully-rendered states
-  await waitForMapStability(page);
-  
   // Take "before" screenshot (all legend items visible, FULLY RENDERED)
   console.log(`  📸 Taking "before" screenshot (all items visible)...`);
   const beforeScreenshot = await page.screenshot({
-    clip: {
-      x: mapBox.x,
-      y: mapBox.y,
-      width: mapBox.width - 142,
-      height: mapBox.height
-    }
+    clip: clipArea
   });
   
   // Click first legend item to filter it out
@@ -1854,15 +1934,20 @@ async function testFilteringForSingleLayer(
   // This prevents false positives from comparing fully-rendered vs partially-rendered states
   await waitForMapStability(page);
   
+  // Recalculate screenshot area (may have changed after filter applied)
+  const clipAreaAfter = await getMapScreenshotArea(page);
+  if (!clipAreaAfter) {
+    return {
+      passed: false,
+      message: `${layerName}: Map container not found for after screenshot`,
+      details: { error: 'no_map_container_after' }
+    };
+  }
+  
   // Take "after" screenshot (first item filtered out, FULLY RENDERED)
   console.log(`  📸 Taking "after" screenshot (item filtered)...`);
   const afterScreenshot = await page.screenshot({
-    clip: {
-      x: mapBox.x,
-      y: mapBox.y,
-      width: mapBox.width - 142,
-      height: mapBox.height
-    }
+    clip: clipAreaAfter
   });
   
   // Use pixelmatch to detect visual changes
