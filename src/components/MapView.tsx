@@ -448,6 +448,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       }
 
       setView(mapView);
+      
+      // Expose MapView to window for E2E testing
+      (window as any).mapView = mapView;
 
       // Note: We no longer load initial data automatically
       // Data will only be loaded when the user clicks the search button

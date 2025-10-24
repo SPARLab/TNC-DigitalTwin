@@ -14,7 +14,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: 1, // Single worker to avoid ArcGIS rate limiting
-  reporter: 'html',
+  reporter: [['html', { open: 'never' }]], // Generate HTML report but don't auto-serve
   
   use: {
     baseURL: 'http://localhost:5173',

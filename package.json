@@ -19,6 +19,7 @@
     "test:e2e:generate-data": "tsx e2e/scripts/parse-manual-test-csv.ts",
     "test:e2e:checkpoint": "playwright test --config=playwright.checkpoint.config.ts",
     "test:e2e:validate": "tsx e2e/scripts/validate-tests.ts",
+    "test:e2e:validate-data": "tsx e2e/scripts/validate-test-data.ts",
     "test:e2e:progress": "tsx e2e/scripts/progress-report.ts"
   },
   "dependencies": {

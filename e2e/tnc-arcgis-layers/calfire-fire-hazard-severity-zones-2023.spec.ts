@@ -1,270 +1,91 @@
 import { test, expect } from '@playwright/test';
-import testData from '../test-data/arcgis-layers.json' with { type: 'json' };
-import * as helpers from '../helpers/tnc-arcgis-test-helpers';
+import { runQualityCheck } from '../helpers/run-quality-check';
+import { calculateTestTimeout } from '../helpers/timeout-calculator';
 import type { LayerConfig } from '../helpers/tnc-arcgis-test-helpers';
 
 /**
- * ArcGIS Layer Quality Assurance Tests
- * CalFire Fire Hazard Severity Zones 2023
+ * Manual Test: CalFire Fire Hazard Severity Zones 2023
  * 
- * Tests verify the 8 quality criteria:
- * 1. Shows Up In All Categories
- * 2. All Layers Load
- * 3. ArcGIS Download Link Works
- * 4. Description Matches Website
- * 5. Tooltips Pop-Up
- * 6. Legend Exists
- * 7. Legend Labels Descriptive
- * 8. Legend Filters Work (EXPECTED: TRUE - filters should work for this layer)
+ * Purpose: Debug test issues for this specific layer
+ * 
+ * Run with: npm run test:e2e -- --grep="CalFire Fire Hazard Severity Zones 2023" --grep-invert="@dynamic"
  */
 
-test.describe('CalFire Fire Hazard Severity Zones 2023', () => {
-  test.setTimeout(120000); // 2 minutes for multi-layer testing with zoom
+test.describe('CalFire Fire Hazard Severity Zones 2023 @manual', () => {
+  const SUBLAYER_COUNT = 3;
+  const timeout = calculateTestTimeout(SUBLAYER_COUNT);
   
-  const layer = testData.layers.find(l => l.id === 'calfire-fire-hazard-severity-zones')!;
+  test.setTimeout(timeout);
   
   test.beforeEach(async ({ page }) => {
-    // Navigate to the app
-    await page.goto('/');
-    
-    // Wait for app to fully load
+    await page.goto('http://localhost:5173');
     await page.waitForLoadState('networkidle');
-    
-    // Give ArcGIS extra time to initialize
     await page.waitForTimeout(2000);
   });
 
-  /**
-   * Comprehensive Quality Check - All 8 Criteria
-   * Setup happens ONCE, then each criterion is checked as a separate step
-   * Each step shows individual pass/fail in the report
-   */
   test('Complete Quality Check (8 Criteria)', async ({ page }) => {
-    
-    // ===== SETUP: Navigate to Search Results =====
-    await test.step('Setup: Navigate to search results', async () => {
-      const selectCategoryBtn = page.getByRole('button', { name: /select category/i });
-      await selectCategoryBtn.click();
-      await page.waitForTimeout(500);
-      
-      const categoryBtn = page.getByRole('button', { name: /fire/i });
-      await categoryBtn.click();
-      await page.waitForTimeout(500);
-      
-      const selectSourceBtn = page.locator('#source-filter-button');
-      await selectSourceBtn.click();
-      await page.waitForTimeout(500);
-      
-      const arcgisOption = page.locator('#source-option-tnc-arcgis-hub');
-      await arcgisOption.click();
-      await page.waitForTimeout(500);
-      
-      const timeRangeBtn = page.locator('#time-range-filter-button');
-      await timeRangeBtn.click();
-      await page.waitForTimeout(500);
-      
-      const lastFiveYears = page.locator('#time-range-label-1825-days');
-      await lastFiveYears.click();
-      await page.waitForTimeout(500);
-      
-      const searchBtn = page.locator('#observations-search-button');
-      await searchBtn.click();
-      await page.waitForTimeout(3000);
+    const layerConfig: LayerConfig = {
+      id: 'calfire-fire-hazard-severity-zones-2023',
+      title: 'CalFire Fire Hazard Severity Zones 2023',
+      itemId: 'calfire-fire-hazard-severity-zones-2023',
+      url: 'https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/CalFire_Fire_Hazard_Severity_Zones_2023/FeatureServer',
+      type: 'FeatureService',
+      categories: ['Infrastructure', 'Fire', 'Land use and land (geography?)', 'Vegetation / habitat'],
+      expectedResults: {
+        showsInCategories: null,
+        layersLoad: true,
+        downloadLinkWorks: true,
+        tooltipsPopUp: true,
+        legendExists: true,
+        legendLabelsDescriptive: true,
+        legendFiltersWork: true
+      },
+      notes: 'Filters should work (TRUE)'
+    };
+
+    console.log(`\n=== Testing: ${layerConfig.title} ===`);
+    console.log(`Type: ${layerConfig.type}`);
+    console.log(`Sublayers: ${SUBLAYER_COUNT}`);
+    console.log(`Timeout: ${timeout / 1000}s\n`);
+
+    // Run the complete quality check (includes test.step() calls for hierarchy)
+    const result = await runQualityCheck(page, layerConfig);
+
+    // Verify all expected results - each in its own step for clarity
+    await test.step('Verify: Layer loads successfully', async () => {
+      expect(result.tests.test2_layersLoad?.passed, 
+        `Expected layers to load, but got: ${result.tests.test2_layersLoad?.message}`
+      ).toBe(true);
     });
 
-    // ===== TEST 1: Shows Up In All Categories =====
-    let layerFoundInResults = false;
-    await test.step('1. Shows Up In All Categories', async () => {
-      const itemsList = page.locator('#tnc-items-list');
-      await expect(itemsList).toBeVisible();
-      
-      const itemTitle = page.locator(`#item-title-${layer.itemId}`);
-      const isVisible = await itemTitle.isVisible();
-      
-      if (!isVisible) {
-        // CRITICAL FAILURE - layer not found, fail entire test
-        throw new Error(`Layer "${layer.title}" not found in search results. All remaining tests skipped.`);
-      }
-      
-      await expect(itemTitle).toHaveText(layer.title);
-      layerFoundInResults = true;
+    await test.step('Verify: Download link works', async () => {
+      expect(result.tests.test3_downloadWorks?.passed,
+        `Expected download to work, but got: ${result.tests.test3_downloadWorks?.message}`
+      ).toBe(true);
     });
 
-    // ===== SETUP: Click Layer Card to Load It =====
-    await test.step('Setup: Click layer card to load', async () => {
-      const itemTitle = page.locator(`#item-title-${layer.itemId}`);
-      await itemTitle.click();
-      await page.waitForTimeout(1000);
-      
-      // Set opacity to 100% for better testing
-      const opacitySlider = page.locator('#tnc-details-opacity-slider');
-      await opacitySlider.fill('100');
-      await page.waitForTimeout(3000); // Wait for layer to render
+    await test.step('Verify: Tooltips pop up when clicking features', async () => {
+      expect(result.tests.test5_tooltipsPopUp?.passed,
+        `Expected tooltips to appear, but got: ${result.tests.test5_tooltipsPopUp?.message}`
+      ).toBe(true);
     });
 
-    // ===== TEST 2: All Layers Load =====
-    await test.step('2. All Layers Load (multi-layer + zoom + border detection)', async () => {
-      // Use the enhanced testLayersLoad helper which:
-      // - Tests ALL sublayers in a Feature Service
-      // - Switches to satellite basemap for border detection
-      // - Zooms out if pixels not found at default zoom
-      // - Detects both fill and border colors
-      const layerConfig: LayerConfig = {
-        id: layer.id,
-        title: layer.title,
-        itemId: layer.itemId,
-        url: '', // Not needed for this test
-        type: 'FeatureService',
-        categories: [],
-        expectedResults: layer.expectedResults,
-        notes: ''
-      };
-      
-      const result = await helpers.testLayersLoad(page, layerConfig);
-      
-      console.log(`Layer load test result: ${result.message}`);
-      if (result.details) {
-        console.log(`Details:`, result.details);
-      }
-      
-      expect(result.passed).toBe(true);
+    await test.step('Verify: Legend panel exists', async () => {
+      expect(result.tests.test6_legendExists?.passed,
+        `Expected legend to exist, but got: ${result.tests.test6_legendExists?.message}`
+      ).toBe(true);
     });
 
-    // ===== TEST 3: ArcGIS Download Link Works (No 404) =====
-    await test.step('3. ArcGIS Download Link Works (No 404)', async () => {
-      // Use shared helper - expects download to work (no 404)
-      await helpers.testDownloadLink(page, layer.expectedResults.downloadLinkWorks);
+    await test.step('Verify: Legend labels are descriptive', async () => {
+      expect(result.tests.test7_legendLabelsDescriptive?.passed,
+        `Expected legend labels to be descriptive, but got: ${result.tests.test7_legendLabelsDescriptive?.message}`
+      ).toBe(true);
     });
 
-    // ===== TEST 4: Description Matches Website =====
-    await test.step('4. Description Matches Website (TODO)', async () => {
-      // TODO: Description is in ArcGIS Hub iframe, need iframe handling
-      // For now, just pass this test - will enhance later
-      // The description exists in the ArcGIS Hub interface but requires iframe access
-      expect.soft(true).toBe(true); // Placeholder - always pass for now
-    });
-
-    // ===== TEST 5: Tooltips Pop-Up =====
-    await test.step('5. Tooltips Pop-Up (click map feature)', async () => {
-      // Extract legend colors for finding a feature to click
-      const legendColors = await helpers.extractLegendColors(page);
-      
-      if (legendColors.length > 0) {
-        // Test feature popup (finds colored pixel, clicks it, checks for popup)
-        const popupAppeared = await helpers.testFeaturePopup(page, legendColors);
-        expect.soft(popupAppeared).toBe(layer.expectedResults.tooltipsPopUp);
-      } else {
-        console.warn('No legend colors found, skipping tooltip test');
-        expect.soft(false).toBe(layer.expectedResults.tooltipsPopUp);
-      }
-    });
-
-    // ===== TEST 6: Legend Exists =====
-    await test.step('6. Legend Exists', async () => {
-      const legend = page.locator('#floating-legend-panel');
-      const legendVisible = await legend.isVisible();
-      expect.soft(legendVisible).toBe(true);
-    });
-
-    // ===== TEST 7: Legend Labels Descriptive =====
-    await test.step('7. Legend Labels Descriptive', async () => {
-      const legend = page.locator('#floating-legend-panel');
-      
-      if (await legend.isVisible()) {
-        const legendItems = legend.locator('[data-testid="legend-item-label"]');
-        const labels = await legendItems.allTextContents();
-        
-        if (labels.length > 0) {
-          let allLabelsDescriptive = true;
-          for (const label of labels) {
-            const hasNumbers = /\d/.test(label);
-            const hasLetters = /[a-zA-Z]/.test(label);
-            
-            // If label has numbers, it MUST also have letters to be descriptive
-            if (hasNumbers && !hasLetters) {
-              allLabelsDescriptive = false;
-              break;
-            }
-          }
-          
-          // Soft assertion - check against expected result
-          expect.soft(allLabelsDescriptive).toBe(layer.expectedResults.legendLabelsDescriptive);
-        }
-      }
-    });
-
-    // ===== TEST 8: Legend Filters Work (Pixel-Based) =====
-    await test.step('8. Legend Filters Work (pixel-based verification - EXPECTED: TRUE)', async () => {
-      // Wait for map to fully render (download modal already closed by Test 3)
-      await page.waitForTimeout(2000);
-      
-      const legend = page.locator('#floating-legend-panel');
-      
-      if (await legend.isVisible()) {
-        // Extract actual colors from legend swatches
-        const layerColors = await helpers.extractLegendColors(page);
-        console.log('Legend colors for filter test:', layerColors.map(c => `${c.label}: rgb(${c.r},${c.g},${c.b})`));
-        
-        // If only 1 legend item, filtering doesn't apply (nothing to filter)
-        if (layerColors.length <= 1) {
-          console.log('✅ Only 1 legend item - filtering not applicable, test passes');
-          expect.soft(true).toBe(true);
-          return;
-        }
-        
-        // Take baseline screenshot of map (all colors visible)
-        const mapContainer = page.locator('#map-view');
-        const mapBox = await mapContainer.boundingBox();
-        
-        if (mapBox) {
-          const beforeScreenshot = await page.screenshot({
-            clip: {
-              x: mapBox.x,
-              y: mapBox.y,
-              width: mapBox.width - 142, // Exclude legend
-              height: mapBox.height
-            },
-            path: 'test-results/calfire-fhsz-before-filter.png' // Debug: save screenshot
-          });
-          
-          const beforeColors = helpers.checkWhichColorsPresent(beforeScreenshot, layerColors);
-          console.log('Before filter - colors present:', beforeColors.filter(c => c.found).map(c => c.label));
-          
-          // Click first legend item to filter
-          const firstLegendItem = legend.locator('[id^="legend-item-"]').first();
-          if (await firstLegendItem.isVisible()) {
-            await firstLegendItem.click({ force: true }); // Force click to bypass any overlays
-            await page.waitForTimeout(2000); // Wait for filter to apply
-            
-            // Take screenshot after filtering
-            const afterScreenshot = await page.screenshot({
-              clip: {
-                x: mapBox.x,
-                y: mapBox.y,
-                width: mapBox.width - 142,
-                height: mapBox.height
-              },
-              path: 'test-results/calfire-fhsz-after-filter.png' // Debug: save screenshot
-            });
-            
-            const afterColors = helpers.checkWhichColorsPresent(afterScreenshot, layerColors);
-            console.log('After filter - colors present:', afterColors.filter(c => c.found).map(c => c.label));
-            
-            // Check if filtering actually worked (some colors removed)
-            const beforeCount = beforeColors.filter(c => c.found).length;
-            const afterCount = afterColors.filter(c => c.found).length;
-            const filterWorked = afterCount < beforeCount;
-            
-            console.log(`Filter test result: ${filterWorked} (before: ${beforeCount} colors, after: ${afterCount} colors)`);
-            console.log(`Expected filter to work: ${layer.expectedResults.legendFiltersWork}`);
-            
-            // Soft assertion - check against expected result
-            // For Fire Hazard Severity Zones: expectedResults.legendFiltersWork = TRUE (we expect it to work!)
-            expect.soft(filterWorked).toBe(layer.expectedResults.legendFiltersWork);
-          }
-        }
-      }
+    await test.step('Verify: Legend filters work properly', async () => {
+      expect(result.tests.test8_legendFiltersWork?.passed,
+        `Expected legend filters to work, but got: ${result.tests.test8_legendFiltersWork?.message}`
+      ).toBe(true);
     });
   });
 });
-

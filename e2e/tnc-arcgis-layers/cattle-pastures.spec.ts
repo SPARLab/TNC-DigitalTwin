@@ -4,17 +4,20 @@ import { calculateTestTimeout } from '../helpers/timeout-calculator';
 import type { LayerConfig } from '../helpers/tnc-arcgis-test-helpers';
 
 /**
- * Manual Test: Coastal and Marine Data
+ * Manual Test: Cattle Pastures
  * 
- * SPECIAL CASE: Multiple PNG icon-based layer with 20 sublayers
+ * TESTING: "Ecological / Biological (Species?)" category matching
  * 
- * This layer uses MULTIPLE SMALL PNG IMAGES in the legend instead of solid color swatches.
+ * This layer is in the "Ecological / Biological (Species?)" category which has
+ * special characters that might not match the actual UI button text.
  * 
- * Run with: npm run test:e2e -- --grep="Coastal and Marine Data" --grep-invert="@dynamic"
+ * Purpose: Verify category finding works for this specific category name.
+ * 
+ * Run with: npm run test:e2e -- --grep="Cattle Pastures" --grep-invert="@dynamic"
  */
 
-test.describe('Coastal and Marine Data @manual', () => {
-  const SUBLAYER_COUNT = 20;  // This layer has many sublayers!
+test.describe('Cattle Pastures @manual', () => {
+  const SUBLAYER_COUNT = 1;
   const timeout = calculateTestTimeout(SUBLAYER_COUNT);
   
   test.setTimeout(timeout);
@@ -27,12 +30,12 @@ test.describe('Coastal and Marine Data @manual', () => {
 
   test('Complete Quality Check (8 Criteria)', async ({ page }) => {
     const layerConfig: LayerConfig = {
-      id: 'coastal-and-marine',
-      title: 'Coastal and Marine Data',
-      itemId: '0a7eb52e2edb456892eaa27ad46aca3a',
-      url: 'https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/Coastal_and_Marine/FeatureServer',
+      id: 'jldp-pastures-public-',
+      title: 'Cattle Pastures',
+      itemId: '2cc5dcddd2e64e618c6faa0ba06f40d7',
+      url: 'https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_pastures_(Public)/FeatureServer',
       type: 'FeatureService',
-      categories: ['Marine', 'Ecological / Biological (Species?)'],
+      categories: ['Ecological / Biological (Species?)', 'Vegetation / habitat'],
       expectedResults: {
         showsInCategories: null,
         layersLoad: true,
@@ -42,14 +45,15 @@ test.describe('Coastal and Marine Data @manual', () => {
         legendLabelsDescriptive: true,
         legendFiltersWork: true
       },
-      notes: 'Multiple PNG icon-based layer with 20 sublayers'
+      notes: 'Testing "Ecological / Biological (Species?)" category matching'
     };
 
     console.log(`\n=== Testing: ${layerConfig.title} ===`);
     console.log(`Type: ${layerConfig.type}`);
     console.log(`Sublayers: ${SUBLAYER_COUNT}`);
     console.log(`Timeout: ${timeout / 1000}s`);
-    console.log('📊 Legend Type: Multiple small PNG images\n');
+    console.log('🔍 Category: "Ecological / Biological (Species?)"');
+    console.log('🎯 Goal: Verify category button finding works with special characters\n');
 
     // Run the complete quality check (includes test.step() calls for hierarchy)
     const result = await runQualityCheck(page, layerConfig);

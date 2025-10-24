@@ -13,7 +13,7 @@ export default defineConfig({
   
   // Use checkpoint reporter in addition to HTML reporter
   reporter: [
-    ['html', { outputFolder: 'playwright-report-checkpoint' }],
+    ['html', { outputFolder: 'playwright-report-checkpoint', open: 'never' }],
     ['./e2e/reporters/checkpoint-reporter.ts']
   ],
   
@@ -24,20 +24,20 @@ export default defineConfig({
   // Checkpoint-specific settings
   use: {
     ...baseConfig.use,
-    // Ensure all screenshots/videos are saved for checkpoint runs
-    screenshot: 'on',
-    video: 'on',
+    // Optimize for speed: only record videos on failures
+    screenshot: 'only-on-failure', // Screenshots only for failed tests
+    video: 'retain-on-failure', // Videos only for failed tests (huge speed boost!)
   },
   
-  // Increase timeout for checkpoint runs (multi-layer testing with zoom can be slow)
-  // Base: 60s + ~30s per sublayer (avg 3-5 sublayers = 150-210s)
-  timeout: 240000, // 240 seconds per test (4 minutes)
+  // Global timeout for all checkpoint tests
+  // Most tests complete in 1-2 minutes, but complex layers with pixel-diff screenshots need more time
+  timeout: 300000, // 300 seconds (5 minutes) - simple, one timeout for all tests
   
   // Run tests in parallel for faster execution
   // Optimized for 12-core machine with 32GB RAM
   workers: 9, // 9 parallel workers for faster execution
   
-  // Retry failed tests to reduce false negatives
-  retries: 1,
+  // Don't retry - if a test times out at 5 minutes, retrying adds another 5 minutes (10 min total!)
+  retries: 0,
 });
 

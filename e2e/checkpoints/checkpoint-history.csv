@@ -1,3 +1,5 @@
 timestamp,total_tests_passing,total_tests_failing,feature_services_passing,feature_services_failing,image_services_passing,image_services_failing,failing_service_names,details_file
 Oct 21 2025 3:30 PM,48,12,31,7,6,0,"More than 5 failing, see checkpoint-2025-10-21T22-30-26-411Z.json",checkpoint-2025-10-21T22-30-26-411Z.json
 Oct 22 2025 2:40 PM,52,8,33,5,6,0,"Cattle Guards; Dibblee Geology; Coastal and Marine Data; Earthquake Faults and Folds in the USA; Fish Passage Barriers Assessment",checkpoint-2025-10-22T21-40-51-348Z.json
+Oct 22 2025 5:09 PM,54,6,35,3,6,0,"Dibblee Geology; Earthquake Faults and Folds in the USA; Coastal and Marine Data",checkpoint-2025-10-23T00-09-46-236Z.json
+Oct 23 2025 10:35 AM,75,9,32,6,6,0,"More than 5 failing, see checkpoint-2025-10-23T17-35-49-932Z.json",checkpoint-2025-10-23T17-35-49-932Z.json

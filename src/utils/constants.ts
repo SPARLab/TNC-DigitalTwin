@@ -1,5 +1,5 @@
 // Application constants
-import categoryMappings from '../data-sources/tnc-arcgis/category_mappings.json';
+import categoryMappings from '../data-sources/tnc-arcgis/category_mappings.json' assert { type: 'json' };
 
 export const APP_NAME = 'Dangermond Preserve Data Catalog';
 export const APP_VERSION = '1.0.0';

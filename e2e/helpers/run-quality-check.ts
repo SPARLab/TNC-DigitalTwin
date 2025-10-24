@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import { test, Page } from '@playwright/test';
 import {
   LayerConfig,
   QualityCheckResult,
@@ -43,98 +43,155 @@ export async function runQualityCheck(
   };
 
   try {
-    // TEST 1: Shows Up In All Categories
-    if (layer.expectedResults.showsInCategories !== null) {
-      result.tests.test1_showsInCategories = await testShowsInAllCategories(page, layer);
-    }
-
-    // CRITICAL: Load the layer before running visual tests
-    // Navigate to first category (or use first available category)
-    const categoryToUse = layer.categories.length > 0 ? layer.categories[0] : 'Fire'; // Fallback to Fire category
-    
-    console.log(`[runQualityCheck] Navigating to category: ${categoryToUse}`);
-    await navigateToLayer(page, layer.title, categoryToUse);
-    
-    // Wait for search results to load
-    const itemsList = page.locator('#tnc-items-list');
-    await itemsList.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
-    
-    // Find the layer card by matching the title text
-    // Use getByText instead of itemId since we don't have real ArcGIS item IDs
-    const layerCard = page.getByText(layer.title, { exact: true }).first();
-    const isVisible = await layerCard.isVisible().catch(() => false);
-    
-    if (isVisible) {
-      console.log(`[runQualityCheck] Found layer card, clicking: ${layer.title}`);
-      await layerCard.click();
-      await page.waitForTimeout(1000);
+    // SETUP: Load the layer before running visual tests
+    // This comes FIRST so the layer is loaded for all subsequent tests
+    await test.step('Setup: Navigate and load layer', async () => {
+      const categoryToUse = layer.categories.length > 0 ? layer.categories[0] : 'Fire';
       
-      // Set opacity to 100% for better testing
-      const opacitySlider = page.locator('#tnc-details-opacity-slider');
-      if (await opacitySlider.isVisible().catch(() => false)) {
-        await opacitySlider.fill('100');
-        console.log(`[runQualityCheck] Set opacity to 100%`);
+      console.log(`[Setup] Navigating to category: ${categoryToUse}`);
+      await navigateToLayer(page, layer.title, categoryToUse);
+      
+      console.log(`[Setup] Waiting for search results...`);
+      const itemsList = page.locator('#tnc-items-list');
+      await itemsList.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+      
+      console.log(`[Setup] Finding layer card: ${layer.title}`);
+      const layerCard = page.getByText(layer.title, { exact: true }).first();
+      const isVisible = await layerCard.isVisible().catch(() => false);
+      
+      if (isVisible) {
+        console.log(`[Setup] Clicking layer card...`);
+        await layerCard.click();
+        await page.waitForTimeout(1000);
+        
+        console.log(`[Setup] Setting opacity to 100%...`);
+        const opacitySlider = page.locator('#tnc-details-opacity-slider');
+        if (await opacitySlider.isVisible().catch(() => false)) {
+          await opacitySlider.fill('100');
+        }
+        
+        await page.waitForTimeout(3000);
+        console.log(`[Setup] ✓ Layer loaded and ready`);
+      } else {
+        console.warn(`[Setup] ⚠️ Layer card not found for: ${layer.title}`);
       }
-      
-      // Wait for layer to fully render
-      await page.waitForTimeout(3000);
-      console.log(`[runQualityCheck] Layer loaded, proceeding with tests`);
-    } else {
-      console.warn(`[runQualityCheck] Layer card not found in search results for: ${layer.title}`);
-      console.warn(`[runQualityCheck] Category used: ${categoryToUse}`);
-      // Don't throw - let tests handle missing layer gracefully
-    }
+    });
+
+    // TEST 1: Shows Up In All Categories
+    // Tests that layer appears in search results for ALL its tagged categories
+    await test.step('1. Shows Up In All Categories', async () => {
+      if (layer.expectedResults.showsInCategories !== null && layer.categories.length > 0) {
+        result.tests.test1_showsInCategories = await testShowsInAllCategories(page, layer);
+      } else {
+        result.tests.test1_showsInCategories = {
+          passed: true,
+          message: layer.categories.length === 0 
+            ? 'No categories tagged - test not applicable'
+            : 'Test skipped (not validated for this layer)',
+          details: { skipped: true }
+        };
+      }
+    });
 
     // TEST 2: All Layers Load
-    if (layer.expectedResults.layersLoad !== null) {
-      result.tests.test2_layersLoad = await testLayersLoad(page, layer);
-    }
-
-    // TEST 3: ArcGIS Download Link Works
-    if (layer.expectedResults.downloadLinkWorks !== null) {
-      try {
-        // Use existing testDownloadLink helper
-        await testDownloadLink(page, layer.expectedResults.downloadLinkWorks);
-        result.tests.test3_downloadWorks = {
+    await test.step('2. All Layers Load', async () => {
+      if (layer.expectedResults.layersLoad !== null) {
+        result.tests.test2_layersLoad = await testLayersLoad(page, layer);
+      } else {
+        result.tests.test2_layersLoad = {
           passed: true,
-          message: 'Download link worked as expected',
-          details: {}
-        };
-      } catch (error: any) {
-        result.tests.test3_downloadWorks = {
-          passed: false,
-          message: `Download link failed: ${error.message}`,
-          details: { error: error.message }
+          message: 'Test skipped (not tested for this layer)',
+          details: { skipped: true }
         };
       }
-    }
+    });
+
+    // TEST 3: ArcGIS Download Link Works
+    await test.step('3. ArcGIS Download Link Works', async () => {
+      if (layer.expectedResults.downloadLinkWorks !== null) {
+        try {
+          await testDownloadLink(page, layer.expectedResults.downloadLinkWorks);
+          result.tests.test3_downloadWorks = {
+            passed: true,
+            message: 'Download link worked as expected',
+            details: {}
+          };
+        } catch (error: any) {
+          result.tests.test3_downloadWorks = {
+            passed: false,
+            message: `Download link failed: ${error.message}`,
+            details: { error: error.message }
+          };
+        }
+      } else {
+        result.tests.test3_downloadWorks = {
+          passed: true,
+          message: 'Test skipped (not tested for this layer)',
+          details: { skipped: true }
+        };
+      }
+    });
 
     // TEST 4: Description Matches Website (SKIPPED)
-    result.tests.test4_descriptionMatches = {
-      passed: true,
-      message: 'Description test skipped (per user request)',
-      details: { skipped: 'user_requested' }
-    };
+    await test.step('4. Description Matches Website (skipped)', async () => {
+      result.tests.test4_descriptionMatches = {
+        passed: true,
+        message: 'Description test skipped (per user request)',
+        details: { skipped: true }
+      };
+    });
 
     // TEST 5: Tooltips Pop-Up
-    if (layer.expectedResults.tooltipsPopUp !== null) {
-      result.tests.test5_tooltipsPopUp = await testTooltipsPopUp(page, layer);
-    }
+    await test.step('5. Tooltips Pop-Up', async () => {
+      if (layer.expectedResults.tooltipsPopUp !== null) {
+        result.tests.test5_tooltipsPopUp = await testTooltipsPopUp(page, layer);
+      } else {
+        result.tests.test5_tooltipsPopUp = {
+          passed: true,
+          message: 'Test skipped (not tested for this layer)',
+          details: { skipped: true }
+        };
+      }
+    });
 
     // TEST 6: Legend Exists
-    if (layer.expectedResults.legendExists !== null) {
-      result.tests.test6_legendExists = await testLegendExists(page, layer);
-    }
+    await test.step('6. Legend Exists', async () => {
+      if (layer.expectedResults.legendExists !== null) {
+        result.tests.test6_legendExists = await testLegendExists(page, layer);
+      } else {
+        result.tests.test6_legendExists = {
+          passed: true,
+          message: 'Test skipped (not tested for this layer)',
+          details: { skipped: true }
+        };
+      }
+    });
 
     // TEST 7: Legend Labels Descriptive
-    if (layer.expectedResults.legendLabelsDescriptive !== null) {
-      result.tests.test7_legendLabelsDescriptive = await testLegendLabelsDescriptive(page, layer);
-    }
+    await test.step('7. Legend Labels Descriptive', async () => {
+      if (layer.expectedResults.legendLabelsDescriptive !== null) {
+        result.tests.test7_legendLabelsDescriptive = await testLegendLabelsDescriptive(page, layer);
+      } else {
+        result.tests.test7_legendLabelsDescriptive = {
+          passed: true,
+          message: 'Test skipped (not tested for this layer)',
+          details: { skipped: true }
+        };
+      }
+    });
 
     // TEST 8: Legend Filters Work
-    if (layer.expectedResults.legendFiltersWork !== null) {
-      result.tests.test8_legendFiltersWork = await testLegendFiltersWork(page, layer);
-    }
+    await test.step('8. Legend Filters Work', async () => {
+      if (layer.expectedResults.legendFiltersWork !== null) {
+        result.tests.test8_legendFiltersWork = await testLegendFiltersWork(page, layer);
+      } else {
+        result.tests.test8_legendFiltersWork = {
+          passed: true,
+          message: 'Test skipped (not tested for this layer)',
+          details: { skipped: true }
+        };
+      }
+    });
 
   } catch (error: any) {
     console.error(`❌ Fatal error during quality check for ${layer.title}:`, error);

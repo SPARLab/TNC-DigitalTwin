@@ -1,249 +1,230 @@
-# TNC ArcGIS Layer Tests
+# ArcGIS Layers E2E Tests
 
-This directory contains E2E tests for TNC ArcGIS layers, organized into:
-- **Dynamic tests** (`all-layers-dynamic.spec.ts`) - Auto-generated for all layers
-- **Manual tests** - Hand-crafted for specific problem cases
+This directory contains E2E tests for all ArcGIS layers in the TNC Digital Twin application.
+
+## Test Architecture
+
+### Dynamic Tests (`all-layers-dynamic.spec.ts`)
+- **Runs tests for ALL categorized layers** (45 layers)
+- Generates tests dynamically from `e2e/test-data/all-arcgis-layers.json`
+- Uses `runQualityCheck()` helper for consistency
+- Uses `calculateTestTimeout()` for dynamic timeouts based on sublayer count
+- Best for: Full regression testing, checkpoint runs
+
+### Manual Tests (Individual `.spec.ts` files)
+- **Runs tests for SPECIFIC layers** for debugging
+- Uses the SAME `runQualityCheck()` helper as dynamic tests
+- Uses the SAME `calculateTestTimeout()` for consistent timeouts
+- Uses `@manual` tag for filtering
+- **Human-readable test steps**: Each verification is a separate, clearly-labeled step
+- Best for: Debugging specific layer issues before full run
+
+**Important:** Any code changes should work in BOTH manual and dynamic tests automatically since they use the same `runQualityCheck()` function and timeout calculation.
+
+### Test Step Hierarchy (Human-Readable Reports!)
+
+All tests now use a clear hierarchy in Playwright reports:
+
+```
+Setup: Navigate and load layer
+  ↳ Navigate to category
+  ↳ Search for layer
+  ↳ Click on layer
+  ↳ Wait for load
+
+1. Shows Up In All Categories
+  ↳ Check category 1
+  ↳ Check category 2
+
+2. All Layers Load
+  ↳ Verify layer visible
+
+3. ArcGIS Download Link Works
+  ↳ Click download button
+  ↳ Verify modal opens
+
+... (Tests 4-8)
+
+Verify: Layer loads successfully
+Verify: Download link works
+Verify: Tooltips pop up when clicking features
+Verify: Legend panel exists
+Verify: Legend labels are descriptive
+Verify: Legend filters work properly
+```
+
+This makes it EASY to see what each test is doing and where it failed! 🎯
 
 ---
 
-## 📁 File Organization
+## Running Tests
 
-### **Dynamic Tests (Automated)**
-- `all-layers-dynamic.spec.ts` - Iterates through all 45 categorized layers from `all-arcgis-layers.json`
+### Test a Specific Layer (Manual Testing)
 
-### **Manual Tests (Problem Cases)**
-These are **reference tests** for layers that revealed issues or edge cases:
+**Important:** Use `--grep-invert="@dynamic"` to run ONLY the manual test, not the dynamic test!
 
-- `cattle-guards.spec.ts` - Icon-based layer (visual diff detection)
-- `coastal-and-marine-data.spec.ts` - Multiple PNG icons
-- `fish-passage-barriers-assessment.spec.ts` - Styled points (geometric shapes)
-- `dibblee-geology.spec.ts` - Cryptic legend labels (geological abbreviations)
-
-These manual tests were created to investigate:
-1. **False Negatives** (tests fail, but manual QA passes)
-2. **False Positives** (tests pass, but manual QA fails)
-3. **Hybrid detection behavior** for icon/point layers
-
----
-
-## 🚀 Running Tests
-
-### **Run All Layers (Dynamic Test)**
 ```bash
-npm run test:e2e
+# Test Cattle Guards (manual test only)
+npm run test:e2e -- --grep="Cattle Guards" --grep-invert="@dynamic"
+
+# Test Dibblee Geology (manual test only)
+npm run test:e2e -- --grep="Dibblee" --grep-invert="@dynamic"
+
+# Test Earthquake Faults (manual test only)
+npm run test:e2e -- --grep="Earthquake" --grep-invert="@dynamic"
+
+# Or use the @manual tag to run ALL manual tests
+npm run test:e2e -- --grep="@manual"
 ```
 
-### **Run Specific Manual Test**
+### Test All Layers (Full Checkpoint Run)
+
 ```bash
-# Cattle Guards (icon layer)
-npm run test:e2e -- --grep="Cattle Guards"
-
-# Coastal and Marine Data (multiple PNGs)
-npm run test:e2e -- --grep="Coastal and Marine Data"
-
-# Fish Passage Barriers (styled points)
-npm run test:e2e -- --grep="Fish Passage Barriers Assessment"
-
-# Dibblee Geology (cryptic labels)
-npm run test:e2e -- --grep="Dibblee Geology"
-```
-
-### **Run All Manual Tests**
-```bash
-npm run test:e2e -- --grep="ICON LAYER|PNG ICON|STYLED POINT|CRYPTIC LABELS"
-```
-
-### **Run Full Checkpoint (All Layers)**
-```bash
+# Run full checkpoint with custom reporter
 npm run test:e2e:checkpoint
+
+# Results saved to:
+# - e2e/checkpoints/test-validation-history.csv (summary)
+# - e2e/checkpoints/full/checkpoint-{timestamp}.json (detailed)
 ```
 
----
+### Test Multiple Specific Layers
 
-## 🧪 What These Manual Tests Verify
-
-### **1. Cattle Guards (`cattle-guards.spec.ts`)**
-**Problem:** Icon-based layer, no extractable RGB colors
-
-**What it tests:**
-- ✅ Visual diff detection automatically engages
-- ✅ Before/after screenshot comparison works
-- ✅ Pixel difference > 100 threshold
-- ✅ Layer renders visibly despite having no color swatches
-
-**Expected Result:** Layer Load test should **PASS** using visual change detection
-
----
-
-### **2. Coastal and Marine Data (`coastal-and-marine-data.spec.ts`)**
-**Problem:** Multiple small PNG icons, no extractable RGB colors
-
-**What it tests:**
-- ✅ Visual diff detection for multiple sublayers with PNG icons
-- ✅ Each sublayer tested independently
-- ✅ PNG icons render visibly despite having no color swatches
-
-**Expected Result:** All sublayer Load tests should **PASS** using visual change detection
-
----
-
-### **3. Fish Passage Barriers Assessment (`fish-passage-barriers-assessment.spec.ts`)**
-**Problem:** Styled points (10px circle with border), no extractable RGB colors
-
-**What it tests:**
-- ✅ Visual diff detection for geometric shapes
-- ✅ Styled points render visibly
-- ✅ Legend HTML structure (rounded-full, inline styles)
-
-**Expected Result:** Layer Load test should **PASS** using visual change detection
-
-**Legend HTML Example:**
-```html
-<div class="rounded-full" style="width: 10px; height: 10px; 
-     background-color: rgba(0, 0, 0, 0.8); border: 1px solid rgba(255, 255, 255, 0.8);">
-</div>
-```
-
----
-
-### **4. Dibblee Geology (`dibblee-geology.spec.ts`)**
-**Problem:** Cryptic legend labels ("Tm", "Tma") - geological abbreviations
-
-**What it tests:**
-- ✅ Legend labels are accepted as-is
-- ✅ No complex geological interpretation logic needed
-- ✅ Test 7 (Legend Labels Descriptive) should PASS
-
-**Decision:** Accept cryptic labels without implementing interpretation logic
-
-**Manual QA Note:** Changed from "Some (See Notes)" to "Yes" in CSV
-
----
-
-## 📊 Test Results Analysis
-
-### **Before Hybrid Detection:**
-| Layer | Layer Load Test | Detection Method | Result |
-|-------|----------------|------------------|--------|
-| Cattle Guards | ❌ FAIL | Color Detection | False Negative |
-| Coastal & Marine | ❌ FAIL | Color Detection | False Negative |
-| Fish Passage Barriers | ❌ FAIL | Color Detection | False Negative |
-
-### **After Hybrid Detection:**
-| Layer | Layer Load Test | Detection Method | Result |
-|-------|----------------|------------------|--------|
-| Cattle Guards | ✅ PASS | Visual Diff | True Positive |
-| Coastal & Marine | ✅ PASS | Visual Diff | True Positive |
-| Fish Passage Barriers | ✅ PASS | Visual Diff | True Positive |
-
----
-
-## ⏱️ Test Timeouts
-
-### **Dynamic Timeouts (`all-layers-dynamic.spec.ts`)**
-
-The dynamic test suite automatically calculates timeout based on layer complexity:
-
-**Formula:**
-```
-timeout = base_timeout + (estimated_sublayers × time_per_sublayer)
-       = 60s + (sublayers × 5s)
-       = capped at 240s (4 min) max
-```
-
-**Examples:**
-| Layer | Type | Est. Sublayers | Timeout |
-|-------|------|----------------|---------|
-| Coastal & Marine | Feature Service | 20 | 160s |
-| California Fire Perimeters | Feature Service | 10 | 110s |
-| Groundwater Wells | Feature Service | 5 | 85s |
-| Typical Feature Service | Feature Service | 3 | 75s |
-| Image Service | Image Service | 1 | 65s |
-
-**Logged in console:**
-```
-⏱️  Timeout: 160s (dynamic)
-```
-
-### **Manual Test Timeouts**
-
-Manual tests use fixed extended timeouts:
-
-| Test File | Timeout | Reason |
-|-----------|---------|--------|
-| `coastal-and-marine-data.spec.ts` | 120s | 20 sublayers! |
-| `cattle-guards.spec.ts` | 60s | Single sublayer with visual diff |
-| `fish-passage-barriers-assessment.spec.ts` | 60s | Single sublayer with visual diff |
-| `dibblee-geology.spec.ts` | 60s | Standard multi-test suite |
-
-**Why dynamic timeouts?**
-- Visual diff detection: ~700-800ms per sublayer
-- Color detection: ~100ms per sublayer
-- Plus navigation, download, tooltip, legend tests
-- **Prevents timeouts on complex multi-sublayer services**
-- **Keeps tests fast for simple single-layer services**
-
----
-
-## 🔍 How to Investigate Issues
-
-### **View Test Video Recording:**
-After running a test, Playwright saves videos to:
-```
-test-results/[test-name]/video.webm
-```
-
-### **View Screenshots:**
-Failed tests automatically save screenshots:
-```
-test-results/[test-name]/test-failed-*.png
-```
-
-### **View Detailed Report:**
 ```bash
-npm run test:e2e:report
+# Test all manual tests (skip dynamic tests)
+npm run test:e2e -- --grep="@manual"
+
+# Test just CalFire layers (both manual and dynamic)
+npm run test:e2e -- --grep="CalFire"
+
+# Test Fire-related layers (both manual and dynamic)
+npm run test:e2e -- --grep="Fire"
 ```
 
-### **Common Issues:**
+---
 
-#### **Timeout Errors**
-```
-Test timeout of 30000ms exceeded
-```
-**Solution:** Layer has too many sublayers. Increase timeout in test file:
+## Test Files
+
+### Manual Test Files (for debugging):
+- `cattle-guards.spec.ts` - Cattle Guards (icon layer, tooltip issues)
+- `cattle-pastures.spec.ts` - Cattle Pastures (category matching test)
+- `coastal-and-marine-data.spec.ts` - Coastal and Marine Data (PNG icons)
+- `dibblee-geology.spec.ts` - Dibblee Geology (cryptic labels, tooltip issues)
+- `fish-passage-barriers-assessment.spec.ts` - Fish Passage Barriers (styled points, tooltip issues)
+- `earthquake-faults-folds-usa.spec.ts` - Earthquake Faults (download broken, tooltip issues)
+- `california-historic-fire-perimeters.spec.ts` - California Fire Perimeters
+- `calfire-fire-hazard-severity-zones-2023.spec.ts` - CalFire FHSZ
+- `calfire-frap-fire-threat-2019.spec.ts` - CalFire FRAP (filters broken)
+
+### Dynamic Test File:
+- `all-layers-dynamic.spec.ts` - Runs all 45 categorized layers
+
+### Other Files:
+- `PROBLEM_LAYERS.md` - Tracks known issues and debugging TODO list
+- `README.md` - This file
+
+---
+
+## How to Add a New Manual Test
+
+1. Copy an existing manual test file (e.g., `cattle-guards.spec.ts`)
+2. Update the layer config with correct ID, title, URL, categories, and expected results
+3. Use `runQualityCheck(page, layerConfig)` - **DO NOT** use old helpers directly
+4. Run it: `npm run test:e2e -- --grep="Your Layer Name"`
+
+**Example:**
+
 ```typescript
-test.setTimeout(120000); // 2 minutes
+import { test, expect } from '@playwright/test';
+import { runQualityCheck } from '../helpers/run-quality-check';
+
+test.describe('My New Layer', () => {
+  test.setTimeout(120000); // 2 minutes
+  
+  test.beforeEach(async ({ page }) => {
+    await page.goto('http://localhost:5173');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+  });
+
+  test('Complete Quality Check (8 Criteria)', async ({ page }) => {
+    const layerConfig = {
+      id: 'my-layer-id',
+      title: 'My New Layer',
+      itemId: 'abc123',
+      url: 'https://services.arcgis.com/.../FeatureServer',
+      type: 'FeatureService' as const,
+      categories: ['Fire', 'Infrastructure'],
+      expectedResults: {
+        showsInCategories: null,
+        layersLoad: true,
+        downloadLinkWorks: true,
+        tooltipsPopUp: true,
+        legendExists: true,
+        legendLabelsDescriptive: true,
+        legendFiltersWork: true
+      },
+      notes: 'Optional notes'
+    };
+
+    const result = await runQualityCheck(page, layerConfig);
+
+    // Log results
+    console.log(`Tooltips: ${result.tests.test5_tooltipsPopUp?.passed ? 'PASS' : 'FAIL'}`);
+
+    // Assertions
+    expect(result.tests.test2_layersLoad?.passed).toBe(true);
+  });
+});
 ```
 
 ---
 
-## 📈 Next Steps
+## Test Results
 
-1. ✅ **DONE:** Implement hybrid layer detection (color detection + visual diff)
-2. ✅ **DONE:** Fix False Negatives for icon/point layers
-3. ⏳ **TODO:** Update tooltip test for icon/point layers
-4. ⏳ **TODO:** Investigate remaining False Positives/Negatives
+### Viewing Results
+
+```bash
+# Open HTML report
+npx playwright show-report
+
+# Open checkpoint report (for full runs)
+npx playwright show-report playwright-report-checkpoint
+```
+
+### Understanding Results
+
+**Test Validation Metrics:**
+- **True Positive (TP):** Feature works, test says PASS ✅
+- **True Negative (TN):** Feature broken, test says FAIL ✅
+- **False Positive (FP):** Feature broken, test says PASS ❌
+- **False Negative (FN):** Feature works, test says FAIL ❌
+
+**Accuracy = (TP + TN) / Total Tests**
+
+**Goal:** 95%+ accuracy, < 20 minutes runtime
 
 ---
 
-## 📚 Related Documentation
+## Known Issues
 
-- [Main E2E README](../README.md) - Comprehensive guide covering hybrid detection, checkpoint system, and more
-- [E2E Test Helpers](../helpers/tnc-arcgis-test-helpers.ts) - Source code for hybrid detection logic
+See `PROBLEM_LAYERS.md` for:
+- Layers with 10-minute timeouts
+- Tooltip test failures (false negatives)
+- Other test issues
+- Priority TODOs
 
 ---
 
-## 🏁 Summary
+## Test Configuration
 
-These manual tests serve as **reference implementations** for:
-1. Verifying hybrid detection behavior
-2. Debugging specific problem layers
-3. Validating expected vs. actual results
-4. Demonstrating detection method selection logic
+### Checkpoint Config (`playwright.checkpoint.config.ts`)
+- **Workers:** 9 parallel workers
+- **Timeout:** 300 seconds (5 minutes) per test
+- **Retries:** 0 (disabled to prevent 10-min timeouts)
+- **Video:** Only on failures (for speed)
+- **Screenshots:** Only on failures (for speed)
 
-Run them when:
-- Investigating test validation issues (TP/TN/FP/FN)
-- Debugging hybrid detection logic
-- Verifying changes to test helpers
-- Understanding how specific layer types are tested
-
+### Base Config (`playwright.config.ts`)
+- Standard Playwright settings
+- Local dev server: http://localhost:5173
