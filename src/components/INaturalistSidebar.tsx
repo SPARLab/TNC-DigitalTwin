@@ -27,6 +27,7 @@ interface INaturalistSidebarProps {
   onObservationClick?: (obs: INaturalistUnifiedObservation) => void;
   hasSearched?: boolean;
   selectedObservationId?: number | string | null;
+  iconicTaxa?: string[]; // Filter by taxonomic groups
 }
 
 const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
@@ -37,7 +38,8 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
   onAddToCart,
   onObservationClick,
   hasSearched = false,
-  selectedObservationId
+  selectedObservationId,
+  iconicTaxa = []
 }) => {
   const [searchText, setSearchText] = useState('');
   const [selectedTaxonFilter, setSelectedTaxonFilter] = useState('all');
@@ -114,8 +116,15 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
   const filteredObservations = useMemo(() => {
     let filtered = observations;
     
-    // Filter by taxon
-    if (selectedTaxonFilter !== 'all') {
+    // Filter by iconicTaxa from parent (takes precedence over local selectedTaxonFilter)
+    // Only apply if iconicTaxa is explicitly set and not all 8 groups
+    const isIconicTaxaFiltering = iconicTaxa && iconicTaxa.length > 0 && iconicTaxa.length < 8;
+    if (isIconicTaxaFiltering) {
+      filtered = filtered.filter(obs => 
+        iconicTaxa.some(taxon => obs.iconicTaxon?.toLowerCase() === taxon.toLowerCase())
+      );
+    } else if (selectedTaxonFilter !== 'all') {
+      // Fallback to local taxon filter if iconicTaxa is not filtering
       filtered = filtered.filter(obs => 
         (obs.iconicTaxon || 'Unknown') === selectedTaxonFilter
       );
@@ -132,7 +141,7 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
     }
     
     return filtered;
-  }, [observations, selectedTaxonFilter, searchText]);
+  }, [observations, selectedTaxonFilter, searchText, iconicTaxa]);
 
   // Paginate observations
   const paginatedObservations = useMemo(() => {

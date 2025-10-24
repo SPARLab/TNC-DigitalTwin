@@ -169,6 +169,7 @@ const DataView: React.FC<DataViewProps> = ({
             hasSearched={hasSearched}
             onObservationClick={onINatObservationClick}
             selectedObservationId={selectedINatObservation?.id}
+            iconicTaxa={filters.iconicTaxa}
           />
         );
 
@@ -189,6 +190,7 @@ const DataView: React.FC<DataViewProps> = ({
             hasSearched={hasSearched}
             onObservationClick={onINatObservationClick}
             selectedObservationId={selectedINatObservation?.id}
+            iconicTaxa={filters.iconicTaxa}
           />
         );
         

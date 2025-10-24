@@ -1566,6 +1566,8 @@ function App() {
                 onDrawModeChange={setIsDrawMode}
                 onPolygonDrawn={handlePolygonDrawn}
                 onPolygonCleared={handlePolygonCleared}
+                iconicTaxa={filters.iconicTaxa}
+                onIconicTaxaChange={(taxa) => setFilters(prev => ({ ...prev, iconicTaxa: taxa }))}
               />
               {/* Hub Page Preview Overlay */}
               {selectedModalItem && (

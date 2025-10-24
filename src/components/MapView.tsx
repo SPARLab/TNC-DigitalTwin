@@ -63,6 +63,9 @@ interface MapViewProps {
   onDrawModeChange?: (isDrawMode: boolean) => void;
   onPolygonDrawn?: (polygon: __esri.Polygon) => void;
   onPolygonCleared?: () => void;
+  // Filter synchronization props
+  iconicTaxa?: string[];
+  onIconicTaxaChange?: (taxa: string[]) => void;
 }
 
 export interface MapViewRef {
@@ -141,7 +144,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   isDrawMode = false,
   onDrawModeChange,
   onPolygonDrawn,
-  onPolygonCleared
+  onPolygonCleared,
+  iconicTaxa = [],
+  onIconicTaxaChange
 }, ref) => {
   const mapDiv = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<MapView | null>(null);
@@ -2125,6 +2130,19 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   }, [tncObservations, visibleObservationCategories.size]);
 
+  // Sync visibleObservationCategories with iconicTaxa filter from App.tsx
+  // This ensures legend state matches the filter state from the right sidebar
+  useEffect(() => {
+    if (iconicTaxa && iconicTaxa.length > 0) {
+      // Convert to lowercase for consistent matching
+      const normalizedTaxa = new Set(iconicTaxa.map(t => t.toLowerCase()));
+      setVisibleObservationCategories(normalizedTaxa);
+    } else if (iconicTaxa && iconicTaxa.length === 0) {
+      // If iconicTaxa is explicitly empty, clear all categories
+      setVisibleObservationCategories(new Set());
+    }
+  }, [iconicTaxa]);
+
   // Effect to update eBird observations on map when data changes
   useEffect(() => {
     if (view) {
@@ -3365,32 +3383,38 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     const allVisible = allCategories.every(key => visibleObservationCategories.has(key));
     const isCurrentlyVisible = visibleObservationCategories.has(categoryKey);
     
+    let newVisible: Set<string>;
+    
     // Case 1: All are visible, click one → show only that one
     if (allVisible) {
-      setVisibleObservationCategories(new Set([categoryKey]));
-      return;
+      newVisible = new Set([categoryKey]);
     }
-    
     // Case 2: Only this one is visible, click it again → show all
-    if (isCurrentlyVisible && visibleObservationCategories.size === 1) {
-      setVisibleObservationCategories(new Set(allCategories));
-      return;
+    else if (isCurrentlyVisible && visibleObservationCategories.size === 1) {
+      newVisible = new Set(allCategories);
     }
-    
     // Case 3: Some are visible, clicking a non-visible one → add it (multi-select)
-    if (!isCurrentlyVisible) {
-      const newVisible = new Set(visibleObservationCategories);
+    else if (!isCurrentlyVisible) {
+      newVisible = new Set(visibleObservationCategories);
       newVisible.add(categoryKey);
-      setVisibleObservationCategories(newVisible);
-      return;
+    }
+    // Case 4: Some are visible, clicking a visible one → remove it (unless it would leave none)
+    else if (isCurrentlyVisible && visibleObservationCategories.size > 1) {
+      newVisible = new Set(visibleObservationCategories);
+      newVisible.delete(categoryKey);
+    } else {
+      return; // No change needed
     }
     
-    // Case 4: Some are visible, clicking a visible one → remove it (unless it would leave none)
-    if (isCurrentlyVisible && visibleObservationCategories.size > 1) {
-      const newVisible = new Set(visibleObservationCategories);
-      newVisible.delete(categoryKey);
-      setVisibleObservationCategories(newVisible);
-      return;
+    setVisibleObservationCategories(newVisible);
+    
+    // Sync with parent filter state
+    if (onIconicTaxaChange) {
+      // Convert to capitalized format (e.g., 'aves' -> 'Aves')
+      const capitalizedTaxa = Array.from(newVisible).map(key => 
+        key.charAt(0).toUpperCase() + key.slice(1)
+      );
+      onIconicTaxaChange(capitalizedTaxa);
     }
   };
 
@@ -3398,8 +3422,21 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     if (visible) {
       const allCategories = new Set(legendCategories.map(cat => cat.key));
       setVisibleObservationCategories(allCategories);
+      
+      // Sync with parent filter state
+      if (onIconicTaxaChange) {
+        const capitalizedTaxa = Array.from(allCategories).map(key => 
+          key.charAt(0).toUpperCase() + key.slice(1)
+        );
+        onIconicTaxaChange(capitalizedTaxa);
+      }
     } else {
       setVisibleObservationCategories(new Set());
+      
+      // Sync with parent filter state
+      if (onIconicTaxaChange) {
+        onIconicTaxaChange([]);
+      }
     }
   };
 

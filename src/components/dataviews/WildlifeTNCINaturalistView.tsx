@@ -16,6 +16,7 @@ interface WildlifeTNCINaturalistViewProps {
   hasSearched?: boolean;
   onObservationClick?: (obs: INaturalistUnifiedObservation) => void;
   selectedObservationId?: number | string | null;
+  iconicTaxa?: string[]; // Filter by taxonomic groups
 }
 
 const WildlifeTNCINaturalistView: React.FC<WildlifeTNCINaturalistViewProps> = ({
@@ -30,7 +31,8 @@ const WildlifeTNCINaturalistView: React.FC<WildlifeTNCINaturalistViewProps> = ({
   onObservationSelect,
   hasSearched = false,
   onObservationClick,
-  selectedObservationId
+  selectedObservationId,
+  iconicTaxa = []
 }) => {
   // Helper function to format date
   const formatDate = (dateString: string) => {
@@ -97,6 +99,7 @@ const WildlifeTNCINaturalistView: React.FC<WildlifeTNCINaturalistViewProps> = ({
       onObservationClick={handleObservationClick}
       selectedObservationId={selectedObservationId || selectedObservation?.observation_id}
       hasSearched={hasSearched}
+      iconicTaxa={iconicTaxa}
     />
   );
 };
