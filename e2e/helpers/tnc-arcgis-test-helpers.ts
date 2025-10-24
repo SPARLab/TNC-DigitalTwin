@@ -953,14 +953,10 @@ async function checkForVisualChangeUsingToggle(
     await toggleButton.click();
     await page.waitForTimeout(300);
     
-    // Step 4: Screenshot "after" state (recalculate in case layout changed)
-    const clipAreaAfter = await getMapScreenshotArea(page);
-    if (!clipAreaAfter) {
-      console.warn('    ⚠️ Map container not found for after screenshot');
-      continue;
-    }
+    // Step 4: Screenshot "after" state - USE SAME DIMENSIONS AS BEFORE
+    // This prevents "Image sizes do not match" errors when legend visibility changes
     const afterScreenshot = await page.screenshot({
-      clip: clipAreaAfter
+      clip: clipAreaBefore  // ✅ Same dimensions as before!
     });
     
     // Step 5: Run pixelmatch
@@ -1266,6 +1262,19 @@ export async function testTooltipsPopUp(
       reason: result.message,
       method: result.details?.method
     });
+  }
+  
+  // NEW: Ensure zoom is reset after ALL tooltip tests complete
+  // This prevents zoom state from affecting subsequent tests (e.g., filtering)
+  const anyZoomedOut = sublayerResults.some(r => 
+    r.method === 'pixel_diff' || 
+    (r as any).zoomLevel !== 'default'
+  );
+  if (anyZoomedOut) {
+    console.log(`\n   🔄 Final zoom reset: Ensuring default zoom level for subsequent tests...`);
+    await zoomInToDefault(page);
+    await page.waitForTimeout(2000); // Wait for map to fully re-render at default zoom
+    console.log(`   ✅ Zoom reset complete`);
   }
   
   const workedCount = sublayerResults.filter(r => r.tooltipsWork).length;
@@ -1934,20 +1943,11 @@ async function testFilteringForSingleLayer(
   // This prevents false positives from comparing fully-rendered vs partially-rendered states
   await waitForMapStability(page);
   
-  // Recalculate screenshot area (may have changed after filter applied)
-  const clipAreaAfter = await getMapScreenshotArea(page);
-  if (!clipAreaAfter) {
-    return {
-      passed: false,
-      message: `${layerName}: Map container not found for after screenshot`,
-      details: { error: 'no_map_container_after' }
-    };
-  }
-  
-  // Take "after" screenshot (first item filtered out, FULLY RENDERED)
+  // Take "after" screenshot - USE SAME DIMENSIONS AS BEFORE
+  // This prevents "Image sizes do not match" errors when legend visibility changes
   console.log(`  📸 Taking "after" screenshot (item filtered)...`);
   const afterScreenshot = await page.screenshot({
-    clip: clipAreaAfter
+    clip: clipArea  // ✅ Same dimensions as before!
   });
   
   // Use pixelmatch to detect visual changes
