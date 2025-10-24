@@ -158,7 +158,7 @@ export interface DendraStationWithMetadata extends DendraStation {
  */
 export interface INaturalistCustomFilters {
   /** 
-   * Filter by observation quality grade
+   * Filter by observation quality grade (Public API only, works client-side)
    * - research: Has community identification to species level with 2/3 agreement
    * - needs_id: Needs community identification
    * - casual: Does not meet research grade criteria
@@ -166,49 +166,30 @@ export interface INaturalistCustomFilters {
   qualityGrade?: 'research' | 'needs_id' | 'casual';
   
   /** 
-   * Filter by major taxonomic groups (iconic taxa)
+   * Filter by major taxonomic groups (iconic taxa) (works client-side)
    * Examples: Aves (birds), Mammalia (mammals), Plantae (plants), etc.
    */
   iconicTaxa?: string[];
   
   /** 
-   * Search by taxon scientific or common name
+   * Search by taxon scientific or common name (works client-side)
    * Note: Names are not unique, may match multiple taxa
    */
   taxonName?: string;
   
   /** 
-   * Only include observations that have photos
-   * Uses the iNaturalist API 'has[]=photos' parameter
+   * Filter observations by photo presence (works client-side)
+   * - 'any': Include all observations (default)
+   * - 'with': Only include observations that have photos
+   * - 'without': Only include observations without photos
    */
-  hasPhotos?: boolean;
+  photoFilter?: 'any' | 'with' | 'without';
   
-  /** 
-   * Filter by geoprivacy level
-   * - open: Exact coordinates visible to all
-   * - obscured: Coordinates obscured to ~0.2° grid
-   * - private: Coordinates hidden from public
+  /**
+   * Filter by months (1-12) (works client-side)
+   * Useful for seasonal analysis and migration patterns
    */
-  geoprivacy?: 'open' | 'obscured' | 'private';
-  
-  /** 
-   * Maximum positional accuracy in meters
-   * Only includes observations with accuracy better than this threshold
-   * Common values: 100, 500, 1000, 5000
-   */
-  accBelow?: number;
-  
-  /** 
-   * Filter by photo license
-   * Examples: 'CC-BY', 'CC-BY-NC', 'CC0', 'any'
-   */
-  photoLicense?: string;
-  
-  /** 
-   * Filter observations that are outside the expected range for the taxon
-   * Useful for finding unusual or potentially misidentified observations
-   */
-  outOfRange?: boolean;
+  months?: number[];
 }
 
 /**

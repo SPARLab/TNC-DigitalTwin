@@ -110,13 +110,10 @@ private async waitForRateLimit(): Promise<void> {
     startDate?: string;
     endDate?: string;
     maxResults?: number; // Maximum total results to fetch across all pages
-    // Custom filter parameters
+    // Custom filter parameters (that work client-side)
     taxonName?: string;
-    hasPhotos?: boolean;
-    geoprivacy?: 'open' | 'obscured' | 'private';
-    accBelow?: number;
-    photoLicense?: string;
-    outOfRange?: boolean;
+    photoFilter?: 'any' | 'with' | 'without';
+    months?: number[];
   } = {}): Promise<iNaturalistResponse> {
     const {
       perPage = 200, // Increased from 100 to get more per request
@@ -129,11 +126,8 @@ private async waitForRateLimit(): Promise<void> {
       maxResults = 500, // Default max results across all pages
       // Custom filters
       taxonName,
-      hasPhotos,
-      geoprivacy,
-      accBelow,
-      photoLicense,
-      outOfRange
+      photoFilter,
+      months
     } = options;
 
     // Calculate date range - use custom dates if provided, otherwise use daysBack
@@ -192,24 +186,14 @@ private async waitForRateLimit(): Promise<void> {
       params.append('taxon_name', taxonName);
     }
 
-    if (hasPhotos) {
+    if (photoFilter === 'with') {
       params.append('has[]', 'photos');
+    } else if (photoFilter === 'without') {
+      params.append('has[]', 'nophotos');
     }
 
-    if (geoprivacy) {
-      params.append('geoprivacy', geoprivacy);
-    }
-
-    if (accBelow !== undefined) {
-      params.set('acc_below', accBelow.toString());
-    }
-
-    if (photoLicense) {
-      params.append('photo_license', photoLicense);
-    }
-
-    if (outOfRange !== undefined) {
-      params.append('out_of_range', outOfRange.toString());
+    if (months && months.length > 0) {
+      params.append('month', months.join(','));
     }
 
     // Fetch multiple pages if needed

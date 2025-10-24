@@ -85,19 +85,14 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item, onRemove }) =>
                 {item.customFilters.inaturalist.taxonName}
               </span>
             )}
-            {item.customFilters.inaturalist.hasPhotos && (
+            {item.customFilters.inaturalist.photoFilter && item.customFilters.inaturalist.photoFilter !== 'any' && (
               <span className="text-xs px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded">
-                📷 photos
+                📷 {item.customFilters.inaturalist.photoFilter === 'with' ? 'with photos' : 'without photos'}
               </span>
             )}
-            {item.customFilters.inaturalist.geoprivacy && (
-              <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded">
-                {item.customFilters.inaturalist.geoprivacy}
-              </span>
-            )}
-            {item.customFilters.inaturalist.accBelow && item.customFilters.inaturalist.accBelow !== 1000 && (
-              <span className="text-xs px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded">
-                &lt; {item.customFilters.inaturalist.accBelow}m
+            {item.customFilters.inaturalist.months && item.customFilters.inaturalist.months.length > 0 && item.customFilters.inaturalist.months.length < 12 && (
+              <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded">
+                📅 {item.customFilters.inaturalist.months.length} {item.customFilters.inaturalist.months.length === 1 ? 'month' : 'months'}
               </span>
             )}
           </div>

@@ -53,13 +53,11 @@ function App() {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // iNaturalist custom filters state (for export tab)
+  // Only includes filters that work client-side with the current data
   const [iNatCustomFilters, setINatCustomFilters] = useState<INaturalistCustomFilters>({
     taxonName: '',
-    hasPhotos: false,
-    geoprivacy: undefined,
-    accBelow: 1000,
-    photoLicense: undefined,
-    outOfRange: undefined
+    photoFilter: 'any',
+    months: []
   });
 
   const [filters, setFilters] = useState<FilterState>({
@@ -1739,12 +1737,10 @@ function App() {
             onIconicTaxaChange={(taxa) => setFilters(prev => ({ ...prev, iconicTaxa: taxa }))}
             taxonName={iNatCustomFilters.taxonName}
             onTaxonNameChange={(name) => setINatCustomFilters(prev => ({ ...prev, taxonName: name }))}
-            hasPhotos={iNatCustomFilters.hasPhotos}
-            onHasPhotosChange={(value) => setINatCustomFilters(prev => ({ ...prev, hasPhotos: value }))}
-            geoprivacy={iNatCustomFilters.geoprivacy}
-            onGeoprivacyChange={(value) => setINatCustomFilters(prev => ({ ...prev, geoprivacy: value }))}
-            accBelow={iNatCustomFilters.accBelow}
-            onAccBelowChange={(value) => setINatCustomFilters(prev => ({ ...prev, accBelow: value }))}
+            photoFilter={iNatCustomFilters.photoFilter}
+            onPhotoFilterChange={(value) => setINatCustomFilters(prev => ({ ...prev, photoFilter: value }))}
+            months={iNatCustomFilters.months}
+            onMonthsChange={(months) => setINatCustomFilters(prev => ({ ...prev, months }))}
             onExportCSV={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? handleTNCExportCSV : handleExportCSV}
             onExportGeoJSON={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? handleTNCExportGeoJSON : handleExportGeoJSON}
             onAddToCart={(filteredCount: number) => {
@@ -1768,11 +1764,8 @@ function App() {
                     // Only include iconicTaxa if it's actually filtering (not all 8 selected)
                     iconicTaxa: filters.iconicTaxa && filters.iconicTaxa.length > 0 && filters.iconicTaxa.length < 8 ? filters.iconicTaxa : undefined,
                     taxonName: iNatCustomFilters.taxonName || undefined,
-                    hasPhotos: iNatCustomFilters.hasPhotos || undefined,
-                    geoprivacy: iNatCustomFilters.geoprivacy,
-                    accBelow: iNatCustomFilters.accBelow,
-                    photoLicense: iNatCustomFilters.photoLicense,
-                    outOfRange: iNatCustomFilters.outOfRange
+                    photoFilter: iNatCustomFilters.photoFilter !== 'any' ? iNatCustomFilters.photoFilter : undefined,
+                    months: iNatCustomFilters.months && iNatCustomFilters.months.length > 0 && iNatCustomFilters.months.length < 12 ? iNatCustomFilters.months : undefined
                   }
                 },
                 estimatedCount: filteredCount,

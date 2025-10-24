@@ -42,11 +42,8 @@ async function executeINaturalistQuery(item: CartItem): Promise<any[]> {
     qualityGrade: inatFilters.qualityGrade,
     iconicTaxa: inatFilters.iconicTaxa,
     taxonName: inatFilters.taxonName,
-    hasPhotos: inatFilters.hasPhotos,
-    geoprivacy: inatFilters.geoprivacy,
-    accBelow: inatFilters.accBelow,
-    photoLicense: inatFilters.photoLicense,
-    outOfRange: inatFilters.outOfRange,
+    photoFilter: inatFilters.photoFilter,
+    months: inatFilters.months,
     maxResults: 10000 // Higher limit for exports
   });
   
