@@ -18,6 +18,8 @@ import DendraSidebar from './DendraSidebar';
 
 interface DataViewProps {
   filters: FilterState;
+  // Current iconicTaxa (from filters state, not lastSearchedFilters)
+  currentIconicTaxa?: string[];
   // iNaturalist Public API data
   observations: iNaturalistObservation[];
   observationsLoading: boolean;
@@ -78,10 +80,13 @@ interface DataViewProps {
   onINatDetailsClose?: () => void;
   qualityGrade?: 'research' | 'needs_id' | 'casual' | undefined;
   onQualityGradeChange?: (grade: 'research' | 'needs_id' | 'casual' | undefined) => void;
+  // Iconic taxa filter callback
+  onIconicTaxaChange?: (taxa: string[]) => void;
 }
 
 const DataView: React.FC<DataViewProps> = ({
   filters,
+  currentIconicTaxa,
   observations,
   observationsLoading,
   onObservationExportCSV,
@@ -130,7 +135,8 @@ const DataView: React.FC<DataViewProps> = ({
   onINatObservationClick,
   onINatDetailsClose,
   qualityGrade,
-  onQualityGradeChange
+  onQualityGradeChange,
+  onIconicTaxaChange
 }) => {
   // Route to appropriate data view based on category + source combination
   const getDataView = () => {
@@ -169,7 +175,8 @@ const DataView: React.FC<DataViewProps> = ({
             hasSearched={hasSearched}
             onObservationClick={onINatObservationClick}
             selectedObservationId={selectedINatObservation?.id}
-            iconicTaxa={filters.iconicTaxa}
+            iconicTaxa={currentIconicTaxa ?? filters.iconicTaxa}
+            onIconicTaxaChange={onIconicTaxaChange}
           />
         );
 
@@ -190,7 +197,8 @@ const DataView: React.FC<DataViewProps> = ({
             hasSearched={hasSearched}
             onObservationClick={onINatObservationClick}
             selectedObservationId={selectedINatObservation?.id}
-            iconicTaxa={filters.iconicTaxa}
+            iconicTaxa={currentIconicTaxa ?? filters.iconicTaxa}
+            onIconicTaxaChange={onIconicTaxaChange}
           />
         );
         

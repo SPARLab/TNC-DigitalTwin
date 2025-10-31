@@ -1398,6 +1398,7 @@ function App() {
       <div id="main-content" className="flex-1 flex min-h-0">
         <DataView
           filters={lastSearchedFilters}
+          currentIconicTaxa={filters.iconicTaxa}
           observations={observations}
           observationsLoading={observationsLoading}
           onObservationExportCSV={handleExportCSV}
@@ -1452,6 +1453,7 @@ function App() {
           onINatDetailsClose={handleINatDetailsClose}
           qualityGrade={filters.qualityGrade}
           onQualityGradeChange={(grade) => setFilters(prev => ({ ...prev, qualityGrade: grade }))}
+          onIconicTaxaChange={(taxa) => setFilters(prev => ({ ...prev, iconicTaxa: taxa }))}
         />
         <div id="map-container" className="flex-1 relative flex">
           {/* Conditionally render based on data source and LiDAR mode */}

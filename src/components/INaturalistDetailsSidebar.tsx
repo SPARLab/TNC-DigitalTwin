@@ -51,11 +51,33 @@ const INaturalistDetailsSidebar: React.FC<INaturalistDetailsSidebarProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('export');
 
-  // All available taxonomic groups
-  const allTaxonomicGroups = ['Aves', 'Mammalia', 'Reptilia', 'Amphibia', 'Actinopterygii', 'Insecta', 'Plantae', 'Fungi'];
-
   // Detect if we're using TNC layers (which have limited fields)
   const isTNCLayer = dataSourceLabel?.includes('TNC');
+  
+  // Compute available taxa from actual observations (filter out empty/null/Unknown)
+  const availableTaxaInObservations = useMemo(() => {
+    const taxa = new Set<string>();
+    observations.forEach(obs => {
+      const taxon = obs.iconicTaxon;
+      if (taxon && taxon.trim() && taxon.toLowerCase() !== 'unknown') {
+        // Capitalize first letter, lowercase the rest
+        const normalized = taxon.charAt(0).toUpperCase() + taxon.slice(1).toLowerCase();
+        taxa.add(normalized);
+      }
+    });
+    return Array.from(taxa);
+  }, [observations]);
+  
+  
+  // Check if iconic taxa is actually filtering (not all selected or empty)
+  // Compare against actual available taxa, not hardcoded list
+  const isIconicTaxaFiltering = useMemo(() => {
+    if (!iconicTaxa || iconicTaxa.length === 0 || availableTaxaInObservations.length === 0) {
+      return false;
+    }
+    // Filtering if selected taxa count is less than available taxa count
+    return iconicTaxa.length < availableTaxaInObservations.length;
+  }, [iconicTaxa, availableTaxaInObservations]);
   
   // Calculate filtered observations based on custom filters
   const filteredObservations = useMemo(() => {
@@ -69,7 +91,6 @@ const INaturalistDetailsSidebar: React.FC<INaturalistDetailsSidebarProps> = ({
     // Apply iconic taxa filter (only if specific taxa selected, not if all or none selected)
     // Note: Both Public API and TNC use iconicTaxon in the unified observation format
     // (TNC's taxon_category_name is mapped to iconicTaxon upstream)
-    const isIconicTaxaFiltering = iconicTaxa && iconicTaxa.length > 0 && iconicTaxa.length < allTaxonomicGroups.length;
     if (isIconicTaxaFiltering) {
       filtered = filtered.filter(obs => 
         iconicTaxa.some(taxon => obs.iconicTaxon?.toLowerCase() === taxon.toLowerCase())
@@ -114,10 +135,7 @@ const INaturalistDetailsSidebar: React.FC<INaturalistDetailsSidebarProps> = ({
     // These are stored for cart queries but don't filter current client-side results.
 
     return filtered;
-  }, [observations, qualityGrade, iconicTaxa, taxonName, photoFilter, months, allTaxonomicGroups.length, isTNCLayer]);
-  
-  // Check if iconic taxa is actually filtering (not all selected or empty)
-  const isIconicTaxaFiltering = iconicTaxa && iconicTaxa.length > 0 && iconicTaxa.length < allTaxonomicGroups.length;
+  }, [observations, qualityGrade, iconicTaxa, isIconicTaxaFiltering, taxonName, photoFilter, months, isTNCLayer]);
   
   // Check if any additional filters are active (only client-side filters that actually work)
   const hasAdditionalFilters = useMemo(() => {
@@ -432,24 +450,40 @@ const INaturalistDetailsSidebar: React.FC<INaturalistDetailsSidebarProps> = ({
                   { value: 'Insecta', label: 'Insects', icon: '🦋' },
                   { value: 'Plantae', label: 'Plants', icon: '🌱' },
                   { value: 'Fungi', label: 'Fungi', icon: '🍄' }
-                ].map((taxon) => (
-                  <label key={taxon.value} id={`iconic-taxon-option-${taxon.value.toLowerCase()}`} className="flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={iconicTaxa.includes(taxon.value)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          onIconicTaxaChange([...iconicTaxa, taxon.value]);
-                        } else {
-                          onIconicTaxaChange(iconicTaxa.filter(t => t !== taxon.value));
-                        }
-                      }}
-                      className="mr-2 cursor-pointer"
-                    />
-                    <span className="text-lg mr-2">{taxon.icon}</span>
-                    <span className="text-sm text-gray-700">{taxon.label}</span>
-                  </label>
-                ))}
+                ].map((taxon) => {
+                  const isAvailable = availableTaxaInObservations.includes(taxon.value);
+                  const isChecked = iconicTaxa.includes(taxon.value);
+                  return (
+                    <label 
+                      key={taxon.value} 
+                      id={`iconic-taxon-option-${taxon.value.toLowerCase()}`} 
+                      className={`flex items-center ${isAvailable ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        disabled={!isAvailable}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            // Add to current selection (preserve other selections)
+                            const newTaxa = [...iconicTaxa, taxon.value];
+                            onIconicTaxaChange(newTaxa);
+                          } else {
+                            // Remove from current selection
+                            const newTaxa = iconicTaxa.filter(t => t !== taxon.value);
+                            onIconicTaxaChange(newTaxa);
+                          }
+                        }}
+                        className="mr-2 cursor-pointer disabled:cursor-not-allowed"
+                      />
+                      <span className="text-lg mr-2">{taxon.icon}</span>
+                      <span className="text-sm text-gray-700">{taxon.label}</span>
+                      {!isAvailable && observations.length > 0 && (
+                        <span className="text-xs text-gray-400 ml-1">(not in data)</span>
+                      )}
+                    </label>
+                  );
+                })}
               </div>
             </div>
           )}

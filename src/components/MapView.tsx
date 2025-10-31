@@ -2104,34 +2104,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   }, [view, tncObservations, visibleObservationCategories]);
 
-  // Initialize visible categories when regular iNaturalist observations load
-  // This ensures legend shows all categories as selected on first load
-  useEffect(() => {
-    if (currentObservations.length > 0 && visibleObservationCategories.size === 0) {
-      const categories = new Set<string>();
-      currentObservations.forEach(obs => {
-        const iconicTaxon = obs.taxon?.iconic_taxon_name || 'unknown';
-        categories.add(iconicTaxon);
-      });
-      setVisibleObservationCategories(categories);
-    }
-  }, [currentObservations, visibleObservationCategories.size]);
-
-  // Initialize visible categories when TNC observations load
-  // This ensures legend shows all categories as selected on first load
-  useEffect(() => {
-    if (tncObservations.length > 0 && visibleObservationCategories.size === 0) {
-      const categories = new Set<string>();
-      tncObservations.forEach(obs => {
-        const iconicTaxon = normalizeTNCCategoryToIconicTaxon(obs.taxon_category_name);
-        categories.add(iconicTaxon);
-      });
-      setVisibleObservationCategories(categories);
-    }
-  }, [tncObservations, visibleObservationCategories.size]);
-
   // Sync visibleObservationCategories with iconicTaxa filter from App.tsx
-  // This ensures legend state matches the filter state from the right sidebar
+  // This is the single source of truth - INaturalistSidebar handles initialization
   useEffect(() => {
     if (iconicTaxa && iconicTaxa.length > 0) {
       // Convert to lowercase for consistent matching
@@ -2140,8 +2114,22 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     } else if (iconicTaxa && iconicTaxa.length === 0) {
       // If iconicTaxa is explicitly empty, clear all categories
       setVisibleObservationCategories(new Set());
+    } else {
+      // If iconicTaxa is undefined, initialize with all available categories
+      const allCategories = new Set<string>();
+      currentObservations.forEach(obs => {
+        const iconicTaxon = obs.taxon?.iconic_taxon_name || 'unknown';
+        allCategories.add(iconicTaxon);
+      });
+      tncObservations.forEach(obs => {
+        const iconicTaxon = normalizeTNCCategoryToIconicTaxon(obs.taxon_category_name);
+        allCategories.add(iconicTaxon);
+      });
+      if (allCategories.size > 0) {
+        setVisibleObservationCategories(allCategories);
+      }
     }
-  }, [iconicTaxa]);
+  }, [iconicTaxa, currentObservations, tncObservations]);
 
   // Effect to update eBird observations on map when data changes
   useEffect(() => {
