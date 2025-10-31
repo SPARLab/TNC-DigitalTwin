@@ -108,7 +108,6 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
 
   // Get currently selected taxa for the multi-select dropdown
   // Only include taxa that actually exist in the current observations
-  // NOTE: This is computed from the iconicTaxa prop - the prop IS the source of truth
   const selectedTaxaSet = useMemo(() => {
     const availableGroupsSet = new Set(groupedObservations.map(g => g.category.toLowerCase()));
     
@@ -118,7 +117,17 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
         .map(t => t.toLowerCase())
         .filter(t => availableGroupsSet.has(t));
       
-      return new Set(selectedAndAvailable);
+      const selectedSet = new Set(selectedAndAvailable);
+      const missing = Array.from(availableGroupsSet).filter(g => !selectedSet.has(g));
+      
+      if (missing.length > 0) {
+        console.log('⚠️ selectedTaxaSet: Some available taxa are missing from iconicTaxa:', missing);
+        console.log('  - Available groups:', Array.from(availableGroupsSet));
+        console.log('  - iconicTaxa prop:', iconicTaxa);
+        console.log('  - Selected set:', Array.from(selectedSet));
+      }
+      
+      return selectedSet;
     }
     
     // If iconicTaxa is empty array (explicitly cleared) or undefined, show all available groups
@@ -210,7 +219,13 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
   // Handler to toggle a single taxon in the multi-select dropdown
   // Simple toggle: if selected → deselect, if deselected → select
   const handleToggleTaxon = (taxon: string) => {
-    if (!onIconicTaxaChange) return;
+    console.log('🖱️ [CHANGE] handleToggleTaxon: Clicked on taxon:', taxon);
+    console.log('  📍 Current iconicTaxa (BEFORE):', iconicTaxa);
+    
+    if (!onIconicTaxaChange) {
+      console.warn('⚠️ handleToggleTaxon: onIconicTaxaChange not available');
+      return;
+    }
     
     const taxonNormalized = taxon.charAt(0).toUpperCase() + taxon.slice(1).toLowerCase();
     
@@ -231,19 +246,24 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
     
     if (hasAllSelected) {
       // Currently all selected: remove this taxon (select all except this one)
+      console.log('  → Logic: All selected, removing this taxon');
       newIconicTaxa = availableGroups
         .filter(g => g !== taxonNormalized)
         .sort();
     } else if (isCurrentlySelected) {
       // This taxon is selected: remove it
+      console.log('  → Logic: Taxon is selected, removing it');
       newIconicTaxa = currentTaxa
         .filter(t => t !== taxonNormalized)
         .sort();
     } else {
       // This taxon is not selected: add it
+      console.log('  → Logic: Taxon is NOT selected, adding it');
       newIconicTaxa = [...currentTaxa, taxonNormalized].sort();
     }
     
+    console.log('  📍 New iconicTaxa (AFTER):', newIconicTaxa);
+    console.log('  ✅ Calling onIconicTaxaChange()');
     onIconicTaxaChange(newIconicTaxa);
     resetPagination();
   };
@@ -321,7 +341,13 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
       // Always reset to all available taxa when observations change
       // This ensures we start with all taxa selected on new searches
       if (availableTaxa.length > 0) {
+        console.log('🔄 INaturalistSidebar useEffect: Observations changed, setting all available taxa');
+        console.log('  - Available taxa found:', availableTaxa);
+        console.log('  - Current iconicTaxa (will be replaced):', iconicTaxa);
+        console.log('  - Total observations:', observations.length);
         onIconicTaxaChange(availableTaxa);
+      } else {
+        console.warn('⚠️ INaturalistSidebar useEffect: No available taxa found in observations!');
       }
     }
     
@@ -444,7 +470,7 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
           <button
             id="taxon-filter-trigger"
             onClick={() => setIsTaxonDropdownOpen(!isTaxonDropdownOpen)}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white hover:bg-gray-50 flex items-center justify-between transition-colors"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white hover:bg-gray-50 flex items-center justify-between transition-colors"
             disabled={!onIconicTaxaChange}
           >
             <span className="text-gray-700">{dropdownDisplayText}</span>
