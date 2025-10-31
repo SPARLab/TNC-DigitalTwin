@@ -50,6 +50,20 @@ body {
   background-color: rgba(107, 114, 128, 0.8); /* Darker when directly hovering thumb */
 }
 
+/* Remove blue outline on ArcGIS map view click (ArcGIS CSS variables) */
+.esri-view {
+  --esri-view-outline: none !important;
+  --esri-view-outline-color: transparent !important;
+  --esri-view-outline-offset: 0 !important;
+  outline: none !important;
+}
+
+.esri-view:focus,
+.esri-view:focus-visible,
+.esri-view:active {
+  outline: none !important;
+}
+
 /* ArcGIS Popup Styling - Match app design with rounded corners and proper spacing */
 
 /* Add padding to popup header to align with content below and provide top spacing */
