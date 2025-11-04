@@ -103,7 +103,7 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
       }
     });
     
-    return Object.values(groups).sort((a, b) => b.count - a.count);
+    return Object.values(groups).sort((a, b) => a.category.localeCompare(b.category));
   }, [searchFilteredObservations]);
 
   // Get currently selected taxa for the multi-select dropdown
