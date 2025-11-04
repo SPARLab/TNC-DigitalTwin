@@ -24,14 +24,14 @@ describe('CSV Parser - TNC Data', () => {
     const rows = parseCSV(csvContent)
     
     // Verify multi-line descriptions don't break parsing
-    const itemsWithNewlines = rows.filter(row => 
+    const itemsWithNewlines = rows.filter((row: any) => 
       row.Description && row.Description.includes('\n')
     )
     
     expect(itemsWithNewlines.length).toBeGreaterThan(0)
     
     // Each row should have all required fields despite multi-line content
-    itemsWithNewlines.forEach(row => {
+    itemsWithNewlines.forEach((row: any) => {
       expect(row['Item ID']).toBeTruthy()
       expect(row['Title']).toBeTruthy()
       expect(row['Type']).toBeTruthy()
@@ -46,16 +46,16 @@ describe('CSV Parser - TNC Data', () => {
     const fiveYearsAgo = new Date()
     fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5)
     
-    const recentHydro = rows.filter(row => {
+    const recentHydro = rows.filter((row: any) => {
       const isHydrological = row['Mapped Categories']?.includes('Hydrological')
-      const createdDate = new Date(row['Created Date'])
+      const createdDate = new Date(row['Created Date'] || '')
       return isHydrological && createdDate >= fiveYearsAgo
     })
     
     expect(recentHydro.length).toBeGreaterThan(0)
     
     // Verify critical items are present
-    const titles = recentHydro.map(r => r.Title)
+    const titles = recentHydro.map((r: any) => r.Title)
     expect(titles).toContain('Groundwater Wells')
     expect(titles).toContain('Springs')
   })

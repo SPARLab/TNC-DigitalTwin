@@ -108,8 +108,8 @@ const DataView: React.FC<DataViewProps> = ({
   onCalFloraPlantSelect,
   tncArcGISItems,
   tncArcGISLoading,
-  onTNCArcGISExportCSV,
-  onTNCArcGISExportGeoJSON,
+  onTNCArcGISExportCSV: _onTNCArcGISExportCSV,
+  onTNCArcGISExportGeoJSON: _onTNCArcGISExportGeoJSON,
   onTNCArcGISItemSelect,
   activeLayerIds,
   loadingLayerIds = [],
@@ -125,7 +125,7 @@ const DataView: React.FC<DataViewProps> = ({
   hasSearched = false,
   dendraStations = [],
   dendraDatastreams = [],
-  dendraLoading = false,
+  dendraLoading: _dendraLoading = false,
   selectedDendraStationId,
   selectedDendraDatastreamId,
   onDendraStationSelect,
@@ -133,9 +133,9 @@ const DataView: React.FC<DataViewProps> = ({
   onShowDendraWebsite,
   selectedINatObservation,
   onINatObservationClick,
-  onINatDetailsClose,
-  qualityGrade,
-  onQualityGradeChange,
+  onINatDetailsClose: _onINatDetailsClose,
+  qualityGrade: _qualityGrade,
+  onQualityGradeChange: _onQualityGradeChange,
   onIconicTaxaChange
 }) => {
   // Route to appropriate data view based on category + source combination

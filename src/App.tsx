@@ -1733,12 +1733,10 @@ function App() {
                   photoUrl: obs.photos && obs.photos.length > 0 
                     ? obs.photos[0].url.replace('square', 'medium') 
                     : null,
-                  photoAttribution: obs.photos && obs.photos.length > 0 
-                    ? obs.photos[0].attribution 
-                    : null,
+                  photoAttribution: null, // Attribution not available in API response
                   iconicTaxon: obs.taxon?.iconic_taxon_name || 'Unknown',
                   qualityGrade: obs.quality_grade || null,
-                  location: obs.place_guess || null,
+                  location: null, // place_guess not available in API response
                   uri: obs.uri,
                   taxonId: obs.taxon?.id
                 }))
@@ -1757,7 +1755,6 @@ function App() {
             onExportCSV={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? handleTNCExportCSV : handleExportCSV}
             onExportGeoJSON={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? handleTNCExportGeoJSON : handleExportGeoJSON}
             onAddToCart={(filteredCount: number) => {
-              const currentObservations = lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations : observations;
               const result = addToCart({
                 dataSource: 'inaturalist',
                 title: `iNaturalist: ${filteredCount} observations - ${inatDateRangeText}`,
@@ -1781,8 +1778,7 @@ function App() {
                     months: iNatCustomFilters.months && iNatCustomFilters.months.length > 0 && iNatCustomFilters.months.length < 12 ? iNatCustomFilters.months : undefined
                   }
                 },
-                estimatedCount: filteredCount,
-                addedAt: Date.now()
+                estimatedCount: filteredCount
               });
 
               if (result.success) {

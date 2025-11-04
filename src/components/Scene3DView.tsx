@@ -102,9 +102,6 @@ const Scene3DView: React.FC<Scene3DViewProps> = ({ onViewReady }) => {
       qualityProfile: 'high',
       environment: {
         atmosphereEnabled: true,
-        atmosphere: {
-          quality: 'high'
-        },
         lighting: {
           date: new Date(),
           directShadowsEnabled: true
@@ -204,7 +201,8 @@ const Scene3DView: React.FC<Scene3DViewProps> = ({ onViewReady }) => {
         console.log(`Line drawn: ${length.toFixed(2)} meters`);
         
         // Add text label with distance
-        const midpoint = polyline.extent.center;
+        const midpoint = polyline.extent?.center;
+        if (!midpoint) return;
         const textSymbol = {
           type: 'text',
           color: 'white',

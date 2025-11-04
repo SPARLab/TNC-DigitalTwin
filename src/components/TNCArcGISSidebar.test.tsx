@@ -1,13 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import React from 'react'
 import TNCArcGISSidebar from './TNCArcGISSidebar'
 import { 
   createMockTNCItemCollection, 
   createMockTNCArcGISItem 
 } from '../test-utils/factories'
-import { renderWithProviders, mockWindowMethods } from '../test-utils/test-helpers'
+import { renderWithProviders } from '../test-utils/test-helpers'
 
 describe('TNCArcGISSidebar', () => {
   const mockProps = {
@@ -268,7 +267,6 @@ describe('TNCArcGISSidebar', () => {
     })
 
     it('should handle opacity changes', async () => {
-      const user = userEvent.setup()
       const mapLayerItem = createMockTNCArcGISItem({
         id: 'active-layer',
         title: 'Active Layer',

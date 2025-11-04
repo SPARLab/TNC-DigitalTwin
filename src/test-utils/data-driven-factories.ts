@@ -1,6 +1,6 @@
 import { TNCArcGISItem } from '../services/tncArcGISService'
 import { FilterState } from '../types'
-import { CSVRow, parseCSV, filterCSVRows, analyzeCSVForTestScenarios } from './csv-parser'
+import { CSVRow, filterCSVRows, analyzeCSVForTestScenarios } from './csv-parser'
 
 /**
  * Convert CSV row to TNCArcGISItem for testing
@@ -19,13 +19,13 @@ export function csvRowToTNCArcGISItem(row: CSVRow): TNCArcGISItem {
   }
 
   // Parse tags if they exist
-  const tags = row.tags ? row.tags.split(';').map(tag => tag.trim()).filter(Boolean) : []
+  const tags = row.tags ? row.tags.split(';').map((tag: string) => tag.trim()).filter(Boolean) : []
   
   // Parse categories if they exist
-  const categories = row.categories ? row.categories.split(';').map(cat => cat.trim()).filter(Boolean) : []
+  const categories = row.categories ? row.categories.split(';').map((cat: string) => cat.trim()).filter(Boolean) : []
   
   // Parse main categories if they exist
-  const mainCategories = row.mainCategories ? row.mainCategories.split(';').map(cat => cat.trim()).filter(Boolean) : []
+  const mainCategories = row.mainCategories ? row.mainCategories.split(';').map((cat: string) => cat.trim()).filter(Boolean) : []
 
   return {
     id: row.id || `csv-item-${Math.random().toString(36).substr(2, 9)}`,
@@ -55,10 +55,10 @@ export async function loadRealTNCData(): Promise<TNCArcGISItem[]> {
   try {
     // This would be replaced with actual CSV loading in tests
     // For now, return empty array - will be mocked in tests
-    return []
+    return [] as TNCArcGISItem[]
   } catch (error) {
     console.error('Failed to load real TNC data:', error)
-    return []
+    return [] as TNCArcGISItem[]
   }
 }
 
@@ -95,18 +95,17 @@ export function createDataDrivenTestScenarios(csvData: CSVRow[]): Array<{
           timeRange: 'Last 6 months',
           daysBack: 180
         },
-        expectedItems: items,
+        expectedItems: items as CSVRow[],
         expectedCount: items.length,
         expectedCategories: [category],
-        expectedTypes: [...new Set(items.map(item => item.type || 'Unknown'))]
+        expectedTypes: [...new Set(items.map((item: CSVRow) => item.type || 'Unknown'))]
       })
     }
   })
 
   // Add specific hydrological scenario as requested
   const hydrologicalItems = filterCSVRows(csvData, { 
-    mainCategories: ['Hydrological'],
-    category: ['Hydrological'] 
+    mainCategories: ['Hydrological']
   })
   
   if (hydrologicalItems.length > 0) {
@@ -122,14 +121,13 @@ export function createDataDrivenTestScenarios(csvData: CSVRow[]): Array<{
       expectedItems: hydrologicalItems,
       expectedCount: hydrologicalItems.length,
       expectedCategories: ['Hydrological'],
-      expectedTypes: [...new Set(hydrologicalItems.map(item => item.type || 'Unknown'))]
+      expectedTypes: [...new Set(hydrologicalItems.map((item: CSVRow) => item.type || 'Unknown'))]
     })
   }
 
   // Add fire scenario
   const fireItems = filterCSVRows(csvData, { 
-    mainCategories: ['Fire'],
-    category: ['Fire'] 
+    mainCategories: ['Fire']
   })
   
   if (fireItems.length > 0) {
@@ -144,14 +142,13 @@ export function createDataDrivenTestScenarios(csvData: CSVRow[]): Array<{
       expectedItems: fireItems,
       expectedCount: fireItems.length,
       expectedCategories: ['Fire'],
-      expectedTypes: [...new Set(fireItems.map(item => item.type || 'Unknown'))]
+      expectedTypes: [...new Set(fireItems.map((item: CSVRow) => item.type || 'Unknown'))]
     })
   }
 
   // Add marine scenario
   const marineItems = filterCSVRows(csvData, { 
-    mainCategories: ['Marine'],
-    category: ['Marine'] 
+    mainCategories: ['Marine']
   })
   
   if (marineItems.length > 0) {
@@ -167,7 +164,7 @@ export function createDataDrivenTestScenarios(csvData: CSVRow[]): Array<{
       expectedItems: marineItems,
       expectedCount: marineItems.length,
       expectedCategories: ['Marine'],
-      expectedTypes: [...new Set(marineItems.map(item => item.type || 'Unknown'))]
+      expectedTypes: [...new Set(marineItems.map((item: CSVRow) => item.type || 'Unknown'))]
     })
   }
 

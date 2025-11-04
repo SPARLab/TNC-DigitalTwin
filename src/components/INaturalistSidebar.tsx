@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Calendar, User, ExternalLink, MapPin, Info, ShoppingCart } from 'lucide-react';
+import { Calendar, User, ExternalLink, MapPin, Info } from 'lucide-react';
 import ThumbnailImage from './ThumbnailImage';
 
 // Define a unified observation interface
@@ -36,7 +36,7 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
   observations,
   loading,
   dateRangeText,
-  onAddToCart,
+  onAddToCart: _onAddToCart,
   onObservationClick,
   hasSearched = false,
   selectedObservationId,
@@ -44,7 +44,7 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
   onIconicTaxaChange
 }) => {
   const [searchText, setSearchText] = useState('');
-  const [selectedTaxonFilter, setSelectedTaxonFilter] = useState('all');
+  const [selectedTaxonFilter, _setSelectedTaxonFilter] = useState('all');
   const [expandedObservation, setExpandedObservation] = useState<number | string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;

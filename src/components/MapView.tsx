@@ -120,9 +120,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   tncObservations = [],
   onTNCObservationsUpdate,
   onTNCLoadingChange,
-  selectedTNCObservation,
+  selectedTNCObservation: _selectedTNCObservation,
   onTNCObservationSelect,
-  selectedINaturalistObservation,
+  selectedINaturalistObservation: _selectedINaturalistObservation,
   onINaturalistObservationSelect,
   eBirdObservations = [],
   onEBirdObservationsUpdate,
@@ -185,8 +185,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   const currentObservationsRef = useRef<iNaturalistObservation[]>([]);
   const [visibleObservationCategories, setVisibleObservationCategories] = useState<Set<string>>(new Set());
   
-  // Highlighted observation state
-  const [highlightedObservationId, setHighlightedObservationId] = useState<number | string | null>(null);
+                 // Highlighted observation state
+  const [_highlightedObservationId, setHighlightedObservationId] = useState<number | string | null>(null);
   const highlightHandleRef = useRef<__esri.Handle | null>(null);
   const highlightOperationRef = useRef<Promise<void> | null>(null);
 
@@ -3042,6 +3042,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       }
       
       // Find the observation graphic in either layer
+      if (!view.map) return;
       const inatLayer = view.map.findLayerById('inaturalist-observations') as GraphicsLayer;
       const tncLayer = view.map.findLayerById('tnc-inaturalist-observations') as GraphicsLayer;
       

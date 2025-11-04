@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { tncArcGISAPI, TNCArcGISItem } from './tncArcGISService'
+import { tncArcGISAPI } from './tncArcGISService'
 import { 
   createMockTNCItemCollection, 
-  createMockFetchResponse,
   createMockTNCArcGISItem 
 } from '../test-utils/factories'
 import { mockFetch } from '../test-utils/test-helpers'

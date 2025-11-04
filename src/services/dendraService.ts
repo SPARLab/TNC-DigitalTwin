@@ -326,14 +326,14 @@ export async function getMostRecentTimestamp(datastreamId: number): Promise<numb
     throw new Error(`Failed to fetch most recent timestamp: ${response.statusText}`);
   }
 
-  const data: ArcGISQueryResponse<DendraDatapoint> = await response.json();
+  const data: ArcGISQueryResponse<DendraDatapoint> | { error?: any } = await response.json();
   
-  if (data.error) {
+  if ('error' in data && data.error) {
     console.error('ArcGIS query error:', data.error);
     return null;
   }
   
-  if (!data.features || data.features.length === 0) {
+  if (!('features' in data) || !data.features || data.features.length === 0) {
     return null;
   }
 
@@ -404,20 +404,20 @@ export async function fetchDatapointsForDatastream(
       throw new Error(`Failed to fetch datapoints for datastream ${datastreamId}: ${response.statusText}`);
     }
 
-    const data: ArcGISQueryResponse<DendraDatapoint> = await response.json();
+    const data: ArcGISQueryResponse<DendraDatapoint> | { error?: any } = await response.json();
     
     // Check if there's an error in the response
-    if (data.error) {
+    if ('error' in data && data.error) {
       console.error('ArcGIS query error:', data.error);
       throw new Error(`ArcGIS query error: ${data.error.message || JSON.stringify(data.error)}`);
     }
     
     // Handle empty or missing features
-    if (!data.features || data.features.length === 0) {
+    if (!('features' in data) || !data.features || data.features.length === 0) {
       return null;
     }
     
-    return data.features.map(feature => feature.attributes);
+    return data.features.map((feature: ArcGISFeature<DendraDatapoint>) => feature.attributes);
   };
 
   while (hasMore) {

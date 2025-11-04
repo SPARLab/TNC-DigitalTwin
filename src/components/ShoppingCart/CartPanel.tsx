@@ -20,7 +20,7 @@ export const CartPanel: React.FC<CartPanelProps> = ({
   onClearCart,
   onExport
 }) => {
-  const totalRecords = cartItems.reduce((sum, item) => sum + item.itemCount, 0);
+  const totalRecords = cartItems.reduce((sum, item) => sum + (item.estimatedCount || 0), 0);
 
   return (
     <>

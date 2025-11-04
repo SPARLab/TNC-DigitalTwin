@@ -32,7 +32,7 @@ interface FilterSubheaderProps {
   theme: string;
 }
 
-const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChange, onSearch, resultCount, isSearching = false, theme }) => {
+const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChange, onSearch, resultCount: _resultCount, isSearching = false, theme }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const currentTheme = THEMES[theme] || THEMES.coastal;
 

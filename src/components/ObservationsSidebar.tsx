@@ -25,8 +25,8 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({
   currentDaysBack = 30, 
   startDate, 
   endDate,
-  onExportCSV,
-  onExportGeoJSON,
+  onExportCSV: _onExportCSV,
+  onExportGeoJSON: _onExportGeoJSON,
   onAddToCart,
   hasSearched = false,
   onObservationClick,
@@ -55,12 +55,10 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({
       photoUrl: obs.photos && obs.photos.length > 0 
         ? obs.photos[0].url.replace('square', 'medium') 
         : null,
-      photoAttribution: obs.photos && obs.photos.length > 0 
-        ? obs.photos[0].attribution 
-        : null,
+      photoAttribution: null, // Attribution not available in API response
       iconicTaxon: obs.taxon?.iconic_taxon_name || 'Unknown',
       qualityGrade: obs.quality_grade || null,
-      location: obs.place_guess || null,
+      location: null, // place_guess not available in API response
       uri: obs.uri,
       taxonId: obs.taxon?.id
     }));

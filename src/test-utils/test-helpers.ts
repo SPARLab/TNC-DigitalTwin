@@ -82,11 +82,13 @@ export const mockDate = (mockDate: string | Date) => {
   const originalDate = Date
   const mockedDate = new Date(mockDate)
 
-  global.Date = vi.fn().mockImplementation((...args) => {
+  global.Date = vi.fn().mockImplementation((...args: any[]) => {
     if (args.length === 0) {
       return mockedDate
     }
-    return new originalDate(...args as any)
+    // TypeScript strict mode requires explicit cast for spread
+    const dateArgs = args as ConstructorParameters<typeof Date>;
+    return new originalDate(...dateArgs);
   }) as any
 
   // Mock static methods
