@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { parseCSV, analyzeCSVForTestScenarios, filterCSVRows } from './csv-parser'
 import { createDataDrivenTestScenarios, csvRowToTNCArcGISItem, mockCSVData } from './data-driven-factories'
-import { tncArcGISAPI } from '../services/tncArcGISService'
 
 /**
  * Real Data Tests - Based on actual TNC frontend test data CSV
@@ -215,7 +214,7 @@ describe('TNC ArcGIS Real Data Tests', () => {
         scenario.expectedItems.forEach((item: any) => {
           const itemCategories = item.mainCategories?.split(';') || []
           const hasMatchingCategory = scenario.expectedCategories.some(
-            expectedCat => itemCategories.includes(expectedCat)
+            (expectedCat: string) => itemCategories.includes(expectedCat)
           )
           expect(hasMatchingCategory).toBe(true)
         })

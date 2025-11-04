@@ -46,7 +46,7 @@ export function useShoppingCart() {
   const getCartCount = useCallback(() => cartItems.length, [cartItems]);
 
   const getTotalRecordCount = useCallback(() => {
-    return cartItems.reduce((sum, item) => sum + item.itemCount, 0);
+    return cartItems.reduce((sum, item) => sum + (item.estimatedCount || 0), 0);
   }, [cartItems]);
 
   return {

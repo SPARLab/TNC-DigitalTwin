@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Calendar, User, ExternalLink, MapPin, Info, ShoppingCart } from 'lucide-react';
+import { Calendar, User, ExternalLink, MapPin, Info } from 'lucide-react';
 import ThumbnailImage from './ThumbnailImage';
 
 // Define a unified observation interface
@@ -27,6 +27,8 @@ interface INaturalistSidebarProps {
   onObservationClick?: (obs: INaturalistUnifiedObservation) => void;
   hasSearched?: boolean;
   selectedObservationId?: number | string | null;
+  iconicTaxa?: string[]; // Filter by taxonomic groups
+  onIconicTaxaChange?: (taxa: string[]) => void; // Callback to change filter
 }
 
 const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
@@ -34,19 +36,28 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
   observations,
   loading,
   dateRangeText,
-  onAddToCart,
+  onAddToCart: _onAddToCart,
   onObservationClick,
   hasSearched = false,
-  selectedObservationId
+  selectedObservationId,
+  iconicTaxa = [],
+  onIconicTaxaChange
 }) => {
   const [searchText, setSearchText] = useState('');
-  const [selectedTaxonFilter, setSelectedTaxonFilter] = useState('all');
+  const [selectedTaxonFilter, _setSelectedTaxonFilter] = useState('all');
   const [expandedObservation, setExpandedObservation] = useState<number | string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
   
+  // Multi-select dropdown state
+  const [isTaxonDropdownOpen, setIsTaxonDropdownOpen] = useState(false);
+  const taxonDropdownRef = useRef<HTMLDivElement>(null);
+  
   // Ref to track previous selectedObservationId
   const prevSelectedObservationIdRef = useRef<number | string | null>(null);
+  
+  // Ref to track the previous observations to detect when new data loads
+  const prevObservationsRef = useRef<INaturalistUnifiedObservation[]>([]);
 
   // Helper function to format date
   const formatDate = (dateString: string) => {
@@ -57,20 +68,72 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
   // Reset pagination when filters change
   const resetPagination = () => setCurrentPage(1);
 
-  // Group observations by iconic taxon
+  // First, apply search text filter (but NOT iconicTaxa filter)
+  // This ensures we only show taxa that exist in the search-filtered results
+  const searchFilteredObservations = useMemo(() => {
+    if (!searchText.trim()) {
+      return observations;
+    }
+    
+    const search = searchText.toLowerCase();
+    return observations.filter(obs =>
+      obs.commonName?.toLowerCase().includes(search) ||
+      obs.scientificName?.toLowerCase().includes(search) ||
+      obs.observerName?.toLowerCase().includes(search)
+    );
+  }, [observations, searchText]);
+
+  // Group observations by iconic taxon (based on search-filtered observations)
+  // Filter out empty/null/undefined taxa and normalize case (include Unknown as valid category)
   const groupedObservations = useMemo(() => {
     const groups: Record<string, { count: number; category: string }> = {};
     
-    observations.forEach(obs => {
-      const category = obs.iconicTaxon || 'Unknown';
-      if (!groups[category]) {
-        groups[category] = { count: 0, category };
+    searchFilteredObservations.forEach(obs => {
+      const rawCategory = obs.iconicTaxon;
+      // Only include valid taxa (not empty, null, or undefined) - Unknown is now included
+      if (rawCategory && rawCategory.trim()) {
+        // Normalize to capitalized format (first letter uppercase, rest lowercase)
+        // This ensures consistent comparison with iconicTaxa prop
+        const normalizedCategory = rawCategory.charAt(0).toUpperCase() + rawCategory.slice(1).toLowerCase();
+        
+        if (!groups[normalizedCategory]) {
+          groups[normalizedCategory] = { count: 0, category: normalizedCategory };
+        }
+        groups[normalizedCategory].count++;
       }
-      groups[category].count++;
     });
     
-    return Object.values(groups).sort((a, b) => b.count - a.count);
-  }, [observations]);
+    return Object.values(groups).sort((a, b) => a.category.localeCompare(b.category));
+  }, [searchFilteredObservations]);
+
+  // Get currently selected taxa for the multi-select dropdown
+  // Only include taxa that actually exist in the current observations
+  const selectedTaxaSet = useMemo(() => {
+    const availableGroupsSet = new Set(groupedObservations.map(g => g.category.toLowerCase()));
+    
+    // If iconicTaxa is provided and has values
+    if (iconicTaxa && iconicTaxa.length > 0) {
+      const selectedAndAvailable = iconicTaxa
+        .map(t => t.toLowerCase())
+        .filter(t => availableGroupsSet.has(t));
+      
+      const selectedSet = new Set(selectedAndAvailable);
+      const missing = Array.from(availableGroupsSet).filter(g => !selectedSet.has(g));
+      
+      if (missing.length > 0) {
+        console.log('⚠️ selectedTaxaSet: Some available taxa are missing from iconicTaxa:', missing);
+        console.log('  - Available groups:', Array.from(availableGroupsSet));
+        console.log('  - iconicTaxa prop:', iconicTaxa);
+        console.log('  - Selected set:', Array.from(selectedSet));
+      }
+      
+      return selectedSet;
+    }
+    
+    // If iconicTaxa is empty array (explicitly cleared) or undefined, show all available groups
+    // This handles both initial state (undefined) and after observations load
+    return availableGroupsSet;
+  }, [iconicTaxa, groupedObservations]);
 
   // Get taxon icon
   const getTaxonIcon = (taxon: string): string => {
@@ -110,29 +173,120 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
     return '#666666';
   };
 
-  // Filter observations
+  // Filter observations (start with searchFilteredObservations, then apply iconicTaxa filter)
   const filteredObservations = useMemo(() => {
-    let filtered = observations;
+    let filtered = searchFilteredObservations;
     
-    // Filter by taxon
-    if (selectedTaxonFilter !== 'all') {
+    // Filter by iconicTaxa from parent (takes precedence over local selectedTaxonFilter)
+    // Only apply filtering if NOT all available groups are selected
+    const availableGroupCount = groupedObservations.length;
+    const selectedAvailableCount = Array.from(selectedTaxaSet).filter(taxon =>
+      groupedObservations.some(g => g.category.toLowerCase() === taxon)
+    ).length;
+    const allAvailableSelected = selectedAvailableCount === availableGroupCount && availableGroupCount > 0;
+    
+    if (!allAvailableSelected && iconicTaxa && iconicTaxa.length > 0) {
+      // Only filter if not all available groups are selected
+      filtered = filtered.filter(obs => 
+        iconicTaxa.some(taxon => obs.iconicTaxon?.toLowerCase() === taxon.toLowerCase())
+      );
+    } else if (selectedTaxonFilter !== 'all') {
+      // Fallback to local taxon filter if iconicTaxa is not filtering
       filtered = filtered.filter(obs => 
         (obs.iconicTaxon || 'Unknown') === selectedTaxonFilter
       );
     }
     
-    // Filter by search text
-    if (searchText.trim()) {
-      const search = searchText.toLowerCase();
-      filtered = filtered.filter(obs =>
-        obs.commonName?.toLowerCase().includes(search) ||
-        obs.scientificName?.toLowerCase().includes(search) ||
-        obs.observerName?.toLowerCase().includes(search)
-      );
+    return filtered;
+  }, [searchFilteredObservations, selectedTaxonFilter, iconicTaxa, groupedObservations, selectedTaxaSet]);
+
+  // Get display text for the dropdown trigger button
+  const dropdownDisplayText = useMemo(() => {
+    const allCategories = groupedObservations.length;
+    const selectedCount = Array.from(selectedTaxaSet).filter(taxon =>
+      groupedObservations.some(g => g.category.toLowerCase() === taxon)
+    ).length;
+    
+    if (selectedCount === 0) {
+      return `No taxa selected (${searchFilteredObservations.length})`;
+    } else if (selectedCount === allCategories) {
+      return `All Taxa (${searchFilteredObservations.length})`;
+    } else {
+      return `${selectedCount} group${selectedCount !== 1 ? 's' : ''} selected (${filteredObservations.length})`;
+    }
+  }, [selectedTaxaSet, groupedObservations, searchFilteredObservations.length, filteredObservations.length]);
+
+  // Handler to toggle a single taxon in the multi-select dropdown
+  // Simple toggle: if selected → deselect, if deselected → select
+  const handleToggleTaxon = (taxon: string) => {
+    console.log('🖱️ [CHANGE] handleToggleTaxon: Clicked on taxon:', taxon);
+    console.log('  📍 Current iconicTaxa (BEFORE):', iconicTaxa);
+    
+    if (!onIconicTaxaChange) {
+      console.warn('⚠️ handleToggleTaxon: onIconicTaxaChange not available');
+      return;
     }
     
-    return filtered;
-  }, [observations, selectedTaxonFilter, searchText]);
+    const taxonNormalized = taxon.charAt(0).toUpperCase() + taxon.slice(1).toLowerCase();
+    
+    // Get all available groups (normalized, capitalized)
+    const availableGroups = groupedObservations.map(g => g.category);
+    const allAvailableCount = availableGroups.length;
+    
+    // Check current state: if iconicTaxa is empty or has all available taxa, everything is selected
+    const currentTaxa = iconicTaxa || [];
+    const hasAllSelected = currentTaxa.length === 0 || 
+      (currentTaxa.length === allAvailableCount && 
+       availableGroups.every(g => currentTaxa.includes(g)));
+    
+    // Determine if this specific taxon is currently selected
+    const isCurrentlySelected = hasAllSelected || currentTaxa.includes(taxonNormalized);
+    
+    let newIconicTaxa: string[];
+    
+    if (hasAllSelected) {
+      // Currently all selected: remove this taxon (select all except this one)
+      console.log('  → Logic: All selected, removing this taxon');
+      newIconicTaxa = availableGroups
+        .filter(g => g !== taxonNormalized)
+        .sort();
+    } else if (isCurrentlySelected) {
+      // This taxon is selected: remove it
+      console.log('  → Logic: Taxon is selected, removing it');
+      newIconicTaxa = currentTaxa
+        .filter(t => t !== taxonNormalized)
+        .sort();
+    } else {
+      // This taxon is not selected: add it
+      console.log('  → Logic: Taxon is NOT selected, adding it');
+      newIconicTaxa = [...currentTaxa, taxonNormalized].sort();
+    }
+    
+    console.log('  📍 New iconicTaxa (AFTER):', newIconicTaxa);
+    console.log('  ✅ Calling onIconicTaxaChange()');
+    onIconicTaxaChange(newIconicTaxa);
+    resetPagination();
+  };
+
+  // Handler to select all taxa
+  const handleSelectAllTaxa = () => {
+    if (!onIconicTaxaChange) return;
+    
+    // Select all available groups (only taxa that exist in current observations)
+    const availableGroups = groupedObservations.map(g => g.category.toLowerCase());
+    const allTaxa = availableGroups.map(t => 
+      t.charAt(0).toUpperCase() + t.slice(1)
+    );
+    
+    onIconicTaxaChange(allTaxa);
+    resetPagination();
+  };
+
+  // Handler to clear all taxa (actually selects all - better UX than showing nothing)
+  const handleClearAllTaxa = () => {
+    if (!onIconicTaxaChange) return;
+    handleSelectAllTaxa();
+  };
 
   // Paginate observations
   const paginatedObservations = useMemo(() => {
@@ -143,18 +297,72 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
 
   const totalPages = Math.ceil(filteredObservations.length / pageSize);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (taxonDropdownRef.current && !taxonDropdownRef.current.contains(event.target as Node)) {
+        setIsTaxonDropdownOpen(false);
+      }
+    };
+
+    if (isTaxonDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isTaxonDropdownOpen]);
+
+  // Reset taxonomic filter when observations change (e.g., new spatial/date filter applied)
+  // This ensures we don't preserve filters from a previous dataset and all taxa are selected by default
+  useEffect(() => {
+    // Only reset when observations actually change (new search performed)
+    // Check if first observation ID is different (more reliable than length)
+    const firstObsId = observations.length > 0 ? observations[0].id : null;
+    const prevFirstObsId = prevObservationsRef.current.length > 0 ? prevObservationsRef.current[0].id : null;
+    const observationsChanged = firstObsId !== prevFirstObsId || 
+                                observations.length !== prevObservationsRef.current.length ||
+                                (observations.length > 0 && prevObservationsRef.current.length === 0); // Handle initial load
+    
+    if (onIconicTaxaChange && observations.length > 0 && observationsChanged) {
+      // Extract unique taxa from observations, filtering out empty/null/undefined (Unknown is now included)
+      // Normalize to ensure consistent capitalization
+      const availableTaxa = Array.from(
+        new Set(
+          observations
+            .map(obs => obs.iconicTaxon)
+            .filter(taxon => taxon && taxon.trim())
+            .map(t => {
+              // Normalize to capitalized format (first letter uppercase, rest lowercase)
+              return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+            })
+        )
+      )
+      .sort(); // Sort for consistency
+      
+      // Always reset to all available taxa when observations change
+      // This ensures we start with all taxa selected on new searches
+      if (availableTaxa.length > 0) {
+        console.log('🔄 INaturalistSidebar useEffect: Observations changed, setting all available taxa');
+        console.log('  - Available taxa found:', availableTaxa);
+        console.log('  - Current iconicTaxa (will be replaced):', iconicTaxa);
+        console.log('  - Total observations:', observations.length);
+        onIconicTaxaChange(availableTaxa);
+      } else {
+        console.warn('⚠️ INaturalistSidebar useEffect: No available taxa found in observations!');
+      }
+    }
+    
+    // Update the ref AFTER processing (for next comparison)
+    prevObservationsRef.current = observations;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [observations]); // Only run when observations change, not when callback changes
+
   // Auto-scroll to selected observation when clicked from map
   useEffect(() => {
-    console.log('🔄 INaturalistSidebar: selectedObservationId changed to:', selectedObservationId);
-    console.log('🔄 INaturalistSidebar: previous was:', prevSelectedObservationIdRef.current);
-    
     // Only proceed if selectedObservationId has actually changed
     if (selectedObservationId !== prevSelectedObservationIdRef.current) {
-      prevSelectedObservationIdRef.current = selectedObservationId;
+      prevSelectedObservationIdRef.current = selectedObservationId ?? null;
       
       if (selectedObservationId) {
-        console.log('📜 INaturalistSidebar: Attempting to scroll to:', selectedObservationId);
-        
         // Find which page the observation is on
         const observationIndex = filteredObservations.findIndex(
           obs => String(obs.id) === String(selectedObservationId)
@@ -162,48 +370,35 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
         
         if (observationIndex !== -1) {
           const targetPage = Math.floor(observationIndex / pageSize) + 1;
-          console.log(`📄 INaturalistSidebar: Observation at index ${observationIndex}, page ${targetPage}`);
           
           // Change to the correct page if needed
           if (currentPage !== targetPage) {
-            console.log(`📄 INaturalistSidebar: Changing from page ${currentPage} to page ${targetPage}`);
             setCurrentPage(targetPage);
           }
           
           // Small delay to ensure DOM is updated after page change
           setTimeout(() => {
             const cardElement = document.getElementById(`inaturalist-observation-${selectedObservationId}`);
-            console.log('📜 INaturalistSidebar: Found card element:', cardElement);
             if (cardElement) {
               cardElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
               // Also expand the card
               setExpandedObservation(selectedObservationId);
-              console.log('✅ INaturalistSidebar: Scrolled and expanded');
-            } else {
-              console.warn('⚠️ INaturalistSidebar: Card element not found in DOM');
             }
           }, currentPage !== targetPage ? 200 : 100); // Longer delay if we changed pages
-        } else {
-          console.warn('⚠️ INaturalistSidebar: Observation not found in filtered list');
         }
       }
-    } else {
-      console.log('⏭️ INaturalistSidebar: No change detected, skipping scroll');
     }
   }, [selectedObservationId, filteredObservations, currentPage, pageSize]);
 
   // Handle observation click
   const handleObservationClick = (obs: INaturalistUnifiedObservation) => {
-    console.log('📋 INaturalistSidebar: Observation clicked:', obs.id, 'Currently expanded:', expandedObservation);
-    
     if (expandedObservation === obs.id) {
       setExpandedObservation(null);
     } else {
       setExpandedObservation(obs.id);
     }
     
-    // Call parent callback if provided (should happen on EVERY click)
-    console.log('📋 INaturalistSidebar: Calling onObservationClick callback');
+    // Call parent callback if provided
     onObservationClick?.(obs);
   };
 
@@ -269,33 +464,103 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
           />
         </div>
 
-        {/* Taxon Filter */}
-        <div id="inaturalist-taxon-filter" className="mb-3">
-          <select
-            value={selectedTaxonFilter}
-            onChange={(e) => { setSelectedTaxonFilter(e.target.value); resetPagination(); }}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        {/* Multi-Select Taxon Filter */}
+        <div id="inaturalist-taxon-filter" className="mb-3 relative" ref={taxonDropdownRef}>
+          {/* Dropdown Trigger Button */}
+          <button
+            id="taxon-filter-trigger"
+            onClick={() => setIsTaxonDropdownOpen(!isTaxonDropdownOpen)}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white hover:bg-gray-50 flex items-center justify-between transition-colors"
+            disabled={!onIconicTaxaChange}
           >
-            <option value="all">All Taxa ({observations.length})</option>
-            {groupedObservations.map(group => (
-              <option key={group.category} value={group.category}>
-                {getTaxonIcon(group.category)} {group.category} ({group.count})
-              </option>
-            ))}
-          </select>
+            <span className="text-gray-700">{dropdownDisplayText}</span>
+            <svg 
+              className={`w-4 h-4 text-gray-500 transition-transform ${isTaxonDropdownOpen ? 'transform rotate-180' : ''}`}
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {/* Dropdown Panel */}
+          {isTaxonDropdownOpen && onIconicTaxaChange && (
+            <div 
+              id="taxon-filter-dropdown-panel"
+              className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-72 flex flex-col"
+            >
+              {/* Scrollable checkbox list */}
+              <div id="taxon-filter-dropdown-list" className="overflow-y-auto flex-1 p-2 space-y-1">
+                {groupedObservations.map(group => {
+                  const groupLower = group.category.toLowerCase();
+                  const isSelected = selectedTaxaSet.has(groupLower);
+                  const taxonId = `taxon-filter-option-${groupLower}`;
+                  
+                  return (
+                    <button
+                      key={`${group.category}-${isSelected}`}
+                      id={taxonId}
+                      onClick={() => handleToggleTaxon(group.category)}
+                      className={`w-full flex items-center px-3 py-2 rounded border transition-all cursor-pointer ${
+                        isSelected 
+                          ? 'bg-blue-50 border-blue-200 hover:bg-blue-100' 
+                          : 'bg-gray-100 border-gray-200 opacity-50 hover:bg-gray-150 hover:opacity-75'
+                      }`}
+                      aria-pressed={isSelected}
+                      aria-label={`${isSelected ? 'Deselect' : 'Select'} ${group.category} (${group.count} observations)`}
+                    >
+                      <span className="text-base mr-2">{getTaxonIcon(group.category)}</span>
+                      <span className={`text-sm flex-1 text-left font-medium ${isSelected ? 'text-gray-900' : 'text-gray-600'}`}>
+                        {group.category}
+                      </span>
+                      <span className={`text-xs font-medium ${isSelected ? 'text-gray-600' : 'text-gray-500'}`}>
+                        ({group.count})
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Action buttons */}
+              <div id="taxon-filter-actions" className="border-t border-gray-200 p-2 flex gap-2 bg-gray-50">
+                <button
+                  id="taxon-filter-select-all"
+                  onClick={handleSelectAllTaxa}
+                  className="flex-1 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                  aria-label="Select all taxonomic groups"
+                >
+                  Select All
+                </button>
+                <button
+                  id="taxon-filter-clear"
+                  onClick={handleClearAllTaxa}
+                  className="flex-1 px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                  aria-label="Clear all filters and show all taxonomic groups"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Legend */}
         <div id="inaturalist-legend" className="grid grid-cols-2 gap-1 text-xs">
-          {groupedObservations.slice(0, 6).map(group => (
-            <div key={group.category} className="flex items-center">
-              <div 
-                className="w-3 h-3 rounded-full mr-2"
-                style={{ backgroundColor: getTaxonColor(group.category) }}
-              />
-              <span className="truncate">{group.category} ({group.count})</span>
-            </div>
-          ))}
+          {groupedObservations.slice(0, 6).map(group => {
+            const legendItemId = `legend-item-${group.category.toLowerCase()}`;
+            return (
+              <div key={group.category} id={legendItemId} className="flex items-center">
+                <div 
+                  id={`${legendItemId}-color`}
+                  className="w-3 h-3 rounded-full mr-2"
+                  style={{ backgroundColor: getTaxonColor(group.category) }}
+                  aria-label={`${group.category} color indicator`}
+                />
+                <span id={`${legendItemId}-label`} className="truncate">{group.category} ({group.count})</span>
+              </div>
+            );
+          })}
         </div>
       </div>
 

@@ -1,13 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Palette, Check } from 'lucide-react';
+import { ChevronDown, Palette, Check, ShoppingCart } from 'lucide-react';
 import { THEMES, THEME_OPTIONS } from '../utils/themes';
 
 interface HeaderProps {
   theme: string;
   onThemeChange: (theme: string) => void;
+  cartItemCount?: number;
+  onCartClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ theme, onThemeChange }) => {
+const Header: React.FC<HeaderProps> = ({ theme, onThemeChange, cartItemCount = 0, onCartClick }) => {
   const [isThemeDropdownOpen, setIsThemeDropdownOpen] = useState(false);
   const themeDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -94,6 +96,30 @@ const Header: React.FC<HeaderProps> = ({ theme, onThemeChange }) => {
                 </div>
               )}
             </div>
+
+            {/* Shopping Cart Button */}
+            {onCartClick && (
+              <button
+                id="shopping-cart-button"
+                onClick={onCartClick}
+                className={`relative p-2 rounded-md transition-colors ${
+                  isDarkTheme ? 'hover:bg-white/10' : 'hover:bg-gray-100'
+                }`}
+                aria-label={`Shopping cart with ${cartItemCount} items`}
+                title="View shopping cart"
+              >
+                <ShoppingCart className={`w-5 h-5 ${isDarkTheme ? 'text-gray-200' : 'text-gray-600'}`} />
+                {cartItemCount > 0 && (
+                  <span 
+                    id="cart-badge"
+                    className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center leading-none"
+                    style={{ paddingTop: '1px' }}
+                  >
+                    {cartItemCount > 99 ? '99+' : cartItemCount}
+                  </span>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>

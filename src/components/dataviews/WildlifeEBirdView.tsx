@@ -73,7 +73,7 @@ const WildlifeEBirdView: React.FC<WildlifeEBirdViewProps> = ({
           <h2 className="text-lg font-semibold text-gray-900">eBird</h2>
           {loading && (
             <div className="flex items-center space-x-2">
-              <LoadingSpinner size="small" />
+              <LoadingSpinner size="sm" />
               <span className="text-sm text-gray-500">Loading...</span>
             </div>
           )}

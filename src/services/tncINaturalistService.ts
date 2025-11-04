@@ -348,7 +348,7 @@ class TNCArcGISService {
         console.log('🎯 Using preserve polygon for spatial filtering with intersects relationship');
         console.log('🔍 DEBUG: Polygon geometry length:', geometryParams.geometry.length);
       } else {
-        const extent = spatialExtent || await this.getPreserveExtent(searchMode);
+        const extent = spatialExtent || await this.getPreserveExtent(searchMode === 'expanded' ? 'expanded' : 'preserve-only');
         geometryParams.geometry = `${extent.xmin},${extent.ymin},${extent.xmax},${extent.ymax}`;
         geometryParams.geometryType = 'esriGeometryEnvelope';
         geometryParams.spatialRel = 'esriSpatialRelIntersects';
@@ -578,7 +578,7 @@ class TNCArcGISService {
         params.spatialRel = 'esriSpatialRelIntersects';
       } else {
         // Use bounding box for expanded search
-        const extent = spatialExtent || await this.getPreserveExtent(searchMode);
+        const extent = spatialExtent || await this.getPreserveExtent(searchMode === 'expanded' ? 'expanded' : 'preserve-only');
         params.geometry = `${extent.xmin},${extent.ymin},${extent.xmax},${extent.ymax}`;
         params.geometryType = 'esriGeometryEnvelope';
         params.spatialRel = 'esriSpatialRelIntersects';

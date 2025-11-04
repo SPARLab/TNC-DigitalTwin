@@ -3,35 +3,103 @@
  */
 
 /**
+ * Flattens a nested object into dot-notation keys
+ * Example: { user: { name: "John" } } => { "user.name": "John" }
+ * Special handling: coordinates arrays [lng, lat] => separate longitude/latitude columns
+ */
+function flattenObject(obj: any, prefix = ''): Record<string, any> {
+  const flattened: Record<string, any> = {};
+  
+  for (const key in obj) {
+    if (!obj.hasOwnProperty(key)) continue;
+    
+    const value = obj[key];
+    const newKey = prefix ? `${prefix}.${key}` : key;
+    
+    if (value === null || value === undefined) {
+      flattened[newKey] = '';
+    } else if (Array.isArray(value)) {
+      // Special case: coordinate arrays [lng, lat] or [lon, lat]
+      if ((key === 'coordinates' || key === 'coords') && value.length === 2 && typeof value[0] === 'number' && typeof value[1] === 'number') {
+        const coordPrefix = prefix || 'location';
+        flattened[`${coordPrefix}.longitude`] = value[0];
+        flattened[`${coordPrefix}.latitude`] = value[1];
+      } else {
+        // Other arrays: serialize as JSON
+        flattened[newKey] = JSON.stringify(value);
+      }
+    } else if (typeof value === 'object' && value.constructor === Object) {
+      // Recursively flatten nested objects
+      Object.assign(flattened, flattenObject(value, newKey));
+    } else {
+      flattened[newKey] = value;
+    }
+  }
+  
+  return flattened;
+}
+
+/**
+ * Converts a technical field name to a human-readable column header
+ * Examples:
+ *   user.id → User ID
+ *   taxon.iconic_taxon_name → Taxon Iconic Taxon Name
+ *   latitude → Latitude
+ */
+function formatColumnHeader(fieldName: string): string {
+  return fieldName
+    // Split on dots and underscores
+    .split(/[._]/)
+    // Capitalize first letter of each word
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    // Join with spaces
+    .join(' ')
+    // Handle special cases for acronyms
+    .replace(/\bId\b/g, 'ID')
+    .replace(/\bUrl\b/g, 'URL')
+    .replace(/\bUri\b/g, 'URI')
+    .replace(/\bApi\b/g, 'API')
+    .replace(/\bGps\b/g, 'GPS');
+}
+
+/**
  * Converts an array of objects to CSV format
+ * Flattens nested objects and serializes arrays as JSON
  */
 export function convertToCSV(data: any[]): string {
   if (data.length === 0) return '';
   
-  // Get all unique keys from all objects
+  // Flatten all objects first
+  const flattenedData = data.map(item => flattenObject(item));
+  
+  // Get all unique keys from all flattened objects
   const allKeys = new Set<string>();
-  data.forEach(item => {
+  flattenedData.forEach(item => {
     Object.keys(item).forEach(key => allKeys.add(key));
   });
   
   const headers = Array.from(allKeys);
+  const readableHeaders = headers.map(formatColumnHeader);
   
   // Escape and quote CSV values
   const escapeCSVValue = (value: any): string => {
-    if (value === null || value === undefined) return '';
+    if (value === null || value === undefined || value === '') return '';
+    
     const stringValue = String(value);
+    
     // If contains comma, quote, or newline, wrap in quotes and escape quotes
     if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
       return `"${stringValue.replace(/"/g, '""')}"`;
     }
+    
     return stringValue;
   };
   
-  const rows = data.map(item =>
+  const rows = flattenedData.map(item =>
     headers.map(header => escapeCSVValue(item[header])).join(',')
   );
   
-  return [headers.join(','), ...rows].join('\n');
+  return [readableHeaders.join(','), ...rows].join('\n');
 }
 
 /**

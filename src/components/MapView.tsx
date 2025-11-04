@@ -85,6 +85,9 @@ interface MapViewProps {
   onDrawModeChange?: (isDrawMode: boolean) => void;
   onPolygonDrawn?: (polygon: __esri.Polygon) => void;
   onPolygonCleared?: () => void;
+  // Filter synchronization props
+  iconicTaxa?: string[];
+  onIconicTaxaChange?: (taxa: string[]) => void;
 }
 
 export interface MapViewRef {
@@ -139,9 +142,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   tncObservations = [],
   onTNCObservationsUpdate,
   onTNCLoadingChange,
-  selectedTNCObservation,
+  selectedTNCObservation: _selectedTNCObservation,
   onTNCObservationSelect,
-  selectedINaturalistObservation,
+  selectedINaturalistObservation: _selectedINaturalistObservation,
   onINaturalistObservationSelect,
   eBirdObservations = [],
   onEBirdObservationsUpdate,
@@ -163,7 +166,9 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   isDrawMode = false,
   onDrawModeChange,
   onPolygonDrawn,
-  onPolygonCleared
+  onPolygonCleared,
+  iconicTaxa = [],
+  onIconicTaxaChange
 }, ref) => {
   const mapDiv = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<MapView | null>(null);
@@ -190,8 +195,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   const currentObservationsRef = useRef<iNaturalistObservation[]>([]);
   const [visibleObservationCategories, setVisibleObservationCategories] = useState<Set<string>>(new Set());
   
-  // Highlighted observation state
-  const [highlightedObservationId, setHighlightedObservationId] = useState<number | string | null>(null);
+                 // Highlighted observation state
+  const [_highlightedObservationId, setHighlightedObservationId] = useState<number | string | null>(null);
   const highlightHandleRef = useRef<__esri.Handle | null>(null);
   const highlightOperationRef = useRef<Promise<void> | null>(null);
 
@@ -1191,31 +1196,32 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   }, [view, tncObservations, visibleObservationCategories]);
 
-  // Initialize visible categories when regular iNaturalist observations load
-  // This ensures legend shows all categories as selected on first load
+  // Sync visibleObservationCategories with iconicTaxa filter from App.tsx
+  // This is the single source of truth - INaturalistSidebar handles initialization
   useEffect(() => {
-    if (currentObservations.length > 0 && visibleObservationCategories.size === 0) {
-      const categories = new Set<string>();
+    if (iconicTaxa && iconicTaxa.length > 0) {
+      // Convert to lowercase for consistent matching
+      const normalizedTaxa = new Set(iconicTaxa.map(t => t.toLowerCase()));
+      setVisibleObservationCategories(normalizedTaxa);
+    } else if (iconicTaxa && iconicTaxa.length === 0) {
+      // If iconicTaxa is explicitly empty, clear all categories
+      setVisibleObservationCategories(new Set());
+    } else {
+      // If iconicTaxa is undefined, initialize with all available categories
+      const allCategories = new Set<string>();
       currentObservations.forEach(obs => {
         const iconicTaxon = obs.taxon?.iconic_taxon_name || 'unknown';
-        categories.add(iconicTaxon);
+        allCategories.add(iconicTaxon);
       });
-      setVisibleObservationCategories(categories);
-    }
-  }, [currentObservations, visibleObservationCategories.size]);
-
-  // Initialize visible categories when TNC observations load
-  // This ensures legend shows all categories as selected on first load
-  useEffect(() => {
-    if (tncObservations.length > 0 && visibleObservationCategories.size === 0) {
-      const categories = new Set<string>();
       tncObservations.forEach(obs => {
         const iconicTaxon = normalizeTNCCategoryToIconicTaxon(obs.taxon_category_name);
-        categories.add(iconicTaxon);
+        allCategories.add(iconicTaxon);
       });
-      setVisibleObservationCategories(categories);
+      if (allCategories.size > 0) {
+        setVisibleObservationCategories(allCategories);
+      }
     }
-  }, [tncObservations, visibleObservationCategories.size]);
+  }, [iconicTaxa, currentObservations, tncObservations]);
 
   // Effect to update eBird observations on map when data changes
   useEffect(() => {
@@ -1523,6 +1529,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   // Highlight observation method using ArcGIS native highlighting
   // Highlight observation (using extracted utility)
   const highlightObservation = (id: number | string) => {
+<<<<<<< HEAD
     if (!view) return;
     highlightObservationImpl(id, {
       view,
@@ -1530,6 +1537,138 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       highlightOperationRef,
       onHighlightChange: setHighlightedObservationId
     });
+=======
+    if (!view || !view.map) {
+      console.warn('❌ View or map not available');
+      return;
+    }
+    
+    console.log('🎯 Highlighting observation:', id);
+    
+    // Create the async operation
+    const operation = (async () => {
+      // Wait for any pending highlight operation to complete before clearing
+      if (highlightOperationRef.current) {
+        console.log('⏸️ Waiting for previous highlight operation to complete...');
+        await highlightOperationRef.current;
+      }
+      
+      // Now clear any existing highlight
+      if (highlightHandleRef.current) {
+        console.log('🧹 Clearing previous highlight');
+        highlightHandleRef.current.remove();
+        highlightHandleRef.current = null;
+      }
+      
+      // Find the observation graphic in either layer
+      if (!view.map) return;
+      const inatLayer = view.map.findLayerById('inaturalist-observations') as GraphicsLayer;
+      const tncLayer = view.map.findLayerById('tnc-inaturalist-observations') as GraphicsLayer;
+      
+      let targetGraphic: __esri.Graphic | undefined;
+      let targetLayer: GraphicsLayer | undefined;
+      
+      // Search in iNaturalist Public API layer
+      if (inatLayer) {
+        targetGraphic = inatLayer.graphics.find(g => g.attributes?.id === id);
+        if (targetGraphic) {
+          targetLayer = inatLayer;
+          console.log('✅ Found in iNaturalist Public API layer');
+        }
+      }
+      
+      // Search in TNC layer if not found
+      if (!targetGraphic && tncLayer) {
+        targetGraphic = tncLayer.graphics.find(g => g.attributes?.observation_id === id);
+        if (targetGraphic) {
+          targetLayer = tncLayer;
+          console.log('✅ Found in TNC layer');
+        }
+      }
+      
+      if (!targetGraphic || !targetLayer) {
+        console.warn(`❌ Observation with id ${id} not found on map`);
+        return;
+      }
+      
+      try {
+        // Ensure the layer is loaded and the layer view is ready
+        console.log('⏳ Waiting for layer view to be ready...');
+        const layerView = await view.whenLayerView(targetLayer);
+        console.log('✅ Layer view obtained, checking if updating...');
+        
+        // Wait for the layer view to finish any pending updates using reactiveUtils
+        // This is especially important on the very first interaction when graphics were just added
+        if ((layerView as any).updating) {
+          console.log('⏳ Layer view is updating (first time), waiting for it to finish...');
+          await reactiveUtils.whenOnce(() => !(layerView as any).updating);
+          console.log('✅ First update cycle complete');
+          
+          // Wait for one more frame - sometimes the layer triggers another update right after
+          await new Promise(resolve => setTimeout(resolve, 50));
+          
+          // If it started updating again, wait for that too
+          if ((layerView as any).updating) {
+            console.log('⏳ Layer view is updating again (second time), waiting...');
+            await reactiveUtils.whenOnce(() => !(layerView as any).updating);
+            console.log('✅ Second update cycle complete');
+          }
+        }
+        
+        // Add a small delay to ensure rendering pipeline is completely stable
+        await new Promise(resolve => setTimeout(resolve, 100));
+        console.log('✅ Ready to highlight');
+        
+        // Use ArcGIS's native highlight method - this creates the blue highlight ring automatically!
+        console.log('🚀 About to call layerView.highlight()');
+        const highlightHandle = (layerView as any).highlight(targetGraphic);
+        console.log('🎯 Highlight handle returned:', highlightHandle);
+        
+        highlightHandleRef.current = highlightHandle;
+        setHighlightedObservationId(id);
+        
+        console.log('✨ Applied native ArcGIS highlight - handle stored');
+        
+        // Open the popup using the proper ArcGIS API method
+        // Important: Since ArcGIS JS API 4.27+, popup is lazily loaded
+        // Use view.openPopup() (not view.popup.open()) to properly initialize it
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        if (view && targetGraphic.geometry) {
+          console.log('💬 Opening popup programmatically using view.openPopup()...');
+          
+          try {
+            // Use view.openPopup() method which handles lazy-loading properly
+            // This properly initializes the popup and sets selectedFeature
+            view.openPopup({
+              features: [targetGraphic],
+              location: targetGraphic.geometry as __esri.Point
+            });
+            
+            console.log('✅ Popup opened successfully');
+            
+            // Check popup state after a brief delay to let it initialize
+            await new Promise(resolve => setTimeout(resolve, 50));
+            console.log('💬 Popup state after openPopup():', {
+              visible: view.popup?.visible,
+              selectedFeature: view.popup?.selectedFeature ? 'EXISTS' : 'NULL/UNDEFINED',
+              features: view.popup?.features?.length
+            });
+          } catch (error) {
+            console.error('❌ Error opening popup:', error);
+          }
+        } else {
+          console.warn('⚠️ Cannot open popup - missing view or geometry');
+        }
+        
+      } catch (error) {
+        console.error('❌ Error highlighting observation:', error);
+      }
+    })();
+    
+    // Store the operation so we can wait for it if needed
+    highlightOperationRef.current = operation;
+>>>>>>> main
   };
   
   // Clear observation highlight (using extracted utility)
@@ -1635,32 +1774,38 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     const allVisible = allCategories.every(key => visibleObservationCategories.has(key));
     const isCurrentlyVisible = visibleObservationCategories.has(categoryKey);
     
+    let newVisible: Set<string>;
+    
     // Case 1: All are visible, click one → show only that one
     if (allVisible) {
-      setVisibleObservationCategories(new Set([categoryKey]));
-      return;
+      newVisible = new Set([categoryKey]);
     }
-    
     // Case 2: Only this one is visible, click it again → show all
-    if (isCurrentlyVisible && visibleObservationCategories.size === 1) {
-      setVisibleObservationCategories(new Set(allCategories));
-      return;
+    else if (isCurrentlyVisible && visibleObservationCategories.size === 1) {
+      newVisible = new Set(allCategories);
     }
-    
     // Case 3: Some are visible, clicking a non-visible one → add it (multi-select)
-    if (!isCurrentlyVisible) {
-      const newVisible = new Set(visibleObservationCategories);
+    else if (!isCurrentlyVisible) {
+      newVisible = new Set(visibleObservationCategories);
       newVisible.add(categoryKey);
-      setVisibleObservationCategories(newVisible);
-      return;
+    }
+    // Case 4: Some are visible, clicking a visible one → remove it (unless it would leave none)
+    else if (isCurrentlyVisible && visibleObservationCategories.size > 1) {
+      newVisible = new Set(visibleObservationCategories);
+      newVisible.delete(categoryKey);
+    } else {
+      return; // No change needed
     }
     
-    // Case 4: Some are visible, clicking a visible one → remove it (unless it would leave none)
-    if (isCurrentlyVisible && visibleObservationCategories.size > 1) {
-      const newVisible = new Set(visibleObservationCategories);
-      newVisible.delete(categoryKey);
-      setVisibleObservationCategories(newVisible);
-      return;
+    setVisibleObservationCategories(newVisible);
+    
+    // Sync with parent filter state
+    if (onIconicTaxaChange) {
+      // Convert to capitalized format (e.g., 'aves' -> 'Aves')
+      const capitalizedTaxa = Array.from(newVisible).map(key => 
+        key.charAt(0).toUpperCase() + key.slice(1)
+      );
+      onIconicTaxaChange(capitalizedTaxa);
     }
   };
 
@@ -1668,8 +1813,21 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     if (visible) {
       const allCategories = new Set(legendCategories.map(cat => cat.key));
       setVisibleObservationCategories(allCategories);
+      
+      // Sync with parent filter state
+      if (onIconicTaxaChange) {
+        const capitalizedTaxa = Array.from(allCategories).map(key => 
+          key.charAt(0).toUpperCase() + key.slice(1)
+        );
+        onIconicTaxaChange(capitalizedTaxa);
+      }
     } else {
       setVisibleObservationCategories(new Set());
+      
+      // Sync with parent filter state
+      if (onIconicTaxaChange) {
+        onIconicTaxaChange([]);
+      }
     }
   };
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, Calendar, User, MapPin, ExternalLink, Download, ShoppingCart, Filter } from 'lucide-react';
 import { INaturalistUnifiedObservation } from './INaturalistSidebar';
 
@@ -9,9 +9,19 @@ interface INaturalistDetailsSidebarProps {
   dateRangeText: string;
   qualityGrade?: 'research' | 'needs_id' | 'casual' | undefined;
   onQualityGradeChange: (grade: 'research' | 'needs_id' | 'casual' | undefined) => void;
+  // Custom filter props
+  iconicTaxa?: string[];
+  onIconicTaxaChange?: (taxa: string[]) => void;
+  taxonName?: string;
+  onTaxonNameChange?: (name: string) => void;
+  photoFilter?: 'any' | 'with' | 'without';
+  onPhotoFilterChange?: (value: 'any' | 'with' | 'without') => void;
+  months?: number[];
+  onMonthsChange?: (months: number[]) => void;
+  // Export & cart actions
   onExportCSV: () => void;
   onExportGeoJSON: () => void;
-  onAddToCart?: () => void;
+  onAddToCart?: (filteredCount: number) => void;
   onClose: () => void;
   hasSearched: boolean;
 }
@@ -25,6 +35,14 @@ const INaturalistDetailsSidebar: React.FC<INaturalistDetailsSidebarProps> = ({
   dateRangeText,
   qualityGrade,
   onQualityGradeChange,
+  iconicTaxa = [],
+  onIconicTaxaChange,
+  taxonName = '',
+  onTaxonNameChange,
+  photoFilter = 'any',
+  onPhotoFilterChange,
+  months = [],
+  onMonthsChange,
   onExportCSV,
   onExportGeoJSON,
   onAddToCart,
@@ -32,6 +50,117 @@ const INaturalistDetailsSidebar: React.FC<INaturalistDetailsSidebarProps> = ({
   hasSearched
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('export');
+
+  // Detect if we're using TNC layers (which have limited fields)
+  const isTNCLayer = dataSourceLabel?.includes('TNC');
+  
+  // Compute available taxa from actual observations (filter out empty/null - Unknown is now included)
+  const availableTaxaInObservations = useMemo(() => {
+    const taxa = new Set<string>();
+    observations.forEach(obs => {
+      const taxon = obs.iconicTaxon;
+      if (taxon && taxon.trim()) {
+        // Capitalize first letter, lowercase the rest
+        const normalized = taxon.charAt(0).toUpperCase() + taxon.slice(1).toLowerCase();
+        taxa.add(normalized);
+      }
+    });
+    return Array.from(taxa);
+  }, [observations]);
+  
+  
+  // Check if iconic taxa is actually filtering (not all selected or empty)
+  // Compare against actual available taxa, not hardcoded list
+  const isIconicTaxaFiltering = useMemo(() => {
+    if (!iconicTaxa || iconicTaxa.length === 0 || availableTaxaInObservations.length === 0) {
+      return false;
+    }
+    // Filtering if selected taxa count is less than available taxa count
+    return iconicTaxa.length < availableTaxaInObservations.length;
+  }, [iconicTaxa, availableTaxaInObservations]);
+  
+  // Calculate filtered observations based on custom filters
+  const filteredObservations = useMemo(() => {
+    let filtered = observations;
+
+    // Apply quality grade filter (only available in Public API)
+    if (qualityGrade && !isTNCLayer) {
+      filtered = filtered.filter(obs => obs.qualityGrade === qualityGrade);
+    }
+
+    // Apply iconic taxa filter (only if specific taxa selected, not if all or none selected)
+    // Note: Both Public API and TNC use iconicTaxon in the unified observation format
+    // (TNC's taxon_category_name is mapped to iconicTaxon upstream)
+    if (isIconicTaxaFiltering) {
+      filtered = filtered.filter(obs => 
+        iconicTaxa.some(taxon => obs.iconicTaxon?.toLowerCase() === taxon.toLowerCase())
+      );
+    }
+
+    // Apply taxon name filter (works for both data sources)
+    if (taxonName && taxonName.trim()) {
+      const searchTerm = taxonName.toLowerCase();
+      filtered = filtered.filter(obs =>
+        obs.commonName?.toLowerCase().includes(searchTerm) ||
+        obs.scientificName?.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Apply photo filter (works for both data sources)
+    if (photoFilter === 'with') {
+      // Only observations WITH photos
+      filtered = filtered.filter(obs => obs.photoUrl !== null && obs.photoUrl !== '');
+    } else if (photoFilter === 'without') {
+      // Only observations WITHOUT photos
+      filtered = filtered.filter(obs => !obs.photoUrl || obs.photoUrl === '');
+    }
+    // If photoFilter === 'any', don't filter (show all)
+
+    // Apply month filter (works for both data sources - parse from observedOn)
+    if (months && months.length > 0 && months.length < 12) {
+      filtered = filtered.filter(obs => {
+        const date = new Date(obs.observedOn);
+        const month = date.getMonth() + 1; // getMonth() returns 0-11, we want 1-12
+        return months.includes(month);
+      });
+    }
+
+    // Note: The following filters can only be applied server-side when fetching data:
+    // - photoLicense (not in observation results)
+    // - soundFilter (would need soundUrl field)
+    // - verifiable (server-side calculation)
+    // - captive (would need captive_cultivated field)
+    // - hours (would need time of day data)
+    // - conservation status (endemic, threatened, introduced, native - server-side only)
+    // These are stored for cart queries but don't filter current client-side results.
+
+    return filtered;
+  }, [observations, qualityGrade, iconicTaxa, isIconicTaxaFiltering, taxonName, photoFilter, months, isTNCLayer]);
+  
+  // Check if any additional filters are active (only client-side filters that actually work)
+  const hasAdditionalFilters = useMemo(() => {
+    const hasMonthFilter = months && months.length > 0 && months.length < 12;
+    
+    if (isTNCLayer) {
+      // TNC layers support: taxonomic groups, taxon name, photo filter, months
+      return !!(
+        isIconicTaxaFiltering ||
+        (taxonName && taxonName.trim()) ||
+        (photoFilter && photoFilter !== 'any') ||
+        hasMonthFilter
+      );
+    } else {
+      // Public API supports: quality grade, taxonomic groups, taxon name, photo filter, months
+      // Note: Other advanced filters are server-side only and stored for cart queries
+      return !!(
+        qualityGrade ||
+        isIconicTaxaFiltering ||
+        (taxonName && taxonName.trim()) ||
+        (photoFilter && photoFilter !== 'any') ||
+        hasMonthFilter
+      );
+    }
+  }, [qualityGrade, isIconicTaxaFiltering, taxonName, photoFilter, months, isTNCLayer]);
 
   // Switch to details tab when an observation is selected
   useEffect(() => {
@@ -69,7 +198,7 @@ const INaturalistDetailsSidebar: React.FC<INaturalistDetailsSidebarProps> = ({
             : 'text-gray-600 hover:text-gray-900 bg-gray-50 shadow-[inset_4px_0_6px_-2px_rgba(0,0,0,0.12),inset_0_-4px_6px_-2px_rgba(0,0,0,0.08)]'
         }`}
       >
-        Export
+        Export All
       </button>
     </div>
   );
@@ -259,39 +388,226 @@ const INaturalistDetailsSidebar: React.FC<INaturalistDetailsSidebarProps> = ({
         {/* Header */}
         <div id="export-header" className="p-4 border-b border-gray-200 bg-white">
           <h3 className="text-sm font-medium text-gray-900 mb-2">{dataSourceLabel}</h3>
-          <p className="text-sm text-gray-600">
-            {observations.length} observations {dateRangeText}
+          <p className="text-sm">
+            {hasAdditionalFilters && filteredObservations.length !== observations.length ? (
+              <>
+                <span className="font-semibold text-blue-600">{filteredObservations.length} filtered</span>
+                <span className="text-gray-400 mx-1">/</span>
+                <span className="text-gray-600">{observations.length} total observations</span>
+                <span className="text-gray-600"> {dateRangeText}</span>
+              </>
+            ) : (
+              <span className="text-gray-600">{observations.length} total observations {dateRangeText}</span>
+            )}
           </p>
         </div>
 
         {/* Filters Section */}
         <div id="export-filters" className="flex-1 overflow-y-auto p-4 space-y-6">
-          {/* Quality Grade Filter */}
-          <div id="quality-grade-filter-section" className="space-y-3">
-            <h4 className="text-sm font-medium text-gray-900 flex items-center">
-              <Filter className="w-4 h-4 mr-2" />
-              Quality Grade
-            </h4>
-            <div className="space-y-2">
-              {[
-                { value: undefined, label: 'All Grades' },
-                { value: 'research' as const, label: 'Research Grade' },
-                { value: 'needs_id' as const, label: 'Needs ID' },
-                { value: 'casual' as const, label: 'Casual' }
-              ].map((option) => (
-                <label key={option.label} id={`quality-grade-option-${option.label.toLowerCase().replace(/\s+/g, '-')}`} className="flex items-center">
+          {/* Quality Grade Filter - Only show for Public API */}
+          {!isTNCLayer && (
+            <div id="quality-grade-filter-section" className="space-y-3">
+              <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                <Filter className="w-4 h-4 mr-2" />
+                Quality Grade
+              </h4>
+              <div className="space-y-2">
+                {[
+                  { value: undefined, label: 'All Grades' },
+                  { value: 'research' as const, label: 'Research Grade' },
+                  { value: 'needs_id' as const, label: 'Needs ID' },
+                  { value: 'casual' as const, label: 'Casual' }
+                ].map((option) => (
+                  <label key={option.label} id={`quality-grade-option-${option.label.toLowerCase().replace(/\s+/g, '-')}`} className="flex items-center">
+                    <input
+                      type="radio"
+                      name="qualityGrade"
+                      checked={qualityGrade === option.value}
+                      onChange={() => onQualityGradeChange(option.value)}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-gray-700">{option.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Iconic Taxa Filter */}
+          {onIconicTaxaChange && (
+            <div id="iconic-taxa-filter-section" className="space-y-3">
+              <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                <Filter className="w-4 h-4 mr-2" />
+                Taxonomic Groups
+              </h4>
+              <div className="space-y-2">
+                {[
+                  { value: 'Aves', label: 'Birds', icon: '🐦' },
+                  { value: 'Mammalia', label: 'Mammals', icon: '🦌' },
+                  { value: 'Reptilia', label: 'Reptiles', icon: '🦎' },
+                  { value: 'Amphibia', label: 'Amphibians', icon: '🐸' },
+                  { value: 'Actinopterygii', label: 'Fish', icon: '🐟' },
+                  { value: 'Insecta', label: 'Insects', icon: '🦋' },
+                  { value: 'Plantae', label: 'Plants', icon: '🌱' },
+                  { value: 'Fungi', label: 'Fungi', icon: '🍄' },
+                  { value: 'Unknown', label: 'Unknown', icon: '🔬' }
+                ].map((taxon) => {
+                  const isAvailable = availableTaxaInObservations.includes(taxon.value);
+                  const isChecked = iconicTaxa.includes(taxon.value);
+                  return (
+                    <label 
+                      key={taxon.value} 
+                      id={`iconic-taxon-option-${taxon.value.toLowerCase()}`} 
+                      className={`flex items-center ${isAvailable ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        disabled={!isAvailable}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            // Add to current selection (preserve other selections)
+                            const newTaxa = [...iconicTaxa, taxon.value];
+                            onIconicTaxaChange(newTaxa);
+                          } else {
+                            // Remove from current selection
+                            const newTaxa = iconicTaxa.filter(t => t !== taxon.value);
+                            onIconicTaxaChange(newTaxa);
+                          }
+                        }}
+                        className="mr-2 cursor-pointer disabled:cursor-not-allowed"
+                      />
+                      <span className="text-lg mr-2">{taxon.icon}</span>
+                      <span className="text-sm text-gray-700">{taxon.label}</span>
+                      {!isAvailable && observations.length > 0 && (
+                        <span className="text-xs text-gray-400 ml-1">(not in data)</span>
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Taxon Name Search */}
+          {onTaxonNameChange && (
+            <div id="taxon-name-filter-section" className="space-y-3">
+              <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                <Filter className="w-4 h-4 mr-2" />
+                Species Search
+              </h4>
+              <input
+                id="taxon-name-input"
+                type="text"
+                value={taxonName}
+                onChange={(e) => onTaxonNameChange(e.target.value)}
+                placeholder="e.g., Quercus agrifolia"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <p className="text-xs text-gray-500">
+                Search by scientific or common name
+              </p>
+            </div>
+          )}
+
+          {/* Photo Filter */}
+          {onPhotoFilterChange && (
+            <div id="photo-filter-section" className="space-y-3">
+              <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                <Filter className="w-4 h-4 mr-2" />
+                Photos
+              </h4>
+              <div className="space-y-2">
+                <label className="flex items-center cursor-pointer">
                   <input
                     type="radio"
-                    name="qualityGrade"
-                    checked={qualityGrade === option.value}
-                    onChange={() => onQualityGradeChange(option.value)}
-                    className="mr-2"
+                    name="photoFilter"
+                    checked={photoFilter === 'any'}
+                    onChange={() => onPhotoFilterChange('any')}
+                    className="mr-2 cursor-pointer"
                   />
-                  <span className="text-sm text-gray-700">{option.label}</span>
+                  <span className="text-sm text-gray-700">Any (with or without photos)</span>
                 </label>
-              ))}
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="radio"
+                    name="photoFilter"
+                    checked={photoFilter === 'with'}
+                    onChange={() => onPhotoFilterChange('with')}
+                    className="mr-2 cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-700">Has photos</span>
+                </label>
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="radio"
+                    name="photoFilter"
+                    checked={photoFilter === 'without'}
+                    onChange={() => onPhotoFilterChange('without')}
+                    className="mr-2 cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-700">No photos</span>
+                </label>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Month/Season Filter */}
+          {onMonthsChange && (
+            <div id="month-filter-section" className="space-y-3">
+              <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                <Filter className="w-4 h-4 mr-2" />
+                Months/Season
+              </h4>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { value: 1, label: 'Jan', season: 'winter' },
+                  { value: 2, label: 'Feb', season: 'winter' },
+                  { value: 3, label: 'Mar', season: 'spring' },
+                  { value: 4, label: 'Apr', season: 'spring' },
+                  { value: 5, label: 'May', season: 'spring' },
+                  { value: 6, label: 'Jun', season: 'summer' },
+                  { value: 7, label: 'Jul', season: 'summer' },
+                  { value: 8, label: 'Aug', season: 'summer' },
+                  { value: 9, label: 'Sep', season: 'fall' },
+                  { value: 10, label: 'Oct', season: 'fall' },
+                  { value: 11, label: 'Nov', season: 'fall' },
+                  { value: 12, label: 'Dec', season: 'winter' }
+                ].map((month) => (
+                  <label key={month.value} className="flex items-center cursor-pointer text-xs">
+                    <input
+                      type="checkbox"
+                      checked={months.includes(month.value)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          onMonthsChange([...months, month.value].sort((a, b) => a - b));
+                        } else {
+                          onMonthsChange(months.filter(m => m !== month.value));
+                        }
+                      }}
+                      className="mr-1 cursor-pointer"
+                    />
+                    <span className="text-gray-700">{month.label}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={() => onMonthsChange([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])}
+                  className="text-xs px-2 py-1 text-blue-600 hover:bg-blue-50 rounded"
+                >
+                  Select All
+                </button>
+                <button
+                  onClick={() => onMonthsChange([])}
+                  className="text-xs px-2 py-1 text-gray-600 hover:bg-gray-50 rounded"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          )}
+
         </div>
 
         {/* Export Actions Footer */}
@@ -335,11 +651,31 @@ const INaturalistDetailsSidebar: React.FC<INaturalistDetailsSidebarProps> = ({
 
           {/* Add to Cart Button */}
           {onAddToCart && (
-            <div id="add-to-cart-section">
+            <div id="add-to-cart-section" className="space-y-3">
+              {/* Summary message */}
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm font-medium text-blue-900">
+                  {hasAdditionalFilters && filteredObservations.length !== observations.length ? (
+                    <>
+                      <span className="text-lg font-bold">{filteredObservations.length}</span> observations will be saved after applying additional filters
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-lg font-bold">{observations.length}</span> observations will be saved
+                    </>
+                  )}
+                </p>
+                {hasAdditionalFilters && filteredObservations.length !== observations.length && (
+                  <p className="text-xs text-blue-700 mt-1">
+                    Filtered from {observations.length} total observations
+                  </p>
+                )}
+              </div>
+              
               <button
                 id="add-to-cart-button"
-                onClick={onAddToCart}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                onClick={() => onAddToCart(filteredObservations.length)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={observations.length === 0}
               >
                 <ShoppingCart className="w-4 h-4" />

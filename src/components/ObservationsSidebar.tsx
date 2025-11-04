@@ -15,6 +15,8 @@ interface ObservationsSidebarProps {
   hasSearched?: boolean;
   onObservationClick?: (obs: INaturalistUnifiedObservation) => void;
   selectedObservationId?: number | string | null;
+  iconicTaxa?: string[]; // Filter by taxonomic groups
+  onIconicTaxaChange?: (taxa: string[]) => void; // Callback to change filter
 }
 
 const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ 
@@ -23,12 +25,14 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({
   currentDaysBack = 30, 
   startDate, 
   endDate,
-  onExportCSV,
-  onExportGeoJSON,
+  onExportCSV: _onExportCSV,
+  onExportGeoJSON: _onExportGeoJSON,
   onAddToCart,
   hasSearched = false,
   onObservationClick,
-  selectedObservationId
+  selectedObservationId,
+  iconicTaxa = [],
+  onIconicTaxaChange
 }) => {
   // Generate appropriate date range text
   const dateRangeText = useMemo(() => {
@@ -51,12 +55,10 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({
       photoUrl: obs.photos && obs.photos.length > 0 
         ? obs.photos[0].url.replace('square', 'medium') 
         : null,
-      photoAttribution: obs.photos && obs.photos.length > 0 
-        ? obs.photos[0].attribution 
-        : null,
+      photoAttribution: null, // Attribution not available in API response
       iconicTaxon: obs.taxon?.iconic_taxon_name || 'Unknown',
       qualityGrade: obs.quality_grade || null,
-      location: obs.place_guess || null,
+      location: null, // place_guess not available in API response
       uri: obs.uri,
       taxonId: obs.taxon?.id
     }));
@@ -72,6 +74,8 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({
       hasSearched={hasSearched}
       onObservationClick={onObservationClick}
       selectedObservationId={selectedObservationId}
+      iconicTaxa={iconicTaxa}
+      onIconicTaxaChange={onIconicTaxaChange}
     />
   );
 };

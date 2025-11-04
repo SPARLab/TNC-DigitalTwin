@@ -18,6 +18,8 @@ import DendraSidebar from './DendraSidebar';
 
 interface DataViewProps {
   filters: FilterState;
+  // Current iconicTaxa (from filters state, not lastSearchedFilters)
+  currentIconicTaxa?: string[];
   // iNaturalist Public API data
   observations: iNaturalistObservation[];
   observationsLoading: boolean;
@@ -78,10 +80,13 @@ interface DataViewProps {
   onINatDetailsClose?: () => void;
   qualityGrade?: 'research' | 'needs_id' | 'casual' | undefined;
   onQualityGradeChange?: (grade: 'research' | 'needs_id' | 'casual' | undefined) => void;
+  // Iconic taxa filter callback
+  onIconicTaxaChange?: (taxa: string[]) => void;
 }
 
 const DataView: React.FC<DataViewProps> = ({
   filters,
+  currentIconicTaxa,
   observations,
   observationsLoading,
   onObservationExportCSV,
@@ -103,8 +108,8 @@ const DataView: React.FC<DataViewProps> = ({
   onCalFloraPlantSelect,
   tncArcGISItems,
   tncArcGISLoading,
-  onTNCArcGISExportCSV,
-  onTNCArcGISExportGeoJSON,
+  onTNCArcGISExportCSV: _onTNCArcGISExportCSV,
+  onTNCArcGISExportGeoJSON: _onTNCArcGISExportGeoJSON,
   onTNCArcGISItemSelect,
   activeLayerIds,
   loadingLayerIds = [],
@@ -120,7 +125,7 @@ const DataView: React.FC<DataViewProps> = ({
   hasSearched = false,
   dendraStations = [],
   dendraDatastreams = [],
-  dendraLoading = false,
+  dendraLoading: _dendraLoading = false,
   selectedDendraStationId,
   selectedDendraDatastreamId,
   onDendraStationSelect,
@@ -128,9 +133,10 @@ const DataView: React.FC<DataViewProps> = ({
   onShowDendraWebsite,
   selectedINatObservation,
   onINatObservationClick,
-  onINatDetailsClose,
-  qualityGrade,
-  onQualityGradeChange
+  onINatDetailsClose: _onINatDetailsClose,
+  qualityGrade: _qualityGrade,
+  onQualityGradeChange: _onQualityGradeChange,
+  onIconicTaxaChange
 }) => {
   // Route to appropriate data view based on category + source combination
   const getDataView = () => {
@@ -169,6 +175,8 @@ const DataView: React.FC<DataViewProps> = ({
             hasSearched={hasSearched}
             onObservationClick={onINatObservationClick}
             selectedObservationId={selectedINatObservation?.id}
+            iconicTaxa={currentIconicTaxa ?? filters.iconicTaxa}
+            onIconicTaxaChange={onIconicTaxaChange}
           />
         );
 
@@ -189,6 +197,8 @@ const DataView: React.FC<DataViewProps> = ({
             hasSearched={hasSearched}
             onObservationClick={onINatObservationClick}
             selectedObservationId={selectedINatObservation?.id}
+            iconicTaxa={currentIconicTaxa ?? filters.iconicTaxa}
+            onIconicTaxaChange={onIconicTaxaChange}
           />
         );
         

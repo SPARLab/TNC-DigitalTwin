@@ -110,6 +110,10 @@ private async waitForRateLimit(): Promise<void> {
     startDate?: string;
     endDate?: string;
     maxResults?: number; // Maximum total results to fetch across all pages
+    // Custom filter parameters (that work client-side)
+    taxonName?: string;
+    photoFilter?: 'any' | 'with' | 'without';
+    months?: number[];
   } = {}): Promise<iNaturalistResponse> {
     const {
       perPage = 200, // Increased from 100 to get more per request
@@ -119,7 +123,11 @@ private async waitForRateLimit(): Promise<void> {
       daysBack = 30,
       startDate: customStartDate,
       endDate: customEndDate,
-      maxResults = 500 // Default max results across all pages
+      maxResults = 500, // Default max results across all pages
+      // Custom filters
+      taxonName,
+      photoFilter,
+      months
     } = options;
 
     // Calculate date range - use custom dates if provided, otherwise use daysBack
@@ -171,6 +179,21 @@ private async waitForRateLimit(): Promise<void> {
 
     if (iconicTaxa && iconicTaxa.length > 0) {
       params.append('iconic_taxa', iconicTaxa.join(','));
+    }
+
+    // Add custom filters
+    if (taxonName) {
+      params.append('taxon_name', taxonName);
+    }
+
+    if (photoFilter === 'with') {
+      params.append('has[]', 'photos');
+    } else if (photoFilter === 'without') {
+      params.append('has[]', 'nophotos');
+    }
+
+    if (months && months.length > 0) {
+      params.append('month', months.join(','));
     }
 
     // Fetch multiple pages if needed

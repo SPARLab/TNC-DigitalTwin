@@ -23,10 +23,13 @@
   },
   "dependencies": {
     "@arcgis/core": "^4.33.12",
+    "@types/jszip": "^3.4.0",
     "echarts": "^6.0.0",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.263.1",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-hot-toast": "^2.6.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",

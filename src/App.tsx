@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
 import Header from './components/Header';
 import FilterSubheader from './components/FilterSubheader';
 import DataView from './components/DataView';
@@ -13,7 +14,7 @@ import TNCArcGISDetailsSidebar from './components/TNCArcGISDetailsSidebar';
 import DendraDetailsSidebar from './components/DendraDetailsSidebar';
 import INaturalistDetailsSidebar from './components/INaturalistDetailsSidebar';
 import { INaturalistUnifiedObservation } from './components/INaturalistSidebar';
-import { FilterState, DendraStation, DendraDatastream, DendraDatastreamWithStation, DendraDatapoint } from './types';
+import { FilterState, DendraStation, DendraDatastream, DendraDatastreamWithStation, DendraDatapoint, INaturalistCustomFilters } from './types';
 import { LiDARViewMode } from './components/dataviews/LiDARView';
 import { iNaturalistObservation } from './services/iNaturalistService';
 import { TNCArcGISObservation } from './services/tncINaturalistService';
@@ -25,6 +26,9 @@ import { tncINaturalistService } from './services/tncINaturalistService';
 import { MapViewRef } from './components/MapView';
 import { DEFAULT_THEME } from './utils/themes';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { useShoppingCart } from './hooks/useShoppingCart';
+import { CartPanel } from './components/ShoppingCart/CartPanel';
+import { ExportModal } from './components/ShoppingCart/ExportModal';
 import { 
   fetchDendraStations,
   fetchDendraDatastreams,
@@ -36,6 +40,26 @@ function App() {
   // Theme state with localStorage persistence
   const [theme, setTheme] = useLocalStorage('dashboard-theme', DEFAULT_THEME);
 
+  // Shopping cart state
+  const {
+    cartItems,
+    addToCart,
+    removeFromCart,
+    clearCart,
+    getCartCount
+  } = useShoppingCart();
+
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
+  // iNaturalist custom filters state (for export tab)
+  // Only includes filters that work client-side with the current data
+  const [iNatCustomFilters, setINatCustomFilters] = useState<INaturalistCustomFilters>({
+    taxonName: '',
+    photoFilter: 'any',
+    months: []
+  });
+
   const [filters, setFilters] = useState<FilterState>({
     category: '',
     source: '',
@@ -44,7 +68,8 @@ function App() {
     daysBack: undefined,
     startDate: undefined,
     endDate: undefined,
-    iconicTaxa: []
+    // Default to all taxonomic groups (representing "no filter" - everything included)
+    iconicTaxa: ['Aves', 'Mammalia', 'Reptilia', 'Amphibia', 'Actinopterygii', 'Insecta', 'Plantae', 'Fungi']
   });
 
   // Suppress ArcGIS console errors completely
@@ -101,7 +126,7 @@ function App() {
     daysBack: undefined,
     startDate: undefined,
     endDate: undefined,
-    iconicTaxa: []
+    iconicTaxa: ['Aves', 'Mammalia', 'Reptilia', 'Amphibia', 'Actinopterygii', 'Insecta', 'Plantae', 'Fungi']
   });
   
   // Track whether a search has been performed
@@ -1339,7 +1364,15 @@ function App() {
 
   return (
     <div id="app" className="h-screen bg-gray-50 flex flex-col">
-      <Header theme={theme} onThemeChange={setTheme} />
+      {/* Toast notifications */}
+      <Toaster />
+      
+      <Header 
+        theme={theme} 
+        onThemeChange={setTheme}
+        cartItemCount={getCartCount()}
+        onCartClick={() => setIsCartOpen(true)}
+      />
       <FilterSubheader 
         filters={filters}
         onFilterChange={handleFilterChange}
@@ -1365,6 +1398,7 @@ function App() {
       <div id="main-content" className="flex-1 flex min-h-0">
         <DataView
           filters={lastSearchedFilters}
+          currentIconicTaxa={filters.iconicTaxa}
           observations={observations}
           observationsLoading={observationsLoading}
           onObservationExportCSV={handleExportCSV}
@@ -1419,6 +1453,7 @@ function App() {
           onINatDetailsClose={handleINatDetailsClose}
           qualityGrade={filters.qualityGrade}
           onQualityGradeChange={(grade) => setFilters(prev => ({ ...prev, qualityGrade: grade }))}
+          onIconicTaxaChange={(taxa) => setFilters(prev => ({ ...prev, iconicTaxa: taxa }))}
         />
         <div id="map-container" className="flex-1 relative flex">
           {/* Conditionally render based on data source and LiDAR mode */}
@@ -1533,6 +1568,8 @@ function App() {
                 onDrawModeChange={setIsDrawMode}
                 onPolygonDrawn={handlePolygonDrawn}
                 onPolygonCleared={handlePolygonCleared}
+                iconicTaxa={filters.iconicTaxa}
+                onIconicTaxaChange={(taxa) => setFilters(prev => ({ ...prev, iconicTaxa: taxa }))}
               />
               {/* Hub Page Preview Overlay */}
               {selectedModalItem && (
@@ -1664,20 +1701,29 @@ function App() {
             dataSourceLabel={lastSearchedFilters.source}
             selectedObservation={selectedINatObservation}
             observations={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' 
-              ? tncObservations.map(obs => ({
-                  id: obs.observation_id,
-                  observedOn: obs.observed_on,
-                  observerName: obs.user_name || 'Unknown',
-                  commonName: obs.common_name || null,
-                  scientificName: obs.scientific_name || 'Unknown',
-                  photoUrl: tncINaturalistService.getPrimaryImageUrl(obs) || null,
-                  photoAttribution: tncINaturalistService.getPhotoAttribution(obs) || null,
-                  iconicTaxon: obs.taxon_category_name || 'Unknown',
-                  qualityGrade: null,
-                  location: null,
-                  uri: `https://www.inaturalist.org/observations/${obs.observation_id}`,
-                  taxonId: obs.taxon_id
-                }))
+              ? tncObservations.map(obs => {
+                  // Normalize taxon category: convert null, empty, or 'Other' to 'Unknown'
+                  const normalizeTaxonCategory = (category: string | null | undefined): string => {
+                    if (!category || category.trim() === '' || category === 'Other') {
+                      return 'Unknown';
+                    }
+                    return category;
+                  };
+                  return {
+                    id: obs.observation_id,
+                    observedOn: obs.observed_on,
+                    observerName: obs.user_name || 'Unknown',
+                    commonName: obs.common_name || null,
+                    scientificName: obs.scientific_name || 'Unknown',
+                    photoUrl: tncINaturalistService.getPrimaryImageUrl(obs) || null,
+                    photoAttribution: tncINaturalistService.getPhotoAttribution(obs) || null,
+                    iconicTaxon: normalizeTaxonCategory(obs.taxon_category_name),
+                    qualityGrade: null,
+                    location: null,
+                    uri: `https://www.inaturalist.org/observations/${obs.observation_id}`,
+                    taxonId: obs.taxon_id
+                  };
+                })
               : observations.map(obs => ({
                   id: obs.id,
                   observedOn: obs.observed_on,
@@ -1687,12 +1733,10 @@ function App() {
                   photoUrl: obs.photos && obs.photos.length > 0 
                     ? obs.photos[0].url.replace('square', 'medium') 
                     : null,
-                  photoAttribution: obs.photos && obs.photos.length > 0 
-                    ? obs.photos[0].attribution 
-                    : null,
+                  photoAttribution: null, // Attribution not available in API response
                   iconicTaxon: obs.taxon?.iconic_taxon_name || 'Unknown',
                   qualityGrade: obs.quality_grade || null,
-                  location: obs.place_guess || null,
+                  location: null, // place_guess not available in API response
                   uri: obs.uri,
                   taxonId: obs.taxon?.id
                 }))
@@ -1700,11 +1744,77 @@ function App() {
             dateRangeText={inatDateRangeText}
             qualityGrade={filters.qualityGrade}
             onQualityGradeChange={(grade) => setFilters(prev => ({ ...prev, qualityGrade: grade }))}
+            iconicTaxa={filters.iconicTaxa}
+            onIconicTaxaChange={(taxa) => setFilters(prev => ({ ...prev, iconicTaxa: taxa }))}
+            taxonName={iNatCustomFilters.taxonName}
+            onTaxonNameChange={(name) => setINatCustomFilters(prev => ({ ...prev, taxonName: name }))}
+            photoFilter={iNatCustomFilters.photoFilter}
+            onPhotoFilterChange={(value) => setINatCustomFilters(prev => ({ ...prev, photoFilter: value }))}
+            months={iNatCustomFilters.months}
+            onMonthsChange={(months) => setINatCustomFilters(prev => ({ ...prev, months }))}
             onExportCSV={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? handleTNCExportCSV : handleExportCSV}
             onExportGeoJSON={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? handleTNCExportGeoJSON : handleExportGeoJSON}
-            onAddToCart={() => {
-              // TODO: Implement shopping cart functionality
-              console.log('Add to cart clicked');
+            onAddToCart={(filteredCount: number) => {
+              const result = addToCart({
+                dataSource: 'inaturalist',
+                title: `iNaturalist: ${filteredCount} observations - ${inatDateRangeText}`,
+                coreFilters: {
+                  category: lastSearchedFilters.category,
+                  source: lastSearchedFilters.source,
+                  spatialFilter: lastSearchedFilters.spatialFilter,
+                  timeRange: lastSearchedFilters.timeRange,
+                  daysBack: lastSearchedFilters.daysBack,
+                  startDate: lastSearchedFilters.startDate,
+                  endDate: lastSearchedFilters.endDate,
+                  customPolygon: lastSearchedFilters.customPolygon
+                },
+                customFilters: {
+                  inaturalist: {
+                    qualityGrade: filters.qualityGrade,
+                    // Only include iconicTaxa if it's actually filtering (not all 8 selected)
+                    iconicTaxa: filters.iconicTaxa && filters.iconicTaxa.length > 0 && filters.iconicTaxa.length < 8 ? filters.iconicTaxa : undefined,
+                    taxonName: iNatCustomFilters.taxonName || undefined,
+                    photoFilter: iNatCustomFilters.photoFilter !== 'any' ? iNatCustomFilters.photoFilter : undefined,
+                    months: iNatCustomFilters.months && iNatCustomFilters.months.length > 0 && iNatCustomFilters.months.length < 12 ? iNatCustomFilters.months : undefined
+                  }
+                },
+                estimatedCount: filteredCount
+              });
+
+              if (result.success) {
+                toast.success(
+                  (t) => (
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">
+                          Added {filteredCount} observations to cart
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setIsCartOpen(true);
+                          toast.dismiss(t.id);
+                        }}
+                        className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium rounded transition-colors"
+                      >
+                        View Cart
+                      </button>
+                    </div>
+                  ),
+                  {
+                    duration: 3000,
+                    position: 'bottom-right',
+                    style: {
+                      minWidth: '350px',
+                    },
+                  }
+                );
+              } else {
+                toast.error(result.error || 'Failed to add to cart', {
+                  duration: 4000,
+                  position: 'bottom-right',
+                });
+              }
             }}
             onClose={handleINatDetailsClose}
             hasSearched={hasSearched}
@@ -1734,6 +1844,43 @@ function App() {
         plant={selectedCalFloraPlant}
         isOpen={isCalFloraModalOpen}
         onClose={closeCalFloraModal}
+      />
+
+      {/* Shopping Cart Panel */}
+      <CartPanel
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        cartItems={cartItems}
+        onRemoveItem={(id) => {
+          removeFromCart(id);
+          toast.success('Removed item from cart', {
+            duration: 2000,
+            position: 'bottom-right',
+          });
+        }}
+        onClearCart={() => {
+          if (window.confirm('Clear all items from cart?')) {
+            clearCart();
+            toast.success('Cart cleared', {
+              duration: 2000,
+              position: 'bottom-right',
+            });
+          }
+        }}
+        onExport={() => {
+          setIsExportModalOpen(true);
+        }}
+      />
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        cartItems={cartItems}
+        onExportComplete={() => {
+          // Optional: clear cart after successful export
+          // clearCart();
+        }}
       />
     </div>
   );

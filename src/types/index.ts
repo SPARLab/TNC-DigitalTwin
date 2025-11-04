@@ -151,26 +151,150 @@ export interface DendraStationWithMetadata extends DendraStation {
 }
 
 // Shopping Cart Types
+
+/**
+ * iNaturalist-specific query filters
+ * Based on iNaturalist API v1: https://api.inaturalist.org/v1/docs/
+ */
+export interface INaturalistCustomFilters {
+  /** 
+   * Filter by observation quality grade (Public API only, works client-side)
+   * - research: Has community identification to species level with 2/3 agreement
+   * - needs_id: Needs community identification
+   * - casual: Does not meet research grade criteria
+   */
+  qualityGrade?: 'research' | 'needs_id' | 'casual';
+  
+  /** 
+   * Filter by major taxonomic groups (iconic taxa) (works client-side)
+   * Examples: Aves (birds), Mammalia (mammals), Plantae (plants), etc.
+   */
+  iconicTaxa?: string[];
+  
+  /** 
+   * Search by taxon scientific or common name (works client-side)
+   * Note: Names are not unique, may match multiple taxa
+   */
+  taxonName?: string;
+  
+  /** 
+   * Filter observations by photo presence (works client-side)
+   * - 'any': Include all observations (default)
+   * - 'with': Only include observations that have photos
+   * - 'without': Only include observations without photos
+   */
+  photoFilter?: 'any' | 'with' | 'without';
+  
+  /**
+   * Filter by months (1-12) (works client-side)
+   * Useful for seasonal analysis and migration patterns
+   */
+  months?: number[];
+}
+
+/**
+ * CalFlora-specific query filters (future implementation)
+ */
+export interface CalFloraCustomFilters {
+  /** Filter by native status: native, invasive, non-native */
+  nativeStatus?: 'native' | 'invasive' | 'non-native';
+  
+  /** California Invasive Plant Council (Cal-IPC) rating */
+  calIpcRating?: string;
+  
+  // Additional filters to be defined
+}
+
+/**
+ * eBird-specific query filters (future implementation)
+ */
+export interface EBirdCustomFilters {
+  /** Include only verified observations */
+  verifiedOnly?: boolean;
+  
+  /** Filter by breeding codes */
+  breedingCodes?: string[];
+  
+  // Additional filters to be defined
+}
+
+/**
+ * Dendra-specific query filters (future implementation)
+ */
+export interface DendraCustomFilters {
+  /** Filter by datastream variable type (temperature, humidity, etc.) */
+  variableTypes?: string[];
+  
+  /** Filter by measurement medium (air, soil, water, etc.) */
+  mediums?: string[];
+  
+  // Additional filters to be defined
+}
+
+/**
+ * Shopping cart item representing a saved query
+ * Stores query parameters (not data) for re-execution during export
+ */
 export interface CartItem {
-  id: string;                    // unique ID (timestamp + source)
+  /** Unique identifier for this cart item */
+  id: string;
+  
+  /** Data source identifier */
   dataSource: 'inaturalist' | 'dendra' | 'calflora' | 'ebird';
-  title: string;                 // user-friendly description
-  query: {
-    // Spatial filters
-    spatialFilter?: 'preserve-only' | 'expanded' | 'custom';
-    customPolygon?: string;      // GeoJSON string if custom
+  
+  /** User-friendly title describing this query */
+  title: string;
+  
+  /** Core filters from the subheader (shared across all data sources) */
+  coreFilters: {
+    /** Data category (e.g., 'Ecological / Biological (Species?)') */
+    category: string;
     
-    // Time range
-    timeRange?: string;           // e.g., "Last 30 days"
+    /** Data source name (e.g., 'iNaturalist', 'CalFlora') */
+    source: string;
+    
+    /** Spatial filter selection (e.g., 'Dangermond Preserve', 'Expanded Area') */
+    spatialFilter: string;
+    
+    /** Human-readable time range description */
+    timeRange: string;
+    
+    /** Number of days back from current date (for relative time ranges) */
+    daysBack?: number;
+    
+    /** Custom start date (YYYY-MM-DD format) */
     startDate?: string;
+    
+    /** Custom end date (YYYY-MM-DD format) */
     endDate?: string;
     
-    // Data source-specific filters
-    additionalFilters?: Record<string, any>;
+    /** Custom polygon for spatial filtering (ArcGIS format) */
+    customPolygon?: {
+      rings: number[][][];
+      spatialReference: { wkid: number };
+    };
   };
-  itemCount: number;             // number of records in this query
-  addedAt: number;               // timestamp when added
-  previewData?: any[];           // first 5-10 records for preview
+  
+  /** Data source-specific custom filters (only one will be populated per item) */
+  customFilters: {
+    /** iNaturalist-specific filters */
+    inaturalist?: INaturalistCustomFilters;
+    
+    /** CalFlora-specific filters (future) */
+    calflora?: CalFloraCustomFilters;
+    
+    /** eBird-specific filters (future) */
+    ebird?: EBirdCustomFilters;
+    
+    /** Dendra-specific filters (future) */
+    dendra?: DendraCustomFilters;
+  };
+  
+  /** Estimated record count at time of adding to cart (for display purposes) */
+  estimatedCount?: number;
+  
+  /** Timestamp when this item was added to cart */
+  addedAt: number;
 }
 
 export interface ExportFormat {

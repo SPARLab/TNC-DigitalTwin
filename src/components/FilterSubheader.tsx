@@ -21,6 +21,7 @@ import { FilterState } from '../types';
 import { formatDateRange, formatDateRangeCompact, getTimeRangeOptions, formatDateToUS } from '../utils/dateUtils';
 import { DATA_CATEGORIES, CATEGORY_DATA_SOURCES, SPATIAL_FILTERS } from '../utils/constants';
 import { THEMES } from '../utils/themes';
+import { getSelectedSourceIcon, getDataSourceIcon } from '../utils/dataSourceIcons';
 
 interface FilterSubheaderProps {
   filters: FilterState;
@@ -31,7 +32,7 @@ interface FilterSubheaderProps {
   theme: string;
 }
 
-const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChange, onSearch, resultCount, isSearching = false, theme }) => {
+const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChange, onSearch, resultCount: _resultCount, isSearching = false, theme }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const currentTheme = THEMES[theme] || THEMES.coastal;
 
@@ -115,7 +116,8 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
       daysBack: undefined,
       startDate: undefined,
       endDate: undefined,
-      iconicTaxa: [],
+      // Reset to all taxonomic groups (representing "no filter")
+      iconicTaxa: ['Aves', 'Mammalia', 'Reptilia', 'Amphibia', 'Actinopterygii', 'Insecta', 'Plantae', 'Fungi'],
       customPolygon: undefined
     });
   };
@@ -134,8 +136,8 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
       ...filters, 
       category,
       source: newSource,
-      // Reset iconic taxa when category changes to avoid invalid states
-      iconicTaxa: []
+      // Reset iconic taxa to all when category changes
+      iconicTaxa: ['Aves', 'Mammalia', 'Reptilia', 'Amphibia', 'Actinopterygii', 'Insecta', 'Plantae', 'Fungi']
     };
     
     // Auto-set spatial filter to "Dangermond Preserve" for locked sources
@@ -221,7 +223,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
             <button 
               id="category-filter-button"
               onClick={() => handleDropdownToggle('category')}
-              className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 w-full"
+              className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 min-w-[20rem]"
             >
               {filters.category ? getCategoryIcon(filters.category) : <Database className="w-4 h-4 flex-shrink-0 text-gray-400" />}
               <span id="category-filter-text" className={`text-sm truncate ${filters.category ? 'text-black' : 'text-gray-400'}`}>
@@ -256,7 +258,9 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
               onClick={() => handleDropdownToggle('source')}
               className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 w-full"
             >
-              <Database id="source-filter-icon" className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <span id="source-filter-icon" className="flex-shrink-0">
+                {getSelectedSourceIcon(filters.source)}
+              </span>
               <span id="source-filter-text" className={`text-sm truncate ${filters.source ? 'text-black' : 'text-gray-400'}`}>
                 {filters.source || <><span className="hidden xl:inline">Select </span><span className="xl:lowercase">Data Source</span></>}
               </span>
@@ -269,9 +273,12 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
                     key={option}
                     id={`source-option-${option.toLowerCase().replace(/\s+/g, '-')}`}
                     onClick={() => handleSourceChange(option)}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 first:rounded-t-md last:rounded-b-md"
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 first:rounded-t-md last:rounded-b-md flex items-center gap-2"
                   >
-                    {option}
+                    <span className="flex-shrink-0">
+                      {getDataSourceIcon(option, 'w-4 h-4') || <Database className="w-4 h-4 text-gray-400" />}
+                    </span>
+                    <span>{option}</span>
                   </button>
                 ))}
               </div>
@@ -475,9 +482,6 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
         </div>
 
         <div id="filter-bar-right" className="flex items-center space-x-4">
-          <span id="results-count" className="text-sm text-gray-500">
-            {resultCount} records found
-          </span>
           <button 
             id="clear-filters-button"
             onClick={handleClearFilters}
