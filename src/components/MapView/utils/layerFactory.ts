@@ -135,7 +135,7 @@ export const createLayerFromItem = async (
 /**
  * Configures popups for different layer types after they've been loaded
  */
-export const configureLayerPopups = async (layer: __esri.Layer, url: string, item: TNCArcGISItem): Promise<void> => {
+export const configureLayerPopups = async (layer: __esri.Layer, url: string, _item: TNCArcGISItem): Promise<void> => {
   // For FeatureLayer, create a popup template showing all fields
   if (url.includes('/FeatureServer') && 'fields' in layer) {
     const featureLayer = layer as __esri.FeatureLayer;
@@ -252,7 +252,7 @@ export const reconstructRenderer = async (
           });
           
           const sampleFieldValues = sampleQuery.features.map((f: any) => f.attributes[field]);
-          const uniqueActual = [...new Set(sampleFieldValues)];
+          const uniqueActual = [...new Set(sampleFieldValues)] as string[];
           const rendererValues = uniqueValueInfos.map((info: any) => info.value);
           
           // Check if field values are longer and start with renderer values
