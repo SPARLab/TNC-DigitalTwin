@@ -84,14 +84,14 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
   }, [observations, searchText]);
 
   // Group observations by iconic taxon (based on search-filtered observations)
-  // Filter out empty/null/undefined/Unknown taxa and normalize case
+  // Filter out empty/null/undefined taxa and normalize case (include Unknown as valid category)
   const groupedObservations = useMemo(() => {
     const groups: Record<string, { count: number; category: string }> = {};
     
     searchFilteredObservations.forEach(obs => {
       const rawCategory = obs.iconicTaxon;
-      // Only include valid taxa (not empty, null, undefined, or 'Unknown')
-      if (rawCategory && rawCategory.trim() && rawCategory.toLowerCase() !== 'unknown') {
+      // Only include valid taxa (not empty, null, or undefined) - Unknown is now included
+      if (rawCategory && rawCategory.trim()) {
         // Normalize to capitalized format (first letter uppercase, rest lowercase)
         // This ensures consistent comparison with iconicTaxa prop
         const normalizedCategory = rawCategory.charAt(0).toUpperCase() + rawCategory.slice(1).toLowerCase();
@@ -323,13 +323,13 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
                                 (observations.length > 0 && prevObservationsRef.current.length === 0); // Handle initial load
     
     if (onIconicTaxaChange && observations.length > 0 && observationsChanged) {
-      // Extract unique taxa from observations, filtering out empty/null/undefined/Unknown
+      // Extract unique taxa from observations, filtering out empty/null/undefined (Unknown is now included)
       // Normalize to ensure consistent capitalization
       const availableTaxa = Array.from(
         new Set(
           observations
             .map(obs => obs.iconicTaxon)
-            .filter(taxon => taxon && taxon.trim() && taxon.toLowerCase() !== 'unknown')
+            .filter(taxon => taxon && taxon.trim())
             .map(t => {
               // Normalize to capitalized format (first letter uppercase, rest lowercase)
               return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();

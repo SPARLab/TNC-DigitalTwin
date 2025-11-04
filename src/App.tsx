@@ -1701,20 +1701,29 @@ function App() {
             dataSourceLabel={lastSearchedFilters.source}
             selectedObservation={selectedINatObservation}
             observations={lastSearchedFilters.source === 'iNaturalist (TNC Layers)' 
-              ? tncObservations.map(obs => ({
-                  id: obs.observation_id,
-                  observedOn: obs.observed_on,
-                  observerName: obs.user_name || 'Unknown',
-                  commonName: obs.common_name || null,
-                  scientificName: obs.scientific_name || 'Unknown',
-                  photoUrl: tncINaturalistService.getPrimaryImageUrl(obs) || null,
-                  photoAttribution: tncINaturalistService.getPhotoAttribution(obs) || null,
-                  iconicTaxon: obs.taxon_category_name || 'Unknown',
-                  qualityGrade: null,
-                  location: null,
-                  uri: `https://www.inaturalist.org/observations/${obs.observation_id}`,
-                  taxonId: obs.taxon_id
-                }))
+              ? tncObservations.map(obs => {
+                  // Normalize taxon category: convert null, empty, or 'Other' to 'Unknown'
+                  const normalizeTaxonCategory = (category: string | null | undefined): string => {
+                    if (!category || category.trim() === '' || category === 'Other') {
+                      return 'Unknown';
+                    }
+                    return category;
+                  };
+                  return {
+                    id: obs.observation_id,
+                    observedOn: obs.observed_on,
+                    observerName: obs.user_name || 'Unknown',
+                    commonName: obs.common_name || null,
+                    scientificName: obs.scientific_name || 'Unknown',
+                    photoUrl: tncINaturalistService.getPrimaryImageUrl(obs) || null,
+                    photoAttribution: tncINaturalistService.getPhotoAttribution(obs) || null,
+                    iconicTaxon: normalizeTaxonCategory(obs.taxon_category_name),
+                    qualityGrade: null,
+                    location: null,
+                    uri: `https://www.inaturalist.org/observations/${obs.observation_id}`,
+                    taxonId: obs.taxon_id
+                  };
+                })
               : observations.map(obs => ({
                   id: obs.id,
                   observedOn: obs.observed_on,

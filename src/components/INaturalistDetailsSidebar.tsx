@@ -54,12 +54,12 @@ const INaturalistDetailsSidebar: React.FC<INaturalistDetailsSidebarProps> = ({
   // Detect if we're using TNC layers (which have limited fields)
   const isTNCLayer = dataSourceLabel?.includes('TNC');
   
-  // Compute available taxa from actual observations (filter out empty/null/Unknown)
+  // Compute available taxa from actual observations (filter out empty/null - Unknown is now included)
   const availableTaxaInObservations = useMemo(() => {
     const taxa = new Set<string>();
     observations.forEach(obs => {
       const taxon = obs.iconicTaxon;
-      if (taxon && taxon.trim() && taxon.toLowerCase() !== 'unknown') {
+      if (taxon && taxon.trim()) {
         // Capitalize first letter, lowercase the rest
         const normalized = taxon.charAt(0).toUpperCase() + taxon.slice(1).toLowerCase();
         taxa.add(normalized);
@@ -449,7 +449,8 @@ const INaturalistDetailsSidebar: React.FC<INaturalistDetailsSidebarProps> = ({
                   { value: 'Actinopterygii', label: 'Fish', icon: '🐟' },
                   { value: 'Insecta', label: 'Insects', icon: '🦋' },
                   { value: 'Plantae', label: 'Plants', icon: '🌱' },
-                  { value: 'Fungi', label: 'Fungi', icon: '🍄' }
+                  { value: 'Fungi', label: 'Fungi', icon: '🍄' },
+                  { value: 'Unknown', label: 'Unknown', icon: '🔬' }
                 ].map((taxon) => {
                   const isAvailable = availableTaxaInObservations.includes(taxon.value);
                   const isChecked = iconicTaxa.includes(taxon.value);
