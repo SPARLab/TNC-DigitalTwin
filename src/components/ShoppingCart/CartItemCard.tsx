@@ -1,18 +1,12 @@
 import React from 'react';
 import { Trash2, Calendar, MapPin } from 'lucide-react';
 import { CartItem } from '../../types';
+import { getDataSourceIcon } from '../../utils/dataSourceIcons';
 
 interface CartItemCardProps {
   item: CartItem;
   onRemove: () => void;
 }
-
-const dataSourceIcons: Record<string, string> = {
-  inaturalist: '🔍',
-  dendra: '📡',
-  calflora: '🌱',
-  ebird: '🐦'
-};
 
 const dataSourceLabels: Record<string, string> = {
   inaturalist: 'iNaturalist',
@@ -30,9 +24,11 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item, onRemove }) =>
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-lg">{dataSourceIcons[item.dataSource]}</span>
+            <span className="flex-shrink-0">
+              {getDataSourceIcon(item.dataSource, 'w-4 h-4')}
+            </span>
             <span className="text-xs font-medium text-gray-600">
-              {dataSourceLabels[item.dataSource]}
+              {dataSourceLabels[item.dataSource] || item.dataSource}
             </span>
           </div>
           <h4 className="font-medium text-sm text-gray-900">{item.title}</h4>

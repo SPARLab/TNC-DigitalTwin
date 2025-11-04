@@ -21,6 +21,7 @@ import { FilterState } from '../types';
 import { formatDateRange, formatDateRangeCompact, getTimeRangeOptions, formatDateToUS } from '../utils/dateUtils';
 import { DATA_CATEGORIES, CATEGORY_DATA_SOURCES, SPATIAL_FILTERS } from '../utils/constants';
 import { THEMES } from '../utils/themes';
+import { getSelectedSourceIcon, getDataSourceIcon } from '../utils/dataSourceIcons';
 
 interface FilterSubheaderProps {
   filters: FilterState;
@@ -257,7 +258,9 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
               onClick={() => handleDropdownToggle('source')}
               className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 w-full"
             >
-              <Database id="source-filter-icon" className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <span id="source-filter-icon" className="flex-shrink-0">
+                {getSelectedSourceIcon(filters.source)}
+              </span>
               <span id="source-filter-text" className={`text-sm truncate ${filters.source ? 'text-black' : 'text-gray-400'}`}>
                 {filters.source || <><span className="hidden xl:inline">Select </span><span className="xl:lowercase">Data Source</span></>}
               </span>
@@ -270,9 +273,12 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
                     key={option}
                     id={`source-option-${option.toLowerCase().replace(/\s+/g, '-')}`}
                     onClick={() => handleSourceChange(option)}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 first:rounded-t-md last:rounded-b-md"
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 first:rounded-t-md last:rounded-b-md flex items-center gap-2"
                   >
-                    {option}
+                    <span className="flex-shrink-0">
+                      {getDataSourceIcon(option, 'w-4 h-4') || <Database className="w-4 h-4 text-gray-400" />}
+                    </span>
+                    <span>{option}</span>
                   </button>
                 ))}
               </div>
