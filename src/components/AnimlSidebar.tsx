@@ -484,10 +484,9 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium text-gray-900">{tag.label}</h3>
-                      <p className="text-xs text-gray-600 mt-1">
-                        {tag.totalObservations} observations • {tag.uniqueCameras} cameras
-                      </p>
+                      <h3 className="text-sm font-medium text-gray-900">
+                        {tag.label} ({tag.totalObservations.toLocaleString()})
+                      </h3>
                       {tag.firstObservation && tag.lastObservation && (
                         <p className="text-xs text-gray-500 mt-1">
                           {formatDate(tag.firstObservation)} - {formatDate(tag.lastObservation)}
