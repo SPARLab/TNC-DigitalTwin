@@ -296,7 +296,7 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
                 <div className="divide-y divide-gray-200">
                 {paginatedObservations.map((observation, obsIndex) => (
                   <div
-                    key={`observation-${observation.id}-${observation.animl_image_id || obsIndex}`}
+                    key={`observation-${observation.id}-${observation.animl_image_id || 'no-image-id'}-${obsIndex}`}
                     id={`animl-observation-${observation.id}`}
                     className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
                       (selectedObservationId !== null && selectedObservationId === observation.id) || 
