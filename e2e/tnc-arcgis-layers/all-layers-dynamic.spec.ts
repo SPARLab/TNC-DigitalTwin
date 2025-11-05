@@ -34,7 +34,8 @@ for (const layer of categorizedLayers) {
   test.describe(`${layer.title} [${layer.id}] ${DYNAMIC_TEST_TAG}`, () => {
     // Calculate dynamic timeout based on sublayer count
     // Most Feature Services have 1-20 sublayers; Image Services have 1
-    const sublayerCount = layer.type === 'ImageService' ? 1 : 5; // Conservative estimate
+    // Using 20 as conservative estimate to handle large multi-sublayer tests (like Coastal and Marine Data)
+    const sublayerCount = layer.type === 'ImageService' ? 1 : 20; // Conservative estimate
     const timeout = calculateTestTimeout(sublayerCount);
     
     test.setTimeout(timeout);

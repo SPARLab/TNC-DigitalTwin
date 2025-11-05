@@ -728,9 +728,26 @@ export async function testShowsInAllCategories(
  */
 /**
  * Helper: Zoom out using mouse wheel scroll on the map
+ * 
+ * PURPOSE: Expand the visible map area to find features that aren't in the default view
+ * 
+ * MOUSE POSITIONING: 
+ * - Positions mouse at LEFT side of map (25% from left edge)
+ * - This is critical! If mouse is over the legend panel (on right), the wheel scroll
+ *   will scroll the LEGEND instead of zooming the MAP
+ * - With large legend panels (long labels), the center of #map-view might be covered by legend
+ * 
+ * ZOOM STEPS:
+ * - targetLevel 8 (California): 2 wheel scrolls
+ * - targetLevel 4 (USA): 4 wheel scrolls
+ * - Each scroll = ~1 zoom level change
+ * - Conservative steps prevent zooming out so far the map becomes tiny
+ * 
+ * @param page - Playwright page object
+ * @param targetLevel - Target zoom level (4 = USA, 8 = state, 12+ = preserve)
  */
 async function zoomOutToLevel(page: Page, targetLevel: number): Promise<void> {
-  // Get the map container
+  // Get the map container dimensions
   const mapContainer = page.locator('#map-view');
   const mapBox = await mapContainer.boundingBox();
   
@@ -739,33 +756,37 @@ async function zoomOutToLevel(page: Page, targetLevel: number): Promise<void> {
     return;
   }
   
-  // Move mouse to center of map
-  const centerX = mapBox.x + mapBox.width / 2;
+  // CRITICAL: Position mouse on LEFT side of map (away from legend panel on right)
+  // If mouse is over the legend, mouse wheel scrolls the LEGEND, not the MAP!
+  const leftX = mapBox.x + (mapBox.width * 0.25); // 25% from left edge
   const centerY = mapBox.y + mapBox.height / 2;
-  await page.mouse.move(centerX, centerY);
+  await page.mouse.move(leftX, centerY);
   
-  // Calculate scroll amount based on target zoom level
-  // Default zoom is ~12-15, target level 8 means ~4-7 zoom outs
-  // Each mouse wheel scroll changes zoom by ~1 level
-  const zoomOutSteps = targetLevel <= 5 ? 10 : targetLevel <= 7 ? 6 : targetLevel <= 8 ? 5 : 3;
+  // Calculate conservative zoom steps based on target level
+  // Default zoom ~12-15, each wheel scroll changes zoom by ~1 level
+  const zoomOutSteps = targetLevel <= 5 ? 4 : targetLevel <= 7 ? 3 : targetLevel <= 8 ? 2 : 1;
   
-  console.log(`    Zooming out ${zoomOutSteps} levels using mouse wheel...`);
+  console.log(`    Zooming out ${zoomOutSteps} step(s) using mouse wheel...`);
   
-  // Scroll out (positive deltaY = zoom out)
+  // Perform the zoom-out scrolls
   for (let i = 0; i < zoomOutSteps; i++) {
-    await page.mouse.wheel(0, 200); // Positive = zoom out
-    await page.waitForTimeout(500); // Wait for each zoom step
+    await page.mouse.wheel(0, 200); // Positive deltaY = zoom out
+    await page.waitForTimeout(500); // Wait for zoom animation
   }
   
-  // Extra wait for final zoom to settle and render
+  // Wait for map tiles to load at the new zoom level
   await page.waitForTimeout(2000);
 }
 
 /**
- * Helper: Zoom back in to default preserve-level view
+ * Helper: Zoom out by a specific number of steps
+ * 
+ * PURPOSE: Zoom out incrementally relative to current zoom level
+ * 
+ * @param page - Playwright page object
+ * @param steps - Number of zoom steps to zoom out
  */
-async function zoomInToDefault(page: Page): Promise<void> {
-  // Get the map container
+async function zoomOutBySteps(page: Page, steps: number): Promise<void> {
   const mapContainer = page.locator('#map-view');
   const mapBox = await mapContainer.boundingBox();
   
@@ -774,21 +795,66 @@ async function zoomInToDefault(page: Page): Promise<void> {
     return;
   }
   
-  // Move mouse to center of map
-  const centerX = mapBox.x + mapBox.width / 2;
+  // CRITICAL: Position mouse on LEFT side of map (away from legend panel on right)
+  const leftX = mapBox.x + (mapBox.width * 0.25);
   const centerY = mapBox.y + mapBox.height / 2;
-  await page.mouse.move(centerX, centerY);
+  await page.mouse.move(leftX, centerY);
   
-  console.log(`    🔍 Zooming back in to default view...`);
-  
-  // Zoom back in (negative deltaY = zoom in)
-  // This brings us back to preserve-level default zoom
-  for (let i = 0; i < 10; i++) {
-    await page.mouse.wheel(0, -200); // Negative = zoom in
-    await page.waitForTimeout(300); // Wait for each zoom step
+  // Perform the zoom-out scrolls
+  for (let i = 0; i < steps; i++) {
+    await page.mouse.wheel(0, 200); // Positive deltaY = zoom out
+    await page.waitForTimeout(500); // Wait for zoom animation
   }
   
-  // Extra wait for final zoom to settle
+  // Wait for map tiles to load at the new zoom level
+  await page.waitForTimeout(1500);
+}
+
+/**
+ * Helper: Zoom back in to default preserve-level view
+ * 
+ * PURPOSE: Reset map zoom to default after testing a sublayer at a different zoom level
+ * 
+ * WHEN CALLED:
+ * - After testTooltipsForSingleLayer() returns with zoomLevel !== 'default'
+ * - Between sublayers to prevent cumulative zoom drift
+ * - Example: Sublayer 4 zoomed to level 8 → reset → Sublayer 5 starts at default
+ * 
+ * MOUSE POSITIONING:
+ * - Same as zoomOutBySteps: positions at LEFT side (25% from left)
+ * - Prevents scrolling the legend panel instead of zooming
+ * 
+ * ZOOM STEPS:
+ * - Zooms in by exactly the number of steps specified
+ * - This ensures symmetric zoom in/out (prevents drift)
+ * 
+ * @param page - Playwright page object
+ * @param steps - Number of zoom steps to zoom back in (defaults to 6 for USA level)
+ */
+async function zoomInToDefault(page: Page, steps: number = 6): Promise<void> {
+  // Get the map container dimensions
+  const mapContainer = page.locator('#map-view');
+  const mapBox = await mapContainer.boundingBox();
+  
+  if (!mapBox) {
+    console.warn('Map container not found for zooming');
+    return;
+  }
+  
+  // CRITICAL: Position mouse on LEFT side of map (away from legend panel on right)
+  const leftX = mapBox.x + (mapBox.width * 0.25); // 25% from left edge
+  const centerY = mapBox.y + mapBox.height / 2;
+  await page.mouse.move(leftX, centerY);
+  
+  console.log(`    🔍 Zooming back in ${steps} step(s) to default view...`);
+  
+  // Perform the zoom-in scrolls to return to default preserve-level zoom
+  for (let i = 0; i < steps; i++) {
+    await page.mouse.wheel(0, -200); // Negative deltaY = zoom in
+    await page.waitForTimeout(300); // Wait for zoom animation
+  }
+  
+  // Wait for map tiles to load at the default zoom level
   await page.waitForTimeout(1500);
 }
 
@@ -915,33 +981,50 @@ async function checkForLayerPixels(page: Page, legendColors: Array<{ r: number; 
  * @returns true if visual change detected, false otherwise
  */
 async function checkForVisualChangeUsingToggle(
-  page: Page,
-  maxZoomRetries: number = 2
-): Promise<{ changed: boolean; pixelDiff: number; zoomLevel?: number }> {
+  page: Page
+): Promise<{ changed: boolean; pixelDiff: number; stepsFromDefault: number }> {
   const mapContainer = page.locator('#map-view');
   const mapBox = await mapContainer.boundingBox();
   
   if (!mapBox) {
-    return { changed: false, pixelDiff: 0 };
+    return { changed: false, pixelDiff: 0, stepsFromDefault: 0 };
   }
   
   const toggleButton = page.locator('#tnc-details-toggle-btn');
-  const PIXEL_CHANGE_THRESHOLD = 100; // Minimum pixels that must change to count as "rendered"
+  const PIXEL_CHANGE_THRESHOLD = 100;
   
-  // Try at current zoom level first
-  let attempt = 0;
-  let zoomUsed: number | undefined = undefined;
+  // Define zoom levels to try: default → state → USA
+  const zoomLevels = [
+    { name: 'default', stepsOut: 0 },
+    { name: 'state level', stepsOut: 2 },
+    { name: 'USA level', stepsOut: 4 }  // 4 MORE steps from state
+  ];
   
-  while (attempt <= maxZoomRetries) {
+  let totalStepsFromDefault = 0;
+  let bestResult = { changed: false, pixelDiff: 0 };
+  
+  for (let i = 0; i < zoomLevels.length; i++) {
+    const zoomInfo = zoomLevels[i];
+    
+    // Zoom out if needed (skip first iteration - already at default)
+    if (i > 0) {
+      const additionalSteps = zoomLevels[i].stepsOut - zoomLevels[i-1].stepsOut;
+      console.log(`    🔍 No change detected, zooming out ${additionalSteps} more step(s) to ${zoomInfo.name}...`);
+      await zoomOutBySteps(page, additionalSteps);
+      totalStepsFromDefault += additionalSteps;
+      await page.waitForTimeout(1500);
+    }
+    
+    console.log(`    🔘 Attempt ${i + 1}/${zoomLevels.length}: Testing at ${zoomInfo.name}`);
+    
     // Step 1: Hide layer
-    console.log(`    🔘 Attempt ${attempt + 1}: Hiding layer...`);
     await toggleButton.click();
     await page.waitForTimeout(300);
     
-    // Step 2: Screenshot "before" state (dynamically calculated clip area)
+    // Step 2: Screenshot "before" state
     const clipAreaBefore = await getMapScreenshotArea(page);
     if (!clipAreaBefore) {
-      console.warn('    ⚠️ Map container not found for before screenshot');
+      console.warn('    ⚠️ Map container not found for screenshot');
       continue;
     }
     const beforeScreenshot = await page.screenshot({
@@ -949,17 +1032,15 @@ async function checkForVisualChangeUsingToggle(
     });
     
     // Step 3: Show layer
-    console.log(`    🔘 Showing layer...`);
     await toggleButton.click();
     await page.waitForTimeout(300);
     
-    // Step 4: Screenshot "after" state - USE SAME DIMENSIONS AS BEFORE
-    // This prevents "Image sizes do not match" errors when legend visibility changes
+    // Step 4: Screenshot "after" state
     const afterScreenshot = await page.screenshot({
-      clip: clipAreaBefore  // ✅ Same dimensions as before!
+      clip: clipAreaBefore
     });
     
-    // Step 5: Run pixelmatch
+    // Step 5: Compare screenshots
     const beforePNG = PNG.sync.read(beforeScreenshot);
     const afterPNG = PNG.sync.read(afterScreenshot);
     const diffPNG = new PNG({ width: beforePNG.width, height: beforePNG.height });
@@ -970,35 +1051,37 @@ async function checkForVisualChangeUsingToggle(
       diffPNG.data,
       beforePNG.width,
       beforePNG.height,
-      { threshold: 0.1 } // 10% tolerance for anti-aliasing
+      { threshold: 0.1 }
     );
     
     console.log(`    📊 Pixel diff: ${pixelDiff} pixels changed`);
+    bestResult = { changed: pixelDiff > PIXEL_CHANGE_THRESHOLD, pixelDiff };
     
-    // Step 6: Check if significant change detected
-    if (pixelDiff > PIXEL_CHANGE_THRESHOLD) {
+    // Step 6: If change detected, zoom back and return success
+    if (bestResult.changed) {
       console.log(`    ✅ Visual change detected (${pixelDiff} > ${PIXEL_CHANGE_THRESHOLD})`);
-      return { changed: true, pixelDiff, zoomLevel: zoomUsed };
-    }
-    
-    // Step 7: If no change and more retries available, zoom out
-    if (attempt < maxZoomRetries) {
-      console.log(`    🔍 No significant change, zooming out...`);
       
-      // Zoom out to different levels: first to county (8), then to state (6)
-      const targetZoom = attempt === 0 ? 8 : 6;
-      await zoomOutToLevel(page, targetZoom);
-      zoomUsed = targetZoom;
+      // CRITICAL: Always zoom back to default before returning
+      if (totalStepsFromDefault > 0) {
+        console.log(`    🔄 Zooming back ${totalStepsFromDefault} step(s) to default...`);
+        await zoomInToDefault(page, totalStepsFromDefault);
+        await page.waitForTimeout(1500);
+      }
       
-      attempt++;
-    } else {
-      // All retries exhausted
-      console.log(`    ❌ No visual change detected after ${maxZoomRetries + 1} attempts`);
-      return { changed: false, pixelDiff, zoomLevel: zoomUsed };
+      return { ...bestResult, stepsFromDefault: 0 }; // Always 0 because we reset
     }
   }
   
-  return { changed: false, pixelDiff: 0, zoomLevel: zoomUsed };
+  // All attempts failed - zoom back to default and return failure
+  console.log(`    ❌ No visual change detected after ${zoomLevels.length} attempts`);
+  
+  if (totalStepsFromDefault > 0) {
+    console.log(`    🔄 Zooming back ${totalStepsFromDefault} step(s) to default...`);
+    await zoomInToDefault(page, totalStepsFromDefault);
+    await page.waitForTimeout(1500);
+  }
+  
+  return { ...bestResult, stepsFromDefault: 0 }; // Always 0 because we reset
 }
 
 export async function testLayersLoad(
@@ -1064,12 +1147,11 @@ export async function testLayersLoad(
       return {
         passed: result.changed,
         message: result.changed 
-          ? `Layer rendered (${result.pixelDiff} pixels changed)${result.zoomLevel ? ` at zoom level ${result.zoomLevel}` : ''}`
+          ? `Layer rendered (${result.pixelDiff} pixels changed)`
           : `Layer did not render (only ${result.pixelDiff} pixels changed)`,
         details: { 
           method: 'visual_change_detection',
-          pixelDiff: result.pixelDiff,
-          zoomLevel: result.zoomLevel
+          pixelDiff: result.pixelDiff
         }
       };
     }
@@ -1120,10 +1202,12 @@ export async function testLayersLoad(
       sublayerResults.push({
         name: layerName,
         loaded: result.changed,
-        zoomLevel: result.zoomLevel,
+        zoomLevel: undefined, // Function handles zoom reset internally
         method: 'visual_change',
         pixelDiff: result.pixelDiff
       });
+      
+      // No zoom reset needed - checkForVisualChangeUsingToggle() handles it internally
       
       continue;
     }
@@ -1152,16 +1236,22 @@ export async function testLayersLoad(
         console.log(`    ✅ Found pixels at state-wide zoom (level ~8)`);
         zoomUsed = 8;
       } else {
-        // Color detection failed even after zoom - try pixel-diff as last resort
-        console.log(`    🔍 Color detection failed after zoom, trying pixel-diff strategy...`);
+        // Color detection failed even after zoom - RESET TO DEFAULT before trying pixel-diff
+        // because checkForVisualChangeUsingToggle assumes it starts at default
+        console.log(`    🔄 Resetting to default before trying pixel-diff strategy...`);
+        await zoomInToDefault(page, 2); // We zoomed out 2 steps to get to level 8
+        await page.waitForTimeout(1500);
+        
+        console.log(`    🔍 Trying pixel-diff strategy from default zoom...`);
         const result = await checkForVisualChangeUsingToggle(page);
         
         if (result.changed) {
           console.log(`    ✅ Visual change detected with pixel-diff (${result.pixelDiff} pixels changed)`);
           colorsFound = true;
-          zoomUsed = result.zoomLevel || 8;
+          zoomUsed = undefined; // Function already reset zoom internally
         } else {
           console.log(`    ❌ No visual change detected even with pixel-diff`);
+          zoomUsed = undefined; // Already at default after checkForVisualChangeUsingToggle
         }
       }
     } else {
@@ -1174,6 +1264,17 @@ export async function testLayersLoad(
       zoomLevel: zoomUsed,
       method: 'color_detection'
     });
+    
+    // CRITICAL: Reset zoom after testing each sublayer to prevent drift
+    // Only needed when we successfully found pixels at zoom level 8 (color detection)
+    // pixel-diff handles its own resets, and failures are already reset
+    if (zoomUsed === 8) {
+      console.log(`    🔄 Resetting zoom from level ${zoomUsed} back to default...`);
+      const stepsToReset = 2; // Level 8 = 2 steps out from default
+      await zoomInToDefault(page, stepsToReset);
+      await page.waitForTimeout(1500);
+      console.log(`    ✅ Zoom reset complete`);
+    }
   }
   
   const loadedCount = sublayerResults.filter(r => r.loaded).length;
@@ -1235,6 +1336,7 @@ export async function testTooltipsPopUp(
     tooltipsWork: boolean;
     reason?: string;
     method?: string;
+    stepsFromDefault?: number;
   }> = [];
   
   for (let i = 0; i < layerCount; i++) {
@@ -1247,35 +1349,34 @@ export async function testTooltipsPopUp(
     await layerButton.click();
     await page.waitForTimeout(2000);
     
-    // Test tooltips for this specific sublayer
+    // Test tooltips for this specific sublayer (may zoom out to find features)
     const result = await testTooltipsForSingleLayer(page, layer, layerName);
     
-    // If we zoomed out during this test, zoom back in before testing next sublayer
-    if (result.details?.zoomLevel && result.details.zoomLevel !== 'default') {
-      console.log(`\n   🔄 Resetting zoom to default for next sublayer...`);
-      await zoomInToDefault(page);
+    // CRITICAL: Reset zoom between sublayers to prevent cumulative zoom drift
+    // If sublayer 4 zoomed out to level 8, sublayer 5 should start at default (not level 8)
+    // Without this reset, each zoom-out compounds and the map gets smaller and smaller
+    const currentZoom = result.details?.zoomLevel || 'unknown';
+    const stepsFromDefault = result.details?.stepsFromDefault || 0;
+    console.log(`   📍 Current zoom after test: ${currentZoom} (${stepsFromDefault} steps from default)`);
+    
+    if (result.details?.zoomLevel && result.details.zoomLevel !== 'default' && stepsFromDefault > 0) {
+      console.log(`   🔄 Resetting zoom from level ${currentZoom} to default for next sublayer...`);
+      await zoomInToDefault(page, stepsFromDefault);
+      await page.waitForTimeout(2000); // Ensure map tiles fully re-render at default zoom
+      console.log(`   ✅ Zoom reset complete - ready for next sublayer`);
     }
     
     sublayerResults.push({
       name: layerName,
       tooltipsWork: result.passed,
       reason: result.message,
-      method: result.details?.method
+      method: result.details?.method,
+      stepsFromDefault: stepsFromDefault
     });
   }
   
-  // NEW: Ensure zoom is reset after ALL tooltip tests complete
-  // This prevents zoom state from affecting subsequent tests (e.g., filtering)
-  const anyZoomedOut = sublayerResults.some(r => 
-    r.method === 'pixel_diff' || 
-    (r as any).zoomLevel !== 'default'
-  );
-  if (anyZoomedOut) {
-    console.log(`\n   🔄 Final zoom reset: Ensuring default zoom level for subsequent tests...`);
-    await zoomInToDefault(page);
-    await page.waitForTimeout(2000); // Wait for map to fully re-render at default zoom
-    console.log(`   ✅ Zoom reset complete`);
-  }
+  // Note: No final zoom reset needed because we reset after each sublayer
+  // Each sublayer starts at default zoom, ensuring consistent behavior
   
   const workedCount = sublayerResults.filter(r => r.tooltipsWork).length;
   const allWorked = workedCount === layerCount;
@@ -1309,63 +1410,91 @@ export async function testTooltipsPopUp(
  * Helper function to test tooltips on a single layer/sublayer
  * 
  * PROGRESSIVE ZOOM-OUT STRATEGY:
- * If tooltips don't appear at the default zoom, progressively zoom out to find features:
- * - Default zoom (~12-15): Dangermond Preserve area
- * - Zoom level 8: California state level
- * - Zoom level 4: Entire continental USA
+ * Some layers have features outside the default Dangermond Preserve view.
+ * If tooltips don't appear at the default zoom, we progressively zoom out to find clickable features:
  * 
- * This handles layers with features in different geographic regions (e.g., East Coast).
+ * ATTEMPT 1: Default zoom (~12-15) - Dangermond Preserve area (California coast)
+ *   → If features found: ✅ Success, return immediately
+ *   → If no features: Continue to Attempt 2
+ * 
+ * ATTEMPT 2: Zoom level 8 - California state-wide view
+ *   → Zooms out 2 steps to see more of California
+ *   → If features found: ✅ Success, return with zoom level noted
+ *   → If no features: Continue to Attempt 3
+ * 
+ * ATTEMPT 3: Zoom level 4 - Continental USA view
+ *   → Zooms out 4 steps total to see entire USA (handles East Coast layers)
+ *   → If features found: ✅ Success, return with zoom level noted
+ *   → If no features: ❌ Fail (layer may have no clickable features or be outside USA)
+ * 
+ * IMPORTANT: After this function returns, the calling code MUST check the returned
+ * zoomLevel and reset zoom to default before testing the next sublayer!
  */
 async function testTooltipsForSingleLayer(
   page: Page,
   layer: LayerConfig,
   layerName: string
 ): Promise<TestResult> {
-  // Try tooltip test at multiple zoom levels progressively
+  // Define the 3 progressive zoom levels to try
   const zoomLevels = [
-    { level: 'default', name: 'preserve level (default)' },
-    { level: 8, name: 'state level (zoom 8)' },
-    { level: 4, name: 'USA level (zoom 4)' }
+    { level: 'default', name: 'preserve level (default)', stepsFromDefault: 0 },
+    { level: 8, name: 'state level (zoom 8)', stepsFromDefault: 2 },
+    { level: 4, name: 'USA level (zoom 4)', stepsFromDefault: 6 }  // 2 steps to state + 4 more to USA
   ];
   
+  // Track current zoom level for proper reset (even if test fails)
+  // This ensures zoom ALWAYS gets reset, even when tooltips aren't found
+  let currentZoomLevel: string | number = 'default';
+  let totalStepsFromDefault = 0;  // Track cumulative zoom steps from default
+  
+  // Try each zoom level in order: preserve → state → USA
   for (let zoomAttempt = 0; zoomAttempt < zoomLevels.length; zoomAttempt++) {
     const zoomInfo = zoomLevels[zoomAttempt];
+    currentZoomLevel = zoomInfo.level; // Update tracked zoom level BEFORE zooming
     
-    if (zoomInfo.level !== 'default') {
-      console.log(`\n   🔍 Previous zoom failed - zooming out to ${zoomInfo.name}...`);
-      await zoomOutToLevel(page, zoomInfo.level as number);
-      await page.waitForTimeout(2000); // Wait for layer to render at new zoom
+    // Calculate how many additional steps we need to zoom out
+    const additionalSteps = zoomInfo.stepsFromDefault - totalStepsFromDefault;
+    
+    // Skip zoom-out on first attempt (already at default)
+    if (zoomInfo.level !== 'default' && additionalSteps > 0) {
+      console.log(`\n   🔍 Previous zoom failed - zooming out ${additionalSteps} more step(s) to ${zoomInfo.name}...`);
+      await zoomOutBySteps(page, additionalSteps);
+      totalStepsFromDefault += additionalSteps;
+      await page.waitForTimeout(2000); // Wait for layer tiles to load at new zoom
     } else {
       console.log(`   🎯 Attempt ${zoomAttempt + 1}/${zoomLevels.length}: Testing at ${zoomInfo.name}`);
     }
     
+    // Try to find and click a feature at the current zoom level
     const result = await testTooltipsAtCurrentZoom(page, layer, layerName);
     
+    // SUCCESS: Found a clickable feature!
     if (result.passed) {
-      // Success! Add zoom info to the message
       const zoomSuffix = zoomInfo.level !== 'default' ? ` (at ${zoomInfo.name})` : '';
       return {
         ...result,
         message: result.message + zoomSuffix,
-        details: { ...result.details, zoomLevel: zoomInfo.level }
+        details: { ...result.details, zoomLevel: currentZoomLevel, stepsFromDefault: totalStepsFromDefault }
       };
     }
     
-    // If this was the last attempt, return the failure
+    // FAILURE: This was the last zoom level, give up
     if (zoomAttempt === zoomLevels.length - 1) {
       return {
         ...result,
         message: result.message + ` (tried ${zoomLevels.length} zoom levels)`,
-        details: { ...result.details, zoomAttempts: zoomLevels.length }
+        details: { ...result.details, zoomAttempts: zoomLevels.length, zoomLevel: currentZoomLevel, stepsFromDefault: totalStepsFromDefault }
       };
     }
+    
+    // Continue to next zoom level...
   }
   
   // Should never reach here, but TypeScript needs a return
   return {
     passed: false,
     message: `${layerName}: Unexpected error in zoom loop`,
-    details: { error: 'zoom_loop_error' }
+    details: { error: 'zoom_loop_error', zoomLevel: currentZoomLevel, stepsFromDefault: totalStepsFromDefault }
   };
 }
 
@@ -1587,7 +1716,7 @@ async function testTooltipsAtCurrentZoom(
     
     // Step 6: Try clicking on the sampled points
     console.log(`      🖱️  PIXEL-DIFF STEP 6: Click sampled points to trigger tooltip`);
-    const maxAttempts = Math.min(10, clickablePoints.length);
+    const maxAttempts = Math.min(4, clickablePoints.length);
     const popup = page.locator('.esri-popup__main-container');
     
     for (let i = 0; i < maxAttempts; i++) {
