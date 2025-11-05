@@ -78,6 +78,14 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
   const prevSelectedObservationIdRef = useRef<number | null>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isSidebarFocusedRef = useRef(false);
+  
+  // Track previous search context to reset pagination on new searches
+  const prevSearchContextRef = useRef<{
+    viewMode: AnimlViewMode;
+    selectedDeploymentId: number | null;
+    selectedAnimalLabel: string | null;
+    observationsLength: number;
+  } | null>(null);
 
   // Helper function to format date
   const formatDate = (dateString: string) => {
@@ -206,6 +214,41 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
 
   // Reset pagination when filters change
   const resetPagination = () => setCurrentPage(1);
+
+  // Reset pagination when search context changes (new search/query)
+  useEffect(() => {
+    const currentContext = {
+      viewMode,
+      selectedDeploymentId: selectedDeploymentId ?? null,
+      selectedAnimalLabel: selectedAnimalLabel ?? null,
+      observationsLength: observations.length
+    };
+    
+    const prevContext = prevSearchContextRef.current;
+    
+    // If this is the first render, just store the context
+    if (!prevContext) {
+      prevSearchContextRef.current = currentContext;
+      return;
+    }
+    
+    // Check if search context has changed (indicating a new search)
+    const contextChanged = 
+      prevContext.viewMode !== currentContext.viewMode ||
+      prevContext.selectedDeploymentId !== currentContext.selectedDeploymentId ||
+      prevContext.selectedAnimalLabel !== currentContext.selectedAnimalLabel ||
+      // If observations length changed significantly, it's likely a new search
+      (prevContext.observationsLength === 0 && currentContext.observationsLength > 0) ||
+      (prevContext.observationsLength > 0 && currentContext.observationsLength === 0);
+    
+    if (contextChanged) {
+      setCurrentPage(1);
+      prevSearchContextRef.current = currentContext;
+    } else {
+      // Update observations length in context (but don't reset pagination)
+      prevSearchContextRef.current = currentContext;
+    }
+  }, [viewMode, selectedDeploymentId, selectedAnimalLabel, observations.length]);
 
   // Paginate observations (works for both grouped and ungrouped)
   const paginatedObservations = useMemo(() => {
