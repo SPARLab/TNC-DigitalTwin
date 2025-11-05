@@ -1,9 +1,89 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Calendar, Camera, Tag, Info } from 'lucide-react';
+import { Calendar, Camera, Tag, Info, X, ArrowLeft } from 'lucide-react';
 import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag } from '../services/animlService';
 import ThumbnailImage from './ThumbnailImage';
 
 export type AnimlViewMode = 'camera-centric' | 'animal-centric';
+
+// Lightbox Modal Component
+interface ImageLightboxProps {
+  imageUrl: string;
+  alt: string;
+  onClose: () => void;
+  observation?: AnimlImageLabel;
+}
+
+const ImageLightbox: React.FC<ImageLightboxProps> = ({ imageUrl, alt, onClose, observation }) => {
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [onClose]);
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  return (
+    <div
+      id="animl-lightbox-overlay"
+      className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        id="animl-lightbox-content"
+        className="max-w-4xl max-h-full relative"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          id="animl-lightbox-close"
+          onClick={onClose}
+          className="absolute top-4 right-4 bg-black bg-opacity-50 hover:bg-opacity-75 text-white rounded-full p-2 transition-colors z-10"
+          aria-label="Close lightbox"
+        >
+          <X className="w-6 h-6" />
+        </button>
+        
+        <img
+          id="animl-lightbox-image"
+          src={imageUrl}
+          alt={alt}
+          className="max-w-full max-h-[85vh] rounded-lg"
+        />
+        
+        {observation && (
+          <div id="animl-lightbox-info" className="mt-4 bg-white rounded-lg p-4 text-sm">
+            <div className="mb-2">
+              <p className="font-medium text-gray-900">{observation.label}</p>
+            </div>
+            <div className="space-y-1 text-gray-600">
+              <div className="flex items-center">
+                <Calendar className="w-3 h-3 mr-2" />
+                {formatDate(observation.timestamp)}
+              </div>
+              {observation.deployment_name && (
+                <div className="flex items-center">
+                  <Camera className="w-3 h-3 mr-2" />
+                  {observation.deployment_name}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 
 interface AnimlSidebarProps {
   viewMode: AnimlViewMode;
@@ -17,7 +97,7 @@ interface AnimlSidebarProps {
   // Animal-centric data
   animalTags?: AnimlAnimalTag[];
   selectedAnimalLabel?: string | null;
-  onAnimalTagClick?: (tag: AnimlAnimalTag) => void;
+  onAnimalTagClick?: (tag: AnimlAnimalTag | null) => void;
   
   // Common
   loading: boolean;
@@ -72,15 +152,20 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
     );
   }, [deployments, searchText]);
 
-  // Filter animal tags by search text (animal-centric mode)
+  // Filter animal tags by search text (animal-centric mode) and sort alphabetically
   const filteredAnimalTags = useMemo(() => {
-    if (!searchText.trim()) {
-      return animalTags;
+    let filtered = animalTags;
+    
+    if (searchText.trim()) {
+      const search = searchText.toLowerCase();
+      filtered = animalTags.filter(tag =>
+        tag.label?.toLowerCase().includes(search)
+      );
     }
     
-    const search = searchText.toLowerCase();
-    return animalTags.filter(tag =>
-      tag.label?.toLowerCase().includes(search)
+    // Sort alphabetically by label name (case-insensitive)
+    return [...filtered].sort((a, b) => 
+      (a.label || '').toLowerCase().localeCompare((b.label || '').toLowerCase())
     );
   }, [animalTags, searchText]);
 
@@ -259,10 +344,23 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
             </div>
           ) : (
             <>
+              {/* Back Button - Show when viewing animal category observations */}
+              {viewMode === 'animal-centric' && selectedAnimalLabel && (
+                <div id="animl-back-button-container" className="p-4 border-b border-gray-200 bg-gray-50 sticky top-0 z-10">
+                  <button
+                    id="animl-back-button"
+                    onClick={() => onAnimalTagClick?.(null)}
+                    className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to All
+                  </button>
+                </div>
+              )}
               <div className="divide-y divide-gray-200">
-                {paginatedObservations.map((observation) => (
+                {paginatedObservations.map((observation, obsIndex) => (
                   <div
-                    key={observation.id}
+                    key={`observation-${observation.id}-${observation.animl_image_id || obsIndex}`}
                     id={`animl-observation-${observation.id}`}
                     className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
                       (selectedObservationId !== null && selectedObservationId === observation.id) || 
@@ -294,13 +392,13 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
                           </h3>
                         </div>
                         
-                        <div className="flex items-center mt-2 text-xs text-gray-500 space-x-3">
-                          <div className="flex items-center">
+                        <div className="mt-2 space-y-1">
+                          <div className="flex items-center text-xs text-gray-500">
                             <Calendar className="w-3 h-3 mr-1" />
                             {formatDate(observation.timestamp)}
                           </div>
                           {observation.deployment_name && (
-                            <div className="flex items-center">
+                            <div className="flex items-center text-xs text-gray-500">
                               <Camera className="w-3 h-3 mr-1" />
                               {observation.deployment_name}
                             </div>

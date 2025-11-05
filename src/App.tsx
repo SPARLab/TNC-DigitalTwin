@@ -475,7 +475,7 @@ function App() {
     }
   };
 
-  const handleAnimlAnimalTagClick = (tag: AnimlAnimalTag) => {
+  const handleAnimlAnimalTagClick = (tag: AnimlAnimalTag | null) => {
     setSelectedAnimlAnimalTag(tag);
     setSelectedAnimlDeployment(null);
     setSelectedAnimlObservation(null);

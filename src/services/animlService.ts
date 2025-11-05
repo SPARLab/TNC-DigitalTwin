@@ -131,13 +131,101 @@ class AnimlService {
    * Query image labels (observations) from the FeatureServer
    * NOTE: Spatial filtering is currently disabled due to server issues
    */
+  /**
+   * Get count of image labels matching the query
+   */
+  async getImageLabelsCount(options: AnimlServiceQueryOptions = {}): Promise<number> {
+    const {
+      startDate,
+      endDate,
+      deploymentIds = [],
+      labels = []
+    } = options;
+
+    try {
+      let whereClause = '1=1';
+
+      // Build where clause filters (same as queryImageLabels)
+      if (startDate && endDate) {
+        const startDateObj = new Date(startDate + 'T00:00:00Z');
+        const endDateObj = new Date(endDate + 'T23:59:59Z');
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        
+        if (endDateObj <= today) {
+          const startDateStr = startDateObj.toISOString().replace('T', ' ').substring(0, 19);
+          const endDateStr = endDateObj.toISOString().replace('T', ' ').substring(0, 19);
+          whereClause += ` AND timestamp >= DATE '${startDateStr}' AND timestamp <= DATE '${endDateStr}'`;
+        }
+      }
+
+      if (deploymentIds.length > 0) {
+        const deploymentFilter = deploymentIds.join(',');
+        whereClause += ` AND deployment_id IN (${deploymentFilter})`;
+      }
+
+      if (labels.length > 0) {
+        const labelFilter = labels.map(label => `'${label.replace(/'/g, "''")}'`).join(',');
+        whereClause += ` AND label IN (${labelFilter})`;
+      }
+
+      const params: AnimlQueryOptions = {
+        where: whereClause,
+        returnCountOnly: true,
+        f: 'json'
+      };
+
+      const queryUrl = `${this.baseUrl}/${this.imageLabelsLayerId}/query`;
+      const fullUrl = `${queryUrl}?${new URLSearchParams(params as any)}`;
+      
+      const response = await fetch(fullUrl);
+      if (!response.ok) {
+        throw new Error(`Animl count query failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(`Animl count API error: ${JSON.stringify(data.error)}`);
+      }
+
+      return data.count || 0;
+    } catch (error) {
+      console.error('Error getting Animl image labels count:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get count of image labels by category/label
+   */
+  async getImageLabelsCountByCategory(options: AnimlServiceQueryOptions = {}): Promise<Record<string, number>> {
+    try {
+      // First get all unique labels
+      const allLabels = await this.queryImageLabels({
+        ...options,
+        maxResults: 100000 // Large limit to get all labels for counting
+      });
+
+      // Count by label
+      const counts: Record<string, number> = {};
+      allLabels.forEach(label => {
+        counts[label.label] = (counts[label.label] || 0) + 1;
+      });
+
+      return counts;
+    } catch (error) {
+      console.error('Error getting Animl image labels count by category:', error);
+      throw error;
+    }
+  }
+
   async queryImageLabels(options: AnimlServiceQueryOptions = {}): Promise<AnimlImageLabel[]> {
     const {
       startDate,
       endDate,
       deploymentIds = [],
       labels = [],
-      maxResults = 10000
+      maxResults = undefined // Remove default limit - fetch all if not specified
     } = options;
 
     try {
@@ -178,7 +266,11 @@ class AnimlService {
       }
 
       console.log(`🔍 Animl Image Labels WHERE clause: ${whereClause}`);
-      console.log(`🎯 Animl Image Labels: Fetching up to ${maxResults} records`);
+      if (maxResults !== undefined) {
+        console.log(`🎯 Animl Image Labels: Fetching up to ${maxResults} records`);
+      } else {
+        console.log(`🎯 Animl Image Labels: Fetching all records (no limit)`);
+      }
 
       // Set up pagination
       const pageSize_internal = 1000;
@@ -192,9 +284,9 @@ class AnimlService {
 
       const queryUrl = `${this.baseUrl}/${this.imageLabelsLayerId}/query`;
 
-      // Pagination loop
-      while (hasMoreData && allImageLabels.length < maxResults) {
-        const remainingResults = maxResults - allImageLabels.length;
+      // Pagination loop - continue until no more data or maxResults is reached
+      while (hasMoreData && (maxResults === undefined || allImageLabels.length < maxResults)) {
+        const remainingResults = maxResults !== undefined ? maxResults - allImageLabels.length : pageSize_internal;
         const currentPageSize = Math.min(pageSize_internal, remainingResults);
 
         const params: AnimlQueryOptions = {
@@ -315,7 +407,7 @@ class AnimlService {
         console.log(`✅ Animl: Page ${pageNumber} complete - ${pageImageLabels.length} records (total: ${allImageLabels.length})`);
         
         // Report progress if callback provided
-        if (options.onProgress) {
+        if (options.onProgress && maxResults !== undefined) {
           const percentage = Math.min(100, Math.round((allImageLabels.length / maxResults) * 100));
           options.onProgress(allImageLabels.length, maxResults, percentage);
         }

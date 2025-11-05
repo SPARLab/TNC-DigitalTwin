@@ -3014,15 +3014,27 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
               latitude
             });
             
-            // Create symbol for camera deployment - use camera icon color (orange/amber)
-            const symbol = new SimpleMarkerSymbol({
-              style: 'circle',
-              color: [251, 146, 60, 0.8], // Orange/amber color for camera traps
-              size: '12px',
-              outline: {
-                color: 'white',
-                width: 2
-              }
+            // Create symbol for camera deployment - use camera-on-tripod icon
+            const cameraIconSvg = `
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <!-- Camera body -->
+                <rect x="4" y="6" width="16" height="12" rx="2" ry="2"/>
+                <!-- Camera lens -->
+                <circle cx="12" cy="12" r="3"/>
+                <!-- Tripod legs -->
+                <line x1="8" y1="18" x2="6" y2="22"/>
+                <line x1="12" y1="18" x2="12" y2="22"/>
+                <line x1="16" y1="18" x2="18" y2="22"/>
+                <!-- Flash/Viewfinder -->
+                <rect x="15" y="7" width="3" height="2" rx="0.5"/>
+              </svg>
+            `;
+            
+            const symbol = new PictureMarkerSymbol({
+              url: `data:image/svg+xml;base64,${btoa(cameraIconSvg)}`,
+              width: '28px',
+              height: '28px',
+              color: [251, 146, 60, 1] // Orange/amber color for camera traps
             });
 
             // Create popup template
