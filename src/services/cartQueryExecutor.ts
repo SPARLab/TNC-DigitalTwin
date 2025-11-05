@@ -1,5 +1,6 @@
 import { CartItem } from '../types';
 import { iNaturalistAPI } from './iNaturalistService';
+import { animlService } from './animlService';
 // Import other services as needed
 
 /**
@@ -10,6 +11,8 @@ export async function executeCartQuery(item: CartItem): Promise<any[]> {
   switch (item.dataSource) {
     case 'inaturalist':
       return executeINaturalistQuery(item);
+    case 'animl':
+      return executeAnimlQuery(item);
     case 'calflora':
       // TODO: Future implementation
       throw new Error('CalFlora export not yet implemented');
@@ -48,5 +51,51 @@ async function executeINaturalistQuery(item: CartItem): Promise<any[]> {
   });
   
   return response.results;
+}
+
+/**
+ * Execute an Animl query from a cart item
+ */
+async function executeAnimlQuery(item: CartItem): Promise<any[]> {
+  const { coreFilters, customFilters } = item;
+  const animlFilters = customFilters.animl;
+  
+  if (!animlFilters) {
+    throw new Error('Animl filters not found in cart item');
+  }
+
+  // Determine search mode from spatial filter
+  let searchMode: 'preserve-only' | 'expanded' | 'custom' = 'expanded';
+  let customPolygon: string | undefined;
+  
+  if (coreFilters.spatialFilter === 'Dangermond Preserve') {
+    searchMode = 'preserve-only';
+  } else if (coreFilters.spatialFilter === 'Dangermond + Margin') {
+    searchMode = 'expanded';
+  } else if (coreFilters.spatialFilter === 'Draw Area' && coreFilters.customPolygon) {
+    searchMode = 'custom';
+    customPolygon = JSON.stringify(coreFilters.customPolygon);
+  }
+
+  // Query image labels based on view mode
+  const imageLabels = await animlService.queryImageLabels({
+    startDate: coreFilters.startDate,
+    endDate: coreFilters.endDate,
+    deploymentIds: animlFilters.viewMode === 'camera-centric' ? animlFilters.deploymentIds : undefined,
+    labels: animlFilters.viewMode === 'animal-centric' ? animlFilters.labels : undefined,
+    searchMode,
+    customPolygon,
+    maxResults: 10000
+  });
+
+  // Filter by hasImages if specified
+  let filtered = imageLabels;
+  if (animlFilters.hasImages === true) {
+    filtered = filtered.filter(obs => obs.small_url || obs.medium_url);
+  } else if (animlFilters.hasImages === false) {
+    filtered = filtered.filter(obs => !obs.small_url && !obs.medium_url);
+  }
+
+  return filtered;
 }
 

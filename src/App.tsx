@@ -13,8 +13,11 @@ import DatasetDownloadView from './components/DatasetDownloadView';
 import TNCArcGISDetailsSidebar from './components/TNCArcGISDetailsSidebar';
 import DendraDetailsSidebar from './components/DendraDetailsSidebar';
 import INaturalistDetailsSidebar from './components/INaturalistDetailsSidebar';
+import AnimlDetailsSidebar from './components/AnimlDetailsSidebar';
 import { INaturalistUnifiedObservation } from './components/INaturalistSidebar';
-import { FilterState, DendraStation, DendraDatastream, DendraDatastreamWithStation, DendraDatapoint, INaturalistCustomFilters } from './types';
+import { FilterState, DendraStation, DendraDatastream, DendraDatastreamWithStation, DendraDatapoint, INaturalistCustomFilters, AnimlCustomFilters } from './types';
+import { animlService, AnimlDeployment, AnimlImageLabel, AnimlAnimalTag } from './services/animlService';
+import { AnimlViewMode } from './components/AnimlSidebar';
 import { LiDARViewMode } from './components/dataviews/LiDARView';
 import { iNaturalistObservation } from './services/iNaturalistService';
 import { TNCArcGISObservation } from './services/tncINaturalistService';
@@ -186,6 +189,22 @@ function App() {
 
   // iNaturalist observation selection state
   const [selectedINatObservation, setSelectedINatObservation] = useState<INaturalistUnifiedObservation | null>(null);
+
+  // Animl state
+  const [animlViewMode, setAnimlViewMode] = useState<AnimlViewMode>('camera-centric');
+  const [animlDeployments, setAnimlDeployments] = useState<AnimlDeployment[]>([]);
+  const [animlImageLabels, setAnimlImageLabels] = useState<AnimlImageLabel[]>([]);
+  const [animlAnimalTags, setAnimlAnimalTags] = useState<AnimlAnimalTag[]>([]);
+  const [animlLoading, setAnimlLoading] = useState(false);
+  const [selectedAnimlDeployment, setSelectedAnimlDeployment] = useState<AnimlDeployment | null>(null);
+  const [selectedAnimlAnimalTag, setSelectedAnimlAnimalTag] = useState<AnimlAnimalTag | null>(null);
+  const [selectedAnimlObservation, setSelectedAnimlObservation] = useState<AnimlImageLabel | null>(null);
+  const [animlCustomFilters, setAnimlCustomFilters] = useState<AnimlCustomFilters>({
+    viewMode: 'camera-centric',
+    deploymentIds: [],
+    labels: [],
+    hasImages: undefined
+  });
 
   // Compute date range text for iNaturalist sidebar
   const inatDateRangeText = useMemo(() => {
@@ -406,6 +425,121 @@ function App() {
     setLidarViewMode(mode);
   };
 
+  // Animl handlers
+  const handleAnimlViewModeChange = (mode: AnimlViewMode) => {
+    setAnimlViewMode(mode);
+    setAnimlCustomFilters(prev => ({ ...prev, viewMode: mode }));
+    // Clear selections when switching view modes
+    setSelectedAnimlDeployment(null);
+    setSelectedAnimlAnimalTag(null);
+    setSelectedAnimlObservation(null);
+    
+    // Reload map if Animl data is already loaded
+    if (lastSearchedFilters.source === 'Animl' && animlImageLabels.length > 0) {
+      const startDate = filters.startDate || formatDateForAPI(getDateRange(lastSearchedDaysBack || 30).startDate);
+      const endDate = filters.endDate || formatDateForAPI(getDateRange(lastSearchedDaysBack || 30).endDate);
+      let searchMode: 'preserve-only' | 'expanded' | 'custom' = filters.spatialFilter === 'Dangermond Preserve' ? 'preserve-only' : 'expanded';
+      let customPolygonGeometry: string | undefined = undefined;
+      if (filters.customPolygon && filters.spatialFilter === 'Draw Area') {
+        searchMode = 'custom';
+        customPolygonGeometry = JSON.stringify({
+          rings: filters.customPolygon.rings,
+          spatialReference: filters.customPolygon.spatialReference
+        });
+      }
+      
+      mapViewRef.current?.reloadAnimlObservations({
+        deployments: animlDeployments,
+        imageLabels: animlImageLabels,
+        viewMode: mode,
+        startDate,
+        endDate,
+        searchMode,
+        customPolygon: customPolygonGeometry,
+        showSearchArea: filters.spatialFilter === 'Dangermond + Margin'
+      });
+    }
+  };
+
+  const handleAnimlDeploymentClick = (deployment: AnimlDeployment) => {
+    console.log('🖱️ App: Animl deployment clicked in sidebar:', deployment.id);
+    setSelectedAnimlDeployment(deployment);
+    setSelectedAnimlAnimalTag(null);
+    setSelectedAnimlObservation(null);
+    // Trigger map highlight immediately
+    if (mapViewRef.current) {
+      console.log('🗺️ App: Calling highlightDeployment');
+      mapViewRef.current.highlightDeployment(deployment.id);
+    } else {
+      console.warn('⚠️ App: mapViewRef.current is not available');
+    }
+  };
+
+  const handleAnimlAnimalTagClick = (tag: AnimlAnimalTag) => {
+    setSelectedAnimlAnimalTag(tag);
+    setSelectedAnimlDeployment(null);
+    setSelectedAnimlObservation(null);
+  };
+
+  const handleAnimlObservationClick = (observation: AnimlImageLabel) => {
+    setSelectedAnimlObservation(observation);
+  };
+
+  const handleAnimlDetailsClose = () => {
+    setSelectedAnimlDeployment(null);
+    setSelectedAnimlAnimalTag(null);
+    setSelectedAnimlObservation(null);
+    // Clear map highlight
+    mapViewRef.current?.clearDeploymentHighlight();
+  };
+
+  const handleAnimlAddToCart = (filteredCount: number) => {
+    if (!hasSearched || animlImageLabels.length === 0) {
+      toast.error('No data to add to cart');
+      return;
+    }
+
+    // Build cart item
+    const cartItem = {
+      id: `animl-${Date.now()}`,
+      dataSource: 'animl' as const,
+      title: `Animl Camera Traps - ${animlViewMode === 'camera-centric' ? 'Camera View' : 'Animal View'} (${filteredCount} observations)`,
+      coreFilters: {
+        category: filters.category,
+        source: filters.source,
+        spatialFilter: filters.spatialFilter,
+        timeRange: filters.timeRange,
+        daysBack: filters.daysBack,
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+        customPolygon: filters.customPolygon
+      },
+      customFilters: {
+        animl: {
+          viewMode: animlViewMode,
+          deploymentIds: animlCustomFilters.deploymentIds,
+          labels: animlCustomFilters.labels,
+          hasImages: animlCustomFilters.hasImages
+        }
+      },
+      estimatedCount: filteredCount,
+      addedAt: Date.now()
+    };
+
+    addToCart(cartItem);
+    toast.success(`Added ${filteredCount} Animl observations to cart`);
+  };
+
+  // Compute date range text for Animl sidebar
+  const animlDateRangeText = useMemo(() => {
+    if (filters.startDate && filters.endDate) {
+      const start = new Date(filters.startDate);
+      const end = new Date(filters.endDate);
+      return `from ${start.toLocaleDateString()} - ${end.toLocaleDateString()}`;
+    }
+    return `from ${formatDateRangeCompact(lastSearchedDaysBack).toLowerCase()}`;
+  }, [filters.startDate, filters.endDate, lastSearchedDaysBack]);
+
   // Dendra Stations handlers
   const handleDendraStationSelect = async (station: DendraStation) => {
     // Close the Dendra iframe if it's showing a different station's dashboard
@@ -610,6 +744,9 @@ function App() {
     setDendraStations([]);
     setDendraDatastreams([]);
     setTncArcGISItems([]);
+    setAnimlDeployments([]);
+    setAnimlImageLabels([]);
+    setAnimlAnimalTags([]);
     
     // Clear any selected items
     setSelectedTNCObservation(null);
@@ -618,6 +755,9 @@ function App() {
     setSelectedModalItem(null);
     setSelectedDendraStation(null);
     setSelectedDendraDatastream(null);
+    setSelectedAnimlDeployment(null);
+    setSelectedAnimlAnimalTag(null);
+    setSelectedAnimlObservation(null);
     
     // Clear all map layers (removes all observation icons from map)
     mapViewRef.current?.clearAllObservationLayers();
@@ -903,6 +1043,110 @@ function App() {
         });
 
       mapViewRef.current?.reloadEBirdObservations(eBirdSearchFilters);
+    } else if (filters.source === 'Animl') {
+      // Handle Animl search
+      setAnimlLoading(true);
+      
+      // Clear previous selections
+      setSelectedAnimlDeployment(null);
+      setSelectedAnimlAnimalTag(null);
+      setSelectedAnimlObservation(null);
+      
+      // Compute start/end dates from filters
+      let startDate = filters.startDate;
+      let endDate = filters.endDate;
+      if (!startDate || !endDate) {
+        const range = getDateRange(filters.daysBack || 30);
+        startDate = formatDateForAPI(range.startDate);
+        endDate = formatDateForAPI(range.endDate);
+      }
+
+      // Map spatial filter to search mode
+      let searchMode: 'preserve-only' | 'expanded' | 'custom' = filters.spatialFilter === 'Dangermond Preserve' ? 'preserve-only' : 'expanded';
+      
+      // If custom polygon exists, use it
+      let customPolygonGeometry: string | undefined = undefined;
+      if (filters.customPolygon && filters.spatialFilter === 'Draw Area') {
+        searchMode = 'custom';
+        customPolygonGeometry = JSON.stringify({
+          rings: filters.customPolygon.rings,
+          spatialReference: filters.customPolygon.spatialReference
+        });
+      }
+
+      const searchAniml = async () => {
+        try {
+          console.log('🔍 Animl Search Starting:', {
+            searchMode,
+            startDate,
+            endDate,
+            spatialFilter: filters.spatialFilter,
+            hasCustomPolygon: !!customPolygonGeometry
+          });
+          
+          // Fetch deployments and image labels in parallel
+          const [deployments, imageLabels] = await Promise.all([
+            animlService.queryDeployments({
+              searchMode,
+              customPolygon: customPolygonGeometry
+            }).catch(error => {
+              console.error('❌ Failed to fetch deployments:', error);
+              // Return empty array on error instead of crashing
+              return [];
+            }),
+            animlService.queryImageLabels({
+              startDate,
+              endDate,
+              searchMode,
+              customPolygon: customPolygonGeometry,
+              maxResults: 1000, // Reduced from 10000 to 1000 for faster loading
+              onProgress: (current, total, percentage) => {
+                console.log(`📊 Animl Image Labels Progress: ${current}/${total} (${percentage}%)`);
+              }
+            }).catch(error => {
+              console.error('❌ Failed to fetch image labels:', error);
+              // Return empty array on error instead of crashing
+              return [];
+            })
+          ]);
+
+          console.log(`✅ Animl Search Results: ${deployments.length} deployments, ${imageLabels.length} image labels`);
+
+          // Enhance deployments with stats
+          const enhancedDeployments = await animlService.enhanceDeploymentsWithStats(deployments, imageLabels);
+          
+          // Aggregate animal tags
+          const animalTags = await animlService.aggregateAnimalTags(imageLabels, 10);
+
+          setAnimlDeployments(enhancedDeployments);
+          setAnimlImageLabels(imageLabels);
+          setAnimlAnimalTags(animalTags);
+          
+          // Update last searched time range
+          setLastSearchedDaysBack(filters.daysBack || 30);
+          
+          // Reload Animl observations on map
+          mapViewRef.current?.reloadAnimlObservations({
+            deployments: enhancedDeployments,
+            imageLabels: imageLabels,
+            viewMode: animlViewMode,
+            startDate,
+            endDate,
+            searchMode,
+            customPolygon: customPolygonGeometry,
+            showSearchArea: filters.spatialFilter === 'Dangermond + Margin'
+          });
+        } catch (error) {
+          console.error('Error loading Animl data:', error);
+          setAnimlDeployments([]);
+          setAnimlImageLabels([]);
+          setAnimlAnimalTags([]);
+        } finally {
+          setAnimlLoading(false);
+        }
+      };
+
+      searchAniml();
     } else {
       // Handle iNaturalist Public API search
       // Filter by iconic taxa based on category
@@ -1277,6 +1521,65 @@ function App() {
     downloadFile(geoJsonData, 'tnc-arcgis-items.geojson', 'application/geo+json');
   };
 
+  // Animl export functions
+  const convertAnimlToCSV = (imageLabels: AnimlImageLabel[]): string => {
+    const headers = [
+      'ID', 'Image ID', 'Deployment ID', 'Camera Name', 'Timestamp', 'Label', 
+      'Medium URL', 'Small URL', 'Latitude', 'Longitude'
+    ];
+    
+    const rows = imageLabels.map(obs => [
+      obs.id,
+      obs.animl_image_id,
+      obs.deployment_id,
+      obs.deployment_name || '',
+      obs.timestamp,
+      obs.label,
+      obs.medium_url || '',
+      obs.small_url || '',
+      obs.geometry?.coordinates?.[1] || '',
+      obs.geometry?.coordinates?.[0] || ''
+    ]);
+
+    return [headers, ...rows].map(row => 
+      row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+    ).join('\n');
+  };
+
+  const convertAnimlToGeoJSON = (imageLabels: AnimlImageLabel[]): string => {
+    const features = imageLabels
+      .filter(obs => obs.geometry?.coordinates)
+      .map(obs => ({
+        type: 'Feature' as const,
+        geometry: obs.geometry!,
+        properties: {
+          id: obs.id,
+          animl_image_id: obs.animl_image_id,
+          deployment_id: obs.deployment_id,
+          deployment_name: obs.deployment_name || '',
+          timestamp: obs.timestamp,
+          label: obs.label,
+          medium_url: obs.medium_url || '',
+          small_url: obs.small_url || ''
+        }
+      }));
+
+    return JSON.stringify({
+      type: 'FeatureCollection',
+      features
+    }, null, 2);
+  };
+
+  const handleAnimlExportCSV = () => {
+    const csvData = convertAnimlToCSV(animlImageLabels);
+    downloadFile(csvData, 'animl-observations.csv', 'text/csv');
+  };
+
+  const handleAnimlExportGeoJSON = () => {
+    const geoJsonData = convertAnimlToGeoJSON(animlImageLabels);
+    downloadFile(geoJsonData, 'animl-observations.geojson', 'application/geo+json');
+  };
+
   // Dendra export functions
   const convertDendraToCSV = (datapoints: DendraDatapoint[], datastream: DendraDatastream | null, station: DendraStation | null): string => {
     if (datapoints.length === 0) return '';
@@ -1384,6 +1687,7 @@ function App() {
           lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations.length :
           lastSearchedFilters.source === 'eBird' ? eBirdObservations.length :
           lastSearchedFilters.source === 'Dendra Stations' ? dendraStations.length :
+          lastSearchedFilters.source === 'Animl' ? animlImageLabels.length :
           observations.length
         }
         isSearching={
@@ -1392,6 +1696,7 @@ function App() {
           filters.source === 'iNaturalist (TNC Layers)' ? tncObservationsLoading :
           filters.source === 'eBird' ? eBirdObservationsLoading :
           filters.source === 'Dendra Stations' ? dendraLoading :
+          filters.source === 'Animl' ? animlLoading :
           observationsLoading
         }
       />
@@ -1454,6 +1759,29 @@ function App() {
           qualityGrade={filters.qualityGrade}
           onQualityGradeChange={(grade) => setFilters(prev => ({ ...prev, qualityGrade: grade }))}
           onIconicTaxaChange={(taxa) => setFilters(prev => ({ ...prev, iconicTaxa: taxa }))}
+          // Animl props
+          animlViewMode={animlViewMode}
+          animlDeployments={animlDeployments}
+          animlAnimalTags={animlAnimalTags}
+          animlImageLabels={animlImageLabels}
+          animlLoading={animlLoading}
+          selectedAnimlDeployment={selectedAnimlDeployment}
+          selectedAnimlDeploymentId={selectedAnimlDeployment?.id || null}
+          selectedAnimlAnimalTag={selectedAnimlAnimalTag}
+          selectedAnimlAnimalLabel={selectedAnimlAnimalTag?.label || null}
+          selectedAnimlObservation={selectedAnimlObservation}
+          selectedAnimlObservationId={selectedAnimlObservation?.id || null}
+          onAnimlViewModeChange={handleAnimlViewModeChange}
+          onAnimlDeploymentClick={handleAnimlDeploymentClick}
+          onAnimlAnimalTagClick={handleAnimlAnimalTagClick}
+          onAnimlObservationClick={handleAnimlObservationClick}
+          onAnimlDetailsClose={handleAnimlDetailsClose}
+          onAnimlExportCSV={handleAnimlExportCSV}
+          onAnimlExportGeoJSON={handleAnimlExportGeoJSON}
+          onAnimlAddToCart={handleAnimlAddToCart}
+          animlDateRangeText={animlDateRangeText}
+          animlCustomFilters={animlCustomFilters}
+          onAnimlCustomFiltersChange={setAnimlCustomFilters}
         />
         <div id="map-container" className="flex-1 relative flex">
           {/* Conditionally render based on data source and LiDAR mode */}
@@ -1570,6 +1898,14 @@ function App() {
                 onPolygonCleared={handlePolygonCleared}
                 iconicTaxa={filters.iconicTaxa}
                 onIconicTaxaChange={(taxa) => setFilters(prev => ({ ...prev, iconicTaxa: taxa }))}
+                animlDeployments={lastSearchedFilters.source === 'Animl' ? animlDeployments : []}
+                animlImageLabels={lastSearchedFilters.source === 'Animl' ? animlImageLabels : []}
+                animlViewMode={animlViewMode}
+                selectedAnimlDeployment={selectedAnimlDeployment}
+                selectedAnimlObservation={selectedAnimlObservation}
+                onAnimlDeploymentClick={handleAnimlDeploymentClick}
+                onAnimlObservationClick={handleAnimlObservationClick}
+                onAnimlLoadingChange={setAnimlLoading}
               />
               {/* Hub Page Preview Overlay */}
               {selectedModalItem && (
@@ -1818,6 +2154,28 @@ function App() {
             }}
             onClose={handleINatDetailsClose}
             hasSearched={hasSearched}
+          />
+        ) : lastSearchedFilters.source === 'Animl' ? (
+          <AnimlDetailsSidebar
+            viewMode={animlViewMode}
+            selectedDeployment={selectedAnimlDeployment}
+            selectedAnimalTag={selectedAnimlAnimalTag}
+            selectedObservation={selectedAnimlObservation}
+            deployments={animlDeployments}
+            animalTags={animlAnimalTags}
+            observations={animlImageLabels}
+            onExportCSV={handleAnimlExportCSV}
+            onExportGeoJSON={handleAnimlExportGeoJSON}
+            onAddToCart={handleAnimlAddToCart}
+            onClose={handleAnimlDetailsClose}
+            hasSearched={hasSearched}
+            dateRangeText={animlDateRangeText}
+            selectedDeploymentIds={animlCustomFilters?.deploymentIds || []}
+            onDeploymentIdsChange={(ids) => setAnimlCustomFilters(prev => ({ ...prev, deploymentIds: ids }))}
+            selectedLabels={animlCustomFilters?.labels || []}
+            onLabelsChange={(labels) => setAnimlCustomFilters(prev => ({ ...prev, labels }))}
+            hasImages={animlCustomFilters?.hasImages}
+            onHasImagesChange={(hasImages) => setAnimlCustomFilters(prev => ({ ...prev, hasImages }))}
           />
         ) : (
           <FilterSidebar 

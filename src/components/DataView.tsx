@@ -15,6 +15,10 @@ import VegetationCalFloraView from './dataviews/VegetationCalFloraView';
 import TNCArcGISView from './dataviews/TNCArcGISView';
 import LiDARView, { LiDARViewMode } from './dataviews/LiDARView';
 import DendraSidebar from './DendraSidebar';
+import WildlifeAnimlView from './dataviews/WildlifeAnimlView';
+import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag } from '../services/animlService';
+import { AnimlViewMode } from './AnimlSidebar';
+import { AnimlCustomFilters } from '../types';
 
 interface DataViewProps {
   filters: FilterState;
@@ -82,6 +86,29 @@ interface DataViewProps {
   onQualityGradeChange?: (grade: 'research' | 'needs_id' | 'casual' | undefined) => void;
   // Iconic taxa filter callback
   onIconicTaxaChange?: (taxa: string[]) => void;
+  // Animl props
+  animlViewMode?: AnimlViewMode;
+  animlDeployments?: AnimlDeployment[];
+  animlAnimalTags?: AnimlAnimalTag[];
+  animlImageLabels?: AnimlImageLabel[];
+  animlLoading?: boolean;
+  selectedAnimlDeployment?: AnimlDeployment | null;
+  selectedAnimlDeploymentId?: number | null;
+  selectedAnimlAnimalTag?: AnimlAnimalTag | null;
+  selectedAnimlAnimalLabel?: string | null;
+  selectedAnimlObservation?: AnimlImageLabel | null;
+  selectedAnimlObservationId?: number | null;
+  onAnimlViewModeChange?: (mode: AnimlViewMode) => void;
+  onAnimlDeploymentClick?: (deployment: AnimlDeployment) => void;
+  onAnimlAnimalTagClick?: (tag: AnimlAnimalTag) => void;
+  onAnimlObservationClick?: (observation: AnimlImageLabel) => void;
+  onAnimlDetailsClose?: () => void;
+  onAnimlExportCSV?: () => void;
+  onAnimlExportGeoJSON?: () => void;
+  onAnimlAddToCart?: (filteredCount: number) => void;
+  animlDateRangeText?: string;
+  animlCustomFilters?: AnimlCustomFilters;
+  onAnimlCustomFiltersChange?: (filters: AnimlCustomFilters) => void;
 }
 
 const DataView: React.FC<DataViewProps> = ({
@@ -136,7 +163,30 @@ const DataView: React.FC<DataViewProps> = ({
   onINatDetailsClose: _onINatDetailsClose,
   qualityGrade: _qualityGrade,
   onQualityGradeChange: _onQualityGradeChange,
-  onIconicTaxaChange
+  onIconicTaxaChange,
+  // Animl props
+  animlViewMode = 'camera-centric',
+  animlDeployments = [],
+  animlAnimalTags = [],
+  animlImageLabels = [],
+  animlLoading = false,
+  selectedAnimlDeployment = null,
+  selectedAnimlDeploymentId = null,
+  selectedAnimlAnimalTag = null,
+  selectedAnimlAnimalLabel = null,
+  selectedAnimlObservation = null,
+  selectedAnimlObservationId = null,
+  onAnimlViewModeChange,
+  onAnimlDeploymentClick,
+  onAnimlAnimalTagClick,
+  onAnimlObservationClick,
+  onAnimlDetailsClose,
+  onAnimlExportCSV,
+  onAnimlExportGeoJSON,
+  onAnimlAddToCart,
+  animlDateRangeText = '',
+  animlCustomFilters,
+  onAnimlCustomFiltersChange
 }) => {
   // Route to appropriate data view based on category + source combination
   const getDataView = () => {
@@ -278,6 +328,41 @@ const DataView: React.FC<DataViewProps> = ({
             selectedStationId={selectedDendraStationId || null}
             selectedDatastreamId={selectedDendraDatastreamId || null}
             onShowDendraWebsite={onShowDendraWebsite}
+          />
+        );
+      
+      // Animl cases
+      case 'Ecological / Biological (Species?)-Animl':
+      case 'Real-time & Remote Sensing-Animl':
+        return (
+          <WildlifeAnimlView
+            viewMode={animlViewMode}
+            onViewModeChange={onAnimlViewModeChange || (() => {})}
+            deployments={animlDeployments}
+            animalTags={animlAnimalTags}
+            imageLabels={animlImageLabels}
+            loading={animlLoading}
+            selectedDeploymentId={selectedAnimlDeploymentId}
+            selectedAnimalLabel={selectedAnimlAnimalLabel}
+            selectedObservationId={selectedAnimlObservationId}
+            onDeploymentClick={onAnimlDeploymentClick}
+            onAnimalTagClick={onAnimlAnimalTagClick}
+            onObservationClick={onAnimlObservationClick}
+            onExportCSV={onAnimlExportCSV}
+            onExportGeoJSON={onAnimlExportGeoJSON}
+            onAddToCart={onAnimlAddToCart}
+            onDetailsClose={onAnimlDetailsClose}
+            selectedDeploymentIds={animlCustomFilters?.deploymentIds || []}
+            onDeploymentIdsChange={(ids) => onAnimlCustomFiltersChange?.({ ...animlCustomFilters!, deploymentIds: ids })}
+            selectedLabels={animlCustomFilters?.labels || []}
+            onLabelsChange={(labels) => onAnimlCustomFiltersChange?.({ ...animlCustomFilters!, labels })}
+            hasImages={animlCustomFilters?.hasImages}
+            onHasImagesChange={(hasImages) => onAnimlCustomFiltersChange?.({ ...animlCustomFilters!, hasImages })}
+            hasSearched={hasSearched}
+            dateRangeText={animlDateRangeText}
+            selectedDeployment={selectedAnimlDeployment}
+            selectedAnimalTag={selectedAnimlAnimalTag}
+            selectedObservation={selectedAnimlObservation}
           />
         );
         

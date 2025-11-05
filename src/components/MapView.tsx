@@ -23,6 +23,7 @@ import { tncINaturalistService, TNCArcGISObservation } from '../services/tncINat
 import { calFloraAPI, CalFloraPlant } from '../services/calFloraService';
 import { TNCArcGISItem, tncArcGISAPI } from '../services/tncArcGISService';
 import { eBirdService, EBirdObservation } from '../services/eBirdService';
+import { animlService, AnimlDeployment, AnimlImageLabel } from '../services/animlService';
 import type { DendraStation } from '../types';
 import LayerLegend from './LayerLegend';
 import { MapLegend } from './MapLegend';
@@ -66,6 +67,15 @@ interface MapViewProps {
   // Filter synchronization props
   iconicTaxa?: string[];
   onIconicTaxaChange?: (taxa: string[]) => void;
+  // Animl data
+  animlDeployments?: AnimlDeployment[];
+  animlImageLabels?: AnimlImageLabel[];
+  animlViewMode?: 'camera-centric' | 'animal-centric';
+  selectedAnimlDeployment?: AnimlDeployment | null;
+  selectedAnimlObservation?: AnimlImageLabel | null;
+  onAnimlDeploymentClick?: (deployment: AnimlDeployment) => void;
+  onAnimlObservationClick?: (observation: AnimlImageLabel) => void;
+  onAnimlLoadingChange?: (loading: boolean) => void;
 }
 
 export interface MapViewRef {
@@ -106,12 +116,24 @@ export interface MapViewRef {
     customPolygon?: string;
     showSearchArea?: boolean;
   }) => void;
+  reloadAnimlObservations: (filters?: {
+    deployments?: AnimlDeployment[];
+    imageLabels?: AnimlImageLabel[];
+    viewMode?: 'camera-centric' | 'animal-centric';
+    startDate?: string;
+    endDate?: string;
+    searchMode?: 'preserve-only' | 'expanded' | 'custom';
+    customPolygon?: string;
+    showSearchArea?: boolean;
+  }) => void;
   activateDrawMode: () => void;
   clearPolygon: () => void;
   clearSearchArea: () => void;
   clearAllObservationLayers: () => void;
   highlightObservation: (id: number | string) => void;
   clearObservationHighlight: () => void;
+  highlightDeployment: (id: number) => void;
+  clearDeploymentHighlight: () => void;
 }
 
 const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({ 
@@ -146,7 +168,15 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   onPolygonDrawn,
   onPolygonCleared,
   iconicTaxa = [],
-  onIconicTaxaChange
+  onIconicTaxaChange,
+  animlDeployments = [],
+  animlImageLabels = [],
+  animlViewMode = 'camera-centric',
+  selectedAnimlDeployment,
+  selectedAnimlObservation,
+  onAnimlDeploymentClick,
+  onAnimlObservationClick,
+  onAnimlLoadingChange
 }, ref) => {
   const mapDiv = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<MapView | null>(null);
@@ -595,11 +625,18 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         title: 'Dendra Stations'
       });
 
+      // Create graphics layer for Animl observations/deployments
+      const animlLayer = new GraphicsLayer({
+        id: 'animl-observations',
+        title: 'Animl Observations'
+      });
+
       map.add(observationsLayer);
       map.add(tncObservationsLayer);
       map.add(eBirdObservationsLayer);
       map.add(calFloraLayer);
       map.add(dendraStationsLayer);
+      map.add(animlLayer);
 
       // Create the map view centered on Dangermond Preserve
       // Coordinates: approximately 34.47°N, -120.47°W (Point Conception area)
@@ -2925,6 +2962,132 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   };
 
+  const loadAnimlObservations = async (_mapView: __esri.MapView, animlLayer: GraphicsLayer, filters?: {
+    deployments?: AnimlDeployment[];
+    imageLabels?: AnimlImageLabel[];
+    viewMode?: 'camera-centric' | 'animal-centric';
+    startDate?: string;
+    endDate?: string;
+    searchMode?: 'preserve-only' | 'expanded' | 'custom';
+    customPolygon?: string;
+    showSearchArea?: boolean;
+  }) => {
+    onAnimlLoadingChange?.(true);
+    try {
+      // Clear other layers when starting a new Animl search
+      const observationsLayer = _mapView.map?.findLayerById('inaturalist-observations') as GraphicsLayer;
+      const tncObservationsLayer = _mapView.map?.findLayerById('tnc-inaturalist-observations') as GraphicsLayer;
+      const calFloraLayer = _mapView.map?.findLayerById('calflora-plants') as GraphicsLayer;
+      const eBirdObservationsLayer = _mapView.map?.findLayerById('ebird-observations') as GraphicsLayer;
+      
+      if (observationsLayer) {
+        observationsLayer.removeAll();
+      }
+      if (tncObservationsLayer) {
+        tncObservationsLayer.removeAll();
+      }
+      if (calFloraLayer) {
+        calFloraLayer.removeAll();
+      }
+      if (eBirdObservationsLayer) {
+        eBirdObservationsLayer.removeAll();
+      }
+      
+      // Handle search area visualization using helper
+      await drawSearchAreaRectangle(_mapView, filters?.showSearchArea || false, filters?.searchMode || '');
+      
+      // Clear existing graphics
+      animlLayer.removeAll();
+      
+      const deployments = filters?.deployments || [];
+      
+      // Always show deployments (camera locations) on the map, regardless of view mode
+      // The view mode only affects what's shown in the sidebar, not the map
+      if (deployments.length > 0) {
+        deployments.forEach(deployment => {
+          if (deployment.geometry && deployment.geometry.coordinates) {
+            const [longitude, latitude] = deployment.geometry.coordinates;
+            
+            // Create point geometry
+            const point = new Point({
+              longitude,
+              latitude
+            });
+            
+            // Create symbol for camera deployment - use camera icon color (orange/amber)
+            const symbol = new SimpleMarkerSymbol({
+              style: 'circle',
+              color: [251, 146, 60, 0.8], // Orange/amber color for camera traps
+              size: '12px',
+              outline: {
+                color: 'white',
+                width: 2
+              }
+            });
+
+            // Create popup template
+            const popupTemplate = new PopupTemplate({
+              title: deployment.name || `Deployment ${deployment.animl_dp_id}`,
+              content: `
+                <div style="font-family: sans-serif;">
+                  <p><strong>Deployment ID:</strong> ${deployment.animl_dp_id}</p>
+                  <p><strong>Name:</strong> ${deployment.name || 'N/A'}</p>
+                  ${deployment.totalObservations !== undefined ? `<p><strong>Total Observations:</strong> ${deployment.totalObservations}</p>` : ''}
+                  ${deployment.uniqueAnimals && deployment.uniqueAnimals.length > 0 ? `<p><strong>Animals Detected:</strong> ${deployment.uniqueAnimals.join(', ')}</p>` : ''}
+                  ${deployment.firstObservation ? `<p><strong>First Observation:</strong> ${new Date(deployment.firstObservation).toLocaleDateString()}</p>` : ''}
+                  ${deployment.lastObservation ? `<p><strong>Last Observation:</strong> ${new Date(deployment.lastObservation).toLocaleDateString()}</p>` : ''}
+                  <p><strong>Coordinates:</strong> ${latitude.toFixed(6)}, ${longitude.toFixed(6)}</p>
+                </div>
+              `
+            });
+
+            // Create graphic
+            const graphic = new Graphic({
+              geometry: point,
+              symbol: symbol,
+              popupTemplate: popupTemplate,
+              attributes: {
+                id: deployment.id,
+                animl_dp_id: deployment.animl_dp_id,
+                name: deployment.name,
+                type: 'deployment'
+              }
+            });
+
+            animlLayer.add(graphic);
+          }
+        });
+      }
+      
+      // Note: We no longer show individual observations on the map - only camera locations
+      // The view mode only affects sidebar content, not map markers
+      // If you want to show observations in the future, they should be aggregated/grouped by camera
+      
+    } catch (error) {
+      console.error('Error loading Animl observations:', error);
+    } finally {
+      onAnimlLoadingChange?.(false);
+    }
+  };
+
+  const reloadAnimlObservations = (filters?: {
+    deployments?: AnimlDeployment[];
+    imageLabels?: AnimlImageLabel[];
+    viewMode?: 'camera-centric' | 'animal-centric';
+    startDate?: string;
+    endDate?: string;
+    searchMode?: 'preserve-only' | 'expanded' | 'custom';
+    customPolygon?: string;
+    showSearchArea?: boolean;
+  }) => {
+    if (view && view.map) {
+      const animlLayer = view.map.findLayerById('animl-observations') as GraphicsLayer;
+      if (animlLayer) {
+        loadAnimlObservations(view, animlLayer, filters);
+      }
+    }
+  };
+
   // Helper to draw search area rectangle for "Dangermond + Margin" spatial filter
   const drawSearchAreaRectangle = async (_mapView: __esri.MapView, showSearchArea: boolean, searchMode: string) => {
     const searchAreaLayer = _mapView.map?.findLayerById('search-area-rectangle') as GraphicsLayer;
@@ -3001,7 +3164,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       'tnc-inaturalist-observations',
       'ebird-observations',
       'calflora-plants',
-      'dendra-stations'
+      'dendra-stations',
+      'animl-observations'
     ];
     
     layerIds.forEach(layerId => {
@@ -3170,18 +3334,135 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   };
 
+  // Highlight deployment method (similar to highlightObservation)
+  const highlightDeployment = (id: number) => {
+    if (!view || !view.map) {
+      console.warn('❌ View or map not available');
+      return;
+    }
+    
+    console.log('🎯 Highlighting Animl deployment:', id);
+    
+    // Create the async operation
+    const operation = (async () => {
+      // Wait for any pending highlight operation to complete before clearing
+      if (highlightOperationRef.current) {
+        console.log('⏸️ Waiting for previous highlight operation to complete...');
+        await highlightOperationRef.current;
+      }
+      
+      // Now clear any existing highlight
+      if (highlightHandleRef.current) {
+        console.log('🧹 Clearing previous highlight');
+        highlightHandleRef.current.remove();
+        highlightHandleRef.current = null;
+      }
+      
+      // Find the deployment graphic in the Animl layer
+      if (!view.map) return;
+      const animlLayer = view.map.findLayerById('animl-observations') as GraphicsLayer;
+      
+      if (!animlLayer) {
+        console.warn('❌ Animl observations layer not found');
+        return;
+      }
+      
+      // Search for deployment graphic - deployments are stored with deployment_id in attributes
+      const targetGraphic = animlLayer.graphics.find(g => 
+        g.attributes?.deployment_id === id || g.attributes?.id === id
+      );
+      
+      if (!targetGraphic) {
+        console.warn(`❌ Deployment with id ${id} not found on map`);
+        return;
+      }
+      
+      try {
+        // Ensure the layer is loaded and the layer view is ready
+        console.log('⏳ Waiting for Animl layer view to be ready...');
+        const layerView = await view.whenLayerView(animlLayer);
+        console.log('✅ Animl layer view obtained');
+        
+        // Wait for the layer view to finish any pending updates
+        if ((layerView as any).updating) {
+          console.log('⏳ Animl layer view is updating, waiting...');
+          await reactiveUtils.whenOnce(() => !(layerView as any).updating);
+          console.log('✅ Animl layer update complete');
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        
+        // Add a small delay to ensure rendering pipeline is stable
+        await new Promise(resolve => setTimeout(resolve, 100));
+        console.log('✅ Ready to highlight Animl deployment');
+        
+        // Use ArcGIS's native highlight method
+        console.log('🚀 About to call layerView.highlight() for deployment');
+        const highlightHandle = (layerView as any).highlight(targetGraphic);
+        console.log('🎯 Highlight handle returned:', highlightHandle);
+        
+        highlightHandleRef.current = highlightHandle;
+        
+        console.log('✨ Applied native ArcGIS highlight for deployment');
+        
+        // Open the popup
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        if (view && targetGraphic.geometry) {
+          console.log('💬 Opening popup for deployment...');
+          
+          try {
+            view.openPopup({
+              features: [targetGraphic],
+              location: targetGraphic.geometry as __esri.Point
+            });
+            
+            console.log('✅ Popup opened successfully for deployment');
+          } catch (error) {
+            console.error('❌ Error opening popup for deployment:', error);
+          }
+        }
+        
+      } catch (error) {
+        console.error('❌ Error highlighting Animl deployment:', error);
+      }
+    })();
+    
+    // Store the operation so we can wait for it if needed
+    highlightOperationRef.current = operation;
+  };
+  
+  // Clear deployment highlight method
+  const clearDeploymentHighlight = () => {
+    console.log('🧹 Clearing Animl deployment highlight');
+    
+    // Remove the ArcGIS native highlight
+    if (highlightHandleRef.current) {
+      highlightHandleRef.current.remove();
+      highlightHandleRef.current = null;
+      console.log('✅ Removed Animl deployment highlight');
+    }
+    
+    // Close popup
+    if (view && view.popup) {
+      view.popup.visible = false;
+    }
+  };
+
   // Expose methods via ref
   useImperativeHandle(ref, () => ({
     reloadObservations,
     reloadTNCObservations,
     reloadEBirdObservations,
     reloadCalFloraData,
+    reloadAnimlObservations,
     activateDrawMode,
     clearPolygon,
     clearSearchArea,
     clearAllObservationLayers,
     highlightObservation,
-    clearObservationHighlight
+    clearObservationHighlight,
+    highlightDeployment,
+    clearDeploymentHighlight
   }));
 
   const getObservationIcon = (obs: iNaturalistObservation) => {

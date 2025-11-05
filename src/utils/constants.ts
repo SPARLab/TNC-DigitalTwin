@@ -18,7 +18,8 @@ export const DATA_SOURCES = [
   'CalFlora',
   'TNC ArcGIS Hub',
   'LiDAR',
-  'Dendra Stations'
+  'Dendra Stations',
+  'Animl'
 ] as const;
 
 // Map categories to their available data sources
@@ -31,7 +32,7 @@ export const CATEGORY_DATA_SOURCES: Record<string, readonly string[]> = {
   }, {} as Record<string, string[]>),
   
   // Ecological / Biological category includes wildlife observation sources
-  'Ecological / Biological (Species?)': ['TNC ArcGIS Hub', 'iNaturalist (Public API)', 'iNaturalist (TNC Layers)', 'eBird'],
+  'Ecological / Biological (Species?)': ['TNC ArcGIS Hub', 'iNaturalist (Public API)', 'iNaturalist (TNC Layers)', 'eBird', 'Animl'],
   
   // Vegetation / habitat category includes plant observation sources
   'Vegetation / habitat': ['TNC ArcGIS Hub', 'CalFlora', 'iNaturalist (Public API)', 'iNaturalist (TNC Layers)'],
@@ -39,8 +40,8 @@ export const CATEGORY_DATA_SOURCES: Record<string, readonly string[]> = {
   // Land use category includes LiDAR
   'Land use and land (geography?)': ['TNC ArcGIS Hub', 'LiDAR'],
   
-  // Real-time & Remote Sensing includes Dendra Stations
-  'Real-time & Remote Sensing': ['TNC ArcGIS Hub', 'Dendra Stations']
+  // Real-time & Remote Sensing includes Dendra Stations and Animl camera traps
+  'Real-time & Remote Sensing': ['TNC ArcGIS Hub', 'Dendra Stations', 'Animl']
 } as const;
 
 // Validate that all data categories have a source mapping
