@@ -590,6 +590,10 @@ function App() {
 
   const handleAnimlObservationClick = (observation: AnimlImageLabel) => {
     setSelectedAnimlObservation(observation);
+    // Highlight the camera/deployment that took this observation
+    if (observation.deployment_id && mapViewRef.current) {
+      mapViewRef.current.highlightDeployment(observation.deployment_id);
+    }
   };
 
   const handleAnimlDetailsClose = () => {

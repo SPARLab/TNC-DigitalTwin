@@ -3390,6 +3390,30 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       }
       
       try {
+        // Check if the deployment is already in view, and pan to it if not
+        if (targetGraphic.geometry && view.extent) {
+          const deploymentPoint = targetGraphic.geometry as Point;
+          
+          // Check if the point is contained in the current view extent
+          if (!view.extent.contains(deploymentPoint)) {
+            console.log('📍 Deployment not in view, panning to center it...');
+            try {
+              await view.goTo({
+                target: deploymentPoint,
+                zoom: view.zoom > 14 ? view.zoom : 14 // Use current zoom if already zoomed in, otherwise zoom to 14
+              });
+              console.log('✅ Panned to deployment location');
+            } catch (goToError: any) {
+              // Ignore AbortError (user interaction interrupted the pan)
+              if (goToError.name !== 'AbortError') {
+                console.warn('⚠️ Error panning to deployment:', goToError);
+              }
+            }
+          } else {
+            console.log('✅ Deployment already in view');
+          }
+        }
+        
         // Ensure the layer is loaded and the layer view is ready
         console.log('⏳ Waiting for Animl layer view to be ready...');
         const layerView = await view.whenLayerView(animlLayer);
