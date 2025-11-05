@@ -5,6 +5,23 @@ import ThumbnailImage from './ThumbnailImage';
 
 export type AnimlViewMode = 'camera-centric' | 'animal-centric';
 
+// Grouped observation for camera-centric view (one image with multiple labels)
+interface GroupedObservation {
+  animl_image_id: string;
+  deployment_id: number;
+  deployment_name?: string;
+  timestamp: string;
+  labels: string[]; // All labels for this image
+  medium_url: string | null;
+  small_url: string | null;
+  geometry?: {
+    type: 'Point';
+    coordinates: [number, number];
+  };
+  // Use the first observation's ID as the primary ID for selection
+  primaryId: number;
+}
+
 
 interface AnimlSidebarProps {
   viewMode: AnimlViewMode;
@@ -59,6 +76,8 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
   const pageSize = 20;
   
   const prevSelectedObservationIdRef = useRef<number | null>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const isSidebarFocusedRef = useRef(false);
 
   // Helper function to format date
   const formatDate = (dateString: string) => {
@@ -96,23 +115,99 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
     );
   }, [animalTags, searchText]);
 
-  // Filter observations by search text
+  // Determine what to show based on view mode and selection
+  const showObservations = (viewMode === 'camera-centric' && selectedDeploymentId !== null) ||
+                           (viewMode === 'animal-centric' && selectedAnimalLabel !== null);
+
+  // Group observations by image ID to deduplicate (works for both camera-centric and animal-centric)
+  const groupedObservations = useMemo(() => {
+    if (!showObservations) {
+      return null;
+    }
+    
+    // Filter out person/people observations
+    const filteredObs = observations.filter(obs => {
+      const labelLower = obs.label?.toLowerCase() || '';
+      return labelLower !== 'person' && labelLower !== 'people';
+    });
+    
+    // Group by animl_image_id
+    const grouped = new Map<string, GroupedObservation>();
+    
+    filteredObs.forEach(obs => {
+      const imageId = obs.animl_image_id || `unknown-${obs.id}`;
+      
+      if (grouped.has(imageId)) {
+        const existing = grouped.get(imageId)!;
+        // Add label if not already present
+        if (!existing.labels.includes(obs.label)) {
+          existing.labels.push(obs.label);
+        }
+      } else {
+        // Create new grouped observation
+        grouped.set(imageId, {
+          animl_image_id: imageId,
+          deployment_id: obs.deployment_id,
+          deployment_name: obs.deployment_name,
+          timestamp: obs.timestamp,
+          labels: [obs.label],
+          medium_url: obs.medium_url,
+          small_url: obs.small_url,
+          geometry: obs.geometry,
+          primaryId: obs.id // Use first observation's ID
+        });
+      }
+    });
+    
+    // Sort labels: prioritize non-"animal" labels, then alphabetically
+    grouped.forEach(group => {
+      group.labels.sort((a, b) => {
+        const aLower = a.toLowerCase();
+        const bLower = b.toLowerCase();
+        const aIsAnimal = aLower === 'animal';
+        const bIsAnimal = bLower === 'animal';
+        
+        // If one is "animal" and the other isn't, put non-"animal" first
+        if (aIsAnimal && !bIsAnimal) return 1;
+        if (!aIsAnimal && bIsAnimal) return -1;
+        
+        // Otherwise, sort alphabetically
+        return a.localeCompare(b);
+      });
+    });
+    
+    return Array.from(grouped.values());
+  }, [observations, viewMode, showObservations]);
+
+  // Filter observations by search text (for grouped or ungrouped)
   const filteredObservations = useMemo(() => {
+    const obsToFilter = groupedObservations || observations;
+    
     if (!searchText.trim()) {
-      return observations;
+      return obsToFilter;
     }
     
     const search = searchText.toLowerCase();
-    return observations.filter(obs =>
-      obs.label?.toLowerCase().includes(search) ||
-      obs.deployment_name?.toLowerCase().includes(search)
-    );
-  }, [observations, searchText]);
+    
+    if (groupedObservations) {
+      // Filter grouped observations by labels or deployment name
+      return (obsToFilter as GroupedObservation[]).filter(group =>
+        group.labels.some(label => label.toLowerCase().includes(search)) ||
+        group.deployment_name?.toLowerCase().includes(search)
+      );
+    } else {
+      // Filter regular observations
+      return (obsToFilter as AnimlImageLabel[]).filter(obs =>
+        obs.label?.toLowerCase().includes(search) ||
+        obs.deployment_name?.toLowerCase().includes(search)
+      );
+    }
+  }, [observations, groupedObservations, searchText]);
 
   // Reset pagination when filters change
   const resetPagination = () => setCurrentPage(1);
 
-  // Paginate observations
+  // Paginate observations (works for both grouped and ungrouped)
   const paginatedObservations = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
     const endIndex = startIndex + pageSize;
@@ -121,15 +216,51 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
 
   const totalPages = Math.ceil(filteredObservations.length / pageSize);
 
+  // Handle observation click (works for both grouped and ungrouped)
+  const handleObservationClick = (obs: AnimlImageLabel | GroupedObservation) => {
+    const obsId = 'primaryId' in obs ? obs.primaryId : obs.id;
+    if (expandedObservation === obsId) {
+      setExpandedObservation(null);
+    } else {
+      setExpandedObservation(obsId);
+    }
+    
+    // Convert to AnimlImageLabel format for onObservationClick
+    if ('primaryId' in obs) {
+      // It's a grouped observation
+      const animlObs: AnimlImageLabel = {
+        id: obs.primaryId,
+        animl_image_id: obs.animl_image_id,
+        deployment_id: obs.deployment_id,
+        deployment_name: obs.deployment_name,
+        timestamp: obs.timestamp,
+        label: obs.labels[0], // Use first (prioritized) label
+        medium_url: obs.medium_url,
+        small_url: obs.small_url,
+        geometry: obs.geometry
+      };
+      onObservationClick?.(animlObs);
+    } else {
+      onObservationClick?.(obs);
+    }
+  };
+
   // Auto-scroll to selected observation when clicked from map
   useEffect(() => {
     if (selectedObservationId !== prevSelectedObservationIdRef.current) {
       prevSelectedObservationIdRef.current = selectedObservationId ?? null;
       
       if (selectedObservationId) {
-        const observationIndex = filteredObservations.findIndex(
-          obs => obs.id === selectedObservationId
-        );
+        let observationIndex = -1;
+        if (groupedObservations) {
+          observationIndex = (filteredObservations as GroupedObservation[]).findIndex(
+            (obs: GroupedObservation) => obs.primaryId === selectedObservationId
+          );
+        } else {
+          observationIndex = (filteredObservations as AnimlImageLabel[]).findIndex(
+            (obs: AnimlImageLabel) => obs.id === selectedObservationId
+          );
+        }
         
         if (observationIndex !== -1) {
           const targetPage = Math.floor(observationIndex / pageSize) + 1;
@@ -148,23 +279,143 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
         }
       }
     }
-  }, [selectedObservationId, filteredObservations, currentPage, pageSize]);
+  }, [selectedObservationId, filteredObservations, currentPage, pageSize, groupedObservations]);
 
-  // Handle observation click
-  const handleObservationClick = (obs: AnimlImageLabel) => {
-    if (expandedObservation === obs.id) {
-      setExpandedObservation(null);
+  // Find observation by ID (works for both grouped and ungrouped)
+  // Also handles finding by image ID when in grouped mode
+  const findObservationById = (id: number): AnimlImageLabel | GroupedObservation | null => {
+    if (groupedObservations) {
+      // First try to find by primaryId
+      let found = groupedObservations.find(group => group.primaryId === id);
+      
+      // If not found, try to find by matching any observation with the same image ID
+      if (!found) {
+        const originalObs = observations.find(obs => obs.id === id);
+        if (originalObs && originalObs.animl_image_id) {
+          found = groupedObservations.find(group => group.animl_image_id === originalObs.animl_image_id);
+        }
+      }
+      
+      if (found) {
+        // Convert grouped observation back to AnimlImageLabel format for compatibility
+        return {
+          id: found.primaryId,
+          animl_image_id: found.animl_image_id,
+          deployment_id: found.deployment_id,
+          deployment_name: found.deployment_name,
+          timestamp: found.timestamp,
+          label: found.labels[0], // Use first (non-"animal" if available) label as primary
+          medium_url: found.medium_url,
+          small_url: found.small_url,
+          geometry: found.geometry
+        } as AnimlImageLabel;
+      }
     } else {
-      setExpandedObservation(obs.id);
+      return observations.find(obs => obs.id === id) || null;
     }
-    
-    onObservationClick?.(obs);
+    return null;
   };
+
+  // Get current observation index for keyboard navigation
+  const getCurrentObservationIndex = (): number => {
+    if (selectedObservationId === null) return -1;
+    if (groupedObservations) {
+      // For grouped observations, find by matching image ID
+      const selectedObs = observations.find(obs => obs.id === selectedObservationId);
+      if (selectedObs?.animl_image_id) {
+        return (filteredObservations as GroupedObservation[]).findIndex(
+          (obs: GroupedObservation) => obs.animl_image_id === selectedObs.animl_image_id
+        );
+      }
+      // Fallback to primaryId
+      return (filteredObservations as GroupedObservation[]).findIndex(
+        (obs: GroupedObservation) => obs.primaryId === selectedObservationId
+      );
+    } else {
+      return (filteredObservations as AnimlImageLabel[]).findIndex(
+        (obs: AnimlImageLabel) => obs.id === selectedObservationId
+      );
+    }
+  };
+
+  // Keyboard navigation handler
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only handle if sidebar is focused or mouse is over it
+      if (!isSidebarFocusedRef.current && !sidebarRef.current?.matches(':hover')) {
+        return;
+      }
+      
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        event.preventDefault();
+        
+        const currentIndex = getCurrentObservationIndex();
+        if (currentIndex === -1 && filteredObservations.length > 0) {
+          // If nothing selected, select first observation
+          const firstObs = filteredObservations[0];
+          if (groupedObservations) {
+            const groupObs = firstObs as GroupedObservation;
+            // Use the primaryId to find the original observation
+            const originalObs = observations.find(obs => obs.id === groupObs.primaryId);
+            if (originalObs) {
+              onObservationClick?.(originalObs);
+            }
+          } else {
+            onObservationClick?.(firstObs as AnimlImageLabel);
+          }
+          return;
+        }
+        
+        const direction = event.key === 'ArrowRight' ? 1 : -1;
+        const newIndex = currentIndex + direction;
+        
+        if (newIndex >= 0 && newIndex < filteredObservations.length) {
+          const nextObs = filteredObservations[newIndex];
+          if (groupedObservations) {
+            const groupObs = nextObs as GroupedObservation;
+            // Use the primaryId to find the original observation
+            const originalObs = observations.find(obs => obs.id === groupObs.primaryId);
+            if (originalObs) {
+              onObservationClick?.(originalObs);
+            }
+          } else {
+            onObservationClick?.(nextObs as AnimlImageLabel);
+          }
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [filteredObservations, selectedObservationId, groupedObservations, onObservationClick, observations]);
+
+  // Track sidebar focus
+  useEffect(() => {
+    const sidebar = sidebarRef.current;
+    if (!sidebar) return;
+    
+    const handleFocus = () => { isSidebarFocusedRef.current = true; };
+    const handleBlur = () => { isSidebarFocusedRef.current = false; };
+    const handleMouseEnter = () => { isSidebarFocusedRef.current = true; };
+    const handleMouseLeave = () => { isSidebarFocusedRef.current = false; };
+    
+    sidebar.addEventListener('focusin', handleFocus);
+    sidebar.addEventListener('focusout', handleBlur);
+    sidebar.addEventListener('mouseenter', handleMouseEnter);
+    sidebar.addEventListener('mouseleave', handleMouseLeave);
+    
+    return () => {
+      sidebar.removeEventListener('focusin', handleFocus);
+      sidebar.removeEventListener('focusout', handleBlur);
+      sidebar.removeEventListener('mouseenter', handleMouseEnter);
+      sidebar.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, []);
 
   // Show empty state if no search has been performed
   if (!hasSearched) {
     return (
-      <div id="animl-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col h-full">
+      <div ref={sidebarRef} id="animl-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col h-full" tabIndex={0}>
         <div id="animl-empty-state" className="flex flex-col items-center justify-center h-full p-8 text-center">
           <div id="search-prompt-icon" className="mb-4">
             <svg className="w-16 h-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -182,7 +433,7 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
 
   if (loading) {
     return (
-      <div id="animl-sidebar-loading" className="w-96 bg-white border-r border-gray-200 flex flex-col h-full">
+      <div ref={sidebarRef} id="animl-sidebar-loading" className="w-96 bg-white border-r border-gray-200 flex flex-col h-full" tabIndex={0}>
         <div id="animl-sidebar-loading-content" className="p-4 border-b border-gray-200">
           <h2 id="animl-sidebar-loading-title" className="text-lg font-semibold text-gray-900 mb-4">Animl Camera Traps</h2>
           <div id="animl-loading-container" className="flex flex-col items-center justify-center h-32 space-y-3">
@@ -196,12 +447,8 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
     );
   }
 
-  // Determine what to show based on view mode and selection
-  const showObservations = (viewMode === 'camera-centric' && selectedDeploymentId !== null) ||
-                           (viewMode === 'animal-centric' && selectedAnimalLabel !== null);
-
   return (
-    <div id="animl-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col">
+    <div ref={sidebarRef} id="animl-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col" tabIndex={0}>
       {/* Header */}
       <div id="animl-sidebar-header" className="p-4 border-b border-gray-200">
         <div id="animl-sidebar-title-container" className="mb-2">
@@ -293,61 +540,105 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
             ) : (
                 <>
                 <div id="animl-observations-list" className="divide-y divide-gray-200">
-                {paginatedObservations.map((observation, obsIndex) => (
+                {paginatedObservations.map((observation, obsIndex) => {
+                  // Handle both grouped and ungrouped observations
+                  const isGrouped = groupedObservations !== null;
+                  const obsId = isGrouped ? (observation as GroupedObservation).primaryId : (observation as AnimlImageLabel).id;
+                  const obsLabels = isGrouped ? (observation as GroupedObservation).labels : [(observation as AnimlImageLabel).label];
+                  const obsTimestamp = isGrouped ? (observation as GroupedObservation).timestamp : (observation as AnimlImageLabel).timestamp;
+                  const obsDeploymentName = isGrouped ? (observation as GroupedObservation).deployment_name : (observation as AnimlImageLabel).deployment_name;
+                  const obsSmallUrl = isGrouped ? (observation as GroupedObservation).small_url : (observation as AnimlImageLabel).small_url;
+                  const obsMediumUrl = isGrouped ? (observation as GroupedObservation).medium_url : (observation as AnimlImageLabel).medium_url;
+                  const obsImageId = isGrouped ? (observation as GroupedObservation).animl_image_id : (observation as AnimlImageLabel).animl_image_id;
+                  
+                  // Check if this observation should be highlighted
+                  // For grouped observations, check if selectedObservationId matches this image ID
+                  let isSelected = false;
+                  if (selectedObservationId !== null) {
+                    if (isGrouped) {
+                      // For grouped, check if the selected observation has the same image ID
+                      const selectedObs = observations.find(obs => obs.id === selectedObservationId);
+                      isSelected = selectedObs?.animl_image_id === obsImageId;
+                    } else {
+                      isSelected = selectedObservationId === obsId;
+                    }
+                  }
+                  const isExpanded = expandedObservation === obsId;
+                  
+                  return (
                   <div
-                    key={`observation-${observation.id}-${observation.animl_image_id || 'no-image-id'}-${obsIndex}`}
-                    id={`animl-observation-${observation.id}`}
+                    key={`observation-${obsId}-${obsImageId || 'no-image-id'}-${obsIndex}`}
+                    id={`animl-observation-${obsId}`}
                     className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                      (selectedObservationId !== null && selectedObservationId === observation.id) || 
-                      expandedObservation === observation.id 
+                      (isSelected || isExpanded)
                         ? 'bg-blue-50 border-l-4 border-blue-500' 
                         : ''
                     }`}
                     onClick={() => handleObservationClick(observation)}
                   >
-                    <div id={`animl-observation-wrapper-${observation.id}`} className="flex items-start space-x-3">
-                      {observation.small_url || observation.medium_url ? (
+                    <div id={`animl-observation-wrapper-${obsId}`} className="flex items-start space-x-3">
+                      {obsSmallUrl || obsMediumUrl ? (
                         <ThumbnailImage
-                          src={observation.small_url || observation.medium_url || ''}
-                          alt={observation.label}
+                          src={obsSmallUrl || obsMediumUrl || ''}
+                          alt={obsLabels[0]}
                           width={48}
                           height={48}
                           className="flex-shrink-0"
                         />
                       ) : (
-                        <div id={`animl-observation-placeholder-${observation.id}`} className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0">
-                          <Camera id={`animl-observation-placeholder-icon-${observation.id}`} className="w-6 h-6 text-gray-400" />
+                        <div id={`animl-observation-placeholder-${obsId}`} className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0">
+                          <Camera id={`animl-observation-placeholder-icon-${obsId}`} className="w-6 h-6 text-gray-400" />
                         </div>
                       )}
                       
-                      <div id={`animl-observation-content-${observation.id}`} className="flex-1 min-w-0">
-                        <div id={`animl-observation-header-${observation.id}`} className="flex items-center justify-between">
-                          <h3 id={`animl-observation-label-${observation.id}`} className="text-sm font-medium text-gray-900 truncate">
-                            {observation.label}
-                          </h3>
+                      <div id={`animl-observation-content-${obsId}`} className="flex-1 min-w-0">
+                        <div id={`animl-observation-header-${obsId}`} className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            {isGrouped && obsLabels.length > 1 ? (
+                              <div className="space-y-1">
+                                <h3 id={`animl-observation-primary-label-${obsId}`} className="text-sm font-medium text-gray-900">
+                                  {obsLabels[0]}
+                                </h3>
+                                <div id={`animl-observation-tags-${obsId}`} className="flex flex-wrap gap-1">
+                                  {obsLabels.map((label, labelIdx) => (
+                                    <span
+                                      key={`${obsId}-label-${labelIdx}`}
+                                      className="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-700 rounded"
+                                    >
+                                      {label}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : (
+                              <h3 id={`animl-observation-label-${obsId}`} className="text-sm font-medium text-gray-900 truncate">
+                                {obsLabels[0]}
+                              </h3>
+                            )}
+                          </div>
                         </div>
                         
-                        <div id={`animl-observation-metadata-${observation.id}`} className="mt-2 space-y-1">
-                          <div id={`animl-observation-date-${observation.id}`} className="flex items-center text-xs text-gray-500">
-                            <Calendar id={`animl-observation-date-icon-${observation.id}`} className="w-3 h-3 mr-1" />
-                            {formatDate(observation.timestamp)}
+                        <div id={`animl-observation-metadata-${obsId}`} className="mt-2 space-y-1">
+                          <div id={`animl-observation-date-${obsId}`} className="flex items-center text-xs text-gray-500">
+                            <Calendar id={`animl-observation-date-icon-${obsId}`} className="w-3 h-3 mr-1" />
+                            {formatDate(obsTimestamp)}
                           </div>
-                          {observation.deployment_name && (
-                            <div id={`animl-observation-deployment-${observation.id}`} className="flex items-center text-xs text-gray-500">
-                              <Camera id={`animl-observation-deployment-icon-${observation.id}`} className="w-3 h-3 mr-1" />
-                              {observation.deployment_name}
+                          {obsDeploymentName && (
+                            <div id={`animl-observation-deployment-${obsId}`} className="flex items-center text-xs text-gray-500">
+                              <Camera id={`animl-observation-deployment-icon-${obsId}`} className="w-3 h-3 mr-1" />
+                              {obsDeploymentName}
                             </div>
                           )}
                         </div>
 
                         {/* Expanded Details */}
-                        {expandedObservation === observation.id && (
-                          <div id={`animl-expanded-details-${observation.id}`} className="mt-3 space-y-2">
-                            {observation.medium_url && (
+                        {expandedObservation === obsId && (
+                          <div id={`animl-expanded-details-${obsId}`} className="mt-3 space-y-2">
+                            {obsMediumUrl && (
                               <img
-                                id={`animl-observation-expanded-image-${observation.id}`}
-                                src={observation.medium_url}
-                                alt={observation.label}
+                                id={`animl-observation-expanded-image-${obsId}`}
+                                src={obsMediumUrl}
+                                alt={obsLabels[0]}
                                 className="w-full rounded-lg"
                               />
                             )}
@@ -356,7 +647,8 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
                 </div>
               
                 {/* Pagination and Loading More Indicator */}

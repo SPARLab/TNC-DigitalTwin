@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Calendar, Camera, Tag, Download, ShoppingCart, Filter, MapPin } from 'lucide-react';
 import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag } from '../services/animlService';
 import { AnimlViewMode } from './AnimlSidebar';
@@ -31,6 +31,9 @@ interface AnimlDetailsSidebarProps {
   onLabelsChange?: (labels: string[]) => void;
   hasImages?: boolean;
   onHasImagesChange?: (hasImages: boolean | undefined) => void;
+  
+  // For keyboard navigation
+  onObservationSelect?: (observation: AnimlImageLabel | null) => void;
 }
 
 type TabType = 'details' | 'export';
@@ -54,9 +57,12 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
   selectedLabels = [],
   onLabelsChange,
   hasImages,
-  onHasImagesChange
+  onHasImagesChange,
+  onObservationSelect
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('details');
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const isSidebarFocusedRef = useRef(false);
 
   // Switch to details tab when an item is selected
   useEffect(() => {
@@ -94,6 +100,76 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
+
+  // Keyboard navigation handler for details sidebar
+  useEffect(() => {
+    // Only enable keyboard nav when viewing observations (either selected observation or in camera-centric with deployment)
+    const hasObservations = observations.length > 0;
+    const shouldEnableNav = (selectedObservation || (viewMode === 'camera-centric' && selectedDeployment)) && hasObservations;
+    
+    if (!onObservationSelect || !shouldEnableNav) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only handle if sidebar is focused or mouse is over it
+      if (!isSidebarFocusedRef.current && !sidebarRef.current?.matches(':hover')) {
+        return;
+      }
+      
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        event.preventDefault();
+        
+        // If no observation selected, select first
+        if (!selectedObservation && observations.length > 0) {
+          onObservationSelect(observations[0]);
+          return;
+        }
+        
+        if (!selectedObservation) return;
+        
+        const currentIndex = observations.findIndex(obs => obs.id === selectedObservation.id);
+        if (currentIndex === -1 && observations.length > 0) {
+          // If current observation not in list, select first
+          onObservationSelect(observations[0]);
+          return;
+        }
+        
+        const direction = event.key === 'ArrowRight' ? 1 : -1;
+        const newIndex = currentIndex + direction;
+        
+        if (newIndex >= 0 && newIndex < observations.length) {
+          onObservationSelect(observations[newIndex]);
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [observations, selectedObservation, onObservationSelect, viewMode, selectedDeployment]);
+
+  // Track sidebar focus
+  useEffect(() => {
+    const sidebar = sidebarRef.current;
+    if (!sidebar) return;
+    
+    const handleFocus = () => { isSidebarFocusedRef.current = true; };
+    const handleBlur = () => { isSidebarFocusedRef.current = false; };
+    const handleMouseEnter = () => { isSidebarFocusedRef.current = true; };
+    const handleMouseLeave = () => { isSidebarFocusedRef.current = false; };
+    
+    sidebar.addEventListener('focusin', handleFocus);
+    sidebar.addEventListener('focusout', handleBlur);
+    sidebar.addEventListener('mouseenter', handleMouseEnter);
+    sidebar.addEventListener('mouseleave', handleMouseLeave);
+    
+    return () => {
+      sidebar.removeEventListener('focusin', handleFocus);
+      sidebar.removeEventListener('focusout', handleBlur);
+      sidebar.removeEventListener('mouseenter', handleMouseEnter);
+      sidebar.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, []);
 
   // Render tab buttons
   const renderTabButtons = () => (
@@ -210,6 +286,82 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
               </div>
             )}
           </div>
+
+          {/* Observation Details Section (when observation is selected) */}
+          {selectedObservation && (
+            <>
+              <div className="border-t border-gray-200 my-4"></div>
+              <div id="animl-observation-section" className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Tag className="w-4 h-4 text-gray-400" />
+                  <span className="text-xs font-medium text-gray-600">Selected Observation</span>
+                </div>
+
+                {/* Photo */}
+                {selectedObservation.medium_url && (
+                  <div id="animl-observation-photo-section" className="mb-4">
+                    <img
+                      id="animl-observation-photo"
+                      src={selectedObservation.medium_url}
+                      alt={selectedObservation.label}
+                      className="w-full rounded-lg"
+                      loading="lazy"
+                    />
+                  </div>
+                )}
+
+                <div id="animl-observation-details" className="space-y-4">
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-900 mb-3">
+                      {selectedObservation.label}
+                    </h3>
+                  </div>
+
+                  <div id="animl-observation-date" className="flex items-start gap-3">
+                    <Calendar className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Timestamp</p>
+                      <p className="text-sm text-gray-900">{formatDate(selectedObservation.timestamp)}</p>
+                    </div>
+                  </div>
+
+                  {selectedObservation.deployment_name && (
+                    <div id="animl-observation-camera" className="flex items-start gap-3">
+                      <Camera className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Camera Trap</p>
+                        <p className="text-sm text-gray-900">{selectedObservation.deployment_name}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedObservation.geometry && (
+                    <div id="animl-observation-location" className="flex items-start gap-3">
+                      <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Location</p>
+                        <p className="text-sm text-gray-900">
+                          {selectedObservation.geometry.coordinates[1].toFixed(4)}, {selectedObservation.geometry.coordinates[0].toFixed(4)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedObservation.animl_image_id && (
+                    <div id="animl-observation-image-id" className="flex items-start gap-3">
+                      <div className="w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-gray-400 text-xs">#</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Image ID</p>
+                        <p className="text-sm text-gray-900">{selectedObservation.animl_image_id}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       );
     }
@@ -602,7 +754,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
   };
 
   return (
-    <div id="animl-details-sidebar" className="w-96 bg-white border-l border-gray-200 flex flex-col h-full">
+    <div ref={sidebarRef} id="animl-details-sidebar" className="w-96 bg-white border-l border-gray-200 flex flex-col h-full" tabIndex={0}>
       {/* Tab Buttons */}
       {renderTabButtons()}
 

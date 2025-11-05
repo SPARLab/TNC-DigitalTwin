@@ -464,17 +464,72 @@ function App() {
     }
   };
 
-  const handleAnimlDeploymentClick = (deployment: AnimlDeployment) => {
+  const handleAnimlDeploymentClick = async (deployment: AnimlDeployment) => {
     console.log('🖱️ App: Animl deployment clicked in sidebar:', deployment.id);
     setSelectedAnimlDeployment(deployment);
     setSelectedAnimlAnimalTag(null);
     setSelectedAnimlObservation(null);
+    
     // Trigger map highlight immediately
     if (mapViewRef.current) {
       console.log('🗺️ App: Calling highlightDeployment');
       mapViewRef.current.highlightDeployment(deployment.id);
     } else {
       console.warn('⚠️ App: mapViewRef.current is not available');
+    }
+    
+    // Load observations for this deployment
+    setAnimlLoadingObservations(true);
+    try {
+      // Use the same date range from last search
+      const startDate = lastSearchedFilters.startDate || undefined;
+      const endDate = lastSearchedFilters.endDate || undefined;
+      
+      // Get spatial filter from last search
+      const searchMode = lastSearchedFilters.spatialFilter === 'Dangermond + Margin' ? 'expanded' : 
+                        lastSearchedFilters.spatialFilter === 'Custom' ? 'custom' : 'preserve-only';
+      
+      // Convert polygon geometry to string if needed
+      let customPolygonStr: string | undefined;
+      if (lastSearchedFilters.spatialFilter === 'Custom' && lastSearchedFilters.customPolygon) {
+        customPolygonStr = typeof lastSearchedFilters.customPolygon === 'string' 
+          ? lastSearchedFilters.customPolygon 
+          : JSON.stringify(lastSearchedFilters.customPolygon);
+      }
+      
+      // Get total count first
+      const totalCount = await animlService.getImageLabelsCount({
+        startDate,
+        endDate,
+        deploymentIds: [deployment.id],
+        searchMode,
+        customPolygon: customPolygonStr
+      });
+      setAnimlTotalObservationsCount(totalCount);
+      
+      // Fetch first 1000 observations immediately (ordered by timestamp DESC - most recent first)
+      const observations = await animlService.queryImageLabels({
+        startDate,
+        endDate,
+        deploymentIds: [deployment.id],
+        maxResults: 1000, // First batch of 1000 observations
+        searchMode,
+        customPolygon: customPolygonStr
+      });
+      
+      setAnimlImageLabels(observations);
+      console.log(`✅ Loaded ${observations.length} of ${totalCount} observations for deployment ${deployment.id}`);
+      
+      // If there are more observations, load them in the background
+      if (observations.length < totalCount) {
+        loadMoreAnimlObservationsForDeployment(deployment.id, observations.length, totalCount, startDate, endDate, searchMode, customPolygonStr);
+      }
+    } catch (error) {
+      console.error('Error loading observations for deployment:', error);
+      setAnimlImageLabels([]);
+      setAnimlTotalObservationsCount(null);
+    } finally {
+      setAnimlLoadingObservations(false);
     }
   };
 
@@ -544,7 +599,7 @@ function App() {
     }
   };
 
-  // Load more observations in the background
+  // Load more observations in the background (for animal tags)
   const loadMoreAnimlObservations = async (
     label: string,
     currentCount: number,
@@ -588,6 +643,50 @@ function App() {
     }
   };
 
+  // Load more observations in the background (for deployments)
+  const loadMoreAnimlObservationsForDeployment = async (
+    deploymentId: number,
+    currentCount: number,
+    totalCount: number,
+    startDate: string | undefined,
+    endDate: string | undefined,
+    searchMode: 'preserve-only' | 'expanded' | 'custom',
+    customPolygonStr: string | undefined
+  ) => {
+    setAnimlLoadingMoreObservations(true);
+    try {
+      const remainingCount = totalCount - currentCount;
+      if (remainingCount <= 0) {
+        console.log('✅ All observations already loaded');
+        return;
+      }
+      
+      // Fetch remaining observations starting from offset 1000 (ordered by timestamp DESC - most recent first)
+      const moreObservations = await animlService.queryImageLabels({
+        startDate,
+        endDate,
+        deploymentIds: [deploymentId],
+        maxResults: remainingCount, // Get all remaining
+        resultOffset: 1000, // Start after the first 1000
+        searchMode,
+        customPolygon: customPolygonStr
+      });
+      
+      // Combine with existing observations (avoiding duplicates)
+      setAnimlImageLabels(prev => {
+        const existingIds = new Set(prev.map(obs => obs.id));
+        const newObservations = moreObservations.filter(obs => !existingIds.has(obs.id));
+        const combined = [...prev, ...newObservations];
+        console.log(`✅ Background: Added ${newObservations.length} observations (total: ${combined.length} of ${totalCount})`);
+        return combined;
+      });
+    } catch (error) {
+      console.error('Error loading more observations for deployment:', error);
+    } finally {
+      setAnimlLoadingMoreObservations(false);
+    }
+  };
+
   const handleAnimlObservationClick = (observation: AnimlImageLabel) => {
     setSelectedAnimlObservation(observation);
     // Highlight the camera/deployment that took this observation
@@ -600,6 +699,9 @@ function App() {
     setSelectedAnimlDeployment(null);
     setSelectedAnimlAnimalTag(null);
     setSelectedAnimlObservation(null);
+    // Clear observations when closing details
+    setAnimlImageLabels([]);
+    setAnimlTotalObservationsCount(null);
     // Clear map highlight
     mapViewRef.current?.clearDeploymentHighlight();
   };
@@ -2267,6 +2369,7 @@ function App() {
             onExportGeoJSON={handleAnimlExportGeoJSON}
             onAddToCart={handleAnimlAddToCart}
             onClose={handleAnimlDetailsClose}
+            onObservationSelect={setSelectedAnimlObservation}
             hasSearched={hasSearched}
             dateRangeText={animlDateRangeText}
             selectedDeploymentIds={animlCustomFilters?.deploymentIds || []}

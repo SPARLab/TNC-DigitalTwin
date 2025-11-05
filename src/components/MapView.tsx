@@ -3353,19 +3353,15 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       return;
     }
     
-    console.log('🎯 Highlighting Animl deployment:', id);
-    
     // Create the async operation
     const operation = (async () => {
       // Wait for any pending highlight operation to complete before clearing
       if (highlightOperationRef.current) {
-        console.log('⏸️ Waiting for previous highlight operation to complete...');
         await highlightOperationRef.current;
       }
       
       // Now clear any existing highlight
       if (highlightHandleRef.current) {
-        console.log('🧹 Clearing previous highlight');
         highlightHandleRef.current.remove();
         highlightHandleRef.current = null;
       }
@@ -3396,63 +3392,46 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           
           // Check if the point is contained in the current view extent
           if (!view.extent.contains(deploymentPoint)) {
-            console.log('📍 Deployment not in view, panning to center it...');
             try {
               await view.goTo({
                 target: deploymentPoint,
                 zoom: view.zoom > 14 ? view.zoom : 14 // Use current zoom if already zoomed in, otherwise zoom to 14
               });
-              console.log('✅ Panned to deployment location');
             } catch (goToError: any) {
               // Ignore AbortError (user interaction interrupted the pan)
               if (goToError.name !== 'AbortError') {
                 console.warn('⚠️ Error panning to deployment:', goToError);
               }
             }
-          } else {
-            console.log('✅ Deployment already in view');
           }
         }
         
         // Ensure the layer is loaded and the layer view is ready
-        console.log('⏳ Waiting for Animl layer view to be ready...');
         const layerView = await view.whenLayerView(animlLayer);
-        console.log('✅ Animl layer view obtained');
         
         // Wait for the layer view to finish any pending updates
         if ((layerView as any).updating) {
-          console.log('⏳ Animl layer view is updating, waiting...');
           await reactiveUtils.whenOnce(() => !(layerView as any).updating);
-          console.log('✅ Animl layer update complete');
           await new Promise(resolve => setTimeout(resolve, 50));
         }
         
         // Add a small delay to ensure rendering pipeline is stable
         await new Promise(resolve => setTimeout(resolve, 100));
-        console.log('✅ Ready to highlight Animl deployment');
         
         // Use ArcGIS's native highlight method
-        console.log('🚀 About to call layerView.highlight() for deployment');
         const highlightHandle = (layerView as any).highlight(targetGraphic);
-        console.log('🎯 Highlight handle returned:', highlightHandle);
         
         highlightHandleRef.current = highlightHandle;
-        
-        console.log('✨ Applied native ArcGIS highlight for deployment');
         
         // Open the popup
         await new Promise(resolve => setTimeout(resolve, 50));
         
         if (view && targetGraphic.geometry) {
-          console.log('💬 Opening popup for deployment...');
-          
           try {
             view.openPopup({
               features: [targetGraphic],
               location: targetGraphic.geometry as __esri.Point
             });
-            
-            console.log('✅ Popup opened successfully for deployment');
           } catch (error) {
             console.error('❌ Error opening popup for deployment:', error);
           }
@@ -3469,13 +3448,10 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   
   // Clear deployment highlight method
   const clearDeploymentHighlight = () => {
-    console.log('🧹 Clearing Animl deployment highlight');
-    
     // Remove the ArcGIS native highlight
     if (highlightHandleRef.current) {
       highlightHandleRef.current.remove();
       highlightHandleRef.current = null;
-      console.log('✅ Removed Animl deployment highlight');
     }
     
     // Close popup
