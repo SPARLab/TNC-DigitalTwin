@@ -196,6 +196,9 @@ function App() {
   const [animlImageLabels, setAnimlImageLabels] = useState<AnimlImageLabel[]>([]);
   const [animlAnimalTags, setAnimlAnimalTags] = useState<AnimlAnimalTag[]>([]);
   const [animlLoading, setAnimlLoading] = useState(false);
+  const [animlLoadingObservations, setAnimlLoadingObservations] = useState(false);
+  const [animlLoadingMoreObservations, setAnimlLoadingMoreObservations] = useState(false);
+  const [animlTotalObservationsCount, setAnimlTotalObservationsCount] = useState<number | null>(null);
   const [selectedAnimlDeployment, setSelectedAnimlDeployment] = useState<AnimlDeployment | null>(null);
   const [selectedAnimlAnimalTag, setSelectedAnimlAnimalTag] = useState<AnimlAnimalTag | null>(null);
   const [selectedAnimlObservation, setSelectedAnimlObservation] = useState<AnimlImageLabel | null>(null);
@@ -475,10 +478,114 @@ function App() {
     }
   };
 
-  const handleAnimlAnimalTagClick = (tag: AnimlAnimalTag | null) => {
+  const handleAnimlAnimalTagClick = async (tag: AnimlAnimalTag | null) => {
     setSelectedAnimlAnimalTag(tag);
     setSelectedAnimlDeployment(null);
     setSelectedAnimlObservation(null);
+    
+    // If tag is selected, load observations for that category
+    if (tag) {
+      setAnimlLoadingObservations(true);
+      try {
+        // Use the same date range from last search
+        const startDate = lastSearchedFilters.startDate || undefined;
+        const endDate = lastSearchedFilters.endDate || undefined;
+        
+        // Get spatial filter from last search
+        const searchMode = lastSearchedFilters.spatialFilter === 'Dangermond + Margin' ? 'expanded' : 
+                          lastSearchedFilters.spatialFilter === 'Custom' ? 'custom' : 'preserve-only';
+        
+        // Convert polygon geometry to string if needed
+        let customPolygonStr: string | undefined;
+        if (lastSearchedFilters.spatialFilter === 'Custom' && lastSearchedFilters.customPolygon) {
+          customPolygonStr = typeof lastSearchedFilters.customPolygon === 'string' 
+            ? lastSearchedFilters.customPolygon 
+            : JSON.stringify(lastSearchedFilters.customPolygon);
+        }
+        
+        // Get total count first
+        const totalCount = await animlService.getImageLabelsCount({
+          startDate,
+          endDate,
+          labels: [tag.label],
+          searchMode,
+          customPolygon: customPolygonStr
+        });
+        setAnimlTotalObservationsCount(totalCount);
+        
+        // Fetch first 1000 observations immediately (using larger page size for efficiency)
+        const observations = await animlService.queryImageLabels({
+          startDate,
+          endDate,
+          labels: [tag.label],
+          maxResults: 1000, // First batch of 1000 observations
+          searchMode,
+          customPolygon: customPolygonStr
+        });
+        
+        setAnimlImageLabels(observations);
+        console.log(`✅ Loaded ${observations.length} of ${totalCount} observations for ${tag.label}`);
+        
+        // If there are more observations, load them in the background
+        if (observations.length < totalCount) {
+          loadMoreAnimlObservations(tag.label, observations.length, totalCount, startDate, endDate, searchMode, customPolygonStr);
+        }
+      } catch (error) {
+        console.error('Error loading observations for category:', error);
+        setAnimlImageLabels([]);
+        setAnimlTotalObservationsCount(null);
+      } finally {
+        setAnimlLoadingObservations(false);
+      }
+    } else {
+      // Clear observations when going back
+      setAnimlImageLabels([]);
+      setAnimlTotalObservationsCount(null);
+    }
+  };
+
+  // Load more observations in the background
+  const loadMoreAnimlObservations = async (
+    label: string,
+    currentCount: number,
+    totalCount: number,
+    startDate: string | undefined,
+    endDate: string | undefined,
+    searchMode: 'preserve-only' | 'expanded' | 'custom',
+    customPolygonStr: string | undefined
+  ) => {
+    setAnimlLoadingMoreObservations(true);
+    try {
+      const remainingCount = totalCount - currentCount;
+      if (remainingCount <= 0) {
+        console.log('✅ All observations already loaded');
+        return;
+      }
+      
+      // Fetch remaining observations starting from offset 1000 (will use 2000 page size internally)
+      const moreObservations = await animlService.queryImageLabels({
+        startDate,
+        endDate,
+        labels: [label],
+        maxResults: remainingCount, // Get all remaining
+        resultOffset: 1000, // Start after the first 1000
+        searchMode,
+        customPolygon: customPolygonStr
+      });
+      
+      // Combine with existing observations (avoiding duplicates)
+      setAnimlImageLabels(prev => {
+        const existingIds = new Set(prev.map(obs => obs.id));
+        const newObservations = moreObservations.filter(obs => !existingIds.has(obs.id));
+        const combined = [...prev, ...newObservations];
+        console.log(`✅ Background: Added ${newObservations.length} observations (total: ${combined.length} of ${totalCount})`);
+        return combined;
+      });
+    } catch (error) {
+      console.error('Error loading more observations:', error);
+    } finally {
+      setAnimlLoadingMoreObservations(false);
+    }
   };
 
   const handleAnimlObservationClick = (observation: AnimlImageLabel) => {
@@ -1076,64 +1183,49 @@ function App() {
 
       const searchAniml = async () => {
         try {
-          console.log('🔍 Animl Search Starting:', {
-            searchMode,
-            startDate,
-            endDate,
-            spatialFilter: filters.spatialFilter,
-            hasCustomPolygon: !!customPolygonGeometry
-          });
-          
-          // Fetch deployments and image labels in parallel
-          const [deployments, imageLabels] = await Promise.all([
+          // Fetch deployments and animal category counts (without all observations)
+          const [deployments, animalTags] = await Promise.all([
             animlService.queryDeployments({
               searchMode,
               customPolygon: customPolygonGeometry
             }).catch(error => {
               console.error('❌ Failed to fetch deployments:', error);
-              // Return empty array on error instead of crashing
               return [];
             }),
-            animlService.queryImageLabels({
+            // Get category counts without fetching all observations
+            animlService.getAnimalCategoryCounts({
               startDate,
               endDate,
               searchMode,
-              customPolygon: customPolygonGeometry,
-              maxResults: 1000, // Reduced from 10000 to 1000 for faster loading
-              onProgress: (current, total, percentage) => {
-                console.log(`📊 Animl Image Labels Progress: ${current}/${total} (${percentage}%)`);
-              }
+              customPolygon: customPolygonGeometry
             }).catch(error => {
-              console.error('❌ Failed to fetch image labels:', error);
-              // Return empty array on error instead of crashing
+              console.error('❌ Failed to fetch animal category counts:', error);
               return [];
             })
           ]);
 
-          console.log(`✅ Animl Search Results: ${deployments.length} deployments, ${imageLabels.length} image labels`);
+          console.log(`✅ Animl Search Results: ${deployments.length} deployments, ${animalTags.length} animal categories`);
 
-          // Enhance deployments with stats
-          const enhancedDeployments = await animlService.enhanceDeploymentsWithStats(deployments, imageLabels);
+          // Enhance deployments with stats (we'll need to get counts separately)
+          // For now, just set deployments without stats since we don't have all observations
+          const enhancedDeployments = deployments; // Will enhance later if needed
           
-          // Aggregate animal tags
-          const animalTags = await animlService.aggregateAnimalTags(imageLabels, 10);
-
           setAnimlDeployments(enhancedDeployments);
-          setAnimlImageLabels(imageLabels);
+          setAnimlImageLabels([]); // Don't load observations until category is selected
           setAnimlAnimalTags(animalTags);
           
           // Update last searched time range
           setLastSearchedDaysBack(filters.daysBack || 30);
           
-          // Reload Animl observations on map
+          // Reload Animl observations on map (only show deployments, not individual observations)
           mapViewRef.current?.reloadAnimlObservations({
             deployments: enhancedDeployments,
-            imageLabels: imageLabels,
+            imageLabels: [], // Don't show individual observations on map initially
             viewMode: animlViewMode,
-            startDate,
-            endDate,
+            startDate: startDate, // Already in YYYY-MM-DD string format
+            endDate: endDate, // Already in YYYY-MM-DD string format
             searchMode,
-            customPolygon: customPolygonGeometry,
+            customPolygon: customPolygonGeometry ? JSON.stringify(customPolygonGeometry) : undefined,
             showSearchArea: filters.spatialFilter === 'Dangermond + Margin'
           });
         } catch (error) {
@@ -1765,6 +1857,9 @@ function App() {
           animlAnimalTags={animlAnimalTags}
           animlImageLabels={animlImageLabels}
           animlLoading={animlLoading}
+          animlLoadingObservations={animlLoadingObservations}
+          animlLoadingMoreObservations={animlLoadingMoreObservations}
+          animlTotalObservationsCount={animlTotalObservationsCount}
           selectedAnimlDeployment={selectedAnimlDeployment}
           selectedAnimlDeploymentId={selectedAnimlDeployment?.id || null}
           selectedAnimlAnimalTag={selectedAnimlAnimalTag}

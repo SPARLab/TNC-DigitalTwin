@@ -13,6 +13,9 @@ interface WildlifeAnimlViewProps {
   animalTags?: AnimlAnimalTag[];
   imageLabels: AnimlImageLabel[];
   loading: boolean;
+  loadingObservations?: boolean; // Loading state when category observations are being fetched
+  loadingMoreObservations?: boolean; // Loading state for background loading
+  totalObservationsCount?: number | null; // Total count for pagination info
   
   // Selected items
   selectedDeploymentId?: number | null;
@@ -58,6 +61,9 @@ const WildlifeAnimlView: React.FC<WildlifeAnimlViewProps> = ({
   animalTags = [],
   imageLabels,
   loading,
+  loadingObservations = false,
+  loadingMoreObservations = false,
+  totalObservationsCount = null,
   selectedDeploymentId,
   selectedAnimalLabel,
   selectedObservationId,
@@ -88,6 +94,9 @@ const WildlifeAnimlView: React.FC<WildlifeAnimlViewProps> = ({
       selectedAnimalLabel={selectedAnimalLabel}
       onAnimalTagClick={onAnimalTagClick}
       loading={loading}
+      loadingObservations={loadingObservations}
+      loadingMoreObservations={loadingMoreObservations}
+      totalObservationsCount={totalObservationsCount}
       dateRangeText={dateRangeText}
       hasSearched={hasSearched}
       observations={displayedObservations}

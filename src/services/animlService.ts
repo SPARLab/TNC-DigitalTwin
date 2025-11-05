@@ -50,6 +50,12 @@ export interface AnimlQueryOptions {
   geometry?: string;
   geometryType?: string;
   spatialRel?: string;
+  outStatistics?: Array<{
+    statisticType: string;
+    onStatisticField: string;
+    outStatisticFieldName: string;
+  }>;
+  groupByFieldsForStatistics?: string;
 }
 
 export interface AnimlServiceQueryOptions {
@@ -60,7 +66,7 @@ export interface AnimlServiceQueryOptions {
   spatialExtent?: { xmin: number; ymin: number; xmax: number; ymax: number };
   maxResults?: number;
   pageSize?: number;
-  resultOffset?: number;
+  resultOffset?: number; // Offset for pagination (skip N results)
   searchMode?: 'preserve-only' | 'expanded' | 'custom';
   customPolygon?: string;
   onProgress?: (current: number, total: number, percentage: number) => void;
@@ -196,28 +202,311 @@ class AnimlService {
   }
 
   /**
-   * Get count of image labels by category/label
+   * Get unique animal categories (labels) without fetching all observations
+   * Uses ArcGIS statistics query with groupByFieldsForStatistics to get ALL unique labels
+   * regardless of recency (unlike sampling which might miss older categories)
    */
-  async getImageLabelsCountByCategory(options: AnimlServiceQueryOptions = {}): Promise<Record<string, number>> {
+  async getUniqueAnimalCategories(options: AnimlServiceQueryOptions = {}): Promise<string[]> {
+    const {
+      startDate,
+      endDate,
+      deploymentIds = []
+    } = options;
+
     try {
-      // First get all unique labels
-      const allLabels = await this.queryImageLabels({
-        ...options,
-        maxResults: 100000 // Large limit to get all labels for counting
-      });
+      let whereClause = '1=1';
 
-      // Count by label
-      const counts: Record<string, number> = {};
-      allLabels.forEach(label => {
-        counts[label.label] = (counts[label.label] || 0) + 1;
-      });
+      // Build where clause filters
+      if (startDate && endDate) {
+        const startDateObj = new Date(startDate + 'T00:00:00Z');
+        const endDateObj = new Date(endDate + 'T23:59:59Z');
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        
+        if (endDateObj <= today) {
+          const startDateStr = startDateObj.toISOString().replace('T', ' ').substring(0, 19);
+          const endDateStr = endDateObj.toISOString().replace('T', ' ').substring(0, 19);
+          whereClause += ` AND timestamp >= DATE '${startDateStr}' AND timestamp <= DATE '${endDateStr}'`;
+        }
+      }
 
-      return counts;
+      if (deploymentIds.length > 0) {
+        const deploymentFilter = deploymentIds.join(',');
+        whereClause += ` AND deployment_id IN (${deploymentFilter})`;
+      }
+
+      // Use statistics query to get unique labels - this gets ALL unique values, not just recent ones
+      // Note: outStatistics must be JSON stringified, not URL-encoded as a URLSearchParam
+      const outStatistics = JSON.stringify([
+        {
+          statisticType: 'COUNT',
+          onStatisticField: 'label',
+          outStatisticFieldName: 'count'
+        }
+      ]);
+
+      const queryUrl = `${this.baseUrl}/${this.imageLabelsLayerId}/query`;
+      const params = new URLSearchParams({
+        where: whereClause,
+        outStatistics: outStatistics,
+        groupByFieldsForStatistics: 'label',
+        f: 'json'
+      });
+      const fullUrl = `${queryUrl}?${params}`;
+      
+      const response = await fetch(fullUrl);
+      
+      if (!response.ok) {
+        console.warn('⚠️ Animl: Statistics query failed, falling back to sampling method');
+        return await this.getUniqueAnimalCategoriesFallback(options);
+      }
+
+      const data = await response.json();
+      if (data.error) {
+        console.warn('⚠️ Animl: Statistics query error, falling back:', data.error);
+        return await this.getUniqueAnimalCategoriesFallback(options);
+      }
+
+      // Extract unique labels from statistics results
+      const uniqueLabels = (data.features || [])
+        .map((feature: any) => feature.attributes?.label)
+        .filter((label: string) => label != null);
+
+      const labelsArray = uniqueLabels.sort((a: string, b: string) => 
+        a.toLowerCase().localeCompare(b.toLowerCase())
+      );
+
+      return labelsArray;
     } catch (error) {
-      console.error('Error getting Animl image labels count by category:', error);
-      throw error;
+      console.error('Error getting unique animal categories:', error);
+      console.warn('⚠️ Animl: Falling back to sampling method');
+      return await this.getUniqueAnimalCategoriesFallback(options);
     }
   }
+
+  /**
+   * Fallback method: Sample recent records to find unique labels
+   * Used when statistics query fails
+   */
+  private async getUniqueAnimalCategoriesFallback(options: AnimlServiceQueryOptions = {}): Promise<string[]> {
+    const {
+      startDate,
+      endDate,
+      deploymentIds = []
+    } = options;
+
+    try {
+      let whereClause = '1=1';
+
+      if (startDate && endDate) {
+        const startDateObj = new Date(startDate + 'T00:00:00Z');
+        const endDateObj = new Date(endDate + 'T23:59:59Z');
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        
+        if (endDateObj <= today) {
+          const startDateStr = startDateObj.toISOString().replace('T', ' ').substring(0, 19);
+          const endDateStr = endDateObj.toISOString().replace('T', ' ').substring(0, 19);
+          whereClause += ` AND timestamp >= DATE '${startDateStr}' AND timestamp <= DATE '${endDateStr}'`;
+        }
+      }
+
+      if (deploymentIds.length > 0) {
+        const deploymentFilter = deploymentIds.join(',');
+        whereClause += ` AND deployment_id IN (${deploymentFilter})`;
+      }
+
+      // Fallback: Fetch a sample to get unique labels
+      const params: AnimlQueryOptions = {
+        where: whereClause,
+        outFields: 'label',
+        returnGeometry: false,
+        f: 'json',
+        resultRecordCount: 5000,
+        orderByFields: 'timestamp DESC'
+      };
+
+      const queryUrl = `${this.baseUrl}/${this.imageLabelsLayerId}/query`;
+      const fullUrl = `${queryUrl}?${new URLSearchParams(params as any)}`;
+      
+      const response = await fetch(fullUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch unique categories: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(`API error: ${JSON.stringify(data.error)}`);
+      }
+
+      const uniqueLabels = new Set<string>();
+      (data.features || []).forEach((feature: any) => {
+        const label = feature.attributes?.label;
+        if (label) {
+          uniqueLabels.add(label);
+        }
+      });
+
+      const labelsArray = Array.from(uniqueLabels).sort((a, b) => 
+        a.toLowerCase().localeCompare(b.toLowerCase())
+      );
+
+      return labelsArray;
+    } catch (error) {
+      console.error('Error in fallback method:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get animal category counts grouped by label without fetching all observations
+   * Uses a single statistics query to get both unique categories AND their counts
+   */
+  async getAnimalCategoryCounts(options: AnimlServiceQueryOptions = {}): Promise<AnimlAnimalTag[]> {
+    const {
+      startDate,
+      endDate,
+      deploymentIds = []
+    } = options;
+
+    try {
+      let whereClause = '1=1';
+
+      // Build where clause filters
+      if (startDate && endDate) {
+        const startDateObj = new Date(startDate + 'T00:00:00Z');
+        const endDateObj = new Date(endDate + 'T23:59:59Z');
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        
+        if (endDateObj <= today) {
+          const startDateStr = startDateObj.toISOString().replace('T', ' ').substring(0, 19);
+          const endDateStr = endDateObj.toISOString().replace('T', ' ').substring(0, 19);
+          whereClause += ` AND timestamp >= DATE '${startDateStr}' AND timestamp <= DATE '${endDateStr}'`;
+        }
+      }
+
+      if (deploymentIds.length > 0) {
+        const deploymentFilter = deploymentIds.join(',');
+        whereClause += ` AND deployment_id IN (${deploymentFilter})`;
+      }
+
+      // Use statistics query to get unique labels AND their counts in a single query
+      const outStatistics = JSON.stringify([
+        {
+          statisticType: 'COUNT',
+          onStatisticField: 'label',
+          outStatisticFieldName: 'count'
+        }
+      ]);
+
+      const queryUrl = `${this.baseUrl}/${this.imageLabelsLayerId}/query`;
+      const params = new URLSearchParams({
+        where: whereClause,
+        outStatistics: outStatistics,
+        groupByFieldsForStatistics: 'label',
+        f: 'json'
+      });
+      const fullUrl = `${queryUrl}?${params}`;
+
+      const response = await fetch(fullUrl);
+      
+      if (!response.ok) {
+        // Fallback to individual queries if statistics query fails
+        console.warn('⚠️ Animl: Statistics query failed, falling back to individual count queries');
+        return await this.getAnimalCategoryCountsFallback(options);
+      }
+
+      const data = await response.json();
+      if (data.error) {
+        console.warn('⚠️ Animl: Statistics query error, falling back:', data.error);
+        return await this.getAnimalCategoryCountsFallback(options);
+      }
+
+      // Extract labels and counts directly from statistics results
+      const animalTags: AnimlAnimalTag[] = (data.features || [])
+        .map((feature: any) => {
+          const label = feature.attributes?.label;
+          const count = feature.attributes?.count || 0;
+          
+          return {
+            label: label || 'Unknown',
+            totalObservations: count,
+            uniqueCameras: 0, // Will be calculated separately if needed
+            firstObservation: '', // Not available from statistics
+            lastObservation: '', // Not available from statistics
+            recentObservations: [] // Will be loaded when category is selected
+          };
+        })
+        .filter((tag: AnimlAnimalTag) => tag.label !== 'Unknown');
+
+      const sortedTags = animalTags.sort((a, b) => 
+        (a.label || '').toLowerCase().localeCompare((b.label || '').toLowerCase())
+      );
+
+      return sortedTags;
+    } catch (error) {
+      console.error('Error getting Animl animal category counts:', error);
+      // Fallback to individual queries
+      return await this.getAnimalCategoryCountsFallback(options);
+    }
+  }
+
+  /**
+   * Fallback method: Get unique categories first, then get counts sequentially
+   * Used when statistics query fails
+   */
+  private async getAnimalCategoryCountsFallback(options: AnimlServiceQueryOptions = {}): Promise<AnimlAnimalTag[]> {
+    try {
+      // Step 1: Get unique categories first (fast, minimal data)
+      const uniqueLabels = await this.getUniqueAnimalCategories(options);
+      
+      if (uniqueLabels.length === 0) {
+        return [];
+      }
+
+      // Step 2: Get counts for each category sequentially
+      const animalTags: AnimlAnimalTag[] = await Promise.all(
+        uniqueLabels.map(async (label) => {
+          try {
+            const count = await this.getImageLabelsCount({
+              ...options,
+              labels: [label]
+            });
+
+            return {
+              label,
+              totalObservations: count,
+              uniqueCameras: 0, // Will be calculated separately if needed
+              firstObservation: '', // Not available from count query
+              lastObservation: '', // Not available from count query
+              recentObservations: [] // Will be loaded when category is selected
+            };
+          } catch (error) {
+            console.error(`Error getting count for ${label}:`, error);
+            return {
+              label,
+              totalObservations: 0,
+              uniqueCameras: 0,
+              firstObservation: '',
+              lastObservation: '',
+              recentObservations: []
+            };
+          }
+        })
+      );
+
+      const sortedTags = animalTags.sort((a, b) => 
+        (a.label || '').toLowerCase().localeCompare((b.label || '').toLowerCase())
+      );
+
+      return sortedTags;
+    } catch (error) {
+      console.error('Error in fallback method:', error);
+      return [];
+    }
+  }
+
 
   async queryImageLabels(options: AnimlServiceQueryOptions = {}): Promise<AnimlImageLabel[]> {
     const {
@@ -225,7 +514,8 @@ class AnimlService {
       endDate,
       deploymentIds = [],
       labels = [],
-      maxResults = undefined // Remove default limit - fetch all if not specified
+      maxResults = undefined, // Remove default limit - fetch all if not specified
+      resultOffset = 0 // Start from offset if provided
     } = options;
 
     try {
@@ -273,9 +563,9 @@ class AnimlService {
       }
 
       // Set up pagination
-      const pageSize_internal = 1000;
+      const pageSize_internal = 2000; // Increased from 1000 to 2000
       let allImageLabels: AnimlImageLabel[] = [];
-      let currentOffset = 0;
+      let currentOffset = resultOffset; // Start from provided offset
       let hasMoreData = true;
       let pageNumber = 1;
       let useClientSideDateFilter = false; // Track if we need to filter client-side

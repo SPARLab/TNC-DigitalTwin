@@ -1,88 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Calendar, Camera, Tag, Info, X, ArrowLeft } from 'lucide-react';
+import { Calendar, Camera, Tag, Info, ArrowLeft } from 'lucide-react';
 import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag } from '../services/animlService';
 import ThumbnailImage from './ThumbnailImage';
 
 export type AnimlViewMode = 'camera-centric' | 'animal-centric';
-
-// Lightbox Modal Component
-interface ImageLightboxProps {
-  imageUrl: string;
-  alt: string;
-  onClose: () => void;
-  observation?: AnimlImageLabel;
-}
-
-const ImageLightbox: React.FC<ImageLightboxProps> = ({ imageUrl, alt, onClose, observation }) => {
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-    document.addEventListener('keydown', handleEscape);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
-    };
-  }, [onClose]);
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  return (
-    <div
-      id="animl-lightbox-overlay"
-      className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <div
-        id="animl-lightbox-content"
-        className="max-w-4xl max-h-full relative"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          id="animl-lightbox-close"
-          onClick={onClose}
-          className="absolute top-4 right-4 bg-black bg-opacity-50 hover:bg-opacity-75 text-white rounded-full p-2 transition-colors z-10"
-          aria-label="Close lightbox"
-        >
-          <X className="w-6 h-6" />
-        </button>
-        
-        <img
-          id="animl-lightbox-image"
-          src={imageUrl}
-          alt={alt}
-          className="max-w-full max-h-[85vh] rounded-lg"
-        />
-        
-        {observation && (
-          <div id="animl-lightbox-info" className="mt-4 bg-white rounded-lg p-4 text-sm">
-            <div className="mb-2">
-              <p className="font-medium text-gray-900">{observation.label}</p>
-            </div>
-            <div className="space-y-1 text-gray-600">
-              <div className="flex items-center">
-                <Calendar className="w-3 h-3 mr-2" />
-                {formatDate(observation.timestamp)}
-              </div>
-              {observation.deployment_name && (
-                <div className="flex items-center">
-                  <Camera className="w-3 h-3 mr-2" />
-                  {observation.deployment_name}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
 
 
 interface AnimlSidebarProps {
@@ -101,6 +22,9 @@ interface AnimlSidebarProps {
   
   // Common
   loading: boolean;
+  loadingObservations?: boolean; // Loading state for observations when category is clicked
+  loadingMoreObservations?: boolean; // Loading state for background loading
+  totalObservationsCount?: number | null; // Total count for pagination info
   dateRangeText: string;
   hasSearched?: boolean;
   
@@ -120,6 +44,9 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
   selectedAnimalLabel,
   onAnimalTagClick,
   loading,
+  loadingObservations = false,
+  loadingMoreObservations = false,
+  totalObservationsCount = null,
   dateRangeText,
   hasSearched = false,
   observations = [],
@@ -357,7 +284,16 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
                   </button>
                 </div>
               )}
-              <div className="divide-y divide-gray-200">
+              
+              {/* Loading indicator for observations */}
+              {loadingObservations ? (
+                <div id="animl-observations-loading" className="p-4 text-center">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                  <p className="text-sm text-gray-600">Loading observations...</p>
+                </div>
+              ) : (
+                <>
+                <div className="divide-y divide-gray-200">
                 {paginatedObservations.map((observation, obsIndex) => (
                   <div
                     key={`observation-${observation.id}-${observation.animl_image_id || obsIndex}`}
@@ -421,31 +357,67 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
                     </div>
                   </div>
                 ))}
-              </div>
-              
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div id="animl-pagination" className="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50">
-                  <button
-                    id="animl-prev-page"
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
-                    className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
-                  >
-                    Previous
-                  </button>
-                  <span className="text-sm text-gray-600">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <button
-                    id="animl-next-page"
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
-                  >
-                    Next
-                  </button>
                 </div>
+              
+                {/* Pagination and Loading More Indicator */}
+                <div className="border-t border-gray-200 bg-gray-50">
+                  {/* Page Navigation */}
+                  {totalPages > 1 && (
+                    <div id="animl-pagination" className="flex items-center justify-between p-4">
+                      <button
+                        id="animl-prev-page"
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-sm text-gray-600">
+                        Page {currentPage} of {totalPages}
+                      </span>
+                      <button
+                        id="animl-next-page"
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* Loading More Indicator */}
+                  {loadingMoreObservations && (
+                    <div id="animl-loading-more" className="p-4 text-center border-t border-gray-200">
+                      <div className="flex items-center justify-center space-x-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        <span className="text-sm text-gray-600">Loading more observations...</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Total Count Info */}
+                  {totalObservationsCount !== null && (
+                    <div id="animl-count-info" className="px-4 pb-4 text-center border-t border-gray-200">
+                      <p className="text-xs text-gray-500">
+                        {loadingMoreObservations ? (
+                          <>
+                            Showing {filteredObservations.length.toLocaleString()} of {totalObservationsCount.toLocaleString()} observations (loading more...)
+                          </>
+                        ) : filteredObservations.length < totalObservationsCount ? (
+                          <>
+                            Showing {filteredObservations.length.toLocaleString()} of {totalObservationsCount.toLocaleString()} observations
+                          </>
+                        ) : (
+                          <>
+                            Showing all {filteredObservations.length.toLocaleString()} observations
+                          </>
+                        )}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                </>
               )}
             </>
           )

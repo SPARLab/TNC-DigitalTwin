@@ -92,6 +92,9 @@ interface DataViewProps {
   animlAnimalTags?: AnimlAnimalTag[];
   animlImageLabels?: AnimlImageLabel[];
   animlLoading?: boolean;
+  animlLoadingObservations?: boolean;
+  animlLoadingMoreObservations?: boolean;
+  animlTotalObservationsCount?: number | null;
   selectedAnimlDeployment?: AnimlDeployment | null;
   selectedAnimlDeploymentId?: number | null;
   selectedAnimlAnimalTag?: AnimlAnimalTag | null;
@@ -170,6 +173,9 @@ const DataView: React.FC<DataViewProps> = ({
   animlAnimalTags = [],
   animlImageLabels = [],
   animlLoading = false,
+  animlLoadingObservations = false,
+  animlLoadingMoreObservations = false,
+  animlTotalObservationsCount = null,
   selectedAnimlDeployment = null,
   selectedAnimlDeploymentId = null,
   selectedAnimlAnimalTag = null,
@@ -340,8 +346,11 @@ const DataView: React.FC<DataViewProps> = ({
             onViewModeChange={onAnimlViewModeChange || (() => {})}
             deployments={animlDeployments}
             animalTags={animlAnimalTags}
-            imageLabels={animlImageLabels}
+            imageLabels={animlImageLabels || []}
             loading={animlLoading}
+            loadingObservations={animlLoadingObservations}
+            loadingMoreObservations={animlLoadingMoreObservations}
+            totalObservationsCount={animlTotalObservationsCount}
             selectedDeploymentId={selectedAnimlDeploymentId}
             selectedAnimalLabel={selectedAnimlAnimalLabel}
             selectedObservationId={selectedAnimlObservationId}
