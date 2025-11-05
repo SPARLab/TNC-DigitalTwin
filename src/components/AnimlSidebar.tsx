@@ -171,8 +171,8 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Start Your Search</h3>
-          <p className="text-sm text-gray-600">
+          <h3 id="animl-empty-state-title" className="text-lg font-medium text-gray-900 mb-2">Start Your Search</h3>
+          <p id="animl-empty-state-description" className="text-sm text-gray-600">
             Enter selection criteria and hit search to see results
           </p>
         </div>
@@ -188,7 +188,7 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
           <div id="animl-loading-container" className="flex flex-col items-center justify-center h-32 space-y-3">
             <div id="animl-loading-spinner" className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             <div id="animl-loading-text" className="text-center">
-              <p className="text-sm text-gray-600 font-medium">Loading camera trap data...</p>
+              <p id="animl-loading-message" className="text-sm text-gray-600 font-medium">Loading camera trap data...</p>
             </div>
           </div>
         </div>
@@ -204,8 +204,8 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
     <div id="animl-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col">
       {/* Header */}
       <div id="animl-sidebar-header" className="p-4 border-b border-gray-200">
-        <div className="mb-2">
-          <h2 className="text-lg font-semibold text-gray-900">Animl Camera Traps</h2>
+        <div id="animl-sidebar-title-container" className="mb-2">
+          <h2 id="animl-sidebar-title" className="text-lg font-semibold text-gray-900">Animl Camera Traps</h2>
         </div>
         
         {/* View Mode Toggle */}
@@ -237,13 +237,13 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
         </div>
 
         {/* Summary */}
-        <div className="text-sm text-gray-600 mb-3">
+        <div id="animl-sidebar-summary" className="text-sm text-gray-600 mb-3">
           {showObservations ? (
-            <span>{filteredObservations.length} observations {dateRangeText}</span>
+            <span id="animl-summary-observations">{filteredObservations.length} observations {dateRangeText}</span>
           ) : viewMode === 'camera-centric' ? (
-            <span>{filteredDeployments.length} cameras {dateRangeText}</span>
+            <span id="animl-summary-cameras">{filteredDeployments.length} cameras {dateRangeText}</span>
           ) : (
-            <span>{filteredAnimalTags.length} animal species {dateRangeText}</span>
+            <span id="animl-summary-animals">{filteredAnimalTags.length} animal species {dateRangeText}</span>
           )}
         </div>
 
@@ -266,8 +266,8 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
           /* Observations List */
           filteredObservations.length === 0 ? (
             <div id="animl-no-observations" className="p-4 text-center text-gray-500">
-              <Info className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-              <p className="text-sm">No observations found</p>
+              <Info id="animl-no-observations-icon" className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+              <p id="animl-no-observations-message" className="text-sm">No observations found</p>
             </div>
           ) : (
             <>
@@ -288,12 +288,12 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
               {/* Loading indicator for observations */}
               {loadingObservations ? (
                 <div id="animl-observations-loading" className="p-4 text-center">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                  <p className="text-sm text-gray-600">Loading observations...</p>
+                  <div id="animl-observations-loading-spinner" className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                  <p id="animl-observations-loading-message" className="text-sm text-gray-600">Loading observations...</p>
                 </div>
               ) : (
                 <>
-                <div className="divide-y divide-gray-200">
+                <div id="animl-observations-list" className="divide-y divide-gray-200">
                 {paginatedObservations.map((observation, obsIndex) => (
                   <div
                     key={`observation-${observation.id}-${observation.animl_image_id || 'no-image-id'}-${obsIndex}`}
@@ -306,7 +306,7 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
                     }`}
                     onClick={() => handleObservationClick(observation)}
                   >
-                    <div className="flex items-start space-x-3">
+                    <div id={`animl-observation-wrapper-${observation.id}`} className="flex items-start space-x-3">
                       {observation.small_url || observation.medium_url ? (
                         <ThumbnailImage
                           src={observation.small_url || observation.medium_url || ''}
@@ -316,26 +316,26 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
                           className="flex-shrink-0"
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0">
-                          <Camera className="w-6 h-6 text-gray-400" />
+                        <div id={`animl-observation-placeholder-${observation.id}`} className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0">
+                          <Camera id={`animl-observation-placeholder-icon-${observation.id}`} className="w-6 h-6 text-gray-400" />
                         </div>
                       )}
                       
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-sm font-medium text-gray-900 truncate">
+                      <div id={`animl-observation-content-${observation.id}`} className="flex-1 min-w-0">
+                        <div id={`animl-observation-header-${observation.id}`} className="flex items-center justify-between">
+                          <h3 id={`animl-observation-label-${observation.id}`} className="text-sm font-medium text-gray-900 truncate">
                             {observation.label}
                           </h3>
                         </div>
                         
-                        <div className="mt-2 space-y-1">
-                          <div className="flex items-center text-xs text-gray-500">
-                            <Calendar className="w-3 h-3 mr-1" />
+                        <div id={`animl-observation-metadata-${observation.id}`} className="mt-2 space-y-1">
+                          <div id={`animl-observation-date-${observation.id}`} className="flex items-center text-xs text-gray-500">
+                            <Calendar id={`animl-observation-date-icon-${observation.id}`} className="w-3 h-3 mr-1" />
                             {formatDate(observation.timestamp)}
                           </div>
                           {observation.deployment_name && (
-                            <div className="flex items-center text-xs text-gray-500">
-                              <Camera className="w-3 h-3 mr-1" />
+                            <div id={`animl-observation-deployment-${observation.id}`} className="flex items-center text-xs text-gray-500">
+                              <Camera id={`animl-observation-deployment-icon-${observation.id}`} className="w-3 h-3 mr-1" />
                               {observation.deployment_name}
                             </div>
                           )}
@@ -346,6 +346,7 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
                           <div id={`animl-expanded-details-${observation.id}`} className="mt-3 space-y-2">
                             {observation.medium_url && (
                               <img
+                                id={`animl-observation-expanded-image-${observation.id}`}
                                 src={observation.medium_url}
                                 alt={observation.label}
                                 className="w-full rounded-lg"
@@ -372,7 +373,7 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
                       >
                         Previous
                       </button>
-                      <span className="text-sm text-gray-600">
+                      <span id="animl-pagination-info" className="text-sm text-gray-600">
                         Page {currentPage} of {totalPages}
                       </span>
                       <button
@@ -389,9 +390,9 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
                   {/* Loading More Indicator */}
                   {loadingMoreObservations && (
                     <div id="animl-loading-more" className="p-4 text-center border-t border-gray-200">
-                      <div className="flex items-center justify-center space-x-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                        <span className="text-sm text-gray-600">Loading more observations...</span>
+                      <div id="animl-loading-more-container" className="flex items-center justify-center space-x-2">
+                        <div id="animl-loading-more-spinner" className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        <span id="animl-loading-more-text" className="text-sm text-gray-600">Loading more observations...</span>
                       </div>
                     </div>
                   )}
@@ -399,7 +400,7 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
                   {/* Total Count Info */}
                   {totalObservationsCount !== null && (
                     <div id="animl-count-info" className="px-4 pb-4 text-center border-t border-gray-200">
-                      <p className="text-xs text-gray-500">
+                      <p id="animl-count-info-text" className="text-xs text-gray-500">
                         {loadingMoreObservations ? (
                           <>
                             Showing {filteredObservations.length.toLocaleString()} of {totalObservationsCount.toLocaleString()} observations (loading more...)
@@ -425,11 +426,11 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
           /* Camera-Centric: List of Deployments */
           filteredDeployments.length === 0 ? (
             <div id="animl-no-cameras" className="p-4 text-center text-gray-500">
-              <Info className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-              <p className="text-sm">No cameras found</p>
+              <Info id="animl-no-cameras-icon" className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+              <p id="animl-no-cameras-message" className="text-sm">No cameras found</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
+            <div id="animl-deployments-list" className="divide-y divide-gray-200">
               {filteredDeployments.map((deployment, index) => (
                 <div
                   key={`deployment-${deployment.id}-${deployment.animl_dp_id}-${index}`}
@@ -439,26 +440,26 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
                   }`}
                   onClick={() => onDeploymentClick?.(deployment)}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium text-gray-900">{deployment.name || deployment.animl_dp_id}</h3>
+                  <div id={`animl-deployment-content-${deployment.id}`} className="flex items-start justify-between">
+                    <div id={`animl-deployment-info-${deployment.id}`} className="flex-1 min-w-0">
+                      <h3 id={`animl-deployment-name-${deployment.id}`} className="text-sm font-medium text-gray-900">{deployment.name || deployment.animl_dp_id}</h3>
                       {deployment.totalObservations !== undefined && (
-                        <p className="text-xs text-gray-600 mt-1">
+                        <p id={`animl-deployment-observations-${deployment.id}`} className="text-xs text-gray-600 mt-1">
                           {deployment.totalObservations} observations
                           {deployment.uniqueAnimals && deployment.uniqueAnimals.length > 0 && (
-                            <span className="ml-2">
+                            <span id={`animl-deployment-species-count-${deployment.id}`} className="ml-2">
                               • {deployment.uniqueAnimals.length} species
                             </span>
                           )}
                         </p>
                       )}
                       {deployment.firstObservation && deployment.lastObservation && (
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p id={`animl-deployment-date-range-${deployment.id}`} className="text-xs text-gray-500 mt-1">
                           {formatDate(deployment.firstObservation)} - {formatDate(deployment.lastObservation)}
                         </p>
                       )}
                     </div>
-                    <Camera className="w-5 h-5 text-gray-400 flex-shrink-0 ml-2" />
+                    <Camera id={`animl-deployment-icon-${deployment.id}`} className="w-5 h-5 text-gray-400 flex-shrink-0 ml-2" />
                   </div>
                 </div>
               ))}
@@ -468,11 +469,11 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
           /* Animal-Centric: List of Animal Tags */
           filteredAnimalTags.length === 0 ? (
             <div id="animl-no-animals" className="p-4 text-center text-gray-500">
-              <Info className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-              <p className="text-sm">No animals found</p>
+              <Info id="animl-no-animals-icon" className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+              <p id="animl-no-animals-message" className="text-sm">No animals found</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
+            <div id="animl-animal-tags-list" className="divide-y divide-gray-200">
               {filteredAnimalTags.map((tag) => (
                 <div
                   key={tag.label}
@@ -482,18 +483,18 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
                   }`}
                   onClick={() => onAnimalTagClick?.(tag)}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium text-gray-900">
+                  <div id={`animl-animal-tag-content-${tag.label}`} className="flex items-start justify-between">
+                    <div id={`animl-animal-tag-info-${tag.label}`} className="flex-1 min-w-0">
+                      <h3 id={`animl-animal-tag-label-${tag.label}`} className="text-sm font-medium text-gray-900">
                         {tag.label} ({tag.totalObservations.toLocaleString()})
                       </h3>
                       {tag.firstObservation && tag.lastObservation && (
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p id={`animl-animal-tag-date-range-${tag.label}`} className="text-xs text-gray-500 mt-1">
                           {formatDate(tag.firstObservation)} - {formatDate(tag.lastObservation)}
                         </p>
                       )}
                     </div>
-                    <Tag className="w-5 h-5 text-gray-400 flex-shrink-0 ml-2" />
+                    <Tag id={`animl-animal-tag-icon-${tag.label}`} className="w-5 h-5 text-gray-400 flex-shrink-0 ml-2" />
                   </div>
                 </div>
               ))}
