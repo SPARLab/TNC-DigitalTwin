@@ -264,34 +264,33 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
       <div id="animl-content" className="flex-1 overflow-y-auto">
         {showObservations ? (
           /* Observations List */
-          filteredObservations.length === 0 ? (
-            <div id="animl-no-observations" className="p-4 text-center text-gray-500">
-              <Info id="animl-no-observations-icon" className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-              <p id="animl-no-observations-message" className="text-sm">No observations found</p>
-            </div>
-          ) : (
-            <>
-              {/* Back Button - Show when viewing animal category observations */}
-              {viewMode === 'animal-centric' && selectedAnimalLabel && (
-                <div id="animl-back-button-container" className="p-4 border-b border-gray-200 bg-gray-50 sticky top-0 z-10">
-                  <button
-                    id="animl-back-button"
-                    onClick={() => onAnimalTagClick?.(null)}
-                    className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
-                  >
-                    <ArrowLeft className="w-4 h-4 mr-2" />
-                    Back to All
-                  </button>
-                </div>
-              )}
-              
-              {/* Loading indicator for observations */}
-              {loadingObservations ? (
-                <div id="animl-observations-loading" className="p-4 text-center">
-                  <div id="animl-observations-loading-spinner" className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                  <p id="animl-observations-loading-message" className="text-sm text-gray-600">Loading observations...</p>
-                </div>
-              ) : (
+          <>
+            {/* Back Button - Show when viewing animal category observations */}
+            {viewMode === 'animal-centric' && selectedAnimalLabel && (
+              <div id="animl-back-button-container" className="p-4 border-b border-gray-200 bg-gray-50 sticky top-0 z-10">
+                <button
+                  id="animl-back-button"
+                  onClick={() => onAnimalTagClick?.(null)}
+                  className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to All
+                </button>
+              </div>
+            )}
+            
+            {/* Loading indicator for observations */}
+            {loadingObservations ? (
+              <div id="animl-observations-loading" className="p-4 text-center">
+                <div id="animl-observations-loading-spinner" className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                <p id="animl-observations-loading-message" className="text-sm text-gray-600">Loading observations...</p>
+              </div>
+            ) : filteredObservations.length === 0 ? (
+              <div id="animl-no-observations" className="p-4 text-center text-gray-500">
+                <Info id="animl-no-observations-icon" className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                <p id="animl-no-observations-message" className="text-sm">No observations found</p>
+              </div>
+            ) : (
                 <>
                 <div id="animl-observations-list" className="divide-y divide-gray-200">
                 {paginatedObservations.map((observation, obsIndex) => (
@@ -421,7 +420,6 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
                 </>
               )}
             </>
-          )
         ) : viewMode === 'camera-centric' ? (
           /* Camera-Centric: List of Deployments */
           filteredDeployments.length === 0 ? (
