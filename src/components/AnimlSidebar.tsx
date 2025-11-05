@@ -478,7 +478,7 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
                 <div
                   key={tag.label}
                   id={`animl-animal-tag-${tag.label}`}
-                  className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
+                  className={`py-2 px-4 cursor-pointer hover:bg-gray-50 transition-colors ${
                     selectedAnimalLabel === tag.label ? 'bg-blue-50 border-l-4 border-blue-500' : ''
                   }`}
                   onClick={() => onAnimalTagClick?.(tag)}
