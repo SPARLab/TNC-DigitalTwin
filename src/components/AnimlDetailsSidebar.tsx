@@ -71,6 +71,30 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
     }
   }, [selectedDeployment, selectedAnimalTag, selectedObservation]);
 
+  // Calculate animal-only observations (excluding person/people) for consistent counting
+  const animalOnlyObservations = useMemo(() => {
+    return observations.filter(obs => {
+      const labelLower = obs.label?.toLowerCase() || '';
+      return labelLower !== 'person' && labelLower !== 'people';
+    });
+  }, [observations]);
+
+  // Filter deployments to only show those with observations (for animal-centric export tab)
+  const deploymentsWithObservations = useMemo(() => {
+    if (viewMode !== 'animal-centric') {
+      return deployments;
+    }
+    
+    // Get deployment IDs that have at least one animal observation
+    const deploymentIdsWithObservations = new Set<number>();
+    animalOnlyObservations.forEach(obs => {
+      deploymentIdsWithObservations.add(obs.deployment_id);
+    });
+    
+    // Filter deployments to only include those with observations
+    return deployments.filter(dep => deploymentIdsWithObservations.has(dep.id));
+  }, [viewMode, deployments, animalOnlyObservations]);
+
   // Track if we've auto-selected cameras in animal-centric mode
   const hasAutoSelectedCameras = useRef(false);
   
@@ -86,9 +110,10 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
 
   // Auto-select all cameras in animal-centric mode for export tab
   // Only do this once when entering animal-centric mode, not on every selection change
+  // Only select cameras that have observations
   useEffect(() => {
-    if (viewMode === 'animal-centric' && onDeploymentIdsChange && deployments.length > 0) {
-      const allDeploymentIds = deployments.map(dep => dep.id);
+    if (viewMode === 'animal-centric' && onDeploymentIdsChange && deploymentsWithObservations.length > 0) {
+      const allDeploymentIds = deploymentsWithObservations.map(dep => dep.id);
       
       // Only auto-select if we haven't done so yet (first time entering animal-centric mode)
       // This allows users to manually deselect cameras without them being re-selected
@@ -97,7 +122,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
         hasAutoSelectedCameras.current = true;
       }
     }
-  }, [viewMode, deployments, onDeploymentIdsChange]);
+  }, [viewMode, deploymentsWithObservations, onDeploymentIdsChange]);
 
   // Get effective deployment IDs for filtering
   // In camera-centric mode, if no deployments selected but a camera is selected, default to that camera
@@ -288,14 +313,6 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [viewMode, selectedDeployment, observations, effectiveDeploymentIds]);
-
-  // Calculate animal-only observations (excluding person/people) for consistent counting
-  const animalOnlyObservations = useMemo(() => {
-    return observations.filter(obs => {
-      const labelLower = obs.label?.toLowerCase() || '';
-      return labelLower !== 'person' && labelLower !== 'people';
-    });
-  }, [observations]);
 
   // Calculate filtered observations for export
   const filteredObservations = useMemo(() => {
@@ -843,80 +860,94 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
           {/* Animal-Centric Mode: Show deployment filter and species filter */}
           {viewMode === 'animal-centric' && (
             <>
-              {/* Deployment Filter - Show all deployments with multi-select */}
-              {onDeploymentIdsChange && deployments.length > 0 && (
-                <div id="animl-deployment-filter-section" className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-medium text-gray-900 flex items-center">
-                      <Camera className="w-4 h-4 mr-2" />
-                      Camera Traps
-                    </h4>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const allDeploymentIds = deployments.map(dep => dep.id);
-                          onDeploymentIdsChange(allDeploymentIds);
-                        }}
-                        className="text-xs px-2 py-1 text-blue-600 hover:text-blue-700 hover:underline"
-                      >
-                        Select All
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onDeploymentIdsChange([]);
-                        }}
-                        className="text-xs px-2 py-1 text-blue-600 hover:text-blue-700 hover:underline"
-                      >
-                        Deselect All
-                      </button>
+              {/* Deployment Filter - Show only deployments with observations */}
+              {onDeploymentIdsChange && deployments.length > 0 && (() => {
+                // Show message if no deployments have observations
+                if (deploymentsWithObservations.length === 0) {
+                  return (
+                    <div id="animl-no-deployments-message" className="p-4 text-center text-gray-500">
+                      <p className="text-sm font-medium mb-1">No camera traps with observations</p>
+                      <p className="text-xs text-gray-400">
+                        No camera traps found with observations for the selected date range and spatial filters.
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div id="animl-deployment-filter-section" className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                        <Camera className="w-4 h-4 mr-2" />
+                        Camera Traps
+                      </h4>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const allDeploymentIds = deploymentsWithObservations.map(dep => dep.id);
+                            onDeploymentIdsChange(allDeploymentIds);
+                          }}
+                          className="text-xs px-2 py-1 text-blue-600 hover:text-blue-700 hover:underline"
+                        >
+                          Select All
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onDeploymentIdsChange([]);
+                          }}
+                          className="text-xs px-2 py-1 text-blue-600 hover:text-blue-700 hover:underline"
+                        >
+                          Deselect All
+                        </button>
+                      </div>
+                    </div>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {[...deploymentsWithObservations]
+                        .sort((a, b) => {
+                          const nameA = (a.name || a.animl_dp_id || '').toLowerCase();
+                          const nameB = (b.name || b.animl_dp_id || '').toLowerCase();
+                          return nameA.localeCompare(nameB);
+                        })
+                        .map(deployment => {
+                        const isChecked = selectedDeploymentIds.includes(deployment.id);
+                        // Count animal-only observations for this deployment
+                        const deploymentObservationCount = animalOnlyObservations.filter(
+                          obs => obs.deployment_id === deployment.id
+                        ).length;
+                        
+                        return (
+                          <label
+                            key={deployment.id}
+                            id={`animl-deployment-filter-${deployment.id}`}
+                            className="flex items-center cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  onDeploymentIdsChange([...selectedDeploymentIds, deployment.id]);
+                                } else {
+                                  onDeploymentIdsChange(selectedDeploymentIds.filter(id => id !== deployment.id));
+                                }
+                              }}
+                              className="mr-2 cursor-pointer"
+                            />
+                            <span className="text-sm text-gray-700">
+                              {deployment.name || deployment.animl_dp_id}
+                              {deploymentObservationCount > 0 && (
+                                <span className="text-gray-500 ml-1">({deploymentObservationCount})</span>
+                              )}
+                            </span>
+                          </label>
+                        );
+                      })}
                     </div>
                   </div>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {[...deployments]
-                      .sort((a, b) => {
-                        const nameA = (a.name || a.animl_dp_id || '').toLowerCase();
-                        const nameB = (b.name || b.animl_dp_id || '').toLowerCase();
-                        return nameA.localeCompare(nameB);
-                      })
-                      .map(deployment => {
-                      const isChecked = selectedDeploymentIds.includes(deployment.id);
-                      // Count observations for this deployment
-                      const deploymentObservationCount = observations.filter(
-                        obs => obs.deployment_id === deployment.id
-                      ).length;
-                      
-                      return (
-                        <label
-                          key={deployment.id}
-                          id={`animl-deployment-filter-${deployment.id}`}
-                          className="flex items-center cursor-pointer"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                onDeploymentIdsChange([...selectedDeploymentIds, deployment.id]);
-                              } else {
-                                onDeploymentIdsChange(selectedDeploymentIds.filter(id => id !== deployment.id));
-                              }
-                            }}
-                            className="mr-2 cursor-pointer"
-                          />
-                          <span className="text-sm text-gray-700">
-                            {deployment.name || deployment.animl_dp_id}
-                            {deploymentObservationCount > 0 && (
-                              <span className="text-gray-500 ml-1">({deploymentObservationCount})</span>
-                            )}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Animal Species Filter (Animal-Centric) - Show all species with Select All/Deselect All */}
               {/* Counts reflect currently selected deployments in export filter */}
