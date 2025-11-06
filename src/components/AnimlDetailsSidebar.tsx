@@ -56,8 +56,8 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
   onDeploymentIdsChange,
   selectedLabels = [],
   onLabelsChange,
-  hasImages,
-  onHasImagesChange,
+  hasImages: _hasImages,
+  onHasImagesChange: _onHasImagesChange,
   onObservationSelect
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('details');
@@ -71,29 +71,251 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
     }
   }, [selectedDeployment, selectedAnimalTag, selectedObservation]);
 
-  // Calculate filtered observations for export
-  const filteredObservations = useMemo(() => {
-    let filtered = observations;
+  // Track if we've auto-selected cameras in animal-centric mode
+  const hasAutoSelectedCameras = useRef(false);
+  
+  // Reset auto-select flag when view mode changes
+  useEffect(() => {
+    if (viewMode !== 'animal-centric') {
+      hasAutoSelectedCameras.current = false;
+    } else {
+      // Reset when entering animal-centric mode so we can auto-select
+      hasAutoSelectedCameras.current = false;
+    }
+  }, [viewMode]);
 
-    // Apply deployment filter (camera-centric)
+  // Auto-select all cameras in animal-centric mode for export tab
+  // Only do this once when entering animal-centric mode, not on every selection change
+  useEffect(() => {
+    if (viewMode === 'animal-centric' && onDeploymentIdsChange && deployments.length > 0) {
+      const allDeploymentIds = deployments.map(dep => dep.id);
+      
+      // Only auto-select if we haven't done so yet (first time entering animal-centric mode)
+      // This allows users to manually deselect cameras without them being re-selected
+      if (!hasAutoSelectedCameras.current && allDeploymentIds.length > 0) {
+        onDeploymentIdsChange(allDeploymentIds);
+        hasAutoSelectedCameras.current = true;
+      }
+    }
+  }, [viewMode, deployments, onDeploymentIdsChange]);
+
+  // Get effective deployment IDs for filtering
+  // In camera-centric mode, if no deployments selected but a camera is selected, default to that camera
+  // In animal-centric mode, default to all cameras if none selected
+  const effectiveDeploymentIds = useMemo(() => {
     if (selectedDeploymentIds.length > 0) {
-      filtered = filtered.filter(obs => selectedDeploymentIds.includes(obs.deployment_id));
+      return selectedDeploymentIds;
+    }
+    // In camera-centric mode, if a camera is selected but no deployments are selected in export,
+    // default to the selected camera
+    if (viewMode === 'camera-centric' && selectedDeployment) {
+      return [selectedDeployment.id];
+    }
+    // In animal-centric mode, if no cameras selected, default to all cameras
+    if (viewMode === 'animal-centric' && deployments.length > 0) {
+      return deployments.map(dep => dep.id);
+    }
+    // Otherwise, no filter (show all)
+    return [];
+  }, [selectedDeploymentIds, viewMode, selectedDeployment, deployments]);
+
+  // Calculate species counts per camera (for animal-centric mode)
+  // This creates a map of: deployment_id -> { label -> count }
+  const speciesCountsPerCamera = useMemo(() => {
+    const countsMap = new Map<number, Map<string, number>>();
+    
+    // Initialize map for all deployments
+    deployments.forEach(dep => {
+      countsMap.set(dep.id, new Map<string, number>());
+    });
+    
+    // Count observations per deployment per species
+    // Handle case where observations might not have deployment_id that matches deployments
+    observations.forEach(obs => {
+      const labelLower = obs.label?.toLowerCase() || '';
+      // Skip person/people
+      if (labelLower === 'person' || labelLower === 'people') {
+        return;
+      }
+      
+      // Try to find the deployment counts for this observation's deployment_id
+      const deploymentCounts = countsMap.get(obs.deployment_id);
+      if (deploymentCounts) {
+        const currentCount = deploymentCounts.get(obs.label) || 0;
+        deploymentCounts.set(obs.label, currentCount + 1);
+      } else {
+        // If deployment_id doesn't match any deployment in our list, 
+        // still count it by creating a new entry (in case of data mismatch)
+        // This shouldn't happen normally, but handles edge cases
+        if (!countsMap.has(obs.deployment_id)) {
+          countsMap.set(obs.deployment_id, new Map<string, number>());
+        }
+        const newDeploymentCounts = countsMap.get(obs.deployment_id)!;
+        const currentCount = newDeploymentCounts.get(obs.label) || 0;
+        newDeploymentCounts.set(obs.label, currentCount + 1);
+      }
+    });
+    
+    return countsMap;
+  }, [observations, deployments]);
+
+  // Compute filtered animal tags for animal-centric mode (species with observations from selected cameras)
+  const filteredAnimalTags = useMemo(() => {
+    if (viewMode !== 'animal-centric' || animalTags.length === 0 || observations.length === 0) {
+      return [];
     }
 
-    // Apply label filter (animal-centric)
+    // Calculate aggregated counts for each species across selected cameras
+    const speciesCountsMap = new Map<string, number>();
+    
+    // Aggregate counts from selected cameras using observation data
+    if (effectiveDeploymentIds.length > 0) {
+      effectiveDeploymentIds.forEach(deploymentId => {
+        const deploymentCounts = speciesCountsPerCamera.get(deploymentId);
+        if (deploymentCounts) {
+          deploymentCounts.forEach((count, label) => {
+            const currentTotal = speciesCountsMap.get(label) || 0;
+            speciesCountsMap.set(label, currentTotal + count);
+          });
+        }
+      });
+    }
+    
+    // Filter animal tags to only show those with observations from selected cameras
+    return animalTags.filter(tag => {
+      // Filter out person/people labels
+      const labelLower = tag.label?.toLowerCase() || '';
+      if (labelLower === 'person' || labelLower === 'people') {
+        return false;
+      }
+      
+      // If no cameras selected (shouldn't happen in animal-centric mode, but handle it)
+      if (effectiveDeploymentIds.length === 0) {
+        return true; // Show all species when no cameras selected
+      }
+      
+      // Get aggregated count for this species across selected cameras
+      const speciesCount = speciesCountsMap.get(tag.label) || 0;
+      
+      // Only show species with count > 0 from selected cameras
+      return speciesCount > 0;
+    }).map(tag => ({
+      ...tag,
+      aggregatedCount: effectiveDeploymentIds.length > 0
+        ? (speciesCountsMap.get(tag.label) || 0)
+        : tag.totalObservations
+    }));
+  }, [viewMode, animalTags, observations.length, effectiveDeploymentIds, speciesCountsPerCamera]);
+
+  // Track if we've auto-selected labels in animal-centric mode
+  const hasAutoSelectedLabels = useRef(false);
+  const lastFilteredAnimalTagsRef = useRef<string>('');
+  
+  // Reset auto-select flag when view mode changes
+  useEffect(() => {
+    if (viewMode !== 'animal-centric') {
+      hasAutoSelectedLabels.current = false;
+      lastFilteredAnimalTagsRef.current = '';
+    } else {
+      // Reset when entering animal-centric mode so we can auto-select
+      hasAutoSelectedLabels.current = false;
+    }
+  }, [viewMode]);
+
+  // Auto-select all animal species in animal-centric mode for export tab
+  useEffect(() => {
+    if (viewMode === 'animal-centric' && onLabelsChange && filteredAnimalTags.length > 0) {
+      const allFilteredLabels = filteredAnimalTags.map(tag => tag.label);
+      const filteredTagsKey = allFilteredLabels.sort().join(',');
+      
+      // Determine if we need to auto-select:
+      // 1. First time entering animal-centric mode with filtered tags available
+      // 2. Filtered tags changed (e.g., cameras finished loading) and no labels selected yet
+      // 3. Filtered tags changed and currently selected labels are empty
+      const isFirstTime = !hasAutoSelectedLabels.current;
+      const tagsChanged = lastFilteredAnimalTagsRef.current !== filteredTagsKey;
+      const noLabelsSelected = selectedLabels.length === 0;
+      
+      // Auto-select if: first time, OR (tags changed AND no labels selected)
+      // This ensures we select all by default without overriding user's manual selections
+      if (isFirstTime || (tagsChanged && noLabelsSelected)) {
+        onLabelsChange(allFilteredLabels);
+        hasAutoSelectedLabels.current = true;
+        lastFilteredAnimalTagsRef.current = filteredTagsKey;
+      } else if (tagsChanged && !noLabelsSelected) {
+        // Tags changed but user has selections - update the key but don't override
+        lastFilteredAnimalTagsRef.current = filteredTagsKey;
+      }
+    }
+  }, [viewMode, filteredAnimalTags, selectedLabels, onLabelsChange]);
+
+  // Get animal species for selected camera(s) (camera-centric mode)
+  // Counts reflect currently selected deployments in export filter
+  const cameraAnimalSpecies = useMemo(() => {
+    if (viewMode !== 'camera-centric') {
+      return [];
+    }
+    
+    // Use effective deployment IDs (which defaults to selected camera if no export filter set)
+    const deploymentIdsToUse = effectiveDeploymentIds.length > 0 
+      ? effectiveDeploymentIds 
+      : (selectedDeployment ? [selectedDeployment.id] : []);
+    
+    if (deploymentIdsToUse.length === 0) {
+      return [];
+    }
+    
+    // Get unique labels from observations for selected camera(s)
+    const speciesSet = new Set<string>();
+    const speciesCounts = new Map<string, number>();
+    
+    observations
+      .filter(obs => deploymentIdsToUse.includes(obs.deployment_id))
+      .forEach(obs => {
+        const label = obs.label?.toLowerCase();
+        // Filter out person/people
+        if (label && label !== 'person' && label !== 'people') {
+          speciesSet.add(obs.label);
+          speciesCounts.set(obs.label, (speciesCounts.get(obs.label) || 0) + 1);
+        }
+      });
+    
+    // Convert to array and sort alphabetically
+    return Array.from(speciesSet)
+      .map(label => ({
+        label,
+        count: speciesCounts.get(label) || 0
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [viewMode, selectedDeployment, observations, effectiveDeploymentIds]);
+
+  // Calculate animal-only observations (excluding person/people) for consistent counting
+  const animalOnlyObservations = useMemo(() => {
+    return observations.filter(obs => {
+      const labelLower = obs.label?.toLowerCase() || '';
+      return labelLower !== 'person' && labelLower !== 'people';
+    });
+  }, [observations]);
+
+  // Calculate filtered observations for export
+  const filteredObservations = useMemo(() => {
+    // Start with animal-only observations (exclude person/people by default)
+    let filtered = animalOnlyObservations;
+
+    // Apply deployment filter
+    if (effectiveDeploymentIds.length > 0) {
+      filtered = filtered.filter(obs => effectiveDeploymentIds.includes(obs.deployment_id));
+    }
+
+    // Apply label filter (animal-centric or camera-centric species selection)
     if (selectedLabels.length > 0) {
       filtered = filtered.filter(obs => selectedLabels.includes(obs.label));
     }
 
-    // Apply image filter
-    if (hasImages === true) {
-      filtered = filtered.filter(obs => obs.small_url || obs.medium_url);
-    } else if (hasImages === false) {
-      filtered = filtered.filter(obs => !obs.small_url && !obs.medium_url);
-    }
+    // Note: Image filter removed - all camera trap observations have images by definition
 
     return filtered;
-  }, [observations, selectedDeploymentIds, selectedLabels, hasImages]);
+  }, [animalOnlyObservations, effectiveDeploymentIds, selectedLabels]);
 
   // Helper function to format date
   const formatDate = (dateString: string) => {
@@ -539,7 +761,8 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
       );
     }
 
-    const hasAdditionalFilters = filteredObservations.length !== observations.length;
+    // Compare against animal-only observations (excluding person/people)
+    const hasAdditionalFilters = filteredObservations.length !== animalOnlyObservations.length;
 
     return (
       <div id="animl-export-content" className="flex flex-col h-full">
@@ -550,11 +773,11 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
               <>
                 <span className="font-semibold text-blue-600">{filteredObservations.length} filtered</span>
                 <span className="text-gray-400 mx-1">/</span>
-                <span className="text-gray-600">{observations.length} total observations</span>
+                <span className="text-gray-600">{animalOnlyObservations.length} total observations</span>
                 <span className="text-gray-600"> {dateRangeText}</span>
               </>
             ) : (
-              <span className="text-gray-600">{observations.length} total observations {dateRangeText}</span>
+              <span className="text-gray-600">{animalOnlyObservations.length} total observations {dateRangeText}</span>
             )}
           </p>
           <p className="text-xs text-gray-500 mt-1">
@@ -563,119 +786,238 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
         </div>
 
         <div id="animl-export-filters" className="flex-1 overflow-y-auto p-4 space-y-6">
-          {/* Deployment Filter (Camera-Centric) */}
-          {viewMode === 'camera-centric' && onDeploymentIdsChange && deployments.length > 0 && (
-            <div id="animl-deployment-filter-section" className="space-y-3">
-              <h4 className="text-sm font-medium text-gray-900 flex items-center">
-                <Filter className="w-4 h-4 mr-2" />
-                Camera Traps
-              </h4>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {deployments.map(deployment => {
-                  const isChecked = selectedDeploymentIds.includes(deployment.id);
-                  return (
-                    <label
-                      key={deployment.id}
-                      id={`animl-deployment-filter-${deployment.id}`}
-                      className="flex items-center cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            onDeploymentIdsChange([...selectedDeploymentIds, deployment.id]);
-                          } else {
-                            onDeploymentIdsChange(selectedDeploymentIds.filter(id => id !== deployment.id));
-                          }
-                        }}
-                        className="mr-2 cursor-pointer"
-                      />
-                      <span className="text-sm text-gray-700">{deployment.name || deployment.animl_dp_id}</span>
-                    </label>
-                  );
-                })}
+          {/* Camera-Centric Mode: Show selected camera info and species filter */}
+          {viewMode === 'camera-centric' && selectedDeployment && (
+            <>
+              {/* Selected Camera Info */}
+              <div id="animl-selected-camera-info" className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Camera className="w-4 h-4 text-blue-600" />
+                  <div>
+                    <p className="text-xs text-blue-600 uppercase tracking-wide mb-1">Currently Selected Camera Trap</p>
+                    <p className="text-sm font-semibold text-blue-900">
+                      {selectedDeployment.name || selectedDeployment.animl_dp_id}
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
+
+              {/* Animal Species Filter (Camera-Centric) - Show species for selected camera */}
+              {onLabelsChange && cameraAnimalSpecies.length > 0 && (
+                <div id="animl-camera-species-filter-section" className="space-y-3">
+                  <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                    <Filter className="w-4 h-4 mr-2" />
+                    Animal Species
+                  </h4>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {cameraAnimalSpecies.map(species => {
+                      const isChecked = selectedLabels.includes(species.label);
+                      return (
+                        <label
+                          key={species.label}
+                          id={`animl-camera-species-filter-${species.label}`}
+                          className="flex items-center cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                onLabelsChange([...selectedLabels, species.label]);
+                              } else {
+                                onLabelsChange(selectedLabels.filter(l => l !== species.label));
+                              }
+                            }}
+                            className="mr-2 cursor-pointer"
+                          />
+                          <span className="text-sm text-gray-700">{species.label} ({species.count})</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
-          {/* Label Filter (Animal-Centric) */}
-          {viewMode === 'animal-centric' && onLabelsChange && animalTags.length > 0 && (
-            <div id="animl-label-filter-section" className="space-y-3">
-              <h4 className="text-sm font-medium text-gray-900 flex items-center">
-                <Filter className="w-4 h-4 mr-2" />
-                Animal Species
-              </h4>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {animalTags.map(tag => {
-                  const isChecked = selectedLabels.includes(tag.label);
-                  return (
-                    <label
-                      key={tag.label}
-                      id={`animl-label-filter-${tag.label}`}
-                      className="flex items-center cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            onLabelsChange([...selectedLabels, tag.label]);
-                          } else {
-                            onLabelsChange(selectedLabels.filter(l => l !== tag.label));
-                          }
+          {/* Animal-Centric Mode: Show deployment filter and species filter */}
+          {viewMode === 'animal-centric' && (
+            <>
+              {/* Deployment Filter - Show all deployments with multi-select */}
+              {onDeploymentIdsChange && deployments.length > 0 && (
+                <div id="animl-deployment-filter-section" className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                      <Camera className="w-4 h-4 mr-2" />
+                      Camera Traps
+                    </h4>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const allDeploymentIds = deployments.map(dep => dep.id);
+                          onDeploymentIdsChange(allDeploymentIds);
                         }}
-                        className="mr-2 cursor-pointer"
-                      />
-                      <span className="text-sm text-gray-700">{tag.label} ({tag.totalObservations})</span>
-                    </label>
+                        className="text-xs px-2 py-1 text-blue-600 hover:text-blue-700 hover:underline"
+                      >
+                        Select All
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onDeploymentIdsChange([]);
+                        }}
+                        className="text-xs px-2 py-1 text-blue-600 hover:text-blue-700 hover:underline"
+                      >
+                        Deselect All
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {[...deployments]
+                      .sort((a, b) => {
+                        const nameA = (a.name || a.animl_dp_id || '').toLowerCase();
+                        const nameB = (b.name || b.animl_dp_id || '').toLowerCase();
+                        return nameA.localeCompare(nameB);
+                      })
+                      .map(deployment => {
+                      const isChecked = selectedDeploymentIds.includes(deployment.id);
+                      // Count observations for this deployment
+                      const deploymentObservationCount = observations.filter(
+                        obs => obs.deployment_id === deployment.id
+                      ).length;
+                      
+                      return (
+                        <label
+                          key={deployment.id}
+                          id={`animl-deployment-filter-${deployment.id}`}
+                          className="flex items-center cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                onDeploymentIdsChange([...selectedDeploymentIds, deployment.id]);
+                              } else {
+                                onDeploymentIdsChange(selectedDeploymentIds.filter(id => id !== deployment.id));
+                              }
+                            }}
+                            className="mr-2 cursor-pointer"
+                          />
+                          <span className="text-sm text-gray-700">
+                            {deployment.name || deployment.animl_dp_id}
+                            {deploymentObservationCount > 0 && (
+                              <span className="text-gray-500 ml-1">({deploymentObservationCount})</span>
+                            )}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Animal Species Filter (Animal-Centric) - Show all species with Select All/Deselect All */}
+              {/* Counts reflect currently selected deployments in export filter */}
+              {/* Only show species with observations from selected cameras */}
+              {onLabelsChange && viewMode === 'animal-centric' && animalTags.length > 0 && (() => {
+                const hasObservations = observations.length > 0;
+                
+                // If no observations available, show message
+                if (!hasObservations) {
+                  return (
+                    <div id="animl-no-observations-message" className="p-4 text-center text-gray-500">
+                      <p className="text-sm font-medium mb-1">No observations available</p>
+                      <p className="text-xs text-gray-400">
+                        No observations found for the selected date range. Try adjusting your search criteria.
+                      </p>
+                    </div>
                   );
-                })}
-              </div>
-            </div>
+                }
+                
+                if (filteredAnimalTags.length === 0) {
+                  // Show message if cameras are selected but no species have observations
+                  if (effectiveDeploymentIds.length > 0) {
+                    // We have observations but none match the selected cameras
+                    return (
+                      <div id="animl-no-species-message" className="p-4 text-center text-gray-500">
+                        <p className="text-sm">No animal species found with observations from selected camera(s).</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {effectiveDeploymentIds.length === 1 
+                            ? 'Try selecting different cameras or check if observations exist for this camera.'
+                            : 'Try selecting different cameras or check if observations exist for these cameras.'}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }
+
+                return (
+                  <div id="animl-label-filter-section" className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                        <Filter className="w-4 h-4 mr-2" />
+                        Animal Species
+                      </h4>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const allLabels = filteredAnimalTags.map(tag => tag.label);
+                            onLabelsChange(allLabels);
+                          }}
+                          className="text-xs px-2 py-1 text-blue-600 hover:text-blue-700 hover:underline"
+                        >
+                          Select All
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onLabelsChange([]);
+                          }}
+                          className="text-xs px-2 py-1 text-blue-600 hover:text-blue-700 hover:underline"
+                        >
+                          Deselect All
+                        </button>
+                      </div>
+                    </div>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {filteredAnimalTags.map(tag => {
+                        const isChecked = selectedLabels.includes(tag.label);
+                        // Use the pre-calculated aggregated count
+                        const speciesCount = tag.aggregatedCount || 0;
+                        
+                        return (
+                          <label
+                            key={tag.label}
+                            id={`animl-label-filter-${tag.label}`}
+                            className="flex items-center cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  onLabelsChange([...selectedLabels, tag.label]);
+                                } else {
+                                  onLabelsChange(selectedLabels.filter(l => l !== tag.label));
+                                }
+                              }}
+                              className="mr-2 cursor-pointer"
+                            />
+                            <span className="text-sm text-gray-700">{tag.label} ({speciesCount})</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+            </>
           )}
 
-          {/* Image Filter */}
-          {onHasImagesChange && (
-            <div id="animl-image-filter-section" className="space-y-3">
-              <h4 className="text-sm font-medium text-gray-900 flex items-center">
-                <Filter className="w-4 h-4 mr-2" />
-                Images
-              </h4>
-              <div className="space-y-2">
-                <label className="flex items-center cursor-pointer">
-                  <input
-                    type="radio"
-                    name="hasImages"
-                    checked={hasImages === undefined}
-                    onChange={() => onHasImagesChange(undefined)}
-                    className="mr-2 cursor-pointer"
-                  />
-                  <span className="text-sm text-gray-700">All (with or without images)</span>
-                </label>
-                <label className="flex items-center cursor-pointer">
-                  <input
-                    type="radio"
-                    name="hasImages"
-                    checked={hasImages === true}
-                    onChange={() => onHasImagesChange(true)}
-                    className="mr-2 cursor-pointer"
-                  />
-                  <span className="text-sm text-gray-700">Has images</span>
-                </label>
-                <label className="flex items-center cursor-pointer">
-                  <input
-                    type="radio"
-                    name="hasImages"
-                    checked={hasImages === false}
-                    onChange={() => onHasImagesChange(false)}
-                    className="mr-2 cursor-pointer"
-                  />
-                  <span className="text-sm text-gray-700">No images</span>
-                </label>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Export Actions Footer */}
@@ -720,19 +1062,19 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
             <div id="animl-add-to-cart-section" className="space-y-3">
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm font-medium text-blue-900">
-                  {hasAdditionalFilters && filteredObservations.length !== observations.length ? (
+                  {hasAdditionalFilters && filteredObservations.length !== animalOnlyObservations.length ? (
                     <>
                       <span className="text-lg font-bold">{filteredObservations.length}</span> observations will be saved after applying additional filters
                     </>
                   ) : (
                     <>
-                      <span className="text-lg font-bold">{observations.length}</span> observations will be saved
+                      <span className="text-lg font-bold">{animalOnlyObservations.length}</span> observations will be saved
                     </>
                   )}
                 </p>
-                {hasAdditionalFilters && filteredObservations.length !== observations.length && (
+                {hasAdditionalFilters && filteredObservations.length !== animalOnlyObservations.length && (
                   <p className="text-xs text-blue-700 mt-1">
-                    Filtered from {observations.length} total observations
+                    Filtered from {animalOnlyObservations.length} total observations
                   </p>
                 )}
               </div>

@@ -555,6 +555,20 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
         {showObservations ? (
           /* Observations List */
           <>
+            {/* Camera Name Subheader - Show when viewing camera observations in camera-centric mode */}
+            {viewMode === 'camera-centric' && selectedDeploymentId !== null && (
+              <div id="animl-camera-subheader-container" className="p-4 border-b border-gray-200 bg-gray-50 sticky top-0 z-10">
+                <div className="flex items-center gap-2">
+                  <Camera className="w-4 h-4 text-gray-600" />
+                  <h3 id="animl-camera-subheader-name" className="text-sm font-semibold text-gray-900">
+                    {deployments.find(dep => dep.id === selectedDeploymentId)?.name || 
+                     deployments.find(dep => dep.id === selectedDeploymentId)?.animl_dp_id || 
+                     'Selected Camera'}
+                  </h3>
+                </div>
+              </div>
+            )}
+            
             {/* Back Button - Show when viewing animal category observations */}
             {viewMode === 'animal-centric' && selectedAnimalLabel && (
               <div id="animl-back-button-container" className="p-4 border-b border-gray-200 bg-gray-50 sticky top-0 z-10">
@@ -666,7 +680,8 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
                             <Calendar id={`animl-observation-date-icon-${obsId}`} className="w-3 h-3 mr-1" />
                             {formatDate(obsTimestamp)}
                           </div>
-                          {obsDeploymentName && (
+                          {/* Only show camera name in animal-centric mode (redundant in camera-centric mode) */}
+                          {obsDeploymentName && viewMode === 'animal-centric' && (
                             <div id={`animl-observation-deployment-${obsId}`} className="flex items-center text-xs text-gray-500">
                               <Camera id={`animl-observation-deployment-icon-${obsId}`} className="w-3 h-3 mr-1" />
                               {obsDeploymentName}

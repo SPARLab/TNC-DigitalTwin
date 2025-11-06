@@ -1,0 +1,40 @@
+ANiML Data Structure and Context for Development
+
+ANiML (Animal Machine Learning) data consists of:
+
+1. **Deployments (Camera Traps)**: Physical camera trap locations with:
+   - `id`: Unique deployment ID
+   - `name`: Camera name (e.g., "JLDP_coastal_05")
+   - `animl_dp_id`: Deployment identifier
+   - Geographic coordinates (Point geometry)
+
+2. **Observations (Image Labels)**: Individual detections/tags of animals in camera trap images:
+   - `id`: Unique observation ID
+   - `animl_image_id`: Groups multiple tags for the same image capture event
+   - `deployment_id`: Links to the camera that captured it
+   - `label`: Animal species/tag (e.g., "american bison", "bobcat", "animal")
+   - `timestamp`: When the image was captured
+   - `medium_url`, `small_url`: Image URLs (may be null)
+   - `geometry`: Geographic coordinates
+
+3. **Animal Tags**: Aggregated view of all unique animal species:
+   - `label`: Species name
+   - `totalObservations`: Total count across all cameras
+   - `uniqueCameras`: Number of cameras that detected this species
+
+**Key Behaviors:**
+- A single camera capture event (same `animl_image_id`) can have multiple tags (e.g., "animal", "bobcat", "mammal")
+- Observations are deduplicated by `animl_image_id` in the UI to show one entry per image with all tags
+- Labels are prioritized: non-"animal" labels appear first (e.g., "bobcat" before "animal")
+- Observations with "person" or "people" labels are filtered out
+
+**View Modes:**
+- **Camera-centric**: Browse by camera → see all observations for that camera
+- **Animal-centric**: Browse by species → see all observations for that species across all cameras
+
+**Export Functionality:**
+- Export tab should be context-aware based on view mode
+- Camera-centric: Show animal species detected by selected camera, allow multi-select
+- Animal-centric: Show all animal species, allow multi-select with Select All/Deselect All
+- Filters apply to observations: selected deployments, selected labels, has images/no images
+

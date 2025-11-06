@@ -429,7 +429,7 @@ function App() {
   };
 
   // Animl handlers
-  const handleAnimlViewModeChange = (mode: AnimlViewMode) => {
+  const handleAnimlViewModeChange = async (mode: AnimlViewMode) => {
     setAnimlViewMode(mode);
     setAnimlCustomFilters(prev => ({ ...prev, viewMode: mode }));
     // Clear selections when switching view modes
@@ -437,30 +437,79 @@ function App() {
     setSelectedAnimlAnimalTag(null);
     setSelectedAnimlObservation(null);
     
-    // Reload map if Animl data is already loaded
-    if (lastSearchedFilters.source === 'Animl' && animlImageLabels.length > 0) {
-      const startDate = filters.startDate || formatDateForAPI(getDateRange(lastSearchedDaysBack || 30).startDate);
-      const endDate = filters.endDate || formatDateForAPI(getDateRange(lastSearchedDaysBack || 30).endDate);
-      let searchMode: 'preserve-only' | 'expanded' | 'custom' = filters.spatialFilter === 'Dangermond Preserve' ? 'preserve-only' : 'expanded';
-      let customPolygonGeometry: string | undefined = undefined;
-      if (filters.customPolygon && filters.spatialFilter === 'Draw Area') {
-        searchMode = 'custom';
-        customPolygonGeometry = JSON.stringify({
-          rings: filters.customPolygon.rings,
-          spatialReference: filters.customPolygon.spatialReference
+    // Prepare date range and spatial filter for map reload
+    const startDate = filters.startDate || formatDateForAPI(getDateRange(lastSearchedDaysBack || 30).startDate);
+    const endDate = filters.endDate || formatDateForAPI(getDateRange(lastSearchedDaysBack || 30).endDate);
+    let searchMode: 'preserve-only' | 'expanded' | 'custom' = filters.spatialFilter === 'Dangermond Preserve' ? 'preserve-only' : 'expanded';
+    let customPolygonStr: string | undefined = undefined;
+    let customPolygonGeometry: string | undefined = undefined;
+    if (filters.customPolygon && filters.spatialFilter === 'Draw Area') {
+      searchMode = 'custom';
+      customPolygonStr = typeof filters.customPolygon === 'string' 
+        ? filters.customPolygon 
+        : JSON.stringify(filters.customPolygon);
+      customPolygonGeometry = JSON.stringify({
+        rings: filters.customPolygon.rings,
+        spatialReference: filters.customPolygon.spatialReference
+      });
+    }
+    
+    // In animal-centric mode, load all observations for the export tab
+    if (mode === 'animal-centric' && lastSearchedFilters.source === 'Animl' && hasSearched) {
+      try {
+        // Load all observations for animal-centric export tab (no filters by deployment or label)
+        const allObservations = await animlService.queryImageLabels({
+          startDate,
+          endDate,
+          searchMode,
+          customPolygon: customPolygonStr,
+          maxResults: 10000 // Load up to 10k observations for export
+        });
+        
+        setAnimlImageLabels(allObservations);
+        console.log(`✅ Loaded ${allObservations.length} observations for animal-centric export view`);
+        
+        // Reload map with all observations
+        mapViewRef.current?.reloadAnimlObservations({
+          deployments: animlDeployments,
+          imageLabels: allObservations,
+          viewMode: mode,
+          startDate,
+          endDate,
+          searchMode,
+          customPolygon: customPolygonGeometry,
+          showSearchArea: filters.spatialFilter === 'Dangermond + Margin'
+        });
+      } catch (error) {
+        console.error('Error loading all observations for animal-centric view:', error);
+        // Reload map with existing observations on error
+        if (animlImageLabels.length > 0) {
+          mapViewRef.current?.reloadAnimlObservations({
+            deployments: animlDeployments,
+            imageLabels: animlImageLabels,
+            viewMode: mode,
+            startDate,
+            endDate,
+            searchMode,
+            customPolygon: customPolygonGeometry,
+            showSearchArea: filters.spatialFilter === 'Dangermond + Margin'
+          });
+        }
+      }
+    } else {
+      // Reload map if Animl data is already loaded (for camera-centric mode)
+      if (lastSearchedFilters.source === 'Animl' && animlImageLabels.length > 0) {
+        mapViewRef.current?.reloadAnimlObservations({
+          deployments: animlDeployments,
+          imageLabels: animlImageLabels,
+          viewMode: mode,
+          startDate,
+          endDate,
+          searchMode,
+          customPolygon: customPolygonGeometry,
+          showSearchArea: filters.spatialFilter === 'Dangermond + Margin'
         });
       }
-      
-      mapViewRef.current?.reloadAnimlObservations({
-        deployments: animlDeployments,
-        imageLabels: animlImageLabels,
-        viewMode: mode,
-        startDate,
-        endDate,
-        searchMode,
-        customPolygon: customPolygonGeometry,
-        showSearchArea: filters.spatialFilter === 'Dangermond + Margin'
-      });
     }
   };
 
