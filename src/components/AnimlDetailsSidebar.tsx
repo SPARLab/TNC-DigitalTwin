@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Calendar, Camera, Tag, Download, ShoppingCart, Filter, MapPin } from 'lucide-react';
-import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag } from '../services/animlService';
+import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag, AnimlCountLookups, animlService } from '../services/animlService';
 import { AnimlViewMode } from './AnimlSidebar';
 
 interface AnimlDetailsSidebarProps {
@@ -15,6 +15,10 @@ interface AnimlDetailsSidebarProps {
   deployments?: AnimlDeployment[];
   animalTags?: AnimlAnimalTag[];
   observations?: AnimlImageLabel[];
+  
+  // Count lookups for accurate counts (optimized query)
+  countLookups?: AnimlCountLookups | null;
+  countsLoading?: boolean;
   
   // Export & cart
   onExportCSV: () => void;
@@ -46,6 +50,8 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
   deployments = [],
   animalTags = [],
   observations = [],
+  countLookups,
+  countsLoading = false,
   onExportCSV,
   onExportGeoJSON,
   onAddToCart,
@@ -85,6 +91,21 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
       return deployments;
     }
     
+    // Use count lookups if available (preferred - accurate database counts)
+    if (countLookups && !countsLoading) {
+      const deploymentIdsWithObservations = new Set<number>();
+      // Get all deployment IDs that have observations from count lookups
+      countLookups.countsByDeployment.forEach((count, deploymentId) => {
+        if (count > 0) {
+          deploymentIdsWithObservations.add(deploymentId);
+        }
+      });
+      
+      // Filter deployments to only include those with observations
+      return deployments.filter(dep => deploymentIdsWithObservations.has(dep.id));
+    }
+    
+    // Fallback: use in-memory data (may be incomplete)
     // Get deployment IDs that have at least one animal observation
     const deploymentIdsWithObservations = new Set<number>();
     animalOnlyObservations.forEach(obs => {
@@ -93,7 +114,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
     
     // Filter deployments to only include those with observations
     return deployments.filter(dep => deploymentIdsWithObservations.has(dep.id));
-  }, [viewMode, deployments, animalOnlyObservations]);
+  }, [viewMode, deployments, animalOnlyObservations, countLookups, countsLoading]);
 
   // Track if we've auto-selected cameras in animal-centric mode
   const hasAutoSelectedCameras = useRef(false);
@@ -186,7 +207,59 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
 
   // Compute filtered animal tags for animal-centric mode (species with observations from selected cameras)
   const filteredAnimalTags = useMemo(() => {
-    if (viewMode !== 'animal-centric' || animalTags.length === 0 || observations.length === 0) {
+    if (viewMode !== 'animal-centric') {
+      return [];
+    }
+
+    // Use count lookups if available (preferred - has ALL species from database)
+    if (countLookups && !countsLoading) {
+      const speciesCountsMap = new Map<string, number>();
+      
+      // Get all unique labels from count lookups
+      const allLabels = new Set<string>(countLookups.countsByLabel.keys());
+      
+      // Calculate aggregated counts for selected deployments
+      if (effectiveDeploymentIds.length > 0) {
+        effectiveDeploymentIds.forEach(deploymentId => {
+          allLabels.forEach(label => {
+            const key = `${deploymentId}:${label}`;
+            const count = countLookups.countsByDeploymentAndLabel.get(key) || 0;
+            if (count > 0) {
+              const currentTotal = speciesCountsMap.get(label) || 0;
+              speciesCountsMap.set(label, currentTotal + count);
+            }
+          });
+        });
+      } else {
+        // No deployments selected - use total counts per label
+        countLookups.countsByLabel.forEach((count, label) => {
+          speciesCountsMap.set(label, count);
+        });
+      }
+      
+      // Build species list from count lookups
+      return Array.from(allLabels)
+        .filter(label => {
+          // Filter out person/people labels
+          const labelLower = label.toLowerCase();
+          if (labelLower === 'person' || labelLower === 'people') {
+            return false;
+          }
+          
+          // Only show species with count > 0 for selected deployments
+          const count = speciesCountsMap.get(label) || 0;
+          return count > 0;
+        })
+        .map(label => ({
+          label,
+          totalObservations: countLookups.countsByLabel.get(label) || 0,
+          aggregatedCount: speciesCountsMap.get(label) || 0
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+    }
+
+    // Fallback: use in-memory data (may be incomplete)
+    if (animalTags.length === 0 || observations.length === 0) {
       return [];
     }
 
@@ -230,7 +303,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
         ? (speciesCountsMap.get(tag.label) || 0)
         : tag.totalObservations
     }));
-  }, [viewMode, animalTags, observations.length, effectiveDeploymentIds, speciesCountsPerCamera]);
+  }, [viewMode, animalTags, observations.length, effectiveDeploymentIds, speciesCountsPerCamera, countLookups, countsLoading]);
 
   // Track if we've auto-selected labels in animal-centric mode
   const hasAutoSelectedLabels = useRef(false);
@@ -333,6 +406,51 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
 
     return filtered;
   }, [animalOnlyObservations, effectiveDeploymentIds, selectedLabels]);
+
+  // Calculate total count of ALL animal observations (excluding person/people) from database
+  const totalAnimalObservationCount = useMemo(() => {
+    if (countLookups && !countsLoading) {
+      try {
+        // Get total count for ALL deployments and ALL labels (no filters)
+        const total = animlService.getTotalCountForFilters(
+          countLookups,
+          [], // No deployment filter = all deployments
+          []  // No label filter = all labels
+        );
+        return total;
+      } catch (error) {
+        console.error('Error calculating total count from lookups:', error);
+        return animalOnlyObservations.length;
+      }
+    }
+    return animalOnlyObservations.length; // Fallback to in-memory count
+  }, [countLookups, countsLoading, animalOnlyObservations.length]);
+
+  // Calculate accurate count using count lookups (preferred over in-memory counting)
+  // Falls back to in-memory count if lookups not available
+  const filteredObservationCount = useMemo(() => {
+    // If count lookups are available, use them for accurate database counts
+    if (countLookups && !countsLoading) {
+      try {
+        const total = animlService.getTotalCountForFilters(
+          countLookups,
+          effectiveDeploymentIds,
+          selectedLabels
+        );
+        console.log(`📊 Filtered count from lookups: ${total} observations (deployments: ${effectiveDeploymentIds.length}, labels: ${selectedLabels.length})`);
+        console.log(`📊 Total count from lookups: ${totalAnimalObservationCount} observations`);
+        return total;
+      } catch (error) {
+        console.error('Error calculating count from lookups:', error);
+        // Fall back to in-memory count on error
+        return filteredObservations.length;
+      }
+    }
+    
+    // Fallback: count in-memory observations
+    // This may be inaccurate if observations are paginated/incomplete
+    return filteredObservations.length;
+  }, [countLookups, countsLoading, effectiveDeploymentIds, selectedLabels, filteredObservations.length, totalAnimalObservationCount]);
 
   // Helper function to format date
   const formatDate = (dateString: string) => {
@@ -778,23 +896,41 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
       );
     }
 
-    // Compare against animal-only observations (excluding person/people)
-    const hasAdditionalFilters = filteredObservations.length !== animalOnlyObservations.length;
+    // Show loading state while counts are being fetched (animal-centric mode)
+    if (viewMode === 'animal-centric' && countsLoading && !countLookups) {
+      return (
+        <div id="animl-export-loading-state" className="flex flex-col items-center justify-center h-full p-8 text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Loading Data</h3>
+          <p className="text-sm text-gray-600">
+            Fetching observation counts from database...
+          </p>
+        </div>
+      );
+    }
+
+    // Check if filters are applied (deployment or label selection)
+    const totalAvailableSpecies = viewMode === 'camera-centric' ? cameraAnimalSpecies.length : filteredAnimalTags.length;
+    const hasDeploymentFilters = effectiveDeploymentIds.length > 0 && effectiveDeploymentIds.length < deploymentsWithObservations.length;
+    const hasLabelFilters = selectedLabels.length > 0 && selectedLabels.length < totalAvailableSpecies;
+    const hasActiveFilters = hasDeploymentFilters || hasLabelFilters;
 
     return (
       <div id="animl-export-content" className="flex flex-col h-full">
         <div id="animl-export-header" className="p-4 border-b border-gray-200 bg-white">
           <h3 className="text-sm font-medium text-gray-900 mb-2">Animl Camera Traps</h3>
           <p className="text-sm">
-            {hasAdditionalFilters ? (
+            {countsLoading ? (
+              <span className="text-gray-500 italic">Loading counts...</span>
+            ) : hasActiveFilters ? (
               <>
-                <span className="font-semibold text-blue-600">{filteredObservations.length} filtered</span>
+                <span className="font-semibold text-blue-600">{filteredObservationCount.toLocaleString()} filtered</span>
                 <span className="text-gray-400 mx-1">/</span>
-                <span className="text-gray-600">{animalOnlyObservations.length} total observations</span>
+                <span className="text-gray-600">{totalAnimalObservationCount.toLocaleString()} total observations</span>
                 <span className="text-gray-600"> {dateRangeText}</span>
               </>
             ) : (
-              <span className="text-gray-600">{animalOnlyObservations.length} total observations {dateRangeText}</span>
+              <span className="text-gray-600">{totalAnimalObservationCount.toLocaleString()} total observations {dateRangeText}</span>
             )}
           </p>
           <p className="text-xs text-gray-500 mt-1">
@@ -802,6 +938,19 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
           </p>
         </div>
 
+        {/* Loading spinner overlay when counts are loading */}
+        {countsLoading && (
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+              <p className="text-sm text-gray-600">Loading observation counts...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Only show filters and actions when counts are loaded */}
+        {!countsLoading && (
+        <>
         <div id="animl-export-filters" className="flex-1 overflow-y-auto p-4 space-y-6">
           {/* Camera-Centric Mode: Show selected camera info and species filter */}
           {viewMode === 'camera-centric' && selectedDeployment && (
@@ -819,40 +968,40 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
                 </div>
               </div>
 
-              {/* Animal Species Filter (Camera-Centric) - Show species for selected camera */}
+          {/* Animal Species Filter (Camera-Centric) - Show species for selected camera */}
               {onLabelsChange && cameraAnimalSpecies.length > 0 && (
-                <div id="animl-camera-species-filter-section" className="space-y-3">
-                  <h4 className="text-sm font-medium text-gray-900 flex items-center">
-                    <Filter className="w-4 h-4 mr-2" />
+            <div id="animl-camera-species-filter-section" className="space-y-3">
+              <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                <Filter className="w-4 h-4 mr-2" />
                     Animal Species
-                  </h4>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {cameraAnimalSpecies.map(species => {
-                      const isChecked = selectedLabels.includes(species.label);
-                      return (
-                        <label
-                          key={species.label}
-                          id={`animl-camera-species-filter-${species.label}`}
-                          className="flex items-center cursor-pointer"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                onLabelsChange([...selectedLabels, species.label]);
-                              } else {
-                                onLabelsChange(selectedLabels.filter(l => l !== species.label));
-                              }
-                            }}
-                            className="mr-2 cursor-pointer"
-                          />
-                          <span className="text-sm text-gray-700">{species.label} ({species.count})</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
+              </h4>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {cameraAnimalSpecies.map(species => {
+                  const isChecked = selectedLabels.includes(species.label);
+                  return (
+                    <label
+                      key={species.label}
+                      id={`animl-camera-species-filter-${species.label}`}
+                      className="flex items-center cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            onLabelsChange([...selectedLabels, species.label]);
+                          } else {
+                            onLabelsChange(selectedLabels.filter(l => l !== species.label));
+                          }
+                        }}
+                        className="mr-2 cursor-pointer"
+                      />
+                      <span className="text-sm text-gray-700">{species.label} ({species.count})</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
               )}
             </>
           )}
@@ -862,6 +1011,16 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
             <>
               {/* Deployment Filter - Show only deployments with observations */}
               {onDeploymentIdsChange && deployments.length > 0 && (() => {
+                // Show loading state while count data is being fetched
+                if (countsLoading || !countLookups) {
+                  return (
+                    <div id="animl-deployments-loading" className="p-4 text-center text-gray-500">
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                      <p className="text-sm font-medium">Loading camera traps...</p>
+                    </div>
+                  );
+                }
+                
                 // Show message if no deployments have observations
                 if (deploymentsWithObservations.length === 0) {
                   return (
@@ -912,10 +1071,8 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
                         })
                         .map(deployment => {
                         const isChecked = selectedDeploymentIds.includes(deployment.id);
-                        // Count animal-only observations for this deployment
-                        const deploymentObservationCount = animalOnlyObservations.filter(
-                          obs => obs.deployment_id === deployment.id
-                        ).length;
+                        // Get count from count lookups (accurate database count)
+                        const deploymentObservationCount = countLookups?.countsByDeployment.get(deployment.id) || 0;
                         
                         return (
                           <label
@@ -937,9 +1094,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
                             />
                             <span className="text-sm text-gray-700">
                               {deployment.name || deployment.animl_dp_id}
-                              {deploymentObservationCount > 0 && (
-                                <span className="text-gray-500 ml-1">({deploymentObservationCount})</span>
-                              )}
+                              <span className="text-gray-500 ml-1">({deploymentObservationCount.toLocaleString()})</span>
                             </span>
                           </label>
                         );
@@ -949,19 +1104,30 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
                 );
               })()}
 
-              {/* Animal Species Filter (Animal-Centric) - Show all species with Select All/Deselect All */}
+          {/* Animal Species Filter (Animal-Centric) - Show all species with Select All/Deselect All */}
               {/* Counts reflect currently selected deployments in export filter */}
               {/* Only show species with observations from selected cameras */}
-              {onLabelsChange && viewMode === 'animal-centric' && animalTags.length > 0 && (() => {
-                const hasObservations = observations.length > 0;
+              {onLabelsChange && viewMode === 'animal-centric' && (() => {
+                // Check if we have count data (don't need observations for export tab)
+                const hasCountData = countLookups && !countsLoading;
                 
-                // If no observations available, show message
-                if (!hasObservations) {
+                // Show loading state while count data is being fetched
+                if (countsLoading || !countLookups) {
+                  return (
+                    <div id="animl-species-loading" className="p-4 text-center text-gray-500">
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                      <p className="text-sm font-medium">Loading species...</p>
+                    </div>
+                  );
+                }
+                
+                // If no count data available (shouldn't happen), show message
+                if (!hasCountData) {
                   return (
                     <div id="animl-no-observations-message" className="p-4 text-center text-gray-500">
-                      <p className="text-sm font-medium mb-1">No observations available</p>
+                      <p className="text-sm font-medium mb-1">No data available</p>
                       <p className="text-xs text-gray-400">
-                        No observations found for the selected date range. Try adjusting your search criteria.
+                        No observation data found for the selected date range. Try adjusting your search criteria.
                       </p>
                     </div>
                   );
@@ -986,69 +1152,68 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
                 }
 
                 return (
-                  <div id="animl-label-filter-section" className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-medium text-gray-900 flex items-center">
-                        <Filter className="w-4 h-4 mr-2" />
-                        Animal Species
-                      </h4>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
+            <div id="animl-label-filter-section" className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-medium text-gray-900 flex items-center">
+                  <Filter className="w-4 h-4 mr-2" />
+                  Animal Species
+                </h4>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
                             const allLabels = filteredAnimalTags.map(tag => tag.label);
-                            onLabelsChange(allLabels);
-                          }}
-                          className="text-xs px-2 py-1 text-blue-600 hover:text-blue-700 hover:underline"
-                        >
-                          Select All
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onLabelsChange([]);
-                          }}
-                          className="text-xs px-2 py-1 text-blue-600 hover:text-blue-700 hover:underline"
-                        >
-                          Deselect All
-                        </button>
-                      </div>
-                    </div>
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      onLabelsChange(allLabels);
+                    }}
+                    className="text-xs px-2 py-1 text-blue-600 hover:text-blue-700 hover:underline"
+                  >
+                    Select All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onLabelsChange([]);
+                    }}
+                    className="text-xs px-2 py-1 text-blue-600 hover:text-blue-700 hover:underline"
+                  >
+                    Deselect All
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
                       {filteredAnimalTags.map(tag => {
-                        const isChecked = selectedLabels.includes(tag.label);
+                  const isChecked = selectedLabels.includes(tag.label);
                         // Use the pre-calculated aggregated count
                         const speciesCount = tag.aggregatedCount || 0;
                         
-                        return (
-                          <label
-                            key={tag.label}
-                            id={`animl-label-filter-${tag.label}`}
-                            className="flex items-center cursor-pointer"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  onLabelsChange([...selectedLabels, tag.label]);
-                                } else {
-                                  onLabelsChange(selectedLabels.filter(l => l !== tag.label));
-                                }
-                              }}
-                              className="mr-2 cursor-pointer"
-                            />
+                  return (
+                    <label
+                      key={tag.label}
+                      id={`animl-label-filter-${tag.label}`}
+                      className="flex items-center cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            onLabelsChange([...selectedLabels, tag.label]);
+                          } else {
+                            onLabelsChange(selectedLabels.filter(l => l !== tag.label));
+                          }
+                        }}
+                        className="mr-2 cursor-pointer"
+                      />
                             <span className="text-sm text-gray-700">{tag.label} ({speciesCount})</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
                 );
               })()}
             </>
           )}
-
         </div>
 
         {/* Export Actions Footer */}
@@ -1093,28 +1258,30 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
             <div id="animl-add-to-cart-section" className="space-y-3">
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm font-medium text-blue-900">
-                  {hasAdditionalFilters && filteredObservations.length !== animalOnlyObservations.length ? (
+                  {countsLoading ? (
+                    <span className="text-gray-500 italic">Calculating count...</span>
+                  ) : hasActiveFilters ? (
                     <>
-                      <span className="text-lg font-bold">{filteredObservations.length}</span> observations will be saved after applying additional filters
+                      <span className="text-lg font-bold">{filteredObservationCount.toLocaleString()}</span> observations will be saved after applying filters
                     </>
                   ) : (
                     <>
-                      <span className="text-lg font-bold">{animalOnlyObservations.length}</span> observations will be saved
+                      <span className="text-lg font-bold">{totalAnimalObservationCount.toLocaleString()}</span> observations will be saved
                     </>
                   )}
                 </p>
-                {hasAdditionalFilters && filteredObservations.length !== animalOnlyObservations.length && (
+                {hasActiveFilters && !countsLoading && (
                   <p className="text-xs text-blue-700 mt-1">
-                    Filtered from {animalOnlyObservations.length} total observations
+                    Filtered from {totalAnimalObservationCount.toLocaleString()} total observations
                   </p>
                 )}
               </div>
               
               <button
                 id="animl-add-to-cart-button"
-                onClick={() => onAddToCart(filteredObservations.length)}
+                onClick={() => onAddToCart(filteredObservationCount)}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={observations.length === 0}
+                disabled={observations.length === 0 || countsLoading}
               >
                 <ShoppingCart className="w-4 h-4" />
                 Add to Cart
@@ -1122,6 +1289,8 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
             </div>
           )}
         </div>
+        </>
+        )}
       </div>
     );
   };

@@ -16,7 +16,7 @@ import INaturalistDetailsSidebar from './components/INaturalistDetailsSidebar';
 import AnimlDetailsSidebar from './components/AnimlDetailsSidebar';
 import { INaturalistUnifiedObservation } from './components/INaturalistSidebar';
 import { FilterState, DendraStation, DendraDatastream, DendraDatastreamWithStation, DendraDatapoint, INaturalistCustomFilters, AnimlCustomFilters } from './types';
-import { animlService, AnimlDeployment, AnimlImageLabel, AnimlAnimalTag } from './services/animlService';
+import { animlService, AnimlDeployment, AnimlImageLabel, AnimlAnimalTag, AnimlCountLookups } from './services/animlService';
 import { AnimlViewMode } from './components/AnimlSidebar';
 import { LiDARViewMode } from './components/dataviews/LiDARView';
 import { iNaturalistObservation } from './services/iNaturalistService';
@@ -195,6 +195,8 @@ function App() {
   const [animlDeployments, setAnimlDeployments] = useState<AnimlDeployment[]>([]);
   const [animlImageLabels, setAnimlImageLabels] = useState<AnimlImageLabel[]>([]);
   const [animlAnimalTags, setAnimlAnimalTags] = useState<AnimlAnimalTag[]>([]);
+  const [animlCountLookups, setAnimlCountLookups] = useState<AnimlCountLookups | null>(null);
+  const [animlCountsLoading, setAnimlCountsLoading] = useState(false);
   const [animlLoading, setAnimlLoading] = useState(false);
   const [animlLoadingObservations, setAnimlLoadingObservations] = useState(false);
   const [animlLoadingMoreObservations, setAnimlLoadingMoreObservations] = useState(false);
@@ -440,6 +442,11 @@ function App() {
     // Prepare date range and spatial filter for map reload
     const startDate = filters.startDate || formatDateForAPI(getDateRange(lastSearchedDaysBack || 30).startDate);
     const endDate = filters.endDate || formatDateForAPI(getDateRange(lastSearchedDaysBack || 30).endDate);
+    
+    // Load count lookups for accurate right sidebar counts
+    if (hasSearched) {
+      await loadAnimlCountLookups(startDate, endDate);
+    }
     let searchMode: 'preserve-only' | 'expanded' | 'custom' = filters.spatialFilter === 'Dangermond Preserve' ? 'preserve-only' : 'expanded';
     let customPolygonStr: string | undefined = undefined;
     let customPolygonGeometry: string | undefined = undefined;
@@ -755,13 +762,80 @@ function App() {
     mapViewRef.current?.clearDeploymentHighlight();
   };
 
+  /**
+   * Load count lookups for Animl data
+   * This fetches ALL observation counts in one optimized query
+   * and builds lookup structures for instant access
+   */
+  const loadAnimlCountLookups = async (startDate: string | undefined, endDate: string | undefined) => {
+    setAnimlCountsLoading(true);
+    try {
+      console.log('📊 Loading Animl count lookups...');
+      
+      // Fetch all counts grouped by (deployment, label)
+      const groupedCounts = await animlService.getObservationCountsGrouped({
+        startDate,
+        endDate
+      });
+      
+      // Build lookup structures for O(1) access
+      const lookups = animlService.buildCountLookups(groupedCounts);
+      
+      setAnimlCountLookups(lookups);
+      console.log('✅ Animl count lookups loaded and ready');
+      
+    } catch (error) {
+      console.error('Error loading Animl count lookups:', error);
+      toast.error('Failed to load observation counts');
+      setAnimlCountLookups(null);
+    } finally {
+      setAnimlCountsLoading(false);
+    }
+  };
+
   const handleAnimlAddToCart = (filteredCount: number) => {
-    if (!hasSearched || animlImageLabels.length === 0) {
+    if (!hasSearched) {
       toast.error('No data to add to cart');
       return;
     }
 
-    // Build cart item
+    // The filteredCount passed here is already accurate (from count lookups)
+    // We need to store the current filter selections (deploymentIds and labels)
+    // These will be used to re-query the database during export
+    
+    // Get the deployment IDs and labels from current filters
+    // In camera-centric mode: use selected deployment
+    // In animal-centric mode: use selected deployments (or all if none selected)
+    const effectiveDeploymentIds = animlCustomFilters.deploymentIds && animlCustomFilters.deploymentIds.length > 0
+      ? animlCustomFilters.deploymentIds
+      : (animlViewMode === 'camera-centric' && selectedAnimlDeployment
+          ? [selectedAnimlDeployment.id]
+          : animlViewMode === 'animal-centric' && animlDeployments.length > 0
+          ? animlDeployments.map(dep => dep.id)
+          : []);
+    
+    const effectiveLabels = animlCustomFilters.labels || [];
+    
+    console.log(`🛒 Animl Add to Cart: ${filteredCount} observations`);
+    console.log(`   📷 Deployments: ${effectiveDeploymentIds.length} selected`);
+    console.log(`   🏷️  Labels: ${effectiveLabels.length} selected`);
+    console.log(`   ✅ Count is accurate (from database query, not in-memory data)`);
+
+    // CRITICAL: Ensure startDate and endDate are explicitly set for cart item
+    // If dates aren't set but daysBack is, compute dates from daysBack
+    // This ensures the cart export always has date filters applied
+    let cartStartDate = filters.startDate;
+    let cartEndDate = filters.endDate;
+    if (!cartStartDate || !cartEndDate) {
+      const daysBack = filters.daysBack || 30;
+      const dateRange = getDateRange(daysBack);
+      cartStartDate = formatDateForAPI(dateRange.startDate);
+      cartEndDate = formatDateForAPI(dateRange.endDate);
+      console.log(`📅 Animl Add to Cart: Computed dates from daysBack (${daysBack}): ${cartStartDate} to ${cartEndDate}`);
+    }
+
+    // Build cart item with current filter selections
+    // The filters will be used to re-query the database during export
     const cartItem = {
       id: `animl-${Date.now()}`,
       dataSource: 'animl' as const,
@@ -772,15 +846,15 @@ function App() {
         spatialFilter: filters.spatialFilter,
         timeRange: filters.timeRange,
         daysBack: filters.daysBack,
-        startDate: filters.startDate,
-        endDate: filters.endDate,
+        startDate: cartStartDate, // Use computed start date
+        endDate: cartEndDate,     // Use computed end date
         customPolygon: filters.customPolygon
       },
       customFilters: {
         animl: {
           viewMode: animlViewMode,
-          deploymentIds: animlCustomFilters.deploymentIds,
-          labels: animlCustomFilters.labels,
+          deploymentIds: effectiveDeploymentIds,
+          labels: effectiveLabels,
           hasImages: animlCustomFilters.hasImages
         }
       },
@@ -2444,6 +2518,8 @@ function App() {
             deployments={animlDeployments}
             animalTags={animlAnimalTags}
             observations={animlImageLabels}
+            countLookups={animlCountLookups}
+            countsLoading={animlCountsLoading}
             onExportCSV={handleAnimlExportCSV}
             onExportGeoJSON={handleAnimlExportGeoJSON}
             onAddToCart={handleAnimlAddToCart}

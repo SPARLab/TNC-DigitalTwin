@@ -72,6 +72,37 @@ export interface AnimlServiceQueryOptions {
   onProgress?: (current: number, total: number, percentage: number) => void;
 }
 
+/**
+ * Result from grouped count query
+ * Represents observation counts for a specific (deployment, label) combination
+ */
+export interface AnimlGroupedCount {
+  deployment_id: number;
+  label: string;
+  observation_count: number;
+}
+
+/**
+ * Processed count data structures for fast lookups
+ * Built from AnimlGroupedCount results
+ */
+export interface AnimlCountLookups {
+  /** Total counts per deployment: Map<deployment_id, count> */
+  countsByDeployment: Map<number, number>;
+  
+  /** Total counts per label (across all deployments): Map<label, count> */
+  countsByLabel: Map<string, number>;
+  
+  /** Counts for specific (deployment, label) combinations: Map<"deployment_id:label", count> */
+  countsByDeploymentAndLabel: Map<string, number>;
+  
+  /** Labels observed at each deployment: Map<deployment_id, Set<label>> */
+  labelsByDeployment: Map<number, Set<string>>;
+  
+  /** Deployments that observed each label: Map<label, Set<deployment_id>> */
+  deploymentsByLabel: Map<string, Set<number>>;
+}
+
 class AnimlService {
   private readonly baseUrl = 'https://dangermondpreserve-spatial.com/server/rest/services/Animl/FeatureServer';
   private readonly deploymentsLayerId = 0; // Deployments/Camera Traps
@@ -199,6 +230,211 @@ class AnimlService {
       console.error('Error getting Animl image labels count:', error);
       throw error;
     }
+  }
+
+  /**
+   * Get observation counts grouped by (deployment_id, label) combination
+   * This is THE optimized query - one call returns all count data needed for the UI
+   * 
+   * @param options - Query filters (date range, exclude person/people)
+   * @returns Array of AnimlGroupedCount with observation counts for each (deployment, label) pair
+   * 
+   * @example
+   * const counts = await animlService.getObservationCountsGrouped({
+   *   startDate: '2024-01-01',
+   *   endDate: '2024-12-31'
+   * });
+   * // Returns: [
+   * //   { deployment_id: 59, label: "mule deer", observation_count: 147 },
+   * //   { deployment_id: 59, label: "coyote", observation_count: 183 },
+   * //   ...
+   * // ]
+   */
+  async getObservationCountsGrouped(options: AnimlServiceQueryOptions = {}): Promise<AnimlGroupedCount[]> {
+    const { startDate, endDate } = options;
+
+    try {
+      let whereClause = '1=1';
+
+      // Build date filter
+      if (startDate && endDate) {
+        const startDateObj = new Date(startDate + 'T00:00:00Z');
+        const endDateObj = new Date(endDate + 'T23:59:59Z');
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        
+        if (endDateObj <= today) {
+          const startDateStr = startDateObj.toISOString().replace('T', ' ').substring(0, 19);
+          const endDateStr = endDateObj.toISOString().replace('T', ' ').substring(0, 19);
+          whereClause += ` AND timestamp >= DATE '${startDateStr}' AND timestamp <= DATE '${endDateStr}'`;
+        }
+      }
+
+      // ALWAYS exclude person/people observations (consistent with UI filtering)
+      whereClause += ` AND label NOT IN ('person', 'people')`;
+
+      const params: any = {
+        where: whereClause,
+        outStatistics: JSON.stringify([{
+          statisticType: 'count',
+          onStatisticField: 'id',
+          outStatisticFieldName: 'observation_count'
+        }]),
+        groupByFieldsForStatistics: 'deployment_id,label', // 🔑 The magic - group by BOTH fields!
+        f: 'json'
+      };
+
+      const queryUrl = `${this.baseUrl}/${this.imageLabelsLayerId}/query`;
+      const fullUrl = `${queryUrl}?${new URLSearchParams(params)}`;
+      
+      console.log('🔍 Animl Grouped Counts Query:', fullUrl.substring(0, 150) + '...');
+      const start = Date.now();
+      
+      const response = await fetch(fullUrl);
+      if (!response.ok) {
+        throw new Error(`Animl grouped count query failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(`Animl grouped count API error: ${JSON.stringify(data.error)}`);
+      }
+
+      const duration = Date.now() - start;
+      console.log(`✅ Animl Grouped Counts: Retrieved ${data.features?.length || 0} combinations in ${duration}ms`);
+
+      return data.features.map((feature: any) => ({
+        deployment_id: feature.attributes.deployment_id,
+        label: feature.attributes.label,
+        observation_count: feature.attributes.observation_count
+      }));
+    } catch (error) {
+      console.error('Error getting Animl grouped counts:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Build fast lookup structures from grouped count data
+   * This processes the result of getObservationCountsGrouped() into Maps for O(1) lookups
+   * 
+   * @param groupedCounts - Result from getObservationCountsGrouped()
+   * @returns Object with 5 Map structures for different lookup patterns
+   * 
+   * @example
+   * const counts = await animlService.getObservationCountsGrouped({ ... });
+   * const lookups = animlService.buildCountLookups(counts);
+   * 
+   * // Now you can do instant lookups:
+   * const totalForDeployment59 = lookups.countsByDeployment.get(59); // O(1)
+   * const totalForMuleDeer = lookups.countsByLabel.get('mule deer'); // O(1)
+   * const muleDeerAt59 = lookups.countsByDeploymentAndLabel.get('59:mule deer'); // O(1)
+   */
+  buildCountLookups(groupedCounts: AnimlGroupedCount[]): AnimlCountLookups {
+    const start = Date.now();
+    
+    const countsByDeployment = new Map<number, number>();
+    const countsByLabel = new Map<string, number>();
+    const countsByDeploymentAndLabel = new Map<string, number>();
+    const labelsByDeployment = new Map<number, Set<string>>();
+    const deploymentsByLabel = new Map<string, Set<number>>();
+
+    groupedCounts.forEach(({ deployment_id, label, observation_count }) => {
+      // Aggregate by deployment
+      countsByDeployment.set(
+        deployment_id,
+        (countsByDeployment.get(deployment_id) || 0) + observation_count
+      );
+
+      // Aggregate by label
+      countsByLabel.set(
+        label,
+        (countsByLabel.get(label) || 0) + observation_count
+      );
+
+      // Store specific combination
+      const key = `${deployment_id}:${label}`;
+      countsByDeploymentAndLabel.set(key, observation_count);
+
+      // Track labels per deployment
+      if (!labelsByDeployment.has(deployment_id)) {
+        labelsByDeployment.set(deployment_id, new Set());
+      }
+      labelsByDeployment.get(deployment_id)!.add(label);
+
+      // Track deployments per label
+      if (!deploymentsByLabel.has(label)) {
+        deploymentsByLabel.set(label, new Set());
+      }
+      deploymentsByLabel.get(label)!.add(deployment_id);
+    });
+
+    const duration = Date.now() - start;
+    console.log(`✅ Animl Count Lookups: Built structures in ${duration}ms`);
+    console.log(`   📊 ${countsByDeployment.size} deployments, ${countsByLabel.size} labels, ${countsByDeploymentAndLabel.size} combinations`);
+
+    return {
+      countsByDeployment,
+      countsByLabel,
+      countsByDeploymentAndLabel,
+      labelsByDeployment,
+      deploymentsByLabel
+    };
+  }
+
+  /**
+   * Calculate total observation count for specific filter selections
+   * Uses the lookup structures for O(n*m) calculation (where n and m are small)
+   * 
+   * @param lookups - Lookup structures from buildCountLookups()
+   * @param selectedDeploymentIds - Array of selected deployment IDs (empty = all)
+   * @param selectedLabels - Array of selected labels (empty = all)
+   * @returns Total observation count matching the filters
+   * 
+   * @example
+   * const lookups = animlService.buildCountLookups(counts);
+   * const total = animlService.getTotalCountForFilters(
+   *   lookups,
+   *   [59, 61], // Selected camera traps
+   *   ['mule deer', 'coyote'] // Selected labels
+   * );
+   * // Returns: sum of observations for those specific combinations
+   */
+  getTotalCountForFilters(
+    lookups: AnimlCountLookups,
+    selectedDeploymentIds: number[],
+    selectedLabels: string[]
+  ): number {
+    const { countsByDeployment, countsByLabel, countsByDeploymentAndLabel } = lookups;
+
+    // If no filters, return total for all deployments
+    if (selectedDeploymentIds.length === 0 && selectedLabels.length === 0) {
+      return Array.from(countsByDeployment.values()).reduce((sum, count) => sum + count, 0);
+    }
+
+    // If only deployment filter, return total for those deployments
+    if (selectedDeploymentIds.length > 0 && selectedLabels.length === 0) {
+      return selectedDeploymentIds.reduce((sum, depId) => {
+        return sum + (countsByDeployment.get(depId) || 0);
+      }, 0);
+    }
+
+    // If only label filter, return total for those labels
+    if (selectedDeploymentIds.length === 0 && selectedLabels.length > 0) {
+      return selectedLabels.reduce((sum, label) => {
+        return sum + (countsByLabel.get(label) || 0);
+      }, 0);
+    }
+
+    // If both filters, sum specific combinations
+    let total = 0;
+    for (const depId of selectedDeploymentIds) {
+      for (const label of selectedLabels) {
+        const key = `${depId}:${label}`;
+        total += countsByDeploymentAndLabel.get(key) || 0;
+      }
+    }
+    return total;
   }
 
   /**
