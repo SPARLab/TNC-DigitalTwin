@@ -458,7 +458,7 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
   // Show empty state if no search has been performed
   if (!hasSearched) {
     return (
-      <div ref={sidebarRef} id="animl-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col h-full" tabIndex={0}>
+      <div ref={sidebarRef} id="animl-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col h-full focus:outline-none" tabIndex={0}>
         <div id="animl-empty-state" className="flex flex-col items-center justify-center h-full p-8 text-center">
           <div id="search-prompt-icon" className="mb-4">
             <svg className="w-16 h-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -476,7 +476,7 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
 
   if (loading) {
     return (
-      <div ref={sidebarRef} id="animl-sidebar-loading" className="w-96 bg-white border-r border-gray-200 flex flex-col h-full" tabIndex={0}>
+      <div ref={sidebarRef} id="animl-sidebar-loading" className="w-96 bg-white border-r border-gray-200 flex flex-col h-full focus:outline-none" tabIndex={0}>
         <div id="animl-sidebar-loading-content" className="p-4 border-b border-gray-200">
           <h2 id="animl-sidebar-loading-title" className="text-lg font-semibold text-gray-900 mb-4">Animl Camera Traps</h2>
           <div id="animl-loading-container" className="flex flex-col items-center justify-center h-32 space-y-3">
@@ -491,7 +491,7 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
   }
 
   return (
-    <div ref={sidebarRef} id="animl-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col" tabIndex={0}>
+    <div ref={sidebarRef} id="animl-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col focus:outline-none" tabIndex={0}>
       {/* Header */}
       <div id="animl-sidebar-header" className="p-4 border-b border-gray-200">
         <div id="animl-sidebar-title-container" className="mb-2">

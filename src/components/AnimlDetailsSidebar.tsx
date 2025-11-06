@@ -754,7 +754,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
   };
 
   return (
-    <div ref={sidebarRef} id="animl-details-sidebar" className="w-96 bg-white border-l border-gray-200 flex flex-col h-full" tabIndex={0}>
+    <div ref={sidebarRef} id="animl-details-sidebar" className="w-96 bg-white border-l border-gray-200 flex flex-col h-full focus:outline-none" tabIndex={0}>
       {/* Tab Buttons */}
       {renderTabButtons()}
 
