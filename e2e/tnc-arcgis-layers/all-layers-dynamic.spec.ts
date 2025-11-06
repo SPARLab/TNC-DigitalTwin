@@ -65,9 +65,7 @@ for (const layer of categorizedLayers) {
     test(`Complete Quality Check (8 Criteria)`, async ({ page }) => {
       console.log(`\n=== Testing: ${layer.title} ===`);
       console.log(`Type: ${layer.type}`);
-      console.log(`Estimated sublayers: ${sublayerCount}`);
       console.log(`Timeout: ${timeout / 1000}s`);
-      console.log(`Categories: ${layer.categories.join(', ') || 'None'}`);
       
       // Run the complete quality check
       // This function now includes test.step() calls internally for clear hierarchy
