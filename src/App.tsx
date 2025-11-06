@@ -1768,6 +1768,36 @@ function App() {
     downloadFile(geoJsonData, 'tnc-arcgis-items.geojson', 'application/geo+json');
   };
 
+  // Compute filtered Animl observations for export (matching AnimlDetailsSidebar logic)
+  const animlFilteredObservations = useMemo(() => {
+    // Start with animal-only observations (exclude person/people by default)
+    let filtered = animlImageLabels.filter(obs => {
+      const labelLower = obs.label?.toLowerCase() || '';
+      return labelLower !== 'person' && labelLower !== 'people';
+    });
+
+    // Get effective deployment IDs for filtering
+    const effectiveDeploymentIds = animlCustomFilters.deploymentIds && animlCustomFilters.deploymentIds.length > 0
+      ? animlCustomFilters.deploymentIds
+      : (animlViewMode === 'camera-centric' && selectedAnimlDeployment
+          ? [selectedAnimlDeployment.id]
+          : animlViewMode === 'animal-centric' && animlDeployments.length > 0
+          ? animlDeployments.map(dep => dep.id)
+          : []);
+
+    // Apply deployment filter
+    if (effectiveDeploymentIds.length > 0) {
+      filtered = filtered.filter(obs => effectiveDeploymentIds.includes(obs.deployment_id));
+    }
+
+    // Apply label filter
+    if (animlCustomFilters.labels && animlCustomFilters.labels.length > 0) {
+      filtered = filtered.filter(obs => animlCustomFilters.labels!.includes(obs.label));
+    }
+
+    return filtered;
+  }, [animlImageLabels, animlCustomFilters.deploymentIds, animlCustomFilters.labels, animlViewMode, selectedAnimlDeployment, animlDeployments]);
+
   // Animl export functions
   const convertAnimlToCSV = (imageLabels: AnimlImageLabel[]): string => {
     const headers = [
@@ -1818,12 +1848,12 @@ function App() {
   };
 
   const handleAnimlExportCSV = () => {
-    const csvData = convertAnimlToCSV(animlImageLabels);
+    const csvData = convertAnimlToCSV(animlFilteredObservations);
     downloadFile(csvData, 'animl-observations.csv', 'text/csv');
   };
 
   const handleAnimlExportGeoJSON = () => {
-    const geoJsonData = convertAnimlToGeoJSON(animlImageLabels);
+    const geoJsonData = convertAnimlToGeoJSON(animlFilteredObservations);
     downloadFile(geoJsonData, 'animl-observations.geojson', 'application/geo+json');
   };
 

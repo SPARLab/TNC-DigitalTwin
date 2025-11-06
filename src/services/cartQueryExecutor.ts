@@ -77,23 +77,82 @@ async function executeAnimlQuery(item: CartItem): Promise<any[]> {
     customPolygon = JSON.stringify(coreFilters.customPolygon);
   }
 
-  // Query image labels based on view mode
+  // Determine what filters to apply
+  // For camera-centric: use deploymentIds if specified
+  // For animal-centric: use labels if specified
+  // We should apply both if they exist (user might have filtered by both)
+  const deploymentIds = animlFilters.deploymentIds && animlFilters.deploymentIds.length > 0 
+    ? animlFilters.deploymentIds 
+    : undefined;
+  const labels = animlFilters.labels && animlFilters.labels.length > 0 
+    ? animlFilters.labels 
+    : undefined;
+
+  // Query image labels with filters
+  // Use estimatedCount with a small buffer (50 records) to account for filtering differences
+  // If we have filters applied, we can be more confident in the estimate
+  // But still add a small buffer in case of edge cases
+  let maxResults: number;
+  if (item.estimatedCount) {
+    // Add a small buffer (10% or 50, whichever is smaller) if we have specific filters
+    const hasFilters = (deploymentIds && deploymentIds.length > 0) || (labels && labels.length > 0);
+    const buffer = hasFilters ? Math.min(Math.ceil(item.estimatedCount * 0.1), 50) : 100;
+    maxResults = Math.min(item.estimatedCount + buffer, 10000);
+  } else {
+    maxResults = 10000;
+  }
+
+  console.log(`🔍 Animl Cart Export: Querying with filters - deployments: ${deploymentIds?.length || 0}, labels: ${labels?.length || 0}, maxResults: ${maxResults}`);
+
   const imageLabels = await animlService.queryImageLabels({
     startDate: coreFilters.startDate,
     endDate: coreFilters.endDate,
-    deploymentIds: animlFilters.viewMode === 'camera-centric' ? animlFilters.deploymentIds : undefined,
-    labels: animlFilters.viewMode === 'animal-centric' ? animlFilters.labels : undefined,
+    deploymentIds,
+    labels,
     searchMode,
     customPolygon,
-    maxResults: 10000
+    maxResults
   });
 
-  // Filter by hasImages if specified
-  let filtered = imageLabels;
+  console.log(`📊 Animl Cart Export: Fetched ${imageLabels.length} records from query`);
+
+  // Filter out person/people observations (consistent with UI behavior)
+  let filtered = imageLabels.filter(obs => {
+    const labelLower = obs.label?.toLowerCase() || '';
+    return labelLower !== 'person' && labelLower !== 'people';
+  });
+
+  console.log(`📊 Animl Cart Export: After excluding person/people: ${filtered.length} records`);
+
+  // Apply deployment filter (should already be applied in query, but ensure it's applied)
+  if (deploymentIds && deploymentIds.length > 0) {
+    const beforeCount = filtered.length;
+    filtered = filtered.filter(obs => deploymentIds.includes(obs.deployment_id));
+    console.log(`📊 Animl Cart Export: After deployment filter (${deploymentIds.length} deployments): ${filtered.length} records (removed ${beforeCount - filtered.length})`);
+  }
+
+  // Apply label filter (should already be applied in query, but ensure it's applied)
+  if (labels && labels.length > 0) {
+    const beforeCount = filtered.length;
+    filtered = filtered.filter(obs => labels.includes(obs.label));
+    console.log(`📊 Animl Cart Export: After label filter (${labels.length} labels): ${filtered.length} records (removed ${beforeCount - filtered.length})`);
+  }
+
+  // Filter by hasImages if specified (though this is likely always true for camera traps)
   if (animlFilters.hasImages === true) {
+    const beforeCount = filtered.length;
     filtered = filtered.filter(obs => obs.small_url || obs.medium_url);
+    console.log(`📊 Animl Cart Export: After hasImages filter: ${filtered.length} records (removed ${beforeCount - filtered.length})`);
   } else if (animlFilters.hasImages === false) {
+    const beforeCount = filtered.length;
     filtered = filtered.filter(obs => !obs.small_url && !obs.medium_url);
+    console.log(`📊 Animl Cart Export: After hasImages=false filter: ${filtered.length} records (removed ${beforeCount - filtered.length})`);
+  }
+
+  console.log(`✅ Animl Cart Export: Final filtered result: ${filtered.length} records (estimated: ${item.estimatedCount})`);
+  
+  if (filtered.length !== item.estimatedCount) {
+    console.warn(`⚠️ Animl Cart Export: Filtered count (${filtered.length}) doesn't match estimated count (${item.estimatedCount})`);
   }
 
   return filtered;
