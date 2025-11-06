@@ -993,11 +993,12 @@ async function checkForVisualChangeUsingToggle(
   const toggleButton = page.locator('#tnc-details-toggle-btn');
   const PIXEL_CHANGE_THRESHOLD = 100;
   
-  // Define zoom levels to try: default → state → USA
+  // Define zoom levels to try: default → county → state → USA
   const zoomLevels = [
     { name: 'default', stepsOut: 0 },
-    { name: 'state level', stepsOut: 2 },
-    { name: 'USA level', stepsOut: 4 }  // 4 MORE steps from state
+    { name: 'county level', stepsOut: 2 },
+    { name: 'state level', stepsOut: 4 },  // 4 MORE steps from default
+    { name: 'USA level', stepsOut: 4 }  // 4 MORE steps from state (10 total)
   ];
   
   let totalStepsFromDefault = 0;
@@ -1279,16 +1280,18 @@ export async function testLayersLoad(
   
   const loadedCount = sublayerResults.filter(r => r.loaded).length;
   const allLoaded = loadedCount === layerCount;
+  const successRate = loadedCount / layerCount;
   const failedLayers = sublayerResults.filter(r => !r.loaded).map(r => r.name);
   
   return {
     passed: allLoaded,
     message: allLoaded 
       ? `All ${layerCount} sublayer(s) loaded successfully`
-      : `${loadedCount}/${layerCount} sublayer(s) loaded (failed: ${failedLayers.join(', ')})`,
+      : `${loadedCount}/${layerCount} sublayer(s) loaded (${Math.round(successRate * 100)}% - failed: ${failedLayers.join(', ')})`,
     details: { 
       totalSublayers: layerCount,
       loadedSublayers: loadedCount,
+      successRate: Math.round(successRate * 100),
       sublayerResults,
       failedLayers: failedLayers.length > 0 ? failedLayers : undefined
     }
@@ -1435,11 +1438,12 @@ async function testTooltipsForSingleLayer(
   layer: LayerConfig,
   layerName: string
 ): Promise<TestResult> {
-  // Define the 3 progressive zoom levels to try
+  // Define the 4 progressive zoom levels to try
   const zoomLevels = [
     { level: 'default', name: 'preserve level (default)', stepsFromDefault: 0 },
-    { level: 8, name: 'state level (zoom 8)', stepsFromDefault: 2 },
-    { level: 4, name: 'USA level (zoom 4)', stepsFromDefault: 6 }  // 2 steps to state + 4 more to USA
+    { level: 8, name: 'county level (zoom 8)', stepsFromDefault: 2 },
+    { level: 4, name: 'state level (zoom 4)', stepsFromDefault: 6 },  // 2 steps to county + 4 more to state
+    { level: 2, name: 'USA level (zoom 2)', stepsFromDefault: 10 }  // 4 more steps to USA-wide view
   ];
   
   // Track current zoom level for proper reset (even if test fails)

@@ -20,21 +20,31 @@ test.describe('Coastal and Marine Data @manual', () => {
   test.setTimeout(timeout);
   
   test.beforeEach(async ({ page, context }) => {
-    // Clear cookies (can be done before navigation)
+    // Clear all cookies and cache for fresh start
     await context.clearCookies();
+    await context.clearPermissions();
     
     // Navigate using baseURL from config (consistent with dynamic tests)
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     
-    // Clear storage AFTER navigation (prevents SecurityError on about:blank)
+    // Clear ALL storage (localStorage, sessionStorage, IndexedDB, cache)
     await page.evaluate(() => {
       localStorage.clear();
       sessionStorage.clear();
+      // Clear IndexedDB if it exists
+      if (window.indexedDB) {
+        window.indexedDB.databases?.().then((dbs) => {
+          dbs.forEach((db) => {
+            if (db.name) window.indexedDB.deleteDatabase(db.name);
+          });
+        });
+      }
     }).catch(() => {
-      // Ignore errors if localStorage not accessible
+      // Ignore errors if storage not accessible
     });
     
+    // Wait for any async operations to complete
     await page.waitForTimeout(2000);
   });
 

@@ -17,11 +17,18 @@ export default defineConfig({
   reporter: [['html', { open: 'never' }]], // Generate HTML report but don't auto-serve
   
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:5175',
     trace: 'on-first-retry',
-    viewport: { width: 2560, height: 1440 }, // Large monitor size (1440p)
+    viewport: { width: 3840, height: 2160 }, // 4K resolution for maximum visibility
     screenshot: 'only-on-failure',
     video: 'on', // Record video of all tests
+    
+    // Fresh browser context for each test file to prevent state leakage
+    contextOptions: {
+      ignoreHTTPSErrors: true,
+      // Force new context to start with clean slate
+      storageState: undefined,
+    },
   },
 
   projects: [
@@ -33,8 +40,8 @@ export default defineConfig({
 
   /* Run dev server before starting tests */
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
+    command: 'npm run dev -- --port 5175',
+    url: 'http://localhost:5175',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000, // 2 minutes for dev server to start
   },
