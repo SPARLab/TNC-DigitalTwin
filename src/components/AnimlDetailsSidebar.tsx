@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Calendar, Camera, Tag, Download, ShoppingCart, Filter, MapPin } from 'lucide-react';
-import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag, AnimlCountLookups, animlService } from '../services/animlService';
+import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag, AnimlCountLookups } from '../services/animlService';
 import { AnimlViewMode } from './AnimlSidebar';
 
 interface AnimlDetailsSidebarProps {
@@ -13,7 +13,7 @@ interface AnimlDetailsSidebarProps {
   
   // Data for display
   deployments?: AnimlDeployment[];
-  animalTags?: AnimlAnimalTag[];
+  animalTags?: AnimlAnimalTag[]; // Not used directly, but kept for compatibility
   observations?: AnimlImageLabel[];
   
   // Count lookups for accurate counts (optimized query)
@@ -48,7 +48,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
   selectedAnimalTag,
   selectedObservation,
   deployments = [],
-  animalTags = [],
+  animalTags: _animalTags = [], // Unused but kept for backwards compatibility
   observations = [],
   countLookups,
   countsLoading = false,
@@ -84,6 +84,18 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
       return labelLower !== 'person' && labelLower !== 'people';
     });
   }, [observations]);
+
+  // Deduplicate observations by image ID (same logic as left sidebar)
+  // This is the TRUE count of unique observations (images)
+  const deduplicatedObservationsCount = useMemo(() => {
+    const uniqueImageIds = new Set<string>();
+    animalOnlyObservations.forEach(obs => {
+      if (obs.animl_image_id) {
+        uniqueImageIds.add(obs.animl_image_id);
+      }
+    });
+    return uniqueImageIds.size;
+  }, [animalOnlyObservations]);
 
   // Filter deployments to only show those with observations (for animal-centric export tab)
   const deploymentsWithObservations = useMemo(() => {
@@ -165,145 +177,53 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
     return [];
   }, [selectedDeploymentIds, viewMode, selectedDeployment, deployments]);
 
-  // Calculate species counts per camera (for animal-centric mode)
-  // This creates a map of: deployment_id -> { label -> count }
-  const speciesCountsPerCamera = useMemo(() => {
-    const countsMap = new Map<number, Map<string, number>>();
-    
-    // Initialize map for all deployments
-    deployments.forEach(dep => {
-      countsMap.set(dep.id, new Map<string, number>());
-    });
-    
-    // Count observations per deployment per species
-    // Handle case where observations might not have deployment_id that matches deployments
-    observations.forEach(obs => {
-      const labelLower = obs.label?.toLowerCase() || '';
-      // Skip person/people
-      if (labelLower === 'person' || labelLower === 'people') {
-        return;
-      }
-      
-      // Try to find the deployment counts for this observation's deployment_id
-      const deploymentCounts = countsMap.get(obs.deployment_id);
-      if (deploymentCounts) {
-        const currentCount = deploymentCounts.get(obs.label) || 0;
-        deploymentCounts.set(obs.label, currentCount + 1);
-      } else {
-        // If deployment_id doesn't match any deployment in our list, 
-        // still count it by creating a new entry (in case of data mismatch)
-        // This shouldn't happen normally, but handles edge cases
-        if (!countsMap.has(obs.deployment_id)) {
-          countsMap.set(obs.deployment_id, new Map<string, number>());
-        }
-        const newDeploymentCounts = countsMap.get(obs.deployment_id)!;
-        const currentCount = newDeploymentCounts.get(obs.label) || 0;
-        newDeploymentCounts.set(obs.label, currentCount + 1);
-      }
-    });
-    
-    return countsMap;
-  }, [observations, deployments]);
 
   // Compute filtered animal tags for animal-centric mode (species with observations from selected cameras)
+  // Uses deduplicated counts from loaded observations (same logic as left sidebar)
   const filteredAnimalTags = useMemo(() => {
     if (viewMode !== 'animal-centric') {
       return [];
     }
 
-    // Use count lookups if available (preferred - has ALL species from database)
-    if (countLookups && !countsLoading) {
-      const speciesCountsMap = new Map<string, number>();
-      
-      // Get all unique labels from count lookups
-      const allLabels = new Set<string>(countLookups.countsByLabel.keys());
-      
-      // Calculate aggregated counts for selected deployments
-      if (effectiveDeploymentIds.length > 0) {
-        effectiveDeploymentIds.forEach(deploymentId => {
-          allLabels.forEach(label => {
-            const key = `${deploymentId}:${label}`;
-            const count = countLookups.countsByDeploymentAndLabel.get(key) || 0;
-            if (count > 0) {
-              const currentTotal = speciesCountsMap.get(label) || 0;
-              speciesCountsMap.set(label, currentTotal + count);
-            }
-          });
-        });
-      } else {
-        // No deployments selected - use total counts per label
-        countLookups.countsByLabel.forEach((count, label) => {
-          speciesCountsMap.set(label, count);
-        });
-      }
-      
-      // Build species list from count lookups
-      return Array.from(allLabels)
-        .filter(label => {
-          // Filter out person/people labels
-          const labelLower = label.toLowerCase();
-          if (labelLower === 'person' || labelLower === 'people') {
-            return false;
-          }
-          
-          // Only show species with count > 0 for selected deployments
-          const count = speciesCountsMap.get(label) || 0;
-          return count > 0;
-        })
-        .map(label => ({
-          label,
-          totalObservations: countLookups.countsByLabel.get(label) || 0,
-          aggregatedCount: speciesCountsMap.get(label) || 0
-        }))
-        .sort((a, b) => a.label.localeCompare(b.label));
-    }
-
-    // Fallback: use in-memory data (may be incomplete)
-    if (animalTags.length === 0 || observations.length === 0) {
+    if (observations.length === 0) {
       return [];
     }
 
-    // Calculate aggregated counts for each species across selected cameras
-    const speciesCountsMap = new Map<string, number>();
+    // Calculate aggregated deduplicated counts for each species across selected cameras
+    const speciesImageIds = new Map<string, Set<string>>();
     
-    // Aggregate counts from selected cameras using observation data
-    if (effectiveDeploymentIds.length > 0) {
-      effectiveDeploymentIds.forEach(deploymentId => {
-        const deploymentCounts = speciesCountsPerCamera.get(deploymentId);
-        if (deploymentCounts) {
-          deploymentCounts.forEach((count, label) => {
-            const currentTotal = speciesCountsMap.get(label) || 0;
-            speciesCountsMap.set(label, currentTotal + count);
-          });
+    // Aggregate unique image IDs from selected cameras
+    const deploymentsToUse = effectiveDeploymentIds.length > 0 ? effectiveDeploymentIds : deployments.map(d => d.id);
+    
+    observations
+      .filter(obs => deploymentsToUse.includes(obs.deployment_id))
+      .forEach(obs => {
+        const labelLower = obs.label?.toLowerCase() || '';
+        // Skip person/people
+        if (labelLower === 'person' || labelLower === 'people' || !obs.animl_image_id) {
+          return;
         }
+        
+        if (!speciesImageIds.has(obs.label)) {
+          speciesImageIds.set(obs.label, new Set<string>());
+        }
+        speciesImageIds.get(obs.label)!.add(obs.animl_image_id);
       });
-    }
     
-    // Filter animal tags to only show those with observations from selected cameras
-    return animalTags.filter(tag => {
-      // Filter out person/people labels
-      const labelLower = tag.label?.toLowerCase() || '';
-      if (labelLower === 'person' || labelLower === 'people') {
-        return false;
-      }
-      
-      // If no cameras selected (shouldn't happen in animal-centric mode, but handle it)
-      if (effectiveDeploymentIds.length === 0) {
-        return true; // Show all species when no cameras selected
-      }
-      
-      // Get aggregated count for this species across selected cameras
-      const speciesCount = speciesCountsMap.get(tag.label) || 0;
-      
-      // Only show species with count > 0 from selected cameras
-      return speciesCount > 0;
-    }).map(tag => ({
-      ...tag,
-      aggregatedCount: effectiveDeploymentIds.length > 0
-        ? (speciesCountsMap.get(tag.label) || 0)
-        : tag.totalObservations
-    }));
-  }, [viewMode, animalTags, observations.length, effectiveDeploymentIds, speciesCountsPerCamera, countLookups, countsLoading]);
+    // Convert to animal tags format with deduplicated counts
+    return Array.from(speciesImageIds.entries())
+      .filter(([_, imageIds]) => imageIds.size > 0)
+      .map(([label, imageIds]) => ({
+        label,
+        totalObservations: imageIds.size,
+        aggregatedCount: imageIds.size,
+        uniqueCameras: 0,
+        firstObservation: '',
+        lastObservation: '',
+        recentObservations: []
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [viewMode, observations, effectiveDeploymentIds, deployments]);
 
   // Track if we've auto-selected labels in animal-centric mode
   const hasAutoSelectedLabels = useRef(false);
@@ -348,7 +268,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
   }, [viewMode, filteredAnimalTags, selectedLabels, onLabelsChange]);
 
   // Get animal species for selected camera(s) (camera-centric mode)
-  // Counts reflect currently selected deployments in export filter
+  // Counts reflect unique images per species (deduplicated by image ID)
   const cameraAnimalSpecies = useMemo(() => {
     if (viewMode !== 'camera-centric') {
       return [];
@@ -363,26 +283,27 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
       return [];
     }
     
-    // Get unique labels from observations for selected camera(s)
-    const speciesSet = new Set<string>();
-    const speciesCounts = new Map<string, number>();
+    // Deduplicate observations by (label, image_id) to count unique images per species
+    const speciesImageIds = new Map<string, Set<string>>();
     
     observations
       .filter(obs => deploymentIdsToUse.includes(obs.deployment_id))
       .forEach(obs => {
         const label = obs.label?.toLowerCase();
         // Filter out person/people
-        if (label && label !== 'person' && label !== 'people') {
-          speciesSet.add(obs.label);
-          speciesCounts.set(obs.label, (speciesCounts.get(obs.label) || 0) + 1);
+        if (label && label !== 'person' && label !== 'people' && obs.animl_image_id) {
+          if (!speciesImageIds.has(obs.label)) {
+            speciesImageIds.set(obs.label, new Set());
+          }
+          speciesImageIds.get(obs.label)!.add(obs.animl_image_id);
         }
       });
     
-    // Convert to array and sort alphabetically
-    return Array.from(speciesSet)
-      .map(label => ({
+    // Convert to array with counts (size of image ID sets)
+    return Array.from(speciesImageIds.entries())
+      .map(([label, imageIds]) => ({
         label,
-        count: speciesCounts.get(label) || 0
+        count: imageIds.size // Count of unique images for this species
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [viewMode, selectedDeployment, observations, effectiveDeploymentIds]);
@@ -407,50 +328,28 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
     return filtered;
   }, [animalOnlyObservations, effectiveDeploymentIds, selectedLabels]);
 
-  // Calculate total count of ALL animal observations (excluding person/people) from database
+  // Calculate total count of animal observations (excluding person/people)
+  // Use deduplicated count from loaded observations (same as left sidebar)
+  // This is the source of truth - always accurate for what's currently loaded
   const totalAnimalObservationCount = useMemo(() => {
-    if (countLookups && !countsLoading) {
-      try {
-        // Get total count for ALL deployments and ALL labels (no filters)
-        const total = animlService.getTotalCountForFilters(
-          countLookups,
-          [], // No deployment filter = all deployments
-          []  // No label filter = all labels
-        );
-        return total;
-      } catch (error) {
-        console.error('Error calculating total count from lookups:', error);
-        return animalOnlyObservations.length;
-      }
-    }
-    return animalOnlyObservations.length; // Fallback to in-memory count
-  }, [countLookups, countsLoading, animalOnlyObservations.length]);
+    return deduplicatedObservationsCount;
+  }, [deduplicatedObservationsCount]);
 
-  // Calculate accurate count using count lookups (preferred over in-memory counting)
-  // Falls back to in-memory count if lookups not available
+  // Calculate filtered count using deduplication (same as left sidebar)
+  // This ensures consistency between left and right sidebars
   const filteredObservationCount = useMemo(() => {
-    // If count lookups are available, use them for accurate database counts
-    if (countLookups && !countsLoading) {
-      try {
-        const total = animlService.getTotalCountForFilters(
-          countLookups,
-          effectiveDeploymentIds,
-          selectedLabels
-        );
-        console.log(`📊 Filtered count from lookups: ${total} observations (deployments: ${effectiveDeploymentIds.length}, labels: ${selectedLabels.length})`);
-        console.log(`📊 Total count from lookups: ${totalAnimalObservationCount} observations`);
-        return total;
-      } catch (error) {
-        console.error('Error calculating count from lookups:', error);
-        // Fall back to in-memory count on error
-        return filteredObservations.length;
+    // Deduplicate filtered observations by image ID
+    const uniqueImageIds = new Set<string>();
+    filteredObservations.forEach(obs => {
+      if (obs.animl_image_id) {
+        uniqueImageIds.add(obs.animl_image_id);
       }
-    }
-    
-    // Fallback: count in-memory observations
-    // This may be inaccurate if observations are paginated/incomplete
-    return filteredObservations.length;
-  }, [countLookups, countsLoading, effectiveDeploymentIds, selectedLabels, filteredObservations.length, totalAnimalObservationCount]);
+    });
+    const count = uniqueImageIds.size;
+    console.log(`📊 Filtered count (deduplicated): ${count} unique images from ${filteredObservations.length} total rows`);
+    console.log(`📊 Total count (deduplicated): ${totalAnimalObservationCount} observations`);
+    return count;
+  }, [filteredObservations, totalAnimalObservationCount]);
 
   // Helper function to format date
   const formatDate = (dateString: string) => {
@@ -930,11 +829,20 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
                 <span className="text-gray-600"> {dateRangeText}</span>
               </>
             ) : (
-              <span className="text-gray-600">{totalAnimalObservationCount.toLocaleString()} total observations {dateRangeText}</span>
+              <>
+                <span className="text-gray-600">{totalAnimalObservationCount.toLocaleString()} total observations</span>
+                {viewMode === 'camera-centric' && selectedDeployment && (
+                  <span className="text-gray-600"> for this camera</span>
+                )}
+                <span className="text-gray-600"> {dateRangeText}</span>
+              </>
             )}
           </p>
           <p className="text-xs text-gray-500 mt-1">
             View Mode: <span className="font-medium">{viewMode === 'camera-centric' ? 'Camera-Centric' : 'Animal-Centric'}</span>
+            {viewMode === 'camera-centric' && selectedDeployment && (
+              <span> • Camera: <span className="font-medium">{selectedDeployment.name || selectedDeployment.animl_dp_id}</span></span>
+            )}
           </p>
         </div>
 
@@ -969,12 +877,51 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
               </div>
 
           {/* Animal Species Filter (Camera-Centric) - Show species for selected camera */}
-              {onLabelsChange && cameraAnimalSpecies.length > 0 && (
+              {onLabelsChange && (() => {
+                // Show loading state while counts are loading
+                if (countsLoading || !countLookups) {
+                  return (
+                    <div id="animl-camera-species-loading" className="p-4 text-center text-gray-500">
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                      <p className="text-sm font-medium">Loading animal species...</p>
+                    </div>
+                  );
+                }
+                
+                // Only show species filter if there are species for this camera
+                if (cameraAnimalSpecies.length === 0) {
+                  return null;
+                }
+                
+                return (
             <div id="animl-camera-species-filter-section" className="space-y-3">
+              <div className="flex items-center justify-between">
               <h4 className="text-sm font-medium text-gray-900 flex items-center">
                 <Filter className="w-4 h-4 mr-2" />
-                    Animal Species
+                  Animal Species
               </h4>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allLabels = cameraAnimalSpecies.map(s => s.label);
+                      onLabelsChange(allLabels);
+                    }}
+                    className="text-xs px-2 py-1 text-blue-600 hover:text-blue-700 hover:underline"
+                  >
+                    Select All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onLabelsChange([]);
+                    }}
+                    className="text-xs px-2 py-1 text-blue-600 hover:text-blue-700 hover:underline"
+                  >
+                    Deselect All
+                  </button>
+                </div>
+              </div>
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {cameraAnimalSpecies.map(species => {
                   const isChecked = selectedLabels.includes(species.label);
@@ -996,13 +943,16 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
                         }}
                         className="mr-2 cursor-pointer"
                       />
-                      <span className="text-sm text-gray-700">{species.label} ({species.count})</span>
+                      <span className="text-sm text-gray-700">
+                        {species.label} <span className="text-gray-500">({species.count.toLocaleString()})</span>
+                      </span>
                     </label>
                   );
                 })}
               </div>
             </div>
-              )}
+                );
+              })()}
             </>
           )}
 

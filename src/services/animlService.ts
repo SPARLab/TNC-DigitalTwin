@@ -112,7 +112,7 @@ class AnimlService {
    * Query deployments (camera traps) from the FeatureServer
    * NOTE: Spatial filtering is currently disabled due to server issues
    */
-  async queryDeployments(options: AnimlServiceQueryOptions = {}): Promise<AnimlDeployment[]> {
+  async queryDeployments(_options: AnimlServiceQueryOptions = {}): Promise<AnimlDeployment[]> {
     try {
       // Use simple query without spatial filtering
       const params: AnimlQueryOptions = {
@@ -234,24 +234,35 @@ class AnimlService {
 
   /**
    * Get observation counts grouped by (deployment_id, label) combination
-   * This is THE optimized query - one call returns all count data needed for the UI
+   * 
+   * APPROACH: We use a clever workaround for the COUNT(DISTINCT) limitation:
+   * 1. Group by (deployment_id, animl_image_id) to get unique images per camera
+   * 2. For each unique image, fetch its labels
+   * 3. Build the final (deployment_id, label) -> unique_image_count mapping
+   * 
+   * This accurately counts UNIQUE IMAGES per (camera, species) combination!
    * 
    * @param options - Query filters (date range, exclude person/people)
-   * @returns Array of AnimlGroupedCount with observation counts for each (deployment, label) pair
+   * @returns Object with: grouped counts array and unique image counts per deployment
    * 
    * @example
-   * const counts = await animlService.getObservationCountsGrouped({
+   * const result = await animlService.getObservationCountsGrouped({
    *   startDate: '2024-01-01',
    *   endDate: '2024-12-31'
    * });
-   * // Returns: [
-   * //   { deployment_id: 59, label: "mule deer", observation_count: 147 },
-   * //   { deployment_id: 59, label: "coyote", observation_count: 183 },
-   * //   ...
-   * // ]
+   * // Returns: {
+   * //   groupedCounts: [
+   * //     { deployment_id: 59, label: "mule deer", observation_count: 147 },  // 147 unique images
+   * //     { deployment_id: 59, label: "coyote", observation_count: 183 },      // 183 unique images
+   * //   ],
+   * //   uniqueImageCountsByDeployment: Map { 59 => 200 }  // 200 total unique images for deployment 59
+   * // }
    */
-  async getObservationCountsGrouped(options: AnimlServiceQueryOptions = {}): Promise<AnimlGroupedCount[]> {
-    const { startDate, endDate } = options;
+  async getObservationCountsGrouped(options: AnimlServiceQueryOptions = {}): Promise<{ 
+    groupedCounts: AnimlGroupedCount[];
+    uniqueImageCountsByDeployment: Map<number, number>;
+  }> {
+    const { startDate, endDate, deploymentIds = [] } = options;
 
     try {
       let whereClause = '1=1';
@@ -270,44 +281,148 @@ class AnimlService {
         }
       }
 
+      // Filter by deployment IDs (only count observations from specified cameras)
+      if (deploymentIds.length > 0) {
+        const deploymentFilter = deploymentIds.join(',');
+        whereClause += ` AND deployment_id IN (${deploymentFilter})`;
+      }
+
       // ALWAYS exclude person/people observations (consistent with UI filtering)
       whereClause += ` AND label NOT IN ('person', 'people')`;
 
-      const params: any = {
+      console.log('🔍 Animl Grouped Counts: Using 2-step approach for unique image counting...');
+      console.log('📊 WHERE clause:', whereClause);
+      console.log('📊 Deployment filter:', deploymentIds.length > 0 ? `${deploymentIds.length} deployments` : 'ALL deployments (no filter)');
+      const start = Date.now();
+      
+      // STEP 1: Get unique images per deployment
+      // Group by (deployment_id, animl_image_id) - this gives us one row per unique image per camera
+      const uniqueImagesParams: any = {
         where: whereClause,
         outStatistics: JSON.stringify([{
           statisticType: 'count',
           onStatisticField: 'id',
-          outStatisticFieldName: 'observation_count'
+          outStatisticFieldName: 'label_count'  // Number of labels per image (we'll ignore this)
         }]),
-        groupByFieldsForStatistics: 'deployment_id,label', // 🔑 The magic - group by BOTH fields!
+        groupByFieldsForStatistics: 'deployment_id,animl_image_id', // 🔑 Group by image ID!
         f: 'json'
       };
 
       const queryUrl = `${this.baseUrl}/${this.imageLabelsLayerId}/query`;
-      const fullUrl = `${queryUrl}?${new URLSearchParams(params)}`;
+      const step1Url = `${queryUrl}?${new URLSearchParams(uniqueImagesParams)}`;
       
-      console.log('🔍 Animl Grouped Counts Query:', fullUrl.substring(0, 150) + '...');
-      const start = Date.now();
-      
-      const response = await fetch(fullUrl);
-      if (!response.ok) {
-        throw new Error(`Animl grouped count query failed: ${response.status}`);
+      console.log('📊 Step 1: Querying for unique images per deployment...');
+      const step1Response = await fetch(step1Url);
+      if (!step1Response.ok) {
+        throw new Error(`Animl unique images query failed: ${step1Response.status}`);
       }
 
-      const data = await response.json();
-      if (data.error) {
-        throw new Error(`Animl grouped count API error: ${JSON.stringify(data.error)}`);
+      const step1Data = await step1Response.json();
+      if (step1Data.error) {
+        throw new Error(`Animl unique images API error: ${JSON.stringify(step1Data.error)}`);
       }
+
+      // Extract unique (deployment_id, animl_image_id) pairs
+      const uniqueImages = step1Data.features.map((f: any) => ({
+        deployment_id: f.attributes.deployment_id,
+        animl_image_id: f.attributes.animl_image_id
+      }));
+      
+      // Build map of unique image counts per deployment (BEFORE considering labels)
+      const uniqueImageCountsByDeployment = new Map<number, Set<string>>();
+      uniqueImages.forEach((img: any) => {
+        if (!uniqueImageCountsByDeployment.has(img.deployment_id)) {
+          uniqueImageCountsByDeployment.set(img.deployment_id, new Set());
+        }
+        uniqueImageCountsByDeployment.get(img.deployment_id)!.add(img.animl_image_id);
+      });
+      
+      console.log(`📊 Step 1 complete: Found ${uniqueImages.length} unique images across ${uniqueImageCountsByDeployment.size} deployments`);
+      
+      // STEP 2: For each unique image, get its labels
+      // Query for labels of these specific images
+      const imageIds = uniqueImages.map((img: any) => img.animl_image_id);
+      const imageIdChunks: string[][] = [];
+      const chunkSize = 500; // Query in batches to avoid URL length limits
+      
+      for (let i = 0; i < imageIds.length; i += chunkSize) {
+        imageIdChunks.push(imageIds.slice(i, i + chunkSize));
+      }
+      
+      console.log(`📊 Step 2: Fetching labels for ${imageIds.length} unique images in ${imageIdChunks.length} batches...`);
+      
+      // Map: "deployment_id:label" -> Set<animl_image_id>
+      const uniqueImagesPerCombo = new Map<string, Set<string>>();
+      
+      for (let chunkIndex = 0; chunkIndex < imageIdChunks.length; chunkIndex++) {
+        const chunk = imageIdChunks[chunkIndex];
+        const imageIdsFilter = chunk.map(id => `'${id.replace(/'/g, "''")}'`).join(',');
+        const labelsWhereClause = `${whereClause} AND animl_image_id IN (${imageIdsFilter})`;
+        
+        const labelsParams: any = {
+          where: labelsWhereClause,
+          outFields: 'animl_image_id,deployment_id,label',
+          returnGeometry: false,
+          f: 'json'
+        };
+        
+        const labelsUrl = `${queryUrl}?${new URLSearchParams(labelsParams)}`;
+        const labelsResponse = await fetch(labelsUrl);
+        
+        if (!labelsResponse.ok) {
+          console.error(`Failed to fetch labels for chunk ${chunkIndex + 1}`);
+          continue;
+        }
+        
+        const labelsData = await labelsResponse.json();
+        if (labelsData.error) {
+          console.error(`Error fetching labels for chunk ${chunkIndex + 1}:`, labelsData.error);
+          continue;
+        }
+        
+        // Process labels and deduplicate
+        labelsData.features.forEach((feature: any) => {
+          const { animl_image_id, deployment_id, label } = feature.attributes;
+          const key = `${deployment_id}:${label}`;
+          
+          if (!uniqueImagesPerCombo.has(key)) {
+            uniqueImagesPerCombo.set(key, new Set());
+          }
+          uniqueImagesPerCombo.get(key)!.add(animl_image_id);
+        });
+        
+        if ((chunkIndex + 1) % 5 === 0) {
+          console.log(`📊 Processed ${chunkIndex + 1}/${imageIdChunks.length} batches...`);
+        }
+      }
+      
+      // Convert to AnimlGroupedCount format
+      const groupedCounts: AnimlGroupedCount[] = [];
+      uniqueImagesPerCombo.forEach((imageIds, key) => {
+        const [deployment_id_str, label] = key.split(':');
+        groupedCounts.push({
+          deployment_id: parseInt(deployment_id_str),
+          label,
+          observation_count: imageIds.size // Count of unique images
+        });
+      });
 
       const duration = Date.now() - start;
-      console.log(`✅ Animl Grouped Counts: Retrieved ${data.features?.length || 0} combinations in ${duration}ms`);
+      
+      // Convert Set sizes to actual counts
+      const uniqueImageCountsMap = new Map<number, number>();
+      uniqueImageCountsByDeployment.forEach((imageSet, deploymentId) => {
+        uniqueImageCountsMap.set(deploymentId, imageSet.size);
+      });
+      
+      const totalUniqueImagesAcrossDeployments = Array.from(uniqueImageCountsMap.values()).reduce((sum, count) => sum + count, 0);
+      
+      console.log(`✅ Animl Grouped Counts: ${totalUniqueImagesAcrossDeployments} unique images across ${uniqueImageCountsMap.size} deployments in ${groupedCounts.length} label combinations (${duration}ms)`);
 
-      return data.features.map((feature: any) => ({
-        deployment_id: feature.attributes.deployment_id,
-        label: feature.attributes.label,
-        observation_count: feature.attributes.observation_count
-      }));
+      return { 
+        groupedCounts, 
+        uniqueImageCountsByDeployment: uniqueImageCountsMap 
+      };
     } catch (error) {
       console.error('Error getting Animl grouped counts:', error);
       throw error;
@@ -318,35 +433,35 @@ class AnimlService {
    * Build fast lookup structures from grouped count data
    * This processes the result of getObservationCountsGrouped() into Maps for O(1) lookups
    * 
-   * @param groupedCounts - Result from getObservationCountsGrouped()
+   * @param groupedCounts - Array of grouped counts from getObservationCountsGrouped()
+   * @param uniqueImageCountsByDeployment - Map of deployment_id -> unique image count
    * @returns Object with 5 Map structures for different lookup patterns
    * 
    * @example
-   * const counts = await animlService.getObservationCountsGrouped({ ... });
-   * const lookups = animlService.buildCountLookups(counts);
+   * const result = await animlService.getObservationCountsGrouped({ ... });
+   * const lookups = animlService.buildCountLookups(result.groupedCounts, result.uniqueImageCountsByDeployment);
    * 
    * // Now you can do instant lookups:
-   * const totalForDeployment59 = lookups.countsByDeployment.get(59); // O(1)
+   * const totalForDeployment59 = lookups.countsByDeployment.get(59); // O(1) - returns UNIQUE image count
    * const totalForMuleDeer = lookups.countsByLabel.get('mule deer'); // O(1)
    * const muleDeerAt59 = lookups.countsByDeploymentAndLabel.get('59:mule deer'); // O(1)
    */
-  buildCountLookups(groupedCounts: AnimlGroupedCount[]): AnimlCountLookups {
+  buildCountLookups(groupedCounts: AnimlGroupedCount[], uniqueImageCountsByDeployment: Map<number, number>): AnimlCountLookups {
     const start = Date.now();
     
-    const countsByDeployment = new Map<number, number>();
+    // Use the pre-calculated unique image counts per deployment (CORRECT - no double counting!)
+    const countsByDeployment = new Map(uniqueImageCountsByDeployment);
+    
     const countsByLabel = new Map<string, number>();
     const countsByDeploymentAndLabel = new Map<string, number>();
     const labelsByDeployment = new Map<number, Set<string>>();
     const deploymentsByLabel = new Map<string, Set<number>>();
 
     groupedCounts.forEach(({ deployment_id, label, observation_count }) => {
-      // Aggregate by deployment
-      countsByDeployment.set(
-        deployment_id,
-        (countsByDeployment.get(deployment_id) || 0) + observation_count
-      );
-
-      // Aggregate by label
+      // Aggregate by label (sum across deployments)
+      // Note: This is NOT the total unique images with this label across all deployments
+      // because the same image could appear in different deployments
+      // But within a deployment, each image is unique, so summing is okay for label totals
       countsByLabel.set(
         label,
         (countsByLabel.get(label) || 0) + observation_count
@@ -370,8 +485,9 @@ class AnimlService {
     });
 
     const duration = Date.now() - start;
+    const totalDeploymentImages = Array.from(countsByDeployment.values()).reduce((sum, count) => sum + count, 0);
     console.log(`✅ Animl Count Lookups: Built structures in ${duration}ms`);
-    console.log(`   📊 ${countsByDeployment.size} deployments, ${countsByLabel.size} labels, ${countsByDeploymentAndLabel.size} combinations`);
+    console.log(`   📊 ${countsByDeployment.size} deployments (${totalDeploymentImages} total unique images), ${countsByLabel.size} labels, ${countsByDeploymentAndLabel.size} combinations`);
 
     return {
       countsByDeployment,
@@ -389,16 +505,17 @@ class AnimlService {
    * @param lookups - Lookup structures from buildCountLookups()
    * @param selectedDeploymentIds - Array of selected deployment IDs (empty = all)
    * @param selectedLabels - Array of selected labels (empty = all)
-   * @returns Total observation count matching the filters
+   * @returns Total observation count (unique images) matching the filters
    * 
    * @example
-   * const lookups = animlService.buildCountLookups(counts);
+   * const result = await animlService.getObservationCountsGrouped({ ... });
+   * const lookups = animlService.buildCountLookups(result.groupedCounts, result.uniqueImageCountsByDeployment);
    * const total = animlService.getTotalCountForFilters(
    *   lookups,
    *   [59, 61], // Selected camera traps
    *   ['mule deer', 'coyote'] // Selected labels
    * );
-   * // Returns: sum of observations for those specific combinations
+   * // Returns: count of unique images for those specific combinations
    */
   getTotalCountForFilters(
     lookups: AnimlCountLookups,

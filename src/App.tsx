@@ -445,7 +445,8 @@ function App() {
     
     // Load count lookups for accurate right sidebar counts
     if (hasSearched) {
-      await loadAnimlCountLookups(startDate, endDate);
+      const deploymentIds = animlDeployments.map(d => d.id);
+      await loadAnimlCountLookups(startDate, endDate, deploymentIds);
     }
     let searchMode: 'preserve-only' | 'expanded' | 'custom' = filters.spatialFilter === 'Dangermond Preserve' ? 'preserve-only' : 'expanded';
     let customPolygonStr: string | undefined = undefined;
@@ -764,22 +765,31 @@ function App() {
 
   /**
    * Load count lookups for Animl data
-   * This fetches ALL observation counts in one optimized query
+   * This fetches observation counts for deployments within the search area
    * and builds lookup structures for instant access
    */
-  const loadAnimlCountLookups = async (startDate: string | undefined, endDate: string | undefined) => {
+  const loadAnimlCountLookups = async (
+    startDate: string | undefined, 
+    endDate: string | undefined,
+    deploymentIds?: number[]
+  ) => {
     setAnimlCountsLoading(true);
     try {
-      console.log('📊 Loading Animl count lookups...');
+      console.log('📊 Loading Animl count lookups...', { startDate, endDate, deploymentCount: deploymentIds?.length });
       
-      // Fetch all counts grouped by (deployment, label)
-      const groupedCounts = await animlService.getObservationCountsGrouped({
+      if (!startDate || !endDate) {
+        console.warn('⚠️ Animl: No date filter applied to count lookups query');
+      }
+      
+      // Fetch counts grouped by (deployment, label), filtered by deployment IDs from search
+      const result = await animlService.getObservationCountsGrouped({
         startDate,
-        endDate
+        endDate,
+        deploymentIds  // Only count observations from deployments in the search area
       });
       
       // Build lookup structures for O(1) access
-      const lookups = animlService.buildCountLookups(groupedCounts);
+      const lookups = animlService.buildCountLookups(result.groupedCounts, result.uniqueImageCountsByDeployment);
       
       setAnimlCountLookups(lookups);
       console.log('✅ Animl count lookups loaded and ready');
@@ -1101,9 +1111,24 @@ function App() {
     // Mark that a search has been performed
     setHasSearched(true);
     
-    // Update the last searched filters to match current filters
+    // Compute date range first (needed for Animl)
+    let computedStartDate: string | undefined = filters.startDate;
+    let computedEndDate: string | undefined = filters.endDate;
+    
+    // If no explicit dates, compute from daysBack
+    if (!computedStartDate || !computedEndDate) {
+      const range = getDateRange(filters.daysBack || 30);
+      computedStartDate = formatDateForAPI(range.startDate);
+      computedEndDate = formatDateForAPI(range.endDate);
+    }
+    
+    // Update the last searched filters to match current filters (with computed dates)
     // This will cause the DataView to update to show the appropriate sidebar
-    setLastSearchedFilters({ ...filters });
+    setLastSearchedFilters({ 
+      ...filters,
+      startDate: computedStartDate,
+      endDate: computedEndDate
+    });
     
     if (filters.source === 'Dendra Stations') {
       // Handle Dendra Stations search
@@ -1445,6 +1470,11 @@ function App() {
           
           // Update last searched time range
           setLastSearchedDaysBack(filters.daysBack || 30);
+          
+          // Load count lookups for accurate right sidebar counts (only for deployments in search area)
+          const deploymentIds = enhancedDeployments.map(d => d.id);
+          console.log('🔍 About to load Animl count lookups with dates:', { startDate, endDate, deploymentIds });
+          await loadAnimlCountLookups(startDate, endDate, deploymentIds);
           
           // Reload Animl observations on map (only show deployments, not individual observations)
           mapViewRef.current?.reloadAnimlObservations({
