@@ -287,6 +287,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
   // Track if we've auto-selected labels in animal-centric mode
   const hasAutoSelectedLabels = useRef(false);
   const lastFilteredAnimalTagsRef = useRef<string>('');
+  const userManuallyDeselectedLabels = useRef(false);
   
   // Get animal species for selected camera(s) (camera-centric mode)
   // Counts reflect unique images per species using count lookups for accuracy
@@ -371,6 +372,8 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
       // Reset when entering animal-centric mode so we can auto-select
       hasAutoSelectedLabels.current = false;
     }
+    // Reset manual deselection flag when changing view modes
+    userManuallyDeselectedLabels.current = false;
   }, [viewMode]);
 
   // Auto-select all animal species in animal-centric mode for export tab
@@ -411,7 +414,8 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
       const noLabelsSelected = selectedLabels.length === 0;
       const speciesChanged = lastFilteredAnimalTagsRef.current !== cameraLabelsKey;
       
-      if (noLabelsSelected) {
+      // Don't auto-select if user manually deselected all
+      if (noLabelsSelected && !userManuallyDeselectedLabels.current) {
         onLabelsChange(allCameraLabels);
         lastFilteredAnimalTagsRef.current = cameraLabelsKey;
       } else if (speciesChanged && !noLabelsSelected) {
@@ -1104,6 +1108,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
                   <button
                     type="button"
                     onClick={() => {
+                      userManuallyDeselectedLabels.current = false;
                       const allLabels = cameraAnimalSpecies.map(s => s.label);
                       onLabelsChange(allLabels);
                     }}
@@ -1114,6 +1119,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
                   <button
                     type="button"
                     onClick={() => {
+                      userManuallyDeselectedLabels.current = true;
                       onLabelsChange([]);
                     }}
                     className="text-xs px-2 py-1 text-blue-600 hover:text-blue-700 hover:underline"
@@ -1135,6 +1141,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
                         type="checkbox"
                         checked={isChecked}
                         onChange={(e) => {
+                          userManuallyDeselectedLabels.current = false;
                           if (e.target.checked) {
                             onLabelsChange([...selectedLabels, species.label]);
                           } else {
