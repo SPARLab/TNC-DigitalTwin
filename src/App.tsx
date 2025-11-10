@@ -518,15 +518,10 @@ function App() {
           : JSON.stringify(lastSearchedFilters.customPolygon);
       }
       
-      // Get total count first
-      const totalCount = await animlService.getImageLabelsCount({
-        startDate,
-        endDate,
-        deploymentIds: [deployment.id],
-        searchMode,
-        customPolygon: customPolygonStr
-      });
+      // Get total count from deduplicated service count lookups (fast, accurate, already loaded!)
+      const totalCount = animlCountLookups?.countsByDeployment.get(deployment.id) || 0;
       setAnimlTotalObservationsCount(totalCount);
+      console.log(`📊 Using count from deduplicated service lookups: ${totalCount} observations for deployment ${deployment.id}`);
       
       // Fetch first 1000 observations immediately (ordered by timestamp DESC - most recent first)
       const observations = await animlService.queryImageLabels({

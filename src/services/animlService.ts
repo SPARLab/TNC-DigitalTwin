@@ -236,6 +236,9 @@ class AnimlService {
         whereClause += ` AND label IN (${labelFilter})`;
       }
 
+      // Always exclude person/people labels
+      whereClause += ` AND label NOT IN ('person', 'people')`;
+
       const params: AnimlQueryOptions = {
         where: whereClause,
         returnCountOnly: true,
@@ -290,7 +293,9 @@ class AnimlService {
       }
     }
     
-    // Note: Deduplicated service already excludes person/people labels
+    // Exclude person/people labels (label field contains comma-separated values)
+    // Use NOT LIKE to exclude any labels containing 'person' or 'people'
+    whereClause += ` AND label NOT LIKE '%person%' AND label NOT LIKE '%people%'`;
     
     const params: any = {
       where: whereClause,
@@ -1110,6 +1115,9 @@ class AnimlService {
         const labelFilter = labels.map(label => `'${label.replace(/'/g, "''")}'`).join(',');
         whereClause += ` AND label IN (${labelFilter})`;
       }
+
+      // Always exclude person/people labels
+      whereClause += ` AND label NOT IN ('person', 'people')`;
 
       console.log(`🔍 Animl Image Labels WHERE clause: ${whereClause}`);
       if (maxResults !== undefined) {

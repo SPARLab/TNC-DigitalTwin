@@ -529,7 +529,9 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
         {/* Summary */}
         <div id="animl-sidebar-summary" className="text-sm text-gray-600 mb-3">
           {showObservations ? (
-            <span id="animl-summary-observations">{filteredObservations.length} observations {dateRangeText}</span>
+            <span id="animl-summary-observations">
+              {totalObservationsCount !== null ? totalObservationsCount.toLocaleString() : filteredObservations.length} observations {dateRangeText}
+            </span>
           ) : viewMode === 'camera-centric' ? (
             <span id="animl-summary-cameras">{filteredDeployments.length} cameras {dateRangeText}</span>
           ) : (
