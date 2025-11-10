@@ -433,7 +433,16 @@ function App() {
   // Animl handlers
   const handleAnimlViewModeChange = async (mode: AnimlViewMode) => {
     setAnimlViewMode(mode);
-    setAnimlCustomFilters(prev => ({ ...prev, viewMode: mode }));
+    
+    // Reset filters when switching view modes
+    // This ensures all cameras/species are selected by default in the new mode
+    setAnimlCustomFilters(prev => ({ 
+      ...prev, 
+      viewMode: mode,
+      deploymentIds: [], // Reset to all cameras
+      labels: [] // Will be auto-selected by AnimlDetailsSidebar
+    }));
+    
     // Clear selections when switching view modes
     setSelectedAnimlDeployment(null);
     setSelectedAnimlAnimalTag(null);

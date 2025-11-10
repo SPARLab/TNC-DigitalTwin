@@ -288,44 +288,6 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
   const hasAutoSelectedLabels = useRef(false);
   const lastFilteredAnimalTagsRef = useRef<string>('');
   
-  // Reset auto-select flag when view mode changes
-  useEffect(() => {
-    if (viewMode !== 'animal-centric') {
-      hasAutoSelectedLabels.current = false;
-      lastFilteredAnimalTagsRef.current = '';
-    } else {
-      // Reset when entering animal-centric mode so we can auto-select
-      hasAutoSelectedLabels.current = false;
-    }
-  }, [viewMode]);
-
-  // Auto-select all animal species in animal-centric mode for export tab
-  useEffect(() => {
-    if (viewMode === 'animal-centric' && onLabelsChange && filteredAnimalTags.length > 0) {
-      const allFilteredLabels = filteredAnimalTags.map(tag => tag.label);
-      const filteredTagsKey = allFilteredLabels.sort().join(',');
-      
-      // Determine if we need to auto-select:
-      // 1. First time entering animal-centric mode with filtered tags available
-      // 2. Filtered tags changed (e.g., cameras finished loading) and no labels selected yet
-      // 3. Filtered tags changed and currently selected labels are empty
-      const isFirstTime = !hasAutoSelectedLabels.current;
-      const tagsChanged = lastFilteredAnimalTagsRef.current !== filteredTagsKey;
-      const noLabelsSelected = selectedLabels.length === 0;
-      
-      // Auto-select if: first time, OR (tags changed AND no labels selected)
-      // This ensures we select all by default without overriding user's manual selections
-      if (isFirstTime || (tagsChanged && noLabelsSelected)) {
-        onLabelsChange(allFilteredLabels);
-        hasAutoSelectedLabels.current = true;
-        lastFilteredAnimalTagsRef.current = filteredTagsKey;
-      } else if (tagsChanged && !noLabelsSelected) {
-        // Tags changed but user has selections - update the key but don't override
-        lastFilteredAnimalTagsRef.current = filteredTagsKey;
-      }
-    }
-  }, [viewMode, filteredAnimalTags, selectedLabels, onLabelsChange]);
-
   // Get animal species for selected camera(s) (camera-centric mode)
   // Counts reflect unique images per species using count lookups for accuracy
   const cameraAnimalSpecies = useMemo(() => {
@@ -399,6 +361,65 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [viewMode, selectedDeployment, observations, effectiveDeploymentIds, countLookups, countsLoading]);
+
+  // Reset auto-select flag when view mode changes
+  useEffect(() => {
+    if (viewMode !== 'animal-centric') {
+      hasAutoSelectedLabels.current = false;
+      lastFilteredAnimalTagsRef.current = '';
+    } else {
+      // Reset when entering animal-centric mode so we can auto-select
+      hasAutoSelectedLabels.current = false;
+    }
+  }, [viewMode]);
+
+  // Auto-select all animal species in animal-centric mode for export tab
+  useEffect(() => {
+    if (viewMode === 'animal-centric' && onLabelsChange && filteredAnimalTags.length > 0) {
+      const allFilteredLabels = filteredAnimalTags.map(tag => tag.label);
+      const filteredTagsKey = allFilteredLabels.sort().join(',');
+      
+      // Determine if we need to auto-select:
+      // 1. First time entering animal-centric mode with filtered tags available
+      // 2. Filtered tags changed (e.g., cameras finished loading) and no labels selected yet
+      // 3. Filtered tags changed and currently selected labels are empty
+      const isFirstTime = !hasAutoSelectedLabels.current;
+      const tagsChanged = lastFilteredAnimalTagsRef.current !== filteredTagsKey;
+      const noLabelsSelected = selectedLabels.length === 0;
+      
+      // Auto-select if: first time, OR (tags changed AND no labels selected)
+      // This ensures we select all by default without overriding user's manual selections
+      if (isFirstTime || (tagsChanged && noLabelsSelected)) {
+        onLabelsChange(allFilteredLabels);
+        hasAutoSelectedLabels.current = true;
+        lastFilteredAnimalTagsRef.current = filteredTagsKey;
+      } else if (tagsChanged && !noLabelsSelected) {
+        // Tags changed but user has selections - update the key but don't override
+        lastFilteredAnimalTagsRef.current = filteredTagsKey;
+      }
+    }
+  }, [viewMode, filteredAnimalTags, selectedLabels, onLabelsChange]);
+
+  // Auto-select all animal species in camera-centric mode for export tab
+  useEffect(() => {
+    if (viewMode === 'camera-centric' && onLabelsChange && cameraAnimalSpecies.length > 0) {
+      const allCameraLabels = cameraAnimalSpecies.map(species => species.label);
+      const cameraLabelsKey = allCameraLabels.sort().join(',');
+      
+      // Only auto-select if no labels are currently selected
+      // This ensures checkboxes match the underlying data (empty labels = all selected)
+      const noLabelsSelected = selectedLabels.length === 0;
+      const speciesChanged = lastFilteredAnimalTagsRef.current !== cameraLabelsKey;
+      
+      if (noLabelsSelected) {
+        onLabelsChange(allCameraLabels);
+        lastFilteredAnimalTagsRef.current = cameraLabelsKey;
+      } else if (speciesChanged && !noLabelsSelected) {
+        // Species changed but user has selections - update the key but don't override
+        lastFilteredAnimalTagsRef.current = cameraLabelsKey;
+      }
+    }
+  }, [viewMode, cameraAnimalSpecies, selectedLabels, onLabelsChange]);
 
   // Calculate filtered observations for export
   const filteredObservations = useMemo(() => {
