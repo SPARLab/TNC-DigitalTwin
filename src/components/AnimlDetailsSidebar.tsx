@@ -986,6 +986,12 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
     const hasDeploymentFilters = effectiveDeploymentIds.length > 0 && effectiveDeploymentIds.length < deploymentsWithObservations.length;
     const hasLabelFilters = selectedLabels.length > 0 && selectedLabels.length < totalAvailableSpecies;
     const hasActiveFilters = hasDeploymentFilters || hasLabelFilters;
+    
+    // Check if filtered count actually differs from total (to avoid showing redundant "X filtered / X total")
+    const filteredDiffersFromTotal = typeof filteredObservationCount === 'object' 
+      ? filteredObservationCount.floor !== totalAnimalObservationCount || filteredObservationCount.ceiling !== totalAnimalObservationCount
+      : filteredObservationCount !== totalAnimalObservationCount;
+    const showFilteredCount = hasActiveFilters && filteredDiffersFromTotal;
 
     return (
       <div id="animl-export-content" className="flex flex-col h-full">
@@ -994,7 +1000,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
           <p className="text-sm">
             {countsLoading ? (
               <span className="text-gray-500 italic">Loading counts...</span>
-            ) : hasActiveFilters ? (
+            ) : showFilteredCount ? (
               <>
                 <span className="font-semibold text-blue-600">{formatCount(filteredObservationCount)} filtered</span>
                 <span className="text-gray-400 mx-1">/</span>
@@ -1383,7 +1389,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
                 <p className="text-sm font-medium text-blue-900">
                   {countsLoading ? (
                     <span className="text-gray-500 italic">Calculating count...</span>
-                  ) : hasActiveFilters ? (
+                  ) : showFilteredCount ? (
                     <>
                       <span className="text-lg font-bold">{formatCount(filteredObservationCount)}</span> observations will be saved after applying filters
                     </>
@@ -1393,7 +1399,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
                     </>
                   )}
                 </p>
-                {hasActiveFilters && !countsLoading && (
+                {showFilteredCount && !countsLoading && (
                   <p className="text-xs text-blue-700 mt-1">
                     Filtered from {totalAnimalObservationCount.toLocaleString()} total observations
                   </p>
