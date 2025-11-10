@@ -443,81 +443,36 @@ function App() {
     const startDate = filters.startDate || formatDateForAPI(getDateRange(lastSearchedDaysBack || 30).startDate);
     const endDate = filters.endDate || formatDateForAPI(getDateRange(lastSearchedDaysBack || 30).endDate);
     
-    // Load count lookups for accurate right sidebar counts
-    if (hasSearched) {
-      const deploymentIds = animlDeployments.map(d => d.id);
-      await loadAnimlCountLookups(startDate, endDate, deploymentIds);
-    }
+    // Count lookups are already loaded during search - no need to reload them!
+    // The count lookups contain ALL the data needed for the Export tab
+    console.log(`🔄 Switching to ${mode} mode - using existing count lookups (no reload needed)`);
     let searchMode: 'preserve-only' | 'expanded' | 'custom' = filters.spatialFilter === 'Dangermond Preserve' ? 'preserve-only' : 'expanded';
-    let customPolygonStr: string | undefined = undefined;
     let customPolygonGeometry: string | undefined = undefined;
     if (filters.customPolygon && filters.spatialFilter === 'Draw Area') {
       searchMode = 'custom';
-      customPolygonStr = typeof filters.customPolygon === 'string' 
-        ? filters.customPolygon 
-        : JSON.stringify(filters.customPolygon);
       customPolygonGeometry = JSON.stringify({
         rings: filters.customPolygon.rings,
         spatialReference: filters.customPolygon.spatialReference
       });
     }
     
-    // In animal-centric mode, load all observations for the export tab
-    if (mode === 'animal-centric' && lastSearchedFilters.source === 'Animl' && hasSearched) {
-      try {
-        // Load all observations for animal-centric export tab (no filters by deployment or label)
-        const allObservations = await animlService.queryImageLabels({
-          startDate,
-          endDate,
-          searchMode,
-          customPolygon: customPolygonStr,
-          maxResults: 10000 // Load up to 10k observations for export
-        });
-        
-        setAnimlImageLabels(allObservations);
-        console.log(`✅ Loaded ${allObservations.length} observations for animal-centric export view`);
-        
-        // Reload map with all observations
-        mapViewRef.current?.reloadAnimlObservations({
-          deployments: animlDeployments,
-          imageLabels: allObservations,
-          viewMode: mode,
-          startDate,
-          endDate,
-          searchMode,
-          customPolygon: customPolygonGeometry,
-          showSearchArea: filters.spatialFilter === 'Dangermond + Margin'
-        });
-      } catch (error) {
-        console.error('Error loading all observations for animal-centric view:', error);
-        // Reload map with existing observations on error
-        if (animlImageLabels.length > 0) {
-          mapViewRef.current?.reloadAnimlObservations({
-            deployments: animlDeployments,
-            imageLabels: animlImageLabels,
-            viewMode: mode,
-            startDate,
-            endDate,
-            searchMode,
-            customPolygon: customPolygonGeometry,
-            showSearchArea: filters.spatialFilter === 'Dangermond + Margin'
-          });
-        }
-      }
-    } else {
-      // Reload map if Animl data is already loaded (for camera-centric mode)
-      if (lastSearchedFilters.source === 'Animl' && animlImageLabels.length > 0) {
-        mapViewRef.current?.reloadAnimlObservations({
-          deployments: animlDeployments,
-          imageLabels: animlImageLabels,
-          viewMode: mode,
-          startDate,
-          endDate,
-          searchMode,
-          customPolygon: customPolygonGeometry,
-          showSearchArea: filters.spatialFilter === 'Dangermond + Margin'
-        });
-      }
+    // No need to load observations when switching view modes!
+    // Export tab uses count lookups (instant), not observations
+    // Observations are only loaded when user clicks a specific animal tag
+    console.log(`✨ Export tab ready instantly - using count lookups (no observations needed)`);
+    
+    // Just reload the map with existing data
+    if (lastSearchedFilters.source === 'Animl' && animlDeployments.length > 0) {
+      mapViewRef.current?.reloadAnimlObservations({
+        deployments: animlDeployments,
+        imageLabels: animlImageLabels, // Keep existing observations (if any)
+        viewMode: mode,
+        startDate,
+        endDate,
+        searchMode,
+        customPolygon: customPolygonGeometry,
+        showSearchArea: filters.spatialFilter === 'Dangermond + Margin'
+      });
     }
   };
 

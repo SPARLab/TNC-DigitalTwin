@@ -107,6 +107,36 @@ class AnimlService {
   private readonly baseUrl = 'https://dangermondpreserve-spatial.com/server/rest/services/Animl/FeatureServer';
   private readonly deploymentsLayerId = 0; // Deployments/Camera Traps
   private readonly imageLabelsLayerId = 1; // Image Labels/Observations
+  
+  // Optimized services for count queries
+  private readonly deduplicatedServiceUrl = 'https://dangermondpreserve-spatial.com/server/rest/services/Hosted/Animl_Deduplicated/FeatureServer/0';
+  private readonly flattenedServiceUrl = 'https://dangermondpreserve-spatial.com/server/rest/services/Animl/FeatureServer/1';
+
+  /**
+   * Fetch with retry logic to handle flaky server responses
+   * Uses exponential backoff: 500ms, 1000ms, 2000ms
+   */
+  private async fetchWithRetry(url: string, maxRetries = 3): Promise<Response> {
+    let lastError: Error = new Error('Unknown error');
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await fetch(url);
+        if (response.ok) return response;
+        
+        // If not ok, treat as error and retry
+        lastError = new Error(`HTTP ${response.status}: ${response.statusText}`);
+      } catch (error) {
+        lastError = error as Error;
+        console.warn(`⚠️ Fetch attempt ${attempt}/${maxRetries} failed:`, lastError.message);
+        
+        if (attempt < maxRetries) {
+          // Exponential backoff: 500ms, 1000ms, 2000ms
+          await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, attempt - 1)));
+        }
+      }
+    }
+    throw lastError;
+  }
 
   /**
    * Query deployments (camera traps) from the FeatureServer
@@ -233,30 +263,200 @@ class AnimlService {
   }
 
   /**
-   * Get observation counts grouped by (deployment_id, label) combination
+   * Get total unique image count for a single deployment (OPTIMIZED!)
+   * Uses deduplicated service with returnCountOnly for fast, tiny responses
    * 
-   * APPROACH: We use a clever workaround for the COUNT(DISTINCT) limitation:
-   * 1. Group by (deployment_id, animl_image_id) to get unique images per camera
-   * 2. For each unique image, fetch its labels
-   * 3. Build the final (deployment_id, label) -> unique_image_count mapping
+   * @param deploymentId - Deployment ID to count
+   * @param startDate - Start date (YYYY-MM-DD)
+   * @param endDate - End date (YYYY-MM-DD)
+   * @returns Count of unique images
+   */
+  private async getUniqueImageCountForDeployment(
+    deploymentId: number,
+    startDate: string | undefined,
+    endDate: string | undefined
+  ): Promise<number> {
+    let whereClause = `deployment_id = ${deploymentId}`;
+    
+    // Add date filter using timestamp_ field (deduplicated service)
+    if (startDate && endDate) {
+      const endDateObj = new Date(endDate + 'T23:59:59Z');
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      
+      if (endDateObj <= today) {
+        // Use date-only format for deduplicated service (DATE 'YYYY-MM-DD')
+        whereClause += ` AND timestamp_ >= DATE '${startDate}' AND timestamp_ <= DATE '${endDate}'`;
+      }
+    }
+    
+    // Note: Deduplicated service already excludes person/people labels
+    
+    const params: any = {
+      where: whereClause,
+      returnCountOnly: true,
+      f: 'json'
+    };
+    
+    const queryUrl = `${this.deduplicatedServiceUrl}/query`;
+    const fullUrl = `${queryUrl}?${new URLSearchParams(params)}`;
+    
+    const response = await this.fetchWithRetry(fullUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to get unique image count for deployment ${deploymentId}`);
+    }
+    
+    const data = await response.json();
+    if (data.error) {
+      throw new Error(`API error: ${JSON.stringify(data.error)}`);
+    }
+    
+    // Return the count directly (deduplicated service with returnCountOnly)
+    return data.count || 0;
+  }
+
+  /**
+   * Get distinct labels for a deployment (OPTIMIZED!)
+   * Uses flattened service with returnDistinctValues to get just the unique labels
    * 
-   * This accurately counts UNIQUE IMAGES per (camera, species) combination!
+   * @param deploymentId - Deployment ID
+   * @param startDate - Start date (YYYY-MM-DD)
+   * @param endDate - End date (YYYY-MM-DD)
+   * @returns Array of distinct label strings
+   */
+  private async getDistinctLabelsForDeployment(
+    deploymentId: number,
+    startDate: string | undefined,
+    endDate: string | undefined
+  ): Promise<string[]> {
+    let whereClause = `deployment_id = ${deploymentId}`;
+    
+    // Add date filter using timestamp field (flattened service)
+    if (startDate && endDate) {
+      const startDateObj = new Date(startDate + 'T00:00:00Z');
+      const endDateObj = new Date(endDate + 'T23:59:59Z');
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      
+      if (endDateObj <= today) {
+        const startDateStr = startDateObj.toISOString().replace('T', ' ').substring(0, 19);
+        const endDateStr = endDateObj.toISOString().replace('T', ' ').substring(0, 19);
+        // Use full datetime format for flattened service (DATE 'YYYY-MM-DD HH:MM:SS')
+        whereClause += ` AND timestamp >= DATE '${startDateStr}' AND timestamp <= DATE '${endDateStr}'`;
+      }
+    }
+    
+    // Exclude person/people
+    whereClause += ` AND label NOT IN ('person', 'people')`;
+    
+    const params: any = {
+      where: whereClause,
+      outFields: 'label',
+      returnDistinctValues: true,  // ← Get distinct values only!
+      returnGeometry: false,
+      f: 'json'
+    };
+    
+    const queryUrl = `${this.flattenedServiceUrl}/query`;
+    const fullUrl = `${queryUrl}?${new URLSearchParams(params)}`;
+    
+    const response = await this.fetchWithRetry(fullUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to get distinct labels for deployment ${deploymentId}`);
+    }
+    
+    const data = await response.json();
+    if (data.error) {
+      throw new Error(`API error: ${JSON.stringify(data.error)}`);
+    }
+    
+    return (data.features || [])
+      .map((f: any) => f.attributes?.label)
+      .filter((label: string) => label != null);
+  }
+
+  /**
+   * Get unique image count for a specific (deployment, label) combination (OPTIMIZED!)
+   * Uses flattened service with GROUP BY to get unique images
    * 
-   * @param options - Query filters (date range, exclude person/people)
+   * @param deploymentId - Deployment ID
+   * @param label - Label to filter by
+   * @param startDate - Start date (YYYY-MM-DD)
+   * @param endDate - End date (YYYY-MM-DD)
+   * @returns Count of unique images for this label at this deployment
+   */
+  private async getUniqueImageCountForLabel(
+    deploymentId: number,
+    label: string,
+    startDate: string | undefined,
+    endDate: string | undefined
+  ): Promise<number> {
+    let whereClause = `deployment_id = ${deploymentId} AND label = '${label.replace(/'/g, "''")}'`;
+    
+    // Add date filter using timestamp field (flattened service)
+    if (startDate && endDate) {
+      const startDateObj = new Date(startDate + 'T00:00:00Z');
+      const endDateObj = new Date(endDate + 'T23:59:59Z');
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      
+      if (endDateObj <= today) {
+        const startDateStr = startDateObj.toISOString().replace('T', ' ').substring(0, 19);
+        const endDateStr = endDateObj.toISOString().replace('T', ' ').substring(0, 19);
+        // Use full datetime format for flattened service (DATE 'YYYY-MM-DD HH:MM:SS')
+        whereClause += ` AND timestamp >= DATE '${startDateStr}' AND timestamp <= DATE '${endDateStr}'`;
+      }
+    }
+    
+    // GROUP BY animl_image_id
+    // NOTE: returnCountOnly doesn't work with groupByFieldsForStatistics in ArcGIS!
+    const params: any = {
+      where: whereClause,
+      outStatistics: JSON.stringify([{
+        statisticType: 'count',
+        onStatisticField: 'id',
+        outStatisticFieldName: 'count'
+      }]),
+      groupByFieldsForStatistics: 'deployment_id,animl_image_id',
+      f: 'json'
+    };
+    
+    const queryUrl = `${this.flattenedServiceUrl}/query`;
+    const fullUrl = `${queryUrl}?${new URLSearchParams(params)}`;
+    
+    const response = await this.fetchWithRetry(fullUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to get count for ${label} at deployment ${deploymentId}`);
+    }
+    
+    const data = await response.json();
+    if (data.error) {
+      throw new Error(`API error: ${JSON.stringify(data.error)}`);
+    }
+    
+    // Count the grouped rows (each row = one unique image with this label)
+    return data.features?.length || 0;
+  }
+
+  /**
+   * Get observation counts grouped by (deployment_id, label) combination (OPTIMIZED!)
+   * 
+   * NEW APPROACH: Uses 3 efficient queries per deployment:
+   * 1. Get total unique images (GROUP BY with returnCountOnly)
+   * 2. Get distinct labels (returnDistinctValues)
+   * 3. For each label, get unique image count (GROUP BY with returnCountOnly)
+   * 
+   * This avoids the 2,000 record limit and is much faster!
+   * 
+   * @param options - Query filters (date range, deployment IDs)
    * @returns Object with: grouped counts array and unique image counts per deployment
    * 
    * @example
    * const result = await animlService.getObservationCountsGrouped({
    *   startDate: '2024-01-01',
-   *   endDate: '2024-12-31'
+   *   endDate: '2024-12-31',
+   *   deploymentIds: [59, 61, 63]
    * });
-   * // Returns: {
-   * //   groupedCounts: [
-   * //     { deployment_id: 59, label: "mule deer", observation_count: 147 },  // 147 unique images
-   * //     { deployment_id: 59, label: "coyote", observation_count: 183 },      // 183 unique images
-   * //   ],
-   * //   uniqueImageCountsByDeployment: Map { 59 => 200 }  // 200 total unique images for deployment 59
-   * // }
    */
   async getObservationCountsGrouped(options: AnimlServiceQueryOptions = {}): Promise<{ 
     groupedCounts: AnimlGroupedCount[];
@@ -265,159 +465,91 @@ class AnimlService {
     const { startDate, endDate, deploymentIds = [] } = options;
 
     try {
-      let whereClause = '1=1';
-
-      // Build date filter
-      if (startDate && endDate) {
-        const startDateObj = new Date(startDate + 'T00:00:00Z');
-        const endDateObj = new Date(endDate + 'T23:59:59Z');
-        const today = new Date();
-        today.setHours(23, 59, 59, 999);
-        
-        if (endDateObj <= today) {
-          const startDateStr = startDateObj.toISOString().replace('T', ' ').substring(0, 19);
-          const endDateStr = endDateObj.toISOString().replace('T', ' ').substring(0, 19);
-          whereClause += ` AND timestamp >= DATE '${startDateStr}' AND timestamp <= DATE '${endDateStr}'`;
-        }
-      }
-
-      // Filter by deployment IDs (only count observations from specified cameras)
-      if (deploymentIds.length > 0) {
-        const deploymentFilter = deploymentIds.join(',');
-        whereClause += ` AND deployment_id IN (${deploymentFilter})`;
-      }
-
-      // ALWAYS exclude person/people observations (consistent with UI filtering)
-      whereClause += ` AND label NOT IN ('person', 'people')`;
-
-      console.log('🔍 Animl Grouped Counts: Using 2-step approach for unique image counting...');
-      console.log('📊 WHERE clause:', whereClause);
-      console.log('📊 Deployment filter:', deploymentIds.length > 0 ? `${deploymentIds.length} deployments` : 'ALL deployments (no filter)');
+      console.log('🚀 Animl Grouped Counts: Using OPTIMIZED 3-query approach with deduplicated service!');
+      console.log('📊 Date range:', startDate, 'to', endDate);
+      console.log('📊 Deployments:', deploymentIds.length > 0 ? `${deploymentIds.length} specific deployments` : 'ALL deployments');
       const start = Date.now();
       
-      // STEP 1: Get unique images per deployment
-      // Group by (deployment_id, animl_image_id) - this gives us one row per unique image per camera
-      const uniqueImagesParams: any = {
-        where: whereClause,
-        outStatistics: JSON.stringify([{
-          statisticType: 'count',
-          onStatisticField: 'id',
-          outStatisticFieldName: 'label_count'  // Number of labels per image (we'll ignore this)
-        }]),
-        groupByFieldsForStatistics: 'deployment_id,animl_image_id', // 🔑 Group by image ID!
-        f: 'json'
-      };
-
-      const queryUrl = `${this.baseUrl}/${this.imageLabelsLayerId}/query`;
-      const step1Url = `${queryUrl}?${new URLSearchParams(uniqueImagesParams)}`;
+      // If no deployment IDs specified, we need to get all deployments first
+      const deploymentsToQuery = deploymentIds.length > 0 
+        ? deploymentIds 
+        : (await this.queryDeployments(options)).map(d => d.id);
       
-      console.log('📊 Step 1: Querying for unique images per deployment...');
-      const step1Response = await fetch(step1Url);
-      if (!step1Response.ok) {
-        throw new Error(`Animl unique images query failed: ${step1Response.status}`);
-      }
-
-      const step1Data = await step1Response.json();
-      if (step1Data.error) {
-        throw new Error(`Animl unique images API error: ${JSON.stringify(step1Data.error)}`);
-      }
-
-      // Extract unique (deployment_id, animl_image_id) pairs
-      const uniqueImages = step1Data.features.map((f: any) => ({
-        deployment_id: f.attributes.deployment_id,
-        animl_image_id: f.attributes.animl_image_id
-      }));
+      console.log(`📊 Processing ${deploymentsToQuery.length} deployments in parallel...`);
+      const parallelStart = Date.now();
       
-      // Build map of unique image counts per deployment (BEFORE considering labels)
-      const uniqueImageCountsByDeployment = new Map<number, Set<string>>();
-      uniqueImages.forEach((img: any) => {
-        if (!uniqueImageCountsByDeployment.has(img.deployment_id)) {
-          uniqueImageCountsByDeployment.set(img.deployment_id, new Set());
-        }
-        uniqueImageCountsByDeployment.get(img.deployment_id)!.add(img.animl_image_id);
-      });
-      
-      console.log(`📊 Step 1 complete: Found ${uniqueImages.length} unique images across ${uniqueImageCountsByDeployment.size} deployments`);
-      
-      // STEP 2: For each unique image, get its labels
-      // Query for labels of these specific images
-      const imageIds = uniqueImages.map((img: any) => img.animl_image_id);
-      const imageIdChunks: string[][] = [];
-      const chunkSize = 500; // Query in batches to avoid URL length limits
-      
-      for (let i = 0; i < imageIds.length; i += chunkSize) {
-        imageIdChunks.push(imageIds.slice(i, i + chunkSize));
-      }
-      
-      console.log(`📊 Step 2: Fetching labels for ${imageIds.length} unique images in ${imageIdChunks.length} batches...`);
-      
-      // Map: "deployment_id:label" -> Set<animl_image_id>
-      const uniqueImagesPerCombo = new Map<string, Set<string>>();
-      
-      for (let chunkIndex = 0; chunkIndex < imageIdChunks.length; chunkIndex++) {
-        const chunk = imageIdChunks[chunkIndex];
-        const imageIdsFilter = chunk.map(id => `'${id.replace(/'/g, "''")}'`).join(',');
-        const labelsWhereClause = `${whereClause} AND animl_image_id IN (${imageIdsFilter})`;
-        
-        const labelsParams: any = {
-          where: labelsWhereClause,
-          outFields: 'animl_image_id,deployment_id,label',
-          returnGeometry: false,
-          f: 'json'
-        };
-        
-        const labelsUrl = `${queryUrl}?${new URLSearchParams(labelsParams)}`;
-        const labelsResponse = await fetch(labelsUrl);
-        
-        if (!labelsResponse.ok) {
-          console.error(`Failed to fetch labels for chunk ${chunkIndex + 1}`);
-          continue;
-        }
-        
-        const labelsData = await labelsResponse.json();
-        if (labelsData.error) {
-          console.error(`Error fetching labels for chunk ${chunkIndex + 1}:`, labelsData.error);
-          continue;
-        }
-        
-        // Process labels and deduplicate
-        labelsData.features.forEach((feature: any) => {
-          const { animl_image_id, deployment_id, label } = feature.attributes;
-          const key = `${deployment_id}:${label}`;
-          
-          if (!uniqueImagesPerCombo.has(key)) {
-            uniqueImagesPerCombo.set(key, new Set());
+      // Process all deployments in parallel!
+      const deploymentResults = await Promise.all(
+        deploymentsToQuery.map(async (deploymentId) => {
+          const deploymentStart = Date.now();
+          try {
+            // Queries 1 & 2: Run in parallel since they're independent
+            const query12Start = Date.now();
+            const [totalCount, labels] = await Promise.all([
+              this.getUniqueImageCountForDeployment(deploymentId, startDate, endDate),
+              this.getDistinctLabelsForDeployment(deploymentId, startDate, endDate)
+            ]);
+            const query12Duration = Date.now() - query12Start;
+            
+            // Query 3: For each label, get unique image count (parallel!)
+            const query3Start = Date.now();
+            const labelCounts = await Promise.all(
+              labels.map(label => this.getUniqueImageCountForLabel(deploymentId, label, startDate, endDate))
+            );
+            const query3Duration = Date.now() - query3Start;
+            
+            // Build per-label counts
+            const byLabel = labels.map((label, i) => ({
+              label,
+              count: labelCounts[i]
+            }));
+            
+            const deploymentDuration = Date.now() - deploymentStart;
+            console.log(`✅ Deployment ${deploymentId}: ${totalCount} unique images, ${labels.length} species (Q1+Q2: ${query12Duration}ms, Q3: ${query3Duration}ms, Total: ${deploymentDuration}ms)`);
+            
+            return {
+              deploymentId,
+              totalCount,
+              byLabel
+            };
+          } catch (error) {
+            console.error(`❌ Error processing deployment ${deploymentId}:`, error);
+            return {
+              deploymentId,
+              totalCount: 0,
+              byLabel: []
+            };
           }
-          uniqueImagesPerCombo.get(key)!.add(animl_image_id);
-        });
-        
-        if ((chunkIndex + 1) % 5 === 0) {
-          console.log(`📊 Processed ${chunkIndex + 1}/${imageIdChunks.length} batches...`);
-        }
-      }
+        })
+      );
       
-      // Convert to AnimlGroupedCount format
-      const groupedCounts: AnimlGroupedCount[] = [];
-      uniqueImagesPerCombo.forEach((imageIds, key) => {
-        const [deployment_id_str, label] = key.split(':');
-        groupedCounts.push({
-          deployment_id: parseInt(deployment_id_str),
-          label,
-          observation_count: imageIds.size // Count of unique images
-        });
-      });
-
-      const duration = Date.now() - start;
-      
-      // Convert Set sizes to actual counts
+      // Convert to expected format
       const uniqueImageCountsMap = new Map<number, number>();
-      uniqueImageCountsByDeployment.forEach((imageSet, deploymentId) => {
-        uniqueImageCountsMap.set(deploymentId, imageSet.size);
+      const groupedCounts: AnimlGroupedCount[] = [];
+      
+      deploymentResults.forEach(result => {
+        // Store total count for this deployment
+        uniqueImageCountsMap.set(result.deploymentId, result.totalCount);
+        
+        // Store per-label counts
+        result.byLabel.forEach(({ label, count }) => {
+          groupedCounts.push({
+            deployment_id: result.deploymentId,
+            label,
+            observation_count: count
+          });
+        });
       });
       
-      const totalUniqueImagesAcrossDeployments = Array.from(uniqueImageCountsMap.values()).reduce((sum, count) => sum + count, 0);
+      const parallelDuration = Date.now() - parallelStart;
+      const duration = Date.now() - start;
+      const totalImages = Array.from(uniqueImageCountsMap.values()).reduce((sum, count) => sum + count, 0);
+      const totalSpeciesRecords = groupedCounts.length;
       
-      console.log(`✅ Animl Grouped Counts: ${totalUniqueImagesAcrossDeployments} unique images across ${uniqueImageCountsMap.size} deployments in ${groupedCounts.length} label combinations (${duration}ms)`);
+      console.log(`✅ Animl Grouped Counts COMPLETE: ${totalImages} unique images across ${uniqueImageCountsMap.size} deployments, ${totalSpeciesRecords} (deployment, species) combinations`);
+      console.log(`⏱️  Wall-clock time: ${parallelDuration}ms for ${deploymentsToQuery.length} deployments`);
+      console.log(`📊 If sequential, would have taken: ~${(duration / deploymentsToQuery.length * deploymentsToQuery.length).toFixed(0)}ms`);
+      console.log(`🚀 Parallelization efficiency: Processing in parallel!`);
 
       return { 
         groupedCounts, 

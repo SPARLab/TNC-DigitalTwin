@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X, Calendar, Camera, Tag, Download, ShoppingCart, Filter, MapPin } from 'lucide-react';
-import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag, AnimlCountLookups } from '../services/animlService';
+import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag, AnimlCountLookups, animlService } from '../services/animlService';
 import { AnimlViewMode } from './AnimlSidebar';
 
 interface AnimlDetailsSidebarProps {
@@ -85,18 +85,6 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
     });
   }, [observations]);
 
-  // Deduplicate observations by image ID (same logic as left sidebar)
-  // This is the TRUE count of unique observations (images)
-  const deduplicatedObservationsCount = useMemo(() => {
-    const uniqueImageIds = new Set<string>();
-    animalOnlyObservations.forEach(obs => {
-      if (obs.animl_image_id) {
-        uniqueImageIds.add(obs.animl_image_id);
-      }
-    });
-    return uniqueImageIds.size;
-  }, [animalOnlyObservations]);
-
   // Filter deployments to only show those with observations (for animal-centric export tab)
   const deploymentsWithObservations = useMemo(() => {
     if (viewMode !== 'animal-centric') {
@@ -179,12 +167,67 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
 
 
   // Compute filtered animal tags for animal-centric mode (species with observations from selected cameras)
-  // Uses deduplicated counts from loaded observations (same logic as left sidebar)
+  // Uses count lookups for accurate, fast database counts
   const filteredAnimalTags = useMemo(() => {
     if (viewMode !== 'animal-centric') {
       return [];
     }
 
+    // Use count lookups if available (preferred - has ALL species from database via GROUP BY query)
+    if (countLookups && !countsLoading) {
+      const speciesCountsMap = new Map<string, number>();
+      
+      // Get all unique labels from count lookups
+      const allLabels = new Set<string>(countLookups.countsByLabel.keys());
+      
+      // Calculate aggregated counts for selected deployments
+      if (effectiveDeploymentIds.length > 0) {
+        effectiveDeploymentIds.forEach(deploymentId => {
+          const labelsForDeployment = countLookups.labelsByDeployment.get(deploymentId);
+          if (labelsForDeployment) {
+            labelsForDeployment.forEach(label => {
+              const key = `${deploymentId}:${label}`;
+              const count = countLookups.countsByDeploymentAndLabel.get(key) || 0;
+              if (count > 0) {
+                const currentTotal = speciesCountsMap.get(label) || 0;
+                speciesCountsMap.set(label, currentTotal + count);
+              }
+            });
+          }
+        });
+      } else {
+        // No deployments selected - use total counts per label
+        countLookups.countsByLabel.forEach((count, label) => {
+          speciesCountsMap.set(label, count);
+        });
+      }
+      
+      // Build species list from count lookups
+      return Array.from(allLabels)
+        .filter(label => {
+          // Filter out person/people labels
+          const labelLower = label.toLowerCase();
+          if (labelLower === 'person' || labelLower === 'people') {
+            return false;
+          }
+          
+          // Only show species with count > 0 for selected deployments
+          const count = speciesCountsMap.get(label) || 0;
+          return count > 0;
+        })
+        .map(label => ({
+          label,
+          totalObservations: countLookups.countsByLabel.get(label) || 0,
+          aggregatedCount: speciesCountsMap.get(label) || 0,
+          uniqueCameras: countLookups.deploymentsByLabel.get(label)?.size || 0,
+          firstObservation: '',
+          lastObservation: '',
+          recentObservations: []
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+    }
+
+    // Fallback: deduplicate in-memory observations (may be incomplete if not all loaded)
     if (observations.length === 0) {
       return [];
     }
@@ -223,7 +266,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
         recentObservations: []
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
-  }, [viewMode, observations, effectiveDeploymentIds, deployments]);
+  }, [viewMode, observations, effectiveDeploymentIds, deployments, countLookups, countsLoading]);
 
   // Track if we've auto-selected labels in animal-centric mode
   const hasAutoSelectedLabels = useRef(false);
@@ -268,7 +311,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
   }, [viewMode, filteredAnimalTags, selectedLabels, onLabelsChange]);
 
   // Get animal species for selected camera(s) (camera-centric mode)
-  // Counts reflect unique images per species (deduplicated by image ID)
+  // Counts reflect unique images per species using count lookups for accuracy
   const cameraAnimalSpecies = useMemo(() => {
     if (viewMode !== 'camera-centric') {
       return [];
@@ -283,7 +326,40 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
       return [];
     }
     
-    // Deduplicate observations by (label, image_id) to count unique images per species
+    // Use count lookups if available (preferred - accurate database counts from GROUP BY query)
+    if (countLookups && !countsLoading) {
+      const speciesCounts = new Map<string, number>();
+      
+      // Get all labels that have observations for the selected deployment(s)
+      deploymentIdsToUse.forEach(deploymentId => {
+        const labelsForDeployment = countLookups.labelsByDeployment.get(deploymentId);
+        if (labelsForDeployment) {
+          labelsForDeployment.forEach(label => {
+            const key = `${deploymentId}:${label}`;
+            const count = countLookups.countsByDeploymentAndLabel.get(key) || 0;
+            if (count > 0) {
+              const currentTotal = speciesCounts.get(label) || 0;
+              speciesCounts.set(label, currentTotal + count);
+            }
+          });
+        }
+      });
+      
+      // Build species list from count lookups
+      return Array.from(speciesCounts.entries())
+        .filter(([label]) => {
+          // Filter out person/people
+          const labelLower = label.toLowerCase();
+          return labelLower !== 'person' && labelLower !== 'people';
+        })
+        .map(([label, count]) => ({
+          label,
+          count
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+    }
+    
+    // Fallback: deduplicate observations by (label, image_id) in memory
     const speciesImageIds = new Map<string, Set<string>>();
     
     observations
@@ -306,7 +382,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
         count: imageIds.size // Count of unique images for this species
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
-  }, [viewMode, selectedDeployment, observations, effectiveDeploymentIds]);
+  }, [viewMode, selectedDeployment, observations, effectiveDeploymentIds, countLookups, countsLoading]);
 
   // Calculate filtered observations for export
   const filteredObservations = useMemo(() => {
@@ -328,28 +404,78 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
     return filtered;
   }, [animalOnlyObservations, effectiveDeploymentIds, selectedLabels]);
 
-  // Calculate total count of animal observations (excluding person/people)
-  // Use deduplicated count from loaded observations (same as left sidebar)
-  // This is the source of truth - always accurate for what's currently loaded
+  // Calculate total count of animal observations (excluding person/people) from database
+  // In camera-centric mode: count for selected camera only
+  // In animal-centric mode: count for all cameras
+  // Uses count lookups for accuracy (includes ALL observations, not just loaded ones)
   const totalAnimalObservationCount = useMemo(() => {
-    return deduplicatedObservationsCount;
-  }, [deduplicatedObservationsCount]);
+    console.log(`🔍 totalAnimalObservationCount: countLookups=${!!countLookups}, countsLoading=${countsLoading}, viewMode=${viewMode}, selectedDeployment=${selectedDeployment?.id || 'none'}`);
+    
+    if (countLookups && !countsLoading) {
+      console.log(`✅ Count lookups available! countsByDeployment has ${countLookups.countsByDeployment.size} deployments`);
+      try {
+        // In camera-centric mode, show count for selected camera only
+        if (viewMode === 'camera-centric' && selectedDeployment) {
+          // Get the unique image count for this specific deployment from pre-calculated lookups
+          const total = countLookups.countsByDeployment.get(selectedDeployment.id) || 0;
+          console.log(`📊 [COUNT LOOKUPS] Total count for camera ${selectedDeployment.id}: ${total} unique images`);
+          return total;
+        }
+        
+        // In animal-centric mode, sum counts across all deployments
+        const total = Array.from(countLookups.countsByDeployment.values()).reduce((sum, count) => sum + count, 0);
+        console.log(`📊 [COUNT LOOKUPS] Total count across all cameras: ${total} unique images`);
+        return total;
+      } catch (error) {
+        console.error('❌ Error calculating total count from lookups:', error);
+        // Fallback: deduplicate in-memory observations
+        const uniqueImageIds = new Set<string>();
+        animalOnlyObservations.forEach(obs => {
+          if (obs.animl_image_id) uniqueImageIds.add(obs.animl_image_id);
+        });
+        console.log(`⚠️ FALLBACK: Using in-memory count (${uniqueImageIds.size}) due to error`);
+        return uniqueImageIds.size;
+      }
+    }
+    
+    // Fallback: deduplicate in-memory observations (may be incomplete if not all loaded)
+    const uniqueImageIds = new Set<string>();
+    animalOnlyObservations.forEach(obs => {
+      if (obs.animl_image_id) uniqueImageIds.add(obs.animl_image_id);
+    });
+    console.warn(`⚠️ Using in-memory count (${uniqueImageIds.size} from ${animalOnlyObservations.length} loaded) - count lookups not available (countLookups=${!!countLookups}, countsLoading=${countsLoading})`);
+    return uniqueImageIds.size;
+  }, [countLookups, countsLoading, animalOnlyObservations, viewMode, selectedDeployment]);
 
-  // Calculate filtered count using deduplication (same as left sidebar)
-  // This ensures consistency between left and right sidebars
+  // Calculate accurate filtered count using count lookups
+  // Falls back to in-memory deduplication if lookups not available
   const filteredObservationCount = useMemo(() => {
-    // Deduplicate filtered observations by image ID
+    // If count lookups are available, use them for accurate database counts (fast!)
+    if (countLookups && !countsLoading) {
+      try {
+        // Calculate count based on filters using the efficient lookup structures
+        const total = animlService.getTotalCountForFilters(
+          countLookups,
+          effectiveDeploymentIds,
+          selectedLabels
+        );
+        console.log(`📊 Filtered count from lookups: ${total} observations (deployments: ${effectiveDeploymentIds.length}, labels: ${selectedLabels.length})`);
+        console.log(`📊 Total count: ${totalAnimalObservationCount} observations`);
+        return total;
+      } catch (error) {
+        console.error('Error calculating count from lookups:', error);
+        // Fall through to in-memory fallback
+      }
+    }
+    
+    // Fallback: deduplicate filtered observations in memory (may be incomplete if not all loaded)
     const uniqueImageIds = new Set<string>();
     filteredObservations.forEach(obs => {
-      if (obs.animl_image_id) {
-        uniqueImageIds.add(obs.animl_image_id);
-      }
+      if (obs.animl_image_id) uniqueImageIds.add(obs.animl_image_id);
     });
-    const count = uniqueImageIds.size;
-    console.log(`📊 Filtered count (deduplicated): ${count} unique images from ${filteredObservations.length} total rows`);
-    console.log(`📊 Total count (deduplicated): ${totalAnimalObservationCount} observations`);
-    return count;
-  }, [filteredObservations, totalAnimalObservationCount]);
+    console.warn(`⚠️ Using in-memory filtered count (${uniqueImageIds.size}) - count lookups not available`);
+    return uniqueImageIds.size;
+  }, [countLookups, countsLoading, effectiveDeploymentIds, selectedLabels, filteredObservations, totalAnimalObservationCount]);
 
   // Helper function to format date
   const formatDate = (dateString: string) => {
