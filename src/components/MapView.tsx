@@ -576,10 +576,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
             }
           }
         },
-        popupTemplate: new PopupTemplate({
-          title: 'Jack and Laura Dangermond Preserve',
-          content: '2019 boundary inclusive of Coast Guard 33 acres at Point Conception.'
-        })
+        // Disable automatic popup - we'll handle it manually with distance checking
+        popupEnabled: false
       });
 
       // Store reference to boundary layer for popup management
@@ -1358,21 +1356,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     handleLayerLoading();
   }, [view, tncArcGISItems, activeLayerIds, layerOpacities]);
 
-  // Manage boundary popup based on active TNC ArcGIS layers
-  // Disable boundary popup when TNC layers are active to prevent it from interfering
+  // Close popup if the layer it belongs to was toggled off
   useEffect(() => {
-    if (boundaryLayerRef.current) {
-      const hasTNCLayers = activeLayerIds.length > 0;
-      boundaryLayerRef.current.popupEnabled = !hasTNCLayers;
-      
-      if (hasTNCLayers) {
-      // console.log('🚫 Boundary popup disabled (TNC layers are active)');
-      } else {
-      // console.log('✅ Boundary popup enabled (no TNC layers active)');
-      }
-    }
-    
-    // Close popup if the layer it belongs to was toggled off
     if (view && view.popup && view.popup.visible) {
       const popupFeature = view.popup.selectedFeature;
       if (popupFeature && popupFeature.layer) {
@@ -2073,12 +2058,16 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     if (!view || !boundaryLayerRef.current) return;
     
     const clickHandler = view.on('click', async (event) => {
-      // Only proceed if boundary popup is enabled
-      if (!boundaryLayerRef.current?.popupEnabled) return;
+      // Check if boundary popup is allowed (disabled when TNC layers are active)
+      const hasTNCLayers = activeLayerIds.length > 0;
+      if (hasTNCLayers) return;
       
       try {
-        // Use hitTest to see if the boundary was clicked
-        const response = await view.hitTest(event);
+        // Use hitTest with explicit include to ensure boundary layer is tested even with popupEnabled: false
+        const response = await view.hitTest(event, {
+          include: boundaryLayerRef.current ? [boundaryLayerRef.current] : []
+        });
+        
         const boundaryHit = response.results.find(result => 
           'graphic' in result && 
           result.graphic && 
@@ -2089,34 +2078,70 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           const clickPoint = event.mapPoint;
           const polygon = boundaryHit.graphic.geometry as __esri.Polygon;
           
-          // Use ArcGIS SDK's optimized nearestCoordinate method to find closest point on boundary
-          const nearestPoint = geometryEngine.nearestCoordinate(polygon, clickPoint);
+          // Create a polyline from the polygon's rings (the outline)
+          // This ensures we measure distance to the boundary line, not the fill
+          const Polyline = (await import('@arcgis/core/geometry/Polyline')).default;
+          const polyline = new Polyline({
+            paths: polygon.rings,
+            spatialReference: polygon.spatialReference
+          });
           
-          // Calculate distance using ArcGIS SDK's geodesic distance method
+          // Use nearestCoordinate on the polyline (boundary) not the polygon
+          const nearestPoint = geometryEngine.nearestCoordinate(polyline, clickPoint);
+          
+          // Calculate geodesic distance between the two points
           const distance = geometryEngine.distance(
             clickPoint, 
             nearestPoint.coordinate, 
             'meters'
-          );
+          ) as number;
           
-          // Define threshold - 50 meters provides reasonable "hit zone" near boundary
-          const BOUNDARY_CLICK_THRESHOLD_METERS = 50;
+          // Define threshold distance in meters - only show popup if click is within this distance of the boundary edge
+          const BOUNDARY_CLICK_THRESHOLD_METERS = 150;
           
-          if (distance > BOUNDARY_CLICK_THRESHOLD_METERS) {
-            // Click is too far from boundary - prevent popup from showing
+          if (distance <= BOUNDARY_CLICK_THRESHOLD_METERS) {
+            // Prevent ALL event handling - stop propagation and default behavior
             event.stopPropagation();
-            view.popup?.close();
+            if (event.native) {
+              event.native.stopImmediatePropagation();
+              event.native.preventDefault();
+            }
+            
+            // Show popup with a slight delay to ensure event handling is complete
+            if (view.popup) {
+              setTimeout(() => {
+                // Create a standalone graphic (not from the layer) to avoid popupEnabled: false issues
+                const popupGraphic = new Graphic({
+                  geometry: clickPoint,
+                  attributes: {
+                    title: 'Jack and Laura Dangermond Preserve',
+                    description: '2019 boundary inclusive of Coast Guard 33 acres at Point Conception.'
+                  },
+                  popupTemplate: new PopupTemplate({
+                    title: '{title}',
+                    content: '{description}'
+                  })
+                });
+                
+                view.popup?.open({
+                  features: [popupGraphic],
+                  location: clickPoint,
+                  fetchFeatures: false
+                });
+              }, 50);
+            }
+          } else {
+            // Beyond threshold - prevent any default popup behavior
+            event.stopPropagation();
           }
-          // If within threshold, let the default popup behavior continue
         }
       } catch (error) {
         console.error('Error in boundary click handler:', error);
-        // Fail gracefully - allow popup to show if there's an error
       }
     });
     
     return () => clickHandler.remove();
-  }, [view]);
+  }, [view, activeLayerIds]);
 
   // Effect to update TNC observations on map when data changes
   useEffect(() => {
