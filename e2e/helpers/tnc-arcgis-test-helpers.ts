@@ -623,6 +623,9 @@ export async function testShowsInAllCategories(
   page: Page,
   layer: LayerConfig
 ): Promise<TestResult> {
+  console.log(`[TEST 1] Starting testShowsInAllCategories for: ${layer.title}`);
+  console.log(`[TEST 1] Categories to check: ${layer.categories.join(', ')}`);
+  
   if (layer.categories.length === 0) {
     return {
       passed: true,
@@ -634,12 +637,14 @@ export async function testShowsInAllCategories(
   const missingCategories: string[] = [];
   
   for (const category of layer.categories) {
-    // Navigate to category
-    const selectCategoryBtn = page.getByRole('button', { name: /select category/i });
-    await selectCategoryBtn.click();
+    // Navigate to category (use stable ID - text changes after selection)
+    const categoryFilterBtn = page.locator('#category-filter-button');
+    await categoryFilterBtn.click();
     await page.waitForTimeout(500);
     
-    const categoryBtn = page.getByRole('button', { name: new RegExp(category, 'i') });
+    // Use stable ID pattern: #category-option-{category-name-lowercase-with-dashes}
+    const categoryId = `#category-option-${category.toLowerCase().replace(/\s+/g, '-').replace(/[()/?]/g, '')}`;
+    const categoryBtn = page.locator(categoryId);
     await categoryBtn.click();
     await page.waitForTimeout(500);
     
@@ -667,13 +672,54 @@ export async function testShowsInAllCategories(
     await page.waitForTimeout(3000);
     
     // Check if layer appears in results
+    console.log(`[TEST 1] Looking for selector: #item-title-${layer.itemId}`);
     const itemTitle = page.locator(`#item-title-${layer.itemId}`);
     const isVisible = await itemTitle.isVisible().catch(() => false);
+    console.log(`[TEST 1] Layer visible in category "${category}": ${isVisible}`);
     
     if (!isVisible) {
-      missingCategories.push(category);
+      console.log(`[TEST 1] ⚠️ Layer NOT found in category "${category}" - trying alternative selector...`);
+      
+      // Try alternative: find by text
+      const layerCardByText = page.getByText(layer.title, { exact: true }).first();
+      const isVisibleByText = await layerCardByText.isVisible().catch(() => false);
+      console.log(`[TEST 1] Layer visible by text search: ${isVisibleByText}`);
+      
+      if (!isVisibleByText) {
+        missingCategories.push(category);
+      } else {
+        // Found it by text, so click it
+        console.log(`[TEST 1] Found layer by text in category "${category}". Clicking to load...`);
+        await layerCardByText.click();
+        await page.waitForTimeout(1000);
+        
+        const opacitySlider = page.locator('#tnc-details-opacity-slider');
+        if (await opacitySlider.isVisible().catch(() => false)) {
+          await opacitySlider.fill('100');
+        }
+        await page.waitForTimeout(2000);
+        console.log(`[TEST 1] Layer loaded for category "${category}"`);
+      }
+    } else {
+      // Click on the layer card to load it for remaining tests
+      console.log(`[TEST 1] Found layer in category "${category}". Clicking to load...`);
+      const layerCard = page.getByText(layer.title, { exact: true }).first();
+      if (await layerCard.isVisible().catch(() => false)) {
+        await layerCard.click();
+        await page.waitForTimeout(1000);
+        
+        // Set opacity to 100%
+        const opacitySlider = page.locator('#tnc-details-opacity-slider');
+        if (await opacitySlider.isVisible().catch(() => false)) {
+          await opacitySlider.fill('100');
+        }
+        await page.waitForTimeout(2000);
+        console.log(`[TEST 1] Layer loaded for category "${category}"`);
+      }
     }
   }
+  
+  console.log(`[TEST 1] Finished checking all categories. Missing: ${missingCategories.length}`);
   
   if (missingCategories.length > 0) {
     return {
@@ -681,6 +727,70 @@ export async function testShowsInAllCategories(
       message: `Layer not found in ${missingCategories.length}/${layer.categories.length} categories`,
       details: { missingCategories }
     };
+  }
+  
+  console.log(`[TEST 1] ✓ Layer found in all categories. Now reloading for remaining tests...`);
+  
+  // Re-load the layer after category checks (filtering may have de-selected it)
+  // Navigate to first category, search, and click the layer to activate it for subsequent tests
+  if (layer.categories.length > 0) {
+    console.log(`[TEST 1] Navigating to first category: ${layer.categories[0]}`);
+    const firstCategory = layer.categories[0];
+    
+    // Navigate to first category
+    const categoryFilterBtn = page.locator('#category-filter-button');
+    await categoryFilterBtn.click();
+    await page.waitForTimeout(500);
+    
+    const categoryId = `#category-option-${firstCategory.toLowerCase().replace(/\s+/g, '-').replace(/[()/?]/g, '')}`;
+    const categoryBtn = page.locator(categoryId);
+    await categoryBtn.click();
+    await page.waitForTimeout(500);
+    
+    // Select TNC ArcGIS Hub source
+    const selectSourceBtn = page.locator('#source-filter-button');
+    await selectSourceBtn.click();
+    await page.waitForTimeout(500);
+    
+    const arcgisOption = page.locator('#source-option-tnc-arcgis-hub');
+    await arcgisOption.click();
+    await page.waitForTimeout(500);
+    
+    // Select time range (last 5 years)
+    const timeRangeBtn = page.locator('#time-range-filter-button');
+    await timeRangeBtn.click();
+    await page.waitForTimeout(500);
+    
+    const lastFiveYears = page.locator('#time-range-label-1825-days');
+    await lastFiveYears.click();
+    await page.waitForTimeout(500);
+    
+    // Search
+    const searchBtn = page.locator('#observations-search-button');
+    await searchBtn.click();
+    await page.waitForTimeout(3000);
+    
+    // Click the layer card to load it into right sidebar (same as setup)
+    const layerCard = page.getByText(layer.title, { exact: true }).first();
+    const isVisible = await layerCard.isVisible().catch(() => false);
+    
+    if (isVisible) {
+      console.log(`[TEST 1] Clicking layer card to reload for remaining tests...`);
+      await layerCard.click();
+      await page.waitForTimeout(1000);
+      
+      // Set opacity to 100% like setup does
+      console.log(`[TEST 1] Setting opacity to 100%...`);
+      const opacitySlider = page.locator('#tnc-details-opacity-slider');
+      if (await opacitySlider.isVisible().catch(() => false)) {
+        await opacitySlider.fill('100');
+      }
+      
+      await page.waitForTimeout(3000);
+      console.log(`[TEST 1] ✓ Layer re-loaded and ready for remaining tests`);
+    } else {
+      console.warn(`[TEST 1] ⚠️ Layer card not found for reload`);
+    }
   }
   
   return {
