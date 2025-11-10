@@ -14,6 +14,7 @@ import TNCArcGISDetailsSidebar from './components/TNCArcGISDetailsSidebar';
 import DendraDetailsSidebar from './components/DendraDetailsSidebar';
 import INaturalistDetailsSidebar from './components/INaturalistDetailsSidebar';
 import AnimlDetailsSidebar from './components/AnimlDetailsSidebar';
+import AnimlLoadingModal from './components/AnimlLoadingModal';
 import { INaturalistUnifiedObservation } from './components/INaturalistSidebar';
 import { FilterState, DendraStation, DendraDatastream, DendraDatastreamWithStation, DendraDatapoint, INaturalistCustomFilters, AnimlCustomFilters } from './types';
 import { animlService, AnimlDeployment, AnimlImageLabel, AnimlAnimalTag, AnimlCountLookups } from './services/animlService';
@@ -2606,6 +2607,9 @@ function App() {
           // clearCart();
         }}
       />
+
+      {/* Animl Loading Modal */}
+      <AnimlLoadingModal isOpen={animlLoading} />
     </div>
   );
 }
