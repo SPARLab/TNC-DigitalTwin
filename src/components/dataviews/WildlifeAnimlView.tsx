@@ -1,6 +1,6 @@
 import React from 'react';
 import AnimlSidebar from '../AnimlSidebar';
-import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag } from '../../services/animlService';
+import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag, AnimlCountLookups } from '../../services/animlService';
 import { AnimlViewMode } from '../AnimlSidebar';
 
 interface WildlifeAnimlViewProps {
@@ -52,6 +52,9 @@ interface WildlifeAnimlViewProps {
   selectedDeployment?: AnimlDeployment | null;
   selectedAnimalTag?: AnimlAnimalTag | null;
   selectedObservation?: AnimlImageLabel | null;
+  
+  // Count lookups for filtering
+  countLookups?: AnimlCountLookups | null;
 }
 
 const WildlifeAnimlView: React.FC<WildlifeAnimlViewProps> = ({
@@ -71,7 +74,8 @@ const WildlifeAnimlView: React.FC<WildlifeAnimlViewProps> = ({
   onAnimalTagClick,
   onObservationClick,
   hasSearched = false,
-  dateRangeText
+  dateRangeText,
+  countLookups
 }) => {
   // Determine which observations to show based on view mode and selection
   const displayedObservations = React.useMemo(() => {
@@ -102,6 +106,7 @@ const WildlifeAnimlView: React.FC<WildlifeAnimlViewProps> = ({
       observations={displayedObservations}
       selectedObservationId={selectedObservationId}
       onObservationClick={onObservationClick}
+      countLookups={countLookups}
     />
   );
 };

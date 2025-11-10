@@ -16,7 +16,7 @@ import TNCArcGISView from './dataviews/TNCArcGISView';
 import LiDARView, { LiDARViewMode } from './dataviews/LiDARView';
 import DendraSidebar from './DendraSidebar';
 import WildlifeAnimlView from './dataviews/WildlifeAnimlView';
-import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag } from '../services/animlService';
+import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag, AnimlCountLookups } from '../services/animlService';
 import { AnimlViewMode } from './AnimlSidebar';
 import { AnimlCustomFilters } from '../types';
 
@@ -112,6 +112,8 @@ interface DataViewProps {
   animlDateRangeText?: string;
   animlCustomFilters?: AnimlCustomFilters;
   onAnimlCustomFiltersChange?: (filters: AnimlCustomFilters) => void;
+  animlCountLookups?: AnimlCountLookups | null;
+  animlCountsLoading?: boolean;
 }
 
 const DataView: React.FC<DataViewProps> = ({
@@ -192,6 +194,8 @@ const DataView: React.FC<DataViewProps> = ({
   onAnimlAddToCart,
   animlDateRangeText = '',
   animlCustomFilters,
+  animlCountLookups = null,
+  animlCountsLoading = false,
   onAnimlCustomFiltersChange
 }) => {
   // Route to appropriate data view based on category + source combination
@@ -372,6 +376,7 @@ const DataView: React.FC<DataViewProps> = ({
             selectedDeployment={selectedAnimlDeployment}
             selectedAnimalTag={selectedAnimlAnimalTag}
             selectedObservation={selectedAnimlObservation}
+            countLookups={animlCountLookups}
           />
         );
         

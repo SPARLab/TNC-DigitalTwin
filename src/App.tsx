@@ -485,7 +485,19 @@ function App() {
     }
   };
 
-  const handleAnimlDeploymentClick = async (deployment: AnimlDeployment) => {
+  const handleAnimlDeploymentClick = async (deployment: AnimlDeployment | null) => {
+    // If null, clear selection and go back to camera list
+    if (deployment === null) {
+      console.log('🖱️ App: Clearing camera selection, returning to camera list');
+      setSelectedAnimlDeployment(null);
+      setSelectedAnimlAnimalTag(null);
+      setSelectedAnimlObservation(null);
+      setAnimlImageLabels([]);
+      setAnimlTotalObservationsCount(null);
+      mapViewRef.current?.clearDeploymentHighlight();
+      return;
+    }
+    
     console.log('🖱️ App: Animl deployment clicked in sidebar:', deployment.id);
     setSelectedAnimlDeployment(deployment);
     setSelectedAnimlAnimalTag(null);
@@ -518,10 +530,16 @@ function App() {
           : JSON.stringify(lastSearchedFilters.customPolygon);
       }
       
-      // Get total count from deduplicated service count lookups (fast, accurate, already loaded!)
-      const totalCount = animlCountLookups?.countsByDeployment.get(deployment.id) || 0;
+      // Get total count for this deployment (with current date filter)
+      const totalCount = await animlService.getImageLabelsCount({
+        startDate,
+        endDate,
+        deploymentIds: [deployment.id],
+        searchMode,
+        customPolygon: customPolygonStr
+      });
       setAnimlTotalObservationsCount(totalCount);
-      console.log(`📊 Using count from deduplicated service lookups: ${totalCount} observations for deployment ${deployment.id}`);
+      console.log(`📊 Total count for deployment ${deployment.id}: ${totalCount} observations`);
       
       // Fetch first 1000 observations immediately (ordered by timestamp DESC - most recent first)
       const observations = await animlService.queryImageLabels({
@@ -2125,6 +2143,8 @@ function App() {
           animlDateRangeText={animlDateRangeText}
           animlCustomFilters={animlCustomFilters}
           onAnimlCustomFiltersChange={setAnimlCustomFilters}
+          animlCountLookups={animlCountLookups}
+          animlCountsLoading={animlCountsLoading}
         />
         <div id="map-container" className="flex-1 relative flex">
           {/* Conditionally render based on data source and LiDAR mode */}

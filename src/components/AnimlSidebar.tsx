@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Calendar, Camera, Tag, Info, ArrowLeft } from 'lucide-react';
-import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag } from '../services/animlService';
+import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag, AnimlCountLookups } from '../services/animlService';
 import ThumbnailImage from './ThumbnailImage';
 
 export type AnimlViewMode = 'camera-centric' | 'animal-centric';
@@ -30,7 +30,7 @@ interface AnimlSidebarProps {
   // Camera-centric data
   deployments?: AnimlDeployment[];
   selectedDeploymentId?: number | null;
-  onDeploymentClick?: (deployment: AnimlDeployment) => void;
+  onDeploymentClick?: (deployment: AnimlDeployment | null) => void;
   
   // Animal-centric data
   animalTags?: AnimlAnimalTag[];
@@ -49,6 +49,9 @@ interface AnimlSidebarProps {
   observations?: AnimlImageLabel[];
   selectedObservationId?: number | null;
   onObservationClick?: (observation: AnimlImageLabel) => void;
+  
+  // Count lookups for filtering deployments
+  countLookups?: AnimlCountLookups | null;
 }
 
 const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
@@ -68,7 +71,8 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
   hasSearched = false,
   observations = [],
   selectedObservationId,
-  onObservationClick
+  onObservationClick,
+  countLookups
 }) => {
   const [searchText, setSearchText] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -93,18 +97,35 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  // Filter deployments by search text (camera-centric mode)
+  // Filter deployments by search text (camera-centric mode) and sort alphabetically
+  // Also filter out deployments with 0 observations
   const filteredDeployments = useMemo(() => {
-    if (!searchText.trim()) {
-      return deployments;
+    let filtered = deployments;
+    
+    // Filter out deployments with 0 observations (using count lookups if available)
+    if (countLookups) {
+      filtered = filtered.filter(dep => {
+        const count = countLookups.countsByDeployment.get(dep.id) || 0;
+        return count > 0;
+      });
     }
     
-    const search = searchText.toLowerCase();
-    return deployments.filter(dep =>
-      dep.name?.toLowerCase().includes(search) ||
-      dep.animl_dp_id?.toLowerCase().includes(search)
-    );
-  }, [deployments, searchText]);
+    // Apply search filter
+    if (searchText.trim()) {
+      const search = searchText.toLowerCase();
+      filtered = filtered.filter(dep =>
+        dep.name?.toLowerCase().includes(search) ||
+        dep.animl_dp_id?.toLowerCase().includes(search)
+      );
+    }
+    
+    // Sort alphabetically by name
+    return filtered.sort((a, b) => {
+      const nameA = (a.name || a.animl_dp_id || '').toLowerCase();
+      const nameB = (b.name || b.animl_dp_id || '').toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+  }, [deployments, searchText, countLookups]);
 
   // Filter animal tags by search text (animal-centric mode) and sort alphabetically
   const filteredAnimalTags = useMemo(() => {
@@ -557,9 +578,17 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
         {showObservations ? (
           /* Observations List */
           <>
-            {/* Camera Name Subheader - Show when viewing camera observations in camera-centric mode */}
+            {/* Back Button + Camera Name - Show when viewing camera observations in camera-centric mode */}
             {viewMode === 'camera-centric' && selectedDeploymentId !== null && (
               <div id="animl-camera-subheader-container" className="p-4 border-b border-gray-200 bg-gray-50 sticky top-0 z-10">
+                <button
+                  id="animl-back-to-cameras-button"
+                  onClick={() => onDeploymentClick?.(null)}
+                  className="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors mb-2"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to All Cameras
+                </button>
                 <div className="flex items-center gap-2">
                   <Camera className="w-4 h-4 text-gray-600" />
                   <h3 id="animl-camera-subheader-name" className="text-sm font-semibold text-gray-900">

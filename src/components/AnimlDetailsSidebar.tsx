@@ -1094,8 +1094,8 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
                 }
                 
                 return (
-            <div id="animl-camera-species-filter-section" className="space-y-3">
-              <div className="flex items-center justify-between">
+            <div id="animl-camera-species-filter-section" className="space-y-3 flex-1 flex flex-col min-h-0">
+              <div className="flex items-center justify-between flex-shrink-0">
               <h4 className="text-sm font-medium text-gray-900 flex items-center">
                 <Filter className="w-4 h-4 mr-2" />
                   Animal Species
@@ -1122,7 +1122,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
                   </button>
                 </div>
               </div>
-              <div className="space-y-2 max-h-64 overflow-y-auto">
+              <div className="space-y-2 flex-1 overflow-y-auto min-h-0">
                 {cameraAnimalSpecies.map(species => {
                   const isChecked = selectedLabels.includes(species.label);
                   return (

@@ -237,7 +237,7 @@ class AnimlService {
       }
 
       // Always exclude person/people labels
-      whereClause += ` AND label NOT IN ('person', 'people')`;
+      whereClause += ` AND label NOT IN ('person', 'people', 'human')`;
 
       const params: AnimlQueryOptions = {
         where: whereClause,
@@ -293,9 +293,9 @@ class AnimlService {
       }
     }
     
-    // Exclude person/people labels (label field contains comma-separated values)
-    // Use NOT LIKE to exclude any labels containing 'person' or 'people'
-    whereClause += ` AND label NOT LIKE '%person%' AND label NOT LIKE '%people%'`;
+    // Exclude person/people/human labels (label field contains comma-separated values)
+    // Use NOT LIKE to exclude any labels containing 'person', 'people', or 'human'
+    whereClause += ` AND label NOT LIKE '%person%' AND label NOT LIKE '%people%' AND label NOT LIKE '%human%'`;
     
     const params: any = {
       where: whereClause,
@@ -952,6 +952,9 @@ class AnimlService {
         whereClause += ` AND deployment_id IN (${deploymentFilter})`;
       }
 
+      // Always exclude person/people/human labels
+      whereClause += ` AND label NOT IN ('person', 'people', 'human')`;
+
       // Use statistics query to get unique labels AND their counts in a single query
       const outStatistics = JSON.stringify([
         {
@@ -999,7 +1002,14 @@ class AnimlService {
             recentObservations: [] // Will be loaded when category is selected
           };
         })
-        .filter((tag: AnimlAnimalTag) => tag.label !== 'Unknown');
+        .filter((tag: AnimlAnimalTag) => {
+          const labelLower = tag.label.toLowerCase();
+          // Filter out Unknown, person, people, and human
+          return tag.label !== 'Unknown' && 
+                 labelLower !== 'person' && 
+                 labelLower !== 'people' && 
+                 labelLower !== 'human';
+        });
 
       const sortedTags = animalTags.sort((a, b) => 
         (a.label || '').toLowerCase().localeCompare((b.label || '').toLowerCase())
@@ -1117,7 +1127,7 @@ class AnimlService {
       }
 
       // Always exclude person/people labels
-      whereClause += ` AND label NOT IN ('person', 'people')`;
+      whereClause += ` AND label NOT IN ('person', 'people', 'human')`;
 
       console.log(`🔍 Animl Image Labels WHERE clause: ${whereClause}`);
       if (maxResults !== undefined) {
