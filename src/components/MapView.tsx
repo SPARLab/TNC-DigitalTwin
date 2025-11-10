@@ -18,6 +18,7 @@ import PictureMarkerSymbol from '@arcgis/core/symbols/PictureMarkerSymbol';
 import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 import PopupTemplate from '@arcgis/core/PopupTemplate';
 import * as reactiveUtils from '@arcgis/core/core/reactiveUtils';
+import * as geometryEngine from '@arcgis/core/geometry/geometryEngine';
 import { iNaturalistAPI, iNaturalistObservation } from '../services/iNaturalistService';
 import { tncINaturalistService, TNCArcGISObservation } from '../services/tncINaturalistService';
 import { calFloraAPI, CalFloraPlant } from '../services/calFloraService';
@@ -2065,6 +2066,57 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       };
     }
   }, [view, onDendraStationClick, dendraStations]);
+
+  // Add click handler for boundary layer - only activates when clicking near the edge
+  // This prevents accidental activation when clicking inside the polygon (e.g., when trying to click on observations)
+  useEffect(() => {
+    if (!view || !boundaryLayerRef.current) return;
+    
+    const clickHandler = view.on('click', async (event) => {
+      // Only proceed if boundary popup is enabled
+      if (!boundaryLayerRef.current?.popupEnabled) return;
+      
+      try {
+        // Use hitTest to see if the boundary was clicked
+        const response = await view.hitTest(event);
+        const boundaryHit = response.results.find(result => 
+          'graphic' in result && 
+          result.graphic && 
+          result.graphic.layer?.id === 'dangermond-boundary'
+        );
+        
+        if (boundaryHit && 'graphic' in boundaryHit) {
+          const clickPoint = event.mapPoint;
+          const polygon = boundaryHit.graphic.geometry as __esri.Polygon;
+          
+          // Use ArcGIS SDK's optimized nearestCoordinate method to find closest point on boundary
+          const nearestPoint = geometryEngine.nearestCoordinate(polygon, clickPoint);
+          
+          // Calculate distance using ArcGIS SDK's geodesic distance method
+          const distance = geometryEngine.distance(
+            clickPoint, 
+            nearestPoint.coordinate, 
+            'meters'
+          );
+          
+          // Define threshold - 50 meters provides reasonable "hit zone" near boundary
+          const BOUNDARY_CLICK_THRESHOLD_METERS = 50;
+          
+          if (distance > BOUNDARY_CLICK_THRESHOLD_METERS) {
+            // Click is too far from boundary - prevent popup from showing
+            event.stopPropagation();
+            view.popup?.close();
+          }
+          // If within threshold, let the default popup behavior continue
+        }
+      } catch (error) {
+        console.error('Error in boundary click handler:', error);
+        // Fail gracefully - allow popup to show if there's an error
+      }
+    });
+    
+    return () => clickHandler.remove();
+  }, [view]);
 
   // Effect to update TNC observations on map when data changes
   useEffect(() => {

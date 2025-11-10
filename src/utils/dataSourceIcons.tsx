@@ -136,6 +136,27 @@ export const DendraIcon: React.FC<{ className?: string }> = ({ className = 'w-4 
   );
 };
 
+// Animl Icon - camera trap monitoring system
+export const AnimlIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => {
+  const fallback = (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" fill="#6B7280"/>
+      <rect x="7" y="8" width="10" height="8" rx="1" fill="white" opacity="0.9"/>
+      <circle cx="12" cy="12" r="2" fill="#6B7280"/>
+      <circle cx="16" cy="9" r="1" fill="#6B7280"/>
+    </svg>
+  );
+  
+  return (
+    <IconWithFallback 
+      src="https://animl.camera/favicon.ico"
+      alt="Animl"
+      className={className}
+      fallbackSvg={fallback}
+    />
+  );
+};
+
 // Map data source names to their icon components
 // Handles both full names (e.g., 'iNaturalist (Public API)') and lowercase identifiers (e.g., 'inaturalist')
 export const getDataSourceIcon = (source: string, className?: string): React.ReactElement | null => {
@@ -155,6 +176,8 @@ export const getDataSourceIcon = (source: string, className?: string): React.Rea
     return <LiDARIcon {...iconProps} />;
   } else if (sourceLower === 'dendra' || source === 'Dendra Stations') {
     return <DendraIcon {...iconProps} />;
+  } else if (sourceLower === 'animl' || source === 'Animl') {
+    return <AnimlIcon {...iconProps} />;
   }
   
   // Default fallback
