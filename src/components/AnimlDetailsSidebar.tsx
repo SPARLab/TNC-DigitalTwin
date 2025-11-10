@@ -146,22 +146,38 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
   }, [viewMode, deploymentsWithObservations, onDeploymentIdsChange]);
 
   // Get effective deployment IDs for filtering
-  // In camera-centric mode, if no deployments selected but a camera is selected, default to that camera
-  // In animal-centric mode, default to all cameras if none selected
+  // In camera-centric mode: ALWAYS use the selected camera (ignore Export tab checkboxes)
+  // In animal-centric mode: use selected deployments from Export tab, or all if none selected
   const effectiveDeploymentIds = useMemo(() => {
-    if (selectedDeploymentIds.length > 0) {
-      return selectedDeploymentIds;
-    }
-    // In camera-centric mode, if a camera is selected but no deployments are selected in export,
-    // default to the selected camera
+    console.log('🎯🔢 effectiveDeploymentIds calculation:', {
+      viewMode,
+      selectedDeploymentIdsLength: selectedDeploymentIds.length,
+      selectedDeploymentIds,
+      selectedDeploymentId: selectedDeployment?.id,
+      deploymentsLength: deployments.length
+    });
+    
+    // In camera-centric mode, ALWAYS use the selected camera (ignore checkboxes)
     if (viewMode === 'camera-centric' && selectedDeployment) {
+      console.log('🎯🔢 ✅ Camera-centric FIX: Using ONLY selected camera:', [selectedDeployment.id]);
       return [selectedDeployment.id];
     }
-    // In animal-centric mode, if no cameras selected, default to all cameras
-    if (viewMode === 'animal-centric' && deployments.length > 0) {
-      return deployments.map(dep => dep.id);
+    
+    // In animal-centric mode, use checked deployments from Export tab
+    if (selectedDeploymentIds.length > 0) {
+      console.log('🎯🔢 Using selectedDeploymentIds:', selectedDeploymentIds);
+      return selectedDeploymentIds;
     }
+    
+    // In animal-centric mode, if no cameras selected, default to all cameras with observations
+    if (viewMode === 'animal-centric' && deployments.length > 0) {
+      const allIds = deployments.map(dep => dep.id);
+      console.log('🎯🔢 Animal-centric: defaulting to all cameras:', allIds.length, 'cameras');
+      return allIds;
+    }
+    
     // Otherwise, no filter (show all)
+    console.log('🎯🔢 No filter - returning empty array');
     return [];
   }, [selectedDeploymentIds, viewMode, selectedDeployment, deployments]);
 
@@ -448,22 +464,44 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
   }, [countLookups, countsLoading, animalOnlyObservations, viewMode, selectedDeployment]);
 
   // Calculate accurate filtered count using count lookups
+  // Returns either a number (exact) or { floor, ceiling } (range)
   // Falls back to in-memory deduplication if lookups not available
-  const filteredObservationCount = useMemo(() => {
+  const filteredObservationCount = useMemo((): number | { floor: number; ceiling: number } => {
+    console.log('🎯🔢 filteredObservationCount calculation:', {
+      viewMode,
+      hasCountLookups: !!countLookups,
+      countsLoading,
+      effectiveDeploymentIds,
+      selectedLabels,
+      selectedDeploymentId: selectedDeployment?.id
+    });
+    
     // If count lookups are available, use them for accurate database counts (fast!)
     if (countLookups && !countsLoading) {
       try {
         // Calculate count based on filters using the efficient lookup structures
-        const total = animlService.getTotalCountForFilters(
+        console.log('🎯🔢 Calling getTotalCountForFilters with:', {
+          effectiveDeploymentIds,
+          selectedLabels
+        });
+        const result = animlService.getTotalCountForFilters(
           countLookups,
           effectiveDeploymentIds,
           selectedLabels
         );
-        console.log(`📊 Filtered count from lookups: ${total} observations (deployments: ${effectiveDeploymentIds.length}, labels: ${selectedLabels.length})`);
-        console.log(`📊 Total count: ${totalAnimalObservationCount} observations`);
-        return total;
+        
+        if (typeof result === 'number') {
+          console.log(`🎯🔢 Filtered count result: ${result} observations (exact)`);
+          console.log(`🎯🔢 Total count (should be >= filtered): ${totalAnimalObservationCount} observations`);
+          console.log(`🎯🔢 BUG CHECK: Filtered (${result}) > Total (${totalAnimalObservationCount})? ${result > totalAnimalObservationCount ? '❌ YES - BUG!' : '✅ No'}`);
+        } else {
+          console.log(`🎯🔢 Filtered count result: ${result.floor}-${result.ceiling} observations (range)`);
+          console.log(`🎯🔢 Total count: ${totalAnimalObservationCount} observations`);
+        }
+        
+        return result;
       } catch (error) {
-        console.error('Error calculating count from lookups:', error);
+        console.error('🎯🔢 Error calculating count from lookups:', error);
         // Fall through to in-memory fallback
       }
     }
@@ -481,6 +519,15 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  // Helper function to format count (handles both exact numbers and ranges)
+  const formatCount = (count: number | { floor: number; ceiling: number }): string => {
+    if (typeof count === 'number') {
+      return count.toLocaleString();
+    } else {
+      return `${count.floor.toLocaleString()}-${count.ceiling.toLocaleString()}`;
+    }
   };
 
   // Keyboard navigation handler for details sidebar
@@ -949,7 +996,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
               <span className="text-gray-500 italic">Loading counts...</span>
             ) : hasActiveFilters ? (
               <>
-                <span className="font-semibold text-blue-600">{filteredObservationCount.toLocaleString()} filtered</span>
+                <span className="font-semibold text-blue-600">{formatCount(filteredObservationCount)} filtered</span>
                 <span className="text-gray-400 mx-1">/</span>
                 <span className="text-gray-600">{totalAnimalObservationCount.toLocaleString()} total observations</span>
                 <span className="text-gray-600"> {dateRangeText}</span>
@@ -1338,7 +1385,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
                     <span className="text-gray-500 italic">Calculating count...</span>
                   ) : hasActiveFilters ? (
                     <>
-                      <span className="text-lg font-bold">{filteredObservationCount.toLocaleString()}</span> observations will be saved after applying filters
+                      <span className="text-lg font-bold">{formatCount(filteredObservationCount)}</span> observations will be saved after applying filters
                     </>
                   ) : (
                     <>
@@ -1355,7 +1402,13 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
               
               <button
                 id="animl-add-to-cart-button"
-                onClick={() => onAddToCart(filteredObservationCount)}
+                onClick={() => {
+                  // Pass ceiling if range, exact number otherwise
+                  const count = typeof filteredObservationCount === 'number' 
+                    ? filteredObservationCount 
+                    : filteredObservationCount.ceiling;
+                  onAddToCart(count);
+                }}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={observations.length === 0 || countsLoading}
               >

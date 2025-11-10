@@ -653,37 +653,108 @@ class AnimlService {
     lookups: AnimlCountLookups,
     selectedDeploymentIds: number[],
     selectedLabels: string[]
-  ): number {
-    const { countsByDeployment, countsByLabel, countsByDeploymentAndLabel } = lookups;
+  ): number | { floor: number; ceiling: number } {
+    const { countsByDeployment, countsByLabel, countsByDeploymentAndLabel, labelsByDeployment } = lookups;
+
+    console.log('🎯🔢 getTotalCountForFilters called:', {
+      selectedDeploymentIds,
+      selectedLabels,
+      hasDeploymentFilter: selectedDeploymentIds.length > 0,
+      hasLabelFilter: selectedLabels.length > 0
+    });
 
     // If no filters, return total for all deployments
     if (selectedDeploymentIds.length === 0 && selectedLabels.length === 0) {
-      return Array.from(countsByDeployment.values()).reduce((sum, count) => sum + count, 0);
+      const total = Array.from(countsByDeployment.values()).reduce((sum, count) => sum + count, 0);
+      console.log('🎯🔢 No filters - returning total across all deployments:', total);
+      return total;
     }
 
     // If only deployment filter, return total for those deployments
     if (selectedDeploymentIds.length > 0 && selectedLabels.length === 0) {
-      return selectedDeploymentIds.reduce((sum, depId) => {
-        return sum + (countsByDeployment.get(depId) || 0);
+      const total = selectedDeploymentIds.reduce((sum, depId) => {
+        const count = countsByDeployment.get(depId) || 0;
+        console.log(`🎯🔢   Deployment ${depId}: ${count} images`);
+        return sum + count;
       }, 0);
+      console.log('🎯🔢 Deployment-only filter - total:', total);
+      return total;
     }
 
     // If only label filter, return total for those labels
     if (selectedDeploymentIds.length === 0 && selectedLabels.length > 0) {
-      return selectedLabels.reduce((sum, label) => {
-        return sum + (countsByLabel.get(label) || 0);
+      const total = selectedLabels.reduce((sum, label) => {
+        const count = countsByLabel.get(label) || 0;
+        console.log(`🎯🔢   Label '${label}': ${count} images (across all deployments)`);
+        return sum + count;
       }, 0);
+      console.log('🎯🔢 Label-only filter - total:', total);
+      console.log('🎯🔢 ⚠️  WARNING: This sums across ALL deployments, not filtered by selected camera!');
+      return total;
     }
 
-    // If both filters, sum specific combinations
-    let total = 0;
-    for (const depId of selectedDeploymentIds) {
-      for (const label of selectedLabels) {
-        const key = `${depId}:${label}`;
-        total += countsByDeploymentAndLabel.get(key) || 0;
+    // If both filters, calculate based on number of labels selected
+    if (selectedLabels.length === 1) {
+      // Single label: exact count
+      let total = 0;
+      console.log('🎯🔢 Deployment + Single label filter (exact):');
+      const singleLabel = selectedLabels[0];
+      for (const depId of selectedDeploymentIds) {
+        const key = `${depId}:${singleLabel}`;
+        const count = countsByDeploymentAndLabel.get(key) || 0;
+        if (count > 0) {
+          console.log(`🎯🔢   Deployment ${depId} + Label '${singleLabel}': ${count} images`);
+        }
+        total += count;
       }
+      console.log('🎯🔢 Single label - exact total:', total);
+      return total;
+    } else {
+      // Multiple labels: use COMPLEMENT logic (what's NOT selected)
+      // This works better when many labels are selected
+      console.log('🎯🔢 Deployment + Multiple labels → using complement logic:');
+      
+      let grandTotal = 0;
+      let floorReduction = 0;  // Max images we could remove (all unselected are solo)
+      let ceilingReduction = 0; // Min images we could remove (all unselected have other selected tags = 0)
+      
+      for (const depId of selectedDeploymentIds) {
+        const totalForDep = countsByDeployment.get(depId) || 0;
+        grandTotal += totalForDep;
+        
+        // Get all labels for this deployment
+        const allLabelsForDep = labelsByDeployment.get(depId) || new Set();
+        
+        // Find UNselected labels for this deployment
+        const unselectedLabels = Array.from(allLabelsForDep).filter(
+          label => !selectedLabels.includes(label)
+        );
+        
+        // Sum counts of unselected labels
+        let unselectedSum = 0;
+        for (const label of unselectedLabels) {
+          const key = `${depId}:${label}`;
+          const count = countsByDeploymentAndLabel.get(key) || 0;
+          unselectedSum += count;
+        }
+        
+        // Floor: assumes all unselected images are solo (max removal)
+        // But can't remove more than the sum of unselected counts
+        floorReduction += Math.min(unselectedSum, totalForDep);
+        
+        // Ceiling: assumes all unselected images have selected tags (min removal = 0)
+        ceilingReduction += 0;
+        
+        console.log(`🎯🔢   Deployment ${depId}: total=${totalForDep}, unselected labels=${unselectedLabels.length}, unselected sum=${unselectedSum}`);
+      }
+      
+      const floor = Math.max(0, grandTotal - floorReduction);
+      const ceiling = grandTotal - ceilingReduction; // Same as grandTotal
+      
+      console.log('🎯🔢 Complement logic - range:', { floor, ceiling, grandTotal, floorReduction, ceilingReduction });
+      console.log('🎯🔢 ✅ Floor: total minus all unselected (assumes solo), Ceiling: total (assumes overlap)');
+      return { floor, ceiling };
     }
-    return total;
   }
 
   /**
