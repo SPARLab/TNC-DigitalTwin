@@ -556,7 +556,7 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
           ) : viewMode === 'camera-centric' ? (
             <span id="animl-summary-cameras">{filteredDeployments.length} cameras {dateRangeText}</span>
           ) : (
-            <span id="animl-summary-animals">{filteredAnimalTags.length} animal species {dateRangeText}</span>
+            <span id="animl-summary-animals">{filteredAnimalTags.length.toLocaleString()} animal species {dateRangeText}</span>
           )}
         </div>
 

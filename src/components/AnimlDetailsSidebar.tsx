@@ -1361,7 +1361,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
                         }}
                         className="mr-2 cursor-pointer"
                       />
-                            <span className="text-sm text-gray-700">{tag.label} ({speciesCount})</span>
+                            <span className="text-sm text-gray-700">{tag.label} ({speciesCount.toLocaleString()})</span>
                     </label>
                   );
                 })}
