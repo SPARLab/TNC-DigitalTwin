@@ -23,6 +23,7 @@ interface DataTypeCardConfig {
   description: string;
   icon: React.ElementType;
   sourceKey: string; // Matches the string used in App state/constants
+  sourceBadge: string; // Short data source label for badge
   defaults: {
     category: string;
     spatialFilter: string;
@@ -38,6 +39,7 @@ const DATA_TYPE_CARDS: DataTypeCardConfig[] = [
     description: 'Curated GIS layers including boundaries, vegetation, fire history, and infrastructure.',
     icon: Layers,
     sourceKey: 'TNC ArcGIS Hub',
+    sourceBadge: 'ArcGIS Hub',
     defaults: {
       category: 'Ecological / Biological (Species?)',
       spatialFilter: 'Dangermond Preserve',
@@ -51,6 +53,7 @@ const DATA_TYPE_CARDS: DataTypeCardConfig[] = [
     description: 'Community-contributed observations of biodiversity from iNaturalist.',
     icon: Database, 
     sourceKey: 'iNaturalist (Public API)',
+    sourceBadge: 'iNaturalist',
     defaults: {
       category: 'Ecological / Biological (Species?)',
       spatialFilter: 'Dangermond Preserve',
@@ -64,6 +67,7 @@ const DATA_TYPE_CARDS: DataTypeCardConfig[] = [
     description: 'Checklists and observations of bird species from the eBird database.',
     icon: Bird,
     sourceKey: 'eBird',
+    sourceBadge: 'eBird',
     defaults: {
       category: 'Ecological / Biological (Species?)',
       spatialFilter: 'Dangermond Preserve',
@@ -77,6 +81,7 @@ const DATA_TYPE_CARDS: DataTypeCardConfig[] = [
     description: 'Distribution data of wild California plants from CalFlora.',
     icon: Flower,
     sourceKey: 'CalFlora',
+    sourceBadge: 'CalFlora',
     defaults: {
       category: 'Vegetation / habitat',
       spatialFilter: 'Dangermond Preserve',
@@ -90,6 +95,7 @@ const DATA_TYPE_CARDS: DataTypeCardConfig[] = [
     description: 'Motion-triggered images from wildlife camera traps across the preserve.',
     icon: Camera,
     sourceKey: 'Animl',
+    sourceBadge: 'Animl',
     defaults: {
       category: 'Real-time & Remote Sensing',
       spatialFilter: 'Dangermond Preserve',
@@ -103,6 +109,7 @@ const DATA_TYPE_CARDS: DataTypeCardConfig[] = [
     description: 'Real-time environmental monitoring data from weather stations and soil sensors.',
     icon: Activity,
     sourceKey: 'Dendra Stations',
+    sourceBadge: 'Dendra',
     defaults: {
       category: 'Real-time & Remote Sensing',
       spatialFilter: 'Dangermond Preserve',
@@ -116,6 +123,7 @@ const DATA_TYPE_CARDS: DataTypeCardConfig[] = [
     description: 'High-resolution elevation and terrain models derived from aerial laser scanning.',
     icon: ScanLine,
     sourceKey: 'LiDAR',
+    sourceBadge: 'LiDAR',
     defaults: {
       category: 'Land use and land (geography?)',
       spatialFilter: 'Dangermond Preserve',
@@ -202,11 +210,18 @@ const DataCatalog: React.FC<DataCatalogProps> = ({ filters, onSelectSource }) =>
               </div>
               
               <div className="flex-1 min-w-0">
-                <h3 className={`text-base font-medium mb-1 ${
-                  compatible ? 'text-gray-900 group-hover:text-blue-700' : 'text-gray-500'
-                }`}>
-                  {card.title}
-                </h3>
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className={`text-base font-medium ${
+                    compatible ? 'text-gray-900 group-hover:text-blue-700' : 'text-gray-500'
+                  }`}>
+                    {card.title}
+                  </h3>
+                  <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                    compatible ? 'bg-gray-100 text-gray-600' : 'bg-gray-200 text-gray-400'
+                  }`}>
+                    {card.sourceBadge}
+                  </span>
+                </div>
                 <p className="text-sm text-gray-500 line-clamp-2">
                   {card.description}
                 </p>

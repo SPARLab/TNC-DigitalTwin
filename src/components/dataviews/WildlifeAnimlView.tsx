@@ -47,6 +47,7 @@ interface WildlifeAnimlViewProps {
   endDate?: string;
   hasSearched?: boolean;
   dateRangeText: string;
+  onBack?: () => void;
   
   // Selected items for details sidebar (kept for backwards compatibility but not used here)
   selectedDeployment?: AnimlDeployment | null;
@@ -75,7 +76,8 @@ const WildlifeAnimlView: React.FC<WildlifeAnimlViewProps> = ({
   onObservationClick,
   hasSearched = false,
   dateRangeText,
-  countLookups
+  countLookups,
+  onBack
 }) => {
   // Determine which observations to show based on view mode and selection
   const displayedObservations = React.useMemo(() => {
@@ -107,6 +109,7 @@ const WildlifeAnimlView: React.FC<WildlifeAnimlViewProps> = ({
       selectedObservationId={selectedObservationId}
       onObservationClick={onObservationClick}
       countLookups={countLookups}
+      onBack={onBack}
     />
   );
 };

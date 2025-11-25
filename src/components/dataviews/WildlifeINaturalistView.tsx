@@ -16,6 +16,7 @@ interface WildlifeINaturalistViewProps {
   selectedObservationId?: number | string | null;
   iconicTaxa?: string[]; // Filter by taxonomic groups
   onIconicTaxaChange?: (taxa: string[]) => void; // Callback to change filter
+  onBack?: () => void;
 }
 
 const WildlifeINaturalistView: React.FC<WildlifeINaturalistViewProps> = ({
@@ -30,7 +31,8 @@ const WildlifeINaturalistView: React.FC<WildlifeINaturalistViewProps> = ({
   onObservationClick,
   selectedObservationId,
   iconicTaxa = [],
-  onIconicTaxaChange
+  onIconicTaxaChange,
+  onBack
 }) => {
   return (
     <ObservationsSidebar
@@ -46,6 +48,7 @@ const WildlifeINaturalistView: React.FC<WildlifeINaturalistViewProps> = ({
       selectedObservationId={selectedObservationId}
       iconicTaxa={iconicTaxa}
       onIconicTaxaChange={onIconicTaxaChange}
+      onBack={onBack}
     />
   );
 };
