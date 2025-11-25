@@ -10,11 +10,14 @@ import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
 import PictureMarkerSymbol from '@arcgis/core/symbols/PictureMarkerSymbol';
 import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 import PopupTemplate from '@arcgis/core/PopupTemplate';
-import { iNaturalistObservation } from '../services/iNaturalistService';
-import { TNCArcGISObservation } from '../services/tncINaturalistService';
-import { CalFloraPlant } from '../services/calFloraService';
-import { TNCArcGISItem } from '../services/tncArcGISService';
-import { EBirdObservation } from '../services/eBirdService';
+import * as reactiveUtils from '@arcgis/core/core/reactiveUtils';
+import * as geometryEngine from '@arcgis/core/geometry/geometryEngine';
+import { iNaturalistAPI, iNaturalistObservation } from '../services/iNaturalistService';
+import { tncINaturalistService, TNCArcGISObservation } from '../services/tncINaturalistService';
+import { calFloraAPI, CalFloraPlant } from '../services/calFloraService';
+import { TNCArcGISItem, tncArcGISAPI } from '../services/tncArcGISService';
+import { eBirdService, EBirdObservation } from '../services/eBirdService';
+import { animlService, AnimlDeployment, AnimlImageLabel } from '../services/animlService';
 import type { DendraStation } from '../types';
 import LayerLegend from './LayerLegend';
 import { MapLegend } from './MapLegend';
@@ -88,6 +91,15 @@ interface MapViewProps {
   // Filter synchronization props
   iconicTaxa?: string[];
   onIconicTaxaChange?: (taxa: string[]) => void;
+  // Animl data
+  animlDeployments?: AnimlDeployment[];
+  animlImageLabels?: AnimlImageLabel[];
+  animlViewMode?: 'camera-centric' | 'animal-centric';
+  selectedAnimlDeployment?: AnimlDeployment | null;
+  selectedAnimlObservation?: AnimlImageLabel | null;
+  onAnimlDeploymentClick?: (deployment: AnimlDeployment) => void;
+  onAnimlObservationClick?: (observation: AnimlImageLabel) => void;
+  onAnimlLoadingChange?: (loading: boolean) => void;
 }
 
 export interface MapViewRef {
@@ -128,12 +140,24 @@ export interface MapViewRef {
     customPolygon?: string;
     showSearchArea?: boolean;
   }) => void;
+  reloadAnimlObservations: (filters?: {
+    deployments?: AnimlDeployment[];
+    imageLabels?: AnimlImageLabel[];
+    viewMode?: 'camera-centric' | 'animal-centric';
+    startDate?: string;
+    endDate?: string;
+    searchMode?: 'preserve-only' | 'expanded' | 'custom';
+    customPolygon?: string;
+    showSearchArea?: boolean;
+  }) => void;
   activateDrawMode: () => void;
   clearPolygon: () => void;
   clearSearchArea: () => void;
   clearAllObservationLayers: () => void;
   highlightObservation: (id: number | string) => void;
   clearObservationHighlight: () => void;
+  highlightDeployment: (id: number) => void;
+  clearDeploymentHighlight: () => void;
 }
 
 const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({ 
@@ -168,7 +192,15 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   onPolygonDrawn,
   onPolygonCleared,
   iconicTaxa = [],
-  onIconicTaxaChange
+  onIconicTaxaChange,
+  animlDeployments = [],
+  animlImageLabels = [],
+  animlViewMode = 'camera-centric',
+  selectedAnimlDeployment,
+  selectedAnimlObservation,
+  onAnimlDeploymentClick,
+  onAnimlObservationClick,
+  onAnimlLoadingChange
 }, ref) => {
   const mapDiv = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<MapView | null>(null);
@@ -243,10 +275,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
             }
           }
         },
-        popupTemplate: new PopupTemplate({
-          title: 'Jack and Laura Dangermond Preserve',
-          content: '2019 boundary inclusive of Coast Guard 33 acres at Point Conception.'
-        })
+        // Disable automatic popup - we'll handle it manually with distance checking
+        popupEnabled: false
       });
 
       // Store reference to boundary layer for popup management
@@ -293,11 +323,18 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         title: 'Dendra Stations'
       });
 
+      // Create graphics layer for Animl observations/deployments
+      const animlLayer = new GraphicsLayer({
+        id: 'animl-observations',
+        title: 'Animl Observations'
+      });
+
       map.add(observationsLayer);
       map.add(tncObservationsLayer);
       map.add(eBirdObservationsLayer);
       map.add(calFloraLayer);
       map.add(dendraStationsLayer);
+      map.add(animlLayer);
 
       // Create the map view centered on Dangermond Preserve
       // Coordinates: approximately 34.47°N, -120.47°W (Point Conception area)
@@ -412,21 +449,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     onLayerLoadErrorChange: setLayerLoadError
   });
 
-  // Manage boundary popup based on active TNC ArcGIS layers
-  // Disable boundary popup when TNC layers are active to prevent it from interfering
+  // Close popup if the layer it belongs to was toggled off
   useEffect(() => {
-    if (boundaryLayerRef.current) {
-      const hasTNCLayers = activeLayerIds.length > 0;
-      boundaryLayerRef.current.popupEnabled = !hasTNCLayers;
-      
-      if (hasTNCLayers) {
-      // console.log('🚫 Boundary popup disabled (TNC layers are active)');
-      } else {
-      // console.log('✅ Boundary popup enabled (no TNC layers active)');
-      }
-    }
-    
-    // Close popup if the layer it belongs to was toggled off
     if (view && view.popup && view.popup.visible) {
       const popupFeature = view.popup.selectedFeature;
       if (popupFeature && popupFeature.layer) {
@@ -1121,6 +1145,97 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   }, [view, onDendraStationClick, dendraStations]);
 
+  // Add click handler for boundary layer - only activates when clicking near the edge
+  // This prevents accidental activation when clicking inside the polygon (e.g., when trying to click on observations)
+  useEffect(() => {
+    if (!view || !boundaryLayerRef.current) return;
+    
+    const clickHandler = view.on('click', async (event) => {
+      // Check if boundary popup is allowed (disabled when TNC layers are active)
+      const hasTNCLayers = activeLayerIds.length > 0;
+      if (hasTNCLayers) return;
+      
+      try {
+        // Use hitTest with explicit include to ensure boundary layer is tested even with popupEnabled: false
+        const response = await view.hitTest(event, {
+          include: boundaryLayerRef.current ? [boundaryLayerRef.current] : []
+        });
+        
+        const boundaryHit = response.results.find(result => 
+          'graphic' in result && 
+          result.graphic && 
+          result.graphic.layer?.id === 'dangermond-boundary'
+        );
+        
+        if (boundaryHit && 'graphic' in boundaryHit) {
+          const clickPoint = event.mapPoint;
+          const polygon = boundaryHit.graphic.geometry as __esri.Polygon;
+          
+          // Create a polyline from the polygon's rings (the outline)
+          // This ensures we measure distance to the boundary line, not the fill
+          const Polyline = (await import('@arcgis/core/geometry/Polyline')).default;
+          const polyline = new Polyline({
+            paths: polygon.rings,
+            spatialReference: polygon.spatialReference
+          });
+          
+          // Use nearestCoordinate on the polyline (boundary) not the polygon
+          const nearestPoint = geometryEngine.nearestCoordinate(polyline, clickPoint);
+          
+          // Calculate geodesic distance between the two points
+          const distance = geometryEngine.distance(
+            clickPoint, 
+            nearestPoint.coordinate, 
+            'meters'
+          ) as number;
+          
+          // Define threshold distance in meters - only show popup if click is within this distance of the boundary edge
+          const BOUNDARY_CLICK_THRESHOLD_METERS = 150;
+          
+          if (distance <= BOUNDARY_CLICK_THRESHOLD_METERS) {
+            // Prevent ALL event handling - stop propagation and default behavior
+            event.stopPropagation();
+            if (event.native) {
+              event.native.stopImmediatePropagation();
+              event.native.preventDefault();
+            }
+            
+            // Show popup with a slight delay to ensure event handling is complete
+            if (view.popup) {
+              setTimeout(() => {
+                // Create a standalone graphic (not from the layer) to avoid popupEnabled: false issues
+                const popupGraphic = new Graphic({
+                  geometry: clickPoint,
+                  attributes: {
+                    title: 'Jack and Laura Dangermond Preserve',
+                    description: '2019 boundary inclusive of Coast Guard 33 acres at Point Conception.'
+                  },
+                  popupTemplate: new PopupTemplate({
+                    title: '{title}',
+                    content: '{description}'
+                  })
+                });
+                
+                view.popup?.open({
+                  features: [popupGraphic],
+                  location: clickPoint,
+                  fetchFeatures: false
+                });
+              }, 50);
+            }
+          } else {
+            // Beyond threshold - prevent any default popup behavior
+            event.stopPropagation();
+          }
+        }
+      } catch (error) {
+        console.error('Error in boundary click handler:', error);
+      }
+    });
+    
+    return () => clickHandler.remove();
+  }, [view, activeLayerIds]);
+
   // Effect to update TNC observations on map when data changes
   useEffect(() => {
     if (view) {
@@ -1485,6 +1600,144 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   };
 
+  const loadAnimlObservations = async (_mapView: __esri.MapView, animlLayer: GraphicsLayer, filters?: {
+    deployments?: AnimlDeployment[];
+    imageLabels?: AnimlImageLabel[];
+    viewMode?: 'camera-centric' | 'animal-centric';
+    startDate?: string;
+    endDate?: string;
+    searchMode?: 'preserve-only' | 'expanded' | 'custom';
+    customPolygon?: string;
+    showSearchArea?: boolean;
+  }) => {
+    onAnimlLoadingChange?.(true);
+    try {
+      // Clear other layers when starting a new Animl search
+      const observationsLayer = _mapView.map?.findLayerById('inaturalist-observations') as GraphicsLayer;
+      const tncObservationsLayer = _mapView.map?.findLayerById('tnc-inaturalist-observations') as GraphicsLayer;
+      const calFloraLayer = _mapView.map?.findLayerById('calflora-plants') as GraphicsLayer;
+      const eBirdObservationsLayer = _mapView.map?.findLayerById('ebird-observations') as GraphicsLayer;
+      
+      if (observationsLayer) {
+        observationsLayer.removeAll();
+      }
+      if (tncObservationsLayer) {
+        tncObservationsLayer.removeAll();
+      }
+      if (calFloraLayer) {
+        calFloraLayer.removeAll();
+      }
+      if (eBirdObservationsLayer) {
+        eBirdObservationsLayer.removeAll();
+      }
+      
+      // Handle search area visualization using helper
+      await drawSearchAreaRectangle(_mapView, filters?.showSearchArea || false, filters?.searchMode || '');
+      
+      // Clear existing graphics
+      animlLayer.removeAll();
+      
+      const deployments = filters?.deployments || [];
+      
+      // Always show deployments (camera locations) on the map, regardless of view mode
+      // The view mode only affects what's shown in the sidebar, not the map
+      if (deployments.length > 0) {
+        deployments.forEach(deployment => {
+          if (deployment.geometry && deployment.geometry.coordinates) {
+            const [longitude, latitude] = deployment.geometry.coordinates;
+            
+            // Create point geometry
+            const point = new Point({
+              longitude,
+              latitude
+            });
+            
+            // Create symbol for camera deployment - use camera-on-tripod icon
+            const cameraIconSvg = `
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <!-- Camera body -->
+                <rect x="4" y="6" width="16" height="12" rx="2" ry="2"/>
+                <!-- Camera lens -->
+                <circle cx="12" cy="12" r="3"/>
+                <!-- Tripod legs -->
+                <line x1="8" y1="18" x2="6" y2="22"/>
+                <line x1="12" y1="18" x2="12" y2="22"/>
+                <line x1="16" y1="18" x2="18" y2="22"/>
+                <!-- Flash/Viewfinder -->
+                <rect x="15" y="7" width="3" height="2" rx="0.5"/>
+              </svg>
+            `;
+            
+            const symbol = new PictureMarkerSymbol({
+              url: `data:image/svg+xml;base64,${btoa(cameraIconSvg)}`,
+              width: '28px',
+              height: '28px',
+              color: [251, 146, 60, 1] // Orange/amber color for camera traps
+            });
+
+            // Create popup template
+            const popupTemplate = new PopupTemplate({
+              title: deployment.name || `Deployment ${deployment.animl_dp_id}`,
+              content: `
+                <div style="font-family: sans-serif;">
+                  <p><strong>Deployment ID:</strong> ${deployment.animl_dp_id}</p>
+                  <p><strong>Name:</strong> ${deployment.name || 'N/A'}</p>
+                  ${deployment.totalObservations !== undefined ? `<p><strong>Total Observations:</strong> ${deployment.totalObservations}</p>` : ''}
+                  ${deployment.uniqueAnimals && deployment.uniqueAnimals.length > 0 ? `<p><strong>Animals Detected:</strong> ${deployment.uniqueAnimals.join(', ')}</p>` : ''}
+                  ${deployment.firstObservation ? `<p><strong>First Observation:</strong> ${new Date(deployment.firstObservation).toLocaleDateString()}</p>` : ''}
+                  ${deployment.lastObservation ? `<p><strong>Last Observation:</strong> ${new Date(deployment.lastObservation).toLocaleDateString()}</p>` : ''}
+                  <p><strong>Coordinates:</strong> ${latitude.toFixed(6)}, ${longitude.toFixed(6)}</p>
+                </div>
+              `
+            });
+
+            // Create graphic
+            const graphic = new Graphic({
+              geometry: point,
+              symbol: symbol,
+              popupTemplate: popupTemplate,
+              attributes: {
+                id: deployment.id,
+                animl_dp_id: deployment.animl_dp_id,
+                name: deployment.name,
+                type: 'deployment'
+              }
+            });
+
+            animlLayer.add(graphic);
+          }
+        });
+      }
+      
+      // Note: We no longer show individual observations on the map - only camera locations
+      // The view mode only affects sidebar content, not map markers
+      // If you want to show observations in the future, they should be aggregated/grouped by camera
+      
+    } catch (error) {
+      console.error('Error loading Animl observations:', error);
+    } finally {
+      onAnimlLoadingChange?.(false);
+    }
+  };
+
+  const reloadAnimlObservations = (filters?: {
+    deployments?: AnimlDeployment[];
+    imageLabels?: AnimlImageLabel[];
+    viewMode?: 'camera-centric' | 'animal-centric';
+    startDate?: string;
+    endDate?: string;
+    searchMode?: 'preserve-only' | 'expanded' | 'custom';
+    customPolygon?: string;
+    showSearchArea?: boolean;
+  }) => {
+    if (view && view.map) {
+      const animlLayer = view.map.findLayerById('animl-observations') as GraphicsLayer;
+      if (animlLayer) {
+        loadAnimlObservations(view, animlLayer, filters);
+      }
+    }
+  };
+
   // Helper to draw search area rectangle for "Dangermond + Margin" spatial filter
 
   // Clear search area helper
@@ -1510,7 +1763,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       'tnc-inaturalist-observations',
       'ebird-observations',
       'calflora-plants',
-      'dendra-stations'
+      'dendra-stations',
+      'animl-observations'
     ];
     
     layerIds.forEach(layerId => {
@@ -1549,18 +1803,135 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     });
   };
 
+  // Highlight deployment method (similar to highlightObservation)
+  const highlightDeployment = (id: number) => {
+    if (!view || !view.map) {
+      console.warn('❌ View or map not available');
+      return;
+    }
+    
+    // Create the async operation
+    const operation = (async () => {
+      // Wait for any pending highlight operation to complete before clearing
+      if (highlightOperationRef.current) {
+        await highlightOperationRef.current;
+      }
+      
+      // Now clear any existing highlight
+      if (highlightHandleRef.current) {
+        highlightHandleRef.current.remove();
+        highlightHandleRef.current = null;
+      }
+      
+      // Find the deployment graphic in the Animl layer
+      if (!view.map) return;
+      const animlLayer = view.map.findLayerById('animl-observations') as GraphicsLayer;
+      
+      if (!animlLayer) {
+        console.warn('❌ Animl observations layer not found');
+        return;
+      }
+      
+      // Search for deployment graphic - deployments are stored with deployment_id in attributes
+      const targetGraphic = animlLayer.graphics.find(g => 
+        g.attributes?.deployment_id === id || g.attributes?.id === id
+      );
+      
+      if (!targetGraphic) {
+        console.warn(`❌ Deployment with id ${id} not found on map`);
+        return;
+      }
+      
+      try {
+        // Check if the deployment is already in view, and pan to it if not
+        if (targetGraphic.geometry && view.extent) {
+          const deploymentPoint = targetGraphic.geometry as Point;
+          
+          // Check if the point is contained in the current view extent
+          if (!view.extent.contains(deploymentPoint)) {
+            try {
+              await view.goTo({
+                target: deploymentPoint,
+                zoom: view.zoom > 14 ? view.zoom : 14 // Use current zoom if already zoomed in, otherwise zoom to 14
+              });
+            } catch (goToError: any) {
+              // Ignore AbortError (user interaction interrupted the pan)
+              if (goToError.name !== 'AbortError') {
+                console.warn('⚠️ Error panning to deployment:', goToError);
+              }
+            }
+          }
+        }
+        
+        // Ensure the layer is loaded and the layer view is ready
+        const layerView = await view.whenLayerView(animlLayer);
+        
+        // Wait for the layer view to finish any pending updates
+        if ((layerView as any).updating) {
+          await reactiveUtils.whenOnce(() => !(layerView as any).updating);
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        
+        // Add a small delay to ensure rendering pipeline is stable
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Use ArcGIS's native highlight method
+        const highlightHandle = (layerView as any).highlight(targetGraphic);
+        
+        highlightHandleRef.current = highlightHandle;
+        
+        // Open the popup
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        if (view && targetGraphic.geometry) {
+          try {
+            view.openPopup({
+              features: [targetGraphic],
+              location: targetGraphic.geometry as __esri.Point
+            });
+          } catch (error) {
+            console.error('❌ Error opening popup for deployment:', error);
+          }
+        }
+        
+      } catch (error) {
+        console.error('❌ Error highlighting Animl deployment:', error);
+      }
+    })();
+    
+    // Store the operation so we can wait for it if needed
+    highlightOperationRef.current = operation;
+  };
+  
+  // Clear deployment highlight method
+  const clearDeploymentHighlight = () => {
+    // Remove the ArcGIS native highlight
+    if (highlightHandleRef.current) {
+      highlightHandleRef.current.remove();
+      highlightHandleRef.current = null;
+    }
+    
+    // Close popup
+    if (view && view.popup) {
+      view.popup.visible = false;
+    }
+  };
+
   // Expose methods via ref
   useImperativeHandle(ref, () => ({
     reloadObservations,
     reloadTNCObservations,
     reloadEBirdObservations,
     reloadCalFloraData,
+    reloadAnimlObservations,
     activateDrawMode,
     clearPolygon,
     clearSearchArea,
     clearAllObservationLayers,
     highlightObservation,
-    clearObservationHighlight
+    clearObservationHighlight,
+    highlightDeployment,
+    clearDeploymentHighlight
   }));
 
   // Custom zoom functions (using extracted utilities)

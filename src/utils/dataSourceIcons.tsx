@@ -36,7 +36,7 @@ export const EBirdIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h
   
   return (
     <IconWithFallback 
-      src="https://www.ebird.org/favicon.ico"
+      src="/icons/data-sources/ebird.ico"
       alt="eBird"
       className={className}
       fallbackSvg={fallback}
@@ -57,7 +57,7 @@ export const INaturalistIcon: React.FC<{ className?: string }> = ({ className = 
   
   return (
     <IconWithFallback 
-      src="https://www.inaturalist.org/favicon.ico"
+      src="/icons/data-sources/inaturalist.ico"
       alt="iNaturalist"
       className={className}
       fallbackSvg={fallback}
@@ -76,7 +76,7 @@ export const TNCIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4
   
   return (
     <IconWithFallback 
-      src="https://hubcdn.arcgis.com/opendata-ui/assets/assets/images/favicon-45a5f6cdc7f23c52b20204d54a7d9ca2.ico"
+      src="/icons/data-sources/arcgis-hub.ico"
       alt="TNC ArcGIS Hub"
       className={className}
       fallbackSvg={fallback}
@@ -96,7 +96,7 @@ export const CalFloraIcon: React.FC<{ className?: string }> = ({ className = 'w-
   
   return (
     <IconWithFallback 
-      src="https://www.calflora.org/favicon.ico"
+      src="/icons/data-sources/calflora.ico"
       alt="CalFlora"
       className={className}
       fallbackSvg={fallback}
@@ -112,7 +112,7 @@ export const LiDARIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h
   
   return (
     <IconWithFallback 
-      src="https://hubcdn.arcgis.com/opendata-ui/assets/assets/images/favicon-45a5f6cdc7f23c52b20204d54a7d9ca2.ico"
+      src="/icons/data-sources/arcgis-hub.ico"
       alt="LiDAR"
       className={className}
       fallbackSvg={fallback}
@@ -128,8 +128,29 @@ export const DendraIcon: React.FC<{ className?: string }> = ({ className = 'w-4 
   
   return (
     <IconWithFallback 
-      src="https://dendra.science/favicon.ico"
+      src="/icons/data-sources/dendra.ico"
       alt="Dendra"
+      className={className}
+      fallbackSvg={fallback}
+    />
+  );
+};
+
+// Animl Icon - camera trap monitoring system
+export const AnimlIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => {
+  const fallback = (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" fill="#6B7280"/>
+      <rect x="7" y="8" width="10" height="8" rx="1" fill="white" opacity="0.9"/>
+      <circle cx="12" cy="12" r="2" fill="#6B7280"/>
+      <circle cx="16" cy="9" r="1" fill="#6B7280"/>
+    </svg>
+  );
+  
+  return (
+    <IconWithFallback 
+      src="/icons/data-sources/animl.ico"
+      alt="Animl"
       className={className}
       fallbackSvg={fallback}
     />
@@ -155,6 +176,8 @@ export const getDataSourceIcon = (source: string, className?: string): React.Rea
     return <LiDARIcon {...iconProps} />;
   } else if (sourceLower === 'dendra' || source === 'Dendra Stations') {
     return <DendraIcon {...iconProps} />;
+  } else if (sourceLower === 'animl' || source === 'Animl') {
+    return <AnimlIcon {...iconProps} />;
   }
   
   // Default fallback

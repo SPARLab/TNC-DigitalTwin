@@ -13,8 +13,12 @@ import DatasetDownloadView from './components/DatasetDownloadView';
 import TNCArcGISDetailsSidebar from './components/TNCArcGISDetailsSidebar';
 import DendraDetailsSidebar from './components/DendraDetailsSidebar';
 import INaturalistDetailsSidebar from './components/INaturalistDetailsSidebar';
+import AnimlDetailsSidebar from './components/AnimlDetailsSidebar';
+import AnimlLoadingModal from './components/AnimlLoadingModal';
 import { INaturalistUnifiedObservation } from './components/INaturalistSidebar';
-import { FilterState, DendraStation, DendraDatastream, DendraDatastreamWithStation, DendraDatapoint, INaturalistCustomFilters } from './types';
+import { FilterState, DendraStation, DendraDatastream, DendraDatastreamWithStation, DendraDatapoint, INaturalistCustomFilters, AnimlCustomFilters } from './types';
+import { animlService, AnimlDeployment, AnimlImageLabel, AnimlAnimalTag, AnimlCountLookups } from './services/animlService';
+import { AnimlViewMode } from './components/AnimlSidebar';
 import { LiDARViewMode } from './components/dataviews/LiDARView';
 import { iNaturalistObservation } from './services/iNaturalistService';
 import { TNCArcGISObservation } from './services/tncINaturalistService';
@@ -186,6 +190,27 @@ function App() {
 
   // iNaturalist observation selection state
   const [selectedINatObservation, setSelectedINatObservation] = useState<INaturalistUnifiedObservation | null>(null);
+
+  // Animl state
+  const [animlViewMode, setAnimlViewMode] = useState<AnimlViewMode>('camera-centric');
+  const [animlDeployments, setAnimlDeployments] = useState<AnimlDeployment[]>([]);
+  const [animlImageLabels, setAnimlImageLabels] = useState<AnimlImageLabel[]>([]);
+  const [animlAnimalTags, setAnimlAnimalTags] = useState<AnimlAnimalTag[]>([]);
+  const [animlCountLookups, setAnimlCountLookups] = useState<AnimlCountLookups | null>(null);
+  const [animlCountsLoading, setAnimlCountsLoading] = useState(false);
+  const [animlLoading, setAnimlLoading] = useState(false);
+  const [animlLoadingObservations, setAnimlLoadingObservations] = useState(false);
+  const [animlLoadingMoreObservations, setAnimlLoadingMoreObservations] = useState(false);
+  const [animlTotalObservationsCount, setAnimlTotalObservationsCount] = useState<number | null>(null);
+  const [selectedAnimlDeployment, setSelectedAnimlDeployment] = useState<AnimlDeployment | null>(null);
+  const [selectedAnimlAnimalTag, setSelectedAnimlAnimalTag] = useState<AnimlAnimalTag | null>(null);
+  const [selectedAnimlObservation, setSelectedAnimlObservation] = useState<AnimlImageLabel | null>(null);
+  const [animlCustomFilters, setAnimlCustomFilters] = useState<AnimlCustomFilters>({
+    viewMode: 'camera-centric',
+    deploymentIds: [],
+    labels: [],
+    hasImages: undefined
+  });
 
   // Compute date range text for iNaturalist sidebar
   const inatDateRangeText = useMemo(() => {
@@ -406,6 +431,439 @@ function App() {
     setLidarViewMode(mode);
   };
 
+  // Animl handlers
+  const handleAnimlViewModeChange = async (mode: AnimlViewMode) => {
+    setAnimlViewMode(mode);
+    
+    // Reset filters when switching view modes
+    // This ensures all cameras/species are selected by default in the new mode
+    setAnimlCustomFilters(prev => ({ 
+      ...prev, 
+      viewMode: mode,
+      deploymentIds: [], // Reset to all cameras
+      labels: [] // Will be auto-selected by AnimlDetailsSidebar
+    }));
+    
+    // Clear selections when switching view modes
+    setSelectedAnimlDeployment(null);
+    setSelectedAnimlAnimalTag(null);
+    setSelectedAnimlObservation(null);
+    
+    // Prepare date range and spatial filter for map reload
+    const startDate = filters.startDate || formatDateForAPI(getDateRange(lastSearchedDaysBack || 30).startDate);
+    const endDate = filters.endDate || formatDateForAPI(getDateRange(lastSearchedDaysBack || 30).endDate);
+    
+    // Count lookups are already loaded during search - no need to reload them!
+    // The count lookups contain ALL the data needed for the Export tab
+    console.log(`🔄 Switching to ${mode} mode - using existing count lookups (no reload needed)`);
+    let searchMode: 'preserve-only' | 'expanded' | 'custom' = filters.spatialFilter === 'Dangermond Preserve' ? 'preserve-only' : 'expanded';
+    let customPolygonGeometry: string | undefined = undefined;
+    if (filters.customPolygon && filters.spatialFilter === 'Draw Area') {
+      searchMode = 'custom';
+      customPolygonGeometry = JSON.stringify({
+        rings: filters.customPolygon.rings,
+        spatialReference: filters.customPolygon.spatialReference
+      });
+    }
+    
+    // No need to load observations when switching view modes!
+    // Export tab uses count lookups (instant), not observations
+    // Observations are only loaded when user clicks a specific animal tag
+    console.log(`✨ Export tab ready instantly - using count lookups (no observations needed)`);
+    
+    // Just reload the map with existing data
+    if (lastSearchedFilters.source === 'Animl' && animlDeployments.length > 0) {
+      mapViewRef.current?.reloadAnimlObservations({
+        deployments: animlDeployments,
+        imageLabels: animlImageLabels, // Keep existing observations (if any)
+        viewMode: mode,
+        startDate,
+        endDate,
+        searchMode,
+        customPolygon: customPolygonGeometry,
+        showSearchArea: filters.spatialFilter === 'Dangermond + Margin'
+      });
+    }
+  };
+
+  const handleAnimlDeploymentClick = async (deployment: AnimlDeployment | null) => {
+    // If null, clear selection and go back to camera list
+    if (deployment === null) {
+      console.log('🖱️ App: Clearing camera selection, returning to camera list');
+      setSelectedAnimlDeployment(null);
+      setSelectedAnimlAnimalTag(null);
+      setSelectedAnimlObservation(null);
+      setAnimlImageLabels([]);
+      setAnimlTotalObservationsCount(null);
+      mapViewRef.current?.clearDeploymentHighlight();
+      return;
+    }
+    
+    console.log('🖱️ App: Animl deployment clicked in sidebar:', deployment.id);
+    setSelectedAnimlDeployment(deployment);
+    setSelectedAnimlAnimalTag(null);
+    setSelectedAnimlObservation(null);
+    
+    // Trigger map highlight immediately
+    if (mapViewRef.current) {
+      console.log('🗺️ App: Calling highlightDeployment');
+      mapViewRef.current.highlightDeployment(deployment.id);
+    } else {
+      console.warn('⚠️ App: mapViewRef.current is not available');
+    }
+    
+    // Load observations for this deployment
+    setAnimlLoadingObservations(true);
+    try {
+      // Use the same date range from last search
+      const startDate = lastSearchedFilters.startDate || undefined;
+      const endDate = lastSearchedFilters.endDate || undefined;
+      
+      // Get spatial filter from last search
+      const searchMode = lastSearchedFilters.spatialFilter === 'Dangermond + Margin' ? 'expanded' : 
+                        lastSearchedFilters.spatialFilter === 'Custom' ? 'custom' : 'preserve-only';
+      
+      // Convert polygon geometry to string if needed
+      let customPolygonStr: string | undefined;
+      if (lastSearchedFilters.spatialFilter === 'Custom' && lastSearchedFilters.customPolygon) {
+        customPolygonStr = typeof lastSearchedFilters.customPolygon === 'string' 
+          ? lastSearchedFilters.customPolygon 
+          : JSON.stringify(lastSearchedFilters.customPolygon);
+      }
+      
+      // Get total count for this deployment (with current date filter)
+      const totalCount = await animlService.getImageLabelsCount({
+        startDate,
+        endDate,
+        deploymentIds: [deployment.id],
+        searchMode,
+        customPolygon: customPolygonStr
+      });
+      setAnimlTotalObservationsCount(totalCount);
+      console.log(`📊 Total count for deployment ${deployment.id}: ${totalCount} observations`);
+      
+      // Fetch first 1000 observations immediately (ordered by timestamp DESC - most recent first)
+      const observations = await animlService.queryImageLabels({
+        startDate,
+        endDate,
+        deploymentIds: [deployment.id],
+        maxResults: 1000, // First batch of 1000 observations
+        searchMode,
+        customPolygon: customPolygonStr
+      });
+      
+      setAnimlImageLabels(observations);
+      console.log(`✅ Loaded ${observations.length} of ${totalCount} observations for deployment ${deployment.id}`);
+      
+      // If there are more observations, load them in the background
+      if (observations.length < totalCount) {
+        loadMoreAnimlObservationsForDeployment(deployment.id, observations.length, totalCount, startDate, endDate, searchMode, customPolygonStr);
+      }
+    } catch (error) {
+      console.error('Error loading observations for deployment:', error);
+      setAnimlImageLabels([]);
+      setAnimlTotalObservationsCount(null);
+    } finally {
+      setAnimlLoadingObservations(false);
+    }
+  };
+
+  const handleAnimlAnimalTagClick = async (tag: AnimlAnimalTag | null) => {
+    setSelectedAnimlAnimalTag(tag);
+    setSelectedAnimlDeployment(null);
+    setSelectedAnimlObservation(null);
+    
+    // If tag is selected, load observations for that category
+    if (tag) {
+      setAnimlLoadingObservations(true);
+      try {
+        // Use the same date range from last search
+        const startDate = lastSearchedFilters.startDate || undefined;
+        const endDate = lastSearchedFilters.endDate || undefined;
+        
+        // Get spatial filter from last search
+        const searchMode = lastSearchedFilters.spatialFilter === 'Dangermond + Margin' ? 'expanded' : 
+                          lastSearchedFilters.spatialFilter === 'Custom' ? 'custom' : 'preserve-only';
+        
+        // Convert polygon geometry to string if needed
+        let customPolygonStr: string | undefined;
+        if (lastSearchedFilters.spatialFilter === 'Custom' && lastSearchedFilters.customPolygon) {
+          customPolygonStr = typeof lastSearchedFilters.customPolygon === 'string' 
+            ? lastSearchedFilters.customPolygon 
+            : JSON.stringify(lastSearchedFilters.customPolygon);
+        }
+        
+        // Get total count first
+        const totalCount = await animlService.getImageLabelsCount({
+          startDate,
+          endDate,
+          labels: [tag.label],
+          searchMode,
+          customPolygon: customPolygonStr
+        });
+        setAnimlTotalObservationsCount(totalCount);
+        
+        // Fetch first 1000 observations immediately (using larger page size for efficiency)
+        const observations = await animlService.queryImageLabels({
+          startDate,
+          endDate,
+          labels: [tag.label],
+          maxResults: 1000, // First batch of 1000 observations
+          searchMode,
+          customPolygon: customPolygonStr
+        });
+        
+        setAnimlImageLabels(observations);
+        console.log(`✅ Loaded ${observations.length} of ${totalCount} observations for ${tag.label}`);
+        
+        // If there are more observations, load them in the background
+        if (observations.length < totalCount) {
+          loadMoreAnimlObservations(tag.label, observations.length, totalCount, startDate, endDate, searchMode, customPolygonStr);
+        }
+      } catch (error) {
+        console.error('Error loading observations for category:', error);
+        setAnimlImageLabels([]);
+        setAnimlTotalObservationsCount(null);
+      } finally {
+        setAnimlLoadingObservations(false);
+      }
+    } else {
+      // Clear observations when going back
+      setAnimlImageLabels([]);
+      setAnimlTotalObservationsCount(null);
+    }
+  };
+
+  // Load more observations in the background (for animal tags)
+  const loadMoreAnimlObservations = async (
+    label: string,
+    currentCount: number,
+    totalCount: number,
+    startDate: string | undefined,
+    endDate: string | undefined,
+    searchMode: 'preserve-only' | 'expanded' | 'custom',
+    customPolygonStr: string | undefined
+  ) => {
+    setAnimlLoadingMoreObservations(true);
+    try {
+      const remainingCount = totalCount - currentCount;
+      if (remainingCount <= 0) {
+        console.log('✅ All observations already loaded');
+        return;
+      }
+      
+      // Fetch remaining observations starting from offset 1000 (will use 2000 page size internally)
+      const moreObservations = await animlService.queryImageLabels({
+        startDate,
+        endDate,
+        labels: [label],
+        maxResults: remainingCount, // Get all remaining
+        resultOffset: 1000, // Start after the first 1000
+        searchMode,
+        customPolygon: customPolygonStr
+      });
+      
+      // Combine with existing observations (avoiding duplicates)
+      setAnimlImageLabels(prev => {
+        const existingIds = new Set(prev.map(obs => obs.id));
+        const newObservations = moreObservations.filter(obs => !existingIds.has(obs.id));
+        const combined = [...prev, ...newObservations];
+        console.log(`✅ Background: Added ${newObservations.length} observations (total: ${combined.length} of ${totalCount})`);
+        return combined;
+      });
+    } catch (error) {
+      console.error('Error loading more observations:', error);
+    } finally {
+      setAnimlLoadingMoreObservations(false);
+    }
+  };
+
+  // Load more observations in the background (for deployments)
+  const loadMoreAnimlObservationsForDeployment = async (
+    deploymentId: number,
+    currentCount: number,
+    totalCount: number,
+    startDate: string | undefined,
+    endDate: string | undefined,
+    searchMode: 'preserve-only' | 'expanded' | 'custom',
+    customPolygonStr: string | undefined
+  ) => {
+    setAnimlLoadingMoreObservations(true);
+    try {
+      const remainingCount = totalCount - currentCount;
+      if (remainingCount <= 0) {
+        console.log('✅ All observations already loaded');
+        return;
+      }
+      
+      // Fetch remaining observations starting from offset 1000 (ordered by timestamp DESC - most recent first)
+      const moreObservations = await animlService.queryImageLabels({
+        startDate,
+        endDate,
+        deploymentIds: [deploymentId],
+        maxResults: remainingCount, // Get all remaining
+        resultOffset: 1000, // Start after the first 1000
+        searchMode,
+        customPolygon: customPolygonStr
+      });
+      
+      // Combine with existing observations (avoiding duplicates)
+      setAnimlImageLabels(prev => {
+        const existingIds = new Set(prev.map(obs => obs.id));
+        const newObservations = moreObservations.filter(obs => !existingIds.has(obs.id));
+        const combined = [...prev, ...newObservations];
+        console.log(`✅ Background: Added ${newObservations.length} observations (total: ${combined.length} of ${totalCount})`);
+        return combined;
+      });
+    } catch (error) {
+      console.error('Error loading more observations for deployment:', error);
+    } finally {
+      setAnimlLoadingMoreObservations(false);
+    }
+  };
+
+  const handleAnimlObservationClick = (observation: AnimlImageLabel) => {
+    setSelectedAnimlObservation(observation);
+    // Highlight the camera/deployment that took this observation
+    if (observation.deployment_id && mapViewRef.current) {
+      mapViewRef.current.highlightDeployment(observation.deployment_id);
+    }
+  };
+
+  const handleAnimlDetailsClose = () => {
+    setSelectedAnimlDeployment(null);
+    setSelectedAnimlAnimalTag(null);
+    setSelectedAnimlObservation(null);
+    // Clear observations when closing details
+    setAnimlImageLabels([]);
+    setAnimlTotalObservationsCount(null);
+    // Clear map highlight
+    mapViewRef.current?.clearDeploymentHighlight();
+  };
+
+  /**
+   * Load count lookups for Animl data
+   * This fetches observation counts for deployments within the search area
+   * and builds lookup structures for instant access
+   */
+  const loadAnimlCountLookups = async (
+    startDate: string | undefined, 
+    endDate: string | undefined,
+    deploymentIds?: number[]
+  ) => {
+    setAnimlCountsLoading(true);
+    try {
+      console.log('📊 Loading Animl count lookups...', { startDate, endDate, deploymentCount: deploymentIds?.length });
+      
+      if (!startDate || !endDate) {
+        console.warn('⚠️ Animl: No date filter applied to count lookups query');
+      }
+      
+      // Fetch counts grouped by (deployment, label), filtered by deployment IDs from search
+      const result = await animlService.getObservationCountsGrouped({
+        startDate,
+        endDate,
+        deploymentIds  // Only count observations from deployments in the search area
+      });
+      
+      // Build lookup structures for O(1) access
+      const lookups = animlService.buildCountLookups(result.groupedCounts, result.uniqueImageCountsByDeployment);
+      
+      setAnimlCountLookups(lookups);
+      console.log('✅ Animl count lookups loaded and ready');
+      
+    } catch (error) {
+      console.error('Error loading Animl count lookups:', error);
+      toast.error('Failed to load observation counts');
+      setAnimlCountLookups(null);
+    } finally {
+      setAnimlCountsLoading(false);
+    }
+  };
+
+  const handleAnimlAddToCart = (filteredCount: number) => {
+    if (!hasSearched) {
+      toast.error('No data to add to cart');
+      return;
+    }
+
+    // The filteredCount passed here is already accurate (from count lookups)
+    // We need to store the current filter selections (deploymentIds and labels)
+    // These will be used to re-query the database during export
+    
+    // Get the deployment IDs and labels from current filters
+    // In camera-centric mode: use selected deployment
+    // In animal-centric mode: use selected deployments (or all if none selected)
+    const effectiveDeploymentIds = animlCustomFilters.deploymentIds && animlCustomFilters.deploymentIds.length > 0
+      ? animlCustomFilters.deploymentIds
+      : (animlViewMode === 'camera-centric' && selectedAnimlDeployment
+          ? [selectedAnimlDeployment.id]
+          : animlViewMode === 'animal-centric' && animlDeployments.length > 0
+          ? animlDeployments.map(dep => dep.id)
+          : []);
+    
+    const effectiveLabels = animlCustomFilters.labels || [];
+    
+    console.log(`🛒 Animl Add to Cart: ${filteredCount} observations`);
+    console.log(`   📷 Deployments: ${effectiveDeploymentIds.length} selected`);
+    console.log(`   🏷️  Labels: ${effectiveLabels.length} selected`);
+    console.log(`   ✅ Count is accurate (from database query, not in-memory data)`);
+
+    // CRITICAL: Ensure startDate and endDate are explicitly set for cart item
+    // If dates aren't set but daysBack is, compute dates from daysBack
+    // This ensures the cart export always has date filters applied
+    let cartStartDate = filters.startDate;
+    let cartEndDate = filters.endDate;
+    if (!cartStartDate || !cartEndDate) {
+      const daysBack = filters.daysBack || 30;
+      const dateRange = getDateRange(daysBack);
+      cartStartDate = formatDateForAPI(dateRange.startDate);
+      cartEndDate = formatDateForAPI(dateRange.endDate);
+      console.log(`📅 Animl Add to Cart: Computed dates from daysBack (${daysBack}): ${cartStartDate} to ${cartEndDate}`);
+    }
+
+    // Build cart item with current filter selections
+    // The filters will be used to re-query the database during export
+    const cartItem = {
+      id: `animl-${Date.now()}`,
+      dataSource: 'animl' as const,
+      title: `Animl Camera Traps - ${animlViewMode === 'camera-centric' ? 'Camera View' : 'Animal View'} (${filteredCount} observations)`,
+      coreFilters: {
+        category: filters.category,
+        source: filters.source,
+        spatialFilter: filters.spatialFilter,
+        timeRange: filters.timeRange,
+        daysBack: filters.daysBack,
+        startDate: cartStartDate, // Use computed start date
+        endDate: cartEndDate,     // Use computed end date
+        customPolygon: filters.customPolygon
+      },
+      customFilters: {
+        animl: {
+          viewMode: animlViewMode,
+          deploymentIds: effectiveDeploymentIds,
+          labels: effectiveLabels,
+          hasImages: animlCustomFilters.hasImages
+        }
+      },
+      estimatedCount: filteredCount,
+      addedAt: Date.now()
+    };
+
+    addToCart(cartItem);
+    toast.success(`Added ${filteredCount} Animl observations to cart`);
+  };
+
+  // Compute date range text for Animl sidebar
+  const animlDateRangeText = useMemo(() => {
+    if (filters.startDate && filters.endDate) {
+      const start = new Date(filters.startDate);
+      const end = new Date(filters.endDate);
+      return `from ${start.toLocaleDateString()} - ${end.toLocaleDateString()}`;
+    }
+    return `from ${formatDateRangeCompact(lastSearchedDaysBack).toLowerCase()}`;
+  }, [filters.startDate, filters.endDate, lastSearchedDaysBack]);
+
   // Dendra Stations handlers
   const handleDendraStationSelect = async (station: DendraStation) => {
     // Close the Dendra iframe if it's showing a different station's dashboard
@@ -610,6 +1068,9 @@ function App() {
     setDendraStations([]);
     setDendraDatastreams([]);
     setTncArcGISItems([]);
+    setAnimlDeployments([]);
+    setAnimlImageLabels([]);
+    setAnimlAnimalTags([]);
     
     // Clear any selected items
     setSelectedTNCObservation(null);
@@ -618,6 +1079,9 @@ function App() {
     setSelectedModalItem(null);
     setSelectedDendraStation(null);
     setSelectedDendraDatastream(null);
+    setSelectedAnimlDeployment(null);
+    setSelectedAnimlAnimalTag(null);
+    setSelectedAnimlObservation(null);
     
     // Clear all map layers (removes all observation icons from map)
     mapViewRef.current?.clearAllObservationLayers();
@@ -625,9 +1089,24 @@ function App() {
     // Mark that a search has been performed
     setHasSearched(true);
     
-    // Update the last searched filters to match current filters
+    // Compute date range first (needed for Animl)
+    let computedStartDate: string | undefined = filters.startDate;
+    let computedEndDate: string | undefined = filters.endDate;
+    
+    // If no explicit dates, compute from daysBack
+    if (!computedStartDate || !computedEndDate) {
+      const range = getDateRange(filters.daysBack || 30);
+      computedStartDate = formatDateForAPI(range.startDate);
+      computedEndDate = formatDateForAPI(range.endDate);
+    }
+    
+    // Update the last searched filters to match current filters (with computed dates)
     // This will cause the DataView to update to show the appropriate sidebar
-    setLastSearchedFilters({ ...filters });
+    setLastSearchedFilters({ 
+      ...filters,
+      startDate: computedStartDate,
+      endDate: computedEndDate
+    });
     
     if (filters.source === 'Dendra Stations') {
       // Handle Dendra Stations search
@@ -903,6 +1382,100 @@ function App() {
         });
 
       mapViewRef.current?.reloadEBirdObservations(eBirdSearchFilters);
+    } else if (filters.source === 'Animl') {
+      // Handle Animl search
+      setAnimlLoading(true);
+      
+      // Clear previous selections
+      setSelectedAnimlDeployment(null);
+      setSelectedAnimlAnimalTag(null);
+      setSelectedAnimlObservation(null);
+      
+      // Compute start/end dates from filters
+      let startDate = filters.startDate;
+      let endDate = filters.endDate;
+      if (!startDate || !endDate) {
+        const range = getDateRange(filters.daysBack || 30);
+        startDate = formatDateForAPI(range.startDate);
+        endDate = formatDateForAPI(range.endDate);
+      }
+
+      // Map spatial filter to search mode
+      let searchMode: 'preserve-only' | 'expanded' | 'custom' = filters.spatialFilter === 'Dangermond Preserve' ? 'preserve-only' : 'expanded';
+      
+      // If custom polygon exists, use it
+      let customPolygonGeometry: string | undefined = undefined;
+      if (filters.customPolygon && filters.spatialFilter === 'Draw Area') {
+        searchMode = 'custom';
+        customPolygonGeometry = JSON.stringify({
+          rings: filters.customPolygon.rings,
+          spatialReference: filters.customPolygon.spatialReference
+        });
+      }
+
+      const searchAniml = async () => {
+        try {
+          // Fetch deployments and animal category counts (without all observations)
+          const [deployments, animalTags] = await Promise.all([
+            animlService.queryDeployments({
+              searchMode,
+              customPolygon: customPolygonGeometry
+            }).catch(error => {
+              console.error('❌ Failed to fetch deployments:', error);
+              return [];
+            }),
+            // Get category counts without fetching all observations
+            animlService.getAnimalCategoryCounts({
+              startDate,
+              endDate,
+              searchMode,
+              customPolygon: customPolygonGeometry
+            }).catch(error => {
+              console.error('❌ Failed to fetch animal category counts:', error);
+              return [];
+            })
+          ]);
+
+          console.log(`✅ Animl Search Results: ${deployments.length} deployments, ${animalTags.length} animal categories`);
+
+          // Enhance deployments with stats (we'll need to get counts separately)
+          // For now, just set deployments without stats since we don't have all observations
+          const enhancedDeployments = deployments; // Will enhance later if needed
+          
+          setAnimlDeployments(enhancedDeployments);
+          setAnimlImageLabels([]); // Don't load observations until category is selected
+          setAnimlAnimalTags(animalTags);
+          
+          // Update last searched time range
+          setLastSearchedDaysBack(filters.daysBack || 30);
+          
+          // Load count lookups for accurate right sidebar counts (only for deployments in search area)
+          const deploymentIds = enhancedDeployments.map(d => d.id);
+          console.log('🔍 About to load Animl count lookups with dates:', { startDate, endDate, deploymentIds });
+          await loadAnimlCountLookups(startDate, endDate, deploymentIds);
+          
+          // Reload Animl observations on map (only show deployments, not individual observations)
+          mapViewRef.current?.reloadAnimlObservations({
+            deployments: enhancedDeployments,
+            imageLabels: [], // Don't show individual observations on map initially
+            viewMode: animlViewMode,
+            startDate: startDate, // Already in YYYY-MM-DD string format
+            endDate: endDate, // Already in YYYY-MM-DD string format
+            searchMode,
+            customPolygon: customPolygonGeometry ? JSON.stringify(customPolygonGeometry) : undefined,
+            showSearchArea: filters.spatialFilter === 'Dangermond + Margin'
+          });
+        } catch (error) {
+          console.error('Error loading Animl data:', error);
+          setAnimlDeployments([]);
+          setAnimlImageLabels([]);
+          setAnimlAnimalTags([]);
+        } finally {
+          setAnimlLoading(false);
+        }
+      };
+
+      searchAniml();
     } else {
       // Handle iNaturalist Public API search
       // Filter by iconic taxa based on category
@@ -1277,6 +1850,95 @@ function App() {
     downloadFile(geoJsonData, 'tnc-arcgis-items.geojson', 'application/geo+json');
   };
 
+  // Compute filtered Animl observations for export (matching AnimlDetailsSidebar logic)
+  const animlFilteredObservations = useMemo(() => {
+    // Start with animal-only observations (exclude person/people by default)
+    let filtered = animlImageLabels.filter(obs => {
+      const labelLower = obs.label?.toLowerCase() || '';
+      return labelLower !== 'person' && labelLower !== 'people';
+    });
+
+    // Get effective deployment IDs for filtering
+    const effectiveDeploymentIds = animlCustomFilters.deploymentIds && animlCustomFilters.deploymentIds.length > 0
+      ? animlCustomFilters.deploymentIds
+      : (animlViewMode === 'camera-centric' && selectedAnimlDeployment
+          ? [selectedAnimlDeployment.id]
+          : animlViewMode === 'animal-centric' && animlDeployments.length > 0
+          ? animlDeployments.map(dep => dep.id)
+          : []);
+
+    // Apply deployment filter
+    if (effectiveDeploymentIds.length > 0) {
+      filtered = filtered.filter(obs => effectiveDeploymentIds.includes(obs.deployment_id));
+    }
+
+    // Apply label filter
+    if (animlCustomFilters.labels && animlCustomFilters.labels.length > 0) {
+      filtered = filtered.filter(obs => animlCustomFilters.labels!.includes(obs.label));
+    }
+
+    return filtered;
+  }, [animlImageLabels, animlCustomFilters.deploymentIds, animlCustomFilters.labels, animlViewMode, selectedAnimlDeployment, animlDeployments]);
+
+  // Animl export functions
+  const convertAnimlToCSV = (imageLabels: AnimlImageLabel[]): string => {
+    const headers = [
+      'ID', 'Image ID', 'Deployment ID', 'Camera Name', 'Timestamp', 'Label', 
+      'Medium URL', 'Small URL', 'Latitude', 'Longitude'
+    ];
+    
+    const rows = imageLabels.map(obs => [
+      obs.id,
+      obs.animl_image_id,
+      obs.deployment_id,
+      obs.deployment_name || '',
+      obs.timestamp,
+      obs.label,
+      obs.medium_url || '',
+      obs.small_url || '',
+      obs.geometry?.coordinates?.[1] || '',
+      obs.geometry?.coordinates?.[0] || ''
+    ]);
+
+    return [headers, ...rows].map(row => 
+      row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+    ).join('\n');
+  };
+
+  const convertAnimlToGeoJSON = (imageLabels: AnimlImageLabel[]): string => {
+    const features = imageLabels
+      .filter(obs => obs.geometry?.coordinates)
+      .map(obs => ({
+        type: 'Feature' as const,
+        geometry: obs.geometry!,
+        properties: {
+          id: obs.id,
+          animl_image_id: obs.animl_image_id,
+          deployment_id: obs.deployment_id,
+          deployment_name: obs.deployment_name || '',
+          timestamp: obs.timestamp,
+          label: obs.label,
+          medium_url: obs.medium_url || '',
+          small_url: obs.small_url || ''
+        }
+      }));
+
+    return JSON.stringify({
+      type: 'FeatureCollection',
+      features
+    }, null, 2);
+  };
+
+  const handleAnimlExportCSV = () => {
+    const csvData = convertAnimlToCSV(animlFilteredObservations);
+    downloadFile(csvData, 'animl-observations.csv', 'text/csv');
+  };
+
+  const handleAnimlExportGeoJSON = () => {
+    const geoJsonData = convertAnimlToGeoJSON(animlFilteredObservations);
+    downloadFile(geoJsonData, 'animl-observations.geojson', 'application/geo+json');
+  };
+
   // Dendra export functions
   const convertDendraToCSV = (datapoints: DendraDatapoint[], datastream: DendraDatastream | null, station: DendraStation | null): string => {
     if (datapoints.length === 0) return '';
@@ -1384,6 +2046,7 @@ function App() {
           lastSearchedFilters.source === 'iNaturalist (TNC Layers)' ? tncObservations.length :
           lastSearchedFilters.source === 'eBird' ? eBirdObservations.length :
           lastSearchedFilters.source === 'Dendra Stations' ? dendraStations.length :
+          lastSearchedFilters.source === 'Animl' ? animlImageLabels.length :
           observations.length
         }
         isSearching={
@@ -1392,6 +2055,7 @@ function App() {
           filters.source === 'iNaturalist (TNC Layers)' ? tncObservationsLoading :
           filters.source === 'eBird' ? eBirdObservationsLoading :
           filters.source === 'Dendra Stations' ? dendraLoading :
+          filters.source === 'Animl' ? animlLoading :
           observationsLoading
         }
       />
@@ -1454,6 +2118,34 @@ function App() {
           qualityGrade={filters.qualityGrade}
           onQualityGradeChange={(grade) => setFilters(prev => ({ ...prev, qualityGrade: grade }))}
           onIconicTaxaChange={(taxa) => setFilters(prev => ({ ...prev, iconicTaxa: taxa }))}
+          // Animl props
+          animlViewMode={animlViewMode}
+          animlDeployments={animlDeployments}
+          animlAnimalTags={animlAnimalTags}
+          animlImageLabels={animlImageLabels}
+          animlLoading={animlLoading}
+          animlLoadingObservations={animlLoadingObservations}
+          animlLoadingMoreObservations={animlLoadingMoreObservations}
+          animlTotalObservationsCount={animlTotalObservationsCount}
+          selectedAnimlDeployment={selectedAnimlDeployment}
+          selectedAnimlDeploymentId={selectedAnimlDeployment?.id || null}
+          selectedAnimlAnimalTag={selectedAnimlAnimalTag}
+          selectedAnimlAnimalLabel={selectedAnimlAnimalTag?.label || null}
+          selectedAnimlObservation={selectedAnimlObservation}
+          selectedAnimlObservationId={selectedAnimlObservation?.id || null}
+          onAnimlViewModeChange={handleAnimlViewModeChange}
+          onAnimlDeploymentClick={handleAnimlDeploymentClick}
+          onAnimlAnimalTagClick={handleAnimlAnimalTagClick}
+          onAnimlObservationClick={handleAnimlObservationClick}
+          onAnimlDetailsClose={handleAnimlDetailsClose}
+          onAnimlExportCSV={handleAnimlExportCSV}
+          onAnimlExportGeoJSON={handleAnimlExportGeoJSON}
+          onAnimlAddToCart={handleAnimlAddToCart}
+          animlDateRangeText={animlDateRangeText}
+          animlCustomFilters={animlCustomFilters}
+          onAnimlCustomFiltersChange={setAnimlCustomFilters}
+          animlCountLookups={animlCountLookups}
+          animlCountsLoading={animlCountsLoading}
         />
         <div id="map-container" className="flex-1 relative flex">
           {/* Conditionally render based on data source and LiDAR mode */}
@@ -1570,6 +2262,14 @@ function App() {
                 onPolygonCleared={handlePolygonCleared}
                 iconicTaxa={filters.iconicTaxa}
                 onIconicTaxaChange={(taxa) => setFilters(prev => ({ ...prev, iconicTaxa: taxa }))}
+                animlDeployments={lastSearchedFilters.source === 'Animl' ? animlDeployments : []}
+                animlImageLabels={lastSearchedFilters.source === 'Animl' ? animlImageLabels : []}
+                animlViewMode={animlViewMode}
+                selectedAnimlDeployment={selectedAnimlDeployment}
+                selectedAnimlObservation={selectedAnimlObservation}
+                onAnimlDeploymentClick={handleAnimlDeploymentClick}
+                onAnimlObservationClick={handleAnimlObservationClick}
+                onAnimlLoadingChange={setAnimlLoading}
               />
               {/* Hub Page Preview Overlay */}
               {selectedModalItem && (
@@ -1819,6 +2519,31 @@ function App() {
             onClose={handleINatDetailsClose}
             hasSearched={hasSearched}
           />
+        ) : lastSearchedFilters.source === 'Animl' ? (
+          <AnimlDetailsSidebar
+            viewMode={animlViewMode}
+            selectedDeployment={selectedAnimlDeployment}
+            selectedAnimalTag={selectedAnimlAnimalTag}
+            selectedObservation={selectedAnimlObservation}
+            deployments={animlDeployments}
+            animalTags={animlAnimalTags}
+            observations={animlImageLabels}
+            countLookups={animlCountLookups}
+            countsLoading={animlCountsLoading}
+            onExportCSV={handleAnimlExportCSV}
+            onExportGeoJSON={handleAnimlExportGeoJSON}
+            onAddToCart={handleAnimlAddToCart}
+            onClose={handleAnimlDetailsClose}
+            onObservationSelect={setSelectedAnimlObservation}
+            hasSearched={hasSearched}
+            dateRangeText={animlDateRangeText}
+            selectedDeploymentIds={animlCustomFilters?.deploymentIds || []}
+            onDeploymentIdsChange={(ids) => setAnimlCustomFilters(prev => ({ ...prev, deploymentIds: ids }))}
+            selectedLabels={animlCustomFilters?.labels || []}
+            onLabelsChange={(labels) => setAnimlCustomFilters(prev => ({ ...prev, labels }))}
+            hasImages={animlCustomFilters?.hasImages}
+            onHasImagesChange={(hasImages) => setAnimlCustomFilters(prev => ({ ...prev, hasImages }))}
+          />
         ) : (
           <FilterSidebar 
             filters={filters}
@@ -1882,6 +2607,9 @@ function App() {
           // clearCart();
         }}
       />
+
+      {/* Animl Loading Modal */}
+      <AnimlLoadingModal isOpen={animlLoading} />
     </div>
   );
 }

@@ -232,6 +232,23 @@ export interface DendraCustomFilters {
 }
 
 /**
+ * Animl-specific query filters
+ */
+export interface AnimlCustomFilters {
+  /** View mode: 'camera-centric' or 'animal-centric' */
+  viewMode: 'camera-centric' | 'animal-centric';
+  
+  /** Filter by deployment IDs (camera-centric view) */
+  deploymentIds?: number[];
+  
+  /** Filter by animal species/labels (animal-centric view) */
+  labels?: string[];
+  
+  /** Filter by image presence */
+  hasImages?: boolean;
+}
+
+/**
  * Shopping cart item representing a saved query
  * Stores query parameters (not data) for re-execution during export
  */
@@ -240,7 +257,7 @@ export interface CartItem {
   id: string;
   
   /** Data source identifier */
-  dataSource: 'inaturalist' | 'dendra' | 'calflora' | 'ebird';
+  dataSource: 'inaturalist' | 'dendra' | 'calflora' | 'ebird' | 'animl';
   
   /** User-friendly title describing this query */
   title: string;
@@ -288,6 +305,9 @@ export interface CartItem {
     
     /** Dendra-specific filters (future) */
     dendra?: DendraCustomFilters;
+    
+    /** Animl-specific filters */
+    animl?: AnimlCustomFilters;
   };
   
   /** Estimated record count at time of adding to cart (for display purposes) */
