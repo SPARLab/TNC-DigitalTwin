@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Database, ExternalLink, Box, Globe } from 'lucide-react';
+import { Database, ExternalLink, Box, Globe, ArrowLeft } from 'lucide-react';
 
 type LiDARViewMode = 'virtual-tour' | 'interactive-3d';
 
 interface LiDARViewProps {
   hasSearched?: boolean;
   onModeChange?: (mode: LiDARViewMode) => void;
+  onBack?: () => void;
 }
 
-const LiDARView: React.FC<LiDARViewProps> = ({ hasSearched = false, onModeChange }) => {
+const LiDARView: React.FC<LiDARViewProps> = ({ hasSearched = false, onModeChange, onBack }) => {
   const [viewMode, setViewMode] = useState<LiDARViewMode>('virtual-tour');
 
   const handleModeChange = (mode: LiDARViewMode) => {
@@ -31,6 +32,15 @@ const LiDARView: React.FC<LiDARViewProps> = ({ hasSearched = false, onModeChange
       {/* Header */}
       <div id="lidar-view-header" className="p-4 border-b border-gray-200">
         <div id="lidar-view-title" className="flex items-center space-x-2">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
+              title="Back to Data Catalog"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
           <Database className="w-5 h-5 text-blue-600" />
           <h2 className="text-lg font-semibold text-gray-900">LiDAR Data</h2>
         </div>

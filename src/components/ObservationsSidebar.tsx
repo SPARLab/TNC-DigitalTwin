@@ -17,6 +17,7 @@ interface ObservationsSidebarProps {
   selectedObservationId?: number | string | null;
   iconicTaxa?: string[]; // Filter by taxonomic groups
   onIconicTaxaChange?: (taxa: string[]) => void; // Callback to change filter
+  onBack?: () => void;
 }
 
 const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({ 
@@ -32,7 +33,8 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({
   onObservationClick,
   selectedObservationId,
   iconicTaxa = [],
-  onIconicTaxaChange
+  onIconicTaxaChange,
+  onBack
 }) => {
   // Generate appropriate date range text
   const dateRangeText = useMemo(() => {
@@ -76,6 +78,7 @@ const ObservationsSidebar: React.FC<ObservationsSidebarProps> = ({
       selectedObservationId={selectedObservationId}
       iconicTaxa={iconicTaxa}
       onIconicTaxaChange={onIconicTaxaChange}
+      onBack={onBack}
     />
   );
 };

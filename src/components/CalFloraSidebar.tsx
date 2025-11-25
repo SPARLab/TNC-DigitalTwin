@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronDown, ChevronRight, Leaf, AlertTriangle, MapPin, Calendar, ShoppingCart } from 'lucide-react';
+import { ChevronDown, ChevronRight, Leaf, AlertTriangle, MapPin, Calendar, ShoppingCart, ArrowLeft } from 'lucide-react';
 import { CalFloraPlant } from '../services/calFloraService';
 import { CalFloraGroup } from '../types';
 
@@ -11,6 +11,7 @@ interface CalFloraSidebarProps {
   onAddToCart?: () => void;
   onPlantSelect?: (plant: CalFloraPlant) => void;
   hasSearched?: boolean;
+  onBack?: () => void;
 }
 
 const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
@@ -20,7 +21,8 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
   onExportGeoJSON,
   onAddToCart,
   onPlantSelect,
-  hasSearched = false
+  hasSearched = false,
+  onBack
 }) => {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['Native Plants', 'Invasive Plants']));
   const [viewMode, setViewMode] = useState<'recent' | 'grouped'>('recent');
@@ -159,10 +161,21 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
       {/* Header */}
       <div id="calflora-header" className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <Leaf className="w-5 h-5 text-green-600" />
-            CalFlora Plants
-          </h2>
+          <div className="flex items-center gap-2">
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
+                title="Back to Data Catalog"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+            )}
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <Leaf className="w-5 h-5 text-green-600" />
+              CalFlora Plants
+            </h2>
+          </div>
           <div className="flex gap-1">
             <button
               id="recent-view-btn"

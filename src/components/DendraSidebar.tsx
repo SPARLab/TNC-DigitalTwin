@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import type { DendraStation, DendraDatastream, DendraDatastreamWithStation } from '../types';
 
+import { ArrowLeft } from 'lucide-react';
+
 interface DendraSidebarProps {
   stations: DendraStation[];
   datastreams: DendraDatastream[];
@@ -9,6 +11,7 @@ interface DendraSidebarProps {
   selectedStationId: number | null;
   selectedDatastreamId: number | null;
   onShowDendraWebsite?: () => void;
+  onBack?: () => void;
 }
 
 export default function DendraSidebar({
@@ -19,6 +22,7 @@ export default function DendraSidebar({
   selectedStationId,
   selectedDatastreamId,
   onShowDendraWebsite,
+  onBack
 }: DendraSidebarProps) {
   const [activeTab, setActiveTab] = useState<'stations' | 'datastreams'>('stations');
   const [stationSearch, setStationSearch] = useState('');
@@ -160,7 +164,18 @@ export default function DendraSidebar({
       {/* Header with Dendra.science link */}
       <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-700">Dendra Stations</h2>
+          <div className="flex items-center gap-2">
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
+                title="Back to Data Catalog"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+            )}
+            <h2 className="text-sm font-semibold text-gray-700">Dendra Stations</h2>
+          </div>
           {onShowDendraWebsite && (
             <button
               onClick={onShowDendraWebsite}

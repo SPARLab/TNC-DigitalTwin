@@ -15,13 +15,14 @@ import {
   Waves,
   Flame,
   Truck,
-  ShieldAlert
+  ShieldAlert,
+  Tag
 } from 'lucide-react';
 import { FilterState } from '../types';
 import { formatDateRange, formatDateRangeCompact, getTimeRangeOptions, formatDateToUS } from '../utils/dateUtils';
-import { DATA_CATEGORIES, CATEGORY_DATA_SOURCES, SPATIAL_FILTERS } from '../utils/constants';
+import { DATA_CATEGORIES, SPATIAL_FILTERS } from '../utils/constants';
 import { THEMES } from '../utils/themes';
-import { getSelectedSourceIcon, getDataSourceIcon } from '../utils/dataSourceIcons';
+import categoryMappings from '../data-sources/tnc-arcgis/category_mappings.json';
 
 interface FilterSubheaderProps {
   filters: FilterState;
@@ -38,13 +39,17 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
 
   // Refs for click-outside detection
   const categoryRef = useRef<HTMLDivElement>(null);
-  const sourceRef = useRef<HTMLDivElement>(null);
+  const tagsRef = useRef<HTMLDivElement>(null);
   const spatialFilterRef = useRef<HTMLDivElement>(null);
   const timeRangeRef = useRef<HTMLDivElement>(null);
 
   const categoryOptions = DATA_CATEGORIES;
-  // Get available sources for the current category
-  const sourceOptions = CATEGORY_DATA_SOURCES[filters.category as keyof typeof CATEGORY_DATA_SOURCES] || [];
+  // Get available tags for the current category
+  // @ts-ignore - JSON import types can be tricky, but we know the structure
+  const tagsOptions = filters.category && categoryMappings.mappings.tags[filters.category] 
+    ? categoryMappings.mappings.tags[filters.category as keyof typeof categoryMappings.mappings.tags] 
+    : [];
+
   const timeRangeOptions = getTimeRangeOptions();
 
   // Map categories to icons with colors
@@ -88,7 +93,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
     const handleClickOutside = (event: MouseEvent) => {
       const refMap = {
         'category': categoryRef,
-        'source': sourceRef,
+        'tags': tagsRef,
         'spatialFilter': spatialFilterRef,
         'timeRange': timeRangeRef
       };
@@ -110,7 +115,8 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
   const handleClearFilters = () => {
     onFilterChange({
       category: '',
-      source: '',
+      source: '', // Reset source as well
+      tags: [],
       spatialFilter: '',
       timeRange: '',
       daysBack: undefined,
@@ -127,36 +133,28 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
   };
 
   const handleCategoryChange = (category: typeof DATA_CATEGORIES[number]) => {
-    // Auto-select the first available source for the new category
-    const availableSources = CATEGORY_DATA_SOURCES[category] || [];
-    const newSource = availableSources[0] || filters.source;
-    
-    // Check if the new source requires a locked spatial filter
+    // Reset source and tags when category changes to show filtered Data Catalog
     const newFilters: FilterState = {
       ...filters, 
       category,
-      source: newSource,
+      source: '', // Clear source to show Data Catalog
+      tags: [], // Clear tags
       // Reset iconic taxa to all when category changes
       iconicTaxa: ['Aves', 'Mammalia', 'Reptilia', 'Amphibia', 'Actinopterygii', 'Insecta', 'Plantae', 'Fungi']
     };
-    
-    // Auto-set spatial filter to "Dangermond Preserve" for locked sources
-    if (newSource === 'Dendra Stations' || newSource === 'TNC ArcGIS Hub' || newSource === 'LiDAR') {
-      newFilters.spatialFilter = 'Dangermond Preserve';
-    }
     
     onFilterChange(newFilters);
     setOpenDropdown(null);
   };
 
-  const handleSourceChange = (source: string) => {
-    // Auto-set spatial filter to "Dangermond Preserve" for Dendra Stations, TNC ArcGIS Hub, and LiDAR
-    if (source === 'Dendra Stations' || source === 'TNC ArcGIS Hub' || source === 'LiDAR') {
-      onFilterChange({ ...filters, source, spatialFilter: 'Dangermond Preserve' });
-    } else {
-      onFilterChange({ ...filters, source });
-    }
-    setOpenDropdown(null);
+  const handleTagToggle = (tag: string) => {
+    const currentTags = filters.tags || [];
+    const newTags = currentTags.includes(tag)
+      ? currentTags.filter(t => t !== tag)
+      : [...currentTags, tag];
+      
+    onFilterChange({ ...filters, tags: newTags });
+    // Don't close dropdown for multi-select
   };
 
   const handleSpatialFilterChange = (spatialFilter: string) => {
@@ -248,39 +246,49 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
             )}
           </div>
 
-          {/* Data Source Filter */}
-          <div ref={sourceRef} id="source-filter-container" className="flex flex-col relative">
-            <label id="source-filter-label" className="text-xs font-medium text-gray-500 mb-1">
-              DATA SOURCE
+          {/* Tags Filter (Replaces Data Source) */}
+          <div ref={tagsRef} id="tags-filter-container" className="flex flex-col relative">
+            <label id="tags-filter-label" className="text-xs font-medium text-gray-500 mb-1">
+              TAGS
             </label>
             <button 
-              id="source-filter-button"
-              onClick={() => handleDropdownToggle('source')}
-              className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 w-full"
+              id="tags-filter-button"
+              onClick={() => handleDropdownToggle('tags')}
+              disabled={!filters.category || tagsOptions.length === 0}
+              className={`flex items-center space-x-2 px-3 py-2 border rounded-md w-full ${
+                !filters.category || tagsOptions.length === 0
+                  ? 'bg-gray-50 border-gray-200 cursor-not-allowed'
+                  : 'bg-white border-gray-300 hover:bg-gray-50'
+              }`}
             >
-              <span id="source-filter-icon" className="flex-shrink-0">
-                {getSelectedSourceIcon(filters.source)}
+              <Tag id="tags-filter-icon" className={`w-4 h-4 flex-shrink-0 ${filters.tags?.length ? 'text-blue-600' : 'text-gray-400'}`} />
+              <span id="tags-filter-text" className={`text-sm truncate ${filters.tags?.length ? 'text-black' : 'text-gray-400'}`}>
+                {filters.tags?.length 
+                  ? `${filters.tags.length} tag${filters.tags.length > 1 ? 's' : ''} selected` 
+                  : <><span className="hidden xl:inline">Select </span><span className="xl:lowercase">Tags</span></>}
               </span>
-              <span id="source-filter-text" className={`text-sm truncate ${filters.source ? 'text-black' : 'text-gray-400'}`}>
-                {filters.source || <><span className="hidden xl:inline">Select </span><span className="xl:lowercase">Data Source</span></>}
-              </span>
-              <ChevronDown id="source-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ml-auto ${openDropdown === 'source' ? 'rotate-180' : ''}`} />
+              <ChevronDown id="tags-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ml-auto ${openDropdown === 'tags' ? 'rotate-180' : ''}`} />
             </button>
-            {openDropdown === 'source' && (
-              <div id="source-filter-dropdown" className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg z-50">
-                {sourceOptions.map((option) => (
+            {openDropdown === 'tags' && (
+              <div id="tags-filter-dropdown" className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
+                {tagsOptions.map((tag: string) => (
                   <button
-                    key={option}
-                    id={`source-option-${option.toLowerCase().replace(/\s+/g, '-')}`}
-                    onClick={() => handleSourceChange(option)}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 first:rounded-t-md last:rounded-b-md flex items-center gap-2"
+                    key={tag}
+                    id={`tag-option-${tag.toLowerCase().replace(/\s+/g, '-')}`}
+                    onClick={() => handleTagToggle(tag)}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2`}
                   >
-                    <span className="flex-shrink-0">
-                      {getDataSourceIcon(option, 'w-4 h-4') || <Database className="w-4 h-4 text-gray-400" />}
-                    </span>
-                    <span>{option}</span>
+                    <div className={`w-4 h-4 border rounded flex items-center justify-center ${
+                      filters.tags?.includes(tag) ? 'bg-blue-600 border-blue-600' : 'border-gray-300'
+                    }`}>
+                      {filters.tags?.includes(tag) && <div className="w-2 h-2 bg-white rounded-sm" />}
+                    </div>
+                    <span>{tag}</span>
                   </button>
                 ))}
+                {tagsOptions.length === 0 && (
+                  <div className="px-3 py-2 text-sm text-gray-400 italic">No tags available for this category</div>
+                )}
               </div>
             )}
           </div>
@@ -293,11 +301,10 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
             <button 
               id="spatial-filter-button"
               onClick={() => handleDropdownToggle('spatialFilter')}
-              disabled={filters.source === 'Dendra Stations' || filters.source === 'TNC ArcGIS Hub' || filters.source === 'LiDAR'}
+              // disabled={filters.source === 'Dendra Stations' || filters.source === 'TNC ArcGIS Hub' || filters.source === 'LiDAR'}
               className={`flex items-center space-x-2 px-3 py-2 border rounded-md w-full ${
-                filters.source === 'Dendra Stations' || filters.source === 'TNC ArcGIS Hub' || filters.source === 'LiDAR'
-                  ? 'bg-gray-100 cursor-not-allowed opacity-60'
-                  : filters.customPolygon 
+                /* Logic to disable based on source is removed/relaxed for now as we want bi-directional flow */
+                filters.customPolygon 
                     ? 'border-blue-500 bg-blue-50 hover:bg-gray-50' 
                     : 'border-gray-300 bg-white hover:bg-gray-50'
               }`}
@@ -311,7 +318,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
             </button>
             
             {/* Spatial Filter Dropdown */}
-            {openDropdown === 'spatialFilter' && filters.source !== 'Dendra Stations' && filters.source !== 'TNC ArcGIS Hub' && filters.source !== 'LiDAR' && (
+            {openDropdown === 'spatialFilter' && (
               <div id="spatial-filter-dropdown" className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-50">
                 {SPATIAL_FILTERS.map((option) => (
                   <button
@@ -341,16 +348,11 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
               <button 
                 id="time-range-filter-button"
                 onClick={() => handleDropdownToggle('timeRange')}
-                disabled={filters.source === 'Dendra Stations'}
-                className={`flex items-center space-x-2 px-3 py-2 border rounded-md flex-1 ${
-                  filters.source === 'Dendra Stations'
-                    ? 'bg-gray-100 cursor-not-allowed opacity-60'
-                    : 'border-gray-300 bg-white hover:bg-gray-50'
-                }`}
+                className={`flex items-center space-x-2 px-3 py-2 border rounded-md flex-1 border-gray-300 bg-white hover:bg-gray-50`}
               >
                 <Calendar id="time-range-filter-icon" className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                <span id="time-range-filter-text" className={`text-sm truncate ${filters.source === 'Dendra Stations' || filters.timeRange ? 'text-black' : 'text-gray-400'}`}>
-                  {filters.source === 'Dendra Stations' ? 'All Time' : (filters.timeRange || <><span className="hidden xl:inline">Select </span><span className="xl:lowercase">Time Range</span></>)}
+                <span id="time-range-filter-text" className={`text-sm truncate ${filters.timeRange ? 'text-black' : 'text-gray-400'}`}>
+                  {filters.timeRange || <><span className="hidden xl:inline">Select </span><span className="xl:lowercase">Time Range</span></>}
                 </span>
                 <ChevronDown id="time-range-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ml-auto ${openDropdown === 'timeRange' ? 'rotate-180' : ''}`} />
               </button>
@@ -359,18 +361,16 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
               <button
                 id="observations-search-button"
                 onClick={onSearch}
-                disabled={isSearching || (filters.source !== 'Dendra Stations' && !filters.timeRange)}
+                disabled={isSearching}
                 className={`px-3 py-2 border border-gray-300 rounded-md transition-colors ${
-                  isSearching || (filters.source !== 'Dendra Stations' && !filters.timeRange)
+                  isSearching
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
                     : 'bg-blue-600 text-white hover:bg-blue-700'
                 }`}
                 title={
                   isSearching 
                     ? "Searching... This may take time due to API rate limits" 
-                    : filters.source !== 'Dendra Stations' && !filters.timeRange
-                      ? "Please select a time range before searching"
-                      : "Search for data from selected source"
+                    : "Search for data from selected source"
                 }
               >
                 {isSearching ? (
@@ -381,7 +381,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
               </button>
             </div>
             
-            {openDropdown === 'timeRange' && filters.source !== 'Dendra Stations' && (
+            {openDropdown === 'timeRange' && (
               <div id="time-range-dropdown" className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 min-w-full sm:w-80">
                 {timeRangeOptions.map((option) => (
                   <button

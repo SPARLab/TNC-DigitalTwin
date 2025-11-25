@@ -44,6 +44,7 @@ interface AnimlSidebarProps {
   totalObservationsCount?: number | null; // Total count for pagination info
   dateRangeText: string;
   hasSearched?: boolean;
+  onBack?: () => void; // Back button handler
   
   // Observations (filtered by selected camera or animal)
   observations?: AnimlImageLabel[];
@@ -72,7 +73,8 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
   observations = [],
   selectedObservationId,
   onObservationClick,
-  countLookups
+  countLookups,
+  onBack
 }) => {
   const [searchText, setSearchText] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -515,7 +517,16 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
     <div ref={sidebarRef} id="animl-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col focus:outline-none" tabIndex={0}>
       {/* Header */}
       <div id="animl-sidebar-header" className="p-4 border-b border-gray-200">
-        <div id="animl-sidebar-title-container" className="mb-2">
+        <div className="flex items-center gap-2 mb-3">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
+              title="Back to Data Catalog"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
           <h2 id="animl-sidebar-title" className="text-lg font-semibold text-gray-900">Animl Camera Traps</h2>
         </div>
         

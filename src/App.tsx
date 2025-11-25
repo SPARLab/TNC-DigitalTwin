@@ -29,6 +29,7 @@ import { formatDateRangeCompact, getDateRange, formatDateForAPI, formatDateToUS 
 import { tncINaturalistService } from './services/tncINaturalistService';
 import { MapViewRef } from './components/MapView';
 import { DEFAULT_THEME } from './utils/themes';
+import { CATEGORY_DATA_SOURCES } from './utils/constants';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useShoppingCart } from './hooks/useShoppingCart';
 import { CartPanel } from './components/ShoppingCart/CartPanel';
@@ -66,6 +67,7 @@ function App() {
 
   const [filters, setFilters] = useState<FilterState>({
     category: '',
+    tags: [],
     source: '',
     spatialFilter: '',
     timeRange: '',
@@ -124,6 +126,7 @@ function App() {
   // This determines what data is shown in the sidebar/map
   const [lastSearchedFilters, setLastSearchedFilters] = useState<FilterState>({
     category: '',
+    tags: [],
     source: '',
     spatialFilter: '',
     timeRange: '',
@@ -1513,6 +1516,63 @@ function App() {
     }
   };
 
+  // Handle selection of a data source from the Data Catalog
+  const handleSourceSelect = (source: string, defaults?: Partial<FilterState>) => {
+    // If we are clearing filters (source === ''), just clear everything
+    if (!source) {
+      setFilters(prev => ({ 
+        ...prev, 
+        source: '', 
+        category: '', 
+        tags: [],
+        spatialFilter: '',
+        timeRange: '',
+        daysBack: undefined 
+      }));
+      setLastSearchedFilters(prev => ({ ...prev, source: '' }));
+      setHasSearched(false);
+      return;
+    }
+
+    // Find appropriate category if not set
+    let category = filters.category;
+    if (!category && source) {
+      // Iterate over CATEGORY_DATA_SOURCES to find first match
+      for (const [cat, sources] of Object.entries(CATEGORY_DATA_SOURCES)) {
+        // @ts-ignore - TypeScript doesn't like iterating object entries typed as Record
+        if (sources.includes(source)) {
+          category = cat;
+          break;
+        }
+      }
+    }
+    
+    setFilters(prev => ({ 
+      ...prev, 
+      source, 
+      category: category || prev.category,
+      ...(defaults || {}) 
+    }));
+  };
+
+  // Trigger search or reset when source changes
+  useEffect(() => {
+    if (filters.source) {
+      // If source is selected, trigger search (which sets hasSearched=true)
+      handleSearch();
+    } else {
+      // If source is cleared (Back to Catalog), reset search state
+      setHasSearched(false);
+      setLastSearchedFilters(prev => ({ ...prev, source: '' }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.source]);
+
+  // Handle back button from Data Views
+  const handleBackToCatalog = () => {
+    handleSourceSelect('');
+  };
+
   const handleObservationFilterChange = (observationFilters: Partial<FilterState>) => {
     // Merge the new filter changes into the existing filter state
     const newFilters = { ...filters, ...observationFilters };
@@ -2061,7 +2121,10 @@ function App() {
       />
       <div id="main-content" className="flex-1 flex min-h-0">
         <DataView
+          onSelectSource={handleSourceSelect}
           filters={lastSearchedFilters}
+          draftFilters={filters}
+          onBack={handleBackToCatalog}
           currentIconicTaxa={filters.iconicTaxa}
           observations={observations}
           observationsLoading={observationsLoading}

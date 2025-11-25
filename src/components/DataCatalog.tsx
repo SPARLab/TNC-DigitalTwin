@@ -1,0 +1,238 @@
+import React from 'react';
+import { 
+  Database, 
+  Bird, 
+  Flower, 
+  Camera, 
+  Layers, 
+  Activity, 
+  ScanLine,
+  ArrowRight
+} from 'lucide-react';
+import { FilterState } from '../types';
+import { CATEGORY_DATA_SOURCES } from '../utils/constants';
+
+interface DataCatalogProps {
+  filters: FilterState;
+  onSelectSource: (source: string, defaults?: Partial<FilterState>) => void;
+}
+
+interface DataTypeCardConfig {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ElementType;
+  sourceKey: string; // Matches the string used in App state/constants
+  defaults: {
+    category: string;
+    spatialFilter: string;
+    daysBack: number;
+    timeRange: string;
+  }
+}
+
+const DATA_TYPE_CARDS: DataTypeCardConfig[] = [
+  {
+    id: 'tnc-arcgis',
+    title: 'Map Layers',
+    description: 'Curated GIS layers including boundaries, vegetation, fire history, and infrastructure.',
+    icon: Layers,
+    sourceKey: 'TNC ArcGIS Hub',
+    defaults: {
+      category: 'Ecological / Biological (Species?)',
+      spatialFilter: 'Dangermond Preserve',
+      daysBack: 365,
+      timeRange: 'Last year'
+    }
+  },
+  {
+    id: 'inaturalist',
+    title: 'Wildlife Observations',
+    description: 'Community-contributed observations of biodiversity from iNaturalist.',
+    icon: Database, 
+    sourceKey: 'iNaturalist (Public API)',
+    defaults: {
+      category: 'Ecological / Biological (Species?)',
+      spatialFilter: 'Dangermond Preserve',
+      daysBack: 365,
+      timeRange: 'Last year'
+    }
+  },
+  {
+    id: 'ebird',
+    title: 'Bird Sightings',
+    description: 'Checklists and observations of bird species from the eBird database.',
+    icon: Bird,
+    sourceKey: 'eBird',
+    defaults: {
+      category: 'Ecological / Biological (Species?)',
+      spatialFilter: 'Dangermond Preserve',
+      daysBack: 365,
+      timeRange: 'Last year'
+    }
+  },
+  {
+    id: 'calflora',
+    title: 'Plants',
+    description: 'Distribution data of wild California plants from CalFlora.',
+    icon: Flower,
+    sourceKey: 'CalFlora',
+    defaults: {
+      category: 'Vegetation / habitat',
+      spatialFilter: 'Dangermond Preserve',
+      daysBack: 365,
+      timeRange: 'Last year'
+    }
+  },
+  {
+    id: 'animl',
+    title: 'Camera Traps',
+    description: 'Motion-triggered images from wildlife camera traps across the preserve.',
+    icon: Camera,
+    sourceKey: 'Animl',
+    defaults: {
+      category: 'Real-time & Remote Sensing',
+      spatialFilter: 'Dangermond Preserve',
+      daysBack: 365,
+      timeRange: 'Last year'
+    }
+  },
+  {
+    id: 'dendra',
+    title: 'Remote Sensors',
+    description: 'Real-time environmental monitoring data from weather stations and soil sensors.',
+    icon: Activity,
+    sourceKey: 'Dendra Stations',
+    defaults: {
+      category: 'Real-time & Remote Sensing',
+      spatialFilter: 'Dangermond Preserve',
+      daysBack: 365,
+      timeRange: 'Last year'
+    }
+  },
+  {
+    id: 'lidar',
+    title: 'LiDAR Imagery',
+    description: 'High-resolution elevation and terrain models derived from aerial laser scanning.',
+    icon: ScanLine,
+    sourceKey: 'LiDAR',
+    defaults: {
+      category: 'Land use and land (geography?)',
+      spatialFilter: 'Dangermond Preserve',
+      daysBack: 365, // Not really relevant for LiDAR but needed for type consistency
+      timeRange: 'All time'
+    }
+  }
+];
+
+const DataCatalog: React.FC<DataCatalogProps> = ({ filters, onSelectSource }) => {
+  
+  const isSourceCompatible = (sourceKey: string) => {
+    if (!filters.category) return true; // All sources compatible if no category selected
+    
+    const compatibleSources = CATEGORY_DATA_SOURCES[filters.category as keyof typeof CATEGORY_DATA_SOURCES] || [];
+    
+    // Handle special mappings if necessary (e.g. iNaturalist (Public API) vs iNaturalist)
+    // The constants use specific strings, we should match them.
+    return compatibleSources.includes(sourceKey) || 
+           (sourceKey === 'iNaturalist (Public API)' && compatibleSources.includes('iNaturalist'));
+  };
+
+  // Sort cards: Compatible first, then incompatible
+  const sortedCards = [...DATA_TYPE_CARDS].sort((a, b) => {
+    const aCompatible = isSourceCompatible(a.sourceKey);
+    const bCompatible = isSourceCompatible(b.sourceKey);
+    if (aCompatible === bCompatible) return 0;
+    return aCompatible ? -1 : 1;
+  });
+
+  const handleCardClick = (card: DataTypeCardConfig) => {
+    // If we already have a category selected, we keep it (unless it conflicts? we rely on disabled state for that)
+    // If no category is selected, we use the default for this card
+    const defaults = !filters.category ? card.defaults : undefined;
+    
+    // Also if time range is missing, we might want to inject it
+    const timeDefaults = !filters.timeRange ? { 
+      daysBack: card.defaults.daysBack, 
+      timeRange: card.defaults.timeRange 
+    } : {};
+
+    // Also spatial filter
+    const spatialDefaults = !filters.spatialFilter ? {
+      spatialFilter: card.defaults.spatialFilter
+    } : {};
+
+    const mergedDefaults = {
+      ...(defaults || {}),
+      ...timeDefaults,
+      ...spatialDefaults
+    };
+
+    onSelectSource(card.sourceKey, mergedDefaults);
+  };
+
+  return (
+    <div className="p-4 space-y-4 bg-gray-50 h-full overflow-y-auto">
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold text-gray-900">Data Catalog</h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Select a data type to explore, or use the filters above to narrow down available data.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4">
+        {sortedCards.map((card) => {
+          const compatible = isSourceCompatible(card.sourceKey);
+          
+          return (
+            <button
+              key={card.id}
+              onClick={() => handleCardClick(card)}
+              disabled={!compatible}
+              className={`relative flex items-start p-4 rounded-lg border text-left transition-all duration-200 group ${
+                compatible 
+                  ? 'bg-white border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer' 
+                  : 'bg-gray-100 border-gray-200 opacity-60 cursor-not-allowed grayscale'
+              }`}
+            >
+              <div className={`p-2 rounded-md mr-4 flex-shrink-0 ${
+                compatible ? 'bg-blue-50 text-blue-600 group-hover:bg-blue-100' : 'bg-gray-200 text-gray-400'
+              }`}>
+                <card.icon className="w-6 h-6" />
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <h3 className={`text-base font-medium mb-1 ${
+                  compatible ? 'text-gray-900 group-hover:text-blue-700' : 'text-gray-500'
+                }`}>
+                  {card.title}
+                </h3>
+                <p className="text-sm text-gray-500 line-clamp-2">
+                  {card.description}
+                </p>
+              </div>
+
+              {compatible && (
+                <ArrowRight className="w-5 h-5 text-gray-300 absolute right-4 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+      
+      {filters.category && sortedCards.every(c => !isSourceCompatible(c.sourceKey)) && (
+        <div className="text-center p-8 text-gray-500">
+          <p>No data sources found for the selected category.</p>
+          <button 
+            className="mt-2 text-blue-600 hover:underline"
+            onClick={() => onSelectSource('', {})} // Clear filters
+          >
+            Clear filters
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default DataCatalog;

@@ -1,4 +1,5 @@
 import React from 'react';
+import { ArrowLeft } from 'lucide-react';
 import { EBirdObservation } from '../../services/eBirdService';
 import LoadingSpinner from '../LoadingSpinner';
 
@@ -11,6 +12,7 @@ interface WildlifeEBirdViewProps {
   onExportCSV?: () => void;
   onExportGeoJSON?: () => void;
   hasSearched?: boolean;
+  onBack?: () => void;
 }
 
 const WildlifeEBirdView: React.FC<WildlifeEBirdViewProps> = ({
@@ -21,7 +23,8 @@ const WildlifeEBirdView: React.FC<WildlifeEBirdViewProps> = ({
   endDate,
   onExportCSV,
   onExportGeoJSON,
-  hasSearched = false
+  hasSearched = false,
+  onBack
 }) => {
   // Group observations by species
   const speciesGroups = React.useMemo(() => {
@@ -70,7 +73,18 @@ const WildlifeEBirdView: React.FC<WildlifeEBirdViewProps> = ({
       {/* Header */}
       <div id="ebird-view-header" className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-semibold text-gray-900">eBird</h2>
+          <div className="flex items-center gap-2">
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
+                title="Back to Data Catalog"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+            )}
+            <h2 className="text-lg font-semibold text-gray-900">eBird</h2>
+          </div>
           {loading && (
             <div className="flex items-center space-x-2">
               <LoadingSpinner size="sm" />

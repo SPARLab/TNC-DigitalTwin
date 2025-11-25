@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Calendar, User, ExternalLink, MapPin, Info } from 'lucide-react';
+import { Calendar, User, ExternalLink, MapPin, Info, ArrowLeft } from 'lucide-react';
 import ThumbnailImage from './ThumbnailImage';
 
 // Define a unified observation interface
@@ -29,6 +29,7 @@ interface INaturalistSidebarProps {
   selectedObservationId?: number | string | null;
   iconicTaxa?: string[]; // Filter by taxonomic groups
   onIconicTaxaChange?: (taxa: string[]) => void; // Callback to change filter
+  onBack?: () => void;
 }
 
 const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
@@ -41,7 +42,8 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
   hasSearched = false,
   selectedObservationId,
   iconicTaxa = [],
-  onIconicTaxaChange
+  onIconicTaxaChange,
+  onBack
 }) => {
   const [searchText, setSearchText] = useState('');
   const [selectedTaxonFilter, _setSelectedTaxonFilter] = useState('all');
@@ -444,7 +446,16 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
     <div id="inaturalist-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col">
       {/* Header */}
       <div id="inaturalist-sidebar-header" className="p-4 border-b border-gray-200">
-        <div className="mb-2">
+        <div className="mb-2 flex items-center gap-2">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
+              title="Back to Data Catalog"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
           <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
         </div>
         

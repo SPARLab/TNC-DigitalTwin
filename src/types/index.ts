@@ -10,6 +10,7 @@ export interface Dataset {
 
 export interface FilterState {
   category: string;
+  tags: string[]; // New tags filter
   source: string;
   spatialFilter: string;
   timeRange: string;

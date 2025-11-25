@@ -19,9 +19,12 @@ import WildlifeAnimlView from './dataviews/WildlifeAnimlView';
 import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag, AnimlCountLookups } from '../services/animlService';
 import { AnimlViewMode } from './AnimlSidebar';
 import { AnimlCustomFilters } from '../types';
+import DataCatalog from './DataCatalog';
 
 interface DataViewProps {
   filters: FilterState;
+  draftFilters?: FilterState;
+  onSelectSource?: (source: string) => void;
   // Current iconicTaxa (from filters state, not lastSearchedFilters)
   currentIconicTaxa?: string[];
   // iNaturalist Public API data
@@ -69,6 +72,7 @@ interface DataViewProps {
   startDate?: string;
   endDate?: string;
   hasSearched?: boolean;
+  onBack?: () => void; // Back button callback for all views
   // Dendra Stations data
   dendraStations?: DendraStation[];
   dendraDatastreams?: DendraDatastream[];
@@ -118,6 +122,8 @@ interface DataViewProps {
 
 const DataView: React.FC<DataViewProps> = ({
   filters,
+  draftFilters,
+  onSelectSource,
   currentIconicTaxa,
   observations,
   observationsLoading,
@@ -155,6 +161,7 @@ const DataView: React.FC<DataViewProps> = ({
   startDate,
   endDate,
   hasSearched = false,
+  onBack,
   dendraStations = [],
   dendraDatastreams = [],
   dendraLoading: _dendraLoading = false,
@@ -200,19 +207,15 @@ const DataView: React.FC<DataViewProps> = ({
 }) => {
   // Route to appropriate data view based on category + source combination
   const getDataView = () => {
-    // Show blank state if no filters selected OR before first search
-    if (!hasSearched || !filters.category || !filters.source) {
+    // Show Data Catalog if no source selected (Home View)
+    // Use draftFilters if available to show grayed-out states correctly based on subheader interactions
+    if (!filters.source) {
       return (
-        <div id="no-search-blank-state" className="w-96 bg-white border-r border-gray-200 flex items-center justify-center">
-          <div id="blank-state-content" className="text-center p-8">
-            <svg className="mx-auto w-16 h-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Ready to Search</h3>
-            <p className="text-sm text-gray-600 max-w-sm">
-              Select your data category, source, spatial filter, and time range above, then click the search button to view results.
-            </p>
-          </div>
+        <div className="w-96 bg-white border-r border-gray-200 flex flex-col h-full shadow-xl z-10">
+           <DataCatalog 
+             filters={draftFilters || filters} 
+             onSelectSource={onSelectSource!} 
+           />
         </div>
       );
     }
@@ -237,6 +240,7 @@ const DataView: React.FC<DataViewProps> = ({
             selectedObservationId={selectedINatObservation?.id}
             iconicTaxa={currentIconicTaxa ?? filters.iconicTaxa}
             onIconicTaxaChange={onIconicTaxaChange}
+            onBack={onBack}
           />
         );
 
@@ -259,6 +263,7 @@ const DataView: React.FC<DataViewProps> = ({
             selectedObservationId={selectedINatObservation?.id}
             iconicTaxa={currentIconicTaxa ?? filters.iconicTaxa}
             onIconicTaxaChange={onIconicTaxaChange}
+            onBack={onBack}
           />
         );
         
@@ -274,6 +279,7 @@ const DataView: React.FC<DataViewProps> = ({
             onExportCSV={onEBirdExportCSV}
             onExportGeoJSON={onEBirdExportGeoJSON}
             hasSearched={hasSearched}
+            onBack={onBack}
           />
         );
         
@@ -287,6 +293,7 @@ const DataView: React.FC<DataViewProps> = ({
             onExportGeoJSON={onCalFloraExportGeoJSON}
             onPlantSelect={onCalFloraPlantSelect}
             hasSearched={hasSearched}
+            onBack={onBack}
           />
         );
 
@@ -315,6 +322,7 @@ const DataView: React.FC<DataViewProps> = ({
             onModalOpen={onModalOpen}
             onModalClose={onModalClose}
             hasSearched={hasSearched}
+            onBack={onBack}
           />
         );
 
@@ -324,6 +332,7 @@ const DataView: React.FC<DataViewProps> = ({
           <LiDARView
             hasSearched={hasSearched}
             onModeChange={onLiDARModeChange}
+            onBack={onBack}
           />
         );
       
@@ -338,6 +347,7 @@ const DataView: React.FC<DataViewProps> = ({
             selectedStationId={selectedDendraStationId || null}
             selectedDatastreamId={selectedDendraDatastreamId || null}
             onShowDendraWebsite={onShowDendraWebsite}
+            onBack={onBack}
           />
         );
       
@@ -377,6 +387,7 @@ const DataView: React.FC<DataViewProps> = ({
             selectedAnimalTag={selectedAnimlAnimalTag}
             selectedObservation={selectedAnimlObservation}
             countLookups={animlCountLookups}
+            onBack={onBack}
           />
         );
         
