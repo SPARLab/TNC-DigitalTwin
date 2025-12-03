@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Database, 
+  PawPrint, 
   Bird, 
   Flower, 
   Camera, 
@@ -51,7 +51,7 @@ const DATA_TYPE_CARDS: DataTypeCardConfig[] = [
     id: 'inaturalist',
     title: 'Wildlife Observations',
     description: 'Community-contributed observations of biodiversity from iNaturalist.',
-    icon: Database, 
+    icon: PawPrint, 
     sourceKey: 'iNaturalist (Public API)',
     sourceBadge: 'iNaturalist',
     defaults: {
