@@ -38,6 +38,7 @@ export const CartItemCard: React.FC<CartItemCardProps> = ({ item, onRemove }) =>
           onClick={onRemove}
           className="p-1 hover:bg-red-100 rounded transition-colors"
           aria-label="Remove from cart"
+          title="Remove from cart"
         >
           <Trash2 className="w-4 h-4 text-red-600" />
         </button>

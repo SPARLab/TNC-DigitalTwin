@@ -21,7 +21,7 @@ import { animlService, AnimlDeployment, AnimlImageLabel } from '../services/anim
 import type { DendraStation } from '../types';
 import LayerLegend from './LayerLegend';
 import { MapLegend } from './MapLegend';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Map as MapIcon, Satellite } from 'lucide-react';
 import { buildPublicAPIPopupContent, buildTNCPopupContent } from './MapView/utils/popupBuilders';
 import { 
   getObservationIcon, 
@@ -2245,11 +2245,13 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           id="basemap-toggle-btn"
           onClick={() => setCurrentBasemap(prev => prev === 'hybrid' ? 'topo-vector' : 'hybrid')}
           className="w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors"
-          title={`Switch to ${currentBasemap === 'hybrid' ? 'Topo' : 'Satellite'} Map`}
+          title={`Switch to ${currentBasemap === 'hybrid' ? 'Topo' : 'Satellite'} view`}
         >
-          <span className="text-gray-600 text-xs font-medium">
-            {currentBasemap === 'hybrid' ? '🗺️' : '🛰️'}
-          </span>
+          {currentBasemap === 'hybrid' ? (
+            <MapIcon className="w-5 h-5 text-gray-600" />
+          ) : (
+            <Satellite className="w-5 h-5 text-gray-600" />
+          )}
         </button>
       </div>
 

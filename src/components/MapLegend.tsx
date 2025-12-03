@@ -41,6 +41,7 @@ export const MapLegend: React.FC<MapLegendProps> = ({
             onClick={() => setIsExpanded(!isExpanded)}
             className="p-0.5 hover:bg-gray-200 rounded transition-colors"
             aria-label={isExpanded ? "Collapse legend" : "Expand legend"}
+            title={isExpanded ? "Collapse legend" : "Expand legend"}
           >
             {isExpanded ? (
               <ChevronDown className="w-4 h-4 text-gray-600" />

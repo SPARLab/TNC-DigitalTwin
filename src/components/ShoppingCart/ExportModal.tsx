@@ -231,6 +231,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             onClick={onClose}
             className="p-1 hover:bg-gray-100 rounded transition-colors"
             aria-label="Close export modal"
+            title="Close"
           >
             <X className="w-5 h-5" />
           </button>

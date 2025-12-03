@@ -675,6 +675,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
                 onClick={onClose}
                 className="p-2 hover:bg-gray-200 rounded-full transition-colors ml-2 flex-shrink-0"
                 aria-label="Close details"
+                title="Close details"
               >
                 <X className="w-5 h-5 text-gray-600" />
               </button>
@@ -841,6 +842,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
                   onClick={onClose}
                   className="p-2 hover:bg-gray-200 rounded-full transition-colors ml-2 flex-shrink-0"
                   aria-label="Close details"
+                  title="Close details"
                 >
                   <X className="w-5 h-5 text-gray-600" />
                 </button>
@@ -914,6 +916,7 @@ const AnimlDetailsSidebar: React.FC<AnimlDetailsSidebarProps> = ({
                   onClick={onClose}
                   className="p-2 hover:bg-gray-200 rounded-full transition-colors ml-2 flex-shrink-0"
                   aria-label="Close details"
+                  title="Close details"
                 >
                   <X className="w-5 h-5 text-gray-600" />
                 </button>
