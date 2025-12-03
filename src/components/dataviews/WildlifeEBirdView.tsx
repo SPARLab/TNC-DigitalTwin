@@ -1,7 +1,7 @@
 import React from 'react';
-import { ArrowLeft } from 'lucide-react';
 import { EBirdObservation } from '../../services/eBirdService';
 import LoadingSpinner from '../LoadingSpinner';
+import DataTypeBackHeader from '../DataTypeBackHeader';
 
 interface WildlifeEBirdViewProps {
   observations: EBirdObservation[];
@@ -70,21 +70,13 @@ const WildlifeEBirdView: React.FC<WildlifeEBirdViewProps> = ({
 
   return (
     <div id="ebird-wildlife-view" className="w-96 bg-white border-r border-gray-200 flex flex-col">
+      {/* Back to Data Types - distinct header bar */}
+      {onBack && <DataTypeBackHeader onBack={onBack} />}
+      
       {/* Header */}
       <div id="ebird-view-header" className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            {onBack && (
-              <button
-                onClick={onBack}
-                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
-                title="Back to Data Catalog"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-            )}
-            <h2 className="text-lg font-semibold text-gray-900">eBird</h2>
-          </div>
+          <h2 className="text-lg font-semibold text-gray-900">eBird</h2>
           {loading && (
             <div className="flex items-center space-x-2">
               <LoadingSpinner size="sm" />

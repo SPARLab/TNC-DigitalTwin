@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronDown, ChevronRight, Leaf, AlertTriangle, MapPin, Calendar, ShoppingCart, ArrowLeft } from 'lucide-react';
+import { ChevronDown, ChevronRight, Leaf, AlertTriangle, MapPin, Calendar, ShoppingCart } from 'lucide-react';
 import { CalFloraPlant } from '../services/calFloraService';
+import DataTypeBackHeader from './DataTypeBackHeader';
 import { CalFloraGroup } from '../types';
 
 interface CalFloraSidebarProps {
@@ -158,24 +159,16 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
 
   return (
     <div id="calflora-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col">
+      {/* Back to Data Types - distinct header bar */}
+      {onBack && <DataTypeBackHeader onBack={onBack} />}
+      
       {/* Header */}
       <div id="calflora-header" className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            {onBack && (
-              <button
-                onClick={onBack}
-                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
-                title="Back to Data Catalog"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-            )}
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <Leaf className="w-5 h-5 text-green-600" />
-              CalFlora Plants
-            </h2>
-          </div>
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <Leaf className="w-5 h-5 text-green-600" />
+            CalFlora Plants
+          </h2>
           <div className="flex gap-1">
             <button
               id="recent-view-btn"

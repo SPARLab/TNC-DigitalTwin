@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Calendar, User, ExternalLink, MapPin, Info, ArrowLeft } from 'lucide-react';
+import { Calendar, User, ExternalLink, MapPin, Info } from 'lucide-react';
 import ThumbnailImage from './ThumbnailImage';
+import DataTypeBackHeader from './DataTypeBackHeader';
 
 // Define a unified observation interface
 export interface INaturalistUnifiedObservation {
@@ -438,20 +439,12 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
 
   return (
     <div id="inaturalist-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col">
+      {/* Back to Data Types - distinct header bar */}
+      {onBack && <DataTypeBackHeader onBack={onBack} />}
+      
       {/* Header */}
       <div id="inaturalist-sidebar-header" className="p-4 border-b border-gray-200">
-        <div className="mb-2 flex items-center gap-2">
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
-              title="Back to Data Catalog"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-          )}
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-        </div>
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">{title}</h2>
         
         <div className="text-sm text-gray-600 mb-3">
           {observations.length} observations {dateRangeText}

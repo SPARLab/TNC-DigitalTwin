@@ -6,9 +6,9 @@ import {
   Camera, 
   Layers, 
   Activity, 
-  ScanLine,
   ArrowRight
 } from 'lucide-react';
+import LidarIcon from './icons/LidarIcon';
 import { FilterState } from '../types';
 import { CATEGORY_DATA_SOURCES } from '../utils/constants';
 
@@ -121,7 +121,7 @@ const DATA_TYPE_CARDS: DataTypeCardConfig[] = [
     id: 'lidar',
     title: 'LiDAR Imagery',
     description: 'High-resolution elevation and terrain models derived from aerial laser scanning.',
-    icon: ScanLine,
+    icon: LidarIcon,
     sourceKey: 'LiDAR',
     sourceBadge: 'LiDAR',
     defaults: {

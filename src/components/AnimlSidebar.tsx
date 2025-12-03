@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Calendar, Camera, Tag, Info, ArrowLeft } from 'lucide-react';
+import { Calendar, Camera, Tag, Info } from 'lucide-react';
 import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag, AnimlCountLookups } from '../services/animlService';
 import ThumbnailImage from './ThumbnailImage';
+import DataTypeBackHeader from './DataTypeBackHeader';
 
 export type AnimlViewMode = 'camera-centric' | 'animal-centric';
 
@@ -515,20 +516,12 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
 
   return (
     <div ref={sidebarRef} id="animl-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col focus:outline-none" tabIndex={0}>
+      {/* Back to Data Types - distinct header bar */}
+      {onBack && <DataTypeBackHeader onBack={onBack} />}
+      
       {/* Header */}
       <div id="animl-sidebar-header" className="p-4 border-b border-gray-200">
-        <div className="flex items-center gap-2 mb-3">
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
-              title="Back to Data Catalog"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-          )}
-          <h2 id="animl-sidebar-title" className="text-lg font-semibold text-gray-900">Animl Camera Traps</h2>
-        </div>
+        <h2 id="animl-sidebar-title" className="text-lg font-semibold text-gray-900 mb-3">Animl Camera Traps</h2>
         
         {/* View Mode Toggle */}
         <div id="animl-view-mode-toggle" className="mb-3 flex gap-2">

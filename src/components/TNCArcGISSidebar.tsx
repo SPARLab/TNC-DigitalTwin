@@ -13,10 +13,10 @@ import {
   Calendar,
   User,
   X,
-  Loader2,
-  ArrowLeft
+  Loader2
 } from 'lucide-react';
 import { TNCArcGISItem } from '../services/tncArcGISService';
+import DataTypeBackHeader from './DataTypeBackHeader';
 
 interface TNCArcGISSidebarProps {
   items: TNCArcGISItem[];
@@ -488,21 +488,13 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
 
   return (
     <div id="tnc-arcgis-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col h-full">
+      {/* Back to Data Types - distinct header bar */}
+      {onBack && <DataTypeBackHeader onBack={onBack} />}
+      
       {/* Header */}
       <div id="tnc-header" className="p-4 border-b border-gray-200">
         <div id="tnc-header-top" className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            {onBack && (
-              <button
-                onClick={onBack}
-                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
-                title="Back to Data Catalog"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-            )}
-            <h2 id="tnc-catalog-title" className="text-lg font-semibold text-gray-900">TNC Data Catalog</h2>
-          </div>
+          <h2 id="tnc-catalog-title" className="text-lg font-semibold text-gray-900">TNC Data Catalog</h2>
           <div id="tnc-header-controls" className="flex items-center gap-2">
             <button
               id="tnc-toggle-filters-button"
