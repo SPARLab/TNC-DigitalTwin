@@ -398,9 +398,10 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     currentObservations.forEach(obs => {
       if (obs.geojson && obs.geojson.coordinates) {
         const iconicTaxon = obs.taxon?.iconic_taxon_name || 'unknown';
+        const normalizedTaxon = iconicTaxon.toLowerCase(); // Normalize for comparison
         
         // Skip if this category is hidden (but show all if none are set yet)
-        if (visibleObservationCategories.size > 0 && !visibleObservationCategories.has(iconicTaxon)) {
+        if (visibleObservationCategories.size > 0 && !visibleObservationCategories.has(normalizedTaxon)) {
           return;
         }
 
@@ -1249,7 +1250,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           // Filter TNC observations based on visible categories (show all if none set yet)
           const filteredTNCObservations = tncObservations.filter(obs => {
             const iconicTaxon = normalizeTNCCategoryToIconicTaxon(obs.taxon_category_name);
-            return visibleObservationCategories.size === 0 || visibleObservationCategories.has(iconicTaxon);
+            const normalizedTaxon = iconicTaxon.toLowerCase(); // Normalize for comparison
+            return visibleObservationCategories.size === 0 || visibleObservationCategories.has(normalizedTaxon);
           });
           
           // Add filtered TNC observations to map
@@ -1312,29 +1314,33 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   }, [view, tncObservations, visibleObservationCategories]);
 
   // Sync visibleObservationCategories with iconicTaxa filter from App.tsx
-  // This is the single source of truth - INaturalistSidebar handles initialization
+  // Empty array [] means "show all" - this is the canonical representation
   useEffect(() => {
+    console.log('🗺️ MapView useEffect: iconicTaxa sync triggered', {
+      iconicTaxa,
+      iconicTaxaLength: iconicTaxa?.length,
+      currentObservationsCount: currentObservations.length,
+      tncObservationsCount: tncObservations.length
+    });
+    
     if (iconicTaxa && iconicTaxa.length > 0) {
-      // Convert to lowercase for consistent matching
+      // Specific taxa selected - convert to lowercase for consistent matching
       const normalizedTaxa = new Set(iconicTaxa.map(t => t.toLowerCase()));
+      console.log('  → Setting specific taxa:', Array.from(normalizedTaxa));
       setVisibleObservationCategories(normalizedTaxa);
-    } else if (iconicTaxa && iconicTaxa.length === 0) {
-      // If iconicTaxa is explicitly empty, clear all categories
-      setVisibleObservationCategories(new Set());
     } else {
-      // If iconicTaxa is undefined, initialize with all available categories
+      // Empty array [] or undefined means "show all available categories"
       const allCategories = new Set<string>();
       currentObservations.forEach(obs => {
         const iconicTaxon = obs.taxon?.iconic_taxon_name || 'unknown';
-        allCategories.add(iconicTaxon);
+        allCategories.add(iconicTaxon.toLowerCase());
       });
       tncObservations.forEach(obs => {
         const iconicTaxon = normalizeTNCCategoryToIconicTaxon(obs.taxon_category_name);
-        allCategories.add(iconicTaxon);
+        allCategories.add(iconicTaxon.toLowerCase());
       });
-      if (allCategories.size > 0) {
-        setVisibleObservationCategories(allCategories);
-      }
+      console.log('  → Setting ALL categories (empty array = show all):', Array.from(allCategories));
+      setVisibleObservationCategories(allCategories);
     }
   }, [iconicTaxa, currentObservations, tncObservations]);
 
@@ -1940,6 +1946,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   const handleFullscreen = () => enterFullscreen(view);
 
   // Build legend categories from current observations (both regular and TNC)
+  // Keys are normalized to lowercase for consistent matching with visibleObservationCategories
   const legendCategories = useMemo(() => {
     // Use plain object instead of Map to avoid conflict with ArcGIS Map class
     const categoryMap: Record<string, { count: number; name: string; emoji: string; group: 'fauna' | 'flora' }> = {};
@@ -1947,17 +1954,18 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     // Add regular iNaturalist observations
     currentObservations.forEach(obs => {
       const iconicTaxon = obs.taxon?.iconic_taxon_name || 'unknown';
+      const normalizedKey = iconicTaxon.toLowerCase(); // Normalize to lowercase for matching
       const iconInfo = getObservationIcon(obs);
       
-      if (categoryMap[iconicTaxon]) {
-        categoryMap[iconicTaxon].count++;
+      if (categoryMap[normalizedKey]) {
+        categoryMap[normalizedKey].count++;
       } else {
         // Determine if flora or fauna
-        const group = iconicTaxon.toLowerCase() === 'plantae' || iconicTaxon.toLowerCase() === 'fungi' ? 'flora' : 'fauna';
-        const name = iconicTaxon === 'unknown' ? 'Unknown' : 
-                    iconicTaxon.charAt(0).toUpperCase() + iconicTaxon.slice(1);
+        const group = normalizedKey === 'plantae' || normalizedKey === 'fungi' ? 'flora' : 'fauna';
+        const name = normalizedKey === 'unknown' ? 'Unknown' : 
+                    normalizedKey.charAt(0).toUpperCase() + normalizedKey.slice(1);
         
-        categoryMap[iconicTaxon] = {
+        categoryMap[normalizedKey] = {
           count: 1,
           name: name,
           emoji: iconInfo.emoji,
@@ -1969,17 +1977,18 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     // Add TNC iNaturalist observations (normalized to same iconic taxon names)
     tncObservations.forEach(obs => {
       const iconicTaxon = normalizeTNCCategoryToIconicTaxon(obs.taxon_category_name);
+      const normalizedKey = iconicTaxon.toLowerCase(); // Normalize to lowercase for matching
       const emoji = getTNCObservationEmoji(obs.taxon_category_name);
       
-      if (categoryMap[iconicTaxon]) {
-        categoryMap[iconicTaxon].count++;
+      if (categoryMap[normalizedKey]) {
+        categoryMap[normalizedKey].count++;
       } else {
         // Determine if flora or fauna
-        const group = iconicTaxon.toLowerCase() === 'plantae' || iconicTaxon.toLowerCase() === 'fungi' ? 'flora' : 'fauna';
-        const name = iconicTaxon === 'unknown' ? 'Unknown' : 
-                    iconicTaxon.charAt(0).toUpperCase() + iconicTaxon.slice(1);
+        const group = normalizedKey === 'plantae' || normalizedKey === 'fungi' ? 'flora' : 'fauna';
+        const name = normalizedKey === 'unknown' ? 'Unknown' : 
+                    normalizedKey.charAt(0).toUpperCase() + normalizedKey.slice(1);
         
-        categoryMap[iconicTaxon] = {
+        categoryMap[normalizedKey] = {
           count: 1,
           name: name,
           emoji: emoji,
@@ -1990,7 +1999,7 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     
     return Object.entries(categoryMap)
       .map(([key, data]) => ({
-        key,
+        key, // Now lowercase
         name: data.name,
         emoji: data.emoji,
         count: data.count,
@@ -2048,23 +2057,21 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   };
 
   const handleToggleAllCategories = (visible: boolean) => {
+    console.log('🗺️ MapView handleToggleAllCategories:', { visible });
     if (visible) {
-      const allCategories = new Set(legendCategories.map(cat => cat.key));
-      setVisibleObservationCategories(allCategories);
-      
-      // Sync with parent filter state
+      // Show all - use empty array as canonical "show all" state
+      // The useEffect will then populate visibleObservationCategories with all available taxa
       if (onIconicTaxaChange) {
-        const capitalizedTaxa = Array.from(allCategories).map(key => 
-          key.charAt(0).toUpperCase() + key.slice(1)
-        );
-        onIconicTaxaChange(capitalizedTaxa);
+        console.log('  → Setting iconicTaxa to [] (show all)');
+        onIconicTaxaChange([]);
       }
     } else {
+      // Hide all - not currently used by the UI, but keeping for completeness
+      // Note: with the new pattern, we'd need a different signal for "hide all"
+      // For now, setting to a non-existent taxon as a workaround
       setVisibleObservationCategories(new Set());
-      
-      // Sync with parent filter state
       if (onIconicTaxaChange) {
-        onIconicTaxaChange([]);
+        onIconicTaxaChange(['__NONE__']); // Special marker for "hide all"
       }
     }
   };

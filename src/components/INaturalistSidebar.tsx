@@ -271,21 +271,26 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
   };
 
   // Handler to select all taxa
+  // Setting iconicTaxa to empty array [] is the canonical "show all" state
   const handleSelectAllTaxa = () => {
-    if (!onIconicTaxaChange) return;
+    console.log('📋 INaturalistSidebar handleSelectAllTaxa called');
+    console.log('  - Current iconicTaxa:', iconicTaxa);
+    console.log('  - Available groups:', groupedObservations.map(g => g.category));
+    if (!onIconicTaxaChange) {
+      console.log('  ⚠️ onIconicTaxaChange not available!');
+      return;
+    }
     
-    // Select all available groups (only taxa that exist in current observations)
-    const availableGroups = groupedObservations.map(g => g.category.toLowerCase());
-    const allTaxa = availableGroups.map(t => 
-      t.charAt(0).toUpperCase() + t.slice(1)
-    );
-    
-    onIconicTaxaChange(allTaxa);
+    // Empty array means "no filter" = show all available taxa
+    // This avoids case sensitivity and naming mismatches
+    console.log('  → Setting iconicTaxa to [] (show all)');
+    onIconicTaxaChange([]);
     resetPagination();
   };
 
   // Handler to clear all taxa (actually selects all - better UX than showing nothing)
   const handleClearAllTaxa = () => {
+    console.log('📋 INaturalistSidebar handleClearAllTaxa called');
     if (!onIconicTaxaChange) return;
     handleSelectAllTaxa();
   };
@@ -324,33 +329,22 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
                                 observations.length !== prevObservationsRef.current.length ||
                                 (observations.length > 0 && prevObservationsRef.current.length === 0); // Handle initial load
     
+    console.log('🔄 INaturalistSidebar useEffect[observations] running:', {
+      firstObsId,
+      prevFirstObsId,
+      observationsLength: observations.length,
+      prevObservationsLength: prevObservationsRef.current.length,
+      observationsChanged,
+      willReset: onIconicTaxaChange && observations.length > 0 && observationsChanged
+    });
+    
     if (onIconicTaxaChange && observations.length > 0 && observationsChanged) {
-      // Extract unique taxa from observations, filtering out empty/null/undefined (Unknown is now included)
-      // Normalize to ensure consistent capitalization
-      const availableTaxa = Array.from(
-        new Set(
-          observations
-            .map(obs => obs.iconicTaxon)
-            .filter(taxon => taxon && taxon.trim())
-            .map(t => {
-              // Normalize to capitalized format (first letter uppercase, rest lowercase)
-              return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
-            })
-        )
-      )
-      .sort(); // Sort for consistency
-      
-      // Always reset to all available taxa when observations change
-      // This ensures we start with all taxa selected on new searches
-      if (availableTaxa.length > 0) {
-        console.log('🔄 INaturalistSidebar useEffect: Observations changed, setting all available taxa');
-        console.log('  - Available taxa found:', availableTaxa);
-        console.log('  - Current iconicTaxa (will be replaced):', iconicTaxa);
-        console.log('  - Total observations:', observations.length);
-        onIconicTaxaChange(availableTaxa);
-      } else {
-        console.warn('⚠️ INaturalistSidebar useEffect: No available taxa found in observations!');
-      }
+      // Reset to empty array which means "show all available taxa"
+      // This avoids case sensitivity issues and ensures all taxa are visible on new searches
+      console.log('  ✅ Resetting iconicTaxa to [] (observations changed)');
+      onIconicTaxaChange([]);
+    } else {
+      console.log('  ⏭️ Skipping reset (observations did not change or no callback)');
     }
     
     // Update the ref AFTER processing (for next comparison)

@@ -74,8 +74,8 @@ function App() {
     daysBack: undefined,
     startDate: undefined,
     endDate: undefined,
-    // Default to all taxonomic groups (representing "no filter" - everything included)
-    iconicTaxa: ['Aves', 'Mammalia', 'Reptilia', 'Amphibia', 'Actinopterygii', 'Insecta', 'Plantae', 'Fungi']
+    // Empty array means "show all" - no filtering applied
+    iconicTaxa: []
   });
 
   // Suppress ArcGIS console errors completely
@@ -133,9 +133,10 @@ function App() {
     daysBack: undefined,
     startDate: undefined,
     endDate: undefined,
-    iconicTaxa: ['Aves', 'Mammalia', 'Reptilia', 'Amphibia', 'Actinopterygii', 'Insecta', 'Plantae', 'Fungi']
+    // Empty array means "show all" - no filtering applied
+    iconicTaxa: []
   });
-  
+
   // Track whether a search has been performed
   const [hasSearched, setHasSearched] = useState(false);
 

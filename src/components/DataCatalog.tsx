@@ -182,7 +182,7 @@ const DataCatalog: React.FC<DataCatalogProps> = ({ filters, onSelectSource }) =>
   return (
     <div className="p-4 space-y-4 bg-gray-50 h-full overflow-y-auto">
       <div className="mb-6">
-        <h2 className="text-lg font-semibold text-gray-900">Data Catalog</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Data Type</h2>
         <p className="text-sm text-gray-500 mt-1">
           Select a data type to explore, or use the filters above to narrow down available data.
         </p>
