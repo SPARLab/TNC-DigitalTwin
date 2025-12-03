@@ -104,13 +104,19 @@ export interface AnimlCountLookups {
 }
 
 class AnimlService {
-  private readonly baseUrl = 'https://dangermondpreserve-spatial.com/server/rest/services/Animl/FeatureServer';
-  private readonly deploymentsLayerId = 0; // Deployments/Camera Traps
-  private readonly imageLabelsLayerId = 1; // Image Labels/Observations
+  // NEW MapServer endpoints (Dec 2025)
+  private readonly baseUrl = 'https://dangermondpreserve-spatial.com/server/rest/services/Animl/MapServer';
+  private readonly deploymentsLayerId = 0; // twin.animl.deployment (Point layer with cameras)
   
-  // Optimized services for count queries
-  private readonly deduplicatedServiceUrl = 'https://dangermondpreserve-spatial.com/server/rest/services/Hosted/Animl_Deduplicated/FeatureServer/0';
-  private readonly flattenedServiceUrl = 'https://dangermondpreserve-spatial.com/server/rest/services/Animl/FeatureServer/1';
+  // Table IDs for image labels
+  // Layer 3: Deduplicated view - one row per image, labels_text has comma-separated labels
+  // Layer 4: Flattened view - one row per (image, label) combination
+  private readonly deduplicatedTableId = 3; // twin.animl.image_labels_deduplicated_view
+  private readonly flattenedTableId = 4;    // twin.animl.image_labels_flattened_view
+  
+  // Full URLs for convenience
+  private readonly deduplicatedServiceUrl = 'https://dangermondpreserve-spatial.com/server/rest/services/Animl/MapServer/3';
+  private readonly flattenedServiceUrl = 'https://dangermondpreserve-spatial.com/server/rest/services/Animl/MapServer/4';
 
   /**
    * Fetch with retry logic to handle flaky server responses
@@ -212,17 +218,14 @@ class AnimlService {
     try {
       let whereClause = '1=1';
 
-      // Build where clause filters (same as queryImageLabels)
+      // Build where clause filters using DATE 'YYYY-MM-DD' format
       if (startDate && endDate) {
-        const startDateObj = new Date(startDate + 'T00:00:00Z');
         const endDateObj = new Date(endDate + 'T23:59:59Z');
         const today = new Date();
         today.setHours(23, 59, 59, 999);
         
         if (endDateObj <= today) {
-          const startDateStr = startDateObj.toISOString().replace('T', ' ').substring(0, 19);
-          const endDateStr = endDateObj.toISOString().replace('T', ' ').substring(0, 19);
-          whereClause += ` AND timestamp >= DATE '${startDateStr}' AND timestamp <= DATE '${endDateStr}'`;
+          whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
         }
       }
 
@@ -245,7 +248,7 @@ class AnimlService {
         f: 'json'
       };
 
-      const queryUrl = `${this.baseUrl}/${this.imageLabelsLayerId}/query`;
+      const queryUrl = `${this.baseUrl}/${this.flattenedTableId}/query`;
       const fullUrl = `${queryUrl}?${new URLSearchParams(params as any)}`;
       
       const response = await fetch(fullUrl);
@@ -281,21 +284,21 @@ class AnimlService {
   ): Promise<number> {
     let whereClause = `deployment_id = ${deploymentId}`;
     
-    // Add date filter using timestamp_ field (deduplicated service)
+    // Add date filter using timestamp field (deduplicated service - MapServer/3)
     if (startDate && endDate) {
       const endDateObj = new Date(endDate + 'T23:59:59Z');
       const today = new Date();
       today.setHours(23, 59, 59, 999);
       
       if (endDateObj <= today) {
-        // Use date-only format for deduplicated service (DATE 'YYYY-MM-DD')
-        whereClause += ` AND timestamp_ >= DATE '${startDate}' AND timestamp_ <= DATE '${endDate}'`;
+        // Use DATE 'YYYY-MM-DD' format for the new MapServer tables
+        whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
       }
     }
     
-    // Exclude person/people/human labels (label field contains comma-separated values)
+    // Exclude person/people/human labels (labels_text field contains comma-separated values)
     // Use NOT LIKE to exclude any labels containing 'person', 'people', or 'human'
-    whereClause += ` AND label NOT LIKE '%person%' AND label NOT LIKE '%people%' AND label NOT LIKE '%human%'`;
+    whereClause += ` AND labels_text NOT LIKE '%person%' AND labels_text NOT LIKE '%people%' AND labels_text NOT LIKE '%human%'`;
     
     const params: any = {
       where: whereClause,
@@ -336,23 +339,20 @@ class AnimlService {
   ): Promise<string[]> {
     let whereClause = `deployment_id = ${deploymentId}`;
     
-    // Add date filter using timestamp field (flattened service)
+    // Add date filter using timestamp field (flattened service - MapServer/4)
     if (startDate && endDate) {
-      const startDateObj = new Date(startDate + 'T00:00:00Z');
       const endDateObj = new Date(endDate + 'T23:59:59Z');
       const today = new Date();
       today.setHours(23, 59, 59, 999);
       
       if (endDateObj <= today) {
-        const startDateStr = startDateObj.toISOString().replace('T', ' ').substring(0, 19);
-        const endDateStr = endDateObj.toISOString().replace('T', ' ').substring(0, 19);
-        // Use full datetime format for flattened service (DATE 'YYYY-MM-DD HH:MM:SS')
-        whereClause += ` AND timestamp >= DATE '${startDateStr}' AND timestamp <= DATE '${endDateStr}'`;
+        // Use DATE 'YYYY-MM-DD' format for the new MapServer tables
+        whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
       }
     }
     
-    // Exclude person/people
-    whereClause += ` AND label NOT IN ('person', 'people')`;
+    // Exclude person/people/human
+    whereClause += ` AND label NOT IN ('person', 'people', 'human')`;
     
     const params: any = {
       where: whereClause,
@@ -398,18 +398,15 @@ class AnimlService {
   ): Promise<number> {
     let whereClause = `deployment_id = ${deploymentId} AND label = '${label.replace(/'/g, "''")}'`;
     
-    // Add date filter using timestamp field (flattened service)
+    // Add date filter using timestamp field (flattened service - MapServer/4)
     if (startDate && endDate) {
-      const startDateObj = new Date(startDate + 'T00:00:00Z');
       const endDateObj = new Date(endDate + 'T23:59:59Z');
       const today = new Date();
       today.setHours(23, 59, 59, 999);
       
       if (endDateObj <= today) {
-        const startDateStr = startDateObj.toISOString().replace('T', ' ').substring(0, 19);
-        const endDateStr = endDateObj.toISOString().replace('T', ' ').substring(0, 19);
-        // Use full datetime format for flattened service (DATE 'YYYY-MM-DD HH:MM:SS')
-        whereClause += ` AND timestamp >= DATE '${startDateStr}' AND timestamp <= DATE '${endDateStr}'`;
+        // Use DATE 'YYYY-MM-DD' format for the new MapServer tables
+        whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
       }
     }
     
@@ -777,17 +774,14 @@ class AnimlService {
     try {
       let whereClause = '1=1';
 
-      // Build where clause filters
+      // Build where clause filters using DATE 'YYYY-MM-DD' format
       if (startDate && endDate) {
-        const startDateObj = new Date(startDate + 'T00:00:00Z');
         const endDateObj = new Date(endDate + 'T23:59:59Z');
         const today = new Date();
         today.setHours(23, 59, 59, 999);
         
         if (endDateObj <= today) {
-          const startDateStr = startDateObj.toISOString().replace('T', ' ').substring(0, 19);
-          const endDateStr = endDateObj.toISOString().replace('T', ' ').substring(0, 19);
-          whereClause += ` AND timestamp >= DATE '${startDateStr}' AND timestamp <= DATE '${endDateStr}'`;
+          whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
         }
       }
 
@@ -806,7 +800,7 @@ class AnimlService {
         }
       ]);
 
-      const queryUrl = `${this.baseUrl}/${this.imageLabelsLayerId}/query`;
+      const queryUrl = `${this.baseUrl}/${this.flattenedTableId}/query`;
       const params = new URLSearchParams({
         where: whereClause,
         outStatistics: outStatistics,
@@ -860,15 +854,12 @@ class AnimlService {
       let whereClause = '1=1';
 
       if (startDate && endDate) {
-        const startDateObj = new Date(startDate + 'T00:00:00Z');
         const endDateObj = new Date(endDate + 'T23:59:59Z');
         const today = new Date();
         today.setHours(23, 59, 59, 999);
         
         if (endDateObj <= today) {
-          const startDateStr = startDateObj.toISOString().replace('T', ' ').substring(0, 19);
-          const endDateStr = endDateObj.toISOString().replace('T', ' ').substring(0, 19);
-          whereClause += ` AND timestamp >= DATE '${startDateStr}' AND timestamp <= DATE '${endDateStr}'`;
+          whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
         }
       }
 
@@ -887,7 +878,7 @@ class AnimlService {
         orderByFields: 'timestamp DESC'
       };
 
-      const queryUrl = `${this.baseUrl}/${this.imageLabelsLayerId}/query`;
+      const queryUrl = `${this.baseUrl}/${this.flattenedTableId}/query`;
       const fullUrl = `${queryUrl}?${new URLSearchParams(params as any)}`;
       
       const response = await fetch(fullUrl);
@@ -933,17 +924,14 @@ class AnimlService {
     try {
       let whereClause = '1=1';
 
-      // Build where clause filters
+      // Build where clause filters using DATE 'YYYY-MM-DD' format
       if (startDate && endDate) {
-        const startDateObj = new Date(startDate + 'T00:00:00Z');
         const endDateObj = new Date(endDate + 'T23:59:59Z');
         const today = new Date();
         today.setHours(23, 59, 59, 999);
         
         if (endDateObj <= today) {
-          const startDateStr = startDateObj.toISOString().replace('T', ' ').substring(0, 19);
-          const endDateStr = endDateObj.toISOString().replace('T', ' ').substring(0, 19);
-          whereClause += ` AND timestamp >= DATE '${startDateStr}' AND timestamp <= DATE '${endDateStr}'`;
+          whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
         }
       }
 
@@ -964,7 +952,7 @@ class AnimlService {
         }
       ]);
 
-      const queryUrl = `${this.baseUrl}/${this.imageLabelsLayerId}/query`;
+      const queryUrl = `${this.baseUrl}/${this.flattenedTableId}/query`;
       const params = new URLSearchParams({
         where: whereClause,
         outStatistics: outStatistics,
@@ -1092,28 +1080,22 @@ class AnimlService {
     try {
       let whereClause = '1=1';
 
-      // Build where clause filters
+      // Build where clause filters using DATE 'YYYY-MM-DD' format (works with new MapServer tables)
       if (startDate && endDate) {
-        const startDateObj = new Date(startDate + 'T00:00:00Z');
         const endDateObj = new Date(endDate + 'T23:59:59Z');
         
         // Check if dates are in the future - if so, don't filter by date
-        // Use end of today for comparison to avoid false positives
         const today = new Date();
-        today.setHours(23, 59, 59, 999); // End of today
+        today.setHours(23, 59, 59, 999);
         
         if (endDateObj > today) {
-          console.warn(`⚠️ Animl: End date (${endDate}) is in the future (today: ${today.toISOString().split('T')[0]}), skipping date filter to show all data`);
+          console.warn(`⚠️ Animl: End date (${endDate}) is in the future, skipping date filter`);
         } else {
-          // Use ArcGIS DATE function format: DATE 'YYYY-MM-DD HH:MM:SS'
-          // This format works for count queries. For data queries, we'll filter client-side if needed.
-          const startDateStr = startDateObj.toISOString().replace('T', ' ').substring(0, 19);
-          const endDateStr = endDateObj.toISOString().replace('T', ' ').substring(0, 19);
-          whereClause += ` AND timestamp >= DATE '${startDateStr}' AND timestamp <= DATE '${endDateStr}'`;
-          console.log(`📅 Animl: Applying date filter from ${startDate} to ${endDate} (using DATE format)`);
+          whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
+          console.log(`📅 Animl: Applying date filter from ${startDate} to ${endDate}`);
         }
       } else {
-        console.warn('⚠️ Animl: No date filter applied - this may fetch a large number of records');
+        console.warn('⚠️ Animl: No date filter applied');
       }
 
       if (deploymentIds.length > 0) {
@@ -1146,7 +1128,7 @@ class AnimlService {
       const startTimestamp = startDate ? new Date(startDate + 'T00:00:00Z').getTime() : null;
       const endTimestamp = endDate ? new Date(endDate + 'T23:59:59Z').getTime() : null;
 
-      const queryUrl = `${this.baseUrl}/${this.imageLabelsLayerId}/query`;
+      const queryUrl = `${this.baseUrl}/${this.flattenedTableId}/query`;
 
       // Pagination loop - continue until no more data or maxResults is reached
       while (hasMoreData && (maxResults === undefined || allImageLabels.length < maxResults)) {
@@ -1155,7 +1137,8 @@ class AnimlService {
 
         const params: AnimlQueryOptions = {
           where: whereClause,
-          outFields: 'id,animl_image_id,deployment_id,timestamp,label,medium_url,small_url',
+          // New MapServer/4 (flattened view) includes deployment_name directly
+          outFields: 'id,animl_image_id,deployment_id,deployment_name,timestamp,label,medium_url,small_url',
           returnGeometry: false,
           f: 'json',
           resultRecordCount: currentPageSize,
@@ -1246,6 +1229,7 @@ class AnimlService {
           id: feature.attributes.id,
           animl_image_id: feature.attributes.animl_image_id,
           deployment_id: feature.attributes.deployment_id,
+          deployment_name: feature.attributes.deployment_name, // Now available directly from flattened view
           timestamp: feature.attributes.timestamp,
           label: feature.attributes.label,
           medium_url: feature.attributes.medium_url || null,
@@ -1307,8 +1291,9 @@ class AnimlService {
         }
       }
 
-      // Join with deployments to get deployment names and locations
-      console.log('🔗 Animl: Joining image labels with deployment data...');
+      // Join with deployments to get geometry (lat/lon) for map display
+      // Note: deployment_name is now available directly from the flattened view
+      console.log('🔗 Animl: Fetching deployment geometry for map display...');
       const deployments = await this.queryDeployments(options);
       const deploymentMap = new Map(deployments.map(d => [d.id, d]));
 
@@ -1316,13 +1301,14 @@ class AnimlService {
         const deployment = deploymentMap.get(label.deployment_id);
         return {
           ...label,
-          deployment_name: deployment?.name,
+          // Use deployment_name from response if available, fallback to deployment lookup
+          deployment_name: label.deployment_name || deployment?.name,
           deployment_location: deployment?.geometry?.coordinates,
           geometry: deployment?.geometry
         };
       });
 
-      console.log(`✅ Animl: Enriched ${enrichedLabels.length} image labels with deployment info`);
+      console.log(`✅ Animl: Enriched ${enrichedLabels.length} image labels with deployment geometry`);
       return enrichedLabels;
 
     } catch (error) {
