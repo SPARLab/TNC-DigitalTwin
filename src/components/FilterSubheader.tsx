@@ -31,9 +31,11 @@ interface FilterSubheaderProps {
   resultCount: number;
   isSearching?: boolean;
   theme: string;
+  /** When true, shows a yellow border animation to prompt user to set filters */
+  needsFilterHighlight?: boolean;
 }
 
-const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChange, onSearch, resultCount: _resultCount, isSearching = false, theme }) => {
+const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChange, onSearch, resultCount: _resultCount, isSearching = false, theme, needsFilterHighlight = false }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const currentTheme = THEMES[theme] || THEMES.coastal;
 
@@ -221,7 +223,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
             <button 
               id="category-filter-button"
               onClick={() => handleDropdownToggle('category')}
-              className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 min-w-[20rem]"
+              className={`flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 min-w-[20rem] ${needsFilterHighlight ? 'filter-highlight-1' : ''}`}
             >
               {filters.category ? getCategoryIcon(filters.category) : <Database className="w-4 h-4 flex-shrink-0 text-gray-400" />}
               <span id="category-filter-text" className={`text-sm truncate ${filters.category ? 'text-black' : 'text-gray-400'}`}>
@@ -259,7 +261,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
                 !filters.category || tagsOptions.length === 0
                   ? 'bg-gray-50 border-gray-200 cursor-not-allowed'
                   : 'bg-white border-gray-300 hover:bg-gray-50'
-              }`}
+              } ${needsFilterHighlight ? 'filter-highlight-2' : ''}`}
             >
               <Tag id="tags-filter-icon" className={`w-4 h-4 flex-shrink-0 ${filters.tags?.length ? 'text-blue-600' : 'text-gray-400'}`} />
               <span id="tags-filter-text" className={`text-sm truncate ${filters.tags?.length ? 'text-black' : 'text-gray-400'}`}>
@@ -307,7 +309,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
                 filters.customPolygon 
                     ? 'border-blue-500 bg-blue-50 hover:bg-gray-50' 
                     : 'border-gray-300 bg-white hover:bg-gray-50'
-              }`}
+              } ${needsFilterHighlight ? 'filter-highlight-3' : ''}`}
             >
               <MapPin id="spatial-filter-icon" className={`w-4 h-4 flex-shrink-0 ${filters.customPolygon ? 'text-blue-600' : 'text-gray-400'}`} />
               <span id="spatial-filter-text" className={`text-sm truncate ${filters.customPolygon ? 'text-blue-700 font-medium' : filters.spatialFilter ? 'text-black' : 'text-gray-400'}`}>
@@ -348,7 +350,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
               <button 
                 id="time-range-filter-button"
                 onClick={() => handleDropdownToggle('timeRange')}
-                className={`flex items-center space-x-2 px-3 py-2 border rounded-md flex-1 border-gray-300 bg-white hover:bg-gray-50`}
+                className={`flex items-center space-x-2 px-3 py-2 border rounded-md flex-1 border-gray-300 bg-white hover:bg-gray-50 ${needsFilterHighlight ? 'filter-highlight-4' : ''}`}
               >
                 <Calendar id="time-range-filter-icon" className="w-4 h-4 text-gray-400 flex-shrink-0" />
                 <span id="time-range-filter-text" className={`text-sm truncate ${filters.timeRange ? 'text-black' : 'text-gray-400'}`}>
@@ -366,7 +368,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
                   isSearching
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
                     : 'bg-blue-600 text-white hover:bg-blue-700'
-                }`}
+                } ${needsFilterHighlight ? 'filter-highlight-5' : ''}`}
                 title={
                   isSearching 
                     ? "Searching... This may take time due to API rate limits" 

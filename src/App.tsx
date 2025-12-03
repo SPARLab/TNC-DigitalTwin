@@ -78,6 +78,9 @@ function App() {
     iconicTaxa: []
   });
 
+  // Track when we auto-filled filter defaults - shows reminder animation
+  const [showFilterReminder, setShowFilterReminder] = useState(false);
+
   // Suppress ArcGIS console errors completely
   useEffect(() => {
     // Store original console methods
@@ -1029,6 +1032,14 @@ function App() {
       mapViewRef.current?.clearSearchArea();
     }
     
+    // Clear filter reminder when user manually changes spatial or time filters
+    // This indicates they've acknowledged and reviewed the filters
+    if (newFilters.spatialFilter !== filters.spatialFilter || 
+        newFilters.timeRange !== filters.timeRange ||
+        newFilters.daysBack !== filters.daysBack) {
+      setShowFilterReminder(false);
+    }
+    
     setFilters(newFilters);
     
     // If user selects "Draw Area" spatial filter, activate draw mode
@@ -1532,6 +1543,7 @@ function App() {
       }));
       setLastSearchedFilters(prev => ({ ...prev, source: '' }));
       setHasSearched(false);
+      setShowFilterReminder(false); // Clear reminder when going back to catalog
       return;
     }
 
@@ -1546,6 +1558,12 @@ function App() {
           break;
         }
       }
+    }
+    
+    // If defaults were provided, it means the user hadn't set these filters themselves
+    // Show a reminder animation to prompt them to review
+    if (defaults && Object.keys(defaults).length > 0) {
+      setShowFilterReminder(true);
     }
     
     setFilters(prev => ({ 
@@ -2119,6 +2137,7 @@ function App() {
           filters.source === 'Animl' ? animlLoading :
           observationsLoading
         }
+        needsFilterHighlight={showFilterReminder}
       />
       <div id="main-content" className="flex-1 flex min-h-0">
         <DataView

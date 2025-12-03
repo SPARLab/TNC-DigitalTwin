@@ -95,3 +95,45 @@ body {
   padding-left: 16px !important;
   padding-right: 16px !important;
 }
+
+/* Sequential yellow border highlight animation for filter buttons */
+@keyframes filter-button-blink {
+  0% {
+    box-shadow: 0 0 0 0 rgba(250, 204, 21, 0);
+  }
+  20% {
+    box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.9);
+  }
+  80% {
+    box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.9);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(250, 204, 21, 0);
+  }
+}
+
+/* Each filter button gets a single blink in sequence */
+.filter-highlight-1 {
+  animation: filter-button-blink 0.6s ease-in-out forwards;
+  animation-delay: 0s;
+}
+
+.filter-highlight-2 {
+  animation: filter-button-blink 0.6s ease-in-out forwards;
+  animation-delay: 0.6s;
+}
+
+.filter-highlight-3 {
+  animation: filter-button-blink 0.6s ease-in-out forwards;
+  animation-delay: 1.2s;
+}
+
+.filter-highlight-4 {
+  animation: filter-button-blink 0.6s ease-in-out forwards;
+  animation-delay: 1.8s;
+}
+
+.filter-highlight-5 {
+  animation: filter-button-blink 0.6s ease-in-out forwards;
+  animation-delay: 2.4s;
+}
