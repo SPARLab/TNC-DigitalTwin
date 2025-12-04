@@ -550,7 +550,8 @@ function App() {
       console.log(`📊 Total count for deployment ${deployment.id}: ${totalCount} observations`);
       
       // Fetch first 1000 observations immediately (ordered by timestamp DESC - most recent first)
-      const observations = await animlService.queryImageLabels({
+      // Using cached version for better performance
+      const observations = await animlService.queryImageLabelsCached({
         startDate,
         endDate,
         deploymentIds: [deployment.id],
@@ -611,7 +612,8 @@ function App() {
         setAnimlTotalObservationsCount(totalCount);
         
         // Fetch first 1000 observations immediately (using larger page size for efficiency)
-        const observations = await animlService.queryImageLabels({
+        // Using cached version for better performance
+        const observations = await animlService.queryImageLabelsCached({
           startDate,
           endDate,
           labels: [tag.label],
@@ -660,7 +662,8 @@ function App() {
       }
       
       // Fetch remaining observations starting from offset 1000 (will use 2000 page size internally)
-      const moreObservations = await animlService.queryImageLabels({
+      // Using cached version for better performance
+      const moreObservations = await animlService.queryImageLabelsCached({
         startDate,
         endDate,
         labels: [label],
@@ -704,7 +707,8 @@ function App() {
       }
       
       // Fetch remaining observations starting from offset 1000 (ordered by timestamp DESC - most recent first)
-      const moreObservations = await animlService.queryImageLabels({
+      // Using cached version for better performance
+      const moreObservations = await animlService.queryImageLabelsCached({
         startDate,
         endDate,
         deploymentIds: [deploymentId],
@@ -767,7 +771,8 @@ function App() {
       }
       
       // Fetch counts grouped by (deployment, label), filtered by deployment IDs from search
-      const result = await animlService.getObservationCountsGrouped({
+      // Using cached version for better performance on repeated searches
+      const result = await animlService.getObservationCountsGroupedCached({
         startDate,
         endDate,
         deploymentIds  // Only count observations from deployments in the search area
@@ -1431,8 +1436,9 @@ function App() {
       const searchAniml = async () => {
         try {
           // Fetch deployments and animal category counts (without all observations)
+          // Using cached versions for better performance on repeated searches
           const [deployments, animalTags] = await Promise.all([
-            animlService.queryDeployments({
+            animlService.queryDeploymentsCached({
               searchMode,
               customPolygon: customPolygonGeometry
             }).catch(error => {
@@ -1440,7 +1446,7 @@ function App() {
               return [];
             }),
             // Get category counts without fetching all observations
-            animlService.getAnimalCategoryCounts({
+            animlService.getAnimalCategoryCountsCached({
               startDate,
               endDate,
               searchMode,

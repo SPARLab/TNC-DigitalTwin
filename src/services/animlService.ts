@@ -1,3 +1,5 @@
+import { getCachedOrFetch, CacheTTL } from './cacheService';
+
 export interface AnimlDeployment {
   id: number;
   animl_dp_id: string;
@@ -1350,6 +1352,131 @@ class AnimlService {
         lastObservation: timestamps[timestamps.length - 1] || undefined
       };
     });
+  }
+
+  // ============================================================================
+  // CACHED VERSIONS OF KEY METHODS
+  // These wrap the main query methods with caching for improved performance
+  // ============================================================================
+
+  /**
+   * Query deployments WITH CACHING
+   * Deployments rarely change, so cache for longer
+   */
+  async queryDeploymentsCached(options: AnimlServiceQueryOptions = {}): Promise<AnimlDeployment[]> {
+    const cacheParams = {
+      searchMode: options.searchMode,
+      hasCustomPolygon: !!options.customPolygon
+    };
+
+    return getCachedOrFetch(
+      'animl-deployments',
+      cacheParams,
+      () => this.queryDeployments(options),
+      CacheTTL.VERY_LONG // 1 hour - deployments rarely change
+    );
+  }
+
+  /**
+   * Get animal category counts WITH CACHING
+   */
+  async getAnimalCategoryCountsCached(options: AnimlServiceQueryOptions = {}): Promise<AnimlAnimalTag[]> {
+    const sortedDeploymentIds = options.deploymentIds 
+      ? [...options.deploymentIds].sort((a, b) => a - b).join(',') 
+      : undefined;
+    
+    const cacheParams = {
+      startDate: options.startDate,
+      endDate: options.endDate,
+      deploymentIds: sortedDeploymentIds,
+      searchMode: options.searchMode,
+      hasCustomPolygon: !!options.customPolygon
+    };
+
+    return getCachedOrFetch(
+      'animl-category-counts',
+      cacheParams,
+      () => this.getAnimalCategoryCounts(options),
+      CacheTTL.LONG // 15 minutes
+    );
+  }
+
+  /**
+   * Get grouped observation counts WITH CACHING
+   * This is the main bottleneck (10+ seconds) so caching is critical
+   */
+  async getObservationCountsGroupedCached(options: AnimlServiceQueryOptions = {}): Promise<{ 
+    groupedCounts: AnimlGroupedCount[];
+    uniqueImageCountsByDeployment: Map<number, number>;
+  }> {
+    const { startDate, endDate, deploymentIds = [] } = options;
+    
+    const sortedDeploymentIds = deploymentIds.length > 0 
+      ? [...deploymentIds].sort((a, b) => a - b).join(',') 
+      : 'all';
+    
+    const cacheParams = {
+      startDate,
+      endDate,
+      deploymentIds: sortedDeploymentIds
+    };
+
+    // Define serializable result type for caching (Map can't be JSON serialized)
+    interface SerializableResult {
+      groupedCounts: AnimlGroupedCount[];
+      uniqueImageCountsByDeployment: [number, number][];
+    }
+
+    const result = await getCachedOrFetch<SerializableResult>(
+      'animl-grouped-counts',
+      cacheParams,
+      async () => {
+        const data = await this.getObservationCountsGrouped(options);
+        // Convert Map to array of tuples for serialization
+        return {
+          groupedCounts: data.groupedCounts,
+          uniqueImageCountsByDeployment: Array.from(data.uniqueImageCountsByDeployment.entries())
+        };
+      },
+      CacheTTL.LONG // 15 minutes
+    );
+
+    // Convert array back to Map
+    return {
+      groupedCounts: result.groupedCounts,
+      uniqueImageCountsByDeployment: new Map(result.uniqueImageCountsByDeployment)
+    };
+  }
+
+  /**
+   * Query image labels WITH CACHING
+   * Used when viewing a deployment's observations
+   */
+  async queryImageLabelsCached(options: AnimlServiceQueryOptions = {}): Promise<AnimlImageLabel[]> {
+    const sortedDeploymentIds = options.deploymentIds 
+      ? [...options.deploymentIds].sort((a, b) => a - b).join(',') 
+      : undefined;
+    const sortedLabels = options.labels 
+      ? [...options.labels].sort().join(',') 
+      : undefined;
+    
+    const cacheParams = {
+      startDate: options.startDate,
+      endDate: options.endDate,
+      deploymentIds: sortedDeploymentIds,
+      labels: sortedLabels,
+      maxResults: options.maxResults,
+      resultOffset: options.resultOffset, // Include offset for pagination
+      searchMode: options.searchMode,
+      hasCustomPolygon: !!options.customPolygon
+    };
+
+    return getCachedOrFetch(
+      'animl-image-labels',
+      cacheParams,
+      () => this.queryImageLabels(options),
+      CacheTTL.LONG // 15 minutes
+    );
   }
 }
 
