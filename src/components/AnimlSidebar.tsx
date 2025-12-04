@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Calendar, Camera, Tag, Info } from 'lucide-react';
+import { Calendar, Camera, Tag, Info, ArrowLeft } from 'lucide-react';
 import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag, AnimlCountLookups } from '../services/animlService';
 import ThumbnailImage from './ThumbnailImage';
 import DataTypeBackHeader from './DataTypeBackHeader';

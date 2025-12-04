@@ -220,13 +220,8 @@ class AnimlService {
 
       // Build where clause filters using DATE 'YYYY-MM-DD' format
       if (startDate && endDate) {
-        const endDateObj = new Date(endDate + 'T23:59:59Z');
-        const today = new Date();
-        today.setHours(23, 59, 59, 999);
-        
-        if (endDateObj <= today) {
-          whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
-        }
+        // Always apply the date filter
+        whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
       }
 
       if (deploymentIds.length > 0) {
@@ -286,14 +281,12 @@ class AnimlService {
     
     // Add date filter using timestamp field (deduplicated service - MapServer/3)
     if (startDate && endDate) {
-      const endDateObj = new Date(endDate + 'T23:59:59Z');
-      const today = new Date();
-      today.setHours(23, 59, 59, 999);
-      
-      if (endDateObj <= today) {
-        // Use DATE 'YYYY-MM-DD' format for the new MapServer tables
-        whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
-      }
+      // Always apply the date filter - no need to check if end date is in the future
+      // because the search UI should handle that
+      whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
+      console.log(`📅 Deployment ${deploymentId} date filter: ${startDate} to ${endDate}`);
+    } else {
+      console.warn(`⚠️ Deployment ${deploymentId}: No date filter applied (startDate=${startDate}, endDate=${endDate})`);
     }
     
     // Exclude person/people/human labels (labels_text field contains comma-separated values)
@@ -341,14 +334,8 @@ class AnimlService {
     
     // Add date filter using timestamp field (flattened service - MapServer/4)
     if (startDate && endDate) {
-      const endDateObj = new Date(endDate + 'T23:59:59Z');
-      const today = new Date();
-      today.setHours(23, 59, 59, 999);
-      
-      if (endDateObj <= today) {
-        // Use DATE 'YYYY-MM-DD' format for the new MapServer tables
-        whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
-      }
+      // Always apply the date filter
+      whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
     }
     
     // Exclude person/people/human
@@ -400,14 +387,8 @@ class AnimlService {
     
     // Add date filter using timestamp field (flattened service - MapServer/4)
     if (startDate && endDate) {
-      const endDateObj = new Date(endDate + 'T23:59:59Z');
-      const today = new Date();
-      today.setHours(23, 59, 59, 999);
-      
-      if (endDateObj <= today) {
-        // Use DATE 'YYYY-MM-DD' format for the new MapServer tables
-        whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
-      }
+      // Always apply the date filter
+      whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
     }
     
     // GROUP BY animl_image_id
@@ -776,13 +757,8 @@ class AnimlService {
 
       // Build where clause filters using DATE 'YYYY-MM-DD' format
       if (startDate && endDate) {
-        const endDateObj = new Date(endDate + 'T23:59:59Z');
-        const today = new Date();
-        today.setHours(23, 59, 59, 999);
-        
-        if (endDateObj <= today) {
-          whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
-        }
+        // Always apply the date filter
+        whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
       }
 
       if (deploymentIds.length > 0) {
@@ -854,13 +830,8 @@ class AnimlService {
       let whereClause = '1=1';
 
       if (startDate && endDate) {
-        const endDateObj = new Date(endDate + 'T23:59:59Z');
-        const today = new Date();
-        today.setHours(23, 59, 59, 999);
-        
-        if (endDateObj <= today) {
-          whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
-        }
+        // Always apply the date filter
+        whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
       }
 
       if (deploymentIds.length > 0) {
@@ -926,13 +897,8 @@ class AnimlService {
 
       // Build where clause filters using DATE 'YYYY-MM-DD' format
       if (startDate && endDate) {
-        const endDateObj = new Date(endDate + 'T23:59:59Z');
-        const today = new Date();
-        today.setHours(23, 59, 59, 999);
-        
-        if (endDateObj <= today) {
-          whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
-        }
+        // Always apply the date filter
+        whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
       }
 
       if (deploymentIds.length > 0) {
@@ -1082,20 +1048,11 @@ class AnimlService {
 
       // Build where clause filters using DATE 'YYYY-MM-DD' format (works with new MapServer tables)
       if (startDate && endDate) {
-        const endDateObj = new Date(endDate + 'T23:59:59Z');
-        
-        // Check if dates are in the future - if so, don't filter by date
-        const today = new Date();
-        today.setHours(23, 59, 59, 999);
-        
-        if (endDateObj > today) {
-          console.warn(`⚠️ Animl: End date (${endDate}) is in the future, skipping date filter`);
-        } else {
-          whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
-          console.log(`📅 Animl: Applying date filter from ${startDate} to ${endDate}`);
-        }
+        // Always apply the date filter
+        whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
+        console.log(`📅 Animl: Applying date filter from ${startDate} to ${endDate}`);
       } else {
-        console.warn('⚠️ Animl: No date filter applied');
+        console.warn('⚠️ Animl: No date filter applied (startDate=' + startDate + ', endDate=' + endDate + ')');
       }
 
       if (deploymentIds.length > 0) {
