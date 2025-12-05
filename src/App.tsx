@@ -207,6 +207,8 @@ function App() {
   const [animlCountLookups, setAnimlCountLookups] = useState<AnimlCountLookups | null>(null);
   const [animlCountsLoading, setAnimlCountsLoading] = useState(false);
   const [animlLoading, setAnimlLoading] = useState(false);
+  // Ref to track current Animl search ID - used to cancel stale async operations
+  const animlSearchIdRef = useRef(0);
   const [animlLoadingObservations, setAnimlLoadingObservations] = useState(false);
   const [animlLoadingMoreObservations, setAnimlLoadingMoreObservations] = useState(false);
   const [animlTotalObservationsCount, setAnimlTotalObservationsCount] = useState<number | null>(null);
@@ -757,11 +759,13 @@ function App() {
    * Load count lookups for Animl data
    * This fetches observation counts for deployments within the search area
    * and builds lookup structures for instant access
+   * @param searchId - Optional search ID to check for cancellation
    */
   const loadAnimlCountLookups = async (
     startDate: string | undefined, 
     endDate: string | undefined,
-    deploymentIds?: number[]
+    deploymentIds?: number[],
+    searchId?: number
   ) => {
     setAnimlCountsLoading(true);
     try {
@@ -779,6 +783,12 @@ function App() {
         deploymentIds  // Only count observations from deployments in the search area
       });
       
+      // Check if this search was cancelled before updating state
+      if (searchId !== undefined && searchId !== animlSearchIdRef.current) {
+        console.log('🚫 Animl count lookups cancelled, skipping state update');
+        return;
+      }
+      
       // Build lookup structures for O(1) access
       const lookups = animlService.buildCountLookups(result.groupedCounts, result.uniqueImageCountsByDeployment);
       
@@ -786,11 +796,17 @@ function App() {
       console.log('✅ Animl count lookups loaded and ready');
       
     } catch (error) {
-      console.error('Error loading Animl count lookups:', error);
-      toast.error('Failed to load observation counts');
-      setAnimlCountLookups(null);
+      // Only show error if this search wasn't cancelled
+      if (searchId === undefined || searchId === animlSearchIdRef.current) {
+        console.error('Error loading Animl count lookups:', error);
+        toast.error('Failed to load observation counts');
+        setAnimlCountLookups(null);
+      }
     } finally {
-      setAnimlCountsLoading(false);
+      // Only update loading state if this is still the current search
+      if (searchId === undefined || searchId === animlSearchIdRef.current) {
+        setAnimlCountsLoading(false);
+      }
     }
   };
 
@@ -1435,6 +1451,9 @@ function App() {
       }
 
       const searchAniml = async () => {
+        // Capture the current search ID - if it changes during async operations, we'll skip state updates
+        const currentSearchId = ++animlSearchIdRef.current;
+        
         try {
           // Fetch deployments and animal category counts (without all observations)
           // Using cached versions for better performance on repeated searches
@@ -1458,6 +1477,12 @@ function App() {
             })
           ]);
 
+          // Check if this search was cancelled (user went back or started a new search)
+          if (currentSearchId !== animlSearchIdRef.current) {
+            console.log('🚫 Animl search cancelled, skipping state updates');
+            return;
+          }
+
           console.log(`✅ Animl Search Results: ${deployments.length} deployments, ${animalTags.length} animal categories`);
 
           // Enhance deployments with stats (we'll need to get counts separately)
@@ -1474,7 +1499,13 @@ function App() {
           // Load count lookups for accurate right sidebar counts (only for deployments in search area)
           const deploymentIds = enhancedDeployments.map(d => d.id);
           console.log('🔍 About to load Animl count lookups with dates:', { startDate, endDate, deploymentIds });
-          await loadAnimlCountLookups(startDate, endDate, deploymentIds);
+          await loadAnimlCountLookups(startDate, endDate, deploymentIds, currentSearchId);
+          
+          // Check again after count lookups loaded
+          if (currentSearchId !== animlSearchIdRef.current) {
+            console.log('🚫 Animl search cancelled after count lookups, skipping map reload');
+            return;
+          }
           
           // Reload Animl observations on map (only show deployments, not individual observations)
           mapViewRef.current?.reloadAnimlObservations({
@@ -1488,12 +1519,18 @@ function App() {
             showSearchArea: filters.spatialFilter === 'Dangermond + Margin'
           });
         } catch (error) {
-          console.error('Error loading Animl data:', error);
-          setAnimlDeployments([]);
-          setAnimlImageLabels([]);
-          setAnimlAnimalTags([]);
+          // Only log error if this search wasn't cancelled
+          if (currentSearchId === animlSearchIdRef.current) {
+            console.error('Error loading Animl data:', error);
+            setAnimlDeployments([]);
+            setAnimlImageLabels([]);
+            setAnimlAnimalTags([]);
+          }
         } finally {
-          setAnimlLoading(false);
+          // Only update loading state if this is still the current search
+          if (currentSearchId === animlSearchIdRef.current) {
+            setAnimlLoading(false);
+          }
         }
       };
 
@@ -1604,12 +1641,34 @@ function App() {
   }, [filters.source]);
 
   // Handle back button from Data Views
-  // Also cancels any ongoing ANiML loading
+  // Also cancels any ongoing ANiML loading and clears data
   const handleBackToCatalog = () => {
+    // Invalidate any pending Animl async operations by incrementing the search ID
+    // This causes all in-flight callbacks to skip state updates
+    animlSearchIdRef.current++;
+    console.log('🚫 Animl search cancelled (search ID invalidated)');
+    
     // Cancel ANiML loading if in progress
     if (animlLoading) {
       setAnimlLoading(false);
     }
+    if (animlCountsLoading) {
+      setAnimlCountsLoading(false);
+    }
+    
+    // Clear ANiML data to prevent stale data from showing
+    setAnimlDeployments([]);
+    setAnimlImageLabels([]);
+    setAnimlAnimalTags([]);
+    setAnimlCountLookups(null);
+    setSelectedAnimlDeployment(null);
+    setSelectedAnimlAnimalTag(null);
+    setSelectedAnimlObservation(null);
+    setAnimlTotalObservationsCount(null);
+    
+    // Clear all map layers (removes camera icons from map)
+    mapViewRef.current?.clearAllObservationLayers();
+    
     handleSourceSelect('');
   };
 
