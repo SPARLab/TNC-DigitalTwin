@@ -30,6 +30,7 @@ import { tncINaturalistService } from './services/tncINaturalistService';
 import { MapViewRef } from './components/MapView';
 import { DEFAULT_THEME } from './utils/themes';
 import { CATEGORY_DATA_SOURCES } from './utils/constants';
+import categoryMappings from './data-sources/tnc-arcgis/category_mappings.json';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useShoppingCart } from './hooks/useShoppingCart';
 import { CartPanel } from './components/ShoppingCart/CartPanel';
@@ -1566,6 +1567,13 @@ function App() {
       }
     }
     
+    // Auto-select all tags for the category (if we have a category and tags aren't already set)
+    const finalCategory = category || filters.category;
+    // @ts-ignore - JSON import types
+    const categoryTags: string[] = finalCategory && categoryMappings.mappings.tags[finalCategory as keyof typeof categoryMappings.mappings.tags] 
+      ? categoryMappings.mappings.tags[finalCategory as keyof typeof categoryMappings.mappings.tags] 
+      : [];
+    
     // If defaults were provided, it means the user hadn't set these filters themselves
     // Show a reminder animation to prompt them to review
     if (defaults && Object.keys(defaults).length > 0) {
@@ -1576,6 +1584,8 @@ function App() {
       ...prev, 
       source, 
       category: category || prev.category,
+      // Auto-select all tags if tags are currently empty
+      tags: prev.tags.length === 0 ? categoryTags : prev.tags,
       ...(defaults || {}) 
     }));
   };

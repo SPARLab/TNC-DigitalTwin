@@ -135,12 +135,15 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
   };
 
   const handleCategoryChange = (category: typeof DATA_CATEGORIES[number]) => {
-    // Reset source and tags when category changes to show filtered Data Catalog
+    // Get available tags for the new category and select all by default
+    // @ts-ignore - JSON import types can be tricky, but we know the structure
+    const categoryTags: string[] = categoryMappings.mappings.tags[category as keyof typeof categoryMappings.mappings.tags] || [];
+    
     const newFilters: FilterState = {
       ...filters, 
       category,
       source: '', // Clear source to show Data Catalog
-      tags: [], // Clear tags
+      tags: categoryTags, // Select ALL tags for this category by default
       // Reset iconic taxa to all when category changes
       iconicTaxa: ['Aves', 'Mammalia', 'Reptilia', 'Amphibia', 'Actinopterygii', 'Insecta', 'Plantae', 'Fungi']
     };
@@ -272,24 +275,55 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
               <ChevronDown id="tags-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ml-auto ${openDropdown === 'tags' ? 'rotate-180' : ''}`} />
             </button>
             {openDropdown === 'tags' && (
-              <div id="tags-filter-dropdown" className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
-                {tagsOptions.map((tag: string) => (
-                  <button
-                    key={tag}
-                    id={`tag-option-${tag.toLowerCase().replace(/\s+/g, '-')}`}
-                    onClick={() => handleTagToggle(tag)}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2`}
-                  >
-                    <div className={`w-4 h-4 border rounded flex items-center justify-center ${
-                      filters.tags?.includes(tag) ? 'bg-blue-600 border-blue-600' : 'border-gray-300'
-                    }`}>
-                      {filters.tags?.includes(tag) && <div className="w-2 h-2 bg-white rounded-sm" />}
-                    </div>
-                    <span>{tag}</span>
-                  </button>
-                ))}
-                {tagsOptions.length === 0 && (
-                  <div className="px-3 py-2 text-sm text-gray-400 italic">No tags available for this category</div>
+              <div id="tags-filter-dropdown" className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg z-50 max-h-72 flex flex-col">
+                {/* Scrollable tag list */}
+                <div id="tags-filter-list" className="overflow-y-auto flex-1 p-2 space-y-1">
+                  {tagsOptions.map((tag: string) => {
+                    const isSelected = filters.tags?.includes(tag);
+                    return (
+                      <button
+                        key={tag}
+                        id={`tag-option-${tag.toLowerCase().replace(/\s+/g, '-')}`}
+                        onClick={() => handleTagToggle(tag)}
+                        className={`w-full flex items-center px-3 py-2 rounded border transition-all cursor-pointer ${
+                          isSelected 
+                            ? 'bg-blue-50 border-blue-200 hover:bg-blue-100' 
+                            : 'bg-white border-gray-200 hover:bg-gray-50'
+                        }`}
+                        aria-pressed={isSelected}
+                        aria-label={`${isSelected ? 'Deselect' : 'Select'} ${tag}`}
+                      >
+                        <span className="text-sm flex-1 text-left font-medium text-gray-900">
+                          {tag}
+                        </span>
+                      </button>
+                    );
+                  })}
+                  {tagsOptions.length === 0 && (
+                    <div className="px-3 py-2 text-sm text-gray-400 italic">No tags available for this category</div>
+                  )}
+                </div>
+                
+                {/* Select All / Deselect All buttons */}
+                {tagsOptions.length > 0 && (
+                  <div id="tags-filter-actions" className="border-t border-gray-200 p-2 flex gap-2 bg-gray-50">
+                    <button
+                      id="tags-filter-select-all"
+                      onClick={() => onFilterChange({ ...filters, tags: [...tagsOptions] })}
+                      className="flex-1 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                      aria-label="Select all tags"
+                    >
+                      Select All
+                    </button>
+                    <button
+                      id="tags-filter-deselect-all"
+                      onClick={() => onFilterChange({ ...filters, tags: [] })}
+                      className="flex-1 px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                      aria-label="Deselect all tags"
+                    >
+                      Deselect All
+                    </button>
+                  </div>
                 )}
               </div>
             )}

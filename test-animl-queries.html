@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Animl Query Tester</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { 
+      font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+      background: #1a1a2e;
+      color: #eee;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 { color: #4ecdc4; margin-bottom: 5px; }
+    h2 { color: #ff6b6b; margin-top: 30px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+    h3 { color: #95afc0; margin-top: 20px; }
+    .subtitle { color: #666; font-size: 14px; margin-bottom: 30px; }
+    
+    .service-info {
+      background: #16213e;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid #4ecdc4;
+    }
+    .service-info code {
+      color: #ffd93d;
+    }
+    
+    .test-section {
+      background: #16213e;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    
+    .query-url {
+      background: #0f0f23;
+      padding: 10px;
+      border-radius: 4px;
+      word-break: break-all;
+      font-size: 12px;
+      color: #888;
+      margin: 10px 0;
+    }
+    
+    .result {
+      background: #0f0f23;
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 10px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .result.success { border-left: 4px solid #4ecdc4; }
+    .result.error { border-left: 4px solid #ff6b6b; }
+    .result.loading { border-left: 4px solid #ffd93d; }
+    
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-size: 13px;
+    }
+    
+    button {
+      background: #4ecdc4;
+      color: #1a1a2e;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button:hover { background: #45b7aa; }
+    button:disabled { background: #555; cursor: wait; }
+    
+    .controls {
+      background: #16213e;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    
+    label { display: block; margin-bottom: 5px; color: #95afc0; }
+    input, select {
+      background: #0f0f23;
+      border: 1px solid #333;
+      color: #eee;
+      padding: 8px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      width: 200px;
+    }
+    
+    .inline-group {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .count { color: #4ecdc4; font-size: 24px; font-weight: bold; }
+    .timestamp { color: #666; font-size: 11px; }
+  </style>
+</head>
+<body>
+  <h1>🦊 Animl Query Tester</h1>
+  <p class="subtitle">Direct testing of ArcGIS MapServer queries against Animl tables</p>
+
+  <div class="service-info">
+    <strong>Service Endpoints:</strong><br>
+    <code>Base URL:</code> https://dangermondpreserve-spatial.com/server/rest/services/Animl/MapServer<br>
+    <code>Layer 0:</code> Deployments (camera traps)<br>
+    <code>Layer 3:</code> Deduplicated view (unique images per deployment)<br>
+    <code>Layer 4:</code> Flattened view (one row per image-label pair)
+  </div>
+
+  <div class="controls">
+    <h3>Date Range Filter (optional)</h3>
+    <div class="inline-group">
+      <div>
+        <label>Start Date:</label>
+        <input type="date" id="startDate" value="">
+      </div>
+      <div>
+        <label>End Date:</label>
+        <input type="date" id="endDate" value="">
+      </div>
+      <div>
+        <label>Quick Range:</label>
+        <select id="quickRange" onchange="setQuickRange()">
+          <option value="">No date filter</option>
+          <option value="7">Last 7 days</option>
+          <option value="30" selected>Last 30 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="365">Last year</option>
+          <option value="all">All time (no filter)</option>
+        </select>
+      </div>
+    </div>
+    <button onclick="runAllTests()">🚀 Run All Tests</button>
+    <button onclick="clearResults()">🗑️ Clear Results</button>
+  </div>
+
+  <!-- Test 1: Get all deployments -->
+  <div class="test-section">
+    <h2>Test 1: Get All Deployments (Layer 0)</h2>
+    <p>Fetch camera trap locations from the deployments layer.</p>
+    <button onclick="testDeployments()">Run Test 1</button>
+    <div id="result1" class="result"></div>
+  </div>
+
+  <!-- Test 2: Count unique images per deployment (deduplicated) -->
+  <div class="test-section">
+    <h2>Test 2: Unique Image Counts per Deployment (Layer 3 - Deduplicated)</h2>
+    <p>Count unique images for each camera trap using the deduplicated view.</p>
+    <button onclick="testUniqueImagesPerDeployment()">Run Test 2</button>
+    <div id="result2" class="result"></div>
+  </div>
+
+  <!-- Test 3: Labels per deployment with counts -->
+  <div class="test-section">
+    <h2>Test 3: Label Counts per Deployment (Layer 4 - Flattened)</h2>
+    <p>For each deployment, get distinct labels and their unique image counts.</p>
+    <button onclick="testLabelsPerDeployment()">Run Test 3</button>
+    <div id="result3" class="result"></div>
+  </div>
+
+  <!-- Test 4: Global label counts -->
+  <div class="test-section">
+    <h2>Test 4: Global Label Counts (Layer 4 - Flattened)</h2>
+    <p>Across all cameras, count unique images for each label (e.g., "coyote": 523 images).</p>
+    <button onclick="testGlobalLabelCounts()">Run Test 4</button>
+    <div id="result4" class="result"></div>
+  </div>
+
+  <!-- Test 5: Test DATE syntax specifically -->
+  <div class="test-section">
+    <h2>Test 5: DATE Syntax Validation (Layer 3)</h2>
+    <p>Test different date formats to see which one works with the MapServer.</p>
+    <button onclick="testDateFormats()">Run Test 5</button>
+    <div id="result5" class="result"></div>
+  </div>
+
+  <!-- Test 6: Check field types -->
+  <div class="test-section">
+    <h2>Test 6: Field Metadata (Layer 3 & 4)</h2>
+    <p>Get field definitions to understand the timestamp field type.</p>
+    <button onclick="testFieldTypes()">Run Test 6</button>
+    <div id="result6" class="result"></div>
+  </div>
+
+<script>
+const BASE_URL = 'https://dangermondpreserve-spatial.com/server/rest/services/Animl/MapServer';
+const DEPLOYMENTS_LAYER = 0;
+const DEDUPLICATED_LAYER = 3;
+const FLATTENED_LAYER = 4;
+
+// Set default dates (last 30 days)
+function setQuickRange() {
+  const range = document.getElementById('quickRange').value;
+  if (range === 'all' || range === '') {
+    document.getElementById('startDate').value = '';
+    document.getElementById('endDate').value = '';
+    return;
+  }
+  
+  const days = parseInt(range);
+  const end = new Date();
+  const start = new Date();
+  start.setDate(start.getDate() - days);
+  
+  document.getElementById('startDate').value = start.toISOString().split('T')[0];
+  document.getElementById('endDate').value = end.toISOString().split('T')[0];
+}
+
+// Initialize with last 30 days
+setQuickRange();
+
+function getDateRange() {
+  const startDate = document.getElementById('startDate').value;
+  const endDate = document.getElementById('endDate').value;
+  return { startDate, endDate };
+}
+
+function formatResult(elementId, status, content, url = '') {
+  const el = document.getElementById(elementId);
+  el.className = `result ${status}`;
+  el.innerHTML = `
+    ${url ? `<div class="query-url">📡 ${url}</div>` : ''}
+    <pre>${typeof content === 'string' ? content : JSON.stringify(content, null, 2)}</pre>
+    <div class="timestamp">Executed: ${new Date().toISOString()}</div>
+  `;
+}
+
+async function fetchQuery(layer, params, method = 'GET') {
+  const url = `${BASE_URL}/${layer}/query`;
+  
+  if (method === 'GET') {
+    const queryString = new URLSearchParams(params).toString();
+    const fullUrl = `${url}?${queryString}`;
+    console.log('🔍 Query URL:', fullUrl);
+    const response = await fetch(fullUrl);
+    return { data: await response.json(), url: fullUrl };
+  } else {
+    // POST for longer queries
+    console.log('🔍 POST Query to:', url, params);
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(params)
+    });
+    return { data: await response.json(), url: `${url} (POST)` };
+  }
+}
+
+async function testDeployments() {
+  formatResult('result1', 'loading', 'Loading...');
+  try {
+    const { data, url } = await fetchQuery(DEPLOYMENTS_LAYER, {
+      where: '1=1',
+      outFields: 'id,animl_dp_id,name',
+      returnGeometry: 'false',
+      f: 'json'
+    });
+    
+    if (data.error) {
+      formatResult('result1', 'error', data.error, url);
+      return;
+    }
+    
+    const deployments = data.features?.map(f => f.attributes) || [];
+    const summary = `✅ Found ${deployments.length} deployments\n\nFirst 10:\n${JSON.stringify(deployments.slice(0, 10), null, 2)}`;
+    formatResult('result1', 'success', summary, url);
+  } catch (e) {
+    formatResult('result1', 'error', `Error: ${e.message}`);
+  }
+}
+
+async function testUniqueImagesPerDeployment() {
+  formatResult('result2', 'loading', 'Loading...');
+  try {
+    const { startDate, endDate } = getDateRange();
+    
+    // Build WHERE clause
+    let whereClause = '1=1';
+    
+    // Exclude humans
+    whereClause += ` AND labels_text NOT LIKE '%person%' AND labels_text NOT LIKE '%people%' AND labels_text NOT LIKE '%human%'`;
+    
+    // Add date filter if specified
+    if (startDate && endDate) {
+      whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
+    }
+    
+    // Use statistics to count unique images per deployment
+    const params = {
+      where: whereClause,
+      outStatistics: JSON.stringify([{
+        statisticType: 'count',
+        onStatisticField: 'animl_image_id',
+        outStatisticFieldName: 'unique_image_count'
+      }]),
+      groupByFieldsForStatistics: 'deployment_id',
+      f: 'json'
+    };
+    
+    const { data, url } = await fetchQuery(DEDUPLICATED_LAYER, params);
+    
+    if (data.error) {
+      formatResult('result2', 'error', `API Error:\n${JSON.stringify(data.error, null, 2)}`, url);
+      return;
+    }
+    
+    const counts = data.features?.map(f => f.attributes) || [];
+    const total = counts.reduce((sum, c) => sum + c.unique_image_count, 0);
+    
+    const summary = `✅ Found counts for ${counts.length} deployments\n📊 Total unique images: ${total}\n\nCounts by deployment:\n${JSON.stringify(counts.sort((a,b) => b.unique_image_count - a.unique_image_count), null, 2)}`;
+    formatResult('result2', 'success', summary, url);
+  } catch (e) {
+    formatResult('result2', 'error', `Error: ${e.message}`);
+  }
+}
+
+async function testLabelsPerDeployment() {
+  formatResult('result3', 'loading', 'Loading...');
+  try {
+    const { startDate, endDate } = getDateRange();
+    
+    // Build WHERE clause
+    let whereClause = '1=1';
+    whereClause += ` AND label NOT IN ('person', 'people', 'human')`;
+    
+    if (startDate && endDate) {
+      whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
+    }
+    
+    // Group by deployment AND label to get counts
+    const params = {
+      where: whereClause,
+      outStatistics: JSON.stringify([{
+        statisticType: 'count',
+        onStatisticField: 'animl_image_id',
+        outStatisticFieldName: 'image_count'
+      }]),
+      groupByFieldsForStatistics: 'deployment_id,label',
+      f: 'json'
+    };
+    
+    const { data, url } = await fetchQuery(FLATTENED_LAYER, params);
+    
+    if (data.error) {
+      formatResult('result3', 'error', `API Error:\n${JSON.stringify(data.error, null, 2)}`, url);
+      return;
+    }
+    
+    const counts = data.features?.map(f => f.attributes) || [];
+    
+    // Group by deployment for display
+    const byDeployment = {};
+    counts.forEach(c => {
+      if (!byDeployment[c.deployment_id]) byDeployment[c.deployment_id] = [];
+      byDeployment[c.deployment_id].push({ label: c.label, count: c.image_count });
+    });
+    
+    const summary = `✅ Found ${counts.length} (deployment, label) combinations\n📊 Unique deployments: ${Object.keys(byDeployment).length}\n\nSample (first 3 deployments):\n${JSON.stringify(Object.fromEntries(Object.entries(byDeployment).slice(0, 3)), null, 2)}`;
+    formatResult('result3', 'success', summary, url);
+  } catch (e) {
+    formatResult('result3', 'error', `Error: ${e.message}`);
+  }
+}
+
+async function testGlobalLabelCounts() {
+  formatResult('result4', 'loading', 'Loading...');
+  try {
+    const { startDate, endDate } = getDateRange();
+    
+    // Build WHERE clause
+    let whereClause = '1=1';
+    whereClause += ` AND label NOT IN ('person', 'people', 'human')`;
+    
+    if (startDate && endDate) {
+      whereClause += ` AND timestamp >= DATE '${startDate}' AND timestamp <= DATE '${endDate}'`;
+    }
+    
+    // Group by label only to get global counts
+    const params = {
+      where: whereClause,
+      outStatistics: JSON.stringify([{
+        statisticType: 'count',
+        onStatisticField: 'animl_image_id',
+        outStatisticFieldName: 'image_count'
+      }]),
+      groupByFieldsForStatistics: 'label',
+      f: 'json'
+    };
+    
+    const { data, url } = await fetchQuery(FLATTENED_LAYER, params);
+    
+    if (data.error) {
+      formatResult('result4', 'error', `API Error:\n${JSON.stringify(data.error, null, 2)}`, url);
+      return;
+    }
+    
+    const counts = data.features?.map(f => f.attributes) || [];
+    const sorted = counts.sort((a, b) => b.image_count - a.image_count);
+    const total = counts.reduce((sum, c) => sum + c.image_count, 0);
+    
+    const summary = `✅ Found ${counts.length} unique labels\n📊 Total labeled images: ${total}\n\nTop 20 labels:\n${JSON.stringify(sorted.slice(0, 20), null, 2)}`;
+    formatResult('result4', 'success', summary, url);
+  } catch (e) {
+    formatResult('result4', 'error', `Error: ${e.message}`);
+  }
+}
+
+async function testDateFormats() {
+  formatResult('result5', 'loading', 'Testing different date formats...');
+  
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - 30);
+  
+  const startStr = startDate.toISOString().split('T')[0];
+  const endStr = endDate.toISOString().split('T')[0];
+  const startMs = startDate.getTime();
+  const endMs = endDate.getTime();
+  
+  const formats = [
+    { name: "DATE 'YYYY-MM-DD'", where: `timestamp >= DATE '${startStr}' AND timestamp <= DATE '${endStr}'` },
+    { name: "Unix ms (raw number)", where: `timestamp >= ${startMs} AND timestamp <= ${endMs}` },
+    { name: "ISO string", where: `timestamp >= '${startDate.toISOString()}' AND timestamp <= '${endDate.toISOString()}'` },
+    { name: "TIMESTAMP 'YYYY-MM-DD'", where: `timestamp >= TIMESTAMP '${startStr}' AND timestamp <= TIMESTAMP '${endStr}'` },
+  ];
+  
+  let results = [];
+  
+  for (const format of formats) {
+    try {
+      const { data, url } = await fetchQuery(DEDUPLICATED_LAYER, {
+        where: format.where,
+        returnCountOnly: 'true',
+        f: 'json'
+      });
+      
+      if (data.error) {
+        results.push(`❌ ${format.name}: ERROR - ${data.error.message}`);
+      } else {
+        results.push(`✅ ${format.name}: ${data.count} records\n   WHERE: ${format.where}`);
+      }
+    } catch (e) {
+      results.push(`❌ ${format.name}: ${e.message}`);
+    }
+  }
+  
+  formatResult('result5', 'success', results.join('\n\n'));
+}
+
+async function testFieldTypes() {
+  formatResult('result6', 'loading', 'Fetching field metadata...');
+  try {
+    const results = [];
+    
+    for (const layer of [DEDUPLICATED_LAYER, FLATTENED_LAYER]) {
+      const url = `${BASE_URL}/${layer}?f=json`;
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      const layerName = layer === DEDUPLICATED_LAYER ? 'Deduplicated (Layer 3)' : 'Flattened (Layer 4)';
+      const timestampField = data.fields?.find(f => f.name === 'timestamp');
+      
+      results.push(`📋 ${layerName}:\n   Name: ${data.name}\n   Fields: ${data.fields?.length || 0}`);
+      
+      if (timestampField) {
+        results.push(`   ⏰ timestamp field:\n      Type: ${timestampField.type}\n      Alias: ${timestampField.alias}`);
+      }
+      
+      // Show all fields
+      const fieldList = data.fields?.map(f => `      - ${f.name} (${f.type})`).join('\n') || 'No fields';
+      results.push(`   All fields:\n${fieldList}`);
+    }
+    
+    formatResult('result6', 'success', results.join('\n\n'));
+  } catch (e) {
+    formatResult('result6', 'error', `Error: ${e.message}`);
+  }
+}
+
+function clearResults() {
+  for (let i = 1; i <= 6; i++) {
+    document.getElementById(`result${i}`).innerHTML = '';
+    document.getElementById(`result${i}`).className = 'result';
+  }
+}
+
+async function runAllTests() {
+  await testDeployments();
+  await testUniqueImagesPerDeployment();
+  await testLabelsPerDeployment();
+  await testGlobalLabelCounts();
+  await testDateFormats();
+  await testFieldTypes();
+}
+</script>
+</body>
+</html>
+
