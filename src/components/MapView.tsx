@@ -100,6 +100,10 @@ interface MapViewProps {
   onAnimlDeploymentClick?: (deployment: AnimlDeployment) => void;
   onAnimlObservationClick?: (observation: AnimlImageLabel) => void;
   onAnimlLoadingChange?: (loading: boolean) => void;
+  // Drone Imagery layer management
+  activeDroneImageryIds?: string[];
+  onDroneImageryLayerLoaded?: (wmtsItemId: string) => void;
+  onDroneImageryLayerError?: (wmtsItemId: string) => void;
 }
 
 export interface MapViewRef {
@@ -200,12 +204,17 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   selectedAnimlObservation,
   onAnimlDeploymentClick,
   onAnimlObservationClick,
-  onAnimlLoadingChange
+  onAnimlLoadingChange,
+  // Drone Imagery props
+  activeDroneImageryIds = [],
+  onDroneImageryLayerLoaded,
+  onDroneImageryLayerError
 }, ref) => {
   const mapDiv = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<MapView | null>(null);
   const [loading, setLoading] = useState(false);
   const tncArcGISLayersRef = useRef<globalThis.Map<string, __esri.Layer>>(new globalThis.Map());
+  const droneImageryLayersRef = useRef<globalThis.Map<string, __esri.Layer>>(new globalThis.Map());
   const boundaryLayerRef = useRef<__esri.GeoJSONLayer | null>(null);
   const [drawnPolygon, setDrawnPolygon] = useState<__esri.Polygon | null>(null);
   const drawingPointsRef = useRef<number[][]>([]);
@@ -449,6 +458,74 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     onImageServerLoadingChange: setImageServerLoading,
     onLayerLoadErrorChange: setLayerLoadError
   });
+
+  // Manage Drone Imagery layers from portal items
+  useEffect(() => {
+    if (!view || !view.map) return;
+
+    const currentLayers = droneImageryLayersRef.current;
+    const currentIds = new Set(currentLayers.keys());
+    const targetIds = new Set(activeDroneImageryIds);
+
+    // Remove layers that are no longer active
+    currentIds.forEach(id => {
+      if (!targetIds.has(id)) {
+        const layer = currentLayers.get(id);
+        if (layer && view.map) {
+          console.log(`🗑️ Removing drone imagery layer: ${id}`);
+          view.map.remove(layer);
+          if (typeof (layer as any).destroy === 'function') {
+            (layer as any).destroy();
+          }
+          currentLayers.delete(id);
+        }
+      }
+    });
+
+    // Add new layers
+    targetIds.forEach(async (wmtsItemId) => {
+      if (!currentIds.has(wmtsItemId)) {
+        console.log(`📷 Loading drone imagery layer: ${wmtsItemId}`);
+        try {
+          // Dynamic import to avoid bundling issues
+          const { default: Layer } = await import('@arcgis/core/layers/Layer');
+          
+          const layer = await Layer.fromPortalItem({
+            portalItem: {
+              id: wmtsItemId,
+              portal: {
+                url: 'https://dangermondpreserve-spatial.com/portal'
+              }
+            } as any
+          });
+
+          // Set a recognizable ID
+          layer.id = `drone-imagery-${wmtsItemId}`;
+          layer.title = `Drone Imagery ${wmtsItemId.substring(0, 8)}...`;
+
+          // Add to map
+          if (view.map) {
+            view.map.layers.add(layer);
+            currentLayers.set(wmtsItemId, layer);
+            console.log(`✅ Drone imagery layer loaded: ${wmtsItemId}`);
+            onDroneImageryLayerLoaded?.(wmtsItemId);
+
+            // Try to zoom to the layer extent
+            layer.when(() => {
+              if (layer.fullExtent && view) {
+                view.goTo(layer.fullExtent, { duration: 1000 }).catch(() => {
+                  // Ignore errors from goTo
+                });
+              }
+            });
+          }
+        } catch (error) {
+          console.error(`❌ Failed to load drone imagery layer ${wmtsItemId}:`, error);
+          onDroneImageryLayerError?.(wmtsItemId);
+        }
+      }
+    });
+  }, [view, activeDroneImageryIds, onDroneImageryLayerLoaded, onDroneImageryLayerError]);
 
   // Close popup if the layer it belongs to was toggled off
   useEffect(() => {

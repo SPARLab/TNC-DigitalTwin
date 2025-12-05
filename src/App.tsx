@@ -179,6 +179,10 @@ function App() {
   // LiDAR view mode state
   const [lidarViewMode, setLidarViewMode] = useState<LiDARViewMode>('virtual-tour');
 
+  // Drone Imagery state
+  const [activeDroneImageryIds, setActiveDroneImageryIds] = useState<string[]>([]);
+  const [loadingDroneImageryIds, setLoadingDroneImageryIds] = useState<string[]>([]);
+
   // Dendra Stations state
   const [dendraStations, setDendraStations] = useState<DendraStation[]>([]);
   const [dendraDatastreams, setDendraDatastreams] = useState<DendraDatastream[]>([]);
@@ -437,6 +441,31 @@ function App() {
   const handleLiDARModeChange = (mode: LiDARViewMode) => {
     // console.log('LiDAR view mode changed to:', mode);
     setLidarViewMode(mode);
+  };
+
+  // Drone Imagery handlers
+  const handleDroneImageryLayerToggle = (wmtsItemId: string) => {
+    setActiveDroneImageryIds(prev => {
+      if (prev.includes(wmtsItemId)) {
+        // Removing layer
+        setLoadingDroneImageryIds(ids => ids.filter(id => id !== wmtsItemId));
+        return prev.filter(id => id !== wmtsItemId);
+      } else {
+        // Adding layer - mark as loading
+        setLoadingDroneImageryIds(ids => [...ids, wmtsItemId]);
+        return [...prev, wmtsItemId];
+      }
+    });
+  };
+
+  const handleDroneImageryLayerLoaded = (wmtsItemId: string) => {
+    setLoadingDroneImageryIds(prev => prev.filter(id => id !== wmtsItemId));
+  };
+
+  const handleDroneImageryLayerError = (wmtsItemId: string) => {
+    // Remove from active and loading on error
+    setLoadingDroneImageryIds(prev => prev.filter(id => id !== wmtsItemId));
+    setActiveDroneImageryIds(prev => prev.filter(id => id !== wmtsItemId));
   };
 
   // Animl handlers
@@ -1498,6 +1527,11 @@ function App() {
       };
 
       searchAniml();
+    } else if (filters.source === 'LiDAR' || filters.source === 'Drone Imagery') {
+      // LiDAR and Drone Imagery don't need map data loading
+      // They handle their own content in their respective views
+      // Just update the time range tracking
+      setLastSearchedDaysBack(filters.daysBack || 30);
     } else {
       // Handle iNaturalist Public API search
       // Filter by iconic taxa based on category
@@ -2245,6 +2279,10 @@ function App() {
           onAnimlCustomFiltersChange={setAnimlCustomFilters}
           animlCountLookups={animlCountLookups}
           animlCountsLoading={animlCountsLoading}
+          // Drone Imagery props
+          activeDroneImageryIds={activeDroneImageryIds}
+          loadingDroneImageryIds={loadingDroneImageryIds}
+          onDroneImageryLayerToggle={handleDroneImageryLayerToggle}
         />
         <div id="map-container" className="flex-1 relative flex">
           {/* Conditionally render based on data source and LiDAR mode */}
@@ -2369,6 +2407,10 @@ function App() {
                 onAnimlDeploymentClick={handleAnimlDeploymentClick}
                 onAnimlObservationClick={handleAnimlObservationClick}
                 onAnimlLoadingChange={setAnimlLoading}
+                // Drone Imagery layer management
+                activeDroneImageryIds={activeDroneImageryIds}
+                onDroneImageryLayerLoaded={handleDroneImageryLayerLoaded}
+                onDroneImageryLayerError={handleDroneImageryLayerError}
               />
               {/* Hub Page Preview Overlay */}
               {selectedModalItem && (

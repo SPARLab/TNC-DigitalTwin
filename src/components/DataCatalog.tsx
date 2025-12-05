@@ -6,7 +6,8 @@ import {
   Camera, 
   Layers, 
   Activity, 
-  ArrowRight
+  ArrowRight,
+  Plane
 } from 'lucide-react';
 import LidarIcon from './icons/LidarIcon';
 import { FilterState } from '../types';
@@ -128,6 +129,20 @@ const DATA_TYPE_CARDS: DataTypeCardConfig[] = [
       category: 'Land use and land (geography?)',
       spatialFilter: 'Dangermond Preserve',
       daysBack: 365, // Not really relevant for LiDAR but needed for type consistency
+      timeRange: 'All time'
+    }
+  },
+  {
+    id: 'drone-imagery',
+    title: 'Drone Imagery',
+    description: 'High-resolution aerial imagery from DroneDeploy flights across the preserve.',
+    icon: Plane,
+    sourceKey: 'Drone Imagery',
+    sourceBadge: 'DroneDeploy',
+    defaults: {
+      category: 'Real-time & Remote Sensing',
+      spatialFilter: 'Dangermond Preserve',
+      daysBack: 365,
       timeRange: 'All time'
     }
   }

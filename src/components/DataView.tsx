@@ -14,6 +14,7 @@ import WildlifeEBirdView from './dataviews/WildlifeEBirdView';
 import VegetationCalFloraView from './dataviews/VegetationCalFloraView';
 import TNCArcGISView from './dataviews/TNCArcGISView';
 import LiDARView, { LiDARViewMode } from './dataviews/LiDARView';
+import DroneImageryView from './dataviews/DroneImageryView';
 import DendraSidebar from './DendraSidebar';
 import WildlifeAnimlView from './dataviews/WildlifeAnimlView';
 import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag, AnimlCountLookups } from '../services/animlService';
@@ -118,6 +119,10 @@ interface DataViewProps {
   onAnimlCustomFiltersChange?: (filters: AnimlCustomFilters) => void;
   animlCountLookups?: AnimlCountLookups | null;
   animlCountsLoading?: boolean;
+  // Drone Imagery props
+  activeDroneImageryIds?: string[];
+  loadingDroneImageryIds?: string[];
+  onDroneImageryLayerToggle?: (wmtsItemId: string) => void;
 }
 
 const DataView: React.FC<DataViewProps> = ({
@@ -203,7 +208,11 @@ const DataView: React.FC<DataViewProps> = ({
   animlCustomFilters,
   animlCountLookups = null,
   animlCountsLoading = false,
-  onAnimlCustomFiltersChange
+  onAnimlCustomFiltersChange,
+  // Drone Imagery props
+  activeDroneImageryIds = [],
+  loadingDroneImageryIds = [],
+  onDroneImageryLayerToggle
 }) => {
   // Route to appropriate data view based on category + source combination
   const getDataView = () => {
@@ -348,6 +357,18 @@ const DataView: React.FC<DataViewProps> = ({
             selectedDatastreamId={selectedDendraDatastreamId || null}
             onShowDendraWebsite={onShowDendraWebsite}
             onBack={onBack}
+          />
+        );
+
+      // Drone Imagery case
+      case 'Real-time & Remote Sensing-Drone Imagery':
+        return (
+          <DroneImageryView
+            hasSearched={hasSearched}
+            onBack={onBack}
+            activeLayerIds={activeDroneImageryIds}
+            loadingLayerIds={loadingDroneImageryIds}
+            onLayerToggle={onDroneImageryLayerToggle}
           />
         );
       
