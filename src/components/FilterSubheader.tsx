@@ -397,16 +397,18 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
               <button
                 id="observations-search-button"
                 onClick={onSearch}
-                disabled={isSearching}
+                disabled={isSearching || !filters.source}
                 className={`px-3 py-2 border border-gray-300 rounded-md transition-colors ${
-                  isSearching
+                  isSearching || !filters.source
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
                     : 'bg-blue-600 text-white hover:bg-blue-700'
                 } ${needsFilterHighlight ? 'filter-highlight-5' : ''}`}
                 title={
-                  isSearching 
-                    ? "Searching... This may take time due to API rate limits" 
-                    : "Search for data from selected source"
+                  !filters.source
+                    ? "Select a data type first"
+                    : isSearching 
+                      ? "Searching... This may take time due to API rate limits" 
+                      : "Search for data from selected source"
                 }
               >
                 {isSearching ? (
