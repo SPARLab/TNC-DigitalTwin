@@ -72,6 +72,7 @@ export interface AnimlServiceQueryOptions {
   searchMode?: 'preserve-only' | 'expanded' | 'custom';
   customPolygon?: string;
   onProgress?: (current: number, total: number, percentage: number) => void;
+  signal?: AbortSignal; // For cancellation support
 }
 
 /**
@@ -123,12 +124,19 @@ class AnimlService {
   /**
    * Fetch with retry logic to handle flaky server responses
    * Uses exponential backoff: 500ms, 1000ms, 2000ms
+   * @param url - URL to fetch
+   * @param maxRetries - Number of retries (default 3)
+   * @param signal - Optional AbortSignal for cancellation
    */
-  private async fetchWithRetry(url: string, maxRetries = 3): Promise<Response> {
+  private async fetchWithRetry(url: string, maxRetries = 3, signal?: AbortSignal): Promise<Response> {
     let lastError: Error = new Error('Unknown error');
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      // Check if already aborted before attempting
+      if (signal?.aborted) {
+        throw new DOMException('Request aborted', 'AbortError');
+      }
       try {
-        const response = await fetch(url);
+        const response = await fetch(url, { signal });
         if (response.ok) return response;
         
         // If not ok, treat as error and retry
@@ -272,12 +280,14 @@ class AnimlService {
    * @param deploymentId - Deployment ID to count
    * @param startDate - Start date (YYYY-MM-DD)
    * @param endDate - End date (YYYY-MM-DD)
+   * @param signal - Optional AbortSignal for cancellation
    * @returns Count of unique images
    */
   private async getUniqueImageCountForDeployment(
     deploymentId: number,
     startDate: string | undefined,
-    endDate: string | undefined
+    endDate: string | undefined,
+    signal?: AbortSignal
   ): Promise<number> {
     let whereClause = `deployment_id = ${deploymentId}`;
     
@@ -304,7 +314,7 @@ class AnimlService {
     const queryUrl = `${this.deduplicatedServiceUrl}/query`;
     const fullUrl = `${queryUrl}?${new URLSearchParams(params)}`;
     
-    const response = await this.fetchWithRetry(fullUrl);
+    const response = await this.fetchWithRetry(fullUrl, 3, signal);
     if (!response.ok) {
       throw new Error(`Failed to get unique image count for deployment ${deploymentId}`);
     }
@@ -325,12 +335,14 @@ class AnimlService {
    * @param deploymentId - Deployment ID
    * @param startDate - Start date (YYYY-MM-DD)
    * @param endDate - End date (YYYY-MM-DD)
+   * @param signal - Optional AbortSignal for cancellation
    * @returns Array of distinct label strings
    */
   private async getDistinctLabelsForDeployment(
     deploymentId: number,
     startDate: string | undefined,
-    endDate: string | undefined
+    endDate: string | undefined,
+    signal?: AbortSignal
   ): Promise<string[]> {
     let whereClause = `deployment_id = ${deploymentId}`;
     
@@ -354,7 +366,7 @@ class AnimlService {
     const queryUrl = `${this.flattenedServiceUrl}/query`;
     const fullUrl = `${queryUrl}?${new URLSearchParams(params)}`;
     
-    const response = await this.fetchWithRetry(fullUrl);
+    const response = await this.fetchWithRetry(fullUrl, 3, signal);
     if (!response.ok) {
       throw new Error(`Failed to get distinct labels for deployment ${deploymentId}`);
     }
@@ -377,13 +389,15 @@ class AnimlService {
    * @param label - Label to filter by
    * @param startDate - Start date (YYYY-MM-DD)
    * @param endDate - End date (YYYY-MM-DD)
+   * @param signal - Optional AbortSignal for cancellation
    * @returns Count of unique images for this label at this deployment
    */
   private async getUniqueImageCountForLabel(
     deploymentId: number,
     label: string,
     startDate: string | undefined,
-    endDate: string | undefined
+    endDate: string | undefined,
+    signal?: AbortSignal
   ): Promise<number> {
     let whereClause = `deployment_id = ${deploymentId} AND label = '${label.replace(/'/g, "''")}'`;
     
@@ -409,7 +423,7 @@ class AnimlService {
     const queryUrl = `${this.flattenedServiceUrl}/query`;
     const fullUrl = `${queryUrl}?${new URLSearchParams(params)}`;
     
-    const response = await this.fetchWithRetry(fullUrl);
+    const response = await this.fetchWithRetry(fullUrl, 3, signal);
     if (!response.ok) {
       throw new Error(`Failed to get count for ${label} at deployment ${deploymentId}`);
     }
@@ -447,9 +461,14 @@ class AnimlService {
     groupedCounts: AnimlGroupedCount[];
     uniqueImageCountsByDeployment: Map<number, number>;
   }> {
-    const { startDate, endDate, deploymentIds = [] } = options;
+    const { startDate, endDate, deploymentIds = [], signal } = options;
 
     try {
+      // Check if already aborted before starting
+      if (signal?.aborted) {
+        throw new DOMException('Request aborted', 'AbortError');
+      }
+      
       console.log('🚀 Animl Grouped Counts: Using OPTIMIZED 3-query approach with deduplicated service!');
       console.log('📊 Date range:', startDate, 'to', endDate);
       console.log('📊 Deployments:', deploymentIds.length > 0 ? `${deploymentIds.length} specific deployments` : 'ALL deployments');
@@ -466,20 +485,25 @@ class AnimlService {
       // Process all deployments in parallel!
       const deploymentResults = await Promise.all(
         deploymentsToQuery.map(async (deploymentId) => {
+          // Check if aborted before each deployment
+          if (signal?.aborted) {
+            throw new DOMException('Request aborted', 'AbortError');
+          }
+          
           const deploymentStart = Date.now();
           try {
             // Queries 1 & 2: Run in parallel since they're independent
             const query12Start = Date.now();
             const [totalCount, labels] = await Promise.all([
-              this.getUniqueImageCountForDeployment(deploymentId, startDate, endDate),
-              this.getDistinctLabelsForDeployment(deploymentId, startDate, endDate)
+              this.getUniqueImageCountForDeployment(deploymentId, startDate, endDate, signal),
+              this.getDistinctLabelsForDeployment(deploymentId, startDate, endDate, signal)
             ]);
             const query12Duration = Date.now() - query12Start;
             
             // Query 3: For each label, get unique image count (parallel!)
             const query3Start = Date.now();
             const labelCounts = await Promise.all(
-              labels.map(label => this.getUniqueImageCountForLabel(deploymentId, label, startDate, endDate))
+              labels.map(label => this.getUniqueImageCountForLabel(deploymentId, label, startDate, endDate, signal))
             );
             const query3Duration = Date.now() - query3Start;
             
@@ -498,6 +522,10 @@ class AnimlService {
               byLabel
             };
           } catch (error) {
+            // Re-throw AbortError so it propagates up
+            if (error instanceof DOMException && error.name === 'AbortError') {
+              throw error;
+            }
             console.error(`❌ Error processing deployment ${deploymentId}:`, error);
             return {
               deploymentId,

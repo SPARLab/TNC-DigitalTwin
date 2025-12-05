@@ -209,6 +209,8 @@ function App() {
   const [animlLoading, setAnimlLoading] = useState(false);
   // Ref to track current Animl search ID - used to cancel stale async operations
   const animlSearchIdRef = useRef(0);
+  // AbortController for cancelling in-flight Animl API requests
+  const animlAbortControllerRef = useRef<AbortController | null>(null);
   const [animlLoadingObservations, setAnimlLoadingObservations] = useState(false);
   const [animlLoadingMoreObservations, setAnimlLoadingMoreObservations] = useState(false);
   const [animlTotalObservationsCount, setAnimlTotalObservationsCount] = useState<number | null>(null);
@@ -760,12 +762,14 @@ function App() {
    * This fetches observation counts for deployments within the search area
    * and builds lookup structures for instant access
    * @param searchId - Optional search ID to check for cancellation
+   * @param signal - Optional AbortSignal for cancelling in-flight requests
    */
   const loadAnimlCountLookups = async (
     startDate: string | undefined, 
     endDate: string | undefined,
     deploymentIds?: number[],
-    searchId?: number
+    searchId?: number,
+    signal?: AbortSignal
   ) => {
     setAnimlCountsLoading(true);
     try {
@@ -777,10 +781,12 @@ function App() {
       
       // Fetch counts grouped by (deployment, label), filtered by deployment IDs from search
       // Using cached version for better performance on repeated searches
+      // Pass signal for request cancellation support
       const result = await animlService.getObservationCountsGroupedCached({
         startDate,
         endDate,
-        deploymentIds  // Only count observations from deployments in the search area
+        deploymentIds,  // Only count observations from deployments in the search area
+        signal  // Pass abort signal for cancellation
       });
       
       // Check if this search was cancelled before updating state
@@ -796,6 +802,11 @@ function App() {
       console.log('✅ Animl count lookups loaded and ready');
       
     } catch (error) {
+      // Don't show error for aborted requests
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        console.log('🛑 Animl count lookups request aborted');
+        return;
+      }
       // Only show error if this search wasn't cancelled
       if (searchId === undefined || searchId === animlSearchIdRef.current) {
         console.error('Error loading Animl count lookups:', error);
@@ -1454,6 +1465,14 @@ function App() {
         // Capture the current search ID - if it changes during async operations, we'll skip state updates
         const currentSearchId = ++animlSearchIdRef.current;
         
+        // Create a new AbortController for this search (so we can cancel in-flight requests)
+        // Abort any previous controller first
+        if (animlAbortControllerRef.current) {
+          animlAbortControllerRef.current.abort();
+        }
+        animlAbortControllerRef.current = new AbortController();
+        const signal = animlAbortControllerRef.current.signal;
+        
         try {
           // Fetch deployments and animal category counts (without all observations)
           // Using cached versions for better performance on repeated searches
@@ -1499,7 +1518,7 @@ function App() {
           // Load count lookups for accurate right sidebar counts (only for deployments in search area)
           const deploymentIds = enhancedDeployments.map(d => d.id);
           console.log('🔍 About to load Animl count lookups with dates:', { startDate, endDate, deploymentIds });
-          await loadAnimlCountLookups(startDate, endDate, deploymentIds, currentSearchId);
+          await loadAnimlCountLookups(startDate, endDate, deploymentIds, currentSearchId, signal);
           
           // Check again after count lookups loaded
           if (currentSearchId !== animlSearchIdRef.current) {
@@ -1519,6 +1538,11 @@ function App() {
             showSearchArea: filters.spatialFilter === 'Dangermond + Margin'
           });
         } catch (error) {
+          // Don't show error for aborted requests
+          if (error instanceof DOMException && error.name === 'AbortError') {
+            console.log('🛑 Animl search requests aborted');
+            return;
+          }
           // Only log error if this search wasn't cancelled
           if (currentSearchId === animlSearchIdRef.current) {
             console.error('Error loading Animl data:', error);
@@ -1647,6 +1671,13 @@ function App() {
     // This causes all in-flight callbacks to skip state updates
     animlSearchIdRef.current++;
     console.log('🚫 Animl search cancelled (search ID invalidated)');
+    
+    // Abort any in-flight Animl API requests to free up browser connections
+    if (animlAbortControllerRef.current) {
+      animlAbortControllerRef.current.abort();
+      animlAbortControllerRef.current = null;
+      console.log('🛑 Animl API requests aborted');
+    }
     
     // Cancel ANiML loading if in progress
     if (animlLoading) {
