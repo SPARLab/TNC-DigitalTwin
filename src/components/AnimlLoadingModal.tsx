@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Camera } from 'lucide-react';
+import { Camera, X } from 'lucide-react';
 
 interface AnimlLoadingModalProps {
   isOpen: boolean;
+  onCancel?: () => void;
 }
 
-const AnimlLoadingModal: React.FC<AnimlLoadingModalProps> = ({ isOpen }) => {
+const AnimlLoadingModal: React.FC<AnimlLoadingModalProps> = ({ isOpen, onCancel }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   // Control visibility with slight delay for smooth transitions
@@ -25,7 +26,7 @@ const AnimlLoadingModal: React.FC<AnimlLoadingModalProps> = ({ isOpen }) => {
   return (
     <div
       id="animl-loading-modal-overlay"
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-black transition-opacity duration-300 ${
+      className={`absolute inset-0 z-30 flex items-center justify-center bg-black transition-opacity duration-300 ${
         isOpen ? 'bg-opacity-50' : 'bg-opacity-0'
       }`}
       role="dialog"
@@ -34,10 +35,23 @@ const AnimlLoadingModal: React.FC<AnimlLoadingModalProps> = ({ isOpen }) => {
     >
       <div
         id="animl-loading-modal-card"
-        className={`bg-white rounded-lg shadow-2xl p-8 max-w-md w-full mx-4 transition-all duration-300 ${
+        className={`relative bg-white rounded-lg shadow-2xl p-8 max-w-md w-full mx-4 transition-all duration-300 ${
           isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
         }`}
       >
+        {/* Close button */}
+        {onCancel && (
+          <button
+            id="animl-loading-modal-close-btn"
+            onClick={onCancel}
+            className="absolute top-3 right-3 p-1 rounded-full hover:bg-gray-100 transition-colors"
+            title="Cancel and go back"
+            aria-label="Cancel loading"
+          >
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        )}
+
         {/* Icon and Spinner */}
         <div id="animl-loading-modal-icon-container" className="flex justify-center mb-6">
           <div id="animl-loading-modal-spinner-wrapper" className="relative">
@@ -71,9 +85,22 @@ const AnimlLoadingModal: React.FC<AnimlLoadingModalProps> = ({ isOpen }) => {
         </p>
 
         {/* Additional info */}
-        <p id="animl-loading-modal-info" className="text-xs text-gray-500 text-center">
+        <p id="animl-loading-modal-info" className="text-xs text-gray-500 text-center mb-4">
           Please wait while we process your search...
         </p>
+
+        {/* Cancel button */}
+        {onCancel && (
+          <div id="animl-loading-modal-actions" className="flex justify-center">
+            <button
+              id="animl-loading-modal-cancel-btn"
+              onClick={onCancel}
+              className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              Cancel & Go Back
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

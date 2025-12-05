@@ -1604,7 +1604,12 @@ function App() {
   }, [filters.source]);
 
   // Handle back button from Data Views
+  // Also cancels any ongoing ANiML loading
   const handleBackToCatalog = () => {
+    // Cancel ANiML loading if in progress
+    if (animlLoading) {
+      setAnimlLoading(false);
+    }
     handleSourceSelect('');
   };
 
@@ -2450,6 +2455,12 @@ function App() {
               )}
             </>
           )}
+
+          {/* Animl Loading Overlay - only covers map area */}
+          <AnimlLoadingModal 
+            isOpen={animlLoading} 
+            onCancel={handleBackToCatalog}
+          />
         </div>
         {/* Conditionally show appropriate right sidebar */}
         {selectedDetailsItem && lastSearchedFilters.source === 'TNC ArcGIS Hub' ? (
@@ -2707,8 +2718,6 @@ function App() {
         }}
       />
 
-      {/* Animl Loading Modal */}
-      <AnimlLoadingModal isOpen={animlLoading} />
     </div>
   );
 }
