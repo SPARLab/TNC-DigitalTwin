@@ -26,20 +26,21 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
   onBack
 }) => {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['Native Plants', 'Invasive Plants']));
-  const [viewMode, setViewMode] = useState<'recent' | 'grouped'>('recent');
+  const [viewMode, setViewMode] = useState<'recent' | 'all' | 'grouped'>('recent');
+
+  // Get all plants sorted by date for display
+  const sortedPlants = useMemo(() => {
+    return [...plants].sort((a, b) => {
+      // Sort by observation date (most recent first), then by ID
+      const dateA = a.observationDate ? new Date(a.observationDate).getTime() : 0;
+      const dateB = b.observationDate ? new Date(b.observationDate).getTime() : 0;
+      if (dateA !== dateB) return dateB - dateA;
+      return b.id.localeCompare(a.id);
+    });
+  }, [plants]);
 
   // Get top 10 most recent plants for display
-  const topPlants = useMemo(() => {
-    return plants
-      .sort((a, b) => {
-        // Sort by observation date (most recent first), then by ID
-        const dateA = a.observationDate ? new Date(a.observationDate).getTime() : 0;
-        const dateB = b.observationDate ? new Date(b.observationDate).getTime() : 0;
-        if (dateA !== dateB) return dateB - dateA;
-        return b.id.localeCompare(a.id);
-      })
-      .slice(0, 10);
-  }, [plants]);
+  const topPlants = useMemo(() => sortedPlants.slice(0, 10), [sortedPlants]);
 
   // Group plants by native status for the full view
   const groupedPlants = useMemo((): CalFloraGroup[] => {
@@ -180,6 +181,15 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
               Recent
             </button>
             <button
+              id="all-view-btn"
+              onClick={() => setViewMode('all')}
+              className={`px-2 py-1 text-xs rounded ${
+                viewMode === 'all' ? 'bg-green-100 text-green-700' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              All
+            </button>
+            <button
               id="grouped-view-btn"
               onClick={() => setViewMode('grouped')}
               className={`px-2 py-1 text-xs rounded ${
@@ -237,6 +247,88 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
             <Leaf className="w-12 h-12 mx-auto mb-3 text-gray-300" />
             <p>No plant data available</p>
             <p className="text-xs mt-1">Try adjusting your search filters</p>
+          </div>
+        ) : viewMode === 'all' ? (
+          <div id="all-plants" className="p-4">
+            <div className="mb-3">
+              <h3 className="text-sm font-medium text-gray-700 mb-1">All Observations</h3>
+              <p className="text-xs text-gray-500">Showing all {sortedPlants.length} plant records (sorted by date)</p>
+            </div>
+            <div className="space-y-3">
+              {sortedPlants.map((plant) => (
+                <div 
+                  key={plant.id} 
+                  id={`all-plant-${plant.id}`} 
+                  className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() => onPlantSelect?.(plant)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onPlantSelect?.(plant);
+                    }
+                  }}
+                >
+                  <div className="flex gap-3">
+                    {/* Plant Image */}
+                    <div className="flex-shrink-0">
+                      {plant.attributes?.photo ? (
+                        <img
+                          src={plant.attributes.photo}
+                          alt={plant.commonName || plant.scientificName}
+                          className="w-12 h-12 rounded-lg object-cover bg-gray-100"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const placeholder = target.nextElementSibling as HTMLElement;
+                            if (placeholder) placeholder.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className={`w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center ${
+                          plant.attributes?.photo ? 'hidden' : 'flex'
+                        }`}
+                      >
+                        <span className="text-xl">🌱</span>
+                      </div>
+                    </div>
+                    
+                    {/* Plant Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm text-gray-900 truncate">
+                            {plant.commonName || plant.scientificName}
+                          </h4>
+                          {plant.commonName && (
+                            <p className="text-xs text-gray-600 italic mt-0.5 truncate">
+                              {plant.scientificName}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                        {plant.county && (
+                          <div className="flex items-center gap-1">
+                            <MapPin className="w-3 h-3" />
+                            <span>{plant.county}</span>
+                          </div>
+                        )}
+                        {plant.observationDate && (
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            <span>{new Date(plant.observationDate).toLocaleDateString()}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         ) : viewMode === 'recent' ? (
           <div id="recent-plants" className="p-4">
@@ -298,9 +390,6 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
                             </p>
                           )}
                         </div>
-                        <div className={`ml-2 px-2 py-1 text-xs rounded-full ${getNativeStatusColor(plant.nativeStatus)}`}>
-                          {plant.nativeStatus}
-                        </div>
                       </div>
                       
                       <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
@@ -341,10 +430,10 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
                   Showing 10 of {plants.length} total records
                 </p>
                 <button
-                  onClick={() => setViewMode('grouped')}
+                  onClick={() => setViewMode('all')}
                   className="mt-1 text-xs text-green-600 hover:text-green-700 font-medium"
                 >
-                  View all grouped by category →
+                  View all {plants.length} observations →
                 </button>
               </div>
             )}
@@ -422,9 +511,6 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
                                           {plant.scientificName}
                                         </p>
                                       )}
-                                    </div>
-                                    <div className={`ml-2 px-2 py-1 text-xs rounded-full ${getNativeStatusColor(plant.nativeStatus)}`}>
-                                      {plant.nativeStatus}
                                     </div>
                                   </div>
                                   

@@ -1,6 +1,7 @@
 import { CartItem } from '../types';
 import { iNaturalistAPI } from './iNaturalistService';
 import { animlService } from './animlService';
+import { calFloraAPI, CalFloraPlant } from './calFloraService';
 import { getDateRange, formatDateForAPI } from '../utils/dateUtils';
 // Import other services as needed
 
@@ -15,8 +16,7 @@ export async function executeCartQuery(item: CartItem): Promise<any[]> {
     case 'animl':
       return executeAnimlQuery(item);
     case 'calflora':
-      // TODO: Future implementation
-      throw new Error('CalFlora export not yet implemented');
+      return executeCalFloraQuery(item);
     case 'ebird':
       // TODO: Future implementation
       throw new Error('eBird export not yet implemented');
@@ -253,5 +253,123 @@ async function executeAnimlQuery(item: CartItem): Promise<any[]> {
   // Return EXACTLY the filtered observations (limited to estimatedCount if needed)
   // This ensures CSVs contain exactly what was estimated, preventing oversized files
   return filtered;
+}
+
+/**
+ * Execute a CalFlora query from a cart item
+ * 
+ * Fetches CalFlora plant observations based on stored filters:
+ * - Spatial filter (Dangermond Preserve, expanded margin, or custom polygon)
+ * - Plant name search filter
+ * - Photo filter (with/without photos)
+ */
+async function executeCalFloraQuery(item: CartItem): Promise<any[]> {
+  const { coreFilters, customFilters } = item;
+  const calFloraFilters = customFilters.calflora;
+  
+  console.log('🌱 CalFlora Cart Export: Starting query execution');
+  console.log(`   📍 Spatial filter: ${coreFilters.spatialFilter}`);
+  console.log(`   🔢 Estimated count: ${item.estimatedCount}`);
+  
+  // Determine custom polygon if needed
+  let customPolygon: string | undefined;
+  if (coreFilters.spatialFilter === 'Draw Area' && coreFilters.customPolygon) {
+    customPolygon = JSON.stringify(coreFilters.customPolygon);
+    console.log('   🎨 Using custom drawn polygon for spatial filtering');
+  }
+
+  // Calculate maxResults: use estimatedCount with a buffer
+  const maxResults = item.estimatedCount 
+    ? Math.min(item.estimatedCount + 100, 10000)
+    : 10000;
+
+  // Execute the CalFlora query
+  const response = await calFloraAPI.getAllPlants({
+    maxResults,
+    plantFilter: calFloraFilters?.plantName,
+    customPolygon
+  });
+
+  console.log(`📊 CalFlora Cart Export: Fetched ${response.results.length} records from database`);
+
+  // Apply client-side filtering for photo filter
+  let filtered = response.results;
+
+  // Apply photo filter if specified
+  if (calFloraFilters?.photoFilter === 'with') {
+    const beforeCount = filtered.length;
+    filtered = filtered.filter(plant => plant.attributes?.photo);
+    console.log(`📊 CalFlora Cart Export: After photo filter (has photos): ${filtered.length} records (removed ${beforeCount - filtered.length})`);
+  } else if (calFloraFilters?.photoFilter === 'without') {
+    const beforeCount = filtered.length;
+    filtered = filtered.filter(plant => !plant.attributes?.photo);
+    console.log(`📊 CalFlora Cart Export: After photo filter (no photos): ${filtered.length} records (removed ${beforeCount - filtered.length})`);
+  }
+
+  // Apply plant name filter client-side as well (for case-insensitive matching)
+  if (calFloraFilters?.plantName) {
+    const searchTerm = calFloraFilters.plantName.toLowerCase();
+    const beforeCount = filtered.length;
+    filtered = filtered.filter(plant => 
+      plant.scientificName?.toLowerCase().includes(searchTerm) ||
+      plant.commonName?.toLowerCase().includes(searchTerm) ||
+      plant.family?.toLowerCase().includes(searchTerm)
+    );
+    console.log(`📊 CalFlora Cart Export: After plant name filter: ${filtered.length} records (removed ${beforeCount - filtered.length})`);
+  }
+
+  // Final validation
+  if (item.estimatedCount && filtered.length !== item.estimatedCount) {
+    console.warn(`⚠️ CalFlora Cart Export: Count mismatch - Expected: ${item.estimatedCount}, Got: ${filtered.length}`);
+    
+    if (filtered.length > item.estimatedCount) {
+      console.warn(`   📝 Trimming to ${item.estimatedCount} records to match cart estimate`);
+      filtered = filtered.slice(0, item.estimatedCount);
+    }
+  }
+
+  console.log(`✅ CalFlora Cart Export: Returning ${filtered.length} records`);
+  
+  // Transform data for cleaner CSV export
+  // - Flatten attributes into main object (removing "attributes." prefix)
+  // - Remove unwanted fields: elevation, associated_species, habitat
+  return filtered.map((plant: CalFloraPlant) => {
+    const { attributes, ...rest } = plant;
+    
+    // Fields to exclude from export
+    const excludeFields = ['elevation', 'associated_species', 'associatedSpecies', 'habitat'];
+    
+    // Flatten attributes into main object, excluding unwanted fields
+    const flattenedAttrs: Record<string, any> = {};
+    if (attributes) {
+      for (const [key, value] of Object.entries(attributes)) {
+        // Skip excluded fields
+        if (excludeFields.includes(key)) continue;
+        // Skip internal/duplicate fields
+        if (key.startsWith('_') || key === 'objectid' || key === 'fid') continue;
+        flattenedAttrs[key] = value;
+      }
+    }
+    
+    return {
+      id: rest.id,
+      scientificName: rest.scientificName,
+      commonName: rest.commonName,
+      family: rest.family,
+      county: rest.county,
+      observationDate: rest.observationDate,
+      latitude: rest.geojson?.coordinates?.[1],
+      longitude: rest.geojson?.coordinates?.[0],
+      dataSource: rest.dataSource,
+      // Flattened attributes (without "attributes." prefix)
+      observer: flattenedAttrs.observer || null,
+      photo: flattenedAttrs.photo || null,
+      notes: flattenedAttrs.notes || null,
+      citation: flattenedAttrs.citation || null,
+      source: flattenedAttrs.source || null,
+      locationDescription: flattenedAttrs.locationDescription || flattenedAttrs.location_description || null,
+      locationQuality: flattenedAttrs.locationQuality || flattenedAttrs.location_quality || null,
+    };
+  });
 }
 

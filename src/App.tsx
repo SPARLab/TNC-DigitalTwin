@@ -7,7 +7,7 @@ import FilterSidebar from './components/FilterSidebar';
 import MapView from './components/MapView';
 import Scene3DView from './components/Scene3DView';
 import Footer from './components/Footer';
-import CalFloraPlantModal from './components/CalFloraPlantModal';
+import CalFloraDetailsSidebar from './components/CalFloraDetailsSidebar';
 import HubPagePreview from './components/HubPagePreview';
 import DatasetDownloadView from './components/DatasetDownloadView';
 import TNCArcGISDetailsSidebar from './components/TNCArcGISDetailsSidebar';
@@ -64,6 +64,17 @@ function App() {
     taxonName: '',
     photoFilter: 'any',
     months: []
+  });
+
+  // CalFlora custom filters state (for export tab)
+  const [calFloraCustomFilters, setCalFloraCustomFilters] = useState<{
+    nativeStatus: 'native' | 'invasive' | 'non-native' | 'unknown' | 'all';
+    plantName: string;
+    photoFilter: 'any' | 'with' | 'without';
+  }>({
+    nativeStatus: 'all',
+    plantName: '',
+    photoFilter: 'any'
   });
 
   const [filters, setFilters] = useState<FilterState>({
@@ -163,9 +174,8 @@ function App() {
   const mapViewRef = useRef<MapViewRef>(null);
   const [isDrawMode, setIsDrawMode] = useState(false);
 
-  // CalFlora modal state
+  // CalFlora selection state (for right sidebar)
   const [selectedCalFloraPlant, setSelectedCalFloraPlant] = useState<CalFloraPlant | null>(null);
-  const [isCalFloraModalOpen, setIsCalFloraModalOpen] = useState(false);
 
   // TNC ArcGIS state
   const [activeLayerIds, setActiveLayerIds] = useState<string[]>([]);
@@ -234,17 +244,15 @@ function App() {
     return `from ${formatDateRangeCompact(lastSearchedDaysBack).toLowerCase()}`;
   }, [filters.startDate, filters.endDate, lastSearchedDaysBack]);
 
-  // CalFlora modal handlers
-  const openCalFloraModal = (plantId: string) => {
+  // CalFlora selection handlers (for right sidebar)
+  const openCalFloraDetails = (plantId: string) => {
     const plant = calFloraPlants.find(p => p.id === plantId);
     if (plant) {
       setSelectedCalFloraPlant(plant);
-      setIsCalFloraModalOpen(true);
     }
   };
 
-  const closeCalFloraModal = () => {
-    setIsCalFloraModalOpen(false);
+  const closeCalFloraDetails = () => {
     setSelectedCalFloraPlant(null);
   };
 
@@ -1052,7 +1060,7 @@ function App() {
 
   // Set up global function for popup buttons to access
   useEffect(() => {
-    (window as any).openCalFloraModal = openCalFloraModal;
+    (window as any).openCalFloraModal = openCalFloraDetails;
     
     return () => {
       delete (window as any).openCalFloraModal;
@@ -2275,7 +2283,6 @@ function App() {
           onCalFloraExportGeoJSON={handleCalFloraExportGeoJSON}
           onCalFloraPlantSelect={(plant) => {
             setSelectedCalFloraPlant(plant);
-            setIsCalFloraModalOpen(true);
           }}
           tncArcGISItems={tncArcGISItems}
           tncArcGISLoading={tncArcGISLoading}
@@ -2744,6 +2751,82 @@ function App() {
             hasImages={animlCustomFilters?.hasImages}
             onHasImagesChange={(hasImages) => setAnimlCustomFilters(prev => ({ ...prev, hasImages }))}
           />
+        ) : lastSearchedFilters.source === 'CalFlora' ? (
+          <CalFloraDetailsSidebar
+            dataSourceLabel="CalFlora"
+            selectedPlant={selectedCalFloraPlant}
+            plants={calFloraPlants}
+            dateRangeText=""
+            nativeStatusFilter={calFloraCustomFilters.nativeStatus}
+            onNativeStatusFilterChange={(status) => setCalFloraCustomFilters(prev => ({ ...prev, nativeStatus: status }))}
+            plantNameFilter={calFloraCustomFilters.plantName}
+            onPlantNameFilterChange={(name) => setCalFloraCustomFilters(prev => ({ ...prev, plantName: name }))}
+            photoFilter={calFloraCustomFilters.photoFilter}
+            onPhotoFilterChange={(value) => setCalFloraCustomFilters(prev => ({ ...prev, photoFilter: value }))}
+            onExportCSV={handleCalFloraExportCSV}
+            onExportGeoJSON={handleCalFloraExportGeoJSON}
+            onAddToCart={(filteredCount: number) => {
+              const result = addToCart({
+                dataSource: 'calflora',
+                title: `CalFlora: ${filteredCount} plants`,
+                coreFilters: {
+                  category: lastSearchedFilters.category,
+                  source: lastSearchedFilters.source,
+                  spatialFilter: lastSearchedFilters.spatialFilter,
+                  timeRange: lastSearchedFilters.timeRange,
+                  daysBack: lastSearchedFilters.daysBack,
+                  startDate: lastSearchedFilters.startDate,
+                  endDate: lastSearchedFilters.endDate,
+                  customPolygon: lastSearchedFilters.customPolygon
+                },
+                customFilters: {
+                  calflora: {
+                    nativeStatus: calFloraCustomFilters.nativeStatus !== 'all' ? calFloraCustomFilters.nativeStatus : undefined,
+                    plantName: calFloraCustomFilters.plantName || undefined,
+                    photoFilter: calFloraCustomFilters.photoFilter !== 'any' ? calFloraCustomFilters.photoFilter : undefined
+                  }
+                },
+                estimatedCount: filteredCount
+              });
+
+              if (result.success) {
+                toast.success(
+                  (t) => (
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">
+                          Added {filteredCount} plants to cart
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setIsCartOpen(true);
+                          toast.dismiss(t.id);
+                        }}
+                        className="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 text-white font-medium rounded transition-colors"
+                      >
+                        View Cart
+                      </button>
+                    </div>
+                  ),
+                  {
+                    duration: 3000,
+                    position: 'bottom-right',
+                    style: {
+                      minWidth: '350px',
+                    },
+                  }
+                );
+              } else {
+                toast.error(result.error || 'Failed to add to cart', {
+                  duration: 4000,
+                  position: 'bottom-right',
+                });
+              }
+            }}
+            onClose={closeCalFloraDetails}
+            hasSearched={hasSearched}
+          />
         ) : (
           <FilterSidebar 
             filters={filters}
@@ -2763,13 +2846,6 @@ function App() {
         )}
       </div>
       <Footer />
-      
-      {/* CalFlora Plant Modal */}
-      <CalFloraPlantModal
-        plant={selectedCalFloraPlant}
-        isOpen={isCalFloraModalOpen}
-        onClose={closeCalFloraModal}
-      />
 
       {/* Shopping Cart Panel */}
       <CartPanel

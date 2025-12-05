@@ -691,43 +691,12 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
               latitude: latitude
             });
 
-            // Choose symbol based on native status
-            const getPlantSymbol = (nativeStatus: string) => {
-              switch (nativeStatus) {
-                case 'native':
-                  return new SimpleMarkerSymbol({
-                    style: 'circle',
-                    color: [34, 197, 94, 0.8], // Green for native
-                    size: '10px',
-                    outline: {
-                      color: 'white',
-                      width: 2
-                    }
-                  });
-                case 'invasive':
-                  return new SimpleMarkerSymbol({
-                    style: 'triangle',
-                    color: [239, 68, 68, 0.8], // Red for invasive
-                    size: '12px',
-                    outline: {
-                      color: 'white',
-                      width: 2
-                    }
-                  });
-                default:
-                  return new SimpleMarkerSymbol({
-                    style: 'square',
-                    color: [156, 163, 175, 0.8], // Gray for unknown
-                    size: '8px',
-                    outline: {
-                      color: 'white',
-                      width: 1
-                    }
-                  });
-              }
-            };
-
-            const symbol = getPlantSymbol(plant.nativeStatus);
+            // Use seedling emoji for CalFlora plants (same approach as iNaturalist)
+            const symbol = new PictureMarkerSymbol({
+              url: getEmojiDataUri('🌱'),
+              width: '28px',
+              height: '28px'
+            });
 
           // Create popup template with photo support
           const popupTemplate = new PopupTemplate({

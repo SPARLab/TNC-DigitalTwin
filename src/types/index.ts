@@ -194,16 +194,20 @@ export interface INaturalistCustomFilters {
 }
 
 /**
- * CalFlora-specific query filters (future implementation)
+ * CalFlora-specific query filters
  */
 export interface CalFloraCustomFilters {
-  /** Filter by native status: native, invasive, non-native */
-  nativeStatus?: 'native' | 'invasive' | 'non-native';
+  /** Filter by native status */
+  nativeStatus?: 'native' | 'invasive' | 'non-native' | 'unknown';
   
   /** California Invasive Plant Council (Cal-IPC) rating */
   calIpcRating?: string;
   
-  // Additional filters to be defined
+  /** Plant name search filter */
+  plantName?: string;
+  
+  /** Photo filter: with photos, without photos, or any */
+  photoFilter?: 'with' | 'without';
 }
 
 /**
