@@ -350,7 +350,9 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
 
   // Find observation by ID (works for both grouped and ungrouped)
   // Also handles finding by image ID when in grouped mode
-  const findObservationById = (id: number): AnimlImageLabel | GroupedObservation | null => {
+  // Currently unused but kept for future use
+  /*
+  const _findObservationById = (id: number): AnimlImageLabel | GroupedObservation | null => {
     if (groupedObservations) {
       // First try to find by primaryId
       let found = groupedObservations.find(group => group.primaryId === id);
@@ -382,6 +384,7 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
     }
     return null;
   };
+  */
 
   // Get current observation index for keyboard navigation
   const getCurrentObservationIndex = (): number => {

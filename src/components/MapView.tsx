@@ -12,12 +12,12 @@ import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 import PopupTemplate from '@arcgis/core/PopupTemplate';
 import * as reactiveUtils from '@arcgis/core/core/reactiveUtils';
 import * as geometryEngine from '@arcgis/core/geometry/geometryEngine';
-import { iNaturalistAPI, iNaturalistObservation } from '../services/iNaturalistService';
-import { tncINaturalistService, TNCArcGISObservation } from '../services/tncINaturalistService';
-import { calFloraAPI, CalFloraPlant } from '../services/calFloraService';
-import { TNCArcGISItem, tncArcGISAPI } from '../services/tncArcGISService';
-import { eBirdService, EBirdObservation } from '../services/eBirdService';
-import { animlService, AnimlDeployment, AnimlImageLabel } from '../services/animlService';
+import { iNaturalistObservation } from '../services/iNaturalistService';
+import { TNCArcGISObservation } from '../services/tncINaturalistService';
+import { CalFloraPlant } from '../services/calFloraService';
+import { TNCArcGISItem } from '../services/tncArcGISService';
+import { EBirdObservation } from '../services/eBirdService';
+import { AnimlDeployment, AnimlImageLabel } from '../services/animlService';
 import type { DendraStation } from '../types';
 import LayerLegend from './LayerLegend';
 import { MapLegend } from './MapLegend';
@@ -197,13 +197,13 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   onPolygonCleared,
   iconicTaxa = [],
   onIconicTaxaChange,
-  animlDeployments = [],
-  animlImageLabels = [],
-  animlViewMode = 'camera-centric',
-  selectedAnimlDeployment,
-  selectedAnimlObservation,
-  onAnimlDeploymentClick,
-  onAnimlObservationClick,
+  animlDeployments: _animlDeployments = [],
+  animlImageLabels: _animlImageLabels = [],
+  animlViewMode: _animlViewMode = 'camera-centric',
+  selectedAnimlDeployment: _selectedAnimlDeployment,
+  selectedAnimlObservation: _selectedAnimlObservation,
+  onAnimlDeploymentClick: _onAnimlDeploymentClick,
+  onAnimlObservationClick: _onAnimlObservationClick,
   onAnimlLoadingChange,
   // Drone Imagery props
   activeDroneImageryIds = [],

@@ -41,7 +41,8 @@ export const createMockFilterState = (overrides: Partial<FilterState> = {}): Fil
     startDate: undefined,
     endDate: undefined,
     qualityGrade: undefined,
-    iconicTaxa: []
+    iconicTaxa: [],
+    tags: []
   }
 
   return { ...baseFilter, ...overrides }

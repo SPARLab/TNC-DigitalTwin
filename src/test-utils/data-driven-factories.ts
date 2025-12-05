@@ -93,7 +93,8 @@ export function createDataDrivenTestScenarios(csvData: CSVRow[]): Array<{
           source: 'TNC ArcGIS Hub',
           spatialFilter: 'Dangermond Preserve',
           timeRange: 'Last 6 months',
-          daysBack: 180
+          daysBack: 180,
+          tags: []
         },
         expectedItems: items as CSVRow[],
         expectedCount: items.length,
@@ -116,7 +117,8 @@ export function createDataDrivenTestScenarios(csvData: CSVRow[]): Array<{
         source: 'TNC ArcGIS Hub',
         spatialFilter: 'Dangermond Preserve',
         timeRange: 'Last 6 months',
-        daysBack: 180
+        daysBack: 180,
+        tags: []
       },
       expectedItems: hydrologicalItems,
       expectedCount: hydrologicalItems.length,
@@ -137,7 +139,8 @@ export function createDataDrivenTestScenarios(csvData: CSVRow[]): Array<{
         category: 'Fire',
         source: 'TNC ArcGIS Hub',
         spatialFilter: 'Dangermond + Margin',
-        timeRange: '2020-2024'
+        timeRange: '2020-2024',
+        tags: []
       },
       expectedItems: fireItems,
       expectedCount: fireItems.length,
@@ -159,7 +162,8 @@ export function createDataDrivenTestScenarios(csvData: CSVRow[]): Array<{
         source: 'TNC ArcGIS Hub',
         spatialFilter: 'Current View',
         timeRange: 'Last 6 months',
-        daysBack: 180
+        daysBack: 180,
+        tags: []
       },
       expectedItems: marineItems,
       expectedCount: marineItems.length,

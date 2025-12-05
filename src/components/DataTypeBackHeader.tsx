@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, LayoutGrid } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 interface DataTypeBackHeaderProps {
   onBack: () => void;

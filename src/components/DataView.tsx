@@ -107,8 +107,8 @@ interface DataViewProps {
   selectedAnimlObservation?: AnimlImageLabel | null;
   selectedAnimlObservationId?: number | null;
   onAnimlViewModeChange?: (mode: AnimlViewMode) => void;
-  onAnimlDeploymentClick?: (deployment: AnimlDeployment) => void;
-  onAnimlAnimalTagClick?: (tag: AnimlAnimalTag) => void;
+  onAnimlDeploymentClick?: (deployment: AnimlDeployment | null) => void;
+  onAnimlAnimalTagClick?: (tag: AnimlAnimalTag | null) => void;
   onAnimlObservationClick?: (observation: AnimlImageLabel) => void;
   onAnimlDetailsClose?: () => void;
   onAnimlExportCSV?: () => void;
@@ -207,7 +207,7 @@ const DataView: React.FC<DataViewProps> = ({
   animlDateRangeText = '',
   animlCustomFilters,
   animlCountLookups = null,
-  animlCountsLoading = false,
+  animlCountsLoading: _animlCountsLoading = false,
   onAnimlCustomFiltersChange,
   // Drone Imagery props
   activeDroneImageryIds = [],
