@@ -2,8 +2,8 @@ import { CartItem } from '../types';
 import { iNaturalistAPI } from './iNaturalistService';
 import { animlService } from './animlService';
 import { calFloraAPI, CalFloraPlant } from './calFloraService';
+import { eBirdService, EBirdObservation } from './eBirdService';
 import { getDateRange, formatDateForAPI } from '../utils/dateUtils';
-// Import other services as needed
 
 /**
  * Execute a cart query and return the results
@@ -18,8 +18,7 @@ export async function executeCartQuery(item: CartItem): Promise<any[]> {
     case 'calflora':
       return executeCalFloraQuery(item);
     case 'ebird':
-      // TODO: Future implementation
-      throw new Error('eBird export not yet implemented');
+      return executeEBirdQuery(item);
     case 'dendra':
       // TODO: Future implementation
       throw new Error('Dendra export not yet implemented');
@@ -371,5 +370,107 @@ async function executeCalFloraQuery(item: CartItem): Promise<any[]> {
       locationQuality: flattenedAttrs.locationQuality || flattenedAttrs.location_quality || null,
     };
   });
+}
+
+/**
+ * Execute an eBird query from a cart item
+ * 
+ * Fetches eBird observations based on stored filters:
+ * - Spatial filter (Dangermond Preserve, expanded margin, or custom polygon)
+ * - Date range
+ * - Species name filter
+ */
+async function executeEBirdQuery(item: CartItem): Promise<any[]> {
+  const { coreFilters, customFilters } = item;
+  const eBirdFilters = customFilters.ebird;
+  
+  console.log('🐦 eBird Cart Export: Starting query execution');
+  console.log(`   📍 Spatial filter: ${coreFilters.spatialFilter}`);
+  console.log(`   🔢 Estimated count: ${item.estimatedCount}`);
+  
+  // Determine search mode from spatial filter
+  let searchMode: 'preserve-only' | 'expanded' | 'custom' = 'expanded';
+  let customPolygon: string | undefined;
+  
+  if (coreFilters.spatialFilter === 'Dangermond Preserve') {
+    searchMode = 'preserve-only';
+  } else if (coreFilters.spatialFilter === 'Dangermond + Margin') {
+    searchMode = 'expanded';
+  } else if (coreFilters.spatialFilter === 'Draw Area' && coreFilters.customPolygon) {
+    searchMode = 'custom';
+    customPolygon = JSON.stringify(coreFilters.customPolygon);
+    console.log('   🎨 Using custom drawn polygon for spatial filtering');
+  }
+
+  // Calculate dates from coreFilters
+  let startDate = coreFilters.startDate;
+  let endDate = coreFilters.endDate;
+  if (!startDate || !endDate) {
+    const daysBack = coreFilters.daysBack || 30;
+    const dateRange = getDateRange(daysBack);
+    startDate = formatDateForAPI(dateRange.startDate);
+    endDate = formatDateForAPI(dateRange.endDate);
+    console.log(`📅 eBird Cart Export: Converted daysBack (${daysBack}) to date range: ${startDate} to ${endDate}`);
+  }
+
+  // Calculate maxResults with buffer
+  const maxResults = item.estimatedCount 
+    ? Math.min(item.estimatedCount + 500, 10000) // Larger buffer for eBird
+    : 10000;
+
+  // Execute the eBird query
+  const response = await eBirdService.queryObservations({
+    startDate,
+    endDate,
+    maxResults,
+    searchMode,
+    customPolygon
+  });
+
+  console.log(`📊 eBird Cart Export: Fetched ${response.observations.length} records from database`);
+
+  // Apply client-side filtering
+  let filtered = response.observations;
+
+  // Apply species filter if specified
+  if (eBirdFilters?.speciesFilter) {
+    const searchTerm = eBirdFilters.speciesFilter.toLowerCase();
+    const beforeCount = filtered.length;
+    filtered = filtered.filter((obs: EBirdObservation) => 
+      obs.common_name?.toLowerCase().includes(searchTerm) ||
+      obs.scientific_name?.toLowerCase().includes(searchTerm)
+    );
+    console.log(`📊 eBird Cart Export: After species filter: ${filtered.length} records (removed ${beforeCount - filtered.length})`);
+  }
+
+  // Final validation
+  if (item.estimatedCount && filtered.length !== item.estimatedCount) {
+    console.warn(`⚠️ eBird Cart Export: Count mismatch - Expected: ${item.estimatedCount}, Got: ${filtered.length}`);
+    
+    if (filtered.length > item.estimatedCount) {
+      console.warn(`   📝 Trimming to ${item.estimatedCount} records to match cart estimate`);
+      filtered = filtered.slice(0, item.estimatedCount);
+    }
+  }
+
+  console.log(`✅ eBird Cart Export: Returning ${filtered.length} records`);
+  
+  // Transform data for cleaner CSV export
+  return filtered.map((obs: EBirdObservation) => ({
+    obs_id: obs.obs_id,
+    common_name: obs.common_name,
+    scientific_name: obs.scientific_name,
+    count_observed: obs.count_observed,
+    observation_date: obs.observation_date,
+    obstime: obs.obstime,
+    location_name: obs.location_name,
+    county: obs.county,
+    state: obs.state,
+    country: obs.country,
+    latitude: obs.lat,
+    longitude: obs.lng,
+    protocol_name: obs.protocol_name,
+    data_source: obs.data_source
+  }));
 }
 

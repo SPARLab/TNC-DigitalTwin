@@ -15,8 +15,9 @@ import DendraDetailsSidebar from './components/DendraDetailsSidebar';
 import INaturalistDetailsSidebar from './components/INaturalistDetailsSidebar';
 import AnimlDetailsSidebar from './components/AnimlDetailsSidebar';
 import AnimlLoadingModal from './components/AnimlLoadingModal';
+import EBirdDetailsSidebar from './components/EBirdDetailsSidebar';
 import { INaturalistUnifiedObservation } from './components/INaturalistSidebar';
-import { FilterState, DendraStation, DendraDatastream, DendraDatastreamWithStation, DendraDatapoint, INaturalistCustomFilters, AnimlCustomFilters } from './types';
+import { FilterState, DendraStation, DendraDatastream, DendraDatastreamWithStation, DendraDatapoint, INaturalistCustomFilters, AnimlCustomFilters, EBirdCustomFilters } from './types';
 import { animlService, AnimlDeployment, AnimlImageLabel, AnimlAnimalTag, AnimlCountLookups } from './services/animlService';
 import { AnimlViewMode } from './components/AnimlSidebar';
 import { LiDARViewMode } from './components/dataviews/LiDARView';
@@ -177,6 +178,14 @@ function App() {
   // CalFlora selection state (for right sidebar)
   const [selectedCalFloraPlant, setSelectedCalFloraPlant] = useState<CalFloraPlant | null>(null);
 
+  // eBird selection state (for right sidebar)
+  const [selectedEBirdObservation, setSelectedEBirdObservation] = useState<EBirdObservation | null>(null);
+
+  // eBird custom filters state (for export tab)
+  const [eBirdCustomFilters, setEBirdCustomFilters] = useState<EBirdCustomFilters>({
+    speciesFilter: ''
+  });
+
   // TNC ArcGIS state
   const [activeLayerIds, setActiveLayerIds] = useState<string[]>([]);
   const [loadingLayerIds, setLoadingLayerIds] = useState<string[]>([]);
@@ -254,6 +263,22 @@ function App() {
 
   const closeCalFloraDetails = () => {
     setSelectedCalFloraPlant(null);
+  };
+
+  // eBird observation selection handlers
+  const handleEBirdObservationClick = (obs: EBirdObservation | null) => {
+    setSelectedEBirdObservation(obs);
+    // Highlight on map if available
+    if (obs && mapViewRef.current) {
+      mapViewRef.current.highlightObservation(obs.obs_id);
+    } else {
+      mapViewRef.current?.clearObservationHighlight();
+    }
+  };
+
+  const closeEBirdDetails = () => {
+    setSelectedEBirdObservation(null);
+    mapViewRef.current?.clearObservationHighlight();
   };
 
   // iNaturalist observation selection handlers
@@ -1883,6 +1908,75 @@ function App() {
     downloadFile(geoJsonData, 'calflora-plants.geojson', 'application/geo+json');
   };
 
+  // eBird export functions
+  const convertEBirdToCSV = (observations: EBirdObservation[]): string => {
+    const headers = [
+      'Observation ID', 'Common Name', 'Scientific Name', 'Count', 
+      'Observation Date', 'Observation Time', 'Location', 'County', 'State',
+      'Latitude', 'Longitude', 'Protocol', 'Data Source'
+    ];
+    
+    const rows = observations.map(obs => [
+      obs.obs_id,
+      obs.common_name || '',
+      obs.scientific_name,
+      obs.count_observed,
+      obs.observation_date,
+      obs.obstime || '',
+      obs.location_name,
+      obs.county,
+      obs.state,
+      obs.lat,
+      obs.lng,
+      obs.protocol_name,
+      obs.data_source
+    ]);
+
+    return [headers, ...rows].map(row => 
+      row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+    ).join('\n');
+  };
+
+  const convertEBirdToGeoJSON = (observations: EBirdObservation[]): string => {
+    const features = observations
+      .filter(obs => obs.lat != null && obs.lng != null)
+      .map(obs => ({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [obs.lng, obs.lat]
+        },
+        properties: {
+          obs_id: obs.obs_id,
+          common_name: obs.common_name,
+          scientific_name: obs.scientific_name,
+          count_observed: obs.count_observed,
+          observation_date: obs.observation_date,
+          obstime: obs.obstime,
+          location_name: obs.location_name,
+          county: obs.county,
+          state: obs.state,
+          protocol_name: obs.protocol_name,
+          data_source: obs.data_source
+        }
+      }));
+
+    return JSON.stringify({
+      type: 'FeatureCollection',
+      features
+    }, null, 2);
+  };
+
+  const handleEBirdExportCSV = () => {
+    const csvData = convertEBirdToCSV(eBirdObservations);
+    downloadFile(csvData, 'ebird-observations.csv', 'text/csv');
+  };
+
+  const handleEBirdExportGeoJSON = () => {
+    const geoJsonData = convertEBirdToGeoJSON(eBirdObservations);
+    downloadFile(geoJsonData, 'ebird-observations.geojson', 'application/geo+json');
+  };
+
   const handleExportCSV = () => {
     const csvData = convertToCSV(observations);
     downloadFile(csvData, 'inaturalist-observations.csv', 'text/csv');
@@ -2277,6 +2371,37 @@ function App() {
           onTNCObservationSelect={setSelectedTNCObservation}
           eBirdObservations={eBirdObservations}
           eBirdObservationsLoading={eBirdObservationsLoading}
+          onEBirdExportCSV={handleEBirdExportCSV}
+          onEBirdExportGeoJSON={handleEBirdExportGeoJSON}
+          onEBirdObservationSelect={handleEBirdObservationClick}
+          onEBirdAddToCart={() => {
+            const result = addToCart({
+              dataSource: 'ebird',
+              title: `eBird: ${eBirdObservations.length} observations`,
+              coreFilters: {
+                category: lastSearchedFilters.category,
+                source: lastSearchedFilters.source,
+                spatialFilter: lastSearchedFilters.spatialFilter,
+                timeRange: lastSearchedFilters.timeRange,
+                daysBack: lastSearchedFilters.daysBack,
+                startDate: lastSearchedFilters.startDate,
+                endDate: lastSearchedFilters.endDate,
+                customPolygon: lastSearchedFilters.customPolygon
+              },
+              customFilters: {
+                ebird: {
+                  speciesFilter: eBirdCustomFilters.speciesFilter
+                }
+              },
+              estimatedCount: eBirdObservations.length
+            });
+            
+            if (result.success) {
+              toast.success('Added to cart!', { duration: 2000, position: 'bottom-right' });
+            } else if (result.error === 'duplicate') {
+              toast('Already in cart', { icon: '📋', duration: 2000, position: 'bottom-right' });
+            }
+          }}
           calFloraPlants={calFloraPlants}
           calFloraLoading={calFloraLoading}
           onCalFloraExportCSV={handleCalFloraExportCSV}
@@ -2443,6 +2568,8 @@ function App() {
                 eBirdObservations={lastSearchedFilters.source === 'eBird' ? eBirdObservations : []}
                 onEBirdObservationsUpdate={setEBirdObservations}
                 onEBirdLoadingChange={setEBirdObservationsLoading}
+                selectedEBirdObservation={selectedEBirdObservation}
+                onEBirdObservationSelect={handleEBirdObservationClick}
                 calFloraPlants={filters.source === 'CalFlora' ? calFloraPlants : []}
                 onCalFloraUpdate={setCalFloraPlants}
                 onCalFloraLoadingChange={setCalFloraLoading}
@@ -2825,6 +2952,76 @@ function App() {
               }
             }}
             onClose={closeCalFloraDetails}
+            hasSearched={hasSearched}
+          />
+        ) : lastSearchedFilters.source === 'eBird' ? (
+          <EBirdDetailsSidebar
+            dataSourceLabel="eBird"
+            selectedObservation={selectedEBirdObservation}
+            observations={eBirdObservations}
+            dateRangeText={inatDateRangeText}
+            speciesFilter={eBirdCustomFilters.speciesFilter}
+            onSpeciesFilterChange={(name) => setEBirdCustomFilters(prev => ({ ...prev, speciesFilter: name }))}
+            onExportCSV={handleEBirdExportCSV}
+            onExportGeoJSON={handleEBirdExportGeoJSON}
+            onAddToCart={(filteredCount: number) => {
+              const result = addToCart({
+                dataSource: 'ebird',
+                title: `eBird: ${filteredCount} observations`,
+                coreFilters: {
+                  category: lastSearchedFilters.category,
+                  source: lastSearchedFilters.source,
+                  spatialFilter: lastSearchedFilters.spatialFilter,
+                  timeRange: lastSearchedFilters.timeRange,
+                  daysBack: lastSearchedFilters.daysBack,
+                  startDate: lastSearchedFilters.startDate,
+                  endDate: lastSearchedFilters.endDate,
+                  customPolygon: lastSearchedFilters.customPolygon
+                },
+                customFilters: {
+                  ebird: {
+                    speciesFilter: eBirdCustomFilters.speciesFilter || undefined
+                  }
+                },
+                estimatedCount: filteredCount
+              });
+
+              if (result.success) {
+                toast.success(
+                  (t) => (
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">
+                          Added {filteredCount} observations to cart
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setIsCartOpen(true);
+                          toast.dismiss(t.id);
+                        }}
+                        className="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 text-white font-medium rounded transition-colors"
+                      >
+                        View Cart
+                      </button>
+                    </div>
+                  ),
+                  {
+                    duration: 3000,
+                    position: 'bottom-right',
+                    style: {
+                      minWidth: '350px',
+                    },
+                  }
+                );
+              } else {
+                toast.error(result.error || 'Failed to add to cart', {
+                  duration: 4000,
+                  position: 'bottom-right',
+                });
+              }
+            }}
+            onClose={closeEBirdDetails}
             hasSearched={hasSearched}
           />
         ) : (

@@ -211,16 +211,17 @@ export interface CalFloraCustomFilters {
 }
 
 /**
- * eBird-specific query filters (future implementation)
+ * eBird-specific query filters
  */
 export interface EBirdCustomFilters {
+  /** Filter by species name (common or scientific) */
+  speciesFilter?: string;
+  
   /** Include only verified observations */
   verifiedOnly?: boolean;
   
   /** Filter by breeding codes */
   breedingCodes?: string[];
-  
-  // Additional filters to be defined
 }
 
 /**

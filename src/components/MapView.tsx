@@ -67,6 +67,8 @@ interface MapViewProps {
   eBirdObservations?: EBirdObservation[];
   onEBirdObservationsUpdate?: (observations: EBirdObservation[]) => void;
   onEBirdLoadingChange?: (loading: boolean) => void;
+  selectedEBirdObservation?: EBirdObservation | null;
+  onEBirdObservationSelect?: (observation: EBirdObservation | null) => void;
   calFloraPlants?: CalFloraPlant[];
   onCalFloraUpdate?: (plants: CalFloraPlant[]) => void;
   onCalFloraLoadingChange?: (loading: boolean) => void;
@@ -173,6 +175,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   eBirdObservations = [],
   onEBirdObservationsUpdate,
   onEBirdLoadingChange,
+  selectedEBirdObservation: _selectedEBirdObservation,
+  onEBirdObservationSelect,
   calFloraPlants = [],
   onCalFloraUpdate,
   onCalFloraLoadingChange,
@@ -1333,15 +1337,11 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
               latitude: latitude
             });
 
-            // Create symbol - red color for birds
-            const symbol = new SimpleMarkerSymbol({
-              style: 'circle',
-              color: '#d62728', // Red color for birds
-              size: '10px',
-              outline: {
-                color: 'white',
-                width: 1.5
-              }
+            // Create symbol - bird emoji for eBird observations
+            const symbol = new PictureMarkerSymbol({
+              url: getEmojiDataUri('🐦'),
+              width: '28px',
+              height: '28px'
             });
 
             // Create popup template
@@ -1442,6 +1442,29 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       };
     }
   }, [view, onINaturalistObservationSelect]);
+
+  // Add click handler for eBird observations
+  useEffect(() => {
+    if (view) {
+      const clickHandler = view.on('click', (event) => {
+        view.hitTest(event).then((response) => {
+          const eBirdGraphic = response.results.find(result => 
+            'graphic' in result && result.graphic && result.graphic.layer?.id === 'ebird-observations'
+          );
+          
+          if (eBirdGraphic && 'graphic' in eBirdGraphic && onEBirdObservationSelect) {
+            const obsId = eBirdGraphic.graphic.attributes.obs_id;
+            const observation = eBirdObservations.find(obs => obs.obs_id === obsId);
+            onEBirdObservationSelect(observation || null);
+          }
+        });
+      });
+
+      return () => {
+        clickHandler.remove();
+      };
+    }
+  }, [view, eBirdObservations, onEBirdObservationSelect]);
 
   const loadObservations = async (_mapView: __esri.MapView, observationsLayer: GraphicsLayer, filters?: ObservationsFilters) => {
     setLoading(true);
