@@ -21,6 +21,7 @@ import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag, AnimlCountLookups } f
 import { AnimlViewMode } from './AnimlSidebar';
 import { AnimlCustomFilters } from '../types';
 import DataCatalog from './DataCatalog';
+import type { DroneImageryProject } from '../types/droneImagery';
 
 interface DataViewProps {
   filters: FilterState;
@@ -123,6 +124,8 @@ interface DataViewProps {
   activeDroneImageryIds?: string[];
   loadingDroneImageryIds?: string[];
   onDroneImageryLayerToggle?: (wmtsItemId: string) => void;
+  onDroneCarouselOpen?: (project: DroneImageryProject) => void;
+  activeDroneProjectName?: string;
 }
 
 const DataView: React.FC<DataViewProps> = ({
@@ -212,7 +215,9 @@ const DataView: React.FC<DataViewProps> = ({
   // Drone Imagery props
   activeDroneImageryIds = [],
   loadingDroneImageryIds = [],
-  onDroneImageryLayerToggle
+  onDroneImageryLayerToggle,
+  onDroneCarouselOpen,
+  activeDroneProjectName
 }) => {
   // Route to appropriate data view based on category + source combination
   const getDataView = () => {
@@ -369,6 +374,8 @@ const DataView: React.FC<DataViewProps> = ({
             activeLayerIds={activeDroneImageryIds}
             loadingLayerIds={loadingDroneImageryIds}
             onLayerToggle={onDroneImageryLayerToggle}
+            onProjectCarouselOpen={onDroneCarouselOpen}
+            activeProjectName={activeDroneProjectName}
           />
         );
       

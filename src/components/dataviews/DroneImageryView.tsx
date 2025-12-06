@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plane, Calendar, ChevronDown, ChevronRight, Loader2, Package, MapPin, Eye, EyeOff } from 'lucide-react';
+import { Plane, Calendar, Loader2, Package, Eye } from 'lucide-react';
 import DataTypeBackHeader from '../DataTypeBackHeader';
 import { fetchDroneImageryByProject, type DroneImageryProject } from '../../services/droneImageryService';
 
@@ -9,6 +9,10 @@ interface DroneImageryViewProps {
   activeLayerIds?: string[];
   loadingLayerIds?: string[];
   onLayerToggle?: (wmtsItemId: string) => void;
+  /** Callback to open carousel for any project */
+  onProjectCarouselOpen?: (project: DroneImageryProject) => void;
+  /** Currently active project name (if carousel is open) */
+  activeProjectName?: string;
 }
 
 const DroneImageryView: React.FC<DroneImageryViewProps> = ({ 
@@ -16,12 +20,13 @@ const DroneImageryView: React.FC<DroneImageryViewProps> = ({
   onBack,
   activeLayerIds = [],
   loadingLayerIds = [],
-  onLayerToggle
+  onLayerToggle: _onLayerToggle,
+  onProjectCarouselOpen,
+  activeProjectName
 }) => {
   const [projects, setProjects] = useState<DroneImageryProject[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
 
   // Fetch data when hasSearched becomes true
   useEffect(() => {
@@ -32,11 +37,6 @@ const DroneImageryView: React.FC<DroneImageryViewProps> = ({
         try {
           const data = await fetchDroneImageryByProject();
           setProjects(data);
-          // Auto-expand projects with multiple layers
-          const multiLayerProjects = data
-            .filter(p => p.layerCount > 1)
-            .map(p => p.projectName);
-          setExpandedProjects(new Set(multiLayerProjects));
         } catch (err) {
           setError(err instanceof Error ? err.message : 'Failed to load drone imagery');
         } finally {
@@ -46,18 +46,6 @@ const DroneImageryView: React.FC<DroneImageryViewProps> = ({
       fetchData();
     }
   }, [hasSearched, projects.length]);
-
-  const toggleProject = (projectName: string) => {
-    setExpandedProjects(prev => {
-      const next = new Set(prev);
-      if (next.has(projectName)) {
-        next.delete(projectName);
-      } else {
-        next.add(projectName);
-      }
-      return next;
-    });
-  };
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', { 
@@ -137,144 +125,69 @@ const DroneImageryView: React.FC<DroneImageryViewProps> = ({
           // Project list
           <div id="drone-imagery-projects" className="p-4 space-y-3">
             {projects.map((project) => {
-              const isExpanded = expandedProjects.has(project.projectName);
-              const hasMultipleLayers = project.layerCount > 1;
+              const isActive = activeProjectName === project.projectName;
+              const isLoading = loadingLayerIds.length > 0 && isActive;
 
               return (
                 <div
                   key={project.projectName}
                   id={`project-${project.projectName.replace(/\s+/g, '-').toLowerCase()}`}
-                  className="border border-gray-200 rounded-lg overflow-hidden"
+                  className={`border rounded-lg overflow-hidden transition-colors ${
+                    isActive ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                  }`}
                 >
-                  {/* Project Header */}
-                  <button
-                    onClick={() => hasMultipleLayers && toggleProject(project.projectName)}
-                    className={`w-full flex items-start p-3 text-left ${
-                      hasMultipleLayers 
-                        ? 'hover:bg-gray-50 cursor-pointer' 
-                        : 'cursor-default'
-                    }`}
-                  >
-                    {/* Expand/Collapse Icon */}
-                    <div className="mt-0.5 mr-2 text-gray-400">
-                      {hasMultipleLayers ? (
-                        isExpanded ? (
-                          <ChevronDown className="w-4 h-4" />
-                        ) : (
-                          <ChevronRight className="w-4 h-4" />
-                        )
-                      ) : (
-                        <div className="w-4 h-4" /> // Spacer
-                      )}
-                    </div>
-
+                  {/* Project Card */}
+                  <div className="p-3">
                     {/* Project Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-sm font-medium text-gray-900 truncate">
-                          {project.projectName}
-                        </h3>
-                        {project.hasImageCollections && (
-                          <span title="Has Image Collection">
-                            <Package className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {formatDateRange(project)}
-                        </span>
-                        {hasMultipleLayers && (
-                          <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded">
-                            {project.layerCount} layers
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Single layer - show toggle button directly */}
-                    {!hasMultipleLayers && (() => {
-                      const layer = project.imageryLayers[0];
-                      const isActive = activeLayerIds.includes(layer.wmts.itemId);
-                      const isLoading = loadingLayerIds.includes(layer.wmts.itemId);
-                      
-                      return (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onLayerToggle?.(layer.wmts.itemId);
-                          }}
-                          disabled={isLoading}
-                          className={`ml-2 px-3 py-1.5 text-xs font-medium rounded transition-colors flex items-center gap-1.5 flex-shrink-0 ${
-                            isActive
-                              ? 'bg-blue-600 text-white hover:bg-blue-700'
-                              : 'text-blue-600 border border-blue-600 hover:bg-blue-50'
-                          } ${isLoading ? 'opacity-50 cursor-wait' : ''}`}
-                        >
-                          {isLoading ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : isActive ? (
-                            <Eye className="w-3 h-3" />
-                          ) : (
-                            <EyeOff className="w-3 h-3" />
+                    <div className="flex items-start gap-2 mb-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className={`text-sm font-medium truncate ${
+                            isActive ? 'text-blue-900' : 'text-gray-900'
+                          }`}>
+                            {project.projectName}
+                          </h3>
+                          {project.hasImageCollections && (
+                            <span title="Has Image Collection">
+                              <Package className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                            </span>
                           )}
-                          {isActive ? 'On' : 'Off'}
-                        </button>
-                      );
-                    })()}
-                  </button>
-
-                  {/* Expanded Layers List */}
-                  {hasMultipleLayers && isExpanded && (
-                    <div className="border-t border-gray-100 bg-gray-50">
-                      {project.imageryLayers.map((layer, idx) => {
-                        const isActive = activeLayerIds.includes(layer.wmts.itemId);
-                        const isLoading = loadingLayerIds.includes(layer.wmts.itemId);
-                        
-                        return (
-                          <div
-                            key={layer.id}
-                            className={`flex items-center justify-between px-4 py-2 ${
-                              idx > 0 ? 'border-t border-gray-100' : ''
-                            } ${isActive ? 'bg-blue-50' : ''}`}
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              {layer.imageCollection && (
-                                <span title="Has Image Collection">
-                                  <Package className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
-                                </span>
-                              )}
-                              <span className={`text-sm truncate ${isActive ? 'text-blue-700 font-medium' : 'text-gray-700'}`}>
-                                {layer.planName}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                {formatDate(layer.dateCaptured)}
-                              </span>
-                            </div>
-                            <button
-                              onClick={() => onLayerToggle?.(layer.wmts.itemId)}
-                              disabled={isLoading}
-                              className={`ml-2 px-2.5 py-1 text-xs font-medium rounded transition-colors flex items-center gap-1 flex-shrink-0 ${
-                                isActive
-                                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                  : 'text-blue-600 border border-blue-600 hover:bg-blue-50'
-                              } ${isLoading ? 'opacity-50 cursor-wait' : ''}`}
-                            >
-                              {isLoading ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                              ) : isActive ? (
-                                <Eye className="w-3 h-3" />
-                              ) : (
-                                <EyeOff className="w-3 h-3" />
-                              )}
-                              {isActive ? 'On' : 'Off'}
-                            </button>
-                          </div>
-                        );
-                      })}
+                        </div>
+                        <div className={`flex items-center gap-2 text-xs ${
+                          isActive ? 'text-blue-700' : 'text-gray-500'
+                        }`}>
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {formatDateRange(project)}
+                          </span>
+                          <span className={`px-1.5 py-0.5 rounded ${
+                            isActive ? 'bg-blue-200 text-blue-800' : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {project.layerCount} {project.layerCount === 1 ? 'capture' : 'captures'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  )}
+
+                    {/* Action Button - consistent for all projects */}
+                    <button
+                      id={`project-view-btn-${project.projectName.replace(/\s+/g, '-').toLowerCase()}`}
+                      onClick={() => onProjectCarouselOpen?.(project)}
+                      disabled={isLoading}
+                      className={`w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        isActive
+                          ? 'bg-blue-600 text-white'
+                          : 'text-blue-600 border border-blue-300 hover:bg-blue-50 hover:border-blue-400'
+                      } ${isLoading ? 'opacity-70' : ''}`}
+                    >
+                      {isLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                      {isActive ? 'Viewing' : 'View Imagery'}
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -291,8 +204,8 @@ const DroneImageryView: React.FC<DroneImageryViewProps> = ({
               <span>= Has Image Collection (individual images available)</span>
             </p>
             <p className="flex items-center gap-1">
-              <MapPin className="w-3 h-3 text-gray-400" />
-              <span>Extent data coming soon - metadata enrichment in progress</span>
+              <Eye className="w-3 h-3 text-blue-600" />
+              <span>Use ← → to navigate between captures</span>
             </p>
           </div>
         </div>

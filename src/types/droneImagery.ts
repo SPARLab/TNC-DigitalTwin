@@ -1,9 +1,9 @@
 /**
- * Type definitions for DroneDeploy imagery metadata
+ * Type definitions for DroneDeploy imagery metadata (v2 API)
  */
 
 /**
- * Raw record from the DroneDeploy_Metadata FeatureServer
+ * Raw record from the DroneDeploy_Metadata_v2 FeatureServer
  */
 export interface DroneImageryRecord {
   objectid: number;
@@ -19,6 +19,10 @@ export interface DroneImageryRecord {
   /** Unix timestamp in milliseconds */
   last_updated: string;
   record_type: string;
+  /** WKT POLYGON - master bounding box for all layers in a project */
+  project_bounds: string | null;
+  /** WKT POLYGON - individual layer extent */
+  plan_geometry: string | null;
 }
 
 /**
@@ -34,13 +38,15 @@ export interface DroneImageryMetadata {
   wmts: {
     link: string;
     itemId: string;
-    serviceUrl?: string; // To be fetched from item metadata
+    serviceUrl?: string;
   };
   imageCollection?: {
     link: string;
     itemId: string;
   };
   recordType: string;
+  /** Parsed polygon rings from plan_geometry WKT */
+  planGeometry?: number[][][];
 }
 
 /**
@@ -55,6 +61,17 @@ export interface DroneImageryProject {
   dateRangeEnd: Date;
   layerCount: number;
   hasImageCollections: boolean;
+  /** Parsed polygon rings from project_bounds WKT (master bounding box) */
+  projectBounds?: number[][][];
+}
+
+/**
+ * State for the drone imagery carousel
+ */
+export interface DroneImageryCarouselState {
+  isOpen: boolean;
+  project: DroneImageryProject | null;
+  currentLayerIndex: number;
 }
 
 /**

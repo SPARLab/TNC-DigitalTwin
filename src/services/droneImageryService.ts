@@ -8,14 +8,41 @@ import type {
 // Re-export types for consumers
 export type { DroneImageryMetadata, DroneImageryProject };
 
+// v2 API includes project_bounds and plan_geometry fields
 const DRONE_IMAGERY_METADATA_URL =
-  'https://dangermondpreserve-spatial.com/server/rest/services/Hosted/DroneDeploy_Metadata/FeatureServer/0';
+  'https://dangermondpreserve-spatial.com/server/rest/services/Hosted/DroneDeploy_Metadata_v2/FeatureServer/0';
 
 /**
  * Parse Unix timestamp (milliseconds) to Date object
  */
 function parseTimestamp(timestampMs: string): Date {
   return new Date(parseInt(timestampMs));
+}
+
+/**
+ * Parse WKT POLYGON string to coordinate rings
+ * Example: "POLYGON ((-120.5 34.5, -120.4 34.5, ...))"
+ */
+function parseWKTPolygon(wkt: string | null): number[][][] | undefined {
+  if (!wkt) return undefined;
+  
+  try {
+    // Remove "POLYGON " prefix and outer parentheses
+    const match = wkt.match(/POLYGON\s*\(\((.+)\)\)/i);
+    if (!match) return undefined;
+    
+    const coordsString = match[1];
+    const coords = coordsString.split(',').map(pair => {
+      const [lon, lat] = pair.trim().split(/\s+/).map(Number);
+      return [lon, lat];
+    });
+    
+    // Return as rings array (outer ring only for now)
+    return [coords];
+  } catch (e) {
+    console.warn('Failed to parse WKT polygon:', wkt, e);
+    return undefined;
+  }
 }
 
 /**
@@ -34,6 +61,7 @@ function recordToMetadata(record: DroneImageryRecord): DroneImageryMetadata {
       itemId: record.wmts_item_id,
     },
     recordType: record.record_type,
+    planGeometry: parseWKTPolygon(record.plan_geometry),
   };
 
   // Add image collection if available
@@ -71,25 +99,49 @@ export async function fetchDroneImageryMetadata(): Promise<DroneImageryMetadata[
 }
 
 /**
+ * Fetch all drone imagery raw records (for extracting project_bounds)
+ */
+async function fetchDroneImageryRawRecords(): Promise<DroneImageryRecord[]> {
+  const params = new URLSearchParams({
+    where: '1=1',
+    outFields: '*',
+    returnGeometry: 'false',
+    f: 'json',
+  });
+
+  const url = `${DRONE_IMAGERY_METADATA_URL}/query?${params}`;
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch drone imagery raw records: ${response.statusText}`);
+  }
+
+  const data: DroneImageryQueryResponse = await response.json();
+  return data.features.map((feature) => feature.attributes);
+}
+
+/**
  * Fetch drone imagery metadata grouped by project
  */
 export async function fetchDroneImageryByProject(): Promise<DroneImageryProject[]> {
-  const allImagery = await fetchDroneImageryMetadata();
+  const rawRecords = await fetchDroneImageryRawRecords();
+  
+  // Group raw records by project name
+  const projectMap = new Map<string, { records: DroneImageryRecord[], metadata: DroneImageryMetadata[] }>();
 
-  // Group by project name
-  const projectMap = new Map<string, DroneImageryMetadata[]>();
-
-  for (const imagery of allImagery) {
-    if (!projectMap.has(imagery.projectName)) {
-      projectMap.set(imagery.projectName, []);
+  for (const record of rawRecords) {
+    if (!projectMap.has(record.project_name)) {
+      projectMap.set(record.project_name, { records: [], metadata: [] });
     }
-    projectMap.get(imagery.projectName)!.push(imagery);
+    const group = projectMap.get(record.project_name)!;
+    group.records.push(record);
+    group.metadata.push(recordToMetadata(record));
   }
 
   // Convert to project objects with metadata
   const projects: DroneImageryProject[] = [];
 
-  for (const [projectName, imageryLayers] of projectMap.entries()) {
+  for (const [projectName, { records, metadata: imageryLayers }] of projectMap.entries()) {
     // Sort layers by capture date (oldest first)
     imageryLayers.sort(
       (a, b) => a.dateCaptured.getTime() - b.dateCaptured.getTime()
@@ -102,6 +154,10 @@ export async function fetchDroneImageryByProject(): Promise<DroneImageryProject[
       (layer) => layer.imageCollection !== undefined
     );
 
+    // Get project_bounds from the first record that has it
+    const projectBoundsWKT = records.find(r => r.project_bounds)?.project_bounds;
+    const projectBounds = parseWKTPolygon(projectBoundsWKT || null);
+
     projects.push({
       projectName,
       imageryLayers,
@@ -109,6 +165,7 @@ export async function fetchDroneImageryByProject(): Promise<DroneImageryProject[
       dateRangeEnd,
       layerCount: imageryLayers.length,
       hasImageCollections,
+      projectBounds,
     });
   }
 

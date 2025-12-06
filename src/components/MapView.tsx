@@ -19,6 +19,8 @@ import { TNCArcGISItem } from '../services/tncArcGISService';
 import { EBirdObservation } from '../services/eBirdService';
 import { AnimlDeployment, AnimlImageLabel } from '../services/animlService';
 import type { DendraStation } from '../types';
+import type { DroneImageryProject, DroneImageryCarouselState } from '../types/droneImagery';
+import DroneImageryCarousel from './DroneImageryCarousel';
 import LayerLegend from './LayerLegend';
 import { MapLegend } from './MapLegend';
 import { ChevronDown, ChevronUp, Map as MapIcon, Satellite } from 'lucide-react';
@@ -104,6 +106,11 @@ interface MapViewProps {
   activeDroneImageryIds?: string[];
   onDroneImageryLayerLoaded?: (wmtsItemId: string) => void;
   onDroneImageryLayerError?: (wmtsItemId: string) => void;
+  // Drone Imagery Carousel (for multi-layer projects)
+  droneCarouselState?: DroneImageryCarouselState;
+  onDroneCarouselPrevious?: () => void;
+  onDroneCarouselNext?: () => void;
+  onDroneCarouselClose?: () => void;
 }
 
 export interface MapViewRef {
@@ -208,7 +215,12 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   // Drone Imagery props
   activeDroneImageryIds = [],
   onDroneImageryLayerLoaded,
-  onDroneImageryLayerError
+  onDroneImageryLayerError,
+  // Drone Imagery Carousel props
+  droneCarouselState,
+  onDroneCarouselPrevious,
+  onDroneCarouselNext,
+  onDroneCarouselClose
 }, ref) => {
   const mapDiv = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<MapView | null>(null);
@@ -526,6 +538,40 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       }
     });
   }, [view, activeDroneImageryIds, onDroneImageryLayerLoaded, onDroneImageryLayerError]);
+
+  // Manage drone imagery carousel - draw project bounds polygon
+  useEffect(() => {
+    if (!view || !view.map) return;
+
+    // Get or create the project bounds layer
+    let boundsLayer = view.map.findLayerById('drone-project-bounds') as GraphicsLayer;
+    if (!boundsLayer) {
+      boundsLayer = new GraphicsLayer({
+        id: 'drone-project-bounds',
+        title: 'Drone Project Bounds',
+        listMode: 'hide'
+      });
+      view.map.add(boundsLayer);
+    }
+
+    // Clear existing graphics
+    boundsLayer.removeAll();
+
+    // Zoom to project bounds if carousel is open and has bounds data
+    if (droneCarouselState?.isOpen && droneCarouselState.project?.projectBounds) {
+      const rings = droneCarouselState.project.projectBounds;
+      
+      const polygon = new Polygon({
+        rings: rings,
+        spatialReference: { wkid: 4326 }
+      });
+
+      // Zoom to the project bounds with some padding (no visible border drawn)
+      view.goTo(polygon.extent.expand(1.3), { duration: 1000 }).catch(() => {
+        // Ignore errors from goTo
+      });
+    }
+  }, [view, droneCarouselState?.isOpen, droneCarouselState?.project]);
 
   // Close popup if the layer it belongs to was toggled off
   useEffect(() => {
@@ -2162,6 +2208,19 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         className="w-full h-full outline-none"
         style={{ minHeight: '400px' }}
       />
+
+      {/* Drone Imagery Carousel - Floating overlay for multi-layer projects */}
+      {droneCarouselState?.isOpen && droneCarouselState.project && (
+        <DroneImageryCarousel
+          project={droneCarouselState.project}
+          currentLayerIndex={droneCarouselState.currentLayerIndex}
+          isLoading={activeDroneImageryIds.length > 0 && 
+            activeDroneImageryIds.some(id => !droneImageryLayersRef.current.has(id))}
+          onPrevious={onDroneCarouselPrevious || (() => {})}
+          onNext={onDroneCarouselNext || (() => {})}
+          onClose={onDroneCarouselClose || (() => {})}
+        />
+      )}
 
       {/* ImageServer Loading Banner - Floating over map */}
       {imageServerLoading && (

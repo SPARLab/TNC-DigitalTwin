@@ -20,6 +20,7 @@ import { FilterState, DendraStation, DendraDatastream, DendraDatastreamWithStati
 import { animlService, AnimlDeployment, AnimlImageLabel, AnimlAnimalTag, AnimlCountLookups } from './services/animlService';
 import { AnimlViewMode } from './components/AnimlSidebar';
 import { LiDARViewMode } from './components/dataviews/LiDARView';
+import type { DroneImageryProject, DroneImageryCarouselState } from './types/droneImagery';
 import { iNaturalistObservation } from './services/iNaturalistService';
 import { TNCArcGISObservation } from './services/tncINaturalistService';
 import { EBirdObservation, eBirdService } from './services/eBirdService';
@@ -182,6 +183,13 @@ function App() {
   // Drone Imagery state
   const [activeDroneImageryIds, setActiveDroneImageryIds] = useState<string[]>([]);
   const [loadingDroneImageryIds, setLoadingDroneImageryIds] = useState<string[]>([]);
+  
+  // Drone Imagery Carousel state (for multi-layer projects)
+  const [droneCarouselState, setDroneCarouselState] = useState<DroneImageryCarouselState>({
+    isOpen: false,
+    project: null,
+    currentLayerIndex: 0,
+  });
 
   // Dendra Stations state
   const [dendraStations, setDendraStations] = useState<DendraStation[]>([]);
@@ -466,6 +474,57 @@ function App() {
     // Remove from active and loading on error
     setLoadingDroneImageryIds(prev => prev.filter(id => id !== wmtsItemId));
     setActiveDroneImageryIds(prev => prev.filter(id => id !== wmtsItemId));
+  };
+
+  // Drone Imagery Carousel handlers
+  const handleDroneCarouselOpen = (project: DroneImageryProject) => {
+    // Open carousel and load first layer
+    const firstLayer = project.imageryLayers[0];
+    setDroneCarouselState({
+      isOpen: true,
+      project,
+      currentLayerIndex: 0,
+    });
+    // Clear any existing drone imagery layers and load the first one
+    setActiveDroneImageryIds([firstLayer.wmts.itemId]);
+    setLoadingDroneImageryIds([firstLayer.wmts.itemId]);
+  };
+
+  const handleDroneCarouselPrevious = () => {
+    if (!droneCarouselState.project || droneCarouselState.currentLayerIndex <= 0) return;
+    
+    const newIndex = droneCarouselState.currentLayerIndex - 1;
+    const newLayer = droneCarouselState.project.imageryLayers[newIndex];
+    
+    setDroneCarouselState(prev => ({ ...prev, currentLayerIndex: newIndex }));
+    // Swap to the new layer
+    setActiveDroneImageryIds([newLayer.wmts.itemId]);
+    setLoadingDroneImageryIds([newLayer.wmts.itemId]);
+  };
+
+  const handleDroneCarouselNext = () => {
+    if (!droneCarouselState.project) return;
+    const maxIndex = droneCarouselState.project.layerCount - 1;
+    if (droneCarouselState.currentLayerIndex >= maxIndex) return;
+    
+    const newIndex = droneCarouselState.currentLayerIndex + 1;
+    const newLayer = droneCarouselState.project.imageryLayers[newIndex];
+    
+    setDroneCarouselState(prev => ({ ...prev, currentLayerIndex: newIndex }));
+    // Swap to the new layer
+    setActiveDroneImageryIds([newLayer.wmts.itemId]);
+    setLoadingDroneImageryIds([newLayer.wmts.itemId]);
+  };
+
+  const handleDroneCarouselClose = () => {
+    setDroneCarouselState({
+      isOpen: false,
+      project: null,
+      currentLayerIndex: 0,
+    });
+    // Clear all drone imagery layers
+    setActiveDroneImageryIds([]);
+    setLoadingDroneImageryIds([]);
   };
 
   // Animl handlers
@@ -2283,6 +2342,8 @@ function App() {
           activeDroneImageryIds={activeDroneImageryIds}
           loadingDroneImageryIds={loadingDroneImageryIds}
           onDroneImageryLayerToggle={handleDroneImageryLayerToggle}
+          onDroneCarouselOpen={handleDroneCarouselOpen}
+          activeDroneProjectName={droneCarouselState.project?.projectName}
         />
         <div id="map-container" className="flex-1 relative flex">
           {/* Conditionally render based on data source and LiDAR mode */}
@@ -2411,6 +2472,11 @@ function App() {
                 activeDroneImageryIds={activeDroneImageryIds}
                 onDroneImageryLayerLoaded={handleDroneImageryLayerLoaded}
                 onDroneImageryLayerError={handleDroneImageryLayerError}
+                // Drone Imagery Carousel
+                droneCarouselState={droneCarouselState}
+                onDroneCarouselPrevious={handleDroneCarouselPrevious}
+                onDroneCarouselNext={handleDroneCarouselNext}
+                onDroneCarouselClose={handleDroneCarouselClose}
               />
               {/* Hub Page Preview Overlay */}
               {selectedModalItem && (
