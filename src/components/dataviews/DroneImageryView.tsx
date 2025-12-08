@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plane, Calendar, Loader2, Package, Eye } from 'lucide-react';
+import { Calendar, Loader2, Package, Eye } from 'lucide-react';
 import DataTypeBackHeader from '../DataTypeBackHeader';
+import DroneIcon from '../icons/DroneIcon';
 import { fetchDroneImageryByProject, type DroneImageryProject } from '../../services/droneImageryService';
 
 interface DroneImageryViewProps {
@@ -72,7 +73,7 @@ const DroneImageryView: React.FC<DroneImageryViewProps> = ({
       {/* Header */}
       <div id="drone-imagery-header" className="p-4 border-b border-gray-200">
         <div id="drone-imagery-title" className="flex items-center space-x-2">
-          <Plane className="w-5 h-5 text-blue-600" />
+          <DroneIcon className="w-5 h-5 text-blue-600" />
           <h2 className="text-lg font-semibold text-gray-900">Drone Imagery</h2>
         </div>
         <p id="drone-imagery-subtitle" className="text-sm text-gray-600 mt-1">
@@ -93,7 +94,7 @@ const DroneImageryView: React.FC<DroneImageryViewProps> = ({
         {!hasSearched ? (
           // Pre-search state
           <div id="drone-imagery-search-prompt" className="flex flex-col items-center justify-center h-full text-center px-4">
-            <Plane className="w-12 h-12 text-gray-400 mb-4" />
+            <DroneIcon className="w-12 h-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
               Drone Imagery
             </h3>

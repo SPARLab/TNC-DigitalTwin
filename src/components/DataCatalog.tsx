@@ -6,10 +6,10 @@ import {
   Camera, 
   Layers, 
   Activity, 
-  ArrowRight,
-  Plane
+  ArrowRight
 } from 'lucide-react';
 import LidarIcon from './icons/LidarIcon';
+import DroneIcon from './icons/DroneIcon';
 import { FilterState } from '../types';
 import { CATEGORY_DATA_SOURCES } from '../utils/constants';
 
@@ -136,7 +136,7 @@ const DATA_TYPE_CARDS: DataTypeCardConfig[] = [
     id: 'drone-imagery',
     title: 'Drone Imagery',
     description: 'High-resolution aerial imagery from DroneDeploy flights across the preserve.',
-    icon: Plane,
+    icon: DroneIcon,
     sourceKey: 'Drone Imagery',
     sourceBadge: 'DroneDeploy',
     defaults: {

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight, X, Loader2 } from 'lucide-react';
 import type { DroneImageryProject } from '../types/droneImagery';
+import DroneIcon from './icons/DroneIcon';
 
 interface DroneImageryCarouselProps {
   project: DroneImageryProject;
@@ -59,22 +60,25 @@ const DroneImageryCarousel: React.FC<DroneImageryCarouselProps> = ({
         {/* Left: Project info and date */}
         <div
           id="drone-carousel-info"
-          className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg px-4 py-2.5 flex items-center gap-3 pointer-events-auto"
+          className="relative bg-white/95 backdrop-blur-sm rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 pointer-events-auto overflow-visible"
         >
-          <span className="text-xl">📷</span>
+          <DroneIcon className="w-5 h-5 flex-shrink-0 text-blue-600" />
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-gray-900 leading-tight">
               {project.projectName}
             </span>
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <span>{formatDateWithOrdinal(currentLayer.dateCaptured)}</span>
-              <span className="text-gray-400">•</span>
+              {/* <span className="text-gray-400">•</span> */}
               <span className="font-medium text-blue-600">
                 {currentLayerIndex + 1}/{totalLayers}
               </span>
-              {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />}
             </div>
           </div>
+          {/* Loading spinner - fixed position top right */}
+          {isLoading && (
+            <Loader2 className="absolute top-2 right-3 w-4 h-4 animate-spin text-blue-600" />
+          )}
         </div>
 
         {/* Right: Close button */}
