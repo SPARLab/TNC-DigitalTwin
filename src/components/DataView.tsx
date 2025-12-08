@@ -44,6 +44,8 @@ interface DataViewProps {
   eBirdObservationsLoading?: boolean;
   onEBirdExportCSV?: () => void;
   onEBirdExportGeoJSON?: () => void;
+  onEBirdObservationSelect?: (observation: EBirdObservation) => void;
+  onEBirdAddToCart?: () => void;
   // CalFlora data
   calFloraPlants: CalFloraPlant[];
   calFloraLoading: boolean;
@@ -139,6 +141,8 @@ const DataView: React.FC<DataViewProps> = ({
   eBirdObservationsLoading = false,
   onEBirdExportCSV,
   onEBirdExportGeoJSON,
+  onEBirdObservationSelect,
+  onEBirdAddToCart,
   calFloraPlants,
   calFloraLoading,
   onCalFloraExportCSV,
@@ -278,8 +282,10 @@ const DataView: React.FC<DataViewProps> = ({
             endDate={endDate}
             onExportCSV={onEBirdExportCSV}
             onExportGeoJSON={onEBirdExportGeoJSON}
+            onAddToCart={onEBirdAddToCart}
             hasSearched={hasSearched}
             onBack={onBack}
+            onObservationSelect={onEBirdObservationSelect}
           />
         );
         

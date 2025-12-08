@@ -73,6 +73,9 @@ class EBirdService {
   private readonly bufferZoneUrl = 'https://dangermondpreserve-spatial.com/server/rest/services/Hosted/Dangermond_Preserve_eBird_1_5_Mile_Buffer_Zone_133M_Dataset_/FeatureServer';
   
   private readonly observationsLayerId = 0;
+  
+  // ArcGIS has a hard limit of 2000 records per request
+  private readonly MAX_PAGE_SIZE = 2000;
 
   /**
    * Get the appropriate base URL based on search mode
@@ -82,7 +85,101 @@ class EBirdService {
   }
 
   /**
-   * Query eBird observations from the ArcGIS service
+   * Build WHERE clause for date filtering
+   */
+  private buildWhereClause(startDate?: string, endDate?: string): string {
+    if (startDate && endDate) {
+      return `observation_date >= '${startDate}' AND observation_date <= '${endDate}'`;
+    } else if (startDate) {
+      return `observation_date >= '${startDate}'`;
+    } else if (endDate) {
+      return `observation_date <= '${endDate}'`;
+    }
+    return '1=1'; // All records
+  }
+
+  /**
+   * Fetch a single page of observations from the ArcGIS service
+   */
+  private async fetchSinglePage(options: {
+    whereClause: string;
+    offset: number;
+    pageSize: number;
+    searchMode: 'preserve-only' | 'expanded' | 'custom';
+    customPolygon?: string;
+  }): Promise<{ observations: EBirdObservation[]; exceededLimit: boolean }> {
+    const { whereClause, offset, pageSize, searchMode, customPolygon } = options;
+    
+    const queryParams: EBirdArcGISQueryOptions = {
+      where: whereClause,
+      outFields: '*',
+      returnGeometry: true,
+      f: 'json',
+      resultRecordCount: pageSize,
+      resultOffset: offset,
+      orderByFields: 'observation_date DESC'
+    };
+
+    // Add spatial filtering for custom polygon
+    if (searchMode === 'custom' && customPolygon) {
+      queryParams.geometry = customPolygon;
+      queryParams.geometryType = 'esriGeometryPolygon';
+      queryParams.spatialRel = 'esriSpatialRelIntersects';
+    }
+
+    // Determine which URL to use
+    const baseUrl = searchMode === 'custom' ? this.bufferZoneUrl : this.getBaseUrl(searchMode);
+    const url = `${baseUrl}/${this.observationsLayerId}/query`;
+
+    let response: Response;
+
+    // Use POST for custom polygon queries to avoid URL length limits
+    if (searchMode === 'custom' && customPolygon) {
+      const formData = new URLSearchParams();
+      Object.entries(queryParams).forEach(([key, value]) => {
+        formData.append(key, String(value));
+      });
+
+      response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData.toString()
+      });
+    } else {
+      // Use GET for standard queries
+      const queryString = new URLSearchParams(
+        Object.entries(queryParams).reduce((acc, [key, value]) => ({
+          ...acc,
+          [key]: String(value)
+        }), {})
+      ).toString();
+
+      response = await fetch(`${url}?${queryString}`);
+    }
+
+    if (!response.ok) {
+      throw new Error(`eBird API error: ${response.statusText}`);
+    }
+
+    const data: EBirdArcGISResponse = await response.json();
+
+    // Transform features to observations
+    const observations: EBirdObservation[] = data.features
+      .filter(feature => feature.attributes.lat != null && feature.attributes.lng != null)
+      .map(feature => ({
+        ...feature.attributes,
+        geometry: {
+          type: 'Point' as const,
+          coordinates: [feature.attributes.lng, feature.attributes.lat]
+        }
+      }));
+
+    return { observations, exceededLimit: data.exceededTransferLimit || false };
+  }
+
+  /**
+   * Query eBird observations from the ArcGIS service with pagination
+   * Fetches all matching records in batches of up to 2000 per request
    */
   async queryObservations(options: {
     startDate?: string;
@@ -92,101 +189,69 @@ class EBirdService {
     pageSize?: number;
     searchMode?: 'preserve-only' | 'expanded' | 'custom';
     customPolygon?: string;
+    onProgress?: (fetched: number, total?: number) => void;
   } = {}): Promise<{ observations: EBirdObservation[]; exceededLimit: boolean }> {
     const {
       startDate,
       endDate,
-      maxResults = 2000,
-      page = 1,
-      pageSize = 500,
+      maxResults = 50000, // Increased default to fetch more data
       searchMode = 'expanded',
-      customPolygon
+      customPolygon,
+      onProgress
     } = options;
 
+    // Use max page size (2000) for efficiency, capped by ArcGIS limit
+    const pageSize = Math.min(options.pageSize || this.MAX_PAGE_SIZE, this.MAX_PAGE_SIZE);
+
     try {
-      // Build WHERE clause for date filtering
-      let whereClause = '1=1'; // Default to all records
+      const whereClause = this.buildWhereClause(startDate, endDate);
       
-      if (startDate && endDate) {
-        // eBird uses observation_date field (string format: "YYYY-MM-DD")
-        whereClause = `observation_date >= '${startDate}' AND observation_date <= '${endDate}'`;
-      } else if (startDate) {
-        whereClause = `observation_date >= '${startDate}'`;
-      } else if (endDate) {
-        whereClause = `observation_date <= '${endDate}'`;
-      }
+      // First, get total count for progress reporting
+      const totalCount = await this.queryObservationsCount({ startDate, endDate, searchMode, customPolygon });
+      const targetCount = Math.min(totalCount, maxResults);
+      
+      console.log(`[eBird] Starting paginated fetch: ${totalCount} total available, fetching up to ${targetCount}`);
+      
+      const allObservations: EBirdObservation[] = [];
+      let offset = 0;
+      let pageNum = 1;
+      let hasMore = true;
 
-      const queryParams: EBirdArcGISQueryOptions = {
-        where: whereClause,
-        outFields: '*',
-        returnGeometry: true,
-        f: 'json',
-        resultRecordCount: Math.min(pageSize, maxResults),
-        resultOffset: (page - 1) * pageSize,
-        orderByFields: 'observation_date DESC'
-      };
-
-      // Add spatial filtering for custom polygon
-      if (searchMode === 'custom' && customPolygon) {
-        queryParams.geometry = customPolygon;
-        queryParams.geometryType = 'esriGeometryPolygon';
-        queryParams.spatialRel = 'esriSpatialRelIntersects';
-      }
-
-      // Determine which URL to use
-      const baseUrl = searchMode === 'custom' ? this.bufferZoneUrl : this.getBaseUrl(searchMode);
-      const url = `${baseUrl}/${this.observationsLayerId}/query`;
-
-      let response: Response;
-
-      // Use POST for custom polygon queries to avoid URL length limits
-      if (searchMode === 'custom' && customPolygon) {
-        const formData = new URLSearchParams();
-        Object.entries(queryParams).forEach(([key, value]) => {
-          formData.append(key, String(value));
+      while (hasMore && allObservations.length < maxResults) {
+        const remainingNeeded = maxResults - allObservations.length;
+        const currentPageSize = Math.min(pageSize, remainingNeeded);
+        
+        const { observations } = await this.fetchSinglePage({
+          whereClause,
+          offset,
+          pageSize: currentPageSize,
+          searchMode,
+          customPolygon
         });
 
-        response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: formData.toString()
-        });
-      } else {
-        // Use GET for standard queries
-        const queryString = new URLSearchParams(
-          Object.entries(queryParams).reduce((acc, [key, value]) => ({
-            ...acc,
-            [key]: String(value)
-          }), {})
-        ).toString();
+        allObservations.push(...observations);
+        
+        console.log(`[eBird] Page ${pageNum}: Fetched ${observations.length} observations (total: ${allObservations.length}/${targetCount})`);
+        onProgress?.(allObservations.length, targetCount);
 
-        response = await fetch(`${url}?${queryString}`);
+        // Continue if we got a full page (there might be more)
+        // Stop if we got fewer records than requested (last page) or no records
+        hasMore = observations.length === currentPageSize;
+
+        offset += currentPageSize;
+        pageNum++;
+
+        // Small delay between requests to avoid rate limiting (50ms)
+        if (hasMore) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
       }
 
-      if (!response.ok) {
-        throw new Error(`eBird API error: ${response.statusText}`);
-      }
-
-      const data: EBirdArcGISResponse = await response.json();
-
-      // Transform the response to our standard format
-      // NOTE: The geometry from ArcGIS is in Web Mercator (EPSG:3857), but we use the
-      // lat/lng fields from attributes which are in WGS84 (standard lat/lng)
-      const observations: EBirdObservation[] = data.features
-        .filter(feature => feature.attributes.lat != null && feature.attributes.lng != null)
-        .map(feature => ({
-          ...feature.attributes,
-          geometry: {
-            type: 'Point',
-            coordinates: [feature.attributes.lng, feature.attributes.lat] // [longitude, latitude]
-          }
-        }));
+      console.log(`[eBird] Pagination complete: ${allObservations.length} observations fetched in ${pageNum - 1} pages`);
 
       return {
-        observations,
-        exceededLimit: data.exceededTransferLimit || false
+        observations: allObservations.slice(0, maxResults),
+        exceededLimit: totalCount > maxResults
       };
     } catch (error) {
       console.error('Error querying eBird observations:', error);

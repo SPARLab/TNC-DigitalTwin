@@ -36,6 +36,15 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { useShoppingCart } from './hooks/useShoppingCart';
 import { CartPanel } from './components/ShoppingCart/CartPanel';
 import { ExportModal } from './components/ShoppingCart/ExportModal';
+
+// Load eBird query test utilities in development
+if (import.meta.env.DEV) {
+  import('./test-ebird-queries').then(module => {
+    (window as any).testEBirdQueries = module.testEBirdQueries;
+    console.log('🐦 eBird query test loaded. Run: testEBirdQueries()');
+  });
+}
+
 import { 
   fetchDendraStations,
   fetchDendraDatastreams,
@@ -1434,9 +1443,7 @@ function App() {
       const eBirdSearchFilters = {
         startDate,
         endDate,
-        maxResults: 2000,
-        page: 1,
-        pageSize: 500,
+        // Let service handle pagination - defaults to fetching all (up to 50000)
         searchMode,
         customPolygon: customPolygonGeometry,
         showSearchArea: filters.spatialFilter === 'Dangermond + Margin'

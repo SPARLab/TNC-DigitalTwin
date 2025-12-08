@@ -20,6 +20,7 @@ export interface EBirdLoaderDeps {
   mapView: __esri.MapView;
   eBirdLayer: GraphicsLayer;
   onUpdate?: (observations: EBirdObservation[]) => void;
+  onProgress?: (fetched: number, total?: number) => void;
   drawSearchArea?: (mapView: __esri.MapView, show: boolean, mode: string) => Promise<void>;
 }
 
@@ -30,7 +31,7 @@ export const loadEBirdObservations = async (
   deps: EBirdLoaderDeps,
   filters?: EBirdFilters
 ): Promise<void> => {
-  const { mapView, eBirdLayer, onUpdate, drawSearchArea } = deps;
+  const { mapView, eBirdLayer, onUpdate, onProgress, drawSearchArea } = deps;
   
   try {
     // Clear other layers when starting a new eBird search
@@ -53,14 +54,17 @@ export const loadEBirdObservations = async (
       await drawSearchArea(mapView, filters?.showSearchArea || false, filters?.searchMode || '');
     }
     
+    // Default to 50000 to allow fetching all available observations
+    const maxResults = filters?.maxResults || 50000;
     const response = await eBirdService.queryObservations({
       startDate: filters?.startDate,
       endDate: filters?.endDate,
-      maxResults: filters?.maxResults || 2000,
+      maxResults,
       page: filters?.page,
       pageSize: filters?.pageSize,
       searchMode: filters?.searchMode || 'expanded',
-      customPolygon: filters?.customPolygon
+      customPolygon: filters?.customPolygon,
+      onProgress
     });
     
     onUpdate?.(response.observations);
