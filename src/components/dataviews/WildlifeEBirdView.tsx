@@ -190,7 +190,9 @@ const WildlifeEBirdView: React.FC<WildlifeEBirdViewProps> = ({
       className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors cursor-pointer"
       onClick={() => {
         // Select the first observation for this species
+        console.log('[eBird] Species clicked:', group.common_name, 'onObservationSelect:', !!onObservationSelect);
         if (group.observations.length > 0 && onObservationSelect) {
+          console.log('[eBird] Calling onObservationSelect with:', group.observations[0]);
           onObservationSelect(group.observations[0]);
         }
       }}
