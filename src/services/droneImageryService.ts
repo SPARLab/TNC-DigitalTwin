@@ -125,7 +125,7 @@ async function fetchDroneImageryRawRecords(): Promise<DroneImageryRecord[]> {
  */
 export async function fetchDroneImageryByProject(): Promise<DroneImageryProject[]> {
   const rawRecords = await fetchDroneImageryRawRecords();
-  
+
   // Group raw records by project name
   const projectMap = new Map<string, { records: DroneImageryRecord[], metadata: DroneImageryMetadata[] }>();
 

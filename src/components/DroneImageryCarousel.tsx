@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronLeft, ChevronRight, X, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Loader2, Info } from 'lucide-react';
 import type { DroneImageryProject } from '../types/droneImagery';
 import DroneIcon from './icons/DroneIcon';
 
@@ -10,6 +10,7 @@ interface DroneImageryCarouselProps {
   onPrevious: () => void;
   onNext: () => void;
   onClose: () => void;
+  onShowDetails: () => void;
 }
 
 /**
@@ -44,6 +45,7 @@ const DroneImageryCarousel: React.FC<DroneImageryCarouselProps> = ({
   onPrevious,
   onNext,
   onClose,
+  onShowDetails,
 }) => {
   const totalLayers = project.layerCount;
   const currentLayer = project.imageryLayers[currentLayerIndex];
@@ -81,16 +83,27 @@ const DroneImageryCarousel: React.FC<DroneImageryCarouselProps> = ({
           )}
         </div>
 
-        {/* Right: Close button */}
-        <button
-          id="drone-carousel-close-btn"
-          onClick={onClose}
-          className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-2.5 hover:bg-gray-100 transition-colors pointer-events-auto"
-          title="Close carousel"
-          aria-label="Close carousel"
-        >
-          <X className="w-5 h-5 text-gray-700" />
-        </button>
+        {/* Right: Details and Close buttons */}
+        <div className="flex items-center gap-2 pointer-events-auto">
+          <button
+            id="drone-carousel-details-btn"
+            onClick={onShowDetails}
+            className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-2.5 hover:bg-blue-50 transition-colors"
+            title="Show details & export"
+            aria-label="Show details & export"
+          >
+            <Info className="w-5 h-5 text-blue-600" />
+          </button>
+          <button
+            id="drone-carousel-close-btn"
+            onClick={onClose}
+            className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-2.5 hover:bg-gray-100 transition-colors"
+            title="Close carousel"
+            aria-label="Close carousel"
+          >
+            <X className="w-5 h-5 text-gray-700" />
+          </button>
+        </div>
       </div>
 
       {/* Bottom bar: Navigation arrows */}

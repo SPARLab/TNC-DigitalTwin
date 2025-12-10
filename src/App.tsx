@@ -36,6 +36,8 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { useShoppingCart } from './hooks/useShoppingCart';
 import { CartPanel } from './components/ShoppingCart/CartPanel';
 import { ExportModal } from './components/ShoppingCart/ExportModal';
+import DroneImagerySidebar, { type DroneSidebarTab } from './components/DroneImageryDetails';
+import DroneImageryPreview from './components/DroneImageryPreview';
 import { 
   fetchDendraStations,
   fetchDendraDatastreams,
@@ -189,6 +191,22 @@ function App() {
     isOpen: false,
     project: null,
     currentLayerIndex: 0,
+  });
+  
+  // Drone Imagery sidebar tab
+  const [droneSidebarTab, setDroneSidebarTab] = useState<DroneSidebarTab>('details');
+  
+  // Drone Imagery preview state
+  const [dronePreviewState, setDronePreviewState] = useState<{
+    isOpen: boolean;
+    url: string;
+    title: string;
+    subtitle?: string;
+  }>({
+    isOpen: false,
+    url: '',
+    title: '',
+    subtitle: undefined,
   });
 
   // Dendra Stations state
@@ -485,6 +503,7 @@ function App() {
       project,
       currentLayerIndex: 0,
     });
+    setDroneSidebarTab('details');
     // Clear any existing drone imagery layers and load the first one
     setActiveDroneImageryIds([firstLayer.wmts.itemId]);
     setLoadingDroneImageryIds([firstLayer.wmts.itemId]);
@@ -525,6 +544,83 @@ function App() {
     // Clear all drone imagery layers
     setActiveDroneImageryIds([]);
     setLoadingDroneImageryIds([]);
+    setDroneSidebarTab('details');
+  };
+
+  const handleDroneSidebarTabChange = (tab: DroneSidebarTab) => {
+    setDroneSidebarTab(tab);
+  };
+
+  const handleDronePreviewOpen = (url: string, title: string, subtitle?: string) => {
+    setDronePreviewState({
+      isOpen: true,
+      url,
+      title,
+      subtitle,
+    });
+  };
+
+  const handleDronePreviewClose = () => {
+    setDronePreviewState({
+      isOpen: false,
+      url: '',
+      title: '',
+      subtitle: undefined,
+    });
+  };
+
+  const handleDroneAddToCart = () => {
+    if (!droneCarouselState.project) return;
+
+    const project = droneCarouselState.project;
+    
+    // Format date range
+    const formatDate = (date: Date) => {
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+      });
+    };
+    
+    const timeRange = project.layerCount === 1
+      ? formatDate(project.dateRangeStart)
+      : `${formatDate(project.dateRangeStart)} - ${formatDate(project.dateRangeEnd)}`;
+
+    const cartItem = {
+      dataSource: 'drone-imagery' as const,
+      title: `${project.projectName} (${project.layerCount} ${project.layerCount === 1 ? 'capture' : 'captures'})`,
+      coreFilters: {
+        category: 'Real-time & Remote Sensing',
+        source: 'Drone Imagery',
+        spatialFilter: 'Dangermond Preserve',
+        timeRange,
+        startDate: project.dateRangeStart.toISOString().split('T')[0],
+        endDate: project.dateRangeEnd.toISOString().split('T')[0],
+      },
+      customFilters: {
+        droneImagery: {
+          projectName: project.projectName,
+          layerIds: project.imageryLayers.map(l => l.planId),
+          includeImageCollections: project.hasImageCollections,
+        },
+      },
+      estimatedCount: project.layerCount,
+    };
+
+    const result = addToCart(cartItem);
+    
+    if (result.success) {
+      toast.success(`Added "${project.projectName}" to cart!`, {
+        duration: 3000,
+        position: 'bottom-right',
+      });
+    } else {
+      toast.error(result.error || 'Failed to add to cart', {
+        duration: 3000,
+        position: 'bottom-right',
+      });
+    }
   };
 
   // Animl handlers
@@ -2477,10 +2573,21 @@ function App() {
                 onDroneCarouselPrevious={handleDroneCarouselPrevious}
                 onDroneCarouselNext={handleDroneCarouselNext}
                 onDroneCarouselClose={handleDroneCarouselClose}
+                onDroneCarouselShowDetails={() => handleDroneSidebarTabChange('details')}
               />
               {/* Hub Page Preview Overlay */}
               {selectedModalItem && (
                 <HubPagePreview item={selectedModalItem} onClose={handleModalClose} />
+              )}
+              
+              {/* Drone Imagery Preview Overlay */}
+              {dronePreviewState.isOpen && (
+                <DroneImageryPreview
+                  url={dronePreviewState.url}
+                  title={dronePreviewState.title}
+                  subtitle={dronePreviewState.subtitle}
+                  onClose={handleDronePreviewClose}
+                />
               )}
               
               {/* Dataset Download View Overlay */}
@@ -2601,6 +2708,15 @@ function App() {
             }}
             onExportCSV={handleDendraExportCSV}
             onExportExcel={handleDendraExportExcel}
+          />
+        ) : lastSearchedFilters.source === 'Drone Imagery' && droneCarouselState.isOpen && droneCarouselState.project ? (
+          <DroneImagerySidebar
+            project={droneCarouselState.project}
+            currentLayer={droneCarouselState.project.imageryLayers[droneCarouselState.currentLayerIndex]}
+            activeTab={droneSidebarTab}
+            onTabChange={handleDroneSidebarTabChange}
+            onClose={handleDroneCarouselClose}
+            onAddToCart={handleDroneAddToCart}
           />
         ) : (lastSearchedFilters.source === 'iNaturalist (Public API)' || 
             lastSearchedFilters.source === 'iNaturalist (TNC Layers)') ? (

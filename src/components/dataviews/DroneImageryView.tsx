@@ -135,32 +135,32 @@ const DroneImageryView: React.FC<DroneImageryViewProps> = ({
                   id={`project-${project.projectName.replace(/\s+/g, '-').toLowerCase()}`}
                   className={`border rounded-lg overflow-hidden transition-colors ${
                     isActive ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-                  }`}
-                >
+                    }`}
+                  >
                   {/* Project Card */}
                   <div className="p-3">
                     {/* Project Info */}
                     <div className="flex items-start gap-2 mb-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
                           <h3 className={`text-sm font-medium truncate ${
                             isActive ? 'text-blue-900' : 'text-gray-900'
                           }`}>
-                            {project.projectName}
-                          </h3>
-                          {project.hasImageCollections && (
-                            <span title="Has Image Collection">
-                              <Package className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
-                            </span>
-                          )}
-                        </div>
+                          {project.projectName}
+                        </h3>
+                        {project.hasImageCollections && (
+                          <span title="Has Image Collection">
+                            <Package className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                          </span>
+                        )}
+                      </div>
                         <div className={`flex items-center gap-2 text-xs ${
                           isActive ? 'text-blue-700' : 'text-gray-500'
                         }`}>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {formatDateRange(project)}
-                          </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {formatDateRange(project)}
+                        </span>
                           <span className={`px-1.5 py-0.5 rounded ${
                             isActive ? 'bg-blue-200 text-blue-800' : 'bg-gray-100 text-gray-600'
                           }`}>
@@ -171,24 +171,24 @@ const DroneImageryView: React.FC<DroneImageryViewProps> = ({
                     </div>
 
                     {/* Action Button - consistent for all projects */}
-                    <button
+                        <button
                       id={`project-view-btn-${project.projectName.replace(/\s+/g, '-').toLowerCase()}`}
                       onClick={() => onProjectCarouselOpen?.(project)}
-                      disabled={isLoading}
+                          disabled={isLoading}
                       className={`w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                        isActive
+                            isActive
                           ? 'bg-blue-600 text-white'
                           : 'text-blue-600 border border-blue-300 hover:bg-blue-50 hover:border-blue-400'
                       } ${isLoading ? 'opacity-70' : ''}`}
-                    >
-                      {isLoading ? (
+                        >
+                          {isLoading ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <Eye className="w-4 h-4" />
-                      )}
+                          )}
                       {isActive ? 'Viewing' : 'View Imagery'}
-                    </button>
-                  </div>
+                            </button>
+                          </div>
                 </div>
               );
             })}

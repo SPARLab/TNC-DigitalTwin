@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Database, Radio } from 'lucide-react';
+import DroneIcon from '../components/icons/DroneIcon';
 
 // Helper component for icons with fallback
 const IconWithFallback: React.FC<{ 
@@ -157,6 +158,11 @@ export const AnimlIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h
   );
 };
 
+// Drone Imagery Icon - aerial photography
+export const DroneImageryIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => {
+  return <DroneIcon className={`${className} text-blue-600`} />;
+};
+
 // Map data source names to their icon components
 // Handles both full names (e.g., 'iNaturalist (Public API)') and lowercase identifiers (e.g., 'inaturalist')
 export const getDataSourceIcon = (source: string, className?: string): React.ReactElement | null => {
@@ -178,6 +184,8 @@ export const getDataSourceIcon = (source: string, className?: string): React.Rea
     return <DendraIcon {...iconProps} />;
   } else if (sourceLower === 'animl' || source === 'Animl') {
     return <AnimlIcon {...iconProps} />;
+  } else if (sourceLower === 'drone-imagery' || source.includes('Drone Imagery')) {
+    return <DroneImageryIcon {...iconProps} />;
   }
   
   // Default fallback

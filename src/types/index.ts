@@ -250,6 +250,20 @@ export interface AnimlCustomFilters {
 }
 
 /**
+ * Drone imagery-specific query filters
+ */
+export interface DroneImageryCustomFilters {
+  /** Project name */
+  projectName: string;
+  
+  /** Selected layer IDs (plan IDs) from the project */
+  layerIds: string[];
+  
+  /** Whether to include image collection links in export */
+  includeImageCollections?: boolean;
+}
+
+/**
  * Shopping cart item representing a saved query
  * Stores query parameters (not data) for re-execution during export
  */
@@ -258,7 +272,7 @@ export interface CartItem {
   id: string;
   
   /** Data source identifier */
-  dataSource: 'inaturalist' | 'dendra' | 'calflora' | 'ebird' | 'animl';
+  dataSource: 'inaturalist' | 'dendra' | 'calflora' | 'ebird' | 'animl' | 'drone-imagery';
   
   /** User-friendly title describing this query */
   title: string;
@@ -309,6 +323,9 @@ export interface CartItem {
     
     /** Animl-specific filters */
     animl?: AnimlCustomFilters;
+    
+    /** Drone imagery-specific filters */
+    droneImagery?: DroneImageryCustomFilters;
   };
   
   /** Estimated record count at time of adding to cart (for display purposes) */

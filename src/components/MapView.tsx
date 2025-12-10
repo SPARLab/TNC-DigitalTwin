@@ -111,6 +111,7 @@ interface MapViewProps {
   onDroneCarouselPrevious?: () => void;
   onDroneCarouselNext?: () => void;
   onDroneCarouselClose?: () => void;
+  onDroneCarouselShowDetails?: () => void;
 }
 
 export interface MapViewRef {
@@ -220,7 +221,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   droneCarouselState,
   onDroneCarouselPrevious,
   onDroneCarouselNext,
-  onDroneCarouselClose
+  onDroneCarouselClose,
+  onDroneCarouselShowDetails
 }, ref) => {
   const mapDiv = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<MapView | null>(null);
@@ -2211,15 +2213,18 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
 
       {/* Drone Imagery Carousel - Floating overlay for multi-layer projects */}
       {droneCarouselState?.isOpen && droneCarouselState.project && (
-        <DroneImageryCarousel
-          project={droneCarouselState.project}
-          currentLayerIndex={droneCarouselState.currentLayerIndex}
-          isLoading={activeDroneImageryIds.length > 0 && 
-            activeDroneImageryIds.some(id => !droneImageryLayersRef.current.has(id))}
-          onPrevious={onDroneCarouselPrevious || (() => {})}
-          onNext={onDroneCarouselNext || (() => {})}
-          onClose={onDroneCarouselClose || (() => {})}
-        />
+        <>
+          <DroneImageryCarousel
+            project={droneCarouselState.project}
+            currentLayerIndex={droneCarouselState.currentLayerIndex}
+            isLoading={activeDroneImageryIds.length > 0 && 
+              activeDroneImageryIds.some(id => !droneImageryLayersRef.current.has(id))}
+            onPrevious={onDroneCarouselPrevious || (() => {})}
+            onNext={onDroneCarouselNext || (() => {})}
+            onClose={onDroneCarouselClose || (() => {})}
+            onShowDetails={onDroneCarouselShowDetails || (() => {})}
+          />
+        </>
       )}
 
       {/* ImageServer Loading Banner - Floating over map */}
