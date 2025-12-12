@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Calendar, User, MapPin, ExternalLink, Download, ShoppingCart, Filter, Leaf, AlertTriangle, TreePine } from 'lucide-react';
+import { X, Calendar, User, MapPin, ExternalLink, Download, ShoppingCart, Filter } from 'lucide-react';
 import { CalFloraPlant } from '../services/calFloraService';
 
 interface CalFloraDetailsSidebarProps {
@@ -30,7 +30,7 @@ const CalFloraDetailsSidebar: React.FC<CalFloraDetailsSidebarProps> = ({
   plants,
   dateRangeText,
   nativeStatusFilter = 'all',
-  onNativeStatusFilterChange,
+  onNativeStatusFilterChange: _onNativeStatusFilterChange,
   plantNameFilter = '',
   onPlantNameFilterChange,
   photoFilter = 'any',
@@ -94,23 +94,6 @@ const CalFloraDetailsSidebar: React.FC<CalFloraDetailsSidebarProps> = ({
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  // Native status styling helpers
-  const getNativeStatusColor = (status: string) => {
-    switch (status) {
-      case 'native': return 'text-green-700 bg-green-100';
-      case 'invasive': return 'text-red-700 bg-red-100';
-      case 'non-native': return 'text-yellow-700 bg-yellow-100';
-      default: return 'text-gray-700 bg-gray-100';
-    }
-  };
-
-  const getNativeStatusIcon = (status: string) => {
-    switch (status) {
-      case 'native': return <Leaf className="w-5 h-5" />;
-      case 'invasive': return <AlertTriangle className="w-5 h-5" />;
-      default: return <TreePine className="w-5 h-5" />;
-    }
-  };
 
   // Render tab buttons
   const renderTabButtons = () => (

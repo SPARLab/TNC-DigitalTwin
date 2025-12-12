@@ -12,8 +12,6 @@ export type { DroneImageryMetadata, DroneImageryProject };
 const DRONE_IMAGERY_METADATA_URL =
   'https://dangermondpreserve-spatial.com/server/rest/services/Hosted/DroneDeploy_Metadata_v2/FeatureServer/0';
 
-// Azure Blob Storage base URL for raw TIF downloads
-const AZURE_BLOB_BASE_URL = 'https://dronedeploystorage.blob.core.windows.net/dronedeploy-orthos';
 
 /**
  * Parse Unix timestamp (milliseconds) to Date object

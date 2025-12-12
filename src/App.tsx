@@ -40,9 +40,9 @@ import { ExportModal } from './components/ShoppingCart/ExportModal';
 import DroneImagerySidebar, { type DroneSidebarTab } from './components/DroneImageryDetails';
 
 // Load eBird query test utilities in development
-if (import.meta.env.DEV) {
+if ((import.meta as unknown as { env: { DEV: boolean } }).env.DEV) {
   import('./test-ebird-queries').then(module => {
-    (window as any).testEBirdQueries = module.testEBirdQueries;
+    (window as unknown as { testEBirdQueries: typeof module.testEBirdQueries }).testEBirdQueries = module.testEBirdQueries;
     console.log('🐦 eBird query test loaded. Run: testEBirdQueries()');
   });
 }

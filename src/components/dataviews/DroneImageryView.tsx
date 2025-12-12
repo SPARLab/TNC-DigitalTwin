@@ -19,7 +19,7 @@ interface DroneImageryViewProps {
 const DroneImageryView: React.FC<DroneImageryViewProps> = ({ 
   hasSearched = false, 
   onBack,
-  activeLayerIds = [],
+  activeLayerIds: _activeLayerIds = [],
   loadingLayerIds = [],
   onLayerToggle: _onLayerToggle,
   onProjectCarouselOpen,

@@ -6,7 +6,6 @@ import GeoJSONLayer from '@arcgis/core/layers/GeoJSONLayer';
 import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
 import Polygon from '@arcgis/core/geometry/Polygon';
-import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
 import PictureMarkerSymbol from '@arcgis/core/symbols/PictureMarkerSymbol';
 import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 import PopupTemplate from '@arcgis/core/PopupTemplate';
@@ -19,7 +18,7 @@ import { TNCArcGISItem } from '../services/tncArcGISService';
 import { EBirdObservation } from '../services/eBirdService';
 import { AnimlDeployment, AnimlImageLabel } from '../services/animlService';
 import type { DendraStation } from '../types';
-import type { DroneImageryProject, DroneImageryCarouselState } from '../types/droneImagery';
+import type { DroneImageryCarouselState } from '../types/droneImagery';
 import DroneImageryCarousel from './DroneImageryCarousel';
 import LayerLegend from './LayerLegend';
 import { MapLegend } from './MapLegend';
@@ -573,9 +572,12 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       });
 
       // Zoom to the project bounds with some padding (no visible border drawn)
-      view.goTo(polygon.extent.expand(1.3), { duration: 1000 }).catch(() => {
-        // Ignore errors from goTo
-      });
+      const extent = polygon.extent;
+      if (extent) {
+        view.goTo(extent.expand(1.3), { duration: 1000 }).catch(() => {
+          // Ignore errors from goTo
+        });
+      }
     }
   }, [view, droneCarouselState?.isOpen, droneCarouselState?.project]);
 

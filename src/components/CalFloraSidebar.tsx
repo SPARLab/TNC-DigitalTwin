@@ -108,14 +108,6 @@ const CalFloraSidebar: React.FC<CalFloraSidebarProps> = ({
     setExpandedGroups(newExpanded);
   };
 
-  const getNativeStatusColor = (status: string) => {
-    switch (status) {
-      case 'native': return 'text-green-600 bg-green-50';
-      case 'invasive': return 'text-red-600 bg-red-50';
-      case 'non-native': return 'text-yellow-600 bg-yellow-50';
-      default: return 'text-gray-600 bg-gray-50';
-    }
-  };
 
   const getNativeStatusIcon = (status: string) => {
     switch (status) {
