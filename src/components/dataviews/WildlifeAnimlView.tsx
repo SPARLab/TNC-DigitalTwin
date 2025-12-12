@@ -23,8 +23,8 @@ interface WildlifeAnimlViewProps {
   selectedObservationId?: number | null;
   
   // Callbacks
-  onDeploymentClick?: (deployment: AnimlDeployment) => void;
-  onAnimalTagClick?: (tag: AnimlAnimalTag) => void;
+  onDeploymentClick?: (deployment: AnimlDeployment | null) => void;
+  onAnimalTagClick?: (tag: AnimlAnimalTag | null) => void;
   onObservationClick?: (observation: AnimlImageLabel) => void;
   
   // Export & cart (kept for backwards compatibility but not used here)

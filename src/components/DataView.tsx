@@ -14,12 +14,14 @@ import WildlifeEBirdView from './dataviews/WildlifeEBirdView';
 import VegetationCalFloraView from './dataviews/VegetationCalFloraView';
 import TNCArcGISView from './dataviews/TNCArcGISView';
 import LiDARView, { LiDARViewMode } from './dataviews/LiDARView';
+import DroneImageryView from './dataviews/DroneImageryView';
 import DendraSidebar from './DendraSidebar';
 import WildlifeAnimlView from './dataviews/WildlifeAnimlView';
 import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag, AnimlCountLookups } from '../services/animlService';
 import { AnimlViewMode } from './AnimlSidebar';
 import { AnimlCustomFilters } from '../types';
 import DataCatalog from './DataCatalog';
+import type { DroneImageryProject } from '../types/droneImagery';
 
 interface DataViewProps {
   filters: FilterState;
@@ -108,8 +110,8 @@ interface DataViewProps {
   selectedAnimlObservation?: AnimlImageLabel | null;
   selectedAnimlObservationId?: number | null;
   onAnimlViewModeChange?: (mode: AnimlViewMode) => void;
-  onAnimlDeploymentClick?: (deployment: AnimlDeployment) => void;
-  onAnimlAnimalTagClick?: (tag: AnimlAnimalTag) => void;
+  onAnimlDeploymentClick?: (deployment: AnimlDeployment | null) => void;
+  onAnimlAnimalTagClick?: (tag: AnimlAnimalTag | null) => void;
   onAnimlObservationClick?: (observation: AnimlImageLabel) => void;
   onAnimlDetailsClose?: () => void;
   onAnimlExportCSV?: () => void;
@@ -120,6 +122,12 @@ interface DataViewProps {
   onAnimlCustomFiltersChange?: (filters: AnimlCustomFilters) => void;
   animlCountLookups?: AnimlCountLookups | null;
   animlCountsLoading?: boolean;
+  // Drone Imagery props
+  activeDroneImageryIds?: string[];
+  loadingDroneImageryIds?: string[];
+  onDroneImageryLayerToggle?: (wmtsItemId: string) => void;
+  onDroneCarouselOpen?: (project: DroneImageryProject) => void;
+  activeDroneProjectName?: string;
 }
 
 const DataView: React.FC<DataViewProps> = ({
@@ -206,8 +214,14 @@ const DataView: React.FC<DataViewProps> = ({
   animlDateRangeText = '',
   animlCustomFilters,
   animlCountLookups = null,
-  animlCountsLoading = false,
-  onAnimlCustomFiltersChange
+  animlCountsLoading: _animlCountsLoading = false,
+  onAnimlCustomFiltersChange,
+  // Drone Imagery props
+  activeDroneImageryIds = [],
+  loadingDroneImageryIds = [],
+  onDroneImageryLayerToggle,
+  onDroneCarouselOpen,
+  activeDroneProjectName
 }) => {
   // Route to appropriate data view based on category + source combination
   const getDataView = () => {
@@ -354,6 +368,20 @@ const DataView: React.FC<DataViewProps> = ({
             selectedDatastreamId={selectedDendraDatastreamId || null}
             onShowDendraWebsite={onShowDendraWebsite}
             onBack={onBack}
+          />
+        );
+
+      // Drone Imagery case
+      case 'Real-time & Remote Sensing-Drone Imagery':
+        return (
+          <DroneImageryView
+            hasSearched={hasSearched}
+            onBack={onBack}
+            activeLayerIds={activeDroneImageryIds}
+            loadingLayerIds={loadingDroneImageryIds}
+            onLayerToggle={onDroneImageryLayerToggle}
+            onProjectCarouselOpen={onDroneCarouselOpen}
+            activeProjectName={activeDroneProjectName}
           />
         );
       

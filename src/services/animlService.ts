@@ -114,7 +114,7 @@ class AnimlService {
   // Table IDs for image labels
   // Layer 3: Deduplicated view - one row per image, labels_text has comma-separated labels
   // Layer 4: Flattened view - one row per (image, label) combination
-  private readonly deduplicatedTableId = 3; // twin.animl.image_labels_deduplicated_view
+  // private readonly deduplicatedTableId = 3; // twin.animl.image_labels_deduplicated_view (unused)
   private readonly flattenedTableId = 4;    // twin.animl.image_labels_flattened_view
   
   // Full URLs for convenience

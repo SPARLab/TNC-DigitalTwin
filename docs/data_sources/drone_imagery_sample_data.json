@@ -1,0 +1,95 @@
+{
+  "service_info": {
+    "name": "DroneDeploy_Metadata",
+    "url": "https://dangermondpreserve-spatial.com/server/rest/services/Hosted/DroneDeploy_Metadata/FeatureServer/0",
+    "description": "Metadata table for DroneDeploy imagery including links to WMTS services and Image Collections",
+    "record_count": 11,
+    "last_updated": "2024-12-04"
+  },
+  "sample_records": [
+    {
+      "objectid": 2,
+      "project_name": "JA1",
+      "plan_id": "MapPlan:662826c62737ccc0ff6fec7d",
+      "plan_name": "Map #1",
+      "date_captured": "1713932598496",
+      "date_captured_readable": "2024-04-24",
+      "wmts_link": "https://dangermondpreserve-spatial.com/portal//home/item.html?id=9616c72daba247e2b6d481fc34025d8e",
+      "wmts_item_id": "9616c72daba247e2b6d481fc34025d8e",
+      "collection_link": "https://dangermondpreserve-spatial.com/portal//home/item.html?id=773f168e876e4e8dacae139e395fd76f",
+      "collection_item_id": "773f168e876e4e8dacae139e395fd76f",
+      "last_updated": "1764897224208",
+      "record_type": "plan"
+    },
+    {
+      "objectid": 7,
+      "project_name": "Fish Barrier JA-1",
+      "plan_id": "MapPlan:682696707160dd6c018c4862",
+      "plan_name": "Map #1",
+      "date_captured": "1747384544601",
+      "date_captured_readable": "2025-05-15",
+      "wmts_link": "https://dangermondpreserve-spatial.com/portal//home/item.html?id=738333dff5d1408ba091df7545464673",
+      "wmts_item_id": "738333dff5d1408ba091df7545464673",
+      "collection_link": null,
+      "collection_item_id": null,
+      "last_updated": "1764897225870",
+      "record_type": "plan"
+    },
+    {
+      "objectid": 12,
+      "project_name": "Archaeology Sites",
+      "plan_id": "MapPlan:5d98d4a35ad5218026b0805e",
+      "plan_name": "PercosSouth2",
+      "date_captured": "1570322195518",
+      "date_captured_readable": "2019-10-06",
+      "wmts_link": "https://dangermondpreserve-spatial.com/portal//home/item.html?id=0c5cd289a02446e0ad7164889254fb0c",
+      "wmts_item_id": "0c5cd289a02446e0ad7164889254fb0c",
+      "collection_link": "https://dangermondpreserve-spatial.com/portal//home/item.html?id=bd575c729868465297ac2736dd195fa8",
+      "collection_item_id": "bd575c729868465297ac2736dd195fa8",
+      "last_updated": "1764897226924",
+      "record_type": "plan"
+    }
+  ],
+  "projects_summary": {
+    "total_projects": 6,
+    "projects": [
+      {
+        "name": "JA1",
+        "imagery_count": 1,
+        "date_range": "2024-04-24"
+      },
+      {
+        "name": "JA-2 Bucket Bridge Fish Passage",
+        "imagery_count": 3,
+        "date_range": "2024-08-28 to 2025-05-15"
+      },
+      {
+        "name": "TREX_ArmyCampBurnUnits_2022",
+        "imagery_count": 1,
+        "date_range": "2024-12-12"
+      },
+      {
+        "name": "Fish Barrier JA-1",
+        "imagery_count": 1,
+        "date_range": "2025-05-15"
+      },
+      {
+        "name": "Ramajal Field",
+        "imagery_count": 4,
+        "date_range": "2024-02-14 to 2024-12-13",
+        "note": "Good temporal series example"
+      },
+      {
+        "name": "Archaeology Sites",
+        "imagery_count": 1,
+        "date_range": "2019-10-06"
+      }
+    ]
+  },
+  "usage_notes": {
+    "date_format": "Unix timestamps in milliseconds - divide by 1000 for standard Unix time",
+    "wmts_access": "Use wmts_item_id to construct service URLs or query item metadata",
+    "image_collections": "Some records have collection_item_id for accessing individual images",
+    "authentication": "Portal items may require authentication for direct access"
+  }
+}

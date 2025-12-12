@@ -21,6 +21,7 @@ import { FilterState, DendraStation, DendraDatastream, DendraDatastreamWithStati
 import { animlService, AnimlDeployment, AnimlImageLabel, AnimlAnimalTag, AnimlCountLookups } from './services/animlService';
 import { AnimlViewMode } from './components/AnimlSidebar';
 import { LiDARViewMode } from './components/dataviews/LiDARView';
+import type { DroneImageryProject, DroneImageryCarouselState } from './types/droneImagery';
 import { iNaturalistObservation } from './services/iNaturalistService';
 import { TNCArcGISObservation } from './services/tncINaturalistService';
 import { EBirdObservation, eBirdService } from './services/eBirdService';
@@ -36,6 +37,7 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { useShoppingCart } from './hooks/useShoppingCart';
 import { CartPanel } from './components/ShoppingCart/CartPanel';
 import { ExportModal } from './components/ShoppingCart/ExportModal';
+import DroneImagerySidebar, { type DroneSidebarTab } from './components/DroneImageryDetails';
 
 // Load eBird query test utilities in development
 if (import.meta.env.DEV) {
@@ -44,7 +46,6 @@ if (import.meta.env.DEV) {
     console.log('🐦 eBird query test loaded. Run: testEBirdQueries()');
   });
 }
-
 import { 
   fetchDendraStations,
   fetchDendraDatastreams,
@@ -206,6 +207,23 @@ function App() {
 
   // LiDAR view mode state
   const [lidarViewMode, setLidarViewMode] = useState<LiDARViewMode>('virtual-tour');
+
+  // Drone Imagery state
+  const [activeDroneImageryIds, setActiveDroneImageryIds] = useState<string[]>([]);
+  const [loadingDroneImageryIds, setLoadingDroneImageryIds] = useState<string[]>([]);
+  
+  // Drone Imagery Carousel state (for multi-layer projects)
+  const [droneCarouselState, setDroneCarouselState] = useState<DroneImageryCarouselState>({
+    isOpen: false,
+    project: null,
+    currentLayerIndex: 0,
+  });
+  
+  // Drone Imagery sidebar tab
+  const [droneSidebarTab, setDroneSidebarTab] = useState<DroneSidebarTab>('details');
+  
+  // Note: Drone Imagery preview via iframe was removed due to CSP restrictions
+  // (ArcGIS portal has frame-ancestors 'self' which blocks cross-origin embedding)
 
   // Dendra Stations state
   const [dendraStations, setDendraStations] = useState<DendraStation[]>([]);
@@ -483,6 +501,143 @@ function App() {
   const handleLiDARModeChange = (mode: LiDARViewMode) => {
     // console.log('LiDAR view mode changed to:', mode);
     setLidarViewMode(mode);
+  };
+
+  // Drone Imagery handlers
+  const handleDroneImageryLayerToggle = (wmtsItemId: string) => {
+    setActiveDroneImageryIds(prev => {
+      if (prev.includes(wmtsItemId)) {
+        // Removing layer
+        setLoadingDroneImageryIds(ids => ids.filter(id => id !== wmtsItemId));
+        return prev.filter(id => id !== wmtsItemId);
+      } else {
+        // Adding layer - mark as loading
+        setLoadingDroneImageryIds(ids => [...ids, wmtsItemId]);
+        return [...prev, wmtsItemId];
+      }
+    });
+  };
+
+  const handleDroneImageryLayerLoaded = (wmtsItemId: string) => {
+    setLoadingDroneImageryIds(prev => prev.filter(id => id !== wmtsItemId));
+  };
+
+  const handleDroneImageryLayerError = (wmtsItemId: string) => {
+    // Remove from active and loading on error
+    setLoadingDroneImageryIds(prev => prev.filter(id => id !== wmtsItemId));
+    setActiveDroneImageryIds(prev => prev.filter(id => id !== wmtsItemId));
+  };
+
+  // Drone Imagery Carousel handlers
+  const handleDroneCarouselOpen = (project: DroneImageryProject) => {
+    // Open carousel and load first layer
+    const firstLayer = project.imageryLayers[0];
+    setDroneCarouselState({
+      isOpen: true,
+      project,
+      currentLayerIndex: 0,
+    });
+    setDroneSidebarTab('details');
+    // Clear any existing drone imagery layers and load the first one
+    setActiveDroneImageryIds([firstLayer.wmts.itemId]);
+    setLoadingDroneImageryIds([firstLayer.wmts.itemId]);
+  };
+
+  const handleDroneCarouselPrevious = () => {
+    if (!droneCarouselState.project || droneCarouselState.currentLayerIndex <= 0) return;
+    
+    const newIndex = droneCarouselState.currentLayerIndex - 1;
+    const newLayer = droneCarouselState.project.imageryLayers[newIndex];
+    
+    setDroneCarouselState(prev => ({ ...prev, currentLayerIndex: newIndex }));
+    // Swap to the new layer
+    setActiveDroneImageryIds([newLayer.wmts.itemId]);
+    setLoadingDroneImageryIds([newLayer.wmts.itemId]);
+  };
+
+  const handleDroneCarouselNext = () => {
+    if (!droneCarouselState.project) return;
+    const maxIndex = droneCarouselState.project.layerCount - 1;
+    if (droneCarouselState.currentLayerIndex >= maxIndex) return;
+    
+    const newIndex = droneCarouselState.currentLayerIndex + 1;
+    const newLayer = droneCarouselState.project.imageryLayers[newIndex];
+    
+    setDroneCarouselState(prev => ({ ...prev, currentLayerIndex: newIndex }));
+    // Swap to the new layer
+    setActiveDroneImageryIds([newLayer.wmts.itemId]);
+    setLoadingDroneImageryIds([newLayer.wmts.itemId]);
+  };
+
+  const handleDroneCarouselClose = () => {
+    setDroneCarouselState({
+      isOpen: false,
+      project: null,
+      currentLayerIndex: 0,
+    });
+    // Clear all drone imagery layers
+    setActiveDroneImageryIds([]);
+    setLoadingDroneImageryIds([]);
+    setDroneSidebarTab('details');
+  };
+
+  const handleDroneSidebarTabChange = (tab: DroneSidebarTab) => {
+    setDroneSidebarTab(tab);
+  };
+
+
+  const handleDroneAddToCart = () => {
+    if (!droneCarouselState.project) return;
+
+    const project = droneCarouselState.project;
+    
+    // Format date range
+    const formatDate = (date: Date) => {
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+      });
+    };
+    
+    const timeRange = project.layerCount === 1
+      ? formatDate(project.dateRangeStart)
+      : `${formatDate(project.dateRangeStart)} - ${formatDate(project.dateRangeEnd)}`;
+
+    const cartItem = {
+      dataSource: 'drone-imagery' as const,
+      title: `${project.projectName} (${project.layerCount} ${project.layerCount === 1 ? 'capture' : 'captures'})`,
+      coreFilters: {
+        category: 'Real-time & Remote Sensing',
+        source: 'Drone Imagery',
+        spatialFilter: 'Dangermond Preserve',
+        timeRange,
+        startDate: project.dateRangeStart.toISOString().split('T')[0],
+        endDate: project.dateRangeEnd.toISOString().split('T')[0],
+      },
+      customFilters: {
+        droneImagery: {
+          projectName: project.projectName,
+          layerIds: project.imageryLayers.map(l => l.planId),
+          includeImageCollections: project.hasImageCollections,
+        },
+      },
+      estimatedCount: project.layerCount,
+    };
+
+    const result = addToCart(cartItem);
+    
+    if (result.success) {
+      toast.success(`Added "${project.projectName}" to cart!`, {
+        duration: 3000,
+        position: 'bottom-right',
+      });
+    } else {
+      toast.error(result.error || 'Failed to add to cart', {
+        duration: 3000,
+        position: 'bottom-right',
+      });
+    }
   };
 
   // Animl handlers
@@ -1115,6 +1270,16 @@ function App() {
       setShowFilterReminder(false);
     }
     
+    // Close drone imagery carousel when filters are cleared (source becomes empty)
+    if (!newFilters.source && filters.source === 'Drone Imagery') {
+      setDroneCarouselState({
+        isOpen: false,
+        project: null,
+        currentLayerIndex: 0,
+      });
+      setDroneSidebarTab('details');
+    }
+    
     setFilters(newFilters);
     
     // If user selects "Draw Area" spatial filter, activate draw mode
@@ -1599,6 +1764,11 @@ function App() {
       };
 
       searchAniml();
+    } else if (filters.source === 'LiDAR' || filters.source === 'Drone Imagery') {
+      // LiDAR and Drone Imagery don't need map data loading
+      // They handle their own content in their respective views
+      // Just update the time range tracking
+      setLastSearchedDaysBack(filters.daysBack || 30);
     } else {
       // Handle iNaturalist Public API search
       // Filter by iconic taxa based on category
@@ -1652,6 +1822,15 @@ function App() {
       setLastSearchedFilters(prev => ({ ...prev, source: '' }));
       setHasSearched(false);
       setShowFilterReminder(false); // Clear reminder when going back to catalog
+      
+      // Close drone imagery carousel and sidebar when going back to catalog
+      setDroneCarouselState({
+        isOpen: false,
+        project: null,
+        currentLayerIndex: 0,
+      });
+      setDroneSidebarTab('details');
+      
       return;
     }
 
@@ -2479,6 +2658,12 @@ function App() {
           onAnimlCustomFiltersChange={setAnimlCustomFilters}
           animlCountLookups={animlCountLookups}
           animlCountsLoading={animlCountsLoading}
+          // Drone Imagery props
+          activeDroneImageryIds={activeDroneImageryIds}
+          loadingDroneImageryIds={loadingDroneImageryIds}
+          onDroneImageryLayerToggle={handleDroneImageryLayerToggle}
+          onDroneCarouselOpen={handleDroneCarouselOpen}
+          activeDroneProjectName={droneCarouselState.project?.projectName}
         />
         <div id="map-container" className="flex-1 relative flex">
           {/* Conditionally render based on data source and LiDAR mode */}
@@ -2605,6 +2790,16 @@ function App() {
                 onAnimlDeploymentClick={handleAnimlDeploymentClick}
                 onAnimlObservationClick={handleAnimlObservationClick}
                 onAnimlLoadingChange={setAnimlLoading}
+                // Drone Imagery layer management
+                activeDroneImageryIds={activeDroneImageryIds}
+                onDroneImageryLayerLoaded={handleDroneImageryLayerLoaded}
+                onDroneImageryLayerError={handleDroneImageryLayerError}
+                // Drone Imagery Carousel
+                droneCarouselState={droneCarouselState}
+                onDroneCarouselPrevious={handleDroneCarouselPrevious}
+                onDroneCarouselNext={handleDroneCarouselNext}
+                onDroneCarouselClose={handleDroneCarouselClose}
+                onDroneCarouselShowDetails={() => handleDroneSidebarTabChange('details')}
               />
               {/* Hub Page Preview Overlay */}
               {selectedModalItem && (
@@ -2735,6 +2930,15 @@ function App() {
             }}
             onExportCSV={handleDendraExportCSV}
             onExportExcel={handleDendraExportExcel}
+          />
+        ) : lastSearchedFilters.source === 'Drone Imagery' && droneCarouselState.isOpen && droneCarouselState.project ? (
+          <DroneImagerySidebar
+            project={droneCarouselState.project}
+            currentLayer={droneCarouselState.project.imageryLayers[droneCarouselState.currentLayerIndex]}
+            activeTab={droneSidebarTab}
+            onTabChange={handleDroneSidebarTabChange}
+            onClose={handleDroneCarouselClose}
+            onAddToCart={handleDroneAddToCart}
           />
         ) : (lastSearchedFilters.source === 'iNaturalist (Public API)' || 
             lastSearchedFilters.source === 'iNaturalist (TNC Layers)') ? (

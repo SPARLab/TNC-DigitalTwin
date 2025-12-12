@@ -12,13 +12,15 @@ import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 import PopupTemplate from '@arcgis/core/PopupTemplate';
 import * as reactiveUtils from '@arcgis/core/core/reactiveUtils';
 import * as geometryEngine from '@arcgis/core/geometry/geometryEngine';
-import { iNaturalistAPI, iNaturalistObservation } from '../services/iNaturalistService';
-import { tncINaturalistService, TNCArcGISObservation } from '../services/tncINaturalistService';
-import { calFloraAPI, CalFloraPlant } from '../services/calFloraService';
-import { TNCArcGISItem, tncArcGISAPI } from '../services/tncArcGISService';
-import { eBirdService, EBirdObservation } from '../services/eBirdService';
-import { animlService, AnimlDeployment, AnimlImageLabel } from '../services/animlService';
+import { iNaturalistObservation } from '../services/iNaturalistService';
+import { TNCArcGISObservation } from '../services/tncINaturalistService';
+import { CalFloraPlant } from '../services/calFloraService';
+import { TNCArcGISItem } from '../services/tncArcGISService';
+import { EBirdObservation } from '../services/eBirdService';
+import { AnimlDeployment, AnimlImageLabel } from '../services/animlService';
 import type { DendraStation } from '../types';
+import type { DroneImageryProject, DroneImageryCarouselState } from '../types/droneImagery';
+import DroneImageryCarousel from './DroneImageryCarousel';
 import LayerLegend from './LayerLegend';
 import { MapLegend } from './MapLegend';
 import { ChevronDown, ChevronUp, Map as MapIcon, Satellite } from 'lucide-react';
@@ -102,6 +104,16 @@ interface MapViewProps {
   onAnimlDeploymentClick?: (deployment: AnimlDeployment) => void;
   onAnimlObservationClick?: (observation: AnimlImageLabel) => void;
   onAnimlLoadingChange?: (loading: boolean) => void;
+  // Drone Imagery layer management
+  activeDroneImageryIds?: string[];
+  onDroneImageryLayerLoaded?: (wmtsItemId: string) => void;
+  onDroneImageryLayerError?: (wmtsItemId: string) => void;
+  // Drone Imagery Carousel (for multi-layer projects)
+  droneCarouselState?: DroneImageryCarouselState;
+  onDroneCarouselPrevious?: () => void;
+  onDroneCarouselNext?: () => void;
+  onDroneCarouselClose?: () => void;
+  onDroneCarouselShowDetails?: () => void;
 }
 
 export interface MapViewRef {
@@ -197,19 +209,30 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   onPolygonCleared,
   iconicTaxa = [],
   onIconicTaxaChange,
-  animlDeployments = [],
-  animlImageLabels = [],
-  animlViewMode = 'camera-centric',
-  selectedAnimlDeployment,
-  selectedAnimlObservation,
-  onAnimlDeploymentClick,
-  onAnimlObservationClick,
-  onAnimlLoadingChange
+  animlDeployments: _animlDeployments = [],
+  animlImageLabels: _animlImageLabels = [],
+  animlViewMode: _animlViewMode = 'camera-centric',
+  selectedAnimlDeployment: _selectedAnimlDeployment,
+  selectedAnimlObservation: _selectedAnimlObservation,
+  onAnimlDeploymentClick: _onAnimlDeploymentClick,
+  onAnimlObservationClick: _onAnimlObservationClick,
+  onAnimlLoadingChange,
+  // Drone Imagery props
+  activeDroneImageryIds = [],
+  onDroneImageryLayerLoaded,
+  onDroneImageryLayerError,
+  // Drone Imagery Carousel props
+  droneCarouselState,
+  onDroneCarouselPrevious,
+  onDroneCarouselNext,
+  onDroneCarouselClose,
+  onDroneCarouselShowDetails
 }, ref) => {
   const mapDiv = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<MapView | null>(null);
   const [loading, setLoading] = useState(false);
   const tncArcGISLayersRef = useRef<globalThis.Map<string, __esri.Layer>>(new globalThis.Map());
+  const droneImageryLayersRef = useRef<globalThis.Map<string, __esri.Layer>>(new globalThis.Map());
   const boundaryLayerRef = useRef<__esri.GeoJSONLayer | null>(null);
   const [drawnPolygon, setDrawnPolygon] = useState<__esri.Polygon | null>(null);
   const drawingPointsRef = useRef<number[][]>([]);
@@ -453,6 +476,108 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     onImageServerLoadingChange: setImageServerLoading,
     onLayerLoadErrorChange: setLayerLoadError
   });
+
+  // Manage Drone Imagery layers from portal items
+  useEffect(() => {
+    if (!view || !view.map) return;
+
+    const currentLayers = droneImageryLayersRef.current;
+    const currentIds = new Set(currentLayers.keys());
+    const targetIds = new Set(activeDroneImageryIds);
+
+    // Remove layers that are no longer active
+    currentIds.forEach(id => {
+      if (!targetIds.has(id)) {
+        const layer = currentLayers.get(id);
+        if (layer && view.map) {
+          console.log(`🗑️ Removing drone imagery layer: ${id}`);
+          view.map.remove(layer);
+          if (typeof (layer as any).destroy === 'function') {
+            (layer as any).destroy();
+          }
+          currentLayers.delete(id);
+        }
+      }
+    });
+
+    // Add new layers
+    targetIds.forEach(async (wmtsItemId) => {
+      if (!currentIds.has(wmtsItemId)) {
+        console.log(`📷 Loading drone imagery layer: ${wmtsItemId}`);
+        try {
+          // Dynamic import to avoid bundling issues
+          const { default: Layer } = await import('@arcgis/core/layers/Layer');
+          
+          const layer = await Layer.fromPortalItem({
+            portalItem: {
+              id: wmtsItemId,
+              portal: {
+                url: 'https://dangermondpreserve-spatial.com/portal'
+              }
+            } as any
+          });
+
+          // Set a recognizable ID
+          layer.id = `drone-imagery-${wmtsItemId}`;
+          layer.title = `Drone Imagery ${wmtsItemId.substring(0, 8)}...`;
+
+          // Add to map
+          if (view.map) {
+            view.map.layers.add(layer);
+            currentLayers.set(wmtsItemId, layer);
+            console.log(`✅ Drone imagery layer loaded: ${wmtsItemId}`);
+            onDroneImageryLayerLoaded?.(wmtsItemId);
+
+            // Try to zoom to the layer extent
+            layer.when(() => {
+              if (layer.fullExtent && view) {
+                view.goTo(layer.fullExtent, { duration: 1000 }).catch(() => {
+                  // Ignore errors from goTo
+                });
+              }
+            });
+          }
+        } catch (error) {
+          console.error(`❌ Failed to load drone imagery layer ${wmtsItemId}:`, error);
+          onDroneImageryLayerError?.(wmtsItemId);
+        }
+      }
+    });
+  }, [view, activeDroneImageryIds, onDroneImageryLayerLoaded, onDroneImageryLayerError]);
+
+  // Manage drone imagery carousel - draw project bounds polygon
+  useEffect(() => {
+    if (!view || !view.map) return;
+
+    // Get or create the project bounds layer
+    let boundsLayer = view.map.findLayerById('drone-project-bounds') as GraphicsLayer;
+    if (!boundsLayer) {
+      boundsLayer = new GraphicsLayer({
+        id: 'drone-project-bounds',
+        title: 'Drone Project Bounds',
+        listMode: 'hide'
+      });
+      view.map.add(boundsLayer);
+    }
+
+    // Clear existing graphics
+    boundsLayer.removeAll();
+
+    // Zoom to project bounds if carousel is open and has bounds data
+    if (droneCarouselState?.isOpen && droneCarouselState.project?.projectBounds) {
+      const rings = droneCarouselState.project.projectBounds;
+      
+      const polygon = new Polygon({
+        rings: rings,
+        spatialReference: { wkid: 4326 }
+      });
+
+      // Zoom to the project bounds with some padding (no visible border drawn)
+      view.goTo(polygon.extent.expand(1.3), { duration: 1000 }).catch(() => {
+        // Ignore errors from goTo
+      });
+    }
+  }, [view, droneCarouselState?.isOpen, droneCarouselState?.project]);
 
   // Close popup if the layer it belongs to was toggled off
   useEffect(() => {
@@ -2077,6 +2202,22 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         className="w-full h-full outline-none"
         style={{ minHeight: '400px' }}
       />
+
+      {/* Drone Imagery Carousel - Floating overlay for multi-layer projects */}
+      {droneCarouselState?.isOpen && droneCarouselState.project && (
+        <>
+          <DroneImageryCarousel
+            project={droneCarouselState.project}
+            currentLayerIndex={droneCarouselState.currentLayerIndex}
+            isLoading={activeDroneImageryIds.length > 0 && 
+              activeDroneImageryIds.some(id => !droneImageryLayersRef.current.has(id))}
+            onPrevious={onDroneCarouselPrevious || (() => {})}
+            onNext={onDroneCarouselNext || (() => {})}
+            onClose={onDroneCarouselClose || (() => {})}
+            onShowDetails={onDroneCarouselShowDetails || (() => {})}
+          />
+        </>
+      )}
 
       {/* ImageServer Loading Banner - Floating over map */}
       {imageServerLoading && (

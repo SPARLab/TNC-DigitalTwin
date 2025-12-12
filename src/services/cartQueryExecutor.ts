@@ -4,6 +4,7 @@ import { animlService } from './animlService';
 import { calFloraAPI, CalFloraPlant } from './calFloraService';
 import { eBirdService, EBirdObservation } from './eBirdService';
 import { getDateRange, formatDateForAPI } from '../utils/dateUtils';
+import { fetchDroneImageryForProject } from './droneImageryService';
 
 /**
  * Execute a cart query and return the results
@@ -15,6 +16,8 @@ export async function executeCartQuery(item: CartItem): Promise<any[]> {
       return executeINaturalistQuery(item);
     case 'animl':
       return executeAnimlQuery(item);
+    case 'drone-imagery':
+      return executeDroneImageryQuery(item);
     case 'calflora':
       return executeCalFloraQuery(item);
     case 'ebird':
@@ -252,6 +255,97 @@ async function executeAnimlQuery(item: CartItem): Promise<any[]> {
   // Return EXACTLY the filtered observations (limited to estimatedCount if needed)
   // This ensures CSVs contain exactly what was estimated, preventing oversized files
   return filtered;
+}
+
+/**
+ * Execute a drone imagery query from a cart item
+ * Returns metadata manifest (not actual imagery files)
+ * 
+ * The export contains:
+ * - Project and plan metadata
+ * - Capture dates
+ * - Extent geometries (WKT and bounding box coordinates)
+ * - Access links (WMTS service, ArcGIS Online portal, image collections)
+ * - Technical details (item IDs, service URLs)
+ */
+async function executeDroneImageryQuery(item: CartItem): Promise<any[]> {
+  const { customFilters } = item;
+  const droneFilters = customFilters.droneImagery;
+  
+  if (!droneFilters) {
+    throw new Error('Drone imagery filters not found in cart item');
+  }
+
+  console.log(`🛸 Drone Imagery Cart Export: Fetching metadata for project "${droneFilters.projectName}"`);
+  console.log(`   📷 Layer IDs: ${droneFilters.layerIds.join(', ')}`);
+
+  // Fetch all layers for the project
+  const allLayers = await fetchDroneImageryForProject(droneFilters.projectName);
+  
+  console.log(`📊 Drone Imagery Cart Export: Fetched ${allLayers.length} layers from project`);
+
+  // Filter to only the selected layers
+  const selectedLayers = allLayers.filter(layer => 
+    droneFilters.layerIds.includes(layer.planId)
+  );
+
+  console.log(`📊 Drone Imagery Cart Export: Filtered to ${selectedLayers.length} selected layers`);
+
+  if (selectedLayers.length !== droneFilters.layerIds.length) {
+    console.warn(`⚠️ Drone Imagery Cart Export: Some layers not found. Expected ${droneFilters.layerIds.length}, found ${selectedLayers.length}`);
+  }
+
+  // Transform to export format
+  const exportData = selectedLayers.map(layer => {
+    // Format extent as bounding box
+    let extent = '';
+    if (layer.planGeometry && layer.planGeometry.length > 0) {
+      const coords = layer.planGeometry[0];
+      const lons = coords.map(c => c[0]);
+      const lats = coords.map(c => c[1]);
+      const minLon = Math.min(...lons).toFixed(6);
+      const maxLon = Math.max(...lons).toFixed(6);
+      const minLat = Math.min(...lats).toFixed(6);
+      const maxLat = Math.max(...lats).toFixed(6);
+      extent = `${minLon},${minLat},${maxLon},${maxLat}`;
+    }
+
+    // Format extent as WKT
+    let extent_wkt = '';
+    if (layer.planGeometry && layer.planGeometry.length > 0) {
+      const coords = layer.planGeometry[0];
+      const coordPairs = coords.map(c => `${c[0]} ${c[1]}`).join(', ');
+      extent_wkt = `POLYGON ((${coordPairs}))`;
+    }
+
+    const exportRecord: any = {
+      project_name: layer.projectName,
+      plan_name: layer.planName,
+      plan_id: layer.planId,
+      date_captured: layer.dateCaptured.toISOString().split('T')[0], // YYYY-MM-DD
+      last_updated: layer.lastUpdated.toISOString().split('T')[0],
+      record_type: layer.recordType,
+      extent_bbox: extent,
+      extent_wkt: extent_wkt,
+      wmts_item_id: layer.wmts.itemId,
+      wmts_link: layer.wmts.link,
+      portal_url: `https://dangermondpreserve-spatial.com/portal/home/item.html?id=${layer.wmts.itemId}`,
+      tif_download_url: layer.tifUrl || '', // Azure Blob Storage URL for raw TIF
+    };
+
+    // Add image collection links if available and requested
+    if (droneFilters.includeImageCollections && layer.imageCollection) {
+      exportRecord.collection_item_id = layer.imageCollection.itemId;
+      exportRecord.collection_link = layer.imageCollection.link;
+      exportRecord.collection_portal_url = `https://dangermondpreserve-spatial.com/portal/home/item.html?id=${layer.imageCollection.itemId}`;
+    }
+
+    return exportRecord;
+  });
+
+  console.log(`✅ Drone Imagery Cart Export: Prepared ${exportData.length} records for export`);
+
+  return exportData;
 }
 
 /**
