@@ -37,7 +37,6 @@ import { useShoppingCart } from './hooks/useShoppingCart';
 import { CartPanel } from './components/ShoppingCart/CartPanel';
 import { ExportModal } from './components/ShoppingCart/ExportModal';
 import DroneImagerySidebar, { type DroneSidebarTab } from './components/DroneImageryDetails';
-import DroneImageryPreview from './components/DroneImageryPreview';
 import { 
   fetchDendraStations,
   fetchDendraDatastreams,
@@ -196,18 +195,8 @@ function App() {
   // Drone Imagery sidebar tab
   const [droneSidebarTab, setDroneSidebarTab] = useState<DroneSidebarTab>('details');
   
-  // Drone Imagery preview state
-  const [dronePreviewState, setDronePreviewState] = useState<{
-    isOpen: boolean;
-    url: string;
-    title: string;
-    subtitle?: string;
-  }>({
-    isOpen: false,
-    url: '',
-    title: '',
-    subtitle: undefined,
-  });
+  // Note: Drone Imagery preview via iframe was removed due to CSP restrictions
+  // (ArcGIS portal has frame-ancestors 'self' which blocks cross-origin embedding)
 
   // Dendra Stations state
   const [dendraStations, setDendraStations] = useState<DendraStation[]>([]);
@@ -551,23 +540,6 @@ function App() {
     setDroneSidebarTab(tab);
   };
 
-  const handleDronePreviewOpen = (url: string, title: string, subtitle?: string) => {
-    setDronePreviewState({
-      isOpen: true,
-      url,
-      title,
-      subtitle,
-    });
-  };
-
-  const handleDronePreviewClose = () => {
-    setDronePreviewState({
-      isOpen: false,
-      url: '',
-      title: '',
-      subtitle: undefined,
-    });
-  };
 
   const handleDroneAddToCart = () => {
     if (!droneCarouselState.project) return;
@@ -1230,6 +1202,16 @@ function App() {
       setShowFilterReminder(false);
     }
     
+    // Close drone imagery carousel when filters are cleared (source becomes empty)
+    if (!newFilters.source && filters.source === 'Drone Imagery') {
+      setDroneCarouselState({
+        isOpen: false,
+        project: null,
+        currentLayerIndex: 0,
+      });
+      setDroneSidebarTab('details');
+    }
+    
     setFilters(newFilters);
     
     // If user selects "Draw Area" spatial filter, activate draw mode
@@ -1740,6 +1722,15 @@ function App() {
       setLastSearchedFilters(prev => ({ ...prev, source: '' }));
       setHasSearched(false);
       setShowFilterReminder(false); // Clear reminder when going back to catalog
+      
+      // Close drone imagery carousel and sidebar when going back to catalog
+      setDroneCarouselState({
+        isOpen: false,
+        project: null,
+        currentLayerIndex: 0,
+      });
+      setDroneSidebarTab('details');
+      
       return;
     }
 
@@ -2578,16 +2569,6 @@ function App() {
               {/* Hub Page Preview Overlay */}
               {selectedModalItem && (
                 <HubPagePreview item={selectedModalItem} onClose={handleModalClose} />
-              )}
-              
-              {/* Drone Imagery Preview Overlay */}
-              {dronePreviewState.isOpen && (
-                <DroneImageryPreview
-                  url={dronePreviewState.url}
-                  title={dronePreviewState.title}
-                  subtitle={dronePreviewState.subtitle}
-                  onClose={handleDronePreviewClose}
-                />
               )}
               
               {/* Dataset Download View Overlay */}

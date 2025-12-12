@@ -23,6 +23,8 @@ export interface DroneImageryRecord {
   project_bounds: string | null;
   /** WKT POLYGON - individual layer extent */
   plan_geometry: string | null;
+  /** Azure Blob Storage URL for raw TIF download */
+  azure_blob_url: string | null;
 }
 
 /**
@@ -47,6 +49,8 @@ export interface DroneImageryMetadata {
   recordType: string;
   /** Parsed polygon rings from plan_geometry WKT */
   planGeometry?: number[][][];
+  /** Azure Blob Storage URL for raw TIF download */
+  tifUrl?: string;
 }
 
 /**

@@ -57,7 +57,7 @@ const DroneImageryCarousel: React.FC<DroneImageryCarouselProps> = ({
       {/* Top bar: Project name, Date, Counter, Close */}
       <div
         id="drone-carousel-top-bar"
-        className="absolute top-4 left-4 right-4 z-30 flex items-center justify-between pointer-events-none"
+        className="absolute top-4 left-4 right-16 z-30 flex items-start justify-between pointer-events-none"
       >
         {/* Left: Project info and date */}
         <div

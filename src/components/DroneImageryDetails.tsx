@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink, Copy, Calendar, Clock, Box, ShoppingCart, X } from 'lucide-react';
+import { ExternalLink, Copy, Calendar, Clock, Box, ShoppingCart, X, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { DroneImageryProject, DroneImageryMetadata } from '../types/droneImagery';
 
@@ -71,10 +71,30 @@ const DroneImagerySidebar: React.FC<DroneImagerySidebarProps> = ({
     ? currentLayer.wmts.link 
     : portalItemUrl;
 
+  // Handle TIF download without opening new tab
+  const handleTifDownload = (url: string) => {
+    // Create a temporary anchor element
+    const link = document.createElement('a');
+    link.href = url;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    
+    // Trigger the download
+    link.click();
+    
+    // Clean up
+    document.body.removeChild(link);
+    
+    toast.success('Download started', {
+      duration: 2000,
+      position: 'bottom-right',
+    });
+  };
+
   return (
     <aside
       id="drone-sidebar"
-      className="w-96 max-w-full h-full bg-white border-l border-gray-200 shadow-xl flex flex-col relative"
+      className="w-96 max-w-full h-full bg-white border-l border-gray-200 flex flex-col relative"
     >
       {/* Close button - positioned absolutely */}
       <button
@@ -154,9 +174,28 @@ const DroneImagerySidebar: React.FC<DroneImagerySidebarProps> = ({
               </div>
             </section>
 
+            {/* Download Options */}
+            <section id="drone-details-downloads">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Download Options</h3>
+              <div className="space-y-2">
+                {/* Raw TIF Download */}
+                {currentLayer.tifUrl && (
+                  <button
+                    id="drone-details-tif-download"
+                    onClick={() => handleTifDownload(currentLayer.tifUrl!)}
+                    className="w-full flex items-center gap-2 px-3 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg text-sm text-purple-700 font-medium transition-colors"
+                  >
+                    <Download className="w-4 h-4 flex-shrink-0" />
+                    <span className="flex-1">Download Raw Imagery (TIF)</span>
+                    <span className="text-xs text-purple-600">~100-500 MB</span>
+                  </button>
+                )}
+              </div>
+            </section>
+
             {/* Access Links */}
             <section id="drone-details-access-links">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Access Links</h3>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Web Access Links</h3>
               <div className="space-y-2">
                 {/* ArcGIS Online Portal Link */}
                 <a
@@ -284,10 +323,7 @@ const DroneImagerySidebar: React.FC<DroneImagerySidebarProps> = ({
           </>
         ) : (
           <section id="drone-export-panel" className="space-y-4">
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-900">
-              Exports a metadata manifest (CSV/JSON/GeoJSON) with extents, dates, and access links for all captures in this project.
-            </div>
-
+            {/* Project Summary */}
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">Project</span>
@@ -309,35 +345,59 @@ const DroneImagerySidebar: React.FC<DroneImagerySidebarProps> = ({
                   )}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Image collections</span>
-                <span className="font-medium text-gray-900">{project.hasImageCollections ? 'Included if available' : 'None'}</span>
+            </div>
+
+            {/* Export Option 1: Metadata Manifest */}
+            <div className="border border-gray-200 rounded-lg p-4 space-y-3">
+              <div className="flex items-start gap-2">
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-1">Metadata Manifest</h4>
+                  <p className="text-xs text-gray-600">
+                    CSV/JSON with project details, dates, extents, and TIF download URLs
+                  </p>
+                </div>
               </div>
+              <button
+                id="drone-export-add-metadata"
+                onClick={onAddToCart}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                <ShoppingCart className="w-4 h-4" />
+                <span>Add Metadata to Cart</span>
+              </button>
             </div>
 
-            <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-700 space-y-1">
-              <p>Manifest columns include:</p>
-              <ul className="list-disc list-inside space-y-0.5">
-                <li>Project & plan names</li>
-                <li>Capture & last-updated dates</li>
-                <li>WMTS item IDs + service URLs</li>
-                <li>Portal URLs for download</li>
-                <li>Extent as bbox + WKT</li>
-                <li>Image collection links (when available)</li>
-              </ul>
+            {/* Export Option 2: Raw Image Files */}
+            <div className="border border-purple-200 rounded-lg p-4 space-y-3 bg-purple-50/30">
+              <div className="flex items-start gap-2">
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-1">Raw Image Files (.TIF)</h4>
+                  <p className="text-xs text-gray-600 mb-2">
+                    Download actual TIF files for all {project.layerCount} {project.layerCount === 1 ? 'capture' : 'captures'}
+                  </p>
+                  <p className="text-xs text-purple-700 font-medium">
+                    ⚠️ Total size: ~{project.layerCount * 100}-{project.layerCount * 500} MB
+                  </p>
+                </div>
+              </div>
+              <button
+                id="drone-export-add-files"
+                onClick={() => {
+                  // TODO: Implement file download cart
+                  toast.error('Raw file downloads coming soon!', {
+                    duration: 3000,
+                    position: 'bottom-right',
+                  });
+                }}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                <ShoppingCart className="w-4 h-4" />
+                <span>Add Image Files to Cart</span>
+              </button>
+              <p className="text-xs text-gray-500 italic">
+                Note: Large files will be downloaded individually via browser
+              </p>
             </div>
-
-            <button
-              id="drone-export-add-to-cart"
-              onClick={onAddToCart}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-sm"
-            >
-              <ShoppingCart className="w-5 h-5" />
-              <span>Add Project to Cart</span>
-            </button>
-            <p className="text-xs text-gray-500 text-center">
-              Export queue downloads a manifest; imagery is fetched via provided links.
-            </p>
           </section>
         )}
       </div>

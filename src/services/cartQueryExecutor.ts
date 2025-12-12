@@ -331,6 +331,7 @@ async function executeDroneImageryQuery(item: CartItem): Promise<any[]> {
       wmts_item_id: layer.wmts.itemId,
       wmts_link: layer.wmts.link,
       portal_url: `https://dangermondpreserve-spatial.com/portal/home/item.html?id=${layer.wmts.itemId}`,
+      tif_download_url: layer.tifUrl || '', // Azure Blob Storage URL for raw TIF
     };
 
     // Add image collection links if available and requested
