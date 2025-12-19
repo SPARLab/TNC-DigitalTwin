@@ -31,7 +31,7 @@ import { formatDateRangeCompact, getDateRange, formatDateForAPI, formatDateToUS 
 import { tncINaturalistService } from './services/tncINaturalistService';
 import { MapViewRef } from './components/MapView';
 import { DEFAULT_THEME } from './utils/themes';
-import { CATEGORY_DATA_SOURCES } from './utils/constants';
+import { CATEGORY_DATA_SOURCES, ENABLE_TAGS_FILTER } from './utils/constants';
 import categoryMappings from './data-sources/tnc-arcgis/category_mappings.json';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useShoppingCart } from './hooks/useShoppingCart';
@@ -1847,10 +1847,10 @@ function App() {
       }
     }
     
-    // Auto-select all tags for the category (if we have a category and tags aren't already set)
+    // Auto-select all tags for the category (only if tags filter is enabled)
     const finalCategory = category || filters.category;
     // @ts-ignore - JSON import types
-    const categoryTags: string[] = finalCategory && categoryMappings.mappings.tags[finalCategory as keyof typeof categoryMappings.mappings.tags] 
+    const categoryTags: string[] = ENABLE_TAGS_FILTER && finalCategory && categoryMappings.mappings.tags[finalCategory as keyof typeof categoryMappings.mappings.tags] 
       ? categoryMappings.mappings.tags[finalCategory as keyof typeof categoryMappings.mappings.tags] 
       : [];
     
@@ -1864,8 +1864,8 @@ function App() {
       ...prev, 
       source, 
       category: category || prev.category,
-      // Auto-select all tags if tags are currently empty
-      tags: prev.tags.length === 0 ? categoryTags : prev.tags,
+      // Auto-select all tags if tags are currently empty (only when feature is enabled)
+      tags: ENABLE_TAGS_FILTER && prev.tags.length === 0 ? categoryTags : prev.tags,
       ...(defaults || {}) 
     }));
   };

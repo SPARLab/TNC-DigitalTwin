@@ -2,6 +2,10 @@
 import categoryMappings from '../data-sources/tnc-arcgis/category_mappings.json';
 
 export const APP_NAME = 'Dangermond Preserve Data Catalog';
+
+// Feature Flags
+// Set to true to re-enable the Tags filter dropdown in the subheader
+export const ENABLE_TAGS_FILTER = false;
 export const APP_VERSION = '1.0.0';
 
 // Import main categories from the TNC category mappings (single source of truth)
