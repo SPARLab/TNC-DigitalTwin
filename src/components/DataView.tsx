@@ -17,11 +17,13 @@ import LiDARView, { LiDARViewMode } from './dataviews/LiDARView';
 import DroneImageryView from './dataviews/DroneImageryView';
 import DendraSidebar from './DendraSidebar';
 import WildlifeAnimlView from './dataviews/WildlifeAnimlView';
+import DataONEView from './dataviews/DataONEView';
 import { AnimlDeployment, AnimlImageLabel, AnimlAnimalTag, AnimlCountLookups } from '../services/animlService';
 import { AnimlViewMode } from './AnimlSidebar';
 import { AnimlCustomFilters } from '../types';
 import DataCatalog from './DataCatalog';
 import type { DroneImageryProject } from '../types/droneImagery';
+import type { DataOneDataset } from '../services/dataOneService';
 
 interface DataViewProps {
   filters: FilterState;
@@ -128,6 +130,12 @@ interface DataViewProps {
   onDroneImageryLayerToggle?: (wmtsItemId: string) => void;
   onDroneCarouselOpen?: (project: DroneImageryProject) => void;
   activeDroneProjectName?: string;
+  // DataONE props
+  onDataOneDatasetSelect?: (dataset: DataOneDataset) => void;
+  selectedDataOneDatasetId?: number;
+  dataOneSearchText?: string;
+  onDataOneSearchTextChange?: (text: string) => void;
+  onDataOneDatasetsLoaded?: (datasets: DataOneDataset[]) => void;
 }
 
 const DataView: React.FC<DataViewProps> = ({
@@ -221,7 +229,13 @@ const DataView: React.FC<DataViewProps> = ({
   loadingDroneImageryIds = [],
   onDroneImageryLayerToggle,
   onDroneCarouselOpen,
-  activeDroneProjectName
+  activeDroneProjectName,
+  // DataONE props
+  onDataOneDatasetSelect,
+  selectedDataOneDatasetId,
+  dataOneSearchText = '',
+  onDataOneSearchTextChange,
+  onDataOneDatasetsLoaded
 }) => {
   // Route to appropriate data view based on category + source combination
   const getDataView = () => {
@@ -422,6 +436,24 @@ const DataView: React.FC<DataViewProps> = ({
             selectedObservation={selectedAnimlObservation}
             countLookups={animlCountLookups}
             onBack={onBack}
+          />
+        );
+
+      // DataONE cases - Research Datasets
+      case 'Ecological / Biological (Species?)-DataONE':
+      case 'Vegetation / habitat-DataONE':
+      case 'Marine-DataONE':
+      case 'Climate / weather-DataONE':
+      case 'Hydrological-DataONE':
+        return (
+          <DataONEView
+            hasSearched={hasSearched}
+            onBack={onBack}
+            onDatasetSelect={onDataOneDatasetSelect}
+            selectedDatasetId={selectedDataOneDatasetId}
+            searchText={dataOneSearchText}
+            onSearchTextChange={onDataOneSearchTextChange}
+            onDatasetsLoaded={onDataOneDatasetsLoaded}
           />
         );
         

@@ -3,6 +3,7 @@ import Map from '@arcgis/core/Map';
 import MapView from '@arcgis/core/views/MapView';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import GeoJSONLayer from '@arcgis/core/layers/GeoJSONLayer';
+import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
 import Polygon from '@arcgis/core/geometry/Polygon';
@@ -113,6 +114,16 @@ interface MapViewProps {
   onDroneCarouselNext?: () => void;
   onDroneCarouselClose?: () => void;
   onDroneCarouselShowDetails?: () => void;
+  // DataONE datasets
+  dataOneDatasets?: Array<{
+    id: number;
+    dataoneId: string;
+    title: string;
+    repository: string | null;
+    geometry?: { type: 'Point'; coordinates: [number, number] };
+  }>;
+  selectedDataOneDatasetId?: number;
+  onDataOneDatasetClick?: (datasetId: number) => void;
 }
 
 export interface MapViewRef {
@@ -225,7 +236,11 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   onDroneCarouselPrevious,
   onDroneCarouselNext,
   onDroneCarouselClose,
-  onDroneCarouselShowDetails
+  onDroneCarouselShowDetails,
+  // DataONE props
+  dataOneDatasets = [],
+  selectedDataOneDatasetId: _selectedDataOneDatasetId, // Currently unused - clustering handles selection
+  onDataOneDatasetClick
 }, ref) => {
   const mapDiv = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<MapView | null>(null);
@@ -354,6 +369,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         id: 'animl-observations',
         title: 'Animl Observations'
       });
+
+      // Note: DataONE layer is created dynamically with clustering when data is loaded
 
       map.add(observationsLayer);
       map.add(tncObservationsLayer);
@@ -1246,6 +1263,137 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
     }
   }, [view, onDendraStationClick, dendraStations]);
 
+  // Effect to render DataONE datasets with clustering on the map
+  useEffect(() => {
+    if (!view || !view.map) return;
+
+    // Remove existing DataONE layer if it exists
+    const existingLayer = view.map.findLayerById('dataone-datasets');
+    if (existingLayer) {
+      view.map.remove(existingLayer);
+    }
+
+    if (dataOneDatasets.length === 0) return;
+
+    // Create features for FeatureLayer
+    const features = dataOneDatasets
+      .filter(d => d.geometry)
+      .map((dataset, index) => ({
+        geometry: new Point({
+          longitude: dataset.geometry!.coordinates[0],
+          latitude: dataset.geometry!.coordinates[1]
+        }),
+        attributes: {
+          ObjectID: index,
+          datasetId: dataset.id,
+          dataoneId: dataset.dataoneId,
+          title: dataset.title,
+          repository: dataset.repository || 'Unknown'
+        }
+      }));
+
+    // Create FeatureLayer with clustering
+    const dataOneLayer = new (FeatureLayer as any)({
+      id: 'dataone-datasets',
+      title: 'DataONE Research Datasets',
+      source: features,
+      objectIdField: 'ObjectID',
+      geometryType: 'point',
+      spatialReference: { wkid: 4326 },
+      fields: [
+        { name: 'ObjectID', type: 'oid' },
+        { name: 'datasetId', type: 'integer' },
+        { name: 'dataoneId', type: 'string' },
+        { name: 'title', type: 'string' },
+        { name: 'repository', type: 'string' }
+      ],
+      renderer: {
+        type: 'simple',
+        symbol: {
+          type: 'simple-marker',
+          size: 12,
+          color: [16, 185, 129, 0.9], // emerald-500
+          outline: { color: 'white', width: 1.5 }
+        }
+      },
+      popupTemplate: {
+        title: '{title}',
+        content: '<p><strong>Repository:</strong> {repository}</p><p style="margin-top: 8px; color: #6b7280; font-size: 11px;">Click cluster to zoom in</p>'
+      },
+      // Enable clustering
+      featureReduction: {
+        type: 'cluster',
+        clusterRadius: '80px',
+        clusterMinSize: '24px',
+        clusterMaxSize: '60px',
+        labelingInfo: [{
+          deconflictionStrategy: 'none',
+          labelExpressionInfo: { expression: "Text($feature.cluster_count, '#,###')" },
+          symbol: {
+            type: 'text',
+            color: 'white',
+            font: { weight: 'bold', family: 'sans-serif', size: '12px' },
+            haloSize: 1,
+            haloColor: [5, 150, 105, 0.9] // emerald-600
+          },
+          labelPlacement: 'center-center'
+        }],
+        popupTemplate: {
+          title: 'Research Dataset Cluster',
+          content: '<p><strong>{cluster_count}</strong> datasets in this area</p><p style="margin-top: 8px; color: #6b7280; font-size: 11px;">Click to zoom in and see individual datasets</p>'
+        },
+        // Cluster symbol
+        symbol: {
+          type: 'simple-marker',
+          style: 'circle',
+          color: [5, 150, 105, 0.85], // emerald-600
+          outline: { color: 'white', width: 2 }
+        }
+      }
+    });
+
+    view.map.add(dataOneLayer);
+
+    // Cleanup
+    return () => {
+      if (view.map) {
+        const layer = view.map.findLayerById('dataone-datasets');
+        if (layer) view.map.remove(layer);
+      }
+    };
+  }, [view, dataOneDatasets]);
+
+  // Add click handler for DataONE datasets (works with both clustered and individual features)
+  useEffect(() => {
+    if (view && onDataOneDatasetClick) {
+      const clickHandler = view.on('click', async (event) => {
+        const response = await view.hitTest(event);
+        const dataOneResult = response.results.find(result =>
+          'graphic' in result && result.graphic && result.graphic.layer?.id === 'dataone-datasets'
+        );
+
+        if (dataOneResult && 'graphic' in dataOneResult) {
+          const graphic = dataOneResult.graphic;
+          // Check if it's a cluster (has cluster_count attribute)
+          if (graphic.attributes?.cluster_count) {
+            // It's a cluster - zoom in to expand it
+            view.goTo({
+              target: graphic.geometry,
+              zoom: view.zoom + 2
+            });
+          } else if (graphic.attributes?.datasetId) {
+            // It's an individual feature - call the click handler
+            onDataOneDatasetClick(graphic.attributes.datasetId);
+          }
+        }
+      });
+
+      return () => {
+        clickHandler.remove();
+      };
+    }
+  }, [view, onDataOneDatasetClick]);
+
   // Add click handler for boundary layer - only activates when clicking near the edge
   // This prevents accidental activation when clicking inside the polygon (e.g., when trying to click on observations)
   useEffect(() => {
@@ -1889,7 +2037,8 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       'ebird-observations',
       'calflora-plants',
       'dendra-stations',
-      'animl-observations'
+      'animl-observations',
+      'dataone-datasets'
     ];
     
     layerIds.forEach(layerId => {

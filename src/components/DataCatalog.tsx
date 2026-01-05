@@ -6,7 +6,8 @@ import {
   Camera, 
   Layers, 
   Activity, 
-  ArrowRight
+  ArrowRight,
+  Database
 } from 'lucide-react';
 import LidarIcon from './icons/LidarIcon';
 import DroneIcon from './icons/DroneIcon';
@@ -141,6 +142,20 @@ const DATA_TYPE_CARDS: DataTypeCardConfig[] = [
     sourceBadge: 'DroneDeploy',
     defaults: {
       category: 'Real-time & Remote Sensing',
+      spatialFilter: 'Dangermond Preserve',
+      daysBack: 365,
+      timeRange: 'All time'
+    }
+  },
+  {
+    id: 'dataone',
+    title: 'Research Datasets',
+    description: 'Scientific datasets from PISCO, LTER, PANGAEA and other research repositories.',
+    icon: Database,
+    sourceKey: 'DataONE',
+    sourceBadge: 'DataONE',
+    defaults: {
+      category: 'Ecological / Biological (Species?)',
       spatialFilter: 'Dangermond Preserve',
       daysBack: 365,
       timeRange: 'All time'

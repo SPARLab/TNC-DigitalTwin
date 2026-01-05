@@ -24,7 +24,8 @@ export const DATA_SOURCES = [
   'LiDAR',
   'Dendra Stations',
   'Animl',
-  'Drone Imagery'
+  'Drone Imagery',
+  'DataONE'
 ] as const;
 
 // Map categories to their available data sources
@@ -36,17 +37,26 @@ export const CATEGORY_DATA_SOURCES: Record<string, readonly string[]> = {
     return acc;
   }, {} as Record<string, string[]>),
   
-  // Ecological / Biological category includes wildlife observation sources
-  'Ecological / Biological (Species?)': ['TNC ArcGIS Hub', 'iNaturalist (Public API)', 'iNaturalist (TNC Layers)', 'eBird', 'Animl'],
+  // Ecological / Biological category includes wildlife observation sources and research datasets
+  'Ecological / Biological (Species?)': ['TNC ArcGIS Hub', 'iNaturalist (Public API)', 'iNaturalist (TNC Layers)', 'eBird', 'Animl', 'DataONE'],
   
   // Vegetation / habitat category includes plant observation sources
-  'Vegetation / habitat': ['TNC ArcGIS Hub', 'CalFlora', 'iNaturalist (Public API)', 'iNaturalist (TNC Layers)'],
+  'Vegetation / habitat': ['TNC ArcGIS Hub', 'CalFlora', 'iNaturalist (Public API)', 'iNaturalist (TNC Layers)', 'DataONE'],
   
   // Land use category includes LiDAR
   'Land use and land (geography?)': ['TNC ArcGIS Hub', 'LiDAR'],
   
   // Real-time & Remote Sensing includes Dendra Stations, Animl camera traps, and Drone Imagery
-  'Real-time & Remote Sensing': ['TNC ArcGIS Hub', 'Dendra Stations', 'Animl', 'Drone Imagery']
+  'Real-time & Remote Sensing': ['TNC ArcGIS Hub', 'Dendra Stations', 'Animl', 'Drone Imagery'],
+  
+  // Marine category includes oceanographic research datasets
+  'Marine': ['TNC ArcGIS Hub', 'DataONE'],
+  
+  // Climate / weather category includes climate research datasets
+  'Climate / weather': ['TNC ArcGIS Hub', 'DataONE'],
+  
+  // Hydrological category includes freshwater research datasets
+  'Hydrological': ['TNC ArcGIS Hub', 'DataONE']
 } as const;
 
 // Validate that all data categories have a source mapping

@@ -16,12 +16,15 @@ import INaturalistDetailsSidebar from './components/INaturalistDetailsSidebar';
 import AnimlDetailsSidebar from './components/AnimlDetailsSidebar';
 import AnimlLoadingModal from './components/AnimlLoadingModal';
 import EBirdDetailsSidebar from './components/EBirdDetailsSidebar';
+import DataONEDetailsSidebar from './components/DataONEDetailsSidebar';
+import DataONEPreview from './components/DataONEPreview';
 import { INaturalistUnifiedObservation } from './components/INaturalistSidebar';
 import { FilterState, DendraStation, DendraDatastream, DendraDatastreamWithStation, DendraDatapoint, INaturalistCustomFilters, AnimlCustomFilters, EBirdCustomFilters } from './types';
 import { animlService, AnimlDeployment, AnimlImageLabel, AnimlAnimalTag, AnimlCountLookups } from './services/animlService';
 import { AnimlViewMode } from './components/AnimlSidebar';
 import { LiDARViewMode } from './components/dataviews/LiDARView';
 import type { DroneImageryProject, DroneImageryCarouselState } from './types/droneImagery';
+import { dataOneService, type DataOneDataset } from './services/dataOneService';
 import { iNaturalistObservation } from './services/iNaturalistService';
 import { TNCArcGISObservation } from './services/tncINaturalistService';
 import { EBirdObservation, eBirdService } from './services/eBirdService';
@@ -269,6 +272,12 @@ function App() {
     labels: [],
     hasImages: undefined
   });
+
+  // DataONE state
+  const [selectedDataOneDataset, setSelectedDataOneDataset] = useState<DataOneDataset | null>(null);
+  const [dataOneSearchText, setDataOneSearchText] = useState('');
+  const [showDataOnePreview, setShowDataOnePreview] = useState(false);
+  const [dataOneDatasets, setDataOneDatasets] = useState<DataOneDataset[]>([]);
 
   // Compute date range text for iNaturalist sidebar
   const inatDateRangeText = useMemo(() => {
@@ -1764,9 +1773,23 @@ function App() {
       };
 
       searchAniml();
+    } else if (filters.source === 'DataONE') {
+      // DataONE: Load all datasets for map clustering
+      const loadMapData = async () => {
+        try {
+          const mapData = await dataOneService.getAllDatasetsForMap({
+            usePreserveRadius: true,
+          });
+          setDataOneDatasets(mapData as DataOneDataset[]);
+        } catch (error) {
+          console.error('Failed to load DataONE map data:', error);
+        }
+      };
+      loadMapData();
+      setLastSearchedDaysBack(filters.daysBack || 30);
     } else if (filters.source === 'LiDAR' || filters.source === 'Drone Imagery') {
-      // LiDAR and Drone Imagery don't need map data loading
-      // They handle their own content in their respective views
+      // LiDAR and Drone Imagery don't need map data loading here
+      // They handle their own content/data fetching in their respective views
       // Just update the time range tracking
       setLastSearchedDaysBack(filters.daysBack || 30);
     } else {
@@ -2664,6 +2687,12 @@ function App() {
           onDroneImageryLayerToggle={handleDroneImageryLayerToggle}
           onDroneCarouselOpen={handleDroneCarouselOpen}
           activeDroneProjectName={droneCarouselState.project?.projectName}
+          // DataONE props
+          onDataOneDatasetSelect={setSelectedDataOneDataset}
+          selectedDataOneDatasetId={selectedDataOneDataset?.id}
+          dataOneSearchText={dataOneSearchText}
+          onDataOneSearchTextChange={setDataOneSearchText}
+          onDataOneDatasetsLoaded={setDataOneDatasets}
         />
         <div id="map-container" className="flex-1 relative flex">
           {/* Conditionally render based on data source and LiDAR mode */}
@@ -2800,6 +2829,13 @@ function App() {
                 onDroneCarouselNext={handleDroneCarouselNext}
                 onDroneCarouselClose={handleDroneCarouselClose}
                 onDroneCarouselShowDetails={() => handleDroneSidebarTabChange('details')}
+                // DataONE datasets
+                dataOneDatasets={lastSearchedFilters.source === 'DataONE' ? dataOneDatasets : []}
+                selectedDataOneDatasetId={selectedDataOneDataset?.id}
+                onDataOneDatasetClick={(datasetId) => {
+                  const dataset = dataOneDatasets.find(d => d.id === datasetId);
+                  if (dataset) setSelectedDataOneDataset(dataset);
+                }}
               />
               {/* Hub Page Preview Overlay */}
               {selectedModalItem && (
@@ -3235,6 +3271,25 @@ function App() {
             onClose={closeEBirdDetails}
             hasSearched={hasSearched}
           />
+        ) : lastSearchedFilters.source === 'DataONE' && selectedDataOneDataset ? (
+          <DataONEDetailsSidebar
+            dataset={selectedDataOneDataset}
+            onClose={() => setSelectedDataOneDataset(null)}
+            onPreview={() => setShowDataOnePreview(true)}
+          />
+        ) : lastSearchedFilters.source === 'DataONE' ? (
+          // DataONE without selected dataset - show instructions
+          <div id="dataone-instructions-sidebar" className="h-full flex items-center justify-center p-6 bg-gray-50">
+            <div className="text-center">
+              <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+              </svg>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Dataset</h3>
+              <p className="text-sm text-gray-600">
+                Click on a dataset from the list to view its details, preview the data, or download files.
+              </p>
+            </div>
+          </div>
         ) : (
           <FilterSidebar 
             filters={filters}
@@ -3291,6 +3346,15 @@ function App() {
           // clearCart();
         }}
       />
+
+      {/* DataONE Preview Modal */}
+      {showDataOnePreview && selectedDataOneDataset && (
+        <DataONEPreview
+          dataoneUrl={`https://search.dataone.org/view/${encodeURIComponent(selectedDataOneDataset.dataoneId)}`}
+          title={selectedDataOneDataset.title}
+          onClose={() => setShowDataOnePreview(false)}
+        />
+      )}
 
     </div>
   );
