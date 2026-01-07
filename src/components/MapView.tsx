@@ -1292,6 +1292,19 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         }
       }));
 
+    // Custom SVG icon for DataONE datasets - database/document icon
+    const dataOneIconSvg = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+        <!-- Background circle -->
+        <circle cx="16" cy="16" r="14" fill="#10B981" stroke="white" stroke-width="2"/>
+        <!-- Database icon -->
+        <ellipse cx="16" cy="11" rx="7" ry="3" fill="white"/>
+        <path d="M9 11v4c0 1.66 3.13 3 7 3s7-1.34 7-3v-4" fill="none" stroke="white" stroke-width="1.5"/>
+        <path d="M9 15v4c0 1.66 3.13 3 7 3s7-1.34 7-3v-4" fill="none" stroke="white" stroke-width="1.5"/>
+      </svg>
+    `;
+    const dataOneIconUrl = `data:image/svg+xml;base64,${btoa(dataOneIconSvg)}`;
+
     // Create FeatureLayer with clustering
     const dataOneLayer = new (FeatureLayer as any)({
       id: 'dataone-datasets',
@@ -1310,21 +1323,21 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       renderer: {
         type: 'simple',
         symbol: {
-          type: 'simple-marker',
-          size: 12,
-          color: [16, 185, 129, 0.9], // emerald-500
-          outline: { color: 'white', width: 1.5 }
+          type: 'picture-marker',
+          url: dataOneIconUrl,
+          width: '28px',
+          height: '28px'
         }
       },
       popupTemplate: {
         title: '{title}',
-        content: '<p><strong>Repository:</strong> {repository}</p><p style="margin-top: 8px; color: #6b7280; font-size: 11px;">Click cluster to zoom in</p>'
+        content: '<p><strong>Repository:</strong> {repository}</p>'
       },
       // Enable clustering
       featureReduction: {
         type: 'cluster',
         clusterRadius: '80px',
-        clusterMinSize: '24px',
+        clusterMinSize: '28px',
         clusterMaxSize: '60px',
         labelingInfo: [{
           deconflictionStrategy: 'none',
@@ -1342,11 +1355,11 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
           title: 'Research Dataset Cluster',
           content: '<p><strong>{cluster_count}</strong> datasets in this area</p><p style="margin-top: 8px; color: #6b7280; font-size: 11px;">Click to zoom in and see individual datasets</p>'
         },
-        // Cluster symbol
+        // Cluster symbol - emerald circle with count
         symbol: {
           type: 'simple-marker',
           style: 'circle',
-          color: [5, 150, 105, 0.85], // emerald-600
+          color: [5, 150, 105, 0.9], // emerald-600
           outline: { color: 'white', width: 2 }
         }
       }
@@ -1393,6 +1406,62 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
       };
     }
   }, [view, onDataOneDatasetClick]);
+
+  // Effect to highlight and pan to selected DataONE dataset from sidebar
+  useEffect(() => {
+    if (!view || !_selectedDataOneDatasetId) return;
+    
+    const dataOneLayer = view.map?.findLayerById('dataone-datasets') as __esri.FeatureLayer;
+    if (!dataOneLayer) return;
+    
+    // Query for the selected feature
+    const querySelectedDataset = async () => {
+      try {
+        // Find the dataset in our local data to get the geometry
+        const selectedDataset = dataOneDatasets.find(d => d.id === _selectedDataOneDatasetId);
+        if (!selectedDataset?.geometry) return;
+        
+        // Create a point to zoom to
+        const targetPoint = new Point({
+          longitude: selectedDataset.geometry.coordinates[0],
+          latitude: selectedDataset.geometry.coordinates[1]
+        });
+        
+        // Pan to the feature and zoom in if needed
+        await view.goTo({
+          target: targetPoint,
+          zoom: Math.max(view.zoom, 12) // Zoom in to at least level 12 to break clusters
+        }, {
+          duration: 500,
+          easing: 'ease-out'
+        });
+        
+        // Wait for view to settle and layer to update after zoom
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Query for the feature in the layer after zooming (clusters may have broken up)
+        const queryResult = await dataOneLayer.queryFeatures({
+          where: `datasetId = ${_selectedDataOneDatasetId}`,
+          returnGeometry: true,
+          outFields: ['*']
+        });
+        
+        if (queryResult.features.length > 0) {
+          const feature = queryResult.features[0];
+          
+          // Open popup at the feature location
+          view.openPopup({
+            features: [feature],
+            location: feature.geometry as __esri.Point
+          });
+        }
+      } catch (error) {
+        console.error('Error highlighting DataONE dataset:', error);
+      }
+    };
+    
+    querySelectedDataset();
+  }, [view, _selectedDataOneDatasetId, dataOneDatasets]);
 
   // Add click handler for boundary layer - only activates when clicking near the edge
   // This prevents accidental activation when clicking inside the polygon (e.g., when trying to click on observations)
@@ -2029,23 +2098,33 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
   const clearAllObservationLayers = () => {
     if (!view || !view.map) return;
     
-      // console.log('🧹 Clearing all observation layers from map');
+    // console.log('🧹 Clearing all observation layers from map');
     
-    const layerIds = [
+    // GraphicsLayers that can be cleared with removeAll()
+    const graphicsLayerIds = [
       'inaturalist-observations',
       'tnc-inaturalist-observations',
       'ebird-observations',
       'calflora-plants',
       'dendra-stations',
-      'animl-observations',
-      'dataone-datasets'
+      'animl-observations'
     ];
     
-    layerIds.forEach(layerId => {
+    graphicsLayerIds.forEach(layerId => {
       const layer = view.map?.findLayerById(layerId) as GraphicsLayer;
       if (layer) {
         layer.removeAll();
-      // console.log(`  ✓ Cleared ${layerId}`);
+        // console.log(`  ✓ Cleared ${layerId}`);
+      }
+    });
+    
+    // FeatureLayers need to be removed entirely (they don't have removeAll)
+    const featureLayerIds = ['dataone-datasets'];
+    featureLayerIds.forEach(layerId => {
+      const layer = view.map?.findLayerById(layerId);
+      if (layer) {
+        view.map?.remove(layer);
+        // console.log(`  ✓ Removed FeatureLayer ${layerId}`);
       }
     });
     

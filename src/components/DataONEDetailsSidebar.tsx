@@ -65,6 +65,14 @@ function formatFilesSummary(summary: FilesSummary | null): string | null {
   return sizeStr ? `${extStr} • ${sizeStr}` : extStr;
 }
 
+/**
+ * Strip "urn:node:" prefix from repository/datasource names
+ */
+function formatRepository(repo: string | null): string | null {
+  if (!repo) return null;
+  return repo.replace(/^urn:node:/i, '');
+}
+
 const DataONEDetailsSidebar: React.FC<DataONEDetailsSidebarProps> = ({
   dataset,
   onClose,
@@ -215,13 +223,13 @@ const DataONEDetailsSidebar: React.FC<DataONEDetailsSidebarProps> = ({
               <div className="flex flex-wrap gap-2 mt-2">
                 {dataset.repository && (
                   <span className="px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-800 rounded">
-                    {dataset.repository}
+                    {formatRepository(dataset.repository)}
                   </span>
                 )}
                 {/* Version badge */}
-                {hasMultipleVersions && (
+                {dataset.versionCount > 0 && (
                   <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded">
-                    {dataset.versionCount} versions
+                    {dataset.versionCount} version{dataset.versionCount !== 1 ? 's' : ''}
                   </span>
                 )}
                 {/* Files summary badge */}

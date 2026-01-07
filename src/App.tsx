@@ -1842,7 +1842,7 @@ function App() {
         timeRange: '',
         daysBack: undefined 
       }));
-      setLastSearchedFilters(prev => ({ ...prev, source: '' }));
+      setLastSearchedFilters(prev => ({ ...prev, source: '', category: '' }));
       setHasSearched(false);
       setShowFilterReminder(false); // Clear reminder when going back to catalog
       
