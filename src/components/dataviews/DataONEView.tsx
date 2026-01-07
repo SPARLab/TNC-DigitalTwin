@@ -28,7 +28,8 @@ interface DataONEViewProps {
   selectedDatasetId?: number;
   searchText?: string;
   onSearchTextChange?: (text: string) => void;
-  onDatasetsLoaded?: (datasets: DataOneDataset[]) => void;
+  /** Callback when sidebar filters change - triggers map data reload */
+  onFiltersChange?: (filters: { searchText: string; repository: string }) => void;
 }
 
 const PAGE_SIZE = 20;
@@ -90,7 +91,7 @@ const DataONEView: React.FC<DataONEViewProps> = ({
   selectedDatasetId,
   searchText = '',
   onSearchTextChange,
-  onDatasetsLoaded,
+  onFiltersChange,
 }) => {
   const [datasets, setDatasets] = useState<DataOneDataset[]>([]);
   const [loading, setLoading] = useState(false);
@@ -124,7 +125,7 @@ const DataONEView: React.FC<DataONEViewProps> = ({
     loadRepositories();
   }, []);
 
-  // Fetch data when hasSearched becomes true or page changes
+  // Fetch sidebar data (paginated) - does NOT affect map data
   const fetchData = useCallback(async (page: number, search: string, repository?: string) => {
     setLoading(true);
     setError(null);
@@ -140,24 +141,28 @@ const DataONEView: React.FC<DataONEViewProps> = ({
       setTotalCount(response.totalCount);
       setTotalPages(response.totalPages);
       setPageNumber(response.pageNumber);
-      onDatasetsLoaded?.(response.datasets);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load datasets');
     } finally {
       setLoading(false);
     }
-  }, [onDatasetsLoaded]);
+  }, []);
 
+  // Initial load when hasSearched becomes true - also triggers map data load
   useEffect(() => {
     if (hasSearched) {
       fetchData(0, localSearchText, selectedRepository);
+      // Notify parent to load map data with current filters
+      onFiltersChange?.({ searchText: localSearchText, repository: selectedRepository });
     }
-  }, [hasSearched, fetchData, localSearchText, selectedRepository]);
+  }, [hasSearched]); // Only run on initial search, not on filter changes
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     onSearchTextChange?.(localSearchText);
     fetchData(0, localSearchText, selectedRepository);
+    // Notify parent to reload map data with new filters
+    onFiltersChange?.({ searchText: localSearchText, repository: selectedRepository });
   };
   
   const handleRepositoryChange = (repository: string) => {
@@ -165,6 +170,8 @@ const DataONEView: React.FC<DataONEViewProps> = ({
     // Reset to page 0 when filter changes
     if (hasSearched) {
       fetchData(0, localSearchText, repository);
+      // Notify parent to reload map data with new filter
+      onFiltersChange?.({ searchText: localSearchText, repository });
     }
   };
 

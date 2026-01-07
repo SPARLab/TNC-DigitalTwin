@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import Header from './components/Header';
 import FilterSubheader from './components/FilterSubheader';
@@ -277,7 +277,19 @@ function App() {
   const [selectedDataOneDataset, setSelectedDataOneDataset] = useState<DataOneDataset | null>(null);
   const [dataOneSearchText, setDataOneSearchText] = useState('');
   const [showDataOnePreview, setShowDataOnePreview] = useState(false);
-  const [dataOneDatasets, setDataOneDatasets] = useState<DataOneDataset[]>([]);
+  // Map datasets: ALL datasets matching current filters (up to 5000) - used for clustering
+  const [dataOneMapDatasets, setDataOneMapDatasets] = useState<Array<{
+    id: number;
+    dataoneId: string;
+    title: string;
+    repository: string | null;
+    geometry?: { type: 'Point'; coordinates: [number, number] };
+  }>>([]);
+  // Track DataONE sidebar filters for map data sync
+  const [dataOneFilters, setDataOneFilters] = useState<{ searchText: string; repository: string }>({
+    searchText: '',
+    repository: '',
+  });
 
   // Compute date range text for iNaturalist sidebar
   const inatDateRangeText = useMemo(() => {
@@ -594,6 +606,24 @@ function App() {
     setDroneSidebarTab(tab);
   };
 
+  // DataONE filter change handler - updates map data when sidebar filters change
+  const handleDataOneFiltersChange = useCallback(
+    async (newFilters: { searchText: string; repository: string }) => {
+      setDataOneFilters(newFilters);
+      // Reload map data with new filters
+      try {
+        const mapData = await dataOneService.getAllDatasetsForMap({
+          usePreserveRadius: true,
+          searchText: newFilters.searchText || undefined,
+          repository: newFilters.repository || undefined,
+        });
+        setDataOneMapDatasets(mapData);
+      } catch (error) {
+        console.error('Failed to reload DataONE map data:', error);
+      }
+    },
+    []
+  );
 
   const handleDroneAddToCart = () => {
     if (!droneCarouselState.project) return;
@@ -1774,13 +1804,15 @@ function App() {
 
       searchAniml();
     } else if (filters.source === 'DataONE') {
-      // DataONE: Load all datasets for map clustering
+      // DataONE: Load all datasets for map clustering (with current filters)
       const loadMapData = async () => {
         try {
           const mapData = await dataOneService.getAllDatasetsForMap({
             usePreserveRadius: true,
+            searchText: dataOneFilters.searchText || undefined,
+            repository: dataOneFilters.repository || undefined,
           });
-          setDataOneDatasets(mapData as DataOneDataset[]);
+          setDataOneMapDatasets(mapData);
         } catch (error) {
           console.error('Failed to load DataONE map data:', error);
         }
@@ -2692,7 +2724,7 @@ function App() {
           selectedDataOneDatasetId={selectedDataOneDataset?.id}
           dataOneSearchText={dataOneSearchText}
           onDataOneSearchTextChange={setDataOneSearchText}
-          onDataOneDatasetsLoaded={setDataOneDatasets}
+          onDataOneFiltersChange={handleDataOneFiltersChange}
         />
         <div id="map-container" className="flex-1 relative flex">
           {/* Conditionally render based on data source and LiDAR mode */}
@@ -2829,12 +2861,23 @@ function App() {
                 onDroneCarouselNext={handleDroneCarouselNext}
                 onDroneCarouselClose={handleDroneCarouselClose}
                 onDroneCarouselShowDetails={() => handleDroneSidebarTabChange('details')}
-                // DataONE datasets
-                dataOneDatasets={lastSearchedFilters.source === 'DataONE' ? dataOneDatasets : []}
+                // DataONE datasets - use map datasets (all matching, up to 5000) for clustering
+                dataOneDatasets={lastSearchedFilters.source === 'DataONE' ? dataOneMapDatasets : []}
                 selectedDataOneDatasetId={selectedDataOneDataset?.id}
-                onDataOneDatasetClick={(datasetId) => {
-                  const dataset = dataOneDatasets.find(d => d.id === datasetId);
-                  if (dataset) setSelectedDataOneDataset(dataset);
+                onDataOneDatasetClick={async (datasetId) => {
+                  // Find the dataset from map data to get the dataoneId
+                  const mapDataset = dataOneMapDatasets.find(d => d.id === datasetId);
+                  if (mapDataset) {
+                    // Fetch full details on-demand from Latest layer
+                    try {
+                      const fullDetails = await dataOneService.getDatasetDetails(mapDataset.dataoneId);
+                      if (fullDetails) {
+                        setSelectedDataOneDataset(fullDetails);
+                      }
+                    } catch (error) {
+                      console.error('Failed to fetch dataset details:', error);
+                    }
+                  }
                 }}
               />
               {/* Hub Page Preview Overlay */}

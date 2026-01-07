@@ -135,7 +135,7 @@ interface DataViewProps {
   selectedDataOneDatasetId?: number;
   dataOneSearchText?: string;
   onDataOneSearchTextChange?: (text: string) => void;
-  onDataOneDatasetsLoaded?: (datasets: DataOneDataset[]) => void;
+  onDataOneFiltersChange?: (filters: { searchText: string; repository: string }) => void;
 }
 
 const DataView: React.FC<DataViewProps> = ({
@@ -235,7 +235,7 @@ const DataView: React.FC<DataViewProps> = ({
   selectedDataOneDatasetId,
   dataOneSearchText = '',
   onDataOneSearchTextChange,
-  onDataOneDatasetsLoaded
+  onDataOneFiltersChange
 }) => {
   // Route to appropriate data view based on category + source combination
   const getDataView = () => {
@@ -453,7 +453,7 @@ const DataView: React.FC<DataViewProps> = ({
             selectedDatasetId={selectedDataOneDatasetId}
             searchText={dataOneSearchText}
             onSearchTextChange={onDataOneSearchTextChange}
-            onDatasetsLoaded={onDataOneDatasetsLoaded}
+            onFiltersChange={onDataOneFiltersChange}
           />
         );
         
