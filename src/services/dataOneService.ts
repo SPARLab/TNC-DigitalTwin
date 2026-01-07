@@ -41,9 +41,10 @@ const LATEST_LAYER_URL = `${BASE_SERVICE_URL}/1`;    // Full metadata, latest ve
 const ALL_VERSIONS_LAYER_URL = `${BASE_SERVICE_URL}/2`; // All versions for history
 
 // Dangermond Preserve center coordinates for default radius filter
+// Calculated from actual preserve bounds: W -120.498, E -120.357, S 34.415, N 34.570
 const PRESERVE_CENTER = {
-  lat: 34.4669,
-  lng: -120.0707,
+  lat: 34.4925,
+  lng: -120.4275,
 };
 
 // ~20 miles in degrees (approximate)
