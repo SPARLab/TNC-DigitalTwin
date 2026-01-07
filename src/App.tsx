@@ -3322,16 +3322,18 @@ function App() {
             onVersionSelect={(dataset) => setSelectedDataOneDataset(dataset)}
           />
         ) : lastSearchedFilters.source === 'DataONE' ? (
-          // DataONE without selected dataset - show instructions
-          <div id="dataone-instructions-sidebar" className="h-full flex items-center justify-center p-6 bg-gray-50">
-            <div className="text-center">
-              <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
-              </svg>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Dataset</h3>
-              <p className="text-sm text-gray-600">
-                Click on a dataset from the list to view its details, preview the data, or download files.
-              </p>
+          // DataONE without selected dataset - show instructions (w-96 matches DataONEDetailsSidebar)
+          <div id="dataone-instructions-sidebar" className="w-96 bg-white border-l border-gray-200 flex flex-col h-full shadow-lg">
+            <div className="flex-1 flex items-center justify-center p-6">
+              <div className="text-center">
+                <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                </svg>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Dataset</h3>
+                <p className="text-sm text-gray-600">
+                  Click on a dataset from the list to view its details, preview the data, or download files.
+                </p>
+              </div>
             </div>
           </div>
         ) : (
