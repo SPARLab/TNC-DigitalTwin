@@ -3,30 +3,42 @@
  * Queries ArcGIS Feature Services for DataONE research dataset metadata
  * and DataONE API for file-level information and downloads
  * 
- * Feature Services:
- * - Catalog: https://dangermondpreserve-spatial.com/server/rest/services/Hosted/DataONE_Catalog/FeatureServer/0
- * - Detail: https://dangermondpreserve-spatial.com/server/rest/services/Hosted/DataONE_Detail/FeatureServer/0
+ * Feature Service: https://dangermondpreserve-spatial.com/server/rest/services/Hosted/DataONE_Datasets/FeatureServer
+ * - Layer 0 (Lite): Latest versions with lightweight fields - fast initial load (~12k records)
+ * - Layer 1 (Latest): Latest versions with full metadata including abstracts
+ * - Layer 2 (AllVersions): All versions for version history lookup by series_id (~22k records)
  */
 
 import type {
-  DataOneCatalogRecord,
-  DataOneDetailRecord,
+  DataOneLiteRecord,
+  DataOneFullRecord,
   DataOneDataset,
   DataOneDatasetDetail,
   DataOneQueryOptions,
   DataOneQueryResponse,
   DataOneArcGISResponse,
   DataOneFileInfo,
+  DataOneVersionEntry,
+  FilesSummary,
 } from '../types/dataone';
 
 // Re-export types for consumers
-export type { DataOneDataset, DataOneDatasetDetail, DataOneQueryOptions, DataOneQueryResponse, DataOneFileInfo };
+export type {
+  DataOneDataset,
+  DataOneDatasetDetail,
+  DataOneQueryOptions,
+  DataOneQueryResponse,
+  DataOneFileInfo,
+  DataOneVersionEntry,
+  FilesSummary,
+};
 
-// ArcGIS Feature Service endpoints
-const CATALOG_SERVICE_URL =
-  'https://dangermondpreserve-spatial.com/server/rest/services/Hosted/DataONE_Catalog/FeatureServer/0';
-const DETAIL_SERVICE_URL =
-  'https://dangermondpreserve-spatial.com/server/rest/services/Hosted/DataONE_Detail/FeatureServer/0';
+// ArcGIS Feature Service endpoints (new consolidated service)
+const BASE_SERVICE_URL =
+  'https://dangermondpreserve-spatial.com/server/rest/services/Hosted/DataONE_Datasets/FeatureServer';
+const LITE_LAYER_URL = `${BASE_SERVICE_URL}/0`;      // Fast list loading, no abstracts
+const LATEST_LAYER_URL = `${BASE_SERVICE_URL}/1`;    // Full metadata, latest versions only
+const ALL_VERSIONS_LAYER_URL = `${BASE_SERVICE_URL}/2`; // All versions for history
 
 // Dangermond Preserve center coordinates for default radius filter
 const PRESERVE_CENTER = {
@@ -46,18 +58,37 @@ function parseCommaList(str: string | null): string[] {
 }
 
 /**
- * Parse date string to Date object
+ * Parse Unix timestamp (milliseconds) to Date object
  */
-function parseDate(dateStr: string | null): Date | null {
-  if (!dateStr) return null;
-  const date = new Date(dateStr);
+function parseTimestamp(timestamp: number | null): Date | null {
+  if (timestamp === null) return null;
+  const date = new Date(timestamp);
   return isNaN(date.getTime()) ? null : date;
 }
 
 /**
- * Convert catalog record to processed dataset for list display
+ * Parse files_summary JSON string
+ * Format: {"total": 3, "by_ext": {"csv": 2, "pdf": 1}, "size_bytes": 22583}
  */
-function catalogRecordToDataset(record: DataOneCatalogRecord): DataOneDataset {
+function parseFilesSummary(jsonStr: string | null): FilesSummary | null {
+  if (!jsonStr) return null;
+  try {
+    const parsed = JSON.parse(jsonStr);
+    return {
+      total: parsed.total || 0,
+      byExtension: parsed.by_ext || {},
+      sizeBytes: parsed.size_bytes || 0,
+    };
+  } catch {
+    console.warn('Failed to parse files_summary:', jsonStr);
+    return null;
+  }
+}
+
+/**
+ * Convert lite record to processed dataset for list display
+ */
+function liteRecordToDataset(record: DataOneLiteRecord): DataOneDataset {
   return {
     id: record.objectid,
     dataoneId: record.dataone_id,
@@ -66,29 +97,34 @@ function catalogRecordToDataset(record: DataOneCatalogRecord): DataOneDataset {
     tncCategory: record.tnc_category,
     tncCategories: parseCommaList(record.tnc_categories),
     tncConfidence: record.tnc_confidence,
-    dateUploaded: parseDate(record.date_uploaded),
+    dateUploaded: parseTimestamp(record.date_uploaded),
     temporalCoverage: {
-      beginDate: parseDate(record.begin_date),
-      endDate: parseDate(record.end_date),
+      beginDate: parseTimestamp(record.begin_date),
+      endDate: parseTimestamp(record.end_date),
     },
     centerLat: record.center_lat,
     centerLon: record.center_lon,
     repository: record.datasource,
-    // Create geometry from center coordinates if available
+    // Computed geometry from center coordinates
     geometry: record.center_lat !== null && record.center_lon !== null
       ? {
           type: 'Point',
           coordinates: [record.center_lon, record.center_lat],
         }
       : undefined,
+    // Version tracking fields
+    seriesId: record.series_id,
+    isLatestVersion: record.is_latest_version === 1,
+    versionCount: record.version_count,
+    filesSummary: parseFilesSummary(record.files_summary),
   };
 }
 
 /**
- * Convert detail record to full dataset detail
+ * Convert full record to dataset detail
  */
-function detailRecordToDatasetDetail(record: DataOneDetailRecord): DataOneDatasetDetail {
-  const base = catalogRecordToDataset(record);
+function fullRecordToDatasetDetail(record: DataOneFullRecord): DataOneDatasetDetail {
+  const base = liteRecordToDataset(record);
   return {
     ...base,
     abstract: record.abstract,
@@ -105,8 +141,8 @@ function detailRecordToDatasetDetail(record: DataOneDetailRecord): DataOneDatase
           west: record.west_bound,
         }
       : null,
-    datePublished: parseDate(record.date_published),
-    dateModified: parseDate(record.date_modified),
+    datePublished: parseTimestamp(record.date_published),
+    dateModified: parseTimestamp(record.date_modified),
     dataUrl: record.data_url,
     sizeBytes: record.size_bytes,
     rightsHolder: record.rights_holder,
@@ -139,7 +175,7 @@ function buildWhereClause(options: DataOneQueryOptions): string {
     );
   }
 
-  // Text search on title (catalog layer doesn't have keywords)
+  // Text search on title (lite layer doesn't have keywords)
   if (options.searchText) {
     const searchTerm = options.searchText.replace(/'/g, "''");
     conditions.push(`title LIKE '%${searchTerm}%'`);
@@ -169,7 +205,7 @@ function buildWhereClause(options: DataOneQueryOptions): string {
 
 class DataOneService {
   /**
-   * Get total count of datasets matching filters
+   * Get total count of datasets matching filters (uses Lite layer)
    */
   async countDatasets(options: DataOneQueryOptions = {}): Promise<number> {
     const whereClause = buildWhereClause(options);
@@ -180,7 +216,7 @@ class DataOneService {
       f: 'json',
     });
 
-    const url = `${CATALOG_SERVICE_URL}/query?${params}`;
+    const url = `${LITE_LAYER_URL}/query?${params}`;
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -198,7 +234,8 @@ class DataOneService {
   }
 
   /**
-   * Query datasets with pagination (uses Catalog layer for fast queries)
+   * Query datasets with pagination (uses Lite layer for fast queries)
+   * Returns only latest versions (~12k instead of ~22k records)
    */
   async queryDatasets(options: DataOneQueryOptions = {}): Promise<DataOneQueryResponse> {
     const pageSize = options.pageSize || 20;
@@ -210,7 +247,7 @@ class DataOneService {
     // First get total count
     const totalCount = await this.countDatasets(options);
 
-    // Then fetch page of results
+    // Then fetch page of results from Lite layer
     const params = new URLSearchParams({
       where: whereClause,
       outFields: '*',
@@ -221,7 +258,7 @@ class DataOneService {
       f: 'json',
     });
 
-    const url = `${CATALOG_SERVICE_URL}/query?${params}`;
+    const url = `${LITE_LAYER_URL}/query?${params}`;
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -239,7 +276,7 @@ class DataOneService {
     }
 
     const datasets = data.features.map((feature) =>
-      catalogRecordToDataset(feature.attributes as DataOneCatalogRecord)
+      liteRecordToDataset(feature.attributes as DataOneLiteRecord)
     );
 
     return {
@@ -252,7 +289,7 @@ class DataOneService {
   }
 
   /**
-   * Get full details for a single dataset (uses Detail layer)
+   * Get full details for a single dataset by series_id (uses Latest layer)
    */
   async getDatasetDetails(dataoneId: string): Promise<DataOneDatasetDetail | null> {
     const params = new URLSearchParams({
@@ -262,7 +299,7 @@ class DataOneService {
       f: 'json',
     });
 
-    const url = `${DETAIL_SERVICE_URL}/query?${params}`;
+    const url = `${LATEST_LAYER_URL}/query?${params}`;
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -279,7 +316,80 @@ class DataOneService {
       return null;
     }
 
-    return detailRecordToDatasetDetail(data.features[0].attributes as DataOneDetailRecord);
+    return fullRecordToDatasetDetail(data.features[0].attributes as DataOneFullRecord);
+  }
+
+  /**
+   * Get full details for a specific version (uses AllVersions layer)
+   */
+  async getVersionDetails(dataoneId: string): Promise<DataOneDatasetDetail | null> {
+    const params = new URLSearchParams({
+      where: `dataone_id = '${dataoneId}'`,
+      outFields: '*',
+      returnGeometry: 'false',
+      f: 'json',
+    });
+
+    const url = `${ALL_VERSIONS_LAYER_URL}/query?${params}`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`Failed to get version details: ${response.statusText}`);
+    }
+
+    const data: DataOneArcGISResponse = await response.json();
+
+    if (data.error) {
+      throw new Error(`DataONE API error: ${data.error.message || 'Unknown error'}`);
+    }
+
+    if (!data.features || data.features.length === 0) {
+      return null;
+    }
+
+    return fullRecordToDatasetDetail(data.features[0].attributes as DataOneFullRecord);
+  }
+
+  /**
+   * Get version history for a dataset by series_id (uses AllVersions layer)
+   * Returns all versions sorted by date_uploaded DESC (newest first)
+   */
+  async queryVersionHistory(seriesId: string): Promise<DataOneVersionEntry[]> {
+    const escapedSeriesId = seriesId.replace(/'/g, "''");
+    
+    const params = new URLSearchParams({
+      where: `series_id = '${escapedSeriesId}'`,
+      outFields: 'dataone_id,date_uploaded,files_summary',
+      returnGeometry: 'false',
+      orderByFields: 'date_uploaded DESC',
+      f: 'json',
+    });
+
+    const url = `${ALL_VERSIONS_LAYER_URL}/query?${params}`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`Failed to get version history: ${response.statusText}`);
+    }
+
+    const data: DataOneArcGISResponse = await response.json();
+
+    if (data.error) {
+      throw new Error(`DataONE API error: ${data.error.message || 'Unknown error'}`);
+    }
+
+    if (!data.features) {
+      return [];
+    }
+
+    return data.features.map((feature) => {
+      const attrs = feature.attributes as DataOneLiteRecord;
+      return {
+        dataoneId: attrs.dataone_id,
+        dateUploaded: parseTimestamp(attrs.date_uploaded),
+        filesSummary: parseFilesSummary(attrs.files_summary),
+      };
+    });
   }
 
   /**
@@ -303,7 +413,7 @@ class DataOneService {
       f: 'json',
     });
 
-    const url = `${CATALOG_SERVICE_URL}/query?${params}`;
+    const url = `${LITE_LAYER_URL}/query?${params}`;
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -318,7 +428,7 @@ class DataOneService {
 
     return data.features
       .map((feature) => {
-        const attrs = feature.attributes as DataOneCatalogRecord;
+        const attrs = feature.attributes as DataOneLiteRecord;
         return {
           id: attrs.objectid,
           dataoneId: attrs.dataone_id,
@@ -344,7 +454,7 @@ class DataOneService {
       f: 'json',
     });
 
-    const url = `${CATALOG_SERVICE_URL}/query?${params}`;
+    const url = `${LITE_LAYER_URL}/query?${params}`;
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -358,7 +468,7 @@ class DataOneService {
     }
 
     return data.features
-      .map((f) => (f.attributes as DataOneCatalogRecord).datasource)
+      .map((f) => (f.attributes as DataOneLiteRecord).datasource)
       .filter((r): r is string => r !== null && r.trim() !== '')
       .sort();
   }
@@ -451,7 +561,7 @@ class DataOneService {
       f: 'json',
     });
 
-    const url = `${CATALOG_SERVICE_URL}/query?${params}`;
+    const url = `${LITE_LAYER_URL}/query?${params}`;
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -467,7 +577,7 @@ class DataOneService {
     // Convert to GeoJSON features with center points
     const features = data.features
       .map((feature) => {
-        const attrs = feature.attributes as DataOneCatalogRecord;
+        const attrs = feature.attributes as DataOneLiteRecord;
 
         if (attrs.center_lat === null || attrs.center_lon === null) {
           return null;

@@ -1,7 +1,24 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Database, Loader2, Search, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import {
+  Database,
+  Loader2,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  History,
+} from 'lucide-react';
 import DataTypeBackHeader from '../DataTypeBackHeader';
-import { dataOneService, DataOneDataset, DataOneQueryResponse } from '../../services/dataOneService';
+import {
+  dataOneService,
+  DataOneDataset,
+  DataOneQueryResponse,
+  DataOneVersionEntry,
+  FilesSummary,
+} from '../../services/dataOneService';
 
 interface DataONEViewProps {
   hasSearched?: boolean;
@@ -14,6 +31,48 @@ interface DataONEViewProps {
 }
 
 const PAGE_SIZE = 20;
+
+/**
+ * Format file size in human-readable format
+ */
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let unitIndex = 0;
+  let size = bytes;
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex++;
+  }
+  return `${size.toFixed(unitIndex > 0 ? 1 : 0)} ${units[unitIndex]}`;
+}
+
+/**
+ * Format files summary for display (e.g., "2 CSV, 1 PDF • 22 KB")
+ */
+function formatFilesSummary(summary: FilesSummary | null): string | null {
+  if (!summary || summary.total === 0) return null;
+  
+  const extParts = Object.entries(summary.byExtension)
+    .sort(([, a], [, b]) => b - a) // Sort by count descending
+    .slice(0, 3) // Show top 3 extensions
+    .map(([ext, count]) => `${count} ${ext.toUpperCase()}`);
+  
+  const extStr = extParts.join(', ');
+  const sizeStr = summary.sizeBytes > 0 ? formatFileSize(summary.sizeBytes) : null;
+  
+  return sizeStr ? `${extStr} • ${sizeStr}` : extStr;
+}
+
+/**
+ * Version history expansion state for a single dataset
+ */
+interface VersionHistoryState {
+  loading: boolean;
+  error: string | null;
+  versions: DataOneVersionEntry[];
+  showAll: boolean;
+}
 
 const DataONEView: React.FC<DataONEViewProps> = ({
   hasSearched = false,
@@ -31,6 +90,9 @@ const DataONEView: React.FC<DataONEViewProps> = ({
   const [pageNumber, setPageNumber] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [localSearchText, setLocalSearchText] = useState(searchText);
+  
+  // Track expanded version history per dataset (keyed by seriesId)
+  const [expandedVersions, setExpandedVersions] = useState<Record<string, VersionHistoryState>>({});
 
   // Fetch data when hasSearched becomes true or page changes
   const fetchData = useCallback(async (page: number, search: string) => {
@@ -53,7 +115,7 @@ const DataONEView: React.FC<DataONEViewProps> = ({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [onDatasetsLoaded]);
 
   useEffect(() => {
     if (hasSearched) {
@@ -70,6 +132,8 @@ const DataONEView: React.FC<DataONEViewProps> = ({
   const handlePageChange = (newPage: number) => {
     if (newPage >= 0 && newPage < totalPages) {
       fetchData(newPage, localSearchText);
+      // Clear expanded versions when changing pages
+      setExpandedVersions({});
     }
   };
 
@@ -80,6 +144,72 @@ const DataONEView: React.FC<DataONEViewProps> = ({
       day: 'numeric',
       year: 'numeric',
     });
+  };
+
+  /**
+   * Toggle version history expansion for a dataset
+   */
+  const toggleVersionHistory = async (dataset: DataOneDataset) => {
+    const { seriesId } = dataset;
+    const current = expandedVersions[seriesId];
+    
+    // If already loaded, just toggle visibility
+    if (current && current.versions.length > 0) {
+      setExpandedVersions((prev) => ({
+        ...prev,
+        [seriesId]: undefined as unknown as VersionHistoryState,
+      }));
+      return;
+    }
+    
+    // Start loading
+    setExpandedVersions((prev) => ({
+      ...prev,
+      [seriesId]: { loading: true, error: null, versions: [], showAll: false },
+    }));
+    
+    try {
+      const versions = await dataOneService.queryVersionHistory(seriesId);
+      setExpandedVersions((prev) => ({
+        ...prev,
+        [seriesId]: { loading: false, error: null, versions, showAll: false },
+      }));
+    } catch (err) {
+      setExpandedVersions((prev) => ({
+        ...prev,
+        [seriesId]: {
+          loading: false,
+          error: err instanceof Error ? err.message : 'Failed to load versions',
+          versions: [],
+          showAll: false,
+        },
+      }));
+    }
+  };
+
+  /**
+   * Toggle showing all versions vs first 3
+   */
+  const toggleShowAllVersions = (seriesId: string) => {
+    setExpandedVersions((prev) => ({
+      ...prev,
+      [seriesId]: { ...prev[seriesId], showAll: !prev[seriesId]?.showAll },
+    }));
+  };
+
+  /**
+   * Handle clicking a specific version to view its details
+   */
+  const handleVersionClick = async (dataoneId: string) => {
+    try {
+      const details = await dataOneService.getVersionDetails(dataoneId);
+      if (details) {
+        // Convert to DataOneDataset format for selection
+        onDatasetSelect?.(details);
+      }
+    } catch (err) {
+      console.error('Failed to load version details:', err);
+    }
   };
 
   return (
@@ -190,64 +320,172 @@ const DataONEView: React.FC<DataONEViewProps> = ({
           <div id="dataone-list" className="divide-y divide-gray-100">
             {datasets.map((dataset) => {
               const isSelected = selectedDatasetId === dataset.id;
+              const versionState = expandedVersions[dataset.seriesId];
+              const isExpanded = versionState && versionState.versions.length > 0;
+              const hasMultipleVersions = dataset.versionCount > 1;
+              const filesSummaryText = formatFilesSummary(dataset.filesSummary);
+              
               return (
-                <button
-                  key={dataset.id}
-                  id={`dataset-${dataset.id}`}
-                  onClick={() => onDatasetSelect?.(dataset)}
-                  className={`w-full text-left p-4 transition-colors hover:bg-gray-50 ${
-                    isSelected ? 'bg-emerald-50 border-l-4 border-emerald-500' : ''
-                  }`}
-                >
-                  {/* Title */}
-                  <h3
-                    className={`text-sm font-medium line-clamp-2 mb-1 ${
-                      isSelected ? 'text-emerald-900' : 'text-gray-900'
+                <div key={dataset.id} id={`dataset-container-${dataset.id}`}>
+                  {/* Main dataset row */}
+                  <button
+                    id={`dataset-${dataset.id}`}
+                    onClick={() => onDatasetSelect?.(dataset)}
+                    className={`w-full text-left p-4 transition-colors hover:bg-gray-50 ${
+                      isSelected ? 'bg-emerald-50 border-l-4 border-emerald-500' : ''
                     }`}
                   >
-                    {dataset.title}
-                  </h3>
+                    {/* Title */}
+                    <h3
+                      className={`text-sm font-medium line-clamp-2 mb-1 ${
+                        isSelected ? 'text-emerald-900' : 'text-gray-900'
+                      }`}
+                    >
+                      {dataset.title}
+                    </h3>
 
-                  {/* Metadata row */}
-                  <div className="flex items-center flex-wrap gap-2 text-xs text-gray-500 mb-2">
-                    {/* Repository badge */}
-                    {dataset.repository && (
-                      <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">
-                        {dataset.repository}
-                      </span>
-                    )}
-                    {/* Date uploaded */}
-                    {dataset.dateUploaded && (
-                      <span>{formatDate(dataset.dateUploaded)}</span>
-                    )}
-                    {/* Temporal coverage */}
-                    {dataset.temporalCoverage.beginDate && (
-                      <span className="text-gray-400">
-                        {formatDate(dataset.temporalCoverage.beginDate)}
-                        {dataset.temporalCoverage.endDate && ` - ${formatDate(dataset.temporalCoverage.endDate)}`}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* TNC Categories */}
-                  {dataset.tncCategories.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {dataset.tncCategories.slice(0, 3).map((category, i) => (
-                        <span
-                          key={i}
-                          className="text-xs px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded"
-                        >
-                          {category}
+                    {/* Metadata row */}
+                    <div className="flex items-center flex-wrap gap-2 text-xs text-gray-500 mb-2">
+                      {/* Repository badge */}
+                      {dataset.repository && (
+                        <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">
+                          {dataset.repository}
                         </span>
-                      ))}
-                      {dataset.tncCategories.length > 3 && (
-                        <span className="text-xs text-gray-400">
-                          +{dataset.tncCategories.length - 3} more
+                      )}
+                      {/* Date uploaded */}
+                      {dataset.dateUploaded && (
+                        <span>{formatDate(dataset.dateUploaded)}</span>
+                      )}
+                      {/* Temporal coverage */}
+                      {dataset.temporalCoverage.beginDate && (
+                        <span className="text-gray-400">
+                          {formatDate(dataset.temporalCoverage.beginDate)}
+                          {dataset.temporalCoverage.endDate && ` - ${formatDate(dataset.temporalCoverage.endDate)}`}
                         </span>
                       )}
                     </div>
+
+                    {/* Version & Files badges row */}
+                    <div className="flex items-center flex-wrap gap-2">
+                      {/* Version count badge (if > 1) */}
+                      {hasMultipleVersions && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleVersionHistory(dataset);
+                          }}
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors"
+                        >
+                          <History className="w-3 h-3" />
+                          {dataset.versionCount} versions
+                          {isExpanded ? (
+                            <ChevronUp className="w-3 h-3" />
+                          ) : (
+                            <ChevronDown className="w-3 h-3" />
+                          )}
+                        </button>
+                      )}
+
+                      {/* Files summary badge */}
+                      {filesSummaryText && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs bg-amber-50 text-amber-700 rounded">
+                          <FileText className="w-3 h-3" />
+                          {filesSummaryText}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* TNC Categories */}
+                    {dataset.tncCategories.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {dataset.tncCategories.slice(0, 3).map((category, i) => (
+                          <span
+                            key={i}
+                            className="text-xs px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded"
+                          >
+                            {category}
+                          </span>
+                        ))}
+                        {dataset.tncCategories.length > 3 && (
+                          <span className="text-xs text-gray-400">
+                            +{dataset.tncCategories.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </button>
+
+                  {/* Inline version history (when expanded) */}
+                  {versionState && (
+                    <div
+                      id={`version-history-${dataset.id}`}
+                      className="bg-gray-50 border-t border-gray-100 px-4 py-3"
+                    >
+                      {versionState.loading ? (
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Loading version history...
+                        </div>
+                      ) : versionState.error ? (
+                        <div className="text-sm text-red-600">{versionState.error}</div>
+                      ) : versionState.versions.length > 0 ? (
+                        <div className="space-y-1">
+                          <h4 className="text-xs font-medium text-gray-700 mb-2">Version History</h4>
+                          {(versionState.showAll
+                            ? versionState.versions
+                            : versionState.versions.slice(0, 3)
+                          ).map((version, index) => {
+                            const isLatest = index === 0;
+                            const versionNumber = versionState.versions.length - index;
+                            const isCurrentlySelected = dataset.dataoneId === version.dataoneId;
+                            const versionFilesSummary = formatFilesSummary(version.filesSummary);
+
+                            return (
+                              <button
+                                key={version.dataoneId}
+                                onClick={() => handleVersionClick(version.dataoneId)}
+                                className={`w-full text-left px-2 py-1.5 text-xs rounded transition-colors ${
+                                  isCurrentlySelected
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : 'hover:bg-gray-100 text-gray-600'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="font-medium">
+                                    v{versionNumber}
+                                    {isLatest && (
+                                      <span className="ml-1 text-emerald-600">(latest)</span>
+                                    )}
+                                  </span>
+                                  <span className="text-gray-400">
+                                    {formatDate(version.dateUploaded)}
+                                  </span>
+                                </div>
+                                {versionFilesSummary && (
+                                  <div className="mt-0.5 text-gray-500">{versionFilesSummary}</div>
+                                )}
+                              </button>
+                            );
+                          })}
+
+                          {/* Show all / Show less toggle */}
+                          {versionState.versions.length > 3 && (
+                            <button
+                              onClick={() => toggleShowAllVersions(dataset.seriesId)}
+                              className="w-full text-center text-xs text-emerald-600 hover:underline mt-1 py-1"
+                            >
+                              {versionState.showAll
+                                ? 'Show less'
+                                : `Show all ${versionState.versions.length} versions`}
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-500">No version history available</div>
+                      )}
+                    </div>
                   )}
-                </button>
+                </div>
               );
             })}
           </div>
@@ -292,4 +530,3 @@ const DataONEView: React.FC<DataONEViewProps> = ({
 };
 
 export default DataONEView;
-

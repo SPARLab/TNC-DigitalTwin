@@ -3276,6 +3276,7 @@ function App() {
             dataset={selectedDataOneDataset}
             onClose={() => setSelectedDataOneDataset(null)}
             onPreview={() => setShowDataOnePreview(true)}
+            onVersionSelect={(dataset) => setSelectedDataOneDataset(dataset)}
           />
         ) : lastSearchedFilters.source === 'DataONE' ? (
           // DataONE without selected dataset - show instructions
