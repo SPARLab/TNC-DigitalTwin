@@ -11,6 +11,7 @@ import {
   FileText,
   History,
   Filter,
+  ExternalLink,
 } from 'lucide-react';
 import DataTypeBackHeader from '../DataTypeBackHeader';
 import {
@@ -417,7 +418,7 @@ const DataONEView: React.FC<DataONEViewProps> = ({
                       {dataset.title}
                     </h3>
 
-                    {/* Row 1: versions • file info */}
+                    {/* Row 1: versions • file info • metadata-only badge */}
                     <div className="flex items-center flex-wrap gap-2 mb-1.5">
                       {/* Version count badge (always shown) */}
                       {hasMultipleVersions ? (
@@ -443,13 +444,19 @@ const DataONEView: React.FC<DataONEViewProps> = ({
                         </span>
                       )}
 
-                      {/* Files summary badge */}
-                      {filesSummaryText && (
+                      {/* Metadata-only badge (with external link indicator) */}
+                      {dataset.isMetadataOnly ? (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs bg-purple-50 text-purple-700 rounded">
+                          <ExternalLink className="w-3 h-3" />
+                          Metadata Only
+                        </span>
+                      ) : filesSummaryText ? (
+                        /* Files summary badge (only for non-metadata-only) */
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs bg-amber-50 text-amber-700 rounded">
                           <FileText className="w-3 h-3" />
                           {filesSummaryText}
                         </span>
-                      )}
+                      ) : null}
                     </div>
 
                     {/* Row 2: date • node source */}

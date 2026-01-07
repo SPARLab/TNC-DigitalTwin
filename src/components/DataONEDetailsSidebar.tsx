@@ -73,6 +73,36 @@ function formatRepository(repo: string | null): string | null {
   return repo.replace(/^urn:node:/i, '');
 }
 
+/**
+ * Extract a readable name from an external URL
+ * e.g., "https://doi.pangaea.de/..." -> "PANGAEA"
+ */
+function getExternalSourceName(url: string | null): string | null {
+  if (!url) return null;
+  try {
+    const hostname = new URL(url).hostname.toLowerCase();
+    // Map common hostnames to readable names
+    if (hostname.includes('pangaea')) return 'PANGAEA';
+    if (hostname.includes('hydroshare')) return 'HydroShare';
+    if (hostname.includes('bco-dmo') || hostname.includes('bcodmo')) return 'BCO-DMO';
+    if (hostname.includes('griidc')) return 'GRIIDC';
+    if (hostname.includes('earthchem')) return 'EarthChem';
+    if (hostname.includes('opentopo')) return 'OpenTopography';
+    if (hostname.includes('ncei') || hostname.includes('noaa')) return 'NCEI';
+    if (hostname.includes('obis')) return 'OBIS';
+    if (hostname.includes('lter')) return 'LTER';
+    if (hostname.includes('r2r')) return 'R2R';
+    // Fallback: extract domain name
+    const parts = hostname.split('.');
+    if (parts.length >= 2) {
+      return parts[parts.length - 2].toUpperCase();
+    }
+    return hostname;
+  } catch {
+    return null;
+  }
+}
+
 const DataONEDetailsSidebar: React.FC<DataONEDetailsSidebarProps> = ({
   dataset,
   onClose,
@@ -226,6 +256,12 @@ const DataONEDetailsSidebar: React.FC<DataONEDetailsSidebarProps> = ({
                     {formatRepository(dataset.repository)}
                   </span>
                 )}
+                {/* Metadata-only badge */}
+                {dataset.isMetadataOnly && (
+                  <span className="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-800 rounded">
+                    Metadata Only
+                  </span>
+                )}
                 {/* Version badge */}
                 {dataset.versionCount > 0 && (
                   <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded">
@@ -233,7 +269,7 @@ const DataONEDetailsSidebar: React.FC<DataONEDetailsSidebarProps> = ({
                   </span>
                 )}
                 {/* Files summary badge */}
-                {dataset.filesSummary && (
+                {dataset.filesSummary && !dataset.isMetadataOnly && (
                   <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800 rounded">
                     {formatFilesSummary(dataset.filesSummary)}
                   </span>
@@ -494,9 +530,18 @@ const DataONEDetailsSidebar: React.FC<DataONEDetailsSidebarProps> = ({
           <div id="dataone-details-files">
             <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
               <FileText className="w-4 h-4" />
-              File Information
+              {dataset.isMetadataOnly ? 'Data Availability' : 'File Information'}
             </h3>
-            {dataset.filesSummary ? (
+            {dataset.isMetadataOnly ? (
+              <div className="text-sm text-gray-600 space-y-2">
+                <p className="text-purple-700 bg-purple-50 px-3 py-2 rounded-lg">
+                  This is a metadata-only record. The actual data files are hosted externally
+                  {dataset.externalUrl && getExternalSourceName(dataset.externalUrl) && (
+                    <> on <span className="font-medium">{getExternalSourceName(dataset.externalUrl)}</span></>
+                  )}.
+                </p>
+              </div>
+            ) : dataset.filesSummary ? (
               <div className="text-sm text-gray-600 space-y-1">
                 <p>
                   <span className="font-medium">{dataset.filesSummary.total}</span> file{dataset.filesSummary.total !== 1 ? 's' : ''}
@@ -522,19 +567,36 @@ const DataONEDetailsSidebar: React.FC<DataONEDetailsSidebarProps> = ({
 
       {/* Actions */}
       <div id="dataone-details-actions" className="p-4 border-t border-gray-200 bg-gray-50 space-y-2">
+        {/* External Source Link (for metadata-only datasets) */}
+        {dataset.isMetadataOnly && dataset.externalUrl && (
+          <a
+            href={dataset.externalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Open in {getExternalSourceName(dataset.externalUrl) || 'External Source'}
+          </a>
+        )}
+
         {/* View on DataONE */}
         <a
           href={dataoneUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
+          className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+            dataset.isMetadataOnly && dataset.externalUrl
+              ? 'text-emerald-700 bg-white border border-emerald-300 hover:bg-emerald-50'
+              : 'text-white bg-emerald-600 hover:bg-emerald-700'
+          }`}
         >
           <ExternalLink className="w-4 h-4" />
           View on DataONE
         </a>
 
-        {/* Preview Button */}
-        {onPreview && (
+        {/* Preview Button (only for non-metadata-only datasets) */}
+        {onPreview && !dataset.isMetadataOnly && (
           <button
             onClick={onPreview}
             className="flex items-center justify-center gap-2 w-full px-4 py-2 text-sm font-medium text-emerald-700 bg-white border border-emerald-300 rounded-lg hover:bg-emerald-50 transition-colors"
@@ -544,25 +606,27 @@ const DataONEDetailsSidebar: React.FC<DataONEDetailsSidebarProps> = ({
           </button>
         )}
 
-        {/* Download & Cart Row */}
-        <div className="flex gap-2">
-          <button
-            onClick={handleDownload}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            Download
-          </button>
-          {onAddToCart && (
+        {/* Download & Cart Row (only for non-metadata-only datasets) */}
+        {!dataset.isMetadataOnly && (
+          <div className="flex gap-2">
             <button
-              onClick={onAddToCart}
+              onClick={handleDownload}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              <ShoppingCart className="w-4 h-4" />
-              Add to Cart
+              <Download className="w-4 h-4" />
+              Download
             </button>
-          )}
-        </div>
+            {onAddToCart && (
+              <button
+                onClick={onAddToCart}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <ShoppingCart className="w-4 h-4" />
+                Add to Cart
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

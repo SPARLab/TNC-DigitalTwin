@@ -90,6 +90,10 @@ function parseFilesSummary(jsonStr: string | null): FilesSummary | null {
  * Convert lite record to processed dataset for list display
  */
 function liteRecordToDataset(record: DataOneLiteRecord): DataOneDataset {
+  const filesSummary = parseFilesSummary(record.files_summary);
+  // Metadata-only if no files_summary or total is 0
+  const isMetadataOnly = !filesSummary || filesSummary.total === 0;
+  
   return {
     id: record.objectid,
     dataoneId: record.dataone_id,
@@ -117,7 +121,10 @@ function liteRecordToDataset(record: DataOneLiteRecord): DataOneDataset {
     seriesId: record.series_id,
     isLatestVersion: record.is_latest_version === 1,
     versionCount: record.version_count,
-    filesSummary: parseFilesSummary(record.files_summary),
+    filesSummary,
+    // External URL for metadata-only datasets
+    externalUrl: record.external_url,
+    isMetadataOnly,
   };
 }
 
