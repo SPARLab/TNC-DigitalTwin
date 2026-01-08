@@ -420,7 +420,7 @@ const DataONEDetailsSidebar: React.FC<DataONEDetailsSidebarProps> = ({
                 {details.keywords.map((keyword, i) => (
                   <span
                     key={i}
-                    className="px-2 py-0.5 text-xs bg-gray-100 text-gray-700 rounded-full"
+                    className="px-2 py-0.5 text-xs bg-gray-100 text-gray-700 rounded"
                   >
                     {keyword}
                   </span>
@@ -440,7 +440,7 @@ const DataONEDetailsSidebar: React.FC<DataONEDetailsSidebarProps> = ({
                 {dataset.tncCategories.map((category, i) => (
                   <span
                     key={i}
-                    className="px-2 py-0.5 text-xs bg-emerald-100 text-emerald-700 rounded-full"
+                    className="px-2 py-0.5 text-xs bg-emerald-100 text-emerald-700 rounded"
                   >
                     {category}
                   </span>
@@ -526,20 +526,40 @@ const DataONEDetailsSidebar: React.FC<DataONEDetailsSidebarProps> = ({
             </div>
           </div>
 
-          {/* File Information (from files_summary) */}
+          {/* File Information / Data Availability */}
           <div id="dataone-details-files">
             <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
               <FileText className="w-4 h-4" />
               {dataset.isMetadataOnly ? 'Data Availability' : 'File Information'}
             </h3>
             {dataset.isMetadataOnly ? (
-              <div className="text-sm text-gray-600 space-y-2">
-                <p className="text-purple-700 bg-purple-50 px-3 py-2 rounded-lg">
-                  This is a metadata-only record. The actual data files are hosted externally
+              <div className="text-sm space-y-3">
+                {/* Explanation */}
+                <div className="bg-purple-50 border border-purple-100 px-3 py-2.5 rounded-lg space-y-2">
+                  <p className="text-purple-800 font-medium">Metadata-Only Record</p>
+                  <p className="text-purple-700 text-xs leading-relaxed">
+                    DataONE stores only the metadata description for this dataset. 
+                    The actual data files are hosted externally
+                    {dataset.externalUrl && getExternalSourceName(dataset.externalUrl) 
+                      ? <> on <span className="font-semibold">{getExternalSourceName(dataset.externalUrl)}</span></>
+                      : null
+                    }.
+                  </p>
+                </div>
+                
+                {/* What's available where */}
+                <div className="space-y-2 text-xs text-gray-600">
+                  <div className="flex items-start gap-2">
+                    <span className="text-emerald-600 font-medium">📄 DataONE:</span>
+                    <span>View the metadata record describing this dataset</span>
+                  </div>
                   {dataset.externalUrl && getExternalSourceName(dataset.externalUrl) && (
-                    <> on <span className="font-medium">{getExternalSourceName(dataset.externalUrl)}</span></>
-                  )}.
-                </p>
+                    <div className="flex items-start gap-2">
+                      <span className="text-purple-600 font-medium">📦 {getExternalSourceName(dataset.externalUrl)}:</span>
+                      <span>Access the actual data files</span>
+                    </div>
+                  )}
+                </div>
               </div>
             ) : dataset.filesSummary ? (
               <div className="text-sm text-gray-600 space-y-1">
@@ -566,66 +586,100 @@ const DataONEDetailsSidebar: React.FC<DataONEDetailsSidebarProps> = ({
       </div>
 
       {/* Actions */}
-      <div id="dataone-details-actions" className="p-4 border-t border-gray-200 bg-gray-50 space-y-2">
-        {/* External Source Link (for metadata-only datasets) */}
-        {dataset.isMetadataOnly && dataset.externalUrl && (
-          <a
-            href={dataset.externalUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            <ExternalLink className="w-4 h-4" />
-            Open in {getExternalSourceName(dataset.externalUrl) || 'External Source'}
-          </a>
-        )}
+      <div id="dataone-details-actions" className="p-4 border-t border-gray-200 bg-gray-50 space-y-3">
+        {/* For metadata-only datasets: show organized sections */}
+        {dataset.isMetadataOnly ? (
+          <>
+            {/* External Data Source Section (primary for metadata-only) */}
+            {dataset.externalUrl && getExternalSourceName(dataset.externalUrl) && (
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium text-purple-700 uppercase tracking-wide">
+                  📦 Data Files on {getExternalSourceName(dataset.externalUrl)}
+                </p>
+                <a
+                  href={dataset.externalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Open {getExternalSourceName(dataset.externalUrl)} in New Tab
+                </a>
+              </div>
+            )}
 
-        {/* View on DataONE */}
-        <a
-          href={dataoneUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
-            dataset.isMetadataOnly && dataset.externalUrl
-              ? 'text-emerald-700 bg-white border border-emerald-300 hover:bg-emerald-50'
-              : 'text-white bg-emerald-600 hover:bg-emerald-700'
-          }`}
-        >
-          <ExternalLink className="w-4 h-4" />
-          View on DataONE
-        </a>
-
-        {/* Preview Dataset in DataONE (available for all datasets) */}
-        {onPreview && (
-          <button
-            onClick={onPreview}
-            className="flex items-center justify-center gap-2 w-full px-4 py-2 text-sm font-medium text-emerald-700 bg-white border border-emerald-300 rounded-lg hover:bg-emerald-50 transition-colors"
-          >
-            <Eye className="w-4 h-4" />
-            Preview Dataset in DataONE
-          </button>
-        )}
-
-        {/* Download & Cart Row (only for non-metadata-only datasets) */}
-        {!dataset.isMetadataOnly && (
-          <div className="flex gap-2">
-            <button
-              onClick={handleDownload}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            {/* DataONE Metadata Section */}
+            <div className="space-y-1.5">
+              <p className="text-xs font-medium text-emerald-700 uppercase tracking-wide">
+                📄 Metadata on DataONE
+              </p>
+              <div className="flex gap-2">
+                {onPreview && (
+                  <button
+                    onClick={onPreview}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-emerald-700 bg-white border border-emerald-300 rounded-lg hover:bg-emerald-50 transition-colors"
+                  >
+                    <Eye className="w-4 h-4" />
+                    Preview
+                  </button>
+                )}
+                <a
+                  href={dataoneUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-emerald-700 bg-white border border-emerald-300 rounded-lg hover:bg-emerald-50 transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  New Tab
+                </a>
+              </div>
+            </div>
+          </>
+        ) : (
+          /* For regular datasets with files */
+          <>
+            {/* Primary action: View on DataONE */}
+            <a
+              href={dataoneUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
             >
-              <Download className="w-4 h-4" />
-              Download
-            </button>
-            {onAddToCart && (
+              <ExternalLink className="w-4 h-4" />
+              View on DataONE
+            </a>
+
+            {/* Preview in iframe */}
+            {onPreview && (
               <button
-                onClick={onAddToCart}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                onClick={onPreview}
+                className="flex items-center justify-center gap-2 w-full px-4 py-2 text-sm font-medium text-emerald-700 bg-white border border-emerald-300 rounded-lg hover:bg-emerald-50 transition-colors"
               >
-                <ShoppingCart className="w-4 h-4" />
-                Add to Cart
+                <Eye className="w-4 h-4" />
+                Preview Dataset in DataONE
               </button>
             )}
-          </div>
+
+            {/* Download & Cart Row */}
+            <div className="flex gap-2">
+              <button
+                onClick={handleDownload}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Download
+              </button>
+              {onAddToCart && (
+                <button
+                  onClick={onAddToCart}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <ShoppingCart className="w-4 h-4" />
+                  Add to Cart
+                </button>
+              )}
+            </div>
+          </>
         )}
       </div>
     </div>
