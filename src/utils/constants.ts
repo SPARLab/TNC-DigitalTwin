@@ -37,26 +37,44 @@ export const CATEGORY_DATA_SOURCES: Record<string, readonly string[]> = {
     return acc;
   }, {} as Record<string, string[]>),
   
-  // Ecological / Biological category includes wildlife observation sources and research datasets
-  'Ecological / Biological (Species?)': ['TNC ArcGIS Hub', 'iNaturalist (Public API)', 'iNaturalist (TNC Layers)', 'eBird', 'Animl', 'DataONE'],
+  // Species category includes wildlife observation sources and research datasets
+  'Species': ['TNC ArcGIS Hub', 'iNaturalist (Public API)', 'iNaturalist (TNC Layers)', 'eBird', 'Animl', 'DataONE'],
   
-  // Vegetation / habitat category includes plant observation sources
-  'Vegetation / habitat': ['TNC ArcGIS Hub', 'CalFlora', 'iNaturalist (Public API)', 'iNaturalist (TNC Layers)', 'DataONE'],
+  // Land Cover category includes plant observation sources
+  'Land Cover': ['TNC ArcGIS Hub', 'CalFlora', 'iNaturalist (Public API)', 'iNaturalist (TNC Layers)', 'DataONE'],
   
-  // Land use category includes LiDAR
-  'Land use and land (geography?)': ['TNC ArcGIS Hub', 'LiDAR'],
+  // Boundaries category
+  'Boundaries': ['TNC ArcGIS Hub'],
   
-  // Real-time & Remote Sensing includes Dendra Stations, Animl camera traps, and Drone Imagery
-  'Real-time & Remote Sensing': ['TNC ArcGIS Hub', 'Dendra Stations', 'Animl', 'Drone Imagery'],
+  // Elevation and Bathymetry includes LiDAR
+  'Elevation and Bathymetry': ['TNC ArcGIS Hub', 'LiDAR'],
   
-  // Marine category includes oceanographic research datasets
-  'Marine': ['TNC ArcGIS Hub', 'DataONE'],
+  // Earth Observations includes Drone Imagery
+  'Earth Observations': ['TNC ArcGIS Hub', 'Drone Imagery'],
   
-  // Climate / weather category includes climate research datasets
-  'Climate / weather': ['TNC ArcGIS Hub', 'DataONE'],
+  // Research and Sensor Equipment includes Dendra Stations and Animl camera traps
+  'Research and Sensor Equipment': ['TNC ArcGIS Hub', 'Dendra Stations', 'Animl'],
   
-  // Hydrological category includes freshwater research datasets
-  'Hydrological': ['TNC ArcGIS Hub', 'DataONE']
+  // Oceans and Coasts includes oceanographic research datasets
+  'Oceans and Coasts': ['TNC ArcGIS Hub', 'DataONE'],
+  
+  // Weather and Climate includes climate research datasets
+  'Weather and Climate': ['TNC ArcGIS Hub', 'DataONE'],
+  
+  // Freshwater includes freshwater research datasets
+  'Freshwater': ['TNC ArcGIS Hub', 'DataONE'],
+  
+  // Soils and Geology
+  'Soils and Geology': ['TNC ArcGIS Hub'],
+  
+  // Infrastructure
+  'Infrastructure': ['TNC ArcGIS Hub'],
+  
+  // Threats and Hazards
+  'Threats and Hazards': ['TNC ArcGIS Hub'],
+  
+  // Fire
+  'Fire': ['TNC ArcGIS Hub']
 } as const;
 
 // Validate that all data categories have a source mapping

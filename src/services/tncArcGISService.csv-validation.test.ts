@@ -25,8 +25,9 @@ describe('TNC ArcGIS Service - CSV Validation (Minimum Guarantees)', () => {
     csvData = parseCSV(csvContent)
   })
 
-  describe('Vegetation / habitat - Last 5 years', () => {
+  describe('Land Cover - Last 5 years', () => {
     // These titles MUST be present. Test fails loudly if any are missing.
+    // Note: CSV contains legacy "Vegetation / habitat" category which maps to "Land Cover"
     const REQUIRED_TITLES = [
       'CalFire Fire Hazard Severity Zones 2023',
       'Cattle Pastures',
@@ -34,13 +35,15 @@ describe('TNC ArcGIS Service - CSV Validation (Minimum Guarantees)', () => {
       'Stream Crossings'
     ]
     const MIN_EXPECTED_COUNT = 4
+    // Legacy CSV category name that maps to "Land Cover"
+    const LEGACY_CSV_CATEGORY = 'Vegetation / habitat'
 
     it('should include ALL required titles (TNC may have added more)', () => {
       const fiveYearsAgo = new Date()
       fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5)
       
       const results = csvData.filter(row => {
-        const hasCategory = row['Mapped Categories']?.includes('Vegetation / habitat')
+        const hasCategory = row['Mapped Categories']?.includes(LEGACY_CSV_CATEGORY)
         const createdDate = new Date(row['Created Date'])
         return hasCategory && createdDate >= fiveYearsAgo
       })
@@ -61,7 +64,7 @@ describe('TNC ArcGIS Service - CSV Validation (Minimum Guarantees)', () => {
         `Expected AT LEAST ${MIN_EXPECTED_COUNT} items, got ${results.length}`
       ).toBeGreaterThanOrEqual(MIN_EXPECTED_COUNT)
 
-      console.log(`✅ Vegetation / habitat: Found ${results.length} items (min: ${MIN_EXPECTED_COUNT})`)
+      console.log(`✅ Land Cover: Found ${results.length} items (min: ${MIN_EXPECTED_COUNT})`)
     })
 
     it('should return AT LEAST expected items from mocked API', async () => {
@@ -70,7 +73,7 @@ describe('TNC ArcGIS Service - CSV Validation (Minimum Guarantees)', () => {
       
       const mockFeatures = csvData
         .filter(row => {
-          const hasCategory = row['Mapped Categories']?.includes('Vegetation / habitat')
+          const hasCategory = row['Mapped Categories']?.includes(LEGACY_CSV_CATEGORY)
           const createdDate = new Date(row['Created Date'])
           return hasCategory && createdDate >= fiveYearsAgo
         })
@@ -98,7 +101,7 @@ describe('TNC ArcGIS Service - CSV Validation (Minimum Guarantees)', () => {
       } as Response)
 
       const response = await tncArcGISAPI.getAllItems({
-        categoryFilter: ['Vegetation / habitat']
+        categoryFilter: ['Land Cover']
       })
 
       const titles = response.results.map(item => item.title)
@@ -114,26 +117,28 @@ describe('TNC ArcGIS Service - CSV Validation (Minimum Guarantees)', () => {
       // At least minimum count
       expect(response.results.length).toBeGreaterThanOrEqual(MIN_EXPECTED_COUNT)
       
-      // All items must have correct category
+      // All items must have correct category (new name)
       response.results.forEach(item => {
-        expect(item.mainCategories).toContain('Vegetation / habitat')
+        expect(item.mainCategories).toContain('Land Cover')
       })
 
       console.log(`✅ API returned ${response.results.length} items (min: ${MIN_EXPECTED_COUNT})`)
     })
   })
 
-  describe('Hydrological - All time', () => {
+  describe('Freshwater - All time', () => {
     const REQUIRED_TITLES = [
       'Groundwater Wells',
       'Springs',
       'Streams'
     ]
     const MIN_EXPECTED_COUNT = 3
+    // Legacy CSV category name that maps to "Freshwater"
+    const LEGACY_CSV_CATEGORY = 'Hydrological'
 
-    it('should include ALL required hydrological items', () => {
+    it('should include ALL required freshwater items', () => {
       const results = csvData.filter(row => 
-        row['Mapped Categories']?.includes('Hydrological')
+        row['Mapped Categories']?.includes(LEGACY_CSV_CATEGORY)
       )
 
       const titles = results.map(r => r.Title)
@@ -147,7 +152,7 @@ describe('TNC ArcGIS Service - CSV Validation (Minimum Guarantees)', () => {
       
       expect(results.length).toBeGreaterThanOrEqual(MIN_EXPECTED_COUNT)
 
-      console.log(`✅ Hydrological: Found ${results.length} items (min: ${MIN_EXPECTED_COUNT})`)
+      console.log(`✅ Freshwater: Found ${results.length} items (min: ${MIN_EXPECTED_COUNT})`)
       console.log(`   Titles: ${titles.slice(0, 5).join(', ')}...`)
     })
   })
@@ -203,9 +208,10 @@ describe('TNC ArcGIS Service - CSV Validation (Minimum Guarantees)', () => {
     })
 
     it('should have data for all critical categories', () => {
+      // Legacy CSV category names (historical test data)
       const criticalCategories = [
-        'Vegetation / habitat',
-        'Hydrological',
+        'Vegetation / habitat', // Maps to Land Cover
+        'Hydrological',         // Maps to Freshwater
         'Fire',
         'Infrastructure'
       ]

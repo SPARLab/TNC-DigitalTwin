@@ -46,12 +46,12 @@ describe('TNC ArcGIS Real Data Tests', () => {
       expect(analysis.types.length).toBeGreaterThan(0)
     })
 
-    it('should identify hydrological datasets', () => {
+    it('should identify freshwater datasets', () => {
       const hydroItems = filterCSVRows(realCSVData, { 
-        mainCategories: ['Hydrological'] 
+        mainCategories: ['Freshwater'] 
       })
       
-      console.log(`💧 Found ${hydroItems.length} hydrological items:`)
+      console.log(`💧 Found ${hydroItems.length} freshwater items:`)
       hydroItems.forEach(item => {
         console.log(`  - ${item.title} (${item.type})`)
       })
@@ -101,9 +101,9 @@ describe('TNC ArcGIS Real Data Tests', () => {
   })
 
   describe('Filter Combination Validation', () => {
-    it('should validate Hydrological + Dangermond Preserve scenario', () => {
+    it('should validate Freshwater + Dangermond Preserve scenario', () => {
       const scenario = testScenarios.find(s => 
-        s.name.includes('Hydrological') && s.filters.spatialFilter === 'Dangermond Preserve'
+        s.name.includes('Freshwater') && s.filters.spatialFilter === 'Dangermond Preserve'
       )
       
       if (scenario) {
@@ -112,14 +112,14 @@ describe('TNC ArcGIS Real Data Tests', () => {
         console.log(`  Expected types: ${scenario.expectedTypes.join(', ')}`)
         
         expect(scenario.expectedCount).toBeGreaterThan(0)
-        expect(scenario.expectedCategories).toContain('Hydrological')
+        expect(scenario.expectedCategories).toContain('Freshwater')
         
         // Verify the items match the filter criteria
         scenario.expectedItems.forEach((item: any) => {
-          expect(item.mainCategories).toContain('Hydrological')
+          expect(item.mainCategories).toContain('Freshwater')
         })
       } else {
-        console.log('⚠️  No hydrological scenario found in test data')
+        console.log('⚠️  No freshwater scenario found in test data')
       }
     })
 
@@ -145,9 +145,9 @@ describe('TNC ArcGIS Real Data Tests', () => {
       }
     })
 
-    it('should validate Marine + Current View scenario', () => {
+    it('should validate Oceans and Coasts + Current View scenario', () => {
       const scenario = testScenarios.find(s => 
-        s.name.includes('Marine') && s.filters.spatialFilter === 'Current View'
+        s.name.includes('Oceans and Coasts') && s.filters.spatialFilter === 'Current View'
       )
       
       if (scenario) {
@@ -156,11 +156,11 @@ describe('TNC ArcGIS Real Data Tests', () => {
         console.log(`  Expected types: ${scenario.expectedTypes.join(', ')}`)
         
         expect(scenario.expectedCount).toBeGreaterThan(0)
-        expect(scenario.expectedCategories).toContain('Marine')
+        expect(scenario.expectedCategories).toContain('Oceans and Coasts')
         
         // Verify the items match the filter criteria
         scenario.expectedItems.forEach((item: any) => {
-          expect(item.mainCategories).toContain('Marine')
+          expect(item.mainCategories).toContain('Oceans and Coasts')
         })
       } else {
         console.log('⚠️  No marine scenario found in test data')
@@ -186,11 +186,11 @@ describe('TNC ArcGIS Real Data Tests', () => {
     })
 
     it('should preserve category mappings in transformation', () => {
-      const hydroRows = filterCSVRows(realCSVData, { mainCategories: ['Hydrological'] })
+      const hydroRows = filterCSVRows(realCSVData, { mainCategories: ['Freshwater'] })
       
       hydroRows.forEach(row => {
         const tncItem = csvRowToTNCArcGISItem(row)
-        expect(tncItem.mainCategories).toContain('Hydrological')
+        expect(tncItem.mainCategories).toContain('Freshwater')
       })
     })
   })

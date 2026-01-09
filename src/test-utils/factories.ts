@@ -22,7 +22,7 @@ export const createMockTNCArcGISItem = (overrides: Partial<TNCArcGISItem> = {}):
     modified: Date.now() - 3600000,  // 1 hour ago
     thumbnail: 'https://example.com/thumbnail.jpg',
     uiPattern: 'MAP_LAYER',
-    mainCategories: ['Hydrological']
+    mainCategories: ['Freshwater']
   }
 
   return { ...baseItem, ...overrides }
@@ -33,7 +33,7 @@ export const createMockTNCArcGISItem = (overrides: Partial<TNCArcGISItem> = {}):
  */
 export const createMockFilterState = (overrides: Partial<FilterState> = {}): FilterState => {
   const baseFilter: FilterState = {
-    category: 'Hydrological',
+    category: 'Freshwater',
     source: 'TNC ArcGIS Hub',
     spatialFilter: 'Dangermond Preserve',
     timeRange: 'Last 6 months',
@@ -53,14 +53,14 @@ export const createMockFilterState = (overrides: Partial<FilterState> = {}): Fil
  */
 export const createMockTNCItemCollection = () => {
   return [
-    // Hydrological items
+    // Freshwater items
     createMockTNCArcGISItem({
       id: 'hydro-1',
       title: 'Stream Network Data',
       type: 'Feature Service',
       tags: ['Water', 'Streams', 'Hydrology'],
       categories: ['/Categories/Environment/Freshwater'],
-      mainCategories: ['Hydrological'],
+      mainCategories: ['Freshwater'],
       uiPattern: 'MAP_LAYER'
     }),
     createMockTNCArcGISItem({
@@ -69,7 +69,7 @@ export const createMockTNCItemCollection = () => {
       type: 'Feature Service',
       tags: ['Watershed', 'Basins', 'Water'],
       categories: ['/Categories/Environment/Freshwater'],
-      mainCategories: ['Hydrological'],
+      mainCategories: ['Freshwater'],
       uiPattern: 'MAP_LAYER'
     }),
     createMockTNCArcGISItem({
@@ -78,7 +78,7 @@ export const createMockTNCItemCollection = () => {
       type: 'Dashboard',
       tags: ['Water', 'Quality', 'Monitoring'],
       categories: ['/Categories/Environment/Freshwater'],
-      mainCategories: ['Hydrological'],
+      mainCategories: ['Freshwater'],
       uiPattern: 'EXTERNAL_LINK'
     }),
 
@@ -89,7 +89,7 @@ export const createMockTNCItemCollection = () => {
       type: 'Image Service',
       tags: ['Vegetation', 'Landcover', 'Habitat'],
       categories: ['/Categories/Environment/Habitat'],
-      mainCategories: ['Vegetation / habitat'],
+      mainCategories: ['Land Cover'],
       uiPattern: 'MAP_LAYER'
     }),
     createMockTNCArcGISItem({
@@ -98,7 +98,7 @@ export const createMockTNCItemCollection = () => {
       type: 'Feature Service',
       tags: ['Restoration', 'Conservation', 'Habitat'],
       categories: ['/Categories/Environment/Habitat'],
-      mainCategories: ['Vegetation / habitat'],
+      mainCategories: ['Land Cover'],
       uiPattern: 'MAP_LAYER'
     }),
 
@@ -122,14 +122,14 @@ export const createMockTNCItemCollection = () => {
       uiPattern: 'MODAL'
     }),
 
-    // Marine items
+    // Oceans and Coasts items
     createMockTNCArcGISItem({
       id: 'marine-1',
       title: 'Coastal Monitoring Data',
       type: 'Feature Service',
       tags: ['Marine', 'Coastal', 'Monitoring'],
-      categories: ['/Categories/Environment/Marine'],
-      mainCategories: ['Marine'],
+      categories: ['/Categories/Environment/Oceans and Coasts'],
+      mainCategories: ['Oceans and Coasts'],
       uiPattern: 'MAP_LAYER'
     }),
 
@@ -140,7 +140,7 @@ export const createMockTNCItemCollection = () => {
       type: 'Web Experience',
       tags: ['Climate', 'Change', 'Projections'],
       categories: ['/Categories/Environment/Climate'],
-      mainCategories: ['Climate / weather'],
+      mainCategories: ['Weather and Climate'],
       uiPattern: 'EXTERNAL_LINK'
     })
   ]
@@ -174,9 +174,9 @@ export const createMockFetchResponse = (data: any, ok = true, status = 200) => {
  */
 export const filterTestScenarios = [
   {
-    name: 'Hydrological category with Dangermond Preserve spatial filter',
+    name: 'Freshwater category with Dangermond Preserve spatial filter',
     filters: createMockFilterState({
-      category: 'Hydrological',
+      category: 'Freshwater',
       source: 'TNC ArcGIS Hub',
       spatialFilter: 'Dangermond Preserve',
       timeRange: 'Last 6 months'
@@ -198,7 +198,7 @@ export const filterTestScenarios = [
   {
     name: 'Vegetation category with custom date range',
     filters: createMockFilterState({
-      category: 'Vegetation / habitat',
+      category: 'Land Cover',
       source: 'TNC ArcGIS Hub',
       spatialFilter: 'Current View',
       timeRange: 'Custom Range',
@@ -209,9 +209,9 @@ export const filterTestScenarios = [
     expectedUIPatterns: ['MAP_LAYER']
   },
   {
-    name: 'Marine category with all filters',
+    name: 'Oceans and Coasts category with all filters',
     filters: createMockFilterState({
-      category: 'Marine',
+      category: 'Oceans and Coasts',
       source: 'TNC ArcGIS Hub',
       spatialFilter: 'Draw Area',
       timeRange: 'Last 6 months'

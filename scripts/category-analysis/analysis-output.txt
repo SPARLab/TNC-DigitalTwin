@@ -1,0 +1,785 @@
+🔍 Fetching all TNC ArcGIS Hub items...
+
+Fetching dataset...
+Fetching document...
+✅ Fetched 105 total items
+
+
+=== ANALYSIS RESULTS ===
+
+📊 Total unique tags: 306
+📊 Total unique categories: 15
+📊 Total titles: 105
+
+
+=== ALL TAGS (alphabetical) ===
+  - 
+  -   coastal
+  - 2005
+  - 2050
+  - ANLCD
+  - Analysis Result
+  - AnalysisOptimized
+  - Anderson
+  - Annual NLCD
+  - Aqueduct
+  - Auth_CDFW
+  - BOEM
+  - Building Standards
+  - CA
+  - CAL FIRE
+  - CAOpenData
+  - CDFG
+  - CDFW
+  - California
+  - California Department of Fish And Wildlife
+  - California Department of Fish and Wildlife
+  - California Forestry and Fire Protection
+  - California Natural Resources Agency
+  - Canal
+  - Chapter 7A
+  - Chlorophyll
+  - Chlorophyll A
+  - Chlorophyll-a
+  - Coastal
+  - Control burns
+  - Creek
+  - DFG
+  - DOC
+  - DOI
+  - DS2968_20211210_wm
+  - Dams
+  - Dangermond
+  - Dangermond Preserve
+  - Dangermond_Preserve
+  - Department of Commerce
+  - Department of the Interior
+  - Derived Products
+  - Dibblee
+  - EFH
+  - EHP
+  - Earthquake Hazards Program
+  - Endangered Species Act
+  - Esri
+  - Essential Fish Habitat
+  - FGDC
+  - FHSZ
+  - FRAP
+  - FWS
+  - Falco peregrinus
+  - Federal Geospatial Data Committee
+  - Field Survey
+  - Fire
+  - Fire Hazard Severity Zones
+  - Fire and Fuels
+  - Fish and Wildlife Service
+  - Flash Flood
+  - Freshwater
+  - HAPC
+  - Habitat Areas of Particular Concern
+  - Hub Site
+  - ISRIC
+  - Impediment
+  - Infrastructure
+  - JLDP_FireData
+  - Join Features
+  - Lake
+  - Land Cover
+  - Live Feeds
+  - MRLC
+  - MSA
+  - Magnuson-Stevens Fishery Conservation and Management Act
+  - Management
+  - Marine
+  - Marine Boundaries
+  - Marine Conservation Areas
+  - Marine Protected Areas
+  - NAIP
+  - NAIPCDFW
+  - NGDA
+  - NHD
+  - NHDPlus
+  - NLCD
+  - NOAA
+  - NWS
+  - NWS_Watches_Warnings
+  - National Geospatial Data Asset
+  - National Oceanic and Atmospheric Administration
+  - North America
+  - Oak_Restoration
+  - Ocean Conservation
+  - PEFA
+  - Point Conception
+  - Pond
+  - Prescribed fire
+  - Rail
+  - Railroad
+  - Raster Analysis Result
+  - Raster Function Template result
+  - Reservoir
+  - River
+  - SRA
+  - Santa Barbara County
+  - Severe Weather
+  - SoilGrids250m
+  - State Responsibility Area
+  - Stream
+  - Streams
+  - Thunderstorm
+  - Tornado
+  - Transportation
+  - U.S. Department of Commerce
+  - U.S. Department of the Interior
+  - U.S. Fish and Wildlife Service
+  - U.S. Geological Survey
+  - UNEP
+  - USDA
+  - USDOC
+  - USDOI
+  - USFWS
+  - USGS
+  - United States
+  - VMP
+  - Vegetation
+  - Vegetation Communities
+  - Vegetation management program
+  - WCMC
+  - Water - Oceans and Coasts
+  - Weather
+  - Wetland
+  - administrative
+  - aerial imagery
+  - agriculture
+  - annual
+  - aquatic
+  - aquatic habitat
+  - authoritative
+  - barren
+  - basins
+  - bio-optics
+  - biodiversity
+  - biota
+  - bird
+  - border
+  - borders
+  - botany
+  - boundaries
+  - boundary
+  - breeding
+  - catchments
+  - cattle
+  - change
+  - chemical
+  - classification
+  - climate
+  - communities
+  - conservation
+  - conservation_status
+  - contour
+  - copied with ago-assistant
+  - counties
+  - county
+  - county boundaries
+  - county boundary
+  - county line
+  - cover
+  - criticial habitats
+  - cropland
+  - cultivated
+  - dangermond
+  - dangermond_fire
+  - deciduous
+  - density
+  - developed
+  - development
+  - earth observations
+  - earthobs3
+  - earthquakes
+  - ecological_intactness
+  - ecoregions
+  - endangered
+  - energy
+  - env1
+  - environment
+  - esri_earthobs
+  - esri_environment
+  - esri_oceans
+  - evergreen
+  - farm
+  - farmland
+  - faults
+  - federal
+  - fire
+  - fire perimeters
+  - fire use
+  - fish
+  - fishing
+  - folds
+  - forest
+  - freshwater
+  - freshwater_public
+  - fuel treatment
+  - gas
+  - geological survey
+  - geology
+  - global
+  - government
+  - grassland
+  - groundwater
+  - habitat
+  - habitat_species_diversity
+  - habitats
+  - hand pile burns
+  - hazards
+  - herbaceous
+  - hosted
+  - hosted view
+  - human_disturbance
+  - hydrology
+  - infrastructure
+  - infrastucture
+  - internal
+  - jackpot
+  - jldp
+  - jldp_firedata
+  - land
+  - land cover
+  - landcover
+  - landscape
+  - landscape10
+  - landslides
+  - livefeeds
+  - location
+  - machine pile burns
+  - magnitude
+  - management
+  - marine
+  - marine_protected_areas
+  - monitoring
+  - multidimensional
+  - natural color
+  - nest
+  - ngda
+  - oak
+  - observation
+  - oceans
+  - ocs
+  - offshore
+  - oil
+  - oil and gas
+  - open
+  - operations
+  - ownership
+  - pH
+  - pasture
+  - pastures
+  - peregrine falcon
+  - physical_intactness
+  - pipelines
+  - platforms
+  - protection
+  - quaternary
+  - ranching
+  - resolve
+  - restoration
+  - risk
+  - scrub
+  - sensitive
+  - sensor
+  - sensors
+  - shrub
+  - soil
+  - soilgrids
+  - soilgrids.org
+  - soils
+  - sourceId-59ff42b1eae64064abf256468da3c47b
+  - sourceId-7637792c510847dd886877ffdbfe425a
+  - sourceId-bfff8c07055944fd9c03539c3ff9fb19
+  - species
+  - springs
+  - streams
+  - subsurface
+  - subwatersheds
+  - tanks
+  - terrestrial
+  - territory
+  - threatened
+  - topography
+  - vegetation
+  - water
+  - watershed
+  - watersheds
+  - weather
+  - weightedOverlayService
+  - weighted_raster_overlay
+  - wells
+  - wetlands
+  - widlife
+  - wild_coast
+  - wildfires
+  - wildlife
+  - zones
+
+
+=== ALL CATEGORIES (alphabetical) ===
+  - Beta
+  - Boundaries
+  - Earth Observations
+  - Elevation and Bathymetry
+  - Fire
+  - Fire and Fuels
+  - Freshwater
+  - General Availability
+  - Infrastructure
+  - Land Cover
+  - Oceans and Coasts
+  - Research and Sensor Equipment
+  - Soils and Geology
+  - Species
+  - Weather and Climate
+
+
+=== SAMPLE TITLES (first 20) ===
+  - USA Legacy NLCD Land Cover
+  - Land Cover Vulnerability Change 2050 - Country
+  - NAIP 2005 1m California
+  - Chlorophyll-a
+  - World Soils 250m pH
+  - USA Annual NLCD - Land Cover
+  - Oil and Gas Wells (DOGGR)
+  - Cattle Pastures
+  - Natural Limits to Anadromy Jalama Watershed
+  - National Hydrography Dataset Plus High Resolution
+  - Streams
+  - NOAA Marine Protected Areas Inventory 2024
+  - JLDP_Roads_Live PUBLIC VIEW
+  - Burn Unit Vegetation Classes
+  - Cattle Troughs
+  - Vegetation Communities
+  - Stream Crossings
+  - Fish Passage Barriers Assessment
+  - Wetlands
+  - TREX Burn Units
+
+
+=== SUGGESTED MAPPINGS TO NEW TNC CATEGORIES ===
+
+
+⚠️  UNMAPPED TAGS:
+     - ""
+     - "2005"
+     - "2050"
+     - "ANLCD"
+     - "Analysis Result"
+     - "AnalysisOptimized"
+     - "Anderson"
+     - "Annual NLCD"
+     - "Aqueduct"
+     - "CA"
+     - "CAOpenData"
+     - "CDFG"
+     - "California"
+     - "California Natural Resources Agency"
+     - "Canal"
+     - "Chapter 7A"
+     - "DFG"
+     - "DOC"
+     - "DOI"
+     - "DS2968_20211210_wm"
+     - "Dangermond"
+     - "Department of Commerce"
+     - "Department of the Interior"
+     - "Derived Products"
+     - "EFH"
+     - "EHP"
+     - "Esri"
+     - "FGDC"
+     - "Falco peregrinus"
+     - "Federal Geospatial Data Committee"
+     - "Field Survey"
+     - "Flash Flood"
+     - "HAPC"
+     - "Hub Site"
+     - "ISRIC"
+     - "Impediment"
+     - "Join Features"
+     - "Live Feeds"
+     - "MRLC"
+     - "MSA"
+     - "Management"
+     - "NGDA"
+     - "NLCD"
+     - "National Geospatial Data Asset"
+     - "North America"
+     - "PEFA"
+     - "Point Conception"
+     - "Raster Analysis Result"
+     - "Raster Function Template result"
+     - "Reservoir"
+     - "SRA"
+     - "Santa Barbara County"
+     - "State Responsibility Area"
+     - "Thunderstorm"
+     - "Tornado"
+     - "U.S. Department of Commerce"
+     - "U.S. Department of the Interior"
+     - "U.S. Geological Survey"
+     - "UNEP"
+     - "USDA"
+     - "USDOC"
+     - "USDOI"
+     - "United States"
+     - "VMP"
+     - "WCMC"
+     - "Wetland"
+     - "agriculture"
+     - "annual"
+     - "aquatic"
+     - "authoritative"
+     - "barren"
+     - "bio-optics"
+     - "biota"
+     - "bird"
+     - "border"
+     - "borders"
+     - "breeding"
+     - "catchments"
+     - "change"
+     - "chemical"
+     - "classification"
+     - "communities"
+     - "conservation"
+     - "conservation_status"
+     - "contour"
+     - "copied with ago-assistant"
+     - "counties"
+     - "county"
+     - "county line"
+     - "cover"
+     - "cultivated"
+     - "dangermond"
+     - "deciduous"
+     - "density"
+     - "developed"
+     - "development"
+     - "earthobs3"
+     - "ecological_intactness"
+     - "ecoregions"
+     - "energy"
+     - "env1"
+     - "environment"
+     - "esri_earthobs"
+     - "esri_environment"
+     - "evergreen"
+     - "farm"
+     - "farmland"
+     - "faults"
+     - "federal"
+     - "folds"
+     - "fuel treatment"
+     - "geological survey"
+     - "global"
+     - "government"
+     - "grassland"
+     - "hosted"
+     - "hosted view"
+     - "human_disturbance"
+     - "infrastucture"
+     - "internal"
+     - "jackpot"
+     - "jldp"
+     - "land"
+     - "landslides"
+     - "livefeeds"
+     - "location"
+     - "magnitude"
+     - "management"
+     - "multidimensional"
+     - "natural color"
+     - "nest"
+     - "ngda"
+     - "oak"
+     - "observation"
+     - "ocs"
+     - "offshore"
+     - "open"
+     - "operations"
+     - "pH"
+     - "pasture"
+     - "pastures"
+     - "peregrine falcon"
+     - "physical_intactness"
+     - "pipelines"
+     - "platforms"
+     - "protection"
+     - "quaternary"
+     - "ranching"
+     - "resolve"
+     - "scrub"
+     - "sensitive"
+     - "shrub"
+     - "sourceId-59ff42b1eae64064abf256468da3c47b"
+     - "sourceId-7637792c510847dd886877ffdbfe425a"
+     - "sourceId-bfff8c07055944fd9c03539c3ff9fb19"
+     - "springs"
+     - "tanks"
+     - "terrestrial"
+     - "territory"
+     - "threatened"
+     - "weightedOverlayService"
+     - "weighted_raster_overlay"
+     - "wetlands"
+     - "widlife"
+     - "zones"
+
+⚠️  UNMAPPED CATEGORIES:
+     - "Beta"
+     - "General Availability"
+
+=== JSON OUTPUT (copy this to category_mappings.json) ===
+
+{
+  "main_categories": [
+    "Boundaries",
+    "Infrastructure",
+    "Research and Sensor Equipment",
+    "Earth Observations",
+    "Soils and Geology",
+    "Land Cover",
+    "Elevation and Bathymetry",
+    "Weather and Climate",
+    "Freshwater",
+    "Species",
+    "Threats and Hazards",
+    "Oceans and Coasts",
+    "Fire"
+  ],
+  "mappings": {
+    "tags": {
+      "Boundaries": [
+        "Dangermond Preserve",
+        "Dangermond_Preserve",
+        "Marine Boundaries",
+        "Marine Protected Areas",
+        "administrative",
+        "boundaries",
+        "boundary",
+        "county boundaries",
+        "county boundary",
+        "ownership"
+      ],
+      "Infrastructure": [
+        "Building Standards",
+        "Infrastructure",
+        "Rail",
+        "Railroad",
+        "Transportation",
+        "infrastructure",
+        "wells"
+      ],
+      "Research and Sensor Equipment": [
+        "monitoring",
+        "sensor",
+        "sensors"
+      ],
+      "Earth Observations": [
+        "NAIP",
+        "NAIPCDFW",
+        "aerial imagery",
+        "earth observations"
+      ],
+      "Soils and Geology": [
+        "Dibblee",
+        "Earthquake Hazards Program",
+        "SoilGrids250m",
+        "USGS",
+        "earthquakes",
+        "geology",
+        "soil",
+        "soilgrids",
+        "soilgrids.org",
+        "soils"
+      ],
+      "Land Cover": [
+        "California Forestry and Fire Protection",
+        "Essential Fish Habitat",
+        "Habitat Areas of Particular Concern",
+        "Land Cover",
+        "Oak_Restoration",
+        "Vegetation",
+        "Vegetation Communities",
+        "Vegetation management program",
+        "aquatic habitat",
+        "botany",
+        "criticial habitats",
+        "cropland",
+        "forest",
+        "habitat",
+        "habitat_species_diversity",
+        "habitats",
+        "land cover",
+        "landcover",
+        "landscape",
+        "landscape10",
+        "restoration",
+        "vegetation"
+      ],
+      "Elevation and Bathymetry": [
+        "topography"
+      ],
+      "Weather and Climate": [
+        "NOAA",
+        "NWS",
+        "NWS_Watches_Warnings",
+        "Severe Weather",
+        "Weather",
+        "climate",
+        "weather"
+      ],
+      "Freshwater": [
+        "Chlorophyll",
+        "Chlorophyll A",
+        "Chlorophyll-a",
+        "Creek",
+        "Dams",
+        "Freshwater",
+        "Lake",
+        "NHD",
+        "NHDPlus",
+        "Pond",
+        "River",
+        "Stream",
+        "Streams",
+        "Water - Oceans and Coasts",
+        "basins",
+        "freshwater",
+        "freshwater_public",
+        "groundwater",
+        "hydrology",
+        "streams",
+        "subwatersheds",
+        "water",
+        "watershed",
+        "watersheds"
+      ],
+      "Species": [
+        "Auth_CDFW",
+        "CDFW",
+        "California Department of Fish And Wildlife",
+        "California Department of Fish and Wildlife",
+        "Endangered Species Act",
+        "Essential Fish Habitat",
+        "FWS",
+        "Fish and Wildlife Service",
+        "Habitat Areas of Particular Concern",
+        "Magnuson-Stevens Fishery Conservation and Management Act",
+        "NAIPCDFW",
+        "U.S. Fish and Wildlife Service",
+        "USFWS",
+        "biodiversity",
+        "cattle",
+        "endangered",
+        "fish",
+        "fishing",
+        "habitat_species_diversity",
+        "species",
+        "wildlife"
+      ],
+      "Threats and Hazards": [
+        "Earthquake Hazards Program",
+        "Fire Hazard Severity Zones",
+        "SoilGrids250m",
+        "gas",
+        "hazards",
+        "herbaceous",
+        "oil",
+        "oil and gas",
+        "risk",
+        "soil",
+        "soilgrids",
+        "soilgrids.org",
+        "soils",
+        "subsurface"
+      ],
+      "Oceans and Coasts": [
+        "  coastal",
+        "BOEM",
+        "Coastal",
+        "Marine",
+        "Marine Boundaries",
+        "Marine Conservation Areas",
+        "Marine Protected Areas",
+        "National Oceanic and Atmospheric Administration",
+        "Ocean Conservation",
+        "Water - Oceans and Coasts",
+        "esri_oceans",
+        "marine",
+        "marine_protected_areas",
+        "oceans",
+        "wild_coast"
+      ],
+      "Fire": [
+        "CAL FIRE",
+        "California Forestry and Fire Protection",
+        "Control burns",
+        "FHSZ",
+        "FRAP",
+        "Fire",
+        "Fire Hazard Severity Zones",
+        "Fire and Fuels",
+        "JLDP_FireData",
+        "Prescribed fire",
+        "dangermond_fire",
+        "fire",
+        "fire perimeters",
+        "fire use",
+        "hand pile burns",
+        "jldp_firedata",
+        "machine pile burns",
+        "wildfires"
+      ]
+    },
+    "categories": {
+      "Boundaries": [
+        "Boundaries"
+      ],
+      "Infrastructure": [
+        "Infrastructure"
+      ],
+      "Research and Sensor Equipment": [
+        "Research and Sensor Equipment"
+      ],
+      "Earth Observations": [
+        "Earth Observations"
+      ],
+      "Soils and Geology": [
+        "Soils and Geology"
+      ],
+      "Land Cover": [
+        "Land Cover"
+      ],
+      "Elevation and Bathymetry": [
+        "Elevation and Bathymetry"
+      ],
+      "Weather and Climate": [
+        "Weather and Climate"
+      ],
+      "Freshwater": [
+        "Freshwater"
+      ],
+      "Species": [
+        "Species"
+      ],
+      "Threats and Hazards": [
+        "Soils and Geology"
+      ],
+      "Oceans and Coasts": [
+        "Oceans and Coasts"
+      ],
+      "Fire": [
+        "Fire",
+        "Fire and Fuels"
+      ]
+    }
+  }
+}

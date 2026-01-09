@@ -104,26 +104,26 @@ export function createDataDrivenTestScenarios(csvData: CSVRow[]): Array<{
     }
   })
 
-  // Add specific hydrological scenario as requested
-  const hydrologicalItems = filterCSVRows(csvData, { 
-    mainCategories: ['Hydrological']
+  // Add specific freshwater scenario as requested
+  const freshwaterItems = filterCSVRows(csvData, { 
+    mainCategories: ['Freshwater']
   })
   
-  if (hydrologicalItems.length > 0) {
+  if (freshwaterItems.length > 0) {
     scenarios.push({
-      name: 'Hydrological category with Dangermond Preserve spatial filter',
+      name: 'Freshwater category with Dangermond Preserve spatial filter',
       filters: {
-        category: 'Hydrological',
+        category: 'Freshwater',
         source: 'TNC ArcGIS Hub',
         spatialFilter: 'Dangermond Preserve',
         timeRange: 'Last 6 months',
         daysBack: 180,
         tags: []
       },
-      expectedItems: hydrologicalItems,
-      expectedCount: hydrologicalItems.length,
-      expectedCategories: ['Hydrological'],
-      expectedTypes: [...new Set(hydrologicalItems.map((item: CSVRow) => item.type || 'Unknown'))]
+      expectedItems: freshwaterItems,
+      expectedCount: freshwaterItems.length,
+      expectedCategories: ['Freshwater'],
+      expectedTypes: [...new Set(freshwaterItems.map((item: CSVRow) => item.type || 'Unknown'))]
     })
   }
 
@@ -149,26 +149,26 @@ export function createDataDrivenTestScenarios(csvData: CSVRow[]): Array<{
     })
   }
 
-  // Add marine scenario
-  const marineItems = filterCSVRows(csvData, { 
-    mainCategories: ['Marine']
+  // Add oceans and coasts scenario
+  const oceansItems = filterCSVRows(csvData, { 
+    mainCategories: ['Oceans and Coasts']
   })
   
-  if (marineItems.length > 0) {
+  if (oceansItems.length > 0) {
     scenarios.push({
-      name: 'Marine category with current view',
+      name: 'Oceans and Coasts category with current view',
       filters: {
-        category: 'Marine',
+        category: 'Oceans and Coasts',
         source: 'TNC ArcGIS Hub',
         spatialFilter: 'Current View',
         timeRange: 'Last 6 months',
         daysBack: 180,
         tags: []
       },
-      expectedItems: marineItems,
-      expectedCount: marineItems.length,
-      expectedCategories: ['Marine'],
-      expectedTypes: [...new Set(marineItems.map((item: CSVRow) => item.type || 'Unknown'))]
+      expectedItems: oceansItems,
+      expectedCount: oceansItems.length,
+      expectedCategories: ['Oceans and Coasts'],
+      expectedTypes: [...new Set(oceansItems.map((item: CSVRow) => item.type || 'Unknown'))]
     })
   }
 
@@ -189,7 +189,7 @@ export const mockCSVData: CSVRow[] = [
     owner: 'TNC',
     tags: 'Water;Streams;Hydrology;Monitoring',
     categories: '/Categories/Environment/Freshwater',
-    mainCategories: 'Hydrological',
+    mainCategories: 'Freshwater',
     collection: 'dataset',
     num_views: '150',
     size: '2048',
@@ -206,7 +206,7 @@ export const mockCSVData: CSVRow[] = [
     owner: 'TNC',
     tags: 'Watershed;Basins;Water;Drainage',
     categories: '/Categories/Environment/Freshwater',
-    mainCategories: 'Hydrological',
+    mainCategories: 'Freshwater',
     collection: 'dataset',
     num_views: '89',
     size: '1024',
@@ -223,7 +223,7 @@ export const mockCSVData: CSVRow[] = [
     owner: 'TNC',
     tags: 'Water;Quality;Monitoring;Dashboard',
     categories: '/Categories/Environment/Freshwater',
-    mainCategories: 'Hydrological',
+    mainCategories: 'Freshwater',
     collection: 'appAndMap',
     num_views: '234',
     size: '512',
@@ -273,8 +273,8 @@ export const mockCSVData: CSVRow[] = [
     url: 'https://services.arcgis.com/coastal-habitats',
     owner: 'TNC',
     tags: 'Marine;Coastal;Habitat;Monitoring',
-    categories: '/Categories/Environment/Marine',
-    mainCategories: 'Marine',
+    categories: '/Categories/Environment/Oceans and Coasts',
+    mainCategories: 'Oceans and Coasts',
     collection: 'dataset',
     num_views: '95',
     size: '1536',

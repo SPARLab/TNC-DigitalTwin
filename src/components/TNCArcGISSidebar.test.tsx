@@ -117,11 +117,11 @@ describe('TNCArcGISSidebar', () => {
       const filterButton = screen.getByTitle('Toggle filters')
       await user.click(filterButton)
 
-      // Click on Hydrological category filter
-      const hydroButton = screen.getByRole('button', { name: 'Hydrological' })
+      // Click on Freshwater category filter
+      const hydroButton = screen.getByRole('button', { name: 'Freshwater' })
       await user.click(hydroButton)
 
-      // Should show only hydrological items
+      // Should show only freshwater items
       expect(screen.getByText('Stream Network Data')).toBeInTheDocument()
       expect(screen.getByText('Watershed Boundaries')).toBeInTheDocument()
       expect(screen.queryByText('Fire History Map')).not.toBeInTheDocument()
@@ -154,7 +154,7 @@ describe('TNCArcGISSidebar', () => {
       const filterButton = screen.getByTitle('Toggle filters')
       await user.click(filterButton)
 
-      const hydroButton = screen.getByRole('button', { name: 'Hydrological' })
+      const hydroButton = screen.getByRole('button', { name: 'Freshwater' })
       await user.click(hydroButton)
 
       // Clear all filters

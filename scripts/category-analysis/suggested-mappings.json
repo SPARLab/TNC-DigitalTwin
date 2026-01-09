@@ -1,8 +1,4 @@
 {
-  "version": "2.0",
-  "description": "TNC Dangermond Preserve tag and category mappings to official TNC data categories",
-  "created": "2025-01-08",
-  "updated": "2025-01-08",
   "main_categories": [
     "Boundaries",
     "Infrastructure",
@@ -19,40 +15,6 @@
     "Fire"
   ],
   "mappings": {
-    "titles": {
-      "Land Cover": [
-        "Oak Restoration",
-        "Rangeland Management"
-      ],
-      "Species": [
-        "Species Lists",
-        "Ecology",
-        "Wildlife Cameras"
-      ],
-      "Earth Observations": [
-        "Imagery",
-        "Time-Series Data"
-      ],
-      "Boundaries": [
-        "Overview Maps",
-        "Maps and Apps"
-      ],
-      "Freshwater": [
-        "Freshwater",
-        "Jalachichi Ponds Restoration"
-      ],
-      "Oceans and Coasts": [
-        "Wild Coast"
-      ],
-      "Fire": [
-        "Preserve Fire"
-      ],
-      "Infrastructure": [
-        "Mobile Data Collection",
-        "Analytical Tools",
-        "Preserve Operations"
-      ]
-    },
     "tags": {
       "Boundaries": [
         "Dangermond Preserve",
@@ -64,21 +26,7 @@
         "boundary",
         "county boundaries",
         "county boundary",
-        "ownership",
-        "Administrative",
-        "Boundary",
-        "Boundaries",
-        "California",
-        "CA",
-        "Federal",
-        "CAOpenData",
-        "California Natural Resources Agency",
-        "Ownership",
-        "Location",
-        "Access",
-        "Point Conception",
-        "Santa Barbara County",
-        "North America"
+        "ownership"
       ],
       "Infrastructure": [
         "Building Standards",
@@ -87,10 +35,7 @@
         "Railroad",
         "Transportation",
         "infrastructure",
-        "wells",
-        "Structures",
-        "Utilities",
-        "Agriculture"
+        "wells"
       ],
       "Research and Sensor Equipment": [
         "monitoring",
@@ -101,22 +46,7 @@
         "NAIP",
         "NAIPCDFW",
         "aerial imagery",
-        "earth observations",
-        "Imagery",
-        "Earth Observations",
-        "Basemap Imagery",
-        "European Space Agency",
-        "Live Feeds",
-        "Esri",
-        "Living Atlas",
-        "Raster Analysis Result",
-        "Raster Function Template Result",
-        "WeightedOverlayService",
-        "Weighted_raster_overlay",
-        "Analysis Result",
-        "Digital_coast",
-        "2005",
-        "2050"
+        "earth observations"
       ],
       "Soils and Geology": [
         "Dibblee",
@@ -128,14 +58,7 @@
         "soil",
         "soilgrids",
         "soilgrids.org",
-        "soils",
-        "Topography",
-        "Geology",
-        "Soils",
-        "Soils And Geology",
-        "U.S. Geological Survey",
-        "ISRIC",
-        "EHP"
+        "soils"
       ],
       "Land Cover": [
         "California Forestry and Fire Protection",
@@ -159,25 +82,10 @@
         "landscape",
         "landscape10",
         "restoration",
-        "vegetation",
-        "Habitat",
-        "Habitat_species_diversity",
-        "Forest",
-        "Landcover",
-        "Cropland",
-        "Botany",
-        "Restoration",
-        "Conservation",
-        "Conservation_status",
-        "Conserved Areas",
-        "Terrestrial",
-        "Landscape",
-        "Communities",
-        "Ecosystems"
+        "vegetation"
       ],
       "Elevation and Bathymetry": [
-        "topography",
-        "Topography"
+        "topography"
       ],
       "Weather and Climate": [
         "NOAA",
@@ -186,14 +94,7 @@
         "Severe Weather",
         "Weather",
         "climate",
-        "weather",
-        "Climate",
-        "Climate Change",
-        "Change",
-        "Flash Flood",
-        "Thunderstorm",
-        "Tornado",
-        "National Oceanic And Atmospheric Administration"
+        "weather"
       ],
       "Freshwater": [
         "Chlorophyll",
@@ -219,16 +120,7 @@
         "subwatersheds",
         "water",
         "watershed",
-        "watersheds",
-        "Water",
-        "Hydrology",
-        "Hydrography",
-        "Basins",
-        "Watershed",
-        "Reservoir",
-        "Canal",
-        "Aqueduct",
-        "Impediment"
+        "watersheds"
       ],
       "Species": [
         "Auth_CDFW",
@@ -251,19 +143,7 @@
         "fishing",
         "habitat_species_diversity",
         "species",
-        "wildlife",
-        "Species",
-        "Biodiversity",
-        "Fish",
-        "Cattle",
-        "Ecological_intactness",
-        "Physical_intactness",
-        "Marine_protected_areas",
-        "ESA",
-        "EFH",
-        "HAPC",
-        "PEFA",
-        "Falco Peregrinus"
+        "wildlife"
       ],
       "Threats and Hazards": [
         "Earthquake Hazards Program",
@@ -279,18 +159,7 @@
         "soilgrids",
         "soilgrids.org",
         "soils",
-        "subsurface",
-        "Wells",
-        "Oil",
-        "Gas",
-        "Energy Resources",
-        "DOC",
-        "Department Of Commerce",
-        "U.S. Department Of Commerce",
-        "CCED",
-        "Areas Of Conservation Emphasis",
-        "ACE",
-        "30x30"
+        "subsurface"
       ],
       "Oceans and Coasts": [
         "  coastal",
@@ -307,11 +176,7 @@
         "marine",
         "marine_protected_areas",
         "oceans",
-        "wild_coast",
-        "Oceans",
-        "Esri_oceans",
-        "Wild_coast",
-        "OSC"
+        "wild_coast"
       ],
       "Fire": [
         "CAL FIRE",
@@ -331,95 +196,50 @@
         "hand pile burns",
         "jldp_firedata",
         "machine pile burns",
-        "wildfires",
-        "Jldp_firedata",
-        "Fire And Fuels",
-        "California Forestry And Fire Protection",
-        "Control Burns",
-        "Prescribed Fire",
-        "SRA",
-        "State Responsibility Area"
+        "wildfires"
       ]
     },
     "categories": {
       "Boundaries": [
-        "Boundaries",
-        "Administrative",
-        "Reference Maps",
-        "Access"
+        "Boundaries"
       ],
       "Infrastructure": [
-        "Infrastructure",
-        "Structures",
-        "Transportation",
-        "Utilities"
+        "Infrastructure"
       ],
       "Research and Sensor Equipment": [
         "Research and Sensor Equipment"
       ],
       "Earth Observations": [
-        "Earth Observations",
-        "Imagery",
-        "Basemap Imagery",
-        "Basemaps"
+        "Earth Observations"
       ],
       "Soils and Geology": [
-        "Soils and Geology",
-        "Soils And Geology"
+        "Soils and Geology"
       ],
       "Land Cover": [
-        "Land Cover",
-        "Habitat",
-        "Ecosystems",
-        "Agriculture",
-        "Conserved Areas"
+        "Land Cover"
       ],
       "Elevation and Bathymetry": [
         "Elevation and Bathymetry"
       ],
       "Weather and Climate": [
-        "Weather and Climate",
-        "Climate"
+        "Weather and Climate"
       ],
       "Freshwater": [
-        "Freshwater",
-        "Hydrography"
+        "Freshwater"
       ],
       "Species": [
-        "Species",
-        "Biodiversity",
-        "Environment",
-        "Environmental"
+        "Species"
       ],
       "Threats and Hazards": [
-        "Energy Resources"
+        "Soils and Geology"
       ],
       "Oceans and Coasts": [
-        "Oceans and Coasts",
-        "Oceans"
+        "Oceans and Coasts"
       ],
       "Fire": [
         "Fire",
-        "Fire and Fuels",
-        "Fire And Fuels"
+        "Fire and Fuels"
       ]
-    }
-  },
-  "metadata": {
-    "total_tnc_items_analyzed": 105,
-    "total_unique_tags": 306,
-    "total_unique_categories": 15,
-    "mapped_tags": 306,
-    "mapped_categories": 15,
-    "unmapped_tnc_categories": [
-      "Beta",
-      "General Availability"
-    ],
-    "notes": {
-      "tag_mapping_strategy": "Automated keyword matching plus manual review",
-      "category_mapping_strategy": "Direct mapping to official TNC categories",
-      "usage": "Use this mapping to categorize TNC data items based on their tags and categories fields",
-      "arcgis_status": "ArcGIS Hub already uses official TNC category labels - no backend changes needed"
     }
   }
 }

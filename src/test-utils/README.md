@@ -31,8 +31,8 @@ The testing framework is built using:
 
 The integration tests verify that specific filter combinations produce expected results:
 
-1. **Hydrological + Dangermond Preserve + Last 6 months**
-   - Should return hydrological datasets
+1. **Freshwater + Dangermond Preserve + Last 6 months**
+   - Should return freshwater datasets
    - Should show MAP_LAYER and EXTERNAL_LINK UI patterns
    - Should enable layer toggling for map services
 
@@ -41,13 +41,13 @@ The integration tests verify that specific filter combinations produce expected 
    - Should show MAP_LAYER and MODAL UI patterns
    - Should handle StoryMap content in modals
 
-3. **Vegetation + Current View + Custom Date Range**
-   - Should return vegetation/habitat datasets
+3. **Land Cover + Current View + Custom Date Range**
+   - Should return land cover/habitat datasets
    - Should respect custom date filtering
    - Should show appropriate UI patterns
 
-4. **Marine + Draw Area + Last 6 months**
-   - Should return marine datasets
+4. **Oceans and Coasts + Draw Area + Last 6 months**
+   - Should return oceans and coasts datasets
    - Should handle spatial filtering
    - Should show map layer controls
 
@@ -61,7 +61,7 @@ The `tncArcGISService.test.ts` covers:
   - Filtering out Hub Pages from results
 
 - **Category Mapping**
-  - Mapping tags to main categories (e.g., "Water" → "Hydrological")
+  - Mapping tags to main categories (e.g., "Water" → "Freshwater")
   - Mapping hierarchical categories to main categories
   - Handling multiple category assignments
 
@@ -110,7 +110,7 @@ The component tests verify:
 const mockItem = createMockTNCArcGISItem({
   title: 'Custom Title',
   type: 'Feature Service',
-  mainCategories: ['Hydrological']
+  mainCategories: ['Freshwater']
 })
 
 // Create a collection of mock items
@@ -118,7 +118,7 @@ const mockCollection = createMockTNCItemCollection()
 
 // Create mock filter state
 const mockFilters = createMockFilterState({
-  category: 'Hydrological',
+  category: 'Freshwater',
   spatialFilter: 'Dangermond Preserve'
 })
 ```
@@ -130,8 +130,8 @@ Pre-defined test scenarios are available in `filterTestScenarios`:
 ```typescript
 const scenario = filterTestScenarios[0]
 // {
-//   name: 'Hydrological category with Dangermond Preserve spatial filter',
-//   filters: { category: 'Hydrological', ... },
+//   name: 'Freshwater category with Dangermond Preserve spatial filter',
+//   filters: { category: 'Freshwater', ... },
 //   expectedItemCount: 3,
 //   expectedUIPatterns: ['MAP_LAYER', 'EXTERNAL_LINK']
 // }

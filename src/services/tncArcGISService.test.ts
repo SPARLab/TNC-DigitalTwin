@@ -138,7 +138,7 @@ describe('TNCArcGISService', () => {
               snippet: 'Water quality snippet',
               url: 'https://example.com/water',
               owner: 'TNC',
-              tags: ['Water', 'Streams', 'Hydrology'], // Should map to Hydrological
+              tags: ['Water', 'Streams', 'Hydrology'], // Should map to Freshwater
               categories: []
             }
           },
@@ -168,7 +168,7 @@ describe('TNCArcGISService', () => {
       const hydroItem = result.results.find(item => item.id === 'hydro-item')
       const fireItem = result.results.find(item => item.id === 'fire-item')
 
-      expect(hydroItem?.mainCategories).toContain('Hydrological')
+      expect(hydroItem?.mainCategories).toContain('Freshwater')
       expect(fireItem?.mainCategories).toContain('Fire')
     })
 
@@ -185,7 +185,7 @@ describe('TNCArcGISService', () => {
               url: 'https://example.com/freshwater',
               owner: 'TNC',
               tags: [],
-              categories: ['/Categories/Environment/Freshwater'] // Should map to Hydrological
+              categories: ['/Categories/Environment/Freshwater'] // Should map to Freshwater
             }
           }
         ]
@@ -199,7 +199,7 @@ describe('TNCArcGISService', () => {
       const result = await tncArcGISAPI.getDatasets()
 
       const item = result.results[0]
-      expect(item.mainCategories).toContain('Hydrological')
+      expect(item.mainCategories).toContain('Freshwater')
     })
   })
 
@@ -320,12 +320,12 @@ describe('TNCArcGISService', () => {
       }])
 
       const result = await tncArcGISAPI.getDatasets({
-        categoryFilter: ['Hydrological']
+        categoryFilter: ['Freshwater']
       })
 
-      // All returned items should have Hydrological in their main categories
+      // All returned items should have Freshwater in their main categories
       result.results.forEach(item => {
-        expect(item.mainCategories).toContain('Hydrological')
+        expect(item.mainCategories).toContain('Freshwater')
       })
     })
 
@@ -456,10 +456,10 @@ describe('TNCArcGISService', () => {
     it('should return main categories', () => {
       const categories = tncArcGISAPI.getMainCategories()
       
-      expect(categories).toContain('Hydrological')
+      expect(categories).toContain('Freshwater')
       expect(categories).toContain('Fire')
-      expect(categories).toContain('Marine')
-      expect(categories).toContain('Vegetation / habitat')
+      expect(categories).toContain('Oceans and Coasts')
+      expect(categories).toContain('Land Cover')
     })
 
     it('should return data types with UI patterns', () => {

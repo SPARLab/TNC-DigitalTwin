@@ -647,7 +647,7 @@ function App() {
       dataSource: 'drone-imagery' as const,
       title: `${project.projectName} (${project.layerCount} ${project.layerCount === 1 ? 'capture' : 'captures'})`,
       coreFilters: {
-        category: 'Real-time & Remote Sensing',
+        category: 'Earth Observations',
         source: 'Drone Imagery',
         spatialFilter: 'Dangermond Preserve',
         timeRange,
@@ -1434,7 +1434,7 @@ function App() {
       const searchTNCArcGIS = async () => {
         setTncArcGISLoading(true);
         try {
-          const categoryFilter = filters.category !== 'Wildlife' && filters.category !== 'Vegetation' 
+          const categoryFilter = filters.category !== 'Species' && filters.category !== 'Land Cover' 
             ? [filters.category] 
             : undefined;
           
@@ -1550,8 +1550,8 @@ function App() {
     } else if (filters.source === 'iNaturalist (TNC Layers)') {
       // Handle TNC iNaturalist search
       let taxonCategories: string[] = [];
-      if (filters.category === 'Vegetation') {
-        taxonCategories = ['Plantae']; // Only show plant observations for Vegetation category
+      if (filters.category === 'Land Cover') {
+        taxonCategories = ['Plantae']; // Only show plant observations for Land Cover category
       }
       // For Wildlife category, don't filter by taxon categories to show all animals
       
@@ -1828,10 +1828,10 @@ function App() {
       // Handle iNaturalist Public API search
       // Filter by iconic taxa based on category
       let iconicTaxa: string[] = [];
-      if (filters.category === 'Vegetation') {
-        iconicTaxa = ['Plantae']; // Only show Flora observations for Vegetation category
+      if (filters.category === 'Land Cover') {
+        iconicTaxa = ['Plantae']; // Only show Flora observations for Land Cover category
       }
-      // For Wildlife category, don't filter by iconic taxa to show all animals
+      // For Species category, don't filter by iconic taxa to show all animals
       
       // Check for custom polygon (client-side filtering for iNaturalist Public API)
       let customPolygonGeometry: string | undefined = undefined;

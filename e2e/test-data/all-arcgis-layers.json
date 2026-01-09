@@ -32,8 +32,8 @@
       "categories": [
         "Infrastructure",
         "Fire",
-        "Land use and land (geography?)",
-        "Vegetation / habitat"
+        "Boundaries",
+        "Land Cover"
       ],
       "expectedResults": {
         "showsInCategories": null,
@@ -54,7 +54,7 @@
       "type": "FeatureService",
       "categories": [
         "Fire",
-        "Land use and land (geography?)"
+        "Boundaries"
       ],
       "expectedResults": {
         "showsInCategories": null,
@@ -94,8 +94,8 @@
       "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_pastures_(Public)/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Ecological / Biological (Species?)",
-        "Vegetation / habitat"
+        "Species",
+        "Land Cover"
       ],
       "expectedResults": {
         "showsInCategories": null,
@@ -133,8 +133,8 @@
       "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/Coastal_and_Marine/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Marine",
-        "Ecological / Biological (Species?)"
+        "Oceans and Coasts",
+        "Species"
       ],
       "expectedResults": {
         "showsInCategories": null,
@@ -154,7 +154,7 @@
       "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_2m_contours/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Real-time & Remote Sensing"
+        "Earth Observations"
       ],
       "expectedResults": {
         "showsInCategories": null,
@@ -174,7 +174,7 @@
       "url": "https://services.arcgis.com/QVENGdaPbd4LUkLV/arcgis/rest/services/USFWS_Critical_Habitat/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Ecological / Biological (Species?)"
+        "Species"
       ],
       "expectedResults": {
         "showsInCategories": null,
@@ -212,7 +212,7 @@
       "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_boundary_WGS/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Land use and land (geography?)"
+        "Boundaries"
       ],
       "expectedResults": {
         "showsInCategories": null,
@@ -232,7 +232,7 @@
       "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_boundary/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Land use and land (geography?)"
+        "Boundaries"
       ],
       "expectedResults": {
         "showsInCategories": null,
@@ -252,8 +252,8 @@
       "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_dibblee_geology/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Topographic",
-        "Land use and land (geography?)"
+        "Soils and Geology",
+        "Boundaries"
       ],
       "expectedResults": {
         "showsInCategories": null,
@@ -273,7 +273,7 @@
       "url": "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/Earthquake_Faults_and_Folds_in_the_USA/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Topographic"
+        "Soils and Geology"
       ],
       "expectedResults": {
         "showsInCategories": null,
@@ -293,7 +293,7 @@
       "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_fish_passage_barriers/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Hydrological"
+        "Freshwater"
       ],
       "expectedResults": {
         "showsInCategories": null,
@@ -352,7 +352,7 @@
       "type": "FeatureService",
       "categories": [
         "Infrastructure",
-        "Hydrological"
+        "Freshwater"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -372,9 +372,9 @@
       "url": "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/Habitat_Areas_of_Particular_Concern_1/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Climate / weather",
-        "Ecological / Biological (Species?)",
-        "Hazards & Resilience"
+        "Weather and Climate",
+        "Species",
+        "Threats and Hazards"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -487,7 +487,7 @@
       "type": "FeatureService",
       "categories": [
         "Fire",
-        "Land use and land (geography?)"
+        "Boundaries"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -543,8 +543,8 @@
       "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_jalamawatershed/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Ecological / Biological (Species?)",
-        "Hydrological"
+        "Species",
+        "Freshwater"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -582,7 +582,7 @@
       "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_major_watersheds_(Public)/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Ecological / Biological (Species?)"
+        "Species"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -602,7 +602,7 @@
       "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_minor_watersheds/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Ecological / Biological (Species?)"
+        "Species"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -622,8 +622,8 @@
       "url": "https://services2.arcgis.com/C8EMgrsFcRFL6LrL/arcgis/rest/services/NOAA_MPA_Inventory_2023/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Marine",
-        "Land use and land (geography?)"
+        "Oceans and Coasts",
+        "Boundaries"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -643,7 +643,7 @@
       "url": "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/NHDPlus_High_Resolution_9March2023_view/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Hydrological"
+        "Freshwater"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -681,7 +681,7 @@
       "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_oak_restoration_areas_(Public)/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Ecological / Biological (Species?)"
+        "Species"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -719,8 +719,8 @@
       "url": "https://services2.arcgis.com/Uq9r85Potqm3MfRV/arcgis/rest/services/biosds2968_fpu/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Ecological / Biological (Species?)",
-        "Land use and land (geography?)"
+        "Species",
+        "Boundaries"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -758,8 +758,8 @@
       "url": "https://www.sciencebase.gov/arcgis/rest/services/Catalog/58a37135e4b0c8251287616d/MapServer/3",
       "type": "FeatureService",
       "categories": [
-        "Marine",
-        "Land use and land (geography?)"
+        "Oceans and Coasts",
+        "Boundaries"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -779,7 +779,7 @@
       "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_restoration_areas/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Land use and land (geography?)"
+        "Boundaries"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -817,7 +817,7 @@
       "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_sensitive_vegcommunites/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Vegetation / habitat"
+        "Land Cover"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -873,7 +873,7 @@
       "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_springs_(Public)/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Hydrological"
+        "Freshwater"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -894,8 +894,8 @@
       "type": "FeatureService",
       "categories": [
         "Infrastructure",
-        "Hydrological",
-        "Vegetation / habitat"
+        "Freshwater",
+        "Land Cover"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -915,8 +915,8 @@
       "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_stream_crossings_(Internal)/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Hydrological",
-        "Vegetation / habitat"
+        "Freshwater",
+        "Land Cover"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -936,7 +936,7 @@
       "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/jldp_nhd24kflowlines_streams/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Hydrological"
+        "Freshwater"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -1014,7 +1014,7 @@
       "url": "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_OCS_Oil_and_Gas_Pipelines/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Marine"
+        "Oceans and Coasts"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -1034,8 +1034,8 @@
       "url": "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/NWS_Watches_Warnings_v1/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Climate / weather",
-        "Real-time & Remote Sensing"
+        "Weather and Climate",
+        "Earth Observations"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -1130,7 +1130,7 @@
       "type": "FeatureService",
       "categories": [
         "Infrastructure",
-        "Vegetation / habitat"
+        "Land Cover"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -1168,7 +1168,7 @@
       "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/Join_Features_to_jldp_oak_restoration_plantings/FeatureServer",
       "type": "FeatureService",
       "categories": [
-        "Real-time & Remote Sensing"
+        "Earth Observations"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -1188,7 +1188,7 @@
       "url": "https://earthobs3.arcgis.com/arcgis/rest/services/Chlorophyll/ImageServer",
       "type": "ImageService",
       "categories": [
-        "Hydrological"
+        "Freshwater"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -1208,9 +1208,9 @@
       "url": "https://env1.arcgis.com/arcgis/rest/services/Land_Cover_Vulnerability_2050/ImageServer",
       "type": "ImageService",
       "categories": [
-        "Ecological / Biological (Species?)",
-        "Real-time & Remote Sensing",
-        "Vegetation / habitat"
+        "Species",
+        "Earth Observations",
+        "Land Cover"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -1230,9 +1230,9 @@
       "url": "https://map.dfg.ca.gov/ArcGIS/rest/services/Base_Remote_Sensing/NAIP_2005/ImageServer",
       "type": "ImageService",
       "categories": [
-        "Land use and land (geography?)",
-        "Ecological / Biological (Species?)",
-        "Real-time & Remote Sensing"
+        "Boundaries",
+        "Species",
+        "Earth Observations"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -1252,7 +1252,7 @@
       "url": "https://di-nlcd.img.arcgis.com/arcgis/rest/services/USA_NLCD_Annual_LandCover/ImageServer",
       "type": "ImageService",
       "categories": [
-        "Topographic"
+        "Soils and Geology"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -1272,7 +1272,7 @@
       "url": "https://landscape10.arcgis.com/arcgis/rest/services/USA_NLCD_Land_Cover/ImageServer",
       "type": "ImageService",
       "categories": [
-        "Topographic"
+        "Soils and Geology"
       ],
       "expectedResults": {
         "showsInCategories": true,
@@ -1292,8 +1292,8 @@
       "url": "https://tiledimageservices.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/WorldSoils250m_pH1/ImageServer",
       "type": "ImageService",
       "categories": [
-        "Topographic",
-        "Real-time & Remote Sensing"
+        "Soils and Geology",
+        "Earth Observations"
       ],
       "expectedResults": {
         "showsInCategories": true,

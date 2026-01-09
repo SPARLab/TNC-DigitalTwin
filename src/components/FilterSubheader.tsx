@@ -16,7 +16,9 @@ import {
   Flame,
   Truck,
   ShieldAlert,
-  Tag
+  Tag,
+  Satellite,
+  TriangleRight
 } from 'lucide-react';
 import { FilterState } from '../types';
 import { formatDateRange, formatDateRangeCompact, getTimeRangeOptions, formatDateToUS } from '../utils/dateUtils';
@@ -57,28 +59,32 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
   // Map categories to icons with colors
   const getCategoryIcon = (category: string) => {
     switch (category) {
-      case 'Vegetation / habitat':
+      case 'Boundaries':
+        return <Globe className="w-4 h-4 flex-shrink-0 text-purple-600" />;
+      case 'Infrastructure':
+        return <Truck className="w-4 h-4 flex-shrink-0 text-slate-600" />;
+      case 'Research and Sensor Equipment':
+        return <Radio className="w-4 h-4 flex-shrink-0 text-indigo-600" />;
+      case 'Earth Observations':
+        return <Satellite className="w-4 h-4 flex-shrink-0 text-purple-500" />;
+      case 'Soils and Geology':
+        return <Mountain className="w-4 h-4 flex-shrink-0 text-amber-700" />;
+      case 'Land Cover':
         return <TreeDeciduous className="w-4 h-4 flex-shrink-0 text-green-600" />;
-      case 'Ecological / Biological (Species?)':
-        return <Bug className="w-4 h-4 flex-shrink-0 text-blue-500" />;
-      case 'Real-time & Remote Sensing':
-        return <Radio className="w-4 h-4 flex-shrink-0 text-purple-600" />;
-      case 'Land use and land (geography?)':
-        return <Globe className="w-4 h-4 flex-shrink-0 text-amber-600" />;
-      case 'Climate / weather':
+      case 'Elevation and Bathymetry':
+        return <TriangleRight className="w-4 h-4 flex-shrink-0 text-orange-600" />;
+      case 'Weather and Climate':
         return <CloudRain className="w-4 h-4 flex-shrink-0 text-sky-500" />;
-      case 'Hydrological':
+      case 'Freshwater':
         return <Droplets className="w-4 h-4 flex-shrink-0 text-blue-600" />;
-      case 'Topographic':
-        return <Mountain className="w-4 h-4 flex-shrink-0 text-orange-600" />;
-      case 'Marine':
+      case 'Species':
+        return <Bug className="w-4 h-4 flex-shrink-0 text-blue-500" />;
+      case 'Threats and Hazards':
+        return <ShieldAlert className="w-4 h-4 flex-shrink-0 text-yellow-600" />;
+      case 'Oceans and Coasts':
         return <Waves className="w-4 h-4 flex-shrink-0 text-teal-600" />;
       case 'Fire':
         return <Flame className="w-4 h-4 flex-shrink-0 text-red-600" />;
-      case 'Infrastructure':
-        return <Truck className="w-4 h-4 flex-shrink-0 text-slate-600" />;
-      case 'Hazards & Resilience':
-        return <ShieldAlert className="w-4 h-4 flex-shrink-0 text-yellow-600" />;
       default:
         return <Database className="w-4 h-4 flex-shrink-0 text-gray-400" />;
     }

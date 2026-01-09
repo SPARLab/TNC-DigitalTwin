@@ -47,7 +47,7 @@ describe('CSV Parser - TNC Data', () => {
     fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5)
     
     const recentHydro = rows.filter((row: any) => {
-      const isHydrological = row['Mapped Categories']?.includes('Hydrological')
+      const isHydrological = row['Mapped Categories']?.includes('Hydrological') // Legacy CSV category
       const createdDate = new Date(row['Created Date'] || '')
       return isHydrological && createdDate >= fiveYearsAgo
     })

@@ -7,7 +7,7 @@ export const mockDatasets: Dataset[] = [
     description: 'Motion-activated camera data capturing wildlife behavior and population dynamics across 45 monitoring stations.',
     source: 'iNaturalist',
     date: 'Jan 2023',
-    category: 'Wildlife',
+    category: 'Species',
     icon: '🦌'
   },
   {
@@ -16,7 +16,7 @@ export const mockDatasets: Dataset[] = [
     description: 'High-resolution satellite imagery analysis of vegetation patterns and seasonal changes.',
     source: 'ArcGIS Hub',
     date: 'Mar 2023',
-    category: 'Vegetation',
+    category: 'Land Cover',
     icon: '🌿'
   },
   {
@@ -25,7 +25,7 @@ export const mockDatasets: Dataset[] = [
     description: 'Continuous water level and flow rate measurements from 12 stream gauging stations.',
     source: 'USGS',
     date: 'Ongoing',
-    category: 'Hydrology',
+    category: 'Freshwater',
     icon: '💧'
   },
   {
@@ -34,7 +34,7 @@ export const mockDatasets: Dataset[] = [
     description: 'Temperature, humidity, and precipitation measurements from weather stations.',
     source: 'NOAA',
     date: '2020-2024',
-    category: 'Climate',
+    category: 'Weather and Climate',
     icon: '🌡️'
   }
 ];

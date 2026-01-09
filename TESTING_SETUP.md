@@ -4,7 +4,7 @@
 
 I've successfully set up a comprehensive testing framework for the TNC ArcGIS Hub integration in the Dangermond Preserve Data Catalog. The framework is designed to test the specific filter parameter combinations you mentioned, particularly focusing on scenarios like:
 
-- **Hydrological category** + **TNC ArcGIS Hub** + **Dangermond Preserve spatial filter** + **time range** → Expected datasets
+- **Freshwater category** + **TNC ArcGIS Hub** + **Dangermond Preserve spatial filter** + **time range** → Expected datasets
 
 ## What's Been Implemented
 
@@ -69,11 +69,11 @@ I've successfully set up a comprehensive testing framework for the TNC ArcGIS Hu
 The testing framework includes pre-defined scenarios that match your requirements:
 
 ```typescript
-// Example: Hydrological + Dangermond Preserve + Last 6 months
+// Example: Freshwater + Dangermond Preserve + Last 6 months
 {
-  name: 'Hydrological category with Dangermond Preserve spatial filter',
+  name: 'Freshwater category with Dangermond Preserve spatial filter',
   filters: {
-    category: 'Hydrological',
+    category: 'Freshwater',
     source: 'TNC ArcGIS Hub',
     spatialFilter: 'Dangermond Preserve',
     timeRange: 'Last 6 months'
@@ -86,13 +86,13 @@ The testing framework includes pre-defined scenarios that match your requirement
 ### **Mock Data Validation**
 
 The tests verify that when you select:
-- **Category**: "Hydrological" 
+- **Category**: "Freshwater" 
 - **Source**: "TNC ArcGIS Hub"
 - **Spatial Filter**: "Dangermond Preserve"
 - **Time Range**: "Last 6 months"
 
 You get:
-- ✅ 3 hydrological datasets
+- ✅ 3 freshwater datasets
 - ✅ Mix of MAP_LAYER and EXTERNAL_LINK UI patterns
 - ✅ Proper item titles (Stream Network Data, Watershed Boundaries, Water Quality Dashboard)
 - ✅ Correct categorization and tagging
@@ -171,11 +171,11 @@ Since you mentioned working on backend CSV outputs, the testing framework is rea
 ## Example Test Usage
 
 ```typescript
-// Test that Hydrological filter works correctly
-it('should return hydrological datasets for specific filters', () => {
+// Test that Freshwater filter works correctly
+it('should return freshwater datasets for specific filters', () => {
   const mockItems = createMockTNCItemCollection()
   const hydroItems = mockItems.filter(item =>
-    item.mainCategories.includes('Hydrological')
+    item.mainCategories.includes('Freshwater')
   )
   
   expect(hydroItems).toHaveLength(3)
@@ -213,7 +213,7 @@ test: implement comprehensive testing framework for TNC ArcGIS integration
 - Add documentation and examples
 
 Covers key scenarios:
-- Hydrological + Dangermond Preserve + time filters
+- Freshwater + Dangermond Preserve + time filters
 - Category mapping and UI pattern detection
 - Error handling and rate limiting
 - Export functionality framework

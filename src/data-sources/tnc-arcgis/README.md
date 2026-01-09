@@ -4,19 +4,21 @@ This data source integrates with the TNC Dangermond Preserve ArcGIS Hub to provi
 
 ## Overview
 
-The TNC ArcGIS Hub contains 93+ data items (excluding Hub Pages) organized into various categories including:
+The TNC ArcGIS Hub contains 93+ data items (excluding Hub Pages) organized into 13 official TNC categories:
 
-- **Vegetation / habitat** - Land cover, ecosystems, conservation areas
-- **Ecological / Biological (Species?)** - Biodiversity, species data, wildlife
-- **Real-time & Remote Sensing** - Imagery, earth observations, basemaps
-- **Land use and land (geography?)** - Boundaries, administrative data, ownership
-- **Climate / weather** - Climate data, weather information
-- **Hydrological** - Water resources, streams, watersheds
-- **Topographic** - Geology, soils, elevation data
-- **Marine** - Ocean data, coastal information
+- **Species** - Biodiversity, wildlife, species observations
+- **Land Cover** - Vegetation, ecosystems, conservation areas
+- **Earth Observations** - Imagery, remote sensing, basemaps
+- **Research and Sensor Equipment** - Monitoring stations, sensors, camera traps
+- **Boundaries** - Administrative boundaries, ownership, preserve extent
+- **Weather and Climate** - Climate data, weather information
+- **Freshwater** - Water resources, streams, watersheds
+- **Soils and Geology** - Geology, soils, subsurface data
+- **Elevation and Bathymetry** - Topography, elevation models, LiDAR
+- **Oceans and Coasts** - Marine data, coastal information
 - **Fire** - Fire data, hazard zones, prescribed burns
 - **Infrastructure** - Transportation, utilities, structures
-- **Hazards & Resilience** - Energy resources, conservation emphasis areas
+- **Threats and Hazards** - Energy resources, hazards, conservation emphasis areas
 
 ## API Endpoints
 

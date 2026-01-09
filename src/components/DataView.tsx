@@ -255,9 +255,9 @@ const DataView: React.FC<DataViewProps> = ({
     const key = `${filters.category}-${filters.source}`;
     
     switch (key) {
-      // iNaturalist Public API - supports both Ecological/Biological and Vegetation categories
-      case 'Ecological / Biological (Species?)-iNaturalist (Public API)':
-      case 'Vegetation / habitat-iNaturalist (Public API)':
+      // iNaturalist Public API - supports both Species and Land Cover categories
+      case 'Species-iNaturalist (Public API)':
+      case 'Land Cover-iNaturalist (Public API)':
         return (
           <WildlifeINaturalistView
             observations={observations}
@@ -276,9 +276,9 @@ const DataView: React.FC<DataViewProps> = ({
           />
         );
 
-      // iNaturalist TNC Layers - supports both Ecological/Biological and Vegetation categories
-      case 'Ecological / Biological (Species?)-iNaturalist (TNC Layers)':
-      case 'Vegetation / habitat-iNaturalist (TNC Layers)':
+      // iNaturalist TNC Layers - supports both Species and Land Cover categories
+      case 'Species-iNaturalist (TNC Layers)':
+      case 'Land Cover-iNaturalist (TNC Layers)':
         return (
           <WildlifeTNCINaturalistView
             observations={tncObservations}
@@ -299,8 +299,8 @@ const DataView: React.FC<DataViewProps> = ({
           />
         );
         
-      // eBird - Ecological/Biological category
-      case 'Ecological / Biological (Species?)-eBird':
+      // eBird - Species category
+      case 'Species-eBird':
         return (
           <WildlifeEBirdView
             observations={eBirdObservations}
@@ -317,8 +317,8 @@ const DataView: React.FC<DataViewProps> = ({
           />
         );
         
-      // CalFlora - Vegetation/habitat category
-      case 'Vegetation / habitat-CalFlora':
+      // CalFlora - Land Cover category
+      case 'Land Cover-CalFlora':
         return (
           <VegetationCalFloraView
             plants={calFloraPlants}
@@ -332,17 +332,19 @@ const DataView: React.FC<DataViewProps> = ({
         );
 
       // TNC ArcGIS Hub cases
-      case 'Vegetation / habitat-TNC ArcGIS Hub':
-      case 'Ecological / Biological (Species?)-TNC ArcGIS Hub':
-      case 'Real-time & Remote Sensing-TNC ArcGIS Hub':
-      case 'Land use and land (geography?)-TNC ArcGIS Hub':
-      case 'Climate / weather-TNC ArcGIS Hub':
-      case 'Hydrological-TNC ArcGIS Hub':
-      case 'Topographic-TNC ArcGIS Hub':
-      case 'Marine-TNC ArcGIS Hub':
+      case 'Land Cover-TNC ArcGIS Hub':
+      case 'Species-TNC ArcGIS Hub':
+      case 'Earth Observations-TNC ArcGIS Hub':
+      case 'Boundaries-TNC ArcGIS Hub':
+      case 'Weather and Climate-TNC ArcGIS Hub':
+      case 'Freshwater-TNC ArcGIS Hub':
+      case 'Soils and Geology-TNC ArcGIS Hub':
+      case 'Elevation and Bathymetry-TNC ArcGIS Hub':
+      case 'Oceans and Coasts-TNC ArcGIS Hub':
       case 'Fire-TNC ArcGIS Hub':
       case 'Infrastructure-TNC ArcGIS Hub':
-      case 'Hazards & Resilience-TNC ArcGIS Hub':
+      case 'Threats and Hazards-TNC ArcGIS Hub':
+      case 'Research and Sensor Equipment-TNC ArcGIS Hub':
         return (
           <TNCArcGISView
             items={tncArcGISItems}
@@ -361,7 +363,7 @@ const DataView: React.FC<DataViewProps> = ({
         );
 
       // LiDAR case
-      case 'Land use and land (geography?)-LiDAR':
+      case 'Elevation and Bathymetry-LiDAR':
         return (
           <LiDARView
             hasSearched={hasSearched}
@@ -371,7 +373,7 @@ const DataView: React.FC<DataViewProps> = ({
         );
       
       // Dendra Stations case
-      case 'Real-time & Remote Sensing-Dendra Stations':
+      case 'Research and Sensor Equipment-Dendra Stations':
         return (
           <DendraSidebar
             stations={dendraStations}
@@ -386,7 +388,7 @@ const DataView: React.FC<DataViewProps> = ({
         );
 
       // Drone Imagery case
-      case 'Real-time & Remote Sensing-Drone Imagery':
+      case 'Earth Observations-Drone Imagery':
         return (
           <DroneImageryView
             hasSearched={hasSearched}
@@ -400,8 +402,8 @@ const DataView: React.FC<DataViewProps> = ({
         );
       
       // Animl cases
-      case 'Ecological / Biological (Species?)-Animl':
-      case 'Real-time & Remote Sensing-Animl':
+      case 'Species-Animl':
+      case 'Research and Sensor Equipment-Animl':
         return (
           <WildlifeAnimlView
             viewMode={animlViewMode}
@@ -440,11 +442,11 @@ const DataView: React.FC<DataViewProps> = ({
         );
 
       // DataONE cases - Research Datasets
-      case 'Ecological / Biological (Species?)-DataONE':
-      case 'Vegetation / habitat-DataONE':
-      case 'Marine-DataONE':
-      case 'Climate / weather-DataONE':
-      case 'Hydrological-DataONE':
+      case 'Species-DataONE':
+      case 'Land Cover-DataONE':
+      case 'Oceans and Coasts-DataONE':
+      case 'Weather and Climate-DataONE':
+      case 'Freshwater-DataONE':
         return (
           <DataONEView
             hasSearched={hasSearched}

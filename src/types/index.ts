@@ -4,7 +4,7 @@ export interface Dataset {
   description: string;
   source: string;
   date: string;
-  category: 'Wildlife' | 'Vegetation' | 'Climate' | 'Hydrology';
+  category: 'Species' | 'Land Cover' | 'Weather and Climate' | 'Freshwater' | 'Boundaries' | 'Earth Observations' | 'Elevation and Bathymetry' | 'Soils and Geology' | 'Oceans and Coasts' | 'Fire' | 'Infrastructure' | 'Threats and Hazards' | 'Research and Sensor Equipment';
   icon: string;
 }
 
@@ -284,7 +284,7 @@ export interface CartItem {
   
   /** Core filters from the subheader (shared across all data sources) */
   coreFilters: {
-    /** Data category (e.g., 'Ecological / Biological (Species?)') */
+    /** Data category (e.g., 'Species', 'Land Cover', 'Freshwater') */
     category: string;
     
     /** Data source name (e.g., 'iNaturalist', 'CalFlora') */

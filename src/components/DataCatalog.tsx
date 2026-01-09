@@ -43,7 +43,7 @@ const DATA_TYPE_CARDS: DataTypeCardConfig[] = [
     sourceKey: 'TNC ArcGIS Hub',
     sourceBadge: 'ArcGIS Hub',
     defaults: {
-      category: 'Ecological / Biological (Species?)',
+      category: 'Species',
       spatialFilter: 'Dangermond Preserve',
       daysBack: 365,
       timeRange: 'Last year'
@@ -57,7 +57,7 @@ const DATA_TYPE_CARDS: DataTypeCardConfig[] = [
     sourceKey: 'iNaturalist (Public API)',
     sourceBadge: 'iNaturalist',
     defaults: {
-      category: 'Ecological / Biological (Species?)',
+      category: 'Species',
       spatialFilter: 'Dangermond Preserve',
       daysBack: 365,
       timeRange: 'Last year'
@@ -71,7 +71,7 @@ const DATA_TYPE_CARDS: DataTypeCardConfig[] = [
     sourceKey: 'eBird',
     sourceBadge: 'eBird',
     defaults: {
-      category: 'Ecological / Biological (Species?)',
+      category: 'Species',
       spatialFilter: 'Dangermond Preserve',
       daysBack: 365,
       timeRange: 'Last year'
@@ -85,7 +85,7 @@ const DATA_TYPE_CARDS: DataTypeCardConfig[] = [
     sourceKey: 'CalFlora',
     sourceBadge: 'CalFlora',
     defaults: {
-      category: 'Vegetation / habitat',
+      category: 'Land Cover',
       spatialFilter: 'Dangermond Preserve',
       daysBack: 365,
       timeRange: 'Last year'
@@ -99,7 +99,7 @@ const DATA_TYPE_CARDS: DataTypeCardConfig[] = [
     sourceKey: 'Animl',
     sourceBadge: 'Animl',
     defaults: {
-      category: 'Real-time & Remote Sensing',
+      category: 'Research and Sensor Equipment',
       spatialFilter: 'Dangermond Preserve',
       daysBack: 365,
       timeRange: 'Last year'
@@ -113,7 +113,7 @@ const DATA_TYPE_CARDS: DataTypeCardConfig[] = [
     sourceKey: 'Dendra Stations',
     sourceBadge: 'Dendra',
     defaults: {
-      category: 'Real-time & Remote Sensing',
+      category: 'Research and Sensor Equipment',
       spatialFilter: 'Dangermond Preserve',
       daysBack: 365,
       timeRange: 'Last year'
@@ -127,7 +127,7 @@ const DATA_TYPE_CARDS: DataTypeCardConfig[] = [
     sourceKey: 'LiDAR',
     sourceBadge: 'LiDAR',
     defaults: {
-      category: 'Land use and land (geography?)',
+      category: 'Elevation and Bathymetry',
       spatialFilter: 'Dangermond Preserve',
       daysBack: 365, // Not really relevant for LiDAR but needed for type consistency
       timeRange: 'All time'
@@ -141,7 +141,7 @@ const DATA_TYPE_CARDS: DataTypeCardConfig[] = [
     sourceKey: 'Drone Imagery',
     sourceBadge: 'DroneDeploy',
     defaults: {
-      category: 'Real-time & Remote Sensing',
+      category: 'Earth Observations',
       spatialFilter: 'Dangermond Preserve',
       daysBack: 365,
       timeRange: 'All time'
@@ -155,7 +155,7 @@ const DATA_TYPE_CARDS: DataTypeCardConfig[] = [
     sourceKey: 'DataONE',
     sourceBadge: 'DataONE',
     defaults: {
-      category: 'Ecological / Biological (Species?)',
+      category: 'Species',
       spatialFilter: 'Dangermond Preserve',
       daysBack: 365,
       timeRange: 'All time'

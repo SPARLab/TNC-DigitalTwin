@@ -61,7 +61,7 @@
       "itemId": "7ba828df977745f1a1e4b6cc79d6486a",
       "url": "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/Earthquake_Faults_and_Folds_in_the_USA/FeatureServer",
       "type": "FeatureService",
-      "category": "Topographic",
+      "category": "Soils and Geology",
       "expectedResults": {
         "showsInCategories": true,
         "layersLoad": true,
