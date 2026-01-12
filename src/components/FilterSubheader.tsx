@@ -221,7 +221,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
   };
 
   return (
-    <div id="filter-bar" className={`${currentTheme.subheader} border-b border-gray-200 px-6 py-4 transition-colors duration-200`}>
+    <div id="filter-bar" className={`${currentTheme.subheader} border-b border-gray-200 px-3 py-4 transition-colors duration-200`}>
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {/* Data Category Filter */}

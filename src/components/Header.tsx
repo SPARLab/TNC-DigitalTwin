@@ -35,7 +35,7 @@ const Header: React.FC<HeaderProps> = ({ theme, onThemeChange, cartItemCount = 0
 
   return (
     <header id="main-header" className={`${currentTheme.header} border-b ${borderClass} h-16 transition-colors duration-200`}>
-      <div id="header-container" className="px-6 py-4">
+      <div id="header-container" className="px-3 py-4">
         <div id="header-content" className="flex items-center justify-between">
           <div id="header-left" className="flex items-center space-x-6">
             <h1 id="site-title" className={`text-xl font-semibold ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>
