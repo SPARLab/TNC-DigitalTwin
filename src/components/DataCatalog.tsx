@@ -7,7 +7,8 @@ import {
   Layers, 
   Activity, 
   ArrowRight,
-  Database
+  Database,
+  Info
 } from 'lucide-react';
 import LidarIcon from './icons/LidarIcon';
 import DroneIcon from './icons/DroneIcon';
@@ -210,15 +211,15 @@ const DataCatalog: React.FC<DataCatalogProps> = ({ filters, onSelectSource }) =>
   };
 
   return (
-    <div id="data-catalog-container" className="p-container-sm space-y-3 bg-gray-50 h-full overflow-y-auto">
-      <div id="data-catalog-header" className="mb-section-sm">
-        <h2 id="data-catalog-title" className="text-title-section text-gray-900">Data Type</h2>
-        <p id="data-catalog-description" className="text-label xl:text-body text-gray-500 mt-element-sm">
+    <div id="data-catalog-container" className="px-page-x py-page-y xl:p-container-sm space-y-2 xl:space-y-3 bg-gray-50 h-full overflow-y-auto">
+      <div id="data-catalog-header" className="mb-2 xl:mb-section-sm">
+        <h2 id="data-catalog-title" className="text-label xl:text-title-section font-semibold text-gray-900">Data Type</h2>
+        <p id="data-catalog-description" className="text-micro xl:text-body text-gray-500 mt-0.5 xl:mt-element-sm">
           Select a data type to explore, or use the filters above to narrow down available data.
         </p>
       </div>
 
-      <div id="data-catalog-grid" className="grid grid-cols-1 gap-gap-default">
+      <div id="data-catalog-grid" className="grid grid-cols-1 gap-1 xl:gap-gap-default">
         {sortedCards.map((card) => {
           const compatible = isSourceCompatible(card.sourceKey);
           
@@ -228,37 +229,47 @@ const DataCatalog: React.FC<DataCatalogProps> = ({ filters, onSelectSource }) =>
               id={`data-card-${card.id}`}
               onClick={() => handleCardClick(card)}
               disabled={!compatible}
-              className={`relative flex items-start p-container-sm rounded-card border text-left transition-all duration-200 group ${
+              className={`relative flex items-center xl:items-start px-2 py-1.5 xl:p-container-sm rounded-card border text-left transition-all duration-200 group ${
                 compatible 
                   ? 'bg-white border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer' 
                   : 'bg-gray-100 border-gray-200 opacity-60 cursor-not-allowed grayscale'
               }`}
             >
-              <div className={`p-gap-sm rounded-button mr-gap-default flex-shrink-0 ${
+              <div className={`p-1 xl:p-gap-sm rounded-button mr-2 xl:mr-gap-default flex-shrink-0 ${
                 compatible ? 'bg-blue-50 text-blue-600 group-hover:bg-blue-100' : 'bg-gray-200 text-gray-400'
               }`}>
-                <card.icon className="w-5 h-5" />
+                <card.icon className="w-4 h-4 xl:w-5 xl:h-5" />
               </div>
               
-              <div className="flex-1 min-w-0">
-                <h3 className={`text-body xl:text-title-card font-medium mb-element-sm ${
-                  compatible ? 'text-gray-900 group-hover:text-blue-700' : 'text-gray-500'
-                }`}>
+              <div className="flex-1 min-w-0 flex items-center xl:block">
+                <h3 
+                  className={`text-label xl:text-title-card font-medium xl:mb-element-sm ${
+                    compatible ? 'text-gray-900 group-hover:text-blue-700' : 'text-gray-500'
+                  }`}
+                >
                   {card.title}
                 </h3>
-                <p className="text-label xl:text-body text-gray-500 line-clamp-2">
+                <span 
+                  className="xl:hidden flex-shrink-0 ml-[.1rem] cursor-help"
+                  title={card.description}
+                >
+                  <Info className="w-3.5 h-3.5 text-gray-400 hover:text-blue-500" />
+                </span>
+                <p 
+                  className="hidden xl:block text-body text-gray-500 line-clamp-2"
+                >
                   {card.description}
                 </p>
               </div>
               
-              <span className={`absolute top-container-sm right-container-sm px-gap-sm py-gap-xs text-label rounded-badge ${
+              <span className={`absolute top-1/2 -translate-y-1/2 xl:translate-y-0 xl:top-container-sm right-2 xl:right-container-sm px-1.5 xl:px-gap-sm py-0.5 xl:py-gap-xs text-micro xl:text-label rounded-badge ${
                 compatible ? 'bg-gray-100 text-gray-600' : 'bg-gray-200 text-gray-400'
               }`}>
                 {card.sourceBadge}
               </span>
 
               {compatible && (
-                <ArrowRight className="w-4 h-4 text-gray-300 absolute right-container-sm top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <ArrowRight className="hidden xl:block w-4 h-4 text-gray-300 absolute right-container-sm top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity" />
               )}
             </button>
           );
