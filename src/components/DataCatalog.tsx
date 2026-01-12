@@ -210,15 +210,15 @@ const DataCatalog: React.FC<DataCatalogProps> = ({ filters, onSelectSource }) =>
   };
 
   return (
-    <div className="p-4 space-y-4 bg-gray-50 h-full overflow-y-auto">
-      <div className="mb-6">
+    <div className="p-3 space-y-3 bg-gray-50 h-full overflow-y-auto">
+      <div className="mb-3">
         <h2 className="text-lg font-semibold text-gray-900">Data Type</h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-gray-500 mt-0.5">
           Select a data type to explore, or use the filters above to narrow down available data.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 gap-2">
         {sortedCards.map((card) => {
           const compatible = isSourceCompatible(card.sourceKey);
           
@@ -227,26 +227,26 @@ const DataCatalog: React.FC<DataCatalogProps> = ({ filters, onSelectSource }) =>
               key={card.id}
               onClick={() => handleCardClick(card)}
               disabled={!compatible}
-              className={`relative flex items-start p-4 rounded-lg border text-left transition-all duration-200 group ${
+              className={`relative flex items-start p-3 rounded-lg border text-left transition-all duration-200 group ${
                 compatible 
                   ? 'bg-white border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer' 
                   : 'bg-gray-100 border-gray-200 opacity-60 cursor-not-allowed grayscale'
               }`}
             >
-              <div className={`p-2 rounded-md mr-4 flex-shrink-0 ${
+              <div className={`p-1.5 rounded-md mr-3 flex-shrink-0 ${
                 compatible ? 'bg-blue-50 text-blue-600 group-hover:bg-blue-100' : 'bg-gray-200 text-gray-400'
               }`}>
-                <card.icon className="w-6 h-6" />
+                <card.icon className="w-5 h-5" />
               </div>
               
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-0.5">
                   <h3 className={`text-base font-medium ${
                     compatible ? 'text-gray-900 group-hover:text-blue-700' : 'text-gray-500'
                   }`}>
                     {card.title}
                   </h3>
-                  <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                  <span className={`px-1.5 py-0.5 text-xs font-medium rounded ${
                     compatible ? 'bg-gray-100 text-gray-600' : 'bg-gray-200 text-gray-400'
                   }`}>
                     {card.sourceBadge}
@@ -258,7 +258,7 @@ const DataCatalog: React.FC<DataCatalogProps> = ({ filters, onSelectSource }) =>
               </div>
 
               {compatible && (
-                <ArrowRight className="w-5 h-5 text-gray-300 absolute right-4 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <ArrowRight className="w-4 h-4 text-gray-300 absolute right-3 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity" />
               )}
             </button>
           );
