@@ -91,8 +91,8 @@
   --sidebar-width-lg: 20rem;         /* 320px - w-80 */
   
   /* Filter button width - large on desktop, shrinks on smaller screens */
-  --filter-button-min-width: 22.7rem;
-  --filter-button-width: 22.7rem;
+  --filter-button-min-width: 22.9rem;
+  --filter-button-width: 22.9rem;
   
   /* Card/container max-widths */
   --card-max-width: 24rem;           /* 384px - max-w-sm */
