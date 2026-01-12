@@ -240,22 +240,21 @@ const DataCatalog: React.FC<DataCatalogProps> = ({ filters, onSelectSource }) =>
               </div>
               
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <h3 className={`text-base font-medium ${
-                    compatible ? 'text-gray-900 group-hover:text-blue-700' : 'text-gray-500'
-                  }`}>
-                    {card.title}
-                  </h3>
-                  <span className={`px-1.5 py-0.5 text-xs font-medium rounded ${
-                    compatible ? 'bg-gray-100 text-gray-600' : 'bg-gray-200 text-gray-400'
-                  }`}>
-                    {card.sourceBadge}
-                  </span>
-                </div>
+                <h3 className={`text-base font-medium mb-0.5 ${
+                  compatible ? 'text-gray-900 group-hover:text-blue-700' : 'text-gray-500'
+                }`}>
+                  {card.title}
+                </h3>
                 <p className="text-sm text-gray-500 line-clamp-2">
                   {card.description}
                 </p>
               </div>
+              
+              <span className={`absolute top-3 right-3 px-1.5 py-0.5 text-xs font-medium rounded ${
+                compatible ? 'bg-gray-100 text-gray-600' : 'bg-gray-200 text-gray-400'
+              }`}>
+                {card.sourceBadge}
+              </span>
 
               {compatible && (
                 <ArrowRight className="w-4 h-4 text-gray-300 absolute right-3 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity" />
