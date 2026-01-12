@@ -232,7 +232,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
             <button 
               id="category-filter-button"
               onClick={() => handleDropdownToggle('category')}
-              className={`flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 min-w-[20rem] ${needsFilterHighlight ? 'filter-highlight-1' : ''}`}
+              className={`flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 min-w-[22.7rem] ${needsFilterHighlight ? 'filter-highlight-1' : ''}`}
             >
               {filters.category ? getCategoryIcon(filters.category) : <Database className="w-4 h-4 flex-shrink-0 text-gray-400" />}
               <span id="category-filter-text" className={`text-sm truncate ${filters.category ? 'text-black' : 'text-gray-400'}`}>
