@@ -34,21 +34,21 @@ const Header: React.FC<HeaderProps> = ({ theme, onThemeChange, cartItemCount = 0
   const borderClass = currentTheme.headerBorder || (isDarkTheme ? 'border-gray-600' : 'border-gray-200');
 
   return (
-    <header id="main-header" className={`${currentTheme.header} border-b ${borderClass} h-16 transition-colors duration-200`}>
-      <div id="header-container" className="px-3 py-4">
-        <div id="header-content" className="flex items-center justify-between">
-          <div id="header-left" className="flex items-center space-x-8">
-            <h1 id="site-title" className={`text-xl font-semibold ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>
+    <header id="main-header" className={`${currentTheme.header} border-b ${borderClass} transition-colors duration-200`}>
+      <div id="header-container" className="px-page-x py-page-y">
+        <div id="header-content" className="flex items-center justify-between h-full">
+          <div id="header-left" className="flex items-center gap-gap-lg">
+            <h1 id="site-title" className={`text-title-page ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>
               Dangermond Preserve Data Catalog
             </h1>
-            <nav id="main-navigation" className="flex space-x-6">
-              <a id="nav-browse" href="#" className={`text-sm ${isDarkTheme ? 'text-gray-200 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
+            <nav id="main-navigation" className="hidden md:flex gap-section-sm">
+              <a id="nav-browse" href="#" className={`text-body ${isDarkTheme ? 'text-gray-200 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
                 Browse
               </a>
-              <a id="nav-saved-searches" href="#" className={`text-sm ${isDarkTheme ? 'text-gray-200 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
+              <a id="nav-saved-searches" href="#" className={`text-body ${isDarkTheme ? 'text-gray-200 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
                 Saved Searches
               </a>
-              <a id="nav-export-queue" href="#" className={`text-sm ${isDarkTheme ? 'text-gray-200 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
+              <a id="nav-export-queue" href="#" className={`text-body ${isDarkTheme ? 'text-gray-200 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
                 Export Queue
               </a>
             </nav>
@@ -60,13 +60,13 @@ const Header: React.FC<HeaderProps> = ({ theme, onThemeChange, cartItemCount = 0
               <button
                 id="theme-switcher-button"
                 onClick={() => setIsThemeDropdownOpen(!isThemeDropdownOpen)}
-                className={`flex items-center space-x-2 px-3 py-1.5 rounded-md transition-colors ${
+                className={`flex items-center gap-gap-default px-button-x py-button-sm-y rounded-button transition-colors ${
                   isDarkTheme ? 'hover:bg-white/10' : 'hover:bg-gray-100/50'
                 }`}
                 title="Change theme"
               >
                 <Palette id="theme-icon" className={`w-4 h-4 ${isDarkTheme ? 'text-gray-200' : 'text-gray-600'}`} />
-                <span id="theme-label" className={`text-sm ${isDarkTheme ? 'text-gray-100' : 'text-gray-700'}`}>{currentTheme.name}</span>
+                <span id="theme-label" className={`text-body hidden sm:inline ${isDarkTheme ? 'text-gray-100' : 'text-gray-700'}`}>{currentTheme.name}</span>
                 <ChevronDown 
                   id="theme-chevron" 
                   className={`w-3 h-3 ${isDarkTheme ? 'text-gray-300' : 'text-gray-400'} transition-transform ${isThemeDropdownOpen ? 'rotate-180' : ''}`} 
@@ -74,7 +74,7 @@ const Header: React.FC<HeaderProps> = ({ theme, onThemeChange, cartItemCount = 0
               </button>
 
               {isThemeDropdownOpen && (
-                <div id="theme-dropdown" className="absolute top-full right-0 mt-1 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                <div id="theme-dropdown" className="absolute top-full right-0 mt-1 w-56 bg-white border border-gray-200 rounded-card shadow-lg z-50">
                   {THEME_OPTIONS.map((themeOption) => (
                     <button
                       key={themeOption.id}
@@ -83,7 +83,7 @@ const Header: React.FC<HeaderProps> = ({ theme, onThemeChange, cartItemCount = 0
                         onThemeChange(themeOption.id);
                         setIsThemeDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 first:rounded-t-md last:rounded-b-md flex items-center justify-between ${
+                      className={`w-full text-left px-button-x py-button-y text-body hover:bg-gray-50 first:rounded-t-card last:rounded-b-card flex items-center justify-between ${
                         theme === themeOption.id ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
                       }`}
                     >
@@ -102,7 +102,7 @@ const Header: React.FC<HeaderProps> = ({ theme, onThemeChange, cartItemCount = 0
               <button
                 id="shopping-cart-button"
                 onClick={onCartClick}
-                className={`relative p-2 rounded-md transition-colors ${
+                className={`relative p-button-y rounded-button transition-colors ${
                   isDarkTheme ? 'hover:bg-white/10' : 'hover:bg-gray-100'
                 }`}
                 aria-label={`Shopping cart with ${cartItemCount} items`}
@@ -112,7 +112,7 @@ const Header: React.FC<HeaderProps> = ({ theme, onThemeChange, cartItemCount = 0
                 {cartItemCount > 0 && (
                   <span 
                     id="cart-badge"
-                    className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center leading-none"
+                    className="absolute -top-1 -right-1 bg-red-500 text-white text-micro font-bold rounded-full w-5 h-5 flex items-center justify-center leading-none"
                     style={{ paddingTop: '1px' }}
                   >
                     {cartItemCount > 99 ? '99+' : cartItemCount}

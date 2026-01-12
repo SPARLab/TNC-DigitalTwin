@@ -221,33 +221,33 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
   };
 
   return (
-    <div id="filter-bar" className={`${currentTheme.subheader} border-b border-gray-200 px-3 py-4 transition-colors duration-200`}>
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div id="filter-bar" className={`${currentTheme.subheader} border-b border-gray-200 px-page-x py-page-y transition-colors duration-200`}>
+      <div className="flex flex-wrap items-center justify-between gap-gap-lg">
+        <div className="flex flex-wrap gap-gap-sm">
           {/* Data Category Filter */}
           <div ref={categoryRef} id="category-filter-container" className="flex flex-col relative">
-            <label id="category-filter-label" className="text-xs font-medium text-gray-500 mb-1">
+            <label id="category-filter-label" className="text-label text-gray-500 mb-element-sm">
               DATA CATEGORY
             </label>
             <button 
               id="category-filter-button"
               onClick={() => handleDropdownToggle('category')}
-              className={`flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 min-w-[22.7rem] ${needsFilterHighlight ? 'filter-highlight-1' : ''}`}
+              className={`flex items-center gap-gap-default px-button-x py-button-y border border-gray-300 rounded-button bg-white hover:bg-gray-50 w-filter-btn ${needsFilterHighlight ? 'filter-highlight-1' : ''}`}
             >
               {filters.category ? getCategoryIcon(filters.category) : <Database className="w-4 h-4 flex-shrink-0 text-gray-400" />}
-              <span id="category-filter-text" className={`text-sm truncate ${filters.category ? 'text-black' : 'text-gray-400'}`}>
+              <span id="category-filter-text" className={`text-body truncate ${filters.category ? 'text-black' : 'text-gray-400'}`}>
                 {filters.category || <><span className="hidden xl:inline">Select </span><span className="xl:lowercase">Category</span></>}
               </span>
               <ChevronDown id="category-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ml-auto ${openDropdown === 'category' ? 'rotate-180' : ''}`} />
             </button>
             {openDropdown === 'category' && (
-              <div id="category-filter-dropdown" className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg z-50">
+              <div id="category-filter-dropdown" className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-card shadow-lg z-50">
                 {categoryOptions.map((option) => (
                   <button
                     key={option}
                     id={`category-option-${option.toLowerCase().replace(/\s+/g, '-')}`}
                     onClick={() => handleCategoryChange(option)}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 first:rounded-t-md last:rounded-b-md flex items-center gap-2"
+                    className="w-full text-left px-button-x py-button-y text-body hover:bg-gray-50 first:rounded-t-card last:rounded-b-card flex items-center gap-gap-default"
                   >
                     {getCategoryIcon(option)}
                     <span>{option}</span>
@@ -260,21 +260,21 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
           {/* Tags Filter - Conditionally rendered based on feature flag */}
           {ENABLE_TAGS_FILTER && (
             <div ref={tagsRef} id="tags-filter-container" className="flex flex-col relative">
-              <label id="tags-filter-label" className="text-xs font-medium text-gray-500 mb-1">
+              <label id="tags-filter-label" className="text-label text-gray-500 mb-element-sm">
                 TAGS
               </label>
               <button 
                 id="tags-filter-button"
                 onClick={() => handleDropdownToggle('tags')}
                 disabled={!filters.category || tagsOptions.length === 0}
-                className={`flex items-center space-x-2 px-3 py-2 border rounded-md w-full ${
+                className={`flex items-center gap-gap-default px-button-x py-button-y border rounded-button w-filter-btn ${
                   !filters.category || tagsOptions.length === 0
                     ? 'bg-gray-50 border-gray-200 cursor-not-allowed'
                     : 'bg-white border-gray-300 hover:bg-gray-50'
                 } ${needsFilterHighlight ? 'filter-highlight-2' : ''}`}
               >
                 <Tag id="tags-filter-icon" className={`w-4 h-4 flex-shrink-0 ${filters.tags?.length ? 'text-blue-600' : 'text-gray-400'}`} />
-                <span id="tags-filter-text" className={`text-sm truncate ${filters.tags?.length ? 'text-black' : 'text-gray-400'}`}>
+                <span id="tags-filter-text" className={`text-body truncate ${filters.tags?.length ? 'text-black' : 'text-gray-400'}`}>
                   {filters.tags?.length 
                     ? `${filters.tags.length} tag${filters.tags.length > 1 ? 's' : ''} selected` 
                     : <><span className="hidden xl:inline">Select </span><span className="xl:lowercase">Tags</span></>}
@@ -282,9 +282,9 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
                 <ChevronDown id="tags-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ml-auto ${openDropdown === 'tags' ? 'rotate-180' : ''}`} />
               </button>
               {openDropdown === 'tags' && (
-                <div id="tags-filter-dropdown" className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg z-50 max-h-72 flex flex-col">
+                <div id="tags-filter-dropdown" className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-300 rounded-card shadow-lg z-50 max-h-72 flex flex-col">
                   {/* Scrollable tag list */}
-                  <div id="tags-filter-list" className="overflow-y-auto flex-1 p-2 space-y-1">
+                  <div id="tags-filter-list" className="overflow-y-auto flex-1 p-container-sm space-y-1">
                     {tagsOptions.map((tag: string) => {
                       const isSelected = filters.tags?.includes(tag);
                       return (
@@ -292,7 +292,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
                           key={tag}
                           id={`tag-option-${tag.toLowerCase().replace(/\s+/g, '-')}`}
                           onClick={() => handleTagToggle(tag)}
-                          className={`w-full flex items-center px-3 py-2 rounded border transition-all cursor-pointer ${
+                          className={`w-full flex items-center px-button-x py-button-y rounded-button border transition-all cursor-pointer ${
                             isSelected 
                               ? 'bg-blue-50 border-blue-200 hover:bg-blue-100' 
                               : 'bg-white border-gray-200 hover:bg-gray-50'
@@ -300,24 +300,24 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
                           aria-pressed={isSelected}
                           aria-label={`${isSelected ? 'Deselect' : 'Select'} ${tag}`}
                         >
-                          <span className="text-sm flex-1 text-left font-medium text-gray-900">
+                          <span className="text-body flex-1 text-left font-medium text-gray-900">
                             {tag}
                           </span>
                         </button>
                       );
                     })}
                     {tagsOptions.length === 0 && (
-                      <div className="px-3 py-2 text-sm text-gray-400 italic">No tags available for this category</div>
+                      <div className="px-button-x py-button-y text-body text-gray-400 italic">No tags available for this category</div>
                     )}
                   </div>
                   
                   {/* Select All / Deselect All buttons */}
                   {tagsOptions.length > 0 && (
-                    <div id="tags-filter-actions" className="border-t border-gray-200 p-2 flex gap-2 bg-gray-50">
+                    <div id="tags-filter-actions" className="border-t border-gray-200 p-container-sm flex gap-gap-default bg-gray-50">
                       <button
                         id="tags-filter-select-all"
                         onClick={() => onFilterChange({ ...filters, tags: [...tagsOptions] })}
-                        className="flex-1 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        className="flex-1 px-button-sm-x py-button-sm-y text-label text-blue-600 hover:bg-blue-50 rounded-button transition-colors"
                         aria-label="Select all tags"
                       >
                         Select All
@@ -325,7 +325,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
                       <button
                         id="tags-filter-deselect-all"
                         onClick={() => onFilterChange({ ...filters, tags: [] })}
-                        className="flex-1 px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                        className="flex-1 px-button-sm-x py-button-sm-y text-label text-gray-600 hover:bg-gray-100 rounded-button transition-colors"
                         aria-label="Deselect all tags"
                       >
                         Deselect All
@@ -339,22 +339,20 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
 
           {/* Spatial Filter */}
           <div ref={spatialFilterRef} id="spatial-filter-container" className="flex flex-col relative">
-            <label id="spatial-filter-label" className="text-xs font-medium text-gray-500 mb-1">
+            <label id="spatial-filter-label" className="text-label text-gray-500 mb-element-sm">
               SPATIAL FILTER
             </label>
             <button 
               id="spatial-filter-button"
               onClick={() => handleDropdownToggle('spatialFilter')}
-              // disabled={filters.source === 'Dendra Stations' || filters.source === 'TNC ArcGIS Hub' || filters.source === 'LiDAR'}
-              className={`flex items-center space-x-2 px-3 py-2 border rounded-md w-full ${
-                /* Logic to disable based on source is removed/relaxed for now as we want bi-directional flow */
+              className={`flex items-center gap-gap-default px-button-x py-button-y border rounded-button w-filter-btn ${
                 filters.customPolygon 
                     ? 'border-blue-500 bg-blue-50 hover:bg-gray-50' 
                     : 'border-gray-300 bg-white hover:bg-gray-50'
               } ${needsFilterHighlight ? 'filter-highlight-3' : ''}`}
             >
               <MapPin id="spatial-filter-icon" className={`w-4 h-4 flex-shrink-0 ${filters.customPolygon ? 'text-blue-600' : 'text-gray-400'}`} />
-              <span id="spatial-filter-text" className={`text-sm truncate ${filters.customPolygon ? 'text-blue-700 font-medium' : filters.spatialFilter ? 'text-black' : 'text-gray-400'}`}>
+              <span id="spatial-filter-text" className={`text-body truncate ${filters.customPolygon ? 'text-blue-700 font-medium' : filters.spatialFilter ? 'text-black' : 'text-gray-400'}`}>
                 {filters.spatialFilter || <><span className="hidden xl:inline">Select </span><span className="xl:lowercase">Spatial Filter</span></>}
                 {filters.customPolygon && ' ✓'}
               </span>
@@ -363,19 +361,19 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
             
             {/* Spatial Filter Dropdown */}
             {openDropdown === 'spatialFilter' && (
-              <div id="spatial-filter-dropdown" className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-50">
+              <div id="spatial-filter-dropdown" className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-card shadow-lg z-50">
                 {SPATIAL_FILTERS.map((option) => (
                   <button
                     key={option}
                     id={`spatial-filter-option-${option.toLowerCase().replace(/\s+/g, '-')}`}
                     onClick={() => handleSpatialFilterChange(option)}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${
+                    className={`w-full text-left px-button-x py-button-y text-body hover:bg-gray-50 ${
                       filters.spatialFilter === option ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
                     }`}
                   >
                     {option}
                     {option === 'Draw Area' && filters.customPolygon && (
-                      <span className="ml-2 text-xs text-blue-600">✓ Active</span>
+                      <span className="ml-2 text-label text-blue-600">✓ Active</span>
                     )}
                   </button>
                 ))}
@@ -385,17 +383,17 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
 
           {/* Time Range Filter with Search Button */}
           <div ref={timeRangeRef} id="time-range-filter-container" className="flex flex-col relative">
-            <label id="time-range-filter-label" className="text-xs font-medium text-gray-500 mb-1">
+            <label id="time-range-filter-label" className="text-label text-gray-500 mb-element-sm">
               TIME RANGE
             </label>
-            <div id="time-range-controls" className="flex space-x-2">
+            <div id="time-range-controls" className="flex gap-gap-default">
               <button 
                 id="time-range-filter-button"
                 onClick={() => handleDropdownToggle('timeRange')}
-                className={`flex items-center space-x-2 px-3 py-2 border rounded-md flex-1 border-gray-300 bg-white hover:bg-gray-50 ${needsFilterHighlight ? 'filter-highlight-4' : ''}`}
+                className={`flex items-center gap-gap-default px-button-x py-button-y border rounded-button w-filter-btn border-gray-300 bg-white hover:bg-gray-50 ${needsFilterHighlight ? 'filter-highlight-4' : ''}`}
               >
                 <Calendar id="time-range-filter-icon" className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                <span id="time-range-filter-text" className={`text-sm truncate ${filters.timeRange ? 'text-black' : 'text-gray-400'}`}>
+                <span id="time-range-filter-text" className={`text-body truncate ${filters.timeRange ? 'text-black' : 'text-gray-400'}`}>
                   {filters.timeRange || <><span className="hidden xl:inline">Select </span><span className="xl:lowercase">Time Range</span></>}
                 </span>
                 <ChevronDown id="time-range-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ml-auto ${openDropdown === 'timeRange' ? 'rotate-180' : ''}`} />
@@ -406,7 +404,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
                 id="observations-search-button"
                 onClick={onSearch}
                 disabled={isSearching || !filters.source}
-                className={`px-3 py-2 border border-gray-300 rounded-md transition-colors ${
+                className={`px-button-x py-button-y border border-gray-300 rounded-button transition-colors ${
                   isSearching || !filters.source
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
                     : 'bg-blue-600 text-white hover:bg-blue-700'
@@ -428,19 +426,19 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
             </div>
             
             {openDropdown === 'timeRange' && (
-              <div id="time-range-dropdown" className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 min-w-full sm:w-80">
+              <div id="time-range-dropdown" className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-card shadow-lg z-50 min-w-full sm:w-80">
                 {timeRangeOptions.map((option) => (
                   <button
                     key={option.value}
                     id={`time-range-option-${option.value}-days`}
                     onClick={() => handleTimeRangeChange(option.value)}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${
+                    className={`w-full text-left px-button-x py-button-y text-body hover:bg-gray-50 ${
                       filters.daysBack === option.value && !isCustomDateRange ? 'bg-blue-50 text-blue-700' : ''
                     }`}
                     title={formatDateRange(option.value)}
                   >
                     <div id={`time-range-label-${option.value}-days`} className="font-medium">{option.label}</div>
-                    <div id={`time-range-dates-${option.value}-days`} className="text-xs text-gray-500 mt-0.5 truncate">
+                    <div id={`time-range-dates-${option.value}-days`} className="text-label text-gray-500 mt-element-sm truncate">
                       {formatDateRange(option.value)}
                     </div>
                   </button>
@@ -450,20 +448,20 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
                 <button
                   id="time-range-option-custom"
                   onClick={() => handleTimeRangeChange('custom')}
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 border-t border-gray-100 ${
+                  className={`w-full text-left px-button-x py-button-y text-body hover:bg-gray-50 border-t border-gray-100 ${
                     isCustomDateRange ? 'bg-blue-50 text-blue-700' : ''
                   }`}
                 >
                   <div id="time-range-label-custom" className="font-medium">Custom date range</div>
-                  <div id="time-range-desc-custom" className="text-xs text-gray-500 mt-0.5">Select specific start and end dates</div>
+                  <div id="time-range-desc-custom" className="text-label text-gray-500 mt-element-sm">Select specific start and end dates</div>
                 </button>
                 
                 {/* Custom Date Range Inputs */}
                 {isCustomDateRange && (
-                  <div id="custom-date-inputs-header" className="p-3 bg-gray-50 border-t border-gray-200">
+                  <div id="custom-date-inputs-header" className="p-container-sm bg-gray-50 border-t border-gray-200">
                     <div className="space-y-3">
                       <div>
-                        <label htmlFor="header-start-date-input" className="block text-xs font-medium text-gray-700 mb-1">
+                        <label htmlFor="header-start-date-input" className="block text-label text-gray-700 mb-element-sm">
                           Start Date
                         </label>
                         <input
@@ -471,11 +469,11 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
                           type="date"
                           value={filters.startDate || ''}
                           onInput={(e) => handleDateInputChange('startDate', e.currentTarget.value)}
-                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-button-sm-x py-button-sm-y text-body border border-gray-300 rounded-button focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
                       <div>
-                        <label htmlFor="header-end-date-input" className="block text-xs font-medium text-gray-700 mb-1">
+                        <label htmlFor="header-end-date-input" className="block text-label text-gray-700 mb-element-sm">
                           End Date
                         </label>
                         <input
@@ -483,11 +481,11 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
                           type="date"
                           value={filters.endDate || ''}
                           onInput={(e) => handleDateInputChange('endDate', e.currentTarget.value)}
-                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-button-sm-x py-button-sm-y text-body border border-gray-300 rounded-button focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
                       {filters.startDate && filters.endDate && (
-                        <div id="header-date-range-summary" className={`text-xs p-2 rounded border ${
+                        <div id="header-date-range-summary" className={`text-label p-container-sm rounded-button border ${
                           isDateRangeValid() 
                             ? 'text-gray-600 bg-white' 
                             : 'text-red-600 bg-red-50 border-red-200'
@@ -499,14 +497,14 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
                           )}
                         </div>
                       )}
-                      <div className="flex justify-end space-x-2 pt-2">
+                      <div className="flex justify-end gap-gap-default pt-element">
                         <button
                           id="header-custom-date-cancel"
                           onClick={() => {
                             onFilterChange({ ...filters, daysBack: 30 }); // Revert to default
                             setOpenDropdown(null);
                           }}
-                          className="px-3 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50"
+                          className="px-button-x py-button-sm-y text-label text-gray-600 hover:text-gray-800 border border-gray-300 rounded-button hover:bg-gray-50"
                         >
                           Cancel
                         </button>
@@ -514,7 +512,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
                           id="header-custom-date-apply"
                           onClick={() => setOpenDropdown(null)}
                           disabled={!isDateRangeValid() || !filters.startDate || !filters.endDate}
-                          className="px-3 py-1 text-xs text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed rounded"
+                          className="px-button-x py-button-sm-y text-label text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-button"
                         >
                           Apply
                         </button>
@@ -527,11 +525,11 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
           </div>
         </div>
 
-        <div id="filter-bar-right" className="flex items-center space-x-4">
+        <div id="filter-bar-right" className="flex items-center gap-section-sm">
           <button 
             id="clear-filters-button"
             onClick={handleClearFilters}
-            className="text-sm text-blue-600 hover:text-blue-800"
+            className="text-body text-blue-600 hover:text-blue-800"
           >
             Clear Filters
           </button>

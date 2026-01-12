@@ -243,7 +243,7 @@ const DataView: React.FC<DataViewProps> = ({
     // Use draftFilters if available to show grayed-out states correctly based on subheader interactions
     if (!filters.source) {
       return (
-        <div className="w-96 bg-white border-r border-gray-200 flex flex-col h-full z-10">
+        <div className="w-64 md:w-80 lg:w-96 bg-white border-r border-gray-200 flex flex-col h-full z-10 flex-shrink-0">
            <DataCatalog 
              filters={draftFilters || filters} 
              onSelectSource={onSelectSource!} 
@@ -461,7 +461,7 @@ const DataView: React.FC<DataViewProps> = ({
         
       default:
         return (
-          <div id="unsupported-data-view" className="w-96 bg-white border-r border-gray-200 flex flex-col">
+          <div id="unsupported-data-view" className="w-64 md:w-80 lg:w-96 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
             <div id="unsupported-header" className="p-4 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900">Data View</h2>
               <p className="text-sm text-gray-600">

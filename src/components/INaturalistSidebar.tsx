@@ -402,7 +402,7 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
   // Show empty state if no search has been performed
   if (!hasSearched) {
     return (
-      <div id="inaturalist-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col h-full">
+      <div id="inaturalist-sidebar" className="w-64 md:w-80 lg:w-96 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full">
         <div id="inaturalist-empty-state" className="flex flex-col items-center justify-center h-full p-8 text-center">
           <div id="search-prompt-icon" className="mb-4">
             <svg className="w-16 h-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -420,7 +420,7 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
 
   if (loading) {
     return (
-      <div id="inaturalist-sidebar-loading" className="w-96 bg-white border-r border-gray-200 flex flex-col h-full">
+      <div id="inaturalist-sidebar-loading" className="w-64 md:w-80 lg:w-96 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full">
         <div id="inaturalist-sidebar-loading-content" className="p-4 border-b border-gray-200">
           <h2 id="inaturalist-sidebar-loading-title" className="text-lg font-semibold text-gray-900 mb-4">{title}</h2>
           <div id="inaturalist-loading-container" className="flex flex-col items-center justify-center h-32 space-y-3">
@@ -438,7 +438,7 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
   }
 
   return (
-    <div id="inaturalist-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col">
+    <div id="inaturalist-sidebar" className="w-64 md:w-80 lg:w-96 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col">
       {/* Back to Data Types - distinct header bar */}
       {onBack && <DataTypeBackHeader onBack={onBack} />}
       

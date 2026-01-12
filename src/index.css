@@ -1,8 +1,32 @@
 @import 'https://js.arcgis.com/4.30/@arcgis/core/assets/esri/themes/light/main.css';
 
+/* Import responsive design tokens - CSS custom properties that scale with breakpoints */
+@import './styles/tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* =============================================================================
+   RESPONSIVE SIDEBAR WIDTH OVERRIDES
+   Override Tailwind's w-64/w-80/w-96 at tablet sizes for narrower sidebars
+   ============================================================================= */
+
+/* Tablet (1024px - 1279px) - Narrower sidebars */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .lg\:w-96,
+  .w-96 {
+    width: 18rem !important; /* 288px instead of 384px */
+  }
+}
+
+/* Small desktop (1280px - 1439px) - Slightly narrower */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .lg\:w-96,
+  .w-96 {
+    width: 20rem !important; /* 320px instead of 384px */
+  }
+}
 
 /*
  * Global focus ring overrides for Chrome/Safari

@@ -66,7 +66,7 @@ const DroneImageryView: React.FC<DroneImageryViewProps> = ({
   const totalLayers = projects.reduce((sum, p) => sum + p.layerCount, 0);
 
   return (
-    <div id="drone-imagery-view" className="w-96 bg-white border-r border-gray-200 flex flex-col h-full">
+    <div id="drone-imagery-view" className="w-64 md:w-80 lg:w-96 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full">
       {/* Back to Data Types */}
       {onBack && <DataTypeBackHeader onBack={onBack} />}
 

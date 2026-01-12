@@ -470,7 +470,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
   // Show empty state if no search has been performed
   if (!hasSearched) {
     return (
-      <div id="tnc-arcgis-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col h-full">
+      <div id="tnc-arcgis-sidebar" className="w-64 md:w-80 lg:w-96 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full">
         <div id="tnc-empty-state" className="flex flex-col items-center justify-center h-full p-8 text-center">
           <div id="search-prompt-icon" className="mb-4">
             <svg className="w-16 h-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -487,7 +487,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
   }
 
   return (
-    <div id="tnc-arcgis-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col h-full">
+    <div id="tnc-arcgis-sidebar" className="w-64 md:w-80 lg:w-96 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full">
       {/* Back to Data Types - distinct header bar */}
       {onBack && <DataTypeBackHeader onBack={onBack} />}
       

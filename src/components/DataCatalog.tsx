@@ -210,54 +210,55 @@ const DataCatalog: React.FC<DataCatalogProps> = ({ filters, onSelectSource }) =>
   };
 
   return (
-    <div className="p-3 space-y-3 bg-gray-50 h-full overflow-y-auto">
-      <div className="mb-3">
-        <h2 className="text-lg font-semibold text-gray-900">Data Type</h2>
-        <p className="text-sm text-gray-500 mt-0.5">
+    <div id="data-catalog-container" className="p-container-sm space-y-3 bg-gray-50 h-full overflow-y-auto">
+      <div id="data-catalog-header" className="mb-section-sm">
+        <h2 id="data-catalog-title" className="text-title-section text-gray-900">Data Type</h2>
+        <p id="data-catalog-description" className="text-label xl:text-body text-gray-500 mt-element-sm">
           Select a data type to explore, or use the filters above to narrow down available data.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-2">
+      <div id="data-catalog-grid" className="grid grid-cols-1 gap-gap-default">
         {sortedCards.map((card) => {
           const compatible = isSourceCompatible(card.sourceKey);
           
           return (
             <button
               key={card.id}
+              id={`data-card-${card.id}`}
               onClick={() => handleCardClick(card)}
               disabled={!compatible}
-              className={`relative flex items-start p-3 rounded-lg border text-left transition-all duration-200 group ${
+              className={`relative flex items-start p-container-sm rounded-card border text-left transition-all duration-200 group ${
                 compatible 
                   ? 'bg-white border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer' 
                   : 'bg-gray-100 border-gray-200 opacity-60 cursor-not-allowed grayscale'
               }`}
             >
-              <div className={`p-1.5 rounded-md mr-3 flex-shrink-0 ${
+              <div className={`p-gap-sm rounded-button mr-gap-default flex-shrink-0 ${
                 compatible ? 'bg-blue-50 text-blue-600 group-hover:bg-blue-100' : 'bg-gray-200 text-gray-400'
               }`}>
                 <card.icon className="w-5 h-5" />
               </div>
               
               <div className="flex-1 min-w-0">
-                <h3 className={`text-base font-medium mb-0.5 ${
+                <h3 className={`text-body xl:text-title-card font-medium mb-element-sm ${
                   compatible ? 'text-gray-900 group-hover:text-blue-700' : 'text-gray-500'
                 }`}>
                   {card.title}
                 </h3>
-                <p className="text-sm text-gray-500 line-clamp-2">
+                <p className="text-label xl:text-body text-gray-500 line-clamp-2">
                   {card.description}
                 </p>
               </div>
               
-              <span className={`absolute top-3 right-3 px-1.5 py-0.5 text-xs font-medium rounded ${
+              <span className={`absolute top-container-sm right-container-sm px-gap-sm py-gap-xs text-label rounded-badge ${
                 compatible ? 'bg-gray-100 text-gray-600' : 'bg-gray-200 text-gray-400'
               }`}>
                 {card.sourceBadge}
               </span>
 
               {compatible && (
-                <ArrowRight className="w-4 h-4 text-gray-300 absolute right-3 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <ArrowRight className="w-4 h-4 text-gray-300 absolute right-container-sm top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity" />
               )}
             </button>
           );
@@ -265,10 +266,11 @@ const DataCatalog: React.FC<DataCatalogProps> = ({ filters, onSelectSource }) =>
       </div>
       
       {filters.category && sortedCards.every(c => !isSourceCompatible(c.sourceKey)) && (
-        <div className="text-center p-8 text-gray-500">
-          <p>No data sources found for the selected category.</p>
+        <div id="data-catalog-empty-state" className="text-center p-container text-gray-500">
+          <p className="text-body">No data sources found for the selected category.</p>
           <button 
-            className="mt-2 text-blue-600 hover:underline"
+            id="data-catalog-clear-filters"
+            className="mt-element text-body text-blue-600 hover:underline"
             onClick={() => onSelectSource('', {})} // Clear filters
           >
             Clear filters

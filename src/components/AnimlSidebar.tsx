@@ -485,7 +485,7 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
   // Show empty state if no search has been performed
   if (!hasSearched) {
     return (
-      <div ref={sidebarRef} id="animl-sidebar" className="w-96 bg-white border-r border-gray-200 flex flex-col h-full focus:outline-none" tabIndex={0}>
+      <div ref={sidebarRef} id="animl-sidebar" className="w-64 md:w-80 lg:w-96 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full focus:outline-none" tabIndex={0}>
         <div id="animl-empty-state" className="flex flex-col items-center justify-center h-full p-8 text-center">
           <div id="search-prompt-icon" className="mb-4">
             <svg className="w-16 h-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -503,7 +503,7 @@ const AnimlSidebar: React.FC<AnimlSidebarProps> = ({
 
   if (loading) {
     return (
-      <div ref={sidebarRef} id="animl-sidebar-loading" className="w-96 bg-white border-r border-gray-200 flex flex-col h-full focus:outline-none" tabIndex={0}>
+      <div ref={sidebarRef} id="animl-sidebar-loading" className="w-64 md:w-80 lg:w-96 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full focus:outline-none" tabIndex={0}>
         {/* Back to Data Types - visible during loading */}
         {onBack && <DataTypeBackHeader onBack={onBack} />}
         <div id="animl-sidebar-loading-content" className="p-4 border-b border-gray-200">
