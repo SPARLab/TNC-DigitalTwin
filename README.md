@@ -80,6 +80,29 @@ The catalog includes datasets from four main categories:
 - **Climate** - Weather station data, temperature/precipitation
 - **Hydrology** - Stream flow monitoring, water quality
 
+## Feature Status by Data Source
+
+Track the implementation status of key features across data sources.
+
+| Data Source | Map Display | Card View | Add to Cart | Download | Filtering |
+|-------------|:-----------:|:---------:|:-----------:|:--------:|:---------:|
+| ArcGIS Feature Services | ✅ | ✅ | ❓ | ❓ | ✅ |
+| Dendra Weather Stations | ✅ | ✅ | ❓ | ❓ | ✅ |
+| eBird Observations | ✅ | ✅ | ❓ | ❓ | ✅ |
+| Animl Camera Trap | ✅ | ✅ | ❓ | ❓ | ✅ |
+| CSV Data Sources | ❓ | ✅ | ❓ | ❓ | ❓ |
+| Drone Imagery | ❓ | ❓ | ❓ | ❓ | ❓ |
+| DataONE Sources | ❓ | ❓ | ❓ | ❓ | ❓ |
+
+**Legend:** ✅ Working | ⚠️ Partial | ❌ Not Implemented | ❓ Needs Audit
+
+**Last Updated:** January 2026
+
+### Notes
+- Download formats vary by source: CSV, GeoJSON, KML depending on data type
+- Some data sources have API rate limits affecting download functionality
+- See `docs/development_plans/january-2026-ui-improvements.md` for current development priorities
+
 ## Contributing
 
 1. Fork the repository
