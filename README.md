@@ -51,24 +51,49 @@ npm run dev
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint
+- `npm run test` - Run unit tests with Vitest
+- `npm run test:ui` - Run tests with Vitest UI
+
+## Testing
+
+This project uses **Vitest** with **React Testing Library** for unit and component testing.
+
+For detailed testing setup, conventions, and examples, see [docs/testing/TESTING_SETUP.md](docs/testing/TESTING_SETUP.md).
+
+Quick start:
+```bash
+npm run test        # Run all tests
+npm run test:ui     # Run with interactive UI
+```
 
 ## Project Structure
 
 ```
-src/
-├── components/          # React components
-│   ├── Header.tsx      # Main navigation header
-│   ├── FilterSubheader.tsx   # Data filtering controls
-│   ├── SearchResults.tsx # Dataset search results
-│   ├── DatasetCard.tsx # Individual dataset card
-│   ├── MapView.tsx     # Interactive map component
-│   ├── DataLayersPanel.tsx # Map layer controls
-│   └── Footer.tsx      # Site footer
-├── data/               # Mock data and constants
-├── types/              # TypeScript type definitions
-├── App.tsx            # Main application component
-├── main.tsx           # Application entry point
-└── index.css          # Global styles
+TNC-DigitalTwin/
+├── src/
+│   ├── components/      # React components
+│   ├── data/            # Mock data and constants
+│   ├── hooks/           # Custom React hooks
+│   ├── services/        # API and data services
+│   ├── types/           # TypeScript type definitions
+│   ├── utils/           # Utility functions
+│   ├── test-utils/      # Test helpers and factories
+│   └── styles/          # Global styles and CSS tokens
+├── docs/
+│   ├── animl-optimization/   # Animl data source documentation
+│   ├── data_sources/         # Data source integration guides
+│   ├── debug_prompts/        # Debugging documentation
+│   ├── design-system/        # Design tokens and style guides
+│   ├── development_plans/    # Active development plans
+│   └── testing/              # Testing documentation
+├── scripts/
+│   ├── animl-eda/       # Animl data analysis scripts
+│   ├── animl-testing/   # Animl query testing scripts
+│   ├── category-analysis/    # Category mapping scripts
+│   ├── drone-imagery-eda/    # Drone imagery analysis
+│   └── one-off/         # One-time utility scripts
+├── e2e/                 # Playwright end-to-end tests
+└── public/              # Static assets
 ```
 
 ## Data Categories
