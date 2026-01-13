@@ -112,8 +112,7 @@ const Header: React.FC<HeaderProps> = ({ theme, onThemeChange, cartItemCount = 0
                 {cartItemCount > 0 && (
                   <span 
                     id="cart-badge"
-                    className="absolute -top-1 -right-1 bg-red-500 text-white text-micro-base lg:text-micro-lg 2xl:text-micro-2xl font-bold rounded-full w-5 h-5 flex items-center justify-center leading-none"
-                    style={{ paddingTop: '1px' }}
+                    className="absolute -top-1 -right-1 bg-red-500 text-white text-micro-base lg:text-micro-lg 2xl:text-micro-2xl font-bold rounded-full w-4 h-4 lg:w-5 lg:h-5 flex items-center justify-center leading-none -mr-px"
                   >
                     {cartItemCount > 99 ? '99+' : cartItemCount}
                   </span>
