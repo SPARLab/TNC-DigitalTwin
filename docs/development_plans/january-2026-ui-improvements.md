@@ -6,79 +6,6 @@
 
 ---
 
-## Instructions for AI Assistants
-
-**READ THIS FIRST before working on any task in this plan:**
-
-### Before Starting a Task
-
-1. **Context Gathering:**
-   - Read through the relevant parts of the codebase to understand the current implementation
-   - Review any related components, utilities, and configuration files
-   - Check for existing patterns and conventions in the codebase
-   - Look for any dependencies or related tasks that may have been completed
-
-2. **Clarifying Questions:**
-   - Before implementing, ask the user clarifying questions to ensure alignment
-   - Confirm your understanding of the requirements
-   - Ask about edge cases, preferences, or any ambiguities
-   - Get approval on your approach before proceeding with significant changes
-
-3. **Implementation:**
-   - Follow the task requirements as specified
-   - Adhere to existing code patterns and conventions
-   - Use the design system tokens and Tailwind utilities as specified in earlier tasks
-   - Test your changes at relevant breakpoints
-
-### After Completing a Task
-
-When you've finished implementing a task, you MUST:
-
-1. **Announce Completion:**
-   - State clearly that the task is complete
-   - Provide a summary of what was changed
-
-2. **Manual Verification Instructions:**
-   - Use this EXACT heading: **"How to Manually Verify Completeness"**
-   - Provide step-by-step instructions for the user to verify your work
-   - Include specific things to check, test, or look for
-   - List the files that were modified
-   - Suggest specific breakpoints or scenarios to test
-
-3. **Wait for Confirmation:**
-   - Wait for the user to say "okay this task is complete" or similar confirmation
-   - If the user reports issues, fix them before marking complete
-
-4. **Mark Task Complete:**
-   - Once the user confirms completion, update this document
-   - Check off the task in the "Task Execution Checklist" section
-   - Update the task's detailed section if needed with notes about implementation
-   - Add any context notes that future AI assistants might need (under "Implementation Notes")
-   - Update the Change Log with the completion date
-
-### Adding Context for Future Tasks
-
-When completing a task, if future tasks will need to know about decisions made or patterns established:
-
-- Add an **"Implementation Notes"** subsection to the task
-- Document any important decisions, patterns, or gotchas
-- Note any deviations from the original plan and why
-- Reference specific token names, component patterns, or utilities created
-
-**Example:**
-```markdown
-### Task 3 — Define Design System Tokens (🔴 HIGH)
-[...task description...]
-
-**Implementation Notes:**
-- Created tokens: `text-title-base`, `text-title-lg`, `text-title-2xl`
-- Decided to use 1.2 line-height for titles, 1.6 for body text
-- Added custom spacing scale: `spacing-compact-*`, `spacing-default-*`
-- Token names follow pattern: `[category]-[variant]-[breakpoint]`
-```
-
----
-
 ## Overview
 
 This development plan addresses responsive design issues, establishes a consistent design system, and improves the overall user experience across the Dangermond Preserve Data Catalog. The plan prioritizes establishing industry-standard responsive patterns before making component-specific adjustments.
@@ -650,6 +577,79 @@ Out of scope for this plan but tracked for future work:
 - **Document overrides** — If design system tokens don't work, document why
 - **Maintain consistency** — Prefer consistent design over preserving edge cases
 - **Check off completed tasks** — Update the Task Execution Checklist as you go
+
+---
+
+## Instructions for AI Assistants
+
+**READ THIS FIRST before working on any task in this plan:**
+
+### Before Starting a Task
+
+1. **Context Gathering:**
+   - Read through the relevant parts of the codebase to understand the current implementation
+   - Review any related components, utilities, and configuration files
+   - Check for existing patterns and conventions in the codebase
+   - Look for any dependencies or related tasks that may have been completed
+
+2. **Clarifying Questions:**
+   - Before implementing, ask the user clarifying questions to ensure alignment
+   - Confirm your understanding of the requirements
+   - Ask about edge cases, preferences, or any ambiguities
+   - Get approval on your approach before proceeding with significant changes
+
+3. **Implementation:**
+   - Follow the task requirements as specified
+   - Adhere to existing code patterns and conventions
+   - Use the design system tokens and Tailwind utilities as specified in earlier tasks
+   - Test your changes at relevant breakpoints
+
+### After Completing a Task
+
+When you've finished implementing a task, you MUST:
+
+1. **Announce Completion:**
+   - State clearly that the task is complete
+   - Provide a summary of what was changed
+
+2. **Manual Verification Instructions:**
+   - Use this EXACT heading: **"How to Manually Verify Completeness"**
+   - Provide step-by-step instructions for the user to verify your work
+   - Include specific things to check, test, or look for
+   - List the files that were modified
+   - Suggest specific breakpoints or scenarios to test
+
+3. **Wait for Confirmation:**
+   - Wait for the user to say "okay this task is complete" or similar confirmation
+   - If the user reports issues, fix them before marking complete
+
+4. **Mark Task Complete:**
+   - Once the user confirms completion, update this document
+   - Check off the task in the "Task Execution Checklist" section
+   - Update the task's detailed section if needed with notes about implementation
+   - Add any context notes that future AI assistants might need (under "Implementation Notes")
+   - Update the Change Log with the completion date
+
+### Adding Context for Future Tasks
+
+When completing a task, if future tasks will need to know about decisions made or patterns established:
+
+- Add an **"Implementation Notes"** subsection to the task
+- Document any important decisions, patterns, or gotchas
+- Note any deviations from the original plan and why
+- Reference specific token names, component patterns, or utilities created
+
+**Example:**
+```markdown
+### Task 3 — Define Design System Tokens (🔴 HIGH)
+[...task description...]
+
+**Implementation Notes:**
+- Created tokens: `text-title-base`, `text-title-lg`, `text-title-2xl`
+- Decided to use 1.2 line-height for titles, 1.6 for body text
+- Added custom spacing scale: `spacing-compact-*`, `spacing-default-*`
+- Token names follow pattern: `[category]-[variant]-[breakpoint]`
+```
 
 ---
 
