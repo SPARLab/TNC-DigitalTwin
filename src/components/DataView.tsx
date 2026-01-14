@@ -243,7 +243,7 @@ const DataView: React.FC<DataViewProps> = ({
     // Use draftFilters if available to show grayed-out states correctly based on subheader interactions
     if (!filters.source) {
       return (
-        <div className="w-64 md:w-80 lg:w-96 bg-white border-r border-gray-200 flex flex-col h-full z-10 flex-shrink-0">
+        <div className="w-sidebar-left-lg xl:w-sidebar-left-xl 2xl:w-sidebar-left-2xl bg-white border-r border-gray-200 flex flex-col h-full z-10 flex-shrink-0">
            <DataCatalog 
              filters={draftFilters || filters} 
              onSelectSource={onSelectSource!} 
@@ -461,17 +461,17 @@ const DataView: React.FC<DataViewProps> = ({
         
       default:
         return (
-          <div id="unsupported-data-view" className="w-64 md:w-80 lg:w-96 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
-            <div id="unsupported-header" className="p-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Data View</h2>
-              <p className="text-sm text-gray-600">
+          <div id="unsupported-data-view" className="w-sidebar-left-lg xl:w-sidebar-left-xl 2xl:w-sidebar-left-2xl bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+            <div id="unsupported-header" className="p-pad-card-lg xl:p-pad-card-xl 2xl:p-pad-card-2xl border-b border-gray-200">
+              <h2 className="text-title-section-lg xl:text-title-section-xl 2xl:text-title-section-2xl font-semibold text-gray-900">Data View</h2>
+              <p className="text-body-lg xl:text-body-xl 2xl:text-body-2xl text-gray-600">
                 {filters.category} + {filters.source}
               </p>
             </div>
-            <div id="unsupported-content" className="flex-1 flex items-center justify-center p-4">
+            <div id="unsupported-content" className="flex-1 flex items-center justify-center p-pad-card-lg xl:p-pad-card-xl 2xl:p-pad-card-2xl">
               <div className="text-center text-gray-500">
-                <p className="font-medium">Data view not available</p>
-                <p className="text-sm mt-1">
+                <p className="font-medium text-body-lg xl:text-body-xl 2xl:text-body-2xl">Data view not available</p>
+                <p className="text-body-lg xl:text-body-xl 2xl:text-body-2xl mt-margin-element-lg xl:mt-margin-element-xl 2xl:mt-margin-element-2xl">
                   The combination of {filters.category} + {filters.source} is not yet supported.
                 </p>
               </div>

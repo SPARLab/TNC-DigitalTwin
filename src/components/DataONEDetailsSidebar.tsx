@@ -223,7 +223,7 @@ const DataONEDetailsSidebar: React.FC<DataONEDetailsSidebarProps> = ({
   return (
     <div
       id="dataone-details-sidebar"
-      className="w-96 bg-white border-l border-gray-200 flex flex-col h-full shadow-lg"
+      className="w-sidebar-right-lg xl:w-sidebar-right-xl 2xl:w-sidebar-right-2xl bg-white border-l border-gray-200 flex flex-col h-full shadow-lg"
     >
       {/* Header */}
       <div id="dataone-details-header" className="p-4 border-b border-gray-200 bg-emerald-50">

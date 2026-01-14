@@ -468,7 +468,7 @@ export default function DendraDetailsSidebar({
       return (
         <div
           id="dendra-details-no-search"
-          className="h-full flex items-center justify-center bg-gray-50 p-8 w-96"
+          className="h-full flex items-center justify-center bg-gray-50 p-pad-card-lg xl:p-pad-card-xl 2xl:p-pad-card-2xl w-sidebar-right-lg xl:w-sidebar-right-xl 2xl:w-sidebar-right-2xl"
         >
           <div className="text-center max-w-md">
             <svg
@@ -500,7 +500,7 @@ export default function DendraDetailsSidebar({
       return (
         <div
           id="dendra-details-loading"
-          className="h-full flex items-center justify-center bg-gray-50 p-8 w-96"
+          className="h-full flex items-center justify-center bg-gray-50 p-pad-card-lg xl:p-pad-card-xl 2xl:p-pad-card-2xl w-sidebar-right-lg xl:w-sidebar-right-xl 2xl:w-sidebar-right-2xl"
         >
           <div className="text-center max-w-md">
             <div className="w-16 h-16 mx-auto mb-4 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
@@ -519,7 +519,7 @@ export default function DendraDetailsSidebar({
     return (
       <div
         id="dendra-details-select-item"
-        className="h-full flex items-center justify-center bg-gray-50 p-8 w-96"
+        className="h-full flex items-center justify-center bg-gray-50 p-pad-card-lg xl:p-pad-card-xl 2xl:p-pad-card-2xl w-sidebar-right-lg xl:w-sidebar-right-xl 2xl:w-sidebar-right-2xl"
       >
         <div className="text-center max-w-md">
           <svg
@@ -547,7 +547,7 @@ export default function DendraDetailsSidebar({
   }
 
   return (
-    <div id="dendra-details-sidebar" className="h-full flex flex-col bg-white overflow-y-auto w-96">
+    <div id="dendra-details-sidebar" className="h-full flex flex-col bg-white overflow-y-auto w-sidebar-right-lg xl:w-sidebar-right-xl 2xl:w-sidebar-right-2xl">
       {/* Station Info Section (when station is selected) */}
       {station && (
         <div id="station-info-section" className="p-6 border-b border-gray-200">

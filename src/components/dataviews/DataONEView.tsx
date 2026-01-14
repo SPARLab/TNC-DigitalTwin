@@ -260,7 +260,7 @@ const DataONEView: React.FC<DataONEViewProps> = ({
   };
 
   return (
-    <div id="dataone-view" className="w-64 md:w-80 lg:w-96 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full">
+    <div id="dataone-view" className="w-sidebar-left-lg xl:w-sidebar-left-xl 2xl:w-sidebar-left-2xl flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full">
       {/* Back to Data Types */}
       {onBack && <DataTypeBackHeader onBack={onBack} />}
 

@@ -159,18 +159,18 @@ export default function DendraSidebar({
   }, [selectedStationId, activeTab, stationsWithData, stationsWithoutData]);
 
   return (
-    <div id="dendra-sidebar" className="h-full flex flex-col bg-white w-96">
+    <div id="dendra-sidebar" className="h-full flex flex-col bg-white w-sidebar-left-lg xl:w-sidebar-left-xl 2xl:w-sidebar-left-2xl">
       {/* Back to Data Types - distinct header bar */}
       {onBack && <DataTypeBackHeader onBack={onBack} />}
       
       {/* Header with Dendra.science link */}
-      <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+      <div className="px-pad-card-lg xl:px-pad-card-xl 2xl:px-pad-card-2xl py-pad-card-compact-lg xl:py-pad-card-compact-xl 2xl:py-pad-card-compact-2xl border-b border-gray-200 bg-gray-50">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-700">Dendra Stations</h2>
+          <h2 className="text-body-lg xl:text-body-xl 2xl:text-body-2xl font-semibold text-gray-700">Dendra Stations</h2>
           {onShowDendraWebsite && (
             <button
               onClick={onShowDendraWebsite}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors border border-blue-200"
+              className="flex items-center gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl px-btn-compact-x-lg xl:px-btn-compact-x-xl 2xl:px-btn-compact-x-2xl py-btn-compact-y-lg xl:py-btn-compact-y-xl 2xl:py-btn-compact-y-2xl text-label-lg xl:text-label-xl 2xl:text-label-2xl font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-button transition-colors border border-blue-200"
               title="View full Dendra website"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -186,7 +186,7 @@ export default function DendraSidebar({
         <div id="dendra-sidebar-tabs" className="flex border-b border-gray-200">
           <button
             id="stations-tab-button"
-            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+            className={`flex-1 px-btn-x-lg xl:px-btn-x-xl 2xl:px-btn-x-2xl py-btn-y-lg xl:py-btn-y-xl 2xl:py-btn-y-2xl text-body-lg xl:text-body-xl 2xl:text-body-2xl font-medium transition-colors ${
               activeTab === 'stations'
                 ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
                 : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
@@ -197,7 +197,7 @@ export default function DendraSidebar({
           </button>
           <button
             id="datastreams-tab-button"
-            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+            className={`flex-1 px-btn-x-lg xl:px-btn-x-xl 2xl:px-btn-x-2xl py-btn-y-lg xl:py-btn-y-xl 2xl:py-btn-y-2xl text-body-lg xl:text-body-xl 2xl:text-body-2xl font-medium transition-colors ${
               activeTab === 'datastreams'
                 ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
                 : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
@@ -209,7 +209,7 @@ export default function DendraSidebar({
         </div>
 
       {/* Search Bar */}
-      <div id="dendra-search-container" className="p-4 border-b border-gray-200">
+      <div id="dendra-search-container" className="p-pad-card-lg xl:p-pad-card-xl 2xl:p-pad-card-2xl border-b border-gray-200">
         {activeTab === 'stations' ? (
           <input
             id="station-search-input"
@@ -217,7 +217,7 @@ export default function DendraSidebar({
             placeholder="Search stations..."
             value={stationSearch}
             onChange={(e) => setStationSearch(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-btn-x-lg xl:px-btn-x-xl 2xl:px-btn-x-2xl py-btn-y-lg xl:py-btn-y-xl 2xl:py-btn-y-2xl text-body-lg xl:text-body-xl 2xl:text-body-2xl border border-gray-300 rounded-button focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         ) : (
           <input
@@ -226,7 +226,7 @@ export default function DendraSidebar({
             placeholder="Search datastreams..."
             value={datastreamSearch}
             onChange={(e) => setDatastreamSearch(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-btn-x-lg xl:px-btn-x-xl 2xl:px-btn-x-2xl py-btn-y-lg xl:py-btn-y-xl 2xl:py-btn-y-2xl text-body-lg xl:text-body-xl 2xl:text-body-2xl border border-gray-300 rounded-button focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         )}
       </div>

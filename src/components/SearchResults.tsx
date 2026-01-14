@@ -15,7 +15,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
   onViewModeChange 
 }) => {
   return (
-    <div id="search-results" className="bg-white w-96 border-r border-gray-200 h-full overflow-hidden">
+    <div id="search-results" className="bg-white w-sidebar-left-lg xl:w-sidebar-left-xl 2xl:w-sidebar-left-2xl border-r border-gray-200 h-full overflow-hidden">
       <div className="p-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">

@@ -470,15 +470,15 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
   // Show empty state if no search has been performed
   if (!hasSearched) {
     return (
-      <div id="tnc-arcgis-sidebar" className="w-64 md:w-80 lg:w-96 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full">
-        <div id="tnc-empty-state" className="flex flex-col items-center justify-center h-full p-8 text-center">
-          <div id="search-prompt-icon" className="mb-4">
+      <div id="tnc-arcgis-sidebar" className="w-sidebar-left-lg xl:w-sidebar-left-xl 2xl:w-sidebar-left-2xl flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full">
+        <div id="tnc-empty-state" className="flex flex-col items-center justify-center h-full p-pad-card-lg xl:p-pad-card-xl 2xl:p-pad-card-2xl text-center">
+          <div id="search-prompt-icon" className="mb-margin-element-lg xl:mb-margin-element-xl 2xl:mb-margin-element-2xl">
             <svg className="w-16 h-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Start Your Search</h3>
-          <p className="text-sm text-gray-600">
+          <h3 className="text-title-section-lg xl:text-title-section-xl 2xl:text-title-section-2xl font-medium text-gray-900 mb-gap-tight-lg xl:mb-gap-tight-xl 2xl:mb-gap-tight-2xl">Start Your Search</h3>
+          <p className="text-body-lg xl:text-body-xl 2xl:text-body-2xl text-gray-600">
             Enter selection criteria and hit search to see results
           </p>
         </div>
@@ -487,19 +487,19 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
   }
 
   return (
-    <div id="tnc-arcgis-sidebar" className="w-64 md:w-80 lg:w-96 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full">
+    <div id="tnc-arcgis-sidebar" className="w-sidebar-left-lg xl:w-sidebar-left-xl 2xl:w-sidebar-left-2xl flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full">
       {/* Back to Data Types - distinct header bar */}
       {onBack && <DataTypeBackHeader onBack={onBack} />}
       
       {/* Header */}
-      <div id="tnc-header" className="p-4 border-b border-gray-200">
-        <div id="tnc-header-top" className="flex items-center justify-between mb-3">
-          <h2 id="tnc-catalog-title" className="text-lg font-semibold text-gray-900">TNC Data Catalog</h2>
-          <div id="tnc-header-controls" className="flex items-center gap-2">
+      <div id="tnc-header" className="p-pad-card-lg xl:p-pad-card-xl 2xl:p-pad-card-2xl border-b border-gray-200">
+        <div id="tnc-header-top" className="flex items-center justify-between mb-gap-element-lg xl:mb-gap-element-xl 2xl:mb-gap-element-2xl">
+          <h2 id="tnc-catalog-title" className="text-title-section-lg xl:text-title-section-xl 2xl:text-title-section-2xl font-semibold text-gray-900">TNC Data Catalog</h2>
+          <div id="tnc-header-controls" className="flex items-center gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl">
             <button
               id="tnc-toggle-filters-button"
               onClick={() => setShowFilters(!showFilters)}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-btn-y-lg xl:p-btn-y-xl 2xl:p-btn-y-2xl rounded-button transition-colors ${
                 showFilters ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
               title="Toggle filters"
@@ -510,31 +510,31 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
         </div>
         
         {/* Search */}
-        <div id="tnc-search-container" className="relative mb-3">
-          <Search id="tnc-search-icon" className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <div id="tnc-search-container" className="relative mb-gap-element-lg xl:mb-gap-element-xl 2xl:mb-gap-element-2xl">
+          <Search id="tnc-search-icon" className="absolute left-gap-element-lg xl:left-gap-element-xl 2xl:left-gap-element-2xl top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             id="tnc-search-input"
             type="text"
             placeholder="Search datasets..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-btn-x-lg xl:pr-btn-x-xl 2xl:pr-btn-x-2xl py-btn-y-lg xl:py-btn-y-xl 2xl:py-btn-y-2xl text-body-lg xl:text-body-xl 2xl:text-body-2xl border border-gray-300 rounded-button focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
         
         {/* Stats */}
-        <div id="tnc-stats-bar" className="flex items-center justify-between text-sm text-gray-600">
+        <div id="tnc-stats-bar" className="flex items-center justify-between text-label-lg xl:text-label-xl 2xl:text-label-2xl text-gray-600">
           <span id="tnc-total-items-count">{stats.total} items</span>
-          <div id="tnc-stats-by-pattern" className="flex items-center gap-3">
-            <span id="tnc-map-layer-count" className="flex items-center gap-1">
+          <div id="tnc-stats-by-pattern" className="flex items-center gap-gap-element-lg xl:gap-gap-element-xl 2xl:gap-gap-element-2xl">
+            <span id="tnc-map-layer-count" className="flex items-center gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl">
               <Map className="w-3 h-3" />
               {stats.byPattern.MAP_LAYER}
             </span>
-            <span id="tnc-external-link-count" className="flex items-center gap-1">
+            <span id="tnc-external-link-count" className="flex items-center gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl">
               <ExternalLink className="w-3 h-3" />
               {stats.byPattern.EXTERNAL_LINK}
             </span>
-            <span id="tnc-modal-count" className="flex items-center gap-1">
+            <span id="tnc-modal-count" className="flex items-center gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl">
               <FileText className="w-3 h-3" />
               {stats.byPattern.MODAL}
             </span>
@@ -543,14 +543,14 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
         
         {/* Filters */}
         {showFilters && (
-          <div id="tnc-filters-panel" className="mt-3 p-3 bg-gray-50 rounded-lg">
-            <div id="tnc-filters-header" className="flex items-center justify-between mb-2">
-              <span id="tnc-filters-label" className="text-sm font-medium text-gray-700">Filters</span>
+          <div id="tnc-filters-panel" className="mt-gap-element-lg xl:mt-gap-element-xl 2xl:mt-gap-element-2xl p-pad-card-compact-lg xl:p-pad-card-compact-xl 2xl:p-pad-card-compact-2xl bg-gray-50 rounded-card">
+            <div id="tnc-filters-header" className="flex items-center justify-between mb-gap-tight-lg xl:mb-gap-tight-xl 2xl:mb-gap-tight-2xl">
+              <span id="tnc-filters-label" className="text-body-lg xl:text-body-xl 2xl:text-body-2xl font-medium text-gray-700">Filters</span>
               {(selectedCategories.size > 0 || selectedUIPatterns.size > 0) && (
                 <button
                   id="tnc-clear-all-filters-button"
                   onClick={clearFilters}
-                  className="text-xs text-blue-600 hover:text-blue-800"
+                  className="text-label-lg xl:text-label-xl 2xl:text-label-2xl text-blue-600 hover:text-blue-800"
                 >
                   Clear all
                 </button>
@@ -558,15 +558,15 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
             </div>
             
             {/* Category filters */}
-            <div id="tnc-category-filters-section" className="mb-3">
-              <span id="tnc-category-filters-label" className="text-xs text-gray-600 mb-1 block">Categories</span>
-              <div id="tnc-category-filters-list" className="flex flex-wrap gap-1">
+            <div id="tnc-category-filters-section" className="mb-gap-element-lg xl:mb-gap-element-xl 2xl:mb-gap-element-2xl">
+              <span id="tnc-category-filters-label" className="text-label-lg xl:text-label-xl 2xl:text-label-2xl text-gray-600 mb-gap-tight-lg xl:mb-gap-tight-xl 2xl:mb-gap-tight-2xl block">Categories</span>
+              <div id="tnc-category-filters-list" className="flex flex-wrap gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl">
                 {availableCategories.map(category => (
                   <button
                     key={category}
                     id={`tnc-category-filter-${category.toLowerCase().replace(/\s+/g, '-')}`}
                     onClick={() => toggleCategoryFilter(category)}
-                    className={`px-2 py-1 text-xs rounded transition-colors ${
+                    className={`px-btn-compact-x-lg xl:px-btn-compact-x-xl 2xl:px-btn-compact-x-2xl py-btn-compact-y-lg xl:py-btn-compact-y-xl 2xl:py-btn-compact-y-2xl text-label-lg xl:text-label-xl 2xl:text-label-2xl rounded-badge transition-colors ${
                       selectedCategories.has(category)
                         ? 'bg-green-200 text-green-800'
                         : 'bg-white text-gray-600 hover:bg-gray-100'
@@ -580,14 +580,14 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
             
             {/* UI Pattern filters */}
             <div id="tnc-data-type-filters-section">
-              <span id="tnc-data-type-filters-label" className="text-xs text-gray-600 mb-1 block">Data Types</span>
-              <div id="tnc-data-type-filters-list" className="flex flex-wrap gap-1">
+              <span id="tnc-data-type-filters-label" className="text-label-lg xl:text-label-xl 2xl:text-label-2xl text-gray-600 mb-gap-tight-lg xl:mb-gap-tight-xl 2xl:mb-gap-tight-2xl block">Data Types</span>
+              <div id="tnc-data-type-filters-list" className="flex flex-wrap gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl">
                 {availableUIPatterns.map(pattern => (
                   <button
                     key={pattern}
                     id={`tnc-data-type-filter-${pattern.toLowerCase().replace(/_/g, '-')}`}
                     onClick={() => toggleUIPatternFilter(pattern)}
-                    className={`px-2 py-1 text-xs rounded transition-colors flex items-center gap-1 ${
+                    className={`px-btn-compact-x-lg xl:px-btn-compact-x-xl 2xl:px-btn-compact-x-2xl py-btn-compact-y-lg xl:py-btn-compact-y-xl 2xl:py-btn-compact-y-2xl text-label-lg xl:text-label-xl 2xl:text-label-2xl rounded-badge transition-colors flex items-center gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl ${
                       selectedUIPatterns.has(pattern)
                         ? 'bg-blue-200 text-blue-800'
                         : 'bg-white text-gray-600 hover:bg-gray-100'
@@ -606,14 +606,14 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
       {/* Content */}
       <div id="tnc-content" className="flex-1 overflow-y-auto">
         {isLoading ? (
-          <div id="tnc-loading-state" className="flex items-center justify-center p-8">
+          <div id="tnc-loading-state" className="flex items-center justify-center p-pad-card-lg xl:p-pad-card-xl 2xl:p-pad-card-2xl">
             <div id="tnc-loading-spinner" className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
         ) : filteredItems.length === 0 ? (
-          <div id="tnc-empty-state" className="flex flex-col items-center justify-center p-8 text-gray-500">
-            <Database id="tnc-empty-state-icon" className="w-12 h-12 mb-4 text-gray-300" />
-            <p id="tnc-empty-state-title" className="font-medium">No items found</p>
-            <p id="tnc-empty-state-message" className="text-sm text-center mt-1">
+          <div id="tnc-empty-state" className="flex flex-col items-center justify-center p-pad-card-lg xl:p-pad-card-xl 2xl:p-pad-card-2xl text-gray-500">
+            <Database id="tnc-empty-state-icon" className="w-12 h-12 mb-margin-element-lg xl:mb-margin-element-xl 2xl:mb-margin-element-2xl text-gray-300" />
+            <p id="tnc-empty-state-title" className="font-medium text-body-lg xl:text-body-xl 2xl:text-body-2xl">No items found</p>
+            <p id="tnc-empty-state-message" className="text-body-lg xl:text-body-xl 2xl:text-body-2xl text-center mt-gap-tight-lg xl:mt-gap-tight-xl 2xl:mt-gap-tight-2xl">
               {searchQuery || selectedCategories.size > 0 || selectedUIPatterns.size > 0
                 ? 'Try adjusting your search or filters'
                 : 'No data available'
@@ -621,7 +621,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
             </p>
           </div>
         ) : (
-          <div id="tnc-items-list" className="p-4 space-y-6">
+          <div id="tnc-items-list" className="p-pad-card-lg xl:p-pad-card-xl 2xl:p-pad-card-2xl space-y-margin-section-lg xl:space-y-margin-section-xl 2xl:space-y-margin-section-2xl">
             {Object.entries(groupedItems).map(([dataType, typeItems]) => {
               // Determine icon and color for each data type group
               const getGroupIcon = () => {

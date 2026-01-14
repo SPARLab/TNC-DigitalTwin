@@ -168,7 +168,7 @@ const WildlifeEBirdView: React.FC<WildlifeEBirdViewProps> = ({
   // Show empty state if no search has been performed
   if (!hasSearched) {
     return (
-      <div id="ebird-wildlife-view" className="w-64 md:w-80 lg:w-96 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col">
+      <div id="ebird-wildlife-view" className="w-sidebar-left-lg xl:w-sidebar-left-xl 2xl:w-sidebar-left-2xl flex-shrink-0 bg-white border-r border-gray-200 flex flex-col">
         <div id="ebird-empty-state" className="flex flex-col items-center justify-center h-full p-8 text-center">
           <div id="search-prompt-icon" className="mb-4">
             <span className="text-6xl">🐦</span>
@@ -360,7 +360,7 @@ const WildlifeEBirdView: React.FC<WildlifeEBirdViewProps> = ({
   };
 
   return (
-    <div id="ebird-wildlife-view" className="w-64 md:w-80 lg:w-96 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col">
+    <div id="ebird-wildlife-view" className="w-sidebar-left-lg xl:w-sidebar-left-xl 2xl:w-sidebar-left-2xl flex-shrink-0 bg-white border-r border-gray-200 flex flex-col">
       {/* Back to Data Types - distinct header bar */}
       {onBack && <DataTypeBackHeader onBack={onBack} />}
       

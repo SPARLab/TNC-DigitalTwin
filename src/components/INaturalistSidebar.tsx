@@ -402,15 +402,15 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
   // Show empty state if no search has been performed
   if (!hasSearched) {
     return (
-      <div id="inaturalist-sidebar" className="w-64 md:w-80 lg:w-96 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full">
-        <div id="inaturalist-empty-state" className="flex flex-col items-center justify-center h-full p-8 text-center">
-          <div id="search-prompt-icon" className="mb-4">
+      <div id="inaturalist-sidebar" className="w-sidebar-left-lg xl:w-sidebar-left-xl 2xl:w-sidebar-left-2xl flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full">
+        <div id="inaturalist-empty-state" className="flex flex-col items-center justify-center h-full p-pad-card-lg xl:p-pad-card-xl 2xl:p-pad-card-2xl text-center">
+          <div id="search-prompt-icon" className="mb-margin-element-lg xl:mb-margin-element-xl 2xl:mb-margin-element-2xl">
             <svg className="w-16 h-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Start Your Search</h3>
-          <p className="text-sm text-gray-600">
+          <h3 className="text-title-section-lg xl:text-title-section-xl 2xl:text-title-section-2xl font-medium text-gray-900 mb-gap-tight-lg xl:mb-gap-tight-xl 2xl:mb-gap-tight-2xl">Start Your Search</h3>
+          <p className="text-body-lg xl:text-body-xl 2xl:text-body-2xl text-gray-600">
             Enter selection criteria and hit search to see results
           </p>
         </div>
@@ -420,14 +420,14 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
 
   if (loading) {
     return (
-      <div id="inaturalist-sidebar-loading" className="w-64 md:w-80 lg:w-96 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full">
-        <div id="inaturalist-sidebar-loading-content" className="p-4 border-b border-gray-200">
-          <h2 id="inaturalist-sidebar-loading-title" className="text-lg font-semibold text-gray-900 mb-4">{title}</h2>
-          <div id="inaturalist-loading-container" className="flex flex-col items-center justify-center h-32 space-y-3">
+      <div id="inaturalist-sidebar-loading" className="w-sidebar-left-lg xl:w-sidebar-left-xl 2xl:w-sidebar-left-2xl flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full">
+        <div id="inaturalist-sidebar-loading-content" className="p-pad-card-lg xl:p-pad-card-xl 2xl:p-pad-card-2xl border-b border-gray-200">
+          <h2 id="inaturalist-sidebar-loading-title" className="text-title-section-lg xl:text-title-section-xl 2xl:text-title-section-2xl font-semibold text-gray-900 mb-margin-element-lg xl:mb-margin-element-xl 2xl:mb-margin-element-2xl">{title}</h2>
+          <div id="inaturalist-loading-container" className="flex flex-col items-center justify-center h-32 space-y-gap-element-lg xl:space-y-gap-element-xl 2xl:space-y-gap-element-2xl">
             <div id="inaturalist-loading-spinner" className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             <div id="inaturalist-loading-text" className="text-center">
-              <p className="text-sm text-gray-600 font-medium">Loading observations...</p>
-              <p className="text-xs text-gray-500 mt-1 max-w-xs">
+              <p className="text-body-lg xl:text-body-xl 2xl:text-body-2xl text-gray-600 font-medium">Loading observations...</p>
+              <p className="text-label-lg xl:text-label-xl 2xl:text-label-2xl text-gray-500 mt-gap-tight-lg xl:mt-gap-tight-xl 2xl:mt-gap-tight-2xl max-w-xs">
                 Fetching data...
               </p>
             </div>
@@ -438,27 +438,27 @@ const INaturalistSidebar: React.FC<INaturalistSidebarProps> = ({
   }
 
   return (
-    <div id="inaturalist-sidebar" className="w-64 md:w-80 lg:w-96 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col">
+    <div id="inaturalist-sidebar" className="w-sidebar-left-lg xl:w-sidebar-left-xl 2xl:w-sidebar-left-2xl flex-shrink-0 bg-white border-r border-gray-200 flex flex-col">
       {/* Back to Data Types - distinct header bar */}
       {onBack && <DataTypeBackHeader onBack={onBack} />}
       
       {/* Header */}
-      <div id="inaturalist-sidebar-header" className="p-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">{title}</h2>
+      <div id="inaturalist-sidebar-header" className="p-pad-card-lg xl:p-pad-card-xl 2xl:p-pad-card-2xl border-b border-gray-200">
+        <h2 className="text-title-section-lg xl:text-title-section-xl 2xl:text-title-section-2xl font-semibold text-gray-900 mb-gap-tight-lg xl:mb-gap-tight-xl 2xl:mb-gap-tight-2xl">{title}</h2>
         
-        <div className="text-sm text-gray-600 mb-3">
+        <div className="text-body-lg xl:text-body-xl 2xl:text-body-2xl text-gray-600 mb-gap-element-lg xl:mb-gap-element-xl 2xl:mb-gap-element-2xl">
           {observations.length} observations {dateRangeText}
         </div>
 
         {/* Search */}
-        <div id="inaturalist-search" className="mb-3">
+        <div id="inaturalist-search" className="mb-gap-element-lg xl:mb-gap-element-xl 2xl:mb-gap-element-2xl">
           <input
             id="inaturalist-search-input"
             type="text"
             value={searchText}
             onChange={(e) => { setSearchText(e.target.value); resetPagination(); }}
             placeholder="Search by name or observer..."
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-btn-x-lg xl:px-btn-x-xl 2xl:px-btn-x-2xl py-btn-y-lg xl:py-btn-y-xl 2xl:py-btn-y-2xl text-body-lg xl:text-body-xl 2xl:text-body-2xl border border-gray-300 rounded-button focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 

@@ -690,7 +690,7 @@ const INaturalistDetailsSidebar: React.FC<INaturalistDetailsSidebarProps> = ({
   };
 
   return (
-    <div id="inaturalist-details-sidebar" className="w-96 bg-white border-l border-gray-200 flex flex-col h-full">
+    <div id="inaturalist-details-sidebar" className="w-sidebar-right-lg xl:w-sidebar-right-xl 2xl:w-sidebar-right-2xl bg-white border-l border-gray-200 flex flex-col h-full">
       {/* Tab Buttons */}
       {renderTabButtons()}
 

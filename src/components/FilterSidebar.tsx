@@ -104,7 +104,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   // Show message if no search has been performed
   if (!hasSearched) {
     return (
-      <div id="filter-sidebar" className="bg-white w-96 border-l border-gray-200 flex flex-col h-full">
+      <div id="filter-sidebar" className="bg-white w-sidebar-right-lg xl:w-sidebar-right-xl 2xl:w-sidebar-right-2xl border-l border-gray-200 flex flex-col h-full">
         <div id="filter-sidebar-empty-state" className="flex flex-col items-center justify-center h-full p-8 text-center">
           <div id="search-icon" className="mb-4">
             <svg className="w-16 h-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -123,7 +123,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   // Show message if search was performed but no results
   if (!hasResults) {
     return (
-      <div id="filter-sidebar" className="bg-white w-96 border-l border-gray-200 flex flex-col h-full">
+      <div id="filter-sidebar" className="bg-white w-sidebar-right-lg xl:w-sidebar-right-xl 2xl:w-sidebar-right-2xl border-l border-gray-200 flex flex-col h-full">
         <div id="filter-sidebar-empty-results" className="flex flex-col items-center justify-center h-full p-8 text-center">
           <div id="no-results-icon" className="mb-4">
             <svg className="w-16 h-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -142,7 +142,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   // For TNC ArcGIS Hub, show selection prompt when results exist but nothing is selected
   if (dataSource === 'TNC ArcGIS Hub' && hasResults) {
     return (
-      <div id="filter-sidebar" className="bg-white w-96 border-l border-gray-200 flex flex-col h-full">
+      <div id="filter-sidebar" className="bg-white w-sidebar-right-lg xl:w-sidebar-right-xl 2xl:w-sidebar-right-2xl border-l border-gray-200 flex flex-col h-full">
         <div id="filter-sidebar-select-prompt" className="flex flex-col items-center justify-center h-full p-8 text-center">
           <div id="select-icon" className="mb-4">
             <svg className="w-16 h-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -159,7 +159,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   }
 
   return (
-    <div id="filter-sidebar" className="bg-white w-96 border-l border-gray-200 flex flex-col h-full">
+    <div id="filter-sidebar" className="bg-white w-sidebar-right-lg xl:w-sidebar-right-xl 2xl:w-sidebar-right-2xl border-l border-gray-200 flex flex-col h-full">
       <div id="filter-sidebar-content" className="flex flex-col h-full">
         {/* Header */}
         <div id="filter-sidebar-header" className="p-4 border-b border-gray-200">

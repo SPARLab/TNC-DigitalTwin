@@ -211,15 +211,15 @@ const DataCatalog: React.FC<DataCatalogProps> = ({ filters, onSelectSource }) =>
   };
 
   return (
-    <div id="data-catalog-container" className="px-page-base lg:px-page-lg 2xl:px-page-2xl py-page-y-base lg:py-page-y-lg xl:p-card-compact-xl 2xl:p-card-compact-2xl space-y-2 xl:space-y-3 bg-gray-50 h-full overflow-y-auto">
-      <div id="data-catalog-header" className="mb-2 xl:mb-section-compact-xl 2xl:mb-section-compact-2xl">
-        <h2 id="data-catalog-title" className="text-label-base lg:text-label-lg xl:text-title-section-xl 2xl:text-title-section-2xl font-semibold text-gray-900">Data Type</h2>
-        <p id="data-catalog-description" className="text-micro-base lg:text-micro-lg xl:text-body-xl 2xl:text-body-2xl text-gray-500 mt-0.5 xl:mt-element-compact-xl 2xl:mt-element-compact-2xl">
+    <div id="data-catalog-container" className="p-pad-card-lg xl:p-pad-card-xl 2xl:p-pad-card-2xl space-y-gap-card-grid-lg xl:space-y-gap-card-grid-xl 2xl:space-y-gap-card-grid-2xl bg-gray-50 h-full overflow-y-auto">
+      <div id="data-catalog-header" className="mb-margin-element-lg xl:mb-margin-element-xl 2xl:mb-margin-element-2xl">
+        <h2 id="data-catalog-title" className="text-title-section-lg xl:text-title-section-xl 2xl:text-title-section-2xl font-semibold text-gray-900">Data Type</h2>
+        <p id="data-catalog-description" className="text-body-lg xl:text-body-xl 2xl:text-body-2xl text-gray-500 mt-gap-tight-lg xl:mt-gap-tight-xl 2xl:mt-gap-tight-2xl">
           Select a data type to explore, or use the filters above to narrow down available data.
         </p>
       </div>
 
-      <div id="data-catalog-grid" className="grid grid-cols-1 gap-1 xl:gap-gap-default-xl 2xl:gap-gap-default-2xl">
+      <div id="data-catalog-grid" className="grid grid-cols-1 gap-gap-card-grid-lg xl:gap-gap-card-grid-xl 2xl:gap-gap-card-grid-2xl">
         {sortedCards.map((card) => {
           const compatible = isSourceCompatible(card.sourceKey);
           
@@ -229,47 +229,47 @@ const DataCatalog: React.FC<DataCatalogProps> = ({ filters, onSelectSource }) =>
               id={`data-card-${card.id}`}
               onClick={() => handleCardClick(card)}
               disabled={!compatible}
-              className={`relative flex items-center xl:items-start px-2 py-1.5 xl:p-card-compact-xl 2xl:p-card-compact-2xl rounded-card border text-left transition-all duration-200 group ${
+              className={`relative flex items-center xl:items-start p-pad-card-compact-lg xl:p-pad-card-compact-xl 2xl:p-pad-card-compact-2xl rounded-card border text-left transition-all duration-200 group ${
                 compatible 
                   ? 'bg-white border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer' 
                   : 'bg-gray-100 border-gray-200 opacity-60 cursor-not-allowed grayscale'
               }`}
             >
-              <div className={`p-1 xl:p-gap-small-xl 2xl:p-gap-small-2xl rounded-button mr-2 xl:mr-gap-default-xl 2xl:mr-gap-default-2xl flex-shrink-0 ${
+              <div className={`p-gap-tight-lg xl:p-gap-tight-xl 2xl:p-gap-tight-2xl rounded-button mr-gap-element-lg xl:mr-gap-element-xl 2xl:mr-gap-element-2xl flex-shrink-0 ${
                 compatible ? 'bg-blue-50 text-blue-600 group-hover:bg-blue-100' : 'bg-gray-200 text-gray-400'
               }`}>
-                <card.icon className="w-4 h-4 xl:w-5 xl:h-5" />
+                <card.icon className="w-4 h-4 2xl:w-5 2xl:h-5" />
               </div>
               
               <div className="flex-1 min-w-0 flex items-center xl:block">
                 <h3 
-                  className={`text-label-base lg:text-label-lg xl:text-title-card-xl 2xl:text-title-card-2xl font-medium xl:mb-element-compact-xl 2xl:mb-element-compact-2xl ${
+                  className={`text-title-section-lg xl:text-title-section-xl 2xl:text-title-section-2xl font-semibold xl:mb-gap-tight-xl 2xl:mb-gap-tight-2xl leading-5 2xl:leading-7 xl:mt-0.5 ${
                     compatible ? 'text-gray-900 group-hover:text-blue-700' : 'text-gray-500'
                   }`}
                 >
                   {card.title}
                 </h3>
                 <span 
-                  className="xl:hidden flex-shrink-0 ml-[.1rem] cursor-help"
+                  className="xl:hidden flex-shrink-0 ml-gap-tight-lg cursor-help"
                   title={card.description}
                 >
                   <Info className="w-3.5 h-3.5 text-gray-400 hover:text-blue-500" />
                 </span>
                 <p 
-                  className="hidden xl:block text-body-base lg:text-body-lg xl:text-body-xl 2xl:text-body-2xl text-gray-500 line-clamp-2"
+                  className="hidden xl:block text-body-lg xl:text-body-xl 2xl:text-body-2xl text-gray-500 line-clamp-2"
                 >
                   {card.description}
                 </p>
               </div>
               
-              <span className={`absolute top-1/2 -translate-y-1/2 xl:translate-y-0 xl:top-card-compact-xl 2xl:top-card-compact-2xl right-2 xl:right-card-compact-xl 2xl:right-card-compact-2xl px-1.5 xl:px-gap-small-xl 2xl:px-gap-small-2xl py-0.5 text-micro-base lg:text-micro-lg xl:text-label-xl 2xl:text-label-2xl rounded-badge ${
+              <span className={`absolute top-1/2 -translate-y-1/2 xl:translate-y-0 xl:top-pad-card-compact-xl 2xl:top-pad-card-compact-2xl right-pad-card-compact-lg xl:right-pad-card-compact-xl 2xl:right-pad-card-compact-2xl px-gap-tight-lg xl:px-gap-tight-xl 2xl:px-gap-tight-2xl py-0.5 text-micro-lg xl:text-label-xl 2xl:text-label-2xl rounded-badge ${
                 compatible ? 'bg-gray-100 text-gray-600' : 'bg-gray-200 text-gray-400'
               }`}>
                 {card.sourceBadge}
               </span>
 
               {compatible && (
-                <ArrowRight className="hidden xl:block w-4 h-4 text-gray-300 absolute right-card-compact-xl 2xl:right-card-compact-2xl top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <ArrowRight className="hidden xl:block w-4 h-4 text-gray-300 absolute right-pad-card-compact-xl 2xl:right-pad-card-compact-2xl top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity" />
               )}
             </button>
           );
@@ -277,11 +277,11 @@ const DataCatalog: React.FC<DataCatalogProps> = ({ filters, onSelectSource }) =>
       </div>
       
       {filters.category && sortedCards.every(c => !isSourceCompatible(c.sourceKey)) && (
-        <div id="data-catalog-empty-state" className="text-center p-card-base lg:p-card-lg 2xl:p-card-2xl text-gray-500">
-          <p className="text-body-base lg:text-body-lg 2xl:text-body-2xl">No data sources found for the selected category.</p>
+        <div id="data-catalog-empty-state" className="text-center p-pad-card-lg xl:p-pad-card-xl 2xl:p-pad-card-2xl text-gray-500">
+          <p className="text-body-lg xl:text-body-xl 2xl:text-body-2xl">No data sources found for the selected category.</p>
           <button 
             id="data-catalog-clear-filters"
-            className="mt-element-base lg:mt-element-lg 2xl:mt-element-2xl text-body-base lg:text-body-lg 2xl:text-body-2xl text-blue-600 hover:underline"
+            className="mt-margin-element-lg xl:mt-margin-element-xl 2xl:mt-margin-element-2xl text-body-lg xl:text-body-xl 2xl:text-body-2xl text-blue-600 hover:underline"
             onClick={() => onSelectSource('', {})} // Clear filters
           >
             Clear filters

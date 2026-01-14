@@ -22,11 +22,12 @@ This development plan addresses responsive design issues, establishes a consiste
 - [x] **Task 1** — Organize root directory files (🟡 MEDIUM)
 - [x] **Task 2** — Research industry best practices for typography/spacing (🔵 RESEARCH) ✅ COMPLETE
 - [x] **Task 2a** — Implement "Desktop Required" gate for small screens (🔴 HIGH) ✅ COMPLETE
-- [ ] **Task 3** — ⚡ **MIGRATE ENTIRE APP TO DESIGN SYSTEM** (🔴 HIGH) ⚡
+- [x] **Task 3** — ⚡ **MIGRATE ENTIRE APP TO DESIGN SYSTEM** (🔴 HIGH) ⚡ ✅ COMPLETE
 - [ ] **Task 4** — Document design system usage patterns (🟡 MEDIUM)
 
 ### Phase 2: Polish & Fixes (Post-Migration)
 - [ ] **Task 5** — Fix header and subheader height consistency (🟡 MEDIUM)
+- [ ] **Task 5a** — Fix DataCatalog icon/text vertical alignment (🟡 MEDIUM)
 - [ ] **Task 6** — Locate and update Footer component (🟡 MEDIUM)
 - [ ] **Task 7** — Align left sidebar with subheader (🟡 MEDIUM)
 - [ ] **Task 8** — Fix Clear Filters button alignment (🟡 MEDIUM)
@@ -389,6 +390,45 @@ For `lg` breakpoint (1024–1279px), cards should be compact:
 
 ---
 
+**Status:** COMPLETE — January 14, 2026
+
+**Implementation Summary:**
+1. ✅ Updated `tailwind.config.js` with data-dense design system tokens
+   - Typography: title-page, title-section, title-card, body, label, caption, micro
+   - Spacing: pad-card, pad-card-compact, margin-section, margin-element, gap-section, gap-card-grid, gap-element, gap-tight
+   - Widths: sidebar-left (240/280/320px), sidebar-right (280/320/384px)
+   - All tokens have responsive values for lg, xl, 2xl breakpoints
+
+2. ✅ Migrated all sidebar components to use responsive width tokens
+   - Left sidebars: `w-sidebar-left-lg xl:w-sidebar-left-xl 2xl:w-sidebar-left-2xl`
+   - Right sidebars: `w-sidebar-right-lg xl:w-sidebar-right-xl 2xl:w-sidebar-right-2xl`
+
+3. ✅ Updated Header, FilterSubheader, Footer (already using tokens, now have correct values)
+
+4. ✅ Updated DataCatalog and DataView with design system tokens
+
+5. ✅ Implemented compact card mode at lg breakpoint
+   - Descriptions hidden at lg, visible at xl+
+   - Info icons appear on lg for hover tooltips
+   - Compact padding applied
+
+**Files Modified:**
+- `tailwind.config.js` — Updated all token values
+- `src/components/DataView.tsx`
+- `src/components/DataCatalog.tsx`
+- `src/components/TNCArcGISSidebar.tsx`
+- `src/components/INaturalistSidebar.tsx`
+- `src/components/DendraSidebar.tsx`
+- `src/components/AnimlSidebar.tsx`
+- `src/components/CalFloraSidebar.tsx`
+- `src/components/FilterSidebar.tsx`
+- `src/components/SearchResults.tsx`
+- All Details Sidebar components (TNCArcGIS, INaturalist, eBird, CalFlora, Animl, Dendra, DataONE, DroneImagery)
+- All DataView components (WildlifeEBirdView, DroneImageryView, DataONEView, LiDARView)
+- `src/components/ShoppingCart/CartPanel.tsx`
+
+---
+
 ### Task 4 — Document Design System Usage Patterns (🟡 MEDIUM)
 **Goal:** Create practical documentation for using the design system
 
@@ -413,6 +453,40 @@ For `lg` breakpoint (1024–1279px), cards should be compact:
 **Files to Modify:**
 - `src/components/Header.tsx`
 - `src/components/FilterSubheader.tsx`
+
+---
+
+### Task 5a — Fix DataCatalog Icon/Text Vertical Alignment (🟡 MEDIUM)
+**Goal:** Achieve perfect vertical alignment between card icons and titles in the left sidebar
+
+**Current Issue:**
+- Icons and text are not perfectly center-aligned at all breakpoints
+- Typography descenders (y, g, p) affect visual balance
+- Different breakpoints require different alignment adjustments
+
+**Tasks:**
+- [ ] Fine-tune icon sizes and text line-heights at each breakpoint
+- [ ] Account for typography descenders using margin-top offset
+- [ ] Test alignment at 1024px (lg), 1280px (xl), 1440px+ (2xl)
+- [ ] Verify visual harmony across all data source cards
+
+**Acceptance Criteria:**
+- Icon container and text appear visually center-aligned at all breakpoints
+- Text cap height (not including descenders) aligns with icon center
+- Consistent appearance across all 11 data sources
+
+**Files to Modify:**
+- `src/components/DataCatalog.tsx`
+
+**Current Implementation (as of Task 3 migration):**
+- Icon sizes: `w-4 h-4` (lg/xl), `w-5 h-5` (2xl)
+- Text line-height: `leading-5` (lg/xl), `leading-7` (2xl)
+- Descender offset: `xl:mt-0.5` (2px at xl/2xl)
+
+**Technical Notes:**
+- Typography descenders (tails on y, g, p, q, j) extend ~20-25% below baseline
+- Visual alignment should be based on cap height (top of M) to baseline (bottom of M)
+- Icon container height includes padding, not just icon dimensions
 
 ---
 
@@ -667,6 +741,7 @@ For `lg` breakpoint (1024–1279px), cards should be compact:
 | 2026-01-14 | Added Implementation Tips to Task 3 | Team |
 | 2026-01-14 | Renumbered all tasks, simplified phase structure | Team |
 | 2026-01-14 | **Task 2a COMPLETE** — Desktop Required gate implemented | Team |
+| 2026-01-14 | **Task 3 COMPLETE** — Migrated entire app to design system tokens | Team |
 
 ---
 

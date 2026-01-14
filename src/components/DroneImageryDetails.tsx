@@ -94,7 +94,7 @@ const DroneImagerySidebar: React.FC<DroneImagerySidebarProps> = ({
   return (
     <aside
       id="drone-sidebar"
-      className="w-96 max-w-full h-full bg-white border-l border-gray-200 flex flex-col relative"
+      className="w-sidebar-right-lg xl:w-sidebar-right-xl 2xl:w-sidebar-right-2xl max-w-full h-full bg-white border-l border-gray-200 flex flex-col relative"
     >
       {/* Close button - positioned absolutely */}
       <button

@@ -29,7 +29,7 @@ const LiDARView: React.FC<LiDARViewProps> = ({ hasSearched = false, onModeChange
   };
 
   return (
-    <div id="lidar-data-view" className="w-64 md:w-80 lg:w-96 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col">
+    <div id="lidar-data-view" className="w-sidebar-left-lg xl:w-sidebar-left-xl 2xl:w-sidebar-left-2xl flex-shrink-0 bg-white border-r border-gray-200 flex flex-col">
       {/* Back to Data Types - distinct header bar */}
       {onBack && <DataTypeBackHeader onBack={onBack} />}
       
