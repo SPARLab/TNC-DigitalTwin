@@ -23,7 +23,7 @@ This development plan addresses responsive design issues, establishes a consiste
 - [x] **Task 2** — Research industry best practices for typography/spacing (🔵 RESEARCH) ✅ COMPLETE
 - [x] **Task 2a** — Implement "Desktop Required" gate for small screens (🔴 HIGH) ✅ COMPLETE
 - [x] **Task 3** — ⚡ **MIGRATE ENTIRE APP TO DESIGN SYSTEM** (🔴 HIGH) ⚡ ✅ COMPLETE
-- [ ] **Task 4** — Document design system usage patterns (🟡 MEDIUM)
+- [x] **Task 4** — Document design system usage patterns (🟡 MEDIUM) ✅ COMPLETE
 
 ### Phase 2: Polish & Fixes (Post-Migration)
 - [ ] **Task 5** — Fix header and subheader height consistency (🟡 MEDIUM)
@@ -429,13 +429,43 @@ For `lg` breakpoint (1024–1279px), cards should be compact:
 
 ---
 
-### Task 4 — Document Design System Usage Patterns (🟡 MEDIUM)
+### Task 4 — Document Design System Usage Patterns (🟡 MEDIUM) ✅ COMPLETE
 **Goal:** Create practical documentation for using the design system
 
+**Status:** COMPLETE — January 14, 2026
+
 **Tasks:**
-- [ ] Create `docs/design-system/USAGE_GUIDE.md` with examples
-- [ ] Document common patterns and anti-patterns
-- [ ] Add visual reference screenshots
+- [x] Create `docs/design-system/USAGE_GUIDE.md` with examples
+- [x] Document common patterns and anti-patterns
+- [ ] Add visual reference screenshots (deferred — documentation is text-complete)
+
+**Deliverables Created:**
+- ✅ `docs/design-system/USAGE_GUIDE.md` — Comprehensive usage guide
+
+**Documentation Covers:**
+- Quick start guide with the "golden rule" for token usage
+- Three-breakpoint responsive pattern explanation
+- All token categories: typography, spacing (padding/margins/gaps), widths
+- Common component patterns with full code examples:
+  - Sidebar containers
+  - Data cards with compact mode
+  - Info icons for compact mode
+  - Empty states
+  - Stats/metadata rows
+  - Form inputs
+  - Filter buttons/badges
+- Anti-patterns to avoid (with before/after examples)
+- Migration checklist for existing code
+- Testing checklist with viewport sizes
+- Token quick reference tables
+
+**Files Created:**
+- `docs/design-system/USAGE_GUIDE.md`
+
+**Commit:**
+```
+docs(design-system): add USAGE_GUIDE.md with patterns and examples
+```
 
 ---
 
@@ -742,6 +772,7 @@ For `lg` breakpoint (1024–1279px), cards should be compact:
 | 2026-01-14 | Renumbered all tasks, simplified phase structure | Team |
 | 2026-01-14 | **Task 2a COMPLETE** — Desktop Required gate implemented | Team |
 | 2026-01-14 | **Task 3 COMPLETE** — Migrated entire app to design system tokens | Team |
+| 2026-01-14 | **Task 4 COMPLETE** — Created USAGE_GUIDE.md with patterns and examples | Team |
 
 ---
 
