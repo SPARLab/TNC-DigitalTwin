@@ -17,6 +17,25 @@
 2. **Aggressive responsive scaling** — Smaller screens get smaller text
 3. **Consistency across data sources** — All 11 sources use the same tokens
 4. **Desktop-only** — Optimized for 27" monitors, acceptable on 14" laptops, not designed for tablets/phones
+5. **Monotonic sizing** — Values always increase (or stay equal) with screen size
+
+### Monotonic Sizing Rule ⚠️
+
+All responsive values must be **monotonically increasing** as screen size increases:
+
+```
+lg ≤ xl ≤ 2xl
+```
+
+| Pattern | Valid? | Example |
+|---------|--------|---------|
+| Increasing | ✅ | 10px → 12px → 14px |
+| Same then increasing | ✅ | 10px → 10px → 12px |
+| Increasing then same | ✅ | 10px → 12px → 12px |
+| Dip in middle | ❌ | 12px → 11px → 14px |
+| Decrease at end | ❌ | 10px → 14px → 13px |
+
+**Rationale:** Larger screens should never have smaller values than smaller screens.
 
 ---
 

@@ -28,7 +28,7 @@ This development plan addresses responsive design issues, establishes a consiste
 ### Phase 2: Polish & Fixes (Post-Migration)
 - [x] **Task 5** — Fix header and subheader height consistency (🟡 MEDIUM) ✅ COMPLETE
 - [x] **Task 5a** — Fix DataCatalog icon/text vertical alignment (🟡 MEDIUM) ✅ COMPLETE
-- [ ] **Task 6** — Locate and update Footer component (🟡 MEDIUM)
+- [x] **Task 6** — Locate and update Footer component (🟡 MEDIUM) ✅ COMPLETE
 - [ ] **Task 7** — Align left sidebar with subheader (🟡 MEDIUM)
 - [ ] **Task 8** — Fix Clear Filters button alignment (🟡 MEDIUM)
 - [ ] **Task 9** — Scale map legends for screen sizes (🟡 MEDIUM)
@@ -85,6 +85,23 @@ This is a **data-dense application** — we optimize for **maximum information p
 | **Font size priority** | Information density > readability | Smaller fonts (12-13px body) to fit more data |
 | **Responsive approach** | Compact cards on laptops, full cards on desktops | Adaptive density based on screen size |
 | **Consistency** | All 11 data sources use same tokens | Single design system for everything |
+| **Monotonic sizing** | Values always increase (or stay equal) with screen size | Predictable, consistent responsive behavior |
+
+### Monotonic Sizing Rule ⚠️
+
+**All responsive values must be monotonically increasing as screen size increases.**
+
+Unless explicitly stated otherwise, any dimension (font size, padding, margin, gap, width, height) must follow this pattern:
+
+| Pattern | Valid? | Example |
+|---------|--------|---------|
+| `lg ≤ xl ≤ 2xl` | ✅ Yes | 10px → 12px → 14px |
+| `lg = xl < 2xl` | ✅ Yes | 10px → 10px → 12px |
+| `lg < xl = 2xl` | ✅ Yes | 10px → 12px → 12px |
+| `lg > xl` | ❌ No | 12px → 11px → 14px |
+| `xl > 2xl` | ❌ No | 10px → 14px → 13px |
+
+**Rationale:** Larger screens should never have smaller values than smaller screens. This ensures predictable, consistent responsive behavior where elements grow (or stay the same) as viewport increases.
 
 ### Supported Breakpoints
 | Breakpoint | Width | Experience | Card Mode |
@@ -562,14 +579,35 @@ fix(DataCatalog): improve icon/text vertical alignment across breakpoints
 
 ---
 
-### Task 6 — Locate and Update Footer Component (🟡 MEDIUM)
+### Task 6 — Locate and Update Footer Component (🟡 MEDIUM) ✅ COMPLETE
 **Goal:** Ensure footer font sizes match header/subheader
 
+**Status:** COMPLETE — January 14, 2026
+
 **Tasks:**
-- [ ] Locate footer component (if exists)
-- [ ] Apply design system tokens
-- [ ] Ensure font sizes match header navigation links
-- [ ] Test across all breakpoints
+- [x] Locate footer component (if exists)
+- [x] Apply design system tokens
+- [x] Ensure font sizes match header navigation links
+- [x] Test across all breakpoints
+
+**Implementation Summary:**
+1. Located footer at `src/components/Footer.tsx`
+2. Added missing `xl:` breakpoint classes throughout (was jumping from lg to 2xl)
+3. Replaced hardcoded `space-x-6` with responsive gap tokens: `gap-gap-section-base lg:gap-gap-section-lg xl:gap-gap-section-xl 2xl:gap-gap-section-2xl`
+
+**Changes Made:**
+- Horizontal padding: Added `xl:px-page-xl`
+- Vertical padding: Added `xl:py-page-y-xl`
+- Typography: Added `xl:text-body-xl` to copyright text and all links
+- Link spacing: Changed from `space-x-6` to responsive gap tokens
+
+**Files Modified:**
+- `src/components/Footer.tsx`
+
+**Commit:**
+```
+fix(Footer): add missing xl breakpoint classes and use design system gap tokens
+```
 
 ---
 
@@ -793,6 +831,7 @@ fix(DataCatalog): improve icon/text vertical alignment across breakpoints
 2. **Provide verification instructions** under heading **"How to Manually Verify Completeness"**
 3. **Wait for user confirmation** before marking complete
 4. **Update this document** — check off task, add implementation notes
+5. **Offer commit message** — After user says "complete", provide a Conventional Commits message
 
 ---
 
@@ -817,6 +856,8 @@ fix(DataCatalog): improve icon/text vertical alignment across breakpoints
 | 2026-01-14 | **Task 4 COMPLETE** — Created USAGE_GUIDE.md with patterns and examples | Team |
 | 2026-01-14 | **Task 5 COMPLETE** — Header/subheader height consistency with fixed height tokens | Team |
 | 2026-01-14 | **Task 5a COMPLETE** — DataCatalog icon/text vertical alignment fixed | Team |
+| 2026-01-14 | **Task 6 COMPLETE** — Footer updated with xl breakpoints and design system gap tokens | Team |
+| 2026-01-14 | Added **Monotonic Sizing Rule** to Context Summary and DESIGN_SYSTEM.md | Team |
 
 ---
 
