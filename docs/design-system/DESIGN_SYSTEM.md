@@ -116,6 +116,16 @@
 
 ---
 
+## Header/Subheader Heights
+
+| Token | **lg** (1024–1279px) | **xl** (1280–1439px) | **2xl** (≥1440px) | Use Case |
+|-------|----------------------|----------------------|-------------------|----------|
+| `header` | 40px | 48px | 56px | Main header, filter subheader |
+
+Both header and subheader use the same fixed height to ensure visual consistency across the top bars.
+
+---
+
 ## Card Modes
 
 ### Card Properties by Breakpoint

@@ -221,14 +221,11 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
   };
 
   return (
-    <div id="filter-bar" className={`${currentTheme.subheader} border-b border-gray-200 px-page-base lg:px-page-lg 2xl:px-page-2xl py-page-y-base lg:py-page-y-lg 2xl:py-page-y-2xl transition-colors duration-200`}>
-      <div className="flex flex-wrap items-center justify-between gap-gap-large-base lg:gap-gap-large-lg 2xl:gap-gap-large-2xl">
-        <div className="flex flex-wrap gap-gap-small-base lg:gap-gap-small-lg 2xl:gap-gap-small-2xl">
+    <div id="filter-bar" className={`${currentTheme.subheader} border-b border-gray-200 px-page-base lg:px-page-lg 2xl:px-page-2xl h-header-base lg:h-header-lg xl:h-header-xl 2xl:h-header-2xl transition-colors duration-200`}>
+      <div className="flex flex-wrap items-center justify-between gap-gap-large-base lg:gap-gap-large-lg 2xl:gap-gap-large-2xl h-full">
+        <div className="flex flex-wrap items-center gap-gap-small-base lg:gap-gap-small-lg 2xl:gap-gap-small-2xl">
           {/* Data Category Filter */}
-          <div ref={categoryRef} id="category-filter-container" className="flex flex-col relative">
-            <label id="category-filter-label" className="text-label-base lg:text-label-lg 2xl:text-label-2xl text-gray-500 mb-element-compact-base lg:mb-element-compact-lg 2xl:mb-element-compact-2xl">
-              DATA CATEGORY
-            </label>
+          <div ref={categoryRef} id="category-filter-container" className="relative">
             <button 
               id="category-filter-button"
               onClick={() => handleDropdownToggle('category')}
@@ -259,10 +256,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
 
           {/* Tags Filter - Conditionally rendered based on feature flag */}
           {ENABLE_TAGS_FILTER && (
-            <div ref={tagsRef} id="tags-filter-container" className="flex flex-col relative">
-              <label id="tags-filter-label" className="text-label-base lg:text-label-lg 2xl:text-label-2xl text-gray-500 mb-element-compact-base lg:mb-element-compact-lg 2xl:mb-element-compact-2xl">
-                TAGS
-              </label>
+            <div ref={tagsRef} id="tags-filter-container" className="relative">
               <button 
                 id="tags-filter-button"
                 onClick={() => handleDropdownToggle('tags')}
@@ -338,10 +332,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
           )}
 
           {/* Spatial Filter */}
-          <div ref={spatialFilterRef} id="spatial-filter-container" className="flex flex-col relative">
-            <label id="spatial-filter-label" className="text-label-base lg:text-label-lg 2xl:text-label-2xl text-gray-500 mb-element-compact-base lg:mb-element-compact-lg 2xl:mb-element-compact-2xl">
-              SPATIAL FILTER
-            </label>
+          <div ref={spatialFilterRef} id="spatial-filter-container" className="relative">
             <button 
               id="spatial-filter-button"
               onClick={() => handleDropdownToggle('spatialFilter')}
@@ -382,10 +373,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
           </div>
 
           {/* Time Range Filter with Search Button */}
-          <div ref={timeRangeRef} id="time-range-filter-container" className="flex flex-col relative">
-            <label id="time-range-filter-label" className="text-label-base lg:text-label-lg 2xl:text-label-2xl text-gray-500 mb-element-compact-base lg:mb-element-compact-lg 2xl:mb-element-compact-2xl">
-              TIME RANGE
-            </label>
+          <div ref={timeRangeRef} id="time-range-filter-container" className="relative">
             <div id="time-range-controls" className="flex gap-gap-default-base lg:gap-gap-default-lg 2xl:gap-gap-default-2xl">
               <button 
                 id="time-range-filter-button"
@@ -525,7 +513,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
           </div>
         </div>
 
-        <div id="filter-bar-right" className="flex items-center gap-section-compact-base lg:gap-section-compact-lg 2xl:gap-section-compact-2xl">
+        <div id="filter-bar-right" className="flex items-center h-full gap-section-compact-base lg:gap-section-compact-lg 2xl:gap-section-compact-2xl">
           <button 
             id="clear-filters-button"
             onClick={handleClearFilters}

@@ -356,6 +356,22 @@ export default {
       },
       
       // =======================================================================
+      // HEIGHTS - Header/Subheader Consistency
+      //
+      // Fixed heights ensure header and subheader are identical
+      // =======================================================================
+      height: {
+        // Header bar height (header, subheader)
+        // lg: 40px, xl: 48px, 2xl: 56px
+        'header-base': '2.25rem',         // 36px - fallback
+        'header-sm': '2.5rem',            // 40px
+        'header-md': '2.5rem',            // 40px
+        'header-lg': '2.5rem',            // 40px
+        'header-xl': '3rem',              // 48px
+        'header-2xl': '3.5rem',           // 56px
+      },
+      
+      // =======================================================================
       // BORDER RADIUS (static - no breakpoint variants needed)
       // =======================================================================
       borderRadius: {

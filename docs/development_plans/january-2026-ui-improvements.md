@@ -26,7 +26,7 @@ This development plan addresses responsive design issues, establishes a consiste
 - [x] **Task 4** — Document design system usage patterns (🟡 MEDIUM) ✅ COMPLETE
 
 ### Phase 2: Polish & Fixes (Post-Migration)
-- [ ] **Task 5** — Fix header and subheader height consistency (🟡 MEDIUM)
+- [x] **Task 5** — Fix header and subheader height consistency (🟡 MEDIUM) ✅ COMPLETE
 - [ ] **Task 5a** — Fix DataCatalog icon/text vertical alignment (🟡 MEDIUM)
 - [ ] **Task 6** — Locate and update Footer component (🟡 MEDIUM)
 - [ ] **Task 7** — Align left sidebar with subheader (🟡 MEDIUM)
@@ -469,20 +469,48 @@ docs(design-system): add USAGE_GUIDE.md with patterns and examples
 
 ---
 
-### Task 5 — Fix Header and Subheader Height Consistency (🟡 MEDIUM)
+### Task 5 — Fix Header and Subheader Height Consistency (🟡 MEDIUM) ✅ COMPLETE
 **Goal:** Ensure header and subheader have identical heights across all screen sizes
 
+**Status:** COMPLETE — January 14, 2026
+
 **Tasks:**
-- [ ] Adjust padding/height to match across header and subheader
-- [ ] Ensure vertical rhythm is consistent
-- [ ] Test at all breakpoints
+- [x] Adjust padding/height to match across header and subheader
+- [x] Ensure vertical rhythm is consistent
+- [x] Test at all breakpoints
+- [x] Fix missing `xl:` breakpoint classes in Header
 
 **Acceptance Criteria:**
-- Header and subheader have identical heights at all breakpoints
+- [x] Header and subheader have identical heights at all breakpoints
+- [x] Typography and spacing scale properly at xl breakpoint (1280-1439px)
 
-**Files to Modify:**
-- `src/components/Header.tsx`
-- `src/components/FilterSubheader.tsx`
+**Implementation Summary:**
+1. Added new `header` height tokens to `tailwind.config.js`:
+   - lg: 40px, xl: 48px, 2xl: 56px
+2. Applied fixed heights to both Header and FilterSubheader components
+3. Removed floating labels above filter buttons (redundant with button placeholder text)
+4. Added `items-center` and `h-full` to ensure proper vertical centering
+5. Fixed missing `xl:` breakpoint classes throughout Header component:
+   - Title font size now scales properly: 15px (lg) → 16px (xl) → 18px (2xl)
+   - Padding, gaps, and button spacing now scale at all three breakpoints
+6. Updated `docs/design-system/DESIGN_SYSTEM.md` with new height tokens
+
+**Files Modified:**
+- `tailwind.config.js` — Added height tokens
+- `src/components/Header.tsx` — Applied fixed height, added missing xl: breakpoints
+- `src/components/FilterSubheader.tsx` — Applied fixed height, removed floating labels
+- `docs/design-system/DESIGN_SYSTEM.md` — Documented height tokens
+
+**Design Decisions:**
+1. **Removed floating labels** ("DATA CATEGORY", "TAGS", etc.) above filter buttons because:
+   - They added unnecessary height to the subheader
+   - Button placeholder text already indicates the filter type ("Select Category", "Select Spatial Filter")
+   - Data-dense approach prioritizes vertical space efficiency
+
+2. **Fixed missing xl: breakpoints** in Header:
+   - Header was jumping from lg (1024px) directly to 2xl (1440px), skipping xl (1280px)
+   - This caused title and spacing to not scale properly on standard laptops (1280-1439px)
+   - All responsive tokens now include base, lg, xl, and 2xl variants
 
 ---
 
@@ -773,6 +801,7 @@ docs(design-system): add USAGE_GUIDE.md with patterns and examples
 | 2026-01-14 | **Task 2a COMPLETE** — Desktop Required gate implemented | Team |
 | 2026-01-14 | **Task 3 COMPLETE** — Migrated entire app to design system tokens | Team |
 | 2026-01-14 | **Task 4 COMPLETE** — Created USAGE_GUIDE.md with patterns and examples | Team |
+| 2026-01-14 | **Task 5 COMPLETE** — Header/subheader height consistency with fixed height tokens | Team |
 
 ---
 
