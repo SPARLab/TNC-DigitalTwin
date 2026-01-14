@@ -308,13 +308,15 @@ export default {
       // =======================================================================
       width: {
         // Left sidebar (Data Catalog)
-        // lg: 240px, xl: 280px, 2xl: 320px
+        // Aligned with midpoint between Category and Spatial Filter buttons
+        // Formula: page-padding + filter-width + (gap/2)
+        // lg: 10 + 224 + 1 = 235px, xl: 12 + 272 + 1.5 = 286px, 2xl: 16 + 320 + 2 = 338px
         'sidebar-left-base': '100%',
         'sidebar-left-sm': '100%',
         'sidebar-left-md': '100%',
-        'sidebar-left-lg': '15rem',       // 240px
-        'sidebar-left-xl': '17.5rem',     // 280px
-        'sidebar-left-2xl': '20rem',      // 320px
+        'sidebar-left-lg': '14.6875rem',  // 235px (aligned with filter gap midpoint)
+        'sidebar-left-xl': '17.875rem',   // 286px (aligned with filter gap midpoint)
+        'sidebar-left-2xl': '21.125rem',  // 338px (aligned with filter gap midpoint)
         
         // Right sidebar (Details panels)
         // lg: 280px, xl: 320px, 2xl: 384px

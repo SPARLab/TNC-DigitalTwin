@@ -221,9 +221,9 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
   };
 
   return (
-    <div id="filter-bar" className={`${currentTheme.subheader} border-b border-gray-200 px-page-base lg:px-page-lg 2xl:px-page-2xl h-header-base lg:h-header-lg xl:h-header-xl 2xl:h-header-2xl transition-colors duration-200`}>
-      <div className="flex flex-wrap items-center justify-between gap-gap-large-base lg:gap-gap-large-lg 2xl:gap-gap-large-2xl h-full">
-        <div className="flex flex-wrap items-center gap-gap-small-base lg:gap-gap-small-lg 2xl:gap-gap-small-2xl">
+    <div id="filter-bar" className={`${currentTheme.subheader} border-b border-gray-200 px-page-base lg:px-page-lg xl:px-page-xl 2xl:px-page-2xl h-header-base lg:h-header-lg xl:h-header-xl 2xl:h-header-2xl transition-colors duration-200`}>
+      <div className="flex flex-wrap items-center justify-between gap-gap-large-base lg:gap-gap-large-lg xl:gap-gap-large-xl 2xl:gap-gap-large-2xl h-full">
+        <div className="flex flex-wrap items-center gap-gap-small-base lg:gap-gap-small-lg xl:gap-gap-small-xl 2xl:gap-gap-small-2xl">
           {/* Data Category Filter */}
           <div ref={categoryRef} id="category-filter-container" className="relative">
             <button 
@@ -513,7 +513,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
           </div>
         </div>
 
-        <div id="filter-bar-right" className="flex items-center h-full gap-section-compact-base lg:gap-section-compact-lg 2xl:gap-section-compact-2xl">
+        <div id="filter-bar-right" className="flex items-center h-full gap-section-compact-base lg:gap-section-compact-lg xl:gap-section-compact-xl 2xl:gap-section-compact-2xl">
           <button 
             id="clear-filters-button"
             onClick={handleClearFilters}

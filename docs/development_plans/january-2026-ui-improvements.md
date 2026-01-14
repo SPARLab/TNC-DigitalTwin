@@ -29,7 +29,7 @@ This development plan addresses responsive design issues, establishes a consiste
 - [x] **Task 5** — Fix header and subheader height consistency (🟡 MEDIUM) ✅ COMPLETE
 - [x] **Task 5a** — Fix DataCatalog icon/text vertical alignment (🟡 MEDIUM) ✅ COMPLETE
 - [x] **Task 6** — Locate and update Footer component (🟡 MEDIUM) ✅ COMPLETE
-- [ ] **Task 7** — Align left sidebar with subheader (🟡 MEDIUM)
+- [x] **Task 7** — Align left sidebar with subheader (🟡 MEDIUM) ✅ COMPLETE
 - [ ] **Task 8** — Fix Clear Filters button alignment (🟡 MEDIUM)
 - [ ] **Task 9** — Scale map legends for screen sizes (🟡 MEDIUM)
 
@@ -611,18 +611,44 @@ fix(Footer): add missing xl breakpoint classes and use design system gap tokens
 
 ---
 
-### Task 7 — Align Left Sidebar with Subheader (🟡 MEDIUM)
+### Task 7 — Align Left Sidebar with Subheader (🟡 MEDIUM) ✅ COMPLETE
 **Goal:** Align right edge of left sidebar with midpoint between Category and Spatial Filter buttons
 
-**Tasks:**
-- [ ] Calculate required alignment values
-- [ ] Adjust sidebar width tokens to achieve alignment
-- [ ] Test alignment at all breakpoints
+**Status:** COMPLETE — January 14, 2026
 
-**Files to Modify:**
-- `tailwind.config.js`
-- Left sidebar component
-- `src/components/FilterSubheader.tsx`
+**Tasks:**
+- [x] Calculate required alignment values
+- [x] Adjust sidebar width tokens to achieve alignment
+- [x] Test alignment at all breakpoints
+- [x] Fix missing `xl:` breakpoint classes in FilterSubheader
+
+**Implementation Summary:**
+
+1. **Calculated target widths** using formula: `page-padding + filter-width + (gap/2)`
+   - lg: 10px + 224px + 1px = **235px** (14.6875rem)
+   - xl: 12px + 272px + 1.5px = **286px** (17.875rem)
+   - 2xl: 16px + 320px + 2px = **338px** (21.125rem)
+
+2. **Updated sidebar width tokens** in `tailwind.config.js`:
+   - `sidebar-left-lg`: 14.6875rem (235px) — was 15rem (240px)
+   - `sidebar-left-xl`: 17.875rem (286px) — was 17.5rem (280px)
+   - `sidebar-left-2xl`: 21.125rem (338px) — was 20rem (320px)
+
+3. **Fixed missing `xl:` breakpoint classes** in FilterSubheader:
+   - Added `xl:px-page-xl` for horizontal padding
+   - Added `xl:gap-gap-large-xl` for outer flex container
+   - Added `xl:gap-gap-small-xl` for filter buttons container
+   - Added `xl:gap-section-compact-xl` for right section
+
+**Files Modified:**
+- `tailwind.config.js` — Updated sidebar-left width tokens
+- `src/components/FilterSubheader.tsx` — Added missing xl: breakpoint classes
+- `docs/design-system/DESIGN_SYSTEM.md` — Documented alignment formula
+
+**Commit:**
+```
+fix(FilterSubheader, design-system): align left sidebar with filter gap midpoint
+```
 
 ---
 
@@ -858,6 +884,7 @@ fix(Footer): add missing xl breakpoint classes and use design system gap tokens
 | 2026-01-14 | **Task 5a COMPLETE** — DataCatalog icon/text vertical alignment fixed | Team |
 | 2026-01-14 | **Task 6 COMPLETE** — Footer updated with xl breakpoints and design system gap tokens | Team |
 | 2026-01-14 | Added **Monotonic Sizing Rule** to Context Summary and DESIGN_SYSTEM.md | Team |
+| 2026-01-14 | **Task 7 COMPLETE** — Left sidebar aligned with filter gap midpoint, added missing xl: breakpoints | Team |
 
 ---
 

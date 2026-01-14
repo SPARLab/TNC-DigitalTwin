@@ -130,8 +130,22 @@ lg ≤ xl ≤ 2xl
 
 | Token | **lg** (1024–1279px) | **xl** (1280–1439px) | **2xl** (≥1440px) | Use Case |
 |-------|----------------------|----------------------|-------------------|----------|
-| `sidebar-left` | 240px | 280px | 320px | Left data catalog sidebar |
+| `sidebar-left` | 235px | 286px | 338px | Left data catalog sidebar |
 | `sidebar-right` | 280px | 320px | 384px | Right detail sidebar |
+
+### Left Sidebar Alignment
+
+The left sidebar width is calculated to align its right edge with the **midpoint** between the Category and Spatial Filter buttons in the subheader:
+
+```
+sidebar-left = page-padding + filter-width + (gap / 2)
+
+lg:  10px + 224px + 1px   = 235px (14.6875rem)
+xl:  12px + 272px + 1.5px = 286px (17.875rem)  
+2xl: 16px + 320px + 2px   = 338px (21.125rem)
+```
+
+This creates visual alignment when scanning from the filter buttons down to the sidebar below.
 
 ---
 
@@ -311,10 +325,11 @@ spacing: {
 }
 
 // Widths: {component}-{breakpoint}
+// Left sidebar aligned with filter gap midpoint
 width: {
-  'sidebar-left-lg': '15rem',   // 240px
-  'sidebar-left-xl': '17.5rem', // 280px
-  'sidebar-left-2xl': '20rem',  // 320px
+  'sidebar-left-lg': '14.6875rem',  // 235px
+  'sidebar-left-xl': '17.875rem',   // 286px
+  'sidebar-left-2xl': '21.125rem',  // 338px
   // ... etc
 }
 ```
@@ -334,6 +349,7 @@ width: {
 <div className="flex gap-gap-element-lg xl:gap-gap-element-xl 2xl:gap-gap-element-2xl">
 
 // Sidebar width
+// Left sidebar (aligned with filter gap midpoint)
 <aside className="w-sidebar-left-lg xl:w-sidebar-left-xl 2xl:w-sidebar-left-2xl">
 ```
 
