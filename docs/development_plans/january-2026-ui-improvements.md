@@ -31,7 +31,7 @@ This development plan addresses responsive design issues, establishes a consiste
 - [x] **Task 6** — Locate and update Footer component (🟡 MEDIUM) ✅ COMPLETE
 - [x] **Task 7** — Align left sidebar with subheader (🟡 MEDIUM) ✅ COMPLETE
 - [x] **Task 8** — Fix Clear Filters button alignment (🟡 MEDIUM) ✅ COMPLETE
-- [ ] **Task 9** — Scale map legends for screen sizes (🟡 MEDIUM)
+- [x] **Task 9** — Scale map legends for screen sizes (🟡 MEDIUM) ✅ COMPLETE
 
 ### Phase 3: Data Source Refinements
 - [ ] **Task 10** — Fix ArcGIS card sizing (🟡 MEDIUM)
@@ -690,14 +690,52 @@ fix(FilterSubheader): align Clear Filters button with filter buttons
 
 ---
 
-### Task 9 — Scale Map Legends for Screen Size (🟡 MEDIUM)
+### Task 9 — Scale Map Legends for Screen Size (🟡 MEDIUM) ✅ COMPLETE
 **Goal:** Ensure map legends are appropriately sized for all screen sizes
 
+**Status:** COMPLETE — January 14, 2026
+
 **Tasks:**
-- [ ] Scale legend icon sizes based on breakpoints
-- [ ] Adjust legend container sizing
-- [ ] Consider collapsible legends for small screens
-- [ ] Test legend readability across devices
+- [x] Scale legend icon sizes based on breakpoints
+- [x] Adjust legend container sizing
+- [x] Update legend typography with design system tokens
+- [x] Test legend readability across devices
+
+**Implementation Summary:**
+
+1. **Added legend-specific tokens to `tailwind.config.js`:**
+   - Legend container width: lg: 180px, xl: 208px, 2xl: 240px
+   - Legend swatch sizes: lg: 24px, xl: 28px, 2xl: 32px
+   - Legend offset positioning: lg: 12px, xl: 16px, 2xl: 24px
+
+2. **Updated `MapLegend.tsx` (iNaturalist observations filter):**
+   - Responsive container width using `w-legend-*` tokens
+   - Responsive positioning using `bottom-legend-offset-*` and `right-legend-offset-*`
+   - Typography using design system tokens (`text-title-card-*`, `text-label-*`, `text-caption-*`)
+   - Padding and gaps using design system tokens
+
+3. **Updated `LayerLegend.tsx` (ArcGIS layer legends):**
+   - Responsive symbol swatch sizes using `w-legend-swatch-*` and `h-legend-swatch-*`
+   - Typography using design system tokens
+   - Responsive max-height for scrollable legend content
+   - Padding, gaps, and button styling using design system tokens
+
+4. **Updated floating legend panel in `MapView.tsx`:**
+   - Responsive container width and positioning
+   - Typography using design system tokens
+   - Responsive padding for header and content sections
+
+**Files Modified:**
+- `tailwind.config.js` — Added legend tokens (width, height, spacing)
+- `src/components/MapLegend.tsx` — Full responsive styling
+- `src/components/LayerLegend.tsx` — Full responsive styling
+- `src/components/MapView.tsx` — Updated floating legend panel
+- `docs/design-system/DESIGN_SYSTEM.md` — Documented legend tokens
+
+**Commit:**
+```
+fix(MapLegend, LayerLegend): scale map legends for screen sizes
+```
 
 ---
 
@@ -911,6 +949,7 @@ fix(FilterSubheader): align Clear Filters button with filter buttons
 | 2026-01-14 | Added **Monotonic Sizing Rule** to Context Summary and DESIGN_SYSTEM.md | Team |
 | 2026-01-14 | **Task 7 COMPLETE** — Left sidebar aligned with filter gap midpoint, added missing xl: breakpoints | Team |
 | 2026-01-14 | **Task 8 COMPLETE** — Clear Filters button alignment fixed with matching padding | Team |
+| 2026-01-14 | **Task 9 COMPLETE** — Map legends scaled for screen sizes with new legend tokens | Team |
 
 ---
 

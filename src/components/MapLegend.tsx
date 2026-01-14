@@ -31,11 +31,11 @@ export const MapLegend: React.FC<MapLegendProps> = ({
   return (
     <div
       id="map-legend"
-      className="absolute bottom-6 right-6 bg-white rounded-lg shadow-lg border border-gray-300 z-30 w-52"
+      className="absolute bottom-legend-offset-lg xl:bottom-legend-offset-xl 2xl:bottom-legend-offset-2xl right-legend-offset-lg xl:right-legend-offset-xl 2xl:right-legend-offset-2xl bg-white rounded-lg shadow-lg border border-gray-300 z-30 w-legend-lg xl:w-legend-xl 2xl:w-legend-2xl"
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between p-pad-card-lg xl:p-pad-card-xl 2xl:p-pad-card-2xl border-b border-gray-200 bg-gray-50 rounded-t-lg">
+        <div className="flex items-center gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl">
           <button
             id="legend-expand-toggle"
             onClick={() => setIsExpanded(!isExpanded)}
@@ -44,18 +44,18 @@ export const MapLegend: React.FC<MapLegendProps> = ({
             title={isExpanded ? "Collapse legend" : "Expand legend"}
           >
             {isExpanded ? (
-              <ChevronDown className="w-4 h-4 text-gray-600" />
+              <ChevronDown className="w-3.5 h-3.5 lg:w-3.5 lg:h-3.5 xl:w-4 xl:h-4 2xl:w-4 2xl:h-4 text-gray-600" />
             ) : (
-              <ChevronRight className="w-4 h-4 text-gray-600" />
+              <ChevronRight className="w-3.5 h-3.5 lg:w-3.5 lg:h-3.5 xl:w-4 xl:h-4 2xl:w-4 2xl:h-4 text-gray-600" />
             )}
           </button>
-          <h3 className="text-sm font-semibold text-gray-900">Filter Observations</h3>
+          <h3 className="text-title-card-lg xl:text-title-card-xl 2xl:text-title-card-2xl text-gray-900">Filter Observations</h3>
         </div>
         {!allVisible && (
           <button
             id="legend-clear-filters"
             onClick={() => onToggleAll(true)}
-            className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+            className="text-label-lg xl:text-label-xl 2xl:text-label-2xl text-blue-600 hover:text-blue-700"
           >
             Show All
           </button>
@@ -64,7 +64,7 @@ export const MapLegend: React.FC<MapLegendProps> = ({
 
       {/* Content - Flat list with colored backgrounds */}
       {isExpanded && (
-        <div id="legend-content" className="p-2 max-h-96 overflow-y-auto space-y-1">
+        <div id="legend-content" className="p-pad-card-compact-lg xl:p-pad-card-compact-xl 2xl:p-pad-card-compact-2xl max-h-72 lg:max-h-72 xl:max-h-80 2xl:max-h-96 overflow-y-auto space-y-gap-tight-lg xl:space-y-gap-tight-xl 2xl:space-y-gap-tight-2xl">
           {categories.map(category => {
             const isVisible = visibleCategories.has(category.key);
             const bgColor = category.group === 'fauna' 
@@ -76,14 +76,14 @@ export const MapLegend: React.FC<MapLegendProps> = ({
                 key={category.key}
                 id={`legend-item-${category.key}`}
                 onClick={() => onToggleCategory(category.key)}
-                className={`w-full flex items-center justify-between p-2 rounded border transition-all ${bgColor}`}
+                className={`w-full flex items-center justify-between p-pad-card-compact-lg xl:p-pad-card-compact-xl 2xl:p-pad-card-compact-2xl rounded border transition-all ${bgColor}`}
                 title={`Click to ${isVisible ? 'filter for only' : 'show'} ${category.name}`}
               >
-                <div className="flex items-center gap-2">
-                  <span className="text-base">{category.emoji}</span>
-                  <span className="text-xs font-medium text-gray-800">{category.name}</span>
+                <div className="flex items-center gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl">
+                  <span className="text-label-lg xl:text-label-xl 2xl:text-label-2xl leading-none">{category.emoji}</span>
+                  <span className="text-label-lg xl:text-label-xl 2xl:text-label-2xl text-gray-800">{category.name}</span>
                 </div>
-                <span className="text-xs text-gray-600 font-medium">{category.count}</span>
+                <span className="text-caption-lg xl:text-caption-xl 2xl:text-caption-2xl text-gray-600">{category.count}</span>
               </button>
             );
           })}

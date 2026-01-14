@@ -159,6 +159,29 @@ Both header and subheader use the same fixed height to ensure visual consistency
 
 ---
 
+## Map Legend Tokens
+
+| Token | **lg** (1024–1279px) | **xl** (1280–1439px) | **2xl** (≥1440px) | Use Case |
+|-------|----------------------|----------------------|-------------------|----------|
+| `legend` (width) | 180px | 208px | 240px | Legend container width |
+| `legend-swatch` | 24px | 28px | 32px | Symbol swatch size (square) |
+| `legend-offset` | 12px | 16px | 24px | Legend positioning from map edge |
+
+### Usage
+
+```tsx
+// Legend container
+<div className="w-legend-lg xl:w-legend-xl 2xl:w-legend-2xl">
+
+// Legend positioning
+<div className="absolute bottom-legend-offset-lg xl:bottom-legend-offset-xl 2xl:bottom-legend-offset-2xl right-legend-offset-lg xl:right-legend-offset-xl 2xl:right-legend-offset-2xl">
+
+// Legend symbol swatch
+<div className="w-legend-swatch-lg xl:w-legend-swatch-xl 2xl:w-legend-swatch-2xl h-legend-swatch-lg xl:h-legend-swatch-xl 2xl:h-legend-swatch-2xl">
+```
+
+---
+
 ## Card Modes
 
 ### Card Properties by Breakpoint

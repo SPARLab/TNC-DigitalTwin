@@ -119,7 +119,7 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false, la
         return (
           <div
             id={`legend-swatch-polygon-${legend.layerId}`}
-            className="w-8 h-8 rounded flex-shrink-0"
+            className="w-legend-swatch-lg xl:w-legend-swatch-xl 2xl:w-legend-swatch-2xl h-legend-swatch-lg xl:h-legend-swatch-xl 2xl:h-legend-swatch-2xl rounded flex-shrink-0"
             style={{
               ...getPatternStyle(style),
               border: outlineWidth && !style?.includes('Diagonal') && !style?.includes('Horizontal') && !style?.includes('Vertical')
@@ -133,11 +133,11 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false, la
         return (
           <div
             id={`legend-swatch-line-${legend.layerId}`}
-            className="w-8 h-8 flex items-center justify-center flex-shrink-0"
+            className="w-legend-swatch-lg xl:w-legend-swatch-xl 2xl:w-legend-swatch-2xl h-legend-swatch-lg xl:h-legend-swatch-xl 2xl:h-legend-swatch-2xl flex items-center justify-center flex-shrink-0"
           >
             <div
               style={{
-                width: '20px',
+                width: '75%',
                 height: `${lineWidth || 2}px`,
                 backgroundColor: fillStyle || outlineStyle,
                 borderRadius: '1px'
@@ -150,13 +150,13 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false, la
         return (
           <div
             id={`legend-swatch-point-${legend.layerId}`}
-            className="w-8 h-8 flex items-center justify-center flex-shrink-0"
+            className="w-legend-swatch-lg xl:w-legend-swatch-xl 2xl:w-legend-swatch-2xl h-legend-swatch-lg xl:h-legend-swatch-xl 2xl:h-legend-swatch-2xl flex items-center justify-center flex-shrink-0"
           >
             <div
               className="rounded-full"
               style={{
-                width: `${size || 8}px`,
-                height: `${size || 8}px`,
+                width: `${Math.min(size || 8, 20)}px`,
+                height: `${Math.min(size || 8, 20)}px`,
                 backgroundColor: fillStyle,
                 border: outlineWidth ? `${outlineWidth}px solid ${outlineStyle}` : 'none'
               }}
@@ -173,18 +173,10 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false, la
         // Apply rotation if angle is specified
         const rotationStyle = symbol.angle ? `rotate(${symbol.angle}deg)` : undefined;
         
-        // Make picture marker symbols larger for better visibility
-        const displayWidth = symbol.width ? Math.max(symbol.width * 1.5, 32) : 32;
-        const displayHeight = symbol.height ? Math.max(symbol.height * 1.5, 32) : 32;
-        
         return (
           <div
             id={`legend-swatch-image-${legend.layerId}`}
-            className="flex items-center justify-center flex-shrink-0"
-            style={{
-              width: `${displayWidth}px`,
-              height: `${displayHeight}px`
-            }}
+            className="w-legend-swatch-lg xl:w-legend-swatch-xl 2xl:w-legend-swatch-2xl h-legend-swatch-lg xl:h-legend-swatch-xl 2xl:h-legend-swatch-2xl flex items-center justify-center flex-shrink-0"
           >
             <img 
               src={imgSrc} 
@@ -203,7 +195,7 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false, la
         return (
           <div
             id={`legend-swatch-unknown-${legend.layerId}`}
-            className="w-5 h-5 rounded bg-gray-300 flex-shrink-0"
+            className="w-legend-swatch-lg xl:w-legend-swatch-xl 2xl:w-legend-swatch-2xl h-legend-swatch-lg xl:h-legend-swatch-xl 2xl:h-legend-swatch-2xl rounded bg-gray-300 flex-shrink-0"
           />
         );
     }
@@ -252,7 +244,7 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false, la
         key={`${legend.layerId}-legend-item-${index}`}
         id={`legend-item-${legend.layerId}-${index}`}
         onClick={() => isFilterable && handleItemClick(item)}
-        className={`flex items-center gap-3 py-1.5 rounded px-1 transition-all
+        className={`flex items-center gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl py-pad-card-compact-lg xl:py-pad-card-compact-xl 2xl:py-pad-card-compact-2xl rounded px-pad-card-compact-lg xl:px-pad-card-compact-xl 2xl:px-pad-card-compact-2xl transition-all
           ${isFilterable ? 'cursor-pointer hover:bg-blue-50' : ''}
           ${isSelected ? 'bg-blue-100 border border-blue-300' : 'hover:bg-gray-50'}
           ${isAnySelected && !isSelected ? 'opacity-50' : 'opacity-100'}`}
@@ -263,12 +255,12 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false, la
         {renderSymbolSwatch(item.symbol)}
         <span 
           data-testid="legend-item-label"
-          className="text-sm text-gray-700 break-words flex-1 min-w-0"
+          className="text-body-lg xl:text-body-xl 2xl:text-body-2xl text-gray-700 break-words flex-1 min-w-0"
         >
           {label}
         </span>
         {isFilterable && isSelected && (
-          <span className="text-blue-600 text-xs font-medium">✓</span>
+          <span className="text-blue-600 text-label-lg xl:text-label-xl 2xl:text-label-2xl">✓</span>
         )}
       </div>
     );
@@ -278,7 +270,7 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false, la
   const renderLegendContent = () => {
     if (legend.items.length === 0) {
       return (
-        <p id={`legend-no-items-${legend.layerId}`} className="text-xs text-gray-500 italic py-2">
+        <p id={`legend-no-items-${legend.layerId}`} className="text-caption-lg xl:text-caption-xl 2xl:text-caption-2xl text-gray-500 italic py-pad-card-compact-lg xl:py-pad-card-compact-xl 2xl:py-pad-card-compact-2xl">
           No legend information available
         </p>
       );
@@ -287,7 +279,7 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false, la
     // Simple renderer - single item, always show
     if (legend.rendererType === 'simple') {
       return (
-        <div id={`legend-simple-${legend.layerId}`} className="py-1">
+        <div id={`legend-simple-${legend.layerId}`} className="py-pad-card-compact-lg xl:py-pad-card-compact-xl 2xl:py-pad-card-compact-2xl">
           {renderLegendItem(legend.items[0], 0)}
         </div>
       );
@@ -298,17 +290,17 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false, la
     const hasMore = filteredItems.length > itemsToShow.length;
 
     return (
-      <div id={`legend-items-${legend.layerId}`} className="space-y-0.5">
+      <div id={`legend-items-${legend.layerId}`} className="space-y-gap-tight-lg xl:space-y-gap-tight-xl 2xl:space-y-gap-tight-2xl">
         {/* Search for large legends */}
         {showSearch && isExpanded && (
-          <div id={`legend-search-${legend.layerId}`} className="relative mb-2 mt-1">
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400" />
+          <div id={`legend-search-${legend.layerId}`} className="relative mb-gap-tight-lg xl:mb-gap-tight-xl 2xl:mb-gap-tight-2xl mt-gap-tight-lg xl:mt-gap-tight-xl 2xl:mt-gap-tight-2xl">
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 lg:w-3 lg:h-3 xl:w-3.5 xl:h-3.5 2xl:w-3.5 2xl:h-3.5 text-gray-400" />
             <input
               type="text"
               placeholder="Search categories..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-7 pr-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-6 lg:pl-6 xl:pl-7 2xl:pl-7 pr-pad-card-compact-lg xl:pr-pad-card-compact-xl 2xl:pr-pad-card-compact-2xl py-pad-card-compact-lg xl:py-pad-card-compact-xl 2xl:py-pad-card-compact-2xl text-caption-lg xl:text-caption-xl 2xl:text-caption-2xl border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
               onClick={(e) => e.stopPropagation()}
             />
           </div>
@@ -317,7 +309,7 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false, la
         {/* Legend items */}
         <div
           id={`legend-items-list-${legend.layerId}`}
-          className={`${isExpanded ? 'max-h-64 overflow-y-auto' : ''}`}
+          className={`${isExpanded ? 'max-h-48 lg:max-h-48 xl:max-h-56 2xl:max-h-64 overflow-y-auto' : ''}`}
         >
           {itemsToShow.map((item, index) => renderLegendItem(item, index))}
         </div>
@@ -333,16 +325,16 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false, la
                 setSearchQuery(''); // Clear search when collapsing
               }
             }}
-            className="w-full mt-2 pt-2 border-t border-gray-200 text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center justify-center gap-1 transition-colors"
+            className="w-full mt-gap-tight-lg xl:mt-gap-tight-xl 2xl:mt-gap-tight-2xl pt-gap-tight-lg xl:pt-gap-tight-xl 2xl:pt-gap-tight-2xl border-t border-gray-200 text-label-lg xl:text-label-xl 2xl:text-label-2xl text-blue-600 hover:text-blue-800 flex items-center justify-center gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl transition-colors"
           >
             {isExpanded ? (
               <>
-                <ChevronRight className="w-3 h-3" />
+                <ChevronRight className="w-2.5 h-2.5 lg:w-2.5 lg:h-2.5 xl:w-3 xl:h-3 2xl:w-3 2xl:h-3" />
                 Show Less
               </>
             ) : (
               <>
-                <ChevronDown className="w-3 h-3" />
+                <ChevronDown className="w-2.5 h-2.5 lg:w-2.5 lg:h-2.5 xl:w-3 xl:h-3 2xl:w-3 2xl:h-3" />
                 Show All ({legend.items.length} categories)
               </>
             )}
@@ -350,7 +342,7 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false, la
         )}
 
         {hasMore && isExpanded && (
-          <p id={`legend-filtered-count-${legend.layerId}`} className="text-xs text-gray-500 italic pt-1">
+          <p id={`legend-filtered-count-${legend.layerId}`} className="text-caption-lg xl:text-caption-xl 2xl:text-caption-2xl text-gray-500 italic pt-gap-tight-lg xl:pt-gap-tight-xl 2xl:pt-gap-tight-2xl">
             Showing {filteredItems.length} of {legend.items.length}
           </p>
         )}
@@ -362,8 +354,8 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false, la
     <div id={`layer-legend-${legend.layerId}`} className="w-full">
       {/* Display units if available */}
       {legend.units && (
-        <div id={`legend-units-${legend.layerId}`} className="mb-2 px-1">
-          <p className="text-xs text-gray-600 italic">
+        <div id={`legend-units-${legend.layerId}`} className="mb-gap-tight-lg xl:mb-gap-tight-xl 2xl:mb-gap-tight-2xl px-pad-card-compact-lg xl:px-pad-card-compact-xl 2xl:px-pad-card-compact-2xl">
+          <p className="text-caption-lg xl:text-caption-xl 2xl:text-caption-2xl text-gray-600 italic">
             Units: <span className="font-medium text-gray-700">{legend.units}</span>
           </p>
         </div>
@@ -371,16 +363,16 @@ const LayerLegend: React.FC<LayerLegendProps> = ({ legend, isCompact = false, la
       
       {/* Clear filter button - only show for unique-value renderers when filters are active */}
       {onFilterChange && legend.rendererType === 'uniqueValue' && selectedValues.length > 0 && (
-        <div id={`legend-filter-controls-${legend.layerId}`} className="mb-2 px-1">
+        <div id={`legend-filter-controls-${legend.layerId}`} className="mb-gap-tight-lg xl:mb-gap-tight-xl 2xl:mb-gap-tight-2xl px-pad-card-compact-lg xl:px-pad-card-compact-xl 2xl:px-pad-card-compact-2xl">
           <button
             id={`legend-clear-filter-${legend.layerId}`}
             onClick={handleClearFilters}
-            className="w-full px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors flex items-center justify-center gap-1"
+            className="w-full px-btn-x-lg xl:px-btn-x-xl 2xl:px-btn-x-2xl py-btn-y-lg xl:py-btn-y-xl 2xl:py-btn-y-2xl text-label-lg xl:text-label-xl 2xl:text-label-2xl text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors flex items-center justify-center gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl"
             aria-label="Clear legend filters"
           >
             Show All ({legend.items.length})
           </button>
-          <p className="text-xs text-gray-600 italic mt-1">
+          <p className="text-caption-lg xl:text-caption-xl 2xl:text-caption-2xl text-gray-600 italic mt-gap-tight-lg xl:mt-gap-tight-xl 2xl:mt-gap-tight-2xl">
             Showing {selectedValues.length} of {legend.items.length} categories
           </p>
         </div>

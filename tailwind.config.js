@@ -298,6 +298,13 @@ export default {
         'btn-compact-y-lg': '0.1875rem',  // 3px
         'btn-compact-y-xl': '0.25rem',    // 4px
         'btn-compact-y-2xl': '0.25rem',   // 4px
+        
+        // Legend positioning (bottom/right offset from map edge)
+        // lg: 12px, xl: 16px, 2xl: 24px
+        'legend-offset-base': '0.5rem',   // 8px - fallback
+        'legend-offset-lg': '0.75rem',    // 12px - compact
+        'legend-offset-xl': '1rem',       // 16px - standard
+        'legend-offset-2xl': '1.5rem',    // 24px - generous
       },
       
       // =======================================================================
@@ -342,6 +349,20 @@ export default {
         'filter-lg': '14rem',             // 224px - compact
         'filter-xl': '17rem',             // 272px - standard
         'filter-2xl': '20rem',            // 320px - full
+        
+        // Legend container widths
+        // lg: 180px, xl: 208px, 2xl: 240px
+        'legend-base': '10rem',           // 160px - fallback
+        'legend-lg': '11.25rem',          // 180px - compact
+        'legend-xl': '13rem',             // 208px - standard
+        'legend-2xl': '15rem',            // 240px - generous
+        
+        // Legend swatch sizes (color/symbol boxes)
+        // lg: 24px, xl: 28px, 2xl: 32px
+        'legend-swatch-base': '1.25rem',  // 20px - fallback
+        'legend-swatch-lg': '1.5rem',     // 24px - compact
+        'legend-swatch-xl': '1.75rem',    // 28px - standard
+        'legend-swatch-2xl': '2rem',      // 32px - full
       },
       
       minWidth: {
@@ -355,6 +376,11 @@ export default {
       
       maxWidth: {
         'card': '24rem',                  // 384px
+        // Legend container max-width (responsive)
+        // lg: 180px, xl: 208px, 2xl: 240px
+        'legend-lg': '11.25rem',          // 180px - compact
+        'legend-xl': '13rem',             // 208px - standard (w-52)
+        'legend-2xl': '15rem',            // 240px - generous
       },
       
       // =======================================================================
@@ -371,6 +397,13 @@ export default {
         'header-lg': '2.5rem',            // 40px
         'header-xl': '3rem',              // 48px
         'header-2xl': '3.5rem',           // 56px
+        
+        // Legend swatch heights (matches width for square swatches)
+        // lg: 24px, xl: 28px, 2xl: 32px
+        'legend-swatch-base': '1.25rem',  // 20px - fallback
+        'legend-swatch-lg': '1.5rem',     // 24px - compact
+        'legend-swatch-xl': '1.75rem',    // 28px - standard
+        'legend-swatch-2xl': '2rem',      // 32px - full
       },
       
       // =======================================================================

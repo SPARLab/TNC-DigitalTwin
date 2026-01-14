@@ -2687,29 +2687,29 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
         return (
           <div 
             id="floating-legend-panel"
-            className="absolute bottom-8 right-4 bg-white rounded-lg shadow-lg z-10 max-w-sm overflow-hidden"
-            style={{ maxHeight: '60vh' }}
+            className="absolute bottom-legend-offset-lg xl:bottom-legend-offset-xl 2xl:bottom-legend-offset-2xl right-legend-offset-lg xl:right-legend-offset-xl 2xl:right-legend-offset-2xl bg-white rounded-lg shadow-lg z-10 w-legend-lg xl:w-legend-xl 2xl:w-legend-2xl overflow-hidden"
+            style={{ maxHeight: '50vh' }}
           >
             {/* Legend Header */}
             <div 
               id="legend-panel-header"
-              className="flex items-center justify-between p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-between p-pad-card-lg xl:p-pad-card-xl 2xl:p-pad-card-2xl border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
               onClick={() => setIsLegendExpanded(!isLegendExpanded)}
             >
-              <h3 className="text-sm font-semibold text-gray-900">
+              <h3 className="text-title-card-lg xl:text-title-card-xl 2xl:text-title-card-2xl text-gray-900">
                 Legend {activeLayers.length > 1 && `(${activeLayers.length} layers)`}
               </h3>
               <button 
-                className="p-1 hover:bg-gray-100 rounded transition-colors"
+                className="p-0.5 hover:bg-gray-100 rounded transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsLegendExpanded(!isLegendExpanded);
                 }}
               >
                 {isLegendExpanded ? (
-                  <ChevronDown className="w-4 h-4 text-gray-600" />
+                  <ChevronDown className="w-3.5 h-3.5 lg:w-3.5 lg:h-3.5 xl:w-4 xl:h-4 2xl:w-4 2xl:h-4 text-gray-600" />
                 ) : (
-                  <ChevronUp className="w-4 h-4 text-gray-600" />
+                  <ChevronUp className="w-3.5 h-3.5 lg:w-3.5 lg:h-3.5 xl:w-4 xl:h-4 2xl:w-4 2xl:h-4 text-gray-600" />
                 )}
               </button>
             </div>
@@ -2719,17 +2719,17 @@ const MapViewComponent = forwardRef<MapViewRef, MapViewProps>(({
               <div 
                 id="legend-panel-content"
                 className="overflow-y-auto"
-                style={{ maxHeight: 'calc(60vh - 60px)' }}
+                style={{ maxHeight: 'calc(50vh - 48px)' }}
               >
                 {activeLayers.map((item, index) => (
                   <div 
                     key={item.id}
                     id={`legend-layer-${item.id}`}
-                    className={`p-1 ${index < activeLayers.length - 1 ? 'border-b border-gray-200' : ''}`}
+                    className={`p-pad-card-compact-lg xl:p-pad-card-compact-xl 2xl:p-pad-card-compact-2xl ${index < activeLayers.length - 1 ? 'border-b border-gray-200' : ''}`}
                   >
                     {/* Layer name if multiple layers */}
                     {activeLayers.length > 1 && (
-                      <h4 className="text-xs font-medium text-gray-700 mb-2">
+                      <h4 className="text-label-lg xl:text-label-xl 2xl:text-label-2xl text-gray-700 mb-gap-tight-lg xl:mb-gap-tight-xl 2xl:mb-gap-tight-2xl">
                         {item.title}
                       </h4>
                     )}
