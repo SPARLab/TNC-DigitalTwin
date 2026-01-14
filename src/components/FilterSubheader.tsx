@@ -232,7 +232,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
               className={`flex items-center gap-gap-default-base lg:gap-gap-default-lg 2xl:gap-gap-default-2xl px-btn-x-base lg:px-btn-x-lg 2xl:px-btn-x-2xl py-btn-y-base lg:py-btn-y-lg 2xl:py-btn-y-2xl border border-gray-300 rounded-button bg-white hover:bg-gray-50 w-filter-base lg:w-filter-lg xl:w-filter-xl 2xl:w-filter-2xl ${needsFilterHighlight ? 'filter-highlight-1' : ''}`}
             >
               {filters.category ? getCategoryIcon(filters.category) : <Database className="w-4 h-4 flex-shrink-0 text-gray-400" />}
-              <span id="category-filter-text" className={`text-body-base lg:text-body-lg 2xl:text-body-2xl truncate ${filters.category ? 'text-black' : 'text-gray-400'}`}>
+              <span id="category-filter-text" className={`text-body-base lg:text-body-lg 2xl:text-body-2xl truncate ${filters.category ? 'text-black' : 'text-gray-600'}`}>
                 {filters.category || <><span className="hidden xl:inline">Select </span><span className="xl:lowercase">Category</span></>}
               </span>
               <ChevronDown id="category-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ml-auto ${openDropdown === 'category' ? 'rotate-180' : ''}`} />
@@ -268,7 +268,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
                 } ${needsFilterHighlight ? 'filter-highlight-2' : ''}`}
               >
                 <Tag id="tags-filter-icon" className={`w-4 h-4 flex-shrink-0 ${filters.tags?.length ? 'text-blue-600' : 'text-gray-400'}`} />
-                <span id="tags-filter-text" className={`text-body-base lg:text-body-lg 2xl:text-body-2xl truncate ${filters.tags?.length ? 'text-black' : 'text-gray-400'}`}>
+                <span id="tags-filter-text" className={`text-body-base lg:text-body-lg 2xl:text-body-2xl truncate ${filters.tags?.length ? 'text-black' : 'text-gray-600'}`}>
                   {filters.tags?.length 
                     ? `${filters.tags.length} tag${filters.tags.length > 1 ? 's' : ''} selected` 
                     : <><span className="hidden xl:inline">Select </span><span className="xl:lowercase">Tags</span></>}
@@ -343,7 +343,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
               } ${needsFilterHighlight ? 'filter-highlight-3' : ''}`}
             >
               <MapPin id="spatial-filter-icon" className={`w-4 h-4 flex-shrink-0 ${filters.customPolygon ? 'text-blue-600' : 'text-gray-400'}`} />
-              <span id="spatial-filter-text" className={`text-body-base lg:text-body-lg 2xl:text-body-2xl truncate ${filters.customPolygon ? 'text-blue-700 font-medium' : filters.spatialFilter ? 'text-black' : 'text-gray-400'}`}>
+              <span id="spatial-filter-text" className={`text-body-base lg:text-body-lg 2xl:text-body-2xl truncate ${filters.customPolygon ? 'text-blue-700 font-medium' : filters.spatialFilter ? 'text-black' : 'text-gray-600'}`}>
                 {filters.spatialFilter || <><span className="hidden xl:inline">Select </span><span className="xl:lowercase">Spatial Filter</span></>}
                 {filters.customPolygon && ' ✓'}
               </span>
@@ -381,7 +381,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
                 className={`flex items-center gap-gap-default-base lg:gap-gap-default-lg 2xl:gap-gap-default-2xl px-btn-x-base lg:px-btn-x-lg 2xl:px-btn-x-2xl py-btn-y-base lg:py-btn-y-lg 2xl:py-btn-y-2xl border rounded-button w-filter-base lg:w-filter-lg xl:w-filter-xl 2xl:w-filter-2xl border-gray-300 bg-white hover:bg-gray-50 ${needsFilterHighlight ? 'filter-highlight-4' : ''}`}
               >
                 <Calendar id="time-range-filter-icon" className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                <span id="time-range-filter-text" className={`text-body-base lg:text-body-lg 2xl:text-body-2xl truncate ${filters.timeRange ? 'text-black' : 'text-gray-400'}`}>
+                <span id="time-range-filter-text" className={`text-body-base lg:text-body-lg 2xl:text-body-2xl truncate ${filters.timeRange ? 'text-black' : 'text-gray-600'}`}>
                   {filters.timeRange || <><span className="hidden xl:inline">Select </span><span className="xl:lowercase">Time Range</span></>}
                 </span>
                 <ChevronDown id="time-range-filter-chevron" className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ml-auto ${openDropdown === 'timeRange' ? 'rotate-180' : ''}`} />
@@ -517,7 +517,7 @@ const FilterSubheader: React.FC<FilterSubheaderProps> = ({ filters, onFilterChan
           <button 
             id="clear-filters-button"
             onClick={handleClearFilters}
-            className="text-body-base lg:text-body-lg 2xl:text-body-2xl text-blue-600 hover:text-blue-800"
+            className="text-body-base lg:text-body-lg xl:text-body-xl 2xl:text-body-2xl text-blue-600 hover:text-blue-800 py-btn-y-base lg:py-btn-y-lg xl:py-btn-y-xl 2xl:py-btn-y-2xl"
           >
             Clear Filters
           </button>

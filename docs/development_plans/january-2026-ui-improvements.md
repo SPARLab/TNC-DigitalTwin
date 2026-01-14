@@ -30,7 +30,7 @@ This development plan addresses responsive design issues, establishes a consiste
 - [x] **Task 5a** — Fix DataCatalog icon/text vertical alignment (🟡 MEDIUM) ✅ COMPLETE
 - [x] **Task 6** — Locate and update Footer component (🟡 MEDIUM) ✅ COMPLETE
 - [x] **Task 7** — Align left sidebar with subheader (🟡 MEDIUM) ✅ COMPLETE
-- [ ] **Task 8** — Fix Clear Filters button alignment (🟡 MEDIUM)
+- [x] **Task 8** — Fix Clear Filters button alignment (🟡 MEDIUM) ✅ COMPLETE
 - [ ] **Task 9** — Scale map legends for screen sizes (🟡 MEDIUM)
 
 ### Phase 3: Data Source Refinements
@@ -652,16 +652,41 @@ fix(FilterSubheader, design-system): align left sidebar with filter gap midpoint
 
 ---
 
-### Task 8 — Fix Clear Filters Button Alignment (🟡 MEDIUM)
+### Task 8 — Fix Clear Filters Button Alignment (🟡 MEDIUM) ✅ COMPLETE
 **Goal:** Fix vertical alignment of Clear Filters button
 
-**Tasks:**
-- [ ] Adjust FilterSubheader layout to align Clear Filters button with filter buttons
-- [ ] Consider using flexbox baseline alignment
-- [ ] Test across different screen sizes
+**Status:** COMPLETE — January 14, 2026
 
-**Files to Modify:**
+**Tasks:**
+- [x] Adjust FilterSubheader layout to align Clear Filters button with filter buttons
+- [x] Add matching vertical padding to Clear Filters button
+- [x] Add missing `xl:` breakpoint for typography
+- [x] Test across different screen sizes
+
+**Implementation Summary:**
+The Clear Filters button was misaligned because it had no vertical padding while the filter buttons had `py-btn-y-*` padding. This caused the text baselines to not align even though both containers used `items-center`.
+
+**Changes Made:**
+1. Added matching vertical padding: `py-btn-y-base lg:py-btn-y-lg xl:py-btn-y-xl 2xl:py-btn-y-2xl`
+2. Added missing `xl:` typography breakpoint: `xl:text-body-xl`
+
+**Before:**
+```tsx
+className="text-body-base lg:text-body-lg 2xl:text-body-2xl text-blue-600 hover:text-blue-800"
+```
+
+**After:**
+```tsx
+className="text-body-base lg:text-body-lg xl:text-body-xl 2xl:text-body-2xl text-blue-600 hover:text-blue-800 py-btn-y-base lg:py-btn-y-lg xl:py-btn-y-xl 2xl:py-btn-y-2xl"
+```
+
+**Files Modified:**
 - `src/components/FilterSubheader.tsx`
+
+**Commit:**
+```
+fix(FilterSubheader): align Clear Filters button with filter buttons
+```
 
 ---
 
@@ -885,6 +910,7 @@ fix(FilterSubheader, design-system): align left sidebar with filter gap midpoint
 | 2026-01-14 | **Task 6 COMPLETE** — Footer updated with xl breakpoints and design system gap tokens | Team |
 | 2026-01-14 | Added **Monotonic Sizing Rule** to Context Summary and DESIGN_SYSTEM.md | Team |
 | 2026-01-14 | **Task 7 COMPLETE** — Left sidebar aligned with filter gap midpoint, added missing xl: breakpoints | Team |
+| 2026-01-14 | **Task 8 COMPLETE** — Clear Filters button alignment fixed with matching padding | Team |
 
 ---
 
