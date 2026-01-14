@@ -6,35 +6,6 @@
 
 ---
 
-## Context Summary
-
-> **Read this first!** This section summarizes key decisions made during planning.
-
-### Design Philosophy
-This is a **data-dense application** — we optimize for **maximum information per screen**, not reading comfort. Users can zoom (`Cmd +`) if needed.
-
-### Key Decisions
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| **Target audience** | Desktop users only | Data catalog for researchers, not casual mobile browsing |
-| **Minimum width** | 1024px | Below this, show "Desktop Required" message |
-| **Font size priority** | Information density > readability | Smaller fonts (12-13px body) to fit more data |
-| **Responsive approach** | Compact cards on laptops, full cards on desktops | Adaptive density based on screen size |
-| **Consistency** | All 11 data sources use same tokens | Single design system for everything |
-
-### Supported Breakpoints
-| Breakpoint | Width | Experience | Card Mode |
-|------------|-------|------------|-----------|
-| `lg` | 1024–1279px | Compact (laptops with scaling) | Compact — no descriptions |
-| `xl` | 1280–1439px | Standard (default laptops) | Standard — 1 line description |
-| `2xl` | ≥1440px | Full (desktops, monitors) | Full — 2 line description |
-| `<1024px` | — | **Blocked** | "Desktop Required" message |
-
-### Primary Reference
-📄 **`docs/design-system/DESIGN_SYSTEM.md`** — Contains all token specifications, values, and usage examples.
-
----
-
 ## Overview
 
 This development plan addresses responsive design issues, establishes a consistent design system, and improves the overall user experience across the Dangermond Preserve Data Catalog.
@@ -50,7 +21,7 @@ This development plan addresses responsive design issues, establishes a consiste
 ### Phase 1: Foundation
 - [x] **Task 1** — Organize root directory files (🟡 MEDIUM)
 - [x] **Task 2** — Research industry best practices for typography/spacing (🔵 RESEARCH) ✅ COMPLETE
-- [ ] **Task 2a** — Implement "Desktop Required" gate for small screens (🔴 HIGH)
+- [x] **Task 2a** — Implement "Desktop Required" gate for small screens (🔴 HIGH) ✅ COMPLETE
 - [ ] **Task 3** — ⚡ **MIGRATE ENTIRE APP TO DESIGN SYSTEM** (🔴 HIGH) ⚡
 - [ ] **Task 4** — Document design system usage patterns (🟡 MEDIUM)
 
@@ -95,6 +66,35 @@ This development plan addresses responsive design issues, establishes a consiste
 - **🟡 MEDIUM:** Important improvements that enhance usability
 - **🟢 LOW:** Nice-to-have enhancements for future consideration
 - **🔵 RESEARCH:** Requires investigation and decision-making
+
+---
+
+## Context Summary
+
+> **Read this first!** This section summarizes key decisions made during planning.
+
+### Design Philosophy
+This is a **data-dense application** — we optimize for **maximum information per screen**, not reading comfort. Users can zoom (`Cmd +`) if needed.
+
+### Key Decisions
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| **Target audience** | Desktop users only | Data catalog for researchers, not casual mobile browsing |
+| **Minimum width** | 1024px | Below this, show "Desktop Required" message |
+| **Font size priority** | Information density > readability | Smaller fonts (12-13px body) to fit more data |
+| **Responsive approach** | Compact cards on laptops, full cards on desktops | Adaptive density based on screen size |
+| **Consistency** | All 11 data sources use same tokens | Single design system for everything |
+
+### Supported Breakpoints
+| Breakpoint | Width | Experience | Card Mode |
+|------------|-------|------------|-----------|
+| `lg` | 1024–1279px | Compact (laptops with scaling) | Compact — no descriptions |
+| `xl` | 1280–1439px | Standard (default laptops) | Standard — 1 line description |
+| `2xl` | ≥1440px | Full (desktops, monitors) | Full — 2 line description |
+| `<1024px` | — | **Blocked** | "Desktop Required" message |
+
+### Primary Reference
+📄 **`docs/design-system/DESIGN_SYSTEM.md`** — Contains all token specifications, values, and usage examples.
 
 ---
 
@@ -147,14 +147,24 @@ Move to `scripts/one-off/`:
 
 ---
 
-### Task 2a — Implement "Desktop Required" Gate (🔴 HIGH)
+### Task 2a — Implement "Desktop Required" Gate (🔴 HIGH) ✅ COMPLETE
 **Goal:** Block access on screens <1024px with a friendly message
 
+**Status:** COMPLETE — January 14, 2026
+
 **Tasks:**
-- [ ] Create `DesktopOnlyGate` component
-- [ ] Wrap app in gate component
-- [ ] Test at various viewport sizes
-- [ ] Ensure message is accessible and professional
+- [x] Create `DesktopOnlyGate` component
+- [x] Wrap app in gate component
+- [x] Test at various viewport sizes
+- [x] Ensure message is accessible and professional
+
+**Implementation Notes:**
+- Created `src/components/DesktopOnlyGate.tsx` with responsive width checking
+- Wraps entire App component to block screens <1024px
+- Shows centered card with professional message and helpful tip about display scaling
+- Uses high z-index (9999) and dark overlay to prevent app interaction
+- Includes null return during initial check to prevent flash of content
+- All elements have descriptive IDs for accessibility and testing
 
 **Technical Approach:**
 ```tsx
@@ -192,11 +202,16 @@ Minimum supported width: 1024px
 Tip: If you're on a laptop, try reducing your display scaling or browser zoom level.
 ```
 
-**Files to Create/Modify:**
-- `src/components/DesktopOnlyGate.tsx` (new)
-- `src/App.tsx` (wrap with gate)
+**Files Created/Modified:**
+- ✅ `src/components/DesktopOnlyGate.tsx` (created)
+- ✅ `src/App.tsx` (wrapped with gate)
 
 **Reference:** See `docs/design-system/DESIGN_SYSTEM.md` § Mobile/Tablet Blocking
+
+**Commit:**
+```
+feat(App/DesktopOnlyGate): add gate blocking screens <1024px
+```
 
 ---
 
@@ -651,6 +666,7 @@ For `lg` breakpoint (1024–1279px), cards should be compact:
 | 2026-01-14 | Added Context Summary section at top of document | Team |
 | 2026-01-14 | Added Implementation Tips to Task 3 | Team |
 | 2026-01-14 | Renumbered all tasks, simplified phase structure | Team |
+| 2026-01-14 | **Task 2a COMPLETE** — Desktop Required gate implemented | Team |
 
 ---
 

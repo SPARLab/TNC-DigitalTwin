@@ -41,6 +41,7 @@ import { useShoppingCart } from './hooks/useShoppingCart';
 import { CartPanel } from './components/ShoppingCart/CartPanel';
 import { ExportModal } from './components/ShoppingCart/ExportModal';
 import DroneImagerySidebar, { type DroneSidebarTab } from './components/DroneImageryDetails';
+import { DesktopOnlyGate } from './components/DesktopOnlyGate';
 
 // Load eBird query test utilities in development
 if ((import.meta as unknown as { env: { DEV: boolean } }).env.DEV) {
@@ -2558,9 +2559,10 @@ function App() {
   // });
 
   return (
-    <div id="app" className="h-screen bg-gray-50 flex flex-col">
-      {/* Toast notifications */}
-      <Toaster />
+    <DesktopOnlyGate>
+      <div id="app" className="h-screen bg-gray-50 flex flex-col">
+        {/* Toast notifications */}
+        <Toaster />
       
       <Header 
         theme={theme} 
@@ -3393,16 +3395,17 @@ function App() {
         }}
       />
 
-      {/* DataONE Preview Modal */}
-      {showDataOnePreview && selectedDataOneDataset && (
-        <DataONEPreview
-          dataoneUrl={`https://search.dataone.org/view/${encodeURIComponent(selectedDataOneDataset.dataoneId)}`}
-          title={selectedDataOneDataset.title}
-          onClose={() => setShowDataOnePreview(false)}
-        />
-      )}
+        {/* DataONE Preview Modal */}
+        {showDataOnePreview && selectedDataOneDataset && (
+          <DataONEPreview
+            dataoneUrl={`https://search.dataone.org/view/${encodeURIComponent(selectedDataOneDataset.dataoneId)}`}
+            title={selectedDataOneDataset.title}
+            onClose={() => setShowDataOnePreview(false)}
+          />
+        )}
 
-    </div>
+      </div>
+    </DesktopOnlyGate>
   );
 }
 
