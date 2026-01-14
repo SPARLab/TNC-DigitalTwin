@@ -229,34 +229,38 @@ const DataCatalog: React.FC<DataCatalogProps> = ({ filters, onSelectSource }) =>
               id={`data-card-${card.id}`}
               onClick={() => handleCardClick(card)}
               disabled={!compatible}
-              className={`relative flex items-center xl:items-start p-pad-card-compact-lg xl:p-pad-card-compact-xl 2xl:p-pad-card-compact-2xl rounded-card border text-left transition-all duration-200 group ${
+              className={`relative flex items-center p-pad-card-compact-lg xl:p-pad-card-compact-xl 2xl:p-pad-card-compact-2xl rounded-card border text-left transition-all duration-200 group ${
                 compatible 
                   ? 'bg-white border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer' 
                   : 'bg-gray-100 border-gray-200 opacity-60 cursor-not-allowed grayscale'
               }`}
             >
-              <div className={`p-gap-tight-lg xl:p-gap-tight-xl 2xl:p-gap-tight-2xl rounded-button mr-gap-element-lg xl:mr-gap-element-xl 2xl:mr-gap-element-2xl flex-shrink-0 ${
+              {/* Icon container - square, self-start at xl+ to align with first line of text */}
+              <div className={`aspect-square p-gap-tight-lg xl:p-gap-tight-xl 2xl:p-gap-tight-2xl rounded-button mr-gap-element-lg xl:mr-gap-element-xl 2xl:mr-gap-element-2xl flex-shrink-0 self-center xl:self-start xl:mt-px 2xl:mt-0.5 ${
                 compatible ? 'bg-blue-50 text-blue-600 group-hover:bg-blue-100' : 'bg-gray-200 text-gray-400'
               }`}>
                 <card.icon className="w-4 h-4 2xl:w-5 2xl:h-5" />
               </div>
               
-              <div className="flex-1 min-w-0 flex items-center xl:block">
-                <h3 
-                  className={`text-title-section-lg xl:text-title-section-xl 2xl:text-title-section-2xl font-semibold xl:mb-gap-tight-xl 2xl:mb-gap-tight-2xl leading-5 2xl:leading-7 xl:mt-0.5 ${
-                    compatible ? 'text-gray-900 group-hover:text-blue-700' : 'text-gray-500'
-                  }`}
-                >
-                  {card.title}
-                </h3>
-                <span 
-                  className="xl:hidden flex-shrink-0 ml-gap-tight-lg cursor-help"
-                  title={card.description}
-                >
-                  <Info className="w-3.5 h-3.5 text-gray-400 hover:text-blue-500" />
-                </span>
+              {/* Content container - vertical stack at xl+ for title + description */}
+              <div className="flex-1 min-w-0 flex items-center xl:flex-col xl:items-start">
+                <div className="flex items-center">
+                  <h3 
+                    className={`text-title-section-lg xl:text-title-section-xl 2xl:text-title-section-2xl font-semibold ${
+                      compatible ? 'text-gray-900 group-hover:text-blue-700' : 'text-gray-500'
+                    }`}
+                  >
+                    {card.title}
+                  </h3>
+                  <span 
+                    className="xl:hidden flex-shrink-0 ml-gap-tight-lg cursor-help"
+                    title={card.description}
+                  >
+                    <Info className="w-3.5 h-3.5 text-gray-400 hover:text-blue-500" />
+                  </span>
+                </div>
                 <p 
-                  className="hidden xl:block text-body-lg xl:text-body-xl 2xl:text-body-2xl text-gray-500 line-clamp-2"
+                  className="hidden xl:block text-body-lg xl:text-body-xl 2xl:text-body-2xl text-gray-500 line-clamp-2 mt-gap-tight-xl 2xl:mt-gap-tight-2xl"
                 >
                   {card.description}
                 </p>

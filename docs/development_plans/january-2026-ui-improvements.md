@@ -27,7 +27,7 @@ This development plan addresses responsive design issues, establishes a consiste
 
 ### Phase 2: Polish & Fixes (Post-Migration)
 - [x] **Task 5** — Fix header and subheader height consistency (🟡 MEDIUM) ✅ COMPLETE
-- [ ] **Task 5a** — Fix DataCatalog icon/text vertical alignment (🟡 MEDIUM)
+- [x] **Task 5a** — Fix DataCatalog icon/text vertical alignment (🟡 MEDIUM) ✅ COMPLETE
 - [ ] **Task 6** — Locate and update Footer component (🟡 MEDIUM)
 - [ ] **Task 7** — Align left sidebar with subheader (🟡 MEDIUM)
 - [ ] **Task 8** — Fix Clear Filters button alignment (🟡 MEDIUM)
@@ -514,37 +514,51 @@ docs(design-system): add USAGE_GUIDE.md with patterns and examples
 
 ---
 
-### Task 5a — Fix DataCatalog Icon/Text Vertical Alignment (🟡 MEDIUM)
+### Task 5a — Fix DataCatalog Icon/Text Vertical Alignment (🟡 MEDIUM) ✅ COMPLETE
 **Goal:** Achieve perfect vertical alignment between card icons and titles in the left sidebar
 
-**Current Issue:**
-- Icons and text are not perfectly center-aligned at all breakpoints
-- Typography descenders (y, g, p) affect visual balance
-- Different breakpoints require different alignment adjustments
+**Status:** COMPLETE — January 14, 2026
 
 **Tasks:**
-- [ ] Fine-tune icon sizes and text line-heights at each breakpoint
-- [ ] Account for typography descenders using margin-top offset
-- [ ] Test alignment at 1024px (lg), 1280px (xl), 1440px+ (2xl)
-- [ ] Verify visual harmony across all data source cards
+- [x] Fine-tune icon sizes and text line-heights at each breakpoint
+- [x] Account for typography descenders using margin-top offset
+- [x] Test alignment at 1024px (lg), 1280px (xl), 1440px+ (2xl)
+- [x] Verify visual harmony across all data source cards
 
 **Acceptance Criteria:**
-- Icon container and text appear visually center-aligned at all breakpoints
-- Text cap height (not including descenders) aligns with icon center
-- Consistent appearance across all 11 data sources
+- [x] Icon container and text appear visually center-aligned at all breakpoints
+- [x] Text cap height (not including descenders) aligns with icon center
+- [x] Consistent appearance across all 11 data sources
 
-**Files to Modify:**
+**Files Modified:**
 - `src/components/DataCatalog.tsx`
 
-**Current Implementation (as of Task 3 migration):**
-- Icon sizes: `w-4 h-4` (lg/xl), `w-5 h-5` (2xl)
-- Text line-height: `leading-5` (lg/xl), `leading-7` (2xl)
-- Descender offset: `xl:mt-0.5` (2px at xl/2xl)
+**Implementation Summary:**
 
-**Technical Notes:**
-- Typography descenders (tails on y, g, p, q, j) extend ~20-25% below baseline
-- Visual alignment should be based on cap height (top of M) to baseline (bottom of M)
-- Icon container height includes padding, not just icon dimensions
+1. **Consistent alignment strategy:** Changed card button from `items-center xl:items-start` to just `items-center` for consistent behavior at all breakpoints.
+
+2. **Icon container alignment:** Added `self-center xl:self-start xl:mt-px 2xl:mt-0.5`
+   - At lg: `self-center` keeps icon centered with title
+   - At xl+: `self-start` with small margin-top fine-tunes alignment with first line of text
+
+3. **Content container restructure:** Changed from `flex items-center xl:block` to `flex items-center xl:flex-col xl:items-start`
+   - At lg: horizontal flex row (title + info icon)
+   - At xl+: vertical column (title row above description)
+
+4. **Title wrapper:** Added wrapper div `<div className="flex items-center">` around title and info icon
+   - Keeps title and info icon always horizontally aligned
+   - Info icon hidden at xl+ where full description is visible
+
+5. **Removed hacks:** Removed manual `leading-5 2xl:leading-7` line-height overrides and `xl:mt-0.5 xl:mb-gap-tight-xl` margin hacks
+   - Now uses design system's natural line-height (1.2) from typography tokens
+   - Cleaner, more maintainable code
+
+6. **Description spacing:** Added `mt-gap-tight-xl 2xl:mt-gap-tight-2xl` for consistent spacing between title and description using design system tokens
+
+**Commit:**
+```
+fix(DataCatalog): improve icon/text vertical alignment across breakpoints
+```
 
 ---
 
@@ -802,6 +816,7 @@ docs(design-system): add USAGE_GUIDE.md with patterns and examples
 | 2026-01-14 | **Task 3 COMPLETE** — Migrated entire app to design system tokens | Team |
 | 2026-01-14 | **Task 4 COMPLETE** — Created USAGE_GUIDE.md with patterns and examples | Team |
 | 2026-01-14 | **Task 5 COMPLETE** — Header/subheader height consistency with fixed height tokens | Team |
+| 2026-01-14 | **Task 5a COMPLETE** — DataCatalog icon/text vertical alignment fixed | Team |
 
 ---
 
