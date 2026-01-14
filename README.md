@@ -7,7 +7,7 @@ A modern React TypeScript application for browsing and visualizing environmental
 - **Interactive Data Catalog**: Browse through 247+ environmental datasets
 - **Advanced Filtering**: Filter by data category, source, spatial area, and time range
 - **Interactive Map**: Visualize data locations with toggleable layers
-- **Responsive Design**: Optimized for desktop and mobile viewing
+- **Data-Dense UI**: Optimized for maximum information density on desktop screens
 - **Modern UI**: Clean, accessible interface built with Tailwind CSS
 
 ## Tech Stack
@@ -17,6 +17,32 @@ A modern React TypeScript application for browsing and visualizing environmental
 - **Tailwind CSS** - Utility-first CSS framework
 - **Vite** - Fast build tool and dev server
 - **Lucide React** - Beautiful icons
+
+## Design System
+
+This application uses a **data-dense design system** optimized for displaying maximum information on desktop screens. The design system is documented in detail at:
+
+📄 **[docs/design-system/DESIGN_SYSTEM.md](docs/design-system/DESIGN_SYSTEM.md)**
+
+### Key Design Principles
+
+- **Desktop-only**: Minimum supported width is 1024px (screens below show a "Desktop Required" message)
+- **Information density**: Smaller fonts and tighter spacing than typical consumer apps
+- **Responsive breakpoints**:
+  - `lg` (1024–1279px): Compact mode — dense UI, compact cards
+  - `xl` (1280–1439px): Standard laptop — balanced density  
+  - `2xl` (≥1440px): Desktop — full experience
+
+### Quick Reference
+
+| Element | lg (1024px) | xl (1280px) | 2xl (1440px+) |
+|---------|-------------|-------------|---------------|
+| Body text | 12px | 12px | 13px |
+| Card titles | 12px | 13px | 14px |
+| Card descriptions | Hidden | 1 line | 2 lines |
+| Left sidebar | 240px | 280px | 320px |
+
+For full specifications including typography, spacing, and card modes, see the design system document.
 
 ## Getting Started
 
@@ -85,6 +111,7 @@ TNC-DigitalTwin/
 │   ├── debug_prompts/        # Debugging documentation
 │   ├── design-system/        # Design tokens and style guides
 │   ├── development_plans/    # Active development plans
+│   ├── research_findings/    # Research documents and best practices
 │   └── testing/              # Testing documentation
 ├── scripts/
 │   ├── animl-eda/       # Animl data analysis scripts

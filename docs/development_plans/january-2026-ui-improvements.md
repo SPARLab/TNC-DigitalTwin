@@ -8,7 +8,15 @@
 
 ## Overview
 
-This development plan addresses responsive design issues, establishes a consistent design system, and improves the overall user experience across the Dangermond Preserve Data Catalog. The plan prioritizes establishing industry-standard responsive patterns before making component-specific adjustments.
+This development plan addresses responsive design issues, establishes a consistent design system, and improves the overall user experience across the Dangermond Preserve Data Catalog.
+
+**Design Philosophy (Updated January 2026):**
+- **Data-dense application** — Optimize for maximum information per screen, not reading comfort
+- **Desktop-only** — Supported on screens ≥1024px; smaller screens see "Desktop Required" message
+- **11 data sources** — Consistent styling across ArcGIS, iNaturalist, eBird, CalFlora, Animl, Dendra, LiDAR, Drone Imagery, DataONE, MODIS, GBIF
+- **Adaptive density** — Standard cards on large screens, compact cards on laptops
+
+**Key Reference:** `docs/research_findings/RECOMMENDED_DESIGN_SYSTEM.md`
 
 ---
 
@@ -17,9 +25,10 @@ This development plan addresses responsive design issues, establishes a consiste
 **Tasks are numbered in execution order. Check off as completed.**
 
 ### Phase 1: Preparation & Foundation (Week 1-2)
-- [ ] **Task 1** — Organize root directory files (🟡 MEDIUM)
-- [ ] **Task 2** — Research industry best practices for typography/spacing (🔵 RESEARCH)
-- [ ] **Task 3** — Define semantic design system tokens in Tailwind (🔴 HIGH)
+- [x] **Task 1** — Organize root directory files (🟡 MEDIUM)
+- [x] **Task 2** — Research industry best practices for typography/spacing (🔵 RESEARCH) ✅ COMPLETE
+- [ ] **Task 2a** — Implement "Desktop Required" gate for small screens (🔴 HIGH) *NEW*
+- [ ] **Task 3** — Define data-dense design system tokens in Tailwind (🔴 HIGH) *REVISED*
 - [ ] **Task 4** — Document design system (🔴 HIGH)
 
 ### Phase 2: Core Layout (Week 3-4)
@@ -32,8 +41,8 @@ This development plan addresses responsive design issues, establishes a consiste
 - [ ] **Task 11** — Fix Clear Filters button alignment (🟡 MEDIUM)
 
 ### Phase 3: Component Updates (Week 5-6)
-- [ ] **Task 12** — Apply design system to DataView and cards (🟡 MEDIUM)
-- [ ] **Task 13** — Apply design system to sidebars (beyond width) (🟡 MEDIUM)
+- [ ] **Task 12** — Create CompactCard component for laptop breakpoints (🔴 HIGH) *REVISED*
+- [ ] **Task 13** — Apply design system to all 11 data source sidebars (🔴 HIGH) *REVISED*
 - [ ] **Task 14** — Apply design system to map legends (🟡 MEDIUM)
 - [ ] **Task 15** — Scale map legends for screen sizes (🟡 MEDIUM)
 - [ ] **Task 16** — Apply design system to remaining components (🟡 MEDIUM)
@@ -55,11 +64,14 @@ This development plan addresses responsive design issues, establishes a consiste
 - [ ] **Task 26** — Document responsive design patterns (🟢 LOW)
 
 ### Testing & Validation (Ongoing)
-- [ ] Test on mobile devices (iPhone SE, iPhone 12/13/14)
-- [ ] Test on tablet devices (iPad, iPad Pro)
-- [ ] Test at ~1200px breakpoint (laptop screens)
-- [ ] Test on large desktop (1920px+)
-- [ ] Test in Chrome/Edge, Firefox, Safari
+- [ ] Verify "Desktop Required" message appears below 1024px
+- [ ] Test at 1024px (minimum supported width)
+- [ ] Test at 1440px (compact/standard card threshold)
+- [ ] Test at 1512px (14" MacBook Default scaling)
+- [ ] Test at 1920px+ (large desktop)
+- [ ] Test at 2560px (27" monitor)
+- [ ] Test in Chrome, Firefox, Safari
+- [ ] Verify all 11 data sources use consistent styling
 
 ---
 
@@ -100,50 +112,78 @@ Move to `scripts/one-off/`:
 
 ---
 
-### Task 2 — Research Industry Best Practices (🔵 RESEARCH)
+### Task 2 — Research Industry Best Practices (🔵 RESEARCH) ✅ COMPLETE
 **Goal:** Establish evidence-based responsive design standards
 
-**Tasks:**
-- [ ] Research industry best practices for responsive typography across device sizes
-- [ ] Identify standard font sizes for different text categories across breakpoints
-- [ ] Research optimal spacing/padding/margin standards for different screen sizes
-- [ ] Document ideal ratios between different font size categories
+**Status:** COMPLETE - Pivoted from consumer app standards to data-dense app standards
 
-**Deliverables:**
-- `docs/research_findings/typography-best-practices.md`
-- `docs/research_findings/spacing-best-practices.md`
-- `docs/research_findings/design-system-research-summary.md`
+**Deliverables Created:**
+- ✅ `docs/research_findings/typography-best-practices.md` — Industry standards from Material Design, Apple HIG, IBM Carbon
+- ✅ `docs/research_findings/spacing-best-practices.md` — 8-point grid, touch targets, responsive compression
+- ✅ `docs/research_findings/design-system-research-summary.md` — Executive summary
+- ✅ `docs/research_findings/RECOMMENDED_DESIGN_SYSTEM.md` — **Primary reference** for implementation
 
-**Notes:**
-- Focus on mobile (iPhone), tablet (~1200px), and desktop breakpoints
-- Consider accessibility standards (WCAG)
-- Look at Material Design, Apple HIG, and other design systems for guidance
+**Implementation Notes:**
+- Initial research focused on consumer app best practices (14-16px body text)
+- After reviewing actual app usage on 14" MacBook, pivoted to data-dense approach
+- **Key decision:** Optimize for information density, not readability comfort
+- **Key decision:** Desktop-only (≥1024px), show blocking message on smaller screens
+- Current font usage: 49% text-sm (14px), 38% text-xs (12px), only 6% semantic tokens
+- Recommended: Smaller fonts (13px body, 12px labels), compact cards on laptops
 
 ---
 
-### Task 3 — Define Design System Tokens (🔴 HIGH)
-**Goal:** Create a consistent, Tailwind-based design system with 4-5 font size categories
+### Task 2a — Implement "Desktop Required" Gate (🔴 HIGH) *NEW*
+**Goal:** Block access on screens <1024px with a friendly message
 
 **Tasks:**
-- [ ] Update `tailwind.config.js` with semantic font size tokens
-  - Categories: `title`, `subtitle`, `header`, `section-label`, `body`, `description`
-  - Responsive variants for each (base, sm, md, lg, xl, 2xl)
-- [ ] Define spacing tokens for padding and margins
-- [ ] Create visual reference showing all tokens
+- [ ] Create `DesktopOnlyGate` component
+- [ ] Wrap app in gate component
+- [ ] Test at various viewport sizes
+- [ ] Ensure message is accessible and professional
 
 **Technical Approach:**
-```javascript
-fontSize: {
-  'title': ['24px', { lineHeight: '1.2' }],
-  'title-sm': ['20px', { lineHeight: '1.2' }],
-  'title-lg': ['32px', { lineHeight: '1.2' }],
-  'body': ['14px', { lineHeight: '1.6' }],
-  // ... etc
+```tsx
+// Show "Desktop Required" message for viewports < 1024px
+if (window.innerWidth < 1024) {
+  return <DesktopRequiredMessage />;
 }
 ```
 
+**Files to Create/Modify:**
+- `src/components/DesktopOnlyGate.tsx` (new)
+- `src/App.tsx` (wrap with gate)
+
+**Reference:** See `docs/research_findings/RECOMMENDED_DESIGN_SYSTEM.md` for full implementation details.
+
+---
+
+### Task 3 — Define Data-Dense Design System Tokens (🔴 HIGH) *REVISED*
+**Goal:** Create a data-dense Tailwind design system optimized for maximum information per screen
+
+**Philosophy:** Smaller fonts than consumer apps, aggressive responsive scaling, consistency across 11 data sources.
+
+**Tasks:**
+- [ ] Update `tailwind.config.js` with data-dense typography tokens
+- [ ] Add compact spacing variants for laptop breakpoints
+- [ ] Add sidebar width tokens
+- [ ] Test that existing components don't break
+
+**Recommended Token Values (from research):**
+
+| Token | 2xl (≥1440px) | lg (1024-1439px) | Notes |
+|-------|---------------|------------------|-------|
+| title-page | 18px | 16px | Max size in system |
+| title-section | 15px | 14px | Section headings |
+| title-card | 14px | 12px | Card titles |
+| body | 13px | 12px | Primary text |
+| label | 12px | 11px | Metadata |
+| caption | 11px | 10px | Minimum 10px |
+
 **Files to Modify:**
 - `tailwind.config.js`
+
+**Reference:** See `docs/research_findings/RECOMMENDED_DESIGN_SYSTEM.md` for full token specifications.
 
 ---
 
@@ -661,6 +701,10 @@ When completing a task, if future tasks will need to know about decisions made o
 | 2026-01-13 | Reorganized by execution order, added task checklist summary | Team |
 | 2026-01-13 | Added Task 9 for repository/documentation cleanup | Team |
 | 2026-01-13 | Removed duplicates, renumbered tasks sequentially, simplified feature tracking | Team |
+| 2026-01-13 | **Task 2 COMPLETE** — Research pivoted from consumer app to data-dense approach | Team |
+| 2026-01-13 | Added Task 2a (Desktop Required gate), revised Task 3 for data-dense tokens | Team |
+| 2026-01-13 | Updated testing strategy for desktop-only approach (≥1024px) | Team |
+| 2026-01-13 | Created `RECOMMENDED_DESIGN_SYSTEM.md` with full specifications | Team |
 
 ---
 
