@@ -137,13 +137,13 @@ export default {
         'pad-card-2xl': '0.75rem',       // 12px
         
         // Compact card padding
-        // lg: 4px, xl: 6px, 2xl: 8px
+        // lg: 6px, xl: 8px, 2xl: 10px (increased for better breathing room)
         'pad-card-compact-base': '0.125rem',  // 2px - fallback
         'pad-card-compact-sm': '0.25rem',     // 4px
-        'pad-card-compact-md': '0.25rem',     // 4px
-        'pad-card-compact-lg': '0.25rem',     // 4px
-        'pad-card-compact-xl': '0.375rem',    // 6px
-        'pad-card-compact-2xl': '0.5rem',     // 8px
+        'pad-card-compact-md': '0.375rem',    // 6px
+        'pad-card-compact-lg': '0.375rem',    // 6px
+        'pad-card-compact-xl': '0.5rem',      // 8px
+        'pad-card-compact-2xl': '0.625rem',   // 10px
         
         // Legacy card tokens (for backward compatibility)
         'card-base': '0.25rem',          // 4px
@@ -218,13 +218,13 @@ export default {
         'gap-section-2xl': '1rem',           // 16px
         
         // Card grid gaps (between cards in a grid/list)
-        // lg: 4px, xl: 6px, 2xl: 8px
+        // lg: 6px, xl: 8px, 2xl: 10px (increased for better breathing room)
         'gap-card-grid-base': '0.125rem',    // 2px - fallback
         'gap-card-grid-sm': '0.25rem',       // 4px
-        'gap-card-grid-md': '0.25rem',       // 4px
-        'gap-card-grid-lg': '0.25rem',       // 4px
-        'gap-card-grid-xl': '0.375rem',      // 6px
-        'gap-card-grid-2xl': '0.5rem',       // 8px
+        'gap-card-grid-md': '0.375rem',      // 6px
+        'gap-card-grid-lg': '0.375rem',      // 6px
+        'gap-card-grid-xl': '0.5rem',        // 8px
+        'gap-card-grid-2xl': '0.625rem',     // 10px
         
         // Element gaps (between elements in a row/column)
         // lg: 3px, xl: 4px, 2xl: 6px

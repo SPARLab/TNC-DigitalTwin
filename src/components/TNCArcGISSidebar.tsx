@@ -202,15 +202,6 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
     }
   };
 
-  const getUIPatternColor = (pattern: string) => {
-    switch (pattern) {
-      case 'MAP_LAYER': return 'text-blue-600 bg-blue-50';
-      case 'EXTERNAL_LINK': return 'text-green-600 bg-green-50';
-      case 'MODAL': return 'text-purple-600 bg-purple-50';
-      default: return 'text-gray-600 bg-gray-50';
-    }
-  };
-
   const toggleItemExpansion = (itemId: string) => {
     const newExpanded = new Set(expandedItems);
     if (newExpanded.has(itemId)) {
@@ -251,7 +242,7 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
       <div
         key={item.id}
         id={`tnc-item-${item.id}`}
-        className={`p-3 rounded-lg cursor-pointer transition-all duration-200 ${
+        className={`p-pad-card-compact-lg xl:p-pad-card-compact-xl 2xl:p-pad-card-compact-2xl rounded-card cursor-pointer transition-all duration-200 ${
           isSelectedForDetails
             ? 'bg-blue-50 border-2 border-blue-500 shadow-lg' 
             : isActiveLayer 
@@ -260,137 +251,135 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
         }`}
         onClick={() => handleItemClick(item)}
       >
-        <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0">
-            <div id={`item-header-${item.id}`} className="flex items-center gap-2 mb-2">
-              {isExpanded ? (
-                <ChevronDown id={`item-chevron-down-${item.id}`} className="w-4 h-4 text-gray-600 flex-shrink-0" />
-              ) : (
-                <ChevronRight id={`item-chevron-right-${item.id}`} className="w-4 h-4 text-gray-600 flex-shrink-0" />
-              )}
-              <div id={`item-ui-pattern-icon-${item.id}`} className="flex-shrink-0">
-                {getUIPatternIcon(item.uiPattern)}
-              </div>
-              <h3 id={`item-title-${item.id}`} className="font-medium text-gray-900 break-words flex-1 min-w-0" title={item.title}>
-                {item.title}
-              </h3>
-              {item.uiPattern === 'EXTERNAL_LINK' && (
-                <ExternalLink id={`item-external-link-indicator-${item.id}`} className="w-3 h-3 text-gray-400 flex-shrink-0" />
-              )}
+        {/* Row 1: Title bar with eye icon on far right */}
+        <div id={`item-header-${item.id}`} className="flex items-center justify-between gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl mb-gap-element-lg xl:mb-gap-element-xl 2xl:mb-gap-element-2xl">
+          <div className="flex items-center gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl min-w-0 flex-1">
+            {isExpanded ? (
+              <ChevronDown id={`item-chevron-down-${item.id}`} className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-gray-600 flex-shrink-0" />
+            ) : (
+              <ChevronRight id={`item-chevron-right-${item.id}`} className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-gray-600 flex-shrink-0" />
+            )}
+            <div id={`item-ui-pattern-icon-${item.id}`} className="flex-shrink-0 [&>svg]:w-3.5 [&>svg]:h-3.5 xl:[&>svg]:w-4 xl:[&>svg]:h-4">
+              {getUIPatternIcon(item.uiPattern)}
             </div>
-            
-            {item.snippet && (() => {
-              console.log(`📄 Snippet for "${item.title}":`, item.snippet.substring(0, 300));
-              return (
-                <p id={`item-snippet-${item.id}`} className={`text-sm text-gray-600 mb-2 break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
-                  {item.snippet}
-                </p>
-              );
-            })()}
-            
-            <div id={`item-badges-${item.id}`} className="flex flex-wrap gap-1 mb-2">
-              <span id={`item-ui-pattern-badge-${item.id}`} className={`px-2 py-1 text-xs rounded-full ${getUIPatternColor(item.uiPattern)}`}>
-                {item.uiPattern.replace('_', ' ')}
-              </span>
-              <span id={`item-type-badge-${item.id}`} className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">
-                {item.type}
-              </span>
-              {item.mainCategories.slice(0, isExpanded ? undefined : 2).map((category, idx) => (
-                <span key={category} id={`item-category-badge-${item.id}-${idx}`} className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">
-                  {category}
-                </span>
-              ))}
-            </div>
-            
-            <div id={`item-metadata-${item.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
-              <div id={`item-owner-${item.id}`} className="flex items-center gap-1 min-w-0">
-                <User className="w-3 h-3 flex-shrink-0" />
-                <span className="truncate">{item.owner}</span>
-              </div>
-              <div id={`item-modified-date-${item.id}`} className="flex items-center gap-1 flex-shrink-0">
-                <Calendar className="w-3 h-3 flex-shrink-0" />
-                <span className="whitespace-nowrap">{new Date(item.modified).toLocaleDateString()}</span>
-              </div>
-              <div id={`item-view-count-${item.id}`} className="flex items-center gap-1 flex-shrink-0">
-                <Eye className="w-3 h-3 flex-shrink-0" />
-                <span>{item.num_views}</span>
-              </div>
-            </div>
+            <h3 id={`item-title-${item.id}`} className="text-title-card-lg xl:text-title-card-xl 2xl:text-title-card-2xl text-gray-900 break-words flex-1 min-w-0 line-clamp-1" title={item.title}>
+              {item.title}
+            </h3>
+            {item.uiPattern === 'EXTERNAL_LINK' && (
+              <ExternalLink id={`item-external-link-indicator-${item.id}`} className="w-2.5 h-2.5 xl:w-3 xl:h-3 text-gray-400 flex-shrink-0" />
+            )}
           </div>
           
+          {/* Eye icon on far right of title row */}
           {item.uiPattern === 'MAP_LAYER' && (
             <div 
               id={`item-map-layer-visibility-toggle-${item.id}`} 
-              className="flex items-center gap-2 ml-2"
+              className="flex-shrink-0"
               onClick={(e) => {
                 e.stopPropagation();
                 if (!isActiveLayer) {
-                  // Layer not visible yet - select for details (which auto-shows it)
                   onItemSelect?.(item);
                 } else {
-                  // Layer already visible - just toggle it off (hide it)
-                  // Don't change the details selection
                   onLayerToggle?.(item.id);
                 }
               }}
               title={isActiveLayer ? "Hide from map" : "Show on map"}
             >
               {isLoadingLayer ? (
-                <Loader2 id={`item-layer-loading-spinner-${item.id}`} className="w-5 h-5 text-blue-600 animate-spin" />
+                <Loader2 id={`item-layer-loading-spinner-${item.id}`} className="w-4 h-4 xl:w-5 xl:h-5 text-blue-600 animate-spin" />
               ) : isActiveLayer ? (
                 <Eye 
                   id={`item-layer-visible-icon-${item.id}`} 
-                  className="w-5 h-5 text-blue-600 hover:text-blue-700 cursor-pointer"
+                  className="w-4 h-4 xl:w-5 xl:h-5 text-blue-600 hover:text-blue-700 cursor-pointer"
                 />
               ) : (
                 <EyeOff 
                   id={`item-layer-hidden-icon-${item.id}`} 
-                  className="w-5 h-5 text-gray-400 hover:text-gray-600 cursor-pointer"
+                  className="w-4 h-4 xl:w-5 xl:h-5 text-gray-400 hover:text-gray-600 cursor-pointer"
                 />
               )}
             </div>
           )}
         </div>
         
+        {/* Full-width content rows */}
+        {/* Snippet - line clamped based on breakpoint */}
+        {/* Monotonic: lg=1 line → xl=2 lines → 2xl=4 lines */}
+        {item.snippet && (
+          <p id={`item-snippet-${item.id}`} className={`text-body-lg xl:text-body-xl 2xl:text-body-2xl text-gray-600 mb-gap-element-lg xl:mb-gap-element-xl 2xl:mb-gap-element-2xl break-words ${isExpanded ? '' : 'line-clamp-1 xl:line-clamp-2 2xl:line-clamp-4'}`}>
+            {item.snippet}
+          </p>
+        )}
+        
+        {/* Badges - full width, wraps naturally */}
+        <div id={`item-badges-${item.id}`} className="flex flex-wrap gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl mb-gap-element-lg xl:mb-gap-element-xl 2xl:mb-gap-element-2xl">
+          <span id={`item-type-badge-${item.id}`} className="px-btn-compact-x-lg xl:px-btn-compact-x-xl 2xl:px-btn-compact-x-2xl py-btn-compact-y-lg xl:py-btn-compact-y-xl 2xl:py-btn-compact-y-2xl text-label-lg xl:text-label-xl 2xl:text-label-2xl rounded-badge bg-gray-100 text-gray-700">
+            {item.type}
+          </span>
+          {item.mainCategories.slice(0, isExpanded ? undefined : 3).map((category, idx) => (
+            <span key={category} id={`item-category-badge-${item.id}-${idx}`} className="px-btn-compact-x-lg xl:px-btn-compact-x-xl 2xl:px-btn-compact-x-2xl py-btn-compact-y-lg xl:py-btn-compact-y-xl 2xl:py-btn-compact-y-2xl text-label-lg xl:text-label-xl 2xl:text-label-2xl rounded-badge bg-green-100 text-green-700">
+              {category}
+            </span>
+          ))}
+          {!isExpanded && item.mainCategories.length > 3 && (
+            <span className="px-btn-compact-x-lg xl:px-btn-compact-x-xl 2xl:px-btn-compact-x-2xl py-btn-compact-y-lg xl:py-btn-compact-y-xl 2xl:py-btn-compact-y-2xl text-label-lg xl:text-label-xl 2xl:text-label-2xl text-gray-500">
+              +{item.mainCategories.length - 3}
+            </span>
+          )}
+        </div>
+        
+        {/* Metadata - hidden at lg breakpoint for compactness */}
+        <div id={`item-metadata-${item.id}`} className="hidden xl:flex flex-wrap items-center gap-x-gap-element-xl 2xl:gap-x-gap-element-2xl gap-y-gap-tight-xl 2xl:gap-y-gap-tight-2xl text-caption-lg xl:text-caption-xl 2xl:text-caption-2xl text-gray-500">
+          <div id={`item-owner-${item.id}`} className="flex items-center gap-gap-tight-xl 2xl:gap-gap-tight-2xl min-w-0">
+            <User className="w-2.5 h-2.5 xl:w-3 xl:h-3 flex-shrink-0" />
+            <span className="truncate max-w-[100px] xl:max-w-[120px]">{item.owner}</span>
+          </div>
+          <div id={`item-modified-date-${item.id}`} className="flex items-center gap-gap-tight-xl 2xl:gap-gap-tight-2xl flex-shrink-0">
+            <Calendar className="w-2.5 h-2.5 xl:w-3 xl:h-3 flex-shrink-0" />
+            <span className="whitespace-nowrap">{new Date(item.modified).toLocaleDateString()}</span>
+          </div>
+          <div id={`item-view-count-${item.id}`} className="flex items-center gap-gap-tight-xl 2xl:gap-gap-tight-2xl flex-shrink-0">
+            <Eye className="w-2.5 h-2.5 xl:w-3 xl:h-3 flex-shrink-0" />
+            <span>{item.num_views}</span>
+          </div>
+        </div>
+        
         {/* Expanded content */}
         {isExpanded && (
-          <div id={`item-expanded-content-${item.id}`} className="mt-3 pt-3 border-t border-gray-200 space-y-3" onClick={(e) => e.stopPropagation()}>
+          <div id={`item-expanded-content-${item.id}`} className="mt-gap-element-lg xl:mt-gap-element-xl 2xl:mt-gap-element-2xl pt-gap-element-lg xl:pt-gap-element-xl 2xl:pt-gap-element-2xl border-t border-gray-200 space-y-gap-element-lg xl:space-y-gap-element-xl 2xl:space-y-gap-element-2xl" onClick={(e) => e.stopPropagation()}>
             {/* Description */}
-            {item.description && (() => {
-              console.log(`📋 Left Sidebar Card Description for "${item.title}":`, item.description.substring(0, 500));
-              return (
-                <div id={`item-description-section-${item.id}`}>
-                  <h4 id={`item-description-label-${item.id}`} className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
-                    Description
-                  </h4>
-                  <div 
-                    id={`item-description-content-${item.id}`}
-                    className="text-sm text-gray-700 prose prose-sm max-w-none overflow-hidden break-words max-h-32 overflow-y-auto"
-                    dangerouslySetInnerHTML={{ __html: item.description }}
-                  />
-                </div>
-              );
-            })()}
+            {item.description && (
+              <div id={`item-description-section-${item.id}`}>
+                <h4 id={`item-description-label-${item.id}`} className="text-label-lg xl:text-label-xl 2xl:text-label-2xl font-semibold text-gray-700 uppercase tracking-wide mb-gap-tight-lg xl:mb-gap-tight-xl 2xl:mb-gap-tight-2xl">
+                  Description
+                </h4>
+                <div 
+                  id={`item-description-content-${item.id}`}
+                  className="text-body-lg xl:text-body-xl 2xl:text-body-2xl text-gray-700 prose prose-sm max-w-none overflow-hidden break-words max-h-24 xl:max-h-32 overflow-y-auto"
+                  dangerouslySetInnerHTML={{ __html: item.description }}
+                />
+              </div>
+            )}
             
             {/* Tags */}
             {item.tags.length > 0 && (
               <div id={`item-tags-section-${item.id}`}>
-                <h4 id={`item-tags-label-${item.id}`} className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">
+                <h4 id={`item-tags-label-${item.id}`} className="text-label-lg xl:text-label-xl 2xl:text-label-2xl font-semibold text-gray-700 uppercase tracking-wide mb-gap-tight-lg xl:mb-gap-tight-xl 2xl:mb-gap-tight-2xl">
                   Tags
                 </h4>
-                <div id={`item-tags-list-${item.id}`} className="flex flex-wrap gap-1">
-                  {item.tags.slice(0, 8).map((tag, index) => (
+                <div id={`item-tags-list-${item.id}`} className="flex flex-wrap gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl">
+                  {item.tags.slice(0, 6).map((tag, index) => (
                     <span
                       key={index}
                       id={`item-tag-${item.id}-${index}`}
-                      className="px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded break-words max-w-full"
+                      className="px-btn-compact-x-lg xl:px-btn-compact-x-xl 2xl:px-btn-compact-x-2xl py-btn-compact-y-lg xl:py-btn-compact-y-xl 2xl:py-btn-compact-y-2xl text-label-lg xl:text-label-xl 2xl:text-label-2xl bg-blue-50 text-blue-700 rounded-badge break-words max-w-full"
                     >
                       {tag}
                     </span>
                   ))}
-                  {item.tags.length > 8 && (
-                    <span id={`item-tags-more-indicator-${item.id}`} className="px-2 py-0.5 text-xs text-gray-500">
-                      +{item.tags.length - 8} more
+                  {item.tags.length > 6 && (
+                    <span id={`item-tags-more-indicator-${item.id}`} className="px-btn-compact-x-lg xl:px-btn-compact-x-xl 2xl:px-btn-compact-x-2xl py-btn-compact-y-lg xl:py-btn-compact-y-xl 2xl:py-btn-compact-y-2xl text-label-lg xl:text-label-xl 2xl:text-label-2xl text-gray-500">
+                      +{item.tags.length - 6} more
                     </span>
                   )}
                 </div>
@@ -398,25 +387,25 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
             )}
             
             {/* Action buttons */}
-            <div id={`item-action-buttons-${item.id}`} className="flex gap-2 pt-2">
+            <div id={`item-action-buttons-${item.id}`} className="flex gap-gap-element-lg xl:gap-gap-element-xl 2xl:gap-gap-element-2xl pt-gap-element-lg xl:pt-gap-element-xl 2xl:pt-gap-element-2xl">
               {item.uiPattern === 'EXTERNAL_LINK' && (
                 <a
                   id={`item-open-resource-button-${item.id}`}
                   href={item.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 px-btn-x-lg xl:px-btn-x-xl 2xl:px-btn-x-2xl py-btn-y-lg xl:py-btn-y-xl 2xl:py-btn-y-2xl bg-blue-600 text-white text-body-lg xl:text-body-xl 2xl:text-body-2xl rounded-button hover:bg-blue-700 transition-colors flex items-center justify-center gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl"
                   onClick={(e) => e.stopPropagation()}
                 >
                   Open Resource
-                  <ExternalLink className="w-4 h-4" />
+                  <ExternalLink className="w-3.5 h-3.5 xl:w-4 xl:h-4" />
                 </a>
               )}
               {item.uiPattern === 'MODAL' && (
                 <>
                   <button
                     id={`item-view-preview-button-${item.id}`}
-                    className={`flex-1 px-3 py-2 text-white text-sm rounded transition-colors flex items-center justify-center gap-2 ${
+                    className={`flex-1 px-btn-x-lg xl:px-btn-x-xl 2xl:px-btn-x-2xl py-btn-y-lg xl:py-btn-y-xl 2xl:py-btn-y-2xl text-white text-body-lg xl:text-body-xl 2xl:text-body-2xl rounded-button transition-colors flex items-center justify-center gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl ${
                       selectedModalItem?.id === item.id 
                         ? 'bg-purple-700' 
                         : 'bg-purple-600 hover:bg-purple-700'
@@ -431,18 +420,18 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
                     }}
                   >
                     {selectedModalItem?.id === item.id ? 'Close Preview' : 'View Preview'}
-                    {selectedModalItem?.id === item.id ? <X className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {selectedModalItem?.id === item.id ? <X className="w-3.5 h-3.5 xl:w-4 xl:h-4" /> : <Eye className="w-3.5 h-3.5 xl:w-4 xl:h-4" />}
                   </button>
                   <a
                     id={`item-open-in-arcgis-button-${item.id}`}
                     href={item.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+                    className="px-btn-x-lg xl:px-btn-x-xl 2xl:px-btn-x-2xl py-btn-y-lg xl:py-btn-y-xl 2xl:py-btn-y-2xl bg-gray-100 text-gray-700 text-body-lg xl:text-body-xl 2xl:text-body-2xl rounded-button hover:bg-gray-200 transition-colors flex items-center justify-center gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl"
                     onClick={(e) => e.stopPropagation()}
                     title="Open in ArcGIS Hub"
                   >
-                    <ExternalLink className="w-4 h-4" />
+                    <ExternalLink className="w-3.5 h-3.5 xl:w-4 xl:h-4" />
                   </a>
                 </>
               )}
@@ -452,10 +441,10 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
                   href={item.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+                  className="px-btn-x-lg xl:px-btn-x-xl 2xl:px-btn-x-2xl py-btn-y-lg xl:py-btn-y-xl 2xl:py-btn-y-2xl bg-gray-100 text-gray-700 text-body-lg xl:text-body-xl 2xl:text-body-2xl rounded-button hover:bg-gray-200 transition-colors flex items-center justify-center gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <ExternalLink className="w-4 h-4" />
+                  <ExternalLink className="w-3.5 h-3.5 xl:w-4 xl:h-4" />
                 </a>
               )}
             </div>
@@ -621,19 +610,19 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
             </p>
           </div>
         ) : (
-          <div id="tnc-items-list" className="p-pad-card-lg xl:p-pad-card-xl 2xl:p-pad-card-2xl space-y-margin-section-lg xl:space-y-margin-section-xl 2xl:space-y-margin-section-2xl">
+          <div id="tnc-items-list" className="p-pad-card-compact-lg xl:p-pad-card-compact-xl 2xl:p-pad-card-compact-2xl space-y-gap-element-lg xl:space-y-gap-element-xl 2xl:space-y-gap-element-2xl">
             {Object.entries(groupedItems).map(([dataType, typeItems]) => {
               // Determine icon and color for each data type group
               const getGroupIcon = () => {
                 switch (dataType) {
                   case 'Map Layers':
-                    return <Map className="w-4 h-4 text-blue-600" />;
+                    return <Map className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-blue-600" />;
                   case 'Pages':
-                    return <FileText className="w-4 h-4 text-purple-600" />;
+                    return <FileText className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-purple-600" />;
                   case 'External Links':
-                    return <ExternalLink className="w-4 h-4 text-green-600" />;
+                    return <ExternalLink className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-green-600" />;
                   default:
-                    return <Database className="w-4 h-4 text-gray-600" />;
+                    return <Database className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-gray-600" />;
                 }
               };
 
@@ -642,22 +631,22 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
                   <button
                     id={`tnc-data-type-toggle-${dataType.replace(/\s+/g, '-').toLowerCase()}`}
                     onClick={() => toggleCategory(dataType)}
-                    className="flex items-center justify-between w-full p-2 text-left hover:bg-gray-50 rounded-lg transition-colors"
+                    className="flex items-center justify-between w-full p-pad-card-compact-lg xl:p-pad-card-compact-xl 2xl:p-pad-card-compact-2xl text-left hover:bg-gray-50 rounded-card transition-colors"
                   >
-                    <div id={`tnc-data-type-header-${dataType.replace(/\s+/g, '-').toLowerCase()}`} className="flex items-center gap-2">
+                    <div id={`tnc-data-type-header-${dataType.replace(/\s+/g, '-').toLowerCase()}`} className="flex items-center gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl">
                       {expandedCategories.has(dataType) ? (
-                        <ChevronDown id={`tnc-data-type-chevron-down-${dataType.replace(/\s+/g, '-').toLowerCase()}`} className="w-4 h-4 text-gray-400" />
+                        <ChevronDown id={`tnc-data-type-chevron-down-${dataType.replace(/\s+/g, '-').toLowerCase()}`} className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-gray-400" />
                       ) : (
-                        <ChevronRight id={`tnc-data-type-chevron-right-${dataType.replace(/\s+/g, '-').toLowerCase()}`} className="w-4 h-4 text-gray-400" />
+                        <ChevronRight id={`tnc-data-type-chevron-right-${dataType.replace(/\s+/g, '-').toLowerCase()}`} className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-gray-400" />
                       )}
                       {getGroupIcon()}
-                      <span id={`tnc-data-type-name-${dataType.replace(/\s+/g, '-').toLowerCase()}`} className="font-medium text-gray-900">{dataType}</span>
-                      <span id={`tnc-data-type-count-${dataType.replace(/\s+/g, '-').toLowerCase()}`} className="text-sm text-gray-500">({typeItems.length})</span>
+                      <span id={`tnc-data-type-name-${dataType.replace(/\s+/g, '-').toLowerCase()}`} className="text-title-card-lg xl:text-title-card-xl 2xl:text-title-card-2xl text-gray-900">{dataType}</span>
+                      <span id={`tnc-data-type-count-${dataType.replace(/\s+/g, '-').toLowerCase()}`} className="text-caption-lg xl:text-caption-xl 2xl:text-caption-2xl text-gray-500">({typeItems.length})</span>
                     </div>
                   </button>
                   
                   {expandedCategories.has(dataType) && (
-                    <div id={`tnc-data-type-items-${dataType.replace(/\s+/g, '-').toLowerCase()}`} className="mt-2 space-y-2 pl-6">
+                    <div id={`tnc-data-type-items-${dataType.replace(/\s+/g, '-').toLowerCase()}`} className="mt-gap-tight-lg xl:mt-gap-tight-xl 2xl:mt-gap-tight-2xl space-y-gap-card-grid-lg xl:space-y-gap-card-grid-xl 2xl:space-y-gap-card-grid-2xl pl-gap-section-lg xl:pl-gap-section-xl 2xl:pl-gap-section-2xl">
                       {typeItems.map(renderItem)}
                     </div>
                   )}

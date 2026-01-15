@@ -34,7 +34,7 @@ This development plan addresses responsive design issues, establishes a consiste
 - [x] **Task 9** — Scale map legends for screen sizes (🟡 MEDIUM) ✅ COMPLETE
 
 ### Phase 3: Data Source Refinements
-- [ ] **Task 10** — Fix ArcGIS card sizing (🟡 MEDIUM)
+- [x] **Task 10** — Fix ArcGIS card sizing (🟡 MEDIUM) ✅ COMPLETE
 - [ ] **Task 11** — Fix Dendra card margins (🟡 MEDIUM)
 - [ ] **Task 12** — Replace Dendra "Christmas tree" icons (🟡 MEDIUM)
 - [ ] **Task 13** — eBird image loading improvements (🟡 MEDIUM - Backend)
@@ -739,17 +739,66 @@ fix(MapLegend, LayerLegend): scale map legends for screen sizes
 
 ---
 
-### Task 10 — Fix ArcGIS Card Sizing (🟡 MEDIUM)
+### Task 10 — Fix ArcGIS Card Sizing (🟡 MEDIUM) ✅ COMPLETE
 **Goal:** Reduce card size in left sidebar for ArcGIS feature services
 
-**Current Issues:**
-- Cards are too large
-- Height expanded due to presence of four tags per card
+**Status:** COMPLETE — January 14, 2026
 
 **Tasks:**
-- [ ] Review card sizing after design system migration
-- [ ] Test smaller font sizes for smaller screen widths
-- [ ] Ensure cards are still readable and usable
+- [x] Review card sizing after design system migration
+- [x] Test smaller font sizes for smaller screen widths
+- [x] Ensure cards are still readable and usable
+- [x] Increase padding and spacing for better breathing room
+- [x] Fix text line clamping (xl: 1 line, 2xl: 2 lines)
+
+**Implementation Summary:**
+
+1. **Card padding** — Replaced hardcoded `p-3` with responsive design system tokens:
+   - `p-pad-card-compact-lg xl:p-pad-card-compact-xl 2xl:p-pad-card-compact-2xl`
+
+2. **Typography** — Replaced all hardcoded font sizes with design system tokens:
+   - Card title: `text-title-card-lg xl:text-title-card-xl 2xl:text-title-card-2xl`
+   - Snippets: `text-body-*` tokens with `line-clamp-1` at lg, `line-clamp-2` at xl, `line-clamp-4` at 2xl
+   - Labels: `text-label-*` tokens
+   - Metadata: `text-caption-*` tokens
+
+3. **Badge optimization** — Made badges more compact and limited visibility:
+   - At lg breakpoint: Show abbreviated badge labels ("Map", "Link", "Page" instead of full names)
+   - At lg breakpoint: Hide item type badge, show only 1 category badge + "+N" indicator
+   - At xl+: Show full badge labels and more category badges
+   - Used `rounded-badge` (3px radius) instead of `rounded-full` for tighter appearance
+
+4. **Metadata row** — Hidden at lg breakpoint for compactness:
+   - Changed from always visible to `hidden xl:flex`
+   - Reduces card height significantly at compact breakpoint
+
+5. **Snippet visibility** — Progressive disclosure with line clamping:
+   - One line at lg (`line-clamp-1`)
+   - Two lines at xl (`xl:line-clamp-2`)
+   - Four lines at 2xl (`2xl:line-clamp-4`)
+
+6. **Icon sizes** — Made responsive:
+   - `w-3.5 h-3.5 xl:w-4 xl:h-4` for most icons
+   - Scales appropriately across breakpoints
+
+7. **Gap tokens** — Replaced hardcoded `gap-1`, `gap-2`, `mb-2` with design system tokens:
+   - `gap-gap-tight-*` for tight groupings (icon + text)
+   - `gap-gap-element-*` for element spacing
+   - `gap-gap-card-grid-*` for card list spacing
+
+8. **Design system token refinements** — Updated for better breathing room:
+   - Increased `pad-card-compact`: lg: 6px (was 4px), xl: 8px (was 6px), 2xl: 10px (was 8px)
+   - Increased `gap-card-grid`: lg: 6px (was 4px), xl: 8px (was 6px), 2xl: 10px (was 8px)
+
+**Files Modified:**
+- `src/components/TNCArcGISSidebar.tsx`
+- `tailwind.config.js` — Updated spacing tokens
+- `docs/design-system/DESIGN_SYSTEM.md` — Updated token values and card diagrams
+
+**Commit:**
+```
+fix(TNCArcGISSidebar, design-system): reduce card text overflow and increase spacing
+```
 
 ---
 
@@ -950,6 +999,7 @@ fix(MapLegend, LayerLegend): scale map legends for screen sizes
 | 2026-01-14 | **Task 7 COMPLETE** — Left sidebar aligned with filter gap midpoint, added missing xl: breakpoints | Team |
 | 2026-01-14 | **Task 8 COMPLETE** — Clear Filters button alignment fixed with matching padding | Team |
 | 2026-01-14 | **Task 9 COMPLETE** — Map legends scaled for screen sizes with new legend tokens | Team |
+| 2026-01-14 | **Task 10 COMPLETE** — ArcGIS cards made compact with design system tokens | Team |
 
 ---
 

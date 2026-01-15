@@ -99,7 +99,7 @@ lg ≤ xl ≤ 2xl
 |-------|----------------------|----------------------|-------------------|----------|
 | `pad-page` | 10px | 12px | 16px | Header, footer, main containers |
 | `pad-card` | 6px | 8px | 12px | Card interiors |
-| `pad-card-compact` | 4px | 6px | 8px | Compact card variant |
+| `pad-card-compact` | 6px | 8px | 10px | Compact card variant |
 | `pad-button` | 4px 8px | 6px 10px | 6px 12px | Button padding (vertical × horizontal) |
 | `pad-input` | 6px 8px | 8px 10px | 8px 12px | Form input padding |
 
@@ -120,7 +120,7 @@ lg ≤ xl ≤ 2xl
 | Token | **lg** (1024–1279px) | **xl** (1280–1439px) | **2xl** (≥1440px) | Use Case |
 |-------|----------------------|----------------------|-------------------|----------|
 | `gap-section` | 10px | 12px | 16px | Between major UI sections |
-| `gap-card-grid` | 4px | 6px | 8px | Between cards in a grid/list |
+| `gap-card-grid` | 6px | 8px | 10px | Between cards in a grid/list |
 | `gap-element` | 3px | 4px | 6px | Between elements in a row/column |
 | `gap-tight` | 2px | 2px | 4px | Icon to label, very tight groupings |
 
@@ -202,27 +202,31 @@ Both header and subheader use the same fixed height to ensure visual consistency
 ```
 ┌──────────────────────────────────┐
 │ 🗺️  Map Layers             [Arc] │  ← 12px title, abbreviated badge
+│ Curated GIS layers including...  │  ← 12px, 1 line
 └──────────────────────────────────┘
-Height: 36px | Padding: 4px | No description
+Height: ~52px | Padding: 6px
 ```
 
 **xl (Standard) — 1280–1439px:**
 ```
 ┌──────────────────────────────────┐
 │ 🗺️  Map Layers          [ArcGIS] │  ← 13px title
-│ Curated GIS layers including...  │  ← 12px, 1 line truncated
+│ Curated GIS layers including     │  ← 12px, 2 lines
+│ boundaries, vegetation, and...   │
 └──────────────────────────────────┘
-Height: 60px | Padding: 8px
+Height: ~76px | Padding: 8px
 ```
 
 **2xl (Full) — ≥1440px:**
 ```
 ┌──────────────────────────────────┐
 │ 🗺️  Map Layers          [ArcGIS] │  ← 14px title
-│ Curated GIS layers including     │  ← 13px, 2 lines
-│ boundaries, vegetation, fire...  │
+│ Curated GIS layers including     │  ← 13px, 4 lines
+│ boundaries, vegetation, fire     │
+│ history, and more datasets.      │
+│ Hosted on CAL FIRE AGOL...       │
 └──────────────────────────────────┘
-Height: 80px | Padding: 12px
+Height: ~110px | Padding: 10px
 ```
 
 ---
