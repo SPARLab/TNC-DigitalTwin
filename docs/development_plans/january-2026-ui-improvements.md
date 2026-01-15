@@ -34,7 +34,7 @@ This development plan addresses responsive design issues, establishes a consiste
 - [x] **Task 9** — Scale map legends for screen sizes (🟡 MEDIUM) ✅ COMPLETE
 
 ### Phase 3: Data Source Refinements
-- [x] **Task 10** — Fix ArcGIS card sizing (🟡 MEDIUM) ✅ COMPLETE
+- [ ] **Task 10** — Fix ArcGIS card sizing (🟡 MEDIUM) 🚧 WIP - FittedBadgeRow hidden count bug
 - [ ] **Task 11** — Fix Dendra card margins (🟡 MEDIUM)
 - [ ] **Task 12** — Replace Dendra "Christmas tree" icons (🟡 MEDIUM)
 - [ ] **Task 13** — eBird image loading improvements (🟡 MEDIUM - Backend)
@@ -739,66 +739,108 @@ fix(MapLegend, LayerLegend): scale map legends for screen sizes
 
 ---
 
-### Task 10 — Fix ArcGIS Card Sizing (🟡 MEDIUM) ✅ COMPLETE
+### Task 10 — Fix ArcGIS Card Sizing (🟡 MEDIUM) 🚧 WIP
 **Goal:** Reduce card size in left sidebar for ArcGIS feature services
 
-**Status:** COMPLETE — January 14, 2026
+**Status:** WIP — January 15, 2026 (FittedBadgeRow hidden count bug)
 
 **Tasks:**
 - [x] Review card sizing after design system migration
 - [x] Test smaller font sizes for smaller screen widths
 - [x] Ensure cards are still readable and usable
 - [x] Increase padding and spacing for better breathing room
-- [x] Fix text line clamping (xl: 1 line, 2xl: 2 lines)
+- [x] Fix text line clamping (lg: 1 line, xl: 2 lines, 2xl: 4 lines)
+- [x] Restructure card layout (eye icon in title row, full-width content below)
+- [x] Remove redundant "MAP LAYER" badge
+- [x] Create FittedBadgeRow component for single-row badges
+- [ ] **BUG:** Fix hidden count calculation in FittedBadgeRow
 
-**Implementation Summary:**
+---
 
-1. **Card padding** — Replaced hardcoded `p-3` with responsive design system tokens:
+#### 🐛 KNOWN BUG: FittedBadgeRow Hidden Count Calculation
+
+**Problem:** The `+N` indicator showing hidden badges is sometimes incorrect.
+
+**Example:**
+- California Historical Fire Perimeters has categories: `["Boundaries", "Land Cover"]`
+- Total badges = 3 (Feature Service + 2 categories)
+- Left sidebar shows: `Feature Service`, `Boundaries`, `+2`
+- Should show: `Feature Service`, `Boundaries`, `+1` (only Land Cover is hidden)
+
+**Symptoms:**
+- Sometimes the hidden count is off by 1
+- The bug is intermittent — some cards show correct count, others don't
+- Suspect issue with ref measurement timing or stale state
+
+**Code Location:** `src/components/TNCArcGISSidebar.tsx` — `FittedBadgeRow` component (lines ~21-160)
+
+**Current Implementation:**
+```tsx
+// FittedBadgeRow component uses:
+// 1. useLayoutEffect to measure badge widths before paint
+// 2. Object keyed by badge.id to track refs (instead of array indices)
+// 3. calculateVisibleBadges() helper function
+// 4. ResizeObserver for resize handling (skips first callback)
+
+// Key calculation:
+const safeVisibleCount = Math.min(visibleCount, badges.length);
+const hiddenCount = Math.max(0, badges.length - safeVisibleCount);
+```
+
+**Things Tried:**
+1. ✅ Changed from array refs to object refs keyed by badge.id
+2. ✅ Added `whitespace-nowrap` to prevent badge text wrapping (which caused wrong width measurements)
+3. ✅ Used `useLayoutEffect` instead of `useEffect` to measure before paint
+4. ✅ Skip first ResizeObserver callback to avoid overriding useLayoutEffect
+5. ❌ Still seeing incorrect counts intermittently
+
+**Possible Causes to Investigate:**
+- Race condition between ref assignment and measurement
+- Stale closure in useCallback capturing old badges array
+- Badge width measurement returning 0 for some badges
+- Issue with how badges array is reconstructed on each render
+
+**Next Steps:**
+- Add console.log debugging to trace actual values
+- Check if badgeWidths array has correct length and non-zero values
+- Consider simplifying to a more straightforward measurement approach
+- Maybe pre-calculate badge widths using canvas measureText instead of DOM measurement
+
+---
+
+**Implementation Summary (What's Working):**
+
+1. **Card layout restructured** — Changed from two-column to row-based:
+   - Title row: chevron, icon, title, eye icon (far right)
+   - Full-width rows: description, badges, metadata
+   - Gives more horizontal space for badges and text
+
+2. **Card padding** — Responsive design system tokens:
    - `p-pad-card-compact-lg xl:p-pad-card-compact-xl 2xl:p-pad-card-compact-2xl`
 
-2. **Typography** — Replaced all hardcoded font sizes with design system tokens:
-   - Card title: `text-title-card-lg xl:text-title-card-xl 2xl:text-title-card-2xl`
-   - Snippets: `text-body-*` tokens with `line-clamp-1` at lg, `line-clamp-2` at xl, `line-clamp-4` at 2xl
+3. **Typography** — Design system tokens with line clamping:
+   - Card title: `text-title-card-*` tokens
+   - Snippets: `line-clamp-1` at lg, `line-clamp-2` at xl, `line-clamp-4` at 2xl
    - Labels: `text-label-*` tokens
    - Metadata: `text-caption-*` tokens
 
-3. **Badge optimization** — Made badges more compact and limited visibility:
-   - At lg breakpoint: Show abbreviated badge labels ("Map", "Link", "Page" instead of full names)
-   - At lg breakpoint: Hide item type badge, show only 1 category badge + "+N" indicator
-   - At xl+: Show full badge labels and more category badges
-   - Used `rounded-badge` (3px radius) instead of `rounded-full` for tighter appearance
+4. **FittedBadgeRow component** — Single-row badges with overflow:
+   - Measures badge widths using DOM refs
+   - Calculates how many fit in container width
+   - Shows `+N` indicator for hidden badges
+   - Uses `useLayoutEffect` to prevent flickering
+   - ⚠️ Hidden count calculation has intermittent bug
 
-4. **Metadata row** — Hidden at lg breakpoint for compactness:
-   - Changed from always visible to `hidden xl:flex`
-   - Reduces card height significantly at compact breakpoint
+5. **Badge styling** — `whitespace-nowrap` prevents text wrapping
 
-5. **Snippet visibility** — Progressive disclosure with line clamping:
-   - One line at lg (`line-clamp-1`)
-   - Two lines at xl (`xl:line-clamp-2`)
-   - Four lines at 2xl (`2xl:line-clamp-4`)
+6. **Metadata row** — Hidden at lg for compactness (`hidden xl:flex`)
 
-6. **Icon sizes** — Made responsive:
-   - `w-3.5 h-3.5 xl:w-4 xl:h-4` for most icons
-   - Scales appropriately across breakpoints
-
-7. **Gap tokens** — Replaced hardcoded `gap-1`, `gap-2`, `mb-2` with design system tokens:
-   - `gap-gap-tight-*` for tight groupings (icon + text)
-   - `gap-gap-element-*` for element spacing
-   - `gap-gap-card-grid-*` for card list spacing
-
-8. **Design system token refinements** — Updated for better breathing room:
-   - Increased `pad-card-compact`: lg: 6px (was 4px), xl: 8px (was 6px), 2xl: 10px (was 8px)
-   - Increased `gap-card-grid`: lg: 6px (was 4px), xl: 8px (was 6px), 2xl: 10px (was 8px)
+7. **Removed redundant badges** — "MAP LAYER" badge removed (section header shows this)
 
 **Files Modified:**
-- `src/components/TNCArcGISSidebar.tsx`
+- `src/components/TNCArcGISSidebar.tsx` — Major refactor with FittedBadgeRow
 - `tailwind.config.js` — Updated spacing tokens
 - `docs/design-system/DESIGN_SYSTEM.md` — Updated token values and card diagrams
-
-**Commit:**
-```
-fix(TNCArcGISSidebar, design-system): reduce card text overflow and increase spacing
-```
 
 ---
 
@@ -999,7 +1041,8 @@ fix(TNCArcGISSidebar, design-system): reduce card text overflow and increase spa
 | 2026-01-14 | **Task 7 COMPLETE** — Left sidebar aligned with filter gap midpoint, added missing xl: breakpoints | Team |
 | 2026-01-14 | **Task 8 COMPLETE** — Clear Filters button alignment fixed with matching padding | Team |
 | 2026-01-14 | **Task 9 COMPLETE** — Map legends scaled for screen sizes with new legend tokens | Team |
-| 2026-01-14 | **Task 10 COMPLETE** — ArcGIS cards made compact with design system tokens | Team |
+| 2026-01-14 | **Task 10 PARTIAL** — ArcGIS cards restructured, FittedBadgeRow created | Team |
+| 2026-01-15 | **Task 10 WIP** — FittedBadgeRow hidden count bug identified, needs debugging | Team |
 
 ---
 

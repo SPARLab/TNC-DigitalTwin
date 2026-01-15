@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { 
   ChevronDown, 
   ChevronRight, 
@@ -17,6 +17,150 @@ import {
 } from 'lucide-react';
 import { TNCArcGISItem } from '../services/tncArcGISService';
 import DataTypeBackHeader from './DataTypeBackHeader';
+
+// =============================================================================
+// FittedBadgeRow - Renders badges that fit in one row without clipping
+// Uses useLayoutEffect to measure and calculate BEFORE browser paints (no flicker)
+// =============================================================================
+interface Badge {
+  id: string;
+  label: string;
+  className: string;
+}
+
+interface FittedBadgeRowProps {
+  badges: Badge[];
+  gap: number; // Gap between badges in pixels
+  className?: string;
+}
+
+// Helper to calculate how many badges fit in a container
+function calculateVisibleBadges(
+  containerWidth: number,
+  badgeWidths: number[],
+  overflowWidth: number,
+  gap: number
+): number {
+  if (badgeWidths.length === 0) return 0;
+  
+  let totalWidth = 0;
+  let count = 0;
+  
+  for (let i = 0; i < badgeWidths.length; i++) {
+    const badgeWidth = badgeWidths[i];
+    const gapWidth = i > 0 ? gap : 0;
+    const remainingBadges = badgeWidths.length - i - 1;
+    
+    // Only reserve space for overflow if this badge would leave others hidden
+    const wouldHideOthers = remainingBadges > 0;
+    const reservedWidth = wouldHideOthers ? overflowWidth + gap : 0;
+    
+    if (totalWidth + gapWidth + badgeWidth + reservedWidth <= containerWidth) {
+      totalWidth += gapWidth + badgeWidth;
+      count++;
+    } else {
+      break;
+    }
+  }
+  
+  return Math.max(1, count);
+}
+
+const FittedBadgeRow: React.FC<FittedBadgeRowProps> = ({ badges, gap, className = '' }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const overflowRef = useRef<HTMLSpanElement>(null);
+  const [visibleCount, setVisibleCount] = useState(badges.length);
+  
+  // Track badge elements using an object keyed by badge.id for accurate refs
+  const badgeElementsRef = useRef<Record<string, HTMLSpanElement | null>>({});
+  
+  // Stable calculation function
+  const recalculate = useCallback(() => {
+    const container = containerRef.current;
+    if (!container || badges.length === 0) {
+      setVisibleCount(badges.length);
+      return;
+    }
+
+    const containerWidth = container.getBoundingClientRect().width;
+    const overflowWidth = overflowRef.current?.getBoundingClientRect().width ?? 28;
+    
+    // Get widths for current badges only (using badge IDs)
+    const badgeWidths = badges.map(badge => {
+      const el = badgeElementsRef.current[badge.id];
+      return el?.getBoundingClientRect().width ?? 0;
+    });
+    
+    const count = calculateVisibleBadges(containerWidth, badgeWidths, overflowWidth, gap);
+    setVisibleCount(count);
+  }, [badges, gap]);
+  
+  // Calculate on mount and when badges change - BEFORE paint
+  useLayoutEffect(() => {
+    recalculate();
+  }, [recalculate]);
+
+  // Recalculate on resize (skip initial call since useLayoutEffect handles it)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    let skipFirst = true;
+    const resizeObserver = new ResizeObserver(() => {
+      if (skipFirst) {
+        skipFirst = false;
+        return;
+      }
+      recalculate();
+    });
+    
+    resizeObserver.observe(container);
+    return () => resizeObserver.disconnect();
+  }, [recalculate]);
+
+  // Calculate hidden count - ensure it's never negative
+  const safeVisibleCount = Math.min(visibleCount, badges.length);
+  const hiddenCount = Math.max(0, badges.length - safeVisibleCount);
+
+  return (
+    <div ref={containerRef} className={`flex flex-nowrap ${className}`} style={{ gap: `${gap}px` }}>
+      {/* Render all badges but only show visible ones */}
+      {badges.map((badge, idx) => (
+        <span
+          key={badge.id}
+          id={badge.id}
+          ref={el => {
+            if (el) {
+              badgeElementsRef.current[badge.id] = el;
+            } else {
+              delete badgeElementsRef.current[badge.id];
+            }
+          }}
+          className={`${badge.className} whitespace-nowrap`}
+          style={{ 
+            visibility: idx < safeVisibleCount ? 'visible' : 'hidden',
+            position: idx < safeVisibleCount ? 'relative' : 'absolute',
+            pointerEvents: idx < safeVisibleCount ? 'auto' : 'none'
+          }}
+        >
+          {badge.label}
+        </span>
+      ))}
+      {/* Overflow indicator */}
+      <span
+        ref={overflowRef}
+        className="flex-shrink-0 whitespace-nowrap px-btn-compact-x-lg xl:px-btn-compact-x-xl 2xl:px-btn-compact-x-2xl py-btn-compact-y-lg xl:py-btn-compact-y-xl 2xl:py-btn-compact-y-2xl text-label-lg xl:text-label-xl 2xl:text-label-2xl text-gray-500"
+        style={{
+          visibility: hiddenCount > 0 ? 'visible' : 'hidden',
+          position: hiddenCount > 0 ? 'relative' : 'absolute',
+          pointerEvents: hiddenCount > 0 ? 'auto' : 'none'
+        }}
+      >
+        +{hiddenCount}
+      </span>
+    </div>
+  );
+};
 
 interface TNCArcGISSidebarProps {
   items: TNCArcGISItem[];
@@ -311,20 +455,37 @@ const TNCArcGISSidebar: React.FC<TNCArcGISSidebarProps> = ({
           </p>
         )}
         
-        {/* Badges - full width, wraps naturally */}
-        <div id={`item-badges-${item.id}`} className="flex flex-wrap gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl mb-gap-element-lg xl:mb-gap-element-xl 2xl:mb-gap-element-2xl">
-          <span id={`item-type-badge-${item.id}`} className="px-btn-compact-x-lg xl:px-btn-compact-x-xl 2xl:px-btn-compact-x-2xl py-btn-compact-y-lg xl:py-btn-compact-y-xl 2xl:py-btn-compact-y-2xl text-label-lg xl:text-label-xl 2xl:text-label-2xl rounded-badge bg-gray-100 text-gray-700">
-            {item.type}
-          </span>
-          {item.mainCategories.slice(0, isExpanded ? undefined : 3).map((category, idx) => (
-            <span key={category} id={`item-category-badge-${item.id}-${idx}`} className="px-btn-compact-x-lg xl:px-btn-compact-x-xl 2xl:px-btn-compact-x-2xl py-btn-compact-y-lg xl:py-btn-compact-y-xl 2xl:py-btn-compact-y-2xl text-label-lg xl:text-label-xl 2xl:text-label-2xl rounded-badge bg-green-100 text-green-700">
-              {category}
-            </span>
-          ))}
-          {!isExpanded && item.mainCategories.length > 3 && (
-            <span className="px-btn-compact-x-lg xl:px-btn-compact-x-xl 2xl:px-btn-compact-x-2xl py-btn-compact-y-lg xl:py-btn-compact-y-xl 2xl:py-btn-compact-y-2xl text-label-lg xl:text-label-xl 2xl:text-label-2xl text-gray-500">
-              +{item.mainCategories.length - 3}
-            </span>
+        {/* Badges - single row with overflow indicator when collapsed, wraps when expanded */}
+        <div id={`item-badges-${item.id}`} className="relative mb-gap-element-lg xl:mb-gap-element-xl 2xl:mb-gap-element-2xl">
+          {isExpanded ? (
+            // When expanded, show all badges with wrapping
+            <div className="flex flex-wrap gap-gap-tight-lg xl:gap-gap-tight-xl 2xl:gap-gap-tight-2xl">
+              <span className="whitespace-nowrap px-btn-compact-x-lg xl:px-btn-compact-x-xl 2xl:px-btn-compact-x-2xl py-btn-compact-y-lg xl:py-btn-compact-y-xl 2xl:py-btn-compact-y-2xl text-label-lg xl:text-label-xl 2xl:text-label-2xl rounded-badge bg-gray-100 text-gray-700">
+                {item.type}
+              </span>
+              {item.mainCategories.map((category) => (
+                <span key={category} className="whitespace-nowrap px-btn-compact-x-lg xl:px-btn-compact-x-xl 2xl:px-btn-compact-x-2xl py-btn-compact-y-lg xl:py-btn-compact-y-xl 2xl:py-btn-compact-y-2xl text-label-lg xl:text-label-xl 2xl:text-label-2xl rounded-badge bg-green-100 text-green-700">
+                  {category}
+                </span>
+              ))}
+            </div>
+          ) : (
+            // When collapsed, use FittedBadgeRow for single-row with overflow
+            <FittedBadgeRow
+              badges={[
+                {
+                  id: `item-type-badge-${item.id}`,
+                  label: item.type,
+                  className: 'px-btn-compact-x-lg xl:px-btn-compact-x-xl 2xl:px-btn-compact-x-2xl py-btn-compact-y-lg xl:py-btn-compact-y-xl 2xl:py-btn-compact-y-2xl text-label-lg xl:text-label-xl 2xl:text-label-2xl rounded-badge bg-gray-100 text-gray-700'
+                },
+                ...item.mainCategories.map((category, idx) => ({
+                  id: `item-category-badge-${item.id}-${idx}`,
+                  label: category,
+                  className: 'px-btn-compact-x-lg xl:px-btn-compact-x-xl 2xl:px-btn-compact-x-2xl py-btn-compact-y-lg xl:py-btn-compact-y-xl 2xl:py-btn-compact-y-2xl text-label-lg xl:text-label-xl 2xl:text-label-2xl rounded-badge bg-green-100 text-green-700'
+                }))
+              ]}
+              gap={4}
+            />
           )}
         </div>
         
