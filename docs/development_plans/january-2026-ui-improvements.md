@@ -34,7 +34,7 @@ This development plan addresses responsive design issues, establishes a consiste
 - [x] **Task 9** — Scale map legends for screen sizes (🟡 MEDIUM) ✅ COMPLETE
 
 ### Phase 3: Data Source Refinements
-- [ ] **Task 10** — Fix ArcGIS card sizing (🟡 MEDIUM) 🚧 WIP - FittedBadgeRow hidden count bug
+- [x] **Task 10** — Fix ArcGIS card sizing (🟡 MEDIUM) ✅ COMPLETE
 - [ ] **Task 11** — Fix Dendra card margins (🟡 MEDIUM)
 - [ ] **Task 12** — Replace Dendra "Christmas tree" icons (🟡 MEDIUM)
 - [ ] **Task 13** — eBird image loading improvements (🟡 MEDIUM - Backend)
@@ -739,10 +739,10 @@ fix(MapLegend, LayerLegend): scale map legends for screen sizes
 
 ---
 
-### Task 10 — Fix ArcGIS Card Sizing (🟡 MEDIUM) 🚧 WIP
+### Task 10 — Fix ArcGIS Card Sizing (🟡 MEDIUM) ✅ COMPLETE
 **Goal:** Reduce card size in left sidebar for ArcGIS feature services
 
-**Status:** WIP — January 15, 2026 (FittedBadgeRow hidden count bug)
+**Status:** COMPLETE — January 15, 2026
 
 **Tasks:**
 - [x] Review card sizing after design system migration
@@ -753,60 +753,47 @@ fix(MapLegend, LayerLegend): scale map legends for screen sizes
 - [x] Restructure card layout (eye icon in title row, full-width content below)
 - [x] Remove redundant "MAP LAYER" badge
 - [x] Create FittedBadgeRow component for single-row badges
-- [ ] **BUG:** Fix hidden count calculation in FittedBadgeRow
+- [x] Fix badge count mismatch (use raw ArcGIS categories)
 
 ---
 
-#### 🐛 KNOWN BUG: FittedBadgeRow Hidden Count Calculation
+#### Resolution: Use Raw ArcGIS Categories
 
-**Problem:** The `+N` indicator showing hidden badges is sometimes incorrect.
+**Root Cause:**
 
-**Example:**
-- California Historical Fire Perimeters has categories: `["Boundaries", "Land Cover"]`
-- Total badges = 3 (Feature Service + 2 categories)
-- Left sidebar shows: `Feature Service`, `Boundaries`, `+2`
-- Should show: `Feature Service`, `Boundaries`, `+1` (only Land Cover is hidden)
+The badge count appeared wrong because the internal category mapping system was adding extra categories based on:
+1. Tag mappings
+2. Category mappings  
+3. **Title-based inference** — e.g., "Fire" was added to items with "fire" in the title
 
-**Symptoms:**
-- Sometimes the hidden count is off by 1
-- The bug is intermittent — some cards show correct count, others don't
-- Suspect issue with ref measurement timing or stale state
+This caused items like "California Historical Fire Perimeters" to show 3 categories (`Boundaries`, `Land Cover`, `Fire`) when ArcGIS only provided 2.
 
-**Code Location:** `src/components/TNCArcGISSidebar.tsx` — `FittedBadgeRow` component (lines ~21-160)
+**Solution:**
 
-**Current Implementation:**
-```tsx
-// FittedBadgeRow component uses:
-// 1. useLayoutEffect to measure badge widths before paint
-// 2. Object keyed by badge.id to track refs (instead of array indices)
-// 3. calculateVisibleBadges() helper function
-// 4. ResizeObserver for resize handling (skips first callback)
+Replaced the complex category mapping system with direct extraction from ArcGIS hierarchical category paths:
 
-// Key calculation:
-const safeVisibleCount = Math.min(visibleCount, badges.length);
-const hiddenCount = Math.max(0, badges.length - safeVisibleCount);
+```typescript
+// Before: Complex mapping from tags, categories, and title patterns
+const mainCategories = this.categorizeItem({ tags, categories, title });
+
+// After: Simple extraction of leaf names from ArcGIS paths
+const mainCategories = this.extractCategories(categories);
+// "/Categories/Environment/Boundaries" → "Boundaries"
 ```
 
-**Things Tried:**
-1. ✅ Changed from array refs to object refs keyed by badge.id
-2. ✅ Added `whitespace-nowrap` to prevent badge text wrapping (which caused wrong width measurements)
-3. ✅ Used `useLayoutEffect` instead of `useEffect` to measure before paint
-4. ✅ Skip first ResizeObserver callback to avoid overriding useLayoutEffect
-5. ❌ Still seeing incorrect counts intermittently
+**Benefits:**
+- Categories now match exactly what ArcGIS provides
+- No more phantom categories from title-based inference
+- Future category changes in ArcGIS will be reflected automatically
+- Simpler, more maintainable code
 
-**Possible Causes to Investigate:**
-- Race condition between ref assignment and measurement
-- Stale closure in useCallback capturing old badges array
-- Badge width measurement returning 0 for some badges
-- Issue with how badges array is reconstructed on each render
+**Files Modified:**
+- `src/services/tncArcGISService.ts` — Replaced `categorizeItem()` with `extractCategories()`
+- Removed unused `categoryMappings` import
 
-**Next Steps:**
-- Add console.log debugging to trace actual values
-- Check if badgeWidths array has correct length and non-zero values
-- Consider simplifying to a more straightforward measurement approach
-- Maybe pre-calculate badge widths using canvas measureText instead of DOM measurement
+**FittedBadgeRow Component:**
 
----
+The FittedBadgeRow DOM measurement logic is working correctly. Debug logging can be enabled via `DEBUG_FITTED_BADGE_ROW = true` for future troubleshooting.
 
 **Implementation Summary (What's Working):**
 
@@ -1042,7 +1029,7 @@ const hiddenCount = Math.max(0, badges.length - safeVisibleCount);
 | 2026-01-14 | **Task 8 COMPLETE** — Clear Filters button alignment fixed with matching padding | Team |
 | 2026-01-14 | **Task 9 COMPLETE** — Map legends scaled for screen sizes with new legend tokens | Team |
 | 2026-01-14 | **Task 10 PARTIAL** — ArcGIS cards restructured, FittedBadgeRow created | Team |
-| 2026-01-15 | **Task 10 WIP** — FittedBadgeRow hidden count bug identified, needs debugging | Team |
+| 2026-01-15 | **Task 10 COMPLETE** — Use raw ArcGIS categories instead of internal mapping system | Team |
 
 ---
 

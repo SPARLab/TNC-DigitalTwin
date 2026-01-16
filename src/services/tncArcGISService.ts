@@ -1,4 +1,5 @@
-import categoryMappings from '../data-sources/tnc-arcgis/category_mappings.json';
+// Category mappings no longer needed - using raw ArcGIS categories directly
+// import categoryMappings from '../data-sources/tnc-arcgis/category_mappings.json';
 
 export interface ServiceLayerInfo {
   id: number;
@@ -110,41 +111,24 @@ class TNCArcGISService {
   }
 
   /**
-   * Categorize an item using the mapping system
+   * Extract categories directly from ArcGIS hierarchical category paths.
+   * No longer uses internal mapping - just takes the leaf name from each path.
+   * Example: "/Categories/Environment/Freshwater" → "Freshwater"
    */
-  private categorizeItem(item: any): string[] {
-    const itemTags = item.tags || [];
-    const itemCategories = item.categories || [];
-    const itemTitle = item.title || '';
-    const matchedCategories = new Set<string>();
+  private extractCategories(categories: string[]): string[] {
+    if (!categories || !Array.isArray(categories)) return [];
     
-    // Check tag mappings
-    for (const [mainCategory, tags] of Object.entries(categoryMappings.mappings.tags)) {
-      if (itemTags.some((tag: string) => tags.includes(tag))) {
-        matchedCategories.add(mainCategory);
-      }
-    }
+    // Extract the last part (leaf) of each hierarchical path
+    const leafCategories = categories
+      .map(cat => {
+        if (typeof cat !== 'string') return null;
+        const parts = cat.split('/').filter(Boolean);
+        return parts.length > 0 ? parts[parts.length - 1] : null;
+      })
+      .filter((cat): cat is string => cat !== null && cat !== 'Categories');
     
-    // Check category mappings (extract last part of hierarchical path)
-    const itemCategoryNames = itemCategories.map((cat: string) => cat.split('/').pop()).filter(Boolean);
-    for (const [mainCategory, categories] of Object.entries(categoryMappings.mappings.categories)) {
-      if (itemCategoryNames.some((cat: string) => categories.includes(cat))) {
-        matchedCategories.add(mainCategory);
-      }
-    }
-    
-    // Check title-based mappings (for Hub Pages and other items without tags/categories)
-    if (categoryMappings.mappings.titles) {
-      for (const [mainCategory, titlePatterns] of Object.entries(categoryMappings.mappings.titles)) {
-        if (titlePatterns.some((pattern: string) => 
-          itemTitle.toLowerCase().includes(pattern.toLowerCase())
-        )) {
-          matchedCategories.add(mainCategory);
-        }
-      }
-    }
-    
-    return Array.from(matchedCategories);
+    // Remove duplicates and return
+    return [...new Set(leafCategories)];
   }
 
   /**
@@ -171,11 +155,8 @@ class TNCArcGISService {
     const categories = attrs.categories ? 
       (Array.isArray(attrs.categories) ? attrs.categories : [attrs.categories]) : [];
     
-    const mainCategories = this.categorizeItem({
-      tags: attrs.tags,
-      categories: categories,
-      title: attrs.title
-    });
+    // Use raw categories from ArcGIS (no internal mapping)
+    const mainCategories = this.extractCategories(categories);
 
     const uiPattern = this.getUIPattern(attrs.type);
 

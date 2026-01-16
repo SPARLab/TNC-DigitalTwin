@@ -34,12 +34,16 @@ interface FittedBadgeRowProps {
   className?: string;
 }
 
+// Debug flag - set to true to enable console logging
+const DEBUG_FITTED_BADGE_ROW = false;
+
 // Helper to calculate how many badges fit in a container
 function calculateVisibleBadges(
   containerWidth: number,
   badgeWidths: number[],
   overflowWidth: number,
-  gap: number
+  gap: number,
+  debugLabel?: string
 ): number {
   if (badgeWidths.length === 0) return 0;
   
@@ -55,7 +59,14 @@ function calculateVisibleBadges(
     const wouldHideOthers = remainingBadges > 0;
     const reservedWidth = wouldHideOthers ? overflowWidth + gap : 0;
     
-    if (totalWidth + gapWidth + badgeWidth + reservedWidth <= containerWidth) {
+    const neededWidth = totalWidth + gapWidth + badgeWidth + reservedWidth;
+    const fits = neededWidth <= containerWidth;
+    
+    if (DEBUG_FITTED_BADGE_ROW && debugLabel) {
+      console.log(`[${debugLabel}] Badge ${i}: width=${badgeWidth.toFixed(1)}, needed=${neededWidth.toFixed(1)}, container=${containerWidth.toFixed(1)}, fits=${fits}`);
+    }
+    
+    if (fits) {
       totalWidth += gapWidth + badgeWidth;
       count++;
     } else {
@@ -74,7 +85,16 @@ const FittedBadgeRow: React.FC<FittedBadgeRowProps> = ({ badges, gap, className 
   // Track badge elements using an object keyed by badge.id for accurate refs
   const badgeElementsRef = useRef<Record<string, HTMLSpanElement | null>>({});
   
-  // Stable calculation function
+  // Memoize badges length to detect changes
+  const badgesLength = badges.length;
+  
+  // Create a stable debug label from first badge (memoized)
+  const debugLabel = useMemo(
+    () => badges.length > 0 ? badges[0].id.replace('item-type-badge-', '').slice(0, 20) : 'unknown',
+    [badges]
+  );
+  
+  // Stable calculation function - use badgesLength instead of badges for dependency
   const recalculate = useCallback(() => {
     const container = containerRef.current;
     if (!container || badges.length === 0) {
@@ -86,17 +106,51 @@ const FittedBadgeRow: React.FC<FittedBadgeRowProps> = ({ badges, gap, className 
     const overflowWidth = overflowRef.current?.getBoundingClientRect().width ?? 28;
     
     // Get widths for current badges only (using badge IDs)
-    const badgeWidths = badges.map(badge => {
-      const el = badgeElementsRef.current[badge.id];
-      return el?.getBoundingClientRect().width ?? 0;
-    });
+    const badgeWidths: number[] = [];
+    let hasZeroWidth = false;
     
-    const count = calculateVisibleBadges(containerWidth, badgeWidths, overflowWidth, gap);
+    for (const badge of badges) {
+      const el = badgeElementsRef.current[badge.id];
+      const width = el?.getBoundingClientRect().width ?? 0;
+      
+      if (DEBUG_FITTED_BADGE_ROW) {
+        console.log(`[${debugLabel}] Measuring badge "${badge.label}": width=${width.toFixed(1)}, ref exists=${!!el}`);
+      }
+      
+      if (width === 0) {
+        hasZeroWidth = true;
+      }
+      badgeWidths.push(width);
+    }
+    
+    // If any badge has 0 width, refs aren't ready yet - show all badges
+    if (hasZeroWidth) {
+      if (DEBUG_FITTED_BADGE_ROW) {
+        console.log(`[${debugLabel}] Some badges have 0 width, showing all ${badges.length} badges`);
+      }
+      setVisibleCount(badges.length);
+      return;
+    }
+    
+    if (DEBUG_FITTED_BADGE_ROW) {
+      console.log(`[${debugLabel}] Container=${containerWidth.toFixed(1)}, overflow=${overflowWidth.toFixed(1)}, badges=${badges.length}, widths=[${badgeWidths.map(w => w.toFixed(0)).join(', ')}]`);
+    }
+    
+    const count = calculateVisibleBadges(containerWidth, badgeWidths, overflowWidth, gap, debugLabel);
+    
+    if (DEBUG_FITTED_BADGE_ROW) {
+      const hiddenCount = badges.length - count;
+      console.log(`[${debugLabel}] RESULT: visibleCount=${count}, hiddenCount=${hiddenCount} (total=${badges.length})`);
+    }
+    
     setVisibleCount(count);
-  }, [badges, gap]);
+  }, [badges, gap, debugLabel]);
   
   // Calculate on mount and when badges change - BEFORE paint
   useLayoutEffect(() => {
+    if (DEBUG_FITTED_BADGE_ROW) {
+      console.log(`[${debugLabel}] useLayoutEffect triggered, badges.length=${badges.length}`);
+    }
     recalculate();
   }, [recalculate]);
 
@@ -111,16 +165,30 @@ const FittedBadgeRow: React.FC<FittedBadgeRowProps> = ({ badges, gap, className 
         skipFirst = false;
         return;
       }
+      if (DEBUG_FITTED_BADGE_ROW) {
+        console.log(`[${debugLabel}] ResizeObserver triggered`);
+      }
       recalculate();
     });
     
     resizeObserver.observe(container);
     return () => resizeObserver.disconnect();
-  }, [recalculate]);
+  }, [recalculate, debugLabel]);
 
-  // Calculate hidden count - ensure it's never negative
-  const safeVisibleCount = Math.min(visibleCount, badges.length);
-  const hiddenCount = Math.max(0, badges.length - safeVisibleCount);
+  // Calculate hidden count based on current badges array length
+  // This ensures we always use the latest badges.length even if visibleCount is stale
+  const safeVisibleCount = Math.min(visibleCount, badgesLength);
+  const hiddenCount = Math.max(0, badgesLength - safeVisibleCount);
+  
+  if (DEBUG_FITTED_BADGE_ROW) {
+    const badgeLabels = badges.map(b => b.label).join(', ');
+    console.log(`[${debugLabel}] RENDER: visibleCount=${visibleCount}, safeVisibleCount=${safeVisibleCount}, hiddenCount=${hiddenCount}, badges=[${badgeLabels}] (${badgesLength})`);
+    
+    // Sanity check: visibleCount + hiddenCount should equal badgesLength
+    if (safeVisibleCount + hiddenCount !== badgesLength) {
+      console.error(`[${debugLabel}] BUG DETECTED: safeVisibleCount(${safeVisibleCount}) + hiddenCount(${hiddenCount}) != badgesLength(${badgesLength})`);
+    }
+  }
 
   return (
     <div ref={containerRef} className={`flex flex-nowrap ${className}`} style={{ gap: `${gap}px` }}>
