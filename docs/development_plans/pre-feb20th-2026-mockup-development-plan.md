@@ -12,7 +12,7 @@
 ### Quick Status
 
 ```
-Overall Progress: ▓░░░░░░░░░ 1/9 tasks complete
+Overall Progress: ▓▓░░░░░░░░ 2/9 tasks complete
 ```
 
 **Last Updated:** January 16, 2026
@@ -22,7 +22,7 @@ Overall Progress: ▓░░░░░░░░░ 1/9 tasks complete
 | ID | Task | Status | Assignee | Depends On | Commit |
 |----|------|--------|----------|------------|--------|
 | T0 | Create this plan document | ✅ Done | Wil | - | - |
-| T1 | [Left Sidebar Layout Doc](#t1-left-sidebar-layout-document) | 🔲 Not Started | - | - | - |
+| T1 | [Left Sidebar Layout Doc](#t1-left-sidebar-layout-document) | ✅ Done | Cursor | - | - |
 | T2 | [Mockup 1: Full Layout Overview](#t2-mockup-1-full-layout-overview) | 🔲 Not Started | - | T1 | - |
 | T3 | [Mockup 2: Cross-Referencing Demo](#t3-mockup-2-cross-referencing-demo) | 🔲 Not Started | - | T2 | - |
 | T4 | [Mockup 3a: Dendra (floating panel)](#t4-mockup-3a-dendra-deep-dive-floating-panel) | 🔲 Not Started | - | T2 | - |
@@ -35,6 +35,7 @@ Overall Progress: ▓░░░░░░░░░ 1/9 tasks complete
 
 ### Completed Tasks
 - ✅ **T0** Plan document created and reviewed
+- ✅ **T1** Left Sidebar Layout Document created at `/docs/development_plans/left-sidebar-layout.md`
 
 ### Future Tasks
 *Tasks discovered during mockup development will be added here:*
@@ -119,7 +120,7 @@ Overall Progress: ▓░░░░░░░░░ 1/9 tasks complete
 
 ### T1: Left Sidebar Layout Document
 
-**Status:** 🔲 Not Started  
+**Status:** ✅ Done  
 **Assignee:** Cursor  
 **Output:** `/docs/development_plans/left-sidebar-layout.md`
 
@@ -134,9 +135,9 @@ Overall Progress: ▓░░░░░░░░░ 1/9 tasks complete
 - Notes on nested structures (e.g., Dendra sensor types within Remote Sensors > Weather)
 
 **Acceptance Criteria:**
-- [ ] Document created at specified path
-- [ ] All current data sources have a home in the hierarchy
-- [ ] Dendra sensors are broken out by type (not monolithic)
+- [x] Document created at specified path
+- [x] All current data sources have a home in the hierarchy
+- [x] Dendra sensors are broken out by type (not monolithic)
 
 ---
 
