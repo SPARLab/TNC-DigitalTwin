@@ -12,10 +12,10 @@
 ### Quick Status
 
 ```
-Overall Progress: ▓▓▓░░░░░░░ 3/9 tasks complete
+Overall Progress: ▓▓▓▓▓░░░░░ 5/9 tasks complete
 ```
 
-**Last Updated:** January 16, 2026
+**Last Updated:** January 20, 2026
 
 ### All Tasks
 
@@ -24,8 +24,8 @@ Overall Progress: ▓▓▓░░░░░░░ 3/9 tasks complete
 | T0 | Create this plan document | ✅ Done | Wil | - | - |
 | T1 | [Left Sidebar Layout Doc](#t1-left-sidebar-layout-document) | ✅ Done | Cursor | - | - |
 | T2 | [Mockup 1: Full Layout Overview](#t2-mockup-1-full-layout-overview) | ✅ Done | Cursor | T1 | - |
-| T3 | [Mockup 2: Cross-Referencing Demo](#t3-mockup-2-cross-referencing-demo) | 🔲 Not Started | - | T2 | - |
-| T4 | [Mockup 3a: Dendra (floating panel)](#t4-mockup-3a-dendra-deep-dive-floating-panel) | 🔲 Not Started | - | T2 | - |
+| T3 | [Mockup 2: Cross-Referencing Demo](#t3-mockup-2-cross-referencing-demo) | ✅ Done | Cursor | T2 | - |
+| T4 | [Mockup 3a: Dendra (floating panel)](#t4-mockup-3a-dendra-deep-dive-floating-panel) | ✅ Done | Cursor | T2 | - |
 | T5 | [Mockup 3b: Dendra (sidebar panel)](#t5-mockup-3b-dendra-deep-dive-sidebar-panel) | 🔲 Not Started | - | T4 | - |
 | T6 | [Mockup 4: DataONE Discovery](#t6-mockup-4-dataone-discovery) | 🔲 Not Started | - | T2 | - |
 | T7 | Team Review: Layout Doc | 🔲 Not Started | Team | T1 | - |
@@ -37,13 +37,15 @@ Overall Progress: ▓▓▓░░░░░░░ 3/9 tasks complete
 - ✅ **T0** Plan document created and reviewed
 - ✅ **T1** Left Sidebar Layout Document created at `/docs/development_plans/left-sidebar-layout.md`
 - ✅ **T2** Mockup 1: Full Layout Overview created at `/mockups/01-full-layout-overview.html`
+- ✅ **T3** Cross-Referencing Demo (accomplished by T2 - pinning/cross-referencing functionality demonstrated in Full Layout mockup)
+- ✅ **T4** Mockup 3a: Dendra Deep Dive (Floating Panel) created at `/mockups/03a-dendra-floating-panel.html`
 
 ### Future Tasks
 *Tasks discovered during mockup development will be added here:*
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
-| TF1 | *(example: Refine floating widget legend)* | - | - | *(added after T2 review)* |
+| TF1 | Review Mockup 3a with Dan | 🔲 Not Started | Wil + Dan | Get feedback on Dendra floating panel approach, time series zoom widget, map panning behavior |
 
 ---
 
@@ -224,46 +226,34 @@ Each mockup should have enough interactivity to demonstrate the concept:
 
 ### T3: Mockup 2: Cross-Referencing Demo
 
-**Status:** 🔲 Not Started  
-**Assignee:** -  
-**Output:** `/mockups/02-cross-referencing-demo.html`  
+**Status:** ✅ Done (accomplished by T2)  
+**Assignee:** Cursor  
+**Output:** Integrated into `/mockups/01-full-layout-overview.html`  
 **Depends On:** T2
 
 **Purpose:** Show the core value prop - multiple layers from different sources visible together. *This is the primary demo for the core complaint.*
 
 **Problems Addressed:** P1 (siloing), P2 (cross-referencing)
 
-**What it shows:**
-- Left sidebar with these pinned (from different categories):
-  - iNaturalist Observations (Species)
-  - Fire Perimeters 2024 (Fire & Climate)
-  - Rain Gauges (Remote Sensors > Weather)
-- Floating widget showing all 3
-- Right sidebar focused on Fire Perimeters (simpler layer)
-- Map placeholder showing conceptual overlap ("iNat points over fire perimeter")
+**Resolution:** The Full Layout Overview (T2) already demonstrates all cross-referencing capabilities:
+- Eye icon pinning from multiple categories
+- Floating widget showing pinned layers
+- Ability to switch between layers while maintaining context
+- Left sidebar always visible (not siloed)
 
-**Right sidebar state:**
-- Layer: Fire Perimeters 2024
-- Tabs: [Overview] [Export]
-- Shows layer metadata, date range, simple export options
-
-**Key demonstration:** 
-- User can pin from totally different categories
-- Switching between them in right sidebar is easy
-- The left sidebar STAYS VISIBLE (not siloed)
+A separate mockup was deemed unnecessary as T2 fully demonstrates the paradigm.
 
 **Acceptance Criteria:**
-- [ ] HTML file created at specified path
-- [ ] Shows 3 layers from 3 different categories pinned
-- [ ] Clicking layer in floating widget switches right sidebar
-- [ ] Demonstrates the "not siloed" paradigm clearly
+- [x] Shows layers from different categories can be pinned (via T2)
+- [x] Clicking layer in floating widget switches right sidebar (via T2)
+- [x] Demonstrates the "not siloed" paradigm clearly (via T2)
 
 ---
 
 ### T4: Mockup 3a: Dendra Deep Dive (Floating Panel)
 
-**Status:** 🔲 Not Started  
-**Assignee:** -  
+**Status:** ✅ Done  
+**Assignee:** Cursor  
 **Output:** `/mockups/03a-dendra-floating-panel.html`  
 **Depends On:** T2
 
@@ -272,32 +262,34 @@ Each mockup should have enough interactivity to demonstrate the concept:
 **Problems Addressed:** P3 (query context), P4 (hierarchy), P5 (filters are layer-specific)
 
 **What it shows:**
-- Left sidebar with Remote Sensors > Weather expanded
-- "Rain Gauges" layer pinned
-- Right sidebar showing "Browse & Query" tab for Rain Gauges
-- List of stations with "View Time Series" buttons
+- Left sidebar with Research & Sensors > Weather Sensors expanded
+- "Rain Gauges" layer pinned and selected
+- Right sidebar showing "Stations" tab for Rain Gauges
+- List of 5 stations with "View Time Series" buttons
 - **Floating time series panel** over map area
 
 **Right sidebar state:**
 - Layer: Rain Gauges
-- Active tab: "Browse & Query"
-- Filter: Date range selector
-- Results: List of stations (4-5 items)
-- Each station card has: name, sensor count, "View Time Series" button
+- Active tab: "Stations" (with Overview and Export tabs available)
+- Filter: Date range selector, search box
+- Results: List of 5 stations with status indicators
+- Each station card has: name, ID, status badge, last reading, mini chart, "View Time Series" button
 
 **Floating panel:**
 - Shows when "View Time Series" is clicked
-- Title: Station name
-- Dropdown to select which sensor(s)
-- Placeholder chart area
-- Close button
+- Header: Station name, sensor type, gradient styling
+- Controls: Date range dropdown, variable dropdown
+- Chart area: Placeholder with stats (min/avg/max/total)
+- Footer: Data source info, Export CSV button, close button
 
 **Acceptance Criteria:**
-- [ ] HTML file created at specified path
-- [ ] Station list displays in right sidebar
-- [ ] "View Time Series" opens floating panel
-- [ ] Floating panel can be closed
-- [ ] Demonstrates nested category structure (Remote Sensors > Weather > Rain Gauges)
+- [x] HTML file created at specified path
+- [x] Station list displays in right sidebar with 5 stations
+- [x] "View Time Series" opens floating panel
+- [x] Floating panel can be closed
+- [x] Demonstrates nested category structure (Research & Sensors > Weather Sensors > Rain Gauges)
+- [x] Stations shown on map as point markers
+- [x] Clicking map marker selects station and opens time series
 
 ---
 

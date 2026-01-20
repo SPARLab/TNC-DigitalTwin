@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mockup 3a: Dendra Deep Dive (Floating Panel) - TNC Digital Catalog</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- ArcGIS JS API -->
+  <link rel="stylesheet" href="https://js.arcgis.com/4.28/esri/themes/light/main.css">
+  <script src="https://js.arcgis.com/4.28/"></script>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'inter': ['Inter', 'sans-serif'],
+          },
+          colors: {
+            'tnc-green': '#2e7d32',
+            'tnc-green-dark': '#1b5e20',
+            'sidebar-bg': '#f8fafc',
+            'pinned-bg': '#dbeafe',
+            'visible-bg': '#fef3c7',
+            'selected-border': '#059669',
+            'dendra-blue': '#3b82f6',
+            'dendra-cyan': '#06b6d4',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    
+    .esri-ui-corner { display: none !important; }
+    
+    .sidebar-scroll::-webkit-scrollbar { width: 6px; }
+    .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+    .sidebar-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    
+    .icon-btn { transition: all 0.15s ease; }
+    .icon-btn:hover { transform: scale(1.15); }
+    
+    .layer-row { transition: all 0.15s ease; }
+    .layer-row:hover { background-color: #f1f5f9; }
+    .layer-row.pinned { background-color: #dbeafe; }
+    .layer-row.selected { border-left: 3px solid #059669; }
+    
+    .floating-widget { box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.15); }
+    
+    .tab-btn { transition: all 0.15s ease; }
+    .tab-btn.active { border-bottom: 2px solid #059669; color: #059669; font-weight: 500; }
+    .tab-btn:not(.active):hover { background-color: #f1f5f9; }
+    
+    .chevron { transition: transform 0.2s ease; }
+    .chevron.expanded { transform: rotate(90deg); }
+    
+    .spinner { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    
+    .clickable-layer { 
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+    }
+    .clickable-layer:hover {
+      border-color: #3b82f6;
+      background-color: #eff6ff;
+    }
+    
+    /* Station card styles */
+    .station-card {
+      transition: all 0.15s ease;
+      border: 1px solid #e2e8f0;
+    }
+    .station-card:hover {
+      border-color: #3b82f6;
+      box-shadow: 0 2px 8px -2px rgba(59, 130, 246, 0.2);
+    }
+    .station-card.selected-station {
+      border-color: #059669;
+      background-color: #f0fdf4;
+    }
+    
+    /* Time series floating panel */
+    .time-series-panel {
+      box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(8px);
+      animation: slideIn 0.2s ease-out;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Mini chart placeholder */
+    .mini-chart {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .mini-chart::after {
+      content: '';
+      position: absolute;
+      bottom: 20%;
+      left: 5%;
+      right: 5%;
+      height: 2px;
+      background: linear-gradient(90deg, 
+        #3b82f6 0%, #06b6d4 25%, #3b82f6 50%, #06b6d4 75%, #3b82f6 100%
+      );
+      border-radius: 2px;
+    }
+    .mini-chart::before {
+      content: '';
+      position: absolute;
+      bottom: 20%;
+      left: 5%;
+      width: 90%;
+      height: 60%;
+      background: 
+        radial-gradient(circle at 15% 40%, #3b82f6 2px, transparent 2px),
+        radial-gradient(circle at 30% 60%, #3b82f6 2px, transparent 2px),
+        radial-gradient(circle at 45% 35%, #3b82f6 2px, transparent 2px),
+        radial-gradient(circle at 60% 55%, #3b82f6 2px, transparent 2px),
+        radial-gradient(circle at 75% 30%, #3b82f6 2px, transparent 2px),
+        radial-gradient(circle at 90% 50%, #3b82f6 2px, transparent 2px);
+    }
+    
+    /* Larger chart for floating panel */
+    .chart-area {
+      background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+      position: relative;
+    }
+    .chart-grid {
+      background-image: 
+        linear-gradient(to right, #e5e7eb 1px, transparent 1px),
+        linear-gradient(to bottom, #e5e7eb 1px, transparent 1px);
+      background-size: 40px 30px;
+    }
+    .chart-line {
+      position: absolute;
+      bottom: 10%;
+      left: 5%;
+      right: 5%;
+      height: 80%;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 150' preserveAspectRatio='none'%3E%3Cpath d='M0,100 Q50,120 100,80 T200,90 T300,50 T400,70' fill='none' stroke='%233b82f6' stroke-width='2.5'/%3E%3C/svg%3E") no-repeat;
+      background-size: 100% 100%;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 h-screen overflow-hidden">
+  
+  <!-- HEADER -->
+  <header id="header" class="h-12 bg-white border-b border-slate-200 flex items-center px-4 shadow-sm">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 bg-tnc-green rounded flex items-center justify-center">
+        <span class="text-white font-bold text-sm">TNC</span>
+      </div>
+      <h1 class="text-base font-semibold text-slate-800">Dangermond Preserve Data Catalog</h1>
+    </div>
+    <div class="ml-auto flex items-center gap-4">
+      <span class="text-xs text-slate-500">MOCKUP 3a: Dendra Sensors with Floating Time Series Panel</span>
+    </div>
+  </header>
+  
+  <!-- MAIN LAYOUT -->
+  <div id="main-layout" class="flex h-[calc(100vh-48px)]">
+    
+    <!-- LEFT SIDEBAR: Layer Browser -->
+    <aside id="left-sidebar" class="w-80 bg-sidebar-bg border-r border-slate-200 flex flex-col">
+      
+      <!-- Search Bar -->
+      <div class="p-3 border-b border-slate-200">
+        <div class="relative">
+          <input type="text" placeholder="Search layers..." 
+            class="w-full pl-9 pr-20 py-2 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tnc-green focus:border-transparent">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <button class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-blue-600 hover:text-blue-800 font-medium">Advanced</button>
+        </div>
+      </div>
+      
+      <!-- Legend for icons -->
+      <div class="px-3 py-2 bg-slate-100 border-b border-slate-200 flex items-center gap-4 text-xs text-slate-500">
+        <span class="flex items-center gap-1">
+          <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+          </svg>
+          = visible
+        </span>
+        <span class="flex items-center gap-1">📌 = pinned</span>
+      </div>
+      
+      <!-- Layer List -->
+      <div id="layer-list" class="flex-1 overflow-y-auto sidebar-scroll p-2">
+        
+        <!-- SPECIES (collapsed) -->
+        <div class="category mb-1" data-category="species">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded" onclick="toggleCategory('species')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <span>🦎</span>
+            <span>Species</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal">6 layers</span>
+          </button>
+          <div class="category-content hidden ml-4 space-y-0.5"></div>
+        </div>
+        
+        <!-- RESEARCH AND SENSOR EQUIPMENT (expanded, focus of this mockup) -->
+        <div class="category mb-1" data-category="sensors">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded" onclick="toggleCategory('sensors')">
+            <svg class="chevron w-4 h-4 text-slate-400 expanded" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <span>📡</span>
+            <span>Research & Sensors</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal">15 layers</span>
+          </button>
+          <div class="category-content ml-4 space-y-0.5">
+            
+            <!-- Camera Traps -->
+            <div class="layer-row clickable-layer flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer" 
+                 data-layer="camera-traps" data-has-map="true" onclick="selectLayer('camera-traps')">
+              <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('camera-traps')" title="Click to show on map">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+              <span class="flex-1 text-sm text-slate-700 truncate">Camera Traps (Animl)</span>
+              <button class="icon-btn flex-shrink-0 opacity-30 hover:opacity-100" onclick="event.stopPropagation(); togglePin('camera-traps')" title="Click to pin">
+                <span class="text-sm">📌</span>
+              </button>
+            </div>
+            
+            <!-- WEATHER SENSORS subcategory (expanded) -->
+            <div class="subcategory ml-2" data-category="weather-sensors">
+              <button class="subcategory-header w-full flex items-center gap-2 px-2 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-100 rounded uppercase tracking-wide" onclick="toggleCategory('weather-sensors')">
+                <svg class="chevron w-3 h-3 text-slate-400 expanded" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+                <span>🌡️ Weather Sensors</span>
+                <span class="ml-auto text-xs text-slate-400 font-normal">6</span>
+              </button>
+              <div class="category-content ml-4 space-y-0.5">
+                
+                <!-- Rain Gauges - PINNED & SELECTED -->
+                <div class="layer-row clickable-layer pinned selected flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer" 
+                     data-layer="rain-gauges" data-has-map="true" onclick="selectLayer('rain-gauges')">
+                  <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('rain-gauges')" title="Toggle visibility">
+                    <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                    </svg>
+                  </button>
+                  <span class="flex-1 text-sm text-slate-700 truncate">Rain Gauges</span>
+                  <button class="icon-btn flex-shrink-0 opacity-100" onclick="event.stopPropagation(); togglePin('rain-gauges')" title="Pinned - click to unpin">
+                    <span class="text-sm">📌</span>
+                  </button>
+                </div>
+                
+                <!-- Wind Sensors -->
+                <div class="layer-row clickable-layer flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer" 
+                     data-layer="wind-sensors" data-has-map="true" onclick="selectLayer('wind-sensors')">
+                  <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('wind-sensors')" title="Click to show on map">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                  </button>
+                  <span class="flex-1 text-sm text-slate-700 truncate">Wind Sensors</span>
+                  <button class="icon-btn flex-shrink-0 opacity-30 hover:opacity-100" onclick="event.stopPropagation(); togglePin('wind-sensors')" title="Click to pin">
+                    <span class="text-sm">📌</span>
+                  </button>
+                </div>
+                
+                <!-- Air Temperature -->
+                <div class="layer-row clickable-layer flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer" 
+                     data-layer="air-temperature" data-has-map="true" onclick="selectLayer('air-temperature')">
+                  <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('air-temperature')" title="Click to show on map">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                  </button>
+                  <span class="flex-1 text-sm text-slate-700 truncate">Air Temperature</span>
+                  <button class="icon-btn flex-shrink-0 opacity-30 hover:opacity-100" onclick="event.stopPropagation(); togglePin('air-temperature')" title="Click to pin">
+                    <span class="text-sm">📌</span>
+                  </button>
+                </div>
+                
+                <!-- Barometric Pressure -->
+                <div class="layer-row clickable-layer flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer" 
+                     data-layer="barometric-pressure" data-has-map="true" onclick="selectLayer('barometric-pressure')">
+                  <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('barometric-pressure')" title="Click to show on map">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                  </button>
+                  <span class="flex-1 text-sm text-slate-700 truncate">Barometric Pressure</span>
+                  <button class="icon-btn flex-shrink-0 opacity-30 hover:opacity-100" onclick="event.stopPropagation(); togglePin('barometric-pressure')" title="Click to pin">
+                    <span class="text-sm">📌</span>
+                  </button>
+                </div>
+                
+              </div>
+            </div>
+            
+            <!-- WATER QUALITY subcategory (collapsed) -->
+            <div class="subcategory ml-2" data-category="water-quality">
+              <button class="subcategory-header w-full flex items-center gap-2 px-2 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-100 rounded uppercase tracking-wide" onclick="toggleCategory('water-quality')">
+                <svg class="chevron w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+                <span>💧 Water Quality</span>
+                <span class="ml-auto text-xs text-slate-400 font-normal">5</span>
+              </button>
+              <div class="category-content hidden ml-4 space-y-0.5"></div>
+            </div>
+            
+            <!-- SOIL SENSORS subcategory (collapsed) -->
+            <div class="subcategory ml-2" data-category="soil-sensors">
+              <button class="subcategory-header w-full flex items-center gap-2 px-2 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-100 rounded uppercase tracking-wide" onclick="toggleCategory('soil-sensors')">
+                <svg class="chevron w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+                <span>🪴 Soil Sensors</span>
+                <span class="ml-auto text-xs text-slate-400 font-normal">2</span>
+              </button>
+              <div class="category-content hidden ml-4 space-y-0.5"></div>
+            </div>
+            
+          </div>
+        </div>
+        
+        <!-- FIRE (collapsed) -->
+        <div class="category mb-1" data-category="fire">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded" onclick="toggleCategory('fire')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <span>🔥</span>
+            <span>Fire</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal">5 layers</span>
+          </button>
+          <div class="category-content hidden ml-4"></div>
+        </div>
+        
+        <!-- WEATHER & CLIMATE (collapsed) -->
+        <div class="category mb-1" data-category="weather">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded" onclick="toggleCategory('weather')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <span>🌡️</span>
+            <span>Weather & Climate</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal">4 layers</span>
+          </button>
+          <div class="category-content hidden ml-4"></div>
+        </div>
+        
+        <!-- FRESHWATER (collapsed) -->
+        <div class="category mb-1" data-category="freshwater">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded" onclick="toggleCategory('freshwater')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <span>💧</span>
+            <span>Freshwater</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal">4 layers</span>
+          </button>
+          <div class="category-content hidden ml-4"></div>
+        </div>
+        
+      </div>
+    </aside>
+    
+    <!-- MAP AREA -->
+    <main id="map-area" class="flex-1 relative">
+      
+      <!-- ArcGIS Map Container -->
+      <div id="viewDiv" class="absolute inset-0"></div>
+      
+      <!-- Loading Overlay -->
+      <div id="loading-overlay" class="absolute inset-0 bg-slate-200/80 flex items-center justify-center z-10">
+        <div class="text-center">
+          <svg class="spinner w-10 h-10 text-tnc-green mx-auto mb-3" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p class="text-slate-600 font-medium">Loading Dendra stations...</p>
+        </div>
+      </div>
+      
+      <!-- FLOATING LAYERS WIDGET -->
+      <div id="floating-widget" class="floating-widget absolute top-4 left-4 bg-white rounded-lg border border-slate-200 w-64 z-20">
+        
+        <!-- Widget Header -->
+        <div class="flex items-center justify-between px-3 py-2 border-b border-slate-100 cursor-pointer bg-slate-50 rounded-t-lg" onclick="toggleFloatingWidget()">
+          <div class="flex items-center gap-2">
+            <span class="text-sm">🗺️</span>
+            <span class="text-sm font-semibold text-slate-700">Map Layers</span>
+          </div>
+          <svg id="widget-chevron" class="w-4 h-4 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+        
+        <!-- Widget Content -->
+        <div id="widget-content">
+          
+          <!-- PINNED LAYERS SECTION -->
+          <div id="pinned-section">
+            <div class="px-3 py-1.5 bg-blue-50 border-b border-blue-200">
+              <span class="text-xs font-semibold text-blue-700 uppercase tracking-wide flex items-center gap-1">
+                📌 Pinned Layers
+                <span id="pinned-count" class="bg-blue-200 text-blue-800 px-1.5 rounded-full text-xs">1</span>
+              </span>
+            </div>
+            <div id="pinned-layers-list" class="p-2 space-y-1">
+              
+              <!-- Rain Gauges -->
+              <div class="widget-layer flex items-center gap-2 px-2 py-1.5 rounded hover:bg-slate-50" data-widget-layer="rain-gauges">
+                <button class="icon-btn flex-shrink-0" onclick="toggleMapLayerVisibility('rain-gauges')" title="Toggle visibility">
+                  <span class="text-sm">👁️</span>
+                </button>
+                <div class="flex items-center gap-2 flex-1 min-w-0">
+                  <span class="w-3 h-3 rounded-full bg-cyan-500 flex-shrink-0"></span>
+                  <span class="text-sm text-slate-700 truncate">Rain Gauges</span>
+                </div>
+                <button class="icon-btn text-slate-400 hover:text-red-500 flex-shrink-0" onclick="unpinLayer('rain-gauges')" title="Remove from pinned">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              
+            </div>
+          </div>
+          
+          <!-- Tip -->
+          <div class="px-3 py-2 bg-slate-50 border-t border-slate-100 rounded-b-lg">
+            <p class="text-xs text-slate-500">💡 Click a station on the map or in the sidebar to view time series data.</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- TIME SERIES FLOATING PANEL -->
+      <div id="time-series-panel" class="time-series-panel absolute top-4 right-[340px] bg-white rounded-lg border border-slate-200 w-[480px] z-30 hidden">
+        
+        <!-- Panel Header -->
+        <div class="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-t-lg">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center">
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+            </div>
+            <div>
+              <h3 id="panel-station-name" class="text-sm font-semibold text-slate-800">Jalama Creek Station</h3>
+              <p class="text-xs text-slate-500">Rain Gauge • Precipitation</p>
+            </div>
+          </div>
+          <button class="icon-btn p-1 hover:bg-slate-100 rounded" onclick="closeTimeSeriesPanel()" title="Close panel">
+            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        
+        <!-- Controls Row -->
+        <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-4 bg-slate-50">
+          <div class="flex-1">
+            <label class="text-xs font-medium text-slate-500 block mb-1">Date Range</label>
+            <select class="w-full text-sm border border-slate-300 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
+              <option>Last 7 days</option>
+              <option selected>Last 30 days</option>
+              <option>Last 90 days</option>
+              <option>Last year</option>
+              <option>All time</option>
+            </select>
+          </div>
+          <div class="flex-1">
+            <label class="text-xs font-medium text-slate-500 block mb-1">Variable</label>
+            <select class="w-full text-sm border border-slate-300 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
+              <option selected>Precipitation (mm)</option>
+              <option>Cumulative Precip (mm)</option>
+            </select>
+          </div>
+          <div class="flex items-end gap-2">
+            <button class="px-3 py-1.5 text-sm bg-cyan-500 text-white rounded hover:bg-cyan-600 transition-colors">
+              Apply
+            </button>
+          </div>
+        </div>
+        
+        <!-- Chart Area -->
+        <div class="p-4">
+          <div class="chart-area chart-grid rounded-lg h-48 relative overflow-hidden">
+            <div class="chart-line"></div>
+            <!-- Y-axis labels -->
+            <div class="absolute left-2 top-2 text-xs text-slate-400">25mm</div>
+            <div class="absolute left-2 bottom-2 text-xs text-slate-400">0mm</div>
+            <!-- X-axis labels -->
+            <div class="absolute bottom-2 left-1/4 text-xs text-slate-400">Jan 1</div>
+            <div class="absolute bottom-2 left-1/2 text-xs text-slate-400">Jan 10</div>
+            <div class="absolute bottom-2 right-1/4 text-xs text-slate-400">Jan 20</div>
+          </div>
+          
+          <!-- Time Range Zoom Widget -->
+          <div class="mt-3 bg-slate-50 rounded-lg border border-slate-200 p-3">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-medium text-slate-500">Time Range Navigator</span>
+              <div class="flex items-center gap-1">
+                <button class="p-1 hover:bg-slate-200 rounded text-slate-500 hover:text-slate-700 transition-colors" title="Zoom out">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"/>
+                  </svg>
+                </button>
+                <button class="p-1 hover:bg-slate-200 rounded text-slate-500 hover:text-slate-700 transition-colors" title="Zoom in">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
+                  </svg>
+                </button>
+                <button class="p-1 hover:bg-slate-200 rounded text-slate-500 hover:text-slate-700 transition-colors" title="Reset zoom">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <!-- Mini overview chart with selection window -->
+            <div class="relative h-10 bg-white rounded border border-slate-200 overflow-hidden">
+              <!-- Full range background line -->
+              <div class="absolute inset-x-2 top-1/2 -translate-y-1/2 h-px bg-slate-300"></div>
+              <!-- Simplified data line showing full range -->
+              <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                <path d="M8,30 Q30,35 60,25 T120,28 T180,20 T240,22 T300,18 T360,24 T420,22 T440,26" 
+                      fill="none" stroke="#94a3b8" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+              </svg>
+              <!-- Selection window (the zoomed area) -->
+              <div class="absolute top-0 bottom-0 left-[25%] right-[10%] bg-cyan-500/15 border-x-2 border-cyan-500 cursor-ew-resize">
+                <!-- Left handle -->
+                <div class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-6 bg-cyan-500 rounded-sm cursor-ew-resize"></div>
+                <!-- Right handle -->
+                <div class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-3 h-6 bg-cyan-500 rounded-sm cursor-ew-resize"></div>
+              </div>
+              <!-- Date labels -->
+              <div class="absolute bottom-0 left-1 text-[9px] text-slate-400">Dec 1</div>
+              <div class="absolute bottom-0 right-1 text-[9px] text-slate-400">Jan 20</div>
+            </div>
+            <div class="flex justify-between mt-1.5 text-[10px] text-slate-500">
+              <span>Viewing: <span class="font-medium text-cyan-600">Jan 1 – Jan 20, 2026</span></span>
+              <span class="text-slate-400">20 of 50 days</span>
+            </div>
+          </div>
+          
+          <!-- Stats Row -->
+          <div class="flex items-center gap-4 mt-4 pt-4 border-t border-slate-100">
+            <div class="flex-1 text-center">
+              <p class="text-xs text-slate-500">Min</p>
+              <p class="text-lg font-semibold text-slate-800">0.2 mm</p>
+            </div>
+            <div class="flex-1 text-center border-x border-slate-100">
+              <p class="text-xs text-slate-500">Avg</p>
+              <p class="text-lg font-semibold text-cyan-600">8.4 mm</p>
+            </div>
+            <div class="flex-1 text-center">
+              <p class="text-xs text-slate-500">Max</p>
+              <p class="text-lg font-semibold text-slate-800">22.1 mm</p>
+            </div>
+            <div class="flex-1 text-center border-l border-slate-100">
+              <p class="text-xs text-slate-500">Total</p>
+              <p class="text-lg font-semibold text-blue-600">142 mm</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Panel Footer -->
+        <div class="px-4 py-3 border-t border-slate-100 bg-slate-50 rounded-b-lg flex items-center justify-between">
+          <span class="text-xs text-slate-500">Data from Dendra • Last updated: Jan 20, 2026 09:15 AM</span>
+          <button class="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            Export CSV
+          </button>
+        </div>
+      </div>
+      
+    </main>
+    
+    <!-- RIGHT SIDEBAR -->
+    <aside id="right-sidebar" class="w-80 bg-white border-l border-slate-200 flex flex-col">
+      
+      <!-- Layer Header -->
+      <div class="px-4 py-3 border-b border-slate-200 bg-gradient-to-r from-cyan-50 to-blue-50">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-cyan-500"></span>
+          <h2 class="text-sm font-semibold text-slate-800">Rain Gauges</h2>
+          <span class="ml-auto text-xs bg-cyan-100 text-cyan-700 px-2 py-0.5 rounded-full">Dendra</span>
+        </div>
+        <p class="text-xs text-slate-500 mt-1">Precipitation monitoring stations across the preserve</p>
+      </div>
+      
+      <!-- Tabs -->
+      <div id="tabs" class="flex border-b border-slate-200">
+        <button class="tab-btn flex-1 px-4 py-2 text-sm text-slate-600" data-tab="overview" onclick="switchTab('overview')">Overview</button>
+        <button class="tab-btn active flex-1 px-4 py-2 text-sm text-slate-600" data-tab="stations" onclick="switchTab('stations')">Stations</button>
+        <button class="tab-btn flex-1 px-4 py-2 text-sm text-slate-600" data-tab="export" onclick="switchTab('export')">Export</button>
+      </div>
+      
+      <!-- Tab Content -->
+      <div id="tab-content" class="flex-1 overflow-y-auto sidebar-scroll">
+        
+        <!-- OVERVIEW TAB -->
+        <div id="tab-overview" class="tab-panel hidden p-4">
+          <div class="space-y-4">
+            <div>
+              <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Description</h3>
+              <p class="text-sm text-slate-700">Automated rain gauge stations deployed throughout Dangermond Preserve to monitor precipitation patterns. Data is collected in real-time via Dendra's sensor network.</p>
+            </div>
+            
+            <div class="bg-cyan-50 rounded-lg p-3 border border-cyan-200">
+              <p class="text-sm font-medium text-cyan-800">📊 5 Active Stations</p>
+              <p class="text-xs text-cyan-700 mt-1">Click "Stations" tab to browse and view time series data.</p>
+            </div>
+            
+            <div>
+              <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Data Info</h3>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                  <span class="text-slate-500">Source</span>
+                  <span class="text-slate-700">Dendra API</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-500">Variable</span>
+                  <span class="text-slate-700">Precipitation (mm)</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-500">Frequency</span>
+                  <span class="text-slate-700">15-minute intervals</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-500">Date Range</span>
+                  <span class="text-slate-700">2021 - Present</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- STATIONS TAB (active) -->
+        <div id="tab-stations" class="tab-panel p-4">
+          
+          <!-- Filter Row -->
+          <div class="mb-4">
+            <div class="relative">
+              <input type="text" placeholder="Search stations..." 
+                class="w-full pl-8 pr-3 py-2 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
+              <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+            </div>
+          </div>
+          
+          <!-- Date Range Filter -->
+          <div class="mb-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
+            <label class="text-xs font-medium text-slate-500 block mb-2">Date Range</label>
+            <div class="flex gap-2">
+              <input type="date" value="2025-12-01" class="flex-1 text-sm border border-slate-300 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+              <span class="text-slate-400 self-center">to</span>
+              <input type="date" value="2026-01-20" class="flex-1 text-sm border border-slate-300 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+            </div>
+          </div>
+          
+          <!-- Station List -->
+          <div class="space-y-2">
+            <p class="text-xs text-slate-500 mb-2">5 stations found</p>
+            
+            <!-- Station 1: Jalama Creek (selected) -->
+            <div class="station-card selected-station bg-white rounded-lg p-3 cursor-pointer" onclick="selectStation('jalama-creek')">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 bg-cyan-100 rounded-full flex items-center justify-center">
+                    <svg class="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 class="text-sm font-medium text-slate-800">Jalama Creek</h4>
+                    <p class="text-xs text-slate-500">Station ID: RG-001</p>
+                  </div>
+                </div>
+                <span class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Active</span>
+              </div>
+              <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
+                <span>Last reading: 2.4 mm</span>
+                <span>10 min ago</span>
+              </div>
+              <div class="mini-chart mt-2 h-12 rounded"></div>
+              <button class="mt-2 w-full py-1.5 text-sm bg-cyan-500 text-white rounded hover:bg-cyan-600 transition-colors flex items-center justify-center gap-1" onclick="event.stopPropagation(); openTimeSeriesPanel('jalama-creek')">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                View Time Series
+              </button>
+            </div>
+            
+            <!-- Station 2: Cañada Honda -->
+            <div class="station-card bg-white rounded-lg p-3 cursor-pointer" onclick="selectStation('canada-honda')">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 bg-cyan-100 rounded-full flex items-center justify-center">
+                    <svg class="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 class="text-sm font-medium text-slate-800">Cañada Honda</h4>
+                    <p class="text-xs text-slate-500">Station ID: RG-002</p>
+                  </div>
+                </div>
+                <span class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Active</span>
+              </div>
+              <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
+                <span>Last reading: 1.8 mm</span>
+                <span>15 min ago</span>
+              </div>
+              <div class="mini-chart mt-2 h-12 rounded"></div>
+              <button class="mt-2 w-full py-1.5 text-sm bg-slate-100 text-slate-700 rounded hover:bg-cyan-500 hover:text-white transition-colors flex items-center justify-center gap-1" onclick="event.stopPropagation(); openTimeSeriesPanel('canada-honda')">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                View Time Series
+              </button>
+            </div>
+            
+            <!-- Station 3: Espada Bluff -->
+            <div class="station-card bg-white rounded-lg p-3 cursor-pointer" onclick="selectStation('espada-bluff')">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 bg-cyan-100 rounded-full flex items-center justify-center">
+                    <svg class="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 class="text-sm font-medium text-slate-800">Espada Bluff</h4>
+                    <p class="text-xs text-slate-500">Station ID: RG-003</p>
+                  </div>
+                </div>
+                <span class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Active</span>
+              </div>
+              <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
+                <span>Last reading: 3.1 mm</span>
+                <span>8 min ago</span>
+              </div>
+              <div class="mini-chart mt-2 h-12 rounded"></div>
+              <button class="mt-2 w-full py-1.5 text-sm bg-slate-100 text-slate-700 rounded hover:bg-cyan-500 hover:text-white transition-colors flex items-center justify-center gap-1" onclick="event.stopPropagation(); openTimeSeriesPanel('espada-bluff')">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                View Time Series
+              </button>
+            </div>
+            
+            <!-- Station 4: Point Sal Ridge -->
+            <div class="station-card bg-white rounded-lg p-3 cursor-pointer" onclick="selectStation('point-sal')">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 bg-cyan-100 rounded-full flex items-center justify-center">
+                    <svg class="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 class="text-sm font-medium text-slate-800">Point Sal Ridge</h4>
+                    <p class="text-xs text-slate-500">Station ID: RG-004</p>
+                  </div>
+                </div>
+                <span class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Active</span>
+              </div>
+              <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
+                <span>Last reading: 0.5 mm</span>
+                <span>12 min ago</span>
+              </div>
+              <div class="mini-chart mt-2 h-12 rounded"></div>
+              <button class="mt-2 w-full py-1.5 text-sm bg-slate-100 text-slate-700 rounded hover:bg-cyan-500 hover:text-white transition-colors flex items-center justify-center gap-1" onclick="event.stopPropagation(); openTimeSeriesPanel('point-sal')">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                View Time Series
+              </button>
+            </div>
+            
+            <!-- Station 5: Shuman Canyon (offline) -->
+            <div class="station-card bg-white rounded-lg p-3 cursor-pointer opacity-60" onclick="selectStation('shuman-canyon')">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 class="text-sm font-medium text-slate-800">Shuman Canyon</h4>
+                    <p class="text-xs text-slate-500">Station ID: RG-005</p>
+                  </div>
+                </div>
+                <span class="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">Offline</span>
+              </div>
+              <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
+                <span>Last reading: 1.2 mm</span>
+                <span>3 days ago</span>
+              </div>
+              <button class="mt-2 w-full py-1.5 text-sm bg-slate-100 text-slate-500 rounded cursor-not-allowed flex items-center justify-center gap-1" disabled>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                </svg>
+                Station Offline
+              </button>
+            </div>
+            
+          </div>
+        </div>
+        
+        <!-- EXPORT TAB -->
+        <div id="tab-export" class="tab-panel hidden p-4">
+          <div class="space-y-4">
+            <div>
+              <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Export Options</h3>
+              <p class="text-sm text-slate-600 mb-4">Download precipitation data for all stations or a specific selection.</p>
+            </div>
+            
+            <div class="space-y-3">
+              <div>
+                <label class="text-xs font-medium text-slate-500 block mb-1">Stations</label>
+                <select class="w-full text-sm border border-slate-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                  <option>All stations (5)</option>
+                  <option>Jalama Creek</option>
+                  <option>Cañada Honda</option>
+                  <option>Espada Bluff</option>
+                  <option>Point Sal Ridge</option>
+                  <option>Shuman Canyon</option>
+                </select>
+              </div>
+              
+              <div>
+                <label class="text-xs font-medium text-slate-500 block mb-1">Date Range</label>
+                <div class="flex gap-2">
+                  <input type="date" value="2025-01-01" class="flex-1 text-sm border border-slate-300 rounded px-2 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                  <input type="date" value="2026-01-20" class="flex-1 text-sm border border-slate-300 rounded px-2 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                </div>
+              </div>
+              
+              <div>
+                <label class="text-xs font-medium text-slate-500 block mb-1">Format</label>
+                <select class="w-full text-sm border border-slate-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                  <option>CSV</option>
+                  <option>JSON</option>
+                  <option>Excel (.xlsx)</option>
+                </select>
+              </div>
+            </div>
+            
+            <button class="w-full py-2.5 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors font-medium flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+              Download Data
+            </button>
+            
+            <p class="text-xs text-slate-400 text-center">Estimated file size: ~2.4 MB</p>
+          </div>
+        </div>
+        
+      </div>
+    </aside>
+    
+  </div>
+  
+  <!-- ArcGIS + App Logic -->
+  <script>
+    // =========================================================================
+    // STATE
+    // =========================================================================
+    const state = {
+      selectedLayer: 'rain-gauges',
+      selectedStation: 'jalama-creek',
+      pinnedLayers: new Set(['rain-gauges']),
+      hiddenPinnedLayers: new Set(),
+      expandedCategories: new Set(['sensors', 'weather-sensors']),
+      widgetExpanded: true,
+      timeSeriesPanelOpen: false
+    };
+    
+    // Station data
+    const stations = {
+      'jalama-creek': { name: 'Jalama Creek', id: 'RG-001', lat: 34.4925, lng: -120.4275 },
+      'canada-honda': { name: 'Cañada Honda', id: 'RG-002', lat: 34.5012, lng: -120.4156 },
+      'espada-bluff': { name: 'Espada Bluff', id: 'RG-003', lat: 34.4832, lng: -120.4521 },
+      'point-sal': { name: 'Point Sal Ridge', id: 'RG-004', lat: 34.4756, lng: -120.4687 },
+      'shuman-canyon': { name: 'Shuman Canyon', id: 'RG-005', lat: 34.5098, lng: -120.4012 }
+    };
+    
+    let mapView = null;
+    
+    // =========================================================================
+    // MAP INITIALIZATION
+    // =========================================================================
+    require([
+      "esri/Map",
+      "esri/views/MapView",
+      "esri/Graphic",
+      "esri/layers/GraphicsLayer"
+    ], function(Map, MapView, Graphic, GraphicsLayer) {
+      
+      const map = new Map({ basemap: "topo-vector" });
+      
+      mapView = new MapView({
+        container: "viewDiv",
+        map: map,
+        center: [-120.4275, 34.4925],
+        zoom: 12,
+        ui: { components: [] }
+      });
+      
+      // Create graphics layer for stations
+      const stationLayer = new GraphicsLayer({ id: "rain-gauges" });
+      
+      // Add station markers
+      Object.entries(stations).forEach(([key, station]) => {
+        const point = {
+          type: "point",
+          longitude: station.lng,
+          latitude: station.lat
+        };
+        
+        const markerSymbol = {
+          type: "simple-marker",
+          color: key === 'shuman-canyon' ? [148, 163, 184, 0.8] : [6, 182, 212, 0.9],
+          outline: { color: [255, 255, 255, 1], width: 2 },
+          size: "14px"
+        };
+        
+        const pointGraphic = new Graphic({
+          geometry: point,
+          symbol: markerSymbol,
+          attributes: { stationId: key, name: station.name },
+          popupTemplate: {
+            title: station.name,
+            content: `Station ID: ${station.id}<br>Click to view time series`
+          }
+        });
+        
+        stationLayer.add(pointGraphic);
+      });
+      
+      map.add(stationLayer);
+      
+      mapView.when(() => {
+        document.getElementById('loading-overlay').style.display = 'none';
+      });
+      
+      // Click handler for station markers
+      mapView.on("click", function(event) {
+        mapView.hitTest(event).then(function(response) {
+          const graphic = response.results.find(r => r.graphic.attributes?.stationId);
+          if (graphic) {
+            const stationId = graphic.graphic.attributes.stationId;
+            selectStation(stationId);
+            if (stationId !== 'shuman-canyon') {
+              openTimeSeriesPanel(stationId);
+            }
+          }
+        });
+      });
+    });
+    
+    // =========================================================================
+    // STATION & TIME SERIES FUNCTIONS
+    // =========================================================================
+    function selectStation(stationId) {
+      state.selectedStation = stationId;
+      
+      // Update station card styling
+      document.querySelectorAll('.station-card').forEach(card => {
+        card.classList.remove('selected-station');
+      });
+      
+      // Find and highlight the selected station card
+      const stationCards = document.querySelectorAll('.station-card');
+      stationCards.forEach(card => {
+        if (card.onclick.toString().includes(stationId)) {
+          card.classList.add('selected-station');
+        }
+      });
+    }
+    
+    function openTimeSeriesPanel(stationId) {
+      const station = stations[stationId];
+      if (!station) return;
+      
+      state.timeSeriesPanelOpen = true;
+      state.selectedStation = stationId;
+      
+      // Update panel content
+      document.getElementById('panel-station-name').textContent = station.name;
+      
+      // Show panel
+      document.getElementById('time-series-panel').classList.remove('hidden');
+      
+      // Update station selection
+      selectStation(stationId);
+      
+      // Pan map to position station marker at bottom-left corner of floating panel
+      panMapToStation(stationId);
+    }
+    
+    function panMapToStation(stationId) {
+      const station = stations[stationId];
+      if (!station || !mapView) return;
+      
+      // Get the floating panel element to calculate target screen position
+      const panel = document.getElementById('time-series-panel');
+      const panelRect = panel.getBoundingClientRect();
+      
+      // Target screen point: bottom-left corner of the panel, with small offset
+      // Adding some padding (20px left, 30px up from bottom) so marker doesn't overlap panel edge
+      const targetScreenX = panelRect.left - 40;
+      const targetScreenY = panelRect.bottom - 60;
+      
+      // Convert station coordinates to a point
+      require(["esri/geometry/Point"], function(Point) {
+        const stationPoint = new Point({
+          longitude: station.lng,
+          latitude: station.lat
+        });
+        
+        // Get the current map center screen position
+        const mapContainer = document.getElementById('viewDiv');
+        const mapRect = mapContainer.getBoundingClientRect();
+        const mapCenterScreenX = mapRect.left + mapRect.width / 2;
+        const mapCenterScreenY = mapRect.top + mapRect.height / 2;
+        
+        // Calculate the offset needed (in screen pixels)
+        const offsetX = targetScreenX - mapCenterScreenX;
+        const offsetY = targetScreenY - mapCenterScreenY;
+        
+        // Convert pixel offset to map units
+        // At the current zoom level, we need to calculate how much to shift the center
+        const currentCenter = mapView.center;
+        const currentScale = mapView.scale;
+        
+        // Get resolution (meters per pixel)
+        const resolution = mapView.resolution;
+        
+        // Calculate new center by shifting from station position
+        // We want station at targetScreen, so we shift center the opposite direction
+        const newCenterLng = station.lng - (offsetX * resolution / 111320 * Math.cos(station.lat * Math.PI / 180));
+        const newCenterLat = station.lat + (offsetY * resolution / 111320);
+        
+        // Animate to new position
+        mapView.goTo({
+          center: [newCenterLng, newCenterLat],
+          zoom: mapView.zoom
+        }, {
+          duration: 600,
+          easing: "ease-in-out"
+        });
+      });
+    }
+    
+    function closeTimeSeriesPanel() {
+      state.timeSeriesPanelOpen = false;
+      document.getElementById('time-series-panel').classList.add('hidden');
+    }
+    
+    // =========================================================================
+    // CATEGORY & LAYER FUNCTIONS
+    // =========================================================================
+    function toggleCategory(categoryId) {
+      const category = document.querySelector(`[data-category="${categoryId}"]`);
+      if (!category) return;
+      const content = category.querySelector('.category-content');
+      const chevron = category.querySelector('.chevron');
+      
+      if (state.expandedCategories.has(categoryId)) {
+        state.expandedCategories.delete(categoryId);
+        content.classList.add('hidden');
+        chevron.classList.remove('expanded');
+      } else {
+        state.expandedCategories.add(categoryId);
+        content.classList.remove('hidden');
+        chevron.classList.add('expanded');
+      }
+    }
+    
+    function selectLayer(layerId) {
+      document.querySelectorAll('.layer-row').forEach(row => row.classList.remove('selected'));
+      const row = document.querySelector(`.layer-row[data-layer="${layerId}"]`);
+      if (row) row.classList.add('selected');
+      state.selectedLayer = layerId;
+    }
+    
+    function toggleVisibility(layerId) {
+      console.log('Toggle visibility:', layerId);
+    }
+    
+    function togglePin(layerId) {
+      console.log('Toggle pin:', layerId);
+    }
+    
+    function unpinLayer(layerId) {
+      console.log('Unpin:', layerId);
+    }
+    
+    function toggleMapLayerVisibility(layerId) {
+      console.log('Toggle map visibility:', layerId);
+    }
+    
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`.tab-btn[data-tab="${tabId}"]`)?.classList.add('active');
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+      document.getElementById(`tab-${tabId}`)?.classList.remove('hidden');
+    }
+    
+    function toggleFloatingWidget() {
+      const content = document.getElementById('widget-content');
+      const chevron = document.getElementById('widget-chevron');
+      state.widgetExpanded = !state.widgetExpanded;
+      content.classList.toggle('hidden', !state.widgetExpanded);
+      chevron.style.transform = state.widgetExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
+    
+    // =========================================================================
+    // INIT
+    // =========================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+      state.expandedCategories.forEach(categoryId => {
+        const cat = document.querySelector(`[data-category="${categoryId}"]`);
+        if (cat) {
+          cat.querySelector('.category-content')?.classList.remove('hidden');
+          cat.querySelector('.chevron')?.classList.add('expanded');
+        }
+      });
+    });
+  </script>
+  
+</body>
+</html>
