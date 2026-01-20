@@ -12,7 +12,7 @@
 ### Quick Status
 
 ```
-Overall Progress: ▓▓▓▓▓░░░░░ 5/9 tasks complete
+Overall Progress: ▓▓▓▓▓▓░░░░ 6/9 tasks complete
 ```
 
 **Last Updated:** January 20, 2026
@@ -26,7 +26,7 @@ Overall Progress: ▓▓▓▓▓░░░░░ 5/9 tasks complete
 | T2 | [Mockup 1: Full Layout Overview](#t2-mockup-1-full-layout-overview) | ✅ Done | Cursor | T1 | - |
 | T3 | [Mockup 2: Cross-Referencing Demo](#t3-mockup-2-cross-referencing-demo) | ✅ Done | Cursor | T2 | - |
 | T4 | [Mockup 3a: Dendra (floating panel)](#t4-mockup-3a-dendra-deep-dive-floating-panel) | ✅ Done | Cursor | T2 | - |
-| T5 | [Mockup 3b: Dendra (sidebar panel)](#t5-mockup-3b-dendra-deep-dive-sidebar-panel) | 🔲 Not Started | - | T4 | - |
+| T5 | [Mockup 3b: Dendra (sidebar panel)](#t5-mockup-3b-dendra-deep-dive-sidebar-panel) | ✅ Done | Cursor | T4 | - |
 | T6 | [Mockup 4: DataONE Discovery](#t6-mockup-4-dataone-discovery) | 🔲 Not Started | - | T2 | - |
 | T7 | Team Review: Layout Doc | 🔲 Not Started | Team | T1 | - |
 | T8 | Team Review: All Mockups | 🔲 Not Started | Team | T2-T6 | - |
@@ -39,6 +39,7 @@ Overall Progress: ▓▓▓▓▓░░░░░ 5/9 tasks complete
 - ✅ **T2** Mockup 1: Full Layout Overview created at `/mockups/01-full-layout-overview.html`
 - ✅ **T3** Cross-Referencing Demo (accomplished by T2 - pinning/cross-referencing functionality demonstrated in Full Layout mockup)
 - ✅ **T4** Mockup 3a: Dendra Deep Dive (Floating Panel) created at `/mockups/03a-dendra-floating-panel.html`
+- ✅ **T5** Mockup 3b: Dendra Deep Dive (Sidebar Panel) created at `/mockups/03b-dendra-sidebar-panel.html`
 
 ### Future Tasks
 *Tasks discovered during mockup development will be added here:*
@@ -295,23 +296,33 @@ A separate mockup was deemed unnecessary as T2 fully demonstrates the paradigm.
 
 ### T5: Mockup 3b: Dendra Deep Dive (Sidebar Panel)
 
-**Status:** 🔲 Not Started  
-**Assignee:** -  
+**Status:** ✅ Done  
+**Assignee:** Cursor  
 **Output:** `/mockups/03b-dendra-sidebar-panel.html`  
 **Depends On:** T4
 
 **Purpose:** Alternative approach - time series appears IN the right sidebar instead of floating. Create for comparison.
 
+**Design Decision:** Based on UX research (drilldown patterns, progressive disclosure, master-detail patterns), implemented as a **Replace View** approach:
+- When user clicks "View Time Series", the station list is replaced with the time series detail view
+- Clear "← Back to stations" navigation at top
+- Maintains context while providing focused detail view
+- Follows familiar drill-down pattern used in many dashboards
+
 **What it shows:**
 - Same as T4, but time series chart is embedded in right sidebar
-- Right sidebar expands or scrolls to accommodate chart
+- Station list view with "View Time Series" buttons
+- Time series detail view with chart, stats, controls, and export
+- Smooth view transitions between list and detail
 
 **Acceptance Criteria:**
-- [ ] HTML file created at specified path
-- [ ] Time series appears in right sidebar (not floating)
-- [ ] Can compare with T4 to decide preferred approach
+- [x] HTML file created at specified path
+- [x] Time series appears in right sidebar (not floating)
+- [x] Can compare with T4 to decide preferred approach
+- [x] Clear back navigation to return to station list
+- [x] Map click on station also triggers time series view
 
-**Notes:** This is optional but recommended - helps team decide between floating vs sidebar approach.
+**Notes:** This is the alternative to T4's floating panel - compare both to decide preferred approach for implementation.
 
 ---
 
