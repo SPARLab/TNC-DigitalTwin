@@ -12,7 +12,7 @@
 ### Quick Status
 
 ```
-Overall Progress: ▓▓░░░░░░░░ 2/9 tasks complete
+Overall Progress: ▓▓▓░░░░░░░ 3/9 tasks complete
 ```
 
 **Last Updated:** January 16, 2026
@@ -23,7 +23,7 @@ Overall Progress: ▓▓░░░░░░░░ 2/9 tasks complete
 |----|------|--------|----------|------------|--------|
 | T0 | Create this plan document | ✅ Done | Wil | - | - |
 | T1 | [Left Sidebar Layout Doc](#t1-left-sidebar-layout-document) | ✅ Done | Cursor | - | - |
-| T2 | [Mockup 1: Full Layout Overview](#t2-mockup-1-full-layout-overview) | 🔲 Not Started | - | T1 | - |
+| T2 | [Mockup 1: Full Layout Overview](#t2-mockup-1-full-layout-overview) | ✅ Done | Cursor | T1 | - |
 | T3 | [Mockup 2: Cross-Referencing Demo](#t3-mockup-2-cross-referencing-demo) | 🔲 Not Started | - | T2 | - |
 | T4 | [Mockup 3a: Dendra (floating panel)](#t4-mockup-3a-dendra-deep-dive-floating-panel) | 🔲 Not Started | - | T2 | - |
 | T5 | [Mockup 3b: Dendra (sidebar panel)](#t5-mockup-3b-dendra-deep-dive-sidebar-panel) | 🔲 Not Started | - | T4 | - |
@@ -36,6 +36,7 @@ Overall Progress: ▓▓░░░░░░░░ 2/9 tasks complete
 ### Completed Tasks
 - ✅ **T0** Plan document created and reviewed
 - ✅ **T1** Left Sidebar Layout Document created at `/docs/development_plans/left-sidebar-layout.md`
+- ✅ **T2** Mockup 1: Full Layout Overview created at `/mockups/01-full-layout-overview.html`
 
 ### Future Tasks
 *Tasks discovered during mockup development will be added here:*
@@ -185,8 +186,8 @@ Each mockup should have enough interactivity to demonstrate the concept:
 
 ### T2: Mockup 1: Full Layout Overview
 
-**Status:** 🔲 Not Started  
-**Assignee:** -  
+**Status:** ✅ Done  
+**Assignee:** Cursor  
 **Output:** `/mockups/01-full-layout-overview.html`  
 **Depends On:** T1
 
@@ -207,17 +208,17 @@ Each mockup should have enough interactivity to demonstrate the concept:
 - Shows filters at top, results list below
 
 **Required Interactions:**
-- [ ] Expand/collapse categories
-- [ ] Click eye icons to toggle pin state
-- [ ] Click layer names to "select" (highlight in left sidebar)
-- [ ] Tab switching in right sidebar
-- [ ] Expand/collapse floating widget
+- [x] Expand/collapse categories
+- [x] Click eye icons to toggle pin state
+- [x] Click layer names to "select" (highlight in left sidebar)
+- [x] Tab switching in right sidebar
+- [x] Expand/collapse floating widget
 
 **Acceptance Criteria:**
-- [ ] HTML file created at specified path
-- [ ] All interactions listed above work
-- [ ] Matches category structure from T1
-- [ ] Ready for quick direction check before proceeding
+- [x] HTML file created at specified path
+- [x] All interactions listed above work
+- [x] Matches category structure from T1
+- [x] Ready for quick direction check before proceeding
 
 ---
 

@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mockup 1: Full Layout Overview - TNC Digital Catalog</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'inter': ['Inter', 'sans-serif'],
+          },
+          colors: {
+            'tnc-green': '#2e7d32',
+            'tnc-green-dark': '#1b5e20',
+            'sidebar-bg': '#f8fafc',
+            'pinned-bg': '#dbeafe',
+            'pinned-border': '#3b82f6',
+            'selected-border': '#059669',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    /* Custom scrollbar for sidebars */
+    .sidebar-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .sidebar-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .sidebar-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    
+    /* Eye icon states */
+    .eye-icon {
+      transition: all 0.15s ease;
+    }
+    .eye-icon:hover {
+      transform: scale(1.1);
+    }
+    
+    /* Layer row hover */
+    .layer-row:hover {
+      background-color: #f1f5f9;
+    }
+    .layer-row.pinned {
+      background-color: #dbeafe;
+    }
+    .layer-row.selected {
+      border-left: 3px solid #059669;
+    }
+    .layer-row.pinned.selected {
+      background-color: #dbeafe;
+      border-left: 3px solid #059669;
+    }
+    
+    /* Floating widget */
+    .floating-widget {
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    
+    /* Tab styling */
+    .tab-btn {
+      transition: all 0.15s ease;
+    }
+    .tab-btn.active {
+      border-bottom: 2px solid #059669;
+      color: #059669;
+      font-weight: 500;
+    }
+    .tab-btn:not(.active):hover {
+      background-color: #f1f5f9;
+    }
+    
+    /* Chevron rotation */
+    .chevron {
+      transition: transform 0.2s ease;
+    }
+    .chevron.expanded {
+      transform: rotate(90deg);
+    }
+  </style>
+</head>
+<body class="bg-slate-100 h-screen overflow-hidden">
+  
+  <!-- HEADER -->
+  <header id="header" class="h-12 bg-white border-b border-slate-200 flex items-center px-4 shadow-sm">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 bg-tnc-green rounded flex items-center justify-center">
+        <span class="text-white font-bold text-sm">TNC</span>
+      </div>
+      <h1 class="text-base font-semibold text-slate-800">Dangermond Preserve Data Catalog</h1>
+    </div>
+    <div class="ml-auto flex items-center gap-4">
+      <span class="text-xs text-slate-500">MOCKUP: Full Layout Overview</span>
+    </div>
+  </header>
+  
+  <!-- MAIN LAYOUT -->
+  <div id="main-layout" class="flex h-[calc(100vh-48px)]">
+    
+    <!-- LEFT SIDEBAR: Layer Browser -->
+    <aside id="left-sidebar" class="w-72 bg-sidebar-bg border-r border-slate-200 flex flex-col">
+      
+      <!-- Search Bar -->
+      <div id="search-container" class="p-3 border-b border-slate-200">
+        <div class="relative">
+          <input 
+            type="text" 
+            placeholder="Search layers..." 
+            class="w-full pl-9 pr-20 py-2 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tnc-green focus:border-transparent"
+          >
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <button class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-blue-600 hover:text-blue-800 font-medium">
+            Advanced
+          </button>
+        </div>
+      </div>
+      
+      <!-- Layer List -->
+      <div id="layer-list" class="flex-1 overflow-y-auto sidebar-scroll p-2">
+        
+        <!-- SPECIES CATEGORY (expanded) -->
+        <div class="category mb-1" data-category="species">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded" onclick="toggleCategory('species')">
+            <svg class="chevron w-4 h-4 text-slate-400 expanded" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <span class="text-base">🦎</span>
+            <span>Species</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal">6 layers</span>
+          </button>
+          <div class="category-content ml-4">
+            
+            <!-- iNaturalist - PINNED & SELECTED -->
+            <div class="layer-row pinned selected flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer" data-layer="inaturalist" onclick="selectLayer('inaturalist')">
+              <button class="eye-icon flex-shrink-0" onclick="event.stopPropagation(); togglePin('inaturalist')">
+                <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                </svg>
+              </button>
+              <span class="text-sm text-slate-700">iNaturalist Observations</span>
+            </div>
+            
+            <!-- eBird - PINNED -->
+            <div class="layer-row pinned flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer" data-layer="ebird" onclick="selectLayer('ebird')">
+              <button class="eye-icon flex-shrink-0" onclick="event.stopPropagation(); togglePin('ebird')">
+                <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                </svg>
+              </button>
+              <span class="text-sm text-slate-700">eBird Sightings</span>
+            </div>
+            
+            <!-- CalFlora Plants -->
+            <div class="layer-row flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer" data-layer="calflora" onclick="selectLayer('calflora')">
+              <button class="eye-icon flex-shrink-0" onclick="event.stopPropagation(); togglePin('calflora')">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+              <span class="text-sm text-slate-700">CalFlora Plants</span>
+            </div>
+            
+            <!-- Species Surveys subcategory -->
+            <div class="subcategory mt-1" data-category="species-surveys">
+              <button class="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded" onclick="toggleCategory('species-surveys')">
+                <svg class="chevron w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+                <span>📁</span>
+                <span>Species Surveys (TNC)</span>
+              </button>
+              <div class="category-content hidden ml-4">
+                <div class="layer-row flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer" data-layer="wildlife-lists">
+                  <button class="eye-icon flex-shrink-0" onclick="event.stopPropagation(); togglePin('wildlife-lists')">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                  </button>
+                  <span class="text-sm text-slate-700">Wildlife Species Lists</span>
+                </div>
+                <div class="layer-row flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer" data-layer="ecological-surveys">
+                  <button class="eye-icon flex-shrink-0" onclick="event.stopPropagation(); togglePin('ecological-surveys')">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                  </button>
+                  <span class="text-sm text-slate-700">Ecological Surveys</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- DataONE Species -->
+            <div class="layer-row flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer mt-1" data-layer="dataone-species" onclick="selectLayer('dataone-species')">
+              <button class="eye-icon flex-shrink-0" onclick="event.stopPropagation(); togglePin('dataone-species')">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+              <span class="text-sm text-slate-700">DataONE Species Datasets</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- FIRE CATEGORY (expanded) -->
+        <div class="category mb-1" data-category="fire">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded" onclick="toggleCategory('fire')">
+            <svg class="chevron w-4 h-4 text-slate-400 expanded" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <span class="text-base">🔥</span>
+            <span>Fire</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal">5 layers</span>
+          </button>
+          <div class="category-content ml-4">
+            
+            <!-- Fire History subcategory -->
+            <div class="subcategory" data-category="fire-history">
+              <button class="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded" onclick="toggleCategory('fire-history')">
+                <svg class="chevron w-3 h-3 text-slate-400 expanded" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+                <span>📁</span>
+                <span>Fire History</span>
+              </button>
+              <div class="category-content ml-4">
+                <div class="layer-row flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer" data-layer="fire-perimeters-ca" onclick="selectLayer('fire-perimeters-ca')">
+                  <button class="eye-icon flex-shrink-0" onclick="event.stopPropagation(); togglePin('fire-perimeters-ca')">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                  </button>
+                  <span class="text-sm text-slate-700">Historic Fire Perimeters (CA)</span>
+                </div>
+                <!-- Fire Perimeters 2024 - PINNED -->
+                <div class="layer-row pinned flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer" data-layer="fire-perimeters-2024" onclick="selectLayer('fire-perimeters-2024')">
+                  <button class="eye-icon flex-shrink-0" onclick="event.stopPropagation(); togglePin('fire-perimeters-2024')">
+                    <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                    </svg>
+                  </button>
+                  <span class="text-sm text-slate-700">Preserve Fire History (2020-2024)</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Fire Hazard subcategory (collapsed) -->
+            <div class="subcategory" data-category="fire-hazard">
+              <button class="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded" onclick="toggleCategory('fire-hazard')">
+                <svg class="chevron w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+                <span>📁</span>
+                <span>Fire Hazard</span>
+              </button>
+              <div class="category-content hidden ml-4">
+                <div class="layer-row flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer" data-layer="fhsz">
+                  <button class="eye-icon flex-shrink-0" onclick="event.stopPropagation(); togglePin('fhsz')">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                  </button>
+                  <span class="text-sm text-slate-700">Fire Hazard Severity Zones</span>
+                </div>
+                <div class="layer-row flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer" data-layer="fire-threat">
+                  <button class="eye-icon flex-shrink-0" onclick="event.stopPropagation(); togglePin('fire-threat')">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                  </button>
+                  <span class="text-sm text-slate-700">Fire Threat Assessment</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- RESEARCH AND SENSOR EQUIPMENT (collapsed) -->
+        <div class="category mb-1" data-category="sensors">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded" onclick="toggleCategory('sensors')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <span class="text-base">📡</span>
+            <span>Research & Sensors</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal">8 layers</span>
+          </button>
+          <div class="category-content hidden ml-4">
+            <div class="layer-row flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer" data-layer="camera-traps">
+              <button class="eye-icon flex-shrink-0" onclick="event.stopPropagation(); togglePin('camera-traps')">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+              <span class="text-sm text-slate-700">Camera Traps (Animl)</span>
+            </div>
+            <div class="subcategory" data-category="weather-sensors">
+              <button class="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded" onclick="toggleCategory('weather-sensors')">
+                <svg class="chevron w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+                <span>📁</span>
+                <span>Weather Sensors (Dendra)</span>
+              </button>
+              <div class="category-content hidden ml-4">
+                <div class="layer-row flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer" data-layer="rain-gauges">
+                  <button class="eye-icon flex-shrink-0" onclick="event.stopPropagation(); togglePin('rain-gauges')">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                  </button>
+                  <span class="text-sm text-slate-700">Rain Gauges</span>
+                </div>
+                <div class="layer-row flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer" data-layer="wind-sensors">
+                  <button class="eye-icon flex-shrink-0" onclick="event.stopPropagation(); togglePin('wind-sensors')">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                  </button>
+                  <span class="text-sm text-slate-700">Wind Sensors</span>
+                </div>
+                <div class="layer-row flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer" data-layer="air-temp">
+                  <button class="eye-icon flex-shrink-0" onclick="event.stopPropagation(); togglePin('air-temp')">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                  </button>
+                  <span class="text-sm text-slate-700">Air Temperature</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- LAND COVER (collapsed) -->
+        <div class="category mb-1" data-category="landcover">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded" onclick="toggleCategory('landcover')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <span class="text-base">🌿</span>
+            <span>Land Cover</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal">4 layers</span>
+          </button>
+          <div class="category-content hidden ml-4">
+            <div class="layer-row flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer" data-layer="veg-types">
+              <button class="eye-icon flex-shrink-0" onclick="event.stopPropagation(); togglePin('veg-types')">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+              <span class="text-sm text-slate-700">Vegetation Types</span>
+            </div>
+            <div class="layer-row flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer" data-layer="habitat">
+              <button class="eye-icon flex-shrink-0" onclick="event.stopPropagation(); togglePin('habitat')">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+              <span class="text-sm text-slate-700">Habitat Classification</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- BOUNDARIES (collapsed) -->
+        <div class="category mb-1" data-category="boundaries">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded" onclick="toggleCategory('boundaries')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <span class="text-base">🌐</span>
+            <span>Boundaries</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal">3 layers</span>
+          </button>
+          <div class="category-content hidden ml-4">
+            <div class="layer-row flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer" data-layer="preserve-boundary">
+              <button class="eye-icon flex-shrink-0" onclick="event.stopPropagation(); togglePin('preserve-boundary')">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+              <span class="text-sm text-slate-700">Dangermond Preserve Boundary</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- FRESHWATER (collapsed) -->
+        <div class="category mb-1" data-category="freshwater">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded" onclick="toggleCategory('freshwater')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <span class="text-base">💧</span>
+            <span>Freshwater</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal">4 layers</span>
+          </button>
+          <div class="category-content hidden ml-4">
+            <!-- content hidden -->
+          </div>
+        </div>
+        
+      </div>
+    </aside>
+    
+    <!-- MAP AREA -->
+    <main id="map-area" class="flex-1 bg-slate-300 relative">
+      
+      <!-- Map Placeholder -->
+      <div class="absolute inset-0 flex items-center justify-center">
+        <div class="text-center">
+          <div class="text-6xl text-slate-400 mb-4">🗺️</div>
+          <p class="text-slate-500 text-lg font-medium">Map View</p>
+          <p class="text-slate-400 text-sm mt-2">Pinned layers would display here</p>
+        </div>
+      </div>
+      
+      <!-- FLOATING PINNED LAYERS WIDGET -->
+      <div id="floating-widget" class="floating-widget absolute top-4 left-4 bg-white rounded-lg border border-slate-200 min-w-[220px]">
+        
+        <!-- Widget Header -->
+        <div class="flex items-center justify-between px-3 py-2 border-b border-slate-100 cursor-pointer" onclick="toggleFloatingWidget()">
+          <div class="flex items-center gap-2">
+            <span class="text-sm">📌</span>
+            <span class="text-sm font-semibold text-slate-700">Pinned Layers</span>
+            <span id="pinned-count" class="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">3</span>
+          </div>
+          <svg id="widget-chevron" class="w-4 h-4 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+        
+        <!-- Widget Content -->
+        <div id="widget-content" class="p-2">
+          
+          <!-- iNaturalist -->
+          <div class="widget-layer flex items-center gap-2 px-2 py-1.5 rounded hover:bg-slate-50 cursor-pointer" data-layer="inaturalist" onclick="selectLayerFromWidget('inaturalist')">
+            <button class="eye-icon flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('inaturalist')" title="Toggle visibility">
+              <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+              </svg>
+            </button>
+            <div class="flex items-center gap-2 flex-1 min-w-0">
+              <span class="w-3 h-3 rounded-full bg-green-500 flex-shrink-0"></span>
+              <span class="text-sm text-slate-700 truncate">iNaturalist Observations</span>
+            </div>
+            <button class="text-slate-400 hover:text-red-500 flex-shrink-0" onclick="event.stopPropagation(); removePin('inaturalist')" title="Remove from pinned">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          
+          <!-- eBird -->
+          <div class="widget-layer flex items-center gap-2 px-2 py-1.5 rounded hover:bg-slate-50 cursor-pointer" data-layer="ebird" onclick="selectLayerFromWidget('ebird')">
+            <button class="eye-icon flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('ebird')" title="Toggle visibility">
+              <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+              </svg>
+            </button>
+            <div class="flex items-center gap-2 flex-1 min-w-0">
+              <span class="w-3 h-3 rounded-full bg-yellow-500 flex-shrink-0"></span>
+              <span class="text-sm text-slate-700 truncate">eBird Sightings</span>
+            </div>
+            <button class="text-slate-400 hover:text-red-500 flex-shrink-0" onclick="event.stopPropagation(); removePin('ebird')" title="Remove from pinned">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          
+          <!-- Fire Perimeters 2024 -->
+          <div class="widget-layer flex items-center gap-2 px-2 py-1.5 rounded hover:bg-slate-50 cursor-pointer" data-layer="fire-perimeters-2024" onclick="selectLayerFromWidget('fire-perimeters-2024')">
+            <button class="eye-icon flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('fire-perimeters-2024')" title="Toggle visibility">
+              <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+              </svg>
+            </button>
+            <div class="flex items-center gap-2 flex-1 min-w-0">
+              <span class="w-3 h-3 rounded-full bg-orange-500 flex-shrink-0"></span>
+              <span class="text-sm text-slate-700 truncate">Fire Perimeters 2020-2024</span>
+            </div>
+            <button class="text-slate-400 hover:text-red-500 flex-shrink-0" onclick="event.stopPropagation(); removePin('fire-perimeters-2024')" title="Remove from pinned">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          
+          <!-- Clear All -->
+          <div class="mt-2 pt-2 border-t border-slate-100">
+            <button class="text-xs text-slate-500 hover:text-red-600 font-medium">Clear All</button>
+          </div>
+        </div>
+      </div>
+      
+    </main>
+    
+    <!-- RIGHT SIDEBAR: Layer Workspace -->
+    <aside id="right-sidebar" class="w-80 bg-white border-l border-slate-200 flex flex-col">
+      
+      <!-- Sidebar Header -->
+      <div class="px-4 py-3 border-b border-slate-200">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-green-500"></span>
+          <h2 class="text-sm font-semibold text-slate-800">iNaturalist Observations</h2>
+        </div>
+        <p class="text-xs text-slate-500 mt-1">Community science species observations</p>
+      </div>
+      
+      <!-- Tabs -->
+      <div id="tabs" class="flex border-b border-slate-200">
+        <button class="tab-btn active flex-1 px-4 py-2 text-sm text-slate-600" data-tab="overview" onclick="switchTab('overview')">
+          Overview
+        </button>
+        <button class="tab-btn flex-1 px-4 py-2 text-sm text-slate-600" data-tab="browse" onclick="switchTab('browse')">
+          Browse & Query
+        </button>
+        <button class="tab-btn flex-1 px-4 py-2 text-sm text-slate-600" data-tab="export" onclick="switchTab('export')">
+          Export
+        </button>
+      </div>
+      
+      <!-- Tab Content -->
+      <div id="tab-content" class="flex-1 overflow-y-auto sidebar-scroll">
+        
+        <!-- Overview Tab -->
+        <div id="tab-overview" class="tab-panel p-4">
+          <div class="space-y-4">
+            <!-- Description -->
+            <div>
+              <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Description</h3>
+              <p class="text-sm text-slate-700">
+                iNaturalist is a joint initiative of the California Academy of Sciences and the National Geographic Society. 
+                This layer shows all research-grade observations from the Dangermond Preserve area.
+              </p>
+            </div>
+            
+            <!-- Stats -->
+            <div>
+              <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Statistics</h3>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="bg-slate-50 rounded-lg p-3">
+                  <p class="text-2xl font-bold text-slate-800">12,847</p>
+                  <p class="text-xs text-slate-500">Total Observations</p>
+                </div>
+                <div class="bg-slate-50 rounded-lg p-3">
+                  <p class="text-2xl font-bold text-slate-800">1,203</p>
+                  <p class="text-xs text-slate-500">Species</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Metadata -->
+            <div>
+              <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Metadata</h3>
+              <dl class="text-sm space-y-2">
+                <div class="flex justify-between">
+                  <dt class="text-slate-500">Source</dt>
+                  <dd class="text-slate-700 font-medium">iNaturalist API</dd>
+                </div>
+                <div class="flex justify-between">
+                  <dt class="text-slate-500">Last Updated</dt>
+                  <dd class="text-slate-700 font-medium">Real-time</dd>
+                </div>
+                <div class="flex justify-between">
+                  <dt class="text-slate-500">Coverage</dt>
+                  <dd class="text-slate-700 font-medium">2008 - Present</dd>
+                </div>
+              </dl>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="pt-2">
+              <button class="w-full bg-tnc-green text-white text-sm font-medium py-2 px-4 rounded-md hover:bg-tnc-green-dark transition-colors">
+                Open Browse & Query →
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Browse & Query Tab (hidden by default) -->
+        <div id="tab-browse" class="tab-panel hidden">
+          
+          <!-- Query Filters -->
+          <div class="p-4 border-b border-slate-200 bg-slate-50">
+            <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Filters</h3>
+            
+            <!-- Species Search -->
+            <div class="mb-3">
+              <label class="text-xs text-slate-600 font-medium mb-1 block">Species</label>
+              <input type="text" placeholder="Search species..." class="w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-tnc-green focus:border-transparent">
+            </div>
+            
+            <!-- Date Range -->
+            <div class="mb-3">
+              <label class="text-xs text-slate-600 font-medium mb-1 block">Date Range</label>
+              <div class="flex gap-2">
+                <input type="date" value="2024-01-01" class="flex-1 px-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-tnc-green">
+                <input type="date" value="2024-12-31" class="flex-1 px-2 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-tnc-green">
+              </div>
+            </div>
+            
+            <!-- Taxonomic Group -->
+            <div class="mb-3">
+              <label class="text-xs text-slate-600 font-medium mb-1 block">Taxonomic Group</label>
+              <select class="w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-tnc-green">
+                <option>All Groups</option>
+                <option>Birds (Aves)</option>
+                <option>Mammals (Mammalia)</option>
+                <option>Reptiles (Reptilia)</option>
+                <option>Amphibians (Amphibia)</option>
+                <option>Plants (Plantae)</option>
+                <option>Insects (Insecta)</option>
+              </select>
+            </div>
+            
+            <!-- Apply Button -->
+            <button class="w-full bg-tnc-green text-white text-sm font-medium py-2 px-4 rounded hover:bg-tnc-green-dark transition-colors">
+              Apply Filters
+            </button>
+          </div>
+          
+          <!-- Results List -->
+          <div class="p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Results</h3>
+              <span class="text-xs text-slate-400">247 observations</span>
+            </div>
+            
+            <!-- Result Cards -->
+            <div class="space-y-2">
+              
+              <!-- Result 1 -->
+              <div class="bg-white border border-slate-200 rounded-lg p-3 hover:border-slate-300 cursor-pointer transition-colors">
+                <div class="flex gap-3">
+                  <div class="w-16 h-16 bg-slate-200 rounded flex-shrink-0 flex items-center justify-center text-2xl">
+                    🦎
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-slate-800 truncate">Western Fence Lizard</p>
+                    <p class="text-xs text-slate-500 italic">Sceloporus occidentalis</p>
+                    <div class="flex items-center gap-2 mt-1">
+                      <span class="text-xs text-slate-400">Jan 15, 2024</span>
+                      <span class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Research Grade</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Result 2 -->
+              <div class="bg-white border border-slate-200 rounded-lg p-3 hover:border-slate-300 cursor-pointer transition-colors">
+                <div class="flex gap-3">
+                  <div class="w-16 h-16 bg-slate-200 rounded flex-shrink-0 flex items-center justify-center text-2xl">
+                    🦅
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-slate-800 truncate">Red-tailed Hawk</p>
+                    <p class="text-xs text-slate-500 italic">Buteo jamaicensis</p>
+                    <div class="flex items-center gap-2 mt-1">
+                      <span class="text-xs text-slate-400">Jan 14, 2024</span>
+                      <span class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Research Grade</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Result 3 -->
+              <div class="bg-white border border-slate-200 rounded-lg p-3 hover:border-slate-300 cursor-pointer transition-colors">
+                <div class="flex gap-3">
+                  <div class="w-16 h-16 bg-slate-200 rounded flex-shrink-0 flex items-center justify-center text-2xl">
+                    🌿
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-slate-800 truncate">California Sagebrush</p>
+                    <p class="text-xs text-slate-500 italic">Artemisia californica</p>
+                    <div class="flex items-center gap-2 mt-1">
+                      <span class="text-xs text-slate-400">Jan 13, 2024</span>
+                      <span class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Research Grade</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Result 4 -->
+              <div class="bg-white border border-slate-200 rounded-lg p-3 hover:border-slate-300 cursor-pointer transition-colors">
+                <div class="flex gap-3">
+                  <div class="w-16 h-16 bg-slate-200 rounded flex-shrink-0 flex items-center justify-center text-2xl">
+                    🐍
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-slate-800 truncate">California Kingsnake</p>
+                    <p class="text-xs text-slate-500 italic">Lampropeltis californiae</p>
+                    <div class="flex items-center gap-2 mt-1">
+                      <span class="text-xs text-slate-400">Jan 12, 2024</span>
+                      <span class="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded">Needs ID</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Load More -->
+              <button class="w-full py-2 text-sm text-blue-600 hover:text-blue-800 font-medium">
+                Load more results...
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Export Tab (hidden by default) -->
+        <div id="tab-export" class="tab-panel hidden p-4">
+          <div class="space-y-4">
+            <div>
+              <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Export Options</h3>
+              <p class="text-sm text-slate-600 mb-4">Download filtered observations in your preferred format.</p>
+            </div>
+            
+            <!-- Format Selection -->
+            <div>
+              <label class="text-xs text-slate-600 font-medium mb-2 block">Format</label>
+              <div class="space-y-2">
+                <label class="flex items-center gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50">
+                  <input type="radio" name="format" value="csv" checked class="text-tnc-green focus:ring-tnc-green">
+                  <div>
+                    <p class="text-sm font-medium text-slate-700">CSV</p>
+                    <p class="text-xs text-slate-500">Comma-separated values</p>
+                  </div>
+                </label>
+                <label class="flex items-center gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50">
+                  <input type="radio" name="format" value="geojson" class="text-tnc-green focus:ring-tnc-green">
+                  <div>
+                    <p class="text-sm font-medium text-slate-700">GeoJSON</p>
+                    <p class="text-xs text-slate-500">Geographic JSON format</p>
+                  </div>
+                </label>
+                <label class="flex items-center gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50">
+                  <input type="radio" name="format" value="shapefile" class="text-tnc-green focus:ring-tnc-green">
+                  <div>
+                    <p class="text-sm font-medium text-slate-700">Shapefile</p>
+                    <p class="text-xs text-slate-500">ESRI Shapefile (.shp)</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+            
+            <!-- Export Button -->
+            <button class="w-full bg-tnc-green text-white text-sm font-medium py-3 px-4 rounded-md hover:bg-tnc-green-dark transition-colors mt-4">
+              Download (247 records)
+            </button>
+            
+            <p class="text-xs text-slate-400 text-center">
+              Export respects current filter settings
+            </p>
+          </div>
+        </div>
+        
+      </div>
+    </aside>
+    
+  </div>
+  
+  <script>
+    // =========================================================================
+    // STATE
+    // =========================================================================
+    const state = {
+      selectedLayer: 'inaturalist',
+      pinnedLayers: new Set(['inaturalist', 'ebird', 'fire-perimeters-2024']),
+      hiddenLayers: new Set(),
+      expandedCategories: new Set(['species', 'fire', 'fire-history']),
+      activeTab: 'overview',
+      widgetExpanded: true
+    };
+    
+    // =========================================================================
+    // CATEGORY EXPAND/COLLAPSE
+    // =========================================================================
+    function toggleCategory(categoryId) {
+      const category = document.querySelector(`[data-category="${categoryId}"]`);
+      if (!category) return;
+      
+      const content = category.querySelector('.category-content');
+      const chevron = category.querySelector('.chevron');
+      
+      if (state.expandedCategories.has(categoryId)) {
+        state.expandedCategories.delete(categoryId);
+        content.classList.add('hidden');
+        chevron.classList.remove('expanded');
+      } else {
+        state.expandedCategories.add(categoryId);
+        content.classList.remove('hidden');
+        chevron.classList.add('expanded');
+      }
+    }
+    
+    // =========================================================================
+    // LAYER SELECTION
+    // =========================================================================
+    function selectLayer(layerId) {
+      // Remove selected state from all layers
+      document.querySelectorAll('.layer-row').forEach(row => {
+        row.classList.remove('selected');
+      });
+      
+      // Add selected state to clicked layer
+      const layerRow = document.querySelector(`.layer-row[data-layer="${layerId}"]`);
+      if (layerRow) {
+        layerRow.classList.add('selected');
+      }
+      
+      state.selectedLayer = layerId;
+      
+      // Update right sidebar (in a real app, this would load different content)
+      console.log('Selected layer:', layerId);
+    }
+    
+    function selectLayerFromWidget(layerId) {
+      selectLayer(layerId);
+      
+      // Also ensure the layer is visible in the left sidebar
+      // (expand parent categories if needed)
+    }
+    
+    // =========================================================================
+    // PIN/UNPIN LAYERS
+    // =========================================================================
+    function togglePin(layerId) {
+      const layerRow = document.querySelector(`.layer-row[data-layer="${layerId}"]`);
+      const eyeIcon = layerRow?.querySelector('.eye-icon svg');
+      
+      if (state.pinnedLayers.has(layerId)) {
+        state.pinnedLayers.delete(layerId);
+        layerRow?.classList.remove('pinned');
+        
+        // Change to outline eye
+        if (eyeIcon) {
+          eyeIcon.outerHTML = `<svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+          </svg>`;
+        }
+        
+        // Remove from floating widget
+        removeFromWidget(layerId);
+      } else {
+        state.pinnedLayers.add(layerId);
+        layerRow?.classList.add('pinned');
+        
+        // Change to filled eye
+        if (eyeIcon) {
+          eyeIcon.outerHTML = `<svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+          </svg>`;
+        }
+        
+        // Add to floating widget
+        addToWidget(layerId);
+      }
+      
+      updatePinnedCount();
+    }
+    
+    function removePin(layerId) {
+      if (state.pinnedLayers.has(layerId)) {
+        togglePin(layerId);
+      }
+    }
+    
+    function removeFromWidget(layerId) {
+      const widgetLayer = document.querySelector(`.widget-layer[data-layer="${layerId}"]`);
+      if (widgetLayer) {
+        widgetLayer.remove();
+      }
+    }
+    
+    function addToWidget(layerId) {
+      // In a full implementation, this would add the layer to the widget
+      // For the mockup, we'll just log it
+      console.log('Add to widget:', layerId);
+    }
+    
+    function updatePinnedCount() {
+      const countEl = document.getElementById('pinned-count');
+      if (countEl) {
+        countEl.textContent = state.pinnedLayers.size;
+      }
+    }
+    
+    // =========================================================================
+    // LAYER VISIBILITY (within pinned)
+    // =========================================================================
+    function toggleVisibility(layerId) {
+      const widgetLayer = document.querySelector(`.widget-layer[data-layer="${layerId}"]`);
+      const eyeIcon = widgetLayer?.querySelector('.eye-icon svg');
+      
+      if (state.hiddenLayers.has(layerId)) {
+        state.hiddenLayers.delete(layerId);
+        // Change to visible eye
+        if (eyeIcon) {
+          eyeIcon.outerHTML = `<svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+          </svg>`;
+        }
+      } else {
+        state.hiddenLayers.add(layerId);
+        // Change to hidden eye (crossed out)
+        if (eyeIcon) {
+          eyeIcon.outerHTML = `<svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+          </svg>`;
+        }
+      }
+    }
+    
+    // =========================================================================
+    // FLOATING WIDGET
+    // =========================================================================
+    function toggleFloatingWidget() {
+      const content = document.getElementById('widget-content');
+      const chevron = document.getElementById('widget-chevron');
+      
+      state.widgetExpanded = !state.widgetExpanded;
+      
+      if (state.widgetExpanded) {
+        content.classList.remove('hidden');
+        chevron.style.transform = 'rotate(0deg)';
+      } else {
+        content.classList.add('hidden');
+        chevron.style.transform = 'rotate(180deg)';
+      }
+    }
+    
+    // =========================================================================
+    // TAB SWITCHING
+    // =========================================================================
+    function switchTab(tabId) {
+      // Update tab buttons
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.querySelector(`.tab-btn[data-tab="${tabId}"]`)?.classList.add('active');
+      
+      // Update tab panels
+      document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.classList.add('hidden');
+      });
+      document.getElementById(`tab-${tabId}`)?.classList.remove('hidden');
+      
+      state.activeTab = tabId;
+    }
+    
+    // =========================================================================
+    // INITIALIZATION
+    // =========================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+      // Sync initial state with DOM
+      state.expandedCategories.forEach(categoryId => {
+        const category = document.querySelector(`[data-category="${categoryId}"]`);
+        if (category) {
+          const content = category.querySelector('.category-content');
+          const chevron = category.querySelector('.chevron');
+          if (content) content.classList.remove('hidden');
+          if (chevron) chevron.classList.add('expanded');
+        }
+      });
+      
+      console.log('Mockup initialized. State:', state);
+    });
+  </script>
+  
+</body>
+</html>
