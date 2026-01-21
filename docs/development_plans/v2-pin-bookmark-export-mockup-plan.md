@@ -2,8 +2,30 @@
 
 **Created:** January 21, 2026  
 **Target Presentation:** Jack Dangermond Demo  
-**Status:** Ready for Implementation  
+**Status:** In Progress (4 of 6 core mockups complete)  
 **Paradigm Doc:** `docs/feedback/data-catalog-ux-paradigm-jan-21-2026.md`
+
+---
+
+## Progress Summary
+
+**Completed Mockups:** ✅ 4 / 6
+
+| Mockup | Status | Purpose |
+|--------|--------|---------|
+| **02a** | ✅ Complete | Unified layout with floating widget (pinned + bookmarks) |
+| **02b** | ✅ Complete | iNaturalist Browse (self-contained rows) |
+| **02c** | ✅ Complete | ANiML Browse (pointer rows + dual-level filters) |
+| **02d** | ✅ Complete | Dendra Browse (pointer rows + Level 3 datastream + floating chart) |
+| **02e** | 🔜 Next | DataOne Browse (pointer rows, no Level 3) |
+| **02f** | ⏳ Pending | Export Builder (all bookmark types together) |
+
+**Key Achievements:**
+- ✅ Demonstrated three-level hierarchy (Layer → Feature → Related Data)
+- ✅ Self-contained vs. pointer row patterns clear
+- ✅ Level 3 filtering shown in two contexts (ANiML images, Dendra time series)
+- ✅ Floating time series panel integrated without overlap
+- ⏳ Still need: DataOne (simple pointer) and Export Builder
 
 ---
 
@@ -710,8 +732,8 @@ ANiML is unique among our data sources because:
 | 1 | 02a | Unified layout + floating widget | ✅ **COMPLETE** |
 | 2 | 02b | iNaturalist Browse (self-contained baseline) | ✅ **COMPLETE** |
 | 3 | 02c | ANiML Browse (**dual-level filter pattern**) | ✅ **COMPLETE** |
-| 4 | 02d | Dendra Browse (pointer + Level 3 datastream) | 🔜 Next |
-| 5 | 02e | DataOne Browse (pointer, no Level 3) | |
+| 4 | 02d | Dendra Browse (pointer + Level 3 datastream) | ✅ **COMPLETE** |
+| 5 | 02e | DataOne Browse (pointer, no Level 3) | 🔜 Next |
 | 6 | 02f | Export Builder (all together) | |
 | 7 | Polish | Consistency check, edge cases | |
 
@@ -760,6 +782,23 @@ User flow to demonstrate:
 - ✅ Visual distinction: gray filter section for cameras, amber for images
 - 📝 Most complex mockup - demonstrates the full pointer row + Level 3 pattern
 
+**02d - Dendra Browse (Jan 21, 2026)**
+- ✅ Demonstrated pointer row pattern (sensor points to datastream)
+- ✅ Sensor list view with filtering by region and status
+- ✅ Live indicator (pulsing dot) for active sensors, maintenance status badge
+- ✅ Sensor detail view with current reading display
+- ✅ Level 3 filter: time range (from/to dates) + aggregation (daily, hourly, etc.)
+- ✅ Two bookmark options: "Bookmark Sensor" vs "Bookmark with Time Range"
+- ✅ **Floating time series panel on map** (inspired by 03a mockup)
+  - Positioned at bottom of map to avoid overlap with bookmarks widget (top-right)
+  - Interactive chart with SVG line visualization and grid
+  - Time range navigator with draggable selection window
+  - Stats sidebar: Total, Daily Avg, Max, Rain Days
+  - Minimize/expand/close functionality
+  - "Bookmark Range" and "Export CSV" actions
+- ✅ Teal color theme for Dendra-specific elements (filter sections, badges)
+- 📝 Clean example of time-series Level 3 filter (simpler than ANiML's dual-level)
+
 ---
 
 ## Files
@@ -797,6 +836,8 @@ mockups/
 ---
 
 **Last Updated:** January 21, 2026  
-**Status:** In Progress (3 of 6 mockups complete) ✓  
-**Next:** Mockup 02d - Dendra Browse Tab (pointer + Level 3 datastream)
+**Status:** In Progress (4 of 6 mockups complete) ✓  
+**Next:** Mockup 02e - DataOne Browse Tab (pointer, no Level 3)
+
+**Latest Completion:** 02d - Dendra Browse with floating time series panel on map
 
