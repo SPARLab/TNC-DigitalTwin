@@ -484,23 +484,28 @@
         </div>
         
         <!-- ═══════════════════════════════════════════════════════════════════════ -->
-        <!-- BROWSE TAB - DATASET LIST (Single-level, no drill-down)                -->
+        <!-- BROWSE TAB - DATASET LIST + DETAIL VIEW                                -->
         <!-- ═══════════════════════════════════════════════════════════════════════ -->
-        <div id="tab-browse" class="tab-panel p-3">
+        <div id="tab-browse" class="tab-panel">
           
-          <!-- UX Demo callout -->
-          <div id="browse-ux-callout" class="bg-indigo-50 p-3 border border-indigo-200 rounded-lg mb-3">
-            <p class="text-xs font-semibold text-indigo-800 flex items-center gap-1.5">
-              <span class="text-sm">📚</span>
-              Pointer Row: Dataset → Files (No Level 3 Filter)
-            </p>
-            <p class="text-[10px] text-indigo-700 mt-1 leading-relaxed">
-              Each dataset <strong>points to files</strong>, but we typically bookmark <strong>entire datasets</strong> without filtering to specific files. Data access happens via DataOne's external interface.
-            </p>
-            <p class="text-[10px] text-indigo-600 mt-1.5 italic">
-              Notice: Only <strong>[Bookmark]</strong> button (not "Bookmark with Filter")
-            </p>
-          </div>
+          <!-- ═══════════════════════════════════════════════════════════════════════ -->
+          <!-- DATASETS LIST VIEW                                                      -->
+          <!-- ═══════════════════════════════════════════════════════════════════════ -->
+          <div id="view-datasets-list" class="p-3">
+          
+            <!-- UX Demo callout -->
+            <div id="browse-ux-callout" class="bg-indigo-50 p-3 border border-indigo-200 rounded-lg mb-3">
+              <p class="text-xs font-semibold text-indigo-800 flex items-center gap-1.5">
+                <span class="text-sm">📚</span>
+                Pointer Row: Dataset → Files (No Level 3 Filter)
+              </p>
+              <p class="text-[10px] text-indigo-700 mt-1 leading-relaxed">
+                Each dataset <strong>points to files</strong>, but we typically bookmark <strong>entire datasets</strong> without filtering to specific files. Data access happens via DataOne's external interface.
+              </p>
+              <p class="text-[10px] text-indigo-600 mt-1.5 italic">
+                Notice: Only <strong>[Bookmark]</strong> button (not "Bookmark with Filter")
+              </p>
+            </div>
           
           <!-- ═══════════════════════════════════════════════════════════════════════ -->
           <!-- SEARCH & FILTER SECTION                                                 -->
@@ -632,7 +637,7 @@
                     <span>🔖</span>
                     Bookmark
                   </button>
-                  <button id="details-dataset-1" class="action-btn flex-1 text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-1.5 px-2 rounded-lg flex items-center justify-center gap-1">
+                  <button id="details-dataset-1" onclick="showDatasetDetail('marine-bio')" class="action-btn flex-1 text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-1.5 px-2 rounded-lg flex items-center justify-center gap-1">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
@@ -681,7 +686,7 @@
                     <span>🔖</span>
                     Bookmark
                   </button>
-                  <button id="details-dataset-2" class="action-btn flex-1 text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-1.5 px-2 rounded-lg flex items-center justify-center gap-1">
+                  <button id="details-dataset-2" onclick="showDatasetDetail('coastal-erosion')" class="action-btn flex-1 text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-1.5 px-2 rounded-lg flex items-center justify-center gap-1">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
@@ -730,7 +735,7 @@
                     <span>🔖</span>
                     Bookmark
                   </button>
-                  <button id="details-dataset-3" class="action-btn flex-1 text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-1.5 px-2 rounded-lg flex items-center justify-center gap-1">
+                  <button id="details-dataset-3" onclick="showDatasetDetail('kelp-forest')" class="action-btn flex-1 text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-1.5 px-2 rounded-lg flex items-center justify-center gap-1">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
@@ -778,7 +783,7 @@
                     <span>🔖</span>
                     Bookmark
                   </button>
-                  <button id="details-dataset-4" class="action-btn flex-1 text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-1.5 px-2 rounded-lg flex items-center justify-center gap-1">
+                  <button id="details-dataset-4" onclick="showDatasetDetail('intertidal')" class="action-btn flex-1 text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-1.5 px-2 rounded-lg flex items-center justify-center gap-1">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
@@ -799,6 +804,249 @@
               </div>
               
             </div>
+          </div>
+          
+          </div>
+          
+          <!-- ═══════════════════════════════════════════════════════════════════════ -->
+          <!-- DATASET DETAIL VIEW                                                     -->
+          <!-- Matches the live website's DataONEDetailsSidebar component              -->
+          <!-- ═══════════════════════════════════════════════════════════════════════ -->
+          <div id="view-dataset-detail" class="hidden">
+            
+            <!-- Back button -->
+            <div class="px-3 pt-3">
+              <button id="back-to-datasets-btn" class="back-btn flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium px-2 py-1.5 -ml-2 rounded" onclick="showDatasetsView()">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Back to Datasets
+              </button>
+            </div>
+            
+            <!-- Detail Content -->
+            <div id="dataset-detail-content" class="p-3 space-y-4">
+              
+              <!-- Title & Badges -->
+              <div id="detail-header">
+                <h2 id="detail-title" class="text-base font-semibold text-gray-900 leading-tight">
+                  Marine Biodiversity Assessment - Point Conception
+                </h2>
+                <div class="flex flex-wrap gap-1.5 mt-2">
+                  <span id="detail-badge-repo" class="px-2 py-0.5 text-[10px] font-medium bg-emerald-100 text-emerald-800 rounded">
+                    DataONE
+                  </span>
+                  <span id="detail-badge-versions" class="px-2 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-800 rounded">
+                    3 versions
+                  </span>
+                  <span id="detail-badge-files" class="px-2 py-0.5 text-[10px] font-medium bg-amber-100 text-amber-800 rounded">
+                    3 files (4.2 MB)
+                  </span>
+                </div>
+              </div>
+              
+              <!-- Abstract -->
+              <div id="detail-abstract">
+                <h3 class="text-xs font-medium text-gray-700 mb-1 flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                  </svg>
+                  Abstract
+                </h3>
+                <p id="detail-abstract-text" class="text-[11px] text-gray-600 leading-relaxed">
+                  Comprehensive survey of marine species diversity along the Point Conception coastline, including intertidal zones and kelp forest ecosystems. This study documents seasonal variation in species abundance and distribution patterns across multiple sampling sites. The dataset includes occurrence records, environmental measurements, and associated photographs from quarterly surveys conducted between 2018 and 2020.
+                </p>
+              </div>
+              
+              <!-- Version History (collapsible) -->
+              <div id="detail-versions" class="border border-gray-200 rounded-lg overflow-hidden">
+                <button onclick="toggleVersionHistory()" class="w-full flex items-center justify-between p-2.5 bg-gray-50 hover:bg-gray-100 transition-colors">
+                  <div class="flex items-center gap-2">
+                    <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span class="text-xs font-medium text-gray-700">Version History</span>
+                    <span class="text-[10px] text-gray-500">(3 versions)</span>
+                  </div>
+                  <svg id="version-chevron" class="w-4 h-4 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                  </svg>
+                </button>
+                <div id="version-history-content" class="hidden p-2.5 bg-white border-t border-gray-200 space-y-2">
+                  <!-- Version 3 (latest, current) -->
+                  <div class="p-2 rounded-lg bg-emerald-50 border border-emerald-200">
+                    <div class="flex items-center justify-between mb-1">
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-xs font-medium text-emerald-700">v3</span>
+                        <span class="px-1 py-0.5 text-[9px] bg-emerald-100 text-emerald-700 rounded">latest</span>
+                        <span class="px-1 py-0.5 text-[9px] bg-blue-100 text-blue-700 rounded">current</span>
+                      </div>
+                      <span class="text-[10px] text-gray-500">Mar 15, 2020</span>
+                    </div>
+                    <div class="text-[10px] text-gray-500">3 files (4.2 MB)</div>
+                  </div>
+                  <!-- Version 2 -->
+                  <div class="p-2 rounded-lg bg-white border border-gray-100">
+                    <div class="flex items-center justify-between mb-1">
+                      <span class="text-xs font-medium text-gray-700">v2</span>
+                      <span class="text-[10px] text-gray-500">Jan 10, 2020</span>
+                    </div>
+                    <div class="text-[10px] text-amber-600 font-medium">2 files (2.1 MB) ←</div>
+                    <button class="mt-1.5 text-[10px] text-emerald-600 hover:underline">View this version →</button>
+                  </div>
+                  <!-- Version 1 -->
+                  <div class="p-2 rounded-lg bg-white border border-gray-100">
+                    <div class="flex items-center justify-between mb-1">
+                      <span class="text-xs font-medium text-gray-700">v1</span>
+                      <span class="text-[10px] text-gray-500">Sep 22, 2019</span>
+                    </div>
+                    <div class="text-[10px] text-amber-600 font-medium">1 file (1.8 MB) ←</div>
+                    <button class="mt-1.5 text-[10px] text-emerald-600 hover:underline">View this version →</button>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Keywords -->
+              <div id="detail-keywords">
+                <h3 class="text-xs font-medium text-gray-700 mb-2 flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                  </svg>
+                  Keywords
+                </h3>
+                <div class="flex flex-wrap gap-1">
+                  <span class="px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-700 rounded">marine</span>
+                  <span class="px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-700 rounded">biodiversity</span>
+                  <span class="px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-700 rounded">intertidal</span>
+                  <span class="px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-700 rounded">kelp forest</span>
+                  <span class="px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-700 rounded">Point Conception</span>
+                  <span class="px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-700 rounded">species survey</span>
+                </div>
+              </div>
+              
+              <!-- TNC Categories -->
+              <div id="detail-categories">
+                <h3 class="text-xs font-medium text-gray-700 mb-2 flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                  </svg>
+                  Categories
+                </h3>
+                <div class="flex flex-wrap gap-1">
+                  <span class="px-1.5 py-0.5 text-[10px] bg-emerald-100 text-emerald-700 rounded">Marine</span>
+                  <span class="px-1.5 py-0.5 text-[10px] bg-emerald-100 text-emerald-700 rounded">Biodiversity</span>
+                </div>
+              </div>
+              
+              <!-- Authors -->
+              <div id="detail-authors">
+                <h3 class="text-xs font-medium text-gray-700 mb-1 flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                  </svg>
+                  Authors
+                </h3>
+                <ul class="text-[11px] text-gray-600 space-y-0.5">
+                  <li>Smith, John</li>
+                  <li>Garcia, Ana</li>
+                  <li>Johnson, Robert</li>
+                </ul>
+              </div>
+              
+              <!-- Project/Site -->
+              <div id="detail-project">
+                <h3 class="text-xs font-medium text-gray-700 mb-1 flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                  </svg>
+                  Project / Site
+                </h3>
+                <p class="text-[11px] text-gray-600">Dangermond Preserve Baseline Studies</p>
+              </div>
+              
+              <!-- Temporal Coverage -->
+              <div id="detail-temporal">
+                <h3 class="text-xs font-medium text-gray-700 mb-1 flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                  Temporal Coverage
+                </h3>
+                <p class="text-[11px] text-gray-600">Jan 2018 - Dec 2020</p>
+              </div>
+              
+              <!-- Location -->
+              <div id="detail-location">
+                <h3 class="text-xs font-medium text-gray-700 mb-1 flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  </svg>
+                  Location
+                </h3>
+                <p class="text-[11px] text-gray-600">34.42°N to 34.51°N, 120.38°W to 120.52°W</p>
+              </div>
+              
+              <!-- Size & Date -->
+              <div id="detail-metadata" class="flex gap-6">
+                <div>
+                  <h3 class="text-xs font-medium text-gray-700 mb-1 flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+                    </svg>
+                    Size
+                  </h3>
+                  <p class="text-[11px] text-gray-600">4.2 MB</p>
+                </div>
+                <div>
+                  <h3 class="text-xs font-medium text-gray-700 mb-1">Date Uploaded</h3>
+                  <p class="text-[11px] text-gray-600">Mar 15, 2020</p>
+                </div>
+              </div>
+              
+              <!-- File Information -->
+              <div id="detail-files">
+                <h3 class="text-xs font-medium text-gray-700 mb-2 flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                  </svg>
+                  File Information
+                </h3>
+                <div class="text-[11px] text-gray-600 space-y-1">
+                  <p><span class="font-medium">3</span> files</p>
+                  <p>Types: 1 CSV, 1 PDF, 1 XML</p>
+                  <p>Total size: 4.2 MB</p>
+                </div>
+              </div>
+              
+            </div>
+            
+            <!-- Actions Footer -->
+            <div id="detail-actions" class="p-3 border-t border-gray-200 bg-gray-50 space-y-2">
+              <!-- Primary Action -->
+              <a href="https://search.dataone.org/view/urn:uuid:abc123" target="_blank" rel="noopener noreferrer"
+                class="flex items-center justify-center gap-2 w-full px-4 py-2 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+                Open in DataONE
+              </a>
+              <!-- Secondary Actions -->
+              <div class="flex gap-2">
+                <button onclick="alert('Preview coming soon!')" class="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[10px] font-medium text-indigo-700 bg-white border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                  </svg>
+                  Preview
+                </button>
+                <button onclick="alert('Added to cart!')" class="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-[10px] font-medium text-amber-700 bg-amber-100 rounded-lg hover:bg-amber-200 transition-colors">
+                  <span>🔖</span>
+                  Bookmark
+                </button>
+              </div>
+            </div>
+            
           </div>
           
         </div>
@@ -823,7 +1071,78 @@
       expandedCategories: new Set(['research']),
       widgetExpanded: true,
       bookmarksWidgetExpanded: true,
-      activeTab: 'browse'
+      activeTab: 'browse',
+      currentView: 'list',
+      selectedDataset: null,
+      versionHistoryOpen: false
+    };
+    
+    // Dataset data for detail views
+    const datasetData = {
+      'marine-bio': {
+        title: 'Marine Biodiversity Assessment - Point Conception',
+        repository: 'DataONE',
+        versions: 3,
+        files: '3 files (4.2 MB)',
+        abstract: 'Comprehensive survey of marine species diversity along the Point Conception coastline, including intertidal zones and kelp forest ecosystems. This study documents seasonal variation in species abundance and distribution patterns across multiple sampling sites. The dataset includes occurrence records, environmental measurements, and associated photographs from quarterly surveys conducted between 2018 and 2020.',
+        keywords: ['marine', 'biodiversity', 'intertidal', 'kelp forest', 'Point Conception', 'species survey'],
+        categories: ['Marine', 'Biodiversity'],
+        authors: ['Smith, John', 'Garcia, Ana', 'Johnson, Robert'],
+        project: 'Dangermond Preserve Baseline Studies',
+        temporal: 'Jan 2018 - Dec 2020',
+        location: '34.42°N to 34.51°N, 120.38°W to 120.52°W',
+        size: '4.2 MB',
+        dateUploaded: 'Mar 15, 2020',
+        fileInfo: { count: 3, types: '1 CSV, 1 PDF, 1 XML', size: '4.2 MB' }
+      },
+      'coastal-erosion': {
+        title: 'Coastal Erosion Monitoring - Gaviota',
+        repository: 'DataONE',
+        versions: 5,
+        files: '12 files (156 MB)',
+        abstract: 'Long-term monitoring of coastal erosion rates and sediment transport patterns along the Gaviota coastline with quarterly measurements. This multi-year study tracks shoreline changes, cliff recession, and beach profile evolution using repeat photography, LiDAR surveys, and sediment sampling.',
+        keywords: ['coastal erosion', 'sediment transport', 'shoreline change', 'Gaviota', 'geomorphology'],
+        categories: ['Geology', 'Coastal'],
+        authors: ['Chen, Maria', 'Williams, Thomas', 'Brown, Jennifer'],
+        project: 'Coastal Change Monitoring Program',
+        temporal: 'Jan 2019 - Dec 2023',
+        location: '34.45°N to 34.48°N, 120.21°W to 120.35°W',
+        size: '156 MB',
+        dateUploaded: 'Nov 22, 2023',
+        fileInfo: { count: 12, types: '8 TIFF, 2 CSV, 2 PDF', size: '156 MB' }
+      },
+      'kelp-forest': {
+        title: 'Kelp Forest Ecosystem Dynamics',
+        repository: 'DataONE',
+        versions: 2,
+        files: '6 files (28 MB)',
+        abstract: 'Multi-year study of kelp forest health, canopy coverage, and associated marine invertebrate communities near Point Conception. The dataset includes underwater transect surveys, kelp density measurements, and invertebrate species counts across seasonal sampling events.',
+        keywords: ['kelp forest', 'Macrocystis', 'marine invertebrates', 'canopy coverage', 'ecosystem health'],
+        categories: ['Marine', 'Biodiversity'],
+        authors: ['Garcia, Ana', 'Johnson, Robert'],
+        project: 'Kelp Forest Monitoring Initiative',
+        temporal: 'Mar 2020 - Sep 2022',
+        location: '34.44°N to 34.49°N, 120.41°W to 120.48°W',
+        size: '28 MB',
+        dateUploaded: 'Oct 5, 2022',
+        fileInfo: { count: 6, types: '2 CSV, 2 XLSX, 2 PDF', size: '28 MB' }
+      },
+      'intertidal': {
+        title: 'Intertidal Zone Biodiversity Survey',
+        repository: 'DataONE',
+        versions: 1,
+        files: '2 files (8.5 MB)',
+        abstract: 'Seasonal sampling of intertidal invertebrates across multiple rocky shore sites within the preserve boundary. This baseline study documents species composition, abundance patterns, and zonation across high, mid, and low intertidal zones.',
+        keywords: ['intertidal', 'rocky shore', 'invertebrates', 'species zonation', 'baseline survey'],
+        categories: ['Marine', 'Biodiversity'],
+        authors: ['Williams, Karen', 'Lee, David', 'Martinez, Sofia'],
+        project: 'Dangermond Preserve Baseline Studies',
+        temporal: 'Jun 2022 - Mar 2023',
+        location: '34.43°N to 34.50°N, 120.44°W to 120.51°W',
+        size: '8.5 MB',
+        dateUploaded: 'Apr 18, 2023',
+        fileInfo: { count: 2, types: '1 CSV, 1 ZIP', size: '8.5 MB' }
+      }
     };
     
     let mapView = null;
@@ -924,6 +1243,90 @@
       state.bookmarksWidgetExpanded = !state.bookmarksWidgetExpanded;
       content.classList.toggle('hidden', !state.bookmarksWidgetExpanded);
       chevron.style.transform = state.bookmarksWidgetExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
+    
+    // =========================================================================
+    // DATASET VIEW SWITCHING (List ↔ Detail)
+    // =========================================================================
+    function showDatasetDetail(datasetId) {
+      state.currentView = 'detail';
+      state.selectedDataset = datasetId;
+      state.versionHistoryOpen = false;
+      
+      // Hide list, show detail
+      document.getElementById('view-datasets-list').classList.add('hidden');
+      document.getElementById('view-dataset-detail').classList.remove('hidden');
+      
+      // Update detail content from dataset data
+      const dataset = datasetData[datasetId];
+      if (!dataset) return;
+      
+      // Update header
+      document.getElementById('detail-title').textContent = dataset.title;
+      document.getElementById('detail-badge-repo').textContent = dataset.repository;
+      document.getElementById('detail-badge-versions').textContent = `${dataset.versions} version${dataset.versions !== 1 ? 's' : ''}`;
+      document.getElementById('detail-badge-files').textContent = dataset.files;
+      
+      // Update abstract
+      document.getElementById('detail-abstract-text').textContent = dataset.abstract;
+      
+      // Update keywords
+      const keywordsContainer = document.querySelector('#detail-keywords .flex');
+      keywordsContainer.innerHTML = dataset.keywords.map(k => 
+        `<span class="px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-700 rounded">${k}</span>`
+      ).join('');
+      
+      // Update categories
+      const categoriesContainer = document.querySelector('#detail-categories .flex');
+      categoriesContainer.innerHTML = dataset.categories.map(c => 
+        `<span class="px-1.5 py-0.5 text-[10px] bg-emerald-100 text-emerald-700 rounded">${c}</span>`
+      ).join('');
+      
+      // Update authors
+      const authorsList = document.querySelector('#detail-authors ul');
+      authorsList.innerHTML = dataset.authors.map(a => `<li>${a}</li>`).join('');
+      
+      // Update other fields
+      document.querySelector('#detail-project p').textContent = dataset.project;
+      document.querySelector('#detail-temporal p').textContent = dataset.temporal;
+      document.querySelector('#detail-location p').textContent = dataset.location;
+      document.querySelector('#detail-metadata div:first-child p').textContent = dataset.size;
+      document.querySelector('#detail-metadata div:last-child p').textContent = dataset.dateUploaded;
+      
+      // Update file info
+      const fileInfoContainer = document.querySelector('#detail-files .text-\\[11px\\]');
+      fileInfoContainer.innerHTML = `
+        <p><span class="font-medium">${dataset.fileInfo.count}</span> files</p>
+        <p>Types: ${dataset.fileInfo.types}</p>
+        <p>Total size: ${dataset.fileInfo.size}</p>
+      `;
+      
+      // Reset version history
+      document.getElementById('version-history-content').classList.add('hidden');
+      document.getElementById('version-chevron').style.transform = 'rotate(0deg)';
+    }
+    
+    function showDatasetsView() {
+      state.currentView = 'list';
+      state.selectedDataset = null;
+      
+      // Show list, hide detail
+      document.getElementById('view-dataset-detail').classList.add('hidden');
+      document.getElementById('view-datasets-list').classList.remove('hidden');
+    }
+    
+    function toggleVersionHistory() {
+      state.versionHistoryOpen = !state.versionHistoryOpen;
+      const content = document.getElementById('version-history-content');
+      const chevron = document.getElementById('version-chevron');
+      
+      if (state.versionHistoryOpen) {
+        content.classList.remove('hidden');
+        chevron.style.transform = 'rotate(180deg)';
+      } else {
+        content.classList.add('hidden');
+        chevron.style.transform = 'rotate(0deg)';
+      }
     }
     
     // =========================================================================

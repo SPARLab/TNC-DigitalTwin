@@ -2,14 +2,14 @@
 
 **Created:** January 21, 2026  
 **Target Presentation:** Jack Dangermond Demo  
-**Status:** ✅ ALL MOCKUPS COMPLETE (6 of 6)  
+**Status:** ✅ Core Complete (6/6) • 🔜 DataOne Detail View Planned  
 **Paradigm Doc:** `docs/feedback/data-catalog-ux-paradigm-jan-21-2026.md`
 
 ---
 
 ## Progress Summary
 
-**Completed Mockups:** ✅ 6 / 6 — ALL COMPLETE! 🎉
+**Completed Mockups:** ✅ 6 / 6 Core Mockups • 🔜 1 Enhancement Planned
 
 | Mockup | Status | Purpose |
 |--------|--------|---------|
@@ -18,6 +18,7 @@
 | **02c** | ✅ Complete | ANiML Browse (pointer rows + dual-level filters) |
 | **02d** | ✅ Complete | Dendra Browse (pointer rows + Level 3 datastream + floating chart) |
 | **02e** | ✅ Complete | DataOne Browse (pointer rows, no Level 3) |
+| **02e+** | 🔜 Planned | DataOne Detail View (drill-down with full metadata) |
 | **02f** | ✅ Complete | Export Builder (all bookmark types together) |
 
 **Key Achievements:**
@@ -27,6 +28,7 @@
 - ✅ Floating time series panel integrated without overlap
 - ✅ DataOne pointer pattern complete (simple bookmark, no Level 3)
 - ✅ Export Builder shows all bookmark types converging in single workflow
+- 🔜 DataOne detail view planned (completes drill-down pattern consistency)
 
 ---
 
@@ -524,7 +526,7 @@ With this pattern:
 
 **Row Type:** Pointer (dataset points to files), but filtering files is rare
 
-**Browse Tab:**
+### Browse Tab - Dataset List View
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -554,7 +556,7 @@ With this pattern:
 │  │                                                        │ │
 │  │ Files: 3 (observations.csv, report.pdf, metadata.xml)  │ │
 │  │                                                        │ │
-│  │ [🔖 Bookmark]  [View Details]  [Open in DataOne ↗]     │ │
+│  │ [🔖 Bookmark]  [Details →]  [Open in DataOne ↗]        │ │
 │  └────────────────────────────────────────────────────────┘ │
 │                                                             │
 │  ┌────────────────────────────────────────────────────────┐ │
@@ -565,7 +567,7 @@ With this pattern:
 │  │                                                        │ │
 │  │ Files: 12 (imagery/, measurements.csv, shapefiles/)    │ │
 │  │                                                        │ │
-│  │ [🔖 Bookmark]  [View Details]  [Open in DataOne ↗]     │ │
+│  │ [🔖 Bookmark]  [Details →]  [Open in DataOne ↗]        │ │
 │  └────────────────────────────────────────────────────────┘ │
 │                                                             │
 │  ... (45 more datasets)                                     │
@@ -573,11 +575,157 @@ With this pattern:
 └─────────────────────────────────────────────────────────────┘
 ```
 
+### Browse Tab - Dataset Detail View (drill-down)
+
+When user clicks "Details →", the right sidebar switches to detail view:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  ← Back to Datasets                                         │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │ 🌊 Marine Biodiversity Assessment                   │    │
+│  │    Point Conception                                 │    │
+│  │                                                     │    │
+│  │    Smith, J., Garcia, A., Johnson, R. • 2020       │    │
+│  │    doi: 10.5063/F1Z60PZP                           │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                                                             │
+│  ───────────────────────────────────────────────────────────│
+│  Description                                                │
+│  ───────────────────────────────────────────────────────────│
+│                                                             │
+│  Comprehensive survey of marine species diversity along     │
+│  the Point Conception coastline, including intertidal       │
+│  zones and kelp forest ecosystems. This study documents     │
+│  seasonal variation in species abundance and distribution   │
+│  patterns across multiple sampling sites.                   │
+│                                                             │
+│  Funded by: National Science Foundation                     │
+│  Project: Dangermond Preserve Baseline Studies              │
+│                                                             │
+│  ───────────────────────────────────────────────────────────│
+│  Files (3)                                                  │
+│  ───────────────────────────────────────────────────────────│
+│                                                             │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ 📊 observations.csv                            2.4 MB │ │
+│  │    Species occurrence records with coordinates        │ │
+│  └────────────────────────────────────────────────────────┘ │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ 📄 report.pdf                                  1.8 MB │ │
+│  │    Final technical report with methodology            │ │
+│  └────────────────────────────────────────────────────────┘ │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ 📋 metadata.xml                               12 KB   │ │
+│  │    EML metadata record                                │ │
+│  └────────────────────────────────────────────────────────┘ │
+│                                                             │
+│  ───────────────────────────────────────────────────────────│
+│  Spatial Coverage                                           │
+│  ───────────────────────────────────────────────────────────│
+│                                                             │
+│  Bounding Box: 34.42°N to 34.51°N, 120.38°W to 120.52°W    │
+│  [View on Map]                                              │
+│                                                             │
+│  ───────────────────────────────────────────────────────────│
+│  Keywords                                                   │
+│  ───────────────────────────────────────────────────────────│
+│                                                             │
+│  [marine] [biodiversity] [intertidal] [kelp forest]         │
+│  [Point Conception] [species survey]                        │
+│                                                             │
+│  ═══════════════════════════════════════════════════════════│
+│                                                             │
+│  [🔖 Bookmark Dataset]                                      │
+│                                                             │
+│  [Open in DataOne ↗]  [Copy DOI]  [Cite]                    │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Key Design Decisions
+
+**1. Navigation Pattern:**
+- "← Back to Datasets" button at top (consistent with ANiML cameras, Dendra sensors)
+- Clicking back returns to list view **with filters preserved**
+- Filter state persists across detail view navigation
+
+**2. What the Detail View Shows:**
+| Section | Content | Why |
+|---------|---------|-----|
+| **Header** | Title, authors, year, DOI badge | Quick identification |
+| **Description** | Full abstract (not truncated) | Complete context for decision-making |
+| **Files** | All files with size and descriptions | Let user assess what's included |
+| **Spatial Coverage** | Bounding box + "View on Map" link | Geographic context |
+| **Keywords** | Clickable tags | Help users find related datasets |
+| **Actions** | Bookmark, Open in DataOne, Copy DOI, Cite | Complete workflow support |
+
+**3. Why NOT an iframe embed?**
+- DataOne pages are complex and may not render well in a narrow sidebar
+- External auth/session issues
+- Better to show curated summary + link to full DataOne page
+- Keeps the UI consistent with other data sources
+
+**4. Filter Persistence Behavior:**
+```
+User Flow:
+1. Search: "marine biodiversity", Category: Marine, Years: 2020-2023
+2. Results show 47 datasets
+3. User clicks "Details →" on Marine Biodiversity Assessment
+4. Detail view shows → User clicks "← Back to Datasets"
+5. Filters still applied → Still showing 47 datasets
+6. User can continue browsing without re-entering filters
+```
+
+**5. Key Difference from ANiML/Dendra:**
+- **No Level 3 filter** - DataOne datasets are bookmarked whole
+- **No "Bookmark with Filter"** - Only simple `[🔖 Bookmark Dataset]`
+- Files are browseable for context but not individually bookmarkable
+
+### Data Model
+
+```javascript
+// Dataset object (from ArcGIS Feature Service or DataOne API)
+dataset: {
+  id: "urn:uuid:abc123...",
+  title: "Marine Biodiversity Assessment - Point Conception",
+  authors: ["Smith, J.", "Garcia, A.", "Johnson, R."],
+  year: 2020,
+  doi: "10.5063/F1Z60PZP",
+  abstract: "Comprehensive survey of marine species...",
+  keywords: ["marine", "biodiversity", "intertidal", ...],
+  files: [
+    { name: "observations.csv", size: "2.4 MB", description: "Species records" },
+    { name: "report.pdf", size: "1.8 MB", description: "Technical report" },
+    { name: "metadata.xml", size: "12 KB", description: "EML metadata" }
+  ],
+  boundingBox: {
+    north: 34.51, south: 34.42,
+    east: -120.38, west: -120.52
+  },
+  dataoneUrl: "https://search.dataone.org/view/urn:uuid:abc123..."
+}
+
+// Bookmark (simple, no Level 3 filter)
+bookmark: {
+  id: "bm-dataone-123",
+  type: "dataone-dataset",
+  datasetId: "urn:uuid:abc123...",
+  title: "Marine Biodiversity Assessment",
+  authors: "Smith et al. 2020"
+  // No filter property - entire dataset is bookmarked
+}
+```
+
 **Key Points:**
-- Single-level Browse (no drill-down to individual files)
-- Only `[🔖 Bookmark]` - no "Bookmark with Filter"
+- Two-level Browse: Dataset list → Dataset detail (consistent with ANiML, Dendra)
+- Only `[🔖 Bookmark]` - no "Bookmark with Filter" (no Level 3)
 - User bookmarks entire dataset, not filtered files
+- Detail view shows full context: description, files, spatial coverage, keywords
 - Actual data access via "Open in DataOne" external link
+- Filter state preserved when navigating between list and detail views
 
 **File:** `mockups/02e-browse-dataone.html`
 
@@ -736,7 +884,8 @@ ANiML is unique among our data sources because:
 | 4 | 02d | Dendra Browse (pointer + Level 3 datastream) | ✅ **COMPLETE** |
 | 5 | 02e | DataOne Browse (pointer, no Level 3) | ✅ **COMPLETE** |
 | 6 | 02f | Export Builder (all together) | ✅ **COMPLETE** |
-| 7 | Polish | Consistency check, edge cases | 🔜 Next |
+| 7 | 02e+ | **DataOne Detail View** (drill-down pattern) | 🔜 **Next** |
+| 8 | Polish | Consistency check, edge cases, demo prep | 📋 Planned |
 
 ### 02c Development Notes (ANiML)
 
@@ -802,8 +951,7 @@ User flow to demonstrate:
 
 **02e - DataOne Browse (Jan 21, 2026)**
 - ✅ Demonstrated pointer row pattern WITHOUT Level 3 filter
-- ✅ Single-level browse (datasets, no drill-down to individual files)
-- ✅ Search & filter: text search, category, year range, author
+- ✅ Dataset list view: search & filter (text search, category, year range, author)
 - ✅ Dataset cards show: title, authors, year, description, DOI badge, file tags
 - ✅ Only `[Bookmark]` button (no "Bookmark with Filter") - key distinction
 - ✅ External access via "Open in DataOne ↗" button
@@ -811,14 +959,26 @@ User flow to demonstrate:
 - 📝 Simplest pointer row pattern - bookmarks are always for entire datasets
 - 📝 DOI badges provide citation links to original research
 
-**Enhancement Needed for DataOne Details View:**
-- ⚠️ `[Details]` button should show dataset detail view in right sidebar
-- Should use existing right sidebar detail styling (similar to ANiML camera detail, Dendra sensor detail)
-- Consider showing iframe of actual DataOne dataset page (can pull from ArcGIS Feature Service)
-- Need clear "Back to Datasets" navigation pattern
-- Show how filters persist/interact when viewing detail view
-- Key question: When in detail view, is it obvious you can go back to browse more datasets?
-- This would complete the drill-down pattern consistency across all data sources
+**02e - DataOne Detail View (TODO)**
+- 🔜 `[Details →]` button → drills into dataset detail view
+- 🔜 "← Back to Datasets" navigation (consistent with ANiML/Dendra pattern)
+- 🔜 Full description (not truncated), files list with sizes
+- 🔜 Spatial coverage section with bounding box + "View on Map"
+- 🔜 Keywords as clickable tags
+- 🔜 Actions: Bookmark Dataset, Open in DataOne, Copy DOI, Cite
+- 🔜 Filter persistence: returning to list preserves search/filter state
+- 📝 Decision: No iframe embed - curated summary is better UX for narrow sidebar
+
+**DataOne Details View Plan (Documented Above):**
+- ✅ `[Details →]` button shows dataset detail view in right sidebar
+- ✅ Uses existing right sidebar detail styling (consistent with ANiML camera detail, Dendra sensor detail)
+- ✅ Shows curated metadata summary instead of iframe (better UX, consistent width)
+- ✅ Clear "← Back to Datasets" navigation at top
+- ✅ Filters persist when navigating between list and detail views
+- ✅ Detail view includes: full description, files list, spatial coverage, keywords, actions
+- ✅ Completes the drill-down pattern consistency across all data sources
+
+**Implementation Status:** 🔜 Ready for mockup implementation
 
 ---
 
@@ -845,6 +1005,7 @@ mockups/
 - [x] Self-contained vs. pointer row distinction is clear (✅ shown in 02a bookmarks)
 - [x] Export Builder shows how all bookmark types converge
 - [x] Team can articulate the three-level hierarchy (✅ demonstrated in 02a)
+- [ ] DataOne detail view implemented (drill-down pattern complete across all sources)
 - [ ] Jack Dangermond demo-ready (needs polish pass)
 
 ### Mockup 02a Complete
@@ -871,8 +1032,9 @@ mockups/
 ---
 
 **Last Updated:** January 21, 2026  
-**Status:** ✅ ALL MOCKUPS COMPLETE (6 of 6) 🎉  
-**Next:** Polish pass - consistency check, edge cases, demo preparation
+**Status:** ✅ Core Mockups Complete (6 of 6) • 🔜 Detail View Enhancement Planned  
+**Next:** Implement DataOne detail view (02e+) to complete drill-down pattern
 
-**Latest Completion:** 02f - Export Builder (all bookmark types together)
+**Latest Completion:** 02f - Export Builder (all bookmark types together)  
+**Upcoming:** 02e+ - DataOne Detail View (full dataset metadata, files, spatial coverage)
 
