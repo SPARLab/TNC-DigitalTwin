@@ -4,6 +4,12 @@
 **Status:** Ready for Implementation  
 **Owner:** Team
 
+### Quick Status
+
+```
+Overall Progress: ▓▓▓▓▓▓░░░░ 10/19 tasks complete [FEEDBACK FROM TEAM LED TO NEW MOCKUP PLAN BEING CREATED, THESE UI CHANGES NO LONGER RELEVANT]
+```
+
 ---
 
 ## Overview
