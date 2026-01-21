@@ -340,27 +340,34 @@ The bookmark **shows** its Level 3 query context. Actions:
 
 ---
 
-## Part 5b: ANiML Special Case - Dual-Level Layer Queries
+## Part 5b: ANiML Special Case - Images-First Browsing
 
-### The Problem
+### The Core Insight
 
-With ANiML camera traps, a common use case is:
+> **The sooner we take users to actual camera trap images, the better.**
 
-> "I want all mountain lion images from all cameras in the north preserve."
+With camera trap data, the images ARE the payload. Users want to see wildlife images, not navigate through layers of filters to eventually reach them.
 
-Without special handling, the user would need to:
-1. Pin the Camera Traps layer
-2. Query for cameras in north preserve (8 cameras)
-3. Open CAM-042, filter for mountain lions, bookmark with filter
-4. Open CAM-015, filter for mountain lions, bookmark with filter
-5. ... repeat 8 times
-6. Export all 8 bookmarks
+### The Problem with Filter-First Approach
 
-That's tedious.
+A filter-first approach buries images behind too many steps:
 
-### The Solution: Global Image Filter at Layer Level
+```
+❌ Filter-First (too many steps before images):
+   Filter cameras → Filter animals → See images
+   
+   User has to make TWO decisions before seeing ANY images.
+```
 
-For ANiML specifically, the Browse tab shows **both** camera filters AND image filters at the layer level:
+### The Solution: Choose-Then-See
+
+Instead of filtering first, users **choose one entry point** and **immediately see images**.
+
+The key shift:
+```
+OLD: Filter → Filter → See images (images buried)
+NEW: Choose ONE thing → See images → Optionally filter (images immediate)
+```
 
 ```
 ┌─────────────────────────────────────────────────────────────┐

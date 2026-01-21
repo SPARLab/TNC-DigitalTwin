@@ -196,22 +196,27 @@ Level 1: LAYER
 
 ---
 
-## Mockup 02c: Browse Tab - ANiML Cameras (Pointer → Images)
+## Mockup 02c: Browse Tab - ANiML Cameras (Images-First Browsing)
 
-**Purpose:** Show how pointer rows work with Level 3 filter on images.
+**Purpose:** Show how users browse camera trap images with minimal friction.
 
 **Row Type:** Pointer (camera points to image archive)
 
-### ⚠️ KEY INSIGHT: Dual-Level Filtering
+### ⚠️ KEY INSIGHT: Images-First Browsing
 
-ANiML is unique because users often want to filter at **both** the camera level AND the image level simultaneously. For example: "Show me all north preserve cameras that have mountain lion images, and only show me the mountain lion images."
+> **The sooner we take users to actual camera trap images, the better.**
 
-This means the Browse tab at the **layer level** needs to show image filters too, not just camera filters.
+The previous dual-level filter approach buried images behind too many filter steps. The new approach uses **two entry points** that both lead directly to images:
 
-**The Problem We're Solving:**
-- User wants "all mountain lion images from all cameras"
-- Without dual-level filter: User must bookmark each camera individually and apply the same filter 16 times
-- With dual-level filter: User applies image filter once at layer level, pins layer with that query
+**Two Workflows:**
+1. **By Animal**: Choose animal tag → See all images → Optionally filter by camera
+2. **By Camera**: Choose camera → See all images → Optionally filter by animal
+
+**The Key Shift:**
+```
+OLD: Filter → Filter → See images (images buried behind 2 decisions)
+NEW: Choose ONE thing → See images → Optionally filter (1 click to images)
+```
 
 ### Browse Tab - Layer View WITH Dual-Level Filters
 
@@ -704,8 +709,8 @@ ANiML is unique among our data sources because:
 |-----|--------|-------|--------|
 | 1 | 02a | Unified layout + floating widget | ✅ **COMPLETE** |
 | 2 | 02b | iNaturalist Browse (self-contained baseline) | ✅ **COMPLETE** |
-| 3 | 02c | ANiML Browse (**dual-level filter pattern**) | 🔜 Next |
-| 4 | 02d | Dendra Browse (pointer + Level 3 datastream) | |
+| 3 | 02c | ANiML Browse (**dual-level filter pattern**) | ✅ **COMPLETE** |
+| 4 | 02d | Dendra Browse (pointer + Level 3 datastream) | 🔜 Next |
 | 5 | 02e | DataOne Browse (pointer, no Level 3) | |
 | 6 | 02f | Export Builder (all together) | |
 | 7 | Polish | Consistency check, edge cases | |
@@ -746,6 +751,15 @@ User flow to demonstrate:
 - ✅ Included proper result counts and visual feedback
 - 📝 Set baseline for Browse tab structure that others will follow
 
+**02c - ANiML Browse (Jan 21, 2026)**
+- ✅ Implemented dual-level filtering (camera filters + global image filters)
+- ✅ Created "Pin Layer with Query" button that saves both filter levels
+- ✅ Camera cards show filtered image counts (e.g., "47 mountain lion images")
+- ✅ Drill-down camera detail view with filter pre-populated from layer-level
+- ✅ Two bookmark options: "Bookmark Camera" vs "Bookmark with Filter"
+- ✅ Visual distinction: gray filter section for cameras, amber for images
+- 📝 Most complex mockup - demonstrates the full pointer row + Level 3 pattern
+
 ---
 
 ## Files
@@ -783,6 +797,6 @@ mockups/
 ---
 
 **Last Updated:** January 21, 2026  
-**Status:** In Progress (2 of 6 mockups complete) ✓  
-**Next:** Mockup 02c - ANiML Browse Tab
+**Status:** In Progress (3 of 6 mockups complete) ✓  
+**Next:** Mockup 02d - Dendra Browse Tab (pointer + Level 3 datastream)
 

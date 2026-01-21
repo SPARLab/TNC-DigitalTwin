@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mockup 02c: ANiML Browse (Images-First) - TNC Digital Catalog</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- ArcGIS JS API -->
+  <link rel="stylesheet" href="https://js.arcgis.com/4.28/esri/themes/light/main.css">
+  <script src="https://js.arcgis.com/4.28/"></script>
+  
+  <!-- Google Fonts - Using DM Sans for a more distinctive look -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'sans': ['DM Sans', 'sans-serif'],
+            'mono': ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            'tnc': {
+              'green': '#2e7d32',
+              'green-dark': '#1b5e20',
+              'green-light': '#4caf50',
+            },
+            'sidebar-bg': '#f8fafc',
+            'widget-bg': '#ffffff',
+            'pinned-bg': '#eff6ff',
+            'bookmark-bg': '#fefce8',
+            'query-active': '#dcfce7',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'DM Sans', sans-serif; }
+    
+    .esri-ui-corner { display: none !important; }
+    
+    /* Custom scrollbar */
+    .sidebar-scroll::-webkit-scrollbar { width: 6px; }
+    .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+    .sidebar-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    
+    /* Hover transitions */
+    .icon-btn { transition: all 0.15s ease; }
+    .icon-btn:hover { transform: scale(1.1); }
+    
+    /* Layer row states */
+    .layer-row { transition: all 0.15s ease; border-left: 3px solid transparent; }
+    .layer-row:hover { background-color: #f1f5f9; }
+    .layer-row.pinned { background-color: #eff6ff; border-left-color: #3b82f6; }
+    .layer-row.selected { border-left-color: #059669; }
+    
+    /* Floating widget */
+    .floating-widget { 
+      box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+      backdrop-filter: blur(8px);
+    }
+    
+    /* Widget layer cards */
+    .widget-layer-card {
+      transition: all 0.15s ease;
+      border: 1px solid #e2e8f0;
+    }
+    .widget-layer-card:hover {
+      border-color: #94a3b8;
+      box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Bookmark card */
+    .bookmark-card {
+      transition: all 0.15s ease;
+      border-left: 3px solid #f59e0b;
+    }
+    .bookmark-card:hover {
+      background-color: #fffbeb;
+    }
+    
+    /* Clickable card */
+    .clickable-card {
+      transition: all 0.15s ease;
+      border: 1px solid #e5e7eb;
+      cursor: pointer;
+    }
+    .clickable-card:hover {
+      border-color: #9ca3af;
+      box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.1);
+      transform: translateX(2px);
+    }
+    
+    /* Image thumbnail */
+    .image-thumb {
+      transition: all 0.15s ease;
+    }
+    .image-thumb:hover {
+      transform: scale(1.05);
+      box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Tab styling - lifted tab effect from live site */
+    .tab-btn { transition: all 0.15s ease; }
+    .tab-btn.active { 
+      background-color: white;
+      color: #2563eb;
+      border-left: 1px solid #e5e7eb;
+      border-right: 1px solid #e5e7eb;
+      position: relative;
+      z-index: 10;
+      margin-bottom: -1px;
+    }
+    .tab-btn:not(.active) { 
+      background-color: #f9fafb;
+      color: #4b5563;
+      box-shadow: inset -4px 0 6px -2px rgba(0,0,0,0.12), inset 0 -4px 6px -2px rgba(0,0,0,0.08);
+    }
+    .tab-btn:not(.active):hover { 
+      color: #111827;
+    }
+    
+    /* Sub-tab styling */
+    .sub-tab-btn {
+      transition: all 0.15s ease;
+    }
+    .sub-tab-btn.active {
+      background-color: #3b82f6;
+      color: white;
+    }
+    .sub-tab-btn:not(.active) {
+      background-color: #f1f5f9;
+      color: #64748b;
+    }
+    .sub-tab-btn:not(.active):hover {
+      background-color: #e2e8f0;
+      color: #334155;
+    }
+    
+    /* Chevron rotation */
+    .chevron { transition: transform 0.2s ease; }
+    .chevron.expanded { transform: rotate(90deg); }
+    
+    /* Spinner animation */
+    .spinner { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    
+    /* Query badge */
+    .query-badge {
+      background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+      border: 1px solid #86efac;
+    }
+    
+    /* Filter section styling */
+    .filter-section {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      border: 1px solid #e2e8f0;
+    }
+    
+    /* Action button */
+    .action-btn {
+      transition: all 0.15s ease;
+    }
+    .action-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Widget positioning for split layout */
+    .widget-bookmarks-only {
+      left: auto !important;
+      right: 16px !important;
+    }
+    
+    /* Back button styling */
+    .back-btn {
+      transition: all 0.15s ease;
+    }
+    .back-btn:hover {
+      background-color: #f1f5f9;
+    }
+  </style>
+</head>
+<body id="page-body" class="bg-slate-100 h-screen overflow-hidden">
+  
+  <!-- HEADER - Green gradient from live site aesthetic -->
+  <header id="header" class="h-11 bg-gradient-to-b from-[#00703c] to-[#008f4a] flex items-center px-4">
+    <div class="flex items-center gap-3">
+      <h1 id="header-title" class="text-[15px] font-semibold text-white leading-tight">
+        Dangermond Preserve Data Catalog
+      </h1>
+    </div>
+    <div id="header-badges" class="ml-auto flex items-center gap-3">
+      <span class="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-medium rounded">V2 MOCKUP</span>
+      <span class="px-2 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-medium rounded">02c: ANiML Images-First</span>
+    </div>
+  </header>
+  
+  <!-- MAIN LAYOUT -->
+  <div id="main-layout" class="flex h-[calc(100vh-44px)]">
+    
+    <!-- LEFT SIDEBAR: Layer Browser -->
+    <aside id="left-sidebar" class="w-80 bg-sidebar-bg border-r border-slate-200 flex flex-col">
+      
+      <!-- Search Bar -->
+      <div id="left-sidebar-search" class="p-3 border-b border-slate-200 bg-white">
+        <div class="relative">
+          <input type="text" placeholder="Search layers..." 
+            id="layer-search-input"
+            class="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tnc-green/30 focus:border-tnc-green bg-slate-50">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+      </div>
+      
+      <!-- Layer List -->
+      <div id="layer-list" class="flex-1 overflow-y-auto sidebar-scroll p-2">
+        
+        <!-- SPECIES -->
+        <div class="category mb-1" data-category="species">
+          <button id="species-category-header" class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('species')">
+            <svg class="chevron w-4 h-4 text-slate-400 expanded" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <span class="text-base">🦎</span>
+            <span>Species & Wildlife</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">6</span>
+          </button>
+          <div id="species-category-content" class="category-content ml-2 space-y-0.5">
+            
+            <!-- iNaturalist - PINNED -->
+            <div id="layer-inaturalist" class="layer-row pinned flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" 
+                 data-layer="inaturalist" onclick="selectLayer('inaturalist')">
+              <button id="inaturalist-visibility-btn" class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('inaturalist')" title="Toggle visibility">
+                <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                </svg>
+              </button>
+              <div class="flex-1 min-w-0">
+                <span class="text-sm text-slate-700 block truncate">iNaturalist Observations</span>
+              </div>
+              <button id="inaturalist-pin-btn" class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); togglePin('inaturalist')" title="Pinned">
+                <span class="text-sm">📌</span>
+              </button>
+            </div>
+            
+            <!-- ANiML - PINNED (SELECTED) -->
+            <div id="layer-animl" class="layer-row pinned selected flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" 
+                 data-layer="animl" onclick="selectLayer('animl')">
+              <button id="animl-visibility-btn" class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('animl')" title="Toggle visibility">
+                <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                </svg>
+              </button>
+              <div class="flex-1 min-w-0">
+                <span class="text-sm text-slate-700 block truncate">ANiML Camera Traps</span>
+              </div>
+              <button id="animl-pin-btn" class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); togglePin('animl')" title="Pinned">
+                <span class="text-sm">📌</span>
+              </button>
+            </div>
+            
+            <!-- eBird - not pinned -->
+            <div id="layer-ebird" class="layer-row flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" 
+                 data-layer="ebird" onclick="selectLayer('ebird')">
+              <button id="ebird-visibility-btn" class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('ebird')" title="Show on map">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+              <span class="flex-1 text-sm text-slate-700 truncate">eBird Sightings</span>
+              <button id="ebird-pin-btn" class="icon-btn flex-shrink-0 opacity-30 hover:opacity-100" onclick="event.stopPropagation(); togglePin('ebird')" title="Pin layer">
+                <span class="text-sm">📌</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Other categories collapsed -->
+        <div class="category mb-1" data-category="sensors">
+          <button id="sensors-category-header" class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('sensors')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <span class="text-base">🌡️</span>
+            <span>Sensors & Monitoring</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">4</span>
+          </button>
+          <div id="sensors-category-content" class="category-content hidden ml-2"></div>
+        </div>
+        
+      </div>
+    </aside>
+    
+    <!-- MAP AREA -->
+    <main id="map-area" class="flex-1 relative">
+      
+      <!-- ArcGIS Map Container -->
+      <div id="viewDiv" class="absolute inset-0"></div>
+      
+      <!-- Loading Overlay -->
+      <div id="loading-overlay" class="absolute inset-0 bg-gray-200/80 flex items-center justify-center z-10">
+        <div id="loading-content" class="text-center">
+          <svg class="spinner w-8 h-8 text-[#00703c] mx-auto mb-2" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p class="text-xs text-gray-600 font-medium">Loading map...</p>
+        </div>
+      </div>
+      
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <!-- FLOATING WIDGETS                                                        -->
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      
+      <!-- Pinned Layers Widget (Left) -->
+      <div id="floating-widget-pinned" class="floating-widget widget-pinned-only absolute top-4 left-4 bg-white/95 rounded-xl w-72 z-20 overflow-hidden">
+        
+        <!-- Widget Header -->
+        <div id="pinned-widget-header" class="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 cursor-pointer" onclick="toggleFloatingWidget()">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">📌</span>
+            <span class="text-sm font-semibold text-slate-700">Pinned Layers</span>
+            <span class="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full font-medium">2</span>
+          </div>
+          <svg id="widget-chevron" class="w-5 h-5 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+        
+        <!-- Widget Content -->
+        <div id="widget-content" class="max-h-[60vh] overflow-y-auto sidebar-scroll">
+          
+          <div id="pinned-layers-list" class="p-3 space-y-2">
+            
+            <!-- iNaturalist -->
+            <div id="pinned-inaturalist-card" class="widget-layer-card rounded-lg p-3 bg-white">
+              <div class="flex items-start gap-2">
+                <button class="icon-btn flex-shrink-0 mt-0.5" title="Toggle visibility">
+                  <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                  </svg>
+                </button>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span class="text-base">🦎</span>
+                    <span class="text-sm font-medium text-slate-700 truncate">iNaturalist</span>
+                  </div>
+                </div>
+                <button class="icon-btn text-slate-400 hover:text-red-500 flex-shrink-0" title="Unpin layer">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <!-- ANiML (highlighted) -->
+            <div id="pinned-animl-card" class="widget-layer-card rounded-lg p-3 bg-blue-50 border-blue-200">
+              <div class="flex items-start gap-2">
+                <button class="icon-btn flex-shrink-0 mt-0.5" title="Toggle visibility">
+                  <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                  </svg>
+                </button>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span class="text-base">📷</span>
+                    <span class="text-sm font-medium text-slate-700 truncate">ANiML Camera Traps</span>
+                  </div>
+                  <p class="text-[10px] text-slate-500 mt-1">42 cameras • 156,234 images</p>
+                </div>
+                <button class="icon-btn text-slate-400 hover:text-red-500 flex-shrink-0" title="Unpin layer">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+          </div>
+          
+        </div>
+      </div>
+      
+      <!-- Bookmarks Widget (Right) -->
+      <div id="floating-widget-bookmarks" class="floating-widget widget-bookmarks-only absolute top-4 left-4 bg-white/95 rounded-xl w-72 z-20 overflow-hidden">
+        
+        <!-- Widget Header -->
+        <div id="bookmarks-widget-header" class="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-amber-50 to-white border-b border-amber-100 cursor-pointer" onclick="toggleBookmarksWidget()">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🔖</span>
+            <span class="text-sm font-semibold text-slate-700">Bookmarks</span>
+            <span class="text-xs text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full font-medium">2</span>
+          </div>
+          <svg id="bookmarks-widget-chevron" class="w-5 h-5 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+        
+        <!-- Widget Content -->
+        <div id="bookmarks-widget-content" class="max-h-[50vh] overflow-y-auto sidebar-scroll">
+          
+          <div id="bookmarks-list" class="p-3 space-y-2">
+            
+            <!-- Bookmark: Mountain Lion (from By Animal) -->
+            <div id="bookmark-mountain-lion" class="bookmark-card bg-white rounded-lg p-2.5 cursor-pointer hover:bg-amber-50">
+              <div class="flex items-center gap-3">
+                <span class="text-lg">🦁</span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-slate-700 truncate">Mountain Lion</p>
+                  <p class="text-xs text-slate-500">All cameras • 127 images</p>
+                </div>
+                <button class="icon-btn text-slate-400 hover:text-red-500 p-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Bookmark: CAM-042 → Mountain Lion (from By Camera with filter) -->
+            <div id="bookmark-cam042-mountain-lion" class="bookmark-card bg-white rounded-lg p-2.5 cursor-pointer hover:bg-amber-50">
+              <div class="flex items-center gap-3">
+                <span class="text-lg">📷</span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-slate-700 truncate">CAM-042 <span class="text-amber-600">→</span> <span class="text-amber-700">🦁</span></p>
+                  <p class="text-xs text-slate-500">47 images</p>
+                </div>
+                <button class="icon-btn text-slate-400 hover:text-red-500 p-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+          </div>
+          
+          <!-- Export Button -->
+          <div id="bookmarks-export-section" class="p-3 bg-gradient-to-t from-amber-50 to-white border-t border-amber-100">
+            <button id="export-bookmarks-btn" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-white text-sm font-semibold py-2 px-4 rounded-lg hover:shadow-md transition-all flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+              </svg>
+              Export Bookmarks
+            </button>
+          </div>
+          
+        </div>
+      </div>
+      
+    </main>
+    
+    <!-- RIGHT SIDEBAR -->
+    <aside id="right-sidebar" class="w-[340px] bg-white border-l border-gray-200 flex flex-col">
+      
+      <!-- Sidebar Header -->
+      <div id="right-sidebar-header" class="px-3 py-2.5 border-b border-gray-200 bg-white">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">📷</span>
+          <div>
+            <h2 class="text-[13px] font-semibold text-gray-900">ANiML Camera Traps</h2>
+            <p class="text-[10px] text-gray-500">Wildlife camera network • 42 cameras • 156K images</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tabs - Live site lifted tab styling -->
+      <div id="tabs" class="flex border-b border-gray-200">
+        <button id="tab-btn-overview" class="tab-btn flex-1 px-4 py-2.5 text-xs font-medium" data-tab="overview" onclick="switchTab('overview')">Overview</button>
+        <button id="tab-btn-browse" class="tab-btn active flex-1 px-4 py-2.5 text-xs font-medium" data-tab="browse" onclick="switchTab('browse')">Browse</button>
+        <button id="tab-btn-export" class="tab-btn flex-1 px-4 py-2.5 text-xs font-medium" data-tab="export" onclick="switchTab('export')">Export</button>
+      </div>
+      
+      <!-- Tab Content -->
+      <div id="tab-content" class="flex-1 overflow-y-auto sidebar-scroll">
+        
+        <!-- OVERVIEW TAB -->
+        <div id="tab-overview" class="tab-panel hidden p-3">
+          <p class="text-[10px] text-gray-500 italic">Overview content from mockup 02a</p>
+        </div>
+        
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <!-- BROWSE TAB - IMAGES-FIRST APPROACH                                      -->
+        <!-- Two sub-tabs: "By Animal" and "By Camera"                               -->
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <div id="tab-browse" class="tab-panel">
+          
+          <!-- UX Demo callout -->
+          <div id="browse-ux-callout" class="bg-purple-50 p-3 border-b border-purple-200">
+            <p class="text-xs font-semibold text-purple-800 flex items-center gap-1.5">
+              <span class="text-sm">⚡</span>
+              Images-First Browsing
+            </p>
+            <p class="text-[10px] text-purple-700 mt-1 leading-relaxed">
+              Choose <strong>one thing</strong> → see images <strong>immediately</strong> → optionally filter.
+            </p>
+          </div>
+          
+          <!-- ─────────────────────────────────────────────────────────────────── -->
+          <!-- SUB-TAB TOGGLES                                                      -->
+          <!-- ─────────────────────────────────────────────────────────────────── -->
+          <div id="sub-tab-container" class="px-3 py-3 border-b border-gray-100 bg-gray-50">
+            <div class="flex items-center gap-1">
+              <span class="text-[10px] text-gray-500 mr-2">Browse by:</span>
+              <button id="sub-tab-animal" class="sub-tab-btn active text-xs font-medium px-3 py-1.5 rounded-lg" onclick="switchSubTab('animal')">
+                🦁 By Animal
+              </button>
+              <button id="sub-tab-camera" class="sub-tab-btn text-xs font-medium px-3 py-1.5 rounded-lg" onclick="switchSubTab('camera')">
+                📷 By Camera
+              </button>
+            </div>
+          </div>
+          
+          <!-- ═══════════════════════════════════════════════════════════════════════ -->
+          <!-- BY ANIMAL VIEW - Default                                                -->
+          <!-- Shows animal tags, click to see all images for that animal              -->
+          <!-- ═══════════════════════════════════════════════════════════════════════ -->
+          <div id="view-by-animal" class="p-3">
+            
+            <!-- Optional Camera Filter -->
+            <div id="animal-optional-filter" class="filter-section rounded-lg p-2.5 mb-3">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-gray-500">Optional:</span>
+                <select id="animal-camera-filter" class="flex-1 px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white">
+                  <option selected>All cameras</option>
+                  <option>CAM-042 (North Ridge)</option>
+                  <option>CAM-015 (Valley Floor)</option>
+                  <option>CAM-028 (Coastal Bluff)</option>
+                </select>
+              </div>
+            </div>
+            
+            <!-- Animal Tags List -->
+            <div id="animal-tags-section">
+              <h3 class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-2">Animal Tags</h3>
+              
+              <div id="animal-tags-list" class="space-y-1.5">
+                
+                <!-- Mountain Lion -->
+                <div id="tag-mountain-lion" class="clickable-card bg-white rounded-lg p-3" onclick="showAnimalDetail('mountain-lion')">
+                  <div class="flex items-center gap-3">
+                    <span class="text-2xl">🦁</span>
+                    <div class="flex-1">
+                      <h4 class="text-sm font-semibold text-gray-900">Mountain Lion</h4>
+                      <p class="text-[10px] text-gray-500">Puma concolor</p>
+                    </div>
+                    <div class="text-right">
+                      <p class="text-sm font-bold text-blue-600">127</p>
+                      <p class="text-[9px] text-gray-400">images</p>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </div>
+                
+                <!-- Deer -->
+                <div id="tag-deer" class="clickable-card bg-white rounded-lg p-3" onclick="showAnimalDetail('deer')">
+                  <div class="flex items-center gap-3">
+                    <span class="text-2xl">🦌</span>
+                    <div class="flex-1">
+                      <h4 class="text-sm font-semibold text-gray-900">Deer</h4>
+                      <p class="text-[10px] text-gray-500">Odocoileus hemionus</p>
+                    </div>
+                    <div class="text-right">
+                      <p class="text-sm font-bold text-blue-600">2,341</p>
+                      <p class="text-[9px] text-gray-400">images</p>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </div>
+                
+                <!-- Coyote -->
+                <div id="tag-coyote" class="clickable-card bg-white rounded-lg p-3" onclick="showAnimalDetail('coyote')">
+                  <div class="flex items-center gap-3">
+                    <span class="text-2xl">🦊</span>
+                    <div class="flex-1">
+                      <h4 class="text-sm font-semibold text-gray-900">Coyote</h4>
+                      <p class="text-[10px] text-gray-500">Canis latrans</p>
+                    </div>
+                    <div class="text-right">
+                      <p class="text-sm font-bold text-blue-600">892</p>
+                      <p class="text-[9px] text-gray-400">images</p>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </div>
+                
+                <!-- Wild Pig -->
+                <div id="tag-wild-pig" class="clickable-card bg-white rounded-lg p-3" onclick="showAnimalDetail('wild-pig')">
+                  <div class="flex items-center gap-3">
+                    <span class="text-2xl">🐗</span>
+                    <div class="flex-1">
+                      <h4 class="text-sm font-semibold text-gray-900">Wild Pig</h4>
+                      <p class="text-[10px] text-gray-500">Sus scrofa</p>
+                    </div>
+                    <div class="text-right">
+                      <p class="text-sm font-bold text-blue-600">456</p>
+                      <p class="text-[9px] text-gray-400">images</p>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </div>
+                
+                <!-- Black Bear -->
+                <div id="tag-black-bear" class="clickable-card bg-white rounded-lg p-3" onclick="showAnimalDetail('black-bear')">
+                  <div class="flex items-center gap-3">
+                    <span class="text-2xl">🐻</span>
+                    <div class="flex-1">
+                      <h4 class="text-sm font-semibold text-gray-900">Black Bear</h4>
+                      <p class="text-[10px] text-gray-500">Ursus americanus</p>
+                    </div>
+                    <div class="text-right">
+                      <p class="text-sm font-bold text-blue-600">234</p>
+                      <p class="text-[9px] text-gray-400">images</p>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </div>
+                
+                <!-- More animals placeholder -->
+                <div class="text-center py-3 text-[10px] text-gray-400 italic">
+                  + 12 more animal tags...
+                </div>
+                
+              </div>
+            </div>
+            
+          </div>
+          
+          <!-- ═══════════════════════════════════════════════════════════════════════ -->
+          <!-- BY CAMERA VIEW - Hidden by default                                      -->
+          <!-- Shows cameras, click to see all images from that camera                 -->
+          <!-- ═══════════════════════════════════════════════════════════════════════ -->
+          <div id="view-by-camera" class="hidden p-3">
+            
+            <!-- Optional Animal Filter -->
+            <div id="camera-optional-filter" class="filter-section rounded-lg p-2.5 mb-3">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-gray-500">Optional:</span>
+                <select id="camera-animal-filter" class="flex-1 px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white">
+                  <option selected>All animals</option>
+                  <option>🦁 Mountain Lion</option>
+                  <option>🦌 Deer</option>
+                  <option>🦊 Coyote</option>
+                  <option>🐗 Wild Pig</option>
+                  <option>🐻 Black Bear</option>
+                </select>
+              </div>
+            </div>
+            
+            <!-- Cameras List -->
+            <div id="cameras-section">
+              <h3 class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-2">Cameras</h3>
+              
+              <div id="cameras-list" class="space-y-1.5">
+                
+                <!-- CAM-042 -->
+                <div id="cam-042-card" class="clickable-card bg-white rounded-lg p-3" onclick="showCameraDetail('CAM-042')">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg flex items-center justify-center">
+                      <span class="text-lg">📷</span>
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex items-center gap-2">
+                        <h4 class="text-sm font-semibold text-gray-900">CAM-042</h4>
+                        <span class="text-[8px] bg-green-100 text-green-700 px-1 py-0.5 rounded font-medium">Active</span>
+                      </div>
+                      <p class="text-[10px] text-gray-500">North Ridge</p>
+                    </div>
+                    <div class="text-right">
+                      <p class="text-sm font-bold text-blue-600">10,847</p>
+                      <p class="text-[9px] text-gray-400">images</p>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </div>
+                
+                <!-- CAM-015 -->
+                <div id="cam-015-card" class="clickable-card bg-white rounded-lg p-3" onclick="showCameraDetail('CAM-015')">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center">
+                      <span class="text-lg">📷</span>
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex items-center gap-2">
+                        <h4 class="text-sm font-semibold text-gray-900">CAM-015</h4>
+                        <span class="text-[8px] bg-green-100 text-green-700 px-1 py-0.5 rounded font-medium">Active</span>
+                      </div>
+                      <p class="text-[10px] text-gray-500">Valley Floor</p>
+                    </div>
+                    <div class="text-right">
+                      <p class="text-sm font-bold text-blue-600">8,234</p>
+                      <p class="text-[9px] text-gray-400">images</p>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </div>
+                
+                <!-- CAM-028 -->
+                <div id="cam-028-card" class="clickable-card bg-white rounded-lg p-3" onclick="showCameraDetail('CAM-028')">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-teal-100 to-teal-200 rounded-lg flex items-center justify-center">
+                      <span class="text-lg">📷</span>
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex items-center gap-2">
+                        <h4 class="text-sm font-semibold text-gray-900">CAM-028</h4>
+                        <span class="text-[8px] bg-green-100 text-green-700 px-1 py-0.5 rounded font-medium">Active</span>
+                      </div>
+                      <p class="text-[10px] text-gray-500">Coastal Bluff</p>
+                    </div>
+                    <div class="text-right">
+                      <p class="text-sm font-bold text-blue-600">6,891</p>
+                      <p class="text-[9px] text-gray-400">images</p>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </div>
+                
+                <!-- More cameras placeholder -->
+                <div class="text-center py-3 text-[10px] text-gray-400 italic">
+                  + 39 more cameras...
+                </div>
+                
+              </div>
+            </div>
+            
+          </div>
+          
+          <!-- ═══════════════════════════════════════════════════════════════════════ -->
+          <!-- ANIMAL DETAIL VIEW - Shows images for selected animal                   -->
+          <!-- ═══════════════════════════════════════════════════════════════════════ -->
+          <div id="view-animal-detail" class="hidden p-3">
+            
+            <!-- Back button -->
+            <button id="back-to-animals-btn" class="back-btn flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium mb-3 px-2 py-1.5 -ml-2 rounded" onclick="showAnimalsView()">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+              Back to Animals
+            </button>
+            
+            <!-- Animal Header -->
+            <div id="animal-detail-header" class="mb-4 p-3 bg-gradient-to-r from-amber-50 to-amber-100 rounded-lg border border-amber-200">
+              <div class="flex items-center gap-3">
+                <span id="animal-detail-emoji" class="text-3xl">🦁</span>
+                <div class="flex-1">
+                  <h3 id="animal-detail-name" class="text-base font-bold text-gray-900">Mountain Lion</h3>
+                  <p id="animal-detail-count" class="text-sm text-amber-700 font-semibold">127 images</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Optional Camera Filter -->
+            <div class="filter-section rounded-lg p-2.5 mb-3">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-gray-500">Optional filter:</span>
+                <select id="animal-detail-camera-filter" class="flex-1 px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white">
+                  <option selected>All cameras</option>
+                  <option>CAM-042 (47 images)</option>
+                  <option>CAM-015 (23 images)</option>
+                  <option>CAM-028 (18 images)</option>
+                </select>
+              </div>
+            </div>
+            
+            <!-- Bookmark Buttons -->
+            <div class="flex gap-2 mb-4">
+              <button class="action-btn flex-1 text-[10px] bg-amber-100 hover:bg-amber-200 text-amber-700 font-medium py-2 px-3 rounded-lg flex items-center justify-center gap-1.5">
+                <span>🔖</span>
+                Bookmark
+              </button>
+              <button class="action-btn flex-1 text-[10px] bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-3 rounded-lg flex items-center justify-center gap-1.5">
+                <span>📌</span>
+                Pin with Filter
+              </button>
+            </div>
+            
+            <!-- Image Gallery -->
+            <div id="animal-image-gallery">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Images</h3>
+                <p class="text-[10px] text-gray-500">127 images</p>
+              </div>
+              
+              <div class="grid grid-cols-3 gap-1.5">
+                <div class="image-thumb aspect-square bg-gradient-to-br from-amber-100 to-amber-200 rounded overflow-hidden relative cursor-pointer">
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <span class="text-2xl">🦁</span>
+                  </div>
+                  <div class="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] px-1 py-0.5">
+                    <span class="font-medium">CAM-042</span> • Jan 18
+                  </div>
+                </div>
+                <div class="image-thumb aspect-square bg-gradient-to-br from-amber-100 to-amber-200 rounded overflow-hidden relative cursor-pointer">
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <span class="text-2xl">🦁</span>
+                  </div>
+                  <div class="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] px-1 py-0.5">
+                    <span class="font-medium">CAM-042</span> • Feb 3
+                  </div>
+                </div>
+                <div class="image-thumb aspect-square bg-gradient-to-br from-amber-100 to-amber-200 rounded overflow-hidden relative cursor-pointer">
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <span class="text-2xl">🦁</span>
+                  </div>
+                  <div class="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] px-1 py-0.5">
+                    <span class="font-medium">CAM-015</span> • Mar 12
+                  </div>
+                </div>
+                <div class="image-thumb aspect-square bg-gradient-to-br from-amber-100 to-amber-200 rounded overflow-hidden relative cursor-pointer">
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <span class="text-2xl">🦁</span>
+                  </div>
+                  <div class="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] px-1 py-0.5">
+                    <span class="font-medium">CAM-028</span> • Apr 7
+                  </div>
+                </div>
+                <div class="image-thumb aspect-square bg-gradient-to-br from-amber-100 to-amber-200 rounded overflow-hidden relative cursor-pointer">
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <span class="text-2xl">🦁</span>
+                  </div>
+                  <div class="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] px-1 py-0.5">
+                    <span class="font-medium">CAM-042</span> • May 21
+                  </div>
+                </div>
+                <div class="image-thumb aspect-square bg-gradient-to-br from-amber-100 to-amber-200 rounded overflow-hidden relative cursor-pointer">
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <span class="text-2xl">🦁</span>
+                  </div>
+                  <div class="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] px-1 py-0.5">
+                    <span class="font-medium">CAM-015</span> • Jun 9
+                  </div>
+                </div>
+              </div>
+              
+              <div class="text-center py-3 text-[10px] text-gray-400 italic">
+                ... 121 more images ...
+              </div>
+              
+            </div>
+            
+          </div>
+          
+          <!-- ═══════════════════════════════════════════════════════════════════════ -->
+          <!-- CAMERA DETAIL VIEW - Shows images from selected camera                  -->
+          <!-- ═══════════════════════════════════════════════════════════════════════ -->
+          <div id="view-camera-detail" class="hidden p-3">
+            
+            <!-- Back button -->
+            <button id="back-to-cameras-btn" class="back-btn flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium mb-3 px-2 py-1.5 -ml-2 rounded" onclick="showCamerasView()">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+              Back to Cameras
+            </button>
+            
+            <!-- Camera Header -->
+            <div id="camera-detail-header" class="mb-4 p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg flex items-center justify-center">
+                  <span class="text-xl">📷</span>
+                </div>
+                <div class="flex-1">
+                  <h3 id="camera-detail-name" class="text-base font-bold text-gray-900">CAM-042</h3>
+                  <p id="camera-detail-location" class="text-[10px] text-gray-500">North Ridge • Active</p>
+                  <p id="camera-detail-count" class="text-sm text-blue-700 font-semibold">10,847 images</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Optional Animal Filter -->
+            <div class="filter-section rounded-lg p-2.5 mb-3">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-gray-500">Optional filter:</span>
+                <select id="camera-detail-animal-filter" class="flex-1 px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white">
+                  <option selected>All animals</option>
+                  <option>🦁 Mountain Lion (47)</option>
+                  <option>🦌 Deer (3,421)</option>
+                  <option>🦊 Coyote (892)</option>
+                  <option>🐗 Wild Pig (234)</option>
+                </select>
+              </div>
+            </div>
+            
+            <!-- Bookmark Buttons -->
+            <div class="flex gap-2 mb-4">
+              <button class="action-btn flex-1 text-[10px] bg-amber-100 hover:bg-amber-200 text-amber-700 font-medium py-2 px-3 rounded-lg flex items-center justify-center gap-1.5">
+                <span>🔖</span>
+                Bookmark
+              </button>
+              <button class="action-btn flex-1 text-[10px] bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-3 rounded-lg flex items-center justify-center gap-1.5">
+                <span>📌</span>
+                Pin with Filter
+              </button>
+            </div>
+            
+            <!-- Image Gallery -->
+            <div id="camera-image-gallery">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Images</h3>
+                <p class="text-[10px] text-gray-500">10,847 images</p>
+              </div>
+              
+              <div class="grid grid-cols-3 gap-1.5">
+                <div class="image-thumb aspect-square bg-gradient-to-br from-amber-100 to-amber-200 rounded overflow-hidden relative cursor-pointer">
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <span class="text-2xl">🦁</span>
+                  </div>
+                  <div class="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] px-1 py-0.5">
+                    Jan 18, 2023
+                  </div>
+                </div>
+                <div class="image-thumb aspect-square bg-gradient-to-br from-green-100 to-green-200 rounded overflow-hidden relative cursor-pointer">
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <span class="text-2xl">🦌</span>
+                  </div>
+                  <div class="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] px-1 py-0.5">
+                    Jan 19, 2023
+                  </div>
+                </div>
+                <div class="image-thumb aspect-square bg-gradient-to-br from-green-100 to-green-200 rounded overflow-hidden relative cursor-pointer">
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <span class="text-2xl">🦌</span>
+                  </div>
+                  <div class="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] px-1 py-0.5">
+                    Jan 20, 2023
+                  </div>
+                </div>
+                <div class="image-thumb aspect-square bg-gradient-to-br from-orange-100 to-orange-200 rounded overflow-hidden relative cursor-pointer">
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <span class="text-2xl">🦊</span>
+                  </div>
+                  <div class="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] px-1 py-0.5">
+                    Jan 21, 2023
+                  </div>
+                </div>
+                <div class="image-thumb aspect-square bg-gradient-to-br from-green-100 to-green-200 rounded overflow-hidden relative cursor-pointer">
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <span class="text-2xl">🦌</span>
+                  </div>
+                  <div class="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] px-1 py-0.5">
+                    Jan 22, 2023
+                  </div>
+                </div>
+                <div class="image-thumb aspect-square bg-gradient-to-br from-pink-100 to-pink-200 rounded overflow-hidden relative cursor-pointer">
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <span class="text-2xl">🐗</span>
+                  </div>
+                  <div class="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] px-1 py-0.5">
+                    Jan 23, 2023
+                  </div>
+                </div>
+              </div>
+              
+              <div class="text-center py-3 text-[10px] text-gray-400 italic">
+                ... 10,841 more images ...
+              </div>
+              
+            </div>
+            
+          </div>
+          
+        </div>
+        
+        <!-- EXPORT TAB -->
+        <div id="tab-export" class="tab-panel hidden p-3">
+          <p class="text-[10px] text-gray-500 italic">Export tab content shown in mockup 02f (Export Builder)</p>
+        </div>
+        
+      </div>
+    </aside>
+    
+  </div>
+  
+  <!-- ArcGIS Map Initialization -->
+  <script>
+    // =========================================================================
+    // STATE
+    // =========================================================================
+    const state = {
+      selectedLayer: 'animl',
+      expandedCategories: new Set(['species']),
+      widgetExpanded: true,
+      bookmarksWidgetExpanded: true,
+      activeTab: 'browse',
+      activeSubTab: 'animal', // 'animal' or 'camera'
+      currentView: 'list' // 'list', 'animal-detail', or 'camera-detail'
+    };
+    
+    let mapView = null;
+    
+    // =========================================================================
+    // MAP INITIALIZATION
+    // =========================================================================
+    require([
+      "esri/Map",
+      "esri/views/MapView",
+      "esri/layers/GeoJSONLayer"
+    ], function(Map, MapView, GeoJSONLayer) {
+      
+      const map = new Map({ basemap: "topo-vector" });
+      
+      mapView = new MapView({
+        container: "viewDiv",
+        map: map,
+        center: [-120.4275, 34.4925],
+        zoom: 12,
+        ui: { components: [] }
+      });
+      
+      // Add preserve boundary
+      const boundaryLayer = new GeoJSONLayer({
+        url: "/dangermond-preserve-boundary.geojson",
+        renderer: {
+          type: "simple",
+          symbol: {
+            type: "simple-fill",
+            color: [46, 125, 50, 0.1],
+            outline: { color: [46, 125, 50, 1], width: 2 }
+          }
+        }
+      });
+      
+      map.add(boundaryLayer);
+      
+      mapView.when(() => {
+        document.getElementById('loading-overlay').style.display = 'none';
+      });
+    });
+    
+    // =========================================================================
+    // SUB-TAB SWITCHING (By Animal ↔ By Camera)
+    // =========================================================================
+    function switchSubTab(subTab) {
+      state.activeSubTab = subTab;
+      state.currentView = 'list';
+      
+      // Update sub-tab buttons
+      document.querySelectorAll('.sub-tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`sub-tab-${subTab}`).classList.add('active');
+      
+      // Hide all views
+      document.getElementById('view-by-animal').classList.add('hidden');
+      document.getElementById('view-by-camera').classList.add('hidden');
+      document.getElementById('view-animal-detail').classList.add('hidden');
+      document.getElementById('view-camera-detail').classList.add('hidden');
+      
+      // Show selected view
+      if (subTab === 'animal') {
+        document.getElementById('view-by-animal').classList.remove('hidden');
+      } else {
+        document.getElementById('view-by-camera').classList.remove('hidden');
+      }
+    }
+    
+    // =========================================================================
+    // VIEW SWITCHING (List ↔ Detail)
+    // =========================================================================
+    function showAnimalDetail(animalId) {
+      state.currentView = 'animal-detail';
+      
+      document.getElementById('view-by-animal').classList.add('hidden');
+      document.getElementById('view-animal-detail').classList.remove('hidden');
+      
+      // Update detail content based on animal
+      const animals = {
+        'mountain-lion': { emoji: '🦁', name: 'Mountain Lion', count: '127 images' },
+        'deer': { emoji: '🦌', name: 'Deer', count: '2,341 images' },
+        'coyote': { emoji: '🦊', name: 'Coyote', count: '892 images' },
+        'wild-pig': { emoji: '🐗', name: 'Wild Pig', count: '456 images' },
+        'black-bear': { emoji: '🐻', name: 'Black Bear', count: '234 images' }
+      };
+      
+      const animal = animals[animalId] || animals['mountain-lion'];
+      document.getElementById('animal-detail-emoji').textContent = animal.emoji;
+      document.getElementById('animal-detail-name').textContent = animal.name;
+      document.getElementById('animal-detail-count').textContent = animal.count;
+    }
+    
+    function showAnimalsView() {
+      state.currentView = 'list';
+      document.getElementById('view-animal-detail').classList.add('hidden');
+      document.getElementById('view-by-animal').classList.remove('hidden');
+    }
+    
+    function showCameraDetail(cameraId) {
+      state.currentView = 'camera-detail';
+      
+      document.getElementById('view-by-camera').classList.add('hidden');
+      document.getElementById('view-camera-detail').classList.remove('hidden');
+      
+      // Update detail content based on camera
+      const cameras = {
+        'CAM-042': { name: 'CAM-042', location: 'North Ridge • Active', count: '10,847 images' },
+        'CAM-015': { name: 'CAM-015', location: 'Valley Floor • Active', count: '8,234 images' },
+        'CAM-028': { name: 'CAM-028', location: 'Coastal Bluff • Active', count: '6,891 images' }
+      };
+      
+      const camera = cameras[cameraId] || cameras['CAM-042'];
+      document.getElementById('camera-detail-name').textContent = camera.name;
+      document.getElementById('camera-detail-location').textContent = camera.location;
+      document.getElementById('camera-detail-count').textContent = camera.count;
+    }
+    
+    function showCamerasView() {
+      state.currentView = 'list';
+      document.getElementById('view-camera-detail').classList.add('hidden');
+      document.getElementById('view-by-camera').classList.remove('hidden');
+    }
+    
+    // =========================================================================
+    // UI FUNCTIONS
+    // =========================================================================
+    function toggleCategory(categoryId) {
+      const category = document.querySelector(`[data-category="${categoryId}"]`);
+      if (!category) return;
+      const content = category.querySelector('.category-content');
+      const chevron = category.querySelector('.chevron');
+      
+      if (state.expandedCategories.has(categoryId)) {
+        state.expandedCategories.delete(categoryId);
+        content.classList.add('hidden');
+        chevron.classList.remove('expanded');
+      } else {
+        state.expandedCategories.add(categoryId);
+        content.classList.remove('hidden');
+        chevron.classList.add('expanded');
+      }
+    }
+    
+    function selectLayer(layerId) {
+      document.querySelectorAll('.layer-row').forEach(row => row.classList.remove('selected'));
+      const row = document.querySelector(`.layer-row[data-layer="${layerId}"]`);
+      if (row) row.classList.add('selected');
+      state.selectedLayer = layerId;
+    }
+    
+    function toggleVisibility(layerId) {
+      console.log('Toggle visibility:', layerId);
+    }
+    
+    function togglePin(layerId) {
+      console.log('Toggle pin:', layerId);
+    }
+    
+    function switchTab(tabId) {
+      state.activeTab = tabId;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`.tab-btn[data-tab="${tabId}"]`)?.classList.add('active');
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+      document.getElementById(`tab-${tabId}`)?.classList.remove('hidden');
+    }
+    
+    function toggleFloatingWidget() {
+      const content = document.getElementById('widget-content');
+      const chevron = document.getElementById('widget-chevron');
+      state.widgetExpanded = !state.widgetExpanded;
+      content.classList.toggle('hidden', !state.widgetExpanded);
+      chevron.style.transform = state.widgetExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
+    
+    function toggleBookmarksWidget() {
+      const content = document.getElementById('bookmarks-widget-content');
+      const chevron = document.getElementById('bookmarks-widget-chevron');
+      state.bookmarksWidgetExpanded = !state.bookmarksWidgetExpanded;
+      content.classList.toggle('hidden', !state.bookmarksWidgetExpanded);
+      chevron.style.transform = state.bookmarksWidgetExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
+    
+    // =========================================================================
+    // INIT
+    // =========================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize expanded categories
+      state.expandedCategories.forEach(categoryId => {
+        const cat = document.querySelector(`[data-category="${categoryId}"]`);
+        if (cat) {
+          cat.querySelector('.category-content')?.classList.remove('hidden');
+          cat.querySelector('.chevron')?.classList.add('expanded');
+        }
+      });
+      
+      // Select initial layer
+      selectLayer('animl');
+      
+      // Switch to browse tab
+      switchTab('browse');
+      
+      // Default to "By Animal" sub-tab
+      switchSubTab('animal');
+    });
+  </script>
+  
+</body>
+</html>
