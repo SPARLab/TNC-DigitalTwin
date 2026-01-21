@@ -811,6 +811,15 @@ User flow to demonstrate:
 - 📝 Simplest pointer row pattern - bookmarks are always for entire datasets
 - 📝 DOI badges provide citation links to original research
 
+**Enhancement Needed for DataOne Details View:**
+- ⚠️ `[Details]` button should show dataset detail view in right sidebar
+- Should use existing right sidebar detail styling (similar to ANiML camera detail, Dendra sensor detail)
+- Consider showing iframe of actual DataOne dataset page (can pull from ArcGIS Feature Service)
+- Need clear "Back to Datasets" navigation pattern
+- Show how filters persist/interact when viewing detail view
+- Key question: When in detail view, is it obvious you can go back to browse more datasets?
+- This would complete the drill-down pattern consistency across all data sources
+
 ---
 
 ## Files
