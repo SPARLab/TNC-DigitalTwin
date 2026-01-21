@@ -9,7 +9,7 @@
 
 ## Progress Summary
 
-**Completed Mockups:** ✅ 4 / 6
+**Completed Mockups:** ✅ 5 / 6
 
 | Mockup | Status | Purpose |
 |--------|--------|---------|
@@ -17,15 +17,16 @@
 | **02b** | ✅ Complete | iNaturalist Browse (self-contained rows) |
 | **02c** | ✅ Complete | ANiML Browse (pointer rows + dual-level filters) |
 | **02d** | ✅ Complete | Dendra Browse (pointer rows + Level 3 datastream + floating chart) |
-| **02e** | 🔜 Next | DataOne Browse (pointer rows, no Level 3) |
-| **02f** | ⏳ Pending | Export Builder (all bookmark types together) |
+| **02e** | ✅ Complete | DataOne Browse (pointer rows, no Level 3) |
+| **02f** | 🔜 Next | Export Builder (all bookmark types together) |
 
 **Key Achievements:**
 - ✅ Demonstrated three-level hierarchy (Layer → Feature → Related Data)
 - ✅ Self-contained vs. pointer row patterns clear
 - ✅ Level 3 filtering shown in two contexts (ANiML images, Dendra time series)
 - ✅ Floating time series panel integrated without overlap
-- ⏳ Still need: DataOne (simple pointer) and Export Builder
+- ✅ DataOne pointer pattern complete (simple bookmark, no Level 3)
+- ⏳ Still need: Export Builder
 
 ---
 
@@ -733,8 +734,8 @@ ANiML is unique among our data sources because:
 | 2 | 02b | iNaturalist Browse (self-contained baseline) | ✅ **COMPLETE** |
 | 3 | 02c | ANiML Browse (**dual-level filter pattern**) | ✅ **COMPLETE** |
 | 4 | 02d | Dendra Browse (pointer + Level 3 datastream) | ✅ **COMPLETE** |
-| 5 | 02e | DataOne Browse (pointer, no Level 3) | 🔜 Next |
-| 6 | 02f | Export Builder (all together) | |
+| 5 | 02e | DataOne Browse (pointer, no Level 3) | ✅ **COMPLETE** |
+| 6 | 02f | Export Builder (all together) | 🔜 Next |
 | 7 | Polish | Consistency check, edge cases | |
 
 ### 02c Development Notes (ANiML)
@@ -799,6 +800,17 @@ User flow to demonstrate:
 - ✅ Teal color theme for Dendra-specific elements (filter sections, badges)
 - 📝 Clean example of time-series Level 3 filter (simpler than ANiML's dual-level)
 
+**02e - DataOne Browse (Jan 21, 2026)**
+- ✅ Demonstrated pointer row pattern WITHOUT Level 3 filter
+- ✅ Single-level browse (datasets, no drill-down to individual files)
+- ✅ Search & filter: text search, category, year range, author
+- ✅ Dataset cards show: title, authors, year, description, DOI badge, file tags
+- ✅ Only `[Bookmark]` button (no "Bookmark with Filter") - key distinction
+- ✅ External access via "Open in DataOne ↗" button
+- ✅ Indigo/violet color theme for scholarly/research feel
+- 📝 Simplest pointer row pattern - bookmarks are always for entire datasets
+- 📝 DOI badges provide citation links to original research
+
 ---
 
 ## Files
@@ -836,8 +848,8 @@ mockups/
 ---
 
 **Last Updated:** January 21, 2026  
-**Status:** In Progress (4 of 6 mockups complete) ✓  
-**Next:** Mockup 02e - DataOne Browse Tab (pointer, no Level 3)
+**Status:** In Progress (5 of 6 mockups complete) ✓  
+**Next:** Mockup 02f - Export Builder (all bookmark types together)
 
-**Latest Completion:** 02d - Dendra Browse with floating time series panel on map
+**Latest Completion:** 02e - DataOne Browse (pointer rows, no Level 3 filter)
 

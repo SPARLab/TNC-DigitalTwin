@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mockup 02e: DataOne Datasets (Pointer, No Level 3) - TNC Digital Catalog</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- ArcGIS JS API -->
+  <link rel="stylesheet" href="https://js.arcgis.com/4.28/esri/themes/light/main.css">
+  <script src="https://js.arcgis.com/4.28/"></script>
+  
+  <!-- Google Fonts - Using DM Sans for a more distinctive look -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'sans': ['DM Sans', 'sans-serif'],
+            'mono': ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            'tnc': {
+              'green': '#2e7d32',
+              'green-dark': '#1b5e20',
+              'green-light': '#4caf50',
+            },
+            'sidebar-bg': '#f8fafc',
+            'widget-bg': '#ffffff',
+            'pinned-bg': '#eff6ff',
+            'bookmark-bg': '#fefce8',
+            'query-active': '#dcfce7',
+            'dataone': {
+              'indigo': '#6366f1',
+              'indigo-light': '#818cf8',
+              'indigo-dark': '#4f46e5',
+              'violet': '#8b5cf6',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'DM Sans', sans-serif; }
+    
+    .esri-ui-corner { display: none !important; }
+    
+    /* Custom scrollbar */
+    .sidebar-scroll::-webkit-scrollbar { width: 6px; }
+    .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+    .sidebar-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    
+    /* Hover transitions */
+    .icon-btn { transition: all 0.15s ease; }
+    .icon-btn:hover { transform: scale(1.1); }
+    
+    /* Layer row states */
+    .layer-row { transition: all 0.15s ease; border-left: 3px solid transparent; }
+    .layer-row:hover { background-color: #f1f5f9; }
+    .layer-row.pinned { background-color: #eff6ff; border-left-color: #3b82f6; }
+    .layer-row.selected { border-left-color: #059669; }
+    
+    /* Floating widget */
+    .floating-widget { 
+      box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+      backdrop-filter: blur(8px);
+    }
+    
+    /* Widget layer cards */
+    .widget-layer-card {
+      transition: all 0.15s ease;
+      border: 1px solid #e2e8f0;
+    }
+    .widget-layer-card:hover {
+      border-color: #94a3b8;
+      box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Bookmark card */
+    .bookmark-card {
+      transition: all 0.15s ease;
+      border-left: 3px solid #f59e0b;
+    }
+    .bookmark-card:hover {
+      background-color: #fffbeb;
+    }
+    
+    /* Dataset card */
+    .dataset-card {
+      transition: all 0.15s ease;
+      border: 1px solid #e5e7eb;
+    }
+    .dataset-card:hover {
+      border-color: #a5b4fc;
+      box-shadow: 0 2px 8px -2px rgba(99, 102, 241, 0.15);
+    }
+    
+    /* Tab styling - lifted tab effect from live site */
+    .tab-btn { transition: all 0.15s ease; }
+    .tab-btn.active { 
+      background-color: white;
+      color: #2563eb;
+      border-left: 1px solid #e5e7eb;
+      border-right: 1px solid #e5e7eb;
+      position: relative;
+      z-index: 10;
+      margin-bottom: -1px;
+    }
+    .tab-btn:not(.active) { 
+      background-color: #f9fafb;
+      color: #4b5563;
+      box-shadow: inset -4px 0 6px -2px rgba(0,0,0,0.12), inset 0 -4px 6px -2px rgba(0,0,0,0.08);
+    }
+    .tab-btn:not(.active):hover { 
+      color: #111827;
+    }
+    
+    /* Chevron rotation */
+    .chevron { transition: transform 0.2s ease; }
+    .chevron.expanded { transform: rotate(90deg); }
+    
+    /* Spinner animation */
+    .spinner { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    
+    /* Query badge */
+    .query-badge {
+      background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+      border: 1px solid #86efac;
+    }
+    
+    /* Filter section styling */
+    .filter-section {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      border: 1px solid #e2e8f0;
+    }
+    
+    /* DataOne indigo accent filter section */
+    .filter-section-dataone {
+      background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+      border: 1px solid #c7d2fe;
+    }
+    
+    /* Action button */
+    .action-btn {
+      transition: all 0.15s ease;
+    }
+    .action-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Widget positioning for split layout */
+    .widget-bookmarks-only {
+      left: auto !important;
+      right: 16px !important;
+    }
+    
+    /* File tag styling */
+    .file-tag {
+      background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+      border: 1px solid #ddd6fe;
+    }
+    
+    /* DOI badge */
+    .doi-badge {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border: 1px solid #fcd34d;
+    }
+  </style>
+</head>
+<body id="page-body" class="bg-slate-100 h-screen overflow-hidden">
+  
+  <!-- HEADER - Green gradient from live site aesthetic -->
+  <header id="header" class="h-11 bg-gradient-to-b from-[#00703c] to-[#008f4a] flex items-center px-4">
+    <div class="flex items-center gap-3">
+      <h1 id="header-title" class="text-[15px] font-semibold text-white leading-tight">
+        Dangermond Preserve Data Catalog
+      </h1>
+    </div>
+    <div id="header-badges" class="ml-auto flex items-center gap-3">
+      <span class="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-medium rounded">V2 MOCKUP</span>
+      <span class="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-medium rounded">02e: DataOne Datasets</span>
+    </div>
+  </header>
+  
+  <!-- MAIN LAYOUT -->
+  <div id="main-layout" class="flex h-[calc(100vh-44px)]">
+    
+    <!-- LEFT SIDEBAR: Layer Browser -->
+    <aside id="left-sidebar" class="w-80 bg-sidebar-bg border-r border-slate-200 flex flex-col">
+      
+      <!-- Search Bar -->
+      <div id="left-sidebar-search" class="p-3 border-b border-slate-200 bg-white">
+        <div class="relative">
+          <input type="text" placeholder="Search layers..." 
+            id="layer-search-input"
+            class="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tnc-green/30 focus:border-tnc-green bg-slate-50">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+      </div>
+      
+      <!-- Layer List -->
+      <div id="layer-list" class="flex-1 overflow-y-auto sidebar-scroll p-2">
+        
+        <!-- SPECIES -->
+        <div class="category mb-1" data-category="species">
+          <button id="species-category-header" class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('species')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <span class="text-base">🦎</span>
+            <span>Species & Wildlife</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">6</span>
+          </button>
+          <div id="species-category-content" class="category-content hidden ml-2 space-y-0.5"></div>
+        </div>
+        
+        <!-- SENSORS -->
+        <div class="category mb-1" data-category="sensors">
+          <button id="sensors-category-header" class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('sensors')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <span class="text-base">🌡️</span>
+            <span>Sensors & Monitoring</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">4</span>
+          </button>
+          <div id="sensors-category-content" class="category-content hidden ml-2"></div>
+        </div>
+        
+        <!-- RESEARCH DATA (expanded, DataOne selected) -->
+        <div class="category mb-1" data-category="research">
+          <button id="research-category-header" class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('research')">
+            <svg class="chevron w-4 h-4 text-slate-400 expanded" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <span class="text-base">🔬</span>
+            <span>Research Data</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">3</span>
+          </button>
+          <div id="research-category-content" class="category-content ml-2 space-y-0.5">
+            
+            <!-- DataOne Datasets - PINNED with QUERY (SELECTED) -->
+            <div id="layer-dataone" class="layer-row pinned selected flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" 
+                 data-layer="dataone" onclick="selectLayer('dataone')">
+              <button id="dataone-visibility-btn" class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('dataone')" title="Toggle visibility">
+                <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                </svg>
+              </button>
+              <div class="flex-1 min-w-0">
+                <span class="text-sm text-slate-700 block truncate">DataOne Datasets</span>
+                <span class="text-xs text-emerald-600 flex items-center gap-1">
+                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
+                  Marine, 2020-2023 · 47 results
+                </span>
+              </div>
+              <button id="dataone-pin-btn" class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); togglePin('dataone')" title="Pinned">
+                <span class="text-sm">📌</span>
+              </button>
+            </div>
+            
+            <!-- GBIF - not pinned -->
+            <div id="layer-gbif" class="layer-row flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" 
+                 data-layer="gbif" onclick="selectLayer('gbif')">
+              <button id="gbif-visibility-btn" class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('gbif')" title="Show on map">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+              <span class="flex-1 text-sm text-slate-700 truncate">GBIF Occurrences</span>
+              <button id="gbif-pin-btn" class="icon-btn flex-shrink-0 opacity-30 hover:opacity-100" onclick="event.stopPropagation(); togglePin('gbif')" title="Pin layer">
+                <span class="text-sm">📌</span>
+              </button>
+            </div>
+            
+            <!-- Field Studies - not pinned -->
+            <div id="layer-field-studies" class="layer-row flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" 
+                 data-layer="field-studies" onclick="selectLayer('field-studies')">
+              <button id="field-studies-visibility-btn" class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('field-studies')" title="Show on map">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+              <span class="flex-1 text-sm text-slate-700 truncate">Field Study Reports</span>
+              <button id="field-studies-pin-btn" class="icon-btn flex-shrink-0 opacity-30 hover:opacity-100" onclick="event.stopPropagation(); togglePin('field-studies')" title="Pin layer">
+                <span class="text-sm">📌</span>
+              </button>
+            </div>
+            
+          </div>
+        </div>
+        
+      </div>
+    </aside>
+    
+    <!-- MAP AREA -->
+    <main id="map-area" class="flex-1 relative">
+      
+      <!-- ArcGIS Map Container -->
+      <div id="viewDiv" class="absolute inset-0"></div>
+      
+      <!-- Loading Overlay -->
+      <div id="loading-overlay" class="absolute inset-0 bg-gray-200/80 flex items-center justify-center z-10">
+        <div id="loading-content" class="text-center">
+          <svg class="spinner w-8 h-8 text-[#00703c] mx-auto mb-2" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p class="text-xs text-gray-600 font-medium">Loading map...</p>
+        </div>
+      </div>
+      
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <!-- FLOATING WIDGETS                                                        -->
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      
+      <!-- Pinned Layers Widget (Left) -->
+      <div id="floating-widget-pinned" class="floating-widget widget-pinned-only absolute top-4 left-4 bg-white/95 rounded-xl w-72 z-20 overflow-hidden">
+        
+        <!-- Widget Header -->
+        <div id="pinned-widget-header" class="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 cursor-pointer" onclick="toggleFloatingWidget()">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">📌</span>
+            <span class="text-sm font-semibold text-slate-700">Pinned Layers</span>
+            <span class="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full font-medium">1</span>
+          </div>
+          <svg id="widget-chevron" class="w-5 h-5 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+        
+        <!-- Widget Content -->
+        <div id="widget-content" class="max-h-[60vh] overflow-y-auto sidebar-scroll">
+          
+          <div id="pinned-layers-list" class="p-3 space-y-2">
+            
+            <!-- DataOne (highlighted) -->
+            <div id="pinned-dataone-card" class="widget-layer-card rounded-lg p-3 bg-indigo-50 border-indigo-200">
+              <div class="flex items-start gap-2">
+                <button class="icon-btn flex-shrink-0 mt-0.5" title="Toggle visibility">
+                  <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                  </svg>
+                </button>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span class="text-base">📄</span>
+                    <span class="text-sm font-medium text-slate-700 truncate">DataOne Datasets</span>
+                  </div>
+                  <div class="query-badge mt-1.5 px-2 py-1 rounded text-xs flex items-center gap-1.5">
+                    <svg class="w-3 h-3 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
+                    <span class="text-emerald-700">Marine, 2020-2023</span>
+                    <span class="text-emerald-600 font-mono">(47 of 876)</span>
+                  </div>
+                  <div class="flex gap-2 mt-2">
+                    <button class="action-btn text-xs text-blue-600 hover:text-blue-700 font-medium">Edit Query</button>
+                    <span class="text-slate-300">|</span>
+                    <button class="action-btn text-xs text-slate-500 hover:text-slate-700">Clear</button>
+                  </div>
+                </div>
+                <button class="icon-btn text-slate-400 hover:text-red-500 flex-shrink-0" title="Unpin layer">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+          </div>
+          
+        </div>
+      </div>
+      
+      <!-- Bookmarks Widget (Right) -->
+      <div id="floating-widget-bookmarks" class="floating-widget widget-bookmarks-only absolute top-4 left-4 bg-white/95 rounded-xl w-72 z-20 overflow-hidden">
+        
+        <!-- Widget Header -->
+        <div id="bookmarks-widget-header" class="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-amber-50 to-white border-b border-amber-100 cursor-pointer" onclick="toggleBookmarksWidget()">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🔖</span>
+            <span class="text-sm font-semibold text-slate-700">Bookmarks</span>
+            <span class="text-xs text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full font-medium">2</span>
+          </div>
+          <svg id="bookmarks-widget-chevron" class="w-5 h-5 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+        
+        <!-- Widget Content -->
+        <div id="bookmarks-widget-content" class="max-h-[50vh] overflow-y-auto sidebar-scroll">
+          
+          <div id="bookmarks-list" class="p-3 space-y-2">
+            
+            <!-- Bookmark: Marine Biodiversity Study (simple, no Level 3) -->
+            <div id="bookmark-marine-bio" class="bookmark-card bg-white rounded-lg p-2.5 cursor-pointer hover:bg-amber-50">
+              <div class="flex items-center gap-3">
+                <span class="text-lg">📄</span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-slate-700 truncate">Marine Biodiversity Study</p>
+                  <p class="text-xs text-slate-500">DataOne • Smith et al. 2020</p>
+                </div>
+                <button class="icon-btn text-slate-400 hover:text-red-500 p-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Bookmark: Coastal Erosion Monitoring (simple) -->
+            <div id="bookmark-coastal-erosion" class="bookmark-card bg-white rounded-lg p-2.5 cursor-pointer hover:bg-amber-50">
+              <div class="flex items-center gap-3">
+                <span class="text-lg">📄</span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-slate-700 truncate">Coastal Erosion Monitoring</p>
+                  <p class="text-xs text-slate-500">DataOne • Chen et al. 2021</p>
+                </div>
+                <button class="icon-btn text-slate-400 hover:text-red-500 p-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+          </div>
+          
+          <!-- Export Button -->
+          <div id="bookmarks-export-section" class="p-3 bg-gradient-to-t from-amber-50 to-white border-t border-amber-100">
+            <button id="export-bookmarks-btn" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-white text-sm font-semibold py-2 px-4 rounded-lg hover:shadow-md transition-all flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+              </svg>
+              Export Bookmarks
+            </button>
+          </div>
+          
+        </div>
+      </div>
+      
+    </main>
+    
+    <!-- RIGHT SIDEBAR -->
+    <aside id="right-sidebar" class="w-[340px] bg-white border-l border-gray-200 flex flex-col">
+      
+      <!-- Sidebar Header -->
+      <div id="right-sidebar-header" class="px-3 py-2.5 border-b border-gray-200 bg-white">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">📄</span>
+          <div>
+            <h2 class="text-[13px] font-semibold text-gray-900">DataOne Datasets</h2>
+            <p class="text-[10px] text-gray-500">Research datasets from the DataOne repository</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tabs - Live site lifted tab styling -->
+      <div id="tabs" class="flex border-b border-gray-200">
+        <button id="tab-btn-overview" class="tab-btn flex-1 px-4 py-2.5 text-xs font-medium" data-tab="overview" onclick="switchTab('overview')">Overview</button>
+        <button id="tab-btn-browse" class="tab-btn active flex-1 px-4 py-2.5 text-xs font-medium" data-tab="browse" onclick="switchTab('browse')">Browse</button>
+        <button id="tab-btn-export" class="tab-btn flex-1 px-4 py-2.5 text-xs font-medium" data-tab="export" onclick="switchTab('export')">Export</button>
+      </div>
+      
+      <!-- Tab Content -->
+      <div id="tab-content" class="flex-1 overflow-y-auto sidebar-scroll">
+        
+        <!-- OVERVIEW TAB -->
+        <div id="tab-overview" class="tab-panel hidden p-3">
+          <p class="text-[10px] text-gray-500 italic">Overview content from mockup 02a</p>
+        </div>
+        
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <!-- BROWSE TAB - DATASET LIST (Single-level, no drill-down)                -->
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <div id="tab-browse" class="tab-panel p-3">
+          
+          <!-- UX Demo callout -->
+          <div id="browse-ux-callout" class="bg-indigo-50 p-3 border border-indigo-200 rounded-lg mb-3">
+            <p class="text-xs font-semibold text-indigo-800 flex items-center gap-1.5">
+              <span class="text-sm">📚</span>
+              Pointer Row: Dataset → Files (No Level 3 Filter)
+            </p>
+            <p class="text-[10px] text-indigo-700 mt-1 leading-relaxed">
+              Each dataset <strong>points to files</strong>, but we typically bookmark <strong>entire datasets</strong> without filtering to specific files. Data access happens via DataOne's external interface.
+            </p>
+            <p class="text-[10px] text-indigo-600 mt-1.5 italic">
+              Notice: Only <strong>[Bookmark]</strong> button (not "Bookmark with Filter")
+            </p>
+          </div>
+          
+          <!-- ═══════════════════════════════════════════════════════════════════════ -->
+          <!-- SEARCH & FILTER SECTION                                                 -->
+          <!-- ═══════════════════════════════════════════════════════════════════════ -->
+          <div id="datasets-filter-section" class="filter-section-dataone rounded-lg p-3 mb-3">
+            <h4 class="text-[10px] font-semibold text-indigo-700 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+              Search & Filter Datasets
+            </h4>
+            
+            <div class="space-y-2.5">
+              <!-- Search -->
+              <div>
+                <label class="text-[10px] text-gray-600 block mb-1">Search</label>
+                <div class="relative">
+                  <input type="text" id="dataset-search-input" value="marine biodiversity" placeholder="Search datasets..."
+                    class="w-full px-3 py-1.5 pr-8 text-xs border border-indigo-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white">
+                  <svg class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                  </svg>
+                </div>
+              </div>
+              
+              <!-- Category -->
+              <div class="flex items-center gap-2">
+                <label class="text-[10px] text-gray-600 w-16">Category:</label>
+                <select id="dataset-category-filter" class="flex-1 px-2 py-1.5 text-xs border border-indigo-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                  <option>All categories</option>
+                  <option selected>Marine</option>
+                  <option>Terrestrial</option>
+                  <option>Hydrology</option>
+                  <option>Climate</option>
+                  <option>Biodiversity</option>
+                  <option>Geology</option>
+                </select>
+              </div>
+              
+              <!-- Date Range -->
+              <div class="flex items-center gap-2">
+                <label class="text-[10px] text-gray-600 w-16">Years:</label>
+                <select id="dataset-year-from" class="flex-1 px-2 py-1.5 text-xs border border-indigo-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                  <option>Any</option>
+                  <option>2015</option>
+                  <option>2016</option>
+                  <option>2017</option>
+                  <option>2018</option>
+                  <option>2019</option>
+                  <option selected>2020</option>
+                  <option>2021</option>
+                  <option>2022</option>
+                  <option>2023</option>
+                </select>
+                <span class="text-[10px] text-gray-400">to</span>
+                <select id="dataset-year-to" class="flex-1 px-2 py-1.5 text-xs border border-indigo-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                  <option>Any</option>
+                  <option>2015</option>
+                  <option>2016</option>
+                  <option>2017</option>
+                  <option>2018</option>
+                  <option>2019</option>
+                  <option>2020</option>
+                  <option>2021</option>
+                  <option>2022</option>
+                  <option selected>2023</option>
+                </select>
+              </div>
+              
+              <!-- Author -->
+              <div class="flex items-center gap-2">
+                <label class="text-[10px] text-gray-600 w-16">Author:</label>
+                <select id="dataset-author-filter" class="flex-1 px-2 py-1.5 text-xs border border-indigo-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                  <option selected>Any author</option>
+                  <option>Smith, J.</option>
+                  <option>Chen, M.</option>
+                  <option>Garcia, A.</option>
+                  <option>Johnson, R.</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="mt-3 pt-2 border-t border-indigo-200">
+              <p class="text-[10px] text-indigo-700">
+                Showing: <span class="font-bold text-indigo-800">47</span> of <span class="font-medium">876</span> datasets
+              </p>
+            </div>
+          </div>
+          
+          <!-- ═══════════════════════════════════════════════════════════════════════ -->
+          <!-- DATASETS LIST                                                           -->
+          <!-- ═══════════════════════════════════════════════════════════════════════ -->
+          <div id="datasets-section">
+            <h3 class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-2">Results</h3>
+            
+            <div id="datasets-list" class="space-y-2">
+              
+              <!-- Dataset 1: Marine Biodiversity Assessment -->
+              <div id="dataset-marine-bio-card" class="dataset-card bg-white rounded-lg p-3">
+                <div class="flex items-start gap-3">
+                  <div class="w-10 h-10 bg-gradient-to-br from-indigo-100 to-violet-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span class="text-lg">🌊</span>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h4 class="text-sm font-semibold text-gray-900 leading-tight">Marine Biodiversity Assessment - Point Conception</h4>
+                    <p class="text-[10px] text-gray-600 mt-0.5">Smith, J. et al. • <span class="font-medium">2020</span></p>
+                    <p class="text-[10px] text-gray-500 mt-1.5 line-clamp-2 leading-relaxed">
+                      Comprehensive survey of marine species diversity along the Point Conception coastline, including intertidal zones and kelp forest ecosystems...
+                    </p>
+                    <!-- DOI Badge -->
+                    <div class="doi-badge inline-flex items-center gap-1 mt-2 px-1.5 py-0.5 rounded text-[9px] text-amber-800">
+                      <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                      </svg>
+                      10.5063/F1Z60PZP
+                    </div>
+                    <!-- File tags -->
+                    <div class="flex items-center gap-1.5 mt-2">
+                      <span class="text-[9px] text-gray-500">Files:</span>
+                      <span class="file-tag text-[9px] text-violet-700 px-1.5 py-0.5 rounded">observations.csv</span>
+                      <span class="file-tag text-[9px] text-violet-700 px-1.5 py-0.5 rounded">report.pdf</span>
+                      <span class="file-tag text-[9px] text-violet-700 px-1.5 py-0.5 rounded">+1</span>
+                    </div>
+                  </div>
+                </div>
+                <!-- Actions -->
+                <div class="flex gap-1.5 mt-3 pt-2.5 border-t border-gray-100">
+                  <button id="bookmark-dataset-1" class="action-btn flex-1 text-[10px] bg-amber-100 hover:bg-amber-200 text-amber-700 font-medium py-1.5 px-2 rounded-lg flex items-center justify-center gap-1">
+                    <span>🔖</span>
+                    Bookmark
+                  </button>
+                  <button id="details-dataset-1" class="action-btn flex-1 text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-1.5 px-2 rounded-lg flex items-center justify-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Details
+                  </button>
+                  <button id="open-dataone-1" class="action-btn text-[10px] bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1.5 px-2 rounded-lg flex items-center justify-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                    </svg>
+                    DataOne
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Dataset 2: Coastal Erosion Monitoring -->
+              <div id="dataset-coastal-erosion-card" class="dataset-card bg-white rounded-lg p-3">
+                <div class="flex items-start gap-3">
+                  <div class="w-10 h-10 bg-gradient-to-br from-cyan-100 to-blue-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span class="text-lg">🏖️</span>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h4 class="text-sm font-semibold text-gray-900 leading-tight">Coastal Erosion Monitoring - Gaviota</h4>
+                    <p class="text-[10px] text-gray-600 mt-0.5">Chen, M. et al. • <span class="font-medium">2021</span></p>
+                    <p class="text-[10px] text-gray-500 mt-1.5 line-clamp-2 leading-relaxed">
+                      Long-term monitoring of coastal erosion rates and sediment transport patterns along the Gaviota coastline with quarterly measurements...
+                    </p>
+                    <!-- DOI Badge -->
+                    <div class="doi-badge inline-flex items-center gap-1 mt-2 px-1.5 py-0.5 rounded text-[9px] text-amber-800">
+                      <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                      </svg>
+                      10.5063/F1AB3QRS
+                    </div>
+                    <!-- File tags -->
+                    <div class="flex items-center gap-1.5 mt-2 flex-wrap">
+                      <span class="text-[9px] text-gray-500">Files:</span>
+                      <span class="file-tag text-[9px] text-violet-700 px-1.5 py-0.5 rounded">imagery/</span>
+                      <span class="file-tag text-[9px] text-violet-700 px-1.5 py-0.5 rounded">measurements.csv</span>
+                      <span class="file-tag text-[9px] text-violet-700 px-1.5 py-0.5 rounded">+10</span>
+                    </div>
+                  </div>
+                </div>
+                <!-- Actions -->
+                <div class="flex gap-1.5 mt-3 pt-2.5 border-t border-gray-100">
+                  <button id="bookmark-dataset-2" class="action-btn flex-1 text-[10px] bg-amber-100 hover:bg-amber-200 text-amber-700 font-medium py-1.5 px-2 rounded-lg flex items-center justify-center gap-1">
+                    <span>🔖</span>
+                    Bookmark
+                  </button>
+                  <button id="details-dataset-2" class="action-btn flex-1 text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-1.5 px-2 rounded-lg flex items-center justify-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Details
+                  </button>
+                  <button id="open-dataone-2" class="action-btn text-[10px] bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1.5 px-2 rounded-lg flex items-center justify-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                    </svg>
+                    DataOne
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Dataset 3: Kelp Forest Ecosystem -->
+              <div id="dataset-kelp-forest-card" class="dataset-card bg-white rounded-lg p-3">
+                <div class="flex items-start gap-3">
+                  <div class="w-10 h-10 bg-gradient-to-br from-emerald-100 to-teal-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span class="text-lg">🌿</span>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h4 class="text-sm font-semibold text-gray-900 leading-tight">Kelp Forest Ecosystem Dynamics</h4>
+                    <p class="text-[10px] text-gray-600 mt-0.5">Garcia, A. & Johnson, R. • <span class="font-medium">2022</span></p>
+                    <p class="text-[10px] text-gray-500 mt-1.5 line-clamp-2 leading-relaxed">
+                      Multi-year study of kelp forest health, canopy coverage, and associated marine invertebrate communities near Point Conception...
+                    </p>
+                    <!-- DOI Badge -->
+                    <div class="doi-badge inline-flex items-center gap-1 mt-2 px-1.5 py-0.5 rounded text-[9px] text-amber-800">
+                      <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                      </svg>
+                      10.5063/F1CD5XYZ
+                    </div>
+                    <!-- File tags -->
+                    <div class="flex items-center gap-1.5 mt-2">
+                      <span class="text-[9px] text-gray-500">Files:</span>
+                      <span class="file-tag text-[9px] text-violet-700 px-1.5 py-0.5 rounded">transects.csv</span>
+                      <span class="file-tag text-[9px] text-violet-700 px-1.5 py-0.5 rounded">species_count.xlsx</span>
+                      <span class="file-tag text-[9px] text-violet-700 px-1.5 py-0.5 rounded">+4</span>
+                    </div>
+                  </div>
+                </div>
+                <!-- Actions -->
+                <div class="flex gap-1.5 mt-3 pt-2.5 border-t border-gray-100">
+                  <button id="bookmark-dataset-3" class="action-btn flex-1 text-[10px] bg-amber-100 hover:bg-amber-200 text-amber-700 font-medium py-1.5 px-2 rounded-lg flex items-center justify-center gap-1">
+                    <span>🔖</span>
+                    Bookmark
+                  </button>
+                  <button id="details-dataset-3" class="action-btn flex-1 text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-1.5 px-2 rounded-lg flex items-center justify-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Details
+                  </button>
+                  <button id="open-dataone-3" class="action-btn text-[10px] bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1.5 px-2 rounded-lg flex items-center justify-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                    </svg>
+                    DataOne
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Dataset 4: Intertidal Zone Survey -->
+              <div id="dataset-intertidal-card" class="dataset-card bg-white rounded-lg p-3">
+                <div class="flex items-start gap-3">
+                  <div class="w-10 h-10 bg-gradient-to-br from-orange-100 to-amber-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span class="text-lg">🦀</span>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h4 class="text-sm font-semibold text-gray-900 leading-tight">Intertidal Zone Biodiversity Survey</h4>
+                    <p class="text-[10px] text-gray-600 mt-0.5">Williams, K. et al. • <span class="font-medium">2023</span></p>
+                    <p class="text-[10px] text-gray-500 mt-1.5 line-clamp-2 leading-relaxed">
+                      Seasonal sampling of intertidal invertebrates across multiple rocky shore sites within the preserve boundary...
+                    </p>
+                    <!-- DOI Badge -->
+                    <div class="doi-badge inline-flex items-center gap-1 mt-2 px-1.5 py-0.5 rounded text-[9px] text-amber-800">
+                      <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                      </svg>
+                      10.5063/F1EF7GHI
+                    </div>
+                    <!-- File tags -->
+                    <div class="flex items-center gap-1.5 mt-2">
+                      <span class="text-[9px] text-gray-500">Files:</span>
+                      <span class="file-tag text-[9px] text-violet-700 px-1.5 py-0.5 rounded">quadrat_data.csv</span>
+                      <span class="file-tag text-[9px] text-violet-700 px-1.5 py-0.5 rounded">photos.zip</span>
+                    </div>
+                  </div>
+                </div>
+                <!-- Actions -->
+                <div class="flex gap-1.5 mt-3 pt-2.5 border-t border-gray-100">
+                  <button id="bookmark-dataset-4" class="action-btn flex-1 text-[10px] bg-amber-100 hover:bg-amber-200 text-amber-700 font-medium py-1.5 px-2 rounded-lg flex items-center justify-center gap-1">
+                    <span>🔖</span>
+                    Bookmark
+                  </button>
+                  <button id="details-dataset-4" class="action-btn flex-1 text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-1.5 px-2 rounded-lg flex items-center justify-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Details
+                  </button>
+                  <button id="open-dataone-4" class="action-btn text-[10px] bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1.5 px-2 rounded-lg flex items-center justify-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                    </svg>
+                    DataOne
+                  </button>
+                </div>
+              </div>
+              
+              <!-- More datasets placeholder -->
+              <div class="text-center py-3 text-[10px] text-gray-400 italic">
+                + 43 more datasets...
+              </div>
+              
+            </div>
+          </div>
+          
+        </div>
+        
+        <!-- EXPORT TAB -->
+        <div id="tab-export" class="tab-panel hidden p-3">
+          <p class="text-[10px] text-gray-500 italic">Export tab content shown in mockup 02f (Export Builder)</p>
+        </div>
+        
+      </div>
+    </aside>
+    
+  </div>
+  
+  <!-- ArcGIS Map Initialization -->
+  <script>
+    // =========================================================================
+    // STATE
+    // =========================================================================
+    const state = {
+      selectedLayer: 'dataone',
+      expandedCategories: new Set(['research']),
+      widgetExpanded: true,
+      bookmarksWidgetExpanded: true,
+      activeTab: 'browse'
+    };
+    
+    let mapView = null;
+    
+    // =========================================================================
+    // MAP INITIALIZATION
+    // =========================================================================
+    require([
+      "esri/Map",
+      "esri/views/MapView",
+      "esri/layers/GeoJSONLayer"
+    ], function(Map, MapView, GeoJSONLayer) {
+      
+      const map = new Map({ basemap: "topo-vector" });
+      
+      mapView = new MapView({
+        container: "viewDiv",
+        map: map,
+        center: [-120.4275, 34.4925],
+        zoom: 12,
+        ui: { components: [] }
+      });
+      
+      // Add preserve boundary
+      const boundaryLayer = new GeoJSONLayer({
+        url: "/dangermond-preserve-boundary.geojson",
+        renderer: {
+          type: "simple",
+          symbol: {
+            type: "simple-fill",
+            color: [46, 125, 50, 0.1],
+            outline: { color: [46, 125, 50, 1], width: 2 }
+          }
+        }
+      });
+      
+      map.add(boundaryLayer);
+      
+      mapView.when(() => {
+        document.getElementById('loading-overlay').style.display = 'none';
+      });
+    });
+    
+    // =========================================================================
+    // UI FUNCTIONS
+    // =========================================================================
+    function toggleCategory(categoryId) {
+      const category = document.querySelector(`[data-category="${categoryId}"]`);
+      if (!category) return;
+      const content = category.querySelector('.category-content');
+      const chevron = category.querySelector('.chevron');
+      
+      if (state.expandedCategories.has(categoryId)) {
+        state.expandedCategories.delete(categoryId);
+        content.classList.add('hidden');
+        chevron.classList.remove('expanded');
+      } else {
+        state.expandedCategories.add(categoryId);
+        content.classList.remove('hidden');
+        chevron.classList.add('expanded');
+      }
+    }
+    
+    function selectLayer(layerId) {
+      document.querySelectorAll('.layer-row').forEach(row => row.classList.remove('selected'));
+      const row = document.querySelector(`.layer-row[data-layer="${layerId}"]`);
+      if (row) row.classList.add('selected');
+      state.selectedLayer = layerId;
+    }
+    
+    function toggleVisibility(layerId) {
+      console.log('Toggle visibility:', layerId);
+    }
+    
+    function togglePin(layerId) {
+      console.log('Toggle pin:', layerId);
+    }
+    
+    function switchTab(tabId) {
+      state.activeTab = tabId;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`.tab-btn[data-tab="${tabId}"]`)?.classList.add('active');
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+      document.getElementById(`tab-${tabId}`)?.classList.remove('hidden');
+    }
+    
+    function toggleFloatingWidget() {
+      const content = document.getElementById('widget-content');
+      const chevron = document.getElementById('widget-chevron');
+      state.widgetExpanded = !state.widgetExpanded;
+      content.classList.toggle('hidden', !state.widgetExpanded);
+      chevron.style.transform = state.widgetExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
+    
+    function toggleBookmarksWidget() {
+      const content = document.getElementById('bookmarks-widget-content');
+      const chevron = document.getElementById('bookmarks-widget-chevron');
+      state.bookmarksWidgetExpanded = !state.bookmarksWidgetExpanded;
+      content.classList.toggle('hidden', !state.bookmarksWidgetExpanded);
+      chevron.style.transform = state.bookmarksWidgetExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
+    
+    // =========================================================================
+    // INIT
+    // =========================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize expanded categories
+      state.expandedCategories.forEach(categoryId => {
+        const cat = document.querySelector(`[data-category="${categoryId}"]`);
+        if (cat) {
+          cat.querySelector('.category-content')?.classList.remove('hidden');
+          cat.querySelector('.chevron')?.classList.add('expanded');
+        }
+      });
+      
+      // Select initial layer
+      selectLayer('dataone');
+      
+      // Switch to browse tab
+      switchTab('browse');
+    });
+  </script>
+  
+</body>
+</html>
