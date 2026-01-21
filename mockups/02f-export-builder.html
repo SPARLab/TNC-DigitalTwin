@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mockup 02f: Export Builder - TNC Digital Catalog</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- ArcGIS JS API -->
+  <link rel="stylesheet" href="https://js.arcgis.com/4.28/esri/themes/light/main.css">
+  <script src="https://js.arcgis.com/4.28/"></script>
+  
+  <!-- Google Fonts - Using DM Sans for a more distinctive look -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'sans': ['DM Sans', 'sans-serif'],
+            'mono': ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            'tnc': {
+              'green': '#2e7d32',
+              'green-dark': '#1b5e20',
+              'green-light': '#4caf50',
+            },
+            'sidebar-bg': '#f8fafc',
+            'widget-bg': '#ffffff',
+            'pinned-bg': '#eff6ff',
+            'bookmark-bg': '#fefce8',
+            'query-active': '#dcfce7',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'DM Sans', sans-serif; }
+    
+    .esri-ui-corner { display: none !important; }
+    
+    /* Custom scrollbar */
+    .sidebar-scroll::-webkit-scrollbar { width: 6px; }
+    .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+    .sidebar-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    
+    /* Hover transitions */
+    .icon-btn { transition: all 0.15s ease; }
+    .icon-btn:hover { transform: scale(1.1); }
+    
+    /* Layer row states */
+    .layer-row { transition: all 0.15s ease; border-left: 3px solid transparent; }
+    .layer-row:hover { background-color: #f1f5f9; }
+    .layer-row.pinned { background-color: #eff6ff; border-left-color: #3b82f6; }
+    .layer-row.selected { border-left-color: #059669; }
+    
+    /* Floating widget */
+    .floating-widget { 
+      box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+      backdrop-filter: blur(8px);
+    }
+    
+    /* Widget layer cards */
+    .widget-layer-card {
+      transition: all 0.15s ease;
+      border: 1px solid #e2e8f0;
+    }
+    .widget-layer-card:hover {
+      border-color: #94a3b8;
+      box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Bookmark card */
+    .bookmark-card {
+      transition: all 0.15s ease;
+      border-left: 3px solid #f59e0b;
+    }
+    .bookmark-card:hover {
+      background-color: #fffbeb;
+    }
+    
+    /* Tab styling */
+    .tab-btn { transition: all 0.15s ease; }
+    .tab-btn.active { 
+      background-color: white;
+      color: #2563eb;
+      border-left: 1px solid #e5e7eb;
+      border-right: 1px solid #e5e7eb;
+      position: relative;
+      z-index: 10;
+      margin-bottom: -1px;
+    }
+    .tab-btn:not(.active) { 
+      background-color: #f9fafb;
+      color: #4b5563;
+      box-shadow: inset -4px 0 6px -2px rgba(0,0,0,0.12), inset 0 -4px 6px -2px rgba(0,0,0,0.08);
+    }
+    .tab-btn:not(.active):hover { 
+      color: #111827;
+    }
+    
+    /* Chevron rotation */
+    .chevron { transition: transform 0.2s ease; }
+    .chevron.expanded { transform: rotate(90deg); }
+    
+    /* Spinner animation */
+    .spinner { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    
+    /* Query badge */
+    .query-badge {
+      background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+      border: 1px solid #86efac;
+    }
+    
+    /* Action button */
+    .action-btn {
+      transition: all 0.15s ease;
+    }
+    .action-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Widget positioning for split layout */
+    .widget-bookmarks-only {
+      left: auto !important;
+      right: 16px !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════════════ */
+    /* EXPORT BUILDER MODAL STYLES                                             */
+    /* ═══════════════════════════════════════════════════════════════════════ */
+    
+    /* Modal backdrop */
+    .modal-backdrop {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      animation: fadeIn 0.2s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    /* Modal container */
+    .export-modal {
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+      animation: slideUp 0.25s ease-out;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    
+    /* Export section card */
+    .export-section {
+      transition: all 0.15s ease;
+      border: 1px solid #e5e7eb;
+    }
+    .export-section:hover {
+      border-color: #d1d5db;
+      box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.08);
+    }
+    
+    /* Section header color accents */
+    .export-section-inaturalist { border-left: 4px solid #22c55e; }
+    .export-section-animl { border-left: 4px solid #a855f7; }
+    .export-section-dendra { border-left: 4px solid #14b8a6; }
+    .export-section-dataone { border-left: 4px solid #6366f1; }
+    
+    /* Radio button styling */
+    .export-radio {
+      transition: all 0.15s ease;
+    }
+    .export-radio:checked {
+      accent-color: #2563eb;
+    }
+    
+    /* Bookmark item in export */
+    .export-bookmark {
+      transition: all 0.15s ease;
+      border-left: 3px solid #f59e0b;
+    }
+    .export-bookmark:hover {
+      background-color: #fefce8;
+    }
+    
+    /* Change filter link */
+    .change-filter-link {
+      transition: all 0.15s ease;
+    }
+    .change-filter-link:hover {
+      text-decoration: underline;
+    }
+    
+    /* Summary section */
+    .export-summary {
+      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+      border: 1px solid #86efac;
+    }
+    
+    /* Estimated size badge */
+    .size-badge {
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border: 1px solid #93c5fd;
+    }
+  </style>
+</head>
+<body id="page-body" class="bg-slate-100 h-screen overflow-hidden">
+  
+  <!-- HEADER - Green gradient from live site aesthetic -->
+  <header id="header" class="h-11 bg-gradient-to-b from-[#00703c] to-[#008f4a] flex items-center px-4">
+    <div class="flex items-center gap-3">
+      <h1 id="header-title" class="text-[15px] font-semibold text-white leading-tight">
+        Dangermond Preserve Data Catalog
+      </h1>
+    </div>
+    <div id="header-badges" class="ml-auto flex items-center gap-3">
+      <span class="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-medium rounded">V2 MOCKUP</span>
+      <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-medium rounded">02f: Export Builder</span>
+    </div>
+  </header>
+  
+  <!-- MAIN LAYOUT -->
+  <div id="main-layout" class="flex h-[calc(100vh-44px)]">
+    
+    <!-- LEFT SIDEBAR: Layer Browser (dimmed behind modal) -->
+    <aside id="left-sidebar" class="w-80 bg-sidebar-bg border-r border-slate-200 flex flex-col opacity-50 pointer-events-none">
+      
+      <!-- Search Bar -->
+      <div id="left-sidebar-search" class="p-3 border-b border-slate-200 bg-white">
+        <div class="relative">
+          <input type="text" placeholder="Search layers..." 
+            id="layer-search-input"
+            class="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tnc-green/30 focus:border-tnc-green bg-slate-50" disabled>
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+      </div>
+      
+      <!-- Layer List (simplified for context) -->
+      <div id="layer-list" class="flex-1 overflow-y-auto sidebar-scroll p-2">
+        <div class="text-center py-8 text-slate-400 text-xs italic">
+          Layer browser dimmed while Export Builder is open
+        </div>
+      </div>
+    </aside>
+    
+    <!-- MAP AREA (dimmed behind modal) -->
+    <main id="map-area" class="flex-1 relative">
+      
+      <!-- ArcGIS Map Container -->
+      <div id="viewDiv" class="absolute inset-0"></div>
+      
+      <!-- Loading Overlay -->
+      <div id="loading-overlay" class="absolute inset-0 bg-gray-200/80 flex items-center justify-center z-10">
+        <div id="loading-content" class="text-center">
+          <svg class="spinner w-8 h-8 text-[#00703c] mx-auto mb-2" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p class="text-xs text-gray-600 font-medium">Loading map...</p>
+        </div>
+      </div>
+      
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <!-- EXPORT BUILDER MODAL                                                    -->
+      <!-- Full-screen modal showing export options for all pinned layers          -->
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <div id="export-modal-backdrop" class="modal-backdrop absolute inset-0 z-50 flex items-center justify-center p-6">
+        
+        <div id="export-modal" class="export-modal bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+          
+          <!-- ─────────────────────────────────────────────────────────────────── -->
+          <!-- MODAL HEADER                                                        -->
+          <!-- ─────────────────────────────────────────────────────────────────── -->
+          <div id="export-modal-header" class="px-6 py-4 bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-emerald-200 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-sm">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-lg font-bold text-slate-800">Export Builder</h2>
+                <p class="text-xs text-slate-500">Configure what to include in your export</p>
+              </div>
+            </div>
+            <button id="close-modal-btn" onclick="closeExportModal()" class="icon-btn p-2 hover:bg-slate-100 rounded-lg" title="Close">
+              <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          
+          <!-- ─────────────────────────────────────────────────────────────────── -->
+          <!-- MODAL BODY (scrollable)                                             -->
+          <!-- ─────────────────────────────────────────────────────────────────── -->
+          <div id="export-modal-body" class="flex-1 overflow-y-auto sidebar-scroll p-6">
+            
+            <!-- Intro text -->
+            <div class="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
+              <div class="flex items-center gap-3">
+                <span class="text-xl">📋</span>
+                <div>
+                  <p class="text-sm font-medium text-slate-700">
+                    You have <span class="font-bold text-blue-600">4 pinned layers</span> and <span class="font-bold text-amber-600">5 bookmarked items</span>.
+                  </p>
+                  <p class="text-xs text-slate-500 mt-0.5">
+                    Choose what to export from each data source below.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- ═══════════════════════════════════════════════════════════════════════ -->
+            <!-- SECTION 1: iNaturalist Observations                                     -->
+            <!-- Self-contained rows - simple bookmark, no Level 3                       -->
+            <!-- ═══════════════════════════════════════════════════════════════════════ -->
+            <div id="export-section-inaturalist" class="export-section export-section-inaturalist bg-white rounded-xl p-5 mb-4">
+              
+              <!-- Section Header -->
+              <div class="flex items-center gap-3 mb-4">
+                <span class="text-2xl">🦎</span>
+                <div class="flex-1">
+                  <h3 class="text-sm font-bold text-slate-800">iNaturalist Observations</h3>
+                  <div class="flex items-center gap-2 mt-1">
+                    <span class="query-badge text-[10px] text-emerald-700 px-2 py-0.5 rounded font-medium flex items-center gap-1">
+                      <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
+                      Birds, 2023
+                    </span>
+                    <span class="text-[10px] text-slate-500 font-mono">(847 of 12,430)</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Export Options -->
+              <div class="space-y-2 mb-4">
+                <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
+                  <input type="radio" name="inaturalist-export" value="filtered" checked class="export-radio w-4 h-4">
+                  <span class="text-sm text-slate-700">Export filtered results</span>
+                  <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">(847)</span>
+                </label>
+                <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
+                  <input type="radio" name="inaturalist-export" value="bookmarked" class="export-radio w-4 h-4">
+                  <span class="text-sm text-slate-700">Export bookmarked only</span>
+                  <span class="text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">(1)</span>
+                </label>
+                <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
+                  <input type="radio" name="inaturalist-export" value="skip" class="export-radio w-4 h-4">
+                  <span class="text-sm text-slate-500">Skip</span>
+                </label>
+              </div>
+              
+              <!-- Format Options -->
+              <div class="flex items-center gap-4 p-3 bg-slate-50 rounded-lg">
+                <span class="text-xs text-slate-500">Format:</span>
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" checked class="w-3.5 h-3.5 accent-blue-600">
+                  <span class="text-xs text-slate-700">CSV</span>
+                </label>
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" class="w-3.5 h-3.5 accent-blue-600">
+                  <span class="text-xs text-slate-700">GeoJSON</span>
+                </label>
+              </div>
+              
+            </div>
+            
+            <!-- ═══════════════════════════════════════════════════════════════════════ -->
+            <!-- SECTION 2: ANiML Camera Traps                                           -->
+            <!-- Pointer rows with dual-level filters (cameras + images)                 -->
+            <!-- ═══════════════════════════════════════════════════════════════════════ -->
+            <div id="export-section-animl" class="export-section export-section-animl bg-white rounded-xl p-5 mb-4">
+              
+              <!-- Section Header -->
+              <div class="flex items-center gap-3 mb-4">
+                <span class="text-2xl">📷</span>
+                <div class="flex-1">
+                  <h3 class="text-sm font-bold text-slate-800">ANiML Camera Traps</h3>
+                  <div class="mt-1 space-y-1">
+                    <div class="flex items-center gap-2">
+                      <span class="text-[10px] text-slate-500">Cameras:</span>
+                      <span class="query-badge text-[10px] text-emerald-700 px-2 py-0.5 rounded font-medium">North preserve</span>
+                      <span class="text-[10px] text-slate-500 font-mono">(8 of 42)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span class="text-[10px] text-slate-500">Images:</span>
+                      <span class="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-medium">Mountain Lion, 2023</span>
+                      <span class="text-[10px] text-slate-500 font-mono">(127 total)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Export Options -->
+              <div class="space-y-2 mb-4">
+                <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
+                  <input type="radio" name="animl-export" value="filtered" checked class="export-radio w-4 h-4">
+                  <span class="text-sm text-slate-700">Export filtered results</span>
+                  <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">(8 cameras, 127 images)</span>
+                </label>
+                <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
+                  <input type="radio" name="animl-export" value="bookmarked" class="export-radio w-4 h-4">
+                  <span class="text-sm text-slate-700">Export bookmarked only</span>
+                  <span class="text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">(2 cameras)</span>
+                </label>
+                <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
+                  <input type="radio" name="animl-export" value="skip" class="export-radio w-4 h-4">
+                  <span class="text-sm text-slate-500">Skip</span>
+                </label>
+              </div>
+              
+              <!-- Change Filter Links -->
+              <div class="flex items-center gap-4 mb-4">
+                <button class="change-filter-link text-xs text-blue-600 hover:text-blue-700 font-medium">[Change Camera Filter]</button>
+                <button class="change-filter-link text-xs text-amber-600 hover:text-amber-700 font-medium">[Change Image Filter]</button>
+              </div>
+              
+              <!-- Bookmarked Items (expandable) -->
+              <div class="border-t border-slate-200 pt-4">
+                <p class="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-3">Or export specific bookmarks instead:</p>
+                
+                <!-- Bookmark 1: CAM-042 with Mountain Lions 2023 filter -->
+                <div class="export-bookmark bg-white rounded-lg p-3 mb-2">
+                  <div class="flex items-center gap-3">
+                    <input type="checkbox" class="w-4 h-4 accent-amber-500">
+                    <span class="text-lg">📷</span>
+                    <div class="flex-1">
+                      <p class="text-sm font-medium text-slate-700">
+                        CAM-042 <span class="text-amber-600">→</span> <span class="text-amber-700">Mountain Lions 2023</span>
+                      </p>
+                      <p class="text-xs text-slate-500">47 images (156 MB)</p>
+                    </div>
+                    <button class="change-filter-link text-[10px] text-blue-600 hover:text-blue-700">[Change Filter]</button>
+                  </div>
+                </div>
+                
+                <!-- Bookmark 2: CAM-015 all images -->
+                <div class="export-bookmark bg-white rounded-lg p-3 mb-2">
+                  <div class="flex items-center gap-3">
+                    <input type="checkbox" class="w-4 h-4 accent-amber-500">
+                    <span class="text-lg">📷</span>
+                    <div class="flex-1">
+                      <p class="text-sm font-medium text-slate-700">CAM-015 <span class="text-slate-400">(all images)</span></p>
+                      <p class="text-xs text-slate-500">3,241 images (1.2 GB)</p>
+                    </div>
+                    <button class="change-filter-link text-[10px] text-blue-600 hover:text-blue-700">[Add Filter]</button>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Include Options -->
+              <div class="flex items-center gap-4 p-3 bg-slate-50 rounded-lg mt-4">
+                <span class="text-xs text-slate-500">Include:</span>
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" checked class="w-3.5 h-3.5 accent-blue-600">
+                  <span class="text-xs text-slate-700">Metadata</span>
+                </label>
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" checked class="w-3.5 h-3.5 accent-blue-600">
+                  <span class="text-xs text-slate-700">Images</span>
+                </label>
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" class="w-3.5 h-3.5 accent-blue-600">
+                  <span class="text-xs text-slate-700">Thumbnails only</span>
+                </label>
+              </div>
+              
+            </div>
+            
+            <!-- ═══════════════════════════════════════════════════════════════════════ -->
+            <!-- SECTION 3: Dendra Rain Sensors                                          -->
+            <!-- Pointer rows with Level 3 time range filter                             -->
+            <!-- ═══════════════════════════════════════════════════════════════════════ -->
+            <div id="export-section-dendra" class="export-section export-section-dendra bg-white rounded-xl p-5 mb-4">
+              
+              <!-- Section Header -->
+              <div class="flex items-center gap-3 mb-4">
+                <span class="text-2xl">🌧️</span>
+                <div class="flex-1">
+                  <h3 class="text-sm font-bold text-slate-800">Dendra: Rain Sensors</h3>
+                  <p class="text-[10px] text-slate-500 mt-1">No filter applied (12 sensors)</p>
+                </div>
+              </div>
+              
+              <!-- Export Options -->
+              <div class="space-y-2 mb-4">
+                <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
+                  <input type="radio" name="dendra-export" value="all" class="export-radio w-4 h-4">
+                  <span class="text-sm text-slate-700">Export all sensors</span>
+                  <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">(12)</span>
+                </label>
+                <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
+                  <input type="radio" name="dendra-export" value="bookmarked" checked class="export-radio w-4 h-4">
+                  <span class="text-sm text-slate-700">Export bookmarked only</span>
+                  <span class="text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">(1 sensor)</span>
+                </label>
+                <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
+                  <input type="radio" name="dendra-export" value="skip" class="export-radio w-4 h-4">
+                  <span class="text-sm text-slate-500">Skip</span>
+                </label>
+              </div>
+              
+              <!-- Bookmarked Sensor with Time Range -->
+              <div class="border-t border-slate-200 pt-4">
+                <p class="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-3">Bookmarked:</p>
+                
+                <!-- Bookmark: RS-042 with Q1 2023 time range -->
+                <div class="export-bookmark bg-white rounded-lg p-3">
+                  <div class="flex items-center gap-3">
+                    <input type="checkbox" checked class="w-4 h-4 accent-amber-500">
+                    <span class="text-lg">🌧️</span>
+                    <div class="flex-1">
+                      <p class="text-sm font-medium text-slate-700">
+                        RS-042 <span class="text-amber-600">→</span> <span class="text-amber-700">Jan-Mar 2023</span>
+                      </p>
+                      <p class="text-xs text-slate-500">90 data points</p>
+                    </div>
+                    <button class="change-filter-link text-[10px] text-teal-600 hover:text-teal-700">[Change Time Range]</button>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Include Options -->
+              <div class="flex items-center gap-4 p-3 bg-slate-50 rounded-lg mt-4">
+                <span class="text-xs text-slate-500">Include:</span>
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" checked class="w-3.5 h-3.5 accent-blue-600">
+                  <span class="text-xs text-slate-700">Metadata</span>
+                </label>
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" checked class="w-3.5 h-3.5 accent-blue-600">
+                  <span class="text-xs text-slate-700">Datastream CSV</span>
+                </label>
+              </div>
+              
+            </div>
+            
+            <!-- ═══════════════════════════════════════════════════════════════════════ -->
+            <!-- SECTION 4: DataOne Datasets                                             -->
+            <!-- Pointer rows, no Level 3 filter (datasets bookmarked whole)             -->
+            <!-- ═══════════════════════════════════════════════════════════════════════ -->
+            <div id="export-section-dataone" class="export-section export-section-dataone bg-white rounded-xl p-5 mb-4">
+              
+              <!-- Section Header -->
+              <div class="flex items-center gap-3 mb-4">
+                <span class="text-2xl">🔬</span>
+                <div class="flex-1">
+                  <h3 class="text-sm font-bold text-slate-800">DataOne Datasets</h3>
+                  <div class="flex items-center gap-2 mt-1">
+                    <span class="query-badge text-[10px] text-emerald-700 px-2 py-0.5 rounded font-medium flex items-center gap-1">
+                      <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
+                      Marine, 2020-2023
+                    </span>
+                    <span class="text-[10px] text-slate-500 font-mono">(47 of 876)</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Export Options -->
+              <div class="space-y-2 mb-4">
+                <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
+                  <input type="radio" name="dataone-export" value="filtered" class="export-radio w-4 h-4">
+                  <span class="text-sm text-slate-700">Export filtered results</span>
+                  <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">(47 datasets)</span>
+                </label>
+                <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
+                  <input type="radio" name="dataone-export" value="bookmarked" checked class="export-radio w-4 h-4">
+                  <span class="text-sm text-slate-700">Export bookmarked only</span>
+                  <span class="text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">(1)</span>
+                </label>
+                <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
+                  <input type="radio" name="dataone-export" value="skip" class="export-radio w-4 h-4">
+                  <span class="text-sm text-slate-500">Skip</span>
+                </label>
+              </div>
+              
+              <!-- Bookmarked Dataset -->
+              <div class="border-t border-slate-200 pt-4">
+                <p class="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-3">Bookmarked:</p>
+                
+                <!-- Bookmark: Marine Biodiversity Study -->
+                <div class="export-bookmark bg-white rounded-lg p-3">
+                  <div class="flex items-center gap-3">
+                    <input type="checkbox" checked class="w-4 h-4 accent-amber-500">
+                    <span class="text-lg">📄</span>
+                    <div class="flex-1">
+                      <p class="text-sm font-medium text-slate-700">Marine Biodiversity Study</p>
+                      <p class="text-xs text-slate-500">Smith, J. et al. • 3 files</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Include Options -->
+              <div class="flex items-center gap-4 p-3 bg-slate-50 rounded-lg mt-4">
+                <span class="text-xs text-slate-500">Include:</span>
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" checked class="w-3.5 h-3.5 accent-blue-600">
+                  <span class="text-xs text-slate-700">Metadata</span>
+                </label>
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" checked class="w-3.5 h-3.5 accent-blue-600">
+                  <span class="text-xs text-slate-700">File links</span>
+                </label>
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" class="w-3.5 h-3.5 accent-blue-600">
+                  <span class="text-xs text-slate-700">Download files</span>
+                </label>
+              </div>
+              
+            </div>
+            
+            <!-- ═══════════════════════════════════════════════════════════════════════ -->
+            <!-- EXPORT SUMMARY                                                          -->
+            <!-- ═══════════════════════════════════════════════════════════════════════ -->
+            <div id="export-summary" class="export-summary rounded-xl p-5">
+              
+              <h3 class="text-sm font-bold text-emerald-800 mb-3 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                Export Summary
+              </h3>
+              
+              <div class="space-y-2 mb-4">
+                <div class="flex items-center gap-3 text-sm text-emerald-700">
+                  <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                  <span>847 bird observations (CSV)</span>
+                </div>
+                <div class="flex items-center gap-3 text-sm text-emerald-700">
+                  <span class="w-2 h-2 bg-purple-500 rounded-full"></span>
+                  <span>8 cameras: 127 mountain lion images (48 MB)</span>
+                </div>
+                <div class="flex items-center gap-3 text-sm text-emerald-700">
+                  <span class="w-2 h-2 bg-teal-500 rounded-full"></span>
+                  <span>1 sensor: 90 data points (CSV)</span>
+                </div>
+                <div class="flex items-center gap-3 text-sm text-emerald-700">
+                  <span class="w-2 h-2 bg-indigo-500 rounded-full"></span>
+                  <span>1 DataOne dataset (metadata + links)</span>
+                </div>
+              </div>
+              
+              <div class="flex items-center justify-between p-3 bg-white/60 rounded-lg border border-emerald-200">
+                <span class="text-xs font-medium text-slate-600">Estimated total:</span>
+                <span class="size-badge text-sm font-bold text-blue-700 px-3 py-1 rounded-lg">~52 MB</span>
+              </div>
+              
+            </div>
+            
+          </div>
+          
+          <!-- ─────────────────────────────────────────────────────────────────── -->
+          <!-- MODAL FOOTER                                                        -->
+          <!-- ─────────────────────────────────────────────────────────────────── -->
+          <div id="export-modal-footer" class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+            
+            <button id="cancel-btn" onclick="closeExportModal()" class="action-btn text-sm text-slate-600 hover:text-slate-800 font-medium px-4 py-2 rounded-lg hover:bg-slate-100">
+              Cancel
+            </button>
+            
+            <div class="flex items-center gap-3">
+              <button id="generate-links-btn" class="action-btn text-sm bg-white text-slate-700 border border-slate-300 font-semibold px-4 py-2 rounded-lg hover:bg-slate-50 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                </svg>
+                Generate Links
+              </button>
+              <button id="export-zip-btn" class="action-btn text-sm bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold px-5 py-2 rounded-lg hover:shadow-lg flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                Export ZIP
+              </button>
+            </div>
+            
+          </div>
+          
+        </div>
+        
+      </div>
+      
+    </main>
+    
+    <!-- RIGHT SIDEBAR (dimmed behind modal) -->
+    <aside id="right-sidebar" class="w-[340px] bg-white border-l border-gray-200 flex flex-col opacity-50 pointer-events-none">
+      
+      <!-- Sidebar Header -->
+      <div id="right-sidebar-header" class="px-3 py-2.5 border-b border-gray-200 bg-white">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">📦</span>
+          <div>
+            <h2 class="text-[13px] font-semibold text-gray-900">Export</h2>
+            <p class="text-[10px] text-gray-500">Export Builder is open</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tab Content -->
+      <div id="tab-content" class="flex-1 overflow-y-auto sidebar-scroll p-4">
+        <div class="text-center py-8 text-slate-400 text-xs italic">
+          Right sidebar dimmed while Export Builder is open
+        </div>
+      </div>
+    </aside>
+    
+  </div>
+  
+  <!-- ArcGIS Map Initialization -->
+  <script>
+    // =========================================================================
+    // MAP INITIALIZATION
+    // =========================================================================
+    require([
+      "esri/Map",
+      "esri/views/MapView",
+      "esri/layers/GeoJSONLayer"
+    ], function(Map, MapView, GeoJSONLayer) {
+      
+      const map = new Map({ basemap: "topo-vector" });
+      
+      const mapView = new MapView({
+        container: "viewDiv",
+        map: map,
+        center: [-120.4275, 34.4925],
+        zoom: 12,
+        ui: { components: [] }
+      });
+      
+      // Add preserve boundary
+      const boundaryLayer = new GeoJSONLayer({
+        url: "/dangermond-preserve-boundary.geojson",
+        renderer: {
+          type: "simple",
+          symbol: {
+            type: "simple-fill",
+            color: [46, 125, 50, 0.1],
+            outline: { color: [46, 125, 50, 1], width: 2 }
+          }
+        }
+      });
+      
+      map.add(boundaryLayer);
+      
+      mapView.when(() => {
+        document.getElementById('loading-overlay').style.display = 'none';
+      });
+    });
+    
+    // =========================================================================
+    // MODAL FUNCTIONS
+    // =========================================================================
+    function closeExportModal() {
+      const backdrop = document.getElementById('export-modal-backdrop');
+      const modal = document.getElementById('export-modal');
+      
+      // Animate out
+      modal.style.animation = 'none';
+      modal.offsetHeight; // Trigger reflow
+      modal.style.animation = 'slideUp 0.2s ease-out reverse';
+      backdrop.style.animation = 'fadeIn 0.2s ease-out reverse';
+      
+      setTimeout(() => {
+        // In a real app, this would close the modal
+        // For the mockup, we'll just show an alert
+        alert('Export Builder closed. In the real app, this would return to the previous view.');
+        
+        // Reset animations
+        modal.style.animation = '';
+        backdrop.style.animation = '';
+      }, 180);
+    }
+    
+    function openExportModal() {
+      const backdrop = document.getElementById('export-modal-backdrop');
+      backdrop.classList.remove('hidden');
+    }
+    
+    // =========================================================================
+    // EXPORT OPTION HANDLING
+    // =========================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+      // Add interactivity to radio buttons
+      document.querySelectorAll('input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', updateExportSummary);
+      });
+      
+      // Add interactivity to checkboxes
+      document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', updateExportSummary);
+      });
+    });
+    
+    function updateExportSummary() {
+      // In a real implementation, this would recalculate the export summary
+      // based on the selected options
+      console.log('Export options changed');
+    }
+  </script>
+  
+</body>
+</html>

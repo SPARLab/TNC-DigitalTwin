@@ -2,14 +2,14 @@
 
 **Created:** January 21, 2026  
 **Target Presentation:** Jack Dangermond Demo  
-**Status:** In Progress (4 of 6 core mockups complete)  
+**Status:** ✅ ALL MOCKUPS COMPLETE (6 of 6)  
 **Paradigm Doc:** `docs/feedback/data-catalog-ux-paradigm-jan-21-2026.md`
 
 ---
 
 ## Progress Summary
 
-**Completed Mockups:** ✅ 5 / 6
+**Completed Mockups:** ✅ 6 / 6 — ALL COMPLETE! 🎉
 
 | Mockup | Status | Purpose |
 |--------|--------|---------|
@@ -18,7 +18,7 @@
 | **02c** | ✅ Complete | ANiML Browse (pointer rows + dual-level filters) |
 | **02d** | ✅ Complete | Dendra Browse (pointer rows + Level 3 datastream + floating chart) |
 | **02e** | ✅ Complete | DataOne Browse (pointer rows, no Level 3) |
-| **02f** | 🔜 Next | Export Builder (all bookmark types together) |
+| **02f** | ✅ Complete | Export Builder (all bookmark types together) |
 
 **Key Achievements:**
 - ✅ Demonstrated three-level hierarchy (Layer → Feature → Related Data)
@@ -26,7 +26,7 @@
 - ✅ Level 3 filtering shown in two contexts (ANiML images, Dendra time series)
 - ✅ Floating time series panel integrated without overlap
 - ✅ DataOne pointer pattern complete (simple bookmark, no Level 3)
-- ⏳ Still need: Export Builder
+- ✅ Export Builder shows all bookmark types converging in single workflow
 
 ---
 
@@ -735,8 +735,8 @@ ANiML is unique among our data sources because:
 | 3 | 02c | ANiML Browse (**dual-level filter pattern**) | ✅ **COMPLETE** |
 | 4 | 02d | Dendra Browse (pointer + Level 3 datastream) | ✅ **COMPLETE** |
 | 5 | 02e | DataOne Browse (pointer, no Level 3) | ✅ **COMPLETE** |
-| 6 | 02f | Export Builder (all together) | 🔜 Next |
-| 7 | Polish | Consistency check, edge cases | |
+| 6 | 02f | Export Builder (all together) | ✅ **COMPLETE** |
+| 7 | Polish | Consistency check, edge cases | 🔜 Next |
 
 ### 02c Development Notes (ANiML)
 
@@ -840,12 +840,12 @@ mockups/
 ## Success Criteria
 
 - [x] All 4 data sources shown with consistent outer structure
-- [ ] Variations in Browse tab are clear and justified
-- [ ] Level 3 concept is obvious for pointer rows (✅ shown in 02a bookmarks)
-- [ ] Self-contained vs. pointer row distinction is clear (✅ shown in 02a bookmarks)
-- [ ] Export Builder shows how all bookmark types converge
+- [x] Variations in Browse tab are clear and justified
+- [x] Level 3 concept is obvious for pointer rows (✅ shown in 02a bookmarks)
+- [x] Self-contained vs. pointer row distinction is clear (✅ shown in 02a bookmarks)
+- [x] Export Builder shows how all bookmark types converge
 - [x] Team can articulate the three-level hierarchy (✅ demonstrated in 02a)
-- [ ] Jack Dangermond demo-ready
+- [ ] Jack Dangermond demo-ready (needs polish pass)
 
 ### Mockup 02a Complete
 ✅ Successfully demonstrates:
@@ -854,11 +854,25 @@ mockups/
 - Layout flexibility (Combined vs Split widgets)
 - Consistent visual language across all data sources
 
+**02f - Export Builder (Jan 21, 2026)**
+- ✅ Created full-screen modal Export Builder
+- ✅ Shows all 4 pinned layers in consistent section format
+- ✅ Per-layer export options: filtered results, bookmarked only, or skip
+- ✅ Data-source-specific format options (CSV, GeoJSON, metadata, images, etc.)
+- ✅ Bookmarked items shown with Level 3 filters where applicable
+- ✅ "Change Filter" / "Change Time Range" links for editable bookmarks
+- ✅ ANiML dual-level filter display (camera filter + image filter)
+- ✅ Export Summary section aggregates all selections
+- ✅ Estimated size calculation (~52 MB example)
+- ✅ Two export actions: "Generate Links" and "Export ZIP"
+- 📝 Color-coded section borders match data source themes
+- 📝 Emerald/teal gradient for export-specific UI elements
+
 ---
 
 **Last Updated:** January 21, 2026  
-**Status:** In Progress (5 of 6 mockups complete) ✓  
-**Next:** Mockup 02f - Export Builder (all bookmark types together)
+**Status:** ✅ ALL MOCKUPS COMPLETE (6 of 6) 🎉  
+**Next:** Polish pass - consistency check, edge cases, demo preparation
 
-**Latest Completion:** 02e - DataOne Browse (pointer rows, no Level 3 filter)
+**Latest Completion:** 02f - Export Builder (all bookmark types together)
 
