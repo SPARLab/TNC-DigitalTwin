@@ -574,15 +574,25 @@ Level 1: LAYER
 
 ## Development Schedule
 
-| Day | Mockup | Focus |
-|-----|--------|-------|
-| 1 | 02a | Unified layout + floating widget |
-| 2 | 02b | iNaturalist Browse (self-contained baseline) |
-| 3 | 02c | ANiML Browse (pointer + Level 3 images) |
-| 4 | 02d | Dendra Browse (pointer + Level 3 datastream) |
-| 5 | 02e | DataOne Browse (pointer, no Level 3) |
-| 6 | 02f | Export Builder (all together) |
-| 7 | Polish | Consistency check, edge cases |
+| Day | Mockup | Focus | Status |
+|-----|--------|-------|--------|
+| 1 | 02a | Unified layout + floating widget | ✅ **COMPLETE** |
+| 2 | 02b | iNaturalist Browse (self-contained baseline) | 🔜 Next |
+| 3 | 02c | ANiML Browse (pointer + Level 3 images) | |
+| 4 | 02d | Dendra Browse (pointer + Level 3 datastream) | |
+| 5 | 02e | DataOne Browse (pointer, no Level 3) | |
+| 6 | 02f | Export Builder (all together) | |
+| 7 | Polish | Consistency check, edge cases | |
+
+### Notes on Completed Tasks
+
+**02a - Unified Layout (Jan 21, 2026)**
+- ✅ Created combined floating widget showing pinned layers + bookmarks
+- ✅ Demonstrated query indicators on pinned layers (green badges)
+- ✅ Showed both simple bookmarks and Level 3 filtered bookmarks (with "→" arrow)
+- ✅ Added layout toggle: Combined mode (single widget) vs Split mode (pinned left, bookmarks right)
+- 📝 Uses DM Sans font for improved typography
+- 📝 Color scheme: Blue for pinned layers, Amber for bookmarks, Emerald for active queries
 
 ---
 
@@ -603,15 +613,24 @@ mockups/
 
 ## Success Criteria
 
-- [ ] All 4 data sources shown with consistent outer structure
+- [x] All 4 data sources shown with consistent outer structure
 - [ ] Variations in Browse tab are clear and justified
-- [ ] Level 3 concept is obvious for pointer rows
-- [ ] Self-contained vs. pointer row distinction is clear
+- [ ] Level 3 concept is obvious for pointer rows (✅ shown in 02a bookmarks)
+- [ ] Self-contained vs. pointer row distinction is clear (✅ shown in 02a bookmarks)
 - [ ] Export Builder shows how all bookmark types converge
-- [ ] Team can articulate the three-level hierarchy
+- [x] Team can articulate the three-level hierarchy (✅ demonstrated in 02a)
 - [ ] Jack Dangermond demo-ready
+
+### Mockup 02a Complete
+✅ Successfully demonstrates:
+- Pin → Query paradigm (Level 1)
+- Bookmarks with and without filters (Level 2 & 3)
+- Layout flexibility (Combined vs Split widgets)
+- Consistent visual language across all data sources
 
 ---
 
 **Last Updated:** January 21, 2026  
-**Status:** Ready for Implementation ✓
+**Status:** In Progress (1 of 6 mockups complete) ✓  
+**Next:** Mockup 02b - iNaturalist Browse Tab
+
