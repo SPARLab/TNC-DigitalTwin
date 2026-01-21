@@ -87,7 +87,8 @@ Level 1: LAYER
 │                                                             │
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │ 👁️ 📷 ANiML Camera Traps                            │   │
-│  │    ⚡ Filtered: North preserve (8 of 42)            │   │
+│  │    ⚡ Cameras: North preserve (8 of 42)             │   │
+│  │    ⚡ Images: Mountain Lion, 2023 (127 total)       │   │
 │  │    [Edit Query] [Clear]                     [✕]     │   │
 │  └─────────────────────────────────────────────────────┘   │
 │                                                             │
@@ -201,7 +202,18 @@ Level 1: LAYER
 
 **Row Type:** Pointer (camera points to image archive)
 
-**Browse Tab - Layer View (list of cameras):**
+### ⚠️ KEY INSIGHT: Dual-Level Filtering
+
+ANiML is unique because users often want to filter at **both** the camera level AND the image level simultaneously. For example: "Show me all north preserve cameras that have mountain lion images, and only show me the mountain lion images."
+
+This means the Browse tab at the **layer level** needs to show image filters too, not just camera filters.
+
+**The Problem We're Solving:**
+- User wants "all mountain lion images from all cameras"
+- Without dual-level filter: User must bookmark each camera individually and apply the same filter 16 times
+- With dual-level filter: User applies image filter once at layer level, pins layer with that query
+
+### Browse Tab - Layer View WITH Dual-Level Filters
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -214,35 +226,62 @@ Level 1: LAYER
 │  ┌─ Filter Cameras ─────────────────────────────────────┐   │
 │  │ Region: [North Preserve ▼]                           │   │
 │  │ Status: [Active ▼]                                   │   │
-│  │                                                      │   │
-│  │ Showing: 8 of 42 cameras                             │   │
 │  └──────────────────────────────────────────────────────┘   │
 │                                                             │
+│  ┌─ Filter Images (applies to ALL cameras) ─────────────┐   │
+│  │ Species: [Mountain Lion ▼]                           │   │
+│  │ Date: [2023-01-01] to [2023-12-31]                   │   │
+│  │ Time of day: [Any ▼]                                 │   │
+│  │                                                      │   │
+│  │ ℹ️ This filter will apply to all cameras below       │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  Showing: 8 cameras • 127 total mountain lion images │    │
+│  │                                                      │    │
+│  │  [📌 Pin Layer with Query]                           │    │
+│  │  ↑ Saves BOTH camera filter + global image filter    │    │
+│  └──────────────────────────────────────────────────────┘    │
+│                                                             │
 │  ───────────────────────────────────────────────────────────│
-│  Cameras:                                                   │
+│  Matching Cameras:                                          │
 │                                                             │
 │  ┌────────────────────────────────────────────────────────┐ │
-│  │ 📷 CAM-042                                             │ │
-│  │ North Ridge • Active • 10,847 images                   │ │
-│  │ Last capture: 2 hours ago                              │ │
+│  │ 📷 CAM-042 • 47 mountain lion images                   │ │
+│  │ North Ridge • Active                                   │ │
 │  │                                                        │ │
-│  │ [View Camera Details →]                                │ │
+│  │ [View Camera →]  [🔖 Bookmark with Current Filter]     │ │
 │  └────────────────────────────────────────────────────────┘ │
 │                                                             │
 │  ┌────────────────────────────────────────────────────────┐ │
-│  │ 📷 CAM-015                                             │ │
-│  │ Valley Floor • Active • 3,241 images                   │ │
-│  │ Last capture: 45 min ago                               │ │
+│  │ 📷 CAM-015 • 23 mountain lion images                   │ │
+│  │ Valley Floor • Active                                  │ │
 │  │                                                        │ │
-│  │ [View Camera Details →]                                │ │
+│  │ [View Camera →]  [🔖 Bookmark with Current Filter]     │ │
 │  └────────────────────────────────────────────────────────┘ │
 │                                                             │
-│  ... (6 more cameras)                                       │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ 📷 CAM-028 • 18 mountain lion images                   │ │
+│  │ Coastal Bluff • Active                                 │ │
+│  │                                                        │ │
+│  │ [View Camera →]  [🔖 Bookmark with Current Filter]     │ │
+│  └────────────────────────────────────────────────────────┘ │
+│                                                             │
+│  ... (5 more cameras)                                       │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**Browse Tab - Camera Detail View (with image filtering):**
+### What Gets Saved Where
+
+| User Action | What's Saved | Map Shows | Export Includes |
+|-------------|--------------|-----------|-----------------|
+| **Pin Layer with Query** | Layer + camera filter + global image filter | 8 camera icons on map | All 127 mountain lion images across all 8 cameras |
+| **Bookmark with Current Filter** (CAM-042) | Individual camera + image filter | (nothing new on map) | 47 mountain lion images from CAM-042 only |
+
+### Browse Tab - Camera Detail View (drill-down)
+
+When user clicks "View Camera →", they see the camera detail with the global filter pre-applied:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -255,8 +294,8 @@ Level 1: LAYER
 │  Total images: 10,847                                       │
 │  Date range: Jan 2020 - Present                             │
 │                                                             │
-│  ┌─ Filter Images (Level 3) ────────────────────────────┐   │
-│  │ Species: [Mountain Lion ▼]                           │   │
+│  ┌─ Filter Images ──────────────────────────────────────┐   │
+│  │ Species: [Mountain Lion ▼]   ← Pre-filled from layer │   │
 │  │ Date: [2023-01-01] to [2023-12-31]                   │   │
 │  │ Time of day: [Any ▼]                                 │   │
 │  │                                                      │   │
@@ -264,7 +303,8 @@ Level 1: LAYER
 │  └──────────────────────────────────────────────────────┘   │
 │                                                             │
 │  [🔖 Bookmark Camera]  [🔖 Bookmark with Filter]            │
-│                        ↑ Saves Level 3 query                │
+│                        ↑ Saves current filter for this      │
+│                          camera specifically                │
 │                                                             │
 │  ───────────────────────────────────────────────────────────│
 │  Filtered Images:                                           │
@@ -280,11 +320,73 @@ Level 1: LAYER
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**Key Points:**
-- Two-level Browse: Cameras list → Camera detail
-- Level 3 filter appears on camera detail view
-- Two bookmark options: simple vs. with filter
-- "Bookmark with Filter" saves the image query
+### Data Model for Layer with Global Image Filter
+
+```javascript
+// Pinned layer with dual-level query
+pinnedLayer: {
+  id: "camera-traps",
+  name: "ANiML Camera Traps",
+  activeQuery: {
+    // Level 2: Camera attributes
+    cameraFilter: {
+      region: "north",
+      status: "active"
+    },
+    // Level 3: Image attributes (applied globally to ALL cameras)
+    globalImageFilter: {
+      species: "mountain lion",
+      year: 2023
+    }
+  },
+  featureCount: { cameras: 8, images: 127 }
+}
+```
+
+### Key Points
+
+1. **Dual-level filters at layer browse level** - Both camera AND image filters shown
+2. **Global image filter** - Applies to all cameras in result
+3. **"Pin Layer with Query"** - Saves both filter levels
+4. **Camera cards show image counts** - "47 mountain lion images" not "10,847 total images"
+5. **Drill-down inherits filter** - When viewing camera detail, filter is pre-applied
+6. **Still can bookmark individual cameras** - For when you want just one camera's filtered images
+
+### ⚠️ Important: Bookmarks Are Independent of Layer Query
+
+**Bookmarks persist even when the user changes the layer's current filter.**
+
+```
+Scenario:
+1. Layer filter: "Mountain Lions 2023" → shows 8 cameras
+2. User bookmarks CAM-042 with "Mountain Lions 2023" filter
+3. User changes layer filter to "Deer 2024" → shows 12 different cameras
+4. Bookmark "CAM-042 → Mountain Lions 2023" STILL EXISTS
+   → Independent of current layer state
+   → Can be viewed/exported regardless of layer filter
+```
+
+This is critical for:
+- **Accumulating research** - bookmark interesting finds while exploring
+- **Cross-referencing** - compare bookmarked items with different layer views
+- **Export flexibility** - export bookmarks separately from layer query
+
+The same applies to **DataOne bookmarks** - they persist regardless of how the user changes the search/filter on the DataOne layer.
+
+### Why This Matters
+
+Without this pattern:
+- User pins layer, queries cameras, sees 8 cameras
+- Opens CAM-042, filters for mountain lions, bookmarks with filter
+- Opens CAM-015, filters for mountain lions, bookmarks with filter
+- ... repeats 8 times
+- Export: select all 8 bookmarks
+
+With this pattern:
+- User pins layer, queries cameras AND images in one go
+- "Pin Layer with Query" saves everything
+- Export: just export the pinned layer
+- **OR** user can still bookmark individual cameras if they want granular control
 
 **File:** `mockups/02c-browse-animl.html`
 
@@ -479,16 +581,21 @@ Level 1: LAYER
 │  └──────────────────────────────────────────────────────────┘   │
 │                                                                 │
 │  ┌─ 📷 ANiML Camera Traps ──────────────────────────────────┐   │
-│  │  Filter: North preserve (8 cameras)                      │   │
+│  │  Camera filter: North preserve (8 of 42 cameras)         │   │
+│  │  Image filter: Mountain Lion, 2023 (127 images total)    │   │
 │  │                                                          │   │
-│  │  ○ Export filtered results (8 cameras, all images)       │   │
-│  │  ● Export bookmarked only (2 cameras)                    │   │
+│  │  ● Export filtered results (8 cameras, 127 images)       │   │
+│  │  ○ Export bookmarked only (2 cameras)                    │   │
 │  │  ○ Skip                                                  │   │
 │  │                                                          │   │
-│  │  Bookmarked:                                             │   │
-│  │  ☑ CAM-042 → Mountain Lions 2023                         │   │
+│  │  [Change Camera Filter]  [Change Image Filter]           │   │
+│  │                                                          │   │
+│  │  ─────────────────────────────────────────────────────   │   │
+│  │  Or export specific bookmarks instead:                   │   │
+│  │                                                          │   │
+│  │  ☐ CAM-042 → Mountain Lions 2023                         │   │
 │  │    47 images (156 MB) [Change Filter]                    │   │
-│  │  ☑ CAM-015 (all images)                                  │   │
+│  │  ☐ CAM-015 (all images)                                  │   │
 │  │    3,241 images (1.2 GB) [Add Filter]                    │   │
 │  │                                                          │   │
 │  │  Include: ☑ Metadata  ☑ Images  ☐ Thumbnails only        │   │
@@ -526,11 +633,11 @@ Level 1: LAYER
 │  Export Summary:                                                │
 │  ─────────────────────────────────────────────────────────────  │
 │  • 847 bird observations (CSV)                                  │
-│  • 2 cameras: 3,288 images (1.36 GB)                            │
+│  • 8 cameras: 127 mountain lion images (48 MB)                  │
 │  • 1 sensor: 90 data points (CSV)                               │
 │  • 1 DataOne dataset (metadata + links)                         │
 │  ─────────────────────────────────────────────────────────────  │
-│  Estimated total: ~1.4 GB                                       │
+│  Estimated total: ~52 MB                                        │
 │                                                                 │
 │  [Cancel]                     [Export ZIP]  [Generate Links]    │
 │                                                                 │
@@ -569,6 +676,25 @@ Level 1: LAYER
 | Bookmark options | Self-contained: 1 button; Pointer: 2 buttons | `[Bookmark]` vs. `[Bookmark]` + `[Bookmark with Filter]` |
 | Level 3 exists? | Only for pointer rows | ANiML: images; Dendra: datastream; DataOne: n/a usually |
 | Export options | Data-type specific | Images vs. CSV vs. Links |
+| **Dual-level filter at layer browse?** | **ANiML only** | ANiML shows both camera filters AND image filters at layer level; others only show row-level filters |
+
+### ⚠️ ANiML Special Case: Dual-Level Filtering
+
+ANiML is unique among our data sources because:
+1. Users frequently want to filter by **related data attributes** (species, date) across ALL cameras
+2. The "Pin Layer with Query" can include a **global image filter** that applies to every camera
+3. This avoids tedious per-camera bookmarking when the user wants the same filter applied everywhere
+
+**V1 Decision: Only ANiML has dual-level filtering at layer browse level.**
+
+| Data Source | V1 Approach | Reason |
+|-------------|-------------|--------|
+| **iNaturalist** | Single-level | Self-contained rows - no related data |
+| **Dendra** | Single-level | Backend complexity (time-series indexing); per-sensor filtering is sufficient for V1 |
+| **DataOne** | Single-level | Datasets bookmarked whole - no file-level filtering needed |
+| **ANiML** | **Dual-level** | Users frequently want same image filter across multiple cameras |
+
+> **Future:** Dendra *could* support "sensors with values > X during time Y" but requires backend work. Deferred to V2.
 
 ---
 
@@ -577,12 +703,30 @@ Level 1: LAYER
 | Day | Mockup | Focus | Status |
 |-----|--------|-------|--------|
 | 1 | 02a | Unified layout + floating widget | ✅ **COMPLETE** |
-| 2 | 02b | iNaturalist Browse (self-contained baseline) | 🔜 Next |
-| 3 | 02c | ANiML Browse (pointer + Level 3 images) | |
+| 2 | 02b | iNaturalist Browse (self-contained baseline) | ✅ **COMPLETE** |
+| 3 | 02c | ANiML Browse (**dual-level filter pattern**) | 🔜 Next |
 | 4 | 02d | Dendra Browse (pointer + Level 3 datastream) | |
 | 5 | 02e | DataOne Browse (pointer, no Level 3) | |
 | 6 | 02f | Export Builder (all together) | |
 | 7 | Polish | Consistency check, edge cases | |
+
+### 02c Development Notes (ANiML)
+
+**This mockup is the most complex because it demonstrates dual-level filtering:**
+
+Must show:
+1. **Layer Browse View** with BOTH camera filters AND global image filters
+2. **"Pin Layer with Query"** button that saves both filter levels
+3. **Camera cards showing filtered image counts** (e.g., "47 mountain lion images")
+4. **Camera Detail View** with filter pre-populated from layer-level selection
+5. **Individual bookmark options** at camera detail level
+
+User flow to demonstrate:
+1. User sets camera filter (region: north)
+2. User sets image filter (species: mountain lion, year: 2023)
+3. Results show "8 cameras • 127 total mountain lion images"
+4. User clicks "Pin Layer with Query" → both filters saved
+5. User can also drill into CAM-042 and bookmark just that camera with the filter
 
 ### Notes on Completed Tasks
 
@@ -593,6 +737,14 @@ Level 1: LAYER
 - ✅ Added layout toggle: Combined mode (single widget) vs Split mode (pinned left, bookmarks right)
 - 📝 Uses DM Sans font for improved typography
 - 📝 Color scheme: Blue for pinned layers, Amber for bookmarks, Emerald for active queries
+
+**02b - iNaturalist Browse (Jan 21, 2026)**
+- ✅ Demonstrated self-contained row pattern (observations ARE the data)
+- ✅ Showed filtering UI: taxon, species, date range, research grade
+- ✅ Created observation cards with only `[Bookmark]` button (no Level 3 filter option)
+- ✅ Used split widget layout (pinned layers left, bookmarks right)
+- ✅ Included proper result counts and visual feedback
+- 📝 Set baseline for Browse tab structure that others will follow
 
 ---
 
@@ -631,6 +783,6 @@ mockups/
 ---
 
 **Last Updated:** January 21, 2026  
-**Status:** In Progress (1 of 6 mockups complete) ✓  
-**Next:** Mockup 02b - iNaturalist Browse Tab
+**Status:** In Progress (2 of 6 mockups complete) ✓  
+**Next:** Mockup 02c - ANiML Browse Tab
 

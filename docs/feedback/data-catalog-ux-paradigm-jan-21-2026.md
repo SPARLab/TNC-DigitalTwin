@@ -54,6 +54,36 @@ There's a beautiful symmetry in this model:
 
 Just as you can pin a layer and apply a query to it, you can bookmark a feature and apply a query to its related data.
 
+### Critical: Bookmarks Are Independent of Layer Queries
+
+**Bookmarks persist even when the layer's current query changes.**
+
+```
+Example:
+─────────────────────────────────────────────────────────────
+1. Pin Camera Traps, filter for "Mountain Lions 2023"
+   → Map shows 8 cameras with mountain lion images
+
+2. Bookmark CAM-042 with filter "Mountain Lions 2023" (47 images)
+
+3. Change layer filter to "Deer 2024"
+   → Map now shows 12 cameras with deer images
+   → CAM-042 might not even be visible anymore!
+
+4. BUT bookmark still exists:
+   "CAM-042 → Mountain Lions 2023 (47 images)"
+   → Click [View] to jump back to that exact query
+   → Available for export regardless of current layer state
+─────────────────────────────────────────────────────────────
+```
+
+This is essential for:
+- **Cross-referencing**: Compare mountain lion cameras with fire perimeter data
+- **Accumulating research**: Bookmark interesting finds as you explore different filters
+- **Export flexibility**: Export bookmarked items separately from current layer query
+
+The same principle applies to **DataOne**: bookmarked datasets remain bookmarked even if you change the search/filter on the DataOne layer.
+
 ### What Each Level Represents
 
 | Level | What It Is | Example | User Action |
@@ -307,6 +337,98 @@ The bookmark **shows** its Level 3 query context. Actions:
 | ANiML camera | Yes (images) | ✅ Bookmark with filter option |
 | Dendra sensor | Yes (datastream) | ✅ Bookmark with filter option |
 | DataOne dataset | Yes (files) | ✅ Bookmark with filter option |
+
+---
+
+## Part 5b: ANiML Special Case - Dual-Level Layer Queries
+
+### The Problem
+
+With ANiML camera traps, a common use case is:
+
+> "I want all mountain lion images from all cameras in the north preserve."
+
+Without special handling, the user would need to:
+1. Pin the Camera Traps layer
+2. Query for cameras in north preserve (8 cameras)
+3. Open CAM-042, filter for mountain lions, bookmark with filter
+4. Open CAM-015, filter for mountain lions, bookmark with filter
+5. ... repeat 8 times
+6. Export all 8 bookmarks
+
+That's tedious.
+
+### The Solution: Global Image Filter at Layer Level
+
+For ANiML specifically, the Browse tab shows **both** camera filters AND image filters at the layer level:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ 📷 ANiML Camera Traps                                       │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│ ┌─ Filter Cameras ────────────────────────────────────────┐ │
+│ │ Region: [North Preserve ▼]                              │ │
+│ │ Status: [Active ▼]                                      │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│                                                             │
+│ ┌─ Filter Images (applies to ALL cameras below) ──────────┐ │
+│ │ Species: [Mountain Lion ▼]                              │ │
+│ │ Date: [2023-01-01] to [2023-12-31]                      │ │
+│ │                                                         │ │
+│ │ ℹ️ This filter applies globally to all matching cameras │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│                                                             │
+│ Showing: 8 cameras • 127 total mountain lion images         │
+│                                                             │
+│ [📌 Pin Layer with Query]  ← Saves BOTH filter levels       │
+│                                                             │
+│ ───────────────────────────────────────────────────────────  │
+│ 📷 CAM-042 • 47 mountain lion images                        │
+│ 📷 CAM-015 • 23 mountain lion images                        │
+│ 📷 CAM-028 • 18 mountain lion images                        │
+│ ... (5 more)                                                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### What Gets Saved
+
+```javascript
+// Pinned layer with dual-level query
+pinnedLayer: {
+  id: "camera-traps",
+  activeQuery: {
+    cameraFilter: { region: "north", status: "active" },
+    globalImageFilter: { species: "mountain lion", year: 2023 }
+  },
+  featureCount: { cameras: 8, images: 127 }
+}
+```
+
+### The User Flow
+
+| Step | User Does | Result |
+|------|-----------|--------|
+| 1 | Sets camera filter (region: north) | Shows 8 cameras |
+| 2 | Sets image filter (species: mountain lion) | Shows "8 cameras • 127 images" |
+| 3 | Clicks "Pin Layer with Query" | Both filters saved to pinned layer |
+| 4 | (Later) Clicks pinned layer in widget | Right sidebar shows all 127 images across 8 cameras |
+| 5 | (Export) Opens Export Builder | Export includes "8 cameras, 127 mountain lion images" |
+
+### Why This Is ANiML-Specific
+
+Other data sources don't need this pattern:
+
+| Data Source | Why Single-Level is Fine |
+|-------------|--------------------------|
+| **iNaturalist** | Self-contained rows - no related data to filter |
+| **Dendra** | Per-sensor time ranges differ (sensor A has 2019-2024, sensor B has 2021-2023) |
+| **DataOne** | Datasets are bookmarked whole - no need to filter individual files |
+| **ANiML** | Users frequently want SAME image filter across MULTIPLE cameras |
+
+The key insight: ANiML's image filter is often **uniform across cameras** ("show me all mountain lions everywhere"), while Dendra's time filter is often **specific to a sensor** ("this sensor during the storm event"). What's important is that we will want to allow for queries at the pinned layer level (level 1) which check for and query level 3 related data. This is something that our coding architecture needs to consider, and the back-end needs to keep in mind. For Dendra, for example, we may want to be able to query for all water sensors that had values above 100 gallons within a time range. This requires accessing the level 3 related data: the data stream related to each water sensor in the water sensor layer.
+
+**V1 Scope Decision:** For V1, only ANiML implements dual-level filtering at the layer browse level. Dendra dual-level filtering (e.g., "sensors with values > X") is deferred due to backend complexity (time-series indexing). The architectural pattern is documented here for future reference.
 
 ---
 
