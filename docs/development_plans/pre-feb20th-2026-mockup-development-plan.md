@@ -47,6 +47,7 @@ Overall Progress: ▓▓▓▓▓▓░░░░ 6/9 tasks complete
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
 | TF1 | Review Mockup 3a with Dan | 🔲 Not Started | Wil + Dan | Get feedback on Dendra floating panel approach, time series zoom widget, map panning behavior |
+| TF2 | Mockup: iNaturalist/Animl observation browser | 🔲 Not Started | - | Show how to browse observations in right sidebar while maintaining access to filters. Explore collapsible filter panel, sticky filter bar, or tabbed approach. Goal: demonstrate how observation-heavy layers work in the new paradigm |
 
 ---
 
@@ -323,6 +324,61 @@ A separate mockup was deemed unnecessary as T2 fully demonstrates the paradigm.
 - [x] Map click on station also triggers time series view
 
 **Notes:** This is the alternative to T4's floating panel - compare both to decide preferred approach for implementation.
+
+---
+
+### TF2: Mockup: iNaturalist/Animl Observation Browser
+
+**Status:** 🔲 Not Started  
+**Assignee:** -  
+**Output:** `/mockups/05-observations-browser.html` (or similar)  
+**Depends On:** T2
+
+**Purpose:** Show how observation-heavy layers (iNaturalist, Animl camera traps) work in the new paradigm. Key challenge: users need to both browse many observations AND apply complex filters in the same sidebar.
+
+**Problems Addressed:** P3 (query context), P8 (space efficiency), P9 (clear filters behavior)
+
+**What it shows:**
+- Left sidebar with Species category expanded
+- Either iNaturalist Observations or Animl Camera Traps pinned and selected
+- Right sidebar showing both filters and observations
+
+**Key UX Challenge to Solve:**
+How do users toggle between viewing filters and browsing observations without losing context?
+
+**Possible Approaches to Explore:**
+1. **Collapsible filter panel** - Filters start expanded, can collapse to sticky bar showing active filters
+2. **Sticky filter bar** - Filters always visible at top in compact form, click to expand
+3. **Tabbed approach** - "Filter" tab vs "Browse" tab (may lose context though)
+4. **Inline filter toggles** - Filters appear as chips/tags above results, click to modify
+5. **Hybrid** - Compact filter summary at top, "Edit filters" button opens drawer/modal
+
+**What it should demonstrate:**
+- Observation cards showing photo, species name, date, location
+- Active filters displayed prominently (e.g., "Birds • Last 30 days • Preserve boundary")
+- Easy access to modify filters without scrolling back to top
+- Ability to click observation → see detail view (like time series drill-down in 3b)
+- Map markers for observations that sync with sidebar scroll/selection
+
+**Right sidebar state:**
+- Layer: iNaturalist Observations (or Animl Camera Traps)
+- Active tab: "Browse & Query" (merged approach)
+- Shows filters + results in clever space-efficient way
+- Perhaps 200-500 observations to show (paginated or infinite scroll)
+
+**Acceptance Criteria:**
+- [ ] HTML file created at specified path
+- [ ] Demonstrates at least 2 different filter UI approaches (can show alternate states)
+- [ ] Shows how observation detail drill-down works
+- [ ] Includes realistic observation cards with photos
+- [ ] Active filters are always visible/accessible
+- [ ] Ready to compare different approaches and pick best one
+
+**Notes:** 
+- This is critical for Species layers (biggest use case)
+- Also applies to Animl camera trap images
+- Consider how this differs from Dendra (stations → time series) vs observations (list → detail)
+- May want to show both "list view" and "grid view" options for observations
 
 ---
 
