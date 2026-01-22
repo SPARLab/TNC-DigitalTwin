@@ -228,37 +228,51 @@
             <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">9</span>
           </button>
           <div class="category-content ml-2 space-y-0.5">
-            <div class="layer-row flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" data-layer="fire-hazard" onclick="selectLayer('fire-hazard')">
-              <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('fire-hazard')" title="Pin and show on map">
+            
+            <!-- Fire Hazard - WORKING LAYER, PINNED -->
+            <div class="layer-row pinned flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" data-layer="fire-hazard" onclick="selectLayer('fire-hazard')">
+              <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('fire-hazard')" title="Toggle visibility">
+                <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                </svg>
+              </button>
+              <div class="flex-1 min-w-0">
+                <span class="text-sm text-slate-700 block truncate">Fire Hazard Severity Zones</span>
+                <span class="text-xs text-orange-600">✓ Working layer</span>
+              </div>
+              <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); togglePin('fire-hazard')" title="Pinned"><span class="text-sm">📌</span></button>
+            </div>
+            
+            <!-- Fire Threat - NOT WIRED -->
+            <div class="layer-row flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer opacity-60" data-layer="fire-threat" onclick="selectLayer('fire-threat')">
+              <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('fire-threat')" title="Not wired in this mockup">
                 <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                 </svg>
               </button>
-              <span class="flex-1 text-sm text-slate-700 truncate">CalFire Fire Hazard Severity Zones</span>
-              <button class="icon-btn flex-shrink-0 opacity-30 hover:opacity-100" onclick="event.stopPropagation(); togglePin('fire-hazard')" title="Pin layer"><span class="text-sm">📌</span></button>
+              <div class="flex-1 min-w-0">
+                <span class="text-sm text-slate-500 truncate">Fire Threat 2019</span>
+                <span class="text-xs text-slate-400 italic">Not wired</span>
+              </div>
+              <button class="icon-btn flex-shrink-0 opacity-30" onclick="event.stopPropagation(); togglePin('fire-threat')" title="Not wired"><span class="text-sm">📌</span></button>
             </div>
-            <div class="layer-row flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" data-layer="fire-threat" onclick="selectLayer('fire-threat')">
-              <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('fire-threat')" title="Pin and show on map">
+            
+            <!-- Fire Perimeters - NOT WIRED -->
+            <div class="layer-row flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer opacity-60" data-layer="fire-perimeters" onclick="selectLayer('fire-perimeters')">
+              <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('fire-perimeters')" title="Not wired in this mockup">
                 <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                 </svg>
               </button>
-              <span class="flex-1 text-sm text-slate-700 truncate">CalFire FRAP Fire Threat 2019</span>
-              <button class="icon-btn flex-shrink-0 opacity-30 hover:opacity-100" onclick="event.stopPropagation(); togglePin('fire-threat')" title="Pin layer"><span class="text-sm">📌</span></button>
+              <div class="flex-1 min-w-0">
+                <span class="text-sm text-slate-500 truncate">Fire Perimeters</span>
+                <span class="text-xs text-slate-400 italic">Not wired</span>
+              </div>
+              <button class="icon-btn flex-shrink-0 opacity-30" onclick="event.stopPropagation(); togglePin('fire-perimeters')" title="Not wired"><span class="text-sm">📌</span></button>
             </div>
-            <div class="layer-row flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" data-layer="fire-perimeters" onclick="selectLayer('fire-perimeters')">
-              <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('fire-perimeters')" title="Pin and show on map">
-                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                </svg>
-              </button>
-              <span class="flex-1 text-sm text-slate-700 truncate">JLDP Fire Perimeters</span>
-              <button class="icon-btn flex-shrink-0 opacity-30 hover:opacity-100" onclick="event.stopPropagation(); togglePin('fire-perimeters')" title="Pin layer"><span class="text-sm">📌</span></button>
-            </div>
-            <div class="text-[10px] text-slate-400 px-3 py-1 italic">+ 6 more layers...</div>
+            <div class="text-[10px] text-slate-400 px-3 py-1 italic">+ 6 more layers (not wired)...</div>
           </div>
         </div>
         
@@ -340,17 +354,37 @@
           <div class="category-content hidden ml-2"></div>
         </div>
         
-        <!-- 10. SOILS AND GEOLOGY (collapsed) -->
+        <!-- 10. SOILS AND GEOLOGY (expanded - has working layer) -->
         <div class="category mb-1" data-category="soils">
           <button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('soils')">
-            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="chevron w-4 h-4 text-slate-400 expanded" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
             <span class="text-base">🪨</span>
             <span>Soils and Geology</span>
             <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">4</span>
           </button>
-          <div class="category-content hidden ml-2"></div>
+          <div class="category-content ml-2 space-y-0.5">
+            
+            <!-- Earthquake Faults - WORKING LAYER, PINNED -->
+            <div class="layer-row pinned flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" 
+                 data-layer="earthquake-faults" onclick="selectLayer('earthquake-faults')">
+              <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('earthquake-faults')" title="Toggle visibility">
+                <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                </svg>
+              </button>
+              <div class="flex-1 min-w-0">
+                <span class="text-sm text-slate-700 block truncate">Earthquake Faults</span>
+                <span class="text-xs text-purple-600">✓ Working layer</span>
+              </div>
+              <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); togglePin('earthquake-faults')" title="Pinned">
+                <span class="text-sm">📌</span>
+              </button>
+            </div>
+            
+            <div class="text-[10px] text-slate-400 px-3 py-1 italic">+ 3 more layers (not wired)...</div>
+          </div>
         </div>
         
         <!-- 11. SPECIES (expanded - main demo category) -->
@@ -365,7 +399,7 @@
           </button>
           <div class="category-content ml-2 space-y-0.5">
             
-            <!-- iNaturalist - PINNED with QUERY -->
+            <!-- iNaturalist - WORKING LAYER, PINNED -->
             <div class="layer-row pinned flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" 
                  data-layer="inaturalist" onclick="selectLayer('inaturalist')">
               <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('inaturalist')" title="Toggle visibility">
@@ -375,68 +409,67 @@
               </button>
               <div class="flex-1 min-w-0">
                 <span class="text-sm text-slate-700 block truncate">iNaturalist Observations</span>
-                <span class="text-xs text-emerald-600 flex items-center gap-1">
-                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
-                  Birds, 2023 · 847 results
-                </span>
+                <span class="text-xs text-green-600">✓ Working layer</span>
               </div>
               <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); togglePin('inaturalist')" title="Pinned">
                 <span class="text-sm">📌</span>
               </button>
             </div>
             
-            <!-- ANiML - PINNED with QUERY -->
-            <div class="layer-row pinned flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" 
+            <!-- ANiML - NOT WIRED -->
+            <div class="layer-row flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer opacity-60" 
                  data-layer="animl" onclick="selectLayer('animl')">
-              <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('animl')" title="Toggle visibility">
-                <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
-                </svg>
-              </button>
-              <div class="flex-1 min-w-0">
-                <span class="text-sm text-slate-700 block truncate">ANiML Camera Traps</span>
-                <span class="text-xs text-emerald-600 flex items-center gap-1">
-                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
-                  North preserve · 8 cameras
-                </span>
-              </div>
-              <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); togglePin('animl')" title="Pinned">
-                <span class="text-sm">📌</span>
-              </button>
-            </div>
-            
-            <!-- Dendra Rain - PINNED, no query -->
-            <div class="layer-row pinned flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" 
-                 data-layer="dendra-rain" onclick="selectLayer('dendra-rain')">
-              <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('dendra-rain')" title="Toggle visibility">
-                <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
-                </svg>
-              </button>
-              <div class="flex-1 min-w-0">
-                <span class="text-sm text-slate-700 block truncate">Dendra: Rain Sensors</span>
-                <span class="text-xs text-slate-500">12 sensors · No filter</span>
-              </div>
-              <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); togglePin('dendra-rain')" title="Pinned">
-                <span class="text-sm">📌</span>
-              </button>
-            </div>
-            
-            <!-- eBird - not pinned -->
-            <div class="layer-row flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" 
-                 data-layer="ebird" onclick="selectLayer('ebird')">
-              <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('ebird')" title="Show on map">
+              <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('animl')" title="Not wired in this mockup">
                 <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                 </svg>
               </button>
-              <span class="flex-1 text-sm text-slate-700 truncate">eBird Sightings</span>
-              <button class="icon-btn flex-shrink-0 opacity-30 hover:opacity-100" onclick="event.stopPropagation(); togglePin('ebird')" title="Pin layer">
+              <div class="flex-1 min-w-0">
+                <span class="text-sm text-slate-500 block truncate">ANiML Camera Traps</span>
+                <span class="text-xs text-slate-400 italic">Not wired</span>
+              </div>
+              <button class="icon-btn flex-shrink-0 opacity-30" onclick="event.stopPropagation(); togglePin('animl')" title="Not wired">
                 <span class="text-sm">📌</span>
               </button>
             </div>
-            <div class="text-[10px] text-slate-400 px-3 py-1 italic">+ 2 more layers...</div>
+            
+            <!-- Dendra Rain - NOT WIRED -->
+            <div class="layer-row flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer opacity-60" 
+                 data-layer="dendra-rain" onclick="selectLayer('dendra-rain')">
+              <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('dendra-rain')" title="Not wired in this mockup">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+              <div class="flex-1 min-w-0">
+                <span class="text-sm text-slate-500 block truncate">Dendra: Rain Sensors</span>
+                <span class="text-xs text-slate-400 italic">Not wired</span>
+              </div>
+              <button class="icon-btn flex-shrink-0 opacity-30" onclick="event.stopPropagation(); togglePin('dendra-rain')" title="Not wired">
+                <span class="text-sm">📌</span>
+              </button>
+            </div>
+            
+            <!-- eBird - NOT WIRED -->
+            <div class="layer-row flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer opacity-60" 
+                 data-layer="ebird" onclick="selectLayer('ebird')">
+              <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('ebird')" title="Not wired in this mockup">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+              <div class="flex-1 min-w-0">
+                <span class="text-sm text-slate-500 truncate">eBird Sightings</span>
+                <span class="text-xs text-slate-400 italic">Not wired</span>
+              </div>
+              <button class="icon-btn flex-shrink-0 opacity-30" onclick="event.stopPropagation(); togglePin('ebird')" title="Not wired">
+                <span class="text-sm">📌</span>
+              </button>
+            </div>
+            <div class="text-[10px] text-slate-400 px-3 py-1 italic">+ 2 more layers (not wired)...</div>
           </div>
         </div>
         
@@ -479,33 +512,31 @@
           <p class="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Research Datasets (All Categories)</p>
         </div>
         
-        <!-- DataOne Datasets - PINNED with QUERY -->
+        <!-- DataOne Datasets - NOT WIRED -->
         <div class="category mb-1" data-category="dataone">
           <button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('dataone')">
-            <svg class="chevron w-4 h-4 text-slate-400 expanded" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
             <span class="text-base">📊</span>
             <span>DataOne Datasets</span>
             <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">876</span>
           </button>
-          <div class="category-content ml-2 space-y-0.5">
-            <!-- DataOne - PINNED with QUERY -->
-            <div class="layer-row pinned flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" 
+          <div class="category-content hidden ml-2 space-y-0.5">
+            <!-- DataOne - NOT WIRED -->
+            <div class="layer-row flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer opacity-60" 
                  data-layer="dataone" onclick="selectLayer('dataone')">
-              <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('dataone')" title="Toggle visibility">
-                <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+              <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('dataone')" title="Not wired in this mockup">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                 </svg>
               </button>
               <div class="flex-1 min-w-0">
-                <span class="text-sm text-slate-700 block truncate">All DataOne Datasets</span>
-                <span class="text-xs text-emerald-600 flex items-center gap-1">
-                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
-                  Marine, 2020-2023 · 47 datasets
-                </span>
+                <span class="text-sm text-slate-500 block truncate">All DataOne Datasets</span>
+                <span class="text-xs text-slate-400 italic">Not wired</span>
               </div>
-              <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); togglePin('dataone')" title="Pinned">
+              <button class="icon-btn flex-shrink-0 opacity-30" onclick="event.stopPropagation(); togglePin('dataone')" title="Not wired">
                 <span class="text-sm">📌</span>
               </button>
             </div>
@@ -543,7 +574,7 @@
           <div class="flex items-center gap-2">
             <span class="text-lg">📌</span>
             <span class="text-sm font-semibold text-slate-700">Pinned Layers</span>
-            <span class="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full font-medium">4</span>
+            <span id="pinned-count" class="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full font-medium">4</span>
           </div>
           <svg id="pinned-widget-chevron" class="w-5 h-5 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -554,111 +585,8 @@
         <div id="pinned-widget-content" class="max-h-[50vh] overflow-y-auto sidebar-scroll">
           
           <div id="pinned-layers-list" class="p-3 space-y-2">
-            
-            <!-- iNaturalist - with active query -->
-            <div class="widget-layer-card rounded-lg p-3 bg-white">
-              <div class="flex items-start gap-2">
-                <button class="icon-btn flex-shrink-0 mt-0.5" onclick="toggleVisibility('inaturalist')" title="Toggle visibility">
-                  <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
-                  </svg>
-                </button>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2">
-                    <span class="text-base">🦎</span>
-                    <span class="text-sm font-medium text-slate-700 truncate">iNaturalist</span>
-                  </div>
-                  <div class="query-badge mt-1.5 px-2 py-1 rounded text-xs flex items-center gap-1.5">
-                    <svg class="w-3 h-3 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
-                    <span class="text-emerald-700">Birds, 2023</span>
-                    <span class="text-emerald-600 font-mono">(847)</span>
-                  </div>
-                </div>
-                <button class="icon-btn text-slate-400 hover:text-red-500 flex-shrink-0" onclick="unpinLayer('inaturalist')" title="Unpin">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            
-            <!-- ANiML - with active query -->
-            <div class="widget-layer-card rounded-lg p-3 bg-white">
-              <div class="flex items-start gap-2">
-                <button class="icon-btn flex-shrink-0 mt-0.5" onclick="toggleVisibility('animl')" title="Toggle visibility">
-                  <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
-                  </svg>
-                </button>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2">
-                    <span class="text-base">📷</span>
-                    <span class="text-sm font-medium text-slate-700 truncate">ANiML Cameras</span>
-                  </div>
-                  <div class="query-badge mt-1.5 px-2 py-1 rounded text-xs flex items-center gap-1.5">
-                    <svg class="w-3 h-3 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
-                    <span class="text-emerald-700">North preserve</span>
-                    <span class="text-emerald-600 font-mono">(8)</span>
-                  </div>
-                </div>
-                <button class="icon-btn text-slate-400 hover:text-red-500 flex-shrink-0" onclick="unpinLayer('animl')" title="Unpin">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            
-            <!-- Dendra Rain - no query -->
-            <div class="widget-layer-card rounded-lg p-3 bg-white">
-              <div class="flex items-start gap-2">
-                <button class="icon-btn flex-shrink-0 mt-0.5" onclick="toggleVisibility('dendra-rain')" title="Toggle visibility">
-                  <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
-                  </svg>
-                </button>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2">
-                    <span class="text-base">🌡️</span>
-                    <span class="text-sm font-medium text-slate-700 truncate">Dendra Rain</span>
-                  </div>
-                  <p class="text-xs text-slate-500 mt-1">No filter (12 sensors)</p>
-                </div>
-                <button class="icon-btn text-slate-400 hover:text-red-500 flex-shrink-0" onclick="unpinLayer('dendra-rain')" title="Unpin">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            
-            <!-- DataOne - with active query -->
-            <div class="widget-layer-card rounded-lg p-3 bg-white">
-              <div class="flex items-start gap-2">
-                <button class="icon-btn flex-shrink-0 mt-0.5" onclick="toggleVisibility('dataone')" title="Toggle visibility">
-                  <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
-                  </svg>
-                </button>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2">
-                    <span class="text-base">📊</span>
-                    <span class="text-sm font-medium text-slate-700 truncate">DataOne</span>
-                  </div>
-                  <div class="query-badge mt-1.5 px-2 py-1 rounded text-xs flex items-center gap-1.5">
-                    <svg class="w-3 h-3 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
-                    <span class="text-emerald-700">Marine 2020-23</span>
-                    <span class="text-emerald-600 font-mono">(47)</span>
-                  </div>
-                </div>
-                <button class="icon-btn text-slate-400 hover:text-red-500 flex-shrink-0" onclick="unpinLayer('dataone')" title="Unpin">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            
+            <!-- Dynamically populated by updateFloatingWidget() -->
+            <!-- Initial content will be replaced on load -->
           </div>
           
         </div>
@@ -675,7 +603,7 @@
           <div class="flex items-center gap-2">
             <span class="text-lg">🔖</span>
             <span class="text-sm font-semibold text-slate-700">Bookmarked Items</span>
-            <span class="text-xs text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full font-medium">5</span>
+            <span id="bookmarks-count" class="text-xs text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full font-medium">5</span>
           </div>
           <svg id="bookmarks-widget-chevron" class="w-5 h-5 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -776,18 +704,44 @@
         </div>
       </div>
       
+      <!-- NOT WIRED MODAL -->
+      <div id="not-wired-modal" class="hidden absolute inset-0 bg-black/40 flex items-center justify-center z-50" onclick="closeNotWiredModal()">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm mx-4" onclick="event.stopPropagation()">
+          <div class="text-center">
+            <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span class="text-3xl">🔧</span>
+            </div>
+            <h3 class="text-lg font-semibold text-slate-800 mb-2">Mockup Layer</h3>
+            <p id="not-wired-layer-name" class="text-base font-medium text-slate-700 mb-3">🦎 Layer Name</p>
+            <p class="text-sm text-slate-600 mb-4">
+              This layer is <strong>not wired up</strong> in this mockup demo. 
+              Only <span class="text-green-600 font-medium">iNaturalist</span>, 
+              <span class="text-orange-600 font-medium">Fire Hazard</span>, and 
+              <span class="text-purple-600 font-medium">Earthquake Faults</span> 
+              are connected to live ArcGIS services.
+            </p>
+            <p class="text-xs text-slate-500 italic mb-4">
+              In the full application, this layer would display real data.
+            </p>
+            <button onclick="closeNotWiredModal()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 px-4 rounded-lg transition-colors">
+              Got it
+            </button>
+          </div>
+        </div>
+      </div>
+      
     </main>
     
     <!-- RIGHT SIDEBAR -->
     <aside id="right-sidebar" class="w-96 bg-white border-l border-slate-200 flex flex-col">
       
-      <!-- Sidebar Header -->
-      <div class="px-4 py-4 border-b border-slate-200 bg-gradient-to-r from-white to-slate-50">
+      <!-- Sidebar Header (updates based on selected layer) -->
+      <div id="sidebar-header" class="px-4 py-4 border-b border-slate-200 bg-gradient-to-r from-white to-slate-50">
         <div class="flex items-center gap-3">
-          <span class="text-2xl">🦎</span>
+          <span id="sidebar-icon" class="text-2xl">🦎</span>
           <div>
-            <h2 class="text-base font-semibold text-slate-800">iNaturalist Observations</h2>
-            <p class="text-xs text-slate-500">Community science biodiversity observations</p>
+            <h2 id="sidebar-title" class="text-base font-semibold text-slate-800">iNaturalist Observations</h2>
+            <p id="sidebar-subtitle" class="text-xs text-slate-500">Community science biodiversity observations</p>
           </div>
         </div>
       </div>
@@ -912,23 +866,47 @@
     // =========================================================================
     const state = {
       selectedLayer: 'inaturalist',
-      expandedCategories: new Set(['species', 'fire', 'dataone']),
+      expandedCategories: new Set(['species', 'fire', 'soils']),
       // Widget expanded states
       pinnedWidgetExpanded: true,
       bookmarksWidgetExpanded: true,
-      // Pin/Visibility state
-      pinnedLayers: new Set(['inaturalist', 'animl', 'dendra-rain', 'dataone']),
+      // Pin/Visibility state - ONLY the 3 working layers start pinned
+      pinnedLayers: new Set(['inaturalist', 'fire-hazard', 'earthquake-faults']),
       hiddenLayers: new Set(), // Layers that are pinned but temporarily hidden
       // Layer metadata for widget display
       layerMeta: {
-        'inaturalist': { name: 'iNaturalist', icon: '🦎', query: 'Birds, 2023', count: 847 },
-        'animl': { name: 'ANiML Cameras', icon: '📷', query: 'North preserve', count: 8 },
-        'dendra-rain': { name: 'Dendra Rain', icon: '🌡️', query: null, count: 12 },
-        'dataone': { name: 'DataOne', icon: '📊', query: 'Marine 2020-23', count: 47 },
-        'ebird': { name: 'eBird Sightings', icon: '🐦', query: null, count: null },
-        'fire-hazard': { name: 'Fire Hazard Zones', icon: '🔥', query: null, count: null },
-        'fire-threat': { name: 'Fire Threat 2019', icon: '🔥', query: null, count: null },
-        'fire-perimeters': { name: 'Fire Perimeters', icon: '🔥', query: null, count: null }
+        // === WORKING LAYERS (have ArcGIS services) ===
+        'inaturalist': { 
+          name: 'iNaturalist Observations', 
+          icon: '🦎', 
+          color: 'bg-green-500', 
+          shape: 'w-3 h-3 rounded-full',
+          description: 'Community science biodiversity observations from iNaturalist within the Dangermond Preserve boundary.',
+          wired: true
+        },
+        'fire-hazard': { 
+          name: 'Fire Hazard Severity Zones', 
+          icon: '🔥', 
+          color: 'bg-orange-500', 
+          shape: 'w-3 h-3 rounded-sm',
+          description: 'CalFire Fire Hazard Severity Zones (2023) showing fire risk classifications across the region.',
+          wired: true
+        },
+        'earthquake-faults': { 
+          name: 'Earthquake Faults', 
+          icon: '🪨', 
+          color: 'bg-purple-500', 
+          shape: 'w-3 h-0.5',
+          description: 'Known earthquake faults and folds from USGS data covering the USA.',
+          wired: true
+        },
+        // === NOT WIRED (mockup only) ===
+        'animl': { name: 'ANiML Camera Traps', icon: '📷', color: 'bg-slate-400', description: 'Wildlife camera trap network (not wired in mockup)', wired: false },
+        'dendra-rain': { name: 'Dendra: Rain Sensors', icon: '🌡️', color: 'bg-slate-400', description: 'Precipitation monitoring sensors (not wired in mockup)', wired: false },
+        'dataone': { name: 'DataOne Datasets', icon: '📊', color: 'bg-slate-400', description: 'Research datasets from DataOne repository (not wired in mockup)', wired: false },
+        'ebird': { name: 'eBird Sightings', icon: '🐦', color: 'bg-slate-400', description: 'Bird observations from eBird (not wired in mockup)', wired: false },
+        'fire-threat': { name: 'Fire Threat 2019', icon: '🔥', color: 'bg-slate-400', description: 'CalFire fire threat assessment (not wired in mockup)', wired: false },
+        'fire-perimeters': { name: 'Fire Perimeters', icon: '🔥', color: 'bg-slate-400', description: 'Historic fire perimeters (not wired in mockup)', wired: false }
       }
     };
     
@@ -954,14 +932,18 @@
     }
     
     // =========================================================================
-    // MAP INITIALIZATION
+    // WIRED LAYERS - Only these 3 layers have actual ArcGIS services
+    // =========================================================================
+    const WIRED_LAYERS = new Set(['inaturalist', 'fire-hazard', 'earthquake-faults']);
+    
+    // =========================================================================
+    // MAP INITIALIZATION (same as 01-full-layout-overview.html)
     // =========================================================================
     require([
       "esri/Map",
       "esri/views/MapView",
-      "esri/layers/FeatureLayer",
-      "esri/layers/GeoJSONLayer"
-    ], function(Map, MapView, FeatureLayer, GeoJSONLayer) {
+      "esri/layers/FeatureLayer"
+    ], function(Map, MapView, FeatureLayer) {
       
       const map = new Map({ basemap: "topo-vector" });
       
@@ -973,25 +955,81 @@
         ui: { components: [] }
       });
       
-      // Add preserve boundary
-      const boundaryLayer = new GeoJSONLayer({
-        url: "/dangermond-preserve-boundary.geojson",
+      // Fire Hazard Severity Zones (WORKING)
+      const fireHazardLayer = new FeatureLayer({
+        url: "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/CalFire_Fire_Hazard_Severity_Zones_2023/FeatureServer/0",
+        id: "fire-hazard",
+        opacity: 0.7,
+        visible: true
+      });
+      
+      // iNaturalist Observations (WORKING)
+      const inatLayer = new FeatureLayer({
+        url: "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/iNat_PreUC_View/FeatureServer/0",
+        id: "inaturalist",
+        visible: true,
         renderer: {
           type: "simple",
-          symbol: {
-            type: "simple-fill",
-            color: [46, 125, 50, 0.1],
-            outline: { color: [46, 125, 50, 1], width: 2 }
-          }
+          symbol: { type: "simple-marker", size: 6, color: [34, 197, 94, 0.8], outline: { color: [255,255,255,0.8], width: 1 } }
         }
       });
       
-      map.add(boundaryLayer);
+      // Earthquake Faults (WORKING)
+      const earthquakeFaultsLayer = new FeatureLayer({
+        url: "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/Earthquake_Faults_and_Folds_in_the_USA/FeatureServer/0",
+        id: "earthquake-faults",
+        visible: true,
+        renderer: {
+          type: "simple",
+          symbol: { type: "simple-line", color: [168, 85, 247, 1], width: 2, style: "solid" }
+        }
+      });
+      
+      map.addMany([fireHazardLayer, inatLayer, earthquakeFaultsLayer]);
+      
+      // Store layer references for visibility toggling (ONLY the 3 working layers)
+      window.mapLayers = {
+        'fire-hazard': fireHazardLayer,
+        'inaturalist': inatLayer,
+        'earthquake-faults': earthquakeFaultsLayer
+      };
       
       mapView.when(() => {
         document.getElementById('loading-overlay').style.display = 'none';
+        // Sync initial visibility with state
+        updateMapVisibility();
       });
     });
+    
+    // Update map layer visibility based on state
+    function updateMapVisibility() {
+      if (!window.mapLayers) return;
+      
+      // Only update the 3 wired layers
+      WIRED_LAYERS.forEach(layerId => {
+        const layer = window.mapLayers[layerId];
+        if (layer) {
+          const isPinned = state.pinnedLayers.has(layerId);
+          const isHidden = state.hiddenLayers.has(layerId);
+          layer.visible = isPinned && !isHidden;
+        }
+      });
+    }
+    
+    // =========================================================================
+    // SHOW "NOT WIRED" MODAL for non-working layers
+    // =========================================================================
+    function showNotWiredModal(layerId) {
+      const meta = state.layerMeta[layerId] || { name: layerId, icon: '📄' };
+      const modal = document.getElementById('not-wired-modal');
+      const title = document.getElementById('not-wired-layer-name');
+      title.textContent = `${meta.icon} ${meta.name}`;
+      modal.classList.remove('hidden');
+    }
+    
+    function closeNotWiredModal() {
+      document.getElementById('not-wired-modal').classList.add('hidden');
+    }
     
     // =========================================================================
     // UI FUNCTIONS
@@ -1018,12 +1056,26 @@
       const row = document.querySelector(`.layer-row[data-layer="${layerId}"]`);
       if (row) row.classList.add('selected');
       state.selectedLayer = layerId;
+      
+      // Update right sidebar
+      const meta = state.layerMeta[layerId];
+      if (meta) {
+        document.getElementById('sidebar-icon').textContent = meta.icon;
+        document.getElementById('sidebar-title').textContent = meta.name;
+        document.getElementById('sidebar-subtitle').textContent = meta.description || 'No description available';
+      }
     }
     
     // =========================================================================
     // PIN/VISIBILITY TOGGLE FUNCTIONS
     // =========================================================================
     function toggleVisibility(layerId) {
+      // Check if this layer is wired up
+      if (!WIRED_LAYERS.has(layerId)) {
+        showNotWiredModal(layerId);
+        return;
+      }
+      
       if (state.pinnedLayers.has(layerId)) {
         // For pinned layers: toggle visibility (show/hide)
         if (state.hiddenLayers.has(layerId)) {
@@ -1040,6 +1092,12 @@
     }
     
     function togglePin(layerId) {
+      // Check if this layer is wired up
+      if (!WIRED_LAYERS.has(layerId)) {
+        showNotWiredModal(layerId);
+        return;
+      }
+      
       if (state.pinnedLayers.has(layerId)) {
         unpinLayer(layerId);
       } else {
@@ -1048,6 +1106,10 @@
     }
     
     function pinLayer(layerId) {
+      if (!WIRED_LAYERS.has(layerId)) {
+        showNotWiredModal(layerId);
+        return;
+      }
       state.pinnedLayers.add(layerId);
       state.hiddenLayers.delete(layerId); // Make sure it's visible when pinned
       updateAllUI();
@@ -1063,14 +1125,18 @@
     // UPDATE ALL UI
     // =========================================================================
     function updateAllUI() {
-      // Update left sidebar layer rows
-      document.querySelectorAll('.layer-row[data-layer]').forEach(row => {
-        const layerId = row.dataset.layer;
+      // Update left sidebar layer rows - ONLY for wired layers
+      WIRED_LAYERS.forEach(layerId => {
+        const row = document.querySelector(`.layer-row[data-layer="${layerId}"]`);
+        if (!row) return;
+        
         const isPinned = state.pinnedLayers.has(layerId);
         const isVisible = isPinned && !state.hiddenLayers.has(layerId);
+        const meta = state.layerMeta[layerId];
         
         // Update pinned class
         row.classList.toggle('pinned', isPinned);
+        row.classList.toggle('opacity-60', !isPinned); // Dim unpinned layers
         
         // Update eye icon
         const eyeBtn = row.querySelector('.icon-btn:first-child');
@@ -1106,27 +1172,38 @@
         if (pinBtn) {
           pinBtn.classList.toggle('opacity-30', !isPinned);
           pinBtn.classList.toggle('opacity-100', isPinned);
-          pinBtn.classList.toggle('hover:opacity-100', !isPinned);
         }
         
-        // Update query indicator visibility
-        const queryIndicator = row.querySelector('.text-emerald-600');
-        if (queryIndicator && !isPinned) {
-          row.querySelector('.flex-1.min-w-0').innerHTML = `<span class="text-sm text-slate-700 block truncate">${state.layerMeta[layerId]?.name || layerId}</span>`;
+        // Update status text
+        const contentArea = row.querySelector('.flex-1.min-w-0');
+        if (contentArea && meta) {
+          const statusText = isPinned ? '✓ Working layer' : 'Working layer (not pinned)';
+          const statusColor = isPinned ? (
+            layerId === 'inaturalist' ? 'text-green-600' :
+            layerId === 'fire-hazard' ? 'text-orange-600' : 'text-purple-600'
+          ) : 'text-slate-500';
+          
+          contentArea.innerHTML = `
+            <span class="text-sm text-slate-700 block truncate">${meta.name}</span>
+            <span class="text-xs ${statusColor}">${statusText}</span>
+          `;
         }
       });
       
       // Update floating widget
       updateFloatingWidget();
+      
+      // Update map layer visibility
+      updateMapVisibility();
     }
     
     function updateFloatingWidget() {
       const pinnedLayersList = document.getElementById('pinned-layers-list');
       if (!pinnedLayersList) return;
       
-      // Update pinned count
-      const pinnedCount = document.querySelector('#pinned-section .text-xs.text-blue-600');
-      if (pinnedCount) pinnedCount.textContent = state.pinnedLayers.size;
+      // Update pinned count badge
+      const pinnedCountBadge = document.getElementById('pinned-count');
+      if (pinnedCountBadge) pinnedCountBadge.textContent = state.pinnedLayers.size;
       
       // Rebuild pinned layers list
       pinnedLayersList.innerHTML = '';
@@ -1137,43 +1214,28 @@
       }
       
       state.pinnedLayers.forEach(layerId => {
-        const meta = state.layerMeta[layerId] || { name: layerId, icon: '📄', query: null };
+        const meta = state.layerMeta[layerId] || { name: layerId, icon: '📄', color: 'bg-slate-400', shape: 'w-3 h-3' };
         const isHidden = state.hiddenLayers.has(layerId);
         
         const eyeIcon = isHidden ? 
           `<svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>` :
           `<svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>`;
         
-        const queryBadge = meta.query ? `
-          <div class="query-badge mt-1.5 px-2 py-1 rounded text-xs flex items-center gap-1.5">
-            <svg class="w-3 h-3 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
-            <span class="text-emerald-700">${meta.query}</span>
-          </div>
-          <div class="flex gap-2 mt-2">
-            <button class="action-btn text-xs text-blue-600 hover:text-blue-700 font-medium">Edit Query</button>
-            <span class="text-slate-300">|</span>
-            <button class="action-btn text-xs text-slate-500 hover:text-slate-700">Clear</button>
-          </div>
-        ` : `
-          <p class="text-xs text-slate-500 mt-1">No filter applied</p>
-          <div class="flex gap-2 mt-2">
-            <button class="action-btn text-xs text-blue-600 hover:text-blue-700 font-medium">Add Query</button>
-          </div>
-        `;
+        // Legend swatch that matches map symbol
+        const legendSwatch = meta.shape ? 
+          `<span class="${meta.shape} ${meta.color} flex-shrink-0"></span>` : 
+          `<span class="w-3 h-3 ${meta.color} rounded-sm flex-shrink-0"></span>`;
         
         const card = document.createElement('div');
         card.className = `widget-layer-card rounded-lg p-3 bg-white ${isHidden ? 'opacity-50' : ''}`;
         card.innerHTML = `
-          <div class="flex items-start gap-2">
-            <button class="icon-btn flex-shrink-0 mt-0.5" onclick="toggleVisibility('${layerId}')" title="${isHidden ? 'Show' : 'Hide'} layer">
+          <div class="flex items-center gap-2">
+            <button class="icon-btn flex-shrink-0" onclick="toggleVisibility('${layerId}')" title="${isHidden ? 'Show' : 'Hide'} layer">
               ${eyeIcon}
             </button>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2">
-                <span class="text-base">${meta.icon}</span>
-                <span class="text-sm font-medium text-slate-700 truncate ${isHidden ? 'line-through' : ''}">${meta.name}</span>
-              </div>
-              ${queryBadge}
+            <div class="flex items-center gap-2 flex-1 min-w-0">
+              ${legendSwatch}
+              <span class="text-sm font-medium text-slate-700 truncate ${isHidden ? 'line-through' : ''}">${meta.name}</span>
             </div>
             <button class="icon-btn text-slate-400 hover:text-red-500 flex-shrink-0" onclick="unpinLayer('${layerId}')" title="Unpin layer">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

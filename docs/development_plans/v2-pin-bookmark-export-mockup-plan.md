@@ -29,10 +29,15 @@
   - 🔖 **Bookmarked Items Widget** (top-right) — aligned with right sidebar
 - ✅ Updated email draft to explain widget separation and informational cohesion
 - ✅ Removed layout toggle buttons (now fixed split layout)
+- ✅ **Simplified 02a to use only working ArcGIS layers:**
+  - Used exact 3 layers from 01-full-layout-overview.html
+  - Added "Not wired" modal for mockup-only layers
+  - Visual distinction for non-working layers (grayed out)
+  - Right sidebar updates based on selected layer
 - ⚠️ **Known Issues to Address:**
-  - CORS error loading boundary GeoJSON (need local dev server)
-  - Interactive pin/visibility toggle not fully functional in 02a
-  - Widget count badges need dynamic updates
+  - Need "Edit Query" button for pinned layers
+  - Need drag handles for layer reordering in widget
+  - Browse tab needs explanatory text about feature browsing workflow
 
 **Key Achievements:**
 - ✅ Demonstrated three-level hierarchy (Layer → Feature → Related Data)
@@ -47,13 +52,18 @@
 - ✅ **Widget separation for informational cohesion:** Pinned Layers (left) + Bookmarked Items (right)
 
 **Next Steps (Continue in New Chat):**
-1. Fix CORS issue (set up local dev server or move boundary to public folder)
-2. Refine interactive pin/visibility toggle in 02a (layers not loading on map)
-3. Test widget collapse/expand functionality
-4. Address any visual polish issues
-5. Final review before sharing with team
+1. ✅ ~~Fix CORS issue~~ - Using working ArcGIS layers
+2. ✅ ~~Refine interactive pin/visibility toggle in 02a~~ - Complete
+3. Add "Edit Query" button to pinned layers in widget
+4. Add drag handles (⋮⋮) for layer reordering in widget
+5. Update Browse tab text to explain full workflow:
+   - "Browse the features of a layer, bookmark some features, and/or click a feature to browse its related data"
+   - "You can bookmark a feature after querying related data, and the bookmark will save the query (e.g., querying images for a bookmarked ANiML camera)"
+6. Test widget collapse/expand functionality
+7. Address any visual polish issues
+8. Final review before sharing with team
 
-**Last Commit:** `9f34412` - Split floating widget into separate pinned/bookmarks widgets
+**Last Commit:** `[pending]` - Simplify 02a to use working ArcGIS layers only
 
 ---
 
