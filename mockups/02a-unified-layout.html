@@ -78,6 +78,49 @@
       box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.1);
     }
     
+    /* Drag handle styling */
+    .drag-handle {
+      cursor: grab;
+      color: #94a3b8;
+      transition: color 0.15s ease;
+    }
+    .drag-handle:hover {
+      color: #64748b;
+    }
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+    
+    /* Draggable layer card states */
+    .widget-layer-card[draggable="true"] {
+      cursor: default;
+    }
+    .widget-layer-card.dragging {
+      opacity: 0.5;
+      transform: scale(0.98);
+      box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.2);
+    }
+    .widget-layer-card.drag-over {
+      border-top: 2px solid #3b82f6;
+      margin-top: -2px;
+    }
+    .widget-layer-card.drag-over-bottom {
+      border-bottom: 2px solid #3b82f6;
+      margin-bottom: -2px;
+    }
+    
+    /* Query action buttons in widget */
+    .query-action-btn {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    .query-action-btn:hover {
+      transform: translateY(-1px);
+    }
+    
     /* Bookmark card */
     .bookmark-card {
       transition: all 0.15s ease;
@@ -574,7 +617,7 @@
           <div class="flex items-center gap-2">
             <span class="text-lg">📌</span>
             <span class="text-sm font-semibold text-slate-700">Pinned Layers</span>
-            <span id="pinned-count" class="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full font-medium">4</span>
+            <span id="pinned-count" class="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full font-medium">3</span>
           </div>
           <svg id="pinned-widget-chevron" class="w-5 h-5 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -846,12 +889,111 @@
         
         <!-- BROWSE TAB -->
         <div id="tab-browse" class="tab-panel hidden p-4">
-          <p class="text-sm text-slate-500 italic">Browse tab content shown in mockup 02b (iNaturalist-specific)</p>
+          
+          <!-- Workflow Explanation Callout -->
+          <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200 mb-4">
+            <p class="text-sm font-semibold text-blue-800 flex items-center gap-2 mb-2">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+              How Browsing Works
+            </p>
+            <p class="text-xs text-blue-700 leading-relaxed mb-3">
+              Browse the <strong>features</strong> of a layer, bookmark some features, and/or click a feature to browse its <strong>related data</strong>.
+            </p>
+            <div class="bg-white/60 rounded-lg p-3 border border-blue-100">
+              <p class="text-[10px] text-blue-600 leading-relaxed">
+                <span class="font-semibold">💡 Tip:</span> You can bookmark a feature after querying its related data, and the bookmark will save the query. For example, bookmarking an ANiML camera after filtering for "Mountain Lions 2023" will remember that filter.
+              </p>
+            </div>
+          </div>
+          
+          <!-- Three-Level Hierarchy Visual -->
+          <div class="bg-slate-50 rounded-lg p-4 border border-slate-200 mb-4">
+            <p class="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">The Three Levels</p>
+            <div class="space-y-2">
+              <div class="flex items-start gap-3">
+                <span class="text-lg">📌</span>
+                <div>
+                  <p class="text-sm font-medium text-slate-700">Level 1: Layers</p>
+                  <p class="text-xs text-slate-500">Pin layers to the map, set queries to filter what's shown</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3 pl-4 border-l-2 border-slate-300 ml-2">
+                <span class="text-lg">🔖</span>
+                <div>
+                  <p class="text-sm font-medium text-slate-700">Level 2: Features (Rows)</p>
+                  <p class="text-xs text-slate-500">Browse individual items, bookmark specific features</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3 pl-8 border-l-2 border-amber-300 ml-6">
+                <span class="text-lg">⚡</span>
+                <div>
+                  <p class="text-sm font-medium text-slate-700">Level 3: Related Data</p>
+                  <p class="text-xs text-slate-500">For "pointer" features (cameras, sensors), filter their attached data</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Placeholder for actual browse content -->
+          <div class="text-center py-8 border-2 border-dashed border-slate-200 rounded-lg">
+            <p class="text-slate-400 text-sm mb-2">Feature list would appear here</p>
+            <p class="text-xs text-slate-400 italic">See mockup 02b-02e for data-source-specific browsing</p>
+          </div>
+          
         </div>
         
         <!-- EXPORT TAB -->
         <div id="tab-export" class="tab-panel hidden p-4">
-          <p class="text-sm text-slate-500 italic">Export tab content shown in mockup 02f (Export Builder)</p>
+          
+          <!-- Export Workflow Callout -->
+          <div class="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-200 mb-4">
+            <p class="text-sm font-semibold text-emerald-800 flex items-center gap-2 mb-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+              </svg>
+              Export Your Data
+            </p>
+            <p class="text-xs text-emerald-700 leading-relaxed mb-3">
+              Export pinned layers (with their queries) and bookmarked items together in one workflow.
+            </p>
+            <div class="bg-white/60 rounded-lg p-3 border border-emerald-100">
+              <ul class="text-[10px] text-emerald-600 space-y-1">
+                <li>• <strong>Pinned layers:</strong> Export all filtered results or just bookmarked items</li>
+                <li>• <strong>Bookmarks with filters:</strong> Exports include the saved query (e.g., specific date range)</li>
+                <li>• <strong>Multiple formats:</strong> CSV, GeoJSON, images, and more</li>
+              </ul>
+            </div>
+          </div>
+          
+          <!-- Quick Export Summary -->
+          <div class="bg-slate-50 rounded-lg p-4 border border-slate-200 mb-4">
+            <p class="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">What You'll Export</p>
+            <div class="space-y-2 text-xs">
+              <div class="flex justify-between items-center">
+                <span class="text-slate-600">📌 Pinned layers</span>
+                <span class="text-slate-800 font-medium bg-white px-2 py-0.5 rounded">3</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-slate-600">🔖 Bookmarked items</span>
+                <span class="text-slate-800 font-medium bg-white px-2 py-0.5 rounded">5</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-slate-600">⚡ Active filters</span>
+                <span class="text-slate-800 font-medium bg-white px-2 py-0.5 rounded">2</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Action Button (links to full Export Builder) -->
+          <button onclick="alert('This would open the full Export Builder modal.\n\nSee mockup 02f for the complete export workflow.')" class="w-full bg-gradient-to-r from-tnc-green to-tnc-green-dark text-white text-sm font-semibold py-3 px-4 rounded-lg hover:shadow-md transition-all flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
+            Open Export Builder
+          </button>
+          
+          <p class="text-xs text-slate-400 text-center mt-3 italic">Full export workflow shown in mockup 02f</p>
+          
         </div>
         
       </div>
@@ -871,8 +1013,11 @@
       pinnedWidgetExpanded: true,
       bookmarksWidgetExpanded: true,
       // Pin/Visibility state - ONLY the 3 working layers start pinned
-      pinnedLayers: new Set(['inaturalist', 'fire-hazard', 'earthquake-faults']),
+      // Using array to maintain order for drag-and-drop reordering
+      pinnedLayers: ['inaturalist', 'fire-hazard', 'earthquake-faults'],
       hiddenLayers: new Set(), // Layers that are pinned but temporarily hidden
+      // Drag state
+      draggedLayerId: null,
       // Layer metadata for widget display
       layerMeta: {
         // === WORKING LAYERS (have ArcGIS services) ===
@@ -907,6 +1052,12 @@
         'ebird': { name: 'eBird Sightings', icon: '🐦', color: 'bg-slate-400', description: 'Bird observations from eBird (not wired in mockup)', wired: false },
         'fire-threat': { name: 'Fire Threat 2019', icon: '🔥', color: 'bg-slate-400', description: 'CalFire fire threat assessment (not wired in mockup)', wired: false },
         'fire-perimeters': { name: 'Fire Perimeters', icon: '🔥', color: 'bg-slate-400', description: 'Historic fire perimeters (not wired in mockup)', wired: false }
+      },
+      // Active queries for layers (demo data)
+      layerQueries: {
+        'inaturalist': { active: true, label: 'Birds, 2023', filtered: '847', total: '12,430' },
+        'fire-hazard': { active: false },
+        'earthquake-faults': { active: false }
       }
     };
     
@@ -1009,7 +1160,7 @@
       WIRED_LAYERS.forEach(layerId => {
         const layer = window.mapLayers[layerId];
         if (layer) {
-          const isPinned = state.pinnedLayers.has(layerId);
+          const isPinned = state.pinnedLayers.includes(layerId);
           const isHidden = state.hiddenLayers.has(layerId);
           layer.visible = isPinned && !isHidden;
         }
@@ -1076,7 +1227,7 @@
         return;
       }
       
-      if (state.pinnedLayers.has(layerId)) {
+      if (state.pinnedLayers.includes(layerId)) {
         // For pinned layers: toggle visibility (show/hide)
         if (state.hiddenLayers.has(layerId)) {
           state.hiddenLayers.delete(layerId);
@@ -1085,7 +1236,7 @@
         }
       } else {
         // For non-pinned layers: clicking eye pins the layer
-        state.pinnedLayers.add(layerId);
+        state.pinnedLayers.push(layerId);
         state.hiddenLayers.delete(layerId); // Make sure it's visible
       }
       updateAllUI();
@@ -1098,7 +1249,7 @@
         return;
       }
       
-      if (state.pinnedLayers.has(layerId)) {
+      if (state.pinnedLayers.includes(layerId)) {
         unpinLayer(layerId);
       } else {
         pinLayer(layerId);
@@ -1110,13 +1261,15 @@
         showNotWiredModal(layerId);
         return;
       }
-      state.pinnedLayers.add(layerId);
+      if (!state.pinnedLayers.includes(layerId)) {
+        state.pinnedLayers.push(layerId);
+      }
       state.hiddenLayers.delete(layerId); // Make sure it's visible when pinned
       updateAllUI();
     }
     
     function unpinLayer(layerId) {
-      state.pinnedLayers.delete(layerId);
+      state.pinnedLayers = state.pinnedLayers.filter(id => id !== layerId);
       state.hiddenLayers.delete(layerId);
       updateAllUI();
     }
@@ -1130,7 +1283,7 @@
         const row = document.querySelector(`.layer-row[data-layer="${layerId}"]`);
         if (!row) return;
         
-        const isPinned = state.pinnedLayers.has(layerId);
+        const isPinned = state.pinnedLayers.includes(layerId);
         const isVisible = isPinned && !state.hiddenLayers.has(layerId);
         const meta = state.layerMeta[layerId];
         
@@ -1203,18 +1356,19 @@
       
       // Update pinned count badge
       const pinnedCountBadge = document.getElementById('pinned-count');
-      if (pinnedCountBadge) pinnedCountBadge.textContent = state.pinnedLayers.size;
+      if (pinnedCountBadge) pinnedCountBadge.textContent = state.pinnedLayers.length;
       
       // Rebuild pinned layers list
       pinnedLayersList.innerHTML = '';
       
-      if (state.pinnedLayers.size === 0) {
+      if (state.pinnedLayers.length === 0) {
         pinnedLayersList.innerHTML = '<p class="text-xs text-slate-400 italic px-3 py-4 text-center">No pinned layers. Click 📌 on a layer to pin it.</p>';
         return;
       }
       
-      state.pinnedLayers.forEach(layerId => {
+      state.pinnedLayers.forEach((layerId, index) => {
         const meta = state.layerMeta[layerId] || { name: layerId, icon: '📄', color: 'bg-slate-400', shape: 'w-3 h-3' };
+        const query = state.layerQueries[layerId] || { active: false };
         const isHidden = state.hiddenLayers.has(layerId);
         
         const eyeIcon = isHidden ? 
@@ -1226,27 +1380,179 @@
           `<span class="${meta.shape} ${meta.color} flex-shrink-0"></span>` : 
           `<span class="w-3 h-3 ${meta.color} rounded-sm flex-shrink-0"></span>`;
         
+        // Query info section (only shown if query is active)
+        const querySection = query.active ? `
+          <div class="mt-2 pt-2 border-t border-slate-100">
+            <div class="flex items-center gap-1.5 text-emerald-700 mb-1.5">
+              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
+              <span class="text-xs font-medium">${query.label}</span>
+              <span class="text-[10px] text-emerald-600 font-mono">(${query.filtered} of ${query.total})</span>
+            </div>
+            <div class="flex gap-1.5">
+              <button class="query-action-btn bg-emerald-100 text-emerald-700 hover:bg-emerald-200" onclick="editLayerQuery('${layerId}')">Edit Query</button>
+              <button class="query-action-btn border border-emerald-300 text-emerald-600 hover:bg-emerald-50" onclick="clearLayerQuery('${layerId}')">Clear</button>
+            </div>
+          </div>
+        ` : `
+          <div class="mt-2 pt-2 border-t border-slate-100">
+            <div class="flex items-center gap-1.5 text-slate-500 mb-1.5">
+              <span class="text-xs italic">No filter applied</span>
+            </div>
+            <button class="query-action-btn bg-slate-100 text-slate-600 hover:bg-slate-200" onclick="editLayerQuery('${layerId}')">Add Query</button>
+          </div>
+        `;
+        
         const card = document.createElement('div');
         card.className = `widget-layer-card rounded-lg p-3 bg-white ${isHidden ? 'opacity-50' : ''}`;
+        card.setAttribute('draggable', 'true');
+        card.setAttribute('data-layer-id', layerId);
+        card.setAttribute('data-index', index);
         card.innerHTML = `
           <div class="flex items-center gap-2">
-            <button class="icon-btn flex-shrink-0" onclick="toggleVisibility('${layerId}')" title="${isHidden ? 'Show' : 'Hide'} layer">
+            <!-- Drag Handle -->
+            <div class="drag-handle flex-shrink-0" title="Drag to reorder">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <circle cx="9" cy="5" r="1.5"/>
+                <circle cx="15" cy="5" r="1.5"/>
+                <circle cx="9" cy="12" r="1.5"/>
+                <circle cx="15" cy="12" r="1.5"/>
+                <circle cx="9" cy="19" r="1.5"/>
+                <circle cx="15" cy="19" r="1.5"/>
+              </svg>
+            </div>
+            <button class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('${layerId}')" title="${isHidden ? 'Show' : 'Hide'} layer">
               ${eyeIcon}
             </button>
             <div class="flex items-center gap-2 flex-1 min-w-0">
               ${legendSwatch}
               <span class="text-sm font-medium text-slate-700 truncate ${isHidden ? 'line-through' : ''}">${meta.name}</span>
             </div>
-            <button class="icon-btn text-slate-400 hover:text-red-500 flex-shrink-0" onclick="unpinLayer('${layerId}')" title="Unpin layer">
+            <button class="icon-btn text-slate-400 hover:text-red-500 flex-shrink-0" onclick="event.stopPropagation(); unpinLayer('${layerId}')" title="Unpin layer">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
               </svg>
             </button>
           </div>
+          ${querySection}
         `;
+        
+        // Add drag event listeners
+        card.addEventListener('dragstart', handleDragStart);
+        card.addEventListener('dragend', handleDragEnd);
+        card.addEventListener('dragover', handleDragOver);
+        card.addEventListener('dragleave', handleDragLeave);
+        card.addEventListener('drop', handleDrop);
         
         pinnedLayersList.appendChild(card);
       });
+    }
+    
+    // =========================================================================
+    // DRAG AND DROP HANDLERS
+    // =========================================================================
+    function handleDragStart(e) {
+      const layerId = e.target.getAttribute('data-layer-id');
+      state.draggedLayerId = layerId;
+      e.target.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', layerId);
+    }
+    
+    function handleDragEnd(e) {
+      e.target.classList.remove('dragging');
+      state.draggedLayerId = null;
+      // Remove all drag-over classes
+      document.querySelectorAll('.widget-layer-card').forEach(card => {
+        card.classList.remove('drag-over', 'drag-over-bottom');
+      });
+    }
+    
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      
+      const card = e.target.closest('.widget-layer-card');
+      if (!card || card.getAttribute('data-layer-id') === state.draggedLayerId) return;
+      
+      // Remove previous drag-over classes
+      document.querySelectorAll('.widget-layer-card').forEach(c => {
+        c.classList.remove('drag-over', 'drag-over-bottom');
+      });
+      
+      // Determine if we're in the top or bottom half of the card
+      const rect = card.getBoundingClientRect();
+      const midpoint = rect.top + rect.height / 2;
+      
+      if (e.clientY < midpoint) {
+        card.classList.add('drag-over');
+      } else {
+        card.classList.add('drag-over-bottom');
+      }
+    }
+    
+    function handleDragLeave(e) {
+      const card = e.target.closest('.widget-layer-card');
+      if (card) {
+        card.classList.remove('drag-over', 'drag-over-bottom');
+      }
+    }
+    
+    function handleDrop(e) {
+      e.preventDefault();
+      
+      const card = e.target.closest('.widget-layer-card');
+      if (!card) return;
+      
+      const draggedLayerId = state.draggedLayerId;
+      const targetLayerId = card.getAttribute('data-layer-id');
+      
+      if (draggedLayerId === targetLayerId) return;
+      
+      // Get current indices
+      const fromIndex = state.pinnedLayers.indexOf(draggedLayerId);
+      let toIndex = state.pinnedLayers.indexOf(targetLayerId);
+      
+      // Determine if dropping above or below based on drag-over class
+      const isDropBelow = card.classList.contains('drag-over-bottom');
+      
+      // Remove the dragged layer from its current position
+      state.pinnedLayers.splice(fromIndex, 1);
+      
+      // Recalculate target index after removal
+      toIndex = state.pinnedLayers.indexOf(targetLayerId);
+      
+      // Insert at the new position
+      if (isDropBelow) {
+        state.pinnedLayers.splice(toIndex + 1, 0, draggedLayerId);
+      } else {
+        state.pinnedLayers.splice(toIndex, 0, draggedLayerId);
+      }
+      
+      // Update the UI
+      updateFloatingWidget();
+      updateMapVisibility();
+      
+      console.log('Layer order updated:', state.pinnedLayers);
+    }
+    
+    // Edit Layer Query function (shows alert for demo)
+    function editLayerQuery(layerId) {
+      const meta = state.layerMeta[layerId];
+      const query = state.layerQueries[layerId];
+      
+      // In a real app, this would open a query builder panel
+      alert(`Edit Query for ${meta?.name || layerId}\n\nCurrent filter: ${query?.active ? query.label : 'None'}\n\n(This would open the Browse tab with query filters)`);
+      
+      // Switch to Browse tab to show where filtering would happen
+      switchTab('browse');
+    }
+    
+    // Clear Layer Query function
+    function clearLayerQuery(layerId) {
+      if (state.layerQueries[layerId]) {
+        state.layerQueries[layerId] = { active: false };
+        updateFloatingWidget();
+      }
     }
     
     function switchTab(tabId) {
