@@ -599,7 +599,92 @@ USER'S MENTAL MODEL
 
 ---
 
-## Part 10: Open Questions (Deferred Decisions)
+## Part 10: Cross-Category Data Sources
+
+### The Challenge
+
+Some data sources (notably **DataOne**) contain datasets that span ALL TNC primary categories. Unlike category-specific layers (e.g., "iNaturalist Observations" lives in Species category), these sources need a single location in the left sidebar but allow filtering by any category in the right sidebar.
+
+**The Potential Confusion:**
+```
+User sees:        DataOne in "Research Datasets" category
+User filters for: Marine datasets in right sidebar
+User thinks:      "Wait, which category is this in?"
+```
+
+### The Solution: Clear Labeling
+
+**Left Sidebar Structure (alphabetical, with cross-category section at end):**
+
+```
+🗺️ Boundaries
+🌍 Earth Observations  
+⛰️ Elevation and Bathymetry
+🔥 Fire
+💧 Freshwater
+🏗️ Infrastructure
+🌿 Land Cover
+🌊 Oceans and Coasts
+🔬 Research and Sensor Equipment
+🪨 Soils and Geology
+🦎 Species
+⚠️ Threats and Hazards
+🌤️ Weather and Climate
+───────────────────────────────────
+🔬 Research Datasets (All Categories)
+   └── 📊 DataOne Datasets
+```
+
+**Right Sidebar (when DataOne selected):**
+
+```
+┌──────────────────────────────────────────┐
+│ 📊 DataOne Datasets                      │
+│ Research data across all categories      │
+├──────────────────────────────────────────┤
+│                                          │
+│ ┌─ Search & Filter ─────────────────┐   │
+│ │ Search: [_______________]          │   │
+│ │ Category: [All Categories ▼]       │   │
+│ │           • Boundaries             │   │
+│ │           • Earth Observations     │   │
+│ │           • Fire                   │   │
+│ │           • Freshwater             │   │
+│ │           • Marine                 │   │
+│ │           • Species                │   │
+│ │           • ... (all 13 categories)│   │
+│ │ Years: [2020] to [2024]            │   │
+│ └────────────────────────────────────┘   │
+└──────────────────────────────────────────┘
+```
+
+### Key UX Principles
+
+1. **Alphabetical categories** - Primary TNC categories listed A-Z
+2. **Separator line** - Visual break before cross-category section
+3. **Clear section label** - "Research Datasets (All Categories)"
+4. **Descriptive subtitle** - Right sidebar explains "across all categories"
+5. **Category filter as choice** - Not a constraint, but an option
+
+### Why This Works
+
+- **Name signals difference:** "Research Datasets (All Categories)" ≠ specific category
+- **Position reinforces difference:** Below separator, after all specific categories
+- **Clear labeling:** No confusion about what filtering by category means
+- **Room for growth:** Can add GBIF or other cross-category sources here
+- **Consistent with paradigm:** Still follows pin → query → bookmark → export flow
+
+### Implementation in Mockups
+
+All V2 mockups should include:
+- ✅ All 13 primary TNC categories (alphabetical)
+- ✅ Separator line after last category
+- ✅ "Research Datasets (All Categories)" section with DataOne
+- ✅ Right sidebar clearly labeled as cross-category
+
+---
+
+## Part 11: Open Questions (Deferred Decisions)
 
 ### To Decide Later
 

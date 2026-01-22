@@ -84,6 +84,12 @@ Level 1: LAYER
 | **02e** | Browse Tab: DataOne | Pointer rows with file lists |
 | **02f** | Export Builder | All bookmark types together |
 
+**🔴 REQUIREMENT: All mockups must include complete left sidebar structure**
+- All 13 primary TNC categories (alphabetical order)
+- Separator line
+- "Research Datasets (All Categories)" section with DataOne
+- See "Mockup 02a" for reference structure
+
 ---
 
 ## Mockup 02a: Unified Layout with Floating Widget
@@ -94,6 +100,35 @@ Level 1: LAYER
 - Left sidebar (categories, layers, pin button)
 - Floating widget (pinned layers + bookmarks)
 - Right sidebar tabs (Overview | Browse | Export)
+
+**Left Sidebar Structure:**
+
+All mockups must include the complete category structure from the live site:
+
+```
+🗺️ Boundaries
+🌍 Earth Observations  
+⛰️ Elevation and Bathymetry
+🔥 Fire
+💧 Freshwater
+🏗️ Infrastructure
+🌿 Land Cover
+🌊 Oceans and Coasts
+🔬 Research and Sensor Equipment
+🪨 Soils and Geology
+🦎 Species
+⚠️ Threats and Hazards
+🌤️ Weather and Climate
+───────────────────────────────────
+🔬 Research Datasets (All Categories)
+   └── 📊 DataOne Datasets
+```
+
+**Key Points:**
+- Categories in alphabetical order
+- Separator line before cross-category section
+- "Research Datasets (All Categories)" clearly labeled
+- Each category shows layer count badge
 
 **Floating Widget:**
 
@@ -526,6 +561,20 @@ With this pattern:
 
 **Row Type:** Pointer (dataset points to files), but filtering files is rare
 
+**⚠️ Critical: Cross-Category Context**
+
+DataOne appears under "Research Datasets (All Categories)" in the left sidebar because it contains datasets across ALL TNC categories. The right sidebar must clearly communicate this:
+
+```
+Right Sidebar Header:
+┌──────────────────────────────────────────┐
+│ 📊 DataOne Datasets                      │
+│ Research data across all categories      │
+└──────────────────────────────────────────┘
+```
+
+This prevents confusion: users understand they're filtering by TNC category WITHIN the DataOne collection, not viewing a category-specific layer.
+
 ### Browse Tab - Dataset List View
 
 ```
@@ -847,12 +896,13 @@ bookmark: {
 
 | Component | Variation | Examples |
 |-----------|-----------|----------|
-| Browse tab filters | Data-type specific | Species (iNat), Region (ANiML), Time (Dendra), Search (DataOne) |
+| Browse tab filters | Data-type specific | Species (iNat), Region (ANiML), Time (Dendra), Category (DataOne) |
 | Browse tab results | Card content differs | Observation card vs. Camera card vs. Sensor card vs. Dataset card |
 | Bookmark options | Self-contained: 1 button; Pointer: 2 buttons | `[Bookmark]` vs. `[Bookmark]` + `[Bookmark with Filter]` |
 | Level 3 exists? | Only for pointer rows | ANiML: images; Dendra: datastream; DataOne: n/a usually |
 | Export options | Data-type specific | Images vs. CSV vs. Links |
 | **Dual-level filter at layer browse?** | **ANiML only** | ANiML shows both camera filters AND image filters at layer level; others only show row-level filters |
+| **Category placement** | **Most in primary categories, DataOne cross-category** | DataOne in "Research Datasets (All Categories)" with category filter in right sidebar |
 
 ### ⚠️ ANiML Special Case: Dual-Level Filtering
 
@@ -968,6 +1018,15 @@ User flow to demonstrate:
 - 🔜 Actions: Bookmark Dataset, Open in DataOne, Copy DOI, Cite
 - 🔜 Filter persistence: returning to list preserves search/filter state
 - 📝 Decision: No iframe embed - curated summary is better UX for narrow sidebar
+
+**⚠️ IMPORTANT: Left Sidebar Requirements for All Mockups**
+- 📋 **ACTION REQUIRED:** Update all existing mockups (02a-02f) to include complete left sidebar
+  - All 13 primary TNC categories (alphabetical: Boundaries → Weather and Climate)
+  - Separator line (`───────────────────────────────`)
+  - "Research Datasets (All Categories)" section
+  - DataOne layer under this section
+- 🎯 **Rationale:** Prevents confusion about DataOne being a cross-category data source
+- 📍 **Reference:** See `docs/feedback/data-catalog-ux-paradigm-jan-21-2026.md` Part 10
 
 **DataOne Details View Plan (Documented Above):**
 - ✅ `[Details →]` button shows dataset detail view in right sidebar
