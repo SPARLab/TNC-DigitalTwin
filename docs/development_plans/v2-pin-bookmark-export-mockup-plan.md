@@ -9,7 +9,7 @@
 
 ## Progress Summary
 
-**Completed Mockups:** ✅ 6 / 6 Core Mockups • 🔜 1 Enhancement Planned
+**Completed Mockups:** ✅ 7 / 7 Core Mockups • 🔧 Left Sidebar Update Needed
 
 | Mockup | Status | Purpose |
 |--------|--------|---------|
@@ -18,8 +18,9 @@
 | **02c** | ✅ Complete | ANiML Browse (pointer rows + dual-level filters) |
 | **02d** | ✅ Complete | Dendra Browse (pointer rows + Level 3 datastream + floating chart) |
 | **02e** | ✅ Complete | DataOne Browse (pointer rows, no Level 3) |
-| **02e+** | 🔜 Planned | DataOne Detail View (drill-down with full metadata) |
+| **02e+** | ✅ Complete | DataOne Detail View (drill-down with full metadata) |
 | **02f** | ✅ Complete | Export Builder (all bookmark types together) |
+| **ALL** | 🔧 Update Needed | Add complete left sidebar (all 13 categories + cross-category section) |
 
 **Key Achievements:**
 - ✅ Demonstrated three-level hierarchy (Layer → Feature → Related Data)
@@ -27,8 +28,9 @@
 - ✅ Level 3 filtering shown in two contexts (ANiML images, Dendra time series)
 - ✅ Floating time series panel integrated without overlap
 - ✅ DataOne pointer pattern complete (simple bookmark, no Level 3)
+- ✅ DataOne detail view complete (matches live website)
 - ✅ Export Builder shows all bookmark types converging in single workflow
-- 🔜 DataOne detail view planned (completes drill-down pattern consistency)
+- 🔧 Need to update all mockups with complete left sidebar structure
 
 ---
 
@@ -934,8 +936,9 @@ ANiML is unique among our data sources because:
 | 4 | 02d | Dendra Browse (pointer + Level 3 datastream) | ✅ **COMPLETE** |
 | 5 | 02e | DataOne Browse (pointer, no Level 3) | ✅ **COMPLETE** |
 | 6 | 02f | Export Builder (all together) | ✅ **COMPLETE** |
-| 7 | 02e+ | **DataOne Detail View** (drill-down pattern) | 🔜 **Next** |
-| 8 | Polish | Consistency check, edge cases, demo prep | 📋 Planned |
+| 7 | 02e+ | **DataOne Detail View** (drill-down pattern) | ✅ **COMPLETE** |
+| 8 | ALL | **Update left sidebars** (all 13 categories + cross-category) | 🔧 **Next** |
+| 9 | Polish | Consistency check, edge cases, demo prep | 📋 Planned |
 
 ### 02c Development Notes (ANiML)
 
@@ -1009,26 +1012,29 @@ User flow to demonstrate:
 - 📝 Simplest pointer row pattern - bookmarks are always for entire datasets
 - 📝 DOI badges provide citation links to original research
 
-**02e - DataOne Detail View (TODO)**
-- 🔜 `[Details →]` button → drills into dataset detail view
-- 🔜 "← Back to Datasets" navigation (consistent with ANiML/Dendra pattern)
-- 🔜 Full description (not truncated), files list with sizes
-- 🔜 Spatial coverage section with bounding box + "View on Map"
-- 🔜 Keywords as clickable tags
-- 🔜 Actions: Bookmark Dataset, Open in DataOne, Copy DOI, Cite
-- 🔜 Filter persistence: returning to list preserves search/filter state
+**02e+ - DataOne Detail View (Jan 21, 2026)**
+- ✅ `[Details →]` button → drills into dataset detail view
+- ✅ "← Back to Datasets" navigation (consistent with ANiML/Dendra pattern)
+- ✅ Full description (not truncated), files list with sizes
+- ✅ Version history (collapsible section with version comparison)
+- ✅ Spatial coverage section with bounding box coordinates
+- ✅ Keywords as clickable tags, TNC categories, authors list
+- ✅ Project/site, temporal coverage, file information
+- ✅ Actions: Open in DataONE (primary), Preview, Bookmark
+- ✅ Filter persistence: returning to list preserves search/filter state
+- ✅ Matches live website's DataONEDetailsSidebar component
 - 📝 Decision: No iframe embed - curated summary is better UX for narrow sidebar
+- 📝 Completes drill-down pattern consistency across all data sources
 
-**⚠️ IMPORTANT: Left Sidebar Requirements for All Mockups**
-- 📋 **ACTION REQUIRED:** Update all existing mockups (02a-02f) to include complete left sidebar
+**🔧 ACTION NEEDED: Left Sidebar Update for All Mockups**
+- 📋 **Task:** Update all existing mockups (02a-02f) to include complete left sidebar
   - All 13 primary TNC categories (alphabetical: Boundaries → Weather and Climate)
   - Separator line (`───────────────────────────────`)
   - "Research Datasets (All Categories)" section
-  - DataOne layer under this section
+  - DataOne layer under this section with "(All Categories)" label
 - 🎯 **Rationale:** Prevents confusion about DataOne being a cross-category data source
 - 📍 **Reference:** See `docs/feedback/data-catalog-ux-paradigm-jan-21-2026.md` Part 10
-
-**DataOne Details View Plan (Documented Above):**
+- ⏱️ **Priority:** Next task before demo polish
 - ✅ `[Details →]` button shows dataset detail view in right sidebar
 - ✅ Uses existing right sidebar detail styling (consistent with ANiML camera detail, Dendra sensor detail)
 - ✅ Shows curated metadata summary instead of iframe (better UX, consistent width)
@@ -1037,7 +1043,7 @@ User flow to demonstrate:
 - ✅ Detail view includes: full description, files list, spatial coverage, keywords, actions
 - ✅ Completes the drill-down pattern consistency across all data sources
 
-**Implementation Status:** 🔜 Ready for mockup implementation
+**Implementation Status:** ✅ Complete (as of Jan 21, 2026)
 
 ---
 
@@ -1064,7 +1070,8 @@ mockups/
 - [x] Self-contained vs. pointer row distinction is clear (✅ shown in 02a bookmarks)
 - [x] Export Builder shows how all bookmark types converge
 - [x] Team can articulate the three-level hierarchy (✅ demonstrated in 02a)
-- [ ] DataOne detail view implemented (drill-down pattern complete across all sources)
+- [x] DataOne detail view implemented (drill-down pattern complete across all sources)
+- [ ] All mockups updated with complete left sidebar (13 categories + cross-category section)
 - [ ] Jack Dangermond demo-ready (needs polish pass)
 
 ### Mockup 02a Complete
@@ -1090,10 +1097,10 @@ mockups/
 
 ---
 
-**Last Updated:** January 21, 2026  
-**Status:** ✅ Core Mockups Complete (6 of 6) • 🔜 Detail View Enhancement Planned  
-**Next:** Implement DataOne detail view (02e+) to complete drill-down pattern
+**Last Updated:** January 22, 2026  
+**Status:** ✅ All Core Mockups Complete (7/7) • 🔧 Left Sidebar Update Needed  
+**Next:** Update all mockups with complete left sidebar (13 categories + cross-category section)
 
-**Latest Completion:** 02f - Export Builder (all bookmark types together)  
-**Upcoming:** 02e+ - DataOne Detail View (full dataset metadata, files, spatial coverage)
+**Latest Completion:** 02e+ - DataOne Detail View (matches live website)  
+**Current Task:** Add complete left sidebar to all mockups (02a-02f) with alphabetical categories and cross-category section
 
