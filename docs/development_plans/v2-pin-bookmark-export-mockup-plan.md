@@ -46,12 +46,14 @@
 - ✅ Team review email draft created with forest/tree analogy and hierarchy explanation
 - ✅ **Widget separation for informational cohesion:** Pinned Layers (left) + Bookmarked Items (right)
 
-**Next Steps:**
+**Next Steps (Continue in New Chat):**
 1. Fix CORS issue (set up local dev server or move boundary to public folder)
-2. Refine interactive pin/visibility toggle in 02a
+2. Refine interactive pin/visibility toggle in 02a (layers not loading on map)
 3. Test widget collapse/expand functionality
 4. Address any visual polish issues
 5. Final review before sharing with team
+
+**Last Commit:** `9f34412` - Split floating widget into separate pinned/bookmarks widgets
 
 ---
 
