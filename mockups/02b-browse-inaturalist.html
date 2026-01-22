@@ -186,19 +186,123 @@
       <!-- Layer List -->
       <div id="layer-list" class="flex-1 overflow-y-auto sidebar-scroll p-2">
         
-        <!-- SPECIES -->
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <!-- PRIMARY TNC CATEGORIES (Alphabetical Order) - 13 categories             -->
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        
+        <!-- 1. Boundaries -->
+        <div class="category mb-1" data-category="boundaries">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('boundaries')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <span class="text-base">🗺️</span><span>Boundaries</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">20</span>
+          </button>
+          <div class="category-content hidden ml-2"></div>
+        </div>
+        
+        <!-- 2. Elevation and Bathymetry -->
+        <div class="category mb-1" data-category="elevation">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('elevation')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <span class="text-base">⛰️</span><span>Elevation & Bathymetry</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">2</span>
+          </button>
+          <div class="category-content hidden ml-2"></div>
+        </div>
+        
+        <!-- 3. Fire -->
+        <div class="category mb-1" data-category="fire">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('fire')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <span class="text-base">🔥</span><span>Fire</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">9</span>
+          </button>
+          <div class="category-content hidden ml-2"></div>
+        </div>
+        
+        <!-- 4. Fire and Fuels -->
+        <div class="category mb-1" data-category="fire-fuels">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('fire-fuels')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <span class="text-base">🔥</span><span>Fire and Fuels</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">1</span>
+          </button>
+          <div class="category-content hidden ml-2"></div>
+        </div>
+        
+        <!-- 5. Freshwater -->
+        <div class="category mb-1" data-category="freshwater">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('freshwater')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <span class="text-base">💧</span><span>Freshwater</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">16</span>
+          </button>
+          <div class="category-content hidden ml-2"></div>
+        </div>
+        
+        <!-- 6. Infrastructure -->
+        <div class="category mb-1" data-category="infrastructure">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('infrastructure')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <span class="text-base">🏗️</span><span>Infrastructure</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">14</span>
+          </button>
+          <div class="category-content hidden ml-2"></div>
+        </div>
+        
+        <!-- 7. Land Cover -->
+        <div class="category mb-1" data-category="landcover">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('landcover')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <span class="text-base">🌿</span><span>Land Cover</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">19</span>
+          </button>
+          <div class="category-content hidden ml-2"></div>
+        </div>
+        
+        <!-- 8. Oceans and Coasts -->
+        <div class="category mb-1" data-category="oceans">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('oceans')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <span class="text-base">🌊</span><span>Oceans and Coasts</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">8</span>
+          </button>
+          <div class="category-content hidden ml-2"></div>
+        </div>
+        
+        <!-- 9. Research and Sensor Equipment -->
+        <div class="category mb-1" data-category="research-equipment">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('research-equipment')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <span class="text-base">🔬</span><span>Research & Sensor Equip.</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">4</span>
+          </button>
+          <div class="category-content hidden ml-2"></div>
+        </div>
+        
+        <!-- 10. Soils and Geology -->
+        <div class="category mb-1" data-category="soils">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('soils')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <span class="text-base">🪨</span><span>Soils and Geology</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">4</span>
+          </button>
+          <div class="category-content hidden ml-2"></div>
+        </div>
+        
+        <!-- 11. SPECIES (expanded - main focus for this mockup) -->
         <div class="category mb-1" data-category="species">
           <button id="species-category-header" class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('species')">
             <svg class="chevron w-4 h-4 text-slate-400 expanded" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
             <span class="text-base">🦎</span>
-            <span>Species & Wildlife</span>
+            <span>Species</span>
             <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">6</span>
           </button>
           <div id="species-category-content" class="category-content ml-2 space-y-0.5">
             
-            <!-- iNaturalist - PINNED with QUERY -->
+            <!-- iNaturalist - PINNED with QUERY (selected) -->
             <div id="layer-inaturalist" class="layer-row pinned selected flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" 
                  data-layer="inaturalist" onclick="selectLayer('inaturalist')">
               <button id="inaturalist-visibility-btn" class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('inaturalist')" title="Toggle visibility">
@@ -232,32 +336,45 @@
                 <span class="text-sm">📌</span>
               </button>
             </div>
+            <div class="text-[10px] text-slate-400 px-3 py-1 italic">+ 4 more layers...</div>
           </div>
         </div>
         
-        <!-- Other categories collapsed -->
-        <div class="category mb-1" data-category="sensors">
-          <button id="sensors-category-header" class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('sensors')">
-            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-            </svg>
-            <span class="text-base">🌡️</span>
-            <span>Sensors & Monitoring</span>
-            <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">4</span>
+        <!-- 12. Threats and Hazards -->
+        <div class="category mb-1" data-category="threats">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('threats')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <span class="text-base">⚠️</span><span>Threats and Hazards</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">1</span>
           </button>
-          <div id="sensors-category-content" class="category-content hidden ml-2"></div>
+          <div class="category-content hidden ml-2"></div>
         </div>
         
-        <div class="category mb-1" data-category="research">
-          <button id="research-category-header" class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('research')">
-            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-            </svg>
-            <span class="text-base">🔬</span>
-            <span>Research Data</span>
-            <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">3</span>
+        <!-- 13. Weather and Climate -->
+        <div class="category mb-1" data-category="weather">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('weather')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <span class="text-base">🌤️</span><span>Weather and Climate</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">1</span>
           </button>
-          <div id="research-category-content" class="category-content hidden ml-2"></div>
+          <div class="category-content hidden ml-2"></div>
+        </div>
+        
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <!-- SEPARATOR + CROSS-CATEGORY SECTION                                       -->
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="border-t border-slate-300 my-3 mx-2"></div>
+        <div class="px-2 pb-1">
+          <p class="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Research Datasets (All Categories)</p>
+        </div>
+        
+        <div class="category mb-1" data-category="dataone">
+          <button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('dataone')">
+            <svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <span class="text-base">📊</span><span>DataOne Datasets</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">876</span>
+          </button>
+          <div class="category-content hidden ml-2"></div>
         </div>
         
       </div>
@@ -341,8 +458,8 @@
         </div>
       </div>
       
-      <!-- Bookmarks Widget (Right) -->
-      <div id="floating-widget-bookmarks" class="floating-widget widget-bookmarks-only absolute top-4 left-4 bg-white/95 rounded-xl w-72 z-20 overflow-hidden">
+      <!-- Bookmarks Widget (Right - aligned with right sidebar) -->
+      <div id="floating-widget-bookmarks" class="floating-widget widget-bookmarks-only absolute top-4 right-4 bg-white/95 rounded-xl w-72 z-20 overflow-hidden">
         
         <!-- Widget Header -->
         <div id="bookmarks-widget-header" class="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-amber-50 to-white border-b border-amber-100 cursor-pointer" onclick="toggleBookmarksWidget()">

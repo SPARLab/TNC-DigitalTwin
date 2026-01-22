@@ -248,11 +248,36 @@
         </div>
       </div>
       
-      <!-- Layer List (simplified for context) -->
+      <!-- Layer List - All 13 TNC Categories (dimmed but visible for context) -->
       <div id="layer-list" class="flex-1 overflow-y-auto sidebar-scroll p-2">
-        <div class="text-center py-8 text-slate-400 text-xs italic">
-          Layer browser dimmed while Export Builder is open
-        </div>
+        
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <!-- PRIMARY TNC CATEGORIES (Alphabetical Order) - 13 categories             -->
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        
+        <div class="category mb-1" data-category="boundaries"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">🗺️</span><span>Boundaries</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">20</span></button><div class="category-content hidden ml-2"></div></div>
+        <div class="category mb-1" data-category="elevation"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">⛰️</span><span>Elevation & Bathymetry</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">2</span></button><div class="category-content hidden ml-2"></div></div>
+        <div class="category mb-1" data-category="fire"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">🔥</span><span>Fire</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">9</span></button><div class="category-content hidden ml-2"></div></div>
+        <div class="category mb-1" data-category="fire-fuels"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">🔥</span><span>Fire and Fuels</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">1</span></button><div class="category-content hidden ml-2"></div></div>
+        <div class="category mb-1" data-category="freshwater"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">💧</span><span>Freshwater</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">16</span></button><div class="category-content hidden ml-2"></div></div>
+        <div class="category mb-1" data-category="infrastructure"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">🏗️</span><span>Infrastructure</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">14</span></button><div class="category-content hidden ml-2"></div></div>
+        <div class="category mb-1" data-category="landcover"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">🌿</span><span>Land Cover</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">19</span></button><div class="category-content hidden ml-2"></div></div>
+        <div class="category mb-1" data-category="oceans"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">🌊</span><span>Oceans and Coasts</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">8</span></button><div class="category-content hidden ml-2"></div></div>
+        <div class="category mb-1" data-category="research-equipment"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">🔬</span><span>Research & Sensor Equip.</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">4</span></button><div class="category-content hidden ml-2"></div></div>
+        <div class="category mb-1" data-category="soils"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">🪨</span><span>Soils and Geology</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">4</span></button><div class="category-content hidden ml-2"></div></div>
+        <div class="category mb-1" data-category="species"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">🦎</span><span>Species</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">6</span></button><div class="category-content hidden ml-2"></div></div>
+        <div class="category mb-1" data-category="threats"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">⚠️</span><span>Threats and Hazards</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">1</span></button><div class="category-content hidden ml-2"></div></div>
+        <div class="category mb-1" data-category="weather"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">🌤️</span><span>Weather and Climate</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">1</span></button><div class="category-content hidden ml-2"></div></div>
+        
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <!-- SEPARATOR + CROSS-CATEGORY SECTION                                      -->
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="border-t border-slate-300 my-3 mx-2"></div>
+        <div class="px-2 pb-1"><p class="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Research Datasets (All Categories)</p></div>
+        
+        <!-- DataOne -->
+        <div class="category mb-1" data-category="dataone"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">📊</span><span>DataOne Datasets</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">876</span></button><div class="category-content hidden ml-2"></div></div>
+        
       </div>
     </aside>
     
@@ -270,6 +295,38 @@
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
           <p class="text-xs text-gray-600 font-medium">Loading map...</p>
+        </div>
+      </div>
+      
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <!-- PINNED LAYERS WIDGET (TOP-LEFT) - behind modal                          -->
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <div id="floating-widget-pinned" class="absolute top-4 left-4 bg-white/95 rounded-xl w-72 z-20 overflow-hidden shadow-lg">
+        <div class="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-50 to-white border-b border-blue-100">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">📌</span>
+            <span class="text-sm font-semibold text-slate-700">Pinned Layers</span>
+            <span class="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full font-medium">4</span>
+          </div>
+        </div>
+        <div class="p-3 space-y-2 text-sm text-slate-600">
+          <p class="text-xs text-slate-400 italic">Widget hidden behind export modal</p>
+        </div>
+      </div>
+      
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <!-- BOOKMARKED ITEMS WIDGET (TOP-RIGHT) - behind modal                      -->
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <div id="floating-widget-bookmarks" class="absolute top-4 right-4 bg-white/95 rounded-xl w-72 z-20 overflow-hidden shadow-lg">
+        <div class="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-amber-50 to-white border-b border-amber-100">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🔖</span>
+            <span class="text-sm font-semibold text-slate-700">Bookmarked Items</span>
+            <span class="text-xs text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full font-medium">5</span>
+          </div>
+        </div>
+        <div class="p-3 space-y-2 text-sm text-slate-600">
+          <p class="text-xs text-slate-400 italic">Widget hidden behind export modal</p>
         </div>
       </div>
       

@@ -2,25 +2,37 @@
 
 **Created:** January 21, 2026  
 **Target Presentation:** Jack Dangermond Demo  
-**Status:** ✅ Core Complete (6/6) • 🔜 DataOne Detail View Planned  
+**Status:** 🔄 WIP - Widget Layout Refinement • ⚠️ CORS & Interactivity Issues  
 **Paradigm Doc:** `docs/feedback/data-catalog-ux-paradigm-jan-21-2026.md`
 
 ---
 
 ## Progress Summary
 
-**Completed Mockups:** ✅ 7 / 7 Core Mockups • 🔧 Left Sidebar Update Needed
+**Completed Mockups:** ✅ 8 / 8 Core Mockups + Widget Split • ⚠️ Needs Refinement
 
 | Mockup | Status | Purpose |
 |--------|--------|---------|
-| **02a** | ✅ Complete | Unified layout with floating widget (pinned + bookmarks) |
-| **02b** | ✅ Complete | iNaturalist Browse (self-contained rows) |
-| **02c** | ✅ Complete | ANiML Browse (pointer rows + dual-level filters) |
-| **02d** | ✅ Complete | Dendra Browse (pointer rows + Level 3 datastream + floating chart) |
-| **02e** | ✅ Complete | DataOne Browse (pointer rows, no Level 3) |
+| **02a** | 🔄 Split Widgets | Unified layout - **Pinned Layers (left) + Bookmarks (right)** |
+| **02b** | 🔄 Split Widgets | iNaturalist Browse (self-contained rows) |
+| **02c** | 🔄 Split Widgets | ANiML Browse (pointer rows + dual-level filters) |
+| **02d** | 🔄 Split Widgets | Dendra Browse (pointer rows + Level 3 datastream + floating chart) |
+| **02e** | 🔄 Split Widgets | DataOne Browse (pointer rows, no Level 3) |
 | **02e+** | ✅ Complete | DataOne Detail View (drill-down with full metadata) |
-| **02f** | ✅ Complete | Export Builder (all bookmark types together) |
-| **ALL** | 🔧 Update Needed | Add complete left sidebar (all 13 categories + cross-category section) |
+| **02f** | 🔄 Split Widgets | Export Builder (all bookmark types together) |
+| **ALL** | ✅ Complete | Complete left sidebar (all 13 categories + cross-category section) |
+| **Email** | 🔄 Updated | Team review email draft - updated for two-widget layout |
+
+**Recent Changes (Jan 22, 2026):**
+- ✅ Split combined floating widget into **two separate widgets:**
+  - 📌 **Pinned Layers Widget** (top-left) — aligned with left sidebar
+  - 🔖 **Bookmarked Items Widget** (top-right) — aligned with right sidebar
+- ✅ Updated email draft to explain widget separation and informational cohesion
+- ✅ Removed layout toggle buttons (now fixed split layout)
+- ⚠️ **Known Issues to Address:**
+  - CORS error loading boundary GeoJSON (need local dev server)
+  - Interactive pin/visibility toggle not fully functional in 02a
+  - Widget count badges need dynamic updates
 
 **Key Achievements:**
 - ✅ Demonstrated three-level hierarchy (Layer → Feature → Related Data)
@@ -30,7 +42,16 @@
 - ✅ DataOne pointer pattern complete (simple bookmark, no Level 3)
 - ✅ DataOne detail view complete (matches live website)
 - ✅ Export Builder shows all bookmark types converging in single workflow
-- 🔧 Need to update all mockups with complete left sidebar structure
+- ✅ All mockups updated with complete left sidebar (13 categories + DataOne cross-category)
+- ✅ Team review email draft created with forest/tree analogy and hierarchy explanation
+- ✅ **Widget separation for informational cohesion:** Pinned Layers (left) + Bookmarked Items (right)
+
+**Next Steps:**
+1. Fix CORS issue (set up local dev server or move boundary to public folder)
+2. Refine interactive pin/visibility toggle in 02a
+3. Test widget collapse/expand functionality
+4. Address any visual polish issues
+5. Final review before sharing with team
 
 ---
 
@@ -937,8 +958,9 @@ ANiML is unique among our data sources because:
 | 5 | 02e | DataOne Browse (pointer, no Level 3) | ✅ **COMPLETE** |
 | 6 | 02f | Export Builder (all together) | ✅ **COMPLETE** |
 | 7 | 02e+ | **DataOne Detail View** (drill-down pattern) | ✅ **COMPLETE** |
-| 8 | ALL | **Update left sidebars** (all 13 categories + cross-category) | 🔧 **Next** |
-| 9 | Polish | Consistency check, edge cases, demo prep | 📋 Planned |
+| 8 | ALL | **Update left sidebars** (all 13 categories + cross-category) | ✅ **COMPLETE** |
+| 9 | Email | Team review email draft with hierarchy explanation | ✅ **COMPLETE** |
+| 10 | Polish | Consistency check, edge cases, demo prep | 📋 **Next** |
 
 ### 02c Development Notes (ANiML)
 
@@ -1026,15 +1048,22 @@ User flow to demonstrate:
 - 📝 Decision: No iframe embed - curated summary is better UX for narrow sidebar
 - 📝 Completes drill-down pattern consistency across all data sources
 
-**🔧 ACTION NEEDED: Left Sidebar Update for All Mockups**
-- 📋 **Task:** Update all existing mockups (02a-02f) to include complete left sidebar
+**✅ COMPLETED: Left Sidebar Update for All Mockups (Jan 22, 2026)**
+- ✅ **Task:** Updated all existing mockups (02a-02f) to include complete left sidebar
   - All 13 primary TNC categories (alphabetical: Boundaries → Weather and Climate)
-  - Separator line (`───────────────────────────────`)
-  - "Research Datasets (All Categories)" section
-  - DataOne layer under this section with "(All Categories)" label
+  - Separator line between primary categories and cross-category section
+  - "Research Datasets (All Categories)" section with DataOne layer
 - 🎯 **Rationale:** Prevents confusion about DataOne being a cross-category data source
 - 📍 **Reference:** See `docs/feedback/data-catalog-ux-paradigm-jan-21-2026.md` Part 10
-- ⏱️ **Priority:** Next task before demo polish
+
+**✅ COMPLETED: Team Review Email Draft (Jan 22, 2026)**
+- ✅ Created `docs/feedback/mockup-review-email-draft.md`
+- ✅ Forest/tree analogy: left sidebar = forest view, right sidebar = tree trunk inspection
+- ✅ Three-level hierarchy explained with ASCII diagram
+- ✅ Pin (layers) vs Bookmark (features) distinction clarified
+- ✅ Data source comparison table (iNaturalist, ANiML, Dendra, DataOne)
+- ✅ Per-mockup viewing guide with key areas to focus on
+- ✅ Questions section for team feedback on layout, complexity, consistency
 - ✅ `[Details →]` button shows dataset detail view in right sidebar
 - ✅ Uses existing right sidebar detail styling (consistent with ANiML camera detail, Dendra sensor detail)
 - ✅ Shows curated metadata summary instead of iframe (better UX, consistent width)
@@ -1098,9 +1127,14 @@ mockups/
 ---
 
 **Last Updated:** January 22, 2026  
-**Status:** ✅ All Core Mockups Complete (7/7) • 🔧 Left Sidebar Update Needed  
-**Next:** Update all mockups with complete left sidebar (13 categories + cross-category section)
+**Status:** ✅ All Core Mockups Complete (8/8) + Left Sidebar Updates + Email Draft  
+**Next:** Review email draft, gather team feedback, polish for demo
 
-**Latest Completion:** 02e+ - DataOne Detail View (matches live website)  
-**Current Task:** Add complete left sidebar to all mockups (02a-02f) with alphabetical categories and cross-category section
+**Latest Completion:** Left sidebar updates for all mockups (02a-02f) + Team review email draft  
+**Email Draft:** `docs/feedback/mockup-review-email-draft.md` - explains three-level hierarchy, forest/tree analogy, pin vs bookmark distinction
+
+**Ready for Team Review:**
+- All 6 mockups (02a-02f) have complete left sidebars with 13 TNC categories
+- Email draft explains the mockups with clear hierarchy diagram and data source comparison table
+- Questions section prompts team for specific feedback on layout, pinning, bookmarking, and complexity concerns
 
