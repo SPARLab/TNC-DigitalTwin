@@ -1,241 +1,119 @@
-# Mockup Review Email Draft: V2 Layout & Pin/Bookmark Paradigm
+# Mockup Review Email Draft: V2 Layout & Bookmark Visualization
 
 **TO:** Team  
-**SUBJECT:** Please Review: Data Catalog V2 Mockups - Layout & Interaction Patterns  
-**ATTACHMENTS:** `02a-unified-layout.html`, `02b-browse-inaturalist.html`, `02c-browse-animl.html`, `02d-browse-dendra.html`, `02e-browse-dataone.html`, `02f-export-builder.html`
+**SUBJECT:** Quick Review: Data Catalog Layout & Bookmark Demo  
+**ATTACHMENTS:** `02a-unified-layout.html`, `02c-browse-animl.html`
 
 ---
 
 ## Hi Team,
 
-I've attached six HTML mockups demonstrating our proposed V2 layout and interaction patterns for the Dangermond Preserve Data Catalog. **Please open each file in a browser** and take 10-15 minutes to explore them.
+I've attached **two HTML mockups** that demonstrate our proposed V2 layout for the Dangermond Preserve Data Catalog. Please open each file in a browser and take 5-10 minutes to explore.
 
-I'm looking for a **gut check** on:
-1. The overall website layout (left sidebar, right sidebar, two floating widgets)
-2. The "Pin Layers" and "Bookmark Features" paradigm
-3. Whether the UI logic feels consistent across different data sources
+**I'm looking for approval on:**
+1. ✅ **The main layout** (left sidebar + right sidebar + two floating widgets)
+2. 🔍 **How bookmarks work** — especially seeing related data for a bookmarked item
 
 ---
 
-## The Forest & Tree Analogy 🌲
+## The Main Layout
 
-Imagine a scientist interested in studying a forest. They'd want to do two things:
+We have a **three-zone layout**:
 
-1. **Climb to the top of a tree** to see the entire forest — all the other trees, the landscape, how everything connects
-2. **Inspect the tree trunk up close** — examine the bark, count the rings, observe the details
+| Zone | Purpose | What You Do Here |
+|------|---------|------------------|
+| **Left Sidebar** | Browse categories & layers | Find data sources, pin layers to the map |
+| **Right Sidebar** | Inspect layer details | Browse rows, apply filters, bookmark specific items |
+| **Two Floating Widgets** | Your workspace summary | See what you've pinned (left) and bookmarked (right) |
 
-Our new layout follows this analogy:
-
-| View | Location | Purpose |
-|------|----------|---------|
-| **Forest View** 🌲🌲🌲 | **Left Sidebar** | High-level browsing. See all categories, all layers. Select and pin what you want to explore. |
-| **Tree Trunk View** 🪵 | **Right Sidebar** | Low-level detail. Inspect the layer you've selected. Browse rows, apply filters, bookmark specific items. |
-
-The left sidebar lets you see the whole data landscape. The right sidebar lets you zoom in on specifics.
+The layout separates **high-level browsing** (left) from **detail inspection** (right). This matches how people naturally explore data: first find what you want, then dig into specifics.
 
 ### Floating Widgets — Your Workspace
 
-Floating over the map, we have **two separate widgets** that summarize what you've collected:
+Two separate widgets float over the map:
 
-| Widget | Position | Purpose |
-|--------|----------|---------|
-| 📌 **Pinned Layers** | **Top-Left** | Shows layers you've added to the map. Aligned with the left sidebar (where you pin layers). |
-| 🔖 **Bookmarked Items** | **Top-Right** | Shows individual rows/features you've saved. Aligned with the right sidebar (where you view row details). |
+- **📌 Pinned Layers** (top-left) — Shows layers you've added to the map. Aligned with the left sidebar where you pin layers.
+- **🔖 Bookmarked Items** (top-right) — Shows individual rows/features you've saved. Aligned with the right sidebar where you view row details.
 
-This separation reinforces the mental model: **left = layers (tables), right = features (rows)**.
+**Why two widgets?** It reinforces the mental model: **left = layers (tables), right = features (rows)**.
 
 ---
 
-## The Three-Level Data Hierarchy
+## What We're Showing: Bookmarks with Related Data
 
-Our data follows a three-level hierarchy, and understanding this is key to understanding our UI:
+People have already approved the left/right sidebar and pinning layers. But **bookmarks** are getting "uhhh yeah I guess" reactions — people find them a bit complex.
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  LEVEL 1: LAYERS (Tables)                                           │
-│  ───────────────────────────                                        │
-│  A layer is a collection of items you can pin to the map.           │
-│  Example: "iNaturalist Observations" with 12,430 rows               │
-│                                                                     │
-│  Actions: PIN (unpin) · QUERY (filter) · TOGGLE VISIBILITY          │
-│                                                                     │
-│  Pinning a layer = adding it to your workspace                      │
-│  Querying a layer = filtering which rows are visible                │
-│  (e.g., filtering 12,430 observations down to 847 bird sightings)   │
-└─────────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│  LEVEL 2: FEATURES / ROWS (Individual Items)                        │
-│  ───────────────────────────────────────────                        │
-│  A feature is a single item from a layer you can bookmark.          │
-│  Example: "Western Bluebird observation #48291"                     │
-│                                                                     │
-│  Actions: BOOKMARK · VIEW DETAILS                                   │
-│                                                                     │
-│  Bookmarking = saving a specific item for later                     │
-│  (like bookmarking a page in a book)                                │
-└─────────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼ (some data sources only)
-┌─────────────────────────────────────────────────────────────────────┐
-│  LEVEL 3: RELATED DATA (Nested/Child Data)                          │
-│  ───────────────────────────────────────────                        │
-│  Some features have related data you can filter.                    │
-│  Example: Camera CAM-042 → 3,241 images                             │
-│                                                                     │
-│  Actions: QUERY (filter the related data)                           │
-│                                                                     │
-│  Not all features have Level 3 data.                                │
-│  Not all Level 3 data is queryable.                                 │
-└─────────────────────────────────────────────────────────────────────┘
-```
+**The key question:** When you bookmark something that has related data (like a camera with images, or a sensor with time series), what does it look like to view that related data?
 
-### Pinning vs. Bookmarking — The Key Distinction
+### Mockup 02c: ANiML Cameras — Bookmark Example
 
-| Action | What it does | Analogy |
-|--------|--------------|---------|
-| **📌 Pin a Layer** | Adds an entire table/collection to your map | Pinning a book to your desk — it's there, you can flip through all its pages |
-| **🔖 Bookmark a Feature** | Saves one specific row/item for later | Bookmarking a single page — you want to come back to this exact spot |
+**The scenario:**
+1. You browse ANiML cameras
+2. You bookmark a camera (CAM-042)
+3. That camera has 10,847 images
+4. You filter those images for "Mountain Lions, 2023" → 47 images
+5. You bookmark the camera **with that filter**
 
-**Important:** You pin a **layer** (multiple items, a table). You bookmark a **feature** (single item, one row).
+**What you'll see:**
+- In the **Bookmarked Items widget** (top-right): `CAM-042 → 🦁 2023` (shows the filter)
+- Clicking it opens the camera detail view with the image gallery filtered to those 47 mountain lion images
+- The bookmark "remembers" your filter — you can come back later and see exactly those 47 images
+
+**This is the "related data" visualization** — showing what it looks like when a bookmark includes a filter on related data.
 
 ---
 
-## Data Source Comparison
-
-Different data sources have different capabilities at each level:
-
-| Data Source | Level 1 (Layer) | Level 2 (Features) | Level 3 (Related Data) |
-|-------------|-----------------|-------------------|------------------------|
-| **iNaturalist** | ✅ Pin & Query | ✅ Bookmark | ❌ None — observations are self-contained |
-| **ANiML** | ✅ Pin & Query cameras | ✅ Bookmark cameras | ✅ Query images (species, date) |
-| **Dendra** | ✅ Pin & Query sensors | ✅ Bookmark sensors | ✅ Query time series (date range) |
-| **DataOne** | ✅ Pin & Query datasets | ✅ Bookmark datasets | ⚠️ Has files, but not queryable* |
-
-*DataOne datasets have associated files, but the file structure is too complex to expose querying at this stage. Users bookmark the whole dataset.
-
-### Visual Examples
-
-**iNaturalist (Self-Contained Rows):**
-```
-Layer: iNaturalist Observations
-    └── Feature: Western Bluebird #48291
-        └── (no related data — the observation IS the data)
-```
-
-**ANiML (Pointer Rows → Queryable Related Data):**
-```
-Layer: ANiML Cameras (8 pinned, filtered to "North preserve")
-    └── Bookmark: CAM-042
-        └── Related: 3,241 images
-            └── Query: "Mountain Lion, 2023" → 47 images
-```
-
-**Dendra (Pointer Rows → Queryable Time Series):**
-```
-Layer: Dendra Rain Sensors (12 pinned)
-    └── Bookmark: RS-042 (Jalama Rain)
-        └── Related: 2 years of data points
-            └── Query: "Jan-Mar 2023" → 90 data points
-```
-
-**DataOne (Pointer Rows → Non-Queryable Files):**
-```
-Layer: DataOne Datasets (47 pinned, filtered to "Marine, 2020-2023")
-    └── Bookmark: Marine Biodiversity Study
-        └── Related: 3 files (CSV, PDF, ZIP)
-            └── (no query — download files directly)
-```
-
----
-
-## Mockup Guide: What to Look At in Each File
+## What to Look At
 
 ### 02a: Unified Layout Overview
-**Purpose:** Shows the overall layout with all zones active.
+**Purpose:** See the overall layout with all zones active.
 
-🔴 **Look at:**
-- Left sidebar with all 13 TNC categories (alphabetically ordered)
-- Separator line before "Research Datasets (All Categories)"
-- **Pinned Layers widget (top-left)** — aligned with left sidebar where you pin layers
-- **Bookmarked Items widget (top-right)** — aligned with right sidebar where you view row details
+🔴 **Focus on:**
+- Left sidebar with categories
+- Right sidebar with tabs (Overview | Browse | Export)
+- **Pinned Layers widget** (top-left) — shows layers with query controls
+- **Bookmarked Items widget** (top-right) — shows bookmarks, some with filters (the "→" arrow indicates a filter)
 
-### 02b: Browse iNaturalist
-**Purpose:** Shows the simplest case — self-contained rows with no Level 3.
+### 02c: ANiML Browse — Bookmark Demo
+**Purpose:** See what it looks like to bookmark a camera and view its filtered images.
 
-🔴 **Look at:**
-- Right sidebar Browse tab with observation cards
-- How observations are bookmarked directly (no nested filtering)
-- Query indicator on the pinned layer showing filter applied
+🔴 **Focus on:**
+- Browse tab showing camera cards
+- Click a camera → see its image gallery
+- Filter images (e.g., "Mountain Lion, 2023")
+- Bookmark the camera with that filter
+- See the bookmark appear in the widget showing `CAM-042 → 🦁 2023`
+- Click the bookmark → see the filtered images again
 
-### 02c: Browse ANiML
-**Purpose:** Shows pointer rows with dual-level filters (cameras + images).
-
-🔴 **Look at:**
-- Browse tab showing camera cards as pointer rows
-- Images-first gallery view
-- How bookmarking a camera gives you Level 3 filtering options
-
-### 02d: Browse Dendra
-**Purpose:** Shows pointer rows with time-series filtering.
-
-🔴 **Look at:**
-- Sensor cards with "View Datastreams" action
-- Time range picker for Level 3 filtering
-- Chart preview of sensor data
-
-### 02e: Browse DataOne
-**Purpose:** Shows pointer rows where Level 3 exists but isn't queryable.
-
-🔴 **Look at:**
-- Dataset cards showing file counts but not exposing file filtering
-- Version history dropdown
-- How bookmarks work without Level 3 query capability
-
-### 02f: Export Builder
-**Purpose:** Shows how all bookmark types converge in the export flow.
-
-🔴 **Look at:**
-- Each data source section with its export options
-- Different filtering capabilities exposed for each source
-- How the summary shows estimated export size
+**This demonstrates:** When you bookmark something with related data, the bookmark saves your filter, and you can return to that filtered view later.
 
 ---
 
 ## Questions for You
 
-1. **Layout:** Does the left sidebar / right sidebar split feel intuitive? Does it make sense as "forest view" vs "tree trunk view"?
+1. **Layout:** Does the left sidebar / right sidebar / floating widgets layout feel right? Any concerns?
 
-2. **Pinning Layers:** Is it clear that pinning adds a layer to your workspace, and that you can filter (query) pinned layers?
+2. **Bookmarks with Related Data:** In 02c, when you bookmark a camera with a filter (e.g., "Mountain Lions 2023"), does it make sense that:
+   - The bookmark shows `CAM-042 → 🦁 2023` in the widget?
+   - Clicking it takes you back to that filtered view?
+   - This feels like a natural way to "save your place" in the data?
 
-3. **Bookmarking Features:** Is the distinction between pinning (tables) and bookmarking (rows) clear? Any concern this might confuse users?
-
-4. **Level 3 Filtering:** For ANiML and Dendra, the bookmarked feature has related data you can filter. Does this feel natural or overwhelming?
-
-5. **Two Floating Widgets:** We've separated the Pinned Layers widget (top-left) from the Bookmarked Items widget (top-right). Does this separation feel right? Is it clear which widget is which?
-
-6. **Cross-Category Section:** DataOne appears at the bottom under "Research Datasets (All Categories)" since it spans many categories. Does this placement make sense?
+3. **Cognitive Load:** Is the bookmark concept clear, or does it feel too complex? What would make it clearer?
 
 ---
 
-## Risks & Concerns
+## Why This Matters
 
-**Complexity Risk:** This is not a simple UI. We have three levels of data, two types of actions (pin vs bookmark), and different data sources behaving differently at Level 3. We need to be very careful about:
-- Making the distinction between pin and bookmark obvious
-- Not overwhelming users with too many options
-- Keeping the UI consistent even when capabilities differ
+Bookmarks let researchers:
+- **Save interesting finds** while exploring (don't lose your place)
+- **Return to filtered views** later (e.g., "those mountain lion images from CAM-042")
+- **Accumulate a collection** of items to export together
 
-**Current Mitigation:** 
-- Clear visual language (📌 pin icon for layers, 🔖 bookmark badge for features)
-- Consistent placement (left sidebar = browse categories & layers, right sidebar = row details)
-- **Two separate floating widgets aligned with their respective sidebars:**
-  - 📌 Pinned Layers widget (top-left) — matches left sidebar's "what to add to the map"
-  - 🔖 Bookmarked Items widget (top-right) — matches right sidebar's "inspect individual rows"
+But we need to make sure the UI makes this feel natural, not overwhelming.
 
 ---
 
-Please reply with your thoughts, concerns, or questions. I'd love to get alignment before we start implementation.
+Please reply with your thoughts — especially on whether the bookmark visualization makes sense!
 
 Thanks!
 

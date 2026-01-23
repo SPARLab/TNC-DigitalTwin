@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mockup 02d: Dendra Sensors (Pointer → Datastream) - TNC Digital Catalog</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- ArcGIS JS API -->
+  <link rel="stylesheet" href="https://js.arcgis.com/4.28/esri/themes/light/main.css">
+  <script src="https://js.arcgis.com/4.28/"></script>
+  
+  <!-- Google Fonts - Using DM Sans for a more distinctive look -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'sans': ['DM Sans', 'sans-serif'],
+            'mono': ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            'tnc': {
+              'green': '#2e7d32',
+              'green-dark': '#1b5e20',
+              'green-light': '#4caf50',
+            },
+            'sidebar-bg': '#f8fafc',
+            'widget-bg': '#ffffff',
+            'pinned-bg': '#eff6ff',
+            'bookmark-bg': '#fefce8',
+            'query-active': '#dcfce7',
+            'dendra': {
+              'teal': '#0d9488',
+              'teal-light': '#14b8a6',
+              'teal-dark': '#0f766e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'DM Sans', sans-serif; }
+    
+    .esri-ui-corner { display: none !important; }
+    
+    /* Custom scrollbar */
+    .sidebar-scroll::-webkit-scrollbar { width: 6px; }
+    .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+    .sidebar-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    
+    /* Hover transitions */
+    .icon-btn { transition: all 0.15s ease; }
+    .icon-btn:hover { transform: scale(1.1); }
+    
+    /* Layer row states */
+    .layer-row { transition: all 0.15s ease; border-left: 3px solid transparent; }
+    .layer-row:hover { background-color: #f1f5f9; }
+    .layer-row.pinned { background-color: #eff6ff; border-left-color: #3b82f6; }
+    .layer-row.selected { border-left-color: #059669; }
+    
+    /* Floating widget */
+    .floating-widget { 
+      box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+      backdrop-filter: blur(8px);
+    }
+    
+    /* Widget layer cards */
+    .widget-layer-card {
+      transition: all 0.15s ease;
+      border: 1px solid #e2e8f0;
+    }
+    .widget-layer-card:hover {
+      border-color: #94a3b8;
+      box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Bookmark card */
+    .bookmark-card {
+      transition: all 0.15s ease;
+      border-left: 3px solid #f59e0b;
+    }
+    .bookmark-card:hover {
+      background-color: #fffbeb;
+    }
+    
+    /* Clickable card */
+    .clickable-card {
+      transition: all 0.15s ease;
+      border: 1px solid #e5e7eb;
+      cursor: pointer;
+    }
+    .clickable-card:hover {
+      border-color: #9ca3af;
+      box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.1);
+      transform: translateX(2px);
+    }
+    
+    /* Tab styling - lifted tab effect from live site */
+    .tab-btn { transition: all 0.15s ease; }
+    .tab-btn.active { 
+      background-color: white;
+      color: #2563eb;
+      border-left: 1px solid #e5e7eb;
+      border-right: 1px solid #e5e7eb;
+      position: relative;
+      z-index: 10;
+      margin-bottom: -1px;
+    }
+    .tab-btn:not(.active) { 
+      background-color: #f9fafb;
+      color: #4b5563;
+      box-shadow: inset -4px 0 6px -2px rgba(0,0,0,0.12), inset 0 -4px 6px -2px rgba(0,0,0,0.08);
+    }
+    .tab-btn:not(.active):hover { 
+      color: #111827;
+    }
+    
+    /* Chevron rotation */
+    .chevron { transition: transform 0.2s ease; }
+    .chevron.expanded { transform: rotate(90deg); }
+    
+    /* Spinner animation */
+    .spinner { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    
+    /* Query badge */
+    .query-badge {
+      background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+      border: 1px solid #86efac;
+    }
+    
+    /* Filter section styling */
+    .filter-section {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      border: 1px solid #e2e8f0;
+    }
+    
+    /* Level 3 filter section - teal accent for Dendra */
+    .filter-section-level3 {
+      background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+      border: 1px solid #5eead4;
+    }
+    
+    /* Action button */
+    .action-btn {
+      transition: all 0.15s ease;
+    }
+    .action-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Widget positioning for split layout */
+    .widget-bookmarks-only {
+      left: auto !important;
+      right: 16px !important;
+    }
+    
+    /* Back button styling */
+    .back-btn {
+      transition: all 0.15s ease;
+    }
+    .back-btn:hover {
+      background-color: #f1f5f9;
+    }
+    
+    /* Chart container */
+    .chart-container {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      border: 1px solid #e2e8f0;
+    }
+    
+    /* Data point pill */
+    .data-pill {
+      background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+      border: 1px solid #5eead4;
+    }
+    
+    /* Pulse animation for live indicator */
+    .pulse-live {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    /* ASCII chart styling */
+    .ascii-chart {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      line-height: 1.2;
+      color: #0d9488;
+    }
+    
+    /* Time series floating panel */
+    .time-series-panel {
+      box-shadow: 0 -4px 24px -4px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05);
+      backdrop-filter: blur(8px);
+      animation: slideUp 0.25s ease-out;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Chart area styles */
+    .chart-area {
+      background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+      position: relative;
+    }
+    .chart-grid {
+      background-image: 
+        linear-gradient(to right, #e5e7eb 1px, transparent 1px),
+        linear-gradient(to bottom, #e5e7eb 1px, transparent 1px);
+      background-size: 50px 25px;
+    }
+    .chart-line {
+      position: absolute;
+      bottom: 15%;
+      left: 5%;
+      right: 5%;
+      height: 70%;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 100' preserveAspectRatio='none'%3E%3Cpath d='M0,80 Q30,85 60,70 T120,40 T180,60 T240,25 T300,45 T360,30 T400,50' fill='none' stroke='%230d9488' stroke-width='2.5'/%3E%3C/svg%3E") no-repeat;
+      background-size: 100% 100%;
+    }
+    
+    /* Time range navigator */
+    .range-navigator {
+      background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+    }
+  </style>
+</head>
+<body id="page-body" class="bg-slate-100 h-screen overflow-hidden">
+  
+  <!-- HEADER - Green gradient from live site aesthetic -->
+  <header id="header" class="h-11 bg-gradient-to-b from-[#00703c] to-[#008f4a] flex items-center px-4">
+    <div class="flex items-center gap-3">
+      <h1 id="header-title" class="text-[15px] font-semibold text-white leading-tight">
+        Dangermond Preserve Data Catalog
+      </h1>
+    </div>
+    <div id="header-badges" class="ml-auto flex items-center gap-3">
+      <span class="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-medium rounded">V2 MOCKUP</span>
+      <span class="px-2 py-0.5 bg-teal-100 text-teal-700 text-[10px] font-medium rounded">02d: Dendra Sensors</span>
+    </div>
+  </header>
+  
+  <!-- MAIN LAYOUT -->
+  <div id="main-layout" class="flex h-[calc(100vh-44px)]">
+    
+    <!-- LEFT SIDEBAR: Layer Browser -->
+    <aside id="left-sidebar" class="w-80 bg-sidebar-bg border-r border-slate-200 flex flex-col">
+      
+      <!-- Search Bar -->
+      <div id="left-sidebar-search" class="p-3 border-b border-slate-200 bg-white">
+        <div class="relative">
+          <input type="text" placeholder="Search layers..." 
+            id="layer-search-input"
+            class="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tnc-green/30 focus:border-tnc-green bg-slate-50">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+      </div>
+      
+      <!-- Layer List -->
+      <div id="layer-list" class="flex-1 overflow-y-auto sidebar-scroll p-2">
+        
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <!-- PRIMARY TNC CATEGORIES (Alphabetical Order) - 13 categories             -->
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        
+        <!-- 1-8: Collapsed categories -->
+        <div class="category mb-1" data-category="boundaries"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('boundaries')"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">🗺️</span><span>Boundaries</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">20</span></button><div class="category-content hidden ml-2"></div></div>
+        <div class="category mb-1" data-category="elevation"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('elevation')"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">⛰️</span><span>Elevation & Bathymetry</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">2</span></button><div class="category-content hidden ml-2"></div></div>
+        <div class="category mb-1" data-category="fire"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('fire')"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">🔥</span><span>Fire</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">9</span></button><div class="category-content hidden ml-2"></div></div>
+        <div class="category mb-1" data-category="fire-fuels"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('fire-fuels')"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">🔥</span><span>Fire and Fuels</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">1</span></button><div class="category-content hidden ml-2"></div></div>
+        <div class="category mb-1" data-category="freshwater"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('freshwater')"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">💧</span><span>Freshwater</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">16</span></button><div class="category-content hidden ml-2"></div></div>
+        <div class="category mb-1" data-category="infrastructure"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('infrastructure')"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">🏗️</span><span>Infrastructure</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">14</span></button><div class="category-content hidden ml-2"></div></div>
+        <div class="category mb-1" data-category="landcover"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('landcover')"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">🌿</span><span>Land Cover</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">19</span></button><div class="category-content hidden ml-2"></div></div>
+        <div class="category mb-1" data-category="oceans"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('oceans')"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">🌊</span><span>Oceans and Coasts</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">8</span></button><div class="category-content hidden ml-2"></div></div>
+        
+        <!-- 9. RESEARCH AND SENSOR EQUIPMENT (expanded - Dendra is here) -->
+        <div class="category mb-1" data-category="research-equipment">
+          <button id="sensors-category-header" class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('research-equipment')">
+            <svg class="chevron w-4 h-4 text-slate-400 expanded" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <span class="text-base">🔬</span>
+            <span>Research & Sensor Equip.</span>
+            <span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">4</span>
+          </button>
+          <div id="sensors-category-content" class="category-content ml-2 space-y-0.5">
+            
+            <!-- Dendra Rain - PINNED (SELECTED) -->
+            <div id="layer-dendra-rain" class="layer-row pinned selected flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" 
+                 data-layer="dendra-rain" onclick="selectLayer('dendra-rain')">
+              <button id="dendra-rain-visibility-btn" class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('dendra-rain')" title="Toggle visibility">
+                <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                </svg>
+              </button>
+              <div class="flex-1 min-w-0">
+                <span class="text-sm text-slate-700 block truncate">Dendra: Rain Sensors</span>
+                <span class="text-xs text-slate-500">12 sensors · No filter</span>
+              </div>
+              <button id="dendra-rain-pin-btn" class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); togglePin('dendra-rain')" title="Pinned">
+                <span class="text-sm">📌</span>
+              </button>
+            </div>
+            
+            <!-- Dendra Temperature - not pinned -->
+            <div id="layer-dendra-temp" class="layer-row flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" 
+                 data-layer="dendra-temp" onclick="selectLayer('dendra-temp')">
+              <button id="dendra-temp-visibility-btn" class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('dendra-temp')" title="Show on map">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+              <span class="flex-1 text-sm text-slate-700 truncate">Dendra: Temperature</span>
+              <button id="dendra-temp-pin-btn" class="icon-btn flex-shrink-0 opacity-30 hover:opacity-100" onclick="event.stopPropagation(); togglePin('dendra-temp')" title="Pin layer">
+                <span class="text-sm">📌</span>
+              </button>
+            </div>
+            
+            <!-- Dendra Humidity - not pinned -->
+            <div id="layer-dendra-humidity" class="layer-row flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" 
+                 data-layer="dendra-humidity" onclick="selectLayer('dendra-humidity')">
+              <button id="dendra-humidity-visibility-btn" class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('dendra-humidity')" title="Show on map">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+              <span class="flex-1 text-sm text-slate-700 truncate">Dendra: Humidity</span>
+              <button id="dendra-humidity-pin-btn" class="icon-btn flex-shrink-0 opacity-30 hover:opacity-100" onclick="event.stopPropagation(); togglePin('dendra-humidity')" title="Pin layer">
+                <span class="text-sm">📌</span>
+              </button>
+            </div>
+            
+            <!-- Dendra Wind - not pinned -->
+            <div id="layer-dendra-wind" class="layer-row flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer" 
+                 data-layer="dendra-wind" onclick="selectLayer('dendra-wind')">
+              <button id="dendra-wind-visibility-btn" class="icon-btn flex-shrink-0" onclick="event.stopPropagation(); toggleVisibility('dendra-wind')" title="Show on map">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+              <span class="flex-1 text-sm text-slate-700 truncate">Dendra: Wind Speed</span>
+              <button id="dendra-wind-pin-btn" class="icon-btn flex-shrink-0 opacity-30 hover:opacity-100" onclick="event.stopPropagation(); togglePin('dendra-wind')" title="Pin layer">
+                <span class="text-sm">📌</span>
+              </button>
+            </div>
+            
+          </div>
+        </div>
+        
+        <!-- 10-13: Remaining categories -->
+        <div class="category mb-1" data-category="soils"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('soils')"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">🪨</span><span>Soils and Geology</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">4</span></button><div class="category-content hidden ml-2"></div></div>
+        <div class="category mb-1" data-category="species"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('species')"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">🦎</span><span>Species</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">6</span></button><div class="category-content hidden ml-2"></div></div>
+        <div class="category mb-1" data-category="threats"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('threats')"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">⚠️</span><span>Threats and Hazards</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">1</span></button><div class="category-content hidden ml-2"></div></div>
+        <div class="category mb-1" data-category="weather"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('weather')"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">🌤️</span><span>Weather and Climate</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">1</span></button><div class="category-content hidden ml-2"></div></div>
+        
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <!-- SEPARATOR + CROSS-CATEGORY SECTION                                       -->
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="border-t border-slate-300 my-3 mx-2"></div>
+        <div class="px-2 pb-1"><p class="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Research Datasets (All Categories)</p></div>
+        <div class="category mb-1" data-category="dataone"><button class="category-header w-full flex items-center gap-2 px-2 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg" onclick="toggleCategory('dataone')"><svg class="chevron w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg><span class="text-base">📊</span><span>DataOne Datasets</span><span class="ml-auto text-xs text-slate-400 font-normal bg-slate-200 px-1.5 py-0.5 rounded">876</span></button><div class="category-content hidden ml-2"></div></div>
+        
+      </div>
+    </aside>
+    
+    <!-- MAP AREA -->
+    <main id="map-area" class="flex-1 relative">
+      
+      <!-- ArcGIS Map Container -->
+      <div id="viewDiv" class="absolute inset-0"></div>
+      
+      <!-- Loading Overlay -->
+      <div id="loading-overlay" class="absolute inset-0 bg-gray-200/80 flex items-center justify-center z-10">
+        <div id="loading-content" class="text-center">
+          <svg class="spinner w-8 h-8 text-[#00703c] mx-auto mb-2" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p class="text-xs text-gray-600 font-medium">Loading map...</p>
+        </div>
+      </div>
+      
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <!-- FLOATING WIDGETS                                                        -->
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      
+      <!-- Pinned Layers Widget (Left) -->
+      <div id="floating-widget-pinned" class="floating-widget widget-pinned-only absolute top-4 left-4 bg-white/95 rounded-xl w-72 z-20 overflow-hidden">
+        
+        <!-- Widget Header -->
+        <div id="pinned-widget-header" class="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 cursor-pointer" onclick="toggleFloatingWidget()">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">📌</span>
+            <span class="text-sm font-semibold text-slate-700">Pinned Layers</span>
+            <span class="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full font-medium">1</span>
+          </div>
+          <svg id="widget-chevron" class="w-5 h-5 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+        
+        <!-- Widget Content -->
+        <div id="widget-content" class="max-h-[60vh] overflow-y-auto sidebar-scroll">
+          
+          <div id="pinned-layers-list" class="p-3 space-y-2">
+            
+            <!-- Dendra Rain (highlighted) -->
+            <div id="pinned-dendra-rain-card" class="widget-layer-card rounded-lg p-3 bg-teal-50 border-teal-200">
+              <div class="flex items-start gap-2">
+                <button class="icon-btn flex-shrink-0 mt-0.5" title="Toggle visibility">
+                  <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                  </svg>
+                </button>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span class="text-base">🌧️</span>
+                    <span class="text-sm font-medium text-slate-700 truncate">Dendra: Rain Sensors</span>
+                  </div>
+                  <p class="text-[10px] text-slate-500 mt-1">12 sensors • Precipitation monitoring</p>
+                </div>
+                <button class="icon-btn text-slate-400 hover:text-red-500 flex-shrink-0" title="Unpin layer">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+          </div>
+          
+        </div>
+      </div>
+      
+      <!-- Bookmarks Widget (Right) -->
+      <div id="floating-widget-bookmarks" class="floating-widget widget-bookmarks-only absolute top-4 right-4 bg-white/95 rounded-xl w-72 z-20 overflow-hidden">
+        
+        <!-- Widget Header -->
+        <div id="bookmarks-widget-header" class="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-amber-50 to-white border-b border-amber-100 cursor-pointer" onclick="toggleBookmarksWidget()">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🔖</span>
+            <span class="text-sm font-semibold text-slate-700">Bookmarks</span>
+            <span class="text-xs text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full font-medium">2</span>
+          </div>
+          <svg id="bookmarks-widget-chevron" class="w-5 h-5 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+        
+        <!-- Widget Content -->
+        <div id="bookmarks-widget-content" class="max-h-[50vh] overflow-y-auto sidebar-scroll">
+          
+          <div id="bookmarks-list" class="p-3 space-y-2">
+            
+            <!-- Bookmark: RS-042 with time filter (Level 3) -->
+            <div id="bookmark-rs042-q1" class="bookmark-card bg-white rounded-lg p-2.5 cursor-pointer hover:bg-amber-50">
+              <div class="flex items-center gap-3">
+                <span class="text-lg">🌧️</span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-slate-700 truncate">RS-042 <span class="text-amber-600">→</span> <span class="text-amber-700">Jan-Mar 2023</span></p>
+                  <p class="text-xs text-slate-500">90 data points</p>
+                </div>
+                <button class="icon-btn text-slate-400 hover:text-red-500 p-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Bookmark: RS-018 simple (no Level 3 filter) -->
+            <div id="bookmark-rs018" class="bookmark-card bg-white rounded-lg p-2.5 cursor-pointer hover:bg-amber-50">
+              <div class="flex items-center gap-3">
+                <span class="text-lg">🌧️</span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-slate-700 truncate">RS-018</p>
+                  <p class="text-xs text-slate-500">Valley Floor • All data</p>
+                </div>
+                <button class="icon-btn text-slate-400 hover:text-red-500 p-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+          </div>
+          
+          <!-- Export Button -->
+          <div id="bookmarks-export-section" class="p-3 bg-gradient-to-t from-amber-50 to-white border-t border-amber-100">
+            <button id="export-bookmarks-btn" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-white text-sm font-semibold py-2 px-4 rounded-lg hover:shadow-md transition-all flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+              </svg>
+              Export Bookmarks
+            </button>
+          </div>
+          
+        </div>
+      </div>
+      
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <!-- FLOATING TIME SERIES PANEL (Bottom of map)                              -->
+      <!-- Shows when a sensor is selected - positioned to avoid bookmarks widget  -->
+      <!-- ═══════════════════════════════════════════════════════════════════════ -->
+      <div id="time-series-panel" class="time-series-panel absolute bottom-4 left-4 right-[356px] bg-white/98 rounded-xl z-25 hidden">
+        
+        <!-- Panel Header -->
+        <div id="time-series-header" class="flex items-center justify-between px-4 py-3 border-b border-teal-200 bg-gradient-to-r from-teal-50 to-cyan-50 rounded-t-xl">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 bg-gradient-to-br from-teal-400 to-teal-600 rounded-lg flex items-center justify-center shadow-sm">
+              <span class="text-white text-lg">🌧️</span>
+            </div>
+            <div>
+              <h3 id="panel-sensor-name" class="text-sm font-bold text-slate-800">RS-042</h3>
+              <p class="text-[10px] text-slate-500">Rain Gauge • North Ridge • Precipitation</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <!-- Minimize button -->
+            <button id="minimize-panel-btn" class="icon-btn p-1.5 hover:bg-teal-100 rounded-lg" onclick="minimizeTimeSeriesPanel()" title="Minimize">
+              <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+              </svg>
+            </button>
+            <!-- Close button -->
+            <button id="close-panel-btn" class="icon-btn p-1.5 hover:bg-red-100 rounded-lg" onclick="closeTimeSeriesPanel()" title="Close">
+              <svg class="w-4 h-4 text-slate-500 hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Panel Content -->
+        <div id="time-series-content" class="p-4">
+          
+          <div class="flex gap-4">
+            
+            <!-- Chart Area (main) -->
+            <div class="flex-1">
+              
+              <!-- Controls Row -->
+              <div class="flex items-center gap-3 mb-3">
+                <div class="flex-1">
+                  <label class="text-[10px] font-medium text-slate-500 block mb-1">Date Range</label>
+                  <select id="panel-date-range" class="w-full text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white">
+                    <option>Last 7 days</option>
+                    <option selected>Last 30 days</option>
+                    <option>Last 90 days</option>
+                    <option>Q1 2023 (Jan-Mar)</option>
+                    <option>Last year</option>
+                    <option>Custom...</option>
+                  </select>
+                </div>
+                <div class="flex-1">
+                  <label class="text-[10px] font-medium text-slate-500 block mb-1">Aggregation</label>
+                  <select id="panel-aggregation" class="w-full text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white">
+                    <option>Raw (5 min)</option>
+                    <option>Hourly</option>
+                    <option selected>Daily average</option>
+                    <option>Weekly total</option>
+                  </select>
+                </div>
+                <div class="flex items-end">
+                  <button class="text-xs bg-teal-500 text-white px-3 py-1.5 rounded-lg hover:bg-teal-600 transition-colors font-medium">
+                    Apply
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Chart -->
+              <div class="chart-area chart-grid rounded-lg h-32 relative overflow-hidden border border-slate-200">
+                <div class="chart-line"></div>
+                <!-- Y-axis labels -->
+                <div class="absolute left-2 top-2 text-[9px] text-slate-400 font-mono">15mm</div>
+                <div class="absolute left-2 top-1/2 -translate-y-1/2 text-[9px] text-slate-400 font-mono">7mm</div>
+                <div class="absolute left-2 bottom-2 text-[9px] text-slate-400 font-mono">0mm</div>
+                <!-- X-axis labels -->
+                <div class="absolute bottom-1 left-[15%] text-[9px] text-slate-400">Jan 1</div>
+                <div class="absolute bottom-1 left-[45%] text-[9px] text-slate-400">Jan 15</div>
+                <div class="absolute bottom-1 right-[15%] text-[9px] text-slate-400">Jan 30</div>
+              </div>
+              
+              <!-- Time Range Navigator -->
+              <div class="range-navigator mt-2 rounded-lg border border-teal-200 p-2">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-[9px] font-medium text-teal-700">Time Navigator</span>
+                  <div class="flex items-center gap-1">
+                    <button class="p-0.5 hover:bg-teal-200 rounded text-teal-600" title="Zoom out">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"/>
+                      </svg>
+                    </button>
+                    <button class="p-0.5 hover:bg-teal-200 rounded text-teal-600" title="Zoom in">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
+                      </svg>
+                    </button>
+                    <button class="p-0.5 hover:bg-teal-200 rounded text-teal-600" title="Reset">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <!-- Mini overview with selection window -->
+                <div class="relative h-6 bg-white rounded border border-teal-100 overflow-hidden">
+                  <!-- Full range line -->
+                  <div class="absolute inset-x-2 top-1/2 -translate-y-1/2 h-px bg-slate-300"></div>
+                  <!-- Simplified data -->
+                  <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                    <path d="M8,18 Q40,20 80,14 T160,16 T240,10 T320,13 T400,11" fill="none" stroke="#94a3b8" stroke-width="1"/>
+                  </svg>
+                  <!-- Selection window -->
+                  <div class="absolute top-0 bottom-0 left-[20%] right-[15%] bg-teal-500/20 border-x-2 border-teal-500 cursor-ew-resize">
+                    <div class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-2 h-4 bg-teal-500 rounded-sm"></div>
+                    <div class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-2 h-4 bg-teal-500 rounded-sm"></div>
+                  </div>
+                </div>
+                <div class="flex justify-between mt-1 text-[8px] text-teal-600">
+                  <span>Viewing: <span class="font-semibold">Jan 1 – Jan 30, 2023</span></span>
+                  <span class="text-slate-400">30 of 90 days</span>
+                </div>
+              </div>
+              
+            </div>
+            
+            <!-- Stats Sidebar -->
+            <div class="w-36 flex flex-col gap-2">
+              <div class="text-center p-2 bg-slate-50 rounded-lg border border-slate-100">
+                <p class="text-lg font-bold text-teal-600">378 <span class="text-xs font-normal">mm</span></p>
+                <p class="text-[9px] text-slate-500 uppercase tracking-wide">Total</p>
+              </div>
+              <div class="text-center p-2 bg-slate-50 rounded-lg border border-slate-100">
+                <p class="text-lg font-bold text-slate-700">4.2 <span class="text-xs font-normal">mm</span></p>
+                <p class="text-[9px] text-slate-500 uppercase tracking-wide">Daily Avg</p>
+              </div>
+              <div class="text-center p-2 bg-slate-50 rounded-lg border border-slate-100">
+                <p class="text-lg font-bold text-slate-700">15.2 <span class="text-xs font-normal">mm</span></p>
+                <p class="text-[9px] text-slate-500 uppercase tracking-wide">Max (Feb 12)</p>
+              </div>
+              <div class="text-center p-2 bg-slate-50 rounded-lg border border-slate-100">
+                <p class="text-lg font-bold text-blue-600">23</p>
+                <p class="text-[9px] text-slate-500 uppercase tracking-wide">Rain Days</p>
+              </div>
+              
+              <!-- Actions -->
+              <div class="mt-auto pt-2 space-y-1.5">
+                <button class="w-full text-[10px] bg-amber-100 hover:bg-amber-200 text-amber-700 font-medium py-1.5 px-2 rounded-lg flex items-center justify-center gap-1">
+                  <span>🔖</span>
+                  Bookmark Range
+                </button>
+                <button class="w-full text-[10px] bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 font-medium py-1.5 px-2 rounded-lg flex items-center justify-center gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                  </svg>
+                  Export CSV
+                </button>
+              </div>
+            </div>
+            
+          </div>
+          
+        </div>
+        
+        <!-- Panel Footer -->
+        <div id="time-series-footer" class="px-4 py-2 border-t border-slate-100 bg-slate-50 rounded-b-xl flex items-center justify-between">
+          <span class="text-[10px] text-slate-500">Data from Dendra • Last updated: 5 min ago</span>
+          <a href="#" class="text-[10px] text-teal-600 hover:text-teal-700 font-medium">Open in Dendra ↗</a>
+        </div>
+        
+      </div>
+      
+      <!-- Minimized Time Series Bar (shows when panel is minimized) -->
+      <div id="time-series-minimized" class="absolute bottom-4 left-4 bg-white/98 rounded-xl shadow-lg border border-teal-200 z-25 hidden">
+        <div class="flex items-center gap-3 px-4 py-2 cursor-pointer" onclick="expandTimeSeriesPanel()">
+          <div class="w-7 h-7 bg-gradient-to-br from-teal-400 to-teal-600 rounded-lg flex items-center justify-center">
+            <span class="text-white text-sm">🌧️</span>
+          </div>
+          <div>
+            <p id="minimized-sensor-name" class="text-xs font-semibold text-slate-700">RS-042</p>
+            <p class="text-[10px] text-slate-500">Click to expand chart</p>
+          </div>
+          <div class="ml-4 flex items-center gap-3 text-[10px]">
+            <span class="text-teal-600 font-semibold">378 mm total</span>
+            <span class="text-slate-400">|</span>
+            <span class="text-slate-500">Jan 1 – Jan 30</span>
+          </div>
+          <button class="ml-4 icon-btn p-1 hover:bg-red-100 rounded" onclick="event.stopPropagation(); closeTimeSeriesPanel()" title="Close">
+            <svg class="w-4 h-4 text-slate-400 hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+    </main>
+    
+    <!-- RIGHT SIDEBAR -->
+    <aside id="right-sidebar" class="w-[340px] bg-white border-l border-gray-200 flex flex-col">
+      
+      <!-- Sidebar Header -->
+      <div id="right-sidebar-header" class="px-3 py-2.5 border-b border-gray-200 bg-white">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">🌧️</span>
+          <div>
+            <h2 class="text-[13px] font-semibold text-gray-900">Dendra: Rain Sensors</h2>
+            <p class="text-[10px] text-gray-500">Precipitation monitoring network • 12 sensors</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tabs - Live site lifted tab styling -->
+      <div id="tabs" class="flex border-b border-gray-200">
+        <button id="tab-btn-overview" class="tab-btn flex-1 px-4 py-2.5 text-xs font-medium" data-tab="overview" onclick="switchTab('overview')">Overview</button>
+        <button id="tab-btn-browse" class="tab-btn active flex-1 px-4 py-2.5 text-xs font-medium" data-tab="browse" onclick="switchTab('browse')">Browse</button>
+        <button id="tab-btn-export" class="tab-btn flex-1 px-4 py-2.5 text-xs font-medium" data-tab="export" onclick="switchTab('export')">Export</button>
+      </div>
+      
+      <!-- Tab Content -->
+      <div id="tab-content" class="flex-1 overflow-y-auto sidebar-scroll">
+        
+        <!-- OVERVIEW TAB -->
+        <div id="tab-overview" class="tab-panel hidden p-3">
+          <p class="text-[10px] text-gray-500 italic">Overview content from mockup 02a</p>
+        </div>
+        
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <!-- BROWSE TAB - SENSOR LIST & DETAIL VIEW                                  -->
+        <!-- ═══════════════════════════════════════════════════════════════════════ -->
+        <div id="tab-browse" class="tab-panel">
+          
+          <!-- UX Demo callout -->
+          <div id="browse-ux-callout" class="bg-teal-50 p-3 border-b border-teal-200">
+            <p class="text-xs font-semibold text-teal-800 flex items-center gap-1.5">
+              <span class="text-sm">📊</span>
+              Pointer Row: Sensor → Datastream
+            </p>
+            <p class="text-[10px] text-teal-700 mt-1 leading-relaxed">
+              Each sensor points to a <strong>time series datastream</strong>. Bookmark the sensor, or bookmark with a specific <strong>time range filter</strong>.
+            </p>
+          </div>
+          
+          <!-- ═══════════════════════════════════════════════════════════════════════ -->
+          <!-- SENSORS LIST VIEW                                                       -->
+          <!-- ═══════════════════════════════════════════════════════════════════════ -->
+          <div id="view-sensors-list" class="p-3">
+            
+            <!-- Filter Sensors Section -->
+            <div id="sensors-filter-section" class="filter-section rounded-lg p-2.5 mb-3">
+              <h4 class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-2">Filter Sensors</h4>
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <label class="text-[10px] text-gray-500 w-14">Region:</label>
+                  <select id="sensors-region-filter" class="flex-1 px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white">
+                    <option selected>All regions</option>
+                    <option>North Ridge</option>
+                    <option>Valley Floor</option>
+                    <option>Coastal Bluff</option>
+                    <option>Oak Woodland</option>
+                  </select>
+                </div>
+                <div class="flex items-center gap-2">
+                  <label class="text-[10px] text-gray-500 w-14">Status:</label>
+                  <select id="sensors-status-filter" class="flex-1 px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white">
+                    <option selected>Active</option>
+                    <option>All statuses</option>
+                    <option>Maintenance</option>
+                    <option>Offline</option>
+                  </select>
+                </div>
+              </div>
+              <div class="mt-2 pt-2 border-t border-gray-200">
+                <p class="text-[10px] text-gray-600">
+                  Showing: <span class="font-semibold text-teal-700">12 of 12</span> sensors
+                </p>
+              </div>
+            </div>
+            
+            <!-- Sensors List -->
+            <div id="sensors-section">
+              <h3 class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-2">Rain Sensors</h3>
+              
+              <div id="sensors-list-content" class="space-y-1.5">
+                
+                <!-- RS-042 -->
+                <div id="sensor-rs042-card" class="clickable-card bg-white rounded-lg p-3" onclick="showSensorDetail('RS-042')">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-teal-100 to-teal-200 rounded-lg flex items-center justify-center relative">
+                      <span class="text-lg">🌧️</span>
+                      <span class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white pulse-live" title="Live"></span>
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex items-center gap-2">
+                        <h4 class="text-sm font-semibold text-gray-900">RS-042</h4>
+                        <span class="text-[8px] bg-green-100 text-green-700 px-1 py-0.5 rounded font-medium">Active</span>
+                      </div>
+                      <p class="text-[10px] text-gray-500">North Ridge</p>
+                    </div>
+                    <div class="text-right">
+                      <p class="text-sm font-bold text-teal-600">0.2 <span class="text-[10px] font-normal">mm</span></p>
+                      <p class="text-[9px] text-gray-400">5 min ago</p>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </div>
+                
+                <!-- RS-018 -->
+                <div id="sensor-rs018-card" class="clickable-card bg-white rounded-lg p-3" onclick="showSensorDetail('RS-018')">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center relative">
+                      <span class="text-lg">🌧️</span>
+                      <span class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white pulse-live" title="Live"></span>
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex items-center gap-2">
+                        <h4 class="text-sm font-semibold text-gray-900">RS-018</h4>
+                        <span class="text-[8px] bg-green-100 text-green-700 px-1 py-0.5 rounded font-medium">Active</span>
+                      </div>
+                      <p class="text-[10px] text-gray-500">Valley Floor</p>
+                    </div>
+                    <div class="text-right">
+                      <p class="text-sm font-bold text-teal-600">0.0 <span class="text-[10px] font-normal">mm</span></p>
+                      <p class="text-[9px] text-gray-400">5 min ago</p>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </div>
+                
+                <!-- RS-027 -->
+                <div id="sensor-rs027-card" class="clickable-card bg-white rounded-lg p-3" onclick="showSensorDetail('RS-027')">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-cyan-100 to-cyan-200 rounded-lg flex items-center justify-center relative">
+                      <span class="text-lg">🌧️</span>
+                      <span class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white pulse-live" title="Live"></span>
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex items-center gap-2">
+                        <h4 class="text-sm font-semibold text-gray-900">RS-027</h4>
+                        <span class="text-[8px] bg-green-100 text-green-700 px-1 py-0.5 rounded font-medium">Active</span>
+                      </div>
+                      <p class="text-[10px] text-gray-500">Coastal Bluff</p>
+                    </div>
+                    <div class="text-right">
+                      <p class="text-sm font-bold text-teal-600">0.5 <span class="text-[10px] font-normal">mm</span></p>
+                      <p class="text-[9px] text-gray-400">5 min ago</p>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </div>
+                
+                <!-- RS-033 (maintenance) -->
+                <div id="sensor-rs033-card" class="clickable-card bg-white rounded-lg p-3 opacity-70" onclick="showSensorDetail('RS-033')">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-amber-100 to-amber-200 rounded-lg flex items-center justify-center relative">
+                      <span class="text-lg">🌧️</span>
+                      <span class="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-white" title="Maintenance"></span>
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex items-center gap-2">
+                        <h4 class="text-sm font-semibold text-gray-900">RS-033</h4>
+                        <span class="text-[8px] bg-amber-100 text-amber-700 px-1 py-0.5 rounded font-medium">Maintenance</span>
+                      </div>
+                      <p class="text-[10px] text-gray-500">Oak Woodland</p>
+                    </div>
+                    <div class="text-right">
+                      <p class="text-sm font-bold text-gray-400">—</p>
+                      <p class="text-[9px] text-gray-400">2 days ago</p>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </div>
+                </div>
+                
+                <!-- More sensors placeholder -->
+                <div class="text-center py-3 text-[10px] text-gray-400 italic">
+                  + 8 more sensors...
+                </div>
+                
+              </div>
+            </div>
+            
+          </div>
+          
+          <!-- ═══════════════════════════════════════════════════════════════════════ -->
+          <!-- SENSOR DETAIL VIEW                                                      -->
+          <!-- Shows time series data with Level 3 filter                              -->
+          <!-- ═══════════════════════════════════════════════════════════════════════ -->
+          <div id="view-sensor-detail" class="hidden p-3">
+            
+            <!-- Back button -->
+            <button id="back-to-sensors-btn" class="back-btn flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium mb-3 px-2 py-1.5 -ml-2 rounded" onclick="showSensorsView()">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+              </svg>
+              Back to Sensors
+            </button>
+            
+            <!-- Sensor Header -->
+            <div id="sensor-detail-header" class="mb-4 p-3 bg-gradient-to-r from-teal-50 to-teal-100 rounded-lg border border-teal-200">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-gradient-to-br from-teal-100 to-teal-200 rounded-lg flex items-center justify-center relative">
+                  <span class="text-xl">🌧️</span>
+                  <span class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white pulse-live"></span>
+                </div>
+                <div class="flex-1">
+                  <h3 id="sensor-detail-name" class="text-base font-bold text-gray-900">RS-042</h3>
+                  <p id="sensor-detail-location" class="text-[10px] text-gray-500">North Ridge • 34.4521, -120.4712</p>
+                  <div class="flex items-center gap-2 mt-1">
+                    <span class="text-[8px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">Active</span>
+                    <span class="text-[10px] text-gray-500">Rain Gauge</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Current Reading -->
+            <div id="current-reading" class="mb-4 p-3 bg-white rounded-lg border border-gray-200">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-[10px] text-gray-500 uppercase tracking-wide">Current Reading</p>
+                  <p class="text-2xl font-bold text-teal-600">0.2 <span class="text-sm font-normal text-gray-500">mm</span></p>
+                </div>
+                <div class="text-right">
+                  <p class="text-[10px] text-gray-500">Updated</p>
+                  <p class="text-xs text-gray-700 font-medium">5 min ago</p>
+                </div>
+              </div>
+              <div class="mt-2 pt-2 border-t border-gray-100">
+                <p class="text-[10px] text-gray-500">
+                  Data range: <span class="font-medium text-gray-700">Jan 2019 - Present</span>
+                </p>
+              </div>
+            </div>
+            
+            <!-- Level 3: Filter Datastream -->
+            <div id="datastream-filter-section" class="filter-section-level3 rounded-lg p-3 mb-4">
+              <h4 class="text-[10px] font-semibold text-teal-700 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
+                Filter Datastream (Level 3)
+              </h4>
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <label class="text-[10px] text-gray-600 w-16">From:</label>
+                  <input type="date" id="datastream-from-date" value="2023-01-01" 
+                    class="flex-1 px-2 py-1 text-xs border border-teal-200 rounded focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white">
+                </div>
+                <div class="flex items-center gap-2">
+                  <label class="text-[10px] text-gray-600 w-16">To:</label>
+                  <input type="date" id="datastream-to-date" value="2023-03-31" 
+                    class="flex-1 px-2 py-1 text-xs border border-teal-200 rounded focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white">
+                </div>
+                <div class="flex items-center gap-2">
+                  <label class="text-[10px] text-gray-600 w-16">Aggregation:</label>
+                  <select id="datastream-aggregation" class="flex-1 px-2 py-1 text-xs border border-teal-200 rounded focus:outline-none focus:ring-1 focus:ring-teal-500 bg-white">
+                    <option selected>Daily average</option>
+                    <option>Hourly</option>
+                    <option>Weekly total</option>
+                    <option>Monthly total</option>
+                    <option>Raw (5 min intervals)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="mt-2 pt-2 border-t border-teal-200">
+                <p class="text-[10px] text-teal-700">
+                  Showing: <span class="font-bold">90 data points</span>
+                </p>
+              </div>
+            </div>
+            
+            <!-- Bookmark Buttons -->
+            <div class="flex gap-2 mb-4">
+              <button id="bookmark-sensor-btn" class="action-btn flex-1 text-[10px] bg-amber-100 hover:bg-amber-200 text-amber-700 font-medium py-2 px-3 rounded-lg flex items-center justify-center gap-1.5">
+                <span>🔖</span>
+                Bookmark Sensor
+              </button>
+              <button id="bookmark-with-filter-btn" class="action-btn flex-1 text-[10px] bg-teal-500 hover:bg-teal-600 text-white font-medium py-2 px-3 rounded-lg flex items-center justify-center gap-1.5">
+                <span>🔖</span>
+                Bookmark with Time Range
+              </button>
+            </div>
+            
+            <!-- Chart Info (chart is shown in floating panel) -->
+            <div id="datastream-info-section" class="bg-teal-50 rounded-lg p-3 border border-teal-200">
+              <div class="flex items-center gap-2 mb-2">
+                <svg class="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                <p class="text-xs font-semibold text-teal-800">Time Series Chart</p>
+              </div>
+              <p class="text-[10px] text-teal-700 leading-relaxed">
+                The interactive chart is displayed on the <strong>map panel</strong> below. Use the date range and aggregation controls to explore the datastream.
+              </p>
+              <div class="mt-2 pt-2 border-t border-teal-200 flex items-center gap-3 text-[10px]">
+                <span class="text-teal-600 font-medium">📊 90 data points</span>
+                <span class="text-teal-500">•</span>
+                <span class="text-teal-600">Q1 2023</span>
+              </div>
+            </div>
+            
+          </div>
+          
+        </div>
+        
+        <!-- EXPORT TAB -->
+        <div id="tab-export" class="tab-panel hidden p-3">
+          <p class="text-[10px] text-gray-500 italic">Export tab content shown in mockup 02f (Export Builder)</p>
+        </div>
+        
+      </div>
+    </aside>
+    
+  </div>
+  
+  <!-- ArcGIS Map Initialization -->
+  <script>
+    // =========================================================================
+    // STATE
+    // =========================================================================
+    const state = {
+      selectedLayer: 'dendra-rain',
+      selectedSensor: null,
+      expandedCategories: new Set(['sensors']),
+      widgetExpanded: true,
+      bookmarksWidgetExpanded: true,
+      activeTab: 'browse',
+      currentView: 'list', // 'list' or 'sensor-detail'
+      timeSeriesPanelOpen: false,
+      timeSeriesPanelMinimized: false
+    };
+    
+    let mapView = null;
+    
+    // =========================================================================
+    // MAP INITIALIZATION
+    // =========================================================================
+    require([
+      "esri/Map",
+      "esri/views/MapView",
+      "esri/layers/GeoJSONLayer"
+    ], function(Map, MapView, GeoJSONLayer) {
+      
+      const map = new Map({ basemap: "topo-vector" });
+      
+      mapView = new MapView({
+        container: "viewDiv",
+        map: map,
+        center: [-120.4275, 34.4925],
+        zoom: 12,
+        ui: { components: [] }
+      });
+      
+      // Add preserve boundary
+      const boundaryLayer = new GeoJSONLayer({
+        url: "/dangermond-preserve-boundary.geojson",
+        renderer: {
+          type: "simple",
+          symbol: {
+            type: "simple-fill",
+            color: [46, 125, 50, 0.1],
+            outline: { color: [46, 125, 50, 1], width: 2 }
+          }
+        }
+      });
+      
+      map.add(boundaryLayer);
+      
+      mapView.when(() => {
+        document.getElementById('loading-overlay').style.display = 'none';
+      });
+    });
+    
+    // Sensor data
+    const sensorData = {
+      'RS-042': { 
+        name: 'RS-042', 
+        location: 'North Ridge • 34.4521, -120.4712',
+        reading: '0.2',
+        status: 'Active',
+        region: 'North Ridge'
+      },
+      'RS-018': { 
+        name: 'RS-018', 
+        location: 'Valley Floor • 34.4489, -120.4656',
+        reading: '0.0',
+        status: 'Active',
+        region: 'Valley Floor'
+      },
+      'RS-027': { 
+        name: 'RS-027', 
+        location: 'Coastal Bluff • 34.4612, -120.4834',
+        reading: '0.5',
+        status: 'Active',
+        region: 'Coastal Bluff'
+      },
+      'RS-033': { 
+        name: 'RS-033', 
+        location: 'Oak Woodland • 34.4534, -120.4567',
+        reading: '—',
+        status: 'Maintenance',
+        region: 'Oak Woodland'
+      }
+    };
+    
+    // =========================================================================
+    // VIEW SWITCHING (List ↔ Detail)
+    // =========================================================================
+    function showSensorDetail(sensorId) {
+      state.currentView = 'sensor-detail';
+      state.selectedSensor = sensorId;
+      
+      document.getElementById('view-sensors-list').classList.add('hidden');
+      document.getElementById('view-sensor-detail').classList.remove('hidden');
+      
+      const sensor = sensorData[sensorId] || sensorData['RS-042'];
+      document.getElementById('sensor-detail-name').textContent = sensor.name;
+      document.getElementById('sensor-detail-location').textContent = sensor.location;
+      
+      // Update current reading
+      const readingEl = document.querySelector('#current-reading .text-2xl');
+      if (readingEl) {
+        readingEl.innerHTML = `${sensor.reading} <span class="text-sm font-normal text-gray-500">mm</span>`;
+      }
+      
+      // Show the floating time series panel
+      openTimeSeriesPanel(sensorId);
+    }
+    
+    function showSensorsView() {
+      state.currentView = 'list';
+      document.getElementById('view-sensor-detail').classList.add('hidden');
+      document.getElementById('view-sensors-list').classList.remove('hidden');
+      
+      // Close the time series panel when going back to list
+      closeTimeSeriesPanel();
+    }
+    
+    // =========================================================================
+    // FLOATING TIME SERIES PANEL
+    // =========================================================================
+    function openTimeSeriesPanel(sensorId) {
+      const sensor = sensorData[sensorId];
+      if (!sensor) return;
+      
+      state.timeSeriesPanelOpen = true;
+      state.timeSeriesPanelMinimized = false;
+      
+      // Update panel content
+      document.getElementById('panel-sensor-name').textContent = sensor.name;
+      document.querySelector('#time-series-header p').textContent = `Rain Gauge • ${sensor.region} • Precipitation`;
+      document.getElementById('minimized-sensor-name').textContent = sensor.name;
+      
+      // Show panel, hide minimized bar
+      document.getElementById('time-series-panel').classList.remove('hidden');
+      document.getElementById('time-series-minimized').classList.add('hidden');
+    }
+    
+    function closeTimeSeriesPanel() {
+      state.timeSeriesPanelOpen = false;
+      state.timeSeriesPanelMinimized = false;
+      
+      document.getElementById('time-series-panel').classList.add('hidden');
+      document.getElementById('time-series-minimized').classList.add('hidden');
+    }
+    
+    function minimizeTimeSeriesPanel() {
+      state.timeSeriesPanelMinimized = true;
+      
+      document.getElementById('time-series-panel').classList.add('hidden');
+      document.getElementById('time-series-minimized').classList.remove('hidden');
+    }
+    
+    function expandTimeSeriesPanel() {
+      state.timeSeriesPanelMinimized = false;
+      
+      document.getElementById('time-series-panel').classList.remove('hidden');
+      document.getElementById('time-series-minimized').classList.add('hidden');
+    }
+    
+    // =========================================================================
+    // UI FUNCTIONS
+    // =========================================================================
+    function toggleCategory(categoryId) {
+      const category = document.querySelector(`[data-category="${categoryId}"]`);
+      if (!category) return;
+      const content = category.querySelector('.category-content');
+      const chevron = category.querySelector('.chevron');
+      
+      if (state.expandedCategories.has(categoryId)) {
+        state.expandedCategories.delete(categoryId);
+        content.classList.add('hidden');
+        chevron.classList.remove('expanded');
+      } else {
+        state.expandedCategories.add(categoryId);
+        content.classList.remove('hidden');
+        chevron.classList.add('expanded');
+      }
+    }
+    
+    function selectLayer(layerId) {
+      document.querySelectorAll('.layer-row').forEach(row => row.classList.remove('selected'));
+      const row = document.querySelector(`.layer-row[data-layer="${layerId}"]`);
+      if (row) row.classList.add('selected');
+      state.selectedLayer = layerId;
+    }
+    
+    function toggleVisibility(layerId) {
+      console.log('Toggle visibility:', layerId);
+    }
+    
+    function togglePin(layerId) {
+      console.log('Toggle pin:', layerId);
+    }
+    
+    function switchTab(tabId) {
+      state.activeTab = tabId;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`.tab-btn[data-tab="${tabId}"]`)?.classList.add('active');
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+      document.getElementById(`tab-${tabId}`)?.classList.remove('hidden');
+    }
+    
+    function toggleFloatingWidget() {
+      const content = document.getElementById('widget-content');
+      const chevron = document.getElementById('widget-chevron');
+      state.widgetExpanded = !state.widgetExpanded;
+      content.classList.toggle('hidden', !state.widgetExpanded);
+      chevron.style.transform = state.widgetExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
+    
+    function toggleBookmarksWidget() {
+      const content = document.getElementById('bookmarks-widget-content');
+      const chevron = document.getElementById('bookmarks-widget-chevron');
+      state.bookmarksWidgetExpanded = !state.bookmarksWidgetExpanded;
+      content.classList.toggle('hidden', !state.bookmarksWidgetExpanded);
+      chevron.style.transform = state.bookmarksWidgetExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
+    
+    // =========================================================================
+    // INIT
+    // =========================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize expanded categories
+      state.expandedCategories.forEach(categoryId => {
+        const cat = document.querySelector(`[data-category="${categoryId}"]`);
+        if (cat) {
+          cat.querySelector('.category-content')?.classList.remove('hidden');
+          cat.querySelector('.chevron')?.classList.add('expanded');
+        }
+      });
+      
+      // Select initial layer
+      selectLayer('dendra-rain');
+      
+      // Switch to browse tab
+      switchTab('browse');
+    });
+  </script>
+  
+</body>
+</html>
