@@ -1,0 +1,275 @@
+# Phase 2: ANiML Right Sidebar
+
+**Status:** ⚪ Not Started  
+**Progress:** 0 / 7 tasks  
+**Branch:** `v2/animl`  
+**Depends On:** Phase 0 (Foundation)  
+**Owner:** TBD
+
+---
+
+> **⚠️ NOTE: PLEASE REVIEW THIS AND PROVIDE FEEDBACK**  
+> This phase document is a draft. Before starting implementation, please review the tasks, acceptance criteria, and approach to ensure we're moving in the right direction. Task 2.7 (caching investigation) is particularly important to validate.
+
+---
+
+## Phase Goal
+
+Implement the ANiML camera trap browse experience in the right sidebar. This is the **most complex** data source because it has:
+- **Pointer rows** (cameras point to image archives)
+- **Dual-level filtering** (camera filters + global image filters at layer level)
+- **Level 3 related data** (images with species tags, dates)
+
+## Reference Documents
+
+- Master Plan: `docs/development_plans/master-development-plan.md`
+- Design System: `docs/development_plans/design-system.md`
+- Paradigm: `docs/feedback/data-catalog-ux-paradigm-jan-21-2026.md` (Part 5b - ANiML Special Case)
+- Mockup: `mockups/02c-browse-animl.html`
+
+## Key Paradigm Notes
+
+- **Row Type:** Pointer (camera points to image archive)
+- **Bookmark Options:** "Bookmark Camera" OR "Bookmark with Filter"
+- **Has Level 3:** Yes - images with species, date, time of day
+- **Special:** Dual-level filtering at layer browse level (unique to ANiML)
+
+---
+
+## Task Status
+
+| ID | Task | Status | Assignee | Notes |
+|----|------|--------|----------|-------|
+| 2.1 | Query ANiML service to understand attributes | ⚪ Not Started | | |
+| 2.2 | Create ANiML right sidebar shell | ⚪ Not Started | | |
+| 2.3 | Implement camera filter UI (Level 2) | ⚪ Not Started | | |
+| 2.4 | Implement global image filter UI (Level 3) | ⚪ Not Started | | Dual-level pattern |
+| 2.5 | Implement camera list with filtered image counts | ⚪ Not Started | | |
+| 2.6 | Implement camera detail drill-down | ⚪ Not Started | | |
+| 2.7 | Investigate and decide on caching strategy | ⚪ Not Started | | Current load: 8-12s |
+
+**Status Legend:**
+- ⚪ Not Started
+- 🟡 In Progress
+- 🟢 Complete
+- 🔴 Blocked
+
+---
+
+## Task Details
+
+### 2.1: Query ANiML Service to Understand Attributes
+
+**Goal:** Before building UI, understand what data is available from the ANiML feature services.
+
+**Acceptance Criteria:**
+- [ ] Document camera feature service attributes
+- [ ] Document image/tag feature service attributes
+- [ ] Identify relationship between cameras and images
+- [ ] Note current query performance (baseline for caching decision)
+
+**Questions to Answer:**
+- What attributes exist on cameras? (region, status, ID, coordinates)
+- What attributes exist on images/tags? (species, date, time, camera_id)
+- How are cameras and images related in the feature service?
+- What's the current load time for various queries?
+
+**Output:** Add findings to "Service Analysis" section below.
+
+---
+
+### 2.2: Create ANiML Right Sidebar Shell
+
+**Goal:** Set up the component structure for the ANiML browse experience.
+
+**Acceptance Criteria:**
+- [ ] Component renders when ANiML layer is selected
+- [ ] Tabs exist: Overview | Browse | Export
+- [ ] Browse tab is the default/active tab
+- [ ] Component can show camera list OR camera detail (drill-down pattern)
+
+**Files to Create:**
+- `src/v2/components/RightSidebar/ANiML/ANiMLSidebar.tsx`
+- `src/v2/components/RightSidebar/ANiML/ANiMLBrowseTab.tsx`
+- `src/v2/components/RightSidebar/ANiML/ANiMLOverviewTab.tsx`
+- `src/v2/components/RightSidebar/ANiML/ANiMLExportTab.tsx`
+- `src/v2/components/RightSidebar/ANiML/CameraListView.tsx`
+- `src/v2/components/RightSidebar/ANiML/CameraDetailView.tsx`
+
+---
+
+### 2.3: Implement Camera Filter UI (Level 2)
+
+**Goal:** Create filters for the cameras themselves.
+
+**Acceptance Criteria:**
+- [ ] Region dropdown
+- [ ] Status dropdown (Active, Inactive, etc.)
+- [ ] Filter updates camera list below
+- [ ] Filter can be saved with "Pin Layer with Query"
+
+**Reference:** Mockup `02c-browse-animl.html` "Filter Cameras" section
+
+---
+
+### 2.4: Implement Global Image Filter UI (Level 3)
+
+**Goal:** Create filters for images that apply to ALL cameras in the result.
+
+**This is the dual-level filtering pattern unique to ANiML.**
+
+**Acceptance Criteria:**
+- [ ] Species dropdown
+- [ ] Date range picker
+- [ ] Time of day filter (optional)
+- [ ] Filter shows aggregate count: "X cameras • Y total images"
+- [ ] "Pin Layer with Query" saves BOTH camera filter AND image filter
+- [ ] Clear visual distinction between camera filters and image filters
+
+**Reference:** Mockup `02c-browse-animl.html` "Filter Images" section (note the info text)
+
+**State Shape (for dual-level query):**
+```typescript
+activeQuery: {
+  cameraFilter: { region: "north", status: "active" },
+  globalImageFilter: { species: "mountain lion", year: 2023 }
+}
+```
+
+---
+
+### 2.5: Implement Camera List with Filtered Image Counts
+
+**Goal:** Display cameras as cards showing filtered image counts.
+
+**Acceptance Criteria:**
+- [ ] Each camera card shows filtered image count (not total)
+- [ ] Example: "CAM-042 • 47 mountain lion images"
+- [ ] "View Camera →" button navigates to detail view
+- [ ] "Bookmark with Current Filter" saves camera + active image filter
+
+**Reference:** Mockup `02c-browse-animl.html` camera cards
+
+---
+
+### 2.6: Implement Camera Detail Drill-Down
+
+**Goal:** When user clicks a camera, show its detail view with images.
+
+**Acceptance Criteria:**
+- [ ] "← Back to Cameras" navigation
+- [ ] Camera info header (name, location, status)
+- [ ] Image filter UI (pre-populated from global filter if set)
+- [ ] "Bookmark Camera" (no filter)
+- [ ] "Bookmark with Filter" (saves camera + current image filter)
+- [ ] Image gallery showing filtered results
+- [ ] Image gallery supports pagination or lazy loading
+
+**Reference:** Mockup `02c-browse-animl.html` camera detail section
+
+---
+
+### 2.7: Investigate and Decide on Caching Strategy
+
+**Goal:** Address the 8-12 second load time for ANiML data.
+
+**Background:**
+Current ANiML queries take 8-12 seconds because we're loading all data at once. This needs investigation and a decision on caching approach.
+
+**Acceptance Criteria:**
+- [ ] Document current query performance (what takes how long?)
+- [ ] Identify the bottleneck (network? query complexity? data volume?)
+- [ ] Evaluate caching options (see analysis below)
+- [ ] Recommend and document decision in master plan
+- [ ] If caching needed, create implementation sub-tasks
+
+**Caching Options to Evaluate:**
+
+| Option | Cost | Dev Effort | Performance Gain | Notes |
+|--------|------|------------|------------------|-------|
+| Client-side (React Query) | $0 | Low | Medium | Cache between navigations |
+| Pre-computed JSON in Blob Storage | ~$0.02/mo | Medium | High | Nightly job creates summaries |
+| Azure Table Storage as cache | ~$0.05/mo | Medium | High | Server-side KV cache |
+| Azure Cache for Redis | ~$16/mo | High | Very High | Only if really needed |
+| Lazy loading (don't load images until drill-down) | $0 | Low | High | UX change, not caching |
+
+**Questions to Answer:**
+1. What's slow? Loading cameras, or loading images, or both?
+2. Can we defer image loading until camera drill-down?
+3. Would pre-computed summary counts eliminate the slow query?
+4. What's the acceptable load time target? (<2s? <1s?)
+
+**Output:** 
+- Add performance findings to "Service Analysis" section
+- Document decision in master plan "Cross-Phase Decisions"
+- If caching implemented, document approach in `design-system.md` or new doc
+
+---
+
+## Service Analysis
+
+> Fill this out during Task 2.1
+
+### Feature Service URLs
+- Cameras: TBD
+- Images/Tags: TBD
+
+### Camera Service Attributes
+| Attribute | Type | Useful For | Notes |
+|-----------|------|------------|-------|
+| | | | |
+
+### Image/Tag Service Attributes
+| Attribute | Type | Useful For | Notes |
+|-----------|------|------------|-------|
+| | | | |
+
+### Query Performance Baseline
+| Query Type | Avg Response Time | Data Volume | Notes |
+|------------|-------------------|-------------|-------|
+| All cameras (no images) | | | |
+| All images for 1 camera | | | |
+| Images filtered by species | | | |
+| Current "load everything" | 8-12s | | This is the problem |
+
+---
+
+## Discoveries / Decisions Made
+
+> When working on this phase, document any decisions that might affect other phases.
+
+### Architectural Decisions
+
+| Decision | Date | Rationale |
+|----------|------|-----------|
+| (none yet) | | |
+
+### Styling Decisions
+
+| Decision | Date | Rationale | Added to design-system.md? |
+|----------|------|-----------|---------------------------|
+| (none yet) | | | |
+
+### Caching Decision
+
+| Decision | Date | Rationale |
+|----------|------|-----------|
+| (pending investigation) | | |
+
+---
+
+## Open Questions
+
+- [ ] Should we reuse any code from existing `AnimlDetailsSidebar.tsx`?
+- [ ] How to handle image thumbnails vs full images?
+- [ ] What's the relationship structure between cameras and images in the service?
+- [ ] Backend work needed from Dan for caching?
+
+---
+
+## Change Log
+
+| Date | Task | Change | By |
+|------|------|--------|-----|
+| Jan 23, 2026 | - | Created phase document | Will + Claude |
+
