@@ -35,7 +35,7 @@ Set up the V2 application shell, routing, state management, and shared component
 | 0.3 | Implement Pinned Layers state management | ⚪ Not Started | | |
 | 0.4 | Implement Bookmarks state management | ⚪ Not Started | | Awaiting team feedback |
 | 0.5 | Implement Pinned Layers floating widget | ⚪ Not Started | | |
-| 0.6 | Implement Bookmarked Items floating widget | ⚪ Not Started | | Awaiting team feedback |
+| 0.6 | Implement Bookmarked Features floating widget | ⚪ Not Started | | Awaiting team feedback |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -173,24 +173,24 @@ interface Bookmark {
 
 ---
 
-### 0.6: Implement Bookmarked Items Floating Widget
+### 0.6: Implement Bookmarked Features Floating Widget
 
-**Goal:** Create the floating widget that shows bookmarked items.
+**Goal:** Create the floating widget that shows bookmarked features.
 
 **Status Note:** Awaiting team feedback on bookmark paradigm.
 
 **Acceptance Criteria:**
 - [ ] Widget renders in top-right of map area
 - [ ] Widget is collapsible/expandable
-- [ ] Shows list of bookmarked items
-- [ ] Each item shows: icon, label, source, filter context (if applicable), view/remove buttons
+- [ ] Shows list of bookmarked features
+- [ ] Each feature shows: icon, label, source, filter context (if applicable), view/remove buttons
 - [ ] "Export All" button exists
 
 **Reference:**
 - Mockup: `mockups/02a-unified-layout.html` (bookmark widget section)
 
 **Files to Create:**
-- `src/v2/components/FloatingWidgets/BookmarkedItemsWidget.tsx`
+- `src/v2/components/FloatingWidgets/BookmarkedFeaturesWidget.tsx`
 - `src/v2/components/FloatingWidgets/BookmarkCard.tsx`
 
 ---

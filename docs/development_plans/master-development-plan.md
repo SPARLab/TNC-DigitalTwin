@@ -14,7 +14,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 **The Paradigm Shift:**
 - **Left sidebar:** Persistent layer browser (find and pin layers)
 - **Right sidebar:** Layer workspace (browse, query, bookmark, export)
-- **Floating widgets:** Pinned Layers (top-left) + Bookmarked Items (top-right)
+- **Floating widgets:** Pinned Layers (top-left) + Bookmarked Features (top-right)
 - **Map:** Shows all pinned layers simultaneously
 
 **Key Reference Documents:**

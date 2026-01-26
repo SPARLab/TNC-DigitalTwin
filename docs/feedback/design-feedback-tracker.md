@@ -7,6 +7,13 @@
 2. Discuss/iterate in the issue's "Discussion" section
 3. Mark resolved once a decision is made
 4. Resolved issues feed into development plans
+5. **When resolving an issue:** Update `master-development-plan.md` and relevant phase documents with the decision
+
+**For AI Agents:** When you mark a feedback item as resolved with a decision/outcome:
+- Document the decision in the issue's "Resolution" section
+- Update `docs/development_plans/master-development-plan.md` if it affects cross-phase decisions
+- Update relevant phase documents in `docs/development_plans/phases/` if it affects specific implementation
+- Add an entry to "Cross-Phase Decisions" in master plan if the decision impacts multiple phases
 
 **Last Updated:** January 26, 2026
 
@@ -25,7 +32,7 @@
 | DFT-007 | Bookmark widget title should clarify that bookmarks are features within layers, not separate items | UI/UX | 🟡 Open | Medium |
 | DFT-008 | TNC provided brand colors (Parrot Green, Leaf Green, Benthic Blue) for optional integration | Styling | 🟡 Open | Low |
 | DFT-009 | TNC provided brand fonts (Barlow, Chronicle) for optional integration | Styling | 🟡 Open | Low |
-| DFT-010 | Terminology: Change "items" to "features" throughout — more familiar to GIS users | UI/UX | 🟡 Open | High |
+| DFT-010 | Terminology: Change "items" to "features" throughout — more familiar to GIS users | UI/UX | 🟢 Resolved | High |
 | DFT-011 | Target audience clarification: Researchers (GIS-minded), not broad public | Design Decision | 🟢 Resolved | Medium |
 | DFT-012 | Camera trap clustering: Show numbered icons at locations, click to see filtered images | Feature Request | 🟡 Open | Medium |
 | DFT-013 | Multiple filtered views on same layer — save mountain lion AND deer queries simultaneously | Paradigm Extension | 🟡 Open | High |
@@ -39,6 +46,21 @@
 - ✅ Implemented — Built and shipped
 
 ---
+
+---
+
+## Discussion Items
+
+| ID | Summary | Discuss With | Resolution Status |
+|----|---------|--------------|-------------------|
+| DFT-001 | Should clicking the eyeball icon auto-pin a layer, or should pin be a separate explicit action? | Amy, Trisalyn | 🟡 Pending |
+| DFT-002 | "Export Bookmarks" button placement made it unclear that pinned layers are also exportable | Amy, Trisalyn | 🟡 Pending |
+| DFT-003 | In ANiML browse view, the "Pin with Filter" vs "Bookmark" buttons are confusing—unclear what each does | Amy, Trisalyn | ⏳ Blocked by DFT-004 |
+| DFT-004 | Two filter locations (layer-level and feature-level) appear simultaneously—need clearer visual hierarchy | Amy, Trisalyn, Dan | 🟡 Pending — needs mockup iteration |
+| DFT-006 | When a layer is selected, which tab opens first in the right sidebar—Overview or Browse? | Amy, Trisalyn | 🟡 Pending — Will recommends Overview |
+| DFT-007 | Bookmark widget title should clarify that bookmarks are features within layers, not separate items | Amy, Trisalyn | 🟡 Pending |
+| DFT-012 | Camera trap clustering: Show numbered icons at locations, click to see filtered images | Dan | 🟡 Pending — in backend brief |
+| DFT-013 | Multiple filtered views on same layer — save mountain lion AND deer queries simultaneously | Dan, Amy, Trisalyn | 🟡 Pending — paradigm extension |
 
 ## Paradigm Sign-Offs
 
@@ -54,6 +76,60 @@ These are high-level architectural decisions that need team consensus before dev
 | Floating widget for pins + bookmarks | ✅ Approved | Sophia (Jan 23), Dan, Trisalyn, Amy |
 | DataOne cross-category placement | ✅ Approved | Sophia (Jan 23) |
 | DataOne Level 3 simplified (no file filtering) | ✅ Approved | Sophia (Jan 23) |
+
+**Resolution Status Key:**
+- 🟡 Pending — Not yet discussed
+- ⏳ Blocked — Waiting on another decision
+- 🔵 In Discussion — Actively being debated
+- ✅ Approved — All required sign-offs received
+
+---
+
+### Google Form Candidates (Quick Polls)
+
+These issues have clear options and would benefit from a quick team vote:
+
+**1. DFT-001: Pin vs Toggle Behavior**
+> When you click the eyeball icon on a layer, should it automatically pin the layer?
+> - (A) Yes, auto-pin — eyeball = pin
+> - (B) No, separate actions — eyeball = temporary view, pin = explicit save
+> - (C) Hybrid — eyeball adds to "recent", pin moves to "saved"
+
+**2. DFT-002: Export Button Location**
+> Where should the "Export" button live?
+> - (A) Each widget has its own export button
+> - (B) Single "Export All" button in header or sidebar
+> - (C) Both options available
+
+**3. DFT-006: Default Tab When Selecting Layer**
+> When you select a layer, which tab should open first?
+> - (A) Overview tab (with prominent "Browse Features" button)
+> - (B) Browse tab (jump straight to features)
+> - (C) Context-dependent (depends on how user got there)
+
+**4. DFT-007: Bookmark Widget Label**
+> What should the floating bookmark widget be called?
+> - (A) "Bookmarked Features"
+> - (B) "Saved Features"
+> - (C) "Bookmarks" with a subtitle explaining they're features
+> - (D) Something else (specify)
+
+---
+
+## Decision Triage
+
+### Team Context
+
+| Person | Role | Decision Authority |
+|--------|------|-------------------|
+| **Amy** | PI (Spatial Lab) | Final authority on major decisions |
+| **Trisalyn** | PI (Spatial Lab) | Final authority on major decisions |
+| **Dan** | Backend/GIS (Spatial Lab) | Technical approach, performance, backend architecture |
+| **Kelly** | Dangermond Preserve Lead (TNC) | High-level TNC alignment, preserve-specific needs |
+| **Sophia** | Technical Staff (TNC, reports to Kelly) | Day-to-day TNC feedback, user perspective |
+| **Will** | Frontend Lead (Spatial Lab) | Implementation details, UI refinement |
+
+**Decision Authority:** Spatial Lab (Amy/Trisalyn) are final decision-makers (Jack Dangermond grant). TNC (Kelly/Sophia) are collaborators whose feedback we value but don't require for sign-off except on preserve-specific matters.
 
 ---
 
@@ -200,9 +276,9 @@ These are different questions, but the mockups show both simultaneously without 
 3. Context-dependent (depends on how user got there)
 
 **Discussion:**
-*None yet*
+- Will (Jan 26): I think it should always be Overview first. The Overview tab can include a prominent "Browse Features" button that takes the user to the Browse tab. This gives users context about the layer before diving into data. Good candidate for quick team confirmation via email/form.
 
-**Resolution:** *Pending — needs confirmation*
+**Resolution:** *Pending — needs team confirmation*
 
 ---
 
@@ -285,7 +361,7 @@ These are different questions, but the mockups show both simultaneously without 
 ### DFT-010: Terminology — "Items" → "Features"
 
 **Category:** UI/UX (Terminology)  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** High  
 **Source:** Trisalyn Nelson, Jan 26, 2026
 
@@ -302,7 +378,12 @@ These are different questions, but the mockups show both simultaneously without 
 - "Bookmark" vs "Saved" label still open for discussion
 - Ties into DFT-007 (Bookmark Widget Labeling)
 
-**Resolution:** *Pending — terminology decision needed*
+**Resolution:** Jan 26, 2026 — Applied terminology change to development plans:
+- master-development-plan.md: "Bookmarked Items" → "Bookmarked Features"
+- phase-0-foundation.md: Updated task 0.6 and related text
+- phase-5-export-builder.md: Updated export builder references
+- design-system.md: Updated widget card pattern
+- Note: "Bookmark" vs "Saved" label decision still pending (see DFT-007)
 
 ---
 
@@ -435,4 +516,7 @@ This is a **new feature** to the paradigm. Current assumption was one query per 
 | Jan 26, 2026 | Initial tracker created with 9 issues from Sophia's Jan 23 feedback |
 | Jan 26, 2026 | Updated paradigm sign-offs: Dan, Trisalyn, and Amy approved core paradigm |
 | Jan 26, 2026 | Added DFT-010 through DFT-014 from Trisalyn meeting feedback |
+| Jan 26, 2026 | Resolved DFT-010: Applied "items" → "features" terminology to dev plan docs |
+| Jan 26, 2026 | Added Discussion Items table and Team Context section |
+| Jan 26, 2026 | Updated DFT-006 with Will's recommendation (Overview first with Browse button) |
 

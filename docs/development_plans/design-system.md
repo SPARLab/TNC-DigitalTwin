@@ -50,7 +50,7 @@ When you make a styling decision while working on any phase:
 | Name | Value | Usage | Decided |
 |------|-------|-------|---------|
 | Pinned State | TBD | Pinned layer highlight | TBD |
-| Bookmark State | TBD | Bookmarked item indicator | TBD |
+| Bookmark State | TBD | Bookmarked feature indicator | TBD |
 | Active Query | TBD | Query badge/indicator | TBD |
 | Error | TBD | Error states | TBD |
 | Success | TBD | Success states | TBD |
@@ -145,14 +145,14 @@ File: TBD
 **Decisions:**
 - (none yet)
 
-### Bookmarked Item Widget Item
+### Bookmarked Feature Widget Card
 
 ```
 Status: ⚪ Not Decided
 File: TBD
 
 ┌─────────────────────────────────────────┐
-│ [icon]  Item Name → Filter Context      │
+│ [icon]  Feature Name → Filter Context   │
 │         Source • Count • [View] [✕]     │
 └─────────────────────────────────────────┘
 ```

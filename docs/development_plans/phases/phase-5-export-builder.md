@@ -15,7 +15,7 @@
 
 ## Phase Goal
 
-Implement the Export Builder that brings together all pinned layers and bookmarked items into a unified export workflow.
+Implement the Export Builder that brings together all pinned layers and bookmarked features into a unified export workflow.
 
 ## Reference Documents
 
@@ -60,7 +60,7 @@ Implement the Export Builder that brings together all pinned layers and bookmark
 **Acceptance Criteria:**
 - [ ] Modal opens from "Export All" button in bookmark widget
 - [ ] Modal is full-screen or large overlay
-- [ ] Header shows count: "You have X pinned layers and Y bookmarked items"
+- [ ] Header shows count: "You have X pinned layers and Y bookmarked features"
 - [ ] Close button works
 - [ ] Scrollable content area for many layers
 - [ ] Fixed footer with action buttons
@@ -106,7 +106,7 @@ Implement the Export Builder that brings together all pinned layers and bookmark
 
 **Acceptance Criteria:**
 - [ ] Summary section at bottom of content area
-- [ ] Lists all selected items with counts
+- [ ] Lists all selected features with counts
 - [ ] Estimated total size calculated and displayed
 - [ ] Updates dynamically as user changes selections
 
