@@ -25,6 +25,11 @@
 | DFT-007 | Bookmark widget title should clarify that bookmarks are features within layers, not separate items | UI/UX | 🟡 Open | Medium |
 | DFT-008 | TNC provided brand colors (Parrot Green, Leaf Green, Benthic Blue) for optional integration | Styling | 🟡 Open | Low |
 | DFT-009 | TNC provided brand fonts (Barlow, Chronicle) for optional integration | Styling | 🟡 Open | Low |
+| DFT-010 | Terminology: Change "items" to "features" throughout — more familiar to GIS users | UI/UX | 🟡 Open | High |
+| DFT-011 | Target audience clarification: Researchers (GIS-minded), not broad public | Design Decision | 🟢 Resolved | Medium |
+| DFT-012 | Camera trap clustering: Show numbered icons at locations, click to see filtered images | Feature Request | 🟡 Open | Medium |
+| DFT-013 | Multiple filtered views on same layer — save mountain lion AND deer queries simultaneously | Paradigm Extension | 🟡 Open | High |
+| DFT-014 | Biodiversity/aggregation queries: Species counts and proportions per camera trap | Feature Request | ⚪ Deferred | Low |
 
 **Status Key:**
 - 🟢 Resolved — Decision made, ready for dev
@@ -277,9 +282,149 @@ These are different questions, but the mockups show both simultaneously without 
 
 ---
 
+### DFT-010: Terminology — "Items" → "Features"
+
+**Category:** UI/UX (Terminology)  
+**Status:** 🟡 Open  
+**Priority:** High  
+**Source:** Trisalyn Nelson, Jan 26, 2026
+
+**Feedback (condensed):**
+> "Features is a word that is more familiar to the GIS user." Definite change: "item" should become "feature" throughout. For bookmarks, "saved features" was suggested as an option, though the exact label is still open.
+
+**Required Changes:**
+- "Bookmark Items" → "Bookmarked Features" or "Saved Features"
+- "Marked items" → "Saved features"
+- Any other "item" references in the UI
+
+**Discussion:**
+- Trisalyn confirmed "items → features" is a definite change
+- "Bookmark" vs "Saved" label still open for discussion
+- Ties into DFT-007 (Bookmark Widget Labeling)
+
+**Resolution:** *Pending — terminology decision needed*
+
+---
+
+### DFT-011: Target Audience Clarification
+
+**Category:** Design Decision  
+**Status:** 🟢 Resolved  
+**Priority:** Medium  
+**Source:** Trisalyn Nelson, Jan 26, 2026
+
+**Feedback (condensed):**
+> "Not the broad public. I think it's the researcher, with an eye towards the GIS researcher." The catalog should feel intuitive to someone who uses GIS, but extend beyond to general researchers.
+
+**Resolution:**
+- **Primary audience:** Researchers (academic, TNC staff)
+- **Secondary consideration:** GIS-minded users (ensure GIS conventions feel natural)
+- **NOT targeting:** Broad public / general visitors
+
+**Design Implications:**
+- Can use GIS terminology like "features", "layers", "queries"
+- Don't need to over-simplify for non-technical users
+- Export workflows can assume some technical literacy
+
+---
+
+### DFT-012: Camera Trap Clustering Visualization
+
+**Category:** Feature Request / UI/UX  
+**Status:** 🟡 Open  
+**Priority:** Medium  
+**Source:** Trisalyn Nelson, Jan 26, 2026
+
+**Feedback (condensed):**
+> When filtering for a species (e.g., mountain lions), show camera trap locations as clustered icons with numbers — "like the bike Maps icons where you have a number." The 127 mountain lion images should be distributed across 10-20 camera locations. Clicking a numbered icon shows a list of pictures.
+
+**Example Workflow:**
+1. User filters ANiML layer for "mountain lion"
+2. Map shows ~15 camera trap icons, each with a number (e.g., "23")
+3. The number represents mountain lion images at that trap
+4. Click icon → see list/gallery of those 23 images
+
+**Notes:**
+- Similar to bike crash map clustering pattern
+- Aggregation at camera level, not individual images on map
+- Informs how we handle ANiML browse view
+
+**Discussion:**
+- Will (Jan 26): This is a significant UX improvement over showing individual image markers. May require rethinking ANiML visualization layer.
+
+**Resolution:** *Pending — scope for future iteration*
+
+---
+
+### DFT-013: Multiple Filtered Views on Same Layer (PARADIGM)
+
+**Category:** Paradigm Extension  
+**Status:** 🟡 Open  
+**Priority:** High  
+**Source:** Trisalyn Nelson, Jan 26, 2026
+
+**Feedback (condensed):**
+> "I might want to be able to pin my map of mountain lions and then also bring up my map of deer. So that I can look at a predator-prey interaction."
+
+**Paradigm Implication:**
+This is a **new feature** to the paradigm. Current assumption was one query per layer. Trisalyn wants:
+- Multiple saved filtered views on the same layer
+- Each filter can be toggled on/off independently
+- Example: ANiML layer with both "mountain lions only" and "deer only" views active
+
+**Questions to Resolve:**
+1. How do multiple filtered views display in the Pinned Layers widget?
+2. Are they sub-items under the parent layer, or separate entries?
+3. How do we prevent UI clutter with many filtered views?
+4. Do filtered views get different colors/symbology on the map?
+
+**Discussion:**
+- Will (Jan 26): This is a legitimate research workflow (predator-prey, co-occurrence analysis). Paradigm can support this conceptually. Implementation needs thought — possibly "filtered views" as a sub-concept under pinned layers.
+
+**Resolution:** *Pending — paradigm extension, needs design iteration*
+
+---
+
+### DFT-014: Biodiversity/Aggregation Queries
+
+**Category:** Feature Request  
+**Status:** ⚪ Deferred  
+**Priority:** Low  
+**Source:** Trisalyn Nelson, Jan 26, 2026
+
+**Feedback (condensed):**
+> Want to analyze diversity of species per camera trap location:
+> - "Are there some where almost all the species are mountain lions?"
+> - Unique species count per camera
+> - Pie chart symbols showing proportion of each species
+
+**Potential Visualizations:**
+1. Simple count badge: "5 species" on each camera icon
+2. Proportional pie chart at each location (like bike map hazard breakdown)
+3. Heat map of biodiversity index
+
+**Notes:**
+- Trisalyn acknowledged this may be "too in the weeds" for current scope
+- Useful for informing long-term paradigm (query capabilities)
+- Related to DFT-012 (clustering) and DFT-013 (multiple queries)
+
+**Discussion:**
+- Will (Jan 26): Deferred to future version, but valuable for understanding researcher workflows. Informs what aggregation/visualization capabilities we should architect for.
+
+**Resolution:** *Deferred — future scope, v2+*
+
+---
+
 ## Resolved Issues
 
-*No resolved issues yet.*
+### DFT-011: Target Audience Clarification ✅
+
+**Resolved:** Jan 26, 2026  
+**Source:** Trisalyn Nelson
+
+**Decision:** Primary audience is **researchers** (academic, TNC staff), with particular attention to GIS-minded users. NOT targeting broad public.
+
+**Impact:** Can use GIS terminology (features, layers, queries) without over-simplification.
 
 ---
 
@@ -289,4 +434,5 @@ These are different questions, but the mockups show both simultaneously without 
 |------|--------|
 | Jan 26, 2026 | Initial tracker created with 9 issues from Sophia's Jan 23 feedback |
 | Jan 26, 2026 | Updated paradigm sign-offs: Dan, Trisalyn, and Amy approved core paradigm |
+| Jan 26, 2026 | Added DFT-010 through DFT-014 from Trisalyn meeting feedback |
 
