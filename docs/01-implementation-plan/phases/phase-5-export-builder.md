@@ -57,8 +57,10 @@ Implement the Export Builder that brings together all pinned layers and bookmark
 
 **Goal:** Set up the modal that contains the Export Builder.
 
+**Design Decision (Jan 29, 2026):** Resolved DFT-002 — Modal opens from shopping cart button in global header (top-right), not from bookmark widget.
+
 **Acceptance Criteria:**
-- [ ] Modal opens from "Export All" button in bookmark widget
+- [ ] Modal opens from "Export All" shopping cart button in global header
 - [ ] Modal is full-screen or large overlay
 - [ ] Header shows count: "You have X pinned layers and Y bookmarked features"
 - [ ] Close button works
@@ -175,4 +177,5 @@ Estimated total: ~52 MB
 | Date | Task | Change | By |
 |------|------|--------|-----|
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
+| Jan 29, 2026 | 5.1 | Updated with DFT-002 resolution (modal opens from global header button) | Will + Claude |
 

@@ -57,9 +57,17 @@ Set up the V2 application shell, routing, state management, and shared component
 - [ ] `src/App.tsx` routes to v2 or legacy based on URL param or feature flag
 - [ ] Legacy app still works at default route
 - [ ] V2 app accessible at `/v2` or with `?v2=true`
+- [ ] Global header includes "Export All" button (shopping cart icon) in top-right corner
+- [ ] Shopping cart button shows badge indicator with count of pinned layers + bookmarked features
+- [ ] Shopping cart button uses yellow/orange accent color to stand out
+- [ ] Clicking shopping cart opens Export Builder modal (stub for now, implemented in Phase 5)
+
+**Design Decision (Jan 29, 2026):** Resolved DFT-002 — Export button lives in global header (top-right) with shopping cart metaphor.
 
 **Files to Create/Modify:**
 - `src/v2/V2App.tsx` (create)
+- `src/v2/components/Header/Header.tsx` (create — includes Export All button)
+- `src/v2/components/Header/ExportCartButton.tsx` (create — shopping cart button with badge)
 - `src/App.tsx` (modify)
 - `src/legacy/LegacyApp.tsx` (move current App content)
 
@@ -192,6 +200,7 @@ interface Bookmark {
   - No filters = desaturated funnel, still clickable
   - Clicking funnel or layer name → opens Browse tab in right sidebar
 - **Multiple views of same layer:** Supported via unique distinguishers (see DFT-013)
+- **Filter change animation (DFT-003):** When user changes filters in right sidebar for a pinned layer, the widget row animates/highlights to confirm the change (addresses eye-tracking concern since editing happens in right sidebar but visual confirmation appears in left-floating widget)
 
 **A/B Testing Note:**
 Include a debug toggle (dev-only or settings panel) to switch between:
@@ -210,6 +219,8 @@ This allows collecting user feedback before finalizing the design.
 - [ ] No filters = desaturated funnel icon
 - [ ] Clicking pinned layer in sidebar restores visibility if hidden
 - [ ] Debug toggle switches between text and icon filter representations
+- [ ] Widget row animates/highlights when its filter changes (visual feedback for right sidebar edits)
+- [ ] Optional: brief toast notification when filter is applied (to be tested)
 
 **Reference:**
 - Mockup: `mockups/01-full-layout-overview.html` (will be updated with this design)
@@ -234,7 +245,7 @@ This allows collecting user feedback before finalizing the design.
 - [ ] Widget is collapsible/expandable
 - [ ] Shows list of bookmarked features
 - [ ] Each feature shows: icon, label, source, filter context (if applicable), view/remove buttons
-- [ ] "Export All" button exists
+- [ ] NO "Export All" button in widget (moved to global header per DFT-002 resolution)
 
 **Reference:**
 - Mockup: `mockups/02a-unified-layout.html` (bookmark widget section)
@@ -278,4 +289,6 @@ This allows collecting user feedback before finalizing the design.
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 | Jan 27, 2026 | 0.2, 0.5 | Updated with DFT-001 resolution (Model C: selection = active) | Will + Claude |
 | Jan 27, 2026 | 0.5 | Added A/B testing for filter representation | Will + Claude |
+| Jan 29, 2026 | 0.1, 0.6 | Updated with DFT-002 resolution (Export button in global header) | Will + Claude |
+| Jan 29, 2026 | 0.5 | Added widget animation requirement from DFT-003 resolution | Will + Claude |
 

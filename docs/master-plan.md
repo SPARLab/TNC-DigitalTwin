@@ -97,6 +97,7 @@ Phase 0: Foundation
 | Bookmark widget (right-aligned) | ⏳ Awaiting Feedback | - | - | Feedback expected Monday |
 | Pin vs visibility behavior (DFT-001) | ✅ Decided | Will | Jan 27 | Model C: Selection = active, pin separate. See DFT-001 resolution |
 | Filter representation in widgets | 🟡 A/B Testing | Will | Jan 27 | Text vs funnel emoji (🌪️). Debug toggle for user feedback |
+| Export button placement (DFT-002) | ✅ Decided | Will | Jan 29 | Global header (top-right) with shopping cart icon, badge indicator showing total pinned + bookmarked count. Opens unified Export Builder modal |
 
 ---
 
@@ -201,4 +202,5 @@ When working on any phase:
 | Jan 23, 2026 | - | Created master plan and phase documents | Will + Claude |
 | Jan 27, 2026 | Phase 0 | Resolved DFT-001: Pin vs visibility behavior (Model C adopted) | Will + Claude |
 | Jan 27, 2026 | Phase 0 | Added A/B testing for filter representation (text vs funnel emoji) | Will + Claude |
+| Jan 29, 2026 | Phase 0, 5 | Resolved DFT-002: Export button placement (global header with shopping cart) | Will + Claude |
 

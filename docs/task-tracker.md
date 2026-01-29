@@ -15,7 +15,7 @@
 - Update relevant phase documents in `docs/development_plans/phases/` if it affects specific implementation
 - Add an entry to "Cross-Phase Decisions" in master plan if the decision impacts multiple phases
 
-**Last Updated:** January 26, 2026
+**Last Updated:** January 29, 2026
 
 ---
 
@@ -24,8 +24,10 @@
 | ID | Summary | Category | Status | Priority |
 |----|---------|----------|--------|----------|
 | DFT-001 | Should clicking the eyeball icon auto-pin a layer, or should pin be a separate explicit action? | UI/UX | 🟢 Resolved | Medium |
-| DFT-002 | "Export Bookmarks" button placement made it unclear that pinned layers are also exportable | UI/UX | 🟡 Open | Medium |
-| DFT-003 | In ANiML browse view, the "Pin with Filter" vs "Bookmark" buttons are confusing—unclear what each does | UI/UX | 🟡 Open | High |
+| DFT-002 | "Export Bookmarks" button placement made it unclear that pinned layers are also exportable | UI/UX | 🟢 Resolved | Medium |
+| DFT-003 | In ANiML browse view, the "Pin with Filter" vs "Bookmark" buttons are confusing—unclear what each does | UI/UX | 🟢 Resolved | High |
+| DFT-003b | Where should "Create New View" action live? (Widget dropdown vs right sidebar) | UI/UX | 🟡 Open | Medium |
+| DFT-003c | ANiML Browse: Tabs vs landing cards for Animal-First/Camera-First choice | UI/UX | 🟡 Open | Low |
 | DFT-004 | Two filter locations (layer-level and feature-level) appear simultaneously—need clearer visual hierarchy | UI/UX | 🟡 Open | High |
 | DFT-005 | Floating widgets crowd the screen when viewing time-series data; consider auto-collapse behavior | UI/UX | 🟡 Open | Low |
 | DFT-006 | When a layer is selected, which tab opens first in the right sidebar—Overview or Browse? | UI/UX | 🟡 Open | Low |
@@ -54,8 +56,10 @@
 | ID | Summary | Discuss With | Resolution Status |
 |----|---------|--------------|-------------------|
 | DFT-001 | Should clicking the eyeball icon auto-pin a layer, or should pin be a separate explicit action? | Amy, Trisalyn | ✅ Resolved - Jan 27 |
-| DFT-002 | "Export Bookmarks" button placement made it unclear that pinned layers are also exportable | Amy, Trisalyn | 🟡 Pending |
-| DFT-003 | In ANiML browse view, the "Pin with Filter" vs "Bookmark" buttons are confusing—unclear what each does | Amy, Trisalyn | ⏳ Blocked by DFT-004 |
+| DFT-002 | "Export Bookmarks" button placement made it unclear that pinned layers are also exportable | Amy, Trisalyn | ✅ Resolved - Jan 29 |
+| DFT-003 | In ANiML browse view, the "Pin with Filter" vs "Bookmark" buttons are confusing—unclear what each does | Amy, Trisalyn | ✅ Resolved - Jan 29 |
+| DFT-003b | Where should "Create New View" action live? (for multiple filtered views of same layer) | Amy, Trisalyn, Dan | 🟡 Pending — relates to DFT-013 |
+| DFT-003c | ANiML Browse: Tabs vs landing cards for Animal-First/Camera-First entry point | Amy, Trisalyn | 🟡 Pending — low priority |
 | DFT-004 | Two filter locations (layer-level and feature-level) appear simultaneously—need clearer visual hierarchy | Amy, Trisalyn, Dan | 🟡 Pending — needs mockup iteration |
 | DFT-006 | When a layer is selected, which tab opens first in the right sidebar—Overview or Browse? | Amy, Trisalyn | 🟡 Pending — Will recommends Overview |
 | DFT-007 | Bookmark widget title should clarify that bookmarks are features within layers, not separate items | Amy, Trisalyn | 🟡 Pending |
@@ -184,7 +188,7 @@ These issues have clear options and would benefit from a quick team vote:
 ### DFT-002: Export Button Placement/Visibility
 
 **Category:** UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Medium  
 **Source:** Sophia Leiker, Jan 23, 2026
 
@@ -198,15 +202,37 @@ These issues have clear options and would benefit from a quick team vote:
 
 **Discussion:**
 - Will (Jan 26): Maybe a single "Export All" button in a prominent location (header or right sidebar) that opens the Export Builder, which then shows both pinned layers and bookmarks.
+- Will (Jan 29): Analyzed placement options using UI/UX principles (Law of Proximity, Fitts's Law, visual hierarchy):
+  - **Option A1 (Global Header):** Equidistant from both widgets, follows shopping cart convention
+  - **Option A3 (Floating on Map):** Spatially centered but risks cluttering map
+  - **Right Sidebar:** Violates proximity principle (implies single-layer scope)
+- Will (Jan 29): Shopping cart metaphor aligns with user expectation — top-right corner is universal "saved items" location
 
-**Resolution:** *Pending*
+**Resolution:** Jan 29, 2026 — **Option A1: Global Header (Top-Right)**
+
+**Design Decisions:**
+1. **Placement:** Top-right corner of global header (same level as logo, not in right sidebar)
+2. **Visual design:** Shopping cart icon (🛒) with badge indicator showing total count of pinned layers + bookmarked features
+3. **Button style:** Yellow/orange accent with "Export All" label + cart icon
+4. **Badge behavior:** Red circle indicator displays sum of pinned layers count + bookmarked features count
+5. **Action:** Opens unified Export Builder modal showing both pinned layers and bookmarked features
+6. **Rationale:**
+   - Shopping cart convention → top-right = "saved items basket"
+   - Equidistant from both floating widgets → doesn't favor one over the other
+   - Global header = global action (not tied to active layer)
+   - Avoids Law of Proximity violation (not in right sidebar's single-layer scope)
+
+**Documented in:**
+- Phase 0 task 0.1 updated with header button requirement
+- Phase 5 task 5.1 updated: modal opens from global header button (not bookmark widget)
+- Master plan updated with cross-phase UX decision
 
 ---
 
 ### DFT-003: "Pin with Filter" vs "Bookmark" Labeling (ANiML)
 
 **Category:** UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** High  
 **Source:** Sophia Leiker, Jan 23, 2026
 
@@ -225,8 +251,109 @@ In ANiML mockup (02c), when viewing a filtered set of images for a camera, there
 
 **Discussion:**
 - Will (Jan 26): This ties into DFT-004. The confusion stems from two query levels being visible simultaneously. If we solve the contextual clarity problem, this might resolve itself.
+- Will (Jan 29): After extended discussion, realized the core issue: "Pin with Filter" is redundant once a layer is already pinned. Filter changes should auto-apply to pinned layers. The only explicit action needed is "Bookmark" for saving specific features.
 
-**Resolution:** *Pending*
+**Resolution:** Jan 29, 2026 — **Remove side-by-side buttons; let context determine available actions**
+
+**Design Decisions:**
+
+1. **"Pin with Filter" only appears when layer is NOT pinned:**
+   - If layer is not pinned, show "📌 Pin with [current filter]" button
+   - Once layer is pinned, this button disappears — filter changes auto-apply
+
+2. **Filter changes auto-apply to pinned layers:**
+   - When user changes filters in right sidebar, the pinned layer's query updates automatically
+   - Pinned Layers widget shows animation/highlight to confirm the change (visual feedback)
+   - Optional: brief toast saying "Filter applied" (to be tested)
+
+3. **"Bookmark" button appears only when a feature is selected:**
+   - In Animal-First flow: only after user selects a specific camera
+   - In Camera-First flow: available as soon as camera is selected
+   - Button label: "🔖 Bookmark This Camera" (with current filter if any)
+
+4. **ANiML Browse supports two mental models:**
+   - **Animal-First:** Select animal(s) → optionally select camera → bookmark camera
+   - **Camera-First:** Select camera → optionally filter by animal → bookmark camera
+
+5. **Button visibility by state:**
+
+   | State | Available Actions |
+   |-------|-------------------|
+   | Layer not pinned, no feature selected | "📌 Pin Layer" or "📌 Pin with [filter]" |
+   | Layer pinned, no feature selected | (none — filters auto-apply) |
+   | Layer pinned, feature selected | "🔖 Bookmark This Camera" |
+   | Layer not pinned, feature selected | "📌 Pin Layer" + "🔖 Bookmark This Camera" |
+
+6. **Widget animation requirement:**
+   - When filter changes on a pinned layer, the Pinned Layers widget animates/highlights
+   - This addresses eye-tracking concern (editing in right sidebar, watching left widget)
+
+**Related Issues:**
+- DFT-003b: Where to place "Create New View" action
+- DFT-003c: Tabs vs landing cards for Animal-First/Camera-First choice
+- DFT-013: Multiple filtered views on same layer
+
+**Documented in:**
+- Phase 0 updated with widget animation requirement
+- Mockup 02c needs update to reflect new button logic
+
+---
+
+### DFT-003b: "Create New View" Action Placement
+
+**Category:** UI/UX  
+**Status:** 🟡 Open  
+**Priority:** Medium  
+**Source:** Will, Jan 29, 2026 (derived from DFT-003 discussion)
+
+**Context:**
+If filter changes auto-apply to pinned layers, users need a way to create a second view of the same layer with different filters (e.g., "Mountain Lion" view AND "Deer" view of Camera Traps).
+
+**Question:** Where should the "Create New View" or "Duplicate with Filters" action live?
+
+**Options:**
+1. **In Pinned Layers widget dropdown** — near the layer it duplicates
+2. **In right sidebar** — accessible while editing filters
+3. **Both locations** — redundant but discoverable
+
+**Discussion:**
+- Relates to DFT-013 (multiple filtered views on same layer)
+
+**Resolution:** *Pending — needs team discussion*
+
+---
+
+### DFT-003c: ANiML Browse Entry Point (Tabs vs Landing Cards)
+
+**Category:** UI/UX  
+**Status:** 🟡 Open  
+**Priority:** Low  
+**Source:** Will, Jan 29, 2026 (derived from DFT-003 discussion)
+
+**Context:**
+ANiML Browse tab needs to let users choose between Animal-First and Camera-First workflows.
+
+**Options:**
+1. **Sub-tabs (current mockup):** `🦁 By Animal` | `📷 By Camera` toggle
+2. **Landing cards:** Two prominent cards explaining each approach:
+   ```
+   ┌─────────────────────────────────────┐
+   │  🦁 Browse by Animal                │
+   │  "Which animals are present?"       │
+   └─────────────────────────────────────┘
+   ┌─────────────────────────────────────┐
+   │  📷 Browse by Camera                │
+   │  "What's at this location?"         │
+   └─────────────────────────────────────┘
+   ```
+3. **Hybrid:** Show cards on first visit, remember preference, use tabs thereafter
+
+**Current Recommendation:** Landing cards (more explicit about mental models, though adds one click)
+
+**Discussion:**
+*None yet*
+
+**Resolution:** *Pending — low priority, can decide during implementation*
 
 ---
 
@@ -520,6 +647,32 @@ This is a **new feature** to the paradigm. Current assumption was one query per 
 
 ---
 
+### DFT-002: Export Button Placement/Visibility ✅
+
+**Resolved:** Jan 29, 2026  
+**Source:** Sophia Leiker, Jan 23, 2026
+
+**Decision:** **Shopping cart button in global header (top-right corner)**
+
+**Key Design Elements:**
+- **Placement:** Top-right corner of global header, equidistant from both floating widgets
+- **Visual design:** Shopping cart icon (🛒) with "Export All" label
+- **Badge indicator:** Red circle showing total count (pinned layers + bookmarked features)
+- **Accent color:** Yellow/orange to make it pop and feel distinct from other UI elements
+- **Action:** Opens unified Export Builder modal showing both pinned layers and bookmarked features
+- **Rationale:**
+  - Follows universal shopping cart convention (top-right = "saved items basket")
+  - Global header placement = global action (not tied to single layer or widget)
+  - Equidistant from both widgets → doesn't favor one over the other
+  - Avoids Law of Proximity violation (not in right sidebar which implies single-layer scope)
+
+**Impact:**
+- Phase 0 task 0.1 updated with header button requirement
+- Phase 5 task 5.1 updated: modal opens from global header (not bookmark widget)
+- Master plan updated with cross-phase UX decision
+
+---
+
 ## Resolved Issues
 
 ### DFT-001: Pin vs. Toggle Visibility Behavior ✅
@@ -577,4 +730,5 @@ This is a **new feature** to the paradigm. Current assumption was one query per 
 | Jan 26, 2026 | Added Discussion Items table and Team Context section |
 | Jan 26, 2026 | Updated DFT-006 with Will's recommendation (Overview first with Browse button) |
 | Jan 27, 2026 | Resolved DFT-001: Adopted Model C (selection = active, pin separate) with filter indicators |
+| Jan 29, 2026 | Resolved DFT-002: Export button moves to global header (top-right) with shopping cart design |
 
