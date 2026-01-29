@@ -23,7 +23,7 @@
 
 | ID | Summary | Category | Status | Priority |
 |----|---------|----------|--------|----------|
-| DFT-001 | Should clicking the eyeball icon auto-pin a layer, or should pin be a separate explicit action? | UI/UX | 🟡 Open | Medium |
+| DFT-001 | Should clicking the eyeball icon auto-pin a layer, or should pin be a separate explicit action? | UI/UX | 🟢 Resolved | Medium |
 | DFT-002 | "Export Bookmarks" button placement made it unclear that pinned layers are also exportable | UI/UX | 🟡 Open | Medium |
 | DFT-003 | In ANiML browse view, the "Pin with Filter" vs "Bookmark" buttons are confusing—unclear what each does | UI/UX | 🟡 Open | High |
 | DFT-004 | Two filter locations (layer-level and feature-level) appear simultaneously—need clearer visual hierarchy | UI/UX | 🟡 Open | High |
@@ -53,7 +53,7 @@
 
 | ID | Summary | Discuss With | Resolution Status |
 |----|---------|--------------|-------------------|
-| DFT-001 | Should clicking the eyeball icon auto-pin a layer, or should pin be a separate explicit action? | Amy, Trisalyn | 🟡 Pending |
+| DFT-001 | Should clicking the eyeball icon auto-pin a layer, or should pin be a separate explicit action? | Amy, Trisalyn | ✅ Resolved - Jan 27 |
 | DFT-002 | "Export Bookmarks" button placement made it unclear that pinned layers are also exportable | Amy, Trisalyn | 🟡 Pending |
 | DFT-003 | In ANiML browse view, the "Pin with Filter" vs "Bookmark" buttons are confusing—unclear what each does | Amy, Trisalyn | ⏳ Blocked by DFT-004 |
 | DFT-004 | Two filter locations (layer-level and feature-level) appear simultaneously—need clearer visual hierarchy | Amy, Trisalyn, Dan | 🟡 Pending — needs mockup iteration |
@@ -138,7 +138,7 @@ These issues have clear options and would benefit from a quick team vote:
 ### DFT-001: Pin vs. Toggle Visibility Behavior
 
 **Category:** UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Medium  
 **Source:** Sophia Leiker, Jan 23, 2026
 
@@ -152,8 +152,32 @@ These issues have clear options and would benefit from a quick team vote:
 
 **Discussion:**
 - Will (Jan 26): The pinned widget serves three purposes: i) saving a layer for later, ii) saving a query, iii) quick visibility toggle. If eyeball doesn't auto-pin, how does a layer get into the widget?
+- Will (Jan 27): After exploring multiple models, **Model C** (selection-based) is the best fit:
+  - **Left sidebar:** Shows only selection state (●), no eyeball/pin clutter
+  - **Widget:** Has two sections — "Active Layer" (single-select) and "Pinned Layers" (multi-select)
+  - **Behavior:** Clicking layer name → makes it active/visible. Click [📌] in widget → pins it.
 
-**Resolution:** *Pending*
+**Resolution:** Jan 27, 2026 — **Adopted Model C (selection = active, pin separate)**
+
+**Design Decisions:**
+1. **Left sidebar:** Only selection indicator (●), no eyeball or pin icons
+2. **Widget sections:**
+   - "👁 ACTIVE LAYER" (singular) — One non-pinned layer visible, replaced when selecting another
+   - "📌 PINNED LAYERS" (no count) — Multiple saved layers with independent visibility toggles
+3. **Pin action:** [📌] button in Active Layer section moves layer to Pinned
+4. **Visibility control:** Eye icon (👁) in widget rows toggles visibility without unpinning
+5. **Selecting hidden pinned layer:** Auto-restores visibility when made active
+6. **No helper text:** Removed "selecting another layer will replace this" text — behavior is learnable, non-destructive
+7. **Query indicators:**
+   - **Funnel emoji (🌪️):** Shows filter count next to layer name (e.g., `🌪️5`)
+   - **Primary distinguisher:** Auto-generated label in parentheses (e.g., `Camera Traps (mt. lion)`)
+   - **Multiple views of same layer:** Each gets unique distinguisher (supports DFT-013)
+   - **No filters:** Gray/desaturated funnel, still clickable to add filters
+   - **A/B testing:** Will include debug toggle to test text ("5 filters") vs icon (🌪️5) representations
+
+**Documented in:**
+- Phase 0 task 0.5 updated with refined widget design
+- Note added to Phase 0 for A/B testing filter representation
 
 ---
 
@@ -498,6 +522,39 @@ This is a **new feature** to the paradigm. Current assumption was one query per 
 
 ## Resolved Issues
 
+### DFT-001: Pin vs. Toggle Visibility Behavior ✅
+
+**Resolved:** Jan 27, 2026  
+**Source:** Sophia Leiker, Jan 23, 2026
+
+**Decision:** **Model C adopted** — Selection-based active layer, separate pin action.
+
+**Key Design Elements:**
+- **Left sidebar:** Only shows selection indicator (●), no eyeball/pin icons
+- **Widget sections:** "Active Layer" (single-select) + "Pinned Layers" (multi-select)
+- **Behavior:** Click layer → active/visible. Click [📌] → pins it. Toggle 👁 → hide/show without unpinning.
+- **Filter indicators:** Funnel emoji (🌪️) + count inline (e.g., `🌪️5`)
+- **Distinguishers:** Parenthetical auto-generated from primary filter (e.g., `Camera Traps (mt. lion)`)
+- **A/B testing:** Debug toggle to compare text vs icon filter representations
+
+**Impact:** 
+- Phase 0 tasks 0.2 and 0.5 updated with refined designs
+- Supports DFT-013 (multiple filtered views) via unique distinguishers
+- Clean UI with reduced cognitive load
+
+---
+
+### DFT-010: Terminology — "Items" → "Features" ✅
+
+**Resolved:** Jan 26, 2026  
+**Source:** Trisalyn Nelson
+
+**Decision:** "Features is a word that is more familiar to the GIS user." Applied "items → features" terminology throughout.
+
+**Impact:** Updated all development plan documents with new terminology.
+
+---
+
 ### DFT-011: Target Audience Clarification ✅
 
 **Resolved:** Jan 26, 2026  
@@ -519,4 +576,5 @@ This is a **new feature** to the paradigm. Current assumption was one query per 
 | Jan 26, 2026 | Resolved DFT-010: Applied "items" → "features" terminology to dev plan docs |
 | Jan 26, 2026 | Added Discussion Items table and Team Context section |
 | Jan 26, 2026 | Updated DFT-006 with Will's recommendation (Overview first with Browse button) |
+| Jan 27, 2026 | Resolved DFT-001: Adopted Model C (selection = active, pin separate) with filter indicators |
 

@@ -69,17 +69,20 @@ Set up the V2 application shell, routing, state management, and shared component
 
 **Goal:** Create the persistent left sidebar that shows categories and layers.
 
+**Design (Jan 27, 2026):** Resolved DFT-001 — sidebar shows only selection state, no eyeball/pin icons.
+
 **Acceptance Criteria:**
 - [ ] Left sidebar renders with correct width
 - [ ] Categories are collapsible/expandable
 - [ ] Layers show within categories
-- [ ] Pin button exists on each layer (wired to state in 0.3)
-- [ ] Selected layer is visually highlighted
-- [ ] Clicking layer name triggers selection (for right sidebar to respond)
+- [ ] Selection indicator (●) shows which layer is active
+- [ ] Clicking layer name selects it and makes it active (visible on map + right sidebar)
+- [ ] Clicking pinned layer restores visibility if it was hidden
+- [ ] No eyeball or pin icons in sidebar (widget handles this)
 
 **Reference:** 
-- Mockup: `mockups/02a-unified-layout.html` (left sidebar section)
-- Layout doc: `docs/development_plans/archive/left-sidebar-layout.md`
+- Mockup: `mockups/01-full-layout-overview.html` (will be updated with this design)
+- Design discussion: See DFT-001 in `design-feedback-design-task-tracker.md`
 
 **Files to Create:**
 - `src/v2/components/LeftSidebar/LeftSidebar.tsx`
@@ -153,23 +156,70 @@ interface Bookmark {
 
 ### 0.5: Implement Pinned Layers Floating Widget
 
-**Goal:** Create the floating widget that shows pinned layers over the map.
+**Goal:** Create the floating widget that shows active and pinned layers over the map.
+
+**Decision (Jan 27, 2026):** Resolved DFT-001 with Model C (selection = active, pin separate).
+
+**Widget Design:**
+```
+┌─────────────────────────────────────┐
+│ 👁 ACTIVE LAYER                     │
+├─────────────────────────────────────┤
+│ ● Camera Traps (mt. lion)  🌪️4 📌 │
+├─────────────────────────────────────┤
+│ 📌 PINNED LAYERS                    │
+├─────────────────────────────────────┤
+│ 👁 Camera Traps (mt. lion)  🌪️5 ✕ │
+│ 👁 Camera Traps (deer)      🌪️3 ✕ │
+│ 👁 iNaturalist (birds)      🌪️2 ✕ │
+│ 👁 Fire Hazard              🌪️  ✕ │  ← gray funnel = no filters
+└─────────────────────────────────────┘
+```
+
+**Key Behaviors:**
+- **Active Layer section:** Shows currently selected layer from left sidebar
+  - Only ONE active non-pinned layer at a time
+  - Selecting another layer in sidebar replaces active layer
+  - [📌] button pins the active layer (moves to Pinned section)
+- **Pinned Layers section:** Shows all saved layers with queries
+  - Multiple layers can be pinned simultaneously
+  - Each has independent visibility toggle (👁 blue = visible, gray = hidden)
+  - Clicking pinned layer in sidebar makes it active AND restores visibility if hidden
+  - [✕] button unpins the layer
+- **Filter indicators:**
+  - 🌪️ (funnel emoji) shows filter count (e.g., `🌪️5` = 5 filters)
+  - Parenthetical shows primary distinguisher (e.g., `(mt. lion)`)
+  - No filters = desaturated funnel, still clickable
+  - Clicking funnel or layer name → opens Browse tab in right sidebar
+- **Multiple views of same layer:** Supported via unique distinguishers (see DFT-013)
+
+**A/B Testing Note:**
+Include a debug toggle (dev-only or settings panel) to switch between:
+- **Option A:** Text-based filter indicator (`• 5 filters` on second line)
+- **Option B:** Icon-based filter indicator (`🌪️5` inline)
+
+This allows collecting user feedback before finalizing the design.
 
 **Acceptance Criteria:**
 - [ ] Widget renders in top-left of map area
 - [ ] Widget is collapsible/expandable
-- [ ] Shows list of pinned layers
-- [ ] Each layer shows: visibility toggle, name, query indicator, remove button
-- [ ] Query indicator shows when a filter is active
-- [ ] "Edit Query" and "Clear" buttons work
-- [ ] Drag-and-drop reordering (nice to have)
+- [ ] Active Layer section shows selected layer with [📌] button
+- [ ] Pinned Layers section shows all pinned layers
+- [ ] Each pinned layer row shows: visibility toggle (👁), name, distinguisher, filter indicator (🌪️N), remove button (✕)
+- [ ] Filter indicator shows count and is clickable (opens Browse tab)
+- [ ] No filters = desaturated funnel icon
+- [ ] Clicking pinned layer in sidebar restores visibility if hidden
+- [ ] Debug toggle switches between text and icon filter representations
 
 **Reference:**
-- Mockup: `mockups/02a-unified-layout.html` (floating widget section)
+- Mockup: `mockups/01-full-layout-overview.html` (will be updated with this design)
+- Design discussion: See DFT-001 in `design-feedback-design-task-tracker.md`
 
 **Files to Create:**
 - `src/v2/components/FloatingWidgets/PinnedLayersWidget.tsx`
-- `src/v2/components/FloatingWidgets/PinnedLayerCard.tsx`
+- `src/v2/components/FloatingWidgets/ActiveLayerRow.tsx`
+- `src/v2/components/FloatingWidgets/PinnedLayerRow.tsx`
+- `src/v2/components/FloatingWidgets/FilterIndicator.tsx`
 
 ---
 
@@ -226,4 +276,6 @@ interface Bookmark {
 | Date | Task | Change | By |
 |------|------|--------|-----|
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
+| Jan 27, 2026 | 0.2, 0.5 | Updated with DFT-001 resolution (Model C: selection = active) | Will + Claude |
+| Jan 27, 2026 | 0.5 | Added A/B testing for filter representation | Will + Claude |
 

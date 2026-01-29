@@ -95,6 +95,8 @@ Phase 0: Foundation
 | Pin/Bookmark paradigm | ✅ Decided | Team | Jan 21 | See paradigm doc |
 | Left sidebar always visible | ✅ Decided | Team | Jan 20 | Confirmed in feedback |
 | Bookmark widget (right-aligned) | ⏳ Awaiting Feedback | - | - | Feedback expected Monday |
+| Pin vs visibility behavior (DFT-001) | ✅ Decided | Will | Jan 27 | Model C: Selection = active, pin separate. See DFT-001 resolution |
+| Filter representation in widgets | 🟡 A/B Testing | Will | Jan 27 | Text vs funnel emoji (🌪️). Debug toggle for user feedback |
 
 ---
 
@@ -197,4 +199,6 @@ When working on any phase:
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
 | Jan 23, 2026 | - | Created master plan and phase documents | Will + Claude |
+| Jan 27, 2026 | Phase 0 | Resolved DFT-001: Pin vs visibility behavior (Model C adopted) | Will + Claude |
+| Jan 27, 2026 | Phase 0 | Added A/B testing for filter representation (text vs funnel emoji) | Will + Claude |
 
