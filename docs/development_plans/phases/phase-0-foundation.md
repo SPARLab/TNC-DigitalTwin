@@ -200,9 +200,17 @@ Include a debug toggle (dev-only or settings panel) to switch between:
 
 This allows collecting user feedback before finalizing the design.
 
+**Auto-Collapse Behavior (Jan 29, 2026):** Resolved DFT-005 — Widgets auto-collapse when viewing time-series data to reduce screen crowding.
+- When time-series chart/pop-up is active (e.g., Dendra sensor detail view), Pinned Layers widget auto-collapses
+- Bookmarked Features widget remains expanded (needed for "bookmark range" action)
+- Widgets restore to previous state when time-series view closes
+- User can manually override auto-collapse by expanding widget
+
 **Acceptance Criteria:**
 - [ ] Widget renders in top-left of map area
-- [ ] Widget is collapsible/expandable
+- [ ] Widget is collapsible/expandable (user-controlled)
+- [ ] Widget auto-collapses when time-series data view is active
+- [ ] Widget restores previous state when time-series view closes
 - [ ] Active Layer section shows selected layer with [📌] button
 - [ ] Pinned Layers section shows all pinned layers
 - [ ] Each pinned layer row shows: visibility toggle (👁), name, distinguisher, filter indicator (🌪️N), remove button (✕)
@@ -229,12 +237,15 @@ This allows collecting user feedback before finalizing the design.
 
 **Status Note:** Awaiting team feedback on bookmark paradigm.
 
+**Auto-Collapse Behavior (Jan 29, 2026):** Resolved DFT-005 — Bookmarked Features widget remains expanded during time-series viewing (needed for "bookmark range" action).
+
 **Acceptance Criteria:**
 - [ ] Widget renders in top-right of map area
-- [ ] Widget is collapsible/expandable
+- [ ] Widget is collapsible/expandable (user-controlled)
+- [ ] Widget remains expanded during time-series data viewing (unlike Pinned Layers widget)
 - [ ] Shows list of bookmarked features
 - [ ] Each feature shows: icon, label, source, filter context (if applicable), view/remove buttons
-- [ ] "Export All" button exists
+- [ ] "Export All" button exists (Note: moved to global header per DFT-002)
 
 **Reference:**
 - Mockup: `mockups/02a-unified-layout.html` (bookmark widget section)
@@ -278,4 +289,5 @@ This allows collecting user feedback before finalizing the design.
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 | Jan 27, 2026 | 0.2, 0.5 | Updated with DFT-001 resolution (Model C: selection = active) | Will + Claude |
 | Jan 27, 2026 | 0.5 | Added A/B testing for filter representation | Will + Claude |
+| Jan 29, 2026 | 0.5, 0.6 | Added auto-collapse behavior for time-series viewing (DFT-005) | Will + Claude |
 

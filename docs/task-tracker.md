@@ -29,7 +29,7 @@
 | DFT-003b | Where should "Create New View" action live? (Widget dropdown vs right sidebar) | UI/UX | 🟡 Open | Medium |
 | DFT-003c | ANiML Browse: Tabs vs landing cards for Animal-First/Camera-First choice | UI/UX | 🟡 Open | Low |
 | DFT-004 | Two filter locations (layer-level and feature-level) appear simultaneously—need clearer visual hierarchy | UI/UX | 🟡 Open | High |
-| DFT-005 | Floating widgets crowd the screen when viewing time-series data; consider auto-collapse behavior | UI/UX | 🟡 Open | Low |
+| DFT-005 | Floating widgets crowd the screen when viewing time-series data; consider auto-collapse behavior | UI/UX | 🟢 Resolved | Low |
 | DFT-006 | When a layer is selected, which tab opens first in the right sidebar—Overview or Browse? | UI/UX | 🟡 Open | Low |
 | DFT-007 | Bookmark widget title should clarify that bookmarks are features within layers, not separate items | UI/UX | 🟡 Open | Medium |
 | DFT-008 | TNC provided brand colors (Parrot Green, Leaf Green, Benthic Blue) for optional integration | Styling | 🟡 Open | Low |
@@ -390,7 +390,7 @@ These are different questions, but the mockups show both simultaneously without 
 ### DFT-005: Widget Collapse Behavior (Screen Crowding)
 
 **Category:** UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Low  
 **Source:** Sophia Leiker, Jan 23, 2026
 
@@ -403,9 +403,20 @@ These are different questions, but the mockups show both simultaneously without 
 3. Minimize to icon bar when not in use
 
 **Discussion:**
-*None yet*
+- Will (Jan 29): Auto-collapse makes sense for time-series viewing. Pinned Layers widget should collapse, but Bookmarked Features widget should remain expanded (needed for "bookmark range" action).
 
-**Resolution:** *Pending*
+**Resolution:** Jan 29, 2026 — **Auto-collapse Pinned Layers widget when viewing time-series data**
+
+**Design Decisions:**
+1. **Pinned Layers widget:** Auto-collapses when time-series chart/pop-up is active (e.g., Dendra sensor detail view)
+2. **Bookmarked Features widget:** Remains expanded during time-series viewing (needed for "bookmark range" action)
+3. **State restoration:** Widgets restore to previous state when time-series view closes
+4. **User override:** Users can manually expand/collapse widgets to override auto-collapse behavior
+5. **Detection mechanism:** Widgets detect time-series view state (e.g., via context or prop indicating active time-series view)
+
+**Documented in:**
+- Master development plan: Added UX decision for auto-collapse behavior
+- Phase 0 tasks 0.5 and 0.6: Updated acceptance criteria with auto-collapse requirements
 
 ---
 
@@ -731,4 +742,5 @@ This is a **new feature** to the paradigm. Current assumption was one query per 
 | Jan 26, 2026 | Updated DFT-006 with Will's recommendation (Overview first with Browse button) |
 | Jan 27, 2026 | Resolved DFT-001: Adopted Model C (selection = active, pin separate) with filter indicators |
 | Jan 29, 2026 | Resolved DFT-002: Export button moves to global header (top-right) with shopping cart design |
+| Jan 29, 2026 | Resolved DFT-005: Auto-collapse Pinned Layers widget when viewing time-series data |
 
