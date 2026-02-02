@@ -1,7 +1,7 @@
 # Master Development Plan - V2 Digital Catalog
 
 **Created:** January 23, 2026  
-**Last Updated:** January 23, 2026  
+**Last Updated:** February 2, 2026  
 **Target Deadline:** February 20, 2026  
 **Status:** 🟡 Planning
 
@@ -20,7 +20,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 **Key Reference Documents:**
 - Paradigm: `docs/feedback/data-catalog-ux-paradigm-jan-21-2026.md`
 - Mockups: `mockups/02a-02f` (unified layout, data source browse views, export builder)
-- Previous mockup plan: `docs/development_plans/archive/v2-pin-bookmark-export-mockup-plan.md`
+- Previous mockup plan: `docs/01-implementation-plan/archive/v2-pin-bookmark-export-mockup-plan.md`
 
 ---
 
@@ -98,6 +98,8 @@ Phase 0: Foundation
 | Pin vs visibility behavior (DFT-001) | ✅ Decided | Will | Jan 27 | Model C: Selection = active, pin separate. See DFT-001 resolution |
 | Filter representation in widgets | 🟡 A/B Testing | Will | Jan 27 | Text vs funnel emoji (🌪️). Debug toggle for user feedback |
 | Export button placement (DFT-002) | ✅ Decided | Will | Jan 29 | Global header (top-right) with shopping cart icon, badge indicator showing total pinned + bookmarked count. Opens unified Export Builder modal |
+| Auto-collapse widgets for time-series | ✅ Decided | Will | Jan 29 | Widgets auto-collapse when viewing time-series data (e.g., Dendra pop-ups) to reduce screen crowding. See DFT-005 resolution |
+| "Create New View" placement (DFT-003b) | ✅ Decided | Will | Feb 2 | Lives in expanded panel when pinned layer is clicked/active. Expanded panel shows filter summary + action buttons (Edit Filters, Clear, + Create New View). Row spec: [drag] [👁] [Layer Name] [🌪️N] [✕] (no swatch). Active state indicated by expansion + visual treatment. See DFT-003b resolution |
 
 ---
 
@@ -185,13 +187,13 @@ When working on any phase:
 
 ## Phase Documents
 
-- **Phase 0:** `docs/development_plans/phases/phase-0-foundation.md`
-- **Phase 1:** `docs/development_plans/phases/phase-1-inaturalist.md`
-- **Phase 2:** `docs/development_plans/phases/phase-2-animl.md`
-- **Phase 3:** `docs/development_plans/phases/phase-3-dendra.md`
-- **Phase 4:** `docs/development_plans/phases/phase-4-dataone.md`
-- **Phase 5:** `docs/development_plans/phases/phase-5-export-builder.md`
-- **Phase 6:** `docs/development_plans/phases/phase-6-polish.md`
+- **Phase 0:** `docs/IMPLEMENTATION/phases/phase-0-foundation.md`
+- **Phase 1:** `docs/IMPLEMENTATION/phases/phase-1-inaturalist.md`
+- **Phase 2:** `docs/IMPLEMENTATION/phases/phase-2-animl.md`
+- **Phase 3:** `docs/IMPLEMENTATION/phases/phase-3-dendra.md`
+- **Phase 4:** `docs/IMPLEMENTATION/phases/phase-4-dataone.md`
+- **Phase 5:** `docs/IMPLEMENTATION/phases/phase-5-export-builder.md`
+- **Phase 6:** `docs/IMPLEMENTATION/phases/phase-6-polish.md`
 
 ---
 
@@ -203,4 +205,7 @@ When working on any phase:
 | Jan 27, 2026 | Phase 0 | Resolved DFT-001: Pin vs visibility behavior (Model C adopted) | Will + Claude |
 | Jan 27, 2026 | Phase 0 | Added A/B testing for filter representation (text vs funnel emoji) | Will + Claude |
 | Jan 29, 2026 | Phase 0, 5 | Resolved DFT-002: Export button placement (global header with shopping cart) | Will + Claude |
+| Jan 29, 2026 | Phase 0 | Resolved DFT-005: Auto-collapse widgets when viewing time-series data | Will + Claude |
+| Feb 2, 2026 | Phase 0 | Resolved DFT-003b: "Create New View" lives in expanded panel when layer is active | Will + Claude |
+| Feb 2, 2026 | Phase 0 | Removed swatch from widget row spec; active state indicated by expansion + visual treatment | Will + Claude |
 

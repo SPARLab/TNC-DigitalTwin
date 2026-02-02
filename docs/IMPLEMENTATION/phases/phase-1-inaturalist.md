@@ -19,8 +19,8 @@ Implement the iNaturalist observations browse experience in the right sidebar. T
 
 ## Reference Documents
 
-- Master Plan: `docs/development_plans/master-development-plan.md`
-- Design System: `docs/development_plans/design-system.md`
+- Master Plan: `docs/master-plan.md`
+- Design System: `docs/DESIGN-SYSTEM/design-system.md`
 - Paradigm: `docs/feedback/data-catalog-ux-paradigm-jan-21-2026.md`
 - Mockup: `mockups/02b-browse-inaturalist.html`
 

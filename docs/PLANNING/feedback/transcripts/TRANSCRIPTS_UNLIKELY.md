@@ -1,0 +1,1 @@
+It's unlikely that we'll save and commit meeting transcripts, in case sensitive information is shared.

@@ -19,8 +19,8 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 ## Reference Documents
 
-- Master Plan: `docs/development_plans/master-development-plan.md`
-- Design System: `docs/development_plans/design-system.md`
+- Master Plan: `docs/master-plan.md`
+- Design System: `docs/DESIGN-SYSTEM/design-system.md`
 - All mockups: `mockups/02a-02f`
 
 ---

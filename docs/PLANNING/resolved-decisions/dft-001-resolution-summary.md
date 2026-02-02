@@ -35,6 +35,7 @@ Both result in "layer appears on map," causing confusion about their distinct pu
 
 ### Floating Widget (State Management)
 
+**Collapsed state (typical view):**
 ```
 ┌─────────────────────────────────────┐
 │ 👁 ACTIVE LAYER                     │
@@ -50,7 +51,37 @@ Both result in "layer appears on map," causing confusion about their distinct pu
 └─────────────────────────────────────┘
 ```
 
-**Widget job:** Show active layer + all pinned layers. Manage visibility and filters.
+**Expanded state (when a pinned layer is clicked/active):**
+```
+┌───────────────────────────────────────────────┐
+│ 👁 ACTIVE LAYER                               │
+├───────────────────────────────────────────────┤
+│ ● Camera Traps (mt. lion)            🌪️4 📌 │
+├───────────────────────────────────────────────┤
+│ 📌 PINNED LAYERS                              │
+├───────────────────────────────────────────────┤
+│ 👁 ■ Camera Traps (mt. lion)         🌪️5 ✕ │  ← EXPANDED
+│   ┌─────────────────────────────────────────┐ │
+│   │ Filters: species = mt. lion, date>2024 │ │
+│   │ [Edit Filters] [Clear] [+ New View]    │ │
+│   └─────────────────────────────────────────┘ │
+│ 👁 ■ Camera Traps (deer)             🌪️3 ✕ │
+│ 👁 ■ iNaturalist (birds)             🌪️2 ✕ │
+│ 👁   Fire Hazard                     🌪️  ✕ │
+└───────────────────────────────────────────────┘
+```
+
+**Widget job:** Show active layer + all pinned layers. Manage visibility, filters, and layer actions.
+
+**Row elements:** `[drag] [👁] [Layer Name (distinguisher)] [🌪️N] [✕]`  
+**Note:** No swatch in row. Map legend shows symbology for active layer only.
+
+**Expansion behavior (DFT-003b resolution):**
+- Clicking a pinned layer makes it "active" and expands its panel
+- Only ONE layer expanded at a time
+- Expanded panel shows: filter summary, Edit Filters, Clear, **+ Create New View**
+- "Create New View" duplicates the layer with current filters as a new pinned entry
+- Active state indicated by: expansion (panel visible) + visual treatment (background color, left border accent)
 
 ---
 
@@ -105,9 +136,12 @@ Auto-generated label helps differentiate multiple views of the same layer:
 
 ### Clicking Behavior
 
-- **Click funnel (🌪️) or layer name** → Opens Browse tab in right sidebar
+- **Click layer row** → Expands the layer panel in widget (shows filter summary + action buttons)
+- **Click funnel (🌪️) or "Edit Filters" button** → Opens Browse tab in right sidebar with editable filters
+- **Click "+ Create New View" button** → Duplicates layer with current filters as new pinned entry
+- **Click "Clear" button** → Removes all filters from the layer
 - **Right sidebar shows:** Full filter breakdown, editable
-- **User can rename** the distinguisher label with [✏️] button
+- **User can rename** the distinguisher label with [✏️] button (accessible in expanded panel or right sidebar)
 
 ---
 
@@ -159,7 +193,9 @@ Collect user feedback before finalizing.
 | "I want to see what this layer looks like" | Click layer name in sidebar | Becomes Active Layer, visible on map |
 | "I want to keep this layer for my session" | Click [📌] in Active section | Moves to Pinned, stays when exploring others |
 | "I want to temporarily hide a pinned layer" | Click 👁 in widget | Hidden but still pinned (keeps filters) |
-| "I want to edit filters" | Click 🌪️ or layer name | Opens Browse tab with editable filters |
+| "I want to see/manage this pinned layer" | Click layer row in widget | Expands panel with filter summary + actions |
+| "I want to edit filters" | Click 🌪️ or "Edit Filters" button | Opens Browse tab with editable filters |
+| "I want a second view with different filters" | Click "+ Create New View" in expanded panel | Duplicates layer as new pinned entry |
 | "I'm done with this layer" | Click [✕] | Removed from workspace |
 
 ---
@@ -198,8 +234,8 @@ Collect user feedback before finalizing.
 This design inherently supports multiple filtered views on the same layer (Trisalyn's predator-prey request):
 
 ```
-│ 👁 Camera Traps (mountain lion)  🌪️5 ✕ │
-│ 👁 Camera Traps (deer)            🌪️5 ✕ │
+│ 👁 ■ Camera Traps (mountain lion)  🌪️5 ✕ │
+│ 👁 ■ Camera Traps (deer)            🌪️5 ✕ │
 ```
 
 Each view:
@@ -208,18 +244,29 @@ Each view:
 - Shows on map simultaneously
 - Exports as separate datasets
 
+**How to create multiple views (DFT-003b resolution):**
+1. Pin the layer with initial filter (e.g., "mountain lion")
+2. Click the pinned layer row to expand it
+3. Click **"+ Create New View"** button
+4. A duplicate entry appears (e.g., `Camera Traps (View 2)`)
+5. Edit filters on the new entry to change to "deer"
+6. Both views now exist independently
+
 ---
 
 ## Documentation Updated
 
-1. **Design Feedback Tracker** (`design-feedback-tracker.md`)
+1. **Design Feedback Tracker** (`task-tracker.md`)
    - DFT-001 marked resolved with full decision rationale
+   - DFT-003b marked resolved with expanded panel design (Feb 2, 2026)
 2. **Phase 0 Foundation** (`phases/phase-0-foundation.md`)
    - Task 0.2: Left sidebar design updated
-   - Task 0.5: Widget design updated with full spec + A/B testing note
+   - Task 0.5: Widget design updated with full spec + A/B testing note + expanded panel behavior
 3. **Master Development Plan** (`master-development-plan.md`)
    - Cross-phase decisions updated
    - Change log updated
+
+**Last updated:** February 2, 2026 (DFT-003b resolution added)
 
 ---
 

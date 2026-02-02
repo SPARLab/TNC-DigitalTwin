@@ -19,9 +19,9 @@ Set up the V2 application shell, routing, state management, and shared component
 
 ## Reference Documents
 
-- Master Plan: `docs/development_plans/master-development-plan.md`
-- Design System: `docs/development_plans/design-system.md`
-- Paradigm: `docs/feedback/data-catalog-ux-paradigm-jan-21-2026.md`
+- Master Plan: `docs/master-plan.md`
+- Design System: `docs/DESIGN-SYSTEM/design-system.md`
+- Paradigm: `docs/PLANNING/feedback/transcripts/data-catalog-ux-paradigm-jan-21-2026.md`
 - Mockup: `mockups/02a-unified-layout.html`
 
 ---
@@ -166,9 +166,11 @@ interface Bookmark {
 
 **Goal:** Create the floating widget that shows active and pinned layers over the map.
 
-**Decision (Jan 27, 2026):** Resolved DFT-001 with Model C (selection = active, pin separate).
+**Decision (Jan 27, 2026):** Resolved DFT-001 with Model C (selection = active, pin separate).  
+**Decision (Feb 2, 2026):** Resolved DFT-003b — "Create New View" lives in expanded panel when layer is active.  
+**Decision (Feb 2, 2026):** Removed swatch from row spec; active state indicated by expansion + visual treatment.
 
-**Widget Design:**
+**Widget Design (Collapsed State):**
 ```
 ┌─────────────────────────────────────┐
 │ 👁 ACTIVE LAYER                     │
@@ -184,6 +186,28 @@ interface Bookmark {
 └─────────────────────────────────────┘
 ```
 
+**Widget Design (Expanded State — when pinned layer is clicked):**
+```
+┌───────────────────────────────────────────────┐
+│ 👁 ACTIVE LAYER                               │
+├───────────────────────────────────────────────┤
+│ ● Camera Traps (mt. lion)            🌪️4 📌 │
+├───────────────────────────────────────────────┤
+│ 📌 PINNED LAYERS                              │
+├───────────────────────────────────────────────┤
+│ 👁 ■ Camera Traps (mt. lion)         🌪️5 ✕ │  ← EXPANDED
+│   ┌─────────────────────────────────────────┐ │
+│   │ Filters: species = mt. lion, date>2024 │ │
+│   │ [Edit Filters] [Clear] [+ New View]    │ │
+│   └─────────────────────────────────────────┘ │
+│ 👁 ■ Camera Traps (deer)             🌪️3 ✕ │
+│ 👁 ■ iNaturalist (birds)             🌪️2 ✕ │
+└───────────────────────────────────────────────┘
+```
+
+**Row elements:** `[drag] [👁] [Layer Name (distinguisher)] [🌪️N] [✕]`  
+**Note:** No swatch in row. Map legend shows symbology for active layer only.
+
 **Key Behaviors:**
 - **Active Layer section:** Shows currently selected layer from left sidebar
   - Only ONE active non-pinned layer at a time
@@ -194,11 +218,17 @@ interface Bookmark {
   - Each has independent visibility toggle (👁 blue = visible, gray = hidden)
   - Clicking pinned layer in sidebar makes it active AND restores visibility if hidden
   - [✕] button unpins the layer
+- **Expanded panel behavior (DFT-003b):**
+  - Clicking a pinned layer row expands it to show filter summary + action buttons
+  - Only ONE layer expanded at a time (clicking another collapses the previous)
+  - Action buttons: **Edit Filters**, **Clear**, **+ Create New View**
+  - "Create New View" duplicates the layer with current filters as a new pinned entry
+  - Active state indicated by: expansion (panel visible), visual treatment (background color, left border accent, etc.)
 - **Filter indicators:**
   - 🌪️ (funnel emoji) shows filter count (e.g., `🌪️5` = 5 filters)
   - Parenthetical shows primary distinguisher (e.g., `(mt. lion)`)
   - No filters = desaturated funnel, still clickable
-  - Clicking funnel or layer name → opens Browse tab in right sidebar
+  - Clicking funnel or "Edit Filters" → opens Browse tab in right sidebar
 - **Multiple views of same layer:** Supported via unique distinguishers (see DFT-013)
 - **Filter change animation (DFT-003):** When user changes filters in right sidebar for a pinned layer, the widget row animates/highlights to confirm the change (addresses eye-tracking concern since editing happens in right sidebar but visual confirmation appears in left-floating widget)
 
@@ -211,10 +241,20 @@ This allows collecting user feedback before finalizing the design.
 
 **Acceptance Criteria:**
 - [ ] Widget renders in top-left of map area
-- [ ] Widget is collapsible/expandable
+- [ ] Widget is collapsible/expandable (user-controlled)
+- [ ] Widget auto-collapses when time-series data view is active
+- [ ] Widget restores previous state when time-series view closes
 - [ ] Active Layer section shows selected layer with [📌] button
 - [ ] Pinned Layers section shows all pinned layers
-- [ ] Each pinned layer row shows: visibility toggle (👁), name, distinguisher, filter indicator (🌪️N), remove button (✕)
+- [ ] Each pinned layer row shows: drag handle, visibility toggle (👁), name, distinguisher, filter indicator (🌪️N), remove button (✕)
+- [ ] **No swatch in row** — map legend handles symbology for active layer only
+- [ ] Clicking pinned layer row expands it to show filter summary + action buttons
+- [ ] Only ONE layer expanded at a time (clicking another collapses the previous)
+- [ ] Expanded panel shows: filter summary text, "Edit Filters" button, "Clear" button, "+ Create New View" button
+- [ ] Active state indicated by: expansion (panel visible) + visual treatment (background color, left border accent)
+- [ ] "Edit Filters" button opens Browse tab in right sidebar
+- [ ] "Clear" button removes all filters from the layer
+- [ ] "+ Create New View" button duplicates the layer with current filters as a new pinned entry
 - [ ] Filter indicator shows count and is clickable (opens Browse tab)
 - [ ] No filters = desaturated funnel icon
 - [ ] Clicking pinned layer in sidebar restores visibility if hidden
@@ -223,8 +263,9 @@ This allows collecting user feedback before finalizing the design.
 - [ ] Optional: brief toast notification when filter is applied (to be tested)
 
 **Reference:**
-- Mockup: `mockups/01-full-layout-overview.html` (will be updated with this design)
-- Design discussion: See DFT-001 in `design-feedback-design-task-tracker.md`
+- Mockup: `mockups/02a-unified-layout.html` (canonical layout reference)
+- Design discussion: See DFT-001 and DFT-003b in `docs/planning-task-tracker.md`
+- Widget spec: See `docs/PLANNING/resolved-decisions/dft-001-resolution-summary.md`
 
 **Files to Create:**
 - `src/v2/components/FloatingWidgets/PinnedLayersWidget.tsx`
@@ -291,4 +332,7 @@ This allows collecting user feedback before finalizing the design.
 | Jan 27, 2026 | 0.5 | Added A/B testing for filter representation | Will + Claude |
 | Jan 29, 2026 | 0.1, 0.6 | Updated with DFT-002 resolution (Export button in global header) | Will + Claude |
 | Jan 29, 2026 | 0.5 | Added widget animation requirement from DFT-003 resolution | Will + Claude |
+| Jan 29, 2026 | 0.5, 0.6 | Added auto-collapse behavior for time-series viewing (DFT-005) | Will + Claude |
+| Feb 2, 2026 | 0.5 | Added expanded panel behavior with "Create New View" button (DFT-003b) | Will + Claude |
+| Feb 2, 2026 | 0.5 | Removed swatch from row spec; active state indicated by expansion + visual treatment | Will + Claude |
 

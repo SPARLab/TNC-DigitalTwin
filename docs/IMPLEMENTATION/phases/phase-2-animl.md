@@ -22,8 +22,8 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 ## Reference Documents
 
-- Master Plan: `docs/development_plans/master-development-plan.md`
-- Design System: `docs/development_plans/design-system.md`
+- Master Plan: `docs/master-plan.md`
+- Design System: `docs/DESIGN-SYSTEM/design-system.md`
 - Paradigm: `docs/feedback/data-catalog-ux-paradigm-jan-21-2026.md` (Part 5b - ANiML Special Case)
 - Mockup: `mockups/02c-browse-animl.html`
 

@@ -22,8 +22,8 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 ## Reference Documents
 
-- Master Plan: `docs/development_plans/master-development-plan.md`
-- Design System: `docs/development_plans/design-system.md`
+- Master Plan: `docs/master-plan.md`
+- Design System: `docs/DESIGN-SYSTEM/design-system.md`
 - Paradigm: `docs/feedback/data-catalog-ux-paradigm-jan-21-2026.md`
 - Mockup: `mockups/02d-browse-dendra.html`
 - Previous mockups: `mockups/03a-dendra-floating-panel.html`, `mockups/03b-dendra-sidebar-panel.html`

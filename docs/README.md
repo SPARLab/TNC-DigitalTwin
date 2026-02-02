@@ -1,6 +1,6 @@
 # TNC Digital Catalog - Documentation
 
-**Last Updated:** January 28, 2026
+**Last Updated:** February 2, 2026
 
 ---
 
@@ -8,8 +8,8 @@
 
 | File | Purpose |
 |------|---------|
-| **[task-tracker.md](./task-tracker.md)** | What needs to be done? All feedback items, design decisions, discussion points (DFT-XXX) |
-| **[master-plan.md](./master-plan.md)** | What are we building? Overall strategy, phase status, implementation roadmap |
+| **[planning-task-tracker.md](./planning-task-tracker.md)** | What questions do we have? Active discussions, design decisions, feedback items (DFT-XXX) |
+| **[master-plan.md](./master-plan.md)** | What are we building? Implementation roadmap, phase status, task breakdowns |
 
 **Everything else is supporting documentation in organized folders.**
 
@@ -18,26 +18,28 @@
 ## ⚡ Quick Workflows
 
 ### 🎤 "I have meeting feedback"
-1. Open `task-tracker.md`
-2. Add new DFT-XXX item (or use AI to extract from notes)
-3. Discuss with AI if needed
-4. Mark resolved when decided
+1. Store raw transcript in `PLANNING/feedback/transcripts/`
+2. AI extracts tasks → `PLANNING/feedback/ai-derived-tasks-from-transcripts/`
+3. Incorporate tasks into `planning-task-tracker.md` (add DFT-XXX items)
+4. Discuss with AI if needed
+5. Mark resolved when decided
 
 ### 💭 "I need to make a design decision"
-1. Find the DFT-XXX item in `task-tracker.md`
+1. Find the DFT-XXX item in `planning-task-tracker.md`
 2. Discuss options with AI in Cursor
 3. Document decision in tracker
 4. Update `master-plan.md` if it affects implementation
+5. (Optional) Archive resolved items to `PLANNING/resolved-decisions/` on user request
 
 ### 🎨 "I need to create/update a mockup"
 1. Make changes to HTML in `/mockups/`
-2. Log changes in `00-design-iteration/mockups-changelog.md`
+2. Log changes in `PLANNING/mockups-changelog.md` (if needed)
 3. Share with team for feedback
-4. Feedback → back to task-tracker.md
+4. Feedback → back to `planning-task-tracker.md`
 
 ### 🔨 "I'm ready to build something"
 1. Check `master-plan.md` for phase status
-2. Open phase doc in `01-implementation-plan/phases/`
+2. Open phase doc in `IMPLEMENTATION/phases/`
 3. Pick a task and build
 4. Update phase doc when complete
 
@@ -45,13 +47,13 @@
 
 ## 🧠 ADHD-Friendly Tips
 
-- **Two files matter most:** `task-tracker.md` and `master-plan.md`
+- **Two files matter most:** `planning-task-tracker.md` and `master-plan.md` (both at root level)
 - **Start sessions here:** Open this README first to orient yourself
 - **One thing at a time:** Pick one DFT item or one phase task
 - **Close loops:** Mark things resolved/complete immediately
-- **Archive liberally:** Move old stuff out of sight (resolved/, archive/)
+- **Archive on request:** User may request archiving resolved items to `PLANNING/resolved-decisions/` to keep tracker manageable
 
-**When in doubt:** Open `task-tracker.md` → Find the next open item → Work on it.
+**When in doubt:** Open `planning-task-tracker.md` → Find the next open item → Work on it.
 
 ---
 
@@ -59,38 +61,38 @@
 
 ```
 docs/
-├── task-tracker.md          ← What needs attention?
-├── master-plan.md           ← What's the big picture?
+├── planning-task-tracker.md ← CORE: Active discussions (DFT-XXX)
+├── master-plan.md           ← CORE: Implementation roadmap
 │
-├── 00-design-iteration/     ← Design specs & resolved decisions
-│   ├── design-system/
+├── PLANNING/                 ← Level 1: Questions & Decisions
 │   ├── feedback/
-│   │   ├── meeting-notes/
-│   │   ├── resolved/
-│   │   └── _TEMPLATE.md
-│   └── mockups-changelog.md
+│   │   ├── transcripts/      ← Raw meeting transcripts (unprocessed)
+│   │   └── ai-derived-tasks-from-transcripts/ ← Processed documents & task lists extracted from transcripts
+│   └── resolved-decisions/   ← Archived resolved items (on user request)
 │
-├── 01-implementation-plan/  ← Phase tasks & archived plans
-│   ├── phases/
+├── IMPLEMENTATION/            ← Level 2: Tasks & Phases
+│   ├── phases/               ← Detailed phase documents
 │   │   ├── phase-0-foundation.md
 │   │   ├── phase-1-inaturalist.md
 │   │   └── ...
-│   └── archive/
+│   └── archive/              ← Historical implementation plans
 │
-├── animl-optimization/      ← ANiML performance research
-├── data_sources/            ← Data source documentation
-├── research_findings/       ← Technical research
-└── testing/                 ← QA documentation
+├── DESIGN-SYSTEM/             ← Design specs (reference)
+│   └── design-system.md
+│
+├── DATA-SOURCES/              ← Data source documentation
+├── RESEARCH/                  ← Technical research & findings
+└── ARCHIVE/                   ← Historical docs (not actively used)
 ```
 
 ### When to Use Each Folder
 
 | Folder | When to Use |
 |--------|-------------|
-| **00-design-iteration/** | Need design system specs, resolved decisions, meeting notes |
-| **01-implementation-plan/** | Ready to build, need detailed phase tasks |
-| **animl-optimization/** | Working on ANiML-specific optimization |
-| **data_sources/** | Need to understand a data source API |
+| **PLANNING/** | Need to log feedback, find active discussions, archive resolved items |
+| **IMPLEMENTATION/** | Ready to build, need detailed phase tasks |
+| **DESIGN-SYSTEM/** | Need design system specs, component patterns |
+| **DATA-SOURCES/** | Need to understand a data source API |
 
 ---
 
@@ -99,15 +101,21 @@ docs/
 ```
 1. GATHER FEEDBACK (meeting, testing, review)
    ↓
-2. ADD TO task-tracker.md as DFT-XXX item
+2. STORE TRANSCRIPT → PLANNING/feedback/transcripts/
    ↓
-3. DESIGN ITERATION (discuss with AI, make decision)
+3. AI EXTRACTS TASKS → PLANNING/feedback/ai-derived-tasks/
    ↓
-4. UPDATE master-plan.md (if needed)
+4. INCORPORATE INTO planning-task-tracker.md (DFT-XXX items)
    ↓
-5. CREATE MOCKUP (if needed, log in mockups-changelog.md)
+5. DESIGN ITERATION (discuss with AI, make decision)
    ↓
-6. IMPLEMENTATION (use phase docs, code, test, ship)
+6. UPDATE master-plan.md (if affects implementation)
+   ↓
+7. CREATE MOCKUP (if needed)
+   ↓
+8. IMPLEMENTATION (use IMPLEMENTATION/phases/, code, test, ship)
+   ↓
+9. (Optional) ARCHIVE resolved items to PLANNING/resolved-decisions/
 ```
 
 ---
@@ -116,17 +124,19 @@ docs/
 
 ### Process Feedback
 ```
-1. Paste meeting notes into Cursor
-2. Ask AI: "Extract feedback items into task-tracker.md using the template"
-3. AI creates structured DFT-XXX entries
+1. Store raw transcript in PLANNING/feedback/transcripts/
+2. Ask AI: "Extract feedback items into PLANNING/feedback/ai-derived-tasks-from-transcripts/"
+3. AI creates structured task list
+4. Incorporate tasks into planning-task-tracker.md as DFT-XXX items
 ```
 
 ### Resolve Feedback Item
 ```
-1. Open DFT-XXX item in task-tracker.md
+1. Open DFT-XXX item in planning-task-tracker.md
 2. Discuss with AI (explore options, rationale)
 3. Make decision
-4. AI updates: task-tracker.md, resolved/, design-system/, master-plan.md
+4. AI updates: planning-task-tracker.md, master-plan.md, IMPLEMENTATION/phases/
+5. (User may request) Archive to PLANNING/resolved-decisions/
 ```
 
 ### Create Mockup
@@ -145,17 +155,17 @@ docs/
 ### Task Tracker Items
 - **Format:** `DFT-XXX` (Design Feedback Tracker item)
 - **Example:** `DFT-001`, `DFT-015`
-- **Location:** `task-tracker.md`
+- **Location:** `planning-task-tracker.md` (root level)
 
 ### Meeting Notes
 - **Format:** `[topic]-[date].md`
 - **Example:** `digital-catalog-meeting-jan-20-2026.md`
-- **Location:** `00-design-iteration/feedback/meeting-notes/`
+- **Location:** `PLANNING/feedback/transcripts/`
 
 ### Resolved Decisions
 - **Format:** `dft-XXX-resolution-summary.md`
 - **Example:** `dft-001-resolution-summary.md`
-- **Location:** `00-design-iteration/feedback/resolved/`
+- **Location:** `PLANNING/resolved-decisions/` (archived on user request)
 
 ### Mockups
 - **Format:** `[name]-v[major].[minor].html`
@@ -168,9 +178,11 @@ docs/
 
 | Want to know... | Check... |
 |----------------|----------|
-| What needs attention? | `task-tracker.md` for open DFT items |
+| What needs attention? | `planning-task-tracker.md` for open DFT items |
 | Where are we in development? | `master-plan.md` for phase status |
-| Latest mockup version? | `00-design-iteration/mockups-changelog.md` |
+| Raw meeting transcripts? | `PLANNING/feedback/transcripts/` (unprocessed) |
+| Processed meeting docs? | `PLANNING/feedback/ai-derived-tasks-from-transcripts/` |
+| Resolved decisions? | `PLANNING/resolved-decisions/` |
 
 ---
 
@@ -190,12 +202,13 @@ docs/
 3. Create templates for AI-assisted processing
 4. Make everything ADHD-friendly
 
-**Key Changes:**
-- Moved `task-tracker.md` and `master-plan.md` to docs root (was buried in subfolders)
-- Created `00-design-iteration/` for design work
-- Renamed `development_plans/` to `01-implementation-plan/`
-- Added templates, READMEs, and workflows
-- Organized meeting notes and resolved decisions into subfolders
+**Key Changes (Feb 2, 2026):**
+- Renamed `task-tracker.md` → `planning-task-tracker.md` (clearer purpose)
+- Kept core files at root: `planning-task-tracker.md` and `master-plan.md`
+- Created `PLANNING/` folder for questions/decisions (feedback, resolved-decisions)
+- Created `IMPLEMENTATION/` folder for tasks/phases
+- Consolidated design-system duplicates into `DESIGN-SYSTEM/`
+- Clear separation: Planning (questions) vs Implementation (tasks)
 
 **Philosophy:**
 - **Two primary files** at eye level (task-tracker, master-plan)
@@ -213,15 +226,16 @@ docs/
 3. Check `master-plan.md` to understand the roadmap
 
 ### For AI Agents Working on This Project
-- Extract feedback using `00-design-iteration/feedback/_TEMPLATE.md`
-- Update both `task-tracker.md` and `master-plan.md` when resolving items
+- Extract feedback from transcripts → `PLANNING/feedback/ai-derived-tasks/`
+- Update both `planning-task-tracker.md` and `master-plan.md` when resolving items
+- **DO NOT auto-archive** resolved items — only archive when user requests
 - Follow the development cycle above
 
 ### For Future You (Context Switching)
 1. Open this README to orient yourself
-2. Check `task-tracker.md` for what's open
+2. Check `planning-task-tracker.md` for what's open
 3. Pick one thing, work on it, close the loop
 
 ---
 
-**Questions?** Start with `task-tracker.md` → Find an open item → Work on it → Mark it done.
+**Questions?** Start with `planning-task-tracker.md` → Find an open item → Work on it → Mark it done.

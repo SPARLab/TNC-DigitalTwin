@@ -22,8 +22,8 @@ Implement the DataOne dataset browse experience in the right sidebar. This data 
 
 ## Reference Documents
 
-- Master Plan: `docs/development_plans/master-development-plan.md`
-- Design System: `docs/development_plans/design-system.md`
+- Master Plan: `docs/master-plan.md`
+- Design System: `docs/DESIGN-SYSTEM/design-system.md`
 - Paradigm: `docs/feedback/data-catalog-ux-paradigm-jan-21-2026.md` (Part 10 - Cross-Category)
 - Mockup: `mockups/02e-browse-dataone.html`
 
