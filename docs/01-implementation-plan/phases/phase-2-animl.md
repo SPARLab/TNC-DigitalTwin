@@ -23,7 +23,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 ## Reference Documents
 
 - Master Plan: `docs/master-plan.md`
-- Design System: `docs/DESIGN-SYSTEM/design-system.md`
+- Design System: `docs/00-design-iteration/design-system/design-system.md`
 - Paradigm: `docs/feedback/data-catalog-ux-paradigm-jan-21-2026.md` (Part 5b - ANiML Special Case)
 - Mockup: `mockups/02c-browse-animl.html`
 
@@ -82,16 +82,10 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 **Goal:** Set up the component structure for the ANiML browse experience.
 
-**Decision (Feb 2, 2026):** Resolved DFT-003c — Landing cards entry point for Animal-First vs Camera-First choice.
-
 **Acceptance Criteria:**
 - [ ] Component renders when ANiML layer is selected
 - [ ] Tabs exist: Overview | Browse | Export
 - [ ] Browse tab is the default/active tab
-- [ ] Browse tab shows landing cards on first visit (Animal-First vs Camera-First)
-- [ ] Landing cards include icon, title, and brief tagline for each mode
-- [ ] User preference is remembered (skip landing page on return visits)
-- [ ] Each mode includes subtle "Switch to [other mode]" link
 - [ ] Component can show camera list OR camera detail (drill-down pattern)
 
 **Files to Create:**

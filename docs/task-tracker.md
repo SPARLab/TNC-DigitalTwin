@@ -12,58 +12,8 @@
 **For AI Agents:** When you mark a feedback item as resolved with a decision/outcome:
 - Document the decision in the issue's "Resolution" section
 - Update `docs/master-plan.md` if it affects cross-phase decisions
-- **CRITICAL:** Update relevant phase documents in `docs/IMPLEMENTATION/phases/` if it affects specific implementation
-  - Update ASCII diagrams to match the decision
-  - Update acceptance criteria if needed
-  - Add decision notes at the top of relevant task sections
+- Update relevant phase documents in `docs/01-implementation-plan/phases/` if it affects specific implementation
 - Add an entry to "Cross-Phase Decisions" in master plan if the decision impacts multiple phases
-- **DO NOT automatically archive resolved items** — Only archive to `PLANNING/resolved-decisions/` when explicitly requested by the user. The user may request archiving to keep this document manageable as it grows.
-
-**For Processing Meeting Transcripts:**
-- Store raw transcripts in `PLANNING/feedback/transcripts/`
-- Process transcripts and create structured documents in `PLANNING/feedback/ai-derived-tasks-from-transcripts/`
-- Extract DFT-XXX items from processed documents and add to this tracker
-
-**Design Decision Sync Process:**
-- When a design decision is made in this tracker (DFT-XXX resolved), ensure the ASCII diagrams and specs in `IMPLEMENTATION/phases/` match exactly
-- Phase documents are the **canonical source** for implementation specs
-- This tracker documents the **decision rationale** and **discussion process**
-- If diagrams differ, phase document takes precedence (it's what developers will reference)
-
-**📋 When Resolving a DFT-XXX Item — Update Checklist:**
-
-When marking a DFT-XXX item as resolved, verify/update ALL of the following:
-
-1. **Phase Documents (`IMPLEMENTATION/phases/`):**
-   - [ ] Find all affected phase tasks (e.g., if widget design changes, check `phase-0-foundation.md` task 0.5)
-   - [ ] Update ASCII diagrams to match the decision exactly
-   - [ ] Update acceptance criteria if behavior changes
-   - [ ] Add decision note at top of relevant task section (format: `**Decision (Date):** Resolved DFT-XXX — [summary]`)
-
-2. **Master Plan (`master-plan.md`):**
-   - [ ] Add entry to "Cross-Phase Decisions" → "UX Decisions" table if decision affects multiple phases
-   - [ ] Update changelog with resolution date and summary
-
-3. **Resolved Decisions (`PLANNING/resolved-decisions/`):**
-   - [ ] Create summary document `dft-XXX-resolution-summary.md` if decision is significant enough to archive
-   - [ ] Include: decision date, rationale, design decisions, ASCII diagrams, verification checklist
-
-4. **This Tracker (`planning-task-tracker.md`):**
-   - [ ] Update status to 🟢 Resolved
-   - [ ] Fill in "Resolution" section with decision summary
-   - [ ] Add "Documented in:" section listing all places updated
-   - [ ] Add "✅ Verification Checklist" showing what was checked
-
-5. **Mockups (if applicable):**
-   - [ ] Note if mockups need updating (e.g., "Mockup 02c needs update to reflect new button logic")
-   - [ ] Update mockup files if decision significantly changes UI
-
-**Common Locations to Check:**
-- **Widget designs:** `IMPLEMENTATION/phases/phase-0-foundation.md` task 0.5 (Pinned Layers Widget)
-- **Left sidebar:** `IMPLEMENTATION/phases/phase-0-foundation.md` task 0.2 (Left Sidebar)
-- **Right sidebar:** Various phase documents depending on data source
-- **Export functionality:** `IMPLEMENTATION/phases/phase-5-export-builder.md`
-- **Cross-phase decisions:** `master-plan.md` → "Cross-Phase Decisions" → "UX Decisions"
 
 **Last Updated:** February 2, 2026
 
@@ -77,7 +27,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-002 | "Export Bookmarks" button placement made it unclear that pinned layers are also exportable | UI/UX | 🟢 Resolved | Medium |
 | DFT-003 | In ANiML browse view, the "Pin with Filter" vs "Bookmark" buttons are confusing—unclear what each does | UI/UX | 🟢 Resolved | High |
 | DFT-003b | Where should "Create New View" action live? (Widget dropdown vs right sidebar) | UI/UX | 🟢 Resolved | Medium |
-| DFT-003c | ANiML Browse: Tabs vs landing cards for Animal-First/Camera-First choice | UI/UX | 🟢 Resolved | Low |
+| DFT-003c | ANiML Browse: Tabs vs landing cards for Animal-First/Camera-First choice | UI/UX | 🟡 Open | Low |
 | DFT-004 | Two filter locations (layer-level and feature-level) appear simultaneously—need clearer visual hierarchy | UI/UX | 🟡 Open | High |
 | DFT-005 | Floating widgets crowd the screen when viewing time-series data; consider auto-collapse behavior | UI/UX | 🟢 Resolved | Low |
 | DFT-006 | When a layer is selected, which tab opens first in the right sidebar—Overview or Browse? | UI/UX | 🟡 Open | Low |
@@ -109,7 +59,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-002 | "Export Bookmarks" button placement made it unclear that pinned layers are also exportable | Amy, Trisalyn | ✅ Resolved - Jan 29 |
 | DFT-003 | In ANiML browse view, the "Pin with Filter" vs "Bookmark" buttons are confusing—unclear what each does | Amy, Trisalyn | ✅ Resolved - Jan 29 |
 | DFT-003b | Where should "Create New View" action live? (for multiple filtered views of same layer) | Amy, Trisalyn, Dan | ✅ Resolved - Feb 2 |
-| DFT-003c | ANiML Browse: Tabs vs landing cards for Animal-First/Camera-First entry point | Amy, Trisalyn | ✅ Resolved - Feb 2 |
+| DFT-003c | ANiML Browse: Tabs vs landing cards for Animal-First/Camera-First entry point | Amy, Trisalyn | 🟡 Pending — low priority |
 | DFT-004 | Two filter locations (layer-level and feature-level) appear simultaneously—need clearer visual hierarchy | Amy, Trisalyn, Dan | 🟡 Pending — needs mockup iteration |
 | DFT-006 | When a layer is selected, which tab opens first in the right sidebar—Overview or Browse? | Amy, Trisalyn | 🟡 Pending — Will recommends Overview |
 | DFT-007 | Bookmark widget title should clarify that bookmarks are features within layers, not separate items | Amy, Trisalyn | 🟡 Pending |
@@ -230,17 +180,8 @@ These issues have clear options and would benefit from a quick team vote:
    - **A/B testing:** Will include debug toggle to test text ("5 filters") vs icon (🌪️5) representations
 
 **Documented in:**
-- Phase 0 task 0.2 updated with left sidebar design (no eyeball/pin icons)
 - Phase 0 task 0.5 updated with refined widget design
 - Note added to Phase 0 for A/B testing filter representation
-
-**✅ Verification Checklist (for future reference):**
-- [x] ASCII diagrams in `IMPLEMENTATION/phases/phase-0-foundation.md` task 0.2 match decision (left sidebar)
-- [x] ASCII diagrams in `IMPLEMENTATION/phases/phase-0-foundation.md` task 0.5 match decision (widget)
-- [x] Acceptance criteria in phase document updated
-- [x] Decision notes added at top of relevant task sections
-- [x] Cross-phase decision added to `master-plan.md` UX Decisions table
-- [x] Resolved decision summary created in `PLANNING/resolved-decisions/dft-001-resolution-summary.md`
 
 ---
 
@@ -388,13 +329,13 @@ If filter changes auto-apply to pinned layers, users need a way to create a seco
 
 1. **Collapsed state (inactive pinned layer):**
    ```
-   │ [drag] [👁] Camera Traps (mt. lion) 🌪️5 ✕ │
+   │ [drag] [👁] [swatch] Camera Traps (mt. lion) 🌪️5 ✕ │
    ```
 
 2. **Expanded state (active pinned layer):**
    ```
    ┌─────────────────────────────────────────────────────┐
-   │ [drag][👁] Camera Traps (mt. lion)            🌪️5 ✕│
+   │ [drag][👁][swatch] Camera Traps (mt. lion)    🌪️5 ✕│
    ├─────────────────────────────────────────────────────┤
    │ Filters: species = mountain lion, date > 2024      │
    │ ┌──────────────┐ ┌───────┐ ┌──────────────────┐    │
@@ -431,19 +372,12 @@ If filter changes auto-apply to pinned layers, users need a way to create a seco
 - DFT-001 resolution summary updated with refined widget design
 - Master development plan updated with cross-phase UX decision
 
-**✅ Verification Checklist (for future reference):**
-- [x] ASCII diagrams in `IMPLEMENTATION/phases/phase-0-foundation.md` task 0.5 match decision
-- [x] Acceptance criteria in phase document updated
-- [x] Decision notes added at top of relevant task section
-- [x] Cross-phase decision added to `master-plan.md` UX Decisions table
-- [x] Resolved decision summary created in `PLANNING/resolved-decisions/` (if archived)
-
 ---
 
 ### DFT-003c: ANiML Browse Entry Point (Tabs vs Landing Cards)
 
 **Category:** UI/UX  
-**Status:** 🟢 Resolved  
+**Status:** 🟡 Open  
 **Priority:** Low  
 **Source:** Will, Jan 29, 2026 (derived from DFT-003 discussion)
 
@@ -465,31 +399,12 @@ ANiML Browse tab needs to let users choose between Animal-First and Camera-First
    ```
 3. **Hybrid:** Show cards on first visit, remember preference, use tabs thereafter
 
+**Current Recommendation:** Landing cards (more explicit about mental models, though adds one click)
+
 **Discussion:**
-- Will (Feb 2): Analyzed UI/UX tradeoffs between tabs and landing cards
-- Key insight: Animal-First vs Camera-First represent fundamentally different user intents, not just different views of the same data
-- Landing cards provide better education opportunity and reduce cognitive load within each mode
-- Tabs work best for parallel content sharing structure; these modes have different workflows
+*None yet*
 
-**Resolution:** Feb 2, 2026 — **Landing cards approach**
-
-**Design Decisions:**
-1. **Entry point:** Landing cards showing two prominent options when Browse tab opens
-2. **Card design:** Each card includes icon, title, and brief tagline explaining the mental model
-3. **User preference:** Remember user's last selection so returning users can skip the landing page
-4. **Escape hatch:** Include subtle "Switch to [other mode]" link within each mode (footer or header)
-5. **Rationale:**
-   - Mode selection benefits from intentional friction (conscious choice vs rapid switching)
-   - Education opportunity for first-time users who may not understand the distinction
-   - Reduced cognitive load once committed to a paradigm
-   - Cleaner information architecture (tabs imply parallel content with shared structure)
-
-**Documented in:**
-- Phase 2 task 2.2 updated with landing cards entry point requirement
-
-**✅ Verification Checklist:**
-- [x] Decision documented in planning-task-tracker.md
-- [x] Phase 2 task 2.2 updated with landing cards requirement
+**Resolution:** *Pending — low priority, can decide during implementation*
 
 ---
 
@@ -880,5 +795,4 @@ This is a **new feature** to the paradigm. Current assumption was one query per 
 | Jan 29, 2026 | Resolved DFT-002: Export button moves to global header (top-right) with shopping cart design |
 | Jan 29, 2026 | Resolved DFT-005: Auto-collapse Pinned Layers widget when viewing time-series data |
 | Feb 2, 2026 | Resolved DFT-003b: "Create New View" lives in expanded panel when layer is active (Option C) |
-| Feb 2, 2026 | Resolved DFT-003c: Landing cards approach for Animal-First/Camera-First entry point |
 
