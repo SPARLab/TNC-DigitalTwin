@@ -67,11 +67,14 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 - **Export functionality:** `IMPLEMENTATION/phases/phase-5-export-builder.md`
 - **Cross-phase decisions:** `master-plan.md` → "Cross-Phase Decisions" → "UX Decisions"
 
-**Last Updated:** February 3, 2026 (Documentation sync completed)
+**Last Updated:** February 3, 2026 (UX Design Review: Added DFT-015 through DFT-037 — 23 new issues)
 
 **Next Steps:**
-- [ ] Update mockups (`mockups/02a-02f`) to reflect all resolved v2.0 UX decisions (DFT-001 through DFT-013)
-- [ ] Archive old mockups and create updated versions demonstrating the new design patterns
+- [ ] **BEFORE MOCKUPS (DFT-037):** Resolve all design discussion tasks (DFT-015 through DFT-036)
+  - **High priority:** DFT-015 (empty states), DFT-018 (loading states), DFT-020 (pointer-row bookmark UI), DFT-030 (error states)
+  - **Medium priority:** DFT-016, DFT-019, DFT-024, DFT-028, DFT-029, DFT-031, DFT-032, DFT-035
+  - **Low priority:** Can defer to Phase 6 if not blocking mockup generation
+- [ ] **After DFT-037:** Archive resolved design decisions to `PLANNING/resolved-decisions/` to keep tracker manageable
 
 ---
 
@@ -94,6 +97,29 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-011 | Target audience clarification: Researchers (GIS-minded), not broad public | Design Decision | 🟢 Resolved | Medium |
 | DFT-012 | Camera trap clustering: Show numbered icons at locations, click to see filtered images | Feature Request | 🟢 Resolved | Medium |
 | DFT-013 | Multiple filtered views on same layer — save mountain lion AND deer queries simultaneously | Paradigm Extension | 🟢 Resolved | High |
+| DFT-015 | Empty state design for widgets, Browse tab, search results | UI/UX | 🟡 Open | High |
+| DFT-016 | Mobile/tablet responsiveness scope decision | Technical | 🟡 Open | Medium |
+| DFT-017 | Keyboard navigation & accessibility patterns | Accessibility | 🟡 Open | Medium |
+| DFT-018 | Loading states and skeleton UI patterns | UI/UX | 🟡 Open | High |
+| DFT-019 | Edit Filters button navigation behavior — what happens to widget? | UI/UX | 🟡 Open | Medium |
+| DFT-020 | Pointer-row bookmark UI — one button vs two for "Bookmark" vs "Bookmark with Filter" | UI/UX | 🟡 Open | High |
+| DFT-021 | Terminology consistency — "Active" vs "Selected" layer | Terminology | 🟡 Open | Low |
+| DFT-022 | Parent toggle memory edge case — what if previously-selected child is deleted? | Edge Case | 🟡 Open | Low |
+| DFT-023 | Widget positioning dimensions — exact spacing values | Visual Spec | 🟡 Open | Low |
+| DFT-024 | Filter indicator A/B test decision — make choice before mockups | Visual Design | 🟡 Open | Medium |
+| DFT-025 | Create New View transition animation — visual feedback for state change | Microinteraction | 🟡 Open | Low |
+| DFT-026 | Emoji/icon vocabulary consistency — shopping cart vs export icon | Design System | 🟡 Open | Low |
+| DFT-027 | "Browse Features →" button destination confirmation | Terminology | 🟡 Open | Low |
+| DFT-028 | Zero-result camera behavior — hidden vs grayed out when filter matches 0 images | UI/UX | 🟡 Open | Medium |
+| DFT-029 | Unfiltered layer badge behavior — show total counts or no badges? | UI/UX | 🟡 Open | Medium |
+| DFT-030 | Error state design — API failures, network errors, timeout handling | UI/UX | 🟡 Open | High |
+| DFT-031 | Confirmation dialogs — when to require explicit confirmation (delete, clear filters) | UI/UX | 🟡 Open | Medium |
+| DFT-032 | Map tooltip design — what info shows on hover before clicking feature? | UI/UX | 🟡 Open | Medium |
+| DFT-033 | Right sidebar width and resizability — fixed or user-adjustable? | Layout | 🟡 Open | Low |
+| DFT-034 | Drag-and-drop reorder feedback — what visual cues during layer reorder? | Microinteraction | 🟡 Open | Low |
+| DFT-035 | DataOne search behavior — instant search or explicit submit? | UI/UX | 🟡 Open | Medium |
+| DFT-036 | Feature highlight on map when hovering bookmark row | UI/UX | 🟡 Open | Low |
+| DFT-037 | Generate updated mockups reflecting all resolved design decisions (DFT-001 through DFT-036) | Task | 🟡 Open | High |
 
    **Status Key:**
 - 🟢 Resolved — Decision made, ready for dev
@@ -121,6 +147,29 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-007 | Bookmark widget title should clarify that bookmarks are features within layers, not separate items | Amy, Trisalyn | ✅ Resolved - Feb 2 |
 | DFT-012 | Camera trap clustering: Show numbered icons at locations, click to see filtered images | Dan | ✅ Resolved - Feb 3 |
 | DFT-013 | Multiple filtered views on same layer — save mountain lion AND deer queries simultaneously | Dan, Amy, Trisalyn | ✅ Resolved - Feb 3 |
+| DFT-015 | Empty state design for widgets, Browse tab, search results | Will | 🟡 Pending |
+| DFT-016 | Mobile/tablet responsiveness scope decision | Amy, Trisalyn | 🟡 Pending |
+| DFT-017 | Keyboard navigation & accessibility patterns | Will | 🟡 Pending |
+| DFT-018 | Loading states and skeleton UI patterns | Will, Dan | 🟡 Pending |
+| DFT-019 | Edit Filters button navigation behavior | Will | 🟡 Pending |
+| DFT-020 | Pointer-row bookmark UI (one vs two buttons) | Amy, Trisalyn | 🟡 Pending |
+| DFT-021 | "Active" vs "Selected" terminology | Will | 🟡 Pending |
+| DFT-022 | Parent toggle memory edge case | Will | 🟡 Pending |
+| DFT-023 | Widget positioning dimensions | Will | 🟡 Pending |
+| DFT-024 | Filter indicator A/B test decision | Amy, Trisalyn | 🟡 Pending |
+| DFT-025 | Create New View transition animation | Will | 🟡 Pending |
+| DFT-026 | Emoji/icon vocabulary consistency | Will | 🟡 Pending |
+| DFT-027 | "Browse Features →" button destination | Will | 🟡 Pending |
+| DFT-028 | Zero-result camera behavior | Amy, Trisalyn, Dan | 🟡 Pending |
+| DFT-029 | Unfiltered layer badge behavior | Amy, Trisalyn | 🟡 Pending |
+| DFT-030 | Error state design | Will, Dan | 🟡 Pending |
+| DFT-031 | Confirmation dialogs pattern | Will | 🟡 Pending |
+| DFT-032 | Map tooltip design | Will | 🟡 Pending |
+| DFT-033 | Right sidebar width and resizability | Will | 🟡 Pending |
+| DFT-034 | Drag-and-drop reorder feedback | Will | 🟡 Pending |
+| DFT-035 | DataOne search behavior | Will, Dan | 🟡 Pending |
+| DFT-036 | Feature highlight on bookmark hover | Will | 🟡 Pending |
+| DFT-037 | Generate updated mockups after design decisions resolved | Will | 🟡 Pending |
 
 ## Paradigm Sign-Offs
 
@@ -1096,6 +1145,776 @@ This is a **new feature** to the paradigm. Current assumption was one query per 
 
 ---
 
+### DFT-015: Empty State Design
+
+**Category:** UI/UX  
+**Status:** 🟡 Open  
+**Priority:** High  
+**Source:** UX Design Review, Feb 3, 2026
+
+**Context:**
+The design documents thoroughly specify populated states, but not what users see when:
+1. **First visit:** No pinned layers, no bookmarks — what do floating widgets show?
+2. **Empty widget:** Bookmarked Features widget has no bookmarks — hide or show placeholder?
+3. **Zero filter results:** User applies filters that match 0 features — what does Browse tab show?
+4. **Search with no results:** DataOne search returns nothing — what message/suggestions?
+
+**Why this matters (Nielsen: Help users recognize, diagnose, recover from errors):**
+Empty states are critical teaching moments. A well-designed empty state guides users toward the desired action. A poorly designed one creates confusion or abandonment.
+
+**Questions to Resolve:**
+1. Should empty widgets show placeholder text or hide entirely?
+2. What is the empty state message for each widget?
+3. Should empty states include CTAs (e.g., "Pin a layer to get started")?
+4. What does the map show when no layers are pinned/visible?
+
+**Options:**
+1. **Hide empty widgets** — cleaner initial view, but users may not discover the feature
+2. **Show with placeholder** — educational, guides user toward first action
+3. **Contextual help** — empty state includes brief explanation of what the widget does
+
+**Discussion:**
+*Needs discussion*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-016: Mobile/Tablet Responsiveness Scope
+
+**Category:** Technical  
+**Status:** 🟡 Open  
+**Priority:** Medium  
+**Source:** UX Design Review, Feb 3, 2026
+
+**Context:**
+The design documents assume a desktop layout (left sidebar, right sidebar, floating widgets). No mention of:
+- Minimum supported viewport width
+- Tablet behavior (collapse sidebars to overlays? stack vertically?)
+- Whether mobile is explicitly out of scope
+
+The existing `DesktopOnlyGate.tsx` component suggests this has been considered, but scope isn't documented.
+
+**Why this matters:**
+If mockups are created at a fixed width without defined breakpoints, the team will inherit responsive decisions they didn't consciously make.
+
+**Questions to Resolve:**
+1. What is the minimum supported viewport width?
+2. Is mobile explicitly out of scope for v2.0?
+3. Should mockups be created at a specific width (e.g., 1440px)?
+4. If tablet is in scope, how do the sidebars behave?
+
+**Options:**
+1. **Desktop-only** — explicitly state minimum width (e.g., 1280px), show "desktop required" gate
+2. **Responsive design** — define breakpoints and sidebar collapse behavior
+3. **Defer** — desktop-only for v2.0, responsive for v2.1+
+
+**Discussion:**
+*Needs discussion*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-017: Keyboard Navigation & Accessibility Patterns
+
+**Category:** Accessibility  
+**Status:** 🟡 Open  
+**Priority:** Medium  
+**Source:** UX Design Review, Feb 3, 2026
+
+**Context:**
+No mention of:
+- Tab order between widgets, sidebars, map
+- Keyboard shortcuts (e.g., Escape to close panels?)
+- Screen reader announcements for state changes (widget animations, filter applied)
+- Focus management when panels expand/collapse
+
+**Why this matters (Nielsen: Flexibility and efficiency of use):**
+GIS researchers often work with multiple windows and benefit from keyboard-driven workflows. Accessibility is also a legal requirement for many institutions.
+
+**Questions to Resolve:**
+1. What is the tab order? (Left sidebar → Map → Pinned widget → Bookmarks widget → Right sidebar?)
+2. Should Escape close expanded panels or modals?
+3. When a filter is applied and the widget animates, should a screen reader announce "Filter applied"?
+4. When focus is on the widget and user expands a row, where does focus move?
+
+**Options:**
+1. **Defer to Phase 6 (Polish)** — note requirement but don't detail now
+2. **Specify key interactions now** — define tab order and basic keyboard support
+3. **Full WCAG compliance** — define comprehensive a11y requirements
+
+**Discussion:**
+*Needs discussion — likely defer to Phase 6 but note key requirements*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-018: Loading States and Skeleton UI Patterns
+
+**Category:** UI/UX  
+**Status:** 🟡 Open  
+**Priority:** High  
+**Source:** UX Design Review, Feb 3, 2026
+
+**Context:**
+The documents reference 8-12s ANiML load times (Phase 2 blocking issue) but don't specify:
+- What users see during data loading (spinner? skeleton? progress bar?)
+- Partial loading behavior (show available data while rest loads?)
+- Error handling when API fails (retry button? fallback message?)
+
+**Why this matters (Nielsen: Visibility of system status):**
+This is critical for perceived performance. The paradigm document's "Choose-Then-See" principle depends on images loading fast enough to feel immediate. If users see a blank screen for 8-12 seconds, they'll think the app is broken.
+
+**Questions to Resolve:**
+1. What loading indicator style? (Spinner, skeleton, progress bar, or combination)
+2. Where do loading indicators appear? (In sidebar? On map? Both?)
+3. Should partial data be shown while more loads?
+4. What happens on API error? (Toast? Inline message? Retry button?)
+5. Is there a timeout threshold after which we show an error?
+
+**Options:**
+1. **Spinner** — simple, universal, doesn't require layout knowledge
+2. **Skeleton UI** — shows structure while loading, better perceived performance
+3. **Progress bar** — good for known-duration loads (e.g., "Loading 127 images...")
+4. **Hybrid** — skeleton for structure, spinner for unknown-duration actions
+
+**Discussion:**
+*Needs discussion*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-019: Edit Filters Button Navigation Behavior
+
+**Category:** UI/UX  
+**Status:** 🟡 Open  
+**Priority:** Medium  
+**Source:** UX Design Review, Feb 3, 2026
+
+**Context:**
+Per DFT-003b, when a pinned layer is expanded in the widget (top-left), the "Edit Filters" button is visible. Clicking it navigates to the right sidebar (opposite side of screen).
+
+This is the same "eye-tracking concern" noted in DFT-003 — user's attention is on the left widget, but action happens on the right.
+
+**Questions to Resolve:**
+1. Does the sidebar *open/animate* to draw attention? Or is it already open?
+2. Does the expanded widget panel collapse when Edit Filters is clicked?
+3. Should the button label be "Edit Filters" or "Go to Filters →" (implies navigation)?
+4. Should clicking Edit Filters scroll the right sidebar into view if it's below the fold?
+
+**Options:**
+1. **Auto-collapse widget panel** — user's attention naturally moves to sidebar
+2. **Keep both open** — user can reference widget while editing in sidebar
+3. **Rename button** — "Go to Filters →" sets expectation of navigation, not in-place editing
+4. **Add visual feedback** — sidebar highlights/pulses when Edit Filters is clicked
+
+**Discussion:**
+*Needs discussion*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-020: Pointer-Row Bookmark UI (One Button vs Two)
+
+**Category:** UI/UX  
+**Status:** 🟡 Open  
+**Priority:** High  
+**Source:** UX Design Review, Feb 3, 2026
+
+**Context:**
+DFT-003 resolved that "📌 Pin Layer" only shows when not pinned, and "🔖 Bookmark" only shows when feature selected. This eliminates side-by-side confusion.
+
+However, the paradigm document (Part 5) shows **two** bookmark options for pointer rows:
+- "Bookmark Camera" (simple — no Level 3 filter)
+- "Bookmark with Filter" (includes current Level 3 query)
+
+**Question:** Are these two buttons shown simultaneously when a feature is selected?
+
+If so, DFT-003's claim that we "eliminated side-by-side button confusion" may not hold for the most complex use case (ANiML cameras with active image filters).
+
+**Options:**
+1. **Single button, always capture filter** — if filter is active, it's included automatically
+2. **Single button, never capture filter** — user can add filter later via Edit
+3. **Single button with dropdown/modal** — "Bookmark" opens choice: "Include current filter?"
+4. **Two buttons** — but with much clearer labels and visual separation
+
+**Related:** DFT-003, Paradigm Doc Part 5
+
+**Discussion:**
+*Needs discussion — key question for ANiML workflow*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-021: "Active" vs "Selected" Terminology Consistency
+
+**Category:** Terminology  
+**Status:** 🟡 Open  
+**Priority:** Low  
+**Source:** UX Design Review, Feb 3, 2026
+
+**Context:**
+The documents use these terms interchangeably:
+- "Active Layer" (widget section header)
+- "Selected Layer" (acceptance criteria)
+- "Active non-pinned layer" (behavior description)
+- "Currently selected layer from left sidebar"
+
+**Question:** Do these mean the same thing? If so, pick one. If not, define the distinction.
+
+**Proposed Terminology:**
+- **Selected** = highlighted/clicked in left sidebar (selection state)
+- **Active** = currently visible on map and displayed in right sidebar (visibility + focus state)
+
+A layer could be "selected" in the sidebar but not "active" if it's pinned and hidden. Or they could be synonymous (selected = active always).
+
+**Options:**
+1. **Synonymous** — "selected" and "active" mean the same thing; standardize on "active"
+2. **Distinct** — "selected" = UI selection state; "active" = visible on map
+3. **Use only "active"** — remove "selected" from vocabulary except for multi-select contexts
+
+**Discussion:**
+*Needs decision for consistency*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-022: Parent Toggle Memory Edge Case
+
+**Category:** Edge Case  
+**Status:** 🟡 Open  
+**Priority:** Low  
+**Source:** UX Design Review, Feb 3, 2026
+
+**Context:**
+Per DFT-013, when clicking parent eye to turn ON after all children were hidden, it "restores previously-selected child view (memory-preserving)."
+
+**Edge case:** What if the previously-selected child is *deleted* while parent was off?
+
+**Example:**
+1. User has "mountain lion" and "deer" views
+2. "mountain lion" is visible (selected)
+3. User turns parent OFF (both children hidden)
+4. User deletes "mountain lion" view while parent is off
+5. User turns parent ON
+6. What happens?
+
+**Options:**
+1. **Show first remaining child** — "deer" becomes visible
+2. **Show nothing** — parent stays off, user must manually select
+3. **Show unfiltered base** — if base layer still exists
+4. **Demote to flat** — if only one child remains, demote layer to non-nested state
+
+**Discussion:**
+*Low priority but should be defined for implementation*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-023: Widget Positioning Dimensions
+
+**Category:** Visual Spec  
+**Status:** 🟡 Open  
+**Priority:** Low  
+**Source:** UX Design Review, Feb 3, 2026
+
+**Context:**
+Current spec says widgets are positioned "top-left" and "top-right" of map area.
+
+**Missing details:**
+- Exact pixel offset from edges (16px? 24px? 32px?)
+- Maximum widget height before scrolling
+- Collapse button position (in header? left or right?)
+- Animation easing for expand/collapse transitions
+- Widget shadow/elevation values
+
+**Options:**
+1. **Specify now** — add values to design system doc (e.g., 24px from edges, max-height 400px)
+2. **Let mockup define** — Opus 4.5 proposes values, team approves
+3. **Reference existing pattern** — "use same spacing as ArcGIS/Esri widgets"
+
+**Discussion:**
+*Low priority — can let mockups propose*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-024: Filter Indicator A/B Test Decision
+
+**Category:** Visual Design  
+**Status:** 🟡 Open  
+**Priority:** Medium  
+**Source:** UX Design Review, Feb 3, 2026
+
+**Context:**
+Per DFT-001, A/B testing is planned between:
+- **Option A (Text):** "• 5 filters" on second line
+- **Option B (Icon):** "🌪️5" inline
+
+**Problem for mockups:** Opus 4.5 needs to pick one for the mockup. If one version is created, the team may forget to test the other.
+
+**Question:** Should we decide now, or request both variants in mockups?
+
+**Options:**
+1. **Decide now: Icon (🌪️5)** — more compact, fits in row without wrapping
+2. **Decide now: Text ("5 filters")** — more explicit, better for first-time users
+3. **Request both variants** — Opus 4.5 creates two versions for comparison
+4. **Defer** — implement toggle in dev, test with real users
+
+**Recommendation:** Icon for space efficiency, with tooltip showing full text ("5 filters applied") for accessibility.
+
+**Discussion:**
+*Needs decision before mockup generation*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-025: Create New View Transition Animation
+
+**Category:** Microinteraction  
+**Status:** 🟡 Open  
+**Priority:** Low  
+**Source:** UX Design Review, Feb 3, 2026
+
+**Context:**
+Per DFT-003b and DFT-013, when "Create New View" is clicked on a single-view layer, the layer "promotes to nested structure."
+
+**Question:** What does this look like? The state transformation could confuse users if not visually obvious.
+
+**Missing:**
+- Does the row animate/expand to show the new structure?
+- Is there a success message or toast?
+- Does the new child appear with a highlight/flash?
+- Where does focus move after creation?
+
+**Options:**
+1. **Animate expansion** — row expands with slide animation, children appear below
+2. **Flash/highlight** — new child row flashes briefly to draw attention
+3. **Toast notification** — "New view created" message
+4. **Combination** — animate + highlight, no toast (less intrusive)
+
+**Discussion:**
+*Low priority but affects polish*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-026: Emoji/Icon Vocabulary Consistency
+
+**Category:** Design System  
+**Status:** 🟡 Open  
+**Priority:** Low  
+**Source:** UX Design Review, Feb 3, 2026
+
+**Context:**
+Current emoji/icon vocabulary:
+- 🌪️ for filter indicator (funnel/tornado)
+- 📌 for pin
+- 🔖 for bookmark
+- 👁 for visibility
+- ✕ for remove
+- 🛒 for Export All (shopping cart)
+- 📦 for export (in paradigm doc action vocabulary)
+
+**Question:** The "Export All" button uses 🛒 (shopping cart), but the action vocabulary in Part 4 of paradigm doc shows 📦 (export). Should these match?
+
+**Options:**
+1. **Keep 🛒** — shopping cart metaphor is strong for "collect and export" workflow
+2. **Change to 📦** — matches "Export" in action vocabulary, more literal
+3. **Use both** — 🛒 for button (implies collection), 📦 for export action (implies download)
+
+**Discussion:**
+*Low priority but affects brand consistency*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-027: "Browse Features →" Button Destination
+
+**Category:** Terminology  
+**Status:** 🟡 Open  
+**Priority:** Low  
+**Source:** UX Design Review, Feb 3, 2026
+
+**Context:**
+Per DFT-006, the Overview tab includes a prominent "Browse Features →" button.
+
+**Question:** This button navigates to the Browse tab, correct? The "→" arrow suggests navigation.
+
+**Confirmation needed:**
+- Button navigates to Browse tab (not a modal, not external link)
+- Button label is exactly "Browse Features →" or should it be "Browse Features" (no arrow)?
+- Should the button have an icon (e.g., grid icon for features)?
+
+**Options:**
+1. **"Browse Features →"** — arrow indicates navigation within sidebar
+2. **"Browse Features"** — simpler, no arrow
+3. **"View Features →"** — alternative verb
+4. **Icon button** — grid/list icon with "Browse" label
+
+**Discussion:**
+*Quick confirmation needed*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-028: Zero-Result Camera Behavior
+
+**Category:** UI/UX  
+**Status:** 🟡 Open  
+**Priority:** Medium  
+**Source:** UX Design Review, Feb 3, 2026 (extracted from DFT-012 edge cases)
+
+**Context:**
+Per DFT-012, when a species filter is applied (e.g., "mountain lion"), cameras show badges with counts. 
+
+**Edge case:** What happens to cameras with 0 matching images?
+
+**Options:**
+1. **Hide cameras with 0 matches** — cleaner map, shows only relevant locations
+2. **Show grayed out** — maintains spatial context, shows where species is NOT present
+3. **Show with "0" badge** — explicit count, but clutters map
+4. **User preference** — toggle to "show all cameras" or "show matching only"
+
+**Considerations:**
+- Hiding may cause confusion ("where did CAM-042 go?")
+- Graying out maintains mental map of all camera locations
+- Showing "0" badges adds noise but is explicit
+
+**Discussion:**
+*Needs decision — affects ANiML visualization*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-029: Unfiltered Layer Badge Behavior
+
+**Category:** UI/UX  
+**Status:** 🟡 Open  
+**Priority:** Medium  
+**Source:** UX Design Review, Feb 3, 2026 (extracted from DFT-012 edge cases)
+
+**Context:**
+Per DFT-012, badges appear on camera icons showing filtered image counts. Badges only appear when a layer-level filter is applied.
+
+**Question:** What happens when NO filter is applied? Should cameras show total image counts, or no badges at all?
+
+**Options:**
+1. **No badges until filter applied** — cleaner default, badges indicate active query
+2. **Always show total counts** — useful overview, but may clutter map
+3. **Show totals on hover only** — clean map, details on demand
+4. **User preference** — toggle for "show image counts"
+
+**Considerations:**
+- Showing totals may overwhelm with numbers if 50+ cameras
+- No badges until filter is cleaner but loses "overview" capability
+- Hover-only is a middle ground but requires interaction
+
+**Discussion:**
+*Needs decision — affects ANiML default state*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-030: Error State Design
+
+**Category:** UI/UX  
+**Status:** 🟡 Open  
+**Priority:** High  
+**Source:** UX Design Review, Feb 3, 2026
+
+**Context:**
+No design specification for error handling:
+- API request fails (network error, timeout, 500 error)
+- Partial data load failure (some cameras load, others fail)
+- Authentication/permission errors
+- Rate limiting errors
+
+**Why this matters (Nielsen: Help users recognize, diagnose, recover from errors):**
+Errors are inevitable. Users need clear feedback about what went wrong and how to recover.
+
+**Questions to Resolve:**
+1. Where do error messages appear? (Toast? Inline? Modal?)
+2. Should errors include retry buttons?
+3. How long do error toasts persist?
+4. What's the error message tone? (Technical? Friendly?)
+5. Should errors be logged for debugging?
+
+**Options:**
+1. **Toast notifications** — non-blocking, auto-dismiss after 5-10 seconds
+2. **Inline errors** — appear in the component that failed (e.g., "Failed to load cameras")
+3. **Error modal** — for critical errors that prevent app function
+4. **Combination** — inline for component errors, toast for background errors
+
+**Discussion:**
+*High priority — affects user trust and recovery*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-031: Confirmation Dialogs Pattern
+
+**Category:** UI/UX  
+**Status:** 🟡 Open  
+**Priority:** Medium  
+**Source:** UX Design Review, Feb 3, 2026
+
+**Context:**
+Some actions may warrant confirmation dialogs to prevent accidental data loss:
+- Unpinning a layer with filters (loses filter state)
+- Clearing all filters on a pinned layer
+- Removing a bookmark
+- Deleting a filtered view
+
+**Question:** Which actions require explicit confirmation, and which can be undone via undo/redo?
+
+**Options:**
+1. **No confirmations, rely on undo** — faster workflow, less friction
+2. **Confirm destructive actions** — unpin with filters, delete view
+3. **Confirm all removes** — any ✕ button shows "Are you sure?"
+4. **Soft delete + toast with undo** — action happens immediately, toast shows "Undo" for 5 seconds
+
+**Considerations:**
+- Too many confirmations = friction and "confirmation fatigue"
+- Too few = anxiety about accidental clicks
+- Undo is generally preferred over confirmation (less disruptive)
+
+**Discussion:**
+*Needs decision — affects interaction patterns*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-032: Map Tooltip Design
+
+**Category:** UI/UX  
+**Status:** 🟡 Open  
+**Priority:** Medium  
+**Source:** UX Design Review, Feb 3, 2026
+
+**Context:**
+When users hover over features on the map (cameras, sensors, observations), what information appears in the tooltip before they click?
+
+**Why this matters (Nielsen: Visibility of system status / Shneiderman: Overview first, details on demand):**
+Tooltips provide "information scent" — users can preview what they'll get by clicking, reducing uncertainty and wasted clicks.
+
+**Questions to Resolve:**
+1. What fields appear in each data source's tooltip?
+2. Should tooltips show filter-relevant info (e.g., "23 mountain lion images" on camera)?
+3. How long before tooltip appears? (instant? 200ms delay?)
+4. Does tooltip persist on hover, or dismiss after a timeout?
+5. Are tooltips accessible via keyboard (focus state)?
+
+**Options by Data Source:**
+- **ANiML Camera:** Camera ID, location, image count (filtered if filter active)
+- **Dendra Sensor:** Sensor ID, type, date range, latest reading
+- **iNaturalist:** Species, date, observer
+- **DataOne Dataset:** Title, date, source
+
+**Discussion:**
+*Needs specification for each data source*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-033: Right Sidebar Width and Resizability
+
+**Category:** Layout  
+**Status:** 🟡 Open  
+**Priority:** Low  
+**Source:** UX Design Review, Feb 3, 2026
+
+**Context:**
+What is the right sidebar's width, and can users resize it?
+
+**Questions to Resolve:**
+1. Fixed width or resizable?
+2. If fixed, what width? (320px? 400px? 480px?)
+3. If resizable, what are min/max widths?
+4. Should width persist across sessions?
+5. Does the sidebar have a collapse/expand toggle?
+
+**Options:**
+1. **Fixed width (400px)** — consistent, simpler implementation
+2. **Resizable with drag handle** — flexible, accommodates different content needs
+3. **Breakpoint-based** — wider on larger screens, narrower on smaller
+4. **Collapsible** — full collapse to maximize map, expand when needed
+
+**Considerations:**
+- Image grids (ANiML) benefit from wider sidebar
+- Time-series charts (Dendra) benefit from wider sidebar
+- Text metadata (iNaturalist) works fine with narrower sidebar
+- Map needs to remain usable with sidebar open
+
+**Discussion:**
+*Low priority but affects layout*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-034: Drag-and-Drop Reorder Feedback
+
+**Category:** Microinteraction  
+**Status:** 🟡 Open  
+**Priority:** Low  
+**Source:** UX Design Review, Feb 3, 2026
+
+**Context:**
+Per Phase 0, pinned layers have drag handles for reordering. What visual feedback appears during drag?
+
+**Questions to Resolve:**
+1. What cursor appears when hovering drag handle? (grab cursor)
+2. What happens to the row being dragged? (lifted, semi-transparent, ghost)
+3. How is the drop target indicated? (line, highlighted gap, placeholder)
+4. What animation plays when dropped?
+5. Does drag reorder affect map layer z-order?
+
+**Options:**
+1. **Lifted row + drop line** — row lifts visually, line shows where it will land
+2. **Ghost placeholder** — ghost of row follows cursor, placeholder in list
+3. **Swap animation** — adjacent rows move aside as you drag past them
+4. **Minimal** — just cursor change, row moves on drop (no animation)
+
+**Considerations:**
+- This is a polish item, not critical for MVP
+- ArcGIS/Esri patterns may provide precedent
+
+**Discussion:**
+*Low priority — can defer to Phase 6*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-035: DataOne Search Behavior
+
+**Category:** UI/UX  
+**Status:** 🟡 Open  
+**Priority:** Medium  
+**Source:** UX Design Review, Feb 3, 2026
+
+**Context:**
+DataOne has a search interface. How should search behave?
+
+**Questions to Resolve:**
+1. Instant search (as you type) or explicit submit (press Enter/button)?
+2. If instant, what debounce delay? (300ms? 500ms?)
+3. Should search include all fields or specific fields (title, author, keywords)?
+4. How are search results paginated?
+5. What happens on empty search (show all? show recent? show placeholder)?
+
+**Options:**
+1. **Instant search with debounce** — responsive, modern feel
+2. **Explicit submit** — more control, less API load
+3. **Hybrid** — instant for 3+ characters, explicit for fewer
+
+**Considerations:**
+- DataOne API may have rate limits
+- Large result sets need pagination or virtualization
+- Empty search could be overwhelming (many datasets)
+
+**Discussion:**
+*Needs input from Dan on API constraints*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-036: Feature Highlight on Bookmark Hover
+
+**Category:** UI/UX  
+**Status:** 🟡 Open  
+**Priority:** Low  
+**Source:** UX Design Review, Feb 3, 2026
+
+**Context:**
+When user hovers over a bookmarked feature in the Bookmarked Features widget, should the corresponding feature highlight on the map?
+
+**Why this matters (Gestalt: Common fate / Nielsen: Recognition over recall):**
+Highlighting creates a visual link between widget row and map feature, helping users understand the relationship without clicking.
+
+**Questions to Resolve:**
+1. Does hovering a bookmark row highlight the feature on the map?
+2. What does "highlight" look like? (pulse, ring, color change, zoom to?)
+3. Does this work for features not currently visible on the map?
+4. Should it scroll the map to show the feature?
+5. Does hovering a pinned layer row highlight all its features?
+
+**Options:**
+1. **Highlight only** — feature pulses/rings but map doesn't move
+2. **Highlight + pan** — map pans to show feature if off-screen
+3. **No hover interaction** — click required to see feature
+4. **Bidirectional** — hovering map feature highlights widget row too
+
+**Considerations:**
+- Could be distracting if many bookmarks
+- Pan-on-hover may feel disorienting
+- May conflict with map's own hover behavior
+
+**Discussion:**
+*Low priority polish item*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-037: Generate Updated Mockups After Design Decisions Resolved
+
+**Category:** Task  
+**Status:** 🟡 Open  
+**Priority:** High  
+**Source:** Will, Feb 3, 2026
+
+**Context:**
+Mockups should NOT be generated until all design discussion tasks (DFT-015 through DFT-036) are resolved. Once resolved, updated mockups need to be created that reflect all design decisions from DFT-001 through DFT-036 (excluding any decisions that were explicitly omitted or deferred).
+
+**Prerequisites:**
+- All high-priority design issues resolved (DFT-015, DFT-018, DFT-020, DFT-030)
+- All medium-priority design issues resolved (or explicitly deferred)
+- All resolved decisions documented in phase documents and master plan
+
+**Task:**
+Generate updated mockups (`mockups/02a-02f` or new versions) that demonstrate:
+- All resolved UX decisions from DFT-001 through DFT-036
+- Empty states (per DFT-015)
+- Loading states (per DFT-018)
+- Error states (per DFT-030)
+- All widget designs with final specifications
+- All sidebar designs with final specifications
+- All interaction patterns as resolved
+
+**Exclusions:**
+- Any DFT decisions explicitly omitted or deferred to v2.1+
+- Decisions marked as "defer to Phase 6" unless they affect mockup generation
+
+**Post-Completion:**
+After DFT-037 is complete, **archive resolved design decisions** to `PLANNING/resolved-decisions/` to keep `planning-task-tracker.md` manageable. The tracker should focus on open issues, not serve as a historical archive.
+
+**Discussion:**
+*Blocked until DFT-015 through DFT-036 are resolved*
+
+**Resolution:** *Pending*
+
+---
+
 
 ### DFT-002: Export Button Placement/Visibility ✅
 
@@ -1173,6 +1992,7 @@ This is a **new feature** to the paradigm. Current assumption was one query per 
 
 | Date | Change |
 |------|--------|
+| Feb 3, 2026 | **UX Design Review:** Added DFT-015 through DFT-037 (23 new issues). DFT-015 through DFT-036 cover empty states, responsiveness, accessibility, loading states, navigation behavior, terminology consistency, edge cases, visual specs, microinteractions, and interaction patterns. DFT-037 is the mockup generation task (blocked until design decisions resolved). **High-priority:** DFT-015 (empty states), DFT-018 (loading states), DFT-020 (pointer-row bookmark UI), DFT-030 (error states), DFT-037 (mockup generation). **Note:** After DFT-037, archive resolved decisions to keep tracker manageable |
 | Jan 26, 2026 | Initial tracker created with 9 issues from Sophia's Jan 23 feedback |
 | Jan 26, 2026 | Updated paradigm sign-offs: Dan, Trisalyn, and Amy approved core paradigm |
 | Jan 26, 2026 | Added DFT-010 through DFT-014 from Trisalyn meeting feedback |
