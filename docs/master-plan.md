@@ -84,6 +84,7 @@ Phase 0: Foundation
 
 | Decision | Status | Made By | Date | Details |
 |----------|--------|---------|------|---------|
+| No emojis policy (use SVG icons) | ✅ Decided | Will | Feb 3 | Emojis render inconsistently across browsers. Use SVG icons from `src/components/icons/` or Lucide React. See `design-system.md` |
 | Overall color palette | ⚪ TBD | - | - | Mockups use emojis/colors - need to tone down |
 | Right sidebar header styling | ⚪ TBD | - | - | |
 | Card component styling | ⚪ TBD | - | - | |
@@ -109,6 +110,7 @@ Phase 0: Foundation
 | Context-dependent button visibility (DFT-003) | ✅ Decided | Will | Feb 3 | **Button visibility depends on pin/selection state.** "📌 Pin Layer" only appears when layer is NOT pinned; once pinned, filter changes auto-apply (no button needed). "🔖 Bookmark" only appears when a feature is selected. Eliminates side-by-side button confusion. Widget animates when filter changes to provide visual feedback. See DFT-003 resolution |
 | ANiML Browse entry point (DFT-003c) | ✅ Decided | Will | Feb 2 | **Landing cards** for Animal-First vs Camera-First choice instead of sub-tabs. Each card includes icon, title, and brief tagline explaining the mental model. User preference remembered for return visits. Subtle "Switch to [other mode]" link available within each mode. Rationale: these represent different user intents, not just different views. See DFT-003c resolution |
 | Target audience (DFT-011) | ✅ Decided | Trisalyn | Jan 26 | **Primary audience is researchers** (academic, TNC staff), with particular attention to GIS-minded users. NOT targeting broad public. Implication: can use GIS terminology (features, layers, queries) without over-simplification; export workflows can assume technical literacy. See DFT-011 resolution |
+|| Empty state design (DFT-015) | ✅ Decided | Will | Feb 3 | **Show with placeholder, differentiate first-visit vs returning.** Widgets show educational empty state on first visit (expanded), laconic message after user has used feature. Terminology is configurable via `src/config/terminology.ts` (`childNoun`: "Feature" or "Item"). Widget titles: "Pinned {childNoun} Layers" / "Bookmarked {childNoun}s". Utilitarian tone, simple SVG icons (no emoji). Drone/LiDAR are pin-only (no bookmarkable items). See DFT-015 resolution |
 
 ---
 
@@ -225,4 +227,6 @@ When working on any phase:
 | Feb 3, 2026 | Phase 6 | Resolved DFT-008, DFT-009: TNC brand integration via theme variants approach. Add fonts + create swappable theme options for experimentation | Will + Claude |
 | Feb 3, 2026 | Phase 2 | Resolved DFT-003: Context-dependent button visibility. "Pin Layer" only shows when not pinned; "Bookmark" only shows when feature selected | Will + Claude |
 | Feb 3, 2026 | - | Documentation sync: Added missing UX Decisions (DFT-003, DFT-003c, DFT-011) to master plan; updated phase changelogs | Will + Claude |
+| Feb 3, 2026 | - | Established No Emojis Policy: Use SVG icons instead of emojis for consistent cross-browser rendering. Resolved DFT-026. Created design-system.md and Cursor rule | Will + Claude |
+| Feb 3, 2026 | Phase 0 | Resolved DFT-015: Empty state design — show with placeholder, differentiate first-visit (educational) vs returning (laconic). Configurable terminology via config file ("Feature" vs "Item"). Drone/LiDAR are pin-only | Will + Claude |
 

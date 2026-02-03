@@ -172,6 +172,8 @@ interface Bookmark {
 **Decision (Feb 2, 2026):** Resolved DFT-004 — Widget shows filter **status** (🌪️ indicator) but does NOT contain filter editing UI. "Edit Filters" button navigates to right sidebar. Sidebar is the canonical filter editor.  
 **Decision (Feb 3, 2026):** Resolved DFT-013 — Multiple filtered views use "Multiple Saved, Single Visible" model. Nested widget structure when 2+ views exist; only one view visible at a time (mutual exclusivity); memory-preserving parent toggle.
 
+**Decision (Feb 3, 2026):** Resolved DFT-015 — Empty state design. Widget title uses configurable terminology: "Pinned {childNoun} Layers". First visit shows educational empty state (expanded); returning user sees laconic message. See design-system.md for terminology config.
+
 **Widget Design (Collapsed State):**
 ```
 ┌─────────────────────────────────────┐
@@ -289,6 +291,13 @@ This allows collecting user feedback before finalizing the design.
 - [ ] Debug toggle switches between text and icon filter representations
 - [ ] Widget row animates/highlights when its filter changes (visual feedback for right sidebar edits)
 - [ ] Optional: brief toast notification when filter is applied (to be tested)
+- [ ] **Empty state (DFT-015):**
+  - [ ] Widget title uses configurable terminology from `src/config/terminology.ts`: "Pinned {childNoun} Layers"
+  - [ ] First visit (never pinned before): Show expanded educational empty state with muted pin icon, "No layers pinned." title, "Pin layers from the left sidebar to save them here." body
+  - [ ] Returning user (has pinned before, currently empty): Show laconic message "Pinned layers appear here."
+  - [ ] Collapsed header includes instructive text: "(pin layers from the left)"
+  - [ ] Empty state uses design tokens: icon `w-12 h-12 text-gray-300`, title `text-sm font-medium text-gray-700`, body `text-sm text-gray-500`
+  - [ ] Team design toggle for initial widget state (expanded vs collapsed)
 - [ ] **Multiple filtered views (DFT-013):**
   - [ ] Single-view layers remain flat (no nesting) until second view is created
   - [ ] Multi-view layers show nested structure (parent + indented child views)
@@ -335,6 +344,14 @@ This allows collecting user feedback before finalizing the design.
   - Visibility toggle [👁] and remove button [✕]
 - [ ] NO "Export All" button in widget (moved to global header per DFT-002 resolution)
 - [ ] Auto-collapses when time-series data is active (DFT-005)
+- [ ] **Empty state (DFT-015):**
+  - [ ] Widget title uses configurable terminology from `src/config/terminology.ts`: "Bookmarked {childNoun}s"
+  - [ ] First visit (never bookmarked before): Show expanded educational empty state with muted bookmark icon, "No {childNoun}s bookmarked." title, "Bookmarks save specific {childNoun}s within layers (cameras, sensors, observations). Bookmark {childNoun}s from the right sidebar." body
+  - [ ] Returning user (has bookmarked before, currently empty): Show laconic message "Bookmarked {childNoun}s appear here."
+  - [ ] Collapsed header includes instructive text: "(bookmark {childNoun}s from the right)"
+  - [ ] Empty state uses design tokens: icon `w-12 h-12 text-gray-300`, title `text-sm font-medium text-gray-700`, body `text-sm text-gray-500`
+  - [ ] Team design toggle for initial widget state (expanded vs collapsed)
+  - [ ] Note: Drone imagery and LiDAR are pin-only layers — they will never have bookmark entries
 
 **ASCII Wireframe:**
 ```
@@ -400,4 +417,5 @@ This allows collecting user feedback before finalizing the design.
 | Feb 2, 2026 | 0.5 | Clarified widget shows filter status but does NOT edit filters (DFT-004). Sidebar is canonical editor | Will + Claude |
 | Feb 2, 2026 | 0.6 | Resolved DFT-007: Bookmarks grouped by parent layer; layer headers are non-interactive context labels with muted styling | Will + Claude |
 | Feb 3, 2026 | 0.5 | Resolved DFT-013: Multiple filtered views use nested widget structure with mutual exclusivity (only one view visible at a time) | Will + Claude |
+| Feb 3, 2026 | 0.5, 0.6 | Resolved DFT-015: Empty state design — educational first-visit, laconic returning user. Configurable terminology ("Feature" vs "Item"). Drone/LiDAR are pin-only layers | Will + Claude |
 

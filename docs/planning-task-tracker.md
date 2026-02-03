@@ -97,7 +97,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-011 | Target audience clarification: Researchers (GIS-minded), not broad public | Design Decision | 🟢 Resolved | Medium |
 | DFT-012 | Camera trap clustering: Show numbered icons at locations, click to see filtered images | Feature Request | 🟢 Resolved | Medium |
 | DFT-013 | Multiple filtered views on same layer — save mountain lion AND deer queries simultaneously | Paradigm Extension | 🟢 Resolved | High |
-| DFT-015 | Empty state design for widgets, Browse tab, search results | UI/UX | 🟡 Open | High |
+| DFT-015 | Empty state design for widgets, Browse tab, search results | UI/UX | 🟢 Resolved | High |
 | DFT-016 | Mobile/tablet responsiveness scope decision | Technical | 🟡 Open | Medium |
 | DFT-017 | Keyboard navigation & accessibility patterns | Accessibility | 🟡 Open | Medium |
 | DFT-018 | Loading states and skeleton UI patterns | UI/UX | 🟡 Open | High |
@@ -108,7 +108,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-023 | Widget positioning dimensions — exact spacing values | Visual Spec | 🟡 Open | Low |
 | DFT-024 | Filter indicator A/B test decision — make choice before mockups | Visual Design | 🟡 Open | Medium |
 | DFT-025 | Create New View transition animation — visual feedback for state change | Microinteraction | 🟡 Open | Low |
-| DFT-026 | Emoji/icon vocabulary consistency — shopping cart vs export icon | Design System | 🟡 Open | Low |
+| DFT-026 | Emoji/icon vocabulary consistency — shopping cart vs export icon | Design System | 🟢 Resolved | Low |
 | DFT-027 | "Browse Features →" button destination confirmation | Terminology | 🟡 Open | Low |
 | DFT-028 | Zero-result camera behavior — hidden vs grayed out when filter matches 0 images | UI/UX | 🟡 Open | Medium |
 | DFT-029 | Unfiltered layer badge behavior — show total counts or no badges? | UI/UX | 🟡 Open | Medium |
@@ -147,7 +147,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-007 | Bookmark widget title should clarify that bookmarks are features within layers, not separate items | Amy, Trisalyn | ✅ Resolved - Feb 2 |
 | DFT-012 | Camera trap clustering: Show numbered icons at locations, click to see filtered images | Dan | ✅ Resolved - Feb 3 |
 | DFT-013 | Multiple filtered views on same layer — save mountain lion AND deer queries simultaneously | Dan, Amy, Trisalyn | ✅ Resolved - Feb 3 |
-| DFT-015 | Empty state design for widgets, Browse tab, search results | Will | 🟡 Pending |
+| DFT-015 | Empty state design for widgets, Browse tab, search results | Will | ✅ Resolved - Feb 3 |
 | DFT-016 | Mobile/tablet responsiveness scope decision | Amy, Trisalyn | 🟡 Pending |
 | DFT-017 | Keyboard navigation & accessibility patterns | Will | 🟡 Pending |
 | DFT-018 | Loading states and skeleton UI patterns | Will, Dan | 🟡 Pending |
@@ -158,7 +158,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-023 | Widget positioning dimensions | Will | 🟡 Pending |
 | DFT-024 | Filter indicator A/B test decision | Amy, Trisalyn | 🟡 Pending |
 | DFT-025 | Create New View transition animation | Will | 🟡 Pending |
-| DFT-026 | Emoji/icon vocabulary consistency | Will | 🟡 Pending |
+| DFT-026 | Emoji/icon vocabulary consistency | Will | ✅ Resolved - Feb 3 |
 | DFT-027 | "Browse Features →" button destination | Will | 🟡 Pending |
 | DFT-028 | Zero-result camera behavior | Amy, Trisalyn, Dan | 🟡 Pending |
 | DFT-029 | Unfiltered layer badge behavior | Amy, Trisalyn | 🟡 Pending |
@@ -1148,7 +1148,7 @@ This is a **new feature** to the paradigm. Current assumption was one query per 
 ### DFT-015: Empty State Design
 
 **Category:** UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** High  
 **Source:** UX Design Review, Feb 3, 2026
 
@@ -1162,21 +1162,155 @@ The design documents thoroughly specify populated states, but not what users see
 **Why this matters (Nielsen: Help users recognize, diagnose, recover from errors):**
 Empty states are critical teaching moments. A well-designed empty state guides users toward the desired action. A poorly designed one creates confusion or abandonment.
 
-**Questions to Resolve:**
-1. Should empty widgets show placeholder text or hide entirely?
-2. What is the empty state message for each widget?
-3. Should empty states include CTAs (e.g., "Pin a layer to get started")?
-4. What does the map show when no layers are pinned/visible?
+**Resolution:** Feb 3, 2026 — **Show with placeholder (educational), differentiate first-visit vs returning user**
 
-**Options:**
-1. **Hide empty widgets** — cleaner initial view, but users may not discover the feature
-2. **Show with placeholder** — educational, guides user toward first action
-3. **Contextual help** — empty state includes brief explanation of what the widget does
+**Design Decisions:**
 
-**Discussion:**
-*Needs discussion*
+1. **Terminology is configurable via `src/config/terminology.ts`:**
+   - `childNoun`: "Feature" (default) or "Item" — team can toggle for testing
+   - Widget titles use: "Pinned {childNoun} Layers" / "Bookmarked {childNoun}s"
+   - All UI copy referencing features/items uses this config
+   - Default to "Feature" (aligns with GIS terminology)
 
-**Resolution:** *Pending*
+2. **Widget initial state: configurable (team design option):**
+   - **Expanded (default):** Widgets start expanded with educational empty state
+   - **Collapsed:** Widgets start collapsed with instructive header text
+   - Team toggle allows testing both before finalizing default
+
+3. **Empty state visual pattern:**
+   - Simple muted SVG icons (no emoji)
+   - Utilitarian tone (professional, no warmth)
+   - Design tokens: icon `w-12 h-12 text-gray-300`, title `text-sm font-medium text-gray-700`, body `text-sm text-gray-500`
+   - Container: `flex flex-col items-center justify-center text-center px-6 py-8`
+
+4. **Pinned {Feature/Item} Layers Widget — Empty States:**
+
+   **First visit (expanded, educational):**
+   ```
+   ┌────────────────────────────────────────────┐
+   │ PINNED {FEATURE/ITEM} LAYERS           ▲  │
+   ├────────────────────────────────────────────┤
+   │                                            │
+   │          [pin icon - muted]                │
+   │                                            │
+   │     No layers pinned.                      │
+   │                                            │
+   │     Pin layers from the left sidebar       │
+   │     to save them here.                     │
+   │                                            │
+   └────────────────────────────────────────────┘
+   ```
+
+   **Returning user (laconic):**
+   ```
+   ┌────────────────────────────────────────────┐
+   │ PINNED {FEATURE/ITEM} LAYERS           ▲  │
+   ├────────────────────────────────────────────┤
+   │     Pinned layers appear here.             │
+   └────────────────────────────────────────────┘
+   ```
+
+   **Collapsed header:**
+   ```
+   ┌─────────────────────────────────────────────────────────────┐
+   │ PINNED {FEATURE/ITEM} LAYERS (pin layers from the left) ▼  │
+   └─────────────────────────────────────────────────────────────┘
+   ```
+
+5. **Bookmarked {Features/Items} Widget — Empty States:**
+
+   **First visit (expanded, educational):**
+   ```
+   ┌────────────────────────────────────────────┐
+   │ BOOKMARKED {FEATURES/ITEMS}            ▲  │
+   ├────────────────────────────────────────────┤
+   │                                            │
+   │        [bookmark icon - muted]             │
+   │                                            │
+   │     No {features/items} bookmarked.        │
+   │                                            │
+   │     Bookmarks save specific {features/     │
+   │     items} within layers (cameras,         │
+   │     sensors, observations).                │
+   │                                            │
+   │     Bookmark {features/items} from the     │
+   │     right sidebar.                         │
+   │                                            │
+   └────────────────────────────────────────────┘
+   ```
+
+   **Returning user (laconic):**
+   ```
+   ┌────────────────────────────────────────────┐
+   │ BOOKMARKED {FEATURES/ITEMS}            ▲  │
+   ├────────────────────────────────────────────┤
+   │     Bookmarked {features/items} appear     │
+   │     here.                                  │
+   └────────────────────────────────────────────┘
+   ```
+
+   **Collapsed header:**
+   ```
+   ┌───────────────────────────────────────────────────────────────────┐
+   │ BOOKMARKED {FEATURES/ITEMS} (bookmark {features} from the right) ▼│
+   └───────────────────────────────────────────────────────────────────┘
+   ```
+
+6. **Right Sidebar — No Layer Selected:**
+   ```
+   ┌─────────────────────────────────────────┐
+   │                                         │
+   │         [layers icon - muted]           │
+   │                                         │
+   │   Click any {feature/item} layer in     │
+   │   the left sidebar to view its          │
+   │   details here.                         │
+   │                                         │
+   └─────────────────────────────────────────┘
+   ```
+
+7. **Browse Tab — Zero Filter Results:**
+   - Filters remain visible via proper UI controls (dropdowns, date pickers)
+   - Dynamic label: "No {feature_label_plural} match your filters."
+   - Suggestions specific to active filters
+   - "Clear All Filters" button in filter section
+
+8. **Feature Selected — No Related Data:**
+   - Metadata section still shows (feature exists)
+   - Explain mismatch between user's filter and available data range
+   - One-click fix: "Adjust to data range" button
+   - **Note:** Ideally, features with no related data in selected range should be filtered out or grayed at the layer level (per DFT-028), making this state rare
+
+9. **DataOne Search — No Results:**
+   - Echo the search query in message
+   - Actionable suggestions (fewer keywords, check spelling)
+   - "Clear Search" button
+
+10. **Drone imagery and LiDAR are pin-only layers:**
+    - These data sources do not have bookmarkable sub-items
+    - They will never appear in the Bookmarked Features widget
+    - The "feature" terminology works for layers that DO have discrete items
+
+**Design Principles Applied:**
+- **Nielsen's Visibility of System Status:** User understands empty state is intentional, not a bug
+- **Nielsen's Recognition over Recall:** Show what action will populate the area
+- **Norman's Signifiers:** Visual cues suggest the path forward
+- **Gestalt Closure:** Empty states feel complete, not broken
+- **Progressive Disclosure:** First-visit = educational, returning = laconic
+
+**Documented in:**
+- Phase 0 tasks 0.5 and 0.6 updated with empty state requirements
+- Design system updated with empty state pattern and terminology config
+- Master plan updated with UX decision
+
+**✅ Verification Checklist:**
+- [x] Decision documented in planning-task-tracker.md
+- [x] Phase 0 task 0.5 updated with empty state for Pinned Layers widget
+- [x] Phase 0 task 0.6 updated with empty state for Bookmarked Features widget
+- [x] Design system updated with empty state pattern
+- [x] Design system updated with terminology config
+- [x] Master plan updated with UX decision
+- [x] Quick Reference table updated with resolved status
 
 ---
 
@@ -1512,9 +1646,10 @@ Per DFT-003b and DFT-013, when "Create New View" is clicked on a single-view lay
 ### DFT-026: Emoji/Icon Vocabulary Consistency
 
 **Category:** Design System  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Low  
-**Source:** UX Design Review, Feb 3, 2026
+**Source:** UX Design Review, Feb 3, 2026  
+**Resolved:** February 3, 2026
 
 **Context:**
 Current emoji/icon vocabulary:
@@ -1528,15 +1663,27 @@ Current emoji/icon vocabulary:
 
 **Question:** The "Export All" button uses 🛒 (shopping cart), but the action vocabulary in Part 4 of paradigm doc shows 📦 (export). Should these match?
 
-**Options:**
-1. **Keep 🛒** — shopping cart metaphor is strong for "collect and export" workflow
-2. **Change to 📦** — matches "Export" in action vocabulary, more literal
-3. **Use both** — 🛒 for button (implies collection), 📦 for export action (implies download)
+**Resolution:**
+**No emojis policy established** — All emojis must be replaced with SVG icons. This resolves the vocabulary consistency question by removing emojis entirely.
 
-**Discussion:**
-*Low priority but affects brand consistency*
+**Decision:**
+- Use SVG icons from `src/components/icons/` or Lucide React
+- For shopping cart/export: Use Lucide's `ShoppingCart` icon or similar SVG
+- For pin: Use Lucide's `Pin` icon or similar SVG
+- For bookmark: Use Lucide's `Bookmark` icon or similar SVG
+- For visibility: Use Lucide's `Eye` icon or similar SVG
+- For filter: Use Lucide's `Filter` icon or similar SVG
+- For remove/close: Use Lucide's `X` icon or similar SVG
 
-**Resolution:** *Pending*
+**Documented in:**
+- `docs/DESIGN-SYSTEM/design-system.md` — Icon Policy section
+- `.cursor/rules/no-emojis-use-svg-icons.md` — Cursor rule for enforcement
+- `docs/master-plan.md` — Cross-Phase Decisions → Styling Decisions
+
+**Implementation Notes:**
+- All existing emoji usage should be replaced with SVG icons during implementation
+- Check `src/components/icons/` and `src/utils/dataSourceIcons.tsx` for existing icon patterns
+- When adding new icons, search for appropriate SVG icons from Lucide React or other reputable sources
 
 ---
 
@@ -2010,4 +2157,5 @@ After DFT-037 is complete, **archive resolved design decisions** to `PLANNING/re
 | Feb 3, 2026 | Resolved DFT-012: Camera trap clustering — count badges on camera icons showing filtered image counts. Badges appear when layer-level filter is applied. Progressive disclosure integration confirmed |
 | Feb 3, 2026 | Resolved DFT-013: Multiple filtered views — "Multiple Saved, Single Visible" model. Users can save multiple filtered views but only one is visible at a time (mutual exclusivity). Nested widget structure when 2+ views exist. Memory-preserving parent toggle. Future enhancement could allow limited simultaneous views |
 | Feb 3, 2026 | Created `PLANNING/future-enhancements.md` backlog for v2.1+ features. Moved DFT-014 (biodiversity aggregation) to backlog. Updated tracker scope to clarify it's focused on v2.0 design decisions |
+| Feb 3, 2026 | Resolved DFT-015: Empty state design — show with placeholder, differentiate first-visit (educational) vs returning (laconic). Configurable terminology via `src/config/terminology.ts` ("Feature" vs "Item"). Widget titles use pattern: "Pinned {childNoun} Layers" / "Bookmarked {childNoun}s". Utilitarian tone, simple SVG icons (no emoji). Drone/LiDAR confirmed as pin-only (no bookmarkable items) |
 
