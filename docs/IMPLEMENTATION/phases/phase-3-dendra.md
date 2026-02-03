@@ -90,10 +90,13 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 **Goal:** Set up the component structure for the Dendra browse experience.
 
+**Decision (Feb 2, 2026):** Resolved DFT-006 — Overview tab opens first when layer is selected, with prominent "Browse Features →" button.
+
 **Acceptance Criteria:**
 - [ ] Component renders when Dendra layer is selected
 - [ ] Tabs exist: Overview | Browse | Export
-- [ ] Browse tab is the default/active tab
+- [ ] **Overview tab is the default/active tab**
+- [ ] Overview tab includes prominent "Browse Features →" button to navigate to Browse tab
 - [ ] Component can show sensor list OR sensor detail (drill-down pattern)
 
 **Files to Create:**

@@ -82,12 +82,14 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 **Goal:** Set up the component structure for the ANiML browse experience.
 
-**Decision (Feb 2, 2026):** Resolved DFT-003c — Landing cards entry point for Animal-First vs Camera-First choice.
+**Decision (Feb 2, 2026):** Resolved DFT-003c — Landing cards entry point for Animal-First vs Camera-First choice.  
+**Decision (Feb 2, 2026):** Resolved DFT-006 — Overview tab opens first when layer is selected, with prominent "Browse Features →" button.
 
 **Acceptance Criteria:**
 - [ ] Component renders when ANiML layer is selected
 - [ ] Tabs exist: Overview | Browse | Export
-- [ ] Browse tab is the default/active tab
+- [ ] **Overview tab is the default/active tab**
+- [ ] Overview tab includes prominent "Browse Features →" button to navigate to Browse tab
 - [ ] Browse tab shows landing cards on first visit (Animal-First vs Camera-First)
 - [ ] Landing cards include icon, title, and brief tagline for each mode
 - [ ] User preference is remembered (skip landing page on return visits)

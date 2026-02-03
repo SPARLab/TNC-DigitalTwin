@@ -80,10 +80,13 @@ Implement the DataOne dataset browse experience in the right sidebar. This data 
 
 **Goal:** Set up the component structure for the DataOne browse experience.
 
+**Decision (Feb 2, 2026):** Resolved DFT-006 — Overview tab opens first when layer is selected, with prominent "Browse Features →" button.
+
 **Acceptance Criteria:**
 - [ ] Component renders when DataOne layer is selected
 - [ ] Tabs exist: Overview | Browse | Export
-- [ ] Browse tab is the default/active tab
+- [ ] **Overview tab is the default/active tab**
+- [ ] Overview tab includes prominent "Browse Features →" button to navigate to Browse tab
 - [ ] Component can show dataset list OR dataset detail (drill-down pattern)
 - [ ] Header clearly indicates "Research data across all categories"
 

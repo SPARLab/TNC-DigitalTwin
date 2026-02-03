@@ -80,7 +80,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-003c | ANiML Browse: Tabs vs landing cards for Animal-First/Camera-First choice | UI/UX | 🟢 Resolved | Low |
 | DFT-004 | Two filter locations (layer-level and feature-level) appear simultaneously—need clearer visual hierarchy | UI/UX | 🟢 Resolved | High |
 | DFT-005 | Floating widgets crowd the screen when viewing time-series data; consider auto-collapse behavior | UI/UX | 🟢 Resolved | Low |
-| DFT-006 | When a layer is selected, which tab opens first in the right sidebar—Overview or Browse? | UI/UX | 🟡 Open | Low |
+| DFT-006 | When a layer is selected, which tab opens first in the right sidebar—Overview or Browse? | UI/UX | 🟢 Resolved | Low |
 | DFT-007 | Bookmark widget title should clarify that bookmarks are features within layers, not separate items | UI/UX | 🟡 Open | Medium |
 | DFT-008 | TNC provided brand colors (Parrot Green, Leaf Green, Benthic Blue) for optional integration | Styling | 🟡 Open | Low |
 | DFT-009 | TNC provided brand fonts (Barlow, Chronicle) for optional integration | Styling | 🟡 Open | Low |
@@ -111,7 +111,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-003b | Where should "Create New View" action live? (for multiple filtered views of same layer) | Amy, Trisalyn, Dan | ✅ Resolved - Feb 2 |
 | DFT-003c | ANiML Browse: Tabs vs landing cards for Animal-First/Camera-First entry point | Amy, Trisalyn | ✅ Resolved - Feb 2 |
 | DFT-004 | Two filter locations (layer-level and feature-level) appear simultaneously—need clearer visual hierarchy | Amy, Trisalyn, Dan | ✅ Resolved - Feb 2 |
-| DFT-006 | When a layer is selected, which tab opens first in the right sidebar—Overview or Browse? | Amy, Trisalyn | 🟡 Pending — Will recommends Overview |
+| DFT-006 | When a layer is selected, which tab opens first in the right sidebar—Overview or Browse? | Amy, Trisalyn | ✅ Resolved - Feb 2 |
 | DFT-007 | Bookmark widget title should clarify that bookmarks are features within layers, not separate items | Amy, Trisalyn | 🟡 Pending |
 | DFT-012 | Camera trap clustering: Show numbered icons at locations, click to see filtered images | Dan | 🟡 Pending — in backend brief |
 | DFT-013 | Multiple filtered views on same layer — save mountain lion AND deer queries simultaneously | Dan, Amy, Trisalyn | 🟡 Pending — paradigm extension |
@@ -658,14 +658,12 @@ These are different questions, but the mockups show both simultaneously without 
 ### DFT-006: Tab Navigation Order on Layer Select
 
 **Category:** UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Low  
 **Source:** Sophia Leiker, Jan 23, 2026
 
 **Feedback (condensed):**
 > "To confirm, once you add a layer to the workspace the Overview tab will be the first thing that pops up correct?"
-
-**Current understanding:** Yes, selecting a layer opens the right sidebar with Overview tab active.
 
 **Options:**
 1. Overview first (current assumption)
@@ -675,7 +673,33 @@ These are different questions, but the mockups show both simultaneously without 
 **Discussion:**
 - Will (Jan 26): I think it should always be Overview first. The Overview tab can include a prominent "Browse Features" button that takes the user to the Browse tab. This gives users context about the layer before diving into data. Good candidate for quick team confirmation via email/form.
 
-**Resolution:** *Pending — needs team confirmation*
+**Resolution:** Feb 2, 2026 — **Overview tab opens first**
+
+**Design Decisions:**
+1. **Default tab:** Overview tab is active when a layer is selected in the left sidebar
+2. **Prominent CTA:** Overview tab includes a prominent "Browse Features →" button to navigate to Browse tab
+3. **Consistent behavior:** All layers follow this pattern (not context-dependent)
+4. **Rationale:**
+   - **Information hierarchy:** Researchers need layer context (temporal/spatial extent, data source, methodology, citations) before diving into data
+   - **Discoverability:** Important metadata/caveats are visible before user explores features
+   - **Consistent UX:** Same behavior every time builds predictable muscle memory
+   - **Progressive disclosure:** Aligns with DFT-004 pattern (context first, then drill down)
+   - **Low friction:** One-click "Browse Features →" button mitigates any extra navigation cost
+5. **Future enhancement (optional):** Could persist tab selection per session for power users who repeatedly access the same layer
+
+**Documented in:**
+- Phase 1 task 1.2: Updated acceptance criteria to specify Overview as default tab
+- Phase 2 task 2.2: Updated acceptance criteria to specify Overview as default tab
+- Phase 3 task 3.2: Updated acceptance criteria to specify Overview as default tab
+- Phase 4 task 4.2: Updated acceptance criteria to specify Overview as default tab
+
+**✅ Verification Checklist:**
+- [x] Decision documented in planning-task-tracker.md
+- [x] Phase 1 task 1.2 updated with Overview as default tab
+- [x] Phase 2 task 2.2 updated with Overview as default tab
+- [x] Phase 3 task 3.2 updated with Overview as default tab
+- [x] Phase 4 task 4.2 updated with Overview as default tab
+- [x] Quick Reference table updated with resolved status
 
 ---
 
@@ -981,4 +1005,5 @@ This is a **new feature** to the paradigm. Current assumption was one query per 
 | Feb 2, 2026 | Resolved DFT-003b: "Create New View" lives in expanded panel when layer is active (Option C) |
 | Feb 2, 2026 | Resolved DFT-003c: Landing cards approach for Animal-First/Camera-First entry point |
 | Feb 2, 2026 | Resolved DFT-004: Progressive disclosure + direct/parametric separation. Sidebar edits filters (context-aware), pop-up has slider only (exploration), widget shows status |
+| Feb 2, 2026 | Resolved DFT-006: Overview tab opens first when layer selected, with prominent "Browse Features →" button |
 

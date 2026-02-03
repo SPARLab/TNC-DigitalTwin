@@ -77,10 +77,13 @@ Implement the iNaturalist observations browse experience in the right sidebar. T
 
 **Goal:** Set up the component structure for the iNaturalist browse experience.
 
+**Decision (Feb 2, 2026):** Resolved DFT-006 — Overview tab opens first when layer is selected, with prominent "Browse Features →" button.
+
 **Acceptance Criteria:**
 - [ ] Component renders when iNaturalist layer is selected
 - [ ] Tabs exist: Overview | Browse | Export
-- [ ] Browse tab is the default/active tab
+- [ ] **Overview tab is the default/active tab**
+- [ ] Overview tab includes prominent "Browse Features →" button to navigate to Browse tab
 - [ ] Component receives selected layer info from parent
 
 **Files to Create:**
