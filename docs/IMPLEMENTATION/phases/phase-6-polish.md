@@ -158,13 +158,34 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 ### 6.7: Accessibility Check
 
-**Goal:** Ensure basic accessibility.
+**Decision (Feb 3):** Resolved DFT-017 — Baseline accessibility principles established. This task focuses on auditing and refining the implementation.
+
+**Goal:** Audit and refine accessibility implementation based on baseline principles.
+
+**Baseline Principles (from DFT-017):**
+1. **Tab Order:** Natural DOM order (Left sidebar → Map → Floating widgets → Right sidebar)
+2. **Escape Key:** Closes most recently opened element (modal, expanded row, panel, popup)
+3. **Focus Management:** Focus moves to first interactive element when container expands
+4. **Screen Reader:** Announce significant actions only (filter applied, layer pinned, errors)
 
 **Areas to Check:**
-- [ ] Keyboard navigation works
-- [ ] Focus states visible
-- [ ] Sufficient color contrast
-- [ ] ARIA labels where needed
+- [ ] Keyboard navigation works across all components (verify tab order follows principle)
+- [ ] Focus states visible and consistent (verify focus styling on all interactive elements)
+- [ ] Sufficient color contrast (WCAG 2.1 AA minimum: 4.5:1 for normal text, 3:1 for large text)
+- [ ] ARIA labels where needed (forms, icon buttons, dynamic content)
+- [ ] Escape key behavior consistent (test modals, expanded panels, popups)
+- [ ] Focus management on expand/collapse (verify focus moves correctly)
+- [ ] Screen reader announcements appropriate (test with VoiceOver/NVDA/JAWS)
+- [ ] No keyboard traps (user can always navigate away)
+- [ ] Skip links for main content areas (optional enhancement)
+
+**Testing Tools:**
+- Chrome DevTools Lighthouse accessibility audit
+- axe DevTools browser extension
+- Keyboard-only navigation test (unplug mouse)
+- Screen reader test (at least one: VoiceOver, NVDA, or JAWS)
+
+**Note:** Full WCAG 2.1 AA compliance deferred to post-v2.0 if needed. Focus on usability for keyboard/screen reader users.
 
 ---
 
@@ -184,4 +205,5 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 |------|------|--------|-----|
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 | Feb 3, 2026 | 6.1, 6.2 | Added TNC brand integration tasks (fonts + theme variants). Resolved DFT-008, DFT-009 | Will + Claude |
+| Feb 3, 2026 | 6.7 | Updated accessibility check with DFT-017 baseline principles. Added specific testing checklist and tools | Will + Claude |
 

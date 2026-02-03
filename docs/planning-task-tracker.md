@@ -99,7 +99,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-013 | Multiple filtered views on same layer — save mountain lion AND deer queries simultaneously | Paradigm Extension | 🟢 Resolved | High |
 | DFT-015 | Empty state design for widgets, Browse tab, search results | UI/UX | 🟢 Resolved | High |
 | DFT-016 | Mobile/tablet responsiveness scope decision | Technical | 🟢 Resolved | Medium |
-| DFT-017 | Keyboard navigation & accessibility patterns | Accessibility | 🟡 Open | Medium |
+| DFT-017 | Keyboard navigation & accessibility patterns | Accessibility | 🟢 Resolved | Medium |
 | DFT-018 | Loading states and skeleton UI patterns | UI/UX | 🟡 Open | High |
 | DFT-019 | Edit Filters button navigation behavior — what happens to widget? | UI/UX | 🟡 Open | Medium |
 | DFT-020 | Pointer-row bookmark UI — one button vs two for "Bookmark" vs "Bookmark with Filter" | UI/UX | 🟡 Open | High |
@@ -149,7 +149,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-013 | Multiple filtered views on same layer — save mountain lion AND deer queries simultaneously | Dan, Amy, Trisalyn | ✅ Resolved - Feb 3 |
 | DFT-015 | Empty state design for widgets, Browse tab, search results | Will | ✅ Resolved - Feb 3 |
 | DFT-016 | Mobile/tablet responsiveness scope decision | Amy, Trisalyn | ✅ Resolved - Feb 3 |
-| DFT-017 | Keyboard navigation & accessibility patterns | Will | 🟡 Pending |
+| DFT-017 | Keyboard navigation & accessibility patterns | Will | ✅ Resolved - Feb 3 |
 | DFT-018 | Loading states and skeleton UI patterns | Will, Dan | 🟡 Pending |
 | DFT-019 | Edit Filters button navigation behavior | Will | 🟡 Pending |
 | DFT-020 | Pointer-row bookmark UI (one vs two buttons) | Amy, Trisalyn | 🟡 Pending |
@@ -1400,7 +1400,7 @@ If TNC researchers need field verification (visiting camera trap locations with 
 ### DFT-017: Keyboard Navigation & Accessibility Patterns
 
 **Category:** Accessibility  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Medium  
 **Source:** UX Design Review, Feb 3, 2026
 
@@ -1414,21 +1414,54 @@ No mention of:
 **Why this matters (Nielsen: Flexibility and efficiency of use):**
 GIS researchers often work with multiple windows and benefit from keyboard-driven workflows. Accessibility is also a legal requirement for many institutions.
 
-**Questions to Resolve:**
-1. What is the tab order? (Left sidebar → Map → Pinned widget → Bookmarks widget → Right sidebar?)
-2. Should Escape close expanded panels or modals?
-3. When a filter is applied and the widget animates, should a screen reader announce "Filter applied"?
-4. When focus is on the widget and user expands a row, where does focus move?
+**Resolution:** Feb 3, 2026 — **Baseline Accessibility: Natural DOM order, standard conventions**
 
-**Options:**
-1. **Defer to Phase 6 (Polish)** — note requirement but don't detail now
-2. **Specify key interactions now** — define tab order and basic keyboard support
-3. **Full WCAG compliance** — define comprehensive a11y requirements
+**Design Decisions:**
 
-**Discussion:**
-*Needs discussion — likely defer to Phase 6 but note key requirements*
+1. **Tab Order Principle — Follow natural DOM order:**
+   - Tab navigation will follow left-to-right, top-to-bottom layout matching visual structure
+   - Flow: Left sidebar → Map → Floating widgets (top to bottom) → Right sidebar
+   - Within each region: natural reading order (buttons, links, inputs in DOM order)
+   - **No custom `tabindex` overrides** unless specific accessibility issue requires it
+   - **Implementation note:** If CSS positioning (e.g., `position: absolute` for floating widgets) creates visual/DOM mismatch, adjust DOM order to match visual layout
 
-**Resolution:** *Pending*
+2. **Escape Key Behavior — Close most recently opened/focused element:**
+   - Modal open → Escape closes modal
+   - Expanded widget row → Escape collapses row
+   - Expanded panel → Escape collapses panel
+   - Map popup open → Escape closes popup
+   - **Rule:** Escape always closes/collapses the most recently opened UI element, moving focus back to trigger element when possible
+
+3. **Focus Management — Move focus to first interactive element when expanding:**
+   - Widget row expands → focus moves to first button (Edit Filters, Bookmark, etc.)
+   - Right sidebar opens → focus moves to first tab or interactive element
+   - Modal opens → focus moves to first focusable element in modal
+   - **Rule:** When a container expands, focus should move to the first interactive element inside
+
+4. **Screen Reader Announcements — Announce significant actions only:**
+   - "Filter applied" when filter updates (announce count: "Filter applied: 47 features match")
+   - "Layer pinned" / "Layer unpinned"
+   - "Bookmark saved" / "Bookmark removed"
+   - Error messages (inline and toast)
+   - **Do NOT announce:** Hover states, subtle animations, non-critical UI updates
+   - **Implementation:** Use ARIA live regions (`aria-live="polite"` for non-urgent, `aria-live="assertive"` for errors)
+
+**Deferred to Phase 6 (Polish & Accessibility Audit):**
+- Comprehensive keyboard shortcuts (beyond Tab and Escape)
+- Full WCAG 2.1 AA compliance audit
+- Detailed ARIA label copy and testing
+- Screen reader testing with NVDA/JAWS/VoiceOver
+- Keyboard-only workflow testing
+- Color contrast verification
+- Focus indicator styling refinement
+
+**Rationale:**
+These four principles establish the mental model for keyboard/accessibility behavior without overspecifying implementation details. Modern React components with semantic HTML will handle most accessibility automatically. Phase 6 will refine and audit, but developers have clear guidance now.
+
+**Design Principles Applied:**
+- **Nielsen #7 (Flexibility and efficiency of use):** Keyboard navigation supports power users
+- **Norman's Feedback principle:** Focus states provide visual feedback for interaction
+- **Gestalt Proximity:** Elements visually grouped are in the same tab group
 
 ---
 
