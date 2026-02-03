@@ -81,7 +81,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-004 | Two filter locations (layer-level and feature-level) appear simultaneously—need clearer visual hierarchy | UI/UX | 🟢 Resolved | High |
 | DFT-005 | Floating widgets crowd the screen when viewing time-series data; consider auto-collapse behavior | UI/UX | 🟢 Resolved | Low |
 | DFT-006 | When a layer is selected, which tab opens first in the right sidebar—Overview or Browse? | UI/UX | 🟢 Resolved | Low |
-| DFT-007 | Bookmark widget title should clarify that bookmarks are features within layers, not separate items | UI/UX | 🟡 Open | Medium |
+| DFT-007 | Bookmark widget title should clarify that bookmarks are features within layers, not separate items | UI/UX | 🟢 Resolved | Medium |
 | DFT-008 | TNC provided brand colors (Parrot Green, Leaf Green, Benthic Blue) for optional integration | Styling | 🟡 Open | Low |
 | DFT-009 | TNC provided brand fonts (Barlow, Chronicle) for optional integration | Styling | 🟡 Open | Low |
 | DFT-010 | Terminology: Change "items" to "features" throughout — more familiar to GIS users | UI/UX | 🟢 Resolved | High |
@@ -112,7 +112,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-003c | ANiML Browse: Tabs vs landing cards for Animal-First/Camera-First entry point | Amy, Trisalyn | ✅ Resolved - Feb 2 |
 | DFT-004 | Two filter locations (layer-level and feature-level) appear simultaneously—need clearer visual hierarchy | Amy, Trisalyn, Dan | ✅ Resolved - Feb 2 |
 | DFT-006 | When a layer is selected, which tab opens first in the right sidebar—Overview or Browse? | Amy, Trisalyn | ✅ Resolved - Feb 2 |
-| DFT-007 | Bookmark widget title should clarify that bookmarks are features within layers, not separate items | Amy, Trisalyn | 🟡 Pending |
+| DFT-007 | Bookmark widget title should clarify that bookmarks are features within layers, not separate items | Amy, Trisalyn | ✅ Resolved - Feb 2 |
 | DFT-012 | Camera trap clustering: Show numbered icons at locations, click to see filtered images | Dan | 🟡 Pending — in backend brief |
 | DFT-013 | Multiple filtered views on same layer — save mountain lion AND deer queries simultaneously | Dan, Amy, Trisalyn | 🟡 Pending — paradigm extension |
 
@@ -706,23 +706,91 @@ These are different questions, but the mockups show both simultaneously without 
 ### DFT-007: Bookmark Widget Labeling
 
 **Category:** UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Medium  
 **Source:** Sophia Leiker, Jan 23, 2026
 
 **Feedback (condensed):**
 > "I almost want the title to be 'Bookmark Items within Layer' or something to identify this distinction" — to clarify that bookmarks are features nested under layers.
 
-**Options:**
-1. "Bookmarked Features"
-2. "Bookmarked Items (from Layers)"
-3. "Saved Features"
+**Context:**
+The paradigm has two floating widgets — Pinned Layers (top-left) and Bookmarked Features (top-right) — that are conceptually parent-child (layers contain features), but visually appear as siblings (same widget type, same hierarchy level, both floating). The UI must communicate that bookmarked features are "plucked from" layers without overloading the title.
+
+**Options Considered:**
+1. "Bookmarked Features" (concise, GIS-friendly)
+2. "Bookmarked Items (from Layers)" (explicit hierarchy)
+3. "Saved Features" (alternative verb)
 4. Keep "Bookmarks" but add subtitle/help text
 
 **Discussion:**
-*None yet*
+- Will (Feb 2): Analyzed through established UX design principles (Norman, Gestalt, Nielsen)
+- Key principles at risk: Conceptual Model, Proximity, Similarity, Recognition over Recall, Signifiers, Information Scent, Visual Hierarchy
+- Solution: Use widget structure (not title) to communicate the relationship
 
-**Resolution:** *Pending*
+**Resolution:** Feb 2, 2026 — **Group bookmarks by parent layer; layer header is non-interactive context label**
+
+**Design Decisions:**
+
+1. **Widget title:** "Bookmarked Features" (concise, matches GIS terminology)
+
+2. **Widget structure:** Bookmarks grouped by parent layer
+   - When user bookmarks a feature, its parent layer auto-inserts as a group header
+   - Layer header is **non-interactive** (read-only context label, not a button)
+   - Features appear as interactive rows under their parent layer
+
+3. **Visual treatment for layer header (non-interactivity signifiers):**
+   - Muted color (gray text, ~60% opacity)
+   - No hover state (cursor stays default, no background change)
+   - No buttons/icons on the row (no 👁, no ✕, no chevron)
+   - Different typography (smaller, uppercase, or lighter weight than feature rows)
+   - Full-width span (acts as section divider, not a card row)
+   - Optional: subtle dotted line or different background tint
+
+4. **Widget positioning:** Top-right (near right sidebar where feature-level work happens)
+   - Gestalt Proximity at macro level: aligns with feature exploration context
+   - Contrasts with Pinned Layers (top-left, near left sidebar/layer catalog)
+
+5. **Feature rows remain fully interactive:**
+   - Visibility toggle [👁]
+   - Remove button [✕]
+   - Standard hover states and clickable styling
+
+**ASCII Wireframe:**
+
+```
+┌──────────────────────────────────────────────────┐
+│ 🔖 BOOKMARKED FEATURES                           │
+├──────────────────────────────────────────────────┤
+│ ┄┄ Camera Traps ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ │  ← Non-interactive layer label
+│    CAM-042 (mt. lion)                 [👁] ✕    │  ← Interactive feature row
+│    CAM-118                            [👁] ✕    │
+│ ┄┄ Dendra Sensors ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ │
+│    Sensor ABC-123 (Mar 2024)          [👁] ✕    │
+└──────────────────────────────────────────────────┘
+```
+
+**Rationale (UX Principles Applied):**
+- **Norman's Conceptual Model:** Layer appears as parent → user sees hierarchy matching GIS mental model (layers contain features)
+- **Gestalt Proximity:** Features positioned near layer label → perceived as related/grouped
+- **Recognition over Recall:** Layer name visible inline → no memory burden to recall which layer a bookmark came from
+- **Norman's Signifiers:** Non-interactive styling signals "this is context, not a control"
+- **Visual Hierarchy:** Layer = muted group header, Features = prominent actionable rows
+- **Information Scent:** Layer context visible → users can predict relationships without exploring
+
+**Edge Case Noted:**
+- If user bookmarks features from a layer they later unpin, bookmarked features remain with layer header as context (bookmarks are independent of pin state)
+
+**Documented in:**
+- Phase 0 task 0.6 updated with grouped widget structure and non-interactive layer header design
+- Master plan updated with cross-phase UX decision
+- Resolution summary: `PLANNING/resolved-decisions/dft-007-resolution-summary.md`
+
+**✅ Verification Checklist:**
+- [x] Decision documented in planning-task-tracker.md
+- [x] Phase 0 task 0.6 updated with grouped widget structure
+- [x] Master plan updated with cross-phase UX decision
+- [x] Resolution summary created in PLANNING/resolved-decisions/
+- [x] Quick Reference table updated with resolved status
 
 ---
 
@@ -1006,4 +1074,5 @@ This is a **new feature** to the paradigm. Current assumption was one query per 
 | Feb 2, 2026 | Resolved DFT-003c: Landing cards approach for Animal-First/Camera-First entry point |
 | Feb 2, 2026 | Resolved DFT-004: Progressive disclosure + direct/parametric separation. Sidebar edits filters (context-aware), pop-up has slider only (exploration), widget shows status |
 | Feb 2, 2026 | Resolved DFT-006: Overview tab opens first when layer selected, with prominent "Browse Features →" button |
+| Feb 2, 2026 | Resolved DFT-007: Bookmark widget groups features by parent layer; layer header is non-interactive context label using muted styling |
 

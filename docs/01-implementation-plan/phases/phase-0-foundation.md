@@ -279,14 +279,37 @@ This allows collecting user feedback before finalizing the design.
 
 **Goal:** Create the floating widget that shows bookmarked features.
 
-**Status Note:** Awaiting team feedback on bookmark paradigm.
+**Design Decision (Feb 2, 2026):** Resolved DFT-007 — Bookmarks are grouped by parent layer within the widget. Layer headers are non-interactive context labels (muted styling, no hover) that help users form the correct mental model (layers contain features). This structure addresses UX principles: Conceptual Model, Proximity, Recognition over Recall, Signifiers, Visual Hierarchy.
 
 **Acceptance Criteria:**
 - [ ] Widget renders in top-right of map area
 - [ ] Widget is collapsible/expandable
-- [ ] Shows list of bookmarked features
-- [ ] Each feature shows: icon, label, source, filter context (if applicable), view/remove buttons
+- [ ] Shows list of bookmarked features **grouped by parent layer**
+- [ ] **Layer headers** (non-interactive context labels):
+  - Muted color (gray text, ~60% opacity)
+  - No hover state, no background change
+  - No buttons/icons (no 👁, no ✕, no chevron)
+  - Different typography (smaller, uppercase, or lighter weight)
+  - Full-width span with optional dotted line or background tint
+- [ ] **Feature rows** (interactive):
+  - Standard hover states and clickable styling
+  - Shows: icon, label, filter context (if applicable)
+  - Visibility toggle [👁] and remove button [✕]
 - [ ] NO "Export All" button in widget (moved to global header per DFT-002 resolution)
+- [ ] Auto-collapses when time-series data is active (DFT-005)
+
+**ASCII Wireframe:**
+```
+┌──────────────────────────────────────────────────┐
+│ 🔖 BOOKMARKED FEATURES                           │
+├──────────────────────────────────────────────────┤
+│ ┄┄ Camera Traps ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ │  ← Non-interactive layer label
+│    CAM-042 (mt. lion)                 [👁] ✕    │  ← Interactive feature row
+│    CAM-118                            [👁] ✕    │
+│ ┄┄ Dendra Sensors ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ │
+│    Sensor ABC-123 (Mar 2024)          [👁] ✕    │
+└──────────────────────────────────────────────────┘
+```
 
 **Reference:**
 - Mockup: `mockups/02a-unified-layout.html` (bookmark widget section)
@@ -294,6 +317,7 @@ This allows collecting user feedback before finalizing the design.
 **Files to Create:**
 - `src/v2/components/FloatingWidgets/BookmarkedFeaturesWidget.tsx`
 - `src/v2/components/FloatingWidgets/BookmarkCard.tsx`
+- `src/v2/components/FloatingWidgets/BookmarkLayerHeader.tsx` (non-interactive group header)
 
 ---
 
@@ -335,4 +359,5 @@ This allows collecting user feedback before finalizing the design.
 | Jan 29, 2026 | 0.5, 0.6 | Added auto-collapse behavior for time-series viewing (DFT-005) | Will + Claude |
 | Feb 2, 2026 | 0.5 | Added expanded panel behavior with "Create New View" button (DFT-003b) | Will + Claude |
 | Feb 2, 2026 | 0.5 | Removed swatch from row spec; active state indicated by expansion + visual treatment | Will + Claude |
+| Feb 2, 2026 | 0.6 | Resolved DFT-007: Bookmarks grouped by parent layer; layer headers are non-interactive context labels with muted styling | Will + Claude |
 
