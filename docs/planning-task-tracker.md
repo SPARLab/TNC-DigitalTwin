@@ -67,7 +67,11 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 - **Export functionality:** `IMPLEMENTATION/phases/phase-5-export-builder.md`
 - **Cross-phase decisions:** `master-plan.md` → "Cross-Phase Decisions" → "UX Decisions"
 
-**Last Updated:** February 3, 2026 (DFT-013 resolved)
+**Last Updated:** February 3, 2026 (Documentation sync completed)
+
+**Next Steps:**
+- [ ] Update mockups (`mockups/02a-02f`) to reflect all resolved v2.0 UX decisions (DFT-001 through DFT-013)
+- [ ] Archive old mockups and create updated versions demonstrating the new design patterns
 
 ---
 

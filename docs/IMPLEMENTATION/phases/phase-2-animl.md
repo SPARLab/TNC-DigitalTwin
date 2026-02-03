@@ -110,11 +110,17 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 **Goal:** Create filters for the cameras themselves.
 
+**Design Decision (Feb 3, 2026):** Resolved DFT-003 — Button visibility is context-dependent. "📌 Pin Layer" only appears when layer is NOT pinned. Once pinned, filter changes auto-apply to the pinned layer.
+
 **Acceptance Criteria:**
 - [ ] Region dropdown
 - [ ] Status dropdown (Active, Inactive, etc.)
 - [ ] Filter updates camera list below
-- [ ] Filter can be saved with "Pin Layer with Query"
+- [ ] Filter updates map markers (badge counts reflect active filter)
+- [ ] **Context-dependent pin button:**
+  - [ ] If layer NOT pinned: Show "📌 Pin Layer" or "📌 Pin with [filter summary]" button
+  - [ ] If layer IS pinned: No pin button needed — filter changes auto-apply to pinned layer
+  - [ ] Widget row animates/highlights when filter changes (visual feedback)
 
 **Reference:** Mockup `02c-browse-animl.html` "Filter Cameras" section
 
@@ -126,13 +132,16 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 **This is the dual-level filtering pattern unique to ANiML.**
 
+**Design Decision (Feb 3, 2026):** Resolved DFT-003 — Once layer is pinned, both camera filter AND image filter changes auto-apply. No "Pin Layer with Query" button needed after initial pin.
+
 **Acceptance Criteria:**
 - [ ] Species dropdown
 - [ ] Date range picker
 - [ ] Time of day filter (optional)
 - [ ] Filter shows aggregate count: "X cameras • Y total images"
-- [ ] "Pin Layer with Query" saves BOTH camera filter AND image filter
-- [ ] Clear visual distinction between camera filters and image filters
+- [ ] Clear visual distinction between camera filters (Level 2) and image filters (Level 3)
+- [ ] **Auto-apply behavior:** If layer is already pinned, filter changes update the pinned layer automatically
+- [ ] Widget row animates/highlights when filter changes (confirms change was applied)
 
 **Reference:** Mockup `02c-browse-animl.html` "Filter Images" section (note the info text)
 
@@ -183,12 +192,21 @@ activeQuery: {
 
 **Goal:** When user clicks a camera, show its detail view with images.
 
+**Design Decision (Feb 3, 2026):** Resolved DFT-003 — "Bookmark" button only appears when a feature (camera) is selected. Button visibility follows the state machine defined below.
+
 **Acceptance Criteria:**
 - [ ] "← Back to Cameras" navigation
 - [ ] Camera info header (name, location, status)
 - [ ] Image filter UI (pre-populated from global filter if set)
-- [ ] "Bookmark Camera" (no filter)
-- [ ] "Bookmark with Filter" (saves camera + current image filter)
+- [ ] **Context-dependent button visibility:**
+
+  | State | Available Actions |
+  |-------|-------------------|
+  | Layer not pinned, camera selected | "📌 Pin Layer" + "🔖 Bookmark This Camera" |
+  | Layer pinned, camera selected | "🔖 Bookmark This Camera" only |
+
+- [ ] "🔖 Bookmark This Camera" saves camera with current image filter (if any)
+- [ ] Bookmark appears in Bookmarked Features widget, grouped under parent layer
 - [ ] Image gallery showing filtered results
 - [ ] Image gallery supports pagination or lazy loading
 
@@ -301,4 +319,5 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 | Feb 2, 2026 | 2.2 | Added landing cards entry point (DFT-003c) and Overview tab as default (DFT-006) | Will + Claude |
 | Feb 3, 2026 | 2.5 | Added numbered badge map visualization (DFT-012) with progressive disclosure integration | Will + Claude |
+| Feb 3, 2026 | 2.3, 2.4, 2.6 | Resolved DFT-003: Context-dependent button visibility. "Pin Layer" only shows when layer not pinned; filter changes auto-apply to pinned layers. "Bookmark" only shows when camera is selected. | Will + Claude |
 

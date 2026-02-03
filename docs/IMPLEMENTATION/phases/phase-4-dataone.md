@@ -215,4 +215,5 @@ TBD - Document the actual URL
 | Date | Task | Change | By |
 |------|------|--------|-----|
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
+| Feb 2, 2026 | 4.2 | Resolved DFT-006: Overview tab opens first when layer is selected, with prominent "Browse Features →" button | Will + Claude |
 
