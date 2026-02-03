@@ -71,8 +71,8 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 
 **Next Steps:**
 - [ ] **BEFORE MOCKUPS (DFT-037):** Resolve all design discussion tasks (DFT-015 through DFT-036)
-  - **High priority:** DFT-015 (empty states), DFT-018 (loading states), DFT-020 (pointer-row bookmark UI), DFT-030 (error states)
-  - **Medium priority:** DFT-016, DFT-019, DFT-024, DFT-028, DFT-029, DFT-031, DFT-032, DFT-035
+  - **High priority:** DFT-018 (loading states), DFT-020 (pointer-row bookmark UI), DFT-030 (error states)
+  - **Medium priority:** DFT-019, DFT-024, DFT-028, DFT-029, DFT-031, DFT-032, DFT-035
   - **Low priority:** Can defer to Phase 6 if not blocking mockup generation
 - [ ] **After DFT-037:** Archive resolved design decisions to `PLANNING/resolved-decisions/` to keep tracker manageable
 
@@ -98,7 +98,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-012 | Camera trap clustering: Show numbered icons at locations, click to see filtered images | Feature Request | 🟢 Resolved | Medium |
 | DFT-013 | Multiple filtered views on same layer — save mountain lion AND deer queries simultaneously | Paradigm Extension | 🟢 Resolved | High |
 | DFT-015 | Empty state design for widgets, Browse tab, search results | UI/UX | 🟢 Resolved | High |
-| DFT-016 | Mobile/tablet responsiveness scope decision | Technical | 🟡 Open | Medium |
+| DFT-016 | Mobile/tablet responsiveness scope decision | Technical | 🟢 Resolved | Medium |
 | DFT-017 | Keyboard navigation & accessibility patterns | Accessibility | 🟡 Open | Medium |
 | DFT-018 | Loading states and skeleton UI patterns | UI/UX | 🟡 Open | High |
 | DFT-019 | Edit Filters button navigation behavior — what happens to widget? | UI/UX | 🟡 Open | Medium |
@@ -148,7 +148,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-012 | Camera trap clustering: Show numbered icons at locations, click to see filtered images | Dan | ✅ Resolved - Feb 3 |
 | DFT-013 | Multiple filtered views on same layer — save mountain lion AND deer queries simultaneously | Dan, Amy, Trisalyn | ✅ Resolved - Feb 3 |
 | DFT-015 | Empty state design for widgets, Browse tab, search results | Will | ✅ Resolved - Feb 3 |
-| DFT-016 | Mobile/tablet responsiveness scope decision | Amy, Trisalyn | 🟡 Pending |
+| DFT-016 | Mobile/tablet responsiveness scope decision | Amy, Trisalyn | ✅ Resolved - Feb 3 |
 | DFT-017 | Keyboard navigation & accessibility patterns | Will | 🟡 Pending |
 | DFT-018 | Loading states and skeleton UI patterns | Will, Dan | 🟡 Pending |
 | DFT-019 | Edit Filters button navigation behavior | Will | 🟡 Pending |
@@ -1317,7 +1317,7 @@ Empty states are critical teaching moments. A well-designed empty state guides u
 ### DFT-016: Mobile/Tablet Responsiveness Scope
 
 **Category:** Technical  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Medium  
 **Source:** UX Design Review, Feb 3, 2026
 
@@ -1327,7 +1327,7 @@ The design documents assume a desktop layout (left sidebar, right sidebar, float
 - Tablet behavior (collapse sidebars to overlays? stack vertically?)
 - Whether mobile is explicitly out of scope
 
-The existing `DesktopOnlyGate.tsx` component suggests this has been considered, but scope isn't documented.
+The existing `DesktopOnlyGate.tsx` component suggests this has been considered, but scope wasn't documented.
 
 **Why this matters:**
 If mockups are created at a fixed width without defined breakpoints, the team will inherit responsive decisions they didn't consciously make.
@@ -1344,9 +1344,56 @@ If mockups are created at a fixed width without defined breakpoints, the team wi
 3. **Defer** — desktop-only for v2.0, responsive for v2.1+
 
 **Discussion:**
-*Needs discussion*
+Analyzed from multiple design theory perspectives (Nielsen, Gestalt, Norman):
 
-**Resolution:** *Pending*
+**Nielsen's Heuristics:**
+- **Visibility of system status + Recognition over recall:** The paradigm relies on *simultaneous visibility* of related information (left sidebar, right sidebar, floating widgets, map). Mobile forces sequential disclosure (hamburger menus, hidden panels), violating "recognition over recall."
+- **Flexibility and efficiency:** Target audience (DFT-011: GIS-minded researchers) are power users who benefit from information density. Mobile's constrained viewport trades efficiency for simplicity — opposite of what this audience needs.
+
+**Gestalt Principles:**
+- **Proximity + Common Region:** Design uses spatial proximity to show relationships (layer in left sidebar → details in right sidebar). Breaking into separate "screens" destroys the gestalt.
+- Widgets *need* to float over the map because they represent *parallel* concerns (persistent selections) while sidebars represent *current* exploration context.
+
+**Norman's Principles:**
+- **Mapping:** Left-to-right flow (browse → select → examine → export) maps to natural reading direction. Breaks on mobile.
+- **Constraints:** Desktop constraints are *enabling* — fixed sidebars make system predictable. Mobile requires dynamic constraints (slide-in panels), adding interaction overhead.
+
+**Practical Reality:**
+- Mockup `02a-unified-layout.html` has 6 simultaneously-visible interaction zones
+- Three-level data hierarchy (Layer → Feature → Related Data) benefits from stable UI landmarks
+- Even on 10" iPad, significant UI compromise would be required
+
+**Resolution:** 
+**Option 1 adopted: Desktop-only for v2.0**
+
+**Specifics:**
+- **Minimum viewport width:** 1280px
+- **Below 1280px:** Show existing `DesktopOnlyGate` component with explicit messaging
+- **Mockups designed at:** 1440px (standard desktop breakpoint)
+- **Mobile/tablet responsiveness:** Explicitly deferred to v2.1+ as optional enhancement
+- **Documentation:** This is a professional desktop tool for researchers at workstations
+
+**Rationale:**
+- Aligns with target audience (researchers at workstations, not field work)
+- Avoids design-by-accident (inheriting responsive decisions not consciously made)
+- Frees development resources for core functionality
+- `DesktopOnlyGate.tsx` already exists — formalize the threshold at 1280px
+
+**Edge Case Noted:**
+If TNC researchers need field verification (visiting camera trap locations with tablet), a view-only mobile mode showing bookmarked locations on simplified map could be v2.1+ feature.
+
+**Documented in:**
+- `docs/planning-task-tracker.md` (this file)
+- `docs/master-plan.md` — UX Decisions table
+- `docs/PLANNING/resolved-decisions/dft-016-resolution-summary.md`
+- `src/components/DesktopOnlyGate.tsx` — updated MIN_DESKTOP_WIDTH constant to 1280px
+
+**✅ Verification Checklist:**
+- [x] Resolution documented in planning-task-tracker.md
+- [x] Master plan updated with UX decision
+- [x] DesktopOnlyGate.tsx updated to 1280px threshold
+- [x] Resolution summary created in resolved-decisions/
+- [x] Quick Reference table updated with resolved status
 
 ---
 

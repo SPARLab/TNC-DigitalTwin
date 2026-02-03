@@ -1,6 +1,6 @@
 import { useState, useEffect, type ReactNode } from 'react';
 
-const MIN_DESKTOP_WIDTH = 1024;
+const MIN_DESKTOP_WIDTH = 1280;
 
 interface DesktopOnlyGateProps {
   children: ReactNode;
