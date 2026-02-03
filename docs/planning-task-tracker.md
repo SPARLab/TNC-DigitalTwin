@@ -1,6 +1,8 @@
 # Design Feedback & Issue Tracker
 
-**Purpose:** Track UI/UX feedback, design decisions, and implementation concerns as discrete issues. This document serves as a staging area before development plans are finalized.
+**Purpose:** Track UI/UX feedback, design decisions, and implementation concerns for **v2.0** as discrete issues. This document serves as a staging area before development plans are finalized.
+
+**Scope:** This tracker is focused on v2.0 design decisions. Features deferred to future versions (v2.1+) are tracked in `PLANNING/future-enhancements.md`.
 
 **How to use this doc:**
 1. New feedback gets logged as a numbered issue
@@ -88,14 +90,14 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-011 | Target audience clarification: Researchers (GIS-minded), not broad public | Design Decision | 🟢 Resolved | Medium |
 | DFT-012 | Camera trap clustering: Show numbered icons at locations, click to see filtered images | Feature Request | 🟢 Resolved | Medium |
 | DFT-013 | Multiple filtered views on same layer — save mountain lion AND deer queries simultaneously | Paradigm Extension | 🟢 Resolved | High |
-| DFT-014 | Biodiversity/aggregation queries: Species counts and proportions per camera trap | Feature Request | ⚪ Deferred | Low |
 
    **Status Key:**
 - 🟢 Resolved — Decision made, ready for dev
 - 🟡 Open — Needs discussion/decision
 - 🔵 In Discussion — Actively being debated
-- ⚪ Deferred — Pushed to future version
 - ✅ Implemented — Built and shipped
+
+**Note:** Deferred features (pushed to v2.1+) are tracked in `PLANNING/future-enhancements.md`
 
 ---
 
@@ -1090,35 +1092,6 @@ This is a **new feature** to the paradigm. Current assumption was one query per 
 
 ---
 
-### DFT-014: Biodiversity/Aggregation Queries
-
-**Category:** Feature Request  
-**Status:** ⚪ Deferred  
-**Priority:** Low  
-**Source:** Trisalyn Nelson, Jan 26, 2026
-
-**Feedback (condensed):**
-> Want to analyze diversity of species per camera trap location:
-> - "Are there some where almost all the species are mountain lions?"
-> - Unique species count per camera
-> - Pie chart symbols showing proportion of each species
-
-**Potential Visualizations:**
-1. Simple count badge: "5 species" on each camera icon
-2. Proportional pie chart at each location (like bike map hazard breakdown)
-3. Heat map of biodiversity index
-
-**Notes:**
-- Trisalyn acknowledged this may be "too in the weeds" for current scope
-- Useful for informing long-term paradigm (query capabilities)
-- Related to DFT-012 (clustering) and DFT-013 (multiple queries)
-
-**Discussion:**
-- Will (Jan 26): Deferred to future version, but valuable for understanding researcher workflows. Informs what aggregation/visualization capabilities we should architect for.
-
-**Resolution:** *Deferred — future scope, v2+*
-
----
 
 ### DFT-002: Export Button Placement/Visibility ✅
 
@@ -1212,4 +1185,5 @@ This is a **new feature** to the paradigm. Current assumption was one query per 
 | Feb 2, 2026 | Resolved DFT-007: Bookmark widget groups features by parent layer; layer header is non-interactive context label using muted styling |
 | Feb 3, 2026 | Resolved DFT-012: Camera trap clustering — count badges on camera icons showing filtered image counts. Badges appear when layer-level filter is applied. Progressive disclosure integration confirmed |
 | Feb 3, 2026 | Resolved DFT-013: Multiple filtered views — "Multiple Saved, Single Visible" model. Users can save multiple filtered views but only one is visible at a time (mutual exclusivity). Nested widget structure when 2+ views exist. Memory-preserving parent toggle. Future enhancement could allow limited simultaneous views |
+| Feb 3, 2026 | Created `PLANNING/future-enhancements.md` backlog for v2.1+ features. Moved DFT-014 (biodiversity aggregation) to backlog. Updated tracker scope to clarify it's focused on v2.0 design decisions |
 

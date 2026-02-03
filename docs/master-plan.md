@@ -21,6 +21,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 - Paradigm: `docs/feedback/data-catalog-ux-paradigm-jan-21-2026.md`
 - Mockups: `mockups/02a-02f` (unified layout, data source browse views, export builder)
 - Previous mockup plan: `docs/01-implementation-plan/archive/v2-pin-bookmark-export-mockup-plan.md`
+- Future enhancements: `docs/PLANNING/future-enhancements.md` (v2.1+ feature backlog)
 
 ---
 
@@ -217,4 +218,5 @@ When working on any phase:
 | Feb 2, 2026 | Phase 0 | Resolved DFT-007: Bookmarked Features widget groups features by parent layer; layer headers are non-interactive context labels | Will + Claude |
 | Feb 3, 2026 | Phase 2 | Resolved DFT-012: Camera trap clustering with numbered badges on camera icons showing filtered image counts. Layer-level filter drives badge display | Will + Claude |
 | Feb 3, 2026 | Phase 0 | Resolved DFT-013: Multiple filtered views — "Multiple Saved, Single Visible" model with nested widget structure. Mutual exclusivity prevents map badge stacking complexity | Will + Claude |
+| Feb 3, 2026 | - | Created future-enhancements.md backlog for v2.1+ features. Moved DFT-014 (biodiversity aggregation) to backlog | Will + Claude |
 
