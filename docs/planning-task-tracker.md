@@ -65,7 +65,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 - **Export functionality:** `IMPLEMENTATION/phases/phase-5-export-builder.md`
 - **Cross-phase decisions:** `master-plan.md` → "Cross-Phase Decisions" → "UX Decisions"
 
-**Last Updated:** February 2, 2026 (DFT-004 resolved)
+**Last Updated:** February 3, 2026 (DFT-013 resolved)
 
 ---
 
@@ -86,11 +86,11 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-009 | TNC provided brand fonts (Barlow, Chronicle) for optional integration | Styling | 🟡 Open | Low |
 | DFT-010 | Terminology: Change "items" to "features" throughout — more familiar to GIS users | UI/UX | 🟢 Resolved | High |
 | DFT-011 | Target audience clarification: Researchers (GIS-minded), not broad public | Design Decision | 🟢 Resolved | Medium |
-| DFT-012 | Camera trap clustering: Show numbered icons at locations, click to see filtered images | Feature Request | 🟡 Open | Medium |
-| DFT-013 | Multiple filtered views on same layer — save mountain lion AND deer queries simultaneously | Paradigm Extension | 🟡 Open | High |
+| DFT-012 | Camera trap clustering: Show numbered icons at locations, click to see filtered images | Feature Request | 🟢 Resolved | Medium |
+| DFT-013 | Multiple filtered views on same layer — save mountain lion AND deer queries simultaneously | Paradigm Extension | 🟢 Resolved | High |
 | DFT-014 | Biodiversity/aggregation queries: Species counts and proportions per camera trap | Feature Request | ⚪ Deferred | Low |
 
-**Status Key:**
+   **Status Key:**
 - 🟢 Resolved — Decision made, ready for dev
 - 🟡 Open — Needs discussion/decision
 - 🔵 In Discussion — Actively being debated
@@ -113,8 +113,8 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-004 | Two filter locations (layer-level and feature-level) appear simultaneously—need clearer visual hierarchy | Amy, Trisalyn, Dan | ✅ Resolved - Feb 2 |
 | DFT-006 | When a layer is selected, which tab opens first in the right sidebar—Overview or Browse? | Amy, Trisalyn | ✅ Resolved - Feb 2 |
 | DFT-007 | Bookmark widget title should clarify that bookmarks are features within layers, not separate items | Amy, Trisalyn | ✅ Resolved - Feb 2 |
-| DFT-012 | Camera trap clustering: Show numbered icons at locations, click to see filtered images | Dan | 🟡 Pending — in backend brief |
-| DFT-013 | Multiple filtered views on same layer — save mountain lion AND deer queries simultaneously | Dan, Amy, Trisalyn | 🟡 Pending — paradigm extension |
+| DFT-012 | Camera trap clustering: Show numbered icons at locations, click to see filtered images | Dan | ✅ Resolved - Feb 3 |
+| DFT-013 | Multiple filtered views on same layer — save mountain lion AND deer queries simultaneously | Dan, Amy, Trisalyn | ✅ Resolved - Feb 3 |
 
 ## Paradigm Sign-Offs
 
@@ -901,7 +901,7 @@ The paradigm has two floating widgets — Pinned Layers (top-left) and Bookmarke
 ### DFT-012: Camera Trap Clustering Visualization
 
 **Category:** Feature Request / UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Medium  
 **Source:** Trisalyn Nelson, Jan 26, 2026
 
@@ -914,22 +914,76 @@ The paradigm has two floating widgets — Pinned Layers (top-left) and Bookmarke
 3. The number represents mountain lion images at that trap
 4. Click icon → see list/gallery of those 23 images
 
-**Notes:**
-- Similar to bike crash map clustering pattern
-- Aggregation at camera level, not individual images on map
-- Informs how we handle ANiML browse view
-
 **Discussion:**
 - Will (Jan 26): This is a significant UX improvement over showing individual image markers. May require rethinking ANiML visualization layer.
+- Will (Feb 3): Analyzed design options using Norman, Gestalt, Nielsen, Shneiderman, and Tufte principles. Recommended Option A (count badge on camera icon) with hybrid tooltip approach.
 
-**Resolution:** *Pending — scope for future iteration*
+**Resolution:** Feb 3, 2026 — **Count badges on camera icons (Option A)**
+
+**Design Decisions:**
+
+1. **Badge on camera icon showing filtered image count**
+   - Small circular badge (upper-right corner of camera icon)
+   - Contrasting color (red, blue, or TNC brand accent)
+   - Shows count of observations matching the **layer-level filter**
+   - Badge only appears when layer-level filter is applied
+
+2. **When badges appear:**
+   - Triggered by layer-level filter (species, date range, etc.) applied in right sidebar (Layer View)
+   - NOT affected by feature-level filters (camera-specific filters in Feature View)
+   - Badges remain visible when user drills into a specific camera
+
+3. **Badge behavior:**
+   - Click camera icon → sidebar navigates to that camera's filtered images
+   - Hover shows tooltip with richer context (species name, date range)
+   - Cameras with 0 matching images: **decision pending** (hidden vs grayed out)
+
+4. **Interaction flow:**
+   ```
+   User in Layer View → applies species filter ("mountain lion")
+       ↓
+   Map updates: each camera shows badge with count
+       ↓
+   User clicks camera "CAM-042" (showing "23")
+       ↓
+   Sidebar transitions to Feature View → shows 23 mt. lion images
+   ```
+
+5. **Progressive disclosure (DFT-004) integration:**
+   - Layer-level query (applied in sidebar Layer View) drives map badge counts
+   - Feature-level query (applied when camera selected) only affects related data shown for that camera
+   - Sidebar is canonical filter editor; widget shows status only
+
+6. **Edge cases to resolve:**
+   - No filter applied: Show total counts, or no badges until filter is applied?
+   - Zero results: Hide cameras with 0 matches, or show grayed out?
+   - Multiple species selected: Show combined count (if multi-select supported)
+
+**UX Principles Applied:**
+- **Norman (Visibility):** Counts make distribution immediately visible
+- **Norman (Feedback):** Click immediately shows relevant images
+- **Norman (Mapping):** Number on map = images at that location
+- **Gestalt (Proximity):** Images grouped by camera location (spatial reality)
+- **Nielsen (System Status):** Counts show what filter found and where
+- **Shneiderman (Overview first):** Spatial overview before drilling into details
+- **Tufte (Data-ink ratio):** Single number conveys essential information
+
+**Documented in:**
+- Phase 2 task 2.5 updated with numbered badge map visualization
+- Master plan updated with cross-phase UX decision
+
+**✅ Verification Checklist:**
+- [x] Decision documented in planning-task-tracker.md
+- [x] Phase 2 task 2.5 updated with badge visualization design
+- [x] Master plan updated with cross-phase UX decision
+- [x] Quick Reference table updated with resolved status
 
 ---
 
 ### DFT-013: Multiple Filtered Views on Same Layer (PARADIGM)
 
 **Category:** Paradigm Extension  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** High  
 **Source:** Trisalyn Nelson, Jan 26, 2026
 
@@ -950,8 +1004,89 @@ This is a **new feature** to the paradigm. Current assumption was one query per 
 
 **Discussion:**
 - Will (Jan 26): This is a legitimate research workflow (predator-prey, co-occurrence analysis). Paradigm can support this conceptually. Implementation needs thought — possibly "filtered views" as a sub-concept under pinned layers.
+- Will (Feb 3): Analyzed using Norman, Nielsen, Gestalt principles. Key constraint: map badge visualization becomes complex with multiple simultaneous filtered views (badge stacking, color management, legend complexity). Proposed "Multiple Saved, Single Visible" model as pragmatic MVP scope.
+- Amy (Feb 3): Confirmed direction. Development time is a concern. Quick toggling between views is acceptable for MVP. Future enhancement could allow limited simultaneous views (e.g., 2-3 max). 80/20 rule: most users won't need simultaneous filtered views.
 
-**Resolution:** *Pending — paradigm extension, needs design iteration*
+**Resolution:** Feb 3, 2026 — **"Multiple Saved, Single Visible" Model**
+
+**Design Decisions:**
+
+1. **Core Paradigm:** Users can save multiple filtered views of the same layer, but only ONE filtered view is visible on the map at a time (mutual exclusivity).
+
+2. **Widget Structure — Nested when multiple views exist:**
+   ```
+   ┌──────────────────────────────────────────────────────┐
+   │ 📌 PINNED LAYERS                                     │
+   ├──────────────────────────────────────────────────────┤
+   │ [👁] Camera Traps ▼                             ✕    │  ← Parent (ON if any child visible)
+   │      [👁] mountain lion 🌪️3                          │  ← Active view (eye ON)
+   │      [  ] deer 🌪️2                                   │  ← Inactive view (eye grayed)
+   │      [+ New View]                                    │
+   ├──────────────────────────────────────────────────────┤
+   │ [👁] Dendra Sensors (2024) 🌪️1                  ✕    │  ← Single view (flat, no nesting)
+   └──────────────────────────────────────────────────────┘
+   ```
+
+3. **Visibility Logic:**
+   - **Parent eye icon:** ON if at least one child view is visible; OFF if no children visible
+   - **Child eye icons:** Only ONE can be ON at a time (mutual exclusivity)
+   - **Clicking a child row:** Makes that view visible, auto-turns off the previously visible view
+   - **Clicking child eye to turn OFF:** Also turns off parent (no children visible)
+   - **Clicking parent eye to turn ON:** Restores previously-selected child view (memory-preserving)
+   - **Clicking parent eye to turn OFF:** Hides all children; remembers which was selected
+
+4. **Click Targets:**
+   - Entire child row is clickable (Fitts's Law — larger target, low-risk action)
+   - Clicking anywhere in a child row activates that view's visibility
+
+5. **Visual Indicators:**
+   - Use consistent eye icon (👁) for all visibility toggles
+   - Eye ON = normal color; Eye OFF = grayed out
+   - No radio buttons — eye icon is the sole indicator of visibility state
+
+6. **Flat vs. Nested Behavior:**
+   - **Single view:** Layer stays flat (no nesting, no parent/child structure)
+   - **Multiple views:** Layer becomes parent with nested child views
+   - **Transition:** When user clicks "Create New View" on a single-view layer, it promotes to nested structure
+
+7. **Map Symbology:**
+   - Only the active/visible filtered view shows count badges on camera icons
+   - No badge stacking or multi-color badge management needed
+   - Badge visualization unchanged from DFT-012 (single filter = single badge set)
+
+8. **Future Enhancement (Phase 2+):**
+   - Could allow limited simultaneous views (e.g., 2-3 max) with distinct colors
+   - "Compare Views" mode for side-by-side analysis
+   - For now, users can export multiple views and analyze in GIS software
+
+**Rationale (Design Principles Applied):**
+- **Norman's Constraints:** Limiting to one visible view prevents visual chaos and simplifies map symbology
+- **Fitts's Law:** Entire row clickable = larger, faster targets
+- **Consistency:** Eye icon used throughout for all visibility toggles
+- **Progressive Complexity:** Single-view layers stay simple; nesting only when needed
+- **Memory-Preserving:** Parent toggle remembers which child was last selected
+- **80/20 Rule:** Most users won't need simultaneous filtered views; quick toggling suffices
+
+**Edge Cases:**
+| Scenario | Behavior |
+|----------|----------|
+| User deletes all views | Layer demotes to flat single-view (or removes entirely if unfiltered base not kept) |
+| User creates first "New View" | Layer promotes to nested structure; original becomes first child |
+| All views hidden, then parent re-enabled | Restores last-selected view |
+| User exports with multiple saved views | All saved views included in export (visibility state doesn't affect export) |
+
+**Open Consideration:**
+- Should ALL layers with any filter show nesting, or only layers with 2+ views? Current decision: nest only when 2+ views exist. May revisit if consistency becomes confusing.
+
+**Documented in:**
+- Phase 0 task 0.5 needs update with nested widget structure
+- Master plan needs update with cross-phase UX decision
+
+**✅ Verification Checklist:**
+- [x] Decision documented in planning-task-tracker.md
+- [x] Phase 0 task 0.5 updated with nested widget design and visibility logic
+- [x] Master plan updated with cross-phase UX decision
+- [x] Quick Reference table updated with resolved status
 
 ---
 
@@ -1075,4 +1210,6 @@ This is a **new feature** to the paradigm. Current assumption was one query per 
 | Feb 2, 2026 | Resolved DFT-004: Progressive disclosure + direct/parametric separation. Sidebar edits filters (context-aware), pop-up has slider only (exploration), widget shows status |
 | Feb 2, 2026 | Resolved DFT-006: Overview tab opens first when layer selected, with prominent "Browse Features →" button |
 | Feb 2, 2026 | Resolved DFT-007: Bookmark widget groups features by parent layer; layer header is non-interactive context label using muted styling |
+| Feb 3, 2026 | Resolved DFT-012: Camera trap clustering — count badges on camera icons showing filtered image counts. Badges appear when layer-level filter is applied. Progressive disclosure integration confirmed |
+| Feb 3, 2026 | Resolved DFT-013: Multiple filtered views — "Multiple Saved, Single Visible" model. Users can save multiple filtered views but only one is visible at a time (mutual exclusivity). Nested widget structure when 2+ views exist. Memory-preserving parent toggle. Future enhancement could allow limited simultaneous views |
 

@@ -169,7 +169,8 @@ interface Bookmark {
 **Decision (Jan 27, 2026):** Resolved DFT-001 with Model C (selection = active, pin separate).  
 **Decision (Feb 2, 2026):** Resolved DFT-003b — "Create New View" lives in expanded panel when layer is active.  
 **Decision (Feb 2, 2026):** Removed swatch from row spec; active state indicated by expansion + visual treatment.  
-**Decision (Feb 2, 2026):** Resolved DFT-004 — Widget shows filter **status** (🌪️ indicator) but does NOT contain filter editing UI. "Edit Filters" button navigates to right sidebar. Sidebar is the canonical filter editor.
+**Decision (Feb 2, 2026):** Resolved DFT-004 — Widget shows filter **status** (🌪️ indicator) but does NOT contain filter editing UI. "Edit Filters" button navigates to right sidebar. Sidebar is the canonical filter editor.  
+**Decision (Feb 3, 2026):** Resolved DFT-013 — Multiple filtered views use "Multiple Saved, Single Visible" model. Nested widget structure when 2+ views exist; only one view visible at a time (mutual exclusivity); memory-preserving parent toggle.
 
 **Widget Design (Collapsed State):**
 ```
@@ -180,11 +181,27 @@ interface Bookmark {
 ├─────────────────────────────────────┤
 │ 📌 PINNED LAYERS                    │
 ├─────────────────────────────────────┤
-│ 👁 Camera Traps (mt. lion)  🌪️5 ✕ │
-│ 👁 Camera Traps (deer)      🌪️3 ✕ │
-│ 👁 iNaturalist (birds)      🌪️2 ✕ │
+│ 👁 Camera Traps (mt. lion)  🌪️5 ✕ │  ← Single view (flat)
+│ 👁 iNaturalist (birds)      🌪️2 ✕ │  ← Single view (flat)
 │ 👁 Fire Hazard              🌪️  ✕ │  ← gray funnel = no filters
 └─────────────────────────────────────┘
+```
+
+**Widget Design (Nested — Multiple Filtered Views per DFT-013):**
+```
+┌──────────────────────────────────────────┐
+│ 👁 ACTIVE LAYER                          │
+├──────────────────────────────────────────┤
+│ ● Camera Traps (mt. lion)       🌪️4 📌 │
+├──────────────────────────────────────────┤
+│ 📌 PINNED LAYERS                         │
+├──────────────────────────────────────────┤
+│ 👁 Dendra Sensors (2024)         🌪️1 ✕ │  ← Single view (flat)
+│ 👁 Camera Traps ▼                    ✕  │  ← Parent (nested)
+│    👁 mountain lion 🌪️5                 │  ← Child view (visible)
+│      deer                                │  ← Child view (hidden, eye grayed)
+│    [+ New View]                          │
+└──────────────────────────────────────────┘
 ```
 
 **Widget Design (Expanded State — when pinned layer is clicked):**
@@ -231,7 +248,16 @@ interface Bookmark {
   - No filters = desaturated funnel, still clickable
   - Clicking funnel or "Edit Filters" → opens Browse tab in right sidebar
   - **Widget does NOT contain filter editing UI** (per DFT-004) — sidebar is canonical editor
-- **Multiple views of same layer:** Supported via unique distinguishers (see DFT-013)
+- **Multiple filtered views (DFT-013) — "Multiple Saved, Single Visible" model:**
+  - **Single-view layers:** Remain flat (no nesting) until second view is created
+  - **Multi-view layers:** Promote to nested structure (parent + child views)
+  - **Mutual exclusivity:** Only ONE child view visible at a time (eye ON); others hidden (eye grayed)
+  - **Parent eye toggle:** ON if any child visible; OFF if all children hidden
+  - **Click child row:** Makes that view visible, auto-hides previously visible view (entire row is clickable)
+  - **Click child eye to turn OFF:** Also turns off parent eye (no children visible)
+  - **Click parent eye to turn ON:** Restores previously-selected child view (memory-preserving)
+  - **[+ New View] button:** Creates duplicate child view with current filters
+  - **Transition:** When "Create New View" is clicked on single-view layer, layer promotes to nested structure with original as first child
 - **Filter change animation (DFT-003):** When user changes filters in right sidebar for a pinned layer, the widget row animates/highlights to confirm the change (addresses eye-tracking concern since editing happens in right sidebar but visual confirmation appears in left-floating widget)
 
 **A/B Testing Note:**
@@ -263,6 +289,16 @@ This allows collecting user feedback before finalizing the design.
 - [ ] Debug toggle switches between text and icon filter representations
 - [ ] Widget row animates/highlights when its filter changes (visual feedback for right sidebar edits)
 - [ ] Optional: brief toast notification when filter is applied (to be tested)
+- [ ] **Multiple filtered views (DFT-013):**
+  - [ ] Single-view layers remain flat (no nesting) until second view is created
+  - [ ] Multi-view layers show nested structure (parent + indented child views)
+  - [ ] Parent eye toggle: ON if any child visible, OFF if all hidden
+  - [ ] Only ONE child view visible at a time (mutual exclusivity)
+  - [ ] Clicking anywhere in child row toggles that view's visibility
+  - [ ] Clicking child eye to turn OFF also turns off parent eye
+  - [ ] Clicking parent eye to turn ON restores previously-selected child (memory-preserving)
+  - [ ] [+ New View] button appears in nested structure, creates duplicate child view
+  - [ ] When "Create New View" clicked on single-view layer, layer promotes to nested structure
 
 **Reference:**
 - Mockup: `mockups/02a-unified-layout.html` (canonical layout reference)
@@ -363,4 +399,5 @@ This allows collecting user feedback before finalizing the design.
 | Feb 2, 2026 | 0.5 | Removed swatch from row spec; active state indicated by expansion + visual treatment | Will + Claude |
 | Feb 2, 2026 | 0.5 | Clarified widget shows filter status but does NOT edit filters (DFT-004). Sidebar is canonical editor | Will + Claude |
 | Feb 2, 2026 | 0.6 | Resolved DFT-007: Bookmarks grouped by parent layer; layer headers are non-interactive context labels with muted styling | Will + Claude |
+| Feb 3, 2026 | 0.5 | Resolved DFT-013: Multiple filtered views use nested widget structure with mutual exclusivity (only one view visible at a time) | Will + Claude |
 

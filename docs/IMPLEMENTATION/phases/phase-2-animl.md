@@ -150,13 +150,32 @@ activeQuery: {
 
 **Goal:** Display cameras as cards showing filtered image counts.
 
+**Decision (Feb 3, 2026):** Resolved DFT-012 — Numbered badges on camera icons showing filtered image counts. Map visualization integrates with progressive disclosure pattern.
+
 **Acceptance Criteria:**
 - [ ] Each camera card shows filtered image count (not total)
 - [ ] Example: "CAM-042 • 47 mountain lion images"
 - [ ] "View Camera →" button navigates to detail view
 - [ ] "Bookmark with Current Filter" saves camera + active image filter
+- [ ] **Map visualization with numbered badges:**
+  - [ ] Camera icons on map display count badge (upper-right corner)
+  - [ ] Badge shows filtered image count matching layer-level filter
+  - [ ] Badge color: contrasting (red, blue, or TNC brand accent)
+  - [ ] Badge only appears when layer-level filter is applied
+  - [ ] Clicking camera icon navigates sidebar to that camera's filtered images
+  - [ ] Hover tooltip shows species name and date range context
+  - [ ] Cameras with 0 matching images: hidden or grayed out (to be decided)
 
 **Reference:** Mockup `02c-browse-animl.html` camera cards
+
+**Progressive Disclosure Integration:**
+- Layer-level query (species, date range) applied in sidebar (Layer View) drives badge counts
+- Feature-level query (camera-specific filters) does NOT affect map badges
+- Badges remain visible when user drills into specific camera (sidebar in Feature View)
+
+**Files to Create/Modify:**
+- `src/v2/components/RightSidebar/ANiML/CameraListView.tsx`
+- `src/v2/components/Map/AnimlCameraLayer.tsx` (map visualization with badges)
 
 ---
 
@@ -280,4 +299,6 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | Date | Task | Change | By |
 |------|------|--------|-----|
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
+| Feb 2, 2026 | 2.2 | Added landing cards entry point (DFT-003c) and Overview tab as default (DFT-006) | Will + Claude |
+| Feb 3, 2026 | 2.5 | Added numbered badge map visualization (DFT-012) with progressive disclosure integration | Will + Claude |
 
