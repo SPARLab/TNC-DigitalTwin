@@ -15,7 +15,7 @@
 
 ## Phase Goal
 
-Final consistency pass to ensure all components look and behave consistently. Fix any styling issues, ensure design system is followed, and prepare for demo.
+Final consistency pass to ensure all components look and behave consistently. Fix any styling issues, ensure design system is followed, integrate TNC brand identity, and prepare for demo.
 
 ## Reference Documents
 
@@ -31,11 +31,13 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
-| 6.1 | Design system audit | ⚪ Not Started | | |
-| 6.2 | Cross-component consistency check | ⚪ Not Started | | |
-| 6.3 | Responsive design check | ⚪ Not Started | | |
-| 6.4 | Performance audit | ⚪ Not Started | | |
-| 6.5 | Accessibility check | ⚪ Not Started | | |
+| 6.1 | Integrate TNC brand fonts (Barlow, Chronicle) | ⚪ Not Started | | DFT-008, DFT-009 |
+| 6.2 | Add TNC theme variants (Official, Soft) | ⚪ Not Started | | DFT-008, DFT-009 |
+| 6.3 | Design system audit | ⚪ Not Started | | |
+| 6.4 | Cross-component consistency check | ⚪ Not Started | | |
+| 6.5 | Responsive design check | ⚪ Not Started | | |
+| 6.6 | Performance audit | ⚪ Not Started | | |
+| 6.7 | Accessibility check | ⚪ Not Started | | |
 | (more TBD) | | | | |
 
 **Status Legend:**
@@ -48,7 +50,62 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 ## Task Details
 
-### 6.1: Design System Audit
+### 6.1: Integrate TNC Brand Fonts
+
+**Goal:** Add TNC's brand fonts (Barlow, Chronicle) to the design system.
+
+**Implementation:**
+- Import Barlow and Chronicle from Google Fonts in `src/index.css`
+- Update `tailwind.config.js` to define font families
+- Set Barlow as primary UI font (replaces Inter)
+- Use Chronicle for section headers/special emphasis
+
+**Acceptance Criteria:**
+- [ ] Fonts imported and rendering correctly
+- [ ] Barlow used for body text, labels, buttons
+- [ ] Chronicle used for section headers (optional - test readability)
+- [ ] Typography remains readable and clean
+
+**Estimated Time:** 1-2 hours
+
+---
+
+### 6.2: Add TNC Theme Variants
+
+**Goal:** Create 2-3 new theme options using TNC brand colors.
+
+**TNC Brand Colors:**
+- Parrot Green: `#05641c` (dark, rich green)
+- Leaf Green: `#49a842` (bright, medium green)
+- Benthic Blue: `#06063d` (very dark navy - text color)
+
+**Themes to Create:**
+1. **"TNC Official"** - Bold brand identity
+   - Header: Parrot Green → Leaf Green gradient
+   - Subheader: Light gray (current approach)
+   - Set as default theme
+
+2. **"TNC Soft"** (optional) - Muted brand version
+   - Header: Lighter tints of brand greens
+   - For users who prefer lower contrast
+
+**Implementation:**
+- Add theme definitions to `src/utils/themes.ts`
+- Keep all existing themes (users can experiment and choose)
+
+**Acceptance Criteria:**
+- [ ] "TNC Official" theme added and set as default
+- [ ] "TNC Soft" theme added (optional)
+- [ ] Theme switcher shows new options
+- [ ] All existing themes still work
+
+**Estimated Time:** 30-60 minutes
+
+**Note:** Experimentation encouraged - let users/designers try different themes and provide feedback on which works best.
+
+---
+
+### 6.3: Design System Audit
 
 **Goal:** Ensure all components follow the design system.
 
@@ -60,7 +117,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 ---
 
-### 6.2: Cross-Component Consistency Check
+### 6.4: Cross-Component Consistency Check
 
 **Goal:** Ensure similar patterns look the same across data sources.
 
@@ -74,7 +131,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 ---
 
-### 6.3: Responsive Design Check
+### 6.5: Responsive Design Check
 
 **Goal:** Ensure layout works at different screen sizes.
 
@@ -86,7 +143,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 ---
 
-### 6.4: Performance Audit
+### 6.6: Performance Audit
 
 **Goal:** Ensure acceptable load times and smooth interactions.
 
@@ -99,7 +156,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 ---
 
-### 6.5: Accessibility Check
+### 6.7: Accessibility Check
 
 **Goal:** Ensure basic accessibility.
 
@@ -126,4 +183,5 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | Date | Task | Change | By |
 |------|------|--------|-----|
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
+| Feb 3, 2026 | 6.1, 6.2 | Added TNC brand integration tasks (fonts + theme variants). Resolved DFT-008, DFT-009 | Will + Claude |
 

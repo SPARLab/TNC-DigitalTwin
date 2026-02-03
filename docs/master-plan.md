@@ -35,7 +35,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 3 | Dendra | ⚪ Not Started | 0 / 6 tasks | `v2/dendra` | No |
 | 4 | DataOne | ⚪ Not Started | 0 / 5 tasks | `v2/dataone` | No |
 | 5 | Export Builder | ⚪ Not Started | 0 / 4 tasks | `v2/export` | No |
-| 6 | Polish & Consistency | ⚪ Not Started | 0 / ? tasks | `v2/polish` | No |
+| 6 | Polish & Consistency | ⚪ Not Started | 0 / 7+ tasks | `v2/polish` | No |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -219,4 +219,5 @@ When working on any phase:
 | Feb 3, 2026 | Phase 2 | Resolved DFT-012: Camera trap clustering with numbered badges on camera icons showing filtered image counts. Layer-level filter drives badge display | Will + Claude |
 | Feb 3, 2026 | Phase 0 | Resolved DFT-013: Multiple filtered views — "Multiple Saved, Single Visible" model with nested widget structure. Mutual exclusivity prevents map badge stacking complexity | Will + Claude |
 | Feb 3, 2026 | - | Created future-enhancements.md backlog for v2.1+ features. Moved DFT-014 (biodiversity aggregation) to backlog | Will + Claude |
+| Feb 3, 2026 | Phase 6 | Resolved DFT-008, DFT-009: TNC brand integration via theme variants approach. Add fonts + create swappable theme options for experimentation | Will + Claude |
 
