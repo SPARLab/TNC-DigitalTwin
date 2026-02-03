@@ -65,7 +65,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 - **Export functionality:** `IMPLEMENTATION/phases/phase-5-export-builder.md`
 - **Cross-phase decisions:** `master-plan.md` → "Cross-Phase Decisions" → "UX Decisions"
 
-**Last Updated:** February 2, 2026
+**Last Updated:** February 2, 2026 (DFT-004 resolved)
 
 ---
 
@@ -78,7 +78,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-003 | In ANiML browse view, the "Pin with Filter" vs "Bookmark" buttons are confusing—unclear what each does | UI/UX | 🟢 Resolved | High |
 | DFT-003b | Where should "Create New View" action live? (Widget dropdown vs right sidebar) | UI/UX | 🟢 Resolved | Medium |
 | DFT-003c | ANiML Browse: Tabs vs landing cards for Animal-First/Camera-First choice | UI/UX | 🟢 Resolved | Low |
-| DFT-004 | Two filter locations (layer-level and feature-level) appear simultaneously—need clearer visual hierarchy | UI/UX | 🟡 Open | High |
+| DFT-004 | Two filter locations (layer-level and feature-level) appear simultaneously—need clearer visual hierarchy | UI/UX | 🟢 Resolved | High |
 | DFT-005 | Floating widgets crowd the screen when viewing time-series data; consider auto-collapse behavior | UI/UX | 🟢 Resolved | Low |
 | DFT-006 | When a layer is selected, which tab opens first in the right sidebar—Overview or Browse? | UI/UX | 🟡 Open | Low |
 | DFT-007 | Bookmark widget title should clarify that bookmarks are features within layers, not separate items | UI/UX | 🟡 Open | Medium |
@@ -110,7 +110,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-003 | In ANiML browse view, the "Pin with Filter" vs "Bookmark" buttons are confusing—unclear what each does | Amy, Trisalyn | ✅ Resolved - Jan 29 |
 | DFT-003b | Where should "Create New View" action live? (for multiple filtered views of same layer) | Amy, Trisalyn, Dan | ✅ Resolved - Feb 2 |
 | DFT-003c | ANiML Browse: Tabs vs landing cards for Animal-First/Camera-First entry point | Amy, Trisalyn | ✅ Resolved - Feb 2 |
-| DFT-004 | Two filter locations (layer-level and feature-level) appear simultaneously—need clearer visual hierarchy | Amy, Trisalyn, Dan | 🟡 Pending — needs mockup iteration |
+| DFT-004 | Two filter locations (layer-level and feature-level) appear simultaneously—need clearer visual hierarchy | Amy, Trisalyn, Dan | ✅ Resolved - Feb 2 |
 | DFT-006 | When a layer is selected, which tab opens first in the right sidebar—Overview or Browse? | Amy, Trisalyn | 🟡 Pending — Will recommends Overview |
 | DFT-007 | Bookmark widget title should clarify that bookmarks are features within layers, not separate items | Amy, Trisalyn | 🟡 Pending |
 | DFT-012 | Camera trap clustering: Show numbered icons at locations, click to see filtered images | Dan | 🟡 Pending — in backend brief |
@@ -496,7 +496,7 @@ ANiML Browse tab needs to let users choose between Animal-First and Camera-First
 ### DFT-004: Two Query Locations — Contextual Clarity
 
 **Category:** UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** High  
 **Source:** Sophia Leiker, Jan 23, 2026
 
@@ -510,7 +510,7 @@ The three-level hierarchy legitimately requires two filter locations:
 
 These are different questions, but the mockups show both simultaneously without clear context.
 
-**Options:**
+**Options Considered:**
 1. **Breadcrumb navigation:** Show user's location in hierarchy (`Camera Traps > CAM-042 > Images`)
 2. **Progressive disclosure:** Only show relevant filters based on current view level
 3. **Explicit container labels:** "Filter Cameras in This Layer" vs "Filter Images for CAM-042"
@@ -518,8 +518,107 @@ These are different questions, but the mockups show both simultaneously without 
 
 **Discussion:**
 - Will (Jan 26): This is our trickiest implementation detail. The paradigm is sound (the data actually has two levels), but the UI must make "which level am I filtering?" obvious. File system analogy: nobody confuses filtering folders with searching within a file because the UI shows your location.
+- Will (Feb 2): Extended discussion focused on Dendra as the most complex case. Key insight: the same parameter (time range) can serve different purposes at different levels (discovery vs. focus). Need to separate **direct manipulation** (exploration) from **parametric control** (specification).
 
-**Resolution:** *Pending*
+**Resolution:** Feb 2, 2026 — **Progressive Disclosure + Direct/Parametric Separation**
+
+**Design Decisions:**
+
+1. **Sidebar is the canonical location for parametric filter editing (date pickers, dropdowns)**
+   - Pinned Layers widget shows filter *status* (🌪️ indicator) but does NOT contain filter editing UI
+   - Widget has "Edit Filters" button that navigates to/opens right sidebar
+
+2. **Sidebar is context-aware (progressive disclosure):**
+   - **State A (Layer View):** When layer is active, no feature selected → show layer-level filters
+   - **State B (Feature View):** When feature is selected → collapse layer filters to read-only summary, show feature-level filters
+   - Only ONE filter scope visible at a time (reduces confusion)
+
+3. **Pop-up charts (e.g., Dendra time-series) use direct manipulation only:**
+   - Slider for exploration/viewport (pan through time)
+   - NO date pickers in pop-up (avoids redundant affordances)
+   - Slider state is **ephemeral** — not saved
+
+4. **Persistence model:**
+   | UI Location | What It Controls | Saved To |
+   |-------------|------------------|----------|
+   | Right Sidebar (Layer View) | Which features appear on map | Pinned layer's query |
+   | Right Sidebar (Feature View) | What related data is shown | Bookmarked feature's query |
+   | Pop-up Slider | Exploration viewport only | Not saved (ephemeral) |
+
+5. **Inheritance on bookmark creation:**
+   - When bookmarking a feature without an explicit feature filter, **inherit from layer filter** as default
+   - User can then adjust the feature filter independently in sidebar
+   - Layer and feature filters are **independent after creation** (not linked)
+
+6. **Labeling for clarity:**
+   - Layer filter section: "Show [features] with data in: [controls]"
+   - Feature filter section: "View data from: [controls]"
+   - Collapsed layer summary shows: "Layer: [filter summary]" with [Edit] link
+
+**Rationale (UX Principles Applied):**
+- **Progressive disclosure:** Only show relevant filters for current context
+- **Recognition over recall:** Collapsed summary reminds user of active layer filter
+- **Direct manipulation vs. parametric control:** Slider = exploration (fluid), date pickers = specification (precise)
+- **Single source of truth:** Sidebar is the canonical edit location; pop-ups are for exploration only
+- **Avoids redundant affordances:** No date pickers in pop-up when sidebar has them
+
+**ASCII Example — State A (Layer View, Dendra):**
+```
+┌─────────────────────────────────────────────────────┐
+│ RIGHT SIDEBAR                                       │
+│ ═══════════════════════════════════════════════════│
+│ Dendra Sensors                                     │
+│ ─────────────────────────────────────────────────── │
+│ LAYER FILTERS                                      │
+│ "Show sensors with data in:"                       │
+│ Start: [Jan 1, 2024    ]  End: [Dec 31, 2024  ]    │
+│ [Apply]                                            │
+│ ─────────────────────────────────────────────────── │
+│ [📌 Pin Layer]                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+**ASCII Example — State B (Feature View, Dendra):**
+```
+┌─────────────────────────────────────────────────────┐
+│ RIGHT SIDEBAR                                       │
+│ ═══════════════════════════════════════════════════│
+│ ← Back to Dendra Sensors                           │
+│ Layer: 2024                                  [Edit]│
+│ ─────────────────────────────────────────────────── │
+│ Sensor ABC-123                                     │
+│ ─────────────────────────────────────────────────── │
+│ FEATURE FILTERS                                    │
+│ "View data from:"                                  │
+│ Start: [Mar 1, 2024    ]  End: [Mar 31, 2024  ]    │
+│ Aggregation: [Daily ▼]                             │
+│ [Apply]                                            │
+│ ─────────────────────────────────────────────────── │
+│ [🔖 Bookmark Sensor]                               │
+└─────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────┐
+│ POP-UP CHART (floating on map)                     │
+│ ═══════════════════════════════════════════════════│
+│ [time-series chart]                                │
+│ ───────────●━━━━━━━━━━━●─────────────────────────── │
+│  Mar 1    Mar 10     Mar 20                 Mar 31 │
+│                                                    │
+│ (Slider for exploration — NOT saved)               │
+└─────────────────────────────────────────────────────┘
+```
+
+**Documented in:**
+- Phase 0 task 0.5 updated with widget status-only behavior (no filter editing in widget)
+- Phase 3 (Dendra) updated with progressive disclosure sidebar design + pop-up slider-only behavior
+- Master plan updated with cross-phase UX decision
+
+**✅ Verification Checklist:**
+- [x] Decision documented in planning-task-tracker.md
+- [x] Phase 0 task 0.5 updated (widget shows status, doesn't edit filters)
+- [x] Phase 3 (Dendra) updated with progressive disclosure + pop-up slider design
+- [x] Master plan updated with cross-phase UX decision
+- [x] Quick Reference table updated with resolved status
 
 ---
 
@@ -881,4 +980,5 @@ This is a **new feature** to the paradigm. Current assumption was one query per 
 | Jan 29, 2026 | Resolved DFT-005: Auto-collapse Pinned Layers widget when viewing time-series data |
 | Feb 2, 2026 | Resolved DFT-003b: "Create New View" lives in expanded panel when layer is active (Option C) |
 | Feb 2, 2026 | Resolved DFT-003c: Landing cards approach for Animal-First/Camera-First entry point |
+| Feb 2, 2026 | Resolved DFT-004: Progressive disclosure + direct/parametric separation. Sidebar edits filters (context-aware), pop-up has slider only (exploration), widget shows status |
 

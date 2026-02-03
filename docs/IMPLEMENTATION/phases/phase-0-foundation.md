@@ -168,7 +168,8 @@ interface Bookmark {
 
 **Decision (Jan 27, 2026):** Resolved DFT-001 with Model C (selection = active, pin separate).  
 **Decision (Feb 2, 2026):** Resolved DFT-003b — "Create New View" lives in expanded panel when layer is active.  
-**Decision (Feb 2, 2026):** Removed swatch from row spec; active state indicated by expansion + visual treatment.
+**Decision (Feb 2, 2026):** Removed swatch from row spec; active state indicated by expansion + visual treatment.  
+**Decision (Feb 2, 2026):** Resolved DFT-004 — Widget shows filter **status** (🌪️ indicator) but does NOT contain filter editing UI. "Edit Filters" button navigates to right sidebar. Sidebar is the canonical filter editor.
 
 **Widget Design (Collapsed State):**
 ```
@@ -224,11 +225,12 @@ interface Bookmark {
   - Action buttons: **Edit Filters**, **Clear**, **+ Create New View**
   - "Create New View" duplicates the layer with current filters as a new pinned entry
   - Active state indicated by: expansion (panel visible), visual treatment (background color, left border accent, etc.)
-- **Filter indicators:**
+- **Filter indicators (status display, NOT editing):**
   - 🌪️ (funnel emoji) shows filter count (e.g., `🌪️5` = 5 filters)
   - Parenthetical shows primary distinguisher (e.g., `(mt. lion)`)
   - No filters = desaturated funnel, still clickable
   - Clicking funnel or "Edit Filters" → opens Browse tab in right sidebar
+  - **Widget does NOT contain filter editing UI** (per DFT-004) — sidebar is canonical editor
 - **Multiple views of same layer:** Supported via unique distinguishers (see DFT-013)
 - **Filter change animation (DFT-003):** When user changes filters in right sidebar for a pinned layer, the widget row animates/highlights to confirm the change (addresses eye-tracking concern since editing happens in right sidebar but visual confirmation appears in left-floating widget)
 
@@ -335,4 +337,5 @@ This allows collecting user feedback before finalizing the design.
 | Jan 29, 2026 | 0.5, 0.6 | Added auto-collapse behavior for time-series viewing (DFT-005) | Will + Claude |
 | Feb 2, 2026 | 0.5 | Added expanded panel behavior with "Create New View" button (DFT-003b) | Will + Claude |
 | Feb 2, 2026 | 0.5 | Removed swatch from row spec; active state indicated by expansion + visual treatment | Will + Claude |
+| Feb 2, 2026 | 0.5 | Clarified widget shows filter status but does NOT edit filters (DFT-004). Sidebar is canonical editor | Will + Claude |
 

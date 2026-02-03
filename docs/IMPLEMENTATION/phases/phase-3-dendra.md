@@ -31,9 +31,17 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 ## Key Paradigm Notes
 
 - **Row Type:** Pointer (sensor points to datastream)
-- **Bookmark Options:** "Bookmark Sensor" OR "Bookmark with Time Range"
+- **Bookmark Options:** "Bookmark Sensor" (with inherited or explicit time range)
 - **Has Level 3:** Yes - time range + aggregation filter on datastream
-- **NOT dual-level:** Unlike ANiML, Dendra doesn't have global time filtering at layer level (V1)
+- **Dual-level filtering:** Layer-level time filter (which sensors to show) + Feature-level time filter (what data to view for a specific sensor)
+
+**Decision (Feb 2, 2026):** Resolved DFT-004 — Progressive disclosure + direct/parametric separation:
+- **Sidebar** is the canonical location for filter editing (date pickers, aggregation dropdowns)
+- **Pop-up chart** has slider only for exploration (ephemeral, not saved)
+- **State A (Layer View):** Show layer-level filters in sidebar ("Show sensors with data in: [date range]")
+- **State B (Feature View):** Collapse layer filter to summary, show feature-level filters ("View data from: [date range]")
+- **Inheritance:** When bookmarking without explicit feature filter, inherit from layer filter
+- **Independence:** Layer and feature filters are independent after bookmark creation
 
 ---
 
@@ -98,15 +106,37 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 ---
 
-### 3.3: Implement Sensor Filter UI
+### 3.3: Implement Sensor Filter UI (Layer-Level)
 
-**Goal:** Create filters for the sensors.
+**Goal:** Create layer-level filters for the sensors. These filters determine **which sensors appear** on the map and in the browse list.
+
+**Design Decision (Feb 2, 2026):** Resolved DFT-004 — This is **State A** (Layer View). Filters shown here are saved to the **pinned layer**.
 
 **Acceptance Criteria:**
 - [ ] Region dropdown
 - [ ] Status dropdown (Active, Maintenance, Inactive)
 - [ ] Sensor type filter (if multiple types in same layer)
+- [ ] **Time range filter:** "Show sensors with data in:" + date pickers (start/end)
 - [ ] Filter updates sensor list below
+- [ ] Filter updates map markers
+- [ ] When layer is pinned, current filter state is saved to pinned layer
+- [ ] Section header clearly labels scope: "LAYER FILTERS" or "Filter Sensors"
+
+**Sidebar Layout (State A — Layer View):**
+```
+┌─────────────────────────────────────────────────────┐
+│ Dendra Sensors                                     │
+│ ─────────────────────────────────────────────────── │
+│ LAYER FILTERS                                      │
+│ "Show sensors with data in:"                       │
+│ Start: [           ]  End: [           ]           │
+│ Region: [All ▼]  Status: [Active ▼]                │
+│ [Apply]                                            │
+│ ─────────────────────────────────────────────────── │
+│ Showing 12 sensors                                 │
+│ [📌 Pin Layer]                                     │
+└─────────────────────────────────────────────────────┘
+```
 
 **Reference:** Mockup `02d-browse-dendra.html` "Filter Sensors" section
 
@@ -130,14 +160,44 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 **Goal:** When user clicks a sensor, show its detail view with time series.
 
+**Design Decision (Feb 2, 2026):** Resolved DFT-004 — This is **State B** (Feature View). The pop-up chart has **slider only** for exploration (direct manipulation). Parametric date pickers live in the sidebar (task 3.6).
+
 **Acceptance Criteria:**
-- [ ] "← Back to Sensors" navigation
+- [ ] "← Back to Sensors" navigation (returns to State A)
+- [ ] Collapsed layer filter summary: "Layer: [filter summary]" with [Edit] link
 - [ ] Sensor info header (name, location, status, current reading)
-- [ ] Time series chart component
+- [ ] Time series chart component (in pop-up floating on map)
 - [ ] Chart is interactive (hover to see values)
+- [ ] **Slider for time navigation** — exploration only, NOT saved
+- [ ] Slider state is **ephemeral** — resets when navigating away
+- [ ] **NO date pickers in pop-up** — avoids redundant affordances (date pickers are in sidebar)
 - [ ] Stats sidebar or panel (min, max, avg, total)
 - [ ] "View Full Chart" option for larger view
-- [ ] "Download CSV" for current time range
+- [ ] "Download CSV" for current time range (uses sidebar filter, not slider position)
+
+**Pop-up Chart Design (Direct Manipulation for Exploration):**
+```
+┌─────────────────────────────────────────────────────┐
+│ Sensor ABC-123                              [✕]    │
+│ ═══════════════════════════════════════════════════│
+│ [time-series chart visualization]                  │
+│                                                    │
+│ ───────────●━━━━━━━━━━━●─────────────────────────── │
+│  Mar 1    Mar 10     Mar 20                 Mar 31 │
+│                                                    │
+│ Currently viewing: Mar 10 – Mar 20                 │
+│ (Slider for exploration — not saved)               │
+│                                                    │
+│ Stats: Min: 12.3° | Max: 28.7° | Avg: 19.2°        │
+│ [View Full Chart] [Download CSV]                   │
+└─────────────────────────────────────────────────────┘
+```
+
+**Key Behavior:**
+- Slider changes what's **displayed** in the chart (viewport)
+- Slider does NOT change the **saved filter** (that's in sidebar)
+- Download CSV uses the sidebar filter range, not the slider position
+- This separation follows the **direct manipulation vs. parametric control** principle
 
 **Reference:** Mockup `02d-browse-dendra.html` sensor detail section
 
@@ -147,17 +207,54 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 ---
 
-### 3.6: Implement Time Range Filter (Level 3)
+### 3.6: Implement Time Range Filter (Feature-Level, in Sidebar)
 
-**Goal:** Allow user to filter datastream by time range.
+**Goal:** Allow user to specify the time range for viewing a sensor's datastream. This is the **parametric control** (specification) that gets saved with bookmarks.
+
+**Design Decision (Feb 2, 2026):** Resolved DFT-004 — This is **State B** (Feature View) in the sidebar. These date pickers are the canonical filter location. The pop-up slider is for exploration only.
 
 **Acceptance Criteria:**
+- [ ] Sidebar shows feature filter section when sensor is selected
+- [ ] Layer filter collapses to read-only summary: "Layer: [summary]" with [Edit] link
+- [ ] Section header: "FEATURE FILTERS" or "View data from:"
 - [ ] Date range picker (from/to)
 - [ ] Aggregation dropdown (hourly, daily, weekly)
-- [ ] Filter updates chart display
-- [ ] "Bookmark Sensor" saves sensor only
-- [ ] "Bookmark with Time Range" saves sensor + time filter
+- [ ] Filter updates chart display (syncs with pop-up)
+- [ ] **Inheritance:** Default filter value inherited from layer filter at selection time
+- [ ] User can adjust filter independently (expand, narrow, or clear)
+- [ ] "Bookmark Sensor" saves sensor with current feature filter
 - [ ] Count shows "X data points"
+- [ ] **Independence:** After bookmark creation, feature filter is independent of layer filter
+
+**Sidebar Layout (State B — Feature View):**
+```
+┌─────────────────────────────────────────────────────┐
+│ ← Back to Dendra Sensors                           │
+│ Layer: 2024                                  [Edit]│  ← collapsed summary
+│ ─────────────────────────────────────────────────── │
+│ Sensor ABC-123                                     │
+│ Location: Ridge Station | Status: 🟢 Active        │
+│ ─────────────────────────────────────────────────── │
+│ FEATURE FILTERS                                    │
+│ "View data from:"                                  │
+│ Start: [Mar 1, 2024    ]  End: [Mar 31, 2024  ]    │
+│ Aggregation: [Daily ▼]                             │
+│ [Apply]                                            │
+│ ─────────────────────────────────────────────────── │
+│ 31 data points                                     │
+│ [🔖 Bookmark Sensor]                               │
+└─────────────────────────────────────────────────────┘
+```
+
+**Interaction Flow:**
+1. User selects sensor from list (or clicks on map)
+2. Sidebar transitions from State A to State B (progressive disclosure)
+3. Feature filter inherits layer filter value (e.g., "2024" → defaults to same range)
+4. User can adjust to a specific month (e.g., March 2024)
+5. Pop-up chart updates to show March 2024 data
+6. User can use pop-up slider to explore within March
+7. User clicks "Bookmark Sensor" → saves sensor with "March 2024" filter
+8. Bookmark appears in Bookmarked Features widget
 
 **Reference:** Mockup `02d-browse-dendra.html` "Filter Datastream" section
 
@@ -165,9 +262,11 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 ```typescript
 bookmark: {
   featureId: "RS-042",
+  featureLabel: "Sensor ABC-123",
+  sourceLayer: "dendra-sensors",
   relatedDataQuery: {
-    startDate: "2023-01-01",
-    endDate: "2023-03-31",
+    startDate: "2024-03-01",
+    endDate: "2024-03-31",
     aggregation: "daily"
   }
 }
@@ -226,8 +325,9 @@ bookmark: {
 
 - [ ] Should we reuse any code from existing `DendraDetailsSidebar.tsx`?
 - [ ] Which charting library to use?
-- [ ] Floating panel vs. in-sidebar for time series? (mockups show both options)
+- [x] ~~Floating panel vs. in-sidebar for time series?~~ **Resolved (Feb 2):** Pop-up chart for visualization + slider (exploration), sidebar for filter controls (specification)
 - [ ] How to handle sensors with very long data ranges?
+- [ ] Should "Download CSV" use the sidebar filter range or offer a choice?
 
 ---
 
@@ -236,4 +336,5 @@ bookmark: {
 | Date | Task | Change | By |
 |------|------|--------|-----|
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
+| Feb 2, 2026 | 3.3, 3.5, 3.6 | Resolved DFT-004: Progressive disclosure + direct/parametric separation. Sidebar edits filters (context-aware State A/B), pop-up has slider only (exploration). Layer and feature filters are independent after bookmark creation. | Will + Claude |
 
