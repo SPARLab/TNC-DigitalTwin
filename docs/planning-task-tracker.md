@@ -113,7 +113,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-026 | Emoji/icon vocabulary consistency — shopping cart vs export icon | Design System | 🟢 Resolved | Low |
 | DFT-027 | "Browse Features →" button destination confirmation | Terminology | 🟢 Resolved | Low |
 | DFT-028 | Zero-result camera behavior — hidden vs grayed out when filter matches 0 images | UI/UX | 🟢 Resolved | Medium |
-| DFT-029 | Unfiltered layer badge behavior — show total counts or no badges? | UI/UX | 🟡 Open | Medium |
+| DFT-029 | Unfiltered layer badge behavior — show total counts or no badges? | UI/UX | 🟢 Resolved | Medium |
 | DFT-030 | Error state design — API failures, network errors, timeout handling | UI/UX | 🟡 Open | High |
 | DFT-031 | Confirmation dialogs — when to require explicit confirmation (delete, clear filters) | UI/UX | 🟡 Open | Medium |
 | DFT-032 | Map tooltip design — what info shows on hover before clicking feature? | UI/UX | 🟡 Open | Medium |
@@ -163,7 +163,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-026 | Emoji/icon vocabulary consistency | Will | ✅ Resolved - Feb 3 |
 | DFT-027 | "Browse Features →" button destination | Will | ✅ Resolved - Feb 4 |
 | DFT-028 | Zero-result camera behavior | Amy, Trisalyn, Dan | ✅ Resolved - Feb 4 |
-| DFT-029 | Unfiltered layer badge behavior | Amy, Trisalyn | 🟡 Pending |
+| DFT-029 | Unfiltered layer badge behavior | Amy, Trisalyn | ✅ Resolved - Feb 4 |
 | DFT-030 | Error state design | Will, Dan | 🟡 Pending |
 | DFT-031 | Confirmation dialogs pattern | Will | 🟡 Pending |
 | DFT-032 | Map tooltip design | Will | 🟡 Pending |
@@ -321,9 +321,10 @@ Per DFT-012, when a species filter is applied (e.g., "mountain lion"), cameras s
 ### DFT-029: Unfiltered Layer Badge Behavior
 
 **Category:** UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Medium  
-**Source:** UX Design Review, Feb 3, 2026 (extracted from DFT-012 edge cases)
+**Source:** UX Design Review, Feb 3, 2026 (extracted from DFT-012 edge cases)  
+**Resolved:** February 4, 2026
 
 **Context:**
 Per DFT-012, badges appear on camera icons showing filtered image counts. Badges only appear when a layer-level filter is applied.
@@ -342,9 +343,38 @@ Per DFT-012, badges appear on camera icons showing filtered image counts. Badges
 - Hover-only is a middle ground but requires interaction
 
 **Discussion:**
-*Needs decision — affects ANiML default state*
+- **Option 1 (No badges until filter)** aligns with DFT-012's semantic of "badges = filtered results here"
+- Badges become meaningful signals when they only appear during filtering (figure/ground separation)
+- Research audience understands query-driven workflows ("filter first, then see results")
+- Camera icons themselves show location; hover tooltips can show total counts on demand
+- Avoids cognitive overload from 50+ simultaneous numbers on map
 
-**Resolution:** *Pending*
+**Resolution:** **Option 1 adopted** — No badges when layer has no filter. Badges only appear when layer-level filter is applied, making them semantic indicators of filtered query results. Optional fallback: hover tooltip shows total count ("CAM-042: 1,247 images").
+
+**Design Specification:**
+- **Default state (no filter):** Camera icons show no badges
+- **With layer-level filter:** Badges appear showing filtered counts (per DFT-012)
+- **Optional enhancement:** Hover tooltip shows total count even when no filter applied
+- **Rationale:**
+  - Badges carry information: "filtered results exist here"
+  - Clean default for first-time users
+  - Consistent with DFT-012 resolution
+  - Follows Gestalt figure/ground principles (badges stand out when they mean something)
+  - Shneiderman's mantra: overview (camera locations) first, details (counts) on demand (hover or filter)
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file) — resolution added
+- ✅ `docs/master-plan.md` — added to Cross-Phase Decisions → UX Decisions
+- ✅ `docs/IMPLEMENTATION/phases/phase-2-animl.md` — decision note added to Task 2.5
+
+**✅ Verification Checklist:**
+- [x] Phase document updated (phase-2-animl.md task 2.5)
+- [x] Master plan updated (UX Decisions table)
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with rationale
+- [x] Cross-references added ("Documented in:")
+- [x] Design specification included
+- [ ] Mockups noted (not applicable — badges already specified in DFT-012)
 
 ---
 
@@ -737,4 +767,6 @@ After DFT-037 is complete, **archive resolved design decisions** to `PLANNING/re
 | Feb 4, 2026 | Deferred DFT-023: Widget positioning dimensions — exact pixel values deferred to mockup/implementation phase with constraints (8px grid, ArcGIS reference, adaptive height, DFT-019 animation standards, left-aligned collapse button for accessibility) |
 | Feb 4, 2026 | Resolved DFT-024: Filter indicator design — icon-based approach (Lucide Filter icon + count). Single-line rows, tooltip for learnability. Removed A/B testing toggle |
 | Feb 4, 2026 | Resolved DFT-025: Create New View transition animation — inline transformation with sequential staging (250-300ms). Row expands → children appear → new child highlights. Respects reduced motion. Focus moves to new child. Screen reader announces state change |
+| Feb 4, 2026 | Resolved DFT-028: Zero-result camera behavior — cameras with 0 matching images grayed out (not hidden). 40-50% opacity, desaturated, no badge. Remain clickable/accessible. 300ms ease-out transition. Preserves spatial context for negative evidence discovery |
+| Feb 4, 2026 | Resolved DFT-029: Unfiltered layer badge behavior — no badges when layer has no filter. Badges only appear when layer-level filter is applied (semantic indicator). Optional hover tooltip shows total count. Follows Gestalt figure/ground and Shneiderman's overview-first principles |
 

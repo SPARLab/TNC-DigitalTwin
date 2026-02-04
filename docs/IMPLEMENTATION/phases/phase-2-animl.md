@@ -170,6 +170,7 @@ activeQuery: {
 
 **Decision (Feb 3, 2026):** Resolved DFT-012 — Numbered badges on camera icons showing filtered image counts. Map visualization integrates with progressive disclosure pattern.
 **Decision (Feb 4, 2026):** Resolved DFT-028 — Cameras with 0 matching images are grayed out (40-50% opacity, desaturated), not hidden. Remain clickable/keyboard-accessible. No "0" badge shown. Preserves spatial context and enables discovery of negative evidence (where species is NOT present).
+**Decision (Feb 4, 2026):** Resolved DFT-029 — No badges when layer has no filter. Badges only appear when layer-level filter is applied, making them semantic indicators of filtered query results. Optional hover tooltip shows total count even when no filter is active.
 
 **Acceptance Criteria:**
 - [ ] Each camera card shows filtered image count (not total)
@@ -180,9 +181,10 @@ activeQuery: {
   - [ ] Camera icons on map display count badge (upper-right corner)
   - [ ] Badge shows filtered image count matching layer-level filter
   - [ ] Badge color: contrasting (red, blue, or TNC brand accent)
-  - [ ] Badge only appears when layer-level filter is applied
+  - [ ] **Badge only appears when layer-level filter is applied (no filter = no badges)**
+  - [ ] **Optional: Hover tooltip shows total count even when no filter applied**
   - [ ] Clicking camera icon navigates sidebar to that camera's filtered images
-  - [ ] Hover tooltip shows species name and date range context
+  - [ ] Hover tooltip shows species name and date range context when filter is active
   - [ ] **Cameras with 0 matching images: grayed out (not hidden)**
     - [ ] Visual: 40-50% opacity, desaturated color, no badge
     - [ ] Interaction: remains clickable and keyboard-focusable
@@ -339,4 +341,5 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | Feb 3, 2026 | 2.3, 2.4, 2.6 | Resolved DFT-003: Context-dependent button visibility. "Pin Layer" only shows when layer not pinned; filter changes auto-apply to pinned layers. "Bookmark" only shows when camera is selected. | Will + Claude |
 | Feb 4, 2026 | 2.2 | Resolved DFT-027: "Browse Features →" button design specification (full-width primary, TNC green, inline arrow, hover/focus states, 150-200ms transition) | Will + Claude |
 | Feb 4, 2026 | 2.5 | Resolved DFT-028: Zero-result cameras grayed out (not hidden). 40-50% opacity, desaturated, no badge. Remain clickable/keyboard-accessible. Preserves spatial context for negative evidence discovery. Animation: 300ms ease-out, staggered 30ms. | Will + Claude |
+| Feb 4, 2026 | 2.5 | Resolved DFT-029: No badges when layer has no filter. Badges only appear when layer-level filter is applied (semantic indicator). Optional hover tooltip shows total count. Follows Gestalt figure/ground and Shneiderman's overview-first principles. | Will + Claude |
 
