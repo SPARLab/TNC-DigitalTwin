@@ -71,7 +71,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 
 **Next Steps:**
 - [ ] **BEFORE MOCKUPS (DFT-037):** Resolve all design discussion tasks (DFT-015 through DFT-036)
-  - **High priority:** DFT-018 (loading states), DFT-020 (pointer-row bookmark UI), DFT-030 (error states)
+  - **High priority:** ~~DFT-018 (loading states)~~, DFT-020 (pointer-row bookmark UI), DFT-030 (error states)
   - **Medium priority:** DFT-019, DFT-024, DFT-028, DFT-029, DFT-031, DFT-032, DFT-035
   - **Low priority:** Can defer to Phase 6 if not blocking mockup generation
 - [ ] **After DFT-037:** Archive resolved design decisions to `PLANNING/resolved-decisions/` to keep tracker manageable
@@ -100,7 +100,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-015 | Empty state design for widgets, Browse tab, search results | UI/UX | 🟢 Resolved | High |
 | DFT-016 | Mobile/tablet responsiveness scope decision | Technical | 🟢 Resolved | Medium |
 | DFT-017 | Keyboard navigation & accessibility patterns | Accessibility | 🟢 Resolved | Medium |
-| DFT-018 | Loading states and skeleton UI patterns | UI/UX | 🟡 Open | High |
+| DFT-018 | Loading states and skeleton UI patterns | UI/UX | 🟢 Resolved | High |
 | DFT-019 | Edit Filters button navigation behavior — what happens to widget? | UI/UX | 🟡 Open | Medium |
 | DFT-020 | Pointer-row bookmark UI — one button vs two for "Bookmark" vs "Bookmark with Filter" | UI/UX | 🟡 Open | High |
 | DFT-021 | Terminology consistency — "Active" vs "Selected" layer | Terminology | 🟡 Open | Low |
@@ -150,7 +150,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-015 | Empty state design for widgets, Browse tab, search results | Will | ✅ Resolved - Feb 3 |
 | DFT-016 | Mobile/tablet responsiveness scope decision | Amy, Trisalyn | ✅ Resolved - Feb 3 |
 | DFT-017 | Keyboard navigation & accessibility patterns | Will | ✅ Resolved - Feb 3 |
-| DFT-018 | Loading states and skeleton UI patterns | Will, Dan | 🟡 Pending |
+| DFT-018 | Loading states and skeleton UI patterns | Will, Dan | ✅ Resolved - Feb 3 |
 | DFT-019 | Edit Filters button navigation behavior | Will | 🟡 Pending |
 | DFT-020 | Pointer-row bookmark UI (one vs two buttons) | Amy, Trisalyn | 🟡 Pending |
 | DFT-021 | "Active" vs "Selected" terminology | Will | 🟡 Pending |
@@ -1468,7 +1468,7 @@ These four principles establish the mental model for keyboard/accessibility beha
 ### DFT-018: Loading States and Skeleton UI Patterns
 
 **Category:** UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** High  
 **Source:** UX Design Review, Feb 3, 2026
 
@@ -1481,23 +1481,64 @@ The documents reference 8-12s ANiML load times (Phase 2 blocking issue) but don'
 **Why this matters (Nielsen: Visibility of system status):**
 This is critical for perceived performance. The paradigm document's "Choose-Then-See" principle depends on images loading fast enough to feel immediate. If users see a blank screen for 8-12 seconds, they'll think the app is broken.
 
-**Questions to Resolve:**
-1. What loading indicator style? (Spinner, skeleton, progress bar, or combination)
-2. Where do loading indicators appear? (In sidebar? On map? Both?)
-3. Should partial data be shown while more loads?
-4. What happens on API error? (Toast? Inline message? Retry button?)
-5. Is there a timeout threshold after which we show an error?
+**Resolution:**
 
-**Options:**
-1. **Spinner** — simple, universal, doesn't require layout knowledge
-2. **Skeleton UI** — shows structure while loading, better perceived performance
-3. **Progress bar** — good for known-duration loads (e.g., "Loading 127 images...")
-4. **Hybrid** — skeleton for structure, spinner for unknown-duration actions
+**1. Hybrid Indicator Style with Clear Rules:**
 
-**Discussion:**
-*Needs discussion*
+| Context | Indicator | Behavior |
+|---------|-----------|----------|
+| Right sidebar content | Skeleton UI | Shows expected structure; non-blocking |
+| ANiML camera queries | Progress bar | "Querying cameras: 12/47" (deterministic progress) |
+| Image grid | Skeleton → progressive load | First 10 images load, then infinite scroll + background pre-fetch |
+| Map markers | Subtle spinner overlay | Only if >300ms delay |
+| Search/filter actions | Inline spinner | In search box or filter control |
+| Save/bookmark actions | Button spinner | Inline, replaces button content |
 
-**Resolution:** *Pending*
+**2. Region-Specific, Non-Blocking Loading:**
+- Loading happens in the region where content will appear
+- User can navigate away or interact with other regions
+- Right sidebar loading is dismissable/escapable
+
+**3. Dynamic ETA for Long Loads (ANiML):**
+- Show "Estimated time: ~X seconds" based on `queriesRemaining / queriesPerSecond`
+- Update ETA dynamically as queries complete
+- Example: "Querying 47 cameras... ~12 seconds remaining"
+
+**4. Progressive Image Loading:**
+- Fetch first 10 image URLs immediately
+- Display as they arrive (waterfall pattern)
+- Infinite scroll triggers next batch
+- Pre-fetch next batch in background
+
+**5. Timeout Behavior:**
+
+| Threshold | Indicator | User Communication |
+|-----------|-----------|-------------------|
+| 0-300ms | None | (Feels instant) |
+| 300ms-3s | Spinner/skeleton | None needed |
+| 3s-15s | Skeleton + text | "Loading... ~X seconds" |
+| 15s+ | Skeleton + warning | "Taking longer than usual. [Cancel]" |
+| 30s | Auto-timeout | Error state: "Request timed out. [Retry]" |
+
+ANiML-specific: Show 30s timeout explicitly: "Loading may take up to 30 seconds for large queries."
+
+**6. Error States:**
+
+| Error Type | Pattern |
+|------------|---------|
+| Content load failed | Inline in region + "Retry" button |
+| Action failed | Toast with "Try Again" |
+| Timeout | Inline: "Request timed out. The server may be busy. [Retry]" |
+| Partial failure | Show loaded content, inline error for failed portion |
+
+**Design Principles Applied:**
+- **Nielsen #1 (Visibility of system status):** Dynamic ETA, progress bars, and escapable loading
+- **Nielsen #3 (User control and freedom):** Cancel/dismiss loading at any time
+- **Nielsen #4 (Consistency):** Same patterns across all data sources
+- **Norman (Feedback):** Continuous feedback throughout loading process
+- **Gestalt (Continuity):** Skeleton shapes match final content layout
+
+**Implementation:** See `DESIGN-SYSTEM/design-system.md` → "Loading State Patterns"
 
 ---
 
@@ -2238,4 +2279,5 @@ After DFT-037 is complete, **archive resolved design decisions** to `PLANNING/re
 | Feb 3, 2026 | Resolved DFT-013: Multiple filtered views — "Multiple Saved, Single Visible" model. Users can save multiple filtered views but only one is visible at a time (mutual exclusivity). Nested widget structure when 2+ views exist. Memory-preserving parent toggle. Future enhancement could allow limited simultaneous views |
 | Feb 3, 2026 | Created `PLANNING/future-enhancements.md` backlog for v2.1+ features. Moved DFT-014 (biodiversity aggregation) to backlog. Updated tracker scope to clarify it's focused on v2.0 design decisions |
 | Feb 3, 2026 | Resolved DFT-015: Empty state design — show with placeholder, differentiate first-visit (educational) vs returning (laconic). Configurable terminology via `src/config/terminology.ts` ("Feature" vs "Item"). Widget titles use pattern: "Pinned {childNoun} Layers" / "Bookmarked {childNoun}s". Utilitarian tone, simple SVG icons (no emoji). Drone/LiDAR confirmed as pin-only (no bookmarkable items) |
+| Feb 3, 2026 | Resolved DFT-018: Loading states — hybrid indicators (skeleton for content, spinner for actions, progress bar for ANiML queries). Region-specific/non-blocking/escapable. Dynamic ETA for multi-query operations. Progressive image loading with infinite scroll. Timeout thresholds: 0-300ms none, 300ms-3s spinner, 3s-15s +text, 15s+ warning, 30s auto-timeout. Added to `DESIGN-SYSTEM/design-system.md` |
 

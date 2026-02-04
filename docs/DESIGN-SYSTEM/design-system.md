@@ -149,6 +149,86 @@ export const TERMINOLOGY = {
 
 ---
 
+## Loading State Patterns
+
+**Policy (DFT-018):** Loading states use a hybrid approach — skeletons for content regions, spinners for actions, progress bars for deterministic multi-step operations.
+
+### Key Principles
+
+1. **Region-specific, non-blocking:** Loading happens in the region where content will appear. User can navigate away or interact with other regions.
+2. **Escapable:** Right sidebar loading is dismissable — user can click elsewhere to cancel.
+3. **Dynamic ETA for long loads:** Show estimated time for multi-query operations (e.g., ANiML camera queries).
+4. **Progressive loading:** Show available data immediately, load more via infinite scroll + background pre-fetch.
+
+### Indicator Selection Rules
+
+| Context | Indicator | Notes |
+|---------|-----------|-------|
+| Sidebar content loading | Skeleton UI | Shows expected structure |
+| ANiML camera queries | Progress bar | "Querying cameras: 12/47" |
+| Image grid loading | Skeleton → waterfall | First 10 images, then infinite scroll |
+| Map markers loading | Subtle spinner overlay | Only if >300ms delay |
+| Search/filter in progress | Inline spinner | Inside search box or filter control |
+| Save/bookmark action | Button spinner | Replaces button content |
+
+### Timeout Thresholds
+
+| Threshold | Indicator | User Communication |
+|-----------|-----------|-------------------|
+| 0-300ms | None | (Feels instant) |
+| 300ms-3s | Spinner/skeleton | None needed |
+| 3s-15s | Skeleton + text | "Loading... ~X seconds" |
+| 15s+ | Skeleton + warning | "Taking longer than usual. [Cancel]" |
+| 30s | Auto-timeout | Error state: "Request timed out. [Retry]" |
+
+### Dynamic ETA Formula
+
+For multi-query operations (e.g., ANiML camera count queries):
+
+```typescript
+const estimatedSeconds = Math.ceil(queriesRemaining / queriesPerSecond);
+// Display: "Querying 47 cameras... ~12 seconds remaining"
+```
+
+Update ETA dynamically as queries complete.
+
+### Visual Pattern (Right Sidebar Loading)
+
+```
+┌─────────────────────────────────────┐
+│ ANiML Cameras                    ✕  │  ← Dismissable
+├─────────────────────────────────────┤
+│                                     │
+│   Querying 47 cameras...            │
+│   ████████████░░░░░░░░  12/47       │  ← Progress bar
+│   ~8 seconds remaining              │  ← Dynamic ETA
+│                                     │
+│   [Cancel]                          │  ← Escapable
+│                                     │
+└─────────────────────────────────────┘
+```
+
+### Error States (Related to Loading)
+
+| Error Type | Pattern |
+|------------|---------|
+| Content load failed | Inline in region + "Retry" button |
+| Action failed | Toast with "Try Again" |
+| Timeout | Inline: "Request timed out. The server may be busy. [Retry]" |
+| Partial failure | Show loaded content, inline error for failed portion |
+
+**Tone:** Utilitarian (matches empty state tone). No apologetic language.
+
+### Design Principles Applied
+
+- **Nielsen #1 (Visibility of system status):** Dynamic ETA, progress bars, escapable loading
+- **Nielsen #3 (User control and freedom):** Cancel/dismiss loading at any time
+- **Nielsen #4 (Consistency):** Same patterns across all data sources
+- **Norman (Feedback):** Continuous feedback throughout loading process
+- **Gestalt (Continuity):** Skeleton shapes match final content layout
+
+---
+
 ## Styling Decisions
 
 > **Note:** This section tracks styling decisions that affect multiple phases. Component-specific styling should be documented in component files.
@@ -197,6 +277,7 @@ export const TERMINOLOGY = {
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 3, 2026 | Added Loading State Patterns (DFT-018) — hybrid indicators, timeout thresholds, dynamic ETA, progressive loading | Will + Claude |
 | Feb 3, 2026 | Added No Emojis Policy | Will |
 | Feb 3, 2026 | Added Terminology Configuration (DFT-015) — configurable "Feature" vs "Item" terminology | Will + Claude |
 | Feb 3, 2026 | Added Empty State Patterns (DFT-015) — visual pattern, first-visit vs returning user, widget-specific copy | Will + Claude |
