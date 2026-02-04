@@ -105,7 +105,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-020 | Pointer-row bookmark UI — one button vs two for "Bookmark" vs "Bookmark with Filter" | UI/UX | 🟢 Resolved | High |
 | DFT-021 | Terminology consistency — "Active" vs "Selected" layer | Terminology | 🟢 Resolved | Low |
 | DFT-022 | Parent toggle memory edge case — what if previously-selected child is deleted? | Edge Case | 🟢 Deferred | Low |
-| DFT-023 | Widget positioning dimensions — exact spacing values | Visual Spec | 🟡 Open | Low |
+| DFT-023 | Widget positioning dimensions — exact spacing values | Visual Spec | 🟢 Deferred | Low |
 | DFT-024 | Filter indicator A/B test decision — make choice before mockups | Visual Design | 🟡 Open | Medium |
 | DFT-025 | Create New View transition animation — visual feedback for state change | Microinteraction | 🟡 Open | Low |
 | DFT-026 | Emoji/icon vocabulary consistency — shopping cart vs export icon | Design System | 🟢 Resolved | Low |
@@ -155,7 +155,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-020 | Pointer-row bookmark UI (one vs two buttons) | Amy, Trisalyn | ✅ Resolved - Feb 4 |
 | DFT-021 | "Active" vs "Selected" terminology | Will | ✅ Resolved - Feb 4 |
 | DFT-022 | Parent toggle memory edge case | Will | ✅ Deferred - Feb 4 |
-| DFT-023 | Widget positioning dimensions | Will | 🟡 Pending |
+| DFT-023 | Widget positioning dimensions | Will | ✅ Deferred - Feb 4 |
 | DFT-024 | Filter indicator A/B test decision | Amy, Trisalyn | 🟡 Pending |
 | DFT-025 | Create New View transition animation | Will | 🟡 Pending |
 | DFT-026 | Emoji/icon vocabulary consistency | Will | ✅ Resolved - Feb 3 |
@@ -1784,7 +1784,7 @@ This is a runtime state management question best solved during implementation. T
 ### DFT-023: Widget Positioning Dimensions
 
 **Category:** Visual Spec  
-**Status:** 🟡 Open  
+**Status:** 🟢 Deferred  
 **Priority:** Low  
 **Source:** UX Design Review, Feb 3, 2026
 
@@ -1804,9 +1804,23 @@ Current spec says widgets are positioned "top-left" and "top-right" of map area.
 3. **Reference existing pattern** — "use same spacing as ArcGIS/Esri widgets"
 
 **Discussion:**
-*Low priority — can let mockups propose*
+- Feb 4, 2026: Analyzed using design principles (Cognitive Load, Visual Fundamentals, Consistency)
+- Exact pixel values are implementation details that don't affect conceptual decisions
+- Animation timing already established in DFT-019 (150-200ms transitions)
+- Better to let mockup propose values within constraints, approve visually
 
-**Resolution:** *Pending*
+**Resolution:** Feb 4, 2026 — **Deferred to Mockup/Implementation Phase with Constraints**
+
+**Constraints for Mockup/Implementation:**
+- **Spacing:** Must use 8px grid increments (16px, 24px, 32px, etc.)
+- **Reference:** Use ArcGIS/Esri widget spacing conventions (typically 16-24px from map edges)
+- **Max height:** Adaptive logic (show ~6 items before scrolling, not hardcoded pixels)
+- **Collapse button:** Left side of widget header (before title) for keyboard accessibility
+- **Animation:** Use DFT-019 standards (150-200ms crossfade for expand/collapse, consistent with global tab transitions)
+- **Shadow/elevation:** Defer to design system or ArcGIS reference standards
+
+**Rationale:**
+Exact pixel values are implementation details that don't affect conceptual decisions. Mockup generator can propose values within grid constraints; team can approve visually rather than numerically. Focus remains on higher-priority open decisions (error states, filter indicators, interaction patterns).
 
 ---
 
@@ -2388,4 +2402,9 @@ After DFT-037 is complete, **archive resolved design decisions** to `PLANNING/re
 | Feb 3, 2026 | Created `PLANNING/future-enhancements.md` backlog for v2.1+ features. Moved DFT-014 (biodiversity aggregation) to backlog. Updated tracker scope to clarify it's focused on v2.0 design decisions |
 | Feb 3, 2026 | Resolved DFT-015: Empty state design — show with placeholder, differentiate first-visit (educational) vs returning (laconic). Configurable terminology via `src/config/terminology.ts` ("Feature" vs "Item"). Widget titles use pattern: "Pinned {childNoun} Layers" / "Bookmarked {childNoun}s". Utilitarian tone, simple SVG icons (no emoji). Drone/LiDAR confirmed as pin-only (no bookmarkable items) |
 | Feb 3, 2026 | Resolved DFT-018: Loading states — hybrid indicators (skeleton for content, spinner for actions, progress bar for ANiML queries). Region-specific/non-blocking/escapable. Dynamic ETA for multi-query operations. Progressive image loading with infinite scroll. Timeout thresholds: 0-300ms none, 300ms-3s spinner, 3s-15s +text, 15s+ warning, 30s auto-timeout. Added to `DESIGN-SYSTEM/design-system.md` |
+| Feb 4, 2026 | Resolved DFT-019: Edit Filters button navigation — "Edit Filters →" label with arrow, widget stays expanded, right sidebar uses 150-200ms crossfade transitions. Separation of concerns: widget manages visibility, sidebar manages editing |
+| Feb 4, 2026 | Resolved DFT-020: Pointer-row bookmark UI — single button pattern ("Bookmark" always captures current filter state). Removed "Bookmark with Filter" variant to reduce cognitive load |
+| Feb 4, 2026 | Resolved DFT-021: Terminology consistency — "Active" layer (visible on map) vs "Selected" layer (chosen for editing). Applied throughout docs |
+| Feb 4, 2026 | Deferred DFT-022: Parent toggle memory edge case — runtime state management question best solved during implementation |
+| Feb 4, 2026 | Deferred DFT-023: Widget positioning dimensions — exact pixel values deferred to mockup/implementation phase with constraints (8px grid, ArcGIS reference, adaptive height, DFT-019 animation standards, left-aligned collapse button for accessibility) |
 
