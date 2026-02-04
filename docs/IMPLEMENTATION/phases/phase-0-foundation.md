@@ -172,7 +172,8 @@ interface Bookmark {
 **Decision (Feb 2, 2026):** Resolved DFT-004 — Widget shows filter **status** (🌪️ indicator) but does NOT contain filter editing UI. "Edit Filters" button navigates to right sidebar. Sidebar is the canonical filter editor.  
 **Decision (Feb 3, 2026):** Resolved DFT-013 — Multiple filtered views use "Multiple Saved, Single Visible" model. Nested widget structure when 2+ views exist; only one view visible at a time (mutual exclusivity); memory-preserving parent toggle.
 
-**Decision (Feb 3, 2026):** Resolved DFT-015 — Empty state design. Widget title uses configurable terminology: "Pinned {childNoun} Layers". First visit shows educational empty state (expanded); returning user sees laconic message. See design-system.md for terminology config.
+**Decision (Feb 3, 2026):** Resolved DFT-015 — Empty state design. Widget title uses configurable terminology: "Pinned {childNoun} Layers". First visit shows educational empty state (expanded); returning user sees laconic message. See design-system.md for terminology config.  
+**Decision (Feb 4, 2026):** Resolved DFT-019 — "Edit Filters" button navigation behavior. Button labeled "Edit Filters →" (with arrow), right-aligned in expanded panel. Widget remains expanded (user can reference filter state). Right sidebar uses crossfade animation (~150-200ms) for tab transitions. Separation of Concerns: Widget manages visibility/stacking; sidebar manages deep editing.
 
 **Widget Design (Collapsed State):**
 ```
@@ -218,12 +219,14 @@ interface Bookmark {
 │ 👁 ■ Camera Traps (mt. lion)         🌪️5 ✕ │  ← EXPANDED
 │   ┌─────────────────────────────────────────┐ │
 │   │ Filters: species = mt. lion, date>2024 │ │
-│   │ [Edit Filters] [Clear] [+ New View]    │ │
+│   │ [Clear] [+ New View]    [Edit Filters →]│ │  ← Arrow + right-aligned
 │   └─────────────────────────────────────────┘ │
 │ 👁 ■ Camera Traps (deer)             🌪️3 ✕ │
 │ 👁 ■ iNaturalist (birds)             🌪️2 ✕ │
 └───────────────────────────────────────────────┘
 ```
+
+**Note:** "Edit Filters →" is right-aligned and includes arrow to indicate navigation to right sidebar.
 
 **Row elements:** `[drag] [👁] [Layer Name (distinguisher)] [🌪️N] [✕]`  
 **Note:** No swatch in row. Map legend shows symbology for active layer only.
@@ -238,10 +241,11 @@ interface Bookmark {
   - Each has independent visibility toggle (👁 blue = visible, gray = hidden)
   - Clicking pinned layer in sidebar makes it active AND restores visibility if hidden
   - [✕] button unpins the layer
-- **Expanded panel behavior (DFT-003b):**
+- **Expanded panel behavior (DFT-003b, DFT-019):**
   - Clicking a pinned layer row expands it to show filter summary + action buttons
   - Only ONE layer expanded at a time (clicking another collapses the previous)
-  - Action buttons: **Edit Filters**, **Clear**, **+ Create New View**
+  - Action buttons: **Clear** (left), **+ Create New View**, **Edit Filters →** (right-aligned, with arrow)
+  - "Edit Filters →" navigates to Browse tab in right sidebar; widget panel stays expanded so user can reference filter state
   - "Create New View" duplicates the layer with current filters as a new pinned entry
   - Active state indicated by: expansion (panel visible), visual treatment (background color, left border accent, etc.)
 - **Filter indicators (status display, NOT editing):**
@@ -280,9 +284,10 @@ This allows collecting user feedback before finalizing the design.
 - [ ] **No swatch in row** — map legend handles symbology for active layer only
 - [ ] Clicking pinned layer row expands it to show filter summary + action buttons
 - [ ] Only ONE layer expanded at a time (clicking another collapses the previous)
-- [ ] Expanded panel shows: filter summary text, "Edit Filters" button, "Clear" button, "+ Create New View" button
+- [ ] Expanded panel shows: filter summary text, "Clear" button (left), "+ Create New View" button, "Edit Filters →" button (right-aligned, with arrow)
 - [ ] Active state indicated by: expansion (panel visible) + visual treatment (background color, left border accent)
-- [ ] "Edit Filters" button opens Browse tab in right sidebar
+- [ ] "Edit Filters →" button opens Browse tab in right sidebar (widget panel remains expanded for reference)
+- [ ] Right sidebar tab switches use crossfade animation (~150-200ms) — global pattern per DFT-019
 - [ ] "Clear" button removes all filters from the layer
 - [ ] "+ Create New View" button duplicates the layer with current filters as a new pinned entry
 - [ ] Filter indicator shows count and is clickable (opens Browse tab)

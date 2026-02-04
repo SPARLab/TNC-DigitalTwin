@@ -67,12 +67,12 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 - **Export functionality:** `IMPLEMENTATION/phases/phase-5-export-builder.md`
 - **Cross-phase decisions:** `master-plan.md` → "Cross-Phase Decisions" → "UX Decisions"
 
-**Last Updated:** February 3, 2026 (UX Design Review: Added DFT-015 through DFT-037 — 23 new issues)
+**Last Updated:** February 4, 2026 (Resolved DFT-019: Edit Filters navigation behavior)
 
 **Next Steps:**
 - [ ] **BEFORE MOCKUPS (DFT-037):** Resolve all design discussion tasks (DFT-015 through DFT-036)
   - **High priority:** ~~DFT-018 (loading states)~~, DFT-020 (pointer-row bookmark UI), DFT-030 (error states)
-  - **Medium priority:** DFT-019, DFT-024, DFT-028, DFT-029, DFT-031, DFT-032, DFT-035
+  - **Medium priority:** ~~DFT-019 (Edit Filters navigation)~~, DFT-024, DFT-028, DFT-029, DFT-031, DFT-032, DFT-035
   - **Low priority:** Can defer to Phase 6 if not blocking mockup generation
 - [ ] **After DFT-037:** Archive resolved design decisions to `PLANNING/resolved-decisions/` to keep tracker manageable
 
@@ -101,7 +101,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-016 | Mobile/tablet responsiveness scope decision | Technical | 🟢 Resolved | Medium |
 | DFT-017 | Keyboard navigation & accessibility patterns | Accessibility | 🟢 Resolved | Medium |
 | DFT-018 | Loading states and skeleton UI patterns | UI/UX | 🟢 Resolved | High |
-| DFT-019 | Edit Filters button navigation behavior — what happens to widget? | UI/UX | 🟡 Open | Medium |
+| DFT-019 | Edit Filters button navigation behavior — what happens to widget? | UI/UX | 🟢 Resolved | Medium |
 | DFT-020 | Pointer-row bookmark UI — one button vs two for "Bookmark" vs "Bookmark with Filter" | UI/UX | 🟡 Open | High |
 | DFT-021 | Terminology consistency — "Active" vs "Selected" layer | Terminology | 🟡 Open | Low |
 | DFT-022 | Parent toggle memory edge case — what if previously-selected child is deleted? | Edge Case | 🟡 Open | Low |
@@ -151,7 +151,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-016 | Mobile/tablet responsiveness scope decision | Amy, Trisalyn | ✅ Resolved - Feb 3 |
 | DFT-017 | Keyboard navigation & accessibility patterns | Will | ✅ Resolved - Feb 3 |
 | DFT-018 | Loading states and skeleton UI patterns | Will, Dan | ✅ Resolved - Feb 3 |
-| DFT-019 | Edit Filters button navigation behavior | Will | 🟡 Pending |
+| DFT-019 | Edit Filters button navigation behavior | Will | ✅ Resolved - Feb 4 |
 | DFT-020 | Pointer-row bookmark UI (one vs two buttons) | Amy, Trisalyn | 🟡 Pending |
 | DFT-021 | "Active" vs "Selected" terminology | Will | 🟡 Pending |
 | DFT-022 | Parent toggle memory edge case | Will | 🟡 Pending |
@@ -1545,7 +1545,7 @@ ANiML-specific: Show 30s timeout explicitly: "Loading may take up to 30 seconds 
 ### DFT-019: Edit Filters Button Navigation Behavior
 
 **Category:** UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Medium  
 **Source:** UX Design Review, Feb 3, 2026
 
@@ -1567,9 +1567,59 @@ This is the same "eye-tracking concern" noted in DFT-003 — user's attention is
 4. **Add visual feedback** — sidebar highlights/pulses when Edit Filters is clicked
 
 **Discussion:**
-*Needs discussion*
+- Feb 3-4, 2026: Analyzed using Nielsen's Heuristics (visibility of system status, recognition over recall), Norman's feedback principle, Gestalt continuity, and Fitts's Law
+- Auto-collapse (Option 1) rejected: increases cognitive load (user loses reference to filter state while editing)
+- Key insight: **Separation of Concerns** — widget is responsible for visibility/stacking order; right sidebar is responsible for deep editing (filters, queries, browsing). The "Edit Filters →" button is a **navigation affordance**, not an editing tool.
+- Researched animation best practices (UX Collective, Material Design): crossfade at 150-200ms is standard for tab transitions
 
-**Resolution:** *Pending*
+**Resolution:** Feb 4, 2026 — **Combination: Navigation labeling + visual feedback**
+
+**Design Decisions:**
+
+1. **Button label:** "Edit Filters →" (with arrow indicating navigation)
+   - Arrow (→) is a signifier that implies "go somewhere"
+   - Sets expectation that view will shift to right sidebar
+
+2. **Button placement:** Right-aligned within the expanded widget panel
+   - Reduces perceived distance to destination (Fitts's Law)
+   - Arrow points toward where attention will go
+
+3. **Widget panel:** Remains expanded
+   - User can reference current filter state while editing in sidebar
+   - Supports recognition over recall (Nielsen #6)
+
+4. **Right sidebar transitions:**
+   - **Tab switching (global):** Crossfade animation (~150-200ms) when changing tabs
+   - **Highlight (conditional):** If already on the correct tab (Browse), filter section receives ~200-300ms highlight animation
+   - This applies globally to all tab changes in the right sidebar for a professional feel
+
+5. **Scroll behavior:** If filter section not visible, scroll into view + highlight
+
+**Separation of Concerns Rationale:**
+- **Pinned Layers Widget responsibilities:** 
+  - Managing layer visibility on the map (👁 toggle)
+  - Managing stacking order (drag-and-drop reorder)
+  - Showing pinned status and filter indicators (status display only)
+- **Right Sidebar responsibilities:**
+  - Deep editing (filters, queries, browsing features)
+  - Feature selection and bookmarking
+  - Layer metadata and overview
+
+Editing queries/filters is a significant enough task that it needs its own dedicated space. The widget is the "quick controls panel"; the sidebar is the "editing workspace."
+
+**Global Animation Guideline (added):**
+All tab/view transitions in the right sidebar use crossfade (~150-200ms) to feel professional and avoid jarring state changes.
+
+**Documented in:**
+- Phase 0 task 0.5 (Pinned Layers Widget) — updated with "Edit Filters →" button spec
+- master-plan.md — added UX Decision for global animation pattern
+
+**Design Principles Applied:**
+- **Nielsen #1 (Visibility of system status):** Visual feedback when navigating
+- **Nielsen #2 (Match between system and real world):** Arrow implies navigation
+- **Nielsen #6 (Recognition over recall):** Widget stays open for reference
+- **Fitts's Law:** Button placement reduces distance to destination
+- **Separation of Concerns:** Widget manages visibility; sidebar manages editing
 
 ---
 
