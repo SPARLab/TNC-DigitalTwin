@@ -232,9 +232,9 @@ interface Bookmark {
 **Note:** No swatch in row. Map legend shows symbology for active layer only.
 
 **Key Behaviors:**
-- **Active Layer section:** Shows currently selected layer from left sidebar
+- **Active Layer section:** Shows currently active layer from left sidebar
   - Only ONE active non-pinned layer at a time
-  - Selecting another layer in sidebar replaces active layer
+  - Activating another layer in sidebar replaces active layer
   - [📌] button pins the active layer (moves to Pinned section)
 - **Pinned Layers section:** Shows all saved layers with queries
   - Multiple layers can be pinned simultaneously
@@ -278,7 +278,7 @@ This allows collecting user feedback before finalizing the design.
 - [ ] Widget is collapsible/expandable (user-controlled)
 - [ ] Widget auto-collapses when time-series data view is active
 - [ ] Widget restores previous state when time-series view closes
-- [ ] Active Layer section shows selected layer with [📌] button
+- [ ] Active Layer section shows active layer with [📌] button
 - [ ] Pinned Layers section shows all pinned layers
 - [ ] Each pinned layer row shows: drag handle, visibility toggle (👁), name, distinguisher, filter indicator (🌪️N), remove button (✕)
 - [ ] **No swatch in row** — map legend handles symbology for active layer only

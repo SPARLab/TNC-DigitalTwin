@@ -84,7 +84,7 @@ Implement the iNaturalist observations browse experience in the right sidebar. T
 - [ ] Tabs exist: Overview | Browse | Export
 - [ ] **Overview tab is the default/active tab**
 - [ ] Overview tab includes prominent "Browse Features →" button to navigate to Browse tab
-- [ ] Component receives selected layer info from parent
+- [ ] Component receives active layer info from parent
 
 **Files to Create:**
 - `src/v2/components/RightSidebar/iNaturalist/INaturalistSidebar.tsx`

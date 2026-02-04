@@ -103,7 +103,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-018 | Loading states and skeleton UI patterns | UI/UX | 🟢 Resolved | High |
 | DFT-019 | Edit Filters button navigation behavior — what happens to widget? | UI/UX | 🟢 Resolved | Medium |
 | DFT-020 | Pointer-row bookmark UI — one button vs two for "Bookmark" vs "Bookmark with Filter" | UI/UX | 🟢 Resolved | High |
-| DFT-021 | Terminology consistency — "Active" vs "Selected" layer | Terminology | 🟡 Open | Low |
+| DFT-021 | Terminology consistency — "Active" vs "Selected" layer | Terminology | 🟢 Resolved | Low |
 | DFT-022 | Parent toggle memory edge case — what if previously-selected child is deleted? | Edge Case | 🟡 Open | Low |
 | DFT-023 | Widget positioning dimensions — exact spacing values | Visual Spec | 🟡 Open | Low |
 | DFT-024 | Filter indicator A/B test decision — make choice before mockups | Visual Design | 🟡 Open | Medium |
@@ -153,7 +153,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-018 | Loading states and skeleton UI patterns | Will, Dan | ✅ Resolved - Feb 3 |
 | DFT-019 | Edit Filters button navigation behavior | Will | ✅ Resolved - Feb 4 |
 | DFT-020 | Pointer-row bookmark UI (one vs two buttons) | Amy, Trisalyn | ✅ Resolved - Feb 4 |
-| DFT-021 | "Active" vs "Selected" terminology | Will | 🟡 Pending |
+| DFT-021 | "Active" vs "Selected" terminology | Will | ✅ Resolved - Feb 4 |
 | DFT-022 | Parent toggle memory edge case | Will | 🟡 Pending |
 | DFT-023 | Widget positioning dimensions | Will | 🟡 Pending |
 | DFT-024 | Filter indicator A/B test decision | Amy, Trisalyn | 🟡 Pending |
@@ -1695,7 +1695,7 @@ If so, DFT-003's claim that we "eliminated side-by-side button confusion" may no
 ### DFT-021: "Active" vs "Selected" Terminology Consistency
 
 **Category:** Terminology  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Low  
 **Source:** UX Design Review, Feb 3, 2026
 
@@ -1708,21 +1708,33 @@ The documents use these terms interchangeably:
 
 **Question:** Do these mean the same thing? If so, pick one. If not, define the distinction.
 
-**Proposed Terminology:**
-- **Selected** = highlighted/clicked in left sidebar (selection state)
-- **Active** = currently visible on map and displayed in right sidebar (visibility + focus state)
+**Resolution:** Use **"Active"** terminology exclusively
 
-A layer could be "selected" in the sidebar but not "active" if it's pinned and hidden. Or they could be synonymous (selected = active always).
+**Terminology System:**
+| State | Definition | Visual Indicator | Cardinality |
+|-------|-----------|------------------|-------------|
+| **Active** | Layer currently being inspected; displayed in right sidebar | Green border in left sidebar | ONE at a time |
+| **Visible** | Rendered on map | Blue eye icon (ON) | Multiple simultaneous |
+| **Pinned** | Saved to widget with filters | In widget, pin icon | Multiple simultaneous |
+| **Expanded** | Pinned layer showing filter controls | Expanded panel in widget | ONE at a time |
 
-**Options:**
-1. **Synonymous** — "selected" and "active" mean the same thing; standardize on "active"
-2. **Distinct** — "selected" = UI selection state; "active" = visible on map
-3. **Use only "active"** — remove "selected" from vocabulary except for multi-select contexts
+**Key distinction:** Active ≠ Visible
+- A layer can be **active but not visible** (inspecting data while map visibility OFF)
+- A layer can be **visible but not active** (multiple layers on map, only one in focus)
 
-**Discussion:**
-*Needs decision for consistency*
+**Rationale:**
+- ✅ "Active" conveys functional working state (matches GIS mental model)
+- ✅ Supports "active but hidden" scenario (visibility toggled OFF while inspecting)
+- ✅ Clearer than "selected" which implies temporary UI highlight only
 
-**Resolution:** *Pending*
+**Implementation Updates:**
+- Code: Rename `.selected` → `.active`, `selectLayer()` → `activateLayer()`
+- Docs: Replace "selected layer" → "active layer" throughout specs
+- Widget: Expand eye icon hit targets (40px column) to prevent accidental activation
+
+**Full details:** See `PLANNING/resolved-decisions/dft-021-resolution-summary.md`
+
+**Resolution Date:** February 4, 2026
 
 ---
 
