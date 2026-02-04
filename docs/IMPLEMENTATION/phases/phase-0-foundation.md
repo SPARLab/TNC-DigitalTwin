@@ -1,7 +1,7 @@
 # Phase 0: Foundation
 
 **Status:** ⚪ Not Started  
-**Progress:** 0 / 6 tasks  
+**Progress:** 0 / 7 tasks  
 **Branch:** `v2/foundation`  
 **Blocking:** YES - All other phases depend on this  
 **Owner:** TBD
@@ -36,6 +36,7 @@ Set up the V2 application shell, routing, state management, and shared component
 | 0.4 | Implement Bookmarks state management | ⚪ Not Started | | Awaiting team feedback |
 | 0.5 | Implement Pinned Layers floating widget | ⚪ Not Started | | |
 | 0.6 | Implement Bookmarked Features floating widget | ⚪ Not Started | | Awaiting team feedback |
+| 0.7 | Implement Error Handling components | ⚪ Not Started | | DFT-030 resolved |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -409,6 +410,70 @@ interface Bookmark {
 
 ---
 
+### 0.7: Implement Error Handling Components
+
+**Goal:** Create reusable error handling components that all phases will use.
+
+**Design Decision (Feb 4, 2026):** Resolved DFT-030 — Severity-based error hierarchy with combination approach (critical modal, regional inline, partial banner, action toast).
+
+**Acceptance Criteria:**
+
+**Toast Component (Action Failures):**
+- [ ] Toast component renders at top of right sidebar (full-width)
+- [ ] Design tokens: `bg-red-50 border-b border-red-200`, Lucide `XCircle` icon
+- [ ] Auto-dismisses after 8 seconds
+- [ ] Dismissible via ✕ button
+- [ ] "Try Again" inline button retries action and dismisses toast
+- [ ] Supports stacking (newest on top, max 3 visible)
+- [ ] Position: `absolute; top: 0; right: 0; left: 0;` relative to right sidebar
+- [ ] Use cases: Bookmark save failed, pin failed, export failed, filter apply failed
+
+**Inline Error Component (Content Failures):**
+- [ ] Renders in-place where content should load
+- [ ] Design tokens: `bg-amber-50 border border-amber-200 rounded-lg p-4`, Lucide `AlertTriangle` icon
+- [ ] Shows error title and body text
+- [ ] Includes "Retry" primary button
+- [ ] Includes "Go Back" secondary button (contextual navigation)
+- [ ] Includes "Show Details" expandable section (collapsed by default)
+- [ ] Persistent until user acts (Retry, Go Back, navigate away)
+- [ ] Use cases: Right sidebar content failed, camera list failed, search failed
+
+**Partial Failure Banner:**
+- [ ] Banner component renders above loaded content
+- [ ] Shows "[⚠] X items failed to load. [Retry Failed] [✕]"
+- [ ] "Retry Failed" only retries failed items
+- [ ] Banner persists until dismissed or failures resolved
+- [ ] Design tokens: `bg-amber-50 border-b border-amber-200 px-4 py-2`
+
+**Critical Error Modal:**
+- [ ] Full-screen overlay modal for app-breaking errors
+- [ ] Only used for total API outage or app initialization failure
+- [ ] Shows error icon, message, "Try Again" button, "Show Technical Details" toggle
+- [ ] Blocks app interaction until resolved
+
+**Shared Specifications:**
+- [ ] Error message tone: Utilitarian, direct, no apologies
+- [ ] Color tokens: `amber-*` for warnings, `red-*` for errors
+- [ ] "Show Details" expansion shows: endpoint, HTTP status, timestamp, duration
+- [ ] All components keyboard accessible (focusable buttons, ARIA labels)
+- [ ] ARIA: `role="alert"` for toasts, `aria-live="polite"` for inline
+- [ ] Animation: Fade in 200ms + subtle shake (2px), respects `prefers-reduced-motion`
+- [ ] Timeout: 30s auto-timeout for all API requests → inline error with [Retry]
+
+**Reference:**
+- Design system: `docs/DESIGN-SYSTEM/design-system.md` (Error State Patterns section)
+- DFT-030 resolution in `docs/planning-task-tracker.md`
+
+**Files to Create:**
+- `src/v2/components/ErrorHandling/Toast.tsx`
+- `src/v2/components/ErrorHandling/InlineError.tsx`
+- `src/v2/components/ErrorHandling/PartialFailureBanner.tsx`
+- `src/v2/components/ErrorHandling/CriticalErrorModal.tsx`
+- `src/v2/components/ErrorHandling/ShowDetailsPanel.tsx` (shared expansion)
+- `src/v2/utils/errorMessages.ts` (standardized error text)
+
+---
+
 ## Discoveries / Decisions Made
 
 > When working on this phase, document any decisions that might affect other phases.
@@ -439,6 +504,7 @@ interface Bookmark {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 4, 2026 | 0.7 | Added error handling components task (DFT-030 resolution) — toast, inline error, partial failure, critical modal | Will + Claude |
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 | Jan 27, 2026 | 0.2, 0.5 | Updated with DFT-001 resolution (Model C: selection = active) | Will + Claude |
 | Jan 27, 2026 | 0.5 | Added A/B testing for filter representation | Will + Claude |

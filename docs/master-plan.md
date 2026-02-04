@@ -29,7 +29,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 | Phase | Name | Status | Progress | Branch | Blocking? |
 |-------|------|--------|----------|--------|-----------|
-| 0 | Foundation | ⚪ Not Started | 0 / 6 tasks | `v2/foundation` | YES - blocks all |
+| 0 | Foundation | ⚪ Not Started | 0 / 7 tasks | `v2/foundation` | YES - blocks all |
 | 1 | iNaturalist | ⚪ Not Started | 0 / 5 tasks | `v2/inaturalist` | No |
 | 2 | ANiML | ⚪ Not Started | 0 / 7 tasks | `v2/animl` | No |
 | 3 | Dendra | ⚪ Not Started | 0 / 6 tasks | `v2/dendra` | No |
@@ -247,4 +247,5 @@ When working on any phase:
 | Feb 4, 2026 | Phase 0 | Resolved DFT-025: Create New View transition animation — inline transformation with sequential staging (250-300ms). Row expands → children appear → new child highlights. Respects `prefers-reduced-motion`. Focus moves to new child. Establishes animation timing standard for structural widget changes | Will + Claude |
 | Feb 4, 2026 | Phase 2 | Resolved DFT-028: Zero-result camera behavior — cameras with 0 matching images are grayed out (not hidden). 40-50% opacity, desaturated, no badge. Remain clickable/keyboard-accessible. 300ms ease-out transition. Preserves spatial context for negative evidence discovery. Analyzed via 9 Pillars framework | Will + Claude |
 | Feb 4, 2026 | Phase 2 | Resolved DFT-029: Unfiltered layer badge behavior — no badges when layer has no filter. Badges only appear when layer-level filter is applied, making them semantic indicators. Optional hover tooltip shows total counts. Follows Gestalt figure/ground and Shneiderman's overview-first principles | Will + Claude |
+| Feb 4, 2026 | All | Resolved DFT-030: Error state design — severity-based hierarchy (critical modal, regional inline, partial banner, action toast). Toast placement at top of right sidebar avoids map legend conflict. Utilitarian tone, always actionable (Retry/Go Back/Dismiss). Analyzed via Nielsen #9, Norman feedback, Gestalt proximity, WCAG accessibility | Will + Claude |
 

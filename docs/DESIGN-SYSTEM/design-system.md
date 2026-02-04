@@ -229,6 +229,145 @@ Update ETA dynamically as queries complete.
 
 ---
 
+## Error State Patterns
+
+**Policy (DFT-030):** Error handling follows a severity-based hierarchy with consistent patterns across all data sources.
+
+### Key Principles
+
+1. **Regional containment:** Errors appear in the region where the failure occurred
+2. **Always actionable:** Every error offers Retry, Go Back, or Dismiss
+3. **Ephemeral vs. Persistent:** Toasts auto-dismiss (8s), inline errors persist until resolved
+4. **Utilitarian tone:** Direct, professional, no apologies (matches DFT-015 empty states)
+
+### Error Severity Matrix
+
+| Severity | Example | Pattern | Lifespan | Placement |
+|----------|---------|---------|----------|-----------|
+| **Critical** | Total API outage | Modal | Persistent (blocks app) | Full-screen overlay |
+| **Regional** | Sidebar content failed | Inline | Persistent | In affected region |
+| **Partial** | 3 of 47 cameras failed | Banner | Persistent | Above loaded content |
+| **Action** | Bookmark save failed | Toast | 8s auto-dismiss | Top of right sidebar |
+
+### Toast Notifications (Action Failures)
+
+**Placement:** Top of right sidebar, full-width
+- `position: absolute; top: 0; right: 0; left: 0;`
+- Stacked if multiple (newest on top, max 3 visible)
+
+**Visual Pattern:**
+```
+┌────────────────────────────────────────────────────┐
+│  [✕ Icon]  Bookmark failed to save. [Try Again]  ✕│
+└────────────────────────────────────────────────────┘
+```
+
+**Design Tokens:**
+- Container: `bg-red-50 border-b border-red-200`
+- Icon: `w-5 h-5 text-red-500` (Lucide `XCircle`)
+- Text: `text-sm text-gray-800`
+- Button: `text-sm text-red-600 hover:underline`
+
+**Behavior:**
+- Auto-dismiss after 8 seconds
+- Dismissible via ✕
+- "Try Again" retries action and dismisses toast
+
+**Use cases:** Bookmark save failed, pin failed, export failed, filter apply failed
+
+**Rationale:** Top of right sidebar avoids map legend conflict, maintains proximity to action context (most errors from sidebar), consistent location.
+
+### Inline Errors (Content Failures)
+
+**Placement:** In the region where content should load
+
+**Visual Pattern:**
+```
+┌─────────────────────────────────────────────────────┐
+│  [⚠ Icon]                                           │
+│  Unable to load camera data                         │
+│  The server didn't respond in time.                 │
+│                                                     │
+│  [Retry]  [← Back to Layer List]  [Show Details ▼] │
+└─────────────────────────────────────────────────────┘
+```
+
+**Design Tokens:**
+- Container: `bg-amber-50 border border-amber-200 rounded-lg p-4`
+- Icon: `w-8 h-8 text-amber-500` (Lucide `AlertTriangle`)
+- Title: `text-sm font-medium text-gray-800`
+- Body: `text-sm text-gray-600`
+
+**Behavior:**
+- Persistent until user acts (Retry, Go Back, navigate away)
+- "Show Details" expands technical info (collapsed by default)
+- "Go Back" provides contextual navigation
+
+**Use cases:** Right sidebar content failed, camera list failed, search failed
+
+### Partial Failure Banner
+
+**Pattern:** Show loaded content, banner for failures
+
+```
+┌─────────────────────────────────────────────────────┐
+│ [⚠] 3 cameras failed to load. [Retry Failed] [✕]   │
+└─────────────────────────────────────────────────────┘
+│  Successfully loaded content appears below...        │
+```
+
+**Behavior:**
+- "Retry Failed" only retries failed items
+- Don't throw away successfully loaded data
+
+### Color Tokens
+
+| Severity | Background | Border | Icon/Text |
+|----------|------------|--------|-----------|
+| Warning/Recoverable | `amber-50` | `amber-200` | `amber-500` |
+| Error/Failed | `red-50` | `red-200` | `red-500` |
+
+### Error Message Tone
+
+**Utilitarian** (consistent with DFT-015):
+- Direct, professional, factual
+- No apologetic language ("Oops!", "Sorry!")
+- Explain causality ("The server didn't respond" not "Something went wrong")
+
+**Examples:**
+- ✓ "Unable to load camera data"
+- ✓ "Request timed out after 30 seconds"
+- ✓ "Bookmark failed to save"
+- ✗ "Oops! Something went wrong"
+
+### "Show Details" Expansion
+
+Standardized pattern for technical debugging:
+- Collapsed by default
+- Shows: Request endpoint, HTTP status, timestamp, duration
+- Target audience (researchers) may need for debugging queries
+
+### Timeout Behavior
+
+- 0-30s: Show loading state (per DFT-018)
+- 30s: Auto-timeout → inline error with [Retry]
+- Instant failure: Immediate error display
+
+### Accessibility
+
+- Focus management: Move focus to error container
+- ARIA: `role="alert"` for toasts, `aria-live="polite"` for inline
+- Color independence: Icons + text + color
+- Keyboard: All actions focusable
+
+### Animation
+
+- Appear: Fade in 200ms + subtle shake (2px)
+- Dismiss: Fade out 300ms
+- Reduced motion: Use border pulse instead of shake
+
+---
+
 ## Styling Decisions
 
 > **Note:** This section tracks styling decisions that affect multiple phases. Component-specific styling should be documented in component files.
@@ -277,6 +416,7 @@ Update ETA dynamically as queries complete.
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 4, 2026 | Added Error State Patterns (DFT-030) — severity hierarchy, toast placement (top of right sidebar), inline errors, partial failure banner, utilitarian tone | Will + Claude |
 | Feb 3, 2026 | Added Loading State Patterns (DFT-018) — hybrid indicators, timeout thresholds, dynamic ETA, progressive loading | Will + Claude |
 | Feb 3, 2026 | Added No Emojis Policy | Will |
 | Feb 3, 2026 | Added Terminology Configuration (DFT-015) — configurable "Feature" vs "Item" terminology | Will + Claude |

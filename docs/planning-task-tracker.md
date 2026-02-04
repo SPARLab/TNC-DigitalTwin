@@ -114,7 +114,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-027 | "Browse Features →" button destination confirmation | Terminology | 🟢 Resolved | Low |
 | DFT-028 | Zero-result camera behavior — hidden vs grayed out when filter matches 0 images | UI/UX | 🟢 Resolved | Medium |
 | DFT-029 | Unfiltered layer badge behavior — show total counts or no badges? | UI/UX | 🟢 Resolved | Medium |
-| DFT-030 | Error state design — API failures, network errors, timeout handling | UI/UX | 🟡 Open | High |
+| DFT-030 | Error state design — API failures, network errors, timeout handling | UI/UX | 🟢 Resolved | High |
 | DFT-031 | Confirmation dialogs — when to require explicit confirmation (delete, clear filters) | UI/UX | 🟡 Open | Medium |
 | DFT-032 | Map tooltip design — what info shows on hover before clicking feature? | UI/UX | 🟡 Open | Medium |
 | DFT-033 | Right sidebar width and resizability — fixed or user-adjustable? | Layout | 🟡 Open | Low |
@@ -164,7 +164,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-027 | "Browse Features →" button destination | Will | ✅ Resolved - Feb 4 |
 | DFT-028 | Zero-result camera behavior | Amy, Trisalyn, Dan | ✅ Resolved - Feb 4 |
 | DFT-029 | Unfiltered layer badge behavior | Amy, Trisalyn | ✅ Resolved - Feb 4 |
-| DFT-030 | Error state design | Will, Dan | 🟡 Pending |
+| DFT-030 | Error state design | Will, Dan | ✅ Resolved - Feb 4 |
 | DFT-031 | Confirmation dialogs pattern | Will | 🟡 Pending |
 | DFT-032 | Map tooltip design | Will | 🟡 Pending |
 | DFT-033 | Right sidebar width and resizability | Will | 🟡 Pending |
@@ -381,37 +381,229 @@ Per DFT-012, badges appear on camera icons showing filtered image counts. Badges
 ### DFT-030: Error State Design
 
 **Category:** UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** High  
-**Source:** UX Design Review, Feb 3, 2026
+**Source:** UX Design Review, Feb 3, 2026  
+**Resolved:** February 4, 2026
 
 **Context:**
 No design specification for error handling:
 - API request fails (network error, timeout, 500 error)
 - Partial data load failure (some cameras load, others fail)
-- Authentication/permission errors
 - Rate limiting errors
 
 **Why this matters (Nielsen: Help users recognize, diagnose, recover from errors):**
 Errors are inevitable. Users need clear feedback about what went wrong and how to recover.
 
-**Questions to Resolve:**
-1. Where do error messages appear? (Toast? Inline? Modal?)
-2. Should errors include retry buttons?
-3. How long do error toasts persist?
-4. What's the error message tone? (Technical? Friendly?)
-5. Should errors be logged for debugging?
+**Resolution:** **Combination approach with severity-based hierarchy**
 
-**Options:**
-1. **Toast notifications** — non-blocking, auto-dismiss after 5-10 seconds
-2. **Inline errors** — appear in the component that failed (e.g., "Failed to load cameras")
-3. **Error modal** — for critical errors that prevent app function
-4. **Combination** — inline for component errors, toast for background errors
+**Design Decisions:**
 
-**Discussion:**
-*High priority — affects user trust and recovery*
+### 1. Error Severity Hierarchy
 
-**Resolution:** *Pending*
+| Severity | Example | Pattern | Lifespan |
+|----------|---------|---------|----------|
+| **Critical** | Total API outage | Modal | Persistent (blocks app) |
+| **Regional** | Right sidebar content failed | Inline in region | Persistent until resolved |
+| **Partial** | 3 of 47 cameras failed | Banner + loaded content | Persistent until resolved |
+| **Action** | Bookmark save failed | Toast | 8s auto-dismiss |
+
+### 2. Toast Notifications (Action Failures)
+
+**Placement:** Top of right sidebar (above header)
+- Position: `position: absolute; top: 0; right: 0; left: 0;` (full width of sidebar)
+- Z-index above sidebar content but below modals
+- Stacked if multiple (newest on top, max 3 visible)
+
+**Visual Design:**
+```
+┌────────────────────────────────────────────────────┐
+│  [✕ Icon]  Bookmark failed to save. [Try Again]  ✕│
+└────────────────────────────────────────────────────┘
+```
+
+**Design Tokens:**
+- Container: `bg-red-50 border-b border-red-200`
+- Icon: `w-5 h-5 text-red-500` (Lucide `XCircle`)
+- Text: `text-sm text-gray-800`
+- Button: `text-sm text-red-600 hover:underline`
+- Dismiss: `text-gray-400 hover:text-gray-600`
+
+**Behavior:**
+- Auto-dismiss after 8 seconds
+- User can dismiss manually via ✕
+- "Try Again" inline button retries action and dismisses toast
+- Multiple toasts stack (newest on top, max 3)
+
+**Use for:**
+- Bookmark save failed
+- Pin action failed
+- Export failed
+- Filter apply failed
+
+**Rationale:** Top of right sidebar avoids map legend conflict, maintains proximity to action context (most errors originate from sidebar interactions), consistent location for users to learn.
+
+### 3. Inline Errors (Content Failures)
+
+**Placement:** In the region where content should have loaded
+- Right sidebar for layer/feature load failures
+- Widget for widget-specific failures
+- Map overlay for map layer failures
+
+**Visual Design:**
+```
+┌─────────────────────────────────────────────────────┐
+│  [⚠ Icon]                                           │
+│  Unable to load camera data                         │
+│  The server didn't respond in time.                 │
+│                                                     │
+│  [Retry]  [← Back to Layer List]  [Show Details ▼] │
+└─────────────────────────────────────────────────────┘
+```
+
+**Design Tokens:**
+- Container: `bg-amber-50 border border-amber-200 rounded-lg p-4`
+- Icon: `w-8 h-8 text-amber-500` (Lucide `AlertTriangle`)
+- Title: `text-sm font-medium text-gray-800`
+- Body: `text-sm text-gray-600`
+- Primary button: `bg-emerald-600 text-white`
+- Secondary button: `text-gray-600 hover:underline`
+
+**Behavior:**
+- Persistent until user takes action (Retry, Go Back, or navigates away)
+- "Retry" triggers re-fetch with loading indicator
+- "Go Back" returns to previous view (contextual navigation)
+- "Show Details" expands technical info (optional, collapsed by default)
+- Dismissible via ✕ in cases where it's optional to retry
+
+**Use for:**
+- Right sidebar content failed to load
+- Camera/sensor list failed to load
+- Search results failed
+
+### 4. Partial Failure Banner
+
+**Pattern:** Show what loaded successfully, banner for failures
+
+```
+┌─────────────────────────────────────────────────────┐
+│ [⚠] 3 cameras failed to load. [Retry Failed] [✕]   │
+└─────────────────────────────────────────────────────┘
+│  Camera A1        🦁 23 images                      │
+│  Camera A2        🦁 15 images                      │
+│  ...successfully loaded content continues...        │
+```
+
+**Design Tokens:**
+- Banner: `bg-amber-50 border-b border-amber-200 px-4 py-2`
+- Text: `text-sm text-gray-700`
+- Button: `text-sm text-amber-700 hover:underline`
+
+**Behavior:**
+- Banner persists until dismissed or failures resolved
+- "Retry Failed" only retries the failed items (not successful ones)
+- Show loaded content below banner (don't throw away good data)
+
+**Use for:**
+- ANiML multi-camera queries where some succeed and some fail
+- Batch operations with partial success
+
+### 5. Critical Error Modal
+
+**Pattern:** Full-screen overlay for app-breaking errors
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   [⚠ Icon]                          │
+│                                                     │
+│     Unable to connect to data services              │
+│                                                     │
+│  The application couldn't reach the data servers.   │
+│  This may be a temporary issue.                     │
+│                                                     │
+│         ┌───────────────────────────┐               │
+│         │       Try Again           │               │
+│         └───────────────────────────┘               │
+│                                                     │
+│             [Show Technical Details]                │
+└─────────────────────────────────────────────────────┘
+```
+
+**Use for:**
+- Total API outage (all services unreachable)
+- Critical browser incompatibility
+- App initialization failure
+
+**Note:** No authentication errors (public-facing dashboard).
+
+### 6. Error Message Tone
+
+**Utilitarian** (consistent with DFT-015 empty states, DFT-011 researcher audience):
+- Direct, professional, no warmth
+- No apologetic language ("Oops!", "Sorry!")
+- Factual causality ("The server didn't respond" not "Something went wrong")
+
+**Examples:**
+- Good: "Unable to load camera data"
+- Good: "Request timed out after 30 seconds"
+- Good: "Bookmark failed to save"
+- Bad: "Oops! Something went wrong"
+- Bad: "Sorry, we couldn't save that"
+
+### 7. Color Tokens
+
+| Severity | Background | Border | Icon/Text |
+|----------|------------|--------|-----------|
+| Warning/Recoverable | `amber-50` | `amber-200` | `amber-500` |
+| Error/Failed | `red-50` | `red-200` | `red-500` |
+
+### 8. Timeout Behavior (Aligned with DFT-018)
+
+- 0-30s: Show loading state (per DFT-018)
+- 30s: Auto-timeout → inline error: "Request timed out. [Retry]"
+- Instant failure (4xx/5xx): Immediate error display
+
+### 9. "Show Details" Expansion
+
+Standardized pattern for technical debugging:
+- Collapsed by default
+- Toggle reveals: Request endpoint, HTTP status, timestamp, duration, request ID (if available)
+- Target audience (researchers) may need this for debugging queries
+
+### 10. Accessibility
+
+- **Focus management:** Move focus to error container when it appears
+- **ARIA:** `role="alert"` for toasts, `aria-live="polite"` for inline errors
+- **Color independence:** Icons + text + color (not color alone)
+- **Keyboard:** All buttons focusable and actionable via Enter/Space
+
+### 11. Animation
+
+- Error appears: Fade in 200ms + subtle shake (2px, 2 cycles)
+- Toast auto-dismiss: Fade out 300ms after 8s
+- Retry clicked: Error fades, loading spinner appears
+- **Reduced motion:** Use `prefers-reduced-motion` — replace shake with border pulse
+
+**Rationale:**
+- **Regional containment:** Errors appear where they happened (Gestalt Proximity, Norman Feedback)
+- **Always actionable:** Retry, Go Back, or Dismiss options (Nielsen #3: User control)
+- **Ephemeral vs. Persistent:** Toasts for actions (brief), inline for content (persistent until resolved)
+- **Utilitarian tone:** Matches researcher audience (DFT-011) and design system consistency
+- **Toast placement:** Top of right sidebar avoids map legend conflict, maintains contextual proximity
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file) — resolution added
+- ✅ `docs/DESIGN-SYSTEM/design-system.md` — error state patterns added
+- ✅ `docs/master-plan.md` — added to Cross-Phase Decisions
+
+**✅ Verification Checklist:**
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with full specification
+- [x] Design system updated with error patterns
+- [x] Master plan updated (cross-phase UX decision)
+- [x] Cross-references added ("Documented in:")
+- [x] Rationale provided using UI/UX principles
+- [ ] Mockups noted (defer to DFT-037 — mockup generation task)
 
 ---
 
