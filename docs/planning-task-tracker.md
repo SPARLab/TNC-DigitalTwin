@@ -104,7 +104,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-019 | Edit Filters button navigation behavior — what happens to widget? | UI/UX | 🟢 Resolved | Medium |
 | DFT-020 | Pointer-row bookmark UI — one button vs two for "Bookmark" vs "Bookmark with Filter" | UI/UX | 🟢 Resolved | High |
 | DFT-021 | Terminology consistency — "Active" vs "Selected" layer | Terminology | 🟢 Resolved | Low |
-| DFT-022 | Parent toggle memory edge case — what if previously-selected child is deleted? | Edge Case | 🟡 Open | Low |
+| DFT-022 | Parent toggle memory edge case — what if previously-selected child is deleted? | Edge Case | 🟢 Deferred | Low |
 | DFT-023 | Widget positioning dimensions — exact spacing values | Visual Spec | 🟡 Open | Low |
 | DFT-024 | Filter indicator A/B test decision — make choice before mockups | Visual Design | 🟡 Open | Medium |
 | DFT-025 | Create New View transition animation — visual feedback for state change | Microinteraction | 🟡 Open | Low |
@@ -154,7 +154,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-019 | Edit Filters button navigation behavior | Will | ✅ Resolved - Feb 4 |
 | DFT-020 | Pointer-row bookmark UI (one vs two buttons) | Amy, Trisalyn | ✅ Resolved - Feb 4 |
 | DFT-021 | "Active" vs "Selected" terminology | Will | ✅ Resolved - Feb 4 |
-| DFT-022 | Parent toggle memory edge case | Will | 🟡 Pending |
+| DFT-022 | Parent toggle memory edge case | Will | ✅ Deferred - Feb 4 |
 | DFT-023 | Widget positioning dimensions | Will | 🟡 Pending |
 | DFT-024 | Filter indicator A/B test decision | Amy, Trisalyn | 🟡 Pending |
 | DFT-025 | Create New View transition animation | Will | 🟡 Pending |
@@ -1741,7 +1741,7 @@ The documents use these terms interchangeably:
 ### DFT-022: Parent Toggle Memory Edge Case
 
 **Category:** Edge Case  
-**Status:** 🟡 Open  
+**Status:** 🟢 Deferred  
 **Priority:** Low  
 **Source:** UX Design Review, Feb 3, 2026
 
@@ -1765,9 +1765,19 @@ Per DFT-013, when clicking parent eye to turn ON after all children were hidden,
 4. **Demote to flat** — if only one child remains, demote layer to non-nested state
 
 **Discussion:**
-*Low priority but should be defined for implementation*
+This is a runtime state management question best solved during implementation. The edge case is low-frequency and any reasonable fallback behavior (show first remaining child, show nothing, etc.) will work acceptably. Implementation can refine based on actual state management architecture and user testing feedback.
 
-**Resolution:** *Pending*
+**Resolution:** Feb 4, 2026 — **Deferred to Implementation**
+
+**Recommended Fallback Hierarchy (for implementation reference):**
+- IF previousChild exists → restore it
+- ELSE IF otherChildren.length > 0 → show first remaining child
+- ELSE → parent stays off (no children to show)
+
+**Rationale:**
+- **Norman (Feedback & Conceptual Models):** Showing first remaining child preserves user intent ("I want to see this layer")
+- **Nielsen (Error Prevention):** Prevents confusing state where parent eye is ON but nothing renders
+- **Cognitive Load:** Not worth holding mental space during design phase; can be refined during development
 
 ---
 
