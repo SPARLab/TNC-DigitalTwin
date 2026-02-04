@@ -170,10 +170,10 @@ interface Bookmark {
 **Decision (Feb 2, 2026):** Resolved DFT-003b — "Create New View" lives in expanded panel when layer is active.  
 **Decision (Feb 2, 2026):** Removed swatch from row spec; active state indicated by expansion + visual treatment.  
 **Decision (Feb 2, 2026):** Resolved DFT-004 — Widget shows filter **status** (🌪️ indicator) but does NOT contain filter editing UI. "Edit Filters" button navigates to right sidebar. Sidebar is the canonical filter editor.  
-**Decision (Feb 3, 2026):** Resolved DFT-013 — Multiple filtered views use "Multiple Saved, Single Visible" model. Nested widget structure when 2+ views exist; only one view visible at a time (mutual exclusivity); memory-preserving parent toggle.
-
+**Decision (Feb 3, 2026):** Resolved DFT-013 — Multiple filtered views use "Multiple Saved, Single Visible" model. Nested widget structure when 2+ views exist; only one view visible at a time (mutual exclusivity); memory-preserving parent toggle.  
 **Decision (Feb 3, 2026):** Resolved DFT-015 — Empty state design. Widget title uses configurable terminology: "Pinned {childNoun} Layers". First visit shows educational empty state (expanded); returning user sees laconic message. See design-system.md for terminology config.  
-**Decision (Feb 4, 2026):** Resolved DFT-019 — "Edit Filters" button navigation behavior. Button labeled "Edit Filters →" (with arrow), right-aligned in expanded panel. Widget remains expanded (user can reference filter state). Right sidebar uses crossfade animation (~150-200ms) for tab transitions. Separation of Concerns: Widget manages visibility/stacking; sidebar manages deep editing.
+**Decision (Feb 4, 2026):** Resolved DFT-019 — "Edit Filters" button navigation behavior. Button labeled "Edit Filters →" (with arrow), right-aligned in expanded panel. Widget remains expanded (user can reference filter state). Right sidebar uses crossfade animation (~150-200ms) for tab transitions. Separation of Concerns: Widget manages visibility/stacking; sidebar manages deep editing.  
+**Decision (Feb 4, 2026):** Resolved DFT-025 — Create New View transition animation. Inline transformation with sequential staging (250-300ms total): row expands → children appear → new child highlights briefly. Respects `prefers-reduced-motion`. Focus moves to new child row. Screen reader announces state change.
 
 **Widget Design (Collapsed State):**
 ```
@@ -314,6 +314,19 @@ interface Bookmark {
   - [ ] Clicking parent eye to turn ON restores previously-selected child (memory-preserving)
   - [ ] [+ New View] button appears in nested structure, creates duplicate child view
   - [ ] When "Create New View" clicked on single-view layer, layer promotes to nested structure
+- [ ] **Create New View transition animation (DFT-025):**
+  - [ ] Animation sequence: button press → row expansion (0-150ms) → children appear (150-250ms) → new child highlight (300-500ms)
+  - [ ] Row expands vertically with `ease-out` timing
+  - [ ] Parent row styling: `bg-slate-50` or subtle left border, `font-semibold` text, chevron (▼) appears
+  - [ ] Children indented (`ml-6` / 24px) with subtle connecting line
+  - [ ] Original child has eye ON, new child has eye OFF (per mutual exclusivity)
+  - [ ] New child flashes `bg-green-100` fading to normal over 300-500ms
+  - [ ] Total animation duration: 250-300ms
+  - [ ] Focus moves to new child row after animation completes
+  - [ ] Screen reader announces: "New view created. {LayerName} now has {count} views."
+  - [ ] Respects `prefers-reduced-motion` media query (instant state change + brief highlight only if reduced motion enabled)
+  - [ ] Debounce "Create New View" button to prevent animation stacking
+  - [ ] No layout shift or janky scrolling during animation
 
 **Reference:**
 - Mockup: `mockups/02a-unified-layout.html` (canonical layout reference)
@@ -440,3 +453,5 @@ interface Bookmark {
 | Feb 3, 2026 | 0.5, 0.6 | Resolved DFT-015: Empty state design — educational first-visit, laconic returning user. Configurable terminology ("Feature" vs "Item"). Drone/LiDAR are pin-only layers | Will + Claude |
 
 | Feb 4, 2026 | 0.6 | Resolved DFT-020: Single "Bookmark" button for pointer rows. Auto-captures filter if active. Multiple bookmarks = multiple views. "Edit Filter" on bookmark widget | Will + Claude |
+| Feb 4, 2026 | 0.5 | Resolved DFT-025: Create New View transition animation — inline transformation with sequential staging (250-300ms). Row expands → children appear → new child highlights. Respects reduced motion. Focus moves to new child | Will + Claude |
+

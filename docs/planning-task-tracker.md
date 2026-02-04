@@ -107,9 +107,9 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-022 | Parent toggle memory edge case — what if previously-selected child is deleted? | Edge Case | 🟢 Deferred | Low |
 | DFT-023 | Widget positioning dimensions — exact spacing values | Visual Spec | 🟢 Deferred | Low |
 | DFT-024 | Filter indicator A/B test decision — make choice before mockups | Visual Design | 🟢 Resolved | Medium |
-| DFT-025 | Create New View transition animation — visual feedback for state change | Microinteraction | 🟡 Open | Low |
+| DFT-025 | Create New View transition animation — visual feedback for state change | Microinteraction | 🟢 Resolved | Low |
 | DFT-026 | Emoji/icon vocabulary consistency — shopping cart vs export icon | Design System | 🟢 Resolved | Low |
-| DFT-027 | "Browse Features →" button destination confirmation | Terminology | 🟡 Open | Low |
+| DFT-027 | "Browse Features →" button destination confirmation | Terminology | 🟢 Resolved | Low |
 | DFT-028 | Zero-result camera behavior — hidden vs grayed out when filter matches 0 images | UI/UX | 🟡 Open | Medium |
 | DFT-029 | Unfiltered layer badge behavior — show total counts or no badges? | UI/UX | 🟡 Open | Medium |
 | DFT-030 | Error state design — API failures, network errors, timeout handling | UI/UX | 🟡 Open | High |
@@ -157,9 +157,9 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-022 | Parent toggle memory edge case | Will | ✅ Deferred - Feb 4 |
 | DFT-023 | Widget positioning dimensions | Will | ✅ Deferred - Feb 4 |
 | DFT-024 | Filter indicator A/B test decision | Will | ✅ Resolved - Feb 4 |
-| DFT-025 | Create New View transition animation | Will | 🟡 Pending |
+| DFT-025 | Create New View transition animation | Will | ✅ Resolved - Feb 4 |
 | DFT-026 | Emoji/icon vocabulary consistency | Will | ✅ Resolved - Feb 3 |
-| DFT-027 | "Browse Features →" button destination | Will | 🟡 Pending |
+| DFT-027 | "Browse Features →" button destination | Will | ✅ Resolved - Feb 4 |
 | DFT-028 | Zero-result camera behavior | Amy, Trisalyn, Dan | 🟡 Pending |
 | DFT-029 | Unfiltered layer badge behavior | Amy, Trisalyn | 🟡 Pending |
 | DFT-030 | Error state design | Will, Dan | 🟡 Pending |
@@ -1884,9 +1884,10 @@ Design principles strongly favored Option B for this use case. A/B testing deeme
 ### DFT-025: Create New View Transition Animation
 
 **Category:** Microinteraction  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Low  
-**Source:** UX Design Review, Feb 3, 2026
+**Source:** UX Design Review, Feb 3, 2026  
+**Resolved:** February 4, 2026
 
 **Context:**
 Per DFT-003b and DFT-013, when "Create New View" is clicked on a single-view layer, the layer "promotes to nested structure."
@@ -1899,16 +1900,88 @@ Per DFT-003b and DFT-013, when "Create New View" is clicked on a single-view lay
 - Does the new child appear with a highlight/flash?
 - Where does focus move after creation?
 
-**Options:**
+**Options Considered:**
 1. **Animate expansion** — row expands with slide animation, children appear below
 2. **Flash/highlight** — new child row flashes briefly to draw attention
 3. **Toast notification** — "New view created" message
 4. **Combination** — animate + highlight, no toast (less intrusive)
 
 **Discussion:**
-*Low priority but affects polish*
+- Will (Feb 4): Analyzed using all 9 design principle frameworks (Motion, Norman, Nielsen, Gestalt, Cognitive Science, Accessibility, Behavioral Science, Info Architecture, Visual Fundamentals)
+- Key tension: Visibility vs. Minimalism for low-priority microinteraction
+- Toast rejected: adds clutter for local widget change (user's attention already on widget)
+- No animation rejected: fails Norman's feedback principle; users may be confused about what happened
+- Inline transformation recommended: sequential staging shows continuity, brief highlight draws attention to new child
 
-**Resolution:** *Pending*
+**Resolution:** Feb 4, 2026 — **Inline transformation with sequential staging**
+
+**Animation Sequence (250-300ms total):**
+
+1. **Button Click (0ms)**
+   - Button press state (immediate visual feedback)
+
+2. **Row Expansion (0-150ms)**
+   - Original row expands vertically with `ease-out`
+   - Background shifts to parent styling (subtle background color/border)
+   - Text becomes bold (parent treatment)
+   - Chevron (▼) appears next to parent name
+
+3. **Children Appear (150-250ms)**
+   - Two child rows slide/fade in below parent
+   - Both indented with subtle connecting line
+   - Original child has eye ON, new child has eye OFF
+   - New child has temporary highlight (300-500ms flash, `bg-green-100` fading to normal)
+
+4. **Settle (250-300ms)**
+   - Highlight fades on new child
+   - Focus moves to new child row
+   - Screen reader announces: "New view created. [LayerName] now has 2 views."
+
+**Visual Specifications:**
+
+**Parent Row:**
+- Background: `bg-slate-50` or subtle left border (`border-l-4 border-blue-500`)
+- Text: `font-semibold` (slightly bolder than children)
+- Chevron: `▼` indicating expand/collapse capability
+- Eye icon: ON if any child visible
+
+**Child Rows:**
+- Indentation: `ml-6` (24px indent)
+- Background: Slightly lighter than parent
+- Eye icons: Only ONE can be ON (mutual exclusivity per DFT-013)
+- New child highlight: `bg-green-100` fading to normal over 300-500ms
+
+**Accessibility:**
+- Respects `prefers-reduced-motion` media query
+- If reduced motion: instant state change + brief highlight only (no sliding/expanding)
+- Focus moves to new child row after creation
+- ARIA live region (polite) announces structure change
+- Screen reader: "New view created. {LayerName} now has {count} views. {FirstChild} is active. {NewChild} is inactive. Focus on {NewChild} row."
+
+**Rationale (Design Principles Applied):**
+- **Motion Principles (Continuity):** Sequential staging shows transformation, not abrupt replacement. Original row flows into parent structure.
+- **Norman's Feedback:** Immediate visual response to button click. Transformation provides clear confirmation action succeeded.
+- **Nielsen's Minimalism:** No toast notification (change is local; user's attention already on widget). Inline transformation doesn't require dismissal.
+- **Gestalt (Common Region, Continuity):** Parent container visually encloses children. Vertical flow follows natural reading direction.
+- **Cognitive Science (Peak-End Rule, Von Restorff):** New child briefly highlighted to create memorable peak moment. Clear ending state after animation settles.
+- **Accessibility (WCAG):** Reduced motion variant, screen reader support, focus management, sufficient contrast.
+- **Behavioral Science (Loss Aversion):** Animation shows continuity — original view becomes first child (not lost), addressing "Did my view disappear?" concern.
+
+**Edge Cases:**
+- **Focus management:** After creation, keyboard focus moves to new child row. Users can immediately press Enter to activate or arrow keys to navigate.
+- **Rapid repeated clicks:** Debounce "Create New View" button to prevent animation stacking.
+- **Layout shift:** Animation should not cause janky scrolling or layout reflow.
+
+**Documented in:**
+- Phase 0 task 0.5 — Pinned Layers floating widget acceptance criteria updated with animation spec
+- Master plan — Cross-phase UX decision added for animation timing standards
+- DFT-019 resolution — Cross-reference for global animation pattern (~150-200ms for tab transitions)
+
+**✅ Verification Checklist:**
+- [x] Decision documented in planning-task-tracker.md
+- [x] Phase 0 task 0.5 updated with animation acceptance criteria
+- [x] Master plan updated with cross-phase UX decision
+- [x] Quick Reference table updated with resolved status
 
 ---
 
@@ -1959,7 +2032,7 @@ Current emoji/icon vocabulary:
 ### DFT-027: "Browse Features →" Button Destination
 
 **Category:** Terminology  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Low  
 **Source:** UX Design Review, Feb 3, 2026
 
@@ -1980,9 +2053,51 @@ Per DFT-006, the Overview tab includes a prominent "Browse Features →" button.
 4. **Icon button** — grid/list icon with "Browse" label
 
 **Discussion:**
-*Quick confirmation needed*
+- Will (Feb 4): Analyzed through UI/UX design principles framework
+- Arrow provides redundant signification (Norman), directional cueing (Gestalt), aligns with navigation conventions (Nielsen)
+- "Browse" matches domain terminology (GIS researchers familiar with term)
+- Primary button styling establishes visual hierarchy
+- Full-width button maximizes Fitts's Law (large target)
+- Bottom placement leverages Serial Position Effect (recency)
+- Reaffirmed DFT-006 decision: Always open Overview tab first (consistency > context-specific optimization)
 
-**Resolution:** *Pending*
+**Resolution:** Feb 4, 2026 — **"Browse Features →" button with specified design**
+
+**Design Specification:**
+1. **Label:** "Browse Features →"
+   - Arrow inline with text (Unicode U+2192 `→` or SVG arrow icon)
+   - "Browse" verb aligns with data catalog conventions
+   - "Features" noun matches GIS terminology (per DFT-010)
+2. **Behavior:** Navigates to Browse tab in right sidebar (not modal, not external link)
+3. **Style:** Primary button
+   - Full-width within sidebar content area
+   - TNC green background (`#2e7d32`), white text
+   - Minimum 44px height (accessibility/Fitts's Law)
+4. **Placement:** Bottom of Overview tab content (after layer metadata)
+   - If Overview content is minimal (<3 sentences), consider top placement
+5. **Interaction States:**
+   - **Hover:** Slight color shift + subtle scale (1.02x)
+   - **Focus:** 2px outline for keyboard navigation
+   - **Transition:** 150-200ms ease-out tab switch (per DFT-025)
+6. **Accessibility:**
+   - Semantic `<button>` element
+   - 4.5:1 contrast ratio (white on TNC green)
+   - Keyboard navigable (tab order: content → button → tabs)
+
+**Rationale:**
+- **Arrow (→):** Provides redundant signification (good for accessibility), clear directional cue
+- **Primary styling:** Establishes this as main action on Overview tab (Von Restorff Effect)
+- **Full-width:** Maximizes click target size, feels like natural conclusion to Overview section
+- **Bottom placement:** Leverages recency effect, creates reading flow (context → action)
+- **Consistency:** Reaffirms always-Overview-first pattern (DFT-006) — consistency reduces cognitive load vs. context-dependent behavior
+
+**Future Consideration (v2.1+):**
+- Track analytics: Do users always immediately click "Browse Features →"?
+- If yes, consider per-user preference or per-layer "last tab" memory
+- But don't optimize prematurely
+
+**Documented in:**
+- Phase 0 tasks (0.1, 0.2, etc.): Update acceptance criteria with button spec
 
 ---
 
@@ -2433,4 +2548,6 @@ After DFT-037 is complete, **archive resolved design decisions** to `PLANNING/re
 | Feb 4, 2026 | Resolved DFT-021: Terminology consistency — "Active" layer (visible on map) vs "Selected" layer (chosen for editing). Applied throughout docs |
 | Feb 4, 2026 | Deferred DFT-022: Parent toggle memory edge case — runtime state management question best solved during implementation |
 | Feb 4, 2026 | Deferred DFT-023: Widget positioning dimensions — exact pixel values deferred to mockup/implementation phase with constraints (8px grid, ArcGIS reference, adaptive height, DFT-019 animation standards, left-aligned collapse button for accessibility) |
+| Feb 4, 2026 | Resolved DFT-024: Filter indicator design — icon-based approach (Lucide Filter icon + count). Single-line rows, tooltip for learnability. Removed A/B testing toggle |
+| Feb 4, 2026 | Resolved DFT-025: Create New View transition animation — inline transformation with sequential staging (250-300ms). Row expands → children appear → new child highlights. Respects reduced motion. Focus moves to new child. Screen reader announces state change |
 

@@ -84,12 +84,21 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 **Decision (Feb 2, 2026):** Resolved DFT-003c — Landing cards entry point for Animal-First vs Camera-First choice.  
 **Decision (Feb 2, 2026):** Resolved DFT-006 — Overview tab opens first when layer is selected, with prominent "Browse Features →" button.
+**Decision (Feb 4, 2026):** Resolved DFT-027 — "Browse Features →" button design specification: full-width primary button (TNC green, white text, min 44px height), bottom of Overview content, inline arrow (→), hover effects (color shift + 1.02x scale), 2px focus outline, 150-200ms ease-out transition.
 
 **Acceptance Criteria:**
 - [ ] Component renders when ANiML layer is selected
 - [ ] Tabs exist: Overview | Browse | Export
 - [ ] **Overview tab is the default/active tab**
 - [ ] Overview tab includes prominent "Browse Features →" button to navigate to Browse tab
+  - [ ] Button is full-width within sidebar content area
+  - [ ] Button uses primary styling: TNC green background (`#2e7d32`), white text
+  - [ ] Button minimum height: 44px (accessibility/Fitts's Law)
+  - [ ] Button label: "Browse Features →" (arrow inline with text, Unicode U+2192 or SVG)
+  - [ ] Placement: bottom of Overview tab content (or top if Overview is minimal < 3 sentences)
+  - [ ] Hover state: slight color shift + subtle scale (1.02x)
+  - [ ] Focus state: 2px outline for keyboard navigation
+  - [ ] Click behavior: navigates to Browse tab with 150-200ms ease-out crossfade transition
 - [ ] Browse tab shows landing cards on first visit (Animal-First vs Camera-First)
 - [ ] Landing cards include icon, title, and brief tagline for each mode
 - [ ] User preference is remembered (skip landing page on return visits)
@@ -320,4 +329,5 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | Feb 2, 2026 | 2.2 | Added landing cards entry point (DFT-003c) and Overview tab as default (DFT-006) | Will + Claude |
 | Feb 3, 2026 | 2.5 | Added numbered badge map visualization (DFT-012) with progressive disclosure integration | Will + Claude |
 | Feb 3, 2026 | 2.3, 2.4, 2.6 | Resolved DFT-003: Context-dependent button visibility. "Pin Layer" only shows when layer not pinned; filter changes auto-apply to pinned layers. "Bookmark" only shows when camera is selected. | Will + Claude |
+| Feb 4, 2026 | 2.2 | Resolved DFT-027: "Browse Features →" button design specification (full-width primary, TNC green, inline arrow, hover/focus states, 150-200ms transition) | Will + Claude |
 

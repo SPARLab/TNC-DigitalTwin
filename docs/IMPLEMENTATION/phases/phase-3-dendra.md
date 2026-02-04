@@ -91,12 +91,21 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 **Goal:** Set up the component structure for the Dendra browse experience.
 
 **Decision (Feb 2, 2026):** Resolved DFT-006 — Overview tab opens first when layer is selected, with prominent "Browse Features →" button.
+**Decision (Feb 4, 2026):** Resolved DFT-027 — "Browse Features →" button design specification: full-width primary button (TNC green, white text, min 44px height), bottom of Overview content, inline arrow (→), hover effects (color shift + 1.02x scale), 2px focus outline, 150-200ms ease-out transition.
 
 **Acceptance Criteria:**
 - [ ] Component renders when Dendra layer is selected
 - [ ] Tabs exist: Overview | Browse | Export
 - [ ] **Overview tab is the default/active tab**
 - [ ] Overview tab includes prominent "Browse Features →" button to navigate to Browse tab
+  - [ ] Button is full-width within sidebar content area
+  - [ ] Button uses primary styling: TNC green background (`#2e7d32`), white text
+  - [ ] Button minimum height: 44px (accessibility/Fitts's Law)
+  - [ ] Button label: "Browse Features →" (arrow inline with text, Unicode U+2192 or SVG)
+  - [ ] Placement: bottom of Overview tab content (or top if Overview is minimal < 3 sentences)
+  - [ ] Hover state: slight color shift + subtle scale (1.02x)
+  - [ ] Focus state: 2px outline for keyboard navigation
+  - [ ] Click behavior: navigates to Browse tab with 150-200ms ease-out crossfade transition
 - [ ] Component can show sensor list OR sensor detail (drill-down pattern)
 
 **Files to Create:**
@@ -340,4 +349,5 @@ bookmark: {
 |------|------|--------|-----|
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 | Feb 2, 2026 | 3.3, 3.5, 3.6 | Resolved DFT-004: Progressive disclosure + direct/parametric separation. Sidebar edits filters (context-aware State A/B), pop-up has slider only (exploration). Layer and feature filters are independent after bookmark creation. | Will + Claude |
+| Feb 4, 2026 | 3.2 | Resolved DFT-027: "Browse Features →" button design specification (full-width primary, TNC green, inline arrow, hover/focus states, 150-200ms transition) | Will + Claude |
 
