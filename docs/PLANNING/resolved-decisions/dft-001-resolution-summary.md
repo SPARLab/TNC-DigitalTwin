@@ -40,14 +40,14 @@ Both result in "layer appears on map," causing confusion about their distinct pu
 ┌─────────────────────────────────────┐
 │ 👁 ACTIVE LAYER                     │
 ├─────────────────────────────────────┤
-│ ● Camera Traps (mt. lion)  🌪️4 📌 │
+│ ● Camera Traps (mt. lion)  [🔍4] 📌 │
 ├─────────────────────────────────────┤
 │ 📌 PINNED LAYERS                    │
 ├─────────────────────────────────────┤
-│ 👁 Camera Traps (mt. lion)  🌪️5 ✕ │
-│ 👁 Camera Traps (deer)      🌪️3 ✕ │
-│ 👁 iNaturalist (birds)      🌪️2 ✕ │
-│ 👁 Fire Hazard              🌪️  ✕ │  ← gray funnel = no filters
+│ 👁 Camera Traps (mt. lion)  [🔍5] ✕ │
+│ 👁 Camera Traps (deer)      [🔍3] ✕ │
+│ 👁 iNaturalist (birds)      [🔍2] ✕ │
+│ 👁 Fire Hazard              [🔍]  ✕ │  ← gray icon = no filters
 └─────────────────────────────────────┘
 ```
 
@@ -56,24 +56,24 @@ Both result in "layer appears on map," causing confusion about their distinct pu
 ┌───────────────────────────────────────────────┐
 │ 👁 ACTIVE LAYER                               │
 ├───────────────────────────────────────────────┤
-│ ● Camera Traps (mt. lion)            🌪️4 📌 │
+│ ● Camera Traps (mt. lion)            [🔍4] 📌 │
 ├───────────────────────────────────────────────┤
 │ 📌 PINNED LAYERS                              │
 ├───────────────────────────────────────────────┤
-│ 👁 ■ Camera Traps (mt. lion)         🌪️5 ✕ │  ← EXPANDED
+│ 👁 ■ Camera Traps (mt. lion)         [🔍5] ✕ │  ← EXPANDED
 │   ┌─────────────────────────────────────────┐ │
 │   │ Filters: species = mt. lion, date>2024 │ │
 │   │ [Edit Filters] [Clear] [+ New View]    │ │
 │   └─────────────────────────────────────────┘ │
-│ 👁 ■ Camera Traps (deer)             🌪️3 ✕ │
-│ 👁 ■ iNaturalist (birds)             🌪️2 ✕ │
-│ 👁   Fire Hazard                     🌪️  ✕ │
+│ 👁 ■ Camera Traps (deer)             [🔍3] ✕ │
+│ 👁 ■ iNaturalist (birds)             [🔍2] ✕ │
+│ 👁   Fire Hazard                     [🔍]  ✕ │
 └───────────────────────────────────────────────┘
 ```
 
 **Widget job:** Show active layer + all pinned layers. Manage visibility, filters, and layer actions.
 
-**Row elements:** `[drag] [👁] [Layer Name (distinguisher)] [🌪️N] [✕]`  
+**Row elements:** `[drag] [👁] [Layer Name (distinguisher)] [Filter N] [✕]`  
 **Note:** No swatch in row. Map legend shows symbology for active layer only.
 
 **Expansion behavior (DFT-003b resolution):**
@@ -109,22 +109,30 @@ Both result in "layer appears on map," causing confusion about their distinct pu
 
 ## Filter Indicators
 
-### Funnel Emoji: 🌪️
+### Icon Approach (DFT-024 Resolution - Feb 4, 2026)
+
+**Decision:** Use icon-based filter indicator (not text-based).
 
 | State | Example | Meaning |
 |-------|---------|---------|
-| **With count** | `🌪️5` | 5 filters applied, clickable to edit |
-| **No filters** | `🌪️` (gray) | No filters, clickable to add |
+| **With count** | `[Filter 5]` | 5 filters applied, clickable to edit |
+| **No filters** | `[Filter]` (gray) | No filters, clickable to add |
+
+**Icon:** Lucide `Filter` icon (standard funnel symbol)  
+**Tooltip:** "5 filters applied" or "No filters — click to add"  
+**ARIA label:** `aria-label="5 filters applied. Click to edit."`
+
+**Rationale:** Icon-based approach provides better density for multi-layer scenarios, maintains visual rhythm with consistent single-line rows, and aligns with progressive disclosure pattern (summary → details). Tooltip addresses first-time learnability. Filter funnel icon is industry convention familiar to target users.
 
 ### Primary Distinguisher (Parenthetical)
 
 Auto-generated label helps differentiate multiple views of the same layer:
 
 ```
-│ 👁 Camera Traps (mt. lion)  🌪️5 ✕ │  ← species filter
-│ 👁 Camera Traps (deer)      🌪️3 ✕ │  ← different species
-│ 👁 iNaturalist (birds)      🌪️2 ✕ │  ← taxon filter
-│ 👁 Fire Hazard (high risk)  🌪️1 ✕ │  ← severity filter
+│ 👁 Camera Traps (mt. lion)  [Filter 5] ✕ │  ← species filter
+│ 👁 Camera Traps (deer)      [Filter 3] ✕ │  ← different species
+│ 👁 iNaturalist (birds)      [Filter 2] ✕ │  ← taxon filter
+│ 👁 Fire Hazard (high risk)  [Filter 1] ✕ │  ← severity filter
 ```
 
 **Algorithm (priority order):**
@@ -137,7 +145,7 @@ Auto-generated label helps differentiate multiple views of the same layer:
 ### Clicking Behavior
 
 - **Click layer row** → Expands the layer panel in widget (shows filter summary + action buttons)
-- **Click funnel (🌪️) or "Edit Filters" button** → Opens Browse tab in right sidebar with editable filters
+- **Click filter indicator or "Edit Filters" button** → Opens Browse tab in right sidebar with editable filters
 - **Click "+ Create New View" button** → Duplicates layer with current filters as new pinned entry
 - **Click "Clear" button** → Removes all filters from the layer
 - **Right sidebar shows:** Full filter breakdown, editable
@@ -145,8 +153,11 @@ Auto-generated label helps differentiate multiple views of the same layer:
 
 ---
 
-## A/B Testing Plan
+## A/B Testing Plan (SUPERSEDED — DFT-024 Resolution)
 
+**Decision (Feb 4, 2026):** Icon-based approach adopted. A/B testing removed from implementation plans.
+
+**Original plan (Jan 27, 2026):**
 Include debug toggle (dev-only or settings) to switch between:
 
 **Option A: Text-based**
@@ -155,9 +166,9 @@ Include debug toggle (dev-only or settings) to switch between:
 │   • 5 filters                       │  ← second line
 ```
 
-**Option B: Icon-based (recommended)**
+**Option B: Icon-based (adopted)**
 ```
-│ 👁 Camera Traps (mt. lion)  🌪️5 ✕ │  ← single line
+│ 👁 Camera Traps (mt. lion)  [Filter 5] ✕ │  ← single line
 ```
 
 Collect user feedback before finalizing.
@@ -168,7 +179,7 @@ Collect user feedback before finalizing.
 
 1. **Compact by default, details on demand** — Widget rows are concise; click for full breakdown
 2. **Primary distinguisher visible** — Parenthetical shows what makes each view unique
-3. **Editability signaled, not hidden** — Funnel is clickable; clicking opens filter UI
+3. **Editability signaled, not hidden** — Filter indicator is clickable; clicking opens filter UI
 4. **Consistent mental model** — Widget → Right sidebar → Export builder all use same labels
 
 ---
@@ -194,7 +205,7 @@ Collect user feedback before finalizing.
 | "I want to keep this layer for my session" | Click [📌] in Active section | Moves to Pinned, stays when exploring others |
 | "I want to temporarily hide a pinned layer" | Click 👁 in widget | Hidden but still pinned (keeps filters) |
 | "I want to see/manage this pinned layer" | Click layer row in widget | Expands panel with filter summary + actions |
-| "I want to edit filters" | Click 🌪️ or "Edit Filters" button | Opens Browse tab with editable filters |
+| "I want to edit filters" | Click filter indicator or "Edit Filters" button | Opens Browse tab with editable filters |
 | "I want a second view with different filters" | Click "+ Create New View" in expanded panel | Duplicates layer as new pinned entry |
 | "I'm done with this layer" | Click [✕] | Removed from workspace |
 
@@ -234,8 +245,8 @@ Collect user feedback before finalizing.
 This design inherently supports multiple filtered views on the same layer (Trisalyn's predator-prey request):
 
 ```
-│ 👁 ■ Camera Traps (mountain lion)  🌪️5 ✕ │
-│ 👁 ■ Camera Traps (deer)            🌪️5 ✕ │
+│ 👁 ■ Camera Traps (mountain lion)  [Filter 5] ✕ │
+│ 👁 ■ Camera Traps (deer)            [Filter 5] ✕ │
 ```
 
 Each view:
@@ -259,9 +270,10 @@ Each view:
 1. **Design Feedback Tracker** (`task-tracker.md`)
    - DFT-001 marked resolved with full decision rationale
    - DFT-003b marked resolved with expanded panel design (Feb 2, 2026)
+   - DFT-024 marked resolved with icon-based filter indicator (Feb 4, 2026)
 2. **Phase 0 Foundation** (`phases/phase-0-foundation.md`)
    - Task 0.2: Left sidebar design updated
-   - Task 0.5: Widget design updated with full spec + A/B testing note + expanded panel behavior
+   - Task 0.5: Widget design updated with full spec + icon-based filter indicator + expanded panel behavior
 3. **Master Development Plan** (`master-development-plan.md`)
    - Cross-phase decisions updated
    - Change log updated
@@ -273,7 +285,7 @@ Each view:
 ## Next Steps
 
 1. **Mockup update:** Update `01-full-layout-overview.html` with Model C design
-2. **User testing:** Implement A/B toggle for filter representation feedback
+2. **Icon implementation:** Use Lucide `Filter` icon for filter indicators with tooltip and ARIA labels
 3. **Development:** Use Phase 0 task 0.5 as implementation spec
 4. **Team review:** Present to Amy/Trisalyn for sign-off before implementation
 
@@ -281,7 +293,7 @@ Each view:
 
 ## Questions for Team
 
-1. Does the funnel emoji (🌪️) feel intuitive for "filters"?
+1. ~~Does the funnel emoji (🌪️) feel intuitive for "filters"?~~ *(Resolved: Icon-based approach with Lucide Filter icon)*
 2. Should we prompt users to name views, or rely on auto-generated distinguishers?
 3. Any concerns about auto-restoring visibility when selecting hidden pinned layers?
 

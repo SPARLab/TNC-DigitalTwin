@@ -72,7 +72,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 **Next Steps:**
 - [ ] **BEFORE MOCKUPS (DFT-037):** Resolve all design discussion tasks (DFT-015 through DFT-036)
   - **High priority:** ~~DFT-018 (loading states)~~, ~~DFT-020 (pointer-row bookmark UI)~~, DFT-030 (error states)
-  - **Medium priority:** ~~DFT-019 (Edit Filters navigation)~~, DFT-024, DFT-028, DFT-029, DFT-031, DFT-032, DFT-035
+  - **Medium priority:** ~~DFT-019 (Edit Filters navigation)~~, ~~DFT-024 (Filter indicator)~~, DFT-028, DFT-029, DFT-031, DFT-032, DFT-035
   - **Low priority:** Can defer to Phase 6 if not blocking mockup generation
 - [ ] **After DFT-037:** Archive resolved design decisions to `PLANNING/resolved-decisions/` to keep tracker manageable
 
@@ -106,7 +106,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-021 | Terminology consistency — "Active" vs "Selected" layer | Terminology | 🟢 Resolved | Low |
 | DFT-022 | Parent toggle memory edge case — what if previously-selected child is deleted? | Edge Case | 🟢 Deferred | Low |
 | DFT-023 | Widget positioning dimensions — exact spacing values | Visual Spec | 🟢 Deferred | Low |
-| DFT-024 | Filter indicator A/B test decision — make choice before mockups | Visual Design | 🟡 Open | Medium |
+| DFT-024 | Filter indicator A/B test decision — make choice before mockups | Visual Design | 🟢 Resolved | Medium |
 | DFT-025 | Create New View transition animation — visual feedback for state change | Microinteraction | 🟡 Open | Low |
 | DFT-026 | Emoji/icon vocabulary consistency — shopping cart vs export icon | Design System | 🟢 Resolved | Low |
 | DFT-027 | "Browse Features →" button destination confirmation | Terminology | 🟡 Open | Low |
@@ -156,7 +156,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-021 | "Active" vs "Selected" terminology | Will | ✅ Resolved - Feb 4 |
 | DFT-022 | Parent toggle memory edge case | Will | ✅ Deferred - Feb 4 |
 | DFT-023 | Widget positioning dimensions | Will | ✅ Deferred - Feb 4 |
-| DFT-024 | Filter indicator A/B test decision | Amy, Trisalyn | 🟡 Pending |
+| DFT-024 | Filter indicator A/B test decision | Will | ✅ Resolved - Feb 4 |
 | DFT-025 | Create New View transition animation | Will | 🟡 Pending |
 | DFT-026 | Emoji/icon vocabulary consistency | Will | ✅ Resolved - Feb 3 |
 | DFT-027 | "Browse Features →" button destination | Will | 🟡 Pending |
@@ -1827,31 +1827,57 @@ Exact pixel values are implementation details that don't affect conceptual decis
 ### DFT-024: Filter Indicator A/B Test Decision
 
 **Category:** Visual Design  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Medium  
-**Source:** UX Design Review, Feb 3, 2026
+**Source:** UX Design Review, Feb 3, 2026  
+**Resolved:** February 4, 2026
 
 **Context:**
-Per DFT-001, A/B testing is planned between:
+Per DFT-001, A/B testing was planned between:
 - **Option A (Text):** "• 5 filters" on second line
-- **Option B (Icon):** "🌪️5" inline
+- **Option B (Icon):** Filter icon + count inline (e.g., `[🔍5]`)
 
-**Problem for mockups:** Opus 4.5 needs to pick one for the mockup. If one version is created, the team may forget to test the other.
+**Problem for mockups:** Mockup generator needs to pick one approach. Two-line text takes more vertical space but is more explicit; inline icon is compact but requires learning.
 
-**Question:** Should we decide now, or request both variants in mockups?
+**Decision:** **Option B — Icon-based filter indicator**
 
-**Options:**
-1. **Decide now: Icon (🌪️5)** — more compact, fits in row without wrapping
-2. **Decide now: Text ("5 filters")** — more explicit, better for first-time users
-3. **Request both variants** — Opus 4.5 creates two versions for comparison
-4. **Defer** — implement toggle in dev, test with real users
+**Rationale:**
 
-**Recommendation:** Icon for space efficiency, with tooltip showing full text ("5 filters applied") for accessibility.
+Analysis across 9 design principle frameworks (Gestalt, Norman, Nielsen, Cognitive Laws, Visual Fundamentals, Accessibility, IA, Behavioral) revealed:
+
+1. **Density matters** — Widget has limited vertical space; consistent single-line rows improve scannability when users have 4-6+ pinned layers
+2. **Filter icon is convention** — Target users (researchers, data scientists) likely recognize filter funnel icon from other data tools (Excel, Airtable, Notion, ArcGIS)
+3. **Progressive disclosure fit** — Compact indicator + tooltip + expanded panel aligns with summary → details pattern
+4. **Better list rhythm** — Uniform row heights improve visual parsing (Gestalt: Rhythm & Continuity)
+5. **Cognitive efficiency** — Single visual chunk per layer vs. two-line split (Miller's Law: 7±2 chunks)
+6. **Tooltip bridges learnability gap** — Hover text "5 filters applied" satisfies Recognition over Recall for first-time users
+
+**Implementation Spec:**
+
+Icon approach with accessibility enhancements:
+- Use **Lucide `Filter` icon** (from `lucide-react`) — standard funnel symbol
+- Count displayed adjacent to icon when filters exist: `[Filter 5]`
+- Muted/gray appearance when no filters applied: `[Filter]` (still clickable to add filters)
+- Tooltip showing full text: "5 filters applied" (or "No filters — click to add")
+- ARIA label for screen readers: `aria-label="5 filters applied. Click to edit."`
+- CSS styling deferred to implementation phase
+
+**Visual states:**
+- **Has filters:** Filter icon + count in colored badge (e.g., emerald/green), clickable
+- **No filters:** Muted gray filter icon only, still clickable to add filters
+
+**Tradeoffs Accepted:**
+- First-time users must learn icon meaning (mitigated by tooltip + industry convention)
+- Requires explicit ARIA labeling for accessibility (standard practice)
 
 **Discussion:**
-*Needs decision before mockup generation*
+Design principles strongly favored Option B for this use case. A/B testing deemed unnecessary given:
+- Clear principle-based rationale
+- Tooltip addresses primary learnability concern
+- Target audience familiarity with filter icon patterns
+- Space efficiency critical for multi-layer scenarios
 
-**Resolution:** *Pending*
+**Resolution:** Icon-based approach adopted. Remove A/B testing toggle from Phase 0 implementation plans.
 
 ---
 

@@ -239,3 +239,4 @@ When working on any phase:
 
 | Feb 4, 2026 | Phase 0 | Resolved DFT-020: Pointer-row bookmark UI — single "Bookmark" button pattern. Auto-captures filter if active. Multiple bookmarks = multiple views of same feature. "Edit Filter" action on bookmark widget for post-save correction | Will + Claude |
 | Feb 4, 2026 | All | Resolved DFT-021: Terminology consistency — Use "Active" (not "Selected") for layer working state. Active ≠ Visible: layer can be active (right sidebar) but hidden (eye OFF). Clicking layer makes it active AND visible. Expanded eye icon hit targets (40px) to prevent accidental activation | Will + Claude |
+| Feb 4, 2026 | Phase 0 | Resolved DFT-024: Filter indicator design — icon-based approach adopted (Lucide Filter icon + count). Single-line rows improve scannability; tooltip bridges learnability gap. Removed A/B testing toggle from implementation plans | Will + Claude |

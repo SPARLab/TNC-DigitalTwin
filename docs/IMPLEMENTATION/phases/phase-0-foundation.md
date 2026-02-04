@@ -266,12 +266,14 @@ interface Bookmark {
   - **Transition:** When "Create New View" is clicked on single-view layer, layer promotes to nested structure with original as first child
 - **Filter change animation (DFT-003):** When user changes filters in right sidebar for a pinned layer, the widget row animates/highlights to confirm the change (addresses eye-tracking concern since editing happens in right sidebar but visual confirmation appears in left-floating widget)
 
-**A/B Testing Note:**
-Include a debug toggle (dev-only or settings panel) to switch between:
-- **Option A:** Text-based filter indicator (`• 5 filters` on second line)
-- **Option B:** Icon-based filter indicator (`🌪️5` inline)
-
-This allows collecting user feedback before finalizing the design.
+**Filter Indicator (DFT-024 Resolution):**
+- Use icon-based approach: Lucide `Filter` icon + count
+- Visual states:
+  - **Has filters:** `[Filter 5]` — colored badge, clickable
+  - **No filters:** `[Filter]` — muted gray, still clickable
+- Tooltip: "5 filters applied" or "No filters — click to add"
+- ARIA label: `aria-label="5 filters applied. Click to edit."`
+- CSS styling will be determined during implementation
 
 **Acceptance Criteria:**
 - [ ] Widget renders in top-left of map area
@@ -280,7 +282,7 @@ This allows collecting user feedback before finalizing the design.
 - [ ] Widget restores previous state when time-series view closes
 - [ ] Active Layer section shows active layer with [📌] button
 - [ ] Pinned Layers section shows all pinned layers
-- [ ] Each pinned layer row shows: drag handle, visibility toggle (👁), name, distinguisher, filter indicator (🌪️N), remove button (✕)
+- [ ] Each pinned layer row shows: drag handle, visibility toggle (👁), name, distinguisher, filter indicator (Filter icon + count), remove button (✕)
 - [ ] **No swatch in row** — map legend handles symbology for active layer only
 - [ ] Clicking pinned layer row expands it to show filter summary + action buttons
 - [ ] Only ONE layer expanded at a time (clicking another collapses the previous)
@@ -291,9 +293,8 @@ This allows collecting user feedback before finalizing the design.
 - [ ] "Clear" button removes all filters from the layer
 - [ ] "+ Create New View" button duplicates the layer with current filters as a new pinned entry
 - [ ] Filter indicator shows count and is clickable (opens Browse tab)
-- [ ] No filters = desaturated funnel icon
-- [ ] Clicking pinned layer in sidebar restores visibility if hidden
-- [ ] Debug toggle switches between text and icon filter representations
+- [ ] No filters = muted gray filter icon (still clickable)
+- [ ] Filter indicator has tooltip: "N filters applied" or "No filters — click to add"
 - [ ] Widget row animates/highlights when its filter changes (visual feedback for right sidebar edits)
 - [ ] Optional: brief toast notification when filter is applied (to be tested)
 - [ ] **Empty state (DFT-015):**

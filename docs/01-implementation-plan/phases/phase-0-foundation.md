@@ -232,12 +232,14 @@ interface Bookmark {
 - **Multiple views of same layer:** Supported via unique distinguishers (see DFT-013)
 - **Filter change animation (DFT-003):** When user changes filters in right sidebar for a pinned layer, the widget row animates/highlights to confirm the change (addresses eye-tracking concern since editing happens in right sidebar but visual confirmation appears in left-floating widget)
 
-**A/B Testing Note:**
-Include a debug toggle (dev-only or settings panel) to switch between:
-- **Option A:** Text-based filter indicator (`• 5 filters` on second line)
-- **Option B:** Icon-based filter indicator (`🌪️5` inline)
-
-This allows collecting user feedback before finalizing the design.
+**Filter Indicator (DFT-024 Resolution):**
+- Use icon-based approach: Lucide `Filter` icon + count
+- Visual states:
+  - **Has filters:** `[Filter 5]` — colored badge, clickable
+  - **No filters:** `[Filter]` — muted gray, still clickable
+- Tooltip: "5 filters applied" or "No filters — click to add"
+- ARIA label: `aria-label="5 filters applied. Click to edit."`
+- CSS styling will be determined during implementation
 
 **Acceptance Criteria:**
 - [ ] Widget renders in top-left of map area
@@ -246,7 +248,7 @@ This allows collecting user feedback before finalizing the design.
 - [ ] Widget restores previous state when time-series view closes
 - [ ] Active Layer section shows selected layer with [📌] button
 - [ ] Pinned Layers section shows all pinned layers
-- [ ] Each pinned layer row shows: drag handle, visibility toggle (👁), name, distinguisher, filter indicator (🌪️N), remove button (✕)
+- [ ] Each pinned layer row shows: drag handle, visibility toggle (👁), name, distinguisher, filter indicator (Filter icon + count), remove button (✕)
 - [ ] **No swatch in row** — map legend handles symbology for active layer only
 - [ ] Clicking pinned layer row expands it to show filter summary + action buttons
 - [ ] Only ONE layer expanded at a time (clicking another collapses the previous)
