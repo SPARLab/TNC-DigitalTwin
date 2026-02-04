@@ -333,6 +333,8 @@ This allows collecting user feedback before finalizing the design.
 
 **Design Decision (Feb 2, 2026):** Resolved DFT-007 — Bookmarks are grouped by parent layer within the widget. Layer headers are non-interactive context labels (muted styling, no hover) that help users form the correct mental model (layers contain features). This structure addresses UX principles: Conceptual Model, Proximity, Recognition over Recall, Signifiers, Visual Hierarchy.
 
+**Design Decision (Feb 4, 2026):** Resolved DFT-020 — Single "🔖 Bookmark" button for pointer-row features. Auto-captures current Level 3 filter if active. Multiple bookmarks of same feature allowed (each = different "view"). "Edit Filter" action on bookmark allows post-save correction. Applies to ANiML cameras, Dendra sensors, DataOne datasets.
+
 **Acceptance Criteria:**
 - [ ] Widget renders in top-right of map area
 - [ ] Widget is collapsible/expandable
@@ -347,6 +349,9 @@ This allows collecting user feedback before finalizing the design.
   - Standard hover states and clickable styling
   - Shows: icon, label, filter context (if applicable)
   - Visibility toggle [👁] and remove button [✕]
+  - **For pointer rows with filter:** Show "Edit Filter" action alongside [View] and [✕]
+  - **For pointer rows without filter:** Show only [View] and [✕]
+  - **For self-contained rows:** Show only [View] and [✕] (no "Edit Filter" — these have no Level 3 data)
 - [ ] NO "Export All" button in widget (moved to global header per DFT-002 resolution)
 - [ ] Auto-collapses when time-series data is active (DFT-005)
 - [ ] **Empty state (DFT-015):**
@@ -358,21 +363,30 @@ This allows collecting user feedback before finalizing the design.
   - [ ] Team design toggle for initial widget state (expanded vs collapsed)
   - [ ] Note: Drone imagery and LiDAR are pin-only layers — they will never have bookmark entries
 
-**ASCII Wireframe:**
+**ASCII Wireframe (Updated with DFT-020 resolution):**
 ```
-┌──────────────────────────────────────────────────┐
-│ 🔖 BOOKMARKED FEATURES                           │
-├──────────────────────────────────────────────────┤
-│ ┄┄ Camera Traps ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ │  ← Non-interactive layer label
-│    CAM-042 (mt. lion)                 [👁] ✕    │  ← Interactive feature row
-│    CAM-118                            [👁] ✕    │
-│ ┄┄ Dendra Sensors ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ │
-│    Sensor ABC-123 (Mar 2024)          [👁] ✕    │
-└──────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│ 🔖 BOOKMARKED FEATURES                                         │
+├────────────────────────────────────────────────────────────────┤
+│ ┄┄ Camera Traps ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ │  ← Non-interactive layer label
+│    CAM-042 → Mountain Lions 2023                               │  ← With filter
+│    47 images • [View] [Edit Filter] [✕]                        │
+│    CAM-015                                                      │  ← Without filter
+│    All images • [View] [✕]                                     │
+│ ┄┄ Dendra Sensors ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ │
+│    Sensor ABC-123 → Mar 2024                                   │  ← With filter
+│    90 data points • [View] [Edit Filter] [✕]                   │
+│ ┄┄ iNaturalist ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ │
+│    Observation #45231                                           │  ← Self-contained (no filter)
+│    [View] [✕]                                                  │
+└────────────────────────────────────────────────────────────────┘
 ```
+
+**Note:** "Edit Filter" only shows for pointer-row bookmarks that have related data (ANiML, Dendra, DataOne). Self-contained rows (iNaturalist, eBird, fire perimeters) only show [View] and [✕].
 
 **Reference:**
 - Mockup: `mockups/02a-unified-layout.html` (bookmark widget section)
+- DFT-020 resolution: Single button pattern for pointer rows
 
 **Files to Create:**
 - `src/v2/components/FloatingWidgets/BookmarkedFeaturesWidget.tsx`
@@ -424,3 +438,4 @@ This allows collecting user feedback before finalizing the design.
 | Feb 3, 2026 | 0.5 | Resolved DFT-013: Multiple filtered views use nested widget structure with mutual exclusivity (only one view visible at a time) | Will + Claude |
 | Feb 3, 2026 | 0.5, 0.6 | Resolved DFT-015: Empty state design — educational first-visit, laconic returning user. Configurable terminology ("Feature" vs "Item"). Drone/LiDAR are pin-only layers | Will + Claude |
 
+| Feb 4, 2026 | 0.6 | Resolved DFT-020: Single "Bookmark" button for pointer rows. Auto-captures filter if active. Multiple bookmarks = multiple views. "Edit Filter" on bookmark widget | Will + Claude |

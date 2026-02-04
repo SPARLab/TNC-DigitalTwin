@@ -67,11 +67,11 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 - **Export functionality:** `IMPLEMENTATION/phases/phase-5-export-builder.md`
 - **Cross-phase decisions:** `master-plan.md` → "Cross-Phase Decisions" → "UX Decisions"
 
-**Last Updated:** February 4, 2026 (Resolved DFT-019: Edit Filters navigation behavior)
+**Last Updated:** February 4, 2026 (Resolved DFT-020: Pointer-row bookmark UI — single button pattern)
 
 **Next Steps:**
 - [ ] **BEFORE MOCKUPS (DFT-037):** Resolve all design discussion tasks (DFT-015 through DFT-036)
-  - **High priority:** ~~DFT-018 (loading states)~~, DFT-020 (pointer-row bookmark UI), DFT-030 (error states)
+  - **High priority:** ~~DFT-018 (loading states)~~, ~~DFT-020 (pointer-row bookmark UI)~~, DFT-030 (error states)
   - **Medium priority:** ~~DFT-019 (Edit Filters navigation)~~, DFT-024, DFT-028, DFT-029, DFT-031, DFT-032, DFT-035
   - **Low priority:** Can defer to Phase 6 if not blocking mockup generation
 - [ ] **After DFT-037:** Archive resolved design decisions to `PLANNING/resolved-decisions/` to keep tracker manageable
@@ -102,7 +102,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-017 | Keyboard navigation & accessibility patterns | Accessibility | 🟢 Resolved | Medium |
 | DFT-018 | Loading states and skeleton UI patterns | UI/UX | 🟢 Resolved | High |
 | DFT-019 | Edit Filters button navigation behavior — what happens to widget? | UI/UX | 🟢 Resolved | Medium |
-| DFT-020 | Pointer-row bookmark UI — one button vs two for "Bookmark" vs "Bookmark with Filter" | UI/UX | 🟡 Open | High |
+| DFT-020 | Pointer-row bookmark UI — one button vs two for "Bookmark" vs "Bookmark with Filter" | UI/UX | 🟢 Resolved | High |
 | DFT-021 | Terminology consistency — "Active" vs "Selected" layer | Terminology | 🟡 Open | Low |
 | DFT-022 | Parent toggle memory edge case — what if previously-selected child is deleted? | Edge Case | 🟡 Open | Low |
 | DFT-023 | Widget positioning dimensions — exact spacing values | Visual Spec | 🟡 Open | Low |
@@ -152,7 +152,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-017 | Keyboard navigation & accessibility patterns | Will | ✅ Resolved - Feb 3 |
 | DFT-018 | Loading states and skeleton UI patterns | Will, Dan | ✅ Resolved - Feb 3 |
 | DFT-019 | Edit Filters button navigation behavior | Will | ✅ Resolved - Feb 4 |
-| DFT-020 | Pointer-row bookmark UI (one vs two buttons) | Amy, Trisalyn | 🟡 Pending |
+| DFT-020 | Pointer-row bookmark UI (one vs two buttons) | Amy, Trisalyn | ✅ Resolved - Feb 4 |
 | DFT-021 | "Active" vs "Selected" terminology | Will | 🟡 Pending |
 | DFT-022 | Parent toggle memory edge case | Will | 🟡 Pending |
 | DFT-023 | Widget positioning dimensions | Will | 🟡 Pending |
@@ -1626,7 +1626,7 @@ All tab/view transitions in the right sidebar use crossfade (~150-200ms) to feel
 ### DFT-020: Pointer-Row Bookmark UI (One Button vs Two)
 
 **Category:** UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** High  
 **Source:** UX Design Review, Feb 3, 2026
 
@@ -1650,9 +1650,45 @@ If so, DFT-003's claim that we "eliminated side-by-side button confusion" may no
 **Related:** DFT-003, Paradigm Doc Part 5
 
 **Discussion:**
-*Needs discussion — key question for ANiML workflow*
+- Will (Feb 4): Option 3 adds too much text to already crowded right sidebar. The "two button" problem was artificial — asking users to predict future export needs at browse time is backwards. Real user intent is almost always "save what I'm looking at."
+- Will (Feb 4): Paradigm doc Part 8 already states: "Want different filter? Bookmark again." This supports Option 1 — multiple bookmarks = multiple views of same feature.
+- Will (Feb 4): Applied Hick's Law, Norman's Feedback/Affordances, Nielsen heuristics (User Control, Recognition over Recall), IA progressive disclosure. Single button with auto-capture minimizes decisions at bookmark time; "Edit Filter" on bookmark widget handles corrections.
 
-**Resolution:** *Pending*
+**Resolution:** Feb 4, 2026 — **Option 1: Single button, always capture filter**
+
+**Design Decisions:**
+
+1. **Single "🔖 Bookmark" button** for all pointer-row features (ANiML cameras, Dendra sensors, DataOne datasets)
+2. **Auto-capture current Level 3 filter** if active; saves feature-only if no filter applied
+3. **Multiple bookmarks allowed** of same feature — each with different filter = different "view"
+4. **"Edit Filter" action** on bookmark widget allows post-save correction of Level 3 query
+5. **Feedback shows context:** Toast/animation displays "Bookmarked: CAM-042 → Mountain Lions 2023" (or similar)
+6. **Bookmark widget display:**
+   - Bookmarks with filters show: `📷 CAM-042 → Mountain Lions 2023` (47 images • [View] [Edit Filter] [✕])
+   - Bookmarks without filters show: `📷 CAM-015` (All images • [View] [✕])
+   - "Edit Filter" action only appears for pointer-row bookmarks (self-contained rows like iNaturalist show [View] [✕] only)
+
+**Rationale:**
+- **Eliminates premature decision** — no "do I want the filter?" choice at bookmark time (Hick's Law)
+- **Aligns with paradigm doc Part 8** — "Want different filter? Bookmark again"
+- **Minimizes right sidebar UI complexity** — single word button vs. dropdown/multiple buttons
+- **"Save what I see" mental model** — intuitive, matches user expectation
+- **Error recovery exists** — "Edit Filter" handles corrections without friction
+- **Applies consistently** to ANiML, Dendra, DataOne pointer rows
+
+**Documented in:**
+- Phase 0 task 0.6 (Bookmarked Features Widget) — updated with single button behavior
+- Phase 2 (ANiML) — updated Browse tab bookmark button spec
+- Phase 3 (Dendra) — noted for sensor bookmark implementation
+- Phase 4 (DataOne) — noted for dataset bookmark implementation
+- master-plan.md — added UX Decision for pointer-row bookmark pattern
+
+**✅ Verification Checklist:**
+- [x] ASCII diagrams in `IMPLEMENTATION/phases/phase-0-foundation.md` task 0.6 match decision (bookmark widget)
+- [x] Phase 2, 3, 4 documents note single button pattern for their respective pointer rows
+- [x] Decision notes added at top of relevant task sections
+- [x] Cross-phase decision added to `master-plan.md` UX Decisions table
+- [x] Paradigm doc Part 5 correction noted (two buttons → single button)
 
 ---
 
