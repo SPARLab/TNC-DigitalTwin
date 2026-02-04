@@ -610,9 +610,10 @@ Standardized pattern for technical debugging:
 ### DFT-031: Confirmation Dialogs Pattern
 
 **Category:** UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Medium  
-**Source:** UX Design Review, Feb 3, 2026
+**Source:** UX Design Review, Feb 3, 2026  
+**Resolved:** February 4, 2026
 
 **Context:**
 Some actions may warrant confirmation dialogs to prevent accidental data loss:
@@ -629,15 +630,184 @@ Some actions may warrant confirmation dialogs to prevent accidental data loss:
 3. **Confirm all removes** — any ✕ button shows "Are you sure?"
 4. **Soft delete + toast with undo** — action happens immediately, toast shows "Undo" for 5 seconds
 
-**Considerations:**
-- Too many confirmations = friction and "confirmation fatigue"
-- Too few = anxiety about accidental clicks
-- Undo is generally preferred over confirmation (less disruptive)
-
 **Discussion:**
-*Needs decision — affects interaction patterns*
+After analyzing via Norman's reversibility hierarchy (Undo > Confirmation > Irreversible), Nielsen's efficiency heuristics, Gestalt proximity principles, and behavioral science (confirmation fatigue, loss aversion), determined that universal undo is superior to selective confirmations.
 
-**Resolution:** *Pending*
+**Resolution:** **No confirmation dialogs. Context-specific undo buttons instead.**
+
+### Design Decision: Context-Specific Undo Buttons
+
+**Pattern:** Each widget/region has its own persistent undo button that tracks recent destructive actions.
+
+### Visual Design
+
+**Button Placement:** Widget header, right side (before collapse/close buttons)
+
+```
+┌──────────────────────────────────────────────────┐
+│  Pinned Feature Layers        [↶]  [−]  [✕]     │
+│  ↑ title                      ↑undo ↑collapse ↑close
+├──────────────────────────────────────────────────┤
+│  [≡] [👁] ANiML Cameras (mt. lion) [🌪️3]  [✕]  │
+│  [≡] [👁] iNaturalist                       [✕]  │
+└──────────────────────────────────────────────────┘
+```
+
+**Button States (Option B - Always Present):**
+
+| State | Styling | Tooltip | Behavior |
+|-------|---------|---------|----------|
+| **Inactive** | Gray, 40% opacity | "No actions to undo" | Disabled (not clickable) |
+| **Active** | Full opacity, emerald-600 | "Undo: Unpinned ANiML Cameras" | Click undoes most recent |
+
+**Design Tokens:**
+- Icon: Lucide `Undo2` or `RotateCcw` (w-5 h-5, 20px)
+- Active: `text-emerald-600 hover:text-emerald-700 cursor-pointer`
+- Inactive: `text-gray-400 opacity-40 cursor-not-allowed`
+- Transition: `opacity 200ms ease-out`
+- Animation (when activated): Subtle pulse (1 cycle, 400ms, respects `prefers-reduced-motion`)
+
+### Undo Button Placement by Region
+
+| Region | Undo Button | Actions Covered |
+|--------|-------------|-----------------|
+| **Left Sidebar** | Header, right side | Layer activation/selection (if needed) |
+| **Pinned Layers Widget** | Header, right side | Unpin layer, delete filtered view, clear filters |
+| **Bookmarked Features Widget** | Header, right side | Remove bookmark, remove multiple bookmarks |
+| **Right Sidebar** | Optional — header | Bookmark actions (if separate from widget) |
+
+**Total: 2-3 undo buttons** (primary: Pinned Layers + Bookmarked Features widgets)
+
+### Undo Stack
+
+**Per-Region Stacks:**
+- **Stack size:** 5 actions per region
+- **Scope:** Each widget maintains its own independent undo stack
+- **Single-level for v2.0:** Click undo button → undoes most recent action in that region
+- **Multi-level (future v2.1+):** Click-and-hold or dropdown shows last 5 actions
+
+**State Structure:**
+```typescript
+interface UndoAction {
+  type: 'unpin' | 'remove-bookmark' | 'clear-filters' | 'delete-view';
+  timestamp: number;
+  data: {
+    // Context-specific data to restore state
+    // e.g., layerId, filterState, bookmarkData, etc.
+  };
+}
+```
+
+**Hook Pattern:**
+```typescript
+const { canUndo, undo, addAction } = useUndoStack({
+  context: 'pinned-layers',
+  maxSize: 5,
+});
+```
+
+### Keyboard Support
+
+**Per-region keyboard navigation:**
+- Tab to undo button (part of natural tab order in widget header)
+- Enter/Space: Undo most recent action
+- Escape: No effect (button is not a modal)
+
+**Global keyboard shortcut:**
+- **Cmd+Z / Ctrl+Z:** Undo most recent action in most recently active region
+- Implementation: Track "active region" state (where user last performed action)
+- Deferred to Phase 6 (polish) — requires cross-region state coordination
+
+### Accessibility
+
+**ARIA:**
+- Button: `role="button"`, `aria-label="Undo: [action description]"` (dynamic)
+- Inactive state: `aria-disabled="true"`
+- Active state: `aria-disabled="false"`
+
+**Screen Reader:**
+- Inactive: "Undo button, disabled, no actions to undo"
+- Active: "Undo button, undo unpinned ANiML Cameras"
+
+**Visual:**
+- Color + icon + tooltip (not color alone)
+- 44px min touch target (WCAG 2.5.5)
+
+### Rationale
+
+**Design Principles Applied:**
+
+1. **Norman's Reversibility Hierarchy:** Undo > Confirmation > Irreversible. Undo is the gold standard—no interruption, full control.
+
+2. **Gestalt Proximity:** Undo button is spatially near the action region → clearer cause-effect relationship than distant toasts.
+
+3. **Nielsen #3 (User Control & Freedom):** "Clearly marked emergency exit" → persistent undo button provides constant reassurance.
+
+4. **Nielsen #7 (Flexibility & Efficiency):** No confirmation dialogs slowing workflow. Researchers can work at full speed.
+
+5. **Behavioral Science:**
+   - No confirmation fatigue (users never trained to autopilot-click)
+   - Reduced anxiety (visible undo = encourages exploration)
+   - Peak-End Rule: No deadline pressure (vs. 8-second toast windows)
+
+6. **Cognitive Load (Hick's Law):** No binary decisions ("Cancel" vs "Confirm"). Just act, then optionally undo.
+
+7. **Target Audience (DFT-011):** Researchers expect efficiency and control, not hand-holding.
+
+### Edge Cases
+
+**Rapid actions:**
+- User rapidly removes 3 bookmarks → only most recent is undoable (single-level for v2.0)
+- Undo button always reflects most recent action in that region
+- Future enhancement: Multi-level undo stack with dropdown
+
+**Navigating away:**
+- Undo button remains functional even if user switches contexts
+- Example: Unpin layer, then switch to different layer → undo still works
+
+**Stack persistence:**
+- Undo history does NOT persist across sessions (resets on refresh)
+- Rationale: Refreshing is a "commit" action; KISS principle for v2.0
+
+### Animation
+
+**On activation (action performed):**
+- Button transitions from inactive (40% opacity) to active (100% opacity)
+- Subtle pulse animation: 1 cycle, 400ms, `ease-in-out`
+- Respects `prefers-reduced-motion` (no pulse, just opacity change)
+
+**On undo (button clicked):**
+- No animation on button itself
+- Widget content updates (e.g., layer reappears in list)
+
+### Comparison to Alternatives
+
+| Approach | Proximity | Timing Pressure | Multi-Level | Visual Noise | Winner |
+|----------|-----------|-----------------|-------------|--------------|--------|
+| **Context Undo Buttons** | ✅ At action site | ✅ No deadline | ✅ Natural | ⚠️ 2-3 buttons | ✅ |
+| **Toast + Undo** | ⚠️ Distant | ⚠️ 8-15s window | ⚠️ Only recent | ✅ Temporary | |
+| **Inline Confirmation** | ✅ At action site | ⚠️ Interrupts | N/A | ⚠️ Expansion | |
+| **Modal Confirmation** | ❌ Overlay | ⚠️ Interrupts | N/A | ❌ High | |
+
+**Decision:** Context-specific undo buttons provide best balance of proximity, efficiency, and user control.
+
+---
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file) — resolution added
+- ✅ `docs/DESIGN-SYSTEM/design-system.md` — undo pattern added
+- ✅ `docs/master-plan.md` — added to Cross-Phase Decisions
+- ✅ `docs/IMPLEMENTATION/phases/phase-0-foundation.md` — widget specifications updated
+
+**✅ Verification Checklist:**
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with full specification
+- [x] Design system updated with undo button patterns
+- [x] Master plan updated (cross-phase UX decision)
+- [x] Phase 0 document updated (widget header layout)
+- [x] Cross-references added ("Documented in:")
+- [x] Rationale provided using UI/UX principles
+- [ ] Mockups noted (defer to DFT-037 — mockup generation task)
 
 ---
 
@@ -932,6 +1102,7 @@ After DFT-037 is complete, **archive resolved design decisions** to `PLANNING/re
 
 | Date | Change |
 |------|--------|
+| Feb 4, 2026 | Resolved DFT-031: Context-specific undo buttons — no confirmation dialogs. Each widget has persistent undo button (always visible, grayed when inactive). Stack size: 5 actions per region. Cmd/Ctrl+Z support in Phase 6. Analyzed via Norman, Nielsen, Gestalt, behavioral science |
 | Feb 3, 2026 | **UX Design Review:** Added DFT-015 through DFT-037 (23 new issues). DFT-015 through DFT-036 cover empty states, responsiveness, accessibility, loading states, navigation behavior, terminology consistency, edge cases, visual specs, microinteractions, and interaction patterns. DFT-037 is the mockup generation task (blocked until design decisions resolved). **High-priority:** DFT-015 (empty states), DFT-018 (loading states), DFT-020 (pointer-row bookmark UI), DFT-030 (error states), DFT-037 (mockup generation). **Note:** After DFT-037, archive resolved decisions to keep tracker manageable |
 | Jan 26, 2026 | Initial tracker created with 9 issues from Sophia's Jan 23 feedback |
 | Jan 26, 2026 | Updated paradigm sign-offs: Dan, Trisalyn, and Amy approved core paradigm |

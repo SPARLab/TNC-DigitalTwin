@@ -368,6 +368,178 @@ Standardized pattern for technical debugging:
 
 ---
 
+## Undo Button Pattern
+
+**Policy (DFT-031):** All destructive actions execute immediately without confirmation dialogs. Each widget/region has a persistent undo button to reverse recent actions.
+
+### Key Principles
+
+1. **Norman's Reversibility Hierarchy:** Undo > Confirmation > Irreversible. Undo is the gold standard.
+2. **Context-specific:** Each region maintains its own undo stack (5 actions per region)
+3. **Always visible:** Button is always present, grayed when inactive (reduces anxiety)
+4. **No deadline pressure:** Unlike toasts with 8-second windows, undo persists until next action
+5. **Proximity:** Button is spatially near where actions occur (Gestalt principle)
+
+### Visual Pattern
+
+**Button Placement:** Widget header, right side (before collapse/close buttons)
+
+```
+┌──────────────────────────────────────────────────┐
+│  Pinned Feature Layers        [↶]  [−]  [✕]     │
+│  ↑ title                      ↑undo ↑collapse ↑close
+├──────────────────────────────────────────────────┤
+│  [≡] [👁] ANiML Cameras (mt. lion) [🌪️3]  [✕]  │
+│  [≡] [👁] iNaturalist                       [✕]  │
+└──────────────────────────────────────────────────┘
+```
+
+### Button States (Always Present Pattern)
+
+| State | Styling | Tooltip | Behavior |
+|-------|---------|---------|----------|
+| **Inactive** | Gray, 40% opacity | "No actions to undo" | Disabled (not clickable) |
+| **Active** | Full opacity, emerald-600 | "Undo: [action description]" | Click undoes most recent |
+
+### Design Tokens
+
+**Icon:**
+- Component: Lucide `Undo2` or `RotateCcw`
+- Size: `w-5 h-5` (20px)
+
+**Colors:**
+- Active: `text-emerald-600 hover:text-emerald-700 cursor-pointer`
+- Inactive: `text-gray-400 opacity-40 cursor-not-allowed`
+
+**Transitions:**
+- Opacity: `transition-opacity duration-200 ease-out`
+
+**Animation (on activation):**
+- Subtle pulse: 1 cycle, 400ms, `ease-in-out`
+- Respects `prefers-reduced-motion` (no pulse, just opacity change)
+
+```css
+@keyframes undo-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.undo-button-active {
+  animation: undo-pulse 400ms ease-in-out 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .undo-button-active {
+    animation: none;
+  }
+}
+```
+
+### Undo Button Placement by Region
+
+| Region | Undo Button | Actions Covered |
+|--------|-------------|-----------------|
+| **Left Sidebar** | Header, right side | Layer activation/selection (if needed) |
+| **Pinned Layers Widget** | Header, right side | Unpin layer, delete filtered view, clear filters |
+| **Bookmarked Features Widget** | Header, right side | Remove bookmark, remove multiple bookmarks |
+| **Right Sidebar** | Optional — header | Bookmark actions (if separate from widget) |
+
+**Total:** 2-3 undo buttons across the interface
+
+### Undo Stack Implementation
+
+**Stack Size:** 5 actions per region (single-level for v2.0, multi-level in v2.1+)
+
+**State Structure:**
+```typescript
+interface UndoAction {
+  type: 'unpin' | 'remove-bookmark' | 'clear-filters' | 'delete-view';
+  timestamp: number;
+  data: Record<string, any>; // Context-specific restoration data
+}
+```
+
+**Hook Pattern:**
+```typescript
+const { canUndo, undo, addAction } = useUndoStack({
+  context: 'pinned-layers',
+  maxSize: 5,
+});
+```
+
+### Keyboard Support
+
+**Per-region navigation:**
+- Tab: Focus undo button (part of natural tab order)
+- Enter/Space: Undo most recent action
+- Escape: No effect (button is not a modal)
+
+**Global keyboard shortcut (Phase 6):**
+- Cmd+Z / Ctrl+Z: Undo in most recently active region
+- Requires tracking "active region" state
+
+### Accessibility
+
+**ARIA:**
+- `role="button"`
+- `aria-label="Undo: [dynamic action description]"`
+- Inactive: `aria-disabled="true"`
+- Active: `aria-disabled="false"`
+
+**Screen Reader:**
+- Inactive: "Undo button, disabled, no actions to undo"
+- Active: "Undo button, undo [action description]"
+
+**Touch Targets:**
+- Min 44px touch target (WCAG 2.5.5)
+- Use padding to expand hit area if icon is smaller
+
+**Visual:**
+- Color + icon + tooltip (not color alone)
+- Consistent with WCAG color independence principle
+
+### Edge Cases
+
+**Rapid actions:**
+- Only most recent action is undoable in v2.0 (single-level)
+- Multi-level undo deferred to v2.1+ based on user feedback
+
+**Navigating away:**
+- Undo button remains functional even if user switches contexts
+- Example: Unpin layer, switch to different layer → undo still works
+
+**Stack persistence:**
+- Undo history does NOT persist across sessions (resets on refresh)
+- Rationale: Refreshing is a "commit" action; KISS principle
+
+### Tone & Messaging
+
+**Utilitarian** (consistent with empty states and error patterns):
+- Tooltip describes what will be undone specifically
+- Examples:
+  - "Undo: Unpinned ANiML Cameras"
+  - "Undo: Removed bookmark for Camera A1"
+  - "Undo: Deleted 'Mountain Lion' view"
+  - "Undo: Cleared 3 filters"
+
+### Component Files
+
+**Implementation:**
+- `src/v2/components/UndoButton/UndoButton.tsx` — Button component
+- `src/v2/hooks/useUndoStack.ts` — Per-region undo stack hook
+- `src/v2/types/undo.ts` — UndoAction type definitions
+
+### Design Principles Applied
+
+- **Norman:** Undo is superior to confirmation (no workflow interruption)
+- **Nielsen #3:** User control & freedom (clearly marked emergency exit)
+- **Nielsen #7:** Flexibility & efficiency (no confirmation dialogs slowing workflow)
+- **Gestalt Proximity:** Button near action context
+- **Behavioral Science:** No confirmation fatigue, reduced anxiety, encourages exploration
+- **Target Audience (DFT-011):** Researchers expect efficiency, not hand-holding
+
+---
+
 ## Styling Decisions
 
 > **Note:** This section tracks styling decisions that affect multiple phases. Component-specific styling should be documented in component files.
@@ -416,6 +588,7 @@ Standardized pattern for technical debugging:
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 4, 2026 | Added Undo Button Pattern (DFT-031) — context-specific buttons in widget headers, always-visible with inactive/active states, 5-action stacks per region, Cmd+Z support in Phase 6 | Will + Claude |
 | Feb 4, 2026 | Added Error State Patterns (DFT-030) — severity hierarchy, toast placement (top of right sidebar), inline errors, partial failure banner, utilitarian tone | Will + Claude |
 | Feb 3, 2026 | Added Loading State Patterns (DFT-018) — hybrid indicators, timeout thresholds, dynamic ETA, progressive loading | Will + Claude |
 | Feb 3, 2026 | Added No Emojis Policy | Will |

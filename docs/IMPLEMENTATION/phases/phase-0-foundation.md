@@ -175,6 +175,20 @@ interface Bookmark {
 **Decision (Feb 3, 2026):** Resolved DFT-015 — Empty state design. Widget title uses configurable terminology: "Pinned {childNoun} Layers". First visit shows educational empty state (expanded); returning user sees laconic message. See design-system.md for terminology config.  
 **Decision (Feb 4, 2026):** Resolved DFT-019 — "Edit Filters" button navigation behavior. Button labeled "Edit Filters →" (with arrow), right-aligned in expanded panel. Widget remains expanded (user can reference filter state). Right sidebar uses crossfade animation (~150-200ms) for tab transitions. Separation of Concerns: Widget manages visibility/stacking; sidebar manages deep editing.  
 **Decision (Feb 4, 2026):** Resolved DFT-025 — Create New View transition animation. Inline transformation with sequential staging (250-300ms total): row expands → children appear → new child highlights briefly. Respects `prefers-reduced-motion`. Focus moves to new child row. Screen reader announces state change.
+**Decision (Feb 4, 2026):** Resolved DFT-031 — Confirmation dialogs pattern. No confirmation dialogs. Context-specific undo buttons instead. Widget header has persistent undo button (always visible, grayed when inactive). Stack size: 5 actions per region. Cmd+Z/Ctrl+Z support in Phase 6. See design-system.md for full specification.
+
+**Widget Header Layout:**
+```
+┌──────────────────────────────────────────────────┐
+│  Pinned Feature Layers        [↶]  [−]  [✕]     │
+│  ↑ title                      ↑undo ↑collapse ↑close
+├──────────────────────────────────────────────────┤
+```
+
+**Undo Button States:**
+- Inactive: Gray, 40% opacity, "No actions to undo" tooltip, not clickable
+- Active: Emerald-600, full opacity, "Undo: [action]" tooltip, clickable
+- Animation: Subtle pulse (1 cycle, 400ms) when activated, respects `prefers-reduced-motion`
 
 **Widget Design (Collapsed State):**
 ```
@@ -291,6 +305,15 @@ interface Bookmark {
 - [ ] Active state indicated by: expansion (panel visible) + visual treatment (background color, left border accent)
 - [ ] "Edit Filters →" button opens Browse tab in right sidebar (widget panel remains expanded for reference)
 - [ ] Right sidebar tab switches use crossfade animation (~150-200ms) — global pattern per DFT-019
+- [ ] **Widget header includes undo button (DFT-031):**
+  - [ ] Undo button always present in header (right side, before collapse/close)
+  - [ ] Inactive state: Gray, 40% opacity, "No actions to undo" tooltip
+  - [ ] Active state: Emerald-600, full opacity, "Undo: [action]" tooltip
+  - [ ] Subtle pulse animation (1 cycle, 400ms) when activated
+  - [ ] Respects `prefers-reduced-motion` preference
+  - [ ] Stack size: 5 actions per widget (single-level for v2.0)
+  - [ ] Actions covered: Unpin layer, delete filtered view, clear filters
+  - [ ] See design-system.md for full undo button specification
 - [ ] "Clear" button removes all filters from the layer
 - [ ] "+ Create New View" button duplicates the layer with current filters as a new pinned entry
 - [ ] Filter indicator shows count and is clickable (opens Browse tab)
@@ -368,7 +391,16 @@ interface Bookmark {
   - **For pointer rows without filter:** Show only [View] and [✕]
   - **For self-contained rows:** Show only [View] and [✕] (no "Edit Filter" — these have no Level 3 data)
 - [ ] NO "Export All" button in widget (moved to global header per DFT-002 resolution)
-- [ ] Auto-collapses when time-series data is active (DFT-005)
+- [ ] AUTO-collapses when time-series data is active (DFT-005)
+- [ ] **Widget header includes undo button (DFT-031):**
+  - [ ] Undo button always present in header (right side, before collapse/close)
+  - [ ] Inactive state: Gray, 40% opacity, "No actions to undo" tooltip
+  - [ ] Active state: Emerald-600, full opacity, "Undo: [action]" tooltip
+  - [ ] Subtle pulse animation (1 cycle, 400ms) when activated
+  - [ ] Respects `prefers-reduced-motion` preference
+  - [ ] Stack size: 5 actions per widget (single-level for v2.0)
+  - [ ] Actions covered: Remove bookmark, remove multiple bookmarks
+  - [ ] See design-system.md for full undo button specification
 - [ ] **Empty state (DFT-015):**
   - [ ] Widget title uses configurable terminology from `src/config/terminology.ts`: "Bookmarked {childNoun}s"
   - [ ] First visit (never bookmarked before): Show expanded educational empty state with muted bookmark icon, "No {childNoun}s bookmarked." title, "Bookmarks save specific {childNoun}s within layers (cameras, sensors, observations). Bookmark {childNoun}s from the right sidebar." body
