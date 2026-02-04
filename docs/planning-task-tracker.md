@@ -112,7 +112,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-025 | Create New View transition animation — visual feedback for state change | Microinteraction | 🟢 Resolved | Low |
 | DFT-026 | Emoji/icon vocabulary consistency — shopping cart vs export icon | Design System | 🟢 Resolved | Low |
 | DFT-027 | "Browse Features →" button destination confirmation | Terminology | 🟢 Resolved | Low |
-| DFT-028 | Zero-result camera behavior — hidden vs grayed out when filter matches 0 images | UI/UX | 🟡 Open | Medium |
+| DFT-028 | Zero-result camera behavior — hidden vs grayed out when filter matches 0 images | UI/UX | 🟢 Resolved | Medium |
 | DFT-029 | Unfiltered layer badge behavior — show total counts or no badges? | UI/UX | 🟡 Open | Medium |
 | DFT-030 | Error state design — API failures, network errors, timeout handling | UI/UX | 🟡 Open | High |
 | DFT-031 | Confirmation dialogs — when to require explicit confirmation (delete, clear filters) | UI/UX | 🟡 Open | Medium |
@@ -162,7 +162,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-025 | Create New View transition animation | Will | ✅ Resolved - Feb 4 |
 | DFT-026 | Emoji/icon vocabulary consistency | Will | ✅ Resolved - Feb 3 |
 | DFT-027 | "Browse Features →" button destination | Will | ✅ Resolved - Feb 4 |
-| DFT-028 | Zero-result camera behavior | Amy, Trisalyn, Dan | 🟡 Pending |
+| DFT-028 | Zero-result camera behavior | Amy, Trisalyn, Dan | ✅ Resolved - Feb 4 |
 | DFT-029 | Unfiltered layer badge behavior | Amy, Trisalyn | 🟡 Pending |
 | DFT-030 | Error state design | Will, Dan | 🟡 Pending |
 | DFT-031 | Confirmation dialogs pattern | Will | 🟡 Pending |
@@ -253,7 +253,7 @@ These issues have clear options and would benefit from a quick team vote:
 ### DFT-028: Zero-Result Camera Behavior
 
 **Category:** UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Medium  
 **Source:** UX Design Review, Feb 3, 2026 (extracted from DFT-012 edge cases)
 
@@ -273,10 +273,48 @@ Per DFT-012, when a species filter is applied (e.g., "mountain lion"), cameras s
 - Graying out maintains mental map of all camera locations
 - Showing "0" badges adds noise but is explicit
 
-**Discussion:**
-*Needs decision — affects ANiML visualization*
+**Resolution:** Feb 4, 2026 — **Gray out cameras with 0 matching images**
 
-**Resolution:** *Pending*
+**Design Specification:**
+
+1. **Visual Treatment:**
+   - Reduce opacity to 40-50% (test for contrast with map background)
+   - Desaturate color (grayscale or muted version of active color)
+   - Remove badge entirely (don't show "0")
+   - Consider subtle pattern overlay (diagonal lines) for colorblind accessibility
+
+2. **Interaction:**
+   - Camera remains **clickable** and **keyboard-focusable**
+   - Click behavior: Sidebar shows camera metadata + message: "No [species name] images at this location" with "Adjust Filters" button
+   - Hover tooltip: "CAM-042: No matching images"
+   - ARIA label: "CAM-042: Camera location with no [species name] images"
+
+3. **Animation:**
+   - When filter applied: 300ms ease-out transition from active → grayed
+   - Stagger by 30ms per camera (subtle wave effect)
+   - When filter removed: 300ms ease-out transition back to active state
+
+4. **Edge Cases:**
+   - If ALL cameras are zero-results → show empty state in sidebar: "No cameras match your filter" with "Adjust Filters" and "Clear Filters" buttons
+   - Map still shows all grayed cameras (preserves spatial context)
+
+**Rationale:**
+- **Preservation over Removal:** Maintains spatial structure and mental map of camera network (Gestalt Continuity, Norman Conceptual Models)
+- **Negative Evidence:** Researchers need to see where species is NOT present for ecological analysis (scientific workflow requirement)
+- **Contrast Creates Clarity:** Grayed cameras make active results stand out MORE effectively than hiding (Von Restorff Effect)
+- **Accessibility:** Hidden cameras can't be clicked or keyboard-navigated; grayed cameras remain operable (WCAG Operable principle)
+- **Cognitive Load:** Graying reduces "Where did it go?" confusion; preserves Recognition over Recall (Nielsen's Heuristic #6)
+
+**Documented in:**
+- Phase 2 (ANiML): Task 2.5 acceptance criteria updated
+- Master Plan: Added to UX Decisions
+
+**✅ Verification Checklist:**
+- [x] Resolution documented in planning-task-tracker.md
+- [x] Specification added with visual treatment, interaction, animation details
+- [x] Phase 2 document updated with decision
+- [x] Master plan updated with UX decision entry
+- [x] Related to DFT-012 (camera badges) and DFT-029 (unfiltered badge behavior)
 
 ---
 

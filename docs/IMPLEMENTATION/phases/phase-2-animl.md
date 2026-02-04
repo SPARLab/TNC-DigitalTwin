@@ -169,6 +169,7 @@ activeQuery: {
 **Goal:** Display cameras as cards showing filtered image counts.
 
 **Decision (Feb 3, 2026):** Resolved DFT-012 — Numbered badges on camera icons showing filtered image counts. Map visualization integrates with progressive disclosure pattern.
+**Decision (Feb 4, 2026):** Resolved DFT-028 — Cameras with 0 matching images are grayed out (40-50% opacity, desaturated), not hidden. Remain clickable/keyboard-accessible. No "0" badge shown. Preserves spatial context and enables discovery of negative evidence (where species is NOT present).
 
 **Acceptance Criteria:**
 - [ ] Each camera card shows filtered image count (not total)
@@ -182,7 +183,14 @@ activeQuery: {
   - [ ] Badge only appears when layer-level filter is applied
   - [ ] Clicking camera icon navigates sidebar to that camera's filtered images
   - [ ] Hover tooltip shows species name and date range context
-  - [ ] Cameras with 0 matching images: hidden or grayed out (to be decided)
+  - [ ] **Cameras with 0 matching images: grayed out (not hidden)**
+    - [ ] Visual: 40-50% opacity, desaturated color, no badge
+    - [ ] Interaction: remains clickable and keyboard-focusable
+    - [ ] Click shows: camera metadata + "No [species] images at this location" + "Adjust Filters" button
+    - [ ] Hover tooltip: "CAM-042: No matching images"
+    - [ ] ARIA label: "CAM-042: Camera location with no [species] images"
+    - [ ] Animation: 300ms ease-out transition to/from grayed state, staggered 30ms per camera
+    - [ ] Edge case: If ALL cameras are zero-results, show empty state in sidebar while map shows grayed cameras
 
 **Reference:** Mockup `02c-browse-animl.html` camera cards
 
@@ -330,4 +338,5 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | Feb 3, 2026 | 2.5 | Added numbered badge map visualization (DFT-012) with progressive disclosure integration | Will + Claude |
 | Feb 3, 2026 | 2.3, 2.4, 2.6 | Resolved DFT-003: Context-dependent button visibility. "Pin Layer" only shows when layer not pinned; filter changes auto-apply to pinned layers. "Bookmark" only shows when camera is selected. | Will + Claude |
 | Feb 4, 2026 | 2.2 | Resolved DFT-027: "Browse Features →" button design specification (full-width primary, TNC green, inline arrow, hover/focus states, 150-200ms transition) | Will + Claude |
+| Feb 4, 2026 | 2.5 | Resolved DFT-028: Zero-result cameras grayed out (not hidden). 40-50% opacity, desaturated, no badge. Remain clickable/keyboard-accessible. Preserves spatial context for negative evidence discovery. Animation: 300ms ease-out, staggered 30ms. | Will + Claude |
 
