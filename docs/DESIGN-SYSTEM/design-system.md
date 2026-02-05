@@ -1,6 +1,6 @@
 # Design System - TNC Digital Catalog
 
-**Last Updated:** February 3, 2026  
+**Last Updated:** February 5, 2026  
 **Purpose:** Single source of truth for styling decisions, component patterns, and design policies that affect multiple phases.
 
 ---
@@ -34,6 +34,40 @@
 - If no suitable icon exists, search for SVG icons from reputable sources (Lucide, Heroicons, etc.)
 - Create a new icon component following the pattern of existing icons
 - Never suggest or use emoji characters in code or UI
+
+---
+
+## Layout Specifications
+
+### Right Sidebar Width (DFT-033)
+
+**Policy:** Right sidebar uses fixed width of 400px (not user-resizable).
+
+**Specification:**
+```css
+.right-sidebar {
+  width: 400px;
+  /* No resize handles or drag behavior */
+}
+```
+
+**Rationale:**
+- **Simplicity serves task:** Users analyze data, not configure UI
+- **Cognitive load reduction:** No resize decisions (Hick's Law)
+- **Spatial memory:** Consistent width creates predictable layout (Nielsen #4)
+- **GIS conventions:** Matches ArcGIS Online and QGIS patterns
+- **Accessibility:** No drag handles = keyboard-friendly (WCAG)
+- **Optimized content:** 400px accommodates 4-column image grids (ANiML), time-series charts (Dendra), and metadata (iNaturalist)
+- **Map space:** Leaves 60%+ screen for map at 1440px viewport width
+
+**Edge Case Handling:**
+If specific content needs more space (e.g., detailed chart), use "Expand" button that opens modal/popout overlay. This provides flexibility without persistent UI configuration burden.
+
+**Optional Enhancement (v2.1+):**
+Consider binary collapse toggle (hide/show sidebar entirely) as future enhancement, not continuous resize.
+
+**Decision Date:** February 5, 2026  
+**Analyzed via:** 9 UI/UX frameworks (Gestalt, Norman, Nielsen, Shneiderman, Cognitive Laws, Visual Fundamentals, Accessibility, Behavioral Science, Information Architecture)
 
 ---
 
@@ -677,6 +711,7 @@ After gathering teammate feedback, consider adding:
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 5, 2026 | Added Layout Specifications — Right sidebar fixed width at 400px (DFT-033), not resizable. Rationale documented via 9 UI/UX frameworks | Will + Claude |
 | Feb 4, 2026 | Added Map Tooltip Patterns (DFT-032) — minimal MVP approach (ID + Type only), native browser tooltips recommended, defer filter-aware content to post-v2.0 | Will + Claude |
 | Feb 4, 2026 | Added Undo Button Pattern (DFT-031) — context-specific buttons in widget headers, always-visible with inactive/active states, 5-action stacks per region, Cmd+Z support in Phase 6 | Will + Claude |
 | Feb 4, 2026 | Added Error State Patterns (DFT-030) — severity hierarchy, toast placement (top of right sidebar), inline errors, partial failure banner, utilitarian tone | Will + Claude |

@@ -117,7 +117,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-030 | Error state design — API failures, network errors, timeout handling | UI/UX | 🟢 Resolved | High |
 | DFT-031 | Confirmation dialogs — when to require explicit confirmation (delete, clear filters) | UI/UX | 🟢 Resolved | Medium |
 | DFT-032 | Map tooltip design — what info shows on hover before clicking feature? | UI/UX | 🟢 Resolved | Medium |
-| DFT-033 | Right sidebar width and resizability — fixed or user-adjustable? | Layout | 🟡 Open | Low |
+| DFT-033 | Right sidebar width and resizability — fixed or user-adjustable? | Layout | 🟢 Resolved | Low |
 | DFT-034 | Drag-and-drop reorder feedback — what visual cues during layer reorder? | Microinteraction | 🟡 Open | Low |
 | DFT-035 | DataOne search behavior — instant search or explicit submit? | UI/UX | 🟡 Open | Medium |
 | DFT-036 | Feature highlight on map when hovering bookmark row | UI/UX | 🟡 Open | Low |
@@ -167,7 +167,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-030 | Error state design | Will, Dan | ✅ Resolved - Feb 4 |
 | DFT-031 | Confirmation dialogs pattern | Will | ✅ Resolved - Feb 4 |
 | DFT-032 | Map tooltip design | Will | ✅ Resolved - Feb 4 |
-| DFT-033 | Right sidebar width and resizability | Will | 🟡 Pending |
+| DFT-033 | Right sidebar width and resizability | Will | ✅ Resolved - Feb 5 |
 | DFT-034 | Drag-and-drop reorder feedback | Will | 🟡 Pending |
 | DFT-035 | DataOne search behavior | Will, Dan | 🟡 Pending |
 | DFT-036 | Feature highlight on bookmark hover | Will | 🟡 Pending |
@@ -253,9 +253,10 @@ These issues have clear options and would benefit from a quick team vote:
 ### DFT-033: Right Sidebar Width and Resizability
 
 **Category:** Layout  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Low  
-**Source:** UX Design Review, Feb 3, 2026
+**Source:** UX Design Review, Feb 3, 2026  
+**Resolved:** February 5, 2026
 
 **Context:**
 What is the right sidebar's width, and can users resize it?
@@ -280,9 +281,51 @@ What is the right sidebar's width, and can users resize it?
 - Map needs to remain usable with sidebar open
 
 **Discussion:**
-*Low priority but affects layout*
+Analyzed through all 9 UI/UX frameworks (Gestalt, Norman, Nielsen, Shneiderman, Cognitive Laws, Visual Fundamentals, Accessibility, Behavioral Science, Information Architecture).
 
-**Resolution:** *Pending*
+**Resolution:** **Fixed width at 400px (not resizable)**
+
+**Decision Rationale:**
+
+**Core Principle:** The user's job is to analyze conservation data, not configure the interface.
+
+**Key Findings from Framework Analysis:**
+
+1. **Cognitive Load (Hick's Law):** Resizability adds micro-decisions that distract from primary task. Every UI adjustment forces users to ask "Is this too wide? Should I adjust it?" — cognitive overhead with no clear user need.
+
+2. **Consistency & Spatial Memory (Nielsen #4):** Fixed width creates predictable spatial memory. Users know "where" content appears and "how much" map they'll lose when sidebar opens. Resizable introduces session-to-session variability.
+
+3. **Simplicity Serves Task (Aesthetic Minimalism):** No evidence in user feedback that researchers want to fiddle with sidebar width. Resizable handles add visual noise and implementation complexity for questionable UX value.
+
+4. **GIS Convention Alignment (Mental Models):** ArcGIS Online and QGIS use fixed sidebars. Matching this convention reduces learning curve for target audience (GIS-minded researchers).
+
+5. **Accessibility (WCAG - Operable):** Resizable sidebars require precise mouse control (dragging edges), harder for motor impairments. Fixed width = keyboard-friendly.
+
+6. **Engineering Efficiency:** Fixed width means content can be designed for a specific grid (e.g., 4-column image grid at 400px). Resizable requires responsive breakpoints for every Browse view, adding complexity without user value.
+
+**Why 400px:**
+- Wide enough for 4-column image grids (ANiML)
+- Wide enough for readable time-series charts (Dendra)
+- Wide enough for metadata without excessive line wrapping (iNaturalist)
+- Narrow enough to leave 60%+ of screen for map (at 1440px mockup width)
+- Matches established GIS UI patterns
+
+**Handling Edge Cases:**
+If specific content genuinely needs more space (e.g., Dendra chart), add **"Expand Chart"** button that pops out into modal/overlay. This gives flexibility without introducing persistent UI configuration burden.
+
+**Optional Enhancement (Not Required for v2.0):**
+Consider a **collapse toggle** (hide sidebar entirely, maximize map) as a binary state (open/closed), not continuous adjustment. Simpler to implement, no drag handles, clear affordance.
+
+**Documented in:**
+- `docs/planning-task-tracker.md` (this file)
+- `docs/master-plan.md` (Cross-Phase Decisions → UX Decisions)
+
+**✅ Verification Checklist:**
+- [x] Analysis completed through 9 UI/UX frameworks
+- [x] Decision documented in planning-task-tracker.md
+- [x] Master plan updated with cross-phase UX decision
+- [x] Phase documents reviewed (affects all right sidebar implementations across phases)
+- [x] Mockup implications noted (400px width to be used in mockup generation)
 
 ---
 
@@ -462,6 +505,7 @@ After DFT-037 is complete, **archive resolved design decisions** to `PLANNING/re
 
 | Date | Change |
 |------|--------|
+| Feb 5, 2026 | Resolved DFT-033: Right sidebar width and resizability — fixed width at 400px (not resizable). Analyzed through 9 UI/UX frameworks. Rationale: simplicity serves task, no user need for resize, matches GIS conventions, reduces cognitive load, enables optimized content layout. Optional collapse toggle deferred. Affects all phases with right sidebar implementations |
 | Feb 4, 2026 | Resolved DFT-031: Context-specific undo buttons — no confirmation dialogs. Each widget has persistent undo button (always visible, grayed when inactive). Stack size: 5 actions per region. Cmd/Ctrl+Z support in Phase 6. Analyzed via Norman, Nielsen, Gestalt, behavioral science |
 | Feb 3, 2026 | **UX Design Review:** Added DFT-015 through DFT-037 (23 new issues). DFT-015 through DFT-036 cover empty states, responsiveness, accessibility, loading states, navigation behavior, terminology consistency, edge cases, visual specs, microinteractions, and interaction patterns. DFT-037 is the mockup generation task (blocked until design decisions resolved). **High-priority:** DFT-015 (empty states), DFT-018 (loading states), DFT-020 (pointer-row bookmark UI), DFT-030 (error states), DFT-037 (mockup generation). **Note:** After DFT-037, archive resolved decisions to keep tracker manageable |
 | Jan 26, 2026 | Initial tracker created with 9 issues from Sophia's Jan 23 feedback |
