@@ -1,6 +1,6 @@
 # Design System - TNC Digital Catalog
 
-**Last Updated:** February 5, 2026 (Added DFT-038: Filter Section Patterns)  
+**Last Updated:** February 5, 2026 (Added DFT-039: Filter Apply Behavior)  
 **Purpose:** Single source of truth for styling decisions, component patterns, and design policies that affect multiple phases.
 
 ---
@@ -686,13 +686,40 @@ interface FilterSectionProps {
 - **Fitts's Law:** "Clear All" in header row (near eye focus); full-width inputs maximize target size
 - **WCAG (Operable):** Standard form controls, keyboard navigable, labeled inputs
 
+### Filter Apply Behavior (DFT-039)
+
+**Policy:** All filter controls auto-apply — no Apply button in any data source. This ensures consistent behavior across all Browse tabs.
+
+**Universal auto-apply rules:**
+
+| Control Type | Trigger | Timing |
+|---|---|---|
+| Text search | Keystroke | 500ms debounce, 2+ chars (Enter key bypasses debounce) |
+| Single dropdown | Selection change | Immediate |
+| Multi-select (pills) | Each toggle | Immediate |
+| Date range (each field) | Calendar close / blur | Immediate per field |
+| Toggle / checkbox | Click | Immediate |
+
+**Shared infrastructure (all data sources):**
+- `AbortController` cancels in-flight requests when new filter state arrives
+- Loading feedback per DFT-018 thresholds (stale results with opacity overlay, not blanked)
+- Result count in `FilterSection` footer updates continuously
+- "Clear All" in filter header fires immediately, resets to unfiltered state
+- ARIA live region announces result count changes
+
+**Date range edge case:** Changing one date field fires a query with the new value + existing other field. `AbortController` cancels intermediate queries. Previous results remain visible with opacity overlay.
+
+**Design rationale:** Consistency (Nielsen #4), continuous feedback (Norman), fewer decisions per iteration (Hick's Law), matches ArcGIS Hub conventions (IA: Mental Models). Slight tradeoff on perceived control (Shneiderman #7) — acceptable because all filter changes are independently reversible.
+
+**Decision Date:** February 5, 2026
+
 ### Related Decisions
 
-- **DFT-039:** Filter apply behavior (auto-apply vs explicit Apply button)
+- ~~**DFT-039:** Filter apply behavior (auto-apply vs explicit Apply button)~~ ✅ Resolved — see above
 - **DFT-040:** Visual distinction between Level 2 and Level 3 filter sections
 - **DFT-037:** Exact spacing values, component library choice, collapse/expand behavior
 
-**Decision Date:** February 5, 2026
+**Section Established:** February 5, 2026
 
 ---
 
@@ -1085,6 +1112,7 @@ function announceToScreenReader(message) {
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 5, 2026 | Added Filter Apply Behavior (DFT-039) — auto-apply everywhere, no Apply button in any data source. Universal rules: dropdowns immediate, text search 500ms debounce, date fields on calendar close/blur, toggles immediate. `AbortController` cancels in-flight requests. Loading per DFT-018 thresholds. Stale results visible with overlay. Result count updates continuously. ARIA live region announces changes | Will + Claude |
 | Feb 5, 2026 | Added Filter Section Patterns (DFT-038) — shared structural anatomy for all Browse tab filter UIs. `FilterSection` component enforces consistent header, 2-col CSS grid, result count footer, and `slate-50` container across all 4 data sources. Control sizing rules, header convention, and per-data-source inventory documented | Will + Claude |
 | Feb 5, 2026 | Added Drag-and-Drop Patterns (DFT-034) — enhanced visual treatment, drop animations, keyboard support, ARIA announcements, map z-order feedback via toast. Analyzed through 9 UI/UX frameworks. Keyboard support essential for v2.0 WCAG compliance | Will + Claude |
 | Feb 5, 2026 | Added Layout Specifications — Right sidebar fixed width at 400px (DFT-033), not resizable. Rationale documented via 9 UI/UX frameworks | Will + Claude |

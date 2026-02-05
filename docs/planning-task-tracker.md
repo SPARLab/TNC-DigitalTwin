@@ -67,11 +67,11 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 - **Export functionality:** `IMPLEMENTATION/phases/phase-5-export-builder.md`
 - **Cross-phase decisions:** `master-plan.md` → "Cross-Phase Decisions" → "UX Decisions"
 
-**Last Updated:** February 5, 2026 (Resolved DFT-038: filter section anatomy)
+**Last Updated:** February 5, 2026 (Resolved DFT-039: filter apply behavior — auto-apply everywhere)
 
 **Next Steps:**
 - [ ] **BEFORE MOCKUPS (DFT-037):** Resolve all design discussion tasks (DFT-015 through DFT-040)
-  - **High priority:** ~~DFT-018 (loading states)~~, ~~DFT-020 (pointer-row bookmark UI)~~, ~~DFT-030 (error states)~~, ~~DFT-038 (filter anatomy)~~, DFT-039 (filter apply behavior)
+  - **High priority:** ~~DFT-018 (loading states)~~, ~~DFT-020 (pointer-row bookmark UI)~~, ~~DFT-030 (error states)~~, ~~DFT-038 (filter anatomy)~~, ~~DFT-039 (filter apply behavior)~~
   - **Medium priority:** ~~DFT-019 (Edit Filters navigation)~~, ~~DFT-024 (Filter indicator)~~, ~~DFT-028~~, ~~DFT-029~~, ~~DFT-031~~, ~~DFT-032~~, ~~DFT-035~~, DFT-040 (dual-level distinction)
   - **Low priority:** DFT-036 (bookmark hover highlight) — can defer to Phase 6 if not blocking mockup generation
 - [x] **Archive completed:** Archived DFT-001 through DFT-027 to `PLANNING/archived-planning-tasks-from-tracker.md` (Feb 4, 2026)
@@ -124,7 +124,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-036 | Feature highlight on map when hovering bookmark row | UI/UX | 🟢 Resolved | Low |
 | DFT-037 | Generate updated mockups reflecting all resolved design decisions (DFT-001 through DFT-040) | Task | 🟡 Open | High |
 | DFT-038 | Filter section anatomy — shared structural template for Browse tab filter UI across all data sources | Design System | 🟢 Resolved | High |
-| DFT-039 | Filter apply behavior — auto-apply vs explicit Apply button consistency across data sources | UI/UX | 🟡 Open | High |
+| DFT-039 | Filter apply behavior — auto-apply vs explicit Apply button consistency across data sources | UI/UX | 🟢 Resolved | High |
 | DFT-040 | Dual-level filter visual distinction — how Level 2 vs Level 3 filters look different (ANiML, Dendra) | UI/UX | 🟡 Open | Medium |
 
    **Status Key:**
@@ -177,7 +177,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-036 | Feature highlight on bookmark hover | Will | ✅ Resolved - Feb 5 |
 | DFT-037 | Generate updated mockups after design decisions resolved | Will | 🟡 Pending |
 | DFT-038 | Filter section anatomy — shared structural template | Will | ✅ Resolved - Feb 5 |
-| DFT-039 | Filter apply behavior consistency | Will | 🟡 Pending |
+| DFT-039 | Filter apply behavior consistency | Will | ✅ Resolved - Feb 5 |
 | DFT-040 | Dual-level filter visual distinction (ANiML, Dendra) | Will | 🟡 Pending |
 
 ## Paradigm Sign-Offs
@@ -635,63 +635,114 @@ Analyzed through 9 UI/UX frameworks with **strong cross-framework convergence:**
 ### DFT-039: Filter Apply Behavior — Auto-Apply vs Explicit Apply Button
 
 **Category:** UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** High  
-**Source:** Will + Claude design discussion, Feb 5, 2026
+**Source:** Will + Claude design discussion, Feb 5, 2026  
+**Resolved:** February 5, 2026
 
 **Context:**
-DFT-035 decided DataOne uses auto-apply (debounced instant search, immediate dropdown response). But the phase docs for ANiML (Phase 2, Tasks 2.3-2.4) and Dendra (Phase 3, Task 3.3) show `[Apply]` buttons in their ASCII diagrams. This inconsistency will confuse researchers who switch between data sources (Nielsen #4: Consistency).
+DFT-035 decided DataOne uses auto-apply (debounced instant search, immediate dropdown response). The Phase 3 Dendra spec still showed `[Apply]` buttons in ASCII diagrams (Tasks 3.3, 3.6). ANiML was already updated to auto-apply via DFT-003 (Feb 3). iNaturalist implied auto-apply but wasn't explicit. This created an inconsistency that would confuse researchers switching between data sources (Nielsen #4: Consistency).
 
-**The Inconsistency:**
-- **DataOne (DFT-035):** Auto-apply. Dropdowns fire immediately. Text search debounced at 500ms. No Apply button.
-- **ANiML (Phase 2 spec):** Shows `[Apply]` button in filter section.
-- **Dendra (Phase 3 spec):** Shows `[Apply]` button in filter section.
-- **iNaturalist (Phase 1 spec):** Not specified either way.
+**Actual state before resolution:**
+- **iNaturalist:** Auto-apply implied ("Filters update the pinned layer's activeQuery")
+- **ANiML:** Auto-apply explicit (DFT-003: "filter changes auto-apply to pinned layer")
+- **Dendra:** Explicit `[Apply]` button in both Layer View and Feature View ASCII diagrams
+- **DataOne:** Auto-apply explicit (DFT-035: debounced search + immediate dropdowns)
 
-**Questions to Resolve:**
-1. Should all data sources use the same apply behavior, or is per-source variation acceptable?
-2. If consistent, should it be auto-apply (DFT-035 pattern) or explicit Apply?
-3. Are there data sources where auto-apply is problematic (e.g., expensive queries)?
+3 of 4 data sources already used auto-apply. Only Dendra had `[Apply]` buttons.
 
-**Options:**
+**Resolution:** **Option A — Auto-apply everywhere. No Apply button in any data source.**
 
-**Option A: Auto-apply everywhere (recommended)**
-- Dropdowns, date pickers, toggles: fire immediately on change
-- Text inputs: debounced (500ms per DFT-035)
-- No Apply button anywhere
-- Result count updates continuously
-- Rationale: consistent with DFT-035 reasoning (Norman Feedback, Hick's Law), every action reversible via "Clear" (DFT-031 undo pattern)
+### Design Decision
 
-**Option B: Explicit Apply everywhere**
-- All filter changes staged until user clicks Apply
-- More "control" feeling
-- Risk: silent state changes, broken feedback loop for dropdowns
+**Universal auto-apply rules (all data sources):**
 
-**Option C: Hybrid (per data source)**
-- Auto-apply for cheap queries (DataOne, iNaturalist)
-- Explicit Apply for expensive queries (ANiML image search, Dendra datapoints)
-- Risk: inconsistency across tabs
-
-**Considerations:**
-- ANiML queries can take 8-12s (Phase 2 notes). Auto-apply during typing could hammer the API.
-- `AbortController` pattern (from DFT-035) mitigates stale request issues.
-- Loading states (DFT-018) handle slow queries gracefully.
-- Target audience (DFT-011): researchers iterate quickly on filters.
-
-**Design Principles:**
-
-| Principle | Option A | Option B | Option C |
+| Control Type | Trigger | Timing | Rationale |
 |---|---|---|---|
-| Nielsen #4: Consistency | Yes | Yes | No |
-| Norman: Feedback | Yes (continuous) | Delayed | Mixed |
-| Hick's Law | Fewer decisions | Extra decision per iteration | Variable |
-| Shneiderman #7: User Control | Slightly less | More | Mixed |
-| Nielsen #1: System Status | Continuous updates | Updates on demand | Mixed |
+| Text search | Keystroke | 500ms debounce, 2+ chars | Per DFT-035 pattern |
+| Single dropdown | Selection change | Immediate | Selecting = committed action (Norman) |
+| Multi-select (pills) | Each toggle | Immediate | Each pill toggle = discrete commit |
+| Date range (each field) | Calendar close / blur | Immediate per field | Calendar picker close = committed action |
+| Toggle / checkbox | Click | Immediate | Binary state = instant feedback |
 
-**Discussion:**
-*Pending resolution*
+**Shared infrastructure (all data sources):**
+- `AbortController` cancels in-flight requests when new filter state arrives
+- Loading feedback per DFT-018 thresholds (300ms+ spinner, 3s+ text, 15s+ warning)
+- Stale results visible with opacity overlay during loading (not blanked)
+- Result count in `FilterSection` footer (DFT-038) updates continuously
+- "Clear All" in filter header fires immediately, resets to unfiltered state
+- ARIA live region announces result count changes
 
-**Resolution:** *Pending*
+**Date range edge case:** Changing start date fires a query with new start + existing end date. Changing end date fires another query. `AbortController` cancels intermediate queries. Previous results remain visible with subtle opacity overlay during loading. This is the same pattern DataOne uses for its year range picker.
+
+**Phase doc updates:**
+- **Dendra (Phase 3):** Removed `[Apply]` buttons from Tasks 3.3 and 3.6 ASCII diagrams
+- **iNaturalist (Phase 1):** Explicitly specified auto-apply behavior in Task 1.3
+- **ANiML (Phase 2):** Already correct (auto-apply per DFT-003)
+- **DataOne (Phase 4):** Already correct (auto-apply per DFT-035)
+
+### Design Rationale
+
+**Core tension:** Consistency (Nielsen #4) vs. Perceived Control (Shneiderman #7). An Apply button gives "I decide when to commit" feeling but breaks the feedback loop on every filter interaction. For a 4-control filter section, this adds 1 extra click per iteration cycle. Researchers (DFT-011) iterate frequently — this compounds.
+
+**Why Dendra doesn't need special treatment:**
+- Level 2 filters (Region, Status dropdowns): selecting from a dropdown *is* a committed action (Norman: Feedback). Apply after dropdown selection breaks the action-response link.
+- Level 3 filters (date range + aggregation): same control types that DataOne uses with auto-apply.
+- ANiML queries take 8-12s (slowest in the system) and already use auto-apply. If ANiML can handle it, Dendra can too.
+- `AbortController` + debounce + loading states (DFT-018) mitigate all performance concerns.
+
+| Principle | How Auto-Apply Addresses It | Rating |
+|---|---|:---:|
+| **Nielsen #4: Consistency** | Same behavior across all 4 Browse tabs — learn once, apply everywhere | ✅ |
+| **Norman: Feedback** | Every control change produces immediate, visible result update | ✅ |
+| **Norman: Conceptual Model** | "Adjust filter = see results" — no hidden staged state | ✅ |
+| **Hick's Law** | No "Apply" decision per iteration; reduces micro-decisions by 1 per cycle | ✅ |
+| **Nielsen #1: System Status** | Live result count always reflects current filter state | ✅ |
+| **Shneiderman #3: Feedback** | Action → response loop unbroken for every control type | ✅ |
+| **Shneiderman #4: Dialog Closure** | Each filter change = complete interaction cycle (not staged) | ✅ |
+| **Shneiderman #7: User Control** | Slight tradeoff — users can't compose filters "offline" before committing | 🟡 |
+| **Fitts's Law** | No Apply button target needed; full-width controls maximize hit area | ✅ |
+| **Nielsen #5: Error Prevention** | `AbortController` prevents race conditions; debounce prevents over-querying | ✅ |
+| **DFT-018 Compliance** | Tiered loading feedback for all query durations | ✅ |
+| **DFT-038 Compliance** | Shared `FilterSection` component works identically everywhere | ✅ |
+| **WCAG: Operable** | Standard form controls; Enter key bypass for text; ARIA announcements | ✅ |
+| **IA: Mental Models** | Matches ArcGIS Hub, modern data catalog conventions | ✅ |
+
+### Tradeoffs
+
+**What we sacrifice:**
+- "Compose multiple filters then commit" workflow — acceptable because each filter change is independently reversible via "Clear All" or individual control reset, and `AbortController` means intermediate queries have near-zero cost
+- Slightly more API calls than explicit Apply — acceptable because ArcGIS hosted services handle this well, cancellation prevents wasted work, and silent staged state is worse for feedback
+- Possible brief intermediate results during multi-filter changes — acceptable because stale results remain visible with overlay (not blanked), and intermediate state resolves in <500ms
+
+**What we gain:**
+- Perfect cross-source consistency (Nielsen #4)
+- Unbroken feedback loop on every interaction (Norman)
+- Fewer clicks per exploration cycle (Hick's Law)
+- Simpler `FilterSection` component (no Apply button state management)
+- Alignment with 3 existing data source decisions
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file)
+- ✅ `docs/IMPLEMENTATION/phases/phase-3-dendra.md` (Tasks 3.3, 3.6 — removed `[Apply]` buttons)
+- ✅ `docs/IMPLEMENTATION/phases/phase-1-inaturalist.md` (Task 1.3 — explicit auto-apply)
+- ✅ `docs/DESIGN-SYSTEM/design-system.md` (Filter Apply Behavior subsection)
+- ✅ `docs/master-plan.md` (Cross-Phase Decisions → UX Decisions)
+- ✅ `docs/PLANNING/resolved-decisions/dft-039-resolution-summary.md`
+
+**✅ Verification Checklist:**
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with full specification
+- [x] Design principles cited (14 principles analyzed)
+- [x] Universal auto-apply rules table provided (5 control types)
+- [x] Shared infrastructure specified (AbortController, loading states, ARIA)
+- [x] Date range edge case documented
+- [x] Phase 3 Dendra ASCII diagrams updated (removed `[Apply]`)
+- [x] Phase 1 iNaturalist auto-apply explicitly specified
+- [x] Design system updated with Filter Apply Behavior subsection
+- [x] Master plan Cross-Phase Decisions updated
+- [x] Resolution summary created
+- [x] Tradeoffs analyzed
 
 ---
 
@@ -830,4 +881,5 @@ iNaturalist and DataOne are single-level (no distinction needed), so this only a
 | Feb 5, 2026 | Resolved DFT-034: Drag-and-drop reorder feedback — enhanced lifted row visual treatment (60% opacity, 95% scale, 2deg rotation, dashed border), 4px drop line with background highlight, 400ms settle animation with green highlight, toast notification for map z-order updates, keyboard support (arrow keys + Shift+Home/End), ARIA announcements for screen readers. Analyzed through 9 UI/UX frameworks. Keyboard support essential for v2.0 WCAG compliance (not deferred). Aligns with animation timing standards (DFT-025: 250-400ms). See Phase 0 task 0.5 |
 | Feb 5, 2026 | Resolved DFT-035: DataOne search behavior — debounced instant search (500ms, 2+ chars) + immediate dropdown filters. Initial state loads all datasets (no pre-search dead state). Pagination: Previous/Next (20/page). AbortController cancels in-flight requests. Continuous feedback (Norman, Nielsen #1), reduced cognitive load (Hick's Law), matches ArcGIS Hub conventions. See Phase 4 task 4.3 |
 | Feb 5, 2026 | Resolved DFT-036: Feature highlight on bookmark hover — hover-to-highlight for in-viewport features (no auto-pan). Cyan ring (4px width, 8px offset) with subtle pulse (2 cycles, 800ms). Off-screen features show "📍 Off-screen" text indicator; click [View] to pan. Keyboard support: highlight follows Tab focus, ARIA announcements. Analyzed through 9 UI/UX frameworks with strong cross-framework convergence. Matches GIS conventions (ArcGIS Pro, QGIS). Deferred enhancements to Phase 6: edge indicators (directional arrows), bidirectional highlighting. See Phase 0 task 0.6 |
+| Feb 5, 2026 | Resolved DFT-039: Filter apply behavior — auto-apply everywhere, no Apply button in any data source. Universal rules: dropdowns immediate, text search 500ms debounce, date fields on calendar close/blur, toggles immediate. `AbortController` cancels in-flight requests. Loading per DFT-018. Removed `[Apply]` buttons from Phase 3 Dendra (Tasks 3.3, 3.6). Explicitly specified auto-apply in Phase 1 iNaturalist (Task 1.3). Consistent with DFT-035 (DataOne) and DFT-003 (ANiML). Analyzed via 14 design principles. See design-system.md Filter Apply Behavior |
 

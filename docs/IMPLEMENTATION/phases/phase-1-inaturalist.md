@@ -107,13 +107,19 @@ Implement the iNaturalist observations browse experience in the right sidebar. T
 
 **Goal:** Create the filter controls for querying observations.
 
+**Design Decision (Feb 5, 2026):** Resolved DFT-039 — Auto-apply everywhere. No Apply button. Dropdowns fire immediately on change. Text search debounced at 500ms (2+ chars). Date range fields fire on calendar close/blur. `AbortController` cancels in-flight requests. Loading feedback per DFT-018. Result count updates continuously.
+
 **Acceptance Criteria:**
-- [ ] Taxon dropdown/search
-- [ ] Species dropdown/search (filtered by taxon)
-- [ ] Date range picker
-- [ ] Research grade checkbox
-- [ ] Filter count shows "Showing X of Y observations"
+- [ ] Taxon dropdown/search (fires immediately on change)
+- [ ] Species dropdown/search (filtered by taxon, fires immediately on change)
+- [ ] Date range picker (fires on calendar close/blur per field)
+- [ ] Research grade checkbox (fires immediately on change)
+- [ ] **No Apply button** — all filters auto-apply (DFT-039)
+- [ ] `AbortController` cancels in-flight requests when new filter state arrives
+- [ ] Loading feedback per DFT-018 thresholds (stale results with opacity overlay, not blanked)
+- [ ] Result count footer: "Showing X of Y observations" (updates continuously)
 - [ ] Filters update the pinned layer's activeQuery
+- [ ] Uses shared `FilterSection` component (DFT-038)
 
 **Reference:** Mockup `02b-browse-inaturalist.html` filter section
 
@@ -201,4 +207,5 @@ TBD - Document the actual URL
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 | Feb 2, 2026 | 1.2 | Resolved DFT-006: Overview tab opens first when layer is selected, with prominent "Browse Features →" button | Will + Claude |
 | Feb 4, 2026 | 1.2 | Resolved DFT-027: "Browse Features →" button design specification (full-width primary, TNC green, inline arrow, hover/focus states, 150-200ms transition) | Will + Claude |
+| Feb 5, 2026 | 1.3 | Resolved DFT-039: Auto-apply everywhere — explicitly specified auto-apply behavior for all filter controls. Dropdowns fire immediately, text search debounced (500ms), date fields on calendar close/blur. `AbortController` cancels in-flight requests. Uses shared `FilterSection` component (DFT-038) | Will + Claude |
 

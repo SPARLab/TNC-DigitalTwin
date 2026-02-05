@@ -123,29 +123,32 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 **Goal:** Create layer-level filters for the sensors. These filters determine **which sensors appear** on the map and in the browse list.
 
 **Design Decision (Feb 2, 2026):** Resolved DFT-004 — This is **State A** (Layer View). Filters shown here are saved to the **pinned layer**.
+**Design Decision (Feb 5, 2026):** Resolved DFT-039 — Auto-apply everywhere. No Apply button. Dropdowns fire immediately on change. Date range fields fire on calendar close/blur. `AbortController` cancels in-flight requests. Loading feedback per DFT-018. Result count updates continuously.
 
 **Acceptance Criteria:**
-- [ ] Region dropdown
-- [ ] Status dropdown (Active, Maintenance, Inactive)
-- [ ] Sensor type filter (if multiple types in same layer)
-- [ ] **Time range filter:** "Show sensors with data in:" + date pickers (start/end)
+- [ ] Region dropdown (fires immediately on change)
+- [ ] Status dropdown (Active, Maintenance, Inactive) (fires immediately on change)
+- [ ] Sensor type filter (if multiple types in same layer) (fires immediately on change)
+- [ ] **Time range filter:** "Show sensors with data in:" + date pickers (start/end) (fires on calendar close/blur per field)
+- [ ] **No Apply button** — all filters auto-apply (DFT-039)
+- [ ] `AbortController` cancels in-flight requests when new filter state arrives
+- [ ] Loading feedback per DFT-018 thresholds (stale results with opacity overlay, not blanked)
 - [ ] Filter updates sensor list below
 - [ ] Filter updates map markers
 - [ ] When layer is pinned, current filter state is saved to pinned layer
-- [ ] Section header clearly labels scope: "LAYER FILTERS" or "Filter Sensors"
+- [ ] Section header clearly labels scope: "Filter Sensors" (per DFT-038 convention)
+- [ ] Result count footer: "Showing X of Y sensors" (updates continuously)
 
 **Sidebar Layout (State A — Layer View):**
 ```
 ┌─────────────────────────────────────────────────────┐
 │ Dendra Sensors                                     │
 │ ─────────────────────────────────────────────────── │
-│ LAYER FILTERS                                      │
-│ "Show sensors with data in:"                       │
+│ Filter Sensors                          [Clear All]│
 │ Start: [           ]  End: [           ]           │
 │ Region: [All ▼]  Status: [Active ▼]                │
-│ [Apply]                                            │
 │ ─────────────────────────────────────────────────── │
-│ Showing 12 sensors                                 │
+│ Showing 12 of 38 sensors                           │
 │ [📌 Pin Layer]                                     │
 └─────────────────────────────────────────────────────┘
 ```
@@ -224,18 +227,22 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 **Goal:** Allow user to specify the time range for viewing a sensor's datastream. This is the **parametric control** (specification) that gets saved with bookmarks.
 
 **Design Decision (Feb 2, 2026):** Resolved DFT-004 — This is **State B** (Feature View) in the sidebar. These date pickers are the canonical filter location. The pop-up slider is for exploration only.
+**Design Decision (Feb 5, 2026):** Resolved DFT-039 — Auto-apply everywhere. No Apply button. Date range fields fire on calendar close/blur. Aggregation dropdown fires immediately. `AbortController` cancels in-flight requests. Result count updates continuously.
 
 **Acceptance Criteria:**
 - [ ] Sidebar shows feature filter section when sensor is selected
 - [ ] Layer filter collapses to read-only summary: "Layer: [summary]" with [Edit] link
-- [ ] Section header: "FEATURE FILTERS" or "View data from:"
-- [ ] Date range picker (from/to)
-- [ ] Aggregation dropdown (hourly, daily, weekly)
+- [ ] Section header: "Filter Datapoints" (per DFT-038 convention)
+- [ ] Date range picker (from/to) — fires on calendar close/blur per field
+- [ ] Aggregation dropdown (hourly, daily, weekly) — fires immediately on change
+- [ ] **No Apply button** — all filters auto-apply (DFT-039)
+- [ ] `AbortController` cancels in-flight requests when new filter state arrives
+- [ ] Loading feedback per DFT-018 thresholds (stale results with opacity overlay, not blanked)
 - [ ] Filter updates chart display (syncs with pop-up)
 - [ ] **Inheritance:** Default filter value inherited from layer filter at selection time
 - [ ] User can adjust filter independently (expand, narrow, or clear)
 - [ ] "Bookmark Sensor" saves sensor with current feature filter
-- [ ] Count shows "X data points"
+- [ ] Result count footer: "Showing X datapoints" (updates continuously)
 - [ ] **Independence:** After bookmark creation, feature filter is independent of layer filter
 
 **Sidebar Layout (State B — Feature View):**
@@ -247,13 +254,11 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 │ Sensor ABC-123                                     │
 │ Location: Ridge Station | Status: 🟢 Active        │
 │ ─────────────────────────────────────────────────── │
-│ FEATURE FILTERS                                    │
-│ "View data from:"                                  │
+│ Filter Datapoints                       [Clear All]│
 │ Start: [Mar 1, 2024    ]  End: [Mar 31, 2024  ]    │
 │ Aggregation: [Daily ▼]                             │
-│ [Apply]                                            │
 │ ─────────────────────────────────────────────────── │
-│ 31 data points                                     │
+│ Showing 31 datapoints                              │
 │ [🔖 Bookmark Sensor]                               │
 └─────────────────────────────────────────────────────┘
 ```
@@ -350,4 +355,5 @@ bookmark: {
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 | Feb 2, 2026 | 3.3, 3.5, 3.6 | Resolved DFT-004: Progressive disclosure + direct/parametric separation. Sidebar edits filters (context-aware State A/B), pop-up has slider only (exploration). Layer and feature filters are independent after bookmark creation. | Will + Claude |
 | Feb 4, 2026 | 3.2 | Resolved DFT-027: "Browse Features →" button design specification (full-width primary, TNC green, inline arrow, hover/focus states, 150-200ms transition) | Will + Claude |
+| Feb 5, 2026 | 3.3, 3.6 | Resolved DFT-039: Auto-apply everywhere — removed `[Apply]` buttons from both Layer View (Task 3.3) and Feature View (Task 3.6) ASCII diagrams. All filters fire immediately (dropdowns on change, date fields on calendar close/blur). `AbortController` cancels in-flight requests. Updated section headers and result count footers to match DFT-038 convention | Will + Claude |
 
