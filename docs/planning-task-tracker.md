@@ -121,7 +121,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-033 | Right sidebar width and resizability — fixed or user-adjustable? | Layout | 🟢 Resolved | Low |
 | DFT-034 | Drag-and-drop reorder feedback — what visual cues during layer reorder? | Microinteraction | 🟢 Resolved | Low |
 | DFT-035 | DataOne search behavior — instant search or explicit submit? | UI/UX | 🟢 Resolved | Medium |
-| DFT-036 | Feature highlight on map when hovering bookmark row | UI/UX | 🟡 Open | Low |
+| DFT-036 | Feature highlight on map when hovering bookmark row | UI/UX | 🟢 Resolved | Low |
 | DFT-037 | Generate updated mockups reflecting all resolved design decisions (DFT-001 through DFT-040) | Task | 🟡 Open | High |
 | DFT-038 | Filter section anatomy — shared structural template for Browse tab filter UI across all data sources | Design System | 🟡 Open | High |
 | DFT-039 | Filter apply behavior — auto-apply vs explicit Apply button consistency across data sources | UI/UX | 🟡 Open | High |
@@ -174,7 +174,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-033 | Right sidebar width and resizability | Will | ✅ Resolved - Feb 5 |
 | DFT-034 | Drag-and-drop reorder feedback | Will | ✅ Resolved - Feb 5 |
 | DFT-035 | DataOne search behavior | Will, Dan | ✅ Resolved - Feb 5 |
-| DFT-036 | Feature highlight on bookmark hover | Will | 🟡 Pending |
+| DFT-036 | Feature highlight on bookmark hover | Will | ✅ Resolved - Feb 5 |
 | DFT-037 | Generate updated mockups after design decisions resolved | Will | 🟡 Pending |
 | DFT-038 | Filter section anatomy — shared structural template | Will | 🟡 Pending |
 | DFT-039 | Filter apply behavior consistency | Will | 🟡 Pending |
