@@ -67,11 +67,11 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 - **Export functionality:** `IMPLEMENTATION/phases/phase-5-export-builder.md`
 - **Cross-phase decisions:** `master-plan.md` → "Cross-Phase Decisions" → "UX Decisions"
 
-**Last Updated:** February 5, 2026 (Added DFT-038 through DFT-040: filter design system)
+**Last Updated:** February 5, 2026 (Resolved DFT-038: filter section anatomy)
 
 **Next Steps:**
 - [ ] **BEFORE MOCKUPS (DFT-037):** Resolve all design discussion tasks (DFT-015 through DFT-040)
-  - **High priority:** ~~DFT-018 (loading states)~~, ~~DFT-020 (pointer-row bookmark UI)~~, ~~DFT-030 (error states)~~, DFT-038 (filter anatomy), DFT-039 (filter apply behavior)
+  - **High priority:** ~~DFT-018 (loading states)~~, ~~DFT-020 (pointer-row bookmark UI)~~, ~~DFT-030 (error states)~~, ~~DFT-038 (filter anatomy)~~, DFT-039 (filter apply behavior)
   - **Medium priority:** ~~DFT-019 (Edit Filters navigation)~~, ~~DFT-024 (Filter indicator)~~, ~~DFT-028~~, ~~DFT-029~~, ~~DFT-031~~, ~~DFT-032~~, ~~DFT-035~~, DFT-040 (dual-level distinction)
   - **Low priority:** DFT-036 (bookmark hover highlight) — can defer to Phase 6 if not blocking mockup generation
 - [x] **Archive completed:** Archived DFT-001 through DFT-027 to `PLANNING/archived-planning-tasks-from-tracker.md` (Feb 4, 2026)
@@ -123,7 +123,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-035 | DataOne search behavior — instant search or explicit submit? | UI/UX | 🟢 Resolved | Medium |
 | DFT-036 | Feature highlight on map when hovering bookmark row | UI/UX | 🟢 Resolved | Low |
 | DFT-037 | Generate updated mockups reflecting all resolved design decisions (DFT-001 through DFT-040) | Task | 🟡 Open | High |
-| DFT-038 | Filter section anatomy — shared structural template for Browse tab filter UI across all data sources | Design System | 🟡 Open | High |
+| DFT-038 | Filter section anatomy — shared structural template for Browse tab filter UI across all data sources | Design System | 🟢 Resolved | High |
 | DFT-039 | Filter apply behavior — auto-apply vs explicit Apply button consistency across data sources | UI/UX | 🟡 Open | High |
 | DFT-040 | Dual-level filter visual distinction — how Level 2 vs Level 3 filters look different (ANiML, Dendra) | UI/UX | 🟡 Open | Medium |
 
@@ -176,7 +176,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-035 | DataOne search behavior | Will, Dan | ✅ Resolved - Feb 5 |
 | DFT-036 | Feature highlight on bookmark hover | Will | ✅ Resolved - Feb 5 |
 | DFT-037 | Generate updated mockups after design decisions resolved | Will | 🟡 Pending |
-| DFT-038 | Filter section anatomy — shared structural template | Will | 🟡 Pending |
+| DFT-038 | Filter section anatomy — shared structural template | Will | ✅ Resolved - Feb 5 |
 | DFT-039 | Filter apply behavior consistency | Will | 🟡 Pending |
 | DFT-040 | Dual-level filter visual distinction (ANiML, Dendra) | Will | 🟡 Pending |
 
@@ -434,9 +434,10 @@ After DFT-037 is complete, **archive resolved design decisions** to `PLANNING/re
 ### DFT-038: Filter Section Anatomy — Shared Structural Template
 
 **Category:** Design System  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** High  
-**Source:** Will + Claude design discussion, Feb 5, 2026
+**Source:** Will + Claude design discussion, Feb 5, 2026  
+**Resolved:** February 5, 2026
 
 **Context:**
 We have 4 data sources (iNaturalist, ANiML, Dendra, DataOne) that each need filter controls in the right sidebar Browse tab. Each has different applicable filters (species, date range, spatial filters, keywords, station selectors, etc.), but there is no shared design system for how these filters are visually structured. Without a consistent anatomy, 4 parallel Cursor agents will build 4 visually different filter UIs, making Phase 6 (Polish) significantly harder.
@@ -456,71 +457,178 @@ The structural skeleton that every Browse tab's filter section follows — not t
 | Result count | "X of Y observations" | "X cameras, Y images" | "X sensors" / "X data points" | "X of Y datasets" |
 | Dual-level filters | No | Yes (camera + image) | Yes (station + datastream) | No |
 
-**Questions to Resolve:**
-1. What is the consistent structural skeleton for the filter section?
-2. How are controls sized and laid out within the 400px sidebar?
-3. What is the section header labeling convention?
-4. Should a shared `FilterSection` React component enforce this anatomy?
+**Resolution:** **Shared `FilterSection` anatomy template adopted — consistent skeleton across all 4 data sources**
 
-**Proposed Anatomy Template:**
+### Design Decision
+
+#### 1. Structural Skeleton
 
 ```
 ┌─────────────────────────────────────────┐
-│ [Section Header: "Filter [Noun]"]       │
+│ Filter [Plural Noun]         [Clear All]│  ← Header row (Clear All right-aligned, visible only when filters active)
+│─────────────────────────────────────────│  ← Subtle separator (border-b)
 │                                         │
-│  [Control 1: full-width]                │
-│  [Control 2] [Control 3] ← 2-col grid  │
-│  [Control 4: full-width]                │
+│  [Control 1: full-width]                │  ← Text search always first (if present)
+│  [Control 2] [Control 3] ← 2-col grid  │  ← Compact dropdowns paired
+│  [Control 4: full-width]                │  ← Date ranges, multi-selects
+│  ☐ [Toggle/checkbox option]             │  ← Checkboxes/toggles last
 │                                         │
-│  Showing 47 of 876 [noun]  [Clear All]  │
-├─────────────────────────────────────────┤
-│ [Feature list / results below]          │
+│─────────────────────────────────────────│  ← Subtle separator
+│  Showing 47 of 876 [noun]              │  ← Result count footer
 └─────────────────────────────────────────┘
+│ [Feature list / results below]          │
 ```
 
-**Proposed Control Sizing Rules (within ~368px usable):**
-- Text search: Always full-width
-- Single dropdowns: Can pair 2 side-by-side (~174px each, 2-column grid)
-- Date range (start + end): Full-width with inline start/end
-- Multi-selects: Full-width (pills need horizontal space)
-- Toggles/checkboxes: Can pair with a dropdown on same row
+**"Clear All" placement:** Header row, right-aligned — near where the user's eye lands when reading the filter title (Fitts's Law). Visible only when at least one filter is active. Gray link style, not a button (low visual weight until needed).
 
-**Proposed Section Header Convention:**
-- Single-level layers: `"Filter [Plural Noun]"` (e.g., "Filter Observations", "Filter Datasets")
-- Dual-level, layer scope: `"Filter [Plural Noun]"` (e.g., "Filter Cameras")
-- Dual-level, feature scope: `"Filter [Feature's Data]"` (e.g., "Filter Images", "Filter Datapoints")
+#### 2. Control Sizing Rules (within ~368px usable at 400px sidebar)
 
-**Proposed Shared Component:**
-A `FilterSection` component wraps the consistent anatomy. Each data source passes in its specific controls as children, but the wrapper enforces:
-- Section header with configurable label
-- Consistent control grid layout
-- Result count display ("Showing X of Y [noun]")
-- "Clear All" action link
-- Consistent padding/spacing (exact values deferred to DFT-037 mockups)
+| Control Type | Layout | Width | Rationale |
+|---|---|---|---|
+| Text search | Full-width, always first position | 100% (`col-span-2`) | Serial Position Effect — first seen, most used |
+| Single dropdown | Pair 2 side-by-side | ~50% each (`col-span-1`) | Compact, scannable |
+| Date range (start + end) | Full-width, inline pair | 100% (`col-span-2`, 2-col internal) | Dates need space for readability |
+| Multi-select (pills) | Full-width | 100% (`col-span-2`) | Pills need horizontal space |
+| Toggle/checkbox | Full-width, at end of controls | 100% (`col-span-2`) | Low visual weight, end of list |
 
-**What is deferred to mockups (DFT-037):**
-- Exact spacing/padding values (px, gap sizes)
-- Color treatment for filter section background
-- Control component styling (border-radius, focus states, dropdown appearance)
-- Filter section collapse/expand behavior
-- Specific component library choice (Headless UI, Radix, custom Tailwind, etc.)
-- Filter summary pill display (when section is collapsed)
+**Grid:** CSS Grid with `grid-template-columns: 1fr 1fr` and `gap: 8px` (8-point grid). Controls use `col-span-1` (half) or `col-span-2` (full).
 
-**Design Principles:**
+**When only 1-2 dropdowns and no text search** (e.g., Dendra Level 2 with Region + Status), they still use the 2-column grid to reduce filter section height and keep more results visible (Shneiderman's overview-first).
 
-| Principle | How Template Addresses It |
+#### 3. Section Header Convention
+
+| Context | Pattern | Examples |
+|---|---|---|
+| Single-level layers | `"Filter [Plural Noun]"` | "Filter Observations", "Filter Datasets" |
+| Dual-level, layer scope | `"Filter [Plural Noun]"` | "Filter Cameras", "Filter Sensors" |
+| Dual-level, feature scope | `"Filter [Feature Noun]"` | "Filter Images", "Filter Datapoints" |
+
+**Dropped:** The "Optional:" prefix from the ANiML mockup. Every filter is optional. The header convention is sufficient context. "Optional" adds cognitive load without value (Nielsen #8: Aesthetic minimalism).
+
+#### 4. Container Styling
+
+**Single flat background for all filter sections:**
+
+```css
+.filter-section {
+  @apply bg-slate-50 border border-slate-200 rounded-lg p-3;
+}
+```
+
+**Rejected:** Gradient backgrounds (`linear-gradient(135deg, ...)`) used in ANiML/Dendra mockups. Gradients add visual noise and diverge across data sources. A flat `slate-50` background creates sufficient Common Region grouping (Gestalt) without decoration. Exact values (border-radius, padding specifics) deferred to DFT-037 mockups, but the flat approach is locked in.
+
+#### 5. Shared `FilterSection` React Component
+
+A `FilterSection` wrapper enforces the anatomy. Each data source passes in its specific controls as children.
+
+**Component interface (conceptual):**
+
+```typescript
+interface FilterSectionProps {
+  label: string;              // "Filter Observations"
+  resultCount: number;        // 847
+  totalCount: number;         // 12430
+  noun: string;               // "observations"
+  hasActiveFilters: boolean;  // controls Clear All visibility
+  onClearAll: () => void;
+  children: React.ReactNode;  // Data-source-specific controls
+}
+
+// Usage:
+<FilterSection
+  label="Filter Observations"
+  resultCount={847}
+  totalCount={12430}
+  noun="observations"
+  hasActiveFilters={true}
+  onClearAll={handleClearAll}
+>
+  <SearchInput className="col-span-2" ... />
+  <Dropdown className="col-span-1" ... />
+  <Dropdown className="col-span-1" ... />
+  <DateRangePicker className="col-span-2" ... />
+  <Checkbox className="col-span-2" ... />
+</FilterSection>
+```
+
+The wrapper enforces:
+- Section header with `label` prop and conditional "Clear All" link
+- 2-column CSS grid layout for children
+- Result count footer ("Showing X of Y [noun]")
+- Consistent container styling (`bg-slate-50`, border, padding)
+- Consistent 8px gap between controls
+
+#### 6. Per-Data-Source Control Inventory
+
+| Data Source | Level | Header | Controls (as children) |
+|---|---|---|---|
+| **iNaturalist** | Single | "Filter Observations" | Taxon dropdown, Species dropdown (2-col), Date range (full), Quality grade checkbox |
+| **ANiML** | L2 | "Filter Cameras" | Region dropdown, Status dropdown (2-col) |
+| **ANiML** | L3 | "Filter Images" | Species multi-select (full), Date range (full), Deployment dropdown |
+| **Dendra** | L2 | "Filter Sensors" | Region dropdown, Status dropdown (2-col) |
+| **Dendra** | L3 | "Filter Datapoints" | Date range (full), Aggregation dropdown |
+| **DataOne** | Single | "Filter Datasets" | Title search (full), Repository dropdown, TNC Category dropdown (2-col), Date range (full) |
+
+#### 7. What Is Deferred
+
+| Deferred To | Item |
 |---|---|
-| Gestalt: Common Region | Bounded filter section groups controls together |
-| Gestalt: Proximity | Controls grouped by level; result count adjacent to its filter section |
-| Norman: Signifiers | Section headers tell users what they're editing |
-| Nielsen #4: Consistency | Same anatomy template across all data sources |
-| Nielsen #6: Recognition | Consistent control vocabulary reduces learning curve per data source |
-| IA: Wayfinding | Section headers + result counts = "where am I, what am I seeing" |
+| **DFT-039** | Auto-apply vs Apply button behavior (consistency across data sources) |
+| **DFT-040** | Visual distinction between Level 2 and Level 3 filter sections |
+| **DFT-037** | Exact spacing values, border-radius, focus states, dropdown component choice, collapse/expand behavior, filter summary pill display |
 
-**Discussion:**
-*Pending resolution*
+### Design Rationale
 
-**Resolution:** *Pending*
+Analyzed through 9 UI/UX frameworks with **strong cross-framework convergence:**
+
+| Principle | How This Template Addresses It | Rating |
+|---|---|:---:|
+| **Gestalt: Common Region** | Bounded container groups all filter controls as a cohesive unit | ✅ |
+| **Gestalt: Proximity** | Controls grouped tightly; result count at bottom adjacent to content it describes | ✅ |
+| **Gestalt: Similarity** | Same container, header style, and control styling across all 4 data sources | ✅ |
+| **Norman: Signifiers** | Section header ("Filter X") tells users exactly what they're editing | ✅ |
+| **Norman: Affordances** | Dropdowns look selectable, inputs look typeable, "Clear All" looks clickable | ✅ |
+| **Norman: Feedback** | Result count updates continuously as filters change (ties into DFT-039) | ✅ |
+| **Nielsen #4: Consistency** | Same anatomy across all Browse tabs — researchers learn once, apply everywhere | ✅ |
+| **Nielsen #6: Recognition** | Consistent control vocabulary reduces learning curve per new data source | ✅ |
+| **Nielsen #8: Minimalism** | No "Optional:" labels, no gradient decoration, no unnecessary visual weight | ✅ |
+| **Hick's Law** | 2-col grid keeps filter section compact; fewer visible items = faster scanning | ✅ |
+| **Miller's Law** | Max ~5 controls per section; dual-level splits complexity across levels | ✅ |
+| **IA: Wayfinding** | Header + result count = "where am I, what am I filtering, how many results" | ✅ |
+| **IA: Progressive Disclosure** | Level 2 collapses when Level 3 is active (addressed in DFT-040) | ✅ |
+| **Fitts's Law** | "Clear All" in header row (near eye focus); full-width inputs maximize target size | ✅ |
+| **WCAG: Operable** | Standard form controls, keyboard navigable, labeled inputs | ✅ |
+
+### Tradeoffs
+
+**What we sacrifice:**
+- Per-data-source visual flair (e.g., teal accent for Dendra filters) — replaced by uniform `slate-50`
+- "Optional:" contextual labels — dropped for minimalism
+- Gradient backgrounds in filter containers — dropped for consistency
+
+**Why acceptable:**
+- Uniform styling is the entire point (Nielsen #4) — data-source identity lives in the sidebar header, not the filter controls
+- "Optional" is redundant when filters default to "All" — the empty state communicates optionality
+- Gradients add visual noise at 400px width where space is premium
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file)
+- ✅ `docs/DESIGN-SYSTEM/design-system.md` (Filter Section Patterns)
+- ✅ `docs/master-plan.md` (Cross-Phase Decisions → UX Decisions)
+
+**✅ Verification Checklist:**
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with full specification
+- [x] Design principles cited (9+ frameworks analyzed)
+- [x] Structural skeleton specified (ASCII diagram)
+- [x] Control sizing rules specified (CSS Grid, col-span)
+- [x] Section header convention locked
+- [x] Container styling locked (flat `slate-50`, no gradients)
+- [x] Shared component interface defined (`FilterSection`)
+- [x] Per-data-source control inventory documented
+- [x] Tradeoffs analyzed
+- [x] Deferred items documented (DFT-039, DFT-040, DFT-037)
+- [x] Cross-references added (design-system.md, master-plan.md)
 
 ---
 
@@ -680,6 +788,7 @@ iNaturalist and DataOne are single-level (no distinction needed), so this only a
 
 | Date | Change |
 |------|--------|
+| Feb 5, 2026 | Resolved DFT-038: Filter section anatomy — shared `FilterSection` component enforces consistent Browse tab filter anatomy across all 4 data sources. Structural skeleton: header row with conditional "Clear All", 2-col CSS grid, result count footer. Flat `slate-50` container (no gradients). Header convention: "Filter [Plural Noun]". "Optional:" labels dropped. Per-data-source control inventory documented. Analyzed via 9 UI/UX frameworks. See design-system.md Filter Section Patterns |
 | Feb 5, 2026 | Archived DFT-033 through DFT-035 to `PLANNING/resolved-decisions/` with full resolution summaries. Detailed sections removed from tracker to keep it manageable; summaries remain in Quick Reference table |
 | Feb 5, 2026 | Added DFT-038 (filter section anatomy), DFT-039 (filter apply behavior consistency), DFT-040 (dual-level filter visual distinction). These three items establish the Browse tab filter design system before mockup generation. DFT-038 proposes a shared `FilterSection` component to enforce consistent anatomy across all data sources. DFT-039 addresses inconsistency between DataOne's auto-apply (DFT-035) and ANiML/Dendra's `[Apply]` button pattern. DFT-040 addresses visual distinction for dual-level data sources (ANiML, Dendra). Updated DFT-037 prerequisites to include DFT-038 and DFT-039 as blocking |
 | Feb 5, 2026 | Resolved DFT-035: DataOne search behavior — debounced instant search (500ms, 2+ chars) with immediate dropdown filters. Text search uses Enter key bypass for power users. Initial state loads all datasets (most recent first), eliminating v1 "pre-search" dead state. Pagination with Previous/Next (20 per page). `AbortController` cancels in-flight requests to prevent race conditions. Loading feedback per DFT-018 thresholds. Analyzed via Norman (Feedback), Nielsen (#1 System Status, #5 Error Prevention), Shneiderman (#3, #4, #7), Hick's Law, Fitts's Law, Mental Models (ArcGIS Hub conventions), Wayfinding, Accessibility. Tradeoff: slight control feeling sacrifice vs. continuous feedback + eliminated friction. See Phase 4 task 4.3 |

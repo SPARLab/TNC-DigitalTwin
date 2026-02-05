@@ -1,6 +1,6 @@
 # Design System - TNC Digital Catalog
 
-**Last Updated:** February 5, 2026  
+**Last Updated:** February 5, 2026 (Added DFT-038: Filter Section Patterns)  
 **Purpose:** Single source of truth for styling decisions, component patterns, and design policies that affect multiple phases.
 
 ---
@@ -574,6 +574,128 @@ const { canUndo, undo, addAction } = useUndoStack({
 
 ---
 
+## Filter Section Patterns
+
+**Policy (DFT-038):** All Browse tab filter sections follow a shared structural anatomy. Each data source passes its specific controls as children, but the wrapper enforces consistent layout, header convention, result count display, and container styling.
+
+### Structural Skeleton
+
+```
+┌─────────────────────────────────────────┐
+│ Filter [Plural Noun]         [Clear All]│  ← Header row
+│─────────────────────────────────────────│
+│                                         │
+│  [Control 1: full-width]                │  ← Text search first
+│  [Control 2] [Control 3] ← 2-col grid  │  ← Dropdowns paired
+│  [Control 4: full-width]                │  ← Date ranges, multi-selects
+│  ☐ [Toggle/checkbox option]             │  ← Toggles last
+│                                         │
+│─────────────────────────────────────────│
+│  Showing 47 of 876 [noun]              │  ← Result count footer
+└─────────────────────────────────────────┘
+```
+
+### Container Styling
+
+```css
+.filter-section {
+  @apply bg-slate-50 border border-slate-200 rounded-lg p-3;
+}
+```
+
+**No gradients.** Flat `slate-50` background creates Common Region grouping (Gestalt) without per-data-source decoration. Data-source identity lives in the sidebar header, not the filter controls.
+
+### Grid Layout
+
+```css
+.filter-section-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px; /* 8-point grid */
+}
+```
+
+Controls use `col-span-1` (half-width) or `col-span-2` (full-width).
+
+### Control Sizing Rules (within ~368px usable)
+
+| Control Type | Grid Span | Position | Rationale |
+|---|---|---|---|
+| Text search | `col-span-2` | Always first | Serial Position Effect |
+| Single dropdown | `col-span-1` | Pair 2 side-by-side | Compact, scannable |
+| Date range (start + end) | `col-span-2` (2-col internal) | After dropdowns | Needs space for readability |
+| Multi-select (pills) | `col-span-2` | After dropdowns | Pills need horizontal space |
+| Toggle/checkbox | `col-span-2` | End of controls | Low visual weight |
+
+### Section Header Convention
+
+| Context | Pattern | Examples |
+|---|---|---|
+| Single-level layers | `"Filter [Plural Noun]"` | "Filter Observations", "Filter Datasets" |
+| Dual-level, layer scope | `"Filter [Plural Noun]"` | "Filter Cameras", "Filter Sensors" |
+| Dual-level, feature scope | `"Filter [Feature Noun]"` | "Filter Images", "Filter Datapoints" |
+
+**Header Design Tokens:**
+- Title: `text-[10px] font-semibold text-gray-500 uppercase tracking-wide`
+- "Clear All": `text-[10px] text-gray-400 hover:text-red-500 cursor-pointer` (visible only when `hasActiveFilters`)
+
+### Result Count Footer
+
+**Pattern:** `"Showing X of Y [noun]"` where X is filtered count and Y is total.
+
+**Design Tokens:**
+- Container: `pt-2 border-t border-slate-200 mt-2`
+- Text: `text-[10px] text-gray-600`
+- Count: `font-semibold text-emerald-600` (filtered count) / `font-medium` (total)
+
+### Shared Component Interface
+
+```typescript
+interface FilterSectionProps {
+  label: string;              // "Filter Observations"
+  resultCount: number;        // 847
+  totalCount: number;         // 12430
+  noun: string;               // "observations"
+  hasActiveFilters: boolean;  // controls Clear All visibility
+  onClearAll: () => void;
+  children: React.ReactNode;  // Data-source-specific controls
+}
+```
+
+**Component location:** `src/v2/components/RightSidebar/FilterSection.tsx`
+
+### Per-Data-Source Control Inventory
+
+| Data Source | Level | Header | Controls |
+|---|---|---|---|
+| **iNaturalist** | Single | "Filter Observations" | Taxon dropdown, Species dropdown (2-col), Date range (full), Quality grade checkbox |
+| **ANiML** | L2 | "Filter Cameras" | Region dropdown, Status dropdown (2-col) |
+| **ANiML** | L3 | "Filter Images" | Species multi-select (full), Date range (full), Deployment dropdown |
+| **Dendra** | L2 | "Filter Sensors" | Region dropdown, Status dropdown (2-col) |
+| **Dendra** | L3 | "Filter Datapoints" | Date range (full), Aggregation dropdown |
+| **DataOne** | Single | "Filter Datasets" | Title search (full), Repository dropdown, TNC Category dropdown (2-col), Date range (full) |
+
+### Design Principles Applied
+
+- **Gestalt (Common Region, Proximity, Similarity):** Bounded container, tight grouping, same styling everywhere
+- **Norman (Signifiers, Affordances, Feedback):** Headers communicate scope, controls look interactive, result count provides continuous feedback
+- **Nielsen #4 (Consistency):** Same anatomy across all Browse tabs — learn once, apply everywhere
+- **Nielsen #8 (Minimalism):** No "Optional:" labels, no gradient decoration, no unnecessary visual weight
+- **Hick's Law / Miller's Law:** 2-col grid keeps section compact; max ~5 controls per section
+- **IA (Wayfinding):** Header + result count = "where am I, what am I filtering, how many results"
+- **Fitts's Law:** "Clear All" in header row (near eye focus); full-width inputs maximize target size
+- **WCAG (Operable):** Standard form controls, keyboard navigable, labeled inputs
+
+### Related Decisions
+
+- **DFT-039:** Filter apply behavior (auto-apply vs explicit Apply button)
+- **DFT-040:** Visual distinction between Level 2 and Level 3 filter sections
+- **DFT-037:** Exact spacing values, component library choice, collapse/expand behavior
+
+**Decision Date:** February 5, 2026
+
+---
+
 ## Styling Decisions
 
 > **Note:** This section tracks styling decisions that affect multiple phases. Component-specific styling should be documented in component files.
@@ -963,6 +1085,7 @@ function announceToScreenReader(message) {
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 5, 2026 | Added Filter Section Patterns (DFT-038) — shared structural anatomy for all Browse tab filter UIs. `FilterSection` component enforces consistent header, 2-col CSS grid, result count footer, and `slate-50` container across all 4 data sources. Control sizing rules, header convention, and per-data-source inventory documented | Will + Claude |
 | Feb 5, 2026 | Added Drag-and-Drop Patterns (DFT-034) — enhanced visual treatment, drop animations, keyboard support, ARIA announcements, map z-order feedback via toast. Analyzed through 9 UI/UX frameworks. Keyboard support essential for v2.0 WCAG compliance | Will + Claude |
 | Feb 5, 2026 | Added Layout Specifications — Right sidebar fixed width at 400px (DFT-033), not resizable. Rationale documented via 9 UI/UX frameworks | Will + Claude |
 | Feb 4, 2026 | Added Map Tooltip Patterns (DFT-032) — minimal MVP approach (ID + Type only), native browser tooltips recommended, defer filter-aware content to post-v2.0 | Will + Claude |
