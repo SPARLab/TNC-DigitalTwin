@@ -67,15 +67,18 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 - **Export functionality:** `IMPLEMENTATION/phases/phase-5-export-builder.md`
 - **Cross-phase decisions:** `master-plan.md` → "Cross-Phase Decisions" → "UX Decisions"
 
-**Last Updated:** February 5, 2026 (Resolved DFT-040: dual-level filter visual distinction — condensed layout, no Level 2 summary bar)
+**Last Updated:** February 5, 2026 (Added Sidebar Template System — template-driven consistency for DFT-037 mockups; cleaned stale master-plan entries)
 
 **Next Steps:**
-- [ ] **BEFORE MOCKUPS (DFT-037):** Resolve all design discussion tasks (DFT-015 through DFT-040)
-  - **High priority:** ~~DFT-018 (loading states)~~, ~~DFT-020 (pointer-row bookmark UI)~~, ~~DFT-030 (error states)~~, ~~DFT-038 (filter anatomy)~~, ~~DFT-039 (filter apply behavior)~~
-  - **Medium priority:** ~~DFT-019 (Edit Filters navigation)~~, ~~DFT-024 (Filter indicator)~~, ~~DFT-028~~, ~~DFT-029~~, ~~DFT-031~~, ~~DFT-032~~, ~~DFT-035~~, ~~DFT-040 (dual-level distinction)~~
-  - **Low priority:** DFT-036 (bookmark hover highlight) — can defer to Phase 6 if not blocking mockup generation
+- [x] **BEFORE MOCKUPS (DFT-037):** Resolve all design discussion tasks (DFT-015 through DFT-040) -- ALL DONE
+  - ~~**High priority:** DFT-018, DFT-020, DFT-030, DFT-038, DFT-039~~ -- All resolved
+  - ~~**Medium priority:** DFT-019, DFT-024, DFT-028, DFT-029, DFT-031, DFT-032, DFT-035, DFT-040~~ -- All resolved
+  - ~~**Low priority:** DFT-036~~ -- Resolved Feb 5
+- [x] **Sidebar Template System:** Defined shared templates (TabBar, OverviewTab, ResultCard, Pagination, LeftSidebar) + theme tokens in `design-system.md` (Feb 5, 2026)
+- [x] **Stale entries cleaned:** Updated bookmark widget and filter representation status in `master-plan.md` (Feb 5, 2026)
 - [x] **Archive completed:** Archived DFT-001 through DFT-027 to `PLANNING/archived-planning-tasks-from-tracker.md` (Feb 4, 2026)
 - [x] **Archive completed:** Archived DFT-033 through DFT-035 to `PLANNING/resolved-decisions/` (Feb 5, 2026)
+- [ ] **START DFT-037:** Generate template-driven mockups. 02a defines the master template; 02b-02e show content differences only
 
 ---
 
@@ -403,19 +406,36 @@ Analyzed through 9 UI/UX frameworks with **strong cross-framework convergence:**
 Mockups should NOT be generated until all design discussion tasks (DFT-015 through DFT-036) are resolved. Once resolved, updated mockups need to be created that reflect all design decisions from DFT-001 through DFT-036 (excluding any decisions that were explicitly omitted or deferred).
 
 **Prerequisites:**
-- All high-priority design issues resolved (DFT-015, DFT-018, DFT-020, DFT-030)
-- All medium-priority design issues resolved (or explicitly deferred)
-- All resolved decisions documented in phase documents and master plan
+- All high-priority design issues resolved (DFT-015, DFT-018, DFT-020, DFT-030) -- DONE
+- All medium-priority design issues resolved (or explicitly deferred) -- DONE
+- All resolved decisions documented in phase documents and master plan -- DONE
+- DFT-038 (filter anatomy), DFT-039 (filter apply behavior), DFT-040 (dual-level distinction) -- DONE
+- Sidebar Template System defined in `design-system.md` (TabBar, OverviewTab, ResultCard, Pagination, LeftSidebar, theme tokens) -- DONE
 
 **Task:**
 Generate updated mockups (`mockups/02a-02f` or new versions) that demonstrate:
-- All resolved UX decisions from DFT-001 through DFT-036
+- All resolved UX decisions from DFT-001 through DFT-040
 - Empty states (per DFT-015)
 - Loading states (per DFT-018)
 - Error states (per DFT-030)
 - All widget designs with final specifications
 - All sidebar designs with final specifications
 - All interaction patterns as resolved
+- **Template-driven consistency** (see below)
+
+**Template-Driven Mockup Strategy:**
+
+The mockups must demonstrate the **Sidebar Template System** documented in `design-system.md`. This means:
+
+1. **02a (unified layout)** defines the shared template — TabBar, OverviewTab layout, ResultCard shape, Pagination, LeftSidebar categories. This is the "master mockup" that all data sources inherit from.
+
+2. **02b-02e (data source mockups)** only show content differences — which metadata fields, which filter controls, which result card slots. The structural layout (tabs, card shapes, spacing, typography) must be identical across all four.
+
+3. **Any styling change to the template in one mockup must be applied to all others.** If the team decides to try different tab styling, card padding, or accent colors, it changes everywhere — not per-data-source.
+
+4. **Documented exceptions** (ANiML landing cards, Dendra chart slider, Level 3 FeatureDetailCard) are the only places where data-source mockups diverge structurally from the template.
+
+5. **Theme tokens** from `sidebarTheme` in `design-system.md` define the initial values for all shared styling (colors, spacing, typography). Mockups establish these initial values; team adjusts by changing tokens.
 
 **Exclusions:**
 - Any DFT decisions explicitly omitted or deferred to v2.1+

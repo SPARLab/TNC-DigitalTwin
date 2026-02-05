@@ -85,10 +85,11 @@ Phase 0: Foundation
 | Decision | Status | Made By | Date | Details |
 |----------|--------|---------|------|---------|
 | No emojis policy (use SVG icons) | ✅ Decided | Will | Feb 3 | Emojis render inconsistently across browsers. Use SVG icons from `src/components/icons/` or Lucide React. See `design-system.md` |
-| Overall color palette | ⚪ TBD | - | - | Mockups use emojis/colors - need to tone down |
-| Right sidebar header styling | ⚪ TBD | - | - | |
-| Card component styling | ⚪ TBD | - | - | |
-| Data source accent colors | ⚪ TBD | - | - | |
+| Sidebar Template System | ✅ Decided | Will | Feb 5 | All data sources share structural templates (TabBar, OverviewTab, ResultCard, Pagination). Theme tokens in `sidebarTheme` — change once, changes everywhere. Exceptions documented. See `design-system.md` Sidebar Template System |
+| Overall color palette | 🟡 Defined in mockups | Will | Feb 5 | Initial tokens set in `sidebarTheme` (gray/emerald). Team adjusts via token file during review |
+| Right sidebar header styling | ✅ Decided | Will | Feb 5 | Part of Sidebar Template System — shared `SidebarShell` + `TabBar` components. Underline tabs, emerald accent. See `design-system.md` |
+| Card component styling | ✅ Decided | Will | Feb 5 | Shared `ResultCard` component with icon/title/subtitle/actions slots. Same card everywhere, data sources provide content. See `design-system.md` |
+| Data source accent colors | 🟡 Defined in mockups | Will | Feb 5 | Default: emerald-600 for all. Per-data-source overrides possible but not required for v2.0 |
 
 ### UX Decisions
 
@@ -96,9 +97,9 @@ Phase 0: Foundation
 |----------|--------|---------|------|---------|
 | Pin/Bookmark paradigm | ✅ Decided | Team | Jan 21 | See paradigm doc |
 | Left sidebar always visible | ✅ Decided | Team | Jan 20 | Confirmed in feedback |
-| Bookmark widget (right-aligned) | ⏳ Awaiting Feedback | - | - | Feedback expected Monday |
+| Bookmark widget (right-aligned) | ✅ Decided | Will | Feb 2 | Resolved via DFT-007: grouped by parent layer, non-interactive headers. Position: top-right |
 | Pin vs visibility behavior (DFT-001) | ✅ Decided | Will | Jan 27 | Model C: Selection = active, pin separate. See DFT-001 resolution |
-| Filter representation in widgets | 🟡 A/B Testing | Will | Jan 27 | Text vs funnel emoji (🌪️). Debug toggle for user feedback |
+| Filter representation in widgets | ✅ Decided | Will | Feb 4 | Resolved via DFT-024: Lucide Filter icon + count. A/B testing removed |
 | Export button placement (DFT-002) | ✅ Decided | Will | Jan 29 | Global header (top-right) with shopping cart icon, badge indicator showing total pinned + bookmarked count. Opens unified Export Builder modal |
 | Auto-collapse widgets for time-series | ✅ Decided | Will | Jan 29 | Widgets auto-collapse when viewing time-series data (e.g., Dendra pop-ups) to reduce screen crowding. See DFT-005 resolution |
 | "Create New View" placement (DFT-003b) | ✅ Decided | Will | Feb 2 | Lives in expanded panel when pinned layer is clicked/active. Expanded panel shows filter summary + action buttons (Edit Filters, Clear, + Create New View). Row spec: [drag] [👁] [Layer Name] [🌪️N] [✕] (no swatch). Active state indicated by expansion + visual treatment. See DFT-003b resolution |
@@ -230,6 +231,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 5, 2026 | All | Added Sidebar Template System — shared structural templates for all data sources (TabBar, OverviewTab, ResultCard, Pagination, LeftSidebar categories). Theme tokens centralized in `sidebarTheme`. Change once, changes everywhere. Resolved stale entries: bookmark widget (DFT-007), filter representation (DFT-024). Resolved styling TBDs: sidebar header, card component. See design-system.md | Will + Claude |
 | Feb 5, 2026 | All | Resolved DFT-038: Filter section anatomy — shared `FilterSection` component enforces consistent Browse tab filter UI across all 4 data sources. Structural skeleton: header with "Clear All", 2-col CSS grid, result count footer. Flat `slate-50` container (no gradients). Header convention: "Filter [Plural Noun]". Per-data-source control inventory. "Optional:" labels dropped. Analyzed via Gestalt, Norman, Nielsen, Hick, Miller, IA, Fitts, WCAG. See design-system.md | Will + Claude |
 | Feb 5, 2026 | Phase 4 | Resolved DFT-035: DataOne search behavior — debounced instant search (500ms, 2+ chars) with immediate dropdown filters. Enter key bypass. Initial state loads all datasets, eliminating "pre-search" state. `AbortController` cancels in-flight requests. Analyzed via Norman, Nielsen, Shneiderman, Hick, Fitts, Mental Models, Wayfinding, Accessibility | Will + Claude |
 | Feb 5, 2026 | Phase 0 | Resolved DFT-034: Drag-and-drop reorder feedback — enhanced visual treatment (60% opacity, 95% scale, 2deg rotation, dashed border), 4px drop line, 400ms settle animation, toast for map z-order updates, keyboard support (arrow keys, Shift+Home/End), ARIA announcements. Keyboard support essential for v2.0 WCAG compliance (not deferred) | Will + Claude |

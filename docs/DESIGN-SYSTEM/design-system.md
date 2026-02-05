@@ -1,6 +1,6 @@
 # Design System - TNC Digital Catalog
 
-**Last Updated:** February 5, 2026 (Added DFT-039: Filter Apply Behavior)  
+**Last Updated:** February 5, 2026 (Added Sidebar Template System — template-driven consistency across all data sources)  
 **Purpose:** Single source of truth for styling decisions, component patterns, and design policies that affect multiple phases.
 
 ---
@@ -1176,10 +1176,360 @@ function announceToScreenReader(message) {
 
 ---
 
+## Sidebar Template System
+
+**Policy:** All right sidebar data source views share a common structural template. Changing the template's styling changes all data sources simultaneously. Individual data sources only customize *content* (which fields, which filters), never *layout or styling* (unless a documented exception exists).
+
+**Why this matters:**
+- **Nielsen #4 (Consistency):** Researchers learn one sidebar pattern, apply it across 4+ data sources
+- **Development velocity:** 4 parallel Cursor agents building Phases 1-4 produce visually identical layouts
+- **Theme-ability:** When the team wants to try different tab styles, card spacing, or color schemes, one change propagates everywhere
+- **Mockup fidelity:** DFT-037 mockups define the template once; data-source mockups only show content differences
+
+### Template Architecture
+
+```
+SidebarShell (shared)
+├── SidebarHeader (data source icon + name + close)
+├── TabBar (shared — Overview | Browse | Export)
+├── TabContent (scroll area)
+│   ├── OverviewTab (shared template, data-source fields as props)
+│   ├── BrowseTab (shared template)
+│   │   ├── FilterSection (DFT-038, shared)
+│   │   ├── ResultsList (shared card layout)
+│   │   │   └── ResultCard (shared template, data-source slots)
+│   │   └── Pagination (shared)
+│   └── ExportTab (shared template)
+└── SidebarFooter (optional, shared)
+```
+
+**Rule:** If a component appears in the tree above as "(shared)", it lives in `src/v2/components/RightSidebar/shared/` and is imported by every data source. Data sources pass content as props/children. Data sources do NOT create their own versions of shared components.
+
+**Exceptions (documented custom components):**
+- ANiML: Landing cards for Animal-First / Camera-First entry (DFT-003c) — unique to ANiML Browse tab
+- ANiML/Dendra: `FeatureDetailCard` at Level 3 (DFT-040) — replaces `FilterSection` when drilled into a feature
+- Dendra: Pop-up time series chart with slider (DFT-004) — unique to Dendra map interaction
+
+### Component: TabBar
+
+**Location:** `src/v2/components/RightSidebar/shared/TabBar.tsx`
+
+**Visual Specification:**
+
+```
+┌──────────────┬──────────────┬──────────────┐
+│   Overview   │    Browse    │    Export     │
+├──────────────┴──────────────┴──────────────┤
+│ ════════════                               │  ← 2px active indicator
+```
+
+**Design Tokens:**
+
+| Element | Styling |
+|---------|---------|
+| Container | `flex w-full border-b border-gray-200` |
+| Tab (inactive) | `flex-1 py-2.5 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 text-center cursor-pointer transition-colors duration-150` |
+| Tab (active) | `flex-1 py-2.5 text-sm font-semibold text-gray-900 border-b-2 border-emerald-600 text-center` |
+| Tab (disabled) | `flex-1 py-2.5 text-sm text-gray-300 cursor-not-allowed text-center` |
+
+**Behavior:**
+- Tab click switches content with 150ms crossfade (per DFT-019)
+- Active tab indicated by 2px bottom border (emerald-600 — TNC green family)
+- Text-only labels (no icons) — 400px sidebar is too narrow for icon+text tabs
+- Tab height: 40px total (meets 44px touch target with padding)
+- Keyboard: Arrow Left/Right cycles tabs, Enter/Space activates
+- ARIA: `role="tablist"`, each tab is `role="tab"` with `aria-selected`
+
+**Rationale:**
+- Underline tabs are the strongest convention for in-context navigation (Material, ArcGIS Online, most GIS tools)
+- Equal-width columns prevent layout shift when switching
+- Emerald accent ties to TNC green without being overwhelming
+- Text-only keeps the tab bar clean at narrow widths (Hick's Law — 3 clear choices)
+
+### Component: OverviewTab
+
+**Location:** `src/v2/components/RightSidebar/shared/OverviewTab.tsx`
+
+**Structural Template (all data sources follow this layout):**
+
+```
+┌─────────────────────────────────────────┐
+│ [Icon]  Data Source Name                │  1. Header
+│ Source: via iNaturalist API             │     Source badge
+│─────────────────────────────────────────│
+│ Brief description of this data source   │  2. Description
+│ and what it contains (1-3 sentences).   │     (data-source-specific copy)
+│─────────────────────────────────────────│
+│ Key Metadata                            │  3. Metadata grid
+│ ┌─────────────────┬───────────────────┐ │     (2-col, data-source fields)
+│ │ Total records   │ 12,430            │ │
+│ │ Date range      │ 2019 – 2025      │ │
+│ │ Coverage        │ Dangermond Pres.  │ │
+│ │ Last updated    │ Jan 15, 2026     │ │
+│ └─────────────────┴───────────────────┘ │
+│─────────────────────────────────────────│
+│ [Browse Features →]                     │  4. CTA (per DFT-027)
+└─────────────────────────────────────────┘
+```
+
+**Component Interface:**
+
+```typescript
+interface OverviewTabProps {
+  icon: React.ReactNode;
+  title: string;                    // "iNaturalist Observations"
+  sourceBadge: string;              // "via iNaturalist API"
+  description: string;              // 1-3 sentence summary
+  metadata: { label: string; value: string }[];  // Key-value pairs
+  onBrowseClick: () => void;        // Navigate to Browse tab
+  browseLabel?: string;             // Default: "Browse Features →"
+}
+```
+
+**Design Tokens:**
+
+| Element | Styling |
+|---------|---------|
+| Icon | `w-8 h-8 text-gray-600` (Lucide or data-source SVG) |
+| Title | `text-base font-semibold text-gray-900` |
+| Source badge | `text-xs text-gray-400 mt-0.5` |
+| Description | `text-sm text-gray-600 leading-relaxed` |
+| Metadata label | `text-xs text-gray-500 font-medium` |
+| Metadata value | `text-sm text-gray-900` |
+| Metadata grid | `grid grid-cols-2 gap-x-4 gap-y-2` |
+| CTA button | Per DFT-027 (full-width, TNC green, 44px min height) |
+
+**Per-Data-Source Content (layout identical, fields differ):**
+
+| Data Source | Metadata Fields |
+|---|---|
+| **iNaturalist** | Total observations, Species count, Date range, Quality grades, Coverage area |
+| **ANiML** | Total cameras, Total images, Species detected, Date range, Coverage area |
+| **Dendra** | Total sensors, Sensor types, Date range, Update frequency, Coverage area |
+| **DataOne** | Total datasets, Categories covered, Date range, Sources, Coverage area |
+
+### Component: ResultCard
+
+**Location:** `src/v2/components/RightSidebar/shared/ResultCard.tsx`
+
+**Structural Template:**
+
+```
+┌─────────────────────────────────────────┐
+│ [Icon/Thumb]  Title Line                │
+│               Subtitle / metadata       │
+│               [Action] [Action] [Action]│
+└─────────────────────────────────────────┘
+```
+
+**Component Interface:**
+
+```typescript
+interface ResultCardProps {
+  icon?: React.ReactNode;           // Lucide icon or thumbnail
+  thumbnail?: string;               // Image URL (replaces icon)
+  title: string;                    // "CAM-042 — North Ridge"
+  subtitle?: string;                // "Active • 847 images"
+  metadata?: string;                // Additional line
+  actions: { label: string; onClick: () => void; variant: 'primary' | 'secondary' | 'icon' }[];
+  isGrayed?: boolean;               // For zero-result cameras (DFT-028)
+  onClick?: () => void;             // Card click (drill-down)
+}
+```
+
+**Design Tokens:**
+
+| Element | Styling |
+|---------|---------|
+| Container | `bg-white border border-gray-200 rounded-lg p-3 hover:border-gray-300 hover:shadow-sm transition-all duration-150 cursor-pointer` |
+| Container (grayed) | `opacity-50 saturate-50` (per DFT-028) |
+| Thumbnail | `w-10 h-10 rounded object-cover` |
+| Icon | `w-10 h-10 text-gray-400 bg-gray-100 rounded flex items-center justify-center` |
+| Title | `text-sm font-medium text-gray-900 truncate` |
+| Subtitle | `text-xs text-gray-500` |
+| Action (primary) | `text-xs font-medium text-emerald-600 hover:text-emerald-700` |
+| Action (secondary) | `text-xs text-gray-500 hover:text-gray-700` |
+| Action (icon) | `w-5 h-5 text-gray-400 hover:text-red-500` (for remove/close) |
+
+**Per-Data-Source Content (same card, different slots):**
+
+| Data Source | Icon/Thumb | Title | Subtitle | Actions |
+|---|---|---|---|---|
+| **iNaturalist** | Species photo | Species name | Observer, Date | View, Bookmark, Open in iNat |
+| **ANiML** | Camera icon | CAM-ID — Location | Status, Image count | View Camera, Bookmark |
+| **Dendra** | Sensor icon | Sensor-ID — Location | Status, Last reading | View Sensor, Bookmark |
+| **DataOne** | Document icon | Dataset title | Authors, Year | Details, Bookmark, Open in DataOne |
+
+### Component: Pagination
+
+**Location:** `src/v2/components/RightSidebar/shared/Pagination.tsx`
+
+**Policy:** All list views use the same pagination pattern. Image grids use "Load More" instead.
+
+**List Pagination (iNaturalist, ANiML cameras, Dendra sensors, DataOne datasets):**
+
+```
+┌─────────────────────────────────────────┐
+│  [← Previous]    Page 2 of 12   [Next →]│
+└─────────────────────────────────────────┘
+```
+
+| Element | Styling |
+|---------|---------|
+| Container | `flex items-center justify-between py-3 border-t border-gray-200` |
+| Button (active) | `text-sm text-gray-700 hover:text-gray-900 px-3 py-1.5 rounded hover:bg-gray-100` |
+| Button (disabled) | `text-sm text-gray-300 cursor-not-allowed px-3 py-1.5` |
+| Page indicator | `text-xs text-gray-500` |
+
+**Page size:** 20 items per page (consistent with DFT-035 DataOne decision).
+
+**Image Grid Pagination (ANiML images within a camera):**
+
+```
+┌─────────────────────────────────────────┐
+│  [Load 20 More]  (47 of 847 loaded)    │
+└─────────────────────────────────────────┘
+```
+
+Images benefit from continuous browsing (researchers scan visually). "Load More" avoids losing scroll position.
+
+**Keyboard:** Previous/Next buttons focusable. Enter activates. ARIA: `aria-label="Go to next page"`.
+
+### Component: LeftSidebar Category Pattern
+
+**Location:** `src/v2/components/LeftSidebar/` (shared across all categories)
+
+**Visual Pattern:**
+
+```
+┌──────────────────────────────────────┐
+│ Search layers...                     │  Search/filter bar
+│──────────────────────────────────────│
+│ v  Wildlife Monitoring           (3) │  Category header (collapsible)
+│     * Camera Traps (ANiML)           │  ← Active layer (bold + accent)
+│       iNaturalist Observations       │
+│       eBird Sightings                │
+│ >  Environmental Sensors         (2) │  Category (collapsed)
+│ v  Research Datasets             (1) │
+│       DataOne Datasets               │
+│ >  Reference Layers              (5) │
+│ >  Fire & Hazards                (3) │
+└──────────────────────────────────────┘
+```
+
+**Design Tokens:**
+
+| Element | Styling |
+|---------|---------|
+| Category header | `flex items-center gap-2 py-2 px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer` |
+| Chevron | `w-4 h-4 text-gray-400 transition-transform duration-150` (rotates on expand) |
+| Category icon | `w-4 h-4 text-gray-500` (Lucide icon) |
+| Layer count badge | `text-xs text-gray-400 ml-auto` |
+| Layer row (inactive) | `py-1.5 px-3 pl-9 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 cursor-pointer rounded-sm` |
+| Layer row (active) | `py-1.5 px-3 pl-9 text-sm font-semibold text-gray-900 bg-emerald-50 border-l-2 border-emerald-600 rounded-sm` |
+
+**Behavior:**
+- Click category header: toggle expand/collapse (chevron rotates)
+- Click layer row: make active (right sidebar opens, map highlights)
+- Active layer: bold text + emerald left border + subtle green background
+- Only ONE layer active at a time (per DFT-021)
+- Keyboard: Enter/Space toggles category, Arrow Down navigates layers
+- ARIA: `role="tree"` with `role="treeitem"` for layers
+
+### Theme Token System
+
+**Policy:** All shared template components read from a centralized set of theme tokens. Changing these tokens changes the look of every data source simultaneously.
+
+**Token Categories:**
+
+```typescript
+// src/v2/theme/tokens.ts
+export const sidebarTheme = {
+  // Tab bar
+  tabActiveColor: 'text-gray-900',
+  tabActiveBorder: 'border-emerald-600',
+  tabInactiveColor: 'text-gray-500',
+
+  // Cards
+  cardBg: 'bg-white',
+  cardBorder: 'border-gray-200',
+  cardHoverBorder: 'border-gray-300',
+  cardRadius: 'rounded-lg',
+  cardPadding: 'p-3',
+
+  // Active/accent
+  accentColor: 'emerald-600',
+  accentBg: 'bg-emerald-50',
+  accentBorder: 'border-emerald-600',
+
+  // Typography
+  titleSize: 'text-sm',
+  titleWeight: 'font-medium',
+  subtitleSize: 'text-xs',
+  metadataColor: 'text-gray-500',
+
+  // Filter section (inherits DFT-038)
+  filterBg: 'bg-slate-50',
+  filterBorder: 'border-slate-200',
+
+  // Pagination
+  pageSize: 20,
+
+  // Spacing (8-point grid)
+  sectionGap: 'gap-4',
+  controlGap: 'gap-2',
+} as const;
+```
+
+**How theming works:**
+1. All shared components import from `sidebarTheme`
+2. To try a different look: change tokens in one file
+3. Mockups define the initial token values; team adjusts during review
+4. Data-source-specific colors (if needed later) can override `accentColor` per sidebar instance
+
+**What tokens do NOT control:**
+- Content (fields, descriptions, labels) — per-data-source
+- Filter controls (which dropdowns, which inputs) — per-data-source via DFT-038 children
+- Custom interactions (ANiML landing cards, Dendra chart slider) — documented exceptions
+
+### Shared Component File Structure
+
+```
+src/v2/components/RightSidebar/
+├── shared/
+│   ├── SidebarShell.tsx          ← Outer container (400px, scroll)
+│   ├── TabBar.tsx                ← Overview | Browse | Export
+│   ├── OverviewTab.tsx           ← Template (accepts metadata props)
+│   ├── FilterSection.tsx         ← DFT-038 wrapper
+│   ├── FeatureDetailCard.tsx     ← DFT-040 Level 3 wrapper
+│   ├── ResultCard.tsx            ← Standard result card
+│   ├── Pagination.tsx            ← Previous/Next or Load More
+│   └── BrowseFeaturesButton.tsx  ← DFT-027 CTA button
+├── iNaturalist/                  ← Only content/config, imports shared
+├── ANiML/                        ← Only content/config + landing cards exception
+├── Dendra/                       ← Only content/config + chart exception
+└── DataOne/                      ← Only content/config
+```
+
+### Decision Date
+
+February 5, 2026
+
+### Design Principles Applied
+
+- **Nielsen #4 (Consistency):** Template enforces identical structure across all data sources
+- **DRY principle:** One component definition, 4 consumers — changes propagate automatically
+- **Gestalt (Similarity):** Same card shapes, tab positions, spacing everywhere
+- **Shneiderman (Consistency & Universal Usability):** Novices learn once; experts rely on muscle memory
+- **Development efficiency:** Parallel Cursor agents building Phases 1-4 import shared components — no drift
+
+---
+
 ## Change Log
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 5, 2026 | Added Sidebar Template System — shared structural templates (TabBar, OverviewTab, ResultCard, Pagination, LeftSidebar category pattern) enforced via components. Theme tokens centralized in `sidebarTheme`. All data sources use identical layout; only content varies. Exceptions documented (ANiML landing cards, Dendra chart, Level 3 FeatureDetailCard). Decisions: underline tabs (emerald accent), Previous/Next pagination (20/page), standard result card with icon/title/subtitle/actions slots, left sidebar with collapsible categories and emerald active state | Will + Claude |
 | Feb 5, 2026 | Added Filter Apply Behavior (DFT-039) — auto-apply everywhere, no Apply button in any data source. Universal rules: dropdowns immediate, text search 500ms debounce, date fields on calendar close/blur, toggles immediate. `AbortController` cancels in-flight requests. Loading per DFT-018 thresholds. Stale results visible with overlay. Result count updates continuously. ARIA live region announces changes | Will + Claude |
 | Feb 5, 2026 | Added Filter Section Patterns (DFT-038) — shared structural anatomy for all Browse tab filter UIs. `FilterSection` component enforces consistent header, 2-col CSS grid, result count footer, and `slate-50` container across all 4 data sources. Control sizing rules, header convention, and per-data-source inventory documented | Will + Claude |
 | Feb 5, 2026 | Added Drag-and-Drop Patterns (DFT-034) — enhanced visual treatment, drop animations, keyboard support, ARIA announcements, map z-order feedback via toast. Analyzed through 9 UI/UX frameworks. Keyboard support essential for v2.0 WCAG compliance | Will + Claude |
