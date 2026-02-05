@@ -1,8 +1,8 @@
 # Archived Planning Tasks from Tracker
 
-**Purpose:** This document contains the full text and resolution details for completed planning tasks (DFT-001 through DFT-027) that have been archived from `planning-task-tracker.md` to keep the tracker manageable.
+**Purpose:** This document contains the full text and resolution details for completed planning tasks (DFT-001 through DFT-032) that have been archived from `planning-task-tracker.md` to keep the tracker manageable.
 
-**Archive Date:** February 4, 2026
+**Archive Date:** February 5, 2026
 
 **Note:** These tasks are resolved and their full descriptions are preserved here for historical reference. The Quick Reference table in `planning-task-tracker.md` still shows these tasks with their summaries, but full details are archived here.
 
@@ -1861,6 +1861,683 @@ Per DFT-006, the Overview tab includes a prominent "Browse Features →" button.
 
 **Documented in:**
 - Phase 0 tasks (0.1, 0.2, etc.): Update acceptance criteria with button spec
+
+---
+
+## DFT-028: Zero-Result Camera Behavior
+
+**Category:** UI/UX  
+**Status:** 🟢 Resolved  
+**Priority:** Medium  
+**Source:** UX Design Review, Feb 3, 2026 (extracted from DFT-012 edge cases)
+
+**Context:**
+Per DFT-012, when a species filter is applied (e.g., "mountain lion"), cameras show badges with counts. 
+
+**Edge case:** What happens to cameras with 0 matching images?
+
+**Options:**
+1. **Hide cameras with 0 matches** — cleaner map, shows only relevant locations
+2. **Show grayed out** — maintains spatial context, shows where species is NOT present
+3. **Show with "0" badge** — explicit count, but clutters map
+4. **User preference** — toggle to "show all cameras" or "show matching only"
+
+**Considerations:**
+- Hiding may cause confusion ("where did CAM-042 go?")
+- Graying out maintains mental map of all camera locations
+- Showing "0" badges adds noise but is explicit
+
+**Resolution:** Feb 4, 2026 — **Gray out cameras with 0 matching images**
+
+**Design Specification:**
+
+1. **Visual Treatment:**
+   - Reduce opacity to 40-50% (test for contrast with map background)
+   - Desaturate color (grayscale or muted version of active color)
+   - Remove badge entirely (don't show "0")
+   - Consider subtle pattern overlay (diagonal lines) for colorblind accessibility
+
+2. **Interaction:**
+   - Camera remains **clickable** and **keyboard-focusable**
+   - Click behavior: Sidebar shows camera metadata + message: "No [species name] images at this location" with "Adjust Filters" button
+   - Hover tooltip: "CAM-042: No matching images"
+   - ARIA label: "CAM-042: Camera location with no [species name] images"
+
+3. **Animation:**
+   - When filter applied: 300ms ease-out transition from active → grayed
+   - Stagger by 30ms per camera (subtle wave effect)
+   - When filter removed: 300ms ease-out transition back to active state
+
+4. **Edge Cases:**
+   - If ALL cameras are zero-results → show empty state in sidebar: "No cameras match your filter" with "Adjust Filters" and "Clear Filters" buttons
+   - Map still shows all grayed cameras (preserves spatial context)
+
+**Rationale:**
+- **Preservation over Removal:** Maintains spatial structure and mental map of camera network (Gestalt Continuity, Norman Conceptual Models)
+- **Negative Evidence:** Researchers need to see where species is NOT present for ecological analysis (scientific workflow requirement)
+- **Contrast Creates Clarity:** Grayed cameras make active results stand out MORE effectively than hiding (Von Restorff Effect)
+- **Accessibility:** Hidden cameras can't be clicked or keyboard-navigated; grayed cameras remain operable (WCAG Operable principle)
+- **Cognitive Load:** Graying reduces "Where did it go?" confusion; preserves Recognition over Recall (Nielsen's Heuristic #6)
+
+**Documented in:**
+- Phase 2 (ANiML): Task 2.5 acceptance criteria updated
+- Master Plan: Added to UX Decisions
+
+**✅ Verification Checklist:**
+- [x] Resolution documented in planning-task-tracker.md
+- [x] Specification added with visual treatment, interaction, animation details
+- [x] Phase 2 document updated with decision
+- [x] Master plan updated with UX decision entry
+- [x] Related to DFT-012 (camera badges) and DFT-029 (unfiltered badge behavior)
+
+---
+
+## DFT-029: Unfiltered Layer Badge Behavior
+
+**Category:** UI/UX  
+**Status:** 🟢 Resolved  
+**Priority:** Medium  
+**Source:** UX Design Review, Feb 3, 2026 (extracted from DFT-012 edge cases)  
+**Resolved:** February 4, 2026
+
+**Context:**
+Per DFT-012, badges appear on camera icons showing filtered image counts. Badges only appear when a layer-level filter is applied.
+
+**Question:** What happens when NO filter is applied? Should cameras show total image counts, or no badges at all?
+
+**Options:**
+1. **No badges until filter applied** — cleaner default, badges indicate active query
+2. **Always show total counts** — useful overview, but may clutter map
+3. **Show totals on hover only** — clean map, details on demand
+4. **User preference** — toggle for "show image counts"
+
+**Considerations:**
+- Showing totals may overwhelm with numbers if 50+ cameras
+- No badges until filter is cleaner but loses "overview" capability
+- Hover-only is a middle ground but requires interaction
+
+**Discussion:**
+- **Option 1 (No badges until filter)** aligns with DFT-012's semantic of "badges = filtered results here"
+- Badges become meaningful signals when they only appear during filtering (figure/ground separation)
+- Research audience understands query-driven workflows ("filter first, then see results")
+- Camera icons themselves show location; hover tooltips can show total counts on demand
+- Avoids cognitive overload from 50+ simultaneous numbers on map
+
+**Resolution:** **Option 1 adopted** — No badges when layer has no filter. Badges only appear when layer-level filter is applied, making them semantic indicators of filtered query results. Optional fallback: hover tooltip shows total count ("CAM-042: 1,247 images").
+
+**Design Specification:**
+- **Default state (no filter):** Camera icons show no badges
+- **With layer-level filter:** Badges appear showing filtered counts (per DFT-012)
+- **Optional enhancement:** Hover tooltip shows total count even when no filter applied
+- **Rationale:**
+  - Badges carry information: "filtered results exist here"
+  - Clean default for first-time users
+  - Consistent with DFT-012 resolution
+  - Follows Gestalt figure/ground principles (badges stand out when they mean something)
+  - Shneiderman's mantra: overview (camera locations) first, details (counts) on demand (hover or filter)
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file) — resolution added
+- ✅ `docs/master-plan.md` — added to Cross-Phase Decisions → UX Decisions
+- ✅ `docs/IMPLEMENTATION/phases/phase-2-animl.md` — decision note added to Task 2.5
+
+**✅ Verification Checklist:**
+- [x] Phase document updated (phase-2-animl.md task 2.5)
+- [x] Master plan updated (UX Decisions table)
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with rationale
+- [x] Cross-references added ("Documented in:")
+- [x] Design specification included
+- [ ] Mockups noted (not applicable — badges already specified in DFT-012)
+
+---
+
+## DFT-030: Error State Design
+
+**Category:** UI/UX  
+**Status:** 🟢 Resolved  
+**Priority:** High  
+**Source:** UX Design Review, Feb 3, 2026  
+**Resolved:** February 4, 2026
+
+**Context:**
+No design specification for error handling:
+- API request fails (network error, timeout, 500 error)
+- Partial data load failure (some cameras load, others fail)
+- Rate limiting errors
+
+**Why this matters (Nielsen: Help users recognize, diagnose, recover from errors):**
+Errors are inevitable. Users need clear feedback about what went wrong and how to recover.
+
+**Resolution:** **Combination approach with severity-based hierarchy**
+
+**Design Decisions:**
+
+### 1. Error Severity Hierarchy
+
+| Severity | Example | Pattern | Lifespan |
+|----------|---------|---------|----------|
+| **Critical** | Total API outage | Modal | Persistent (blocks app) |
+| **Regional** | Right sidebar content failed | Inline in region | Persistent until resolved |
+| **Partial** | 3 of 47 cameras failed | Banner + loaded content | Persistent until resolved |
+| **Action** | Bookmark save failed | Toast | 8s auto-dismiss |
+
+### 2. Toast Notifications (Action Failures)
+
+**Placement:** Top of right sidebar (above header)
+- Position: `position: absolute; top: 0; right: 0; left: 0;` (full width of sidebar)
+- Z-index above sidebar content but below modals
+- Stacked if multiple (newest on top, max 3 visible)
+
+**Visual Design:**
+```
+┌────────────────────────────────────────────────────┐
+│  [✕ Icon]  Bookmark failed to save. [Try Again]  ✕│
+└────────────────────────────────────────────────────┘
+```
+
+**Design Tokens:**
+- Container: `bg-red-50 border-b border-red-200`
+- Icon: `w-5 h-5 text-red-500` (Lucide `XCircle`)
+- Text: `text-sm text-gray-800`
+- Button: `text-sm text-red-600 hover:underline`
+- Dismiss: `text-gray-400 hover:text-gray-600`
+
+**Behavior:**
+- Auto-dismiss after 8 seconds
+- User can dismiss manually via ✕
+- "Try Again" inline button retries action and dismisses toast
+- Multiple toasts stack (newest on top, max 3)
+
+**Use for:**
+- Bookmark save failed
+- Pin action failed
+- Export failed
+- Filter apply failed
+
+**Rationale:** Top of right sidebar avoids map legend conflict, maintains proximity to action context (most errors originate from sidebar interactions), consistent location for users to learn.
+
+### 3. Inline Errors (Content Failures)
+
+**Placement:** In the region where content should have loaded
+- Right sidebar for layer/feature load failures
+- Widget for widget-specific failures
+- Map overlay for map layer failures
+
+**Visual Design:**
+```
+┌─────────────────────────────────────────────────────┐
+│  [⚠ Icon]                                           │
+│  Unable to load camera data                         │
+│  The server didn't respond in time.                 │
+│                                                     │
+│  [Retry]  [← Back to Layer List]  [Show Details ▼] │
+└─────────────────────────────────────────────────────┘
+```
+
+**Design Tokens:**
+- Container: `bg-amber-50 border border-amber-200 rounded-lg p-4`
+- Icon: `w-8 h-8 text-amber-500` (Lucide `AlertTriangle`)
+- Title: `text-sm font-medium text-gray-800`
+- Body: `text-sm text-gray-600`
+- Primary button: `bg-emerald-600 text-white`
+- Secondary button: `text-gray-600 hover:underline`
+
+**Behavior:**
+- Persistent until user takes action (Retry, Go Back, or navigates away)
+- "Retry" triggers re-fetch with loading indicator
+- "Go Back" returns to previous view (contextual navigation)
+- "Show Details" expands technical info (optional, collapsed by default)
+- Dismissible via ✕ in cases where it's optional to retry
+
+**Use for:**
+- Right sidebar content failed to load
+- Camera/sensor list failed to load
+- Search results failed
+
+### 4. Partial Failure Banner
+
+**Pattern:** Show what loaded successfully, banner for failures
+
+```
+┌─────────────────────────────────────────────────────┐
+│ [⚠] 3 cameras failed to load. [Retry Failed] [✕]   │
+└─────────────────────────────────────────────────────┘
+│  Camera A1        🦁 23 images                      │
+│  Camera A2        🦁 15 images                      │
+│  ...successfully loaded content continues...        │
+```
+
+**Design Tokens:**
+- Banner: `bg-amber-50 border-b border-amber-200 px-4 py-2`
+- Text: `text-sm text-gray-700`
+- Button: `text-sm text-amber-700 hover:underline`
+
+**Behavior:**
+- Banner persists until dismissed or failures resolved
+- "Retry Failed" only retries the failed items (not successful ones)
+- Show loaded content below banner (don't throw away good data)
+
+**Use for:**
+- ANiML multi-camera queries where some succeed and some fail
+- Batch operations with partial success
+
+### 5. Critical Error Modal
+
+**Pattern:** Full-screen overlay for app-breaking errors
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   [⚠ Icon]                          │
+│                                                     │
+│     Unable to connect to data services              │
+│                                                     │
+│  The application couldn't reach the data servers.   │
+│  This may be a temporary issue.                     │
+│                                                     │
+│         ┌───────────────────────────┐               │
+│         │       Try Again           │               │
+│         └───────────────────────────┘               │
+│                                                     │
+│             [Show Technical Details]                │
+└─────────────────────────────────────────────────────┘
+```
+
+**Use for:**
+- Total API outage (all services unreachable)
+- Critical browser incompatibility
+- App initialization failure
+
+**Note:** No authentication errors (public-facing dashboard).
+
+### 6. Error Message Tone
+
+**Utilitarian** (consistent with DFT-015 empty states, DFT-011 researcher audience):
+- Direct, professional, no warmth
+- No apologetic language ("Oops!", "Sorry!")
+- Factual causality ("The server didn't respond" not "Something went wrong")
+
+**Examples:**
+- Good: "Unable to load camera data"
+- Good: "Request timed out after 30 seconds"
+- Good: "Bookmark failed to save"
+- Bad: "Oops! Something went wrong"
+- Bad: "Sorry, we couldn't save that"
+
+### 7. Color Tokens
+
+| Severity | Background | Border | Icon/Text |
+|----------|------------|--------|-----------|
+| Warning/Recoverable | `amber-50` | `amber-200` | `amber-500` |
+| Error/Failed | `red-50` | `red-200` | `red-500` |
+
+### 8. Timeout Behavior (Aligned with DFT-018)
+
+- 0-30s: Show loading state (per DFT-018)
+- 30s: Auto-timeout → inline error: "Request timed out. [Retry]"
+- Instant failure (4xx/5xx): Immediate error display
+
+### 9. "Show Details" Expansion
+
+Standardized pattern for technical debugging:
+- Collapsed by default
+- Toggle reveals: Request endpoint, HTTP status, timestamp, duration, request ID (if available)
+- Target audience (researchers) may need this for debugging queries
+
+### 10. Accessibility
+
+- **Focus management:** Move focus to error container when it appears
+- **ARIA:** `role="alert"` for toasts, `aria-live="polite"` for inline errors
+- **Color independence:** Icons + text + color (not color alone)
+- **Keyboard:** All buttons focusable and actionable via Enter/Space
+
+### 11. Animation
+
+- Error appears: Fade in 200ms + subtle shake (2px, 2 cycles)
+- Toast auto-dismiss: Fade out 300ms after 8s
+- Retry clicked: Error fades, loading spinner appears
+- **Reduced motion:** Use `prefers-reduced-motion` — replace shake with border pulse
+
+**Rationale:**
+- **Regional containment:** Errors appear where they happened (Gestalt Proximity, Norman Feedback)
+- **Always actionable:** Retry, Go Back, or Dismiss options (Nielsen #3: User control)
+- **Ephemeral vs. Persistent:** Toasts for actions (brief), inline for content (persistent until resolved)
+- **Utilitarian tone:** Matches researcher audience (DFT-011) and design system consistency
+- **Toast placement:** Top of right sidebar avoids map legend conflict, maintains contextual proximity
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file) — resolution added
+- ✅ `docs/DESIGN-SYSTEM/design-system.md` — error state patterns added
+- ✅ `docs/master-plan.md` — added to Cross-Phase Decisions
+
+**✅ Verification Checklist:**
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with full specification
+- [x] Design system updated with error patterns
+- [x] Master plan updated (cross-phase UX decision)
+- [x] Cross-references added ("Documented in:")
+- [x] Rationale provided using UI/UX principles
+- [ ] Mockups noted (defer to DFT-037 — mockup generation task)
+
+---
+
+## DFT-031: Confirmation Dialogs Pattern
+
+**Category:** UI/UX  
+**Status:** 🟢 Resolved  
+**Priority:** Medium  
+**Source:** UX Design Review, Feb 3, 2026  
+**Resolved:** February 4, 2026
+
+**Context:**
+Some actions may warrant confirmation dialogs to prevent accidental data loss:
+- Unpinning a layer with filters (loses filter state)
+- Clearing all filters on a pinned layer
+- Removing a bookmark
+- Deleting a filtered view
+
+**Question:** Which actions require explicit confirmation, and which can be undone via undo/redo?
+
+**Options:**
+1. **No confirmations, rely on undo** — faster workflow, less friction
+2. **Confirm destructive actions** — unpin with filters, delete view
+3. **Confirm all removes** — any ✕ button shows "Are you sure?"
+4. **Soft delete + toast with undo** — action happens immediately, toast shows "Undo" for 5 seconds
+
+**Discussion:**
+After analyzing via Norman's reversibility hierarchy (Undo > Confirmation > Irreversible), Nielsen's efficiency heuristics, Gestalt proximity principles, and behavioral science (confirmation fatigue, loss aversion), determined that universal undo is superior to selective confirmations.
+
+**Resolution:** **No confirmation dialogs. Context-specific undo buttons instead.**
+
+### Design Decision: Context-Specific Undo Buttons
+
+**Pattern:** Each widget/region has its own persistent undo button that tracks recent destructive actions.
+
+### Visual Design
+
+**Button Placement:** Widget header, right side (before collapse/close buttons)
+
+```
+┌──────────────────────────────────────────────────┐
+│  Pinned Feature Layers        [↶]  [−]  [✕]     │
+│  ↑ title                      ↑undo ↑collapse ↑close
+├──────────────────────────────────────────────────┤
+│  [≡] [👁] ANiML Cameras (mt. lion) [🌪️3]  [✕]  │
+│  [≡] [👁] iNaturalist                       [✕]  │
+└──────────────────────────────────────────────────┘
+```
+
+**Button States (Option B - Always Present):**
+
+| State | Styling | Tooltip | Behavior |
+|-------|---------|---------|----------|
+| **Inactive** | Gray, 40% opacity | "No actions to undo" | Disabled (not clickable) |
+| **Active** | Full opacity, emerald-600 | "Undo: Unpinned ANiML Cameras" | Click undoes most recent |
+
+**Design Tokens:**
+- Icon: Lucide `Undo2` or `RotateCcw` (w-5 h-5, 20px)
+- Active: `text-emerald-600 hover:text-emerald-700 cursor-pointer`
+- Inactive: `text-gray-400 opacity-40 cursor-not-allowed`
+- Transition: `opacity 200ms ease-out`
+- Animation (when activated): Subtle pulse (1 cycle, 400ms, respects `prefers-reduced-motion`)
+
+### Undo Button Placement by Region
+
+| Region | Undo Button | Actions Covered |
+|--------|-------------|-----------------|
+| **Left Sidebar** | Header, right side | Layer activation/selection (if needed) |
+| **Pinned Layers Widget** | Header, right side | Unpin layer, delete filtered view, clear filters |
+| **Bookmarked Features Widget** | Header, right side | Remove bookmark, remove multiple bookmarks |
+| **Right Sidebar** | Optional — header | Bookmark actions (if separate from widget) |
+
+**Total: 2-3 undo buttons** (primary: Pinned Layers + Bookmarked Features widgets)
+
+### Undo Stack
+
+**Per-Region Stacks:**
+- **Stack size:** 5 actions per region
+- **Scope:** Each widget maintains its own independent undo stack
+- **Single-level for v2.0:** Click undo button → undoes most recent action in that region
+- **Multi-level (future v2.1+):** Click-and-hold or dropdown shows last 5 actions
+
+**State Structure:**
+```typescript
+interface UndoAction {
+  type: 'unpin' | 'remove-bookmark' | 'clear-filters' | 'delete-view';
+  timestamp: number;
+  data: {
+    // Context-specific data to restore state
+    // e.g., layerId, filterState, bookmarkData, etc.
+  };
+}
+```
+
+**Hook Pattern:**
+```typescript
+const { canUndo, undo, addAction } = useUndoStack({
+  context: 'pinned-layers',
+  maxSize: 5,
+});
+```
+
+### Keyboard Support
+
+**Per-region keyboard navigation:**
+- Tab to undo button (part of natural tab order in widget header)
+- Enter/Space: Undo most recent action
+- Escape: No effect (button is not a modal)
+
+**Global keyboard shortcut:**
+- **Cmd+Z / Ctrl+Z:** Undo most recent action in most recently active region
+- Implementation: Track "active region" state (where user last performed action)
+- Deferred to Phase 6 (polish) — requires cross-region state coordination
+
+### Accessibility
+
+**ARIA:**
+- Button: `role="button"`, `aria-label="Undo: [action description]"` (dynamic)
+- Inactive state: `aria-disabled="true"`
+- Active state: `aria-disabled="false"`
+
+**Screen Reader:**
+- Inactive: "Undo button, disabled, no actions to undo"
+- Active: "Undo button, undo unpinned ANiML Cameras"
+
+**Visual:**
+- Color + icon + tooltip (not color alone)
+- 44px min touch target (WCAG 2.5.5)
+
+### Rationale
+
+**Design Principles Applied:**
+
+1. **Norman's Reversibility Hierarchy:** Undo > Confirmation > Irreversible. Undo is the gold standard—no interruption, full control.
+
+2. **Gestalt Proximity:** Undo button is spatially near the action region → clearer cause-effect relationship than distant toasts.
+
+3. **Nielsen #3 (User Control & Freedom):** "Clearly marked emergency exit" → persistent undo button provides constant reassurance.
+
+4. **Nielsen #7 (Flexibility & Efficiency):** No confirmation dialogs slowing workflow. Researchers can work at full speed.
+
+5. **Behavioral Science:**
+   - No confirmation fatigue (users never trained to autopilot-click)
+   - Reduced anxiety (visible undo = encourages exploration)
+   - Peak-End Rule: No deadline pressure (vs. 8-second toast windows)
+
+6. **Cognitive Load (Hick's Law):** No binary decisions ("Cancel" vs "Confirm"). Just act, then optionally undo.
+
+7. **Target Audience (DFT-011):** Researchers expect efficiency and control, not hand-holding.
+
+### Edge Cases
+
+**Rapid actions:**
+- User rapidly removes 3 bookmarks → only most recent is undoable (single-level for v2.0)
+- Undo button always reflects most recent action in that region
+- Future enhancement: Multi-level undo stack with dropdown
+
+**Navigating away:**
+- Undo button remains functional even if user switches contexts
+- Example: Unpin layer, then switch to different layer → undo still works
+
+**Stack persistence:**
+- Undo history does NOT persist across sessions (resets on refresh)
+- Rationale: Refreshing is a "commit" action; KISS principle for v2.0
+
+### Animation
+
+**On activation (action performed):**
+- Button transitions from inactive (40% opacity) to active (100% opacity)
+- Subtle pulse animation: 1 cycle, 400ms, `ease-in-out`
+- Respects `prefers-reduced-motion` (no pulse, just opacity change)
+
+**On undo (button clicked):**
+- No animation on button itself
+- Widget content updates (e.g., layer reappears in list)
+
+### Comparison to Alternatives
+
+| Approach | Proximity | Timing Pressure | Multi-Level | Visual Noise | Winner |
+|----------|-----------|-----------------|-------------|--------------|--------|
+| **Context Undo Buttons** | ✅ At action site | ✅ No deadline | ✅ Natural | ⚠️ 2-3 buttons | ✅ |
+| **Toast + Undo** | ⚠️ Distant | ⚠️ 8-15s window | ⚠️ Only recent | ✅ Temporary | |
+| **Inline Confirmation** | ✅ At action site | ⚠️ Interrupts | N/A | ⚠️ Expansion | |
+| **Modal Confirmation** | ❌ Overlay | ⚠️ Interrupts | N/A | ❌ High | |
+
+**Decision:** Context-specific undo buttons provide best balance of proximity, efficiency, and user control.
+
+---
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file) — resolution added
+- ✅ `docs/DESIGN-SYSTEM/design-system.md` — undo pattern added
+- ✅ `docs/master-plan.md` — added to Cross-Phase Decisions
+- ✅ `docs/IMPLEMENTATION/phases/phase-0-foundation.md` — widget specifications updated
+
+**✅ Verification Checklist:**
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with full specification
+- [x] Design system updated with undo button patterns
+- [x] Master plan updated (cross-phase UX decision)
+- [x] Phase 0 document updated (widget header layout)
+- [x] Cross-references added ("Documented in:")
+- [x] Rationale provided using UI/UX principles
+- [ ] Mockups noted (defer to DFT-037 — mockup generation task)
+
+---
+
+## DFT-031: Confirmation Dialog Strategy (Duplicate Entry - Consolidated Above)
+
+**Note:** This task was documented twice in the tracker. The resolution above (Context-Specific Undo Buttons) is the canonical resolution. The duplicate entry below contains additional details about hybrid approach (undo for single-item, confirmation for bulk operations) which complements the undo button pattern.
+
+**Resolution:** **Hybrid approach — undo for single-item actions, confirmation for bulk operations**
+
+**Decision Matrix:**
+
+| Action | Confirmation? | Undo? | Rationale |
+|--------|---------------|-------|-----------|
+| **Unpin single layer** | ❌ No | ✅ Yes | Frequent action; easy to re-pin |
+| **Remove single bookmark** | ❌ No | ✅ Yes | Frequent action; easy to re-bookmark |
+| **Clear filters on layer** | ❌ No | ✅ Yes | Filters shown in expanded panel; undo restores |
+| **Remove single cart item** | ❌ No | ✅ Yes | Similar to removing bookmarks |
+| **Clear entire cart** | ✅ Yes | ✅ Yes* | Bulk action affecting multiple queries |
+| **Clear all filters (future)** | ✅ Yes | ✅ Yes* | If applied across multiple layers |
+| **Delete custom view** | ❌ No | ✅ Yes | User can recreate filters easily |
+
+*Post-confirmation actions still support undo as safety net.
+
+**Implementation Notes:**
+- Replace existing `window.confirm()` in `App.tsx` (line 3374) with custom modal
+- Add undo support to Pinned Layers & Bookmarks widgets
+- Document pattern in `design-system.md` (already completed as part of Undo Button Pattern)
+- Create reusable `ConfirmDialog` component for bulk actions
+
+**Documented in:**
+- Design System: Undo Button Pattern (added Feb 4, 2026) includes confirmation strategy
+- Phase 0: Task 0.5 acceptance criteria includes undo implementation
+- Master Plan: Added to Cross-Phase Decisions (UX patterns)
+
+---
+
+## DFT-032: Map Tooltip Design
+
+**Category:** UI/UX  
+**Status:** 🟢 Resolved  
+**Priority:** Medium  
+**Source:** UX Design Review, Feb 3, 2026  
+**Resolved:** February 4, 2026
+
+**Context:**
+When users hover over features on the map (cameras, sensors, observations), what information appears in the tooltip before they click?
+
+**Why this matters (Nielsen: Visibility of system status / Shneiderman: Overview first, details on demand):**
+Tooltips provide "information scent" — users can preview what they'll get by clicking, reducing uncertainty and wasted clicks.
+
+**Resolution:** **Minimal MVP approach — ID + Type only for v2.0**
+
+Given timeline constraints and need for teammate feedback, implement minimal tooltips showing only primary identifier and feature type. Defer filter-aware content and advanced features to future enhancement after user feedback.
+
+### Design Specification (v2.0 MVP)
+
+**Phase 1 Implementation Options:**
+
+**Option A: Native Browser Tooltips (Recommended for MVP)**
+- Use `title` attribute on map markers
+- Zero development overhead
+- Format: `"CAM-042 • Camera"` or `"WL-08 • Water Level Sensor"`
+- Browser handles timing, positioning, accessibility automatically
+- Perfect for gathering teammate feedback on what else to show
+
+**Option B: Minimal Custom Tooltip**
+- Simple styled div showing ID + Type
+- Position near cursor/feature
+- Slightly more polished appearance
+- ~20-50 lines of code
+
+### Tooltip Content by Data Source (MVP)
+
+| Data Source | Tooltip Content |
+|-------------|-----------------|
+| **ANiML Cameras** | `"CAM-042 • Camera"` |
+| **Dendra Sensors** | `"WL-08 • Water Level Sensor"` |
+| **iNaturalist** | `"California Condor • Observation"` |
+| **eBird** | `"Spotted Owl • Sighting"` |
+| **DataOne** | `"[Dataset Title] • Dataset"` (truncate if >40 chars) |
+| **TNC Layers** | `"Thomas Fire Perimeter • Fire Perimeter"` |
+
+### Future Enhancement (Post-v2.0)
+
+After gathering teammate feedback, consider adding:
+- Filter-aware counts (e.g., "23 mountain lion images")
+- Additional metadata fields (date, location, latest reading)
+- Custom styling and animations
+- Advanced timing behavior (200ms delay, fade transitions)
+- Complex filter state integration
+
+**Rationale:**
+- **Timeline-appropriate:** Feb 20 deadline requires focusing on core functionality
+- **Feedback-driven:** Better to ship simple and iterate based on actual usage
+- **Zero overhead:** Native tooltips require minimal implementation
+- **Extensible:** Easy to enhance once team identifies what's most valuable
+- **Progressive disclosure maintained:** Even minimal tooltips provide basic wayfinding
+
+**Implementation Note:**
+Native browser tooltips work with keyboard navigation automatically (`title` attribute announces on focus). For custom tooltips, ensure `role="tooltip"` and `aria-describedby` for WCAG compliance.
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file) — resolution added with MVP spec
+- ✅ `docs/DESIGN-SYSTEM/design-system.md` — minimal tooltip pattern added
+- ✅ `docs/master-plan.md` — added to Cross-Phase Decisions (affects all data sources)
+- ✅ `docs/IMPLEMENTATION/phases/phase-6-polish.md` — enhancement task added for post-v2.0
+
+**✅ Verification Checklist:**
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with MVP specification
+- [x] Design system updated with minimal pattern
+- [x] Master plan updated (cross-phase UX decision)
+- [x] Phase 6 updated with future enhancement task
+- [x] Cross-references added ("Documented in:")
+- [x] Rationale provided using UI/UX principles
+- [x] Implementation notes included
 
 ---
 
