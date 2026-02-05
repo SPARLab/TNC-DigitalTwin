@@ -131,10 +131,18 @@ Estimated total: ~52 MB
 
 **Goal:** Allow user to export their selections.
 
+**Design Decision (Feb 4, 2026):** Resolved DFT-031 — Confirmation dialog strategy. "Clear Cart" bulk action requires custom modal confirmation (not `window.confirm()`). Single cart item removal executes immediately with undo toast. Visual hierarchy: small × icons for single items, bordered "Clear Cart" button with warning styling for bulk action.
+
 **Acceptance Criteria:**
 - [ ] "Export ZIP" button creates downloadable archive
 - [ ] "Generate Links" button creates shareable links (if supported)
 - [ ] "Cancel" button closes modal
+- [ ] "Clear Cart" button with confirmation modal (DFT-031):
+  - [ ] Replace `window.confirm()` with custom `ConfirmDialog` component
+  - [ ] Modal format: Title "Clear cart?", Message "Remove all N queries from your export cart?"
+  - [ ] Buttons: "Cancel" (secondary) + "Clear Cart" (destructive styling with red border)
+  - [ ] After confirmation, show undo toast (5s duration)
+- [ ] Single cart item removal (× icon) executes immediately with undo toast (no confirmation)
 - [ ] Loading state while export is processing
 - [ ] Success/error feedback
 
@@ -178,4 +186,5 @@ Estimated total: ~52 MB
 |------|------|--------|-----|
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 | Jan 29, 2026 | 5.1 | Updated with DFT-002 resolution (modal opens from global header button) | Will + Claude |
+| Feb 4, 2026 | 5.4 | Updated with DFT-031 resolution (Clear Cart requires custom modal confirmation; single item removal uses undo toast only) | Will + Claude |
 

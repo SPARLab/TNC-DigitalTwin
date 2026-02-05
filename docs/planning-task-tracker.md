@@ -115,7 +115,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-028 | Zero-result camera behavior — hidden vs grayed out when filter matches 0 images | UI/UX | 🟢 Resolved | Medium |
 | DFT-029 | Unfiltered layer badge behavior — show total counts or no badges? | UI/UX | 🟢 Resolved | Medium |
 | DFT-030 | Error state design — API failures, network errors, timeout handling | UI/UX | 🟢 Resolved | High |
-| DFT-031 | Confirmation dialogs — when to require explicit confirmation (delete, clear filters) | UI/UX | 🟡 Open | Medium |
+| DFT-031 | Confirmation dialogs — when to require explicit confirmation (delete, clear filters) | UI/UX | 🟢 Resolved | Medium |
 | DFT-032 | Map tooltip design — what info shows on hover before clicking feature? | UI/UX | 🟢 Resolved | Medium |
 | DFT-033 | Right sidebar width and resizability — fixed or user-adjustable? | Layout | 🟡 Open | Low |
 | DFT-034 | Drag-and-drop reorder feedback — what visual cues during layer reorder? | Microinteraction | 🟡 Open | Low |
@@ -165,7 +165,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-028 | Zero-result camera behavior | Amy, Trisalyn, Dan | ✅ Resolved - Feb 4 |
 | DFT-029 | Unfiltered layer badge behavior | Amy, Trisalyn | ✅ Resolved - Feb 4 |
 | DFT-030 | Error state design | Will, Dan | ✅ Resolved - Feb 4 |
-| DFT-031 | Confirmation dialogs pattern | Will | 🟡 Pending |
+| DFT-031 | Confirmation dialogs pattern | Will | ✅ Resolved - Feb 4 |
 | DFT-032 | Map tooltip design | Will | ✅ Resolved - Feb 4 |
 | DFT-033 | Right sidebar width and resizability | Will | 🟡 Pending |
 | DFT-034 | Drag-and-drop reorder feedback | Will | 🟡 Pending |
@@ -808,6 +808,198 @@ const { canUndo, undo, addAction } = useUndoStack({
 - [x] Cross-references added ("Documented in:")
 - [x] Rationale provided using UI/UX principles
 - [ ] Mockups noted (defer to DFT-037 — mockup generation task)
+
+---
+
+### DFT-031: Confirmation Dialog Strategy
+
+**Category:** UI/UX  
+**Status:** 🟢 Resolved  
+**Priority:** Medium  
+**Source:** UX Design Review, Feb 3, 2026  
+**Resolved:** February 4, 2026
+
+**Context:**
+The app allows destructive user actions:
+- Unpin layer (removes from Pinned Layers widget)
+- Remove bookmark (removes from Bookmarks widget)
+- Clear filters (resets all filters on a layer)
+- Clear cart (removes all items from export cart)
+- Remove cart item (removes single item)
+
+**Question:** Which actions require confirmation dialogs vs. relying on undo?
+
+**Why this matters:**
+- **Nielsen #5 (Error Prevention):** Some errors are costly to recover from
+- **Nielsen #3 (User Control):** Users need confidence they won't lose work
+- **Nielsen #7 (Flexibility):** Confirmations slow down frequent actions
+- **Behavioral Science:** Confirmation fatigue leads to "clicking through" without reading
+
+**Resolution:** **Hybrid approach — undo for single-item actions, confirmation for bulk operations**
+
+**Decision Matrix:**
+
+| Action | Confirmation? | Undo? | Rationale |
+|--------|---------------|-------|-----------|
+| **Unpin single layer** | ❌ No | ✅ Yes | Frequent action; easy to re-pin |
+| **Remove single bookmark** | ❌ No | ✅ Yes | Frequent action; easy to re-bookmark |
+| **Clear filters on layer** | ❌ No | ✅ Yes | Filters shown in expanded panel; undo restores |
+| **Remove single cart item** | ❌ No | ✅ Yes | Similar to removing bookmarks |
+| **Clear entire cart** | ✅ Yes | ✅ Yes* | Bulk action affecting multiple queries |
+| **Clear all filters (future)** | ✅ Yes | ✅ Yes* | If applied across multiple layers |
+| **Delete custom view** | ❌ No | ✅ Yes | User can recreate filters easily |
+
+*Post-confirmation actions still support undo as safety net.
+
+**Design Principles:**
+
+### 1. Confirmation Decision Tree
+
+```
+Is this a bulk action (>1 item)?
+├─ YES → Does it affect user-generated content?
+│         ├─ YES → CONFIRM + UNDO
+│         └─ NO  → CONFIRM + UNDO
+└─ NO  → Is it easily reversible?
+          ├─ YES → NO CONFIRM, UNDO ONLY
+          └─ NO  → CONFIRM + UNDO
+```
+
+### 2. Single-Item Actions (No Confirmation)
+
+**Pattern:** Immediate action + toast with undo
+
+```typescript
+// Example implementation
+const handleUnpinLayer = (layerId: string) => {
+  const previousState = captureLayerState(layerId);
+  
+  unpinLayer(layerId);
+  
+  toast.success('Layer unpinned', {
+    duration: 5000,
+    action: {
+      label: 'Undo',
+      onClick: () => restoreLayerState(previousState)
+    }
+  });
+};
+```
+
+**Visual Pattern:**
+- Action executes immediately (no interruption)
+- Toast appears: "Layer unpinned" [Undo]
+- Undo window: 5 seconds (standard), 10 seconds (complex actions like layers with >5 filters)
+
+### 3. Bulk Actions (With Confirmation)
+
+**Pattern:** Custom modal (not `window.confirm`) + undo after confirmation
+
+```typescript
+// Example implementation
+const handleClearCart = async () => {
+  const confirmed = await showDialog({
+    title: 'Clear cart?',
+    message: `Remove all ${cartItems.length} queries from your export cart?`,
+    confirmLabel: 'Clear Cart',
+    confirmVariant: 'destructive',
+    cancelLabel: 'Cancel'
+  });
+  
+  if (confirmed) {
+    const previousCart = [...cartItems];
+    clearCart();
+    
+    toast.success('Cart cleared', {
+      duration: 5000,
+      action: {
+        label: 'Undo',
+        onClick: () => restoreCart(previousCart)
+      }
+    });
+  }
+};
+```
+
+**Modal Design:**
+- Title: "[Action]?" (e.g., "Clear cart?")
+- Message: Specific count of affected items
+- Buttons: "Cancel" (secondary) + "[Action Verb]" (destructive styling)
+- Use custom modal component (not native `window.confirm()`)
+
+### 4. Visual Hierarchy for Destructive Actions
+
+**Single-item removal (× icon):**
+```tsx
+<button className="text-slate-400 hover:text-red-500 transition-colors">
+  <X className="w-4 h-4" />
+</button>
+```
+
+**Bulk removal button:**
+```tsx
+<button className="px-4 py-2 bg-white border-2 border-red-500 text-red-600 
+                   hover:bg-red-50 font-medium rounded-lg">
+  <Trash2 className="w-4 h-4" />
+  Clear All
+</button>
+```
+
+The border and color signal severity—users pause naturally.
+
+**Rationale:**
+
+1. **Cognitive Load (Hick's Law):** Each confirmation adds decision points. Frequent actions (unpin, unbookmark) should be friction-free.
+
+2. **Peak-End Rule:** Research workflows involve many micro-actions. Constant interruptions create negative "peaks." Smooth flow creates better experience.
+
+3. **Norman's Reversibility Hierarchy:** Undo > Confirmation > Irreversible. Undo is superior because it doesn't interrupt workflow.
+
+4. **Loss Aversion:** Users fear losing work. Undo provides safety without anxiety of "Are you sure?" dialogs.
+
+5. **Progressive Commitment:** Small actions (one item) don't need confirmation. Large actions (clear all) should require explicit consent.
+
+6. **Target Audience:** Researchers expect efficiency, not hand-holding (per DFT-011).
+
+**Edge Cases:**
+
+1. **Layer with complex filters (10+ conditions):**
+   - Decision: Still no confirmation, but undo duration = 10 seconds (vs 5 seconds)
+   - Rationale: User invested time; give more recovery window
+
+2. **User unpins last remaining layer:**
+   - Decision: No confirmation (consistent with single-item pattern)
+   - Feedback: "All layers unpinned" toast with undo
+
+3. **Cart has 1 item, user clicks "Clear Cart":**
+   - Decision: Still show confirmation (button label implies bulk action)
+   - Alternative: Dynamically change button to "Remove" when count = 1
+
+4. **User clicks "Clear Filters" but no filters applied:**
+   - Decision: Button disabled/grayed when no filters exist
+   - Avoids confusing confirmation for no-op action
+
+**Implementation Notes:**
+
+- Replace existing `window.confirm()` in `App.tsx` (line 3374) with custom modal
+- Add undo support to Pinned Layers & Bookmarks widgets
+- Document pattern in `design-system.md` (already completed as part of Undo Button Pattern)
+- Create reusable `ConfirmDialog` component for bulk actions
+
+**Documented in:**
+- Design System: Undo Button Pattern (added Feb 4, 2026) includes confirmation strategy
+- Phase 0: Task 0.5 acceptance criteria includes undo implementation
+- Master Plan: Added to Cross-Phase Decisions (UX patterns)
+
+**✅ Verification Checklist:**
+- [x] Resolution documented in planning-task-tracker.md
+- [x] Decision matrix created with specific action-by-action guidance
+- [x] Design pattern specified for both single-item and bulk actions
+- [x] Edge cases documented
+- [x] Design System updated with Undo Button Pattern (includes confirmation strategy)
+- [x] Rationale provided using 9 UI/UX principle frameworks
+- [ ] Replace `window.confirm()` with custom modal (implementation task)
+- [ ] Add undo support to widgets (implementation task)
 
 ---
 

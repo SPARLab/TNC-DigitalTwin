@@ -174,8 +174,8 @@ interface Bookmark {
 **Decision (Feb 3, 2026):** Resolved DFT-013 — Multiple filtered views use "Multiple Saved, Single Visible" model. Nested widget structure when 2+ views exist; only one view visible at a time (mutual exclusivity); memory-preserving parent toggle.  
 **Decision (Feb 3, 2026):** Resolved DFT-015 — Empty state design. Widget title uses configurable terminology: "Pinned {childNoun} Layers". First visit shows educational empty state (expanded); returning user sees laconic message. See design-system.md for terminology config.  
 **Decision (Feb 4, 2026):** Resolved DFT-019 — "Edit Filters" button navigation behavior. Button labeled "Edit Filters →" (with arrow), right-aligned in expanded panel. Widget remains expanded (user can reference filter state). Right sidebar uses crossfade animation (~150-200ms) for tab transitions. Separation of Concerns: Widget manages visibility/stacking; sidebar manages deep editing.  
-**Decision (Feb 4, 2026):** Resolved DFT-025 — Create New View transition animation. Inline transformation with sequential staging (250-300ms total): row expands → children appear → new child highlights briefly. Respects `prefers-reduced-motion`. Focus moves to new child row. Screen reader announces state change.
-**Decision (Feb 4, 2026):** Resolved DFT-031 — Confirmation dialogs pattern. No confirmation dialogs. Context-specific undo buttons instead. Widget header has persistent undo button (always visible, grayed when inactive). Stack size: 5 actions per region. Cmd+Z/Ctrl+Z support in Phase 6. See design-system.md for full specification.
+**Decision (Feb 4, 2026):** Resolved DFT-025 — Create New View transition animation. Inline transformation with sequential staging (250-300ms total): row expands → children appear → new child highlights briefly. Respects `prefers-reduced-motion`. Focus moves to new child row. Screen reader announces state change.  
+**Decision (Feb 4, 2026):** Resolved DFT-031 — Confirmation dialog strategy. **Hybrid approach:** No confirmation for single-item actions (unpin layer, clear filters, delete filtered view)—these execute immediately with 5-10s undo toast. Bulk actions (clear all, if implemented) require custom modal confirmation. Widget header has persistent undo button (always visible, grayed when inactive). Stack size: 5 actions per region. Actions covered: Unpin layer, delete filtered view, clear filters. Pattern documented in design-system.md. Replace `window.confirm()` with custom modal component for any bulk operations.
 
 **Widget Header Layout:**
 ```
@@ -314,7 +314,7 @@ interface Bookmark {
   - [ ] Stack size: 5 actions per widget (single-level for v2.0)
   - [ ] Actions covered: Unpin layer, delete filtered view, clear filters
   - [ ] See design-system.md for full undo button specification
-- [ ] "Clear" button removes all filters from the layer
+- [ ] "Clear" button removes all filters from the layer **without confirmation** (DFT-031: immediate action + undo toast)
 - [ ] "+ Create New View" button duplicates the layer with current filters as a new pinned entry
 - [ ] Filter indicator shows count and is clickable (opens Browse tab)
 - [ ] No filters = muted gray filter icon (still clickable)
@@ -401,6 +401,7 @@ interface Bookmark {
   - [ ] Stack size: 5 actions per widget (single-level for v2.0)
   - [ ] Actions covered: Remove bookmark, remove multiple bookmarks
   - [ ] See design-system.md for full undo button specification
+  - [ ] **Note (DFT-031):** Remove bookmark action executes immediately without confirmation (undo toast provides safety)
 - [ ] **Empty state (DFT-015):**
   - [ ] Widget title uses configurable terminology from `src/config/terminology.ts`: "Bookmarked {childNoun}s"
   - [ ] First visit (never bookmarked before): Show expanded educational empty state with muted bookmark icon, "No {childNoun}s bookmarked." title, "Bookmarks save specific {childNoun}s within layers (cameras, sensors, observations). Bookmark {childNoun}s from the right sidebar." body
@@ -536,6 +537,7 @@ interface Bookmark {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 4, 2026 | 0.5, 0.6 | Updated with DFT-031 resolution (Confirmation dialog strategy: hybrid approach with undo for single-item actions, confirmation for bulk operations) | Will + Claude |
 | Feb 4, 2026 | 0.7 | Added error handling components task (DFT-030 resolution) — toast, inline error, partial failure, critical modal | Will + Claude |
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 | Jan 27, 2026 | 0.2, 0.5 | Updated with DFT-001 resolution (Model C: selection = active) | Will + Claude |
