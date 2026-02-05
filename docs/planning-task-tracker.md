@@ -67,13 +67,13 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 - **Export functionality:** `IMPLEMENTATION/phases/phase-5-export-builder.md`
 - **Cross-phase decisions:** `master-plan.md` → "Cross-Phase Decisions" → "UX Decisions"
 
-**Last Updated:** February 5, 2026 (Archived DFT-001 through DFT-032 to reduce tracker size)
+**Last Updated:** February 5, 2026 (Added DFT-038 through DFT-040: filter design system)
 
 **Next Steps:**
-- [ ] **BEFORE MOCKUPS (DFT-037):** Resolve all design discussion tasks (DFT-015 through DFT-036)
-  - **High priority:** ~~DFT-018 (loading states)~~, ~~DFT-020 (pointer-row bookmark UI)~~, DFT-030 (error states)
-  - **Medium priority:** ~~DFT-019 (Edit Filters navigation)~~, ~~DFT-024 (Filter indicator)~~, DFT-028, DFT-029, DFT-031, DFT-032, DFT-035
-  - **Low priority:** Can defer to Phase 6 if not blocking mockup generation
+- [ ] **BEFORE MOCKUPS (DFT-037):** Resolve all design discussion tasks (DFT-015 through DFT-040)
+  - **High priority:** ~~DFT-018 (loading states)~~, ~~DFT-020 (pointer-row bookmark UI)~~, ~~DFT-030 (error states)~~, DFT-038 (filter anatomy), DFT-039 (filter apply behavior)
+  - **Medium priority:** ~~DFT-019 (Edit Filters navigation)~~, ~~DFT-024 (Filter indicator)~~, ~~DFT-028~~, ~~DFT-029~~, ~~DFT-031~~, ~~DFT-032~~, ~~DFT-035~~, DFT-040 (dual-level distinction)
+  - **Low priority:** DFT-036 (bookmark hover highlight) — can defer to Phase 6 if not blocking mockup generation
 - [x] **Archive completed:** Archived DFT-001 through DFT-027 to `PLANNING/archived-planning-tasks-from-tracker.md` (Feb 4, 2026)
 
 ---
@@ -119,9 +119,12 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-032 | Map tooltip design — what info shows on hover before clicking feature? | UI/UX | 🟢 Resolved | Medium |
 | DFT-033 | Right sidebar width and resizability — fixed or user-adjustable? | Layout | 🟢 Resolved | Low |
 | DFT-034 | Drag-and-drop reorder feedback — what visual cues during layer reorder? | Microinteraction | 🟢 Resolved | Low |
-| DFT-035 | DataOne search behavior — instant search or explicit submit? | UI/UX | 🟡 Open | Medium |
+| DFT-035 | DataOne search behavior — instant search or explicit submit? | UI/UX | 🟢 Resolved | Medium |
 | DFT-036 | Feature highlight on map when hovering bookmark row | UI/UX | 🟡 Open | Low |
-| DFT-037 | Generate updated mockups reflecting all resolved design decisions (DFT-001 through DFT-036) | Task | 🟡 Open | High |
+| DFT-037 | Generate updated mockups reflecting all resolved design decisions (DFT-001 through DFT-040) | Task | 🟡 Open | High |
+| DFT-038 | Filter section anatomy — shared structural template for Browse tab filter UI across all data sources | Design System | 🟡 Open | High |
+| DFT-039 | Filter apply behavior — auto-apply vs explicit Apply button consistency across data sources | UI/UX | 🟡 Open | High |
+| DFT-040 | Dual-level filter visual distinction — how Level 2 vs Level 3 filters look different (ANiML, Dendra) | UI/UX | 🟡 Open | Medium |
 
    **Status Key:**
 - 🟢 Resolved — Decision made, ready for dev
@@ -169,9 +172,12 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-032 | Map tooltip design | Will | ✅ Resolved - Feb 4 |
 | DFT-033 | Right sidebar width and resizability | Will | ✅ Resolved - Feb 5 |
 | DFT-034 | Drag-and-drop reorder feedback | Will | ✅ Resolved - Feb 5 |
-| DFT-035 | DataOne search behavior | Will, Dan | 🟡 Pending |
+| DFT-035 | DataOne search behavior | Will, Dan | ✅ Resolved - Feb 5 |
 | DFT-036 | Feature highlight on bookmark hover | Will | 🟡 Pending |
 | DFT-037 | Generate updated mockups after design decisions resolved | Will | 🟡 Pending |
+| DFT-038 | Filter section anatomy — shared structural template | Will | 🟡 Pending |
+| DFT-039 | Filter apply behavior consistency | Will | 🟡 Pending |
+| DFT-040 | Dual-level filter visual distinction (ANiML, Dendra) | Will | 🟡 Pending |
 
 ## Paradigm Sign-Offs
 
@@ -872,6 +878,224 @@ After DFT-037 is complete, **archive resolved design decisions** to `PLANNING/re
 
 ---
 
+### DFT-038: Filter Section Anatomy — Shared Structural Template
+
+**Category:** Design System  
+**Status:** 🟡 Open  
+**Priority:** High  
+**Source:** Will + Claude design discussion, Feb 5, 2026
+
+**Context:**
+We have 4 data sources (iNaturalist, ANiML, Dendra, DataOne) that each need filter controls in the right sidebar Browse tab. Each has different applicable filters (species, date range, spatial filters, keywords, station selectors, etc.), but there is no shared design system for how these filters are visually structured. Without a consistent anatomy, 4 parallel Cursor agents will build 4 visually different filter UIs, making Phase 6 (Polish) significantly harder.
+
+**What this decides:**
+The structural skeleton that every Browse tab's filter section follows — not the exact styling (colors, border-radius, spacing values), which is deferred to mockup iteration (DFT-037).
+
+**Filter Parameter Inventory (from service analysis):**
+
+| Filter Type | iNaturalist | ANiML | Dendra | DataOne |
+|---|:---:|:---:|:---:|:---:|
+| Date range | Start/End | Start/End | Days-back / Range | Start/End |
+| Text search | Taxon name | — | — | Title search |
+| Single dropdown | Quality grade | Region, Status | Station, Datastream, Aggregation | Repository, TNC Category |
+| Multi-select | Iconic taxa, Months | Species labels, Deployments | — | — |
+| Toggle/Radio | Photo filter | — | "From most recent" | "Use preserve radius" |
+| Result count | "X of Y observations" | "X cameras, Y images" | "X sensors" / "X data points" | "X of Y datasets" |
+| Dual-level filters | No | Yes (camera + image) | Yes (station + datastream) | No |
+
+**Questions to Resolve:**
+1. What is the consistent structural skeleton for the filter section?
+2. How are controls sized and laid out within the 400px sidebar?
+3. What is the section header labeling convention?
+4. Should a shared `FilterSection` React component enforce this anatomy?
+
+**Proposed Anatomy Template:**
+
+```
+┌─────────────────────────────────────────┐
+│ [Section Header: "Filter [Noun]"]       │
+│                                         │
+│  [Control 1: full-width]                │
+│  [Control 2] [Control 3] ← 2-col grid  │
+│  [Control 4: full-width]                │
+│                                         │
+│  Showing 47 of 876 [noun]  [Clear All]  │
+├─────────────────────────────────────────┤
+│ [Feature list / results below]          │
+└─────────────────────────────────────────┘
+```
+
+**Proposed Control Sizing Rules (within ~368px usable):**
+- Text search: Always full-width
+- Single dropdowns: Can pair 2 side-by-side (~174px each, 2-column grid)
+- Date range (start + end): Full-width with inline start/end
+- Multi-selects: Full-width (pills need horizontal space)
+- Toggles/checkboxes: Can pair with a dropdown on same row
+
+**Proposed Section Header Convention:**
+- Single-level layers: `"Filter [Plural Noun]"` (e.g., "Filter Observations", "Filter Datasets")
+- Dual-level, layer scope: `"Filter [Plural Noun]"` (e.g., "Filter Cameras")
+- Dual-level, feature scope: `"Filter [Feature's Data]"` (e.g., "Filter Images", "Filter Datapoints")
+
+**Proposed Shared Component:**
+A `FilterSection` component wraps the consistent anatomy. Each data source passes in its specific controls as children, but the wrapper enforces:
+- Section header with configurable label
+- Consistent control grid layout
+- Result count display ("Showing X of Y [noun]")
+- "Clear All" action link
+- Consistent padding/spacing (exact values deferred to DFT-037 mockups)
+
+**What is deferred to mockups (DFT-037):**
+- Exact spacing/padding values (px, gap sizes)
+- Color treatment for filter section background
+- Control component styling (border-radius, focus states, dropdown appearance)
+- Filter section collapse/expand behavior
+- Specific component library choice (Headless UI, Radix, custom Tailwind, etc.)
+- Filter summary pill display (when section is collapsed)
+
+**Design Principles:**
+
+| Principle | How Template Addresses It |
+|---|---|
+| Gestalt: Common Region | Bounded filter section groups controls together |
+| Gestalt: Proximity | Controls grouped by level; result count adjacent to its filter section |
+| Norman: Signifiers | Section headers tell users what they're editing |
+| Nielsen #4: Consistency | Same anatomy template across all data sources |
+| Nielsen #6: Recognition | Consistent control vocabulary reduces learning curve per data source |
+| IA: Wayfinding | Section headers + result counts = "where am I, what am I seeing" |
+
+**Discussion:**
+*Pending resolution*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-039: Filter Apply Behavior — Auto-Apply vs Explicit Apply Button
+
+**Category:** UI/UX  
+**Status:** 🟡 Open  
+**Priority:** High  
+**Source:** Will + Claude design discussion, Feb 5, 2026
+
+**Context:**
+DFT-035 decided DataOne uses auto-apply (debounced instant search, immediate dropdown response). But the phase docs for ANiML (Phase 2, Tasks 2.3-2.4) and Dendra (Phase 3, Task 3.3) show `[Apply]` buttons in their ASCII diagrams. This inconsistency will confuse researchers who switch between data sources (Nielsen #4: Consistency).
+
+**The Inconsistency:**
+- **DataOne (DFT-035):** Auto-apply. Dropdowns fire immediately. Text search debounced at 500ms. No Apply button.
+- **ANiML (Phase 2 spec):** Shows `[Apply]` button in filter section.
+- **Dendra (Phase 3 spec):** Shows `[Apply]` button in filter section.
+- **iNaturalist (Phase 1 spec):** Not specified either way.
+
+**Questions to Resolve:**
+1. Should all data sources use the same apply behavior, or is per-source variation acceptable?
+2. If consistent, should it be auto-apply (DFT-035 pattern) or explicit Apply?
+3. Are there data sources where auto-apply is problematic (e.g., expensive queries)?
+
+**Options:**
+
+**Option A: Auto-apply everywhere (recommended)**
+- Dropdowns, date pickers, toggles: fire immediately on change
+- Text inputs: debounced (500ms per DFT-035)
+- No Apply button anywhere
+- Result count updates continuously
+- Rationale: consistent with DFT-035 reasoning (Norman Feedback, Hick's Law), every action reversible via "Clear" (DFT-031 undo pattern)
+
+**Option B: Explicit Apply everywhere**
+- All filter changes staged until user clicks Apply
+- More "control" feeling
+- Risk: silent state changes, broken feedback loop for dropdowns
+
+**Option C: Hybrid (per data source)**
+- Auto-apply for cheap queries (DataOne, iNaturalist)
+- Explicit Apply for expensive queries (ANiML image search, Dendra datapoints)
+- Risk: inconsistency across tabs
+
+**Considerations:**
+- ANiML queries can take 8-12s (Phase 2 notes). Auto-apply during typing could hammer the API.
+- `AbortController` pattern (from DFT-035) mitigates stale request issues.
+- Loading states (DFT-018) handle slow queries gracefully.
+- Target audience (DFT-011): researchers iterate quickly on filters.
+
+**Design Principles:**
+
+| Principle | Option A | Option B | Option C |
+|---|---|---|---|
+| Nielsen #4: Consistency | Yes | Yes | No |
+| Norman: Feedback | Yes (continuous) | Delayed | Mixed |
+| Hick's Law | Fewer decisions | Extra decision per iteration | Variable |
+| Shneiderman #7: User Control | Slightly less | More | Mixed |
+| Nielsen #1: System Status | Continuous updates | Updates on demand | Mixed |
+
+**Discussion:**
+*Pending resolution*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-040: Dual-Level Filter Visual Distinction
+
+**Category:** UI/UX  
+**Status:** 🟡 Open  
+**Priority:** Medium  
+**Source:** Will + Claude design discussion, Feb 5, 2026
+
+**Context:**
+ANiML and Dendra have two levels of filters that appear in the same right sidebar Browse tab:
+- **ANiML:** Level 2 = "Filter Cameras" (region, status) → Level 3 = "Filter Images" (species, date)
+- **Dendra:** Level 2 = "Filter Sensors" (region, status, time range) → Level 3 = "Filter Datapoints" (date range, aggregation)
+
+DFT-004 established that the sidebar is the canonical filter editor and that level transitions use progressive disclosure. But it didn't specify the *visual treatment* that distinguishes one filter level from the other when both might be visible (e.g., Dendra shows a collapsed layer-filter summary + expanded feature-filter section).
+
+iNaturalist and DataOne are single-level (no distinction needed), so this only applies to ANiML and Dendra.
+
+**Questions to Resolve:**
+1. How does the user visually distinguish "I'm editing camera-level filters" from "I'm editing image-level filters"?
+2. When the user drills into a feature (Level 3), how does the Level 2 filter section change?
+3. Should the two levels use different background colors, different section header styles, or something else?
+
+**Options:**
+
+**Option A: Section headers + subtle background shift (recommended)**
+- Level 2 filter section: white background, standard section header ("Filter Cameras")
+- Level 3 filter section: `slate-50` background, slightly inset, different section header ("Filter Images at CAM-042")
+- Level 2 collapses to a read-only summary line with "[Edit]" link when Level 3 is active
+- Rationale: double-encoding (Gestalt: Common Region + typography) without heavy-handed color coding
+
+**Option B: Accordion panels with distinct borders**
+- Each level in its own collapsible accordion with a colored left border
+- Level 2: blue left border, Level 3: amber left border
+- More visual separation but heavier UI weight
+
+**Option C: Tab-like sub-navigation within the Browse tab**
+- Sub-tabs: "Cameras" | "Images" within the Browse tab
+- Most explicit separation but adds navigation complexity (a tab within a tab)
+
+**Considerations:**
+- Dendra's Phase 3 spec already has ASCII diagrams showing a "collapsed summary + [Edit]" pattern for Level 2 when Level 3 is active. Option A aligns with this existing spec.
+- ANiML's Phase 2 spec says "clear visual distinction" but doesn't specify how.
+- At 400px width (DFT-033), horizontal space is limited — Option C wastes some on sub-tabs.
+- Progressive disclosure (DFT-004) means both levels are rarely fully expanded simultaneously — one is typically collapsed.
+
+**Design Principles:**
+
+| Principle | How It Applies |
+|---|---|
+| Gestalt: Common Region | Background color shift groups Level 3 controls as a distinct region |
+| Gestalt: Proximity | Level 2 summary stays near top (spatial reference); Level 3 controls grouped below |
+| Norman: Conceptual Model | "I'm inside a camera" = Level 3 context. Background shift signals scope change |
+| Nielsen #6: Recognition | Section headers ("Filter Images at CAM-042") eliminate guessing |
+| IA: Progressive Disclosure | Level 2 collapses when Level 3 is active; expandable to edit |
+| IA: Wayfinding | "← Back to Cameras" breadcrumb + collapsed summary = "I came from here" |
+
+**Discussion:**
+*Pending resolution*
+
+**Resolution:** *Pending*
+
+---
+
 
 ### DFT-002: Export Button Placement/Visibility ✅
 
@@ -903,6 +1127,7 @@ After DFT-037 is complete, **archive resolved design decisions** to `PLANNING/re
 
 | Date | Change |
 |------|--------|
+| Feb 5, 2026 | Added DFT-038 (filter section anatomy), DFT-039 (filter apply behavior consistency), DFT-040 (dual-level filter visual distinction). These three items establish the Browse tab filter design system before mockup generation. DFT-038 proposes a shared `FilterSection` component to enforce consistent anatomy across all data sources. DFT-039 addresses inconsistency between DataOne's auto-apply (DFT-035) and ANiML/Dendra's `[Apply]` button pattern. DFT-040 addresses visual distinction for dual-level data sources (ANiML, Dendra). Updated DFT-037 prerequisites to include DFT-038 and DFT-039 as blocking |
 | Feb 5, 2026 | Resolved DFT-035: DataOne search behavior — debounced instant search (500ms, 2+ chars) with immediate dropdown filters. Text search uses Enter key bypass for power users. Initial state loads all datasets (most recent first), eliminating v1 "pre-search" dead state. Pagination with Previous/Next (20 per page). `AbortController` cancels in-flight requests to prevent race conditions. Loading feedback per DFT-018 thresholds. Analyzed via Norman (Feedback), Nielsen (#1 System Status, #5 Error Prevention), Shneiderman (#3, #4, #7), Hick's Law, Fitts's Law, Mental Models (ArcGIS Hub conventions), Wayfinding, Accessibility. Tradeoff: slight control feeling sacrifice vs. continuous feedback + eliminated friction. See Phase 4 task 4.3 |
 | Feb 5, 2026 | Resolved DFT-034: Drag-and-drop reorder feedback — enhanced lifted row visual treatment (60% opacity, 95% scale, 2deg rotation, dashed border), 4px drop line with background highlight, 400ms settle animation with green highlight, toast notification for map z-order updates, keyboard support (arrow keys + Shift+Home/End), ARIA announcements for screen readers. Analyzed through 9 UI/UX frameworks. Keyboard support essential for v2.0 WCAG compliance (not deferred). Aligns with animation timing standards (DFT-025: 250-400ms). See Phase 0 task 0.5 |
 | Feb 5, 2026 | Resolved DFT-033: Right sidebar width and resizability — fixed width at 400px (not resizable). Analyzed through 9 UI/UX frameworks. Rationale: simplicity serves task, no user need for resize, matches GIS conventions, reduces cognitive load, enables optimized content layout. Optional collapse toggle deferred. Affects all phases with right sidebar implementations |
