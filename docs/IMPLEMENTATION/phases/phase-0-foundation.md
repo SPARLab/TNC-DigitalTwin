@@ -175,7 +175,8 @@ interface Bookmark {
 **Decision (Feb 3, 2026):** Resolved DFT-015 — Empty state design. Widget title uses configurable terminology: "Pinned {childNoun} Layers". First visit shows educational empty state (expanded); returning user sees laconic message. See design-system.md for terminology config.  
 **Decision (Feb 4, 2026):** Resolved DFT-019 — "Edit Filters" button navigation behavior. Button labeled "Edit Filters →" (with arrow), right-aligned in expanded panel. Widget remains expanded (user can reference filter state). Right sidebar uses crossfade animation (~150-200ms) for tab transitions. Separation of Concerns: Widget manages visibility/stacking; sidebar manages deep editing.  
 **Decision (Feb 4, 2026):** Resolved DFT-025 — Create New View transition animation. Inline transformation with sequential staging (250-300ms total): row expands → children appear → new child highlights briefly. Respects `prefers-reduced-motion`. Focus moves to new child row. Screen reader announces state change.  
-**Decision (Feb 4, 2026):** Resolved DFT-031 — Confirmation dialog strategy. **Hybrid approach:** No confirmation for single-item actions (unpin layer, clear filters, delete filtered view)—these execute immediately with 5-10s undo toast. Bulk actions (clear all, if implemented) require custom modal confirmation. Widget header has persistent undo button (always visible, grayed when inactive). Stack size: 5 actions per region. Actions covered: Unpin layer, delete filtered view, clear filters. Pattern documented in design-system.md. Replace `window.confirm()` with custom modal component for any bulk operations.
+**Decision (Feb 4, 2026):** Resolved DFT-031 — Confirmation dialog strategy. **Hybrid approach:** No confirmation for single-item actions (unpin layer, clear filters, delete filtered view)—these execute immediately with 5-10s undo toast. Bulk actions (clear all, if implemented) require custom modal confirmation. Widget header has persistent undo button (always visible, grayed when inactive). Stack size: 5 actions per region. Actions covered: Unpin layer, delete filtered view, clear filters. Pattern documented in design-system.md. Replace `window.confirm()` with custom modal component for any bulk operations.  
+**Decision (Feb 5, 2026):** Resolved DFT-034 — Drag-and-drop reorder feedback. Enhanced lifted row (60% opacity, 95% scale, 2deg rotation, dashed border), 4px drop line with background highlight, 400ms settle animation with green highlight, toast notification for map z-order updates. Keyboard support essential for v2.0 WCAG compliance: arrow keys (up/down), Shift+Home/End (top/bottom), ARIA announcements for screen readers. Aligns with animation timing standards (400ms = DFT-025, DFT-031). See DFT-034 resolution for complete specification.
 
 **Widget Header Layout:**
 ```
@@ -351,6 +352,23 @@ interface Bookmark {
   - [ ] Respects `prefers-reduced-motion` media query (instant state change + brief highlight only if reduced motion enabled)
   - [ ] Debounce "Create New View" button to prevent animation stacking
   - [ ] No layout shift or janky scrolling during animation
+- [ ] **Drag-and-drop reorder (DFT-034):**
+  - [ ] Drag handle (`⋮⋮` icon, Lucide `GripVertical`) on each pinned layer row
+  - [ ] Hover drag handle: `cursor: grab`, color shift `#94a3b8` → `#64748b`
+  - [ ] Active drag: `cursor: grabbing`
+  - [ ] Dragged row visual: 60% opacity, 95% scale, 2deg rotation, dashed blue border (`#3b82f6`), elevated shadow
+  - [ ] Drop target: 4px solid blue line (`#3b82f6`) at top or bottom of target card + subtle background highlight (`rgba(59, 130, 246, 0.05)`)
+  - [ ] Drop animation: 400ms settle animation (`ease-out`) with green highlight (`#dcfce7`)
+  - [ ] Map z-order update: Reordering layers updates map rendering order (top of widget = top of map)
+  - [ ] Toast notification: "Map layer order updated" (2s auto-dismiss, bottom-center position)
+  - [ ] Keyboard support (WCAG 2.1.1): Arrow Up/Down moves layer up/down one position, Shift+Home moves to top, Shift+End moves to bottom
+  - [ ] ARIA live region announces position changes: "{LayerName} moved to position {N} of {total}"
+  - [ ] Focus maintained on drag handle after keyboard reorder
+  - [ ] Respects `prefers-reduced-motion`: No rotation on drag, no bounce on drop (instant change + highlight only)
+  - [ ] Edge case: Hide drag handles when only 1 pinned layer (nothing to reorder)
+  - [ ] Edge case: Invalid drop (outside widget) snaps card back with brief shake animation (2px, 2 cycles)
+  - [ ] Debounce map updates by 300ms to prevent thrashing during rapid reorders
+  - [ ] See DFT-034 resolution for complete CSS/JavaScript specifications
 
 **Reference:**
 - Mockup: `mockups/02a-unified-layout.html` (canonical layout reference)

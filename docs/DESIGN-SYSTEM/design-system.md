@@ -707,10 +707,263 @@ After gathering teammate feedback, consider adding:
 
 ---
 
+## Drag-and-Drop Patterns
+
+**Policy:** Drag-and-drop reordering must be visually clear, keyboard-accessible, and respect reduced motion preferences.
+
+**Context:** Pinned Layers widget allows users to reorder layers via drag-and-drop. Reordering affects map layer z-order (rendering order), which is critical for GIS workflows—researchers need points visible over polygons.
+
+**Decision:** Resolved DFT-034, February 5, 2026
+
+### Visual Specification
+
+#### 1. Drag Handle
+
+```css
+.drag-handle {
+  cursor: grab;
+  color: #94a3b8;
+  transition: color 0.15s ease;
+}
+
+.drag-handle:hover {
+  color: #64748b;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+```
+
+**Icon:** Lucide `GripVertical` (`⋮⋮`)  
+**ARIA:** `aria-label="Drag to reorder layer. Use arrow keys to move up or down."`
+
+#### 2. Dragged Row State
+
+```css
+.widget-layer-card.dragging {
+  opacity: 0.6;
+  transform: scale(0.95) rotate(2deg);
+  box-shadow: 0 12px 40px -8px rgba(0, 0, 0, 0.3);
+  cursor: grabbing;
+  border: 2px dashed #3b82f6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .widget-layer-card.dragging {
+    transform: scale(0.95); /* No rotation */
+  }
+}
+```
+
+**Rationale:**
+- 60% opacity, 95% scale = clear lift (Gestalt Figure-Ground)
+- 2deg rotation adds dynamism (mimics physical paper)
+- Dashed border signals "in motion"
+- Respects reduced motion preference
+
+#### 3. Drop Target Indicator
+
+```css
+.widget-layer-card.drag-over {
+  border-top: 4px solid #3b82f6;
+  margin-top: -4px;
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.widget-layer-card.drag-over-bottom {
+  border-bottom: 4px solid #3b82f6;
+  margin-bottom: -4px;
+  background-color: rgba(59, 130, 246, 0.05);
+}
+```
+
+**Rationale:**
+- 4px line meets WCAG contrast requirements
+- Background highlight double-encodes drop zone (redundancy for accessibility)
+- Margin offset prevents layout shift
+
+#### 4. Drop Animation
+
+```css
+.widget-layer-card.just-dropped {
+  animation: settle 400ms ease-out;
+  background-color: #dcfce7; /* Green = success */
+}
+
+@keyframes settle {
+  0% { transform: scale(1.02); }
+  50% { transform: scale(1.01); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .widget-layer-card.just-dropped {
+    animation: none;
+    background-color: #dcfce7;
+  }
+}
+```
+
+**Rationale:**
+- 400ms aligns with DFT-031 (undo button pulse) and DFT-025 (Create New View animation)
+- Green highlight provides positive closure (Peak-End Rule)
+- Subtle bounce mimics physical settling
+
+### JavaScript Implementation Pattern
+
+```javascript
+function handleDrop(e) {
+  e.preventDefault();
+  
+  const card = e.target.closest('.widget-layer-card');
+  if (!card) return;
+  
+  const draggedLayerId = state.draggedLayerId;
+  const targetLayerId = card.getAttribute('data-layer-id');
+  
+  if (draggedLayerId === targetLayerId) return;
+  
+  // Reorder logic (splice from old position, insert at new position)
+  const fromIndex = state.pinnedLayers.indexOf(draggedLayerId);
+  let toIndex = state.pinnedLayers.indexOf(targetLayerId);
+  const isDropBelow = card.classList.contains('drag-over-bottom');
+  
+  state.pinnedLayers.splice(fromIndex, 1);
+  toIndex = state.pinnedLayers.indexOf(targetLayerId);
+  
+  if (isDropBelow) {
+    state.pinnedLayers.splice(toIndex + 1, 0, draggedLayerId);
+  } else {
+    state.pinnedLayers.splice(toIndex, 0, draggedLayerId);
+  }
+  
+  // Update UI
+  renderPinnedLayers();
+  
+  // Animate dropped card
+  const droppedCard = document.querySelector(`[data-layer-id="${draggedLayerId}"]`);
+  droppedCard.classList.add('just-dropped');
+  setTimeout(() => droppedCard.classList.remove('just-dropped'), 500);
+  
+  // Update map z-order
+  updateMapLayerOrder(state.pinnedLayers, { animate: true });
+}
+```
+
+### Map Z-Order Feedback
+
+**Toast Notification Pattern:**
+
+```javascript
+function updateMapLayerOrder(layerIds, { animate = false }) {
+  // Update ArcGIS map layers...
+  
+  // Show educational toast
+  showToast({
+    message: "Map layer order updated",
+    duration: 2000,           // Brief, auto-dismiss
+    position: "bottom-center" // Near map
+  });
+}
+```
+
+**Rationale:**
+- Educates users that widget order = map rendering order (Norman Conceptual Model)
+- Non-intrusive (fades after 2s)
+- Bottom-center placement near map (Gestalt Proximity)
+
+### Keyboard Support (WCAG 2.1.1 Compliance)
+
+```javascript
+dragHandle.addEventListener('keydown', (e) => {
+  const layerId = e.target.closest('[data-layer-id]').dataset.layerId;
+  const index = state.pinnedLayers.indexOf(layerId);
+  
+  if (e.key === 'ArrowUp' && index > 0) {
+    e.preventDefault();
+    // Swap with previous layer
+    [state.pinnedLayers[index-1], state.pinnedLayers[index]] = 
+      [state.pinnedLayers[index], state.pinnedLayers[index-1]];
+    
+    renderPinnedLayers();
+    
+    // Maintain focus
+    document.querySelector(`[data-layer-id="${layerId}"] .drag-handle`).focus();
+    
+    // Announce to screen readers
+    announceToScreenReader(
+      `${layerMeta[layerId].name} moved up to position ${index} of ${state.pinnedLayers.length}`
+    );
+    
+    updateMapLayerOrder(state.pinnedLayers);
+  }
+  
+  if (e.key === 'ArrowDown' && index < state.pinnedLayers.length - 1) {
+    // Similar logic for moving down
+  }
+  
+  if (e.key === 'Home' && e.shiftKey && index !== 0) {
+    e.preventDefault();
+    // Move to top
+    state.pinnedLayers.splice(index, 1);
+    state.pinnedLayers.unshift(layerId);
+    renderPinnedLayers();
+    document.querySelector(`[data-layer-id="${layerId}"] .drag-handle`).focus();
+    announceToScreenReader(`${layerMeta[layerId].name} moved to top`);
+  }
+  
+  if (e.key === 'End' && e.shiftKey && index !== state.pinnedLayers.length - 1) {
+    // Move to bottom (similar logic)
+  }
+});
+```
+
+**ARIA Live Region:**
+
+```html
+<div id="drag-announcements" role="status" aria-live="polite" class="sr-only"></div>
+```
+
+```javascript
+function announceToScreenReader(message) {
+  const liveRegion = document.getElementById('drag-announcements');
+  liveRegion.textContent = message;
+  setTimeout(() => liveRegion.textContent = '', 1000);
+}
+```
+
+### Edge Cases
+
+| Scenario | Behavior |
+|----------|----------|
+| **Single pinned layer** | Hide drag handles (nothing to reorder) |
+| **Invalid drop** (outside widget) | Card snaps back to origin, brief shake animation (2px, 2 cycles) |
+| **Rapid reorders** | Debounce map updates by 300ms to prevent thrashing |
+
+### Design Principles Applied
+
+- **Gestalt:** Figure-ground (lifted row stands out), continuity (drop line guides eye), common fate (dragged row + cursor move together)
+- **Norman:** Affordances (handle signals draggability), signifiers (cursor changes), feedback (visual states + toast), mappings (spatial layout = z-order)
+- **Nielsen:** Visibility of system status (#1), user control (#3), consistency (#4), recognition over recall (#6)
+- **Cognitive Science:** Feedback timing (<100ms instant, 400ms animation), Von Restorff (dragged row is memorable)
+- **Accessibility:** Keyboard navigation (WCAG 2.1.1), ARIA announcements, contrast (4px line), reduced motion support
+
+### Animation Timing Standards
+
+| Element | Duration | Easing | Aligns With |
+|---------|----------|--------|-------------|
+| Settle animation | 400ms | `ease-out` | DFT-025 (Create New View: 250-300ms), DFT-031 (undo pulse: 400ms) |
+| Toast auto-dismiss | 2000ms | — | Brief, non-intrusive |
+| Debounce map updates | 300ms | — | DFT-025 pattern (prevent animation stacking) |
+
+---
+
 ## Change Log
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 5, 2026 | Added Drag-and-Drop Patterns (DFT-034) — enhanced visual treatment, drop animations, keyboard support, ARIA announcements, map z-order feedback via toast. Analyzed through 9 UI/UX frameworks. Keyboard support essential for v2.0 WCAG compliance | Will + Claude |
 | Feb 5, 2026 | Added Layout Specifications — Right sidebar fixed width at 400px (DFT-033), not resizable. Rationale documented via 9 UI/UX frameworks | Will + Claude |
 | Feb 4, 2026 | Added Map Tooltip Patterns (DFT-032) — minimal MVP approach (ID + Type only), native browser tooltips recommended, defer filter-aware content to post-v2.0 | Will + Claude |
 | Feb 4, 2026 | Added Undo Button Pattern (DFT-031) — context-specific buttons in widget headers, always-visible with inactive/active states, 5-action stacks per region, Cmd+Z support in Phase 6 | Will + Claude |

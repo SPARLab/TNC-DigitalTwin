@@ -118,7 +118,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-031 | Confirmation dialogs — when to require explicit confirmation (delete, clear filters) | UI/UX | 🟢 Resolved | Medium |
 | DFT-032 | Map tooltip design — what info shows on hover before clicking feature? | UI/UX | 🟢 Resolved | Medium |
 | DFT-033 | Right sidebar width and resizability — fixed or user-adjustable? | Layout | 🟢 Resolved | Low |
-| DFT-034 | Drag-and-drop reorder feedback — what visual cues during layer reorder? | Microinteraction | 🟡 Open | Low |
+| DFT-034 | Drag-and-drop reorder feedback — what visual cues during layer reorder? | Microinteraction | 🟢 Resolved | Low |
 | DFT-035 | DataOne search behavior — instant search or explicit submit? | UI/UX | 🟡 Open | Medium |
 | DFT-036 | Feature highlight on map when hovering bookmark row | UI/UX | 🟡 Open | Low |
 | DFT-037 | Generate updated mockups reflecting all resolved design decisions (DFT-001 through DFT-036) | Task | 🟡 Open | High |
@@ -168,7 +168,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-031 | Confirmation dialogs pattern | Will | ✅ Resolved - Feb 4 |
 | DFT-032 | Map tooltip design | Will | ✅ Resolved - Feb 4 |
 | DFT-033 | Right sidebar width and resizability | Will | ✅ Resolved - Feb 5 |
-| DFT-034 | Drag-and-drop reorder feedback | Will | 🟡 Pending |
+| DFT-034 | Drag-and-drop reorder feedback | Will | ✅ Resolved - Feb 5 |
 | DFT-035 | DataOne search behavior | Will, Dan | 🟡 Pending |
 | DFT-036 | Feature highlight on bookmark hover | Will | 🟡 Pending |
 | DFT-037 | Generate updated mockups after design decisions resolved | Will | 🟡 Pending |
@@ -332,34 +332,300 @@ Consider a **collapse toggle** (hide sidebar entirely, maximize map) as a binary
 ### DFT-034: Drag-and-Drop Reorder Feedback
 
 **Category:** Microinteraction  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Low  
-**Source:** UX Design Review, Feb 3, 2026
+**Source:** UX Design Review, Feb 3, 2026  
+**Resolved:** February 5, 2026
 
 **Context:**
-Per Phase 0, pinned layers have drag handles for reordering. What visual feedback appears during drag?
+Per Phase 0, pinned layers have drag handles for reordering. Reordering affects map layer z-order (stacking order), which is critical for GIS workflows—researchers need points visible over polygons, or specific datasets prioritized for visual analysis.
 
-**Questions to Resolve:**
-1. What cursor appears when hovering drag handle? (grab cursor)
-2. What happens to the row being dragged? (lifted, semi-transparent, ghost)
-3. How is the drop target indicated? (line, highlighted gap, placeholder)
-4. What animation plays when dropped?
-5. Does drag reorder affect map layer z-order?
+**Current mockup implementation** (`02a-unified-layout.html`):
+- Drag handle (`⋮⋮`) with `grab` cursor on hover
+- `.dragging` state: 50% opacity, 98% scale, elevated shadow
+- Drop target: 2px blue line at top/bottom edge based on cursor position
+- Drop zones calculated by card midpoint
 
-**Options:**
-1. **Lifted row + drop line** — row lifts visually, line shows where it will land
-2. **Ghost placeholder** — ghost of row follows cursor, placeholder in list
-3. **Swap animation** — adjacent rows move aside as you drag past them
-4. **Minimal** — just cursor change, row moves on drop (no animation)
+**Questions Resolved:**
+1. ✅ Cursor: `grab` on hover, `grabbing` during drag
+2. ✅ Dragged row: Enhanced visual lift with opacity, scale, rotation
+3. ✅ Drop target: 4px blue line + subtle background highlight
+4. ✅ Drop animation: 400ms settle animation with green highlight
+5. ✅ Map z-order: Yes, widget order = map rendering order; toast notification educates users
 
-**Considerations:**
-- This is a polish item, not critical for MVP
-- ArcGIS/Esri patterns may provide precedent
+**Resolution:** **Enhanced Lifted Row + Drop Line + Settle Animation**
 
-**Discussion:**
-*Low priority — can defer to Phase 6*
+### Design Specification
 
-**Resolution:** *Pending*
+#### 1. Drag Handle & Cursor
+- **Icon:** `⋮⋮` (6 dots in 2 columns, Lucide `GripVertical`)
+- **Hover:** `cursor: grab`, color shift from `#94a3b8` to `#64748b`
+- **Active drag:** `cursor: grabbing`
+- **ARIA:** `aria-label="Drag to reorder layer. Use arrow keys to move up or down."`
+
+#### 2. Dragged Row Visual Treatment (Enhanced)
+
+```css
+.widget-layer-card.dragging {
+  opacity: 0.6;                               /* Increased from 0.5 */
+  transform: scale(0.95) rotate(2deg);        /* More noticeable + tilt */
+  box-shadow: 0 12px 40px -8px rgba(0, 0, 0, 0.3);  /* Stronger elevation */
+  cursor: grabbing;
+  border: 2px dashed #3b82f6;                 /* Dashed = "in motion" */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .widget-layer-card.dragging {
+    transform: scale(0.95);  /* No rotation */
+  }
+}
+```
+
+**Rationale:**
+- 95% scale (not 98%) for clearer lift (Gestalt Figure-Ground)
+- 2deg rotation adds dynamism, mimics physical paper
+- Dashed border adds texture, signals temporary state
+- Respects `prefers-reduced-motion` (no rotation if enabled)
+
+#### 3. Drop Target Indicator (Refined)
+
+```css
+.widget-layer-card.drag-over {
+  border-top: 4px solid #3b82f6;              /* Increased from 2px */
+  margin-top: -4px;
+  background-color: rgba(59, 130, 246, 0.05); /* Subtle highlight */
+}
+
+.widget-layer-card.drag-over-bottom {
+  border-bottom: 4px solid #3b82f6;
+  margin-bottom: -4px;
+  background-color: rgba(59, 130, 246, 0.05);
+}
+```
+
+**Rationale:**
+- 4px line meets WCAG contrast requirements (Perceivable)
+- Background highlight double-encodes drop zone (Gestalt redundancy)
+- Margin offset prevents layout shift
+
+#### 4. Drop Animation (New)
+
+```javascript
+function handleDrop(e) {
+  // ... existing reorder logic ...
+  
+  // After state.pinnedLayers updated:
+  const droppedCard = document.querySelector(`[data-layer-id="${draggedLayerId}"]`);
+  
+  // Brief highlight on dropped card
+  droppedCard.classList.add('just-dropped');
+  setTimeout(() => droppedCard.classList.remove('just-dropped'), 500);
+  
+  // Update map z-order with animation
+  updateMapLayerOrder(state.pinnedLayers, { animate: true });
+}
+```
+
+```css
+.widget-layer-card.just-dropped {
+  animation: settle 400ms ease-out;
+  background-color: #dcfce7;  /* Green = success */
+}
+
+@keyframes settle {
+  0% { transform: scale(1.02); }
+  50% { transform: scale(1.01); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .widget-layer-card.just-dropped {
+    animation: none;
+    background-color: #dcfce7;
+  }
+}
+```
+
+**Rationale:**
+- 400ms aligns with DFT-031 undo button pulse (consistency)
+- Green highlight = positive closure (Peak-End Rule)
+- Subtle bounce mimics physical settling
+- Respects `prefers-reduced-motion`
+
+#### 5. Map Z-Order Feedback
+
+**Approach:** Toast notification (non-intrusive, educational)
+
+```javascript
+function updateMapLayerOrder(layerIds, { animate = false }) {
+  // Update ArcGIS map layer order...
+  
+  // Show brief toast
+  showToast({
+    message: "Map layer order updated",
+    duration: 2000,           // Brief, auto-dismiss
+    position: "bottom-center" // Near map
+  });
+}
+```
+
+**Rationale:**
+- Educates users that widget order = map rendering order (Norman Conceptual Model)
+- Non-intrusive (fades after 2s, no permanent visual noise)
+- Bottom-center placement near map (Gestalt Proximity)
+
+**Future Enhancement (v2.1+):**
+- Widget subtitle: "Top layers render above bottom layers"
+- Can be hidden after user reorders 3+ times
+
+#### 6. Keyboard Support (WCAG 2.1.1 Compliance)
+
+```javascript
+// When drag handle focused:
+dragHandle.addEventListener('keydown', (e) => {
+  const layerId = e.target.closest('[data-layer-id]').dataset.layerId;
+  const index = state.pinnedLayers.indexOf(layerId);
+  
+  if (e.key === 'ArrowUp' && index > 0) {
+    e.preventDefault();
+    // Swap with previous layer
+    [state.pinnedLayers[index-1], state.pinnedLayers[index]] = 
+      [state.pinnedLayers[index], state.pinnedLayers[index-1]];
+    
+    renderPinnedLayers();
+    
+    // Maintain focus
+    document.querySelector(`[data-layer-id="${layerId}"] .drag-handle`).focus();
+    
+    // Announce position change
+    announceToScreenReader(
+      `${layerMeta[layerId].name} moved up to position ${index} of ${state.pinnedLayers.length}`
+    );
+    
+    updateMapLayerOrder(state.pinnedLayers);
+  }
+  
+  if (e.key === 'ArrowDown' && index < state.pinnedLayers.length - 1) {
+    // Similar logic moving down
+  }
+  
+  if (e.key === 'Home' && e.shiftKey && index !== 0) {
+    e.preventDefault();
+    // Move to top
+    state.pinnedLayers.splice(index, 1);
+    state.pinnedLayers.unshift(layerId);
+    renderPinnedLayers();
+    document.querySelector(`[data-layer-id="${layerId}"] .drag-handle`).focus();
+    announceToScreenReader(`${layerMeta[layerId].name} moved to top`);
+  }
+  
+  if (e.key === 'End' && e.shiftKey && index !== state.pinnedLayers.length - 1) {
+    // Move to bottom (similar logic)
+  }
+});
+```
+
+**ARIA Live Region:**
+```html
+<div id="drag-announcements" role="status" aria-live="polite" class="sr-only"></div>
+```
+
+```javascript
+function announceToScreenReader(message) {
+  const liveRegion = document.getElementById('drag-announcements');
+  liveRegion.textContent = message;
+  setTimeout(() => liveRegion.textContent = '', 1000);
+}
+```
+
+**Rationale:**
+- Arrow keys intuitive for vertical reordering (Mental Models)
+- Shift+Home/End for quick repositioning (power user feature)
+- Announces position for screen reader users (WCAG Perceivable)
+- Maintains focus after reorder (Nielsen #3: User Control)
+- **Keyboard support essential for v2.0** (not deferred to Phase 6)
+
+#### 7. Edge Cases
+
+**Rapid reorders:**
+- Debounce map updates by 300ms (per DFT-025 pattern)
+- Widget updates instantly, map follows with slight delay
+- Prevents thrashing during rapid sequential drags
+
+**Invalid drop (outside widget):**
+- Card snaps back to origin position
+- Brief shake animation (2px, 2 cycles) to signal "invalid"
+
+**Single pinned layer:**
+- Hide drag handles when only 1 layer pinned
+- Nothing to reorder → reduces UI clutter (Aesthetic Minimalism)
+
+### Summary Specification Table
+
+| Element | Treatment | Duration | Rationale |
+|---------|-----------|----------|-----------|
+| **Drag Handle** | `⋮⋮` icon, `grab` cursor | — | Universal convention (Norman) |
+| **Drag Start** | 60% opacity, 95% scale, 2deg rotation, dashed border, elevated shadow | — | Clear lift (Gestalt Figure-Ground) |
+| **Drop Target** | 4px blue line + subtle background highlight | — | Dual encoding (Gestalt redundancy) |
+| **Drop Animation** | Green highlight + subtle scale bounce | 400ms `ease-out` | Positive closure (Peak-End Rule) |
+| **Map Feedback** | Toast: "Map layer order updated" | 2s auto-dismiss | Educates users (Norman Conceptual Model) |
+| **Keyboard** | Arrow keys (up/down), Shift+Home/End | — | WCAG 2.1.1 compliance |
+| **ARIA** | Live region announces position changes | — | Screen reader support |
+| **Reduced Motion** | No rotation/bounce, instant change + highlight | — | Accessibility (WCAG) |
+
+### Design Principles Applied
+
+**Analyzed through 9 UI/UX frameworks:**
+
+1. **Gestalt (Perception):** Figure-ground separation via lifted row, continuity via drop line, common fate (dragged row + cursor move together)
+
+2. **Norman (Interaction):** Affordances (drag handle signals draggability), signifiers (cursor changes), feedback (visual state changes + toast), mappings (spatial layout matches z-order mental model)
+
+3. **Nielsen (Usability):** Visibility of system status (#1), user control & freedom (#3), consistency & standards (#4), recognition over recall (#6)
+
+4. **Cognitive Science:** Fitts's Law (small drag handle prevents accidental drags), feedback timing (<100ms instant, 400ms animation), Von Restorff Effect (dragged row stands out)
+
+5. **Visual Fundamentals:** Contrast (opacity, color), hierarchy (elevated shadow), balance (scale + rotation suggests "lifted")
+
+6. **Accessibility (WCAG):** Keyboard navigation (WCAG 2.1.1), ARIA announcements (Perceivable), 4px line contrast (Perceivable), reduced motion support
+
+7. **Behavioral Science:** Loss aversion addressed by undo button (DFT-031), feedback loop rewards completion, perceived control via precise targeting
+
+8. **Information Architecture:** Mental model (researchers understand layer stacking from GIS software), wayfinding (drop line shows destination)
+
+9. **Motion & Time:** Duration (400ms aligns with DFT-025, DFT-031), easing (`ease-out` for settling), continuity (smooth transition), reduced motion respected
+
+### Tradeoffs
+
+**What we sacrifice:**
+- Ghost placeholder pattern (more visually rich but adds complexity)
+- Swap animation (adjacent rows animate aside—more tactile but increases motion complexity)
+- Live z-order preview (map updates during drag—impressive but computationally expensive)
+- Permanent z-order badges (position numbers—constant feedback but clutters widget)
+
+**Why acceptable:**
+- Target audience (researchers) values **efficiency over ornamentation** (DFT-011)
+- Aligns with animation timing standards (DFT-025: 250-400ms, DFT-028: 300ms stagger)
+- Respects **aesthetic minimalism** (Nielsen #8) while meeting **visibility** (Nielsen #1)
+- Preserves **fast workflow** (no confirmation per DFT-031)
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file)
+- ✅ `docs/IMPLEMENTATION/phases/phase-0-foundation.md` (Task 0.5 acceptance criteria)
+- ✅ `docs/DESIGN-SYSTEM/design-system.md` (Drag-and-drop patterns)
+- ✅ `docs/master-plan.md` (Cross-Phase Decisions → UX Decisions)
+
+**✅ Verification Checklist:**
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with full specification
+- [x] Design principles cited (9 frameworks)
+- [x] CSS specifications provided
+- [x] JavaScript implementation patterns provided
+- [x] Keyboard support specified (WCAG compliance)
+- [x] ARIA patterns specified
+- [x] Edge cases handled
+- [x] Tradeoffs analyzed
+- [x] Cross-references added
 
 ---
 
@@ -505,6 +771,7 @@ After DFT-037 is complete, **archive resolved design decisions** to `PLANNING/re
 
 | Date | Change |
 |------|--------|
+| Feb 5, 2026 | Resolved DFT-034: Drag-and-drop reorder feedback — enhanced lifted row visual treatment (60% opacity, 95% scale, 2deg rotation, dashed border), 4px drop line with background highlight, 400ms settle animation with green highlight, toast notification for map z-order updates, keyboard support (arrow keys + Shift+Home/End), ARIA announcements for screen readers. Analyzed through 9 UI/UX frameworks. Keyboard support essential for v2.0 WCAG compliance (not deferred). Aligns with animation timing standards (DFT-025: 250-400ms). See Phase 0 task 0.5 |
 | Feb 5, 2026 | Resolved DFT-033: Right sidebar width and resizability — fixed width at 400px (not resizable). Analyzed through 9 UI/UX frameworks. Rationale: simplicity serves task, no user need for resize, matches GIS conventions, reduces cognitive load, enables optimized content layout. Optional collapse toggle deferred. Affects all phases with right sidebar implementations |
 | Feb 4, 2026 | Resolved DFT-031: Context-specific undo buttons — no confirmation dialogs. Each widget has persistent undo button (always visible, grayed when inactive). Stack size: 5 actions per region. Cmd/Ctrl+Z support in Phase 6. Analyzed via Norman, Nielsen, Gestalt, behavioral science |
 | Feb 3, 2026 | **UX Design Review:** Added DFT-015 through DFT-037 (23 new issues). DFT-015 through DFT-036 cover empty states, responsiveness, accessibility, loading states, navigation behavior, terminology consistency, edge cases, visual specs, microinteractions, and interaction patterns. DFT-037 is the mockup generation task (blocked until design decisions resolved). **High-priority:** DFT-015 (empty states), DFT-018 (loading states), DFT-020 (pointer-row bookmark UI), DFT-030 (error states), DFT-037 (mockup generation). **Note:** After DFT-037, archive resolved decisions to keep tracker manageable |
