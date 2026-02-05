@@ -116,7 +116,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-029 | Unfiltered layer badge behavior — show total counts or no badges? | UI/UX | 🟢 Resolved | Medium |
 | DFT-030 | Error state design — API failures, network errors, timeout handling | UI/UX | 🟢 Resolved | High |
 | DFT-031 | Confirmation dialogs — when to require explicit confirmation (delete, clear filters) | UI/UX | 🟡 Open | Medium |
-| DFT-032 | Map tooltip design — what info shows on hover before clicking feature? | UI/UX | 🟡 Open | Medium |
+| DFT-032 | Map tooltip design — what info shows on hover before clicking feature? | UI/UX | 🟢 Resolved | Medium |
 | DFT-033 | Right sidebar width and resizability — fixed or user-adjustable? | Layout | 🟡 Open | Low |
 | DFT-034 | Drag-and-drop reorder feedback — what visual cues during layer reorder? | Microinteraction | 🟡 Open | Low |
 | DFT-035 | DataOne search behavior — instant search or explicit submit? | UI/UX | 🟡 Open | Medium |
@@ -166,7 +166,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-029 | Unfiltered layer badge behavior | Amy, Trisalyn | ✅ Resolved - Feb 4 |
 | DFT-030 | Error state design | Will, Dan | ✅ Resolved - Feb 4 |
 | DFT-031 | Confirmation dialogs pattern | Will | 🟡 Pending |
-| DFT-032 | Map tooltip design | Will | 🟡 Pending |
+| DFT-032 | Map tooltip design | Will | ✅ Resolved - Feb 4 |
 | DFT-033 | Right sidebar width and resizability | Will | 🟡 Pending |
 | DFT-034 | Drag-and-drop reorder feedback | Will | 🟡 Pending |
 | DFT-035 | DataOne search behavior | Will, Dan | 🟡 Pending |
@@ -814,9 +814,10 @@ const { canUndo, undo, addAction } = useUndoStack({
 ### DFT-032: Map Tooltip Design
 
 **Category:** UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Medium  
-**Source:** UX Design Review, Feb 3, 2026
+**Source:** UX Design Review, Feb 3, 2026  
+**Resolved:** February 4, 2026
 
 **Context:**
 When users hover over features on the map (cameras, sensors, observations), what information appears in the tooltip before they click?
@@ -824,23 +825,72 @@ When users hover over features on the map (cameras, sensors, observations), what
 **Why this matters (Nielsen: Visibility of system status / Shneiderman: Overview first, details on demand):**
 Tooltips provide "information scent" — users can preview what they'll get by clicking, reducing uncertainty and wasted clicks.
 
-**Questions to Resolve:**
-1. What fields appear in each data source's tooltip?
-2. Should tooltips show filter-relevant info (e.g., "23 mountain lion images" on camera)?
-3. How long before tooltip appears? (instant? 200ms delay?)
-4. Does tooltip persist on hover, or dismiss after a timeout?
-5. Are tooltips accessible via keyboard (focus state)?
+**Resolution:** **Minimal MVP approach — ID + Type only for v2.0**
 
-**Options by Data Source:**
-- **ANiML Camera:** Camera ID, location, image count (filtered if filter active)
-- **Dendra Sensor:** Sensor ID, type, date range, latest reading
-- **iNaturalist:** Species, date, observer
-- **DataOne Dataset:** Title, date, source
+Given timeline constraints and need for teammate feedback, implement minimal tooltips showing only primary identifier and feature type. Defer filter-aware content and advanced features to future enhancement after user feedback.
 
-**Discussion:**
-*Needs specification for each data source*
+### Design Specification (v2.0 MVP)
 
-**Resolution:** *Pending*
+**Phase 1 Implementation Options:**
+
+**Option A: Native Browser Tooltips (Recommended for MVP)**
+- Use `title` attribute on map markers
+- Zero development overhead
+- Format: `"CAM-042 • Camera"` or `"WL-08 • Water Level Sensor"`
+- Browser handles timing, positioning, accessibility automatically
+- Perfect for gathering teammate feedback on what else to show
+
+**Option B: Minimal Custom Tooltip**
+- Simple styled div showing ID + Type
+- Position near cursor/feature
+- Slightly more polished appearance
+- ~20-50 lines of code
+
+### Tooltip Content by Data Source (MVP)
+
+| Data Source | Tooltip Content |
+|-------------|-----------------|
+| **ANiML Cameras** | `"CAM-042 • Camera"` |
+| **Dendra Sensors** | `"WL-08 • Water Level Sensor"` |
+| **iNaturalist** | `"California Condor • Observation"` |
+| **eBird** | `"Spotted Owl • Sighting"` |
+| **DataOne** | `"[Dataset Title] • Dataset"` (truncate if >40 chars) |
+| **TNC Layers** | `"Thomas Fire Perimeter • Fire Perimeter"` |
+
+### Future Enhancement (Post-v2.0)
+
+After gathering teammate feedback, consider adding:
+- Filter-aware counts (e.g., "23 mountain lion images")
+- Additional metadata fields (date, location, latest reading)
+- Custom styling and animations
+- Advanced timing behavior (200ms delay, fade transitions)
+- Complex filter state integration
+
+**Rationale:**
+- **Timeline-appropriate:** Feb 20 deadline requires focusing on core functionality
+- **Feedback-driven:** Better to ship simple and iterate based on actual usage
+- **Zero overhead:** Native tooltips require minimal implementation
+- **Extensible:** Easy to enhance once team identifies what's most valuable
+- **Progressive disclosure maintained:** Even minimal tooltips provide basic wayfinding
+
+**Implementation Note:**
+Native browser tooltips work with keyboard navigation automatically (`title` attribute announces on focus). For custom tooltips, ensure `role="tooltip"` and `aria-describedby` for WCAG compliance.
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file) — resolution added with MVP spec
+- ✅ `docs/DESIGN-SYSTEM/design-system.md` — minimal tooltip pattern added
+- ✅ `docs/master-plan.md` — added to Cross-Phase Decisions (affects all data sources)
+- ✅ `docs/IMPLEMENTATION/phases/phase-6-polish.md` — enhancement task added for post-v2.0
+
+**✅ Verification Checklist:**
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with MVP specification
+- [x] Design system updated with minimal pattern
+- [x] Master plan updated (cross-phase UX decision)
+- [x] Phase 6 updated with future enhancement task
+- [x] Cross-references added ("Documented in:")
+- [x] Rationale provided using UI/UX principles
+- [x] Implementation notes included
 
 ---
 
@@ -1132,4 +1182,5 @@ After DFT-037 is complete, **archive resolved design decisions** to `PLANNING/re
 | Feb 4, 2026 | Resolved DFT-025: Create New View transition animation — inline transformation with sequential staging (250-300ms). Row expands → children appear → new child highlights. Respects reduced motion. Focus moves to new child. Screen reader announces state change |
 | Feb 4, 2026 | Resolved DFT-028: Zero-result camera behavior — cameras with 0 matching images grayed out (not hidden). 40-50% opacity, desaturated, no badge. Remain clickable/accessible. 300ms ease-out transition. Preserves spatial context for negative evidence discovery |
 | Feb 4, 2026 | Resolved DFT-029: Unfiltered layer badge behavior — no badges when layer has no filter. Badges only appear when layer-level filter is applied (semantic indicator). Optional hover tooltip shows total count. Follows Gestalt figure/ground and Shneiderman's overview-first principles |
+| Feb 4, 2026 | Resolved DFT-032: Map tooltip design — minimal MVP approach (ID + Type only). Defer filter-aware content to post-v2.0 after teammate feedback. Recommend native browser tooltips (title attribute) for zero overhead. Format: "CAM-042 • Camera". Extensible for future enhancement |
 

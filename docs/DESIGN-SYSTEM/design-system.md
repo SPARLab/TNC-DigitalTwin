@@ -582,12 +582,102 @@ const { canUndo, undo, addAction } = useUndoStack({
 |---------|--------|------|---------|
 | Widget card styling | ✅ Decided | - | See phase-0-foundation.md task 0.5 |
 
+### Map Tooltip Patterns
+
+**Policy (DFT-032):** Use minimal tooltips (ID + Type only) for v2.0 MVP. Defer advanced features until after teammate feedback.
+
+#### MVP Implementation (v2.0)
+
+**Recommended Approach: Native Browser Tooltips**
+
+Use the `title` attribute on map markers for zero development overhead:
+
+```typescript
+// Example implementation
+marker.setAttribute('title', `${feature.id} • ${feature.type}`);
+```
+
+**Pros:**
+- Zero implementation overhead (1 line per feature)
+- Browser handles timing, positioning, accessibility automatically
+- Works with keyboard navigation (focus reveals tooltip)
+- Perfect for gathering teammate feedback
+
+**Cons:**
+- Cannot customize styling (browser default appearance)
+- Cannot control timing/animations
+- Less polished than custom tooltips
+
+#### Content Format (v2.0 MVP)
+
+All tooltips follow this format: `"[ID] • [Type]"`
+
+| Data Source | Example |
+|-------------|---------|
+| **ANiML Cameras** | `"CAM-042 • Camera"` |
+| **Dendra Sensors** | `"WL-08 • Water Level Sensor"` |
+| **iNaturalist** | `"California Condor • Observation"` |
+| **eBird** | `"Spotted Owl • Sighting"` |
+| **DataOne** | `"Vegetation Survey 2022 • Dataset"` (truncate title if >40 chars) |
+| **TNC Layers** | `"Thomas Fire Perimeter • Fire Perimeter"` |
+
+#### Alternative: Minimal Custom Tooltip
+
+If native tooltips prove insufficient, implement a minimal custom tooltip:
+
+```typescript
+// Pseudocode
+const MapTooltip = ({ feature }) => (
+  <div 
+    role="tooltip"
+    className="bg-gray-900 text-white px-3 py-2 rounded shadow-lg text-sm"
+  >
+    <span className="font-semibold">{feature.id}</span>
+    <span className="text-gray-400"> • </span>
+    <span>{feature.type}</span>
+  </div>
+);
+```
+
+**Design Tokens:**
+- Container: `bg-gray-900 text-white px-3 py-2 rounded shadow-lg`
+- ID: `text-sm font-semibold`
+- Separator: `text-gray-400`
+- Type: `text-sm`
+
+**Timing:**
+- Show delay: 200ms (prevents flicker)
+- Fade in: 150ms ease-out
+- Persist: While hover/focus maintained
+- Fade out: 100ms ease-out
+
+#### Future Enhancement (Post-v2.0)
+
+After gathering teammate feedback, consider adding:
+- **Filter-aware counts:** "23 mountain lion images" (requires query integration)
+- **Additional metadata:** Date, location, latest sensor reading
+- **Custom styling:** Animations, positioning, visual polish
+- **Advanced accessibility:** Enhanced ARIA support
+
+#### Implementation Notes
+
+**For ArcGIS JS API:**
+- Use `MapView.on("pointer-move")` for hover detection
+- Use `hitTest()` to identify features under cursor
+- Attach tooltip to feature's DOM element
+
+**Accessibility:**
+- Native tooltips announce on keyboard focus automatically
+- Custom tooltips require `role="tooltip"` and `aria-describedby`
+- Ensure tooltip doesn't obscure the feature itself
+
 ---
 
 ## Change Log
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 4, 2026 | Added Map Tooltip Patterns (DFT-032) — minimal MVP approach (ID + Type only), native browser tooltips recommended, defer filter-aware content to post-v2.0 | Will + Claude |
 | Feb 4, 2026 | Added Undo Button Pattern (DFT-031) — context-specific buttons in widget headers, always-visible with inactive/active states, 5-action stacks per region, Cmd+Z support in Phase 6 | Will + Claude |
 | Feb 4, 2026 | Added Error State Patterns (DFT-030) — severity hierarchy, toast placement (top of right sidebar), inline errors, partial failure banner, utilitarian tone | Will + Claude |
 | Feb 3, 2026 | Added Loading State Patterns (DFT-018) — hybrid indicators, timeout thresholds, dynamic ETA, progressive loading | Will + Claude |

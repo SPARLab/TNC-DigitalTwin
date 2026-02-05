@@ -38,6 +38,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | 6.5 | Responsive design check | ⚪ Not Started | | |
 | 6.6 | Performance audit | ⚪ Not Started | | |
 | 6.7 | Accessibility check | ⚪ Not Started | | |
+| 6.8 | Enhance map tooltips (post-v2.0) | ⚪ Not Started | | DFT-032 future enhancement |
 | (more TBD) | | | | |
 
 **Status Legend:**
@@ -189,6 +190,70 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 ---
 
+### 6.8: Enhance Map Tooltips (Post-v2.0)
+
+**Decision (Feb 4):** Resolved DFT-032 — v2.0 ships with minimal tooltips (ID + Type only). This task enhances tooltips based on teammate feedback.
+
+**Goal:** Upgrade map tooltips from minimal MVP (ID + Type) to richer, filter-aware tooltips after gathering teammate feedback on what additional information would be valuable.
+
+**v2.0 Baseline:**
+- Native browser tooltips using `title` attribute
+- Format: `"CAM-042 • Camera"` or `"WL-08 • Water Level Sensor"`
+- Zero implementation overhead, basic wayfinding
+
+**Potential Enhancements (To Be Decided After Feedback):**
+
+1. **Filter-aware counts:**
+   - Show filtered image counts when species filter active (e.g., "23 mountain lion images")
+   - Requires query integration and caching strategy
+
+2. **Additional metadata fields:**
+   - ANiML: Location, total image count
+   - Dendra: Latest reading, date range
+   - iNaturalist: Date, observer
+   - DataOne: Source institution, update date
+
+3. **Custom styling:**
+   - Replace native browser tooltips with custom-styled component
+   - 200ms show delay, fade animations
+   - Better positioning control
+
+4. **Advanced interactions:**
+   - Hover-to-preview thumbnails (ANiML images)
+   - Tooltip persists while hovering tooltip itself
+   - Bidirectional highlighting (hover bookmark row → highlight map feature)
+
+**Implementation Approach:**
+
+1. **Gather feedback** during v2.0 user testing:
+   - Ask teammates: "What additional info would you want in tooltips?"
+   - Observe: What questions do they ask after hovering features?
+   - Prioritize enhancements based on frequency of need
+
+2. **Design custom tooltip component** (if native tooltips insufficient):
+   - Follow design system patterns (utilitarian tone, consistent styling)
+   - Implement timing behavior (200ms delay, fade transitions)
+   - Ensure accessibility (keyboard focus, screen reader support)
+
+3. **Implement filter-aware content** (if high value):
+   - Integrate with existing query caching
+   - Show contextually relevant data based on active filters
+   - Performance optimization: cache tooltip content, debounce updates
+
+**Acceptance Criteria:**
+- [ ] Teammate feedback gathered and documented
+- [ ] Enhancement priorities decided based on actual usage
+- [ ] Custom tooltip component implemented (if needed)
+- [ ] Filter-aware content integrated (if needed)
+- [ ] Accessibility verified (keyboard + screen reader)
+- [ ] Performance acceptable (no lag on hover)
+
+**Estimated Time:** 2-8 hours depending on scope
+
+**Note:** This is explicitly deferred to post-v2.0 to avoid over-engineering without real user feedback. v2.0 ships with minimal tooltips that provide baseline value.
+
+---
+
 ## Discovered Issues
 
 > Add issues discovered during other phases that need fixing in polish.
@@ -206,4 +271,5 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 | Feb 3, 2026 | 6.1, 6.2 | Added TNC brand integration tasks (fonts + theme variants). Resolved DFT-008, DFT-009 | Will + Claude |
 | Feb 3, 2026 | 6.7 | Updated accessibility check with DFT-017 baseline principles. Added specific testing checklist and tools | Will + Claude |
+| Feb 4, 2026 | 6.8 | Added map tooltip enhancement task for post-v2.0 (DFT-032 future enhancement). v2.0 ships with minimal tooltips, enhancements based on teammate feedback | Will + Claude |
 
