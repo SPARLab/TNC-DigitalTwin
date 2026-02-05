@@ -221,7 +221,8 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 4. **Advanced interactions:**
    - Hover-to-preview thumbnails (ANiML images)
    - Tooltip persists while hovering tooltip itself
-   - Bidirectional highlighting (hover bookmark row → highlight map feature)
+   - **Bidirectional highlighting** (hover bookmark row → highlight map feature) — **Implemented in Phase 0 (DFT-036)** for unidirectional (widget → map). Bidirectional (map → widget) deferred pending user feedback.
+   - **Edge indicators for off-screen bookmarks** (DFT-036 deferred enhancement) — "Starfighter" style directional arrow at screen edge pointing toward off-screen bookmarked features. Shows direction + approximate distance. Estimated effort: 6-8 hours. Implement if users express need during v2.0 testing.
 
 **Implementation Approach:**
 

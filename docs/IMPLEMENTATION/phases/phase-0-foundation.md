@@ -391,6 +391,8 @@ interface Bookmark {
 
 **Design Decision (Feb 4, 2026):** Resolved DFT-020 — Single "🔖 Bookmark" button for pointer-row features. Auto-captures current Level 3 filter if active. Multiple bookmarks of same feature allowed (each = different "view"). "Edit Filter" action on bookmark allows post-save correction. Applies to ANiML cameras, Dendra sensors, DataOne datasets.
 
+**Design Decision (Feb 5, 2026):** Resolved DFT-036 — Feature highlight on bookmark hover. Hovering a bookmark row highlights the corresponding feature on the map (if visible in viewport). Cyan ring (4px width, 8px offset) with subtle pulse (2 cycles, 800ms). Off-screen features show "📍 Off-screen" text indicator; clicking [View] button pans to feature. Keyboard support: highlight follows Tab focus, ARIA announcements. Matches GIS conventions (ArcGIS Pro, QGIS attribute table ↔ map coordination). Deferred to Phase 6: edge indicators (directional arrows), bidirectional highlighting.
+
 **Acceptance Criteria:**
 - [ ] Widget renders in top-right of map area
 - [ ] Widget is collapsible/expandable
@@ -428,6 +430,20 @@ interface Bookmark {
   - [ ] Empty state uses design tokens: icon `w-12 h-12 text-gray-300`, title `text-sm font-medium text-gray-700`, body `text-sm text-gray-500`
   - [ ] Team design toggle for initial widget state (expanded vs collapsed)
   - [ ] Note: Drone imagery and LiDAR are pin-only layers — they will never have bookmark entries
+- [ ] **Hover-to-highlight interaction (DFT-036):**
+  - [ ] Hovering bookmark row highlights corresponding map feature (if in viewport)
+  - [ ] Highlight style: Cyan ring (4px width, 8px offset), subtle pulse (2 cycles, 800ms, `ease-in-out`)
+  - [ ] Elevated z-order (renders above other features)
+  - [ ] Instant feedback (<100ms via map API)
+  - [ ] Respects `prefers-reduced-motion` (static ring, no pulse)
+  - [ ] Off-screen features: show "📍 Off-screen" text indicator (gray, 12px) in widget row
+  - [ ] Click [View] button to pan + zoom to off-screen features (deliberate action)
+  - [ ] Keyboard support: highlight follows Tab focus when navigating rows
+  - [ ] ARIA live region announces: "Feature CAM-042 highlighted on map" (polite)
+  - [ ] Debounce rapid hover events (50ms) to prevent map thrashing
+  - [ ] Single highlight at a time (clear previous on new hover)
+  - [ ] Layer headers: no hover highlight (non-interactive per DFT-007)
+  - [ ] Only highlight when widget is expanded (not collapsed)
 
 **ASCII Wireframe (Updated with DFT-020 resolution):**
 ```
