@@ -113,15 +113,25 @@ Implement the DataOne dataset browse experience in the right sidebar. This data 
 
 **Goal:** Create search and filter controls for discovering datasets.
 
+**Decision (Feb 5, 2026):** Resolved DFT-035 — Debounced instant search (500ms, 2+ chars) with immediate dropdown filters. Enter key bypasses debounce. Initial state loads all datasets (most recent first), eliminating v1 "pre-search" dead state. Pagination with Previous/Next (20 per page). `AbortController` cancels in-flight requests.
+
 **Acceptance Criteria:**
-- [ ] Text search box for keywords
-- [ ] Category dropdown (all 13 TNC categories)
-- [ ] Year range picker
-- [ ] Author filter (optional)
-- [ ] Filter count shows "Showing X of Y datasets"
+- [ ] Text search box with 500ms debounce (2+ character minimum)
+- [ ] Enter key bypasses debounce and fires immediately
+- [ ] Category dropdown (all 13 TNC categories) fires immediately on change
+- [ ] Year range picker fires immediately on change
+- [ ] Author filter (optional) fires immediately on change
+- [ ] Filter count shows "Showing X of Y datasets" (updates live)
+- [ ] Initial state loads all datasets (most recent first), no "pre-search" empty state
+- [ ] `AbortController` cancels in-flight requests when filters change
+- [ ] Loading feedback per DFT-018 thresholds (inline spinner, stale results with overlay)
+- [ ] Empty results show "No datasets match your filters" + "Clear all filters" link
+- [ ] ARIA live region announces result count changes
 - [ ] Filters persist when navigating to detail and back
 
-**Reference:** Mockup `02e-browse-dataone.html` "Search & Filter" section
+**Reference:** 
+- Mockup `02e-browse-dataone.html` "Search & Filter" section
+- DFT-035 resolution in `planning-task-tracker.md`
 
 ---
 
@@ -223,6 +233,7 @@ TBD - Document the actual URL
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 5, 2026 | 4.3 | Resolved DFT-035: DataOne search behavior — debounced instant search (500ms, 2+ chars) with immediate dropdown filters. Enter key bypass for power users. Initial state loads all datasets, eliminating "pre-search" state. `AbortController` for race condition prevention. See planning-task-tracker.md | Will + Claude |
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 | Feb 2, 2026 | 4.2 | Resolved DFT-006: Overview tab opens first when layer is selected, with prominent "Browse Features →" button | Will + Claude |
 | Feb 4, 2026 | 4.2 | Resolved DFT-027: "Browse Features →" button design specification (full-width primary, TNC green, inline arrow, hover/focus states, 150-200ms transition) | Will + Claude |
