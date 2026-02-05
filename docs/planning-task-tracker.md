@@ -257,13 +257,6 @@ These issues have clear options and would benefit from a quick team vote:
 
 ---
 
-**Note:** Tasks DFT-033 through DFT-035 have been archived to `PLANNING/resolved-decisions/` with full resolution summaries. See:
-- `dft-033-resolution-summary.md` — Right sidebar width (fixed 400px)
-- `dft-034-resolution-summary.md` — Drag-and-drop reorder feedback
-- `dft-035-resolution-summary.md` — DataOne search behavior
-
----
-
 ### DFT-036: Feature Highlight on Bookmark Hover
 
 **Category:** UI/UX  
