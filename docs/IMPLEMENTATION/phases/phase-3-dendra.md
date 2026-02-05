@@ -177,10 +177,12 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 **Design Decision (Feb 2, 2026):** Resolved DFT-004 — This is **State B** (Feature View). The pop-up chart has **slider only** for exploration (direct manipulation). Parametric date pickers live in the sidebar (task 3.6).
 
+**Design Decision (Feb 5, 2026):** Resolved DFT-040 — No collapsed layer filter summary bar. Back button is only Level 2 reference. Feature header merges with filter actions. See design-system.md Dual-Level Filter Pattern.
+
 **Acceptance Criteria:**
 - [ ] "← Back to Sensors" navigation (returns to State A)
-- [ ] Collapsed layer filter summary: "Layer: [filter summary]" with [Edit] link
-- [ ] Sensor info header (name, location, status, current reading)
+- [ ] **No Level 2 summary bar** — back button is only Level 2 reference (DFT-040)
+- [ ] Sensor info header (name, location, status, current reading) with [Clear] and [↩ Undo] actions
 - [ ] Time series chart component (in pop-up floating on map)
 - [ ] Chart is interactive (hover to see values)
 - [ ] **Slider for time navigation** — exploration only, NOT saved
@@ -228,13 +230,16 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 **Design Decision (Feb 2, 2026):** Resolved DFT-004 — This is **State B** (Feature View) in the sidebar. These date pickers are the canonical filter location. The pop-up slider is for exploration only.
 **Design Decision (Feb 5, 2026):** Resolved DFT-039 — Auto-apply everywhere. No Apply button. Date range fields fire on calendar close/blur. Aggregation dropdown fires immediately. `AbortController` cancels in-flight requests. Result count updates continuously.
+**Design Decision (Feb 5, 2026):** Resolved DFT-040 — Condensed `FeatureDetailCard` layout. No Level 2 summary bar. No separate "Filter Datapoints" header. Filter controls embedded in feature detail card. Back button is only Level 2 reference. See design-system.md Dual-Level Filter Pattern.
 
 **Acceptance Criteria:**
 - [ ] Sidebar shows feature filter section when sensor is selected
-- [ ] Layer filter collapses to read-only summary: "Layer: [summary]" with [Edit] link
-- [ ] Section header: "Filter Datapoints" (per DFT-038 convention)
-- [ ] Date range picker (from/to) — fires on calendar close/blur per field
-- [ ] Aggregation dropdown (hourly, daily, weekly) — fires immediately on change
+- [ ] **No Level 2 summary bar** — back button is only Level 2 reference (DFT-040)
+- [ ] **No separate "Filter Datapoints" header** — sensor header provides scope (DFT-040)
+- [ ] Date range picker (from/to, full-width `col-span-2`) — fires on calendar close/blur per field
+- [ ] Aggregation dropdown (`col-span-1`) — fires immediately on change
+- [ ] Filter controls use DFT-038 grid layout (`1fr 1fr`, `gap: 8px`)
+- [ ] [Clear] and [↩ Undo] in sensor header row (per DFT-031)
 - [ ] **No Apply button** — all filters auto-apply (DFT-039)
 - [ ] `AbortController` cancels in-flight requests when new filter state arrives
 - [ ] Loading feedback per DFT-018 thresholds (stale results with opacity overlay, not blanked)
@@ -248,18 +253,19 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 **Sidebar Layout (State B — Feature View):**
 ```
 ┌─────────────────────────────────────────────────────┐
-│ ← Back to Dendra Sensors                           │
-│ Layer: 2024                                  [Edit]│  ← collapsed summary
-│ ─────────────────────────────────────────────────── │
-│ Sensor ABC-123                                     │
-│ Location: Ridge Station | Status: 🟢 Active        │
-│ ─────────────────────────────────────────────────── │
-│ Filter Datapoints                       [Clear All]│
-│ Start: [Mar 1, 2024    ]  End: [Mar 31, 2024  ]    │
-│ Aggregation: [Daily ▼]                             │
-│ ─────────────────────────────────────────────────── │
-│ Showing 31 datapoints                              │
-│ [🔖 Bookmark Sensor]                               │
+│ ← Back to Sensors                                  │  1. Navigation breadcrumb
+├─────────────────────────────────────────────────────┤
+│ 🌧️ RS-042 — North Ridge                           │
+│ Active • Rain Gauge • 0.2mm        [Clear] [↩]    │  2. Feature identity + actions
+│─────────────────────────────────────────────────────│
+│ Start: [Mar 1, 2024    ]  End: [Mar 31, 2024  ]   │
+│ Aggregation: [Daily ▼]                             │  3. Filter controls
+│─────────────────────────────────────────────────────│
+│ Showing 31 datapoints                              │  4. Result count
+├─────────────────────────────────────────────────────┤
+│ [Chart / data view]                                │  5. Results
+├─────────────────────────────────────────────────────┤
+│ [🔖 Bookmark Sensor]                               │  6. Actions
 └─────────────────────────────────────────────────────┘
 ```
 

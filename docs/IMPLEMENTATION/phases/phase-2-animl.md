@@ -142,17 +142,42 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 **This is the dual-level filtering pattern unique to ANiML.**
 
 **Design Decision (Feb 3, 2026):** Resolved DFT-003 — Once layer is pinned, both camera filter AND image filter changes auto-apply. No "Pin Layer with Query" button needed after initial pin.
+**Design Decision (Feb 5, 2026):** Resolved DFT-040 — Condensed `FeatureDetailCard` layout at Level 3. No Level 2 summary bar (Level 2 filter state is irrelevant when drilled into a camera — back button returns to Level 2). No separate "Filter Images" header (feature header card provides scope). Filter controls embedded directly in `FeatureDetailCard`. See design-system.md Dual-Level Filter Pattern.
 
 **Acceptance Criteria:**
-- [ ] Species dropdown
-- [ ] Date range picker
-- [ ] Time of day filter (optional)
-- [ ] Filter shows aggregate count: "X cameras • Y total images"
-- [ ] Clear visual distinction between camera filters (Level 2) and image filters (Level 3)
-- [ ] **Auto-apply behavior:** If layer is already pinned, filter changes update the pinned layer automatically
+- [ ] Species multi-select (full-width, `col-span-2`)
+- [ ] Date range picker (full-width, `col-span-2`)
+- [ ] Deployment dropdown (`col-span-1`)
+- [ ] **No Level 2 summary bar** — back button is only Level 2 reference (DFT-040)
+- [ ] **No separate "Filter [Noun]" header** — feature header provides scope (DFT-040)
+- [ ] Filter controls use DFT-038 grid layout (`1fr 1fr`, `gap: 8px`)
+- [ ] Result count: "Showing X of Y images" below controls
+- [ ] [Clear] and [↩ Undo] in feature header row (per DFT-031)
+- [ ] **Auto-apply behavior:** All filters auto-apply (DFT-039)
 - [ ] Widget row animates/highlights when filter changes (confirms change was applied)
 
+**Level 3 Sidebar Layout (Feature View — drilled into camera):**
+```
+┌─────────────────────────────────────────┐
+│ ← Back to Cameras                      │  1. Navigation breadcrumb
+├─────────────────────────────────────────┤
+│ 📷 CAM-042 — North Ridge              │
+│ Active • 10,847 images   [Clear] [↩]  │  2. Feature identity + actions
+│─────────────────────────────────────────│
+│  [Species ▼] [Deployment ▼]  (2-col)  │
+│  [Date range: start — end]   (full)   │  3. Filter controls
+│─────────────────────────────────────────│
+│  Showing 47 of 10,847 images          │  4. Result count
+├─────────────────────────────────────────┤
+│  [Image grid]                          │  5. Results
+├─────────────────────────────────────────┤
+│  [← Prev]            [Next →]         │  6. Pagination
+└─────────────────────────────────────────┘
+```
+
 **Reference:** Mockup `02c-browse-animl.html` "Filter Images" section (note the info text)
+
+**Component:** `FeatureDetailCard` (`src/v2/components/RightSidebar/FeatureDetailCard.tsx`)
 
 **State Shape (for dual-level query):**
 ```typescript

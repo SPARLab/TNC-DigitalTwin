@@ -67,12 +67,12 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 - **Export functionality:** `IMPLEMENTATION/phases/phase-5-export-builder.md`
 - **Cross-phase decisions:** `master-plan.md` → "Cross-Phase Decisions" → "UX Decisions"
 
-**Last Updated:** February 5, 2026 (Resolved DFT-039: filter apply behavior — auto-apply everywhere)
+**Last Updated:** February 5, 2026 (Resolved DFT-040: dual-level filter visual distinction — condensed layout, no Level 2 summary bar)
 
 **Next Steps:**
 - [ ] **BEFORE MOCKUPS (DFT-037):** Resolve all design discussion tasks (DFT-015 through DFT-040)
   - **High priority:** ~~DFT-018 (loading states)~~, ~~DFT-020 (pointer-row bookmark UI)~~, ~~DFT-030 (error states)~~, ~~DFT-038 (filter anatomy)~~, ~~DFT-039 (filter apply behavior)~~
-  - **Medium priority:** ~~DFT-019 (Edit Filters navigation)~~, ~~DFT-024 (Filter indicator)~~, ~~DFT-028~~, ~~DFT-029~~, ~~DFT-031~~, ~~DFT-032~~, ~~DFT-035~~, DFT-040 (dual-level distinction)
+  - **Medium priority:** ~~DFT-019 (Edit Filters navigation)~~, ~~DFT-024 (Filter indicator)~~, ~~DFT-028~~, ~~DFT-029~~, ~~DFT-031~~, ~~DFT-032~~, ~~DFT-035~~, ~~DFT-040 (dual-level distinction)~~
   - **Low priority:** DFT-036 (bookmark hover highlight) — can defer to Phase 6 if not blocking mockup generation
 - [x] **Archive completed:** Archived DFT-001 through DFT-027 to `PLANNING/archived-planning-tasks-from-tracker.md` (Feb 4, 2026)
 - [x] **Archive completed:** Archived DFT-033 through DFT-035 to `PLANNING/resolved-decisions/` (Feb 5, 2026)
@@ -125,7 +125,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-037 | Generate updated mockups reflecting all resolved design decisions (DFT-001 through DFT-040) | Task | 🟡 Open | High |
 | DFT-038 | Filter section anatomy — shared structural template for Browse tab filter UI across all data sources | Design System | 🟢 Resolved | High |
 | DFT-039 | Filter apply behavior — auto-apply vs explicit Apply button consistency across data sources | UI/UX | 🟢 Resolved | High |
-| DFT-040 | Dual-level filter visual distinction — how Level 2 vs Level 3 filters look different (ANiML, Dendra) | UI/UX | 🟡 Open | Medium |
+| DFT-040 | Dual-level filter visual distinction — how Level 2 vs Level 3 filters look different (ANiML, Dendra) | UI/UX | 🟢 Resolved | Medium |
 
    **Status Key:**
 - 🟢 Resolved — Decision made, ready for dev
@@ -178,7 +178,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-037 | Generate updated mockups after design decisions resolved | Will | 🟡 Pending |
 | DFT-038 | Filter section anatomy — shared structural template | Will | ✅ Resolved - Feb 5 |
 | DFT-039 | Filter apply behavior consistency | Will | ✅ Resolved - Feb 5 |
-| DFT-040 | Dual-level filter visual distinction (ANiML, Dendra) | Will | 🟡 Pending |
+| DFT-040 | Dual-level filter visual distinction (ANiML, Dendra) | Will | ✅ Resolved - Feb 5 |
 
 ## Paradigm Sign-Offs
 
@@ -749,62 +749,180 @@ DFT-035 decided DataOne uses auto-apply (debounced instant search, immediate dro
 ### DFT-040: Dual-Level Filter Visual Distinction
 
 **Category:** UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Medium  
-**Source:** Will + Claude design discussion, Feb 5, 2026
+**Source:** Will + Claude design discussion, Feb 5, 2026  
+**Resolved:** February 5, 2026
 
 **Context:**
 ANiML and Dendra have two levels of filters that appear in the same right sidebar Browse tab:
 - **ANiML:** Level 2 = "Filter Cameras" (region, status) → Level 3 = "Filter Images" (species, date)
 - **Dendra:** Level 2 = "Filter Sensors" (region, status, time range) → Level 3 = "Filter Datapoints" (date range, aggregation)
 
-DFT-004 established that the sidebar is the canonical filter editor and that level transitions use progressive disclosure. But it didn't specify the *visual treatment* that distinguishes one filter level from the other when both might be visible (e.g., Dendra shows a collapsed layer-filter summary + expanded feature-filter section).
+DFT-004 established progressive disclosure: sidebar is the canonical filter editor, level transitions happen when users drill in/out. DFT-038 established a shared `FilterSection` component with flat `slate-50` background. The question: how do the two filter levels look visually distinct when the user is at Level 3?
 
-iNaturalist and DataOne are single-level (no distinction needed), so this only applies to ANiML and Dendra.
+**Key Insight:** Because of DFT-004, both levels are never fully expanded simultaneously. The user is always in one of two states:
+- **State A (Layer View):** Only Level 2 filter visible. Standard `FilterSection`. No distinction needed.
+- **State B (Feature View):** User drilled into a camera/sensor. Level 2 is irrelevant — the back button provides the escape hatch, and Level 2 filter state doesn't affect Level 3 content.
 
-**Questions to Resolve:**
-1. How does the user visually distinguish "I'm editing camera-level filters" from "I'm editing image-level filters"?
-2. When the user drills into a feature (Level 3), how does the Level 2 filter section change?
-3. Should the two levels use different background colors, different section header styles, or something else?
+**Resolution:** **Condensed Feature Detail layout — no Level 2 summary bar, merged feature header + filter controls**
 
-**Options:**
+### Design Decision
 
-**Option A: Section headers + subtle background shift (recommended)**
-- Level 2 filter section: white background, standard section header ("Filter Cameras")
-- Level 3 filter section: `slate-50` background, slightly inset, different section header ("Filter Images at CAM-042")
-- Level 2 collapses to a read-only summary line with "[Edit]" link when Level 3 is active
-- Rationale: double-encoding (Gestalt: Common Region + typography) without heavy-handed color coding
+**When user drills into a feature (Level 3), the Browse tab uses a 6-zone layout:**
 
-**Option B: Accordion panels with distinct borders**
-- Each level in its own collapsible accordion with a colored left border
-- Level 2: blue left border, Level 3: amber left border
-- More visual separation but heavier UI weight
+```
+┌─────────────────────────────────────────┐
+│ ← Back to Cameras                      │  1. Navigation breadcrumb
+├─────────────────────────────────────────┤
+│ 📷 CAM-042 — North Ridge              │
+│ Active • 10,847 images   [Clear] [↩]  │  2. Feature identity + filter actions
+│─────────────────────────────────────────│
+│  [Species ▼] [Deployment ▼]  (2-col)  │
+│  [Date range: start — end]   (full)   │  3. Filter controls (DFT-038 grid)
+│─────────────────────────────────────────│
+│  Showing 47 of 10,847 images          │  4. Result count
+├─────────────────────────────────────────┤
+│  [Results list / image grid]           │  5. Results
+├─────────────────────────────────────────┤
+│  [← Prev]            [Next →]         │  6. Pagination
+└─────────────────────────────────────────┘
+```
 
-**Option C: Tab-like sub-navigation within the Browse tab**
-- Sub-tabs: "Cameras" | "Images" within the Browse tab
-- Most explicit separation but adds navigation complexity (a tab within a tab)
+**What was dropped:**
+- **No Level 2 summary bar.** When drilled into CAM-042's images, the Level 2 filter ("All regions, Active") is irrelevant — it doesn't affect images at this camera. The back button is the only Level 2 reference needed. Level 2 filter state is preserved in memory and visible on return.
+- **No separate "Filter [Noun]" header at Level 3.** The feature header card provides scope context. You're at CAM-042 — the filter controls below obviously filter CAM-042's images. Adding "Filter Images" is redundant (Nielsen #8: Minimalism).
 
-**Considerations:**
-- Dendra's Phase 3 spec already has ASCII diagrams showing a "collapsed summary + [Edit]" pattern for Level 2 when Level 3 is active. Option A aligns with this existing spec.
-- ANiML's Phase 2 spec says "clear visual distinction" but doesn't specify how.
-- At 400px width (DFT-033), horizontal space is limited — Option C wastes some on sub-tabs.
-- Progressive disclosure (DFT-004) means both levels are rarely fully expanded simultaneously — one is typically collapsed.
+**Feature header row specification:**
 
-**Design Principles:**
+| Element | Styling | Purpose |
+|---|---|---|
+| Feature icon + name | `text-sm font-bold text-gray-900` | Feature identity (camera/sensor ID + location) |
+| Status + count line | `text-[10px] text-gray-500` | Context metadata |
+| [Clear] link | `text-[10px] text-gray-400 hover:text-red-500` | Clear All filters (per DFT-038/DFT-031) |
+| [↩] undo button | `text-[10px] text-gray-400` (grayed when no actions) | Persistent undo (per DFT-031) |
 
-| Principle | How It Applies |
+**Filter controls:** Use the same DFT-038 CSS grid layout (`grid-template-columns: 1fr 1fr`, `gap: 8px`), `col-span-1`/`col-span-2` rules. Controls are children of the feature detail card, not wrapped in a standalone `FilterSection`.
+
+**Per-data-source application:**
+
+| Data Source | Feature Header | Filter Controls | Result Count |
+|---|---|---|---|
+| **ANiML** | `📷 CAM-042 — North Ridge` / `Active • 10,847 images` | Species multi-select, Date range, Deployment dropdown | "Showing 47 of 10,847 images" |
+| **Dendra** | `🌧️ RS-042 — North Ridge` / `Active • Rain Gauge • 0.2mm` | Date range, Aggregation dropdown | "Showing 90 datapoints" |
+
+**Component structure:**
+
+| Context | Component | Notes |
+|---|---|---|
+| Single-level (iNaturalist, DataOne) | `FilterSection` (DFT-038) | Standard: header + grid + footer |
+| Level 2 (ANiML cameras, Dendra sensors) | `FilterSection` (DFT-038) | Standard: "Filter Cameras" / "Filter Sensors" |
+| Level 3 (drilled into feature) | `FeatureDetailCard` | Embeds filter controls directly; no separate `FilterSection` header |
+
+**`FeatureDetailCard` component interface (conceptual):**
+
+```typescript
+interface FeatureDetailCardProps {
+  icon: React.ReactNode;
+  name: string;                 // "CAM-042"
+  subtitle: string;             // "North Ridge"
+  metadata: string;             // "Active • 10,847 images"
+  resultCount: number;
+  totalCount: number;
+  noun: string;                 // "images" or "datapoints"
+  hasActiveFilters: boolean;
+  onClearAll: () => void;
+  onUndo: () => void;
+  canUndo: boolean;
+  children: React.ReactNode;    // Filter controls (use DFT-038 grid)
+}
+```
+
+**Location:** `src/v2/components/RightSidebar/FeatureDetailCard.tsx`
+
+### Edge Cases
+
+| Scenario | Behavior |
 |---|---|
-| Gestalt: Common Region | Background color shift groups Level 3 controls as a distinct region |
-| Gestalt: Proximity | Level 2 summary stays near top (spatial reference); Level 3 controls grouped below |
-| Norman: Conceptual Model | "I'm inside a camera" = Level 3 context. Background shift signals scope change |
-| Nielsen #6: Recognition | Section headers ("Filter Images at CAM-042") eliminate guessing |
-| IA: Progressive Disclosure | Level 2 collapses when Level 3 is active; expandable to edit |
-| IA: Wayfinding | "← Back to Cameras" breadcrumb + collapsed summary = "I came from here" |
+| User clicks "← Back" | Returns to Level 2 list view with Level 2 `FilterSection` visible; Level 2 filter state preserved |
+| Feature disappears (Level 2 filter change via widget) | Navigate back to list with "Feature no longer matches current filters" message |
+| All filters cleared | Result count shows full total; [Clear] link hidden; [↩] active for undo |
+| Screen reader | Back button: `aria-label="Back to camera list"`; Feature header: `role="banner"`; Filter controls: standard form labels |
 
-**Discussion:**
-*Pending resolution*
+### Design Rationale
 
-**Resolution:** *Pending*
+| Principle | How This Solution Addresses It | Rating |
+|---|---|:---:|
+| **Gestalt: Figure-Ground** | Active filter controls on `slate-50` grid; feature header on `white` — clear editing surface | ✅ |
+| **Gestalt: Proximity** | Feature identity + filter actions + controls in one region — everything related is close | ✅ |
+| **Norman: Conceptual Model** | "I'm at a camera. I see its info and its filters. Back takes me to the list." Clean spatial metaphor | ✅ |
+| **Norman: Signifiers** | Form controls signal editability; back arrow signals escape; [Clear]/[↩] signal actions | ✅ |
+| **Nielsen #1: Visibility** | Feature identity always visible at top of drilled-down view | ✅ |
+| **Nielsen #4: Consistency** | Both ANiML and Dendra use same `FeatureDetailCard` pattern at Level 3 | ✅ |
+| **Nielsen #6: Recognition** | Feature header provides scope — no need to recall what "Filter Images" refers to | ✅ |
+| **Nielsen #8: Minimalism** | Dropped Level 2 summary bar (irrelevant), dropped "Filter [Noun]" header (redundant) | ✅ |
+| **Hick's Law** | Only one set of filter controls visible — no Level 2 vs Level 3 decision | ✅ |
+| **IA: Wayfinding** | Back button = "where I came from"; Feature header = "where I am" | ✅ |
+| **IA: Progressive Disclosure** | Level 2 fully hidden at Level 3; revealed on back navigation | ✅ |
+| **Fitts's Law** | [Clear] and [↩] in feature header row — near eye focus, no scrolling needed | ✅ |
+| **WCAG: Perceivable** | Standard form controls, labeled, keyboard navigable | ✅ |
+| **Motion: Continuity** | 150-200ms crossfade between Level 2 and Level 3 views (per DFT-019) | ✅ |
+
+### Rejected Options
+
+**Option A (original): Level 2 summary bar + separate FilterSection**
+- Level 2 summary bar is irrelevant at Level 3 — doesn't affect feature content
+- Creates 4 visual zones above results, wasting vertical space at 400px width
+- Adds cognitive load without aiding the task at hand
+
+**Option B: Accordion panels with colored left borders**
+- Adds permanent color-coding vocabulary to learn
+- Progressive disclosure already prevents simultaneous expansion
+- Conflicts with DFT-038's "no per-data-source decoration" principle
+
+**Option C: Sub-tabs within Browse tab**
+- Creates "tab within tab" pattern (parallel framing for hierarchical relationship)
+- Wastes horizontal space at 400px (DFT-033)
+- Breaks spatial drill-down metaphor
+
+### Tradeoffs
+
+**What we sacrifice:**
+- Visible Level 2 filter state when at Level 3 (acceptable: back button takes you there instantly)
+- Separate "Filter [Noun]" header at Level 3 (acceptable: feature header provides scope)
+- Ability to edit Level 2 filters without navigating back (acceptable: Level 2 doesn't affect Level 3 content)
+
+**Why acceptable:**
+- Level 2 filter state doesn't affect Level 3 content — cameras exist regardless of how the camera list was filtered
+- Back button restores full Level 2 context with one click
+- Condensed layout maximizes vertical space for results (critical at 400px sidebar width)
+- Matches GIS conventions — ArcGIS Pro hides parent-level controls when drilled into feature detail
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file)
+- ✅ `docs/IMPLEMENTATION/phases/phase-2-animl.md` (Task 2.4 decision note, updated acceptance criteria)
+- ✅ `docs/IMPLEMENTATION/phases/phase-3-dendra.md` (Tasks 3.5/3.6 decision notes, updated ASCII diagrams)
+- ✅ `docs/DESIGN-SYSTEM/design-system.md` (Dual-Level Filter Pattern section)
+- ✅ `docs/master-plan.md` (Cross-Phase Decisions → UX Decisions)
+- ✅ `docs/PLANNING/resolved-decisions/dft-040-resolution-summary.md`
+
+**✅ Verification Checklist:**
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with full specification
+- [x] Design principles cited (14 principles analyzed)
+- [x] 6-zone layout specified (ASCII diagram)
+- [x] Feature header row specification provided
+- [x] `FeatureDetailCard` component interface defined
+- [x] Per-data-source application documented (ANiML + Dendra)
+- [x] Edge cases handled
+- [x] Rejected options documented with rationale
+- [x] Tradeoffs analyzed
+- [x] Phase 2 ANiML updated (Task 2.4)
+- [x] Phase 3 Dendra updated (Tasks 3.5, 3.6 — removed collapsed summary, updated ASCII diagrams)
+- [x] Design system updated (Dual-Level Filter Pattern)
+- [x] Master plan Cross-Phase Decisions updated
+- [x] Resolution summary created
+- [x] Cross-references added
 
 ---
 
@@ -882,4 +1000,5 @@ iNaturalist and DataOne are single-level (no distinction needed), so this only a
 | Feb 5, 2026 | Resolved DFT-035: DataOne search behavior — debounced instant search (500ms, 2+ chars) + immediate dropdown filters. Initial state loads all datasets (no pre-search dead state). Pagination: Previous/Next (20/page). AbortController cancels in-flight requests. Continuous feedback (Norman, Nielsen #1), reduced cognitive load (Hick's Law), matches ArcGIS Hub conventions. See Phase 4 task 4.3 |
 | Feb 5, 2026 | Resolved DFT-036: Feature highlight on bookmark hover — hover-to-highlight for in-viewport features (no auto-pan). Cyan ring (4px width, 8px offset) with subtle pulse (2 cycles, 800ms). Off-screen features show "📍 Off-screen" text indicator; click [View] to pan. Keyboard support: highlight follows Tab focus, ARIA announcements. Analyzed through 9 UI/UX frameworks with strong cross-framework convergence. Matches GIS conventions (ArcGIS Pro, QGIS). Deferred enhancements to Phase 6: edge indicators (directional arrows), bidirectional highlighting. See Phase 0 task 0.6 |
 | Feb 5, 2026 | Resolved DFT-039: Filter apply behavior — auto-apply everywhere, no Apply button in any data source. Universal rules: dropdowns immediate, text search 500ms debounce, date fields on calendar close/blur, toggles immediate. `AbortController` cancels in-flight requests. Loading per DFT-018. Removed `[Apply]` buttons from Phase 3 Dendra (Tasks 3.3, 3.6). Explicitly specified auto-apply in Phase 1 iNaturalist (Task 1.3). Consistent with DFT-035 (DataOne) and DFT-003 (ANiML). Analyzed via 14 design principles. See design-system.md Filter Apply Behavior |
+|| Feb 5, 2026 | Resolved DFT-040: Dual-level filter visual distinction — condensed 6-zone layout for Level 3 (feature detail). Dropped Level 2 summary bar (irrelevant at Level 3). Merged feature header + filter controls into `FeatureDetailCard`. Back button is only Level 2 reference. Single-level data sources still use `FilterSection` (DFT-038). Updated Phase 2 Task 2.4, Phase 3 Tasks 3.5/3.6. See design-system.md Dual-Level Filter Pattern |
 

@@ -713,10 +713,78 @@ interface FilterSectionProps {
 
 **Decision Date:** February 5, 2026
 
+### Dual-Level Filter Pattern (DFT-040)
+
+**Policy:** ANiML and Dendra have two filter levels (Level 2 = layer scope, Level 3 = feature scope). At Level 3, a condensed `FeatureDetailCard` replaces the standard `FilterSection`.
+
+**Key principles:**
+- **No Level 2 summary bar at Level 3.** The back button ("← Back to Cameras/Sensors") is the only Level 2 reference. Level 2 filter state doesn't affect Level 3 content.
+- **No separate "Filter [Noun]" header at Level 3.** The feature header card provides scope context.
+- **Filter controls embedded in feature detail card** using the same DFT-038 grid layout.
+
+**6-Zone Layout (Level 3 — Feature View):**
+
+```
+┌─────────────────────────────────────────┐
+│ ← Back to [Cameras/Sensors]            │  1. Navigation breadcrumb
+├─────────────────────────────────────────┤
+│ [icon] Feature-ID — Location           │
+│ Status • Count           [Clear] [↩]  │  2. Feature identity + actions
+│─────────────────────────────────────────│
+│  [Filter controls — DFT-038 grid]      │  3. Filter controls
+│─────────────────────────────────────────│
+│  Showing X of Y [noun]                 │  4. Result count
+├─────────────────────────────────────────┤
+│  [Results]                             │  5. Results
+├─────────────────────────────────────────┤
+│  [Pagination / Actions]                │  6. Pagination
+└─────────────────────────────────────────┘
+```
+
+**Component structure:**
+
+| Context | Component | Notes |
+|---|---|---|
+| Single-level (iNaturalist, DataOne) | `FilterSection` | Standard: header + grid + footer |
+| Level 2 (ANiML cameras, Dendra sensors) | `FilterSection` | Standard: "Filter Cameras" / "Filter Sensors" |
+| Level 3 (drilled into feature) | `FeatureDetailCard` | Embeds filter controls; no "Filter [Noun]" header |
+
+**`FeatureDetailCard` interface:**
+
+```typescript
+interface FeatureDetailCardProps {
+  icon: React.ReactNode;
+  name: string;                 // "CAM-042" or "RS-042"
+  subtitle: string;             // "North Ridge"
+  metadata: string;             // "Active • 10,847 images"
+  resultCount: number;
+  totalCount: number;
+  noun: string;                 // "images" or "datapoints"
+  hasActiveFilters: boolean;
+  onClearAll: () => void;
+  onUndo: () => void;
+  canUndo: boolean;
+  children: React.ReactNode;    // Filter controls (DFT-038 grid)
+}
+```
+
+**Component location:** `src/v2/components/RightSidebar/FeatureDetailCard.tsx`
+
+**Per-data-source application:**
+
+| Data Source | Feature Header | Filter Controls |
+|---|---|---|
+| **ANiML** | `📷 CAM-042 — North Ridge` / `Active • 10,847 images` | Species multi-select, Date range, Deployment dropdown |
+| **Dendra** | `🌧️ RS-042 — North Ridge` / `Active • Rain Gauge • 0.2mm` | Date range, Aggregation dropdown |
+
+**Design rationale:** Progressive disclosure (DFT-004) means both levels are never fully expanded simultaneously. Level 2 filter state doesn't affect Level 3 content (cameras exist regardless of how the camera list was filtered). The condensed layout maximizes vertical space for results within the 400px sidebar (DFT-033). Analyzed via Gestalt (Proximity, Figure-Ground), Norman (Conceptual Model, Signifiers), Nielsen (#1, #4, #6, #8), Hick's Law, IA (Wayfinding, Progressive Disclosure), Fitts's Law, WCAG.
+
+**Decision Date:** February 5, 2026
+
 ### Related Decisions
 
 - ~~**DFT-039:** Filter apply behavior (auto-apply vs explicit Apply button)~~ ✅ Resolved — see above
-- **DFT-040:** Visual distinction between Level 2 and Level 3 filter sections
+- ~~**DFT-040:** Visual distinction between Level 2 and Level 3 filter sections~~ ✅ Resolved — see above
 - **DFT-037:** Exact spacing values, component library choice, collapse/expand behavior
 
 **Section Established:** February 5, 2026
