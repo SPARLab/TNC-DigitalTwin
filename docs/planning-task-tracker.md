@@ -128,7 +128,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-037 | Generate component specs + mockups reflecting all resolved design decisions | Task | 🟡 Open | High |
 | └─ DFT-037-P1 | Component Spec: Left Sidebar (docs/PLANNING/component-specs/left-sidebar.md) | Planning | ✅ Complete | High |
 | └─ DFT-037-P2 | Component Spec: Map Layers Widget (docs/PLANNING/component-specs/map-layers-widget.md) | Planning | ✅ Complete | High |
-| └─ DFT-037-P3 | Component Spec: Bookmarked Items Widget (docs/PLANNING/component-specs/bookmarked-items-widget.md) | Planning | 🟡 Open | High |
+| └─ DFT-037-P3 | Component Spec: Bookmarked Items Widget (docs/PLANNING/component-specs/bookmarked-items-widget.md) | Planning | ✅ Complete | High |
 | └─ DFT-037-P4 | Component Spec: Right Sidebar Template (docs/PLANNING/component-specs/right-sidebar-template.md) | Planning | 🟡 Open | High |
 | └─ DFT-037a | HTML Mockup: mockups/02a-unified-layout.html — Compose from P1-P4 specs | Task | 🟡 Open | High |
 | └─ DFT-037b | HTML Mockup: mockups/02b-browse-inaturalist.html | Task | 🟡 Open | High |
@@ -425,7 +425,7 @@ Generate component specs FIRST, then HTML mockups composed from those specs. Com
 **Phase 1: Component Specs (Planning)**
 - [ ] **DFT-037-P1:** Component Spec: Left Sidebar (`docs/PLANNING/component-specs/left-sidebar.md`)
 - [x] **DFT-037-P2:** Component Spec: Map Layers Widget (`docs/PLANNING/component-specs/map-layers-widget.md`)
-- [ ] **DFT-037-P3:** Component Spec: Bookmarked Items Widget (`docs/PLANNING/component-specs/bookmarked-items-widget.md`)
+- [x] **DFT-037-P3:** Component Spec: Bookmarked Items Widget (`docs/PLANNING/component-specs/bookmarked-items-widget.md`)
 - [ ] **DFT-037-P4:** Component Spec: Right Sidebar Template (`docs/PLANNING/component-specs/right-sidebar-template.md`)
 
 **Phase 2: HTML Mockups (Task)**
