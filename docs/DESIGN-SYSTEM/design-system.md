@@ -1804,12 +1804,135 @@ src/v2/components/RightSidebar/
 │   ├── FeatureDetailCard.tsx     ← DFT-040 Level 3 wrapper
 │   ├── ResultCard.tsx            ← Standard result card
 │   ├── Pagination.tsx            ← Previous/Next or Load More
-│   └── BrowseFeaturesButton.tsx  ← DFT-027 CTA button
+│   ├── BrowseFeaturesButton.tsx  ← DFT-027 CTA button
+│   ├── DetailBackButton.tsx      ← DFT-044 Back navigation for detail views
+│   ├── DetailActionRow.tsx       ← DFT-044 Action button row for detail views
+│   └── DetailMetadataGrid.tsx    ← DFT-044 2-col key-value grid
 ├── iNaturalist/                  ← Only content/config, imports shared
+│   └── ObservationDetailView.tsx ← Uses DetailBackButton, DetailActionRow, DetailMetadataGrid
 ├── ANiML/                        ← Only content/config + landing cards exception
 ├── Dendra/                       ← Only content/config + chart exception
 └── DataOne/                      ← Only content/config
+    └── DatasetDetailView.tsx     ← Uses DetailBackButton, DetailActionRow
 ```
+
+### Detail View Components (DFT-044)
+
+**Policy:** Self-contained row detail views (iNaturalist observations, DataOne datasets) use purpose-built components with shared sub-components for consistency. NO monolithic shared detail view component — observations and datasets are conceptually different types (atomic events vs. structured resources).
+
+**Architectural principle:** Consistent structural template (tabs, back button, action row) with flexibility for custom content (hero images, multi-section layouts, progressive disclosure).
+
+#### Sub-Component: DetailBackButton
+
+**Location:** `src/v2/components/RightSidebar/shared/DetailBackButton.tsx`
+
+**Design Tokens:**
+
+```typescript
+export const detailBackButtonTokens = {
+  container: 'flex items-center gap-1 py-2 text-sm text-gray-600 hover:text-gray-800 cursor-pointer transition-colors',
+  icon: 'w-4 h-4',
+  hoverState: 'hover:text-gray-800',
+};
+```
+
+**Visual Specification:**
+
+```
+┌─────────────────────────────────────────┐
+│ [<-] Back to Observations               │
+└─────────────────────────────────────────┘
+```
+
+**Behavior:**
+- Icon: Lucide `ChevronLeft` (12px)
+- Keyboard: focusable, Enter/Space activates
+- ARIA: `aria-label={label}`
+- Focus: 2px outline for keyboard navigation
+
+#### Sub-Component: DetailActionRow
+
+**Location:** `src/v2/components/RightSidebar/shared/DetailActionRow.tsx`
+
+**Design Tokens:**
+
+```typescript
+export const detailActionRowTokens = {
+  container: 'flex flex-wrap gap-2 pt-3 border-t border-gray-200',
+  primaryButton: 'bg-emerald-600 text-white hover:bg-emerald-700 px-4 py-2 rounded-md text-sm font-medium transition-colors',
+  secondaryButton: 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 px-4 py-2 rounded-md text-sm transition-colors',
+  icon: 'w-4 h-4 inline-block ml-1',
+  minHeight: '40px',
+};
+```
+
+**Visual Specification:**
+
+```
+┌─────────────────────────────────────────┐
+│ [View on Map] [Bookmark] [iNat ->]      │
+└─────────────────────────────────────────┘
+```
+
+**Behavior:**
+- Flex wrap: buttons wrap on narrow screens
+- Min button height: 40px (meets WCAG 44px with padding)
+- Keyboard: Tab cycles through buttons, Enter/Space activates
+- Focus: 2px outline
+- Icon position: right-aligned for external link indicators
+
+#### Sub-Component: DetailMetadataGrid
+
+**Location:** `src/v2/components/RightSidebar/shared/DetailMetadataGrid.tsx`
+
+**Design Tokens:**
+
+```typescript
+export const detailMetadataGridTokens = {
+  container: 'grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 py-3',
+  label: 'text-xs text-gray-500 font-medium',
+  value: 'text-sm text-gray-900',
+};
+```
+
+**Visual Specification:**
+
+```
+┌─────────────────────────────────────────┐
+│ Observer     @jane_doe                  │
+│ Date         January 15, 2024           │
+│ Location     34.4712, -120.4521         │
+│ Quality      Research Grade             │
+│ ID agreement 5 / 5                      │
+│ License      CC-BY-NC                   │
+└─────────────────────────────────────────┘
+```
+
+**Semantic HTML:** Uses `<dl>`, `<dt>`, `<dd>` for accessibility
+
+**Behavior:**
+- Responsive: stacks to 1-col on mobile (<400px width)
+- Label width: auto-sized to longest label
+- Value width: fills remaining space, wraps if needed
+
+#### Full Detail View Tokens
+
+```typescript
+export const detailViewTokens = {
+  container: 'bg-white p-4',
+  titlePrimary: 'text-base font-semibold text-gray-900',
+  titleSecondary: 'text-sm text-gray-500 italic',
+  sectionSeparator: 'border-t border-gray-200 my-3',
+  sectionLabel: 'text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2',
+  heroImage: 'w-full aspect-[4/3] object-cover rounded-lg mb-3',
+};
+```
+
+**Purpose-Built Detail Views:**
+- **iNaturalist:** `ObservationDetailView.tsx` (hero image + flat grid)
+- **DataOne:** `DatasetDetailView.tsx` (multi-section hierarchical layout)
+
+**Rationale:** Forcing both into a shared component creates a leaky abstraction with complex props. Sub-components + tokens provide consistency without sacrificing conceptual clarity. Analyzed via Nielsen #4 (Consistency), Nielsen #8 (Minimalism), Norman (Conceptual Model), Hick's Law, IA (Mental Models). See DFT-044 resolution.
 
 ### Decision Date
 
@@ -1829,6 +1952,7 @@ February 5, 2026
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 6, 2026 | Added Detail View Components (DFT-044) — shared sub-components for self-contained row detail views: `DetailBackButton`, `DetailActionRow`, `DetailMetadataGrid`. Purpose-built views: iNaturalist (hero image + flat grid), DataOne (multi-section hierarchical). Architectural principle: consistent structural template with flexibility for custom content. Design tokens added for back button, action row, metadata grid, and full detail view styling. Analyzed via Nielsen #4/#8, Norman, Hick's Law, IA Mental Models | Will + Claude |
 | Feb 5, 2026 | Audit gap resolution — added 12 missing DFT specs: Viewport Requirements (DFT-016), Accessibility Baseline (DFT-017), Bookmark Hover-to-Highlight (DFT-036), Filter Indicator (DFT-024), Multiple Filtered Views (DFT-013), Widget Animation Patterns (DFT-025), Map Badge Behavior (DFT-029), Widget Auto-Collapse (DFT-005), TabBar default tab + Edit Filters transition (DFT-006/DFT-019), ResultCard grayed animation detail (DFT-028), TNC brand color/font reference (DFT-008/DFT-009) | Will + Claude |
 | Feb 5, 2026 | Added Sidebar Template System — shared structural templates (TabBar, OverviewTab, ResultCard, Pagination, LeftSidebar category pattern) enforced via components. Theme tokens centralized in `sidebarTheme`. All data sources use identical layout; only content varies. Exceptions documented (ANiML landing cards, Dendra chart, Level 3 FeatureDetailCard). Decisions: underline tabs (emerald accent), Previous/Next pagination (20/page), standard result card with icon/title/subtitle/actions slots, left sidebar with collapsible categories and emerald active state | Will + Claude |
 | Feb 5, 2026 | Added Filter Apply Behavior (DFT-039) — auto-apply everywhere, no Apply button in any data source. Universal rules: dropdowns immediate, text search 500ms debounce, date fields on calendar close/blur, toggles immediate. `AbortController` cancels in-flight requests. Loading per DFT-018 thresholds. Stale results visible with overlay. Result count updates continuously. ARIA live region announces changes | Will + Claude |
