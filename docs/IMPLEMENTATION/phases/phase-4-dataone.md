@@ -33,6 +33,7 @@ Implement the DataOne dataset browse experience in the right sidebar. This data 
 - **Bookmark Options:** Only "Bookmark Dataset" (no "Bookmark with Filter")
 - **No Level 3:** Datasets are bookmarked whole, not filtered by individual files
 - **Cross-Category:** DataOne appears under "Research Datasets (All Categories)" with category filter in right sidebar
+- **Left Sidebar Shortcuts (DFT-045):** Special shortcut rows appear in domain categories (Species, Fire, etc.) labeled "DataOne Datasets (count)". Clicking activates DataOne with that domain pre-filtered. Improves discoverability for domain-first users.
 
 ---
 
@@ -98,6 +99,11 @@ Implement the DataOne dataset browse experience in the right sidebar. This data 
   - [ ] Click behavior: navigates to Browse tab with 150-200ms ease-out crossfade transition
 - [ ] Component can show dataset list OR dataset detail (drill-down pattern)
 - [ ] Header clearly indicates "Research data across all categories"
+- [ ] **Left sidebar shortcuts (DFT-045):**
+  - [ ] Query DataOne service for category distribution on sidebar mount
+  - [ ] Render special shortcut rows in expanded domain categories (if count > 0)
+  - [ ] Shortcut rows labeled "DataOne Datasets (count)" with books icon
+  - [ ] Clicking shortcut row activates DataOne with domain pre-filter applied
 
 **Files to Create:**
 - `src/v2/components/RightSidebar/DataOne/DataOneSidebar.tsx`
