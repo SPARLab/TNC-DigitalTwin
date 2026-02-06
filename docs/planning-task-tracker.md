@@ -67,7 +67,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 - **Export functionality:** `IMPLEMENTATION/phases/phase-5-export-builder.md`
 - **Cross-phase decisions:** `master-plan.md` → "Cross-Phase Decisions" → "UX Decisions"
 
-**Last Updated:** February 5, 2026 (Added Sidebar Template System — template-driven consistency for DFT-037 mockups; cleaned stale master-plan entries)
+**Last Updated:** February 6, 2026 (Archived DFT-033 through DFT-040; restructured DFT-037 with component specs phase)
 
 **Next Steps:**
 - [x] **BEFORE MOCKUPS (DFT-037):** Resolve all design discussion tasks (DFT-015 through DFT-040) -- ALL DONE
@@ -84,7 +84,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 
 ## Quick Reference
 
-**Note:** Tasks DFT-001 through DFT-032 have been archived. Full descriptions, discussions, resolutions, and design decisions are preserved in `PLANNING/archived-planning-tasks-from-tracker.md`. Tasks DFT-033 through DFT-035 have been archived to `PLANNING/resolved-decisions/` with full resolution summaries. The summaries below are kept for quick reference.
+**Note:** Tasks DFT-001 through DFT-040 have been archived. Full descriptions, discussions, resolutions, and design decisions are preserved in `PLANNING/archived-planning-tasks-from-tracker.md`. The summaries below are kept for quick reference.
 
 | ID | Summary | Category | Status | Priority |
 |----|---------|----------|--------|----------|
@@ -125,13 +125,17 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-034 | Drag-and-drop reorder feedback — what visual cues during layer reorder? | Microinteraction | 🟢 Resolved | Low |
 | DFT-035 | DataOne search behavior — instant search or explicit submit? | UI/UX | 🟢 Resolved | Medium |
 | DFT-036 | Feature highlight on map when hovering bookmark row | UI/UX | 🟢 Resolved | Low |
-| DFT-037 | Generate updated mockups reflecting all resolved design decisions (DFT-001 through DFT-040) | Task | 🟡 Open | High |
-| └─ DFT-037a | Generate `mockups/02a-unified-layout.html` — Master template defining ALL shared structure | Task | 🟡 Open | High |
-| └─ DFT-037b | Generate `mockups/02b-browse-inaturalist.html` — iNaturalist browse view (inherits from 02a) | Task | 🟡 Open | High |
-| └─ DFT-037c | Generate `mockups/02c-browse-animl.html` — ANiML browse view with landing cards exception | Task | 🟡 Open | High |
-| └─ DFT-037d | Generate `mockups/02d-browse-dendra.html` — Dendra browse view with chart slider exception | Task | 🟡 Open | High |
-| └─ DFT-037e | Generate `mockups/02e-browse-dataone.html` — DataOne browse view (search-first pattern) | Task | 🟡 Open | High |
-| └─ DFT-037f | Generate `mockups/02f-export-builder.html` — Export Builder modal | Task | 🟡 Open | High |
+| DFT-037 | Generate component specs + mockups reflecting all resolved design decisions | Task | 🟡 Open | High |
+| └─ DFT-037-P1 | Component Spec: Left Sidebar (docs/PLANNING/component-specs/left-sidebar.md) | Planning | 🟡 Open | High |
+| └─ DFT-037-P2 | Component Spec: Map Layers Widget (docs/PLANNING/component-specs/map-layers-widget.md) | Planning | 🟡 Open | High |
+| └─ DFT-037-P3 | Component Spec: Bookmarked Items Widget (docs/PLANNING/component-specs/bookmarked-items-widget.md) | Planning | 🟡 Open | High |
+| └─ DFT-037-P4 | Component Spec: Right Sidebar Template (docs/PLANNING/component-specs/right-sidebar-template.md) | Planning | 🟡 Open | High |
+| └─ DFT-037a | HTML Mockup: mockups/02a-unified-layout.html — Compose from P1-P4 specs | Task | 🟡 Open | High |
+| └─ DFT-037b | HTML Mockup: mockups/02b-browse-inaturalist.html | Task | 🟡 Open | High |
+| └─ DFT-037c | HTML Mockup: mockups/02c-browse-animl.html | Task | 🟡 Open | High |
+| └─ DFT-037d | HTML Mockup: mockups/02d-browse-dendra.html | Task | 🟡 Open | High |
+| └─ DFT-037e | HTML Mockup: mockups/02e-browse-dataone.html | Task | 🟡 Open | High |
+| └─ DFT-037f | HTML Mockup: mockups/02f-export-builder.html | Task | 🟡 Open | High |
 | DFT-038 | Filter section anatomy — shared structural template for Browse tab filter UI across all data sources | Design System | 🟢 Resolved | High |
 | DFT-039 | Filter apply behavior — auto-apply vs explicit Apply button consistency across data sources | UI/UX | 🟢 Resolved | High |
 | DFT-040 | Dual-level filter visual distinction — how Level 2 vs Level 3 filters look different (ANiML, Dendra) | UI/UX | 🟢 Resolved | Medium |
@@ -180,14 +184,6 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-030 | Error state design | Will, Dan | ✅ Resolved - Feb 4 |
 | DFT-031 | Confirmation dialogs pattern | Will | ✅ Resolved - Feb 4 |
 | DFT-032 | Map tooltip design | Will | ✅ Resolved - Feb 4 |
-| DFT-033 | Right sidebar width and resizability | Will | ✅ Resolved - Feb 5 |
-| DFT-034 | Drag-and-drop reorder feedback | Will | ✅ Resolved - Feb 5 |
-| DFT-035 | DataOne search behavior | Will, Dan | ✅ Resolved - Feb 5 |
-| DFT-036 | Feature highlight on bookmark hover | Will | ✅ Resolved - Feb 5 |
-| DFT-037 | Generate updated mockups after design decisions resolved | Will | 🟡 Pending |
-| DFT-038 | Filter section anatomy — shared structural template | Will | ✅ Resolved - Feb 5 |
-| DFT-039 | Filter apply behavior consistency | Will | ✅ Resolved - Feb 5 |
-| DFT-040 | Dual-level filter visual distinction (ANiML, Dendra) | Will | ✅ Resolved - Feb 5 |
 
 ## Paradigm Sign-Offs
 
@@ -262,7 +258,7 @@ These issues have clear options and would benefit from a quick team vote:
 
 ## Issues
 
-**Archived Tasks:** Tasks DFT-001 through DFT-032 have been archived. Full descriptions, discussions, resolutions, and design decisions are preserved in `PLANNING/archived-planning-tasks-from-tracker.md`. Tasks DFT-033 through DFT-035 have been archived to `PLANNING/resolved-decisions/` with full resolution summaries. Summaries remain in the Quick Reference table above.
+**Archived Tasks:** Tasks DFT-001 through DFT-040 have been archived. Full descriptions, discussions, resolutions, and design decisions are preserved in `PLANNING/archived-planning-tasks-from-tracker.md`. Summaries remain in the Quick Reference table above.
 
 ---
 
@@ -401,7 +397,7 @@ Analyzed through 9 UI/UX frameworks with **strong cross-framework convergence:**
 
 ---
 
-### DFT-037: Generate Updated Mockups After Design Decisions Resolved
+### DFT-037: Generate Component Specs + Mockups Reflecting All Resolved Design Decisions
 
 **Category:** Task  
 **Status:** 🟡 Open  
@@ -409,7 +405,7 @@ Analyzed through 9 UI/UX frameworks with **strong cross-framework convergence:**
 **Source:** Will, Feb 3, 2026
 
 **Context:**
-Mockups should NOT be generated until all design discussion tasks (DFT-015 through DFT-036) are resolved. Once resolved, updated mockups need to be created that reflect all design decisions from DFT-001 through DFT-036 (excluding any decisions that were explicitly omitted or deferred).
+Component specs define ASCII representations of each component with all states, pulling from all resolved DFTs. HTML mockups are then composed from these specs. Component specs are the authoritative source for what each component should look like.
 
 **Prerequisites:**
 - All high-priority design issues resolved (DFT-015, DFT-018, DFT-020, DFT-030) -- DONE
@@ -419,7 +415,32 @@ Mockups should NOT be generated until all design discussion tasks (DFT-015 throu
 - Sidebar Template System defined in `design-system.md` (TabBar, OverviewTab, ResultCard, Pagination, LeftSidebar, theme tokens) -- DONE
 
 **Task:**
-Generate updated mockups (`mockups/02a-02f` or new versions) that demonstrate:
+Generate component specs FIRST, then HTML mockups composed from those specs. Component specs define ASCII representations of each component with all states, pulling from all resolved DFTs.
+
+**Phase 1: Component Specs (Planning)**
+- [ ] **DFT-037-P1:** Component Spec: Left Sidebar (`docs/PLANNING/component-specs/left-sidebar.md`)
+- [ ] **DFT-037-P2:** Component Spec: Map Layers Widget (`docs/PLANNING/component-specs/map-layers-widget.md`)
+- [ ] **DFT-037-P3:** Component Spec: Bookmarked Items Widget (`docs/PLANNING/component-specs/bookmarked-items-widget.md`)
+- [ ] **DFT-037-P4:** Component Spec: Right Sidebar Template (`docs/PLANNING/component-specs/right-sidebar-template.md`)
+
+**Phase 2: HTML Mockups (Task)**
+- [ ] **DFT-037a:** HTML Mockup: `mockups/02a-unified-layout.html` — Compose from P1-P4 specs
+- [ ] **DFT-037b:** HTML Mockup: `mockups/02b-browse-inaturalist.html`
+- [ ] **DFT-037c:** HTML Mockup: `mockups/02c-browse-animl.html`
+- [ ] **DFT-037d:** HTML Mockup: `mockups/02d-browse-dendra.html`
+- [ ] **DFT-037e:** HTML Mockup: `mockups/02e-browse-dataone.html`
+- [ ] **DFT-037f:** HTML Mockup: `mockups/02f-export-builder.html`
+
+**Component Spec Requirements:**
+Each component spec must include:
+- ASCII diagrams showing all states (empty, loading, error, populated)
+- All interaction patterns as resolved in DFTs
+- All visual specifications (spacing, typography, colors)
+- State transitions and edge cases
+- Accessibility requirements (ARIA, keyboard navigation)
+
+**Mockup Requirements:**
+HTML mockups must demonstrate:
 - All resolved UX decisions from DFT-001 through DFT-040
 - Empty states (per DFT-015)
 - Loading states (per DFT-018)
@@ -427,15 +448,7 @@ Generate updated mockups (`mockups/02a-02f` or new versions) that demonstrate:
 - All widget designs with final specifications
 - All sidebar designs with final specifications
 - All interaction patterns as resolved
-- **Template-driven consistency** (see below)
-
-**Subtasks:**
-- [ ] **DFT-037a:** Generate `mockups/02a-unified-layout.html` — Master template defining ALL shared structure (header, left sidebar, map area, right sidebar shell with TabBar, OverviewTab, FilterSection, ResultCard, Pagination, floating widgets). Uses iNaturalist as default data source. This is the canonical template that all other mockups inherit from.
-- [ ] **DFT-037b:** Generate `mockups/02b-browse-inaturalist.html` — iNaturalist browse view inheriting from 02a template. Only changes: iNaturalist-specific metadata fields in OverviewTab, iNaturalist filter controls (taxon dropdown, species dropdown, date range, quality grade checkbox), iNaturalist result card slots.
-- [ ] **DFT-037c:** Generate `mockups/02c-browse-animl.html` — ANiML browse view inheriting from 02a template. Includes documented exception: ANiML landing cards (Animal-First / Camera-First entry). Level 2: "Filter Cameras" (region, status). Level 3: FeatureDetailCard with "Filter Images" (species multi-select, date range, deployment dropdown).
-- [ ] **DFT-037d:** Generate `mockups/02d-browse-dendra.html` — Dendra browse view inheriting from 02a template. Includes documented exception: Dendra pop-up time-series chart with slider (DFT-004). Level 2: "Filter Sensors" (region, status). Level 3: FeatureDetailCard with "Filter Datapoints" (date range, aggregation dropdown).
-- [ ] **DFT-037e:** Generate `mockups/02e-browse-dataone.html` — DataOne browse view inheriting from 02a template. Search-first pattern (DFT-035): debounced instant search, immediate dropdown filters. Only changes: DataOne-specific metadata fields, DataOne filter controls (title search, repository dropdown, TNC category dropdown, date range), DataOne result card slots.
-- [ ] **DFT-037f:** Generate `mockups/02f-export-builder.html` — Export Builder modal (opens from global header shopping cart button per DFT-002). Shows unified export interface for pinned layers + bookmarked features.
+- **Template-driven consistency** — mockups composed from component specs
 
 **Template-Driven Mockup Strategy:**
 
@@ -459,7 +472,7 @@ The mockups must demonstrate the **Sidebar Template System** documented in `desi
 After DFT-037 is complete, **archive resolved design decisions** to `PLANNING/resolved-decisions/` to keep `planning-task-tracker.md` manageable. The tracker should focus on open issues, not serve as a historical archive.
 
 **Discussion:**
-*Blocked until DFT-015 through DFT-036 are resolved*
+*All prerequisites met — ready to begin component specs*
 
 **Resolution:** *Pending*
 

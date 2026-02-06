@@ -1,8 +1,8 @@
 # Archived Planning Tasks from Tracker
 
-**Purpose:** This document contains the full text and resolution details for completed planning tasks (DFT-001 through DFT-032) that have been archived from `planning-task-tracker.md` to keep the tracker manageable.
+**Purpose:** This document contains the full text and resolution details for completed planning tasks (DFT-001 through DFT-040) that have been archived from `planning-task-tracker.md` to keep the tracker manageable.
 
-**Archive Date:** February 5, 2026
+**Archive Date:** February 6, 2026
 
 **Note:** These tasks are resolved and their full descriptions are preserved here for historical reference. The Quick Reference table in `planning-task-tracker.md` still shows these tasks with their summaries, but full details are archived here.
 
@@ -2538,6 +2538,1015 @@ Native browser tooltips work with keyboard navigation automatically (`title` att
 - [x] Cross-references added ("Documented in:")
 - [x] Rationale provided using UI/UX principles
 - [x] Implementation notes included
+
+---
+
+## DFT-033: Right Sidebar Width and Resizability
+
+**Category:** Layout  
+**Status:** 🟢 Resolved  
+**Priority:** Low  
+**Source:** UX Design Review, Feb 3, 2026  
+**Resolved:** February 5, 2026
+
+**Context:**
+The right sidebar appears in Browse tabs across all data sources (iNaturalist, ANiML, Dendra, DataOne). The question: should it be fixed width or resizable? What width accommodates different content types (image grids, time-series charts, text metadata)?
+
+**Key Considerations:**
+- Image grids (ANiML) benefit from wider sidebar
+- Time-series charts (Dendra) benefit from wider sidebar
+- Text metadata (iNaturalist) works fine with narrower sidebar
+- Map needs to remain usable with sidebar open
+
+**Resolution:** **Fixed width at 400px (not resizable)**
+
+**Core Principle:** The user's job is to analyze conservation data, not configure the interface.
+
+### Design Decision
+
+**Fixed width at 400px (not resizable)**
+
+**Why 400px:**
+- Wide enough for 4-column image grids (ANiML)
+- Wide enough for readable time-series charts (Dendra)
+- Wide enough for metadata without excessive line wrapping (iNaturalist)
+- Narrow enough to leave 60%+ of screen for map (at 1440px mockup width)
+- Matches established GIS UI patterns (ArcGIS Online, QGIS)
+
+**Why Not Resizable:**
+
+**Key Findings from Framework Analysis:**
+
+1. **Cognitive Load (Hick's Law):** Resizability adds micro-decisions that distract from primary task. Every UI adjustment forces users to ask "Is this too wide? Should I adjust it?" — cognitive overhead with no clear user need.
+
+2. **Consistency & Spatial Memory (Nielsen #4):** Fixed width creates predictable spatial memory. Users know "where" content appears and "how much" map they'll lose when sidebar opens. Resizable introduces session-to-session variability.
+
+3. **Simplicity Serves Task (Aesthetic Minimalism):** No evidence in user feedback that researchers want to fiddle with sidebar width. Resizable handles add visual noise and implementation complexity for questionable UX value.
+
+4. **GIS Convention Alignment (Mental Models):** ArcGIS Online and QGIS use fixed sidebars. Matching this convention reduces learning curve for target audience (GIS-minded researchers).
+
+5. **Accessibility (WCAG - Operable):** Resizable sidebars require precise mouse control (dragging edges), harder for motor impairments. Fixed width = keyboard-friendly.
+
+6. **Engineering Efficiency:** Fixed width means content can be designed for a specific grid (e.g., 4-column image grid at 400px). Resizable requires responsive breakpoints for every Browse view, adding complexity without user value.
+
+**Handling Edge Cases:**
+If specific content genuinely needs more space (e.g., Dendra chart):
+- Add **"Expand Chart"** button that pops out into modal/overlay
+- This gives flexibility without introducing persistent UI configuration burden
+
+**Optional Enhancement (Not Required for v2.0):**
+Consider a **collapse toggle** (hide sidebar entirely, maximize map) as a binary state (open/closed), not continuous adjustment. Simpler to implement, no drag handles, clear affordance.
+
+**Design Principles Applied:**
+
+Analyzed through 9 UI/UX frameworks:
+
+1. **Gestalt:** Consistency creates predictable spatial relationships
+2. **Norman:** Fixed width = clear affordance, no ambiguous controls
+3. **Nielsen #4:** Consistency & standards — matches GIS conventions
+4. **Cognitive Science:** Hick's Law — fewer decisions = faster workflow
+5. **Visual Fundamentals:** Predictable layout enables optimized content design
+6. **Accessibility (WCAG):** Fixed width = keyboard-friendly, no precise mouse control needed
+7. **Behavioral Science:** Simplicity reduces cognitive load
+8. **Information Architecture:** Predictable layout aids wayfinding
+9. **Motion & Time:** No animation needed for resize = simpler implementation
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file)
+- ✅ `docs/master-plan.md` (Cross-Phase Decisions → UX Decisions)
+- ✅ `docs/IMPLEMENTATION/phases/` (All phases with right sidebar implementations)
+- ✅ `docs/PLANNING/resolved-decisions/dft-033-resolution-summary.md`
+
+**✅ Verification Checklist:**
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with full specification
+- [x] Design principles cited (9 frameworks analyzed)
+- [x] Master plan updated
+- [x] Phase documents reviewed
+- [x] Resolution summary created
+
+---
+
+## DFT-034: Drag-and-Drop Reorder Feedback
+
+**Category:** Microinteraction  
+**Status:** 🟢 Resolved  
+**Priority:** Low  
+**Source:** UX Design Review, Feb 3, 2026  
+**Resolved:** February 5, 2026
+
+**Context:**
+Per Phase 0, pinned layers have drag handles for reordering. Reordering affects map layer z-order (stacking order), which is critical for GIS workflows—researchers need points visible over polygons, or specific datasets prioritized for visual analysis.
+
+**Questions Resolved:**
+1. ✅ What visual feedback during drag? **Enhanced lifted row (60% opacity, 95% scale, 2deg rotation, dashed border)**
+2. ✅ How to indicate drop target? **4px blue line + subtle background highlight**
+3. ✅ What animation on drop? **400ms settle animation with green highlight**
+4. ✅ How to communicate map z-order changes? **Toast notification: "Map layer order updated"**
+5. ✅ Keyboard accessibility? **Arrow keys (up/down), Shift+Home/End, ARIA announcements**
+
+**Resolution:** **Enhanced visual feedback + keyboard support**
+
+### Design Decision
+
+#### 1. Drag Handle & Cursor
+- **Icon:** `⋮⋮` (6 dots in 2 columns, Lucide `GripVertical`)
+- **Hover:** `cursor: grab`, color shift from `#94a3b8` to `#64748b`
+- **Active drag:** `cursor: grabbing`
+- **ARIA:** `aria-label="Drag to reorder layer. Use arrow keys to move up or down."`
+
+#### 2. Dragged Row Visual Treatment (Enhanced)
+
+```css
+.widget-layer-card.dragging {
+  opacity: 0.6;                               /* Increased from 0.5 */
+  transform: scale(0.95) rotate(2deg);        /* More noticeable + tilt */
+  box-shadow: 0 12px 40px -8px rgba(0, 0, 0, 0.3);  /* Stronger elevation */
+  cursor: grabbing;
+  border: 2px dashed #3b82f6;                 /* Dashed = "in motion" */
+}
+```
+
+#### 3. Drop Target Indicator (Refined)
+
+```css
+.widget-layer-card.drag-over {
+  border-top: 4px solid #3b82f6;              /* Increased from 2px */
+  margin-top: -4px;
+  background-color: rgba(59, 130, 246, 0.05); /* Subtle highlight */
+}
+```
+
+#### 4. Drop Animation (New)
+
+```css
+.widget-layer-card.just-dropped {
+  animation: settle 400ms ease-out;
+  background-color: #dcfce7;  /* Green = success */
+}
+```
+
+#### 5. Map Z-Order Feedback
+
+**Approach:** Toast notification (non-intrusive, educational)
+
+```javascript
+function updateMapLayerOrder(layerIds, { animate = false }) {
+  // Update ArcGIS map layer order...
+  
+  // Show brief toast
+  showToast({
+    message: "Map layer order updated",
+    duration: 2000,           // Brief, auto-dismiss
+    position: "bottom-center" // Near map
+  });
+}
+```
+
+#### 6. Keyboard Support (WCAG 2.1.1 Compliance)
+
+**Arrow keys (up/down):** Move layer up or down one position  
+**Shift+Home:** Move to top  
+**Shift+End:** Move to bottom
+
+**ARIA Live Region:** Announces position changes for screen readers
+
+**Edge Cases:**
+- **Rapid reorders:** Debounce map updates by 300ms (per DFT-025 pattern)
+- **Invalid drop (outside widget):** Card snaps back to origin position with brief shake animation
+- **Single pinned layer:** Hide drag handles when only 1 layer pinned
+
+**Design Principles Applied:**
+
+Analyzed through 9 UI/UX frameworks:
+
+1. **Gestalt (Perception):** Figure-ground separation via lifted row, continuity via drop line, common fate (dragged row + cursor move together)
+2. **Norman (Interaction):** Affordances (drag handle signals draggability), signifiers (cursor changes), feedback (visual state changes + toast), mappings (spatial layout matches z-order mental model)
+3. **Nielsen (Usability):** Visibility of system status (#1), user control & freedom (#3), consistency & standards (#4), recognition over recall (#6)
+4. **Cognitive Science:** Fitts's Law (small drag handle prevents accidental drags), feedback timing (<100ms instant, 400ms animation), Von Restorff Effect (dragged row stands out)
+5. **Visual Fundamentals:** Contrast (opacity, color), hierarchy (elevated shadow), balance (scale + rotation suggests "lifted")
+6. **Accessibility (WCAG):** Keyboard navigation (WCAG 2.1.1), ARIA announcements (Perceivable), 4px line contrast (Perceivable), reduced motion support
+7. **Behavioral Science:** Loss aversion addressed by undo button (DFT-031), feedback loop rewards completion, perceived control via precise targeting
+8. **Information Architecture:** Mental model (researchers understand layer stacking from GIS software), wayfinding (drop line shows destination)
+9. **Motion & Time:** Duration (400ms aligns with DFT-025, DFT-031), easing (`ease-out` for settling), continuity (smooth transition), reduced motion respected
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file)
+- ✅ `docs/IMPLEMENTATION/phases/phase-0-foundation.md` (Task 0.5 acceptance criteria)
+- ✅ `docs/DESIGN-SYSTEM/design-system.md` (Drag-and-drop patterns)
+- ✅ `docs/master-plan.md` (Cross-Phase Decisions → UX Decisions)
+- ✅ `docs/PLANNING/resolved-decisions/dft-034-resolution-summary.md`
+
+**✅ Verification Checklist:**
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with full specification
+- [x] Design principles cited (9 frameworks analyzed)
+- [x] Visual specifications provided (CSS examples)
+- [x] Keyboard support specified (WCAG compliance)
+- [x] ARIA patterns specified
+- [x] Edge cases handled
+- [x] Phase 0 document updated
+- [x] Design system updated
+- [x] Master plan updated
+- [x] Resolution summary created
+
+---
+
+## DFT-035: DataOne Search Behavior
+
+**Category:** UI/UX  
+**Status:** 🟢 Resolved  
+**Priority:** Medium  
+**Source:** UX Design Review, Feb 3, 2026  
+**Resolved:** February 5, 2026
+
+**Context:**
+DataOne has a search interface in the right sidebar Browse tab. The question: should search fire as the user types (instant), require an explicit submit (Enter/button), or use a hybrid approach?
+
+**Key Constraints:**
+- Two API calls per search: `countDatasets()` + `queryDatasets()` hit ArcGIS Feature Service
+- ~12k records (latest versions, filtered to 20-mile radius)
+- Text search uses `LIKE '%term%'` on `title` field only
+- Four filter controls: text search, category dropdown, year range, author dropdown
+- v1 implementation uses explicit submit with "pre-search" empty state
+- Target audience: GIS researchers (DFT-011) at desktop workstations (DFT-016)
+
+**Resolution:** **Debounced instant search (500ms, 2+ chars) + immediate dropdown filters**
+
+### Design Decision
+
+**Text Search Input:**
+- Debounce at **500ms** after last keystroke
+- Fires at **2+ characters** (or 0 characters when clearing to show all)
+- **Enter key bypasses debounce** and fires immediately (power user shortcut)
+- No explicit "Search" button
+
+**Dropdown/Select Controls (category, year, author):**
+- Fire **immediately** on change
+- Selecting from dropdown = committed action (Norman Feedback)
+- Reset pagination to page 1 on any filter change
+
+**Initial State (entering Browse tab):**
+- Load all datasets immediately, sorted by `date_uploaded DESC`
+- Display result count: "876 datasets within 20 miles"
+- Eliminate v1 "pre-search" empty state (Shneiderman overview-first)
+
+**Pagination:**
+- Traditional Previous/Next buttons (20 per page)
+- Positional awareness for researchers ("Page 3 of 44")
+- "Load More" rejected — loses positional context (Wayfinding)
+
+**Loading Feedback:**
+- During debounce: subtle spinner replacing search icon (per DFT-018: 300ms+ = spinner)
+- During query: inline spinner in result count area ("Loading..." replaces "Showing 47 of 876")
+- Results area: show stale results with subtle opacity overlay, not blank (prevent layout shift)
+
+**Empty Results:**
+- Show "No datasets match your filters"
+- Include **"Clear all filters"** link (per DFT-015 pattern)
+
+**In-Flight Request Handling:**
+- Cancel previous requests with `AbortController` when new filter state arrives
+- Prevents race conditions where earlier, slower query overwrites newer one
+
+**ARIA / Accessibility:**
+- Live region announces result count changes for screen readers
+- Enter key works as explicit trigger for keyboard-only users
+- No rapid content swaps that trigger seizures (debounce prevents it)
+
+**Design Rationale:**
+
+**Norman (Feedback):** Every filter change immediately updates results. Dropdown selection feels like a complete action and produces visible feedback. No silent state changes.
+
+**Nielsen #1 (System Status):** Live result count ("Showing 47 of 876") always reflects current filters. User never composes filters "blind."
+
+**Hick's Law (Cognitive Load):** No "Search" button decision. Adjust filter = see results. One less micro-decision per filter iteration. For a 4-control interface, this compounds quickly.
+
+**Fitts's Law:** Full-width search input recovers space from removed button. Enter key = zero-distance shortcut for power users.
+
+**Shneiderman #7 (User Control):** Enter key gives explicit control for power users. 500ms debounce gives typing breathing room. Tradeoff: slightly less "I decide when" feeling, but acceptable for read-only, reversible search.
+
+**Nielsen #5 (Error Prevention):** 2-char minimum prevents overly broad text queries. `AbortController` prevents race conditions.
+
+**Mental Models (IA):** Matches ArcGIS Hub and modern data catalog conventions. Browse tab = exploration context, not formal query construction (like Web of Science).
+
+**Wayfinding (IA):** Pagination with page numbers provides positional awareness. Result count provides scope awareness.
+
+**Why 500ms (Not 300ms):** Each search triggers two network requests (count + query). 500ms debounce + two requests = 700-900ms total response time, still below 1-second threshold where users notice delay. Matches industry standard for debounced search when results replace in-place.
+
+**Why Not Explicit Submit:** Three problems with v1 pattern:
+1. Broken feedback loop for dropdowns (selecting category = no response until "Search" clicked)
+2. Wasted vertical space on "pre-search" educational text (~200px)
+3. Unnecessary friction for exploration (researchers adjust filters many times per session)
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file)
+- ✅ `docs/IMPLEMENTATION/phases/phase-4-dataone.md` (Task 4.3 updated with decision notes)
+- ✅ `docs/master-plan.md` (Cross-Phase Decisions → UX Decisions)
+- ✅ `docs/PLANNING/resolved-decisions/dft-035-resolution-summary.md`
+
+**✅ Verification Checklist:**
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with full specification
+- [x] Design principles cited (multiple frameworks analyzed)
+- [x] Search behavior specification provided
+- [x] Phase 4 document updated
+- [x] Master plan updated
+- [x] Resolution summary created
+
+---
+
+## DFT-036: Feature Highlight on Bookmark Hover
+
+**Category:** UI/UX  
+**Status:** 🟢 Resolved  
+**Priority:** Low  
+**Source:** UX Design Review, Feb 3, 2026  
+**Resolved:** February 5, 2026
+
+**Context:**
+When user hovers over a bookmarked feature in the Bookmarked Features widget, should the corresponding feature highlight on the map?
+
+**Why this matters (Gestalt: Common fate / Nielsen: Recognition over recall):**
+Highlighting creates a visual link between widget row and map feature, helping users understand the relationship without clicking.
+
+**Questions Resolved:**
+1. ✅ Does hovering a bookmark row highlight the feature on the map? **Yes, if feature is in viewport**
+2. ✅ What does "highlight" look like? **Cyan ring (4px width, 8px offset) with subtle pulse (2 cycles, 800ms)**
+3. ✅ Does this work for features not currently visible on the map? **Shows "📍 Off-screen" text indicator; click [View] to pan**
+4. ✅ Should it scroll the map to show the feature? **No auto-pan on hover; click [View] button for deliberate pan**
+5. ✅ Does hovering a pinned layer row highlight all its features? **No; layer headers are non-interactive per DFT-007**
+
+**Resolution:** **Hover-to-highlight for in-viewport features (no auto-pan)**
+
+### Design Decision
+
+**Pattern:** Bookmark row hover → map feature highlights (if visible in viewport)
+
+**Highlight Specification:**
+- **Visual style:** Bright cyan ring (4px width, 8px offset from feature symbol)
+- **Animation:** Subtle pulse (2 cycles, 800ms, `ease-in-out`)
+- **Z-order:** Elevated above other features
+- **Timing:** Instant feedback (<100ms via map API)
+- **Reduced motion:** Static ring (no pulse) if user preference set
+- **Cleanup:** Highlight clears on unhover (instant or 50ms fade-out)
+
+**Off-Screen Features:**
+- No map highlight (no forced pan)
+- Widget row shows subtle "📍 Off-screen" text indicator (gray, 12px)
+- Click [View] button to pan + zoom (deliberate action)
+
+**Keyboard Support (WCAG 2.1.1):**
+- Highlight follows Tab focus when navigating bookmark rows
+- ARIA live region announces: "Feature CAM-042 highlighted on map" (polite)
+- Maintains parity between mouse hover and keyboard focus
+
+**Performance:**
+- Debounce rapid hover events (50ms) to prevent map thrashing
+- Single highlight at a time (clear previous on new hover)
+- Only highlight when bookmark widget is expanded
+
+**Edge Cases:**
+- **Layer headers:** No hover highlight (non-interactive per DFT-007)
+- **Multiple bookmarks of same feature:** Highlights same map feature (expected)
+- **Widget collapsed:** No highlighting (widget not visible)
+- **Feature not loaded:** Graceful degradation, no error
+- **Map layer toggled off:** No highlight (respects layer visibility state)
+
+### Design Rationale
+
+Analyzed through 9 UI/UX frameworks with **strong cross-framework convergence:**
+
+**✅ Gestalt (Common Fate, Proximity):** Widget hover + map highlight creates visual grouping, reinforces spatial relationship
+
+**✅ Norman (Feedback, Conceptual Model):** Instant feedback for exploratory action, matches GIS software conventions (ArcGIS Pro, QGIS attribute table ↔ map coordination)
+
+**✅ Norman (User Control):** No forced pan—hover remains lightweight, non-committal exploration
+
+**✅ Nielsen (#1 Visibility, #6 Recognition):** Shows which map feature corresponds to row, removes memory burden of mental mapping
+
+**✅ Nielsen (#4 Consistency, #7 Flexibility):** Follows GIS platform standards, enables efficient wayfinding for power users
+
+**✅ Cognitive Science (Hick's Law, Feedback Timing):** Reduces decision complexity, instant feedback (<100ms)
+
+**✅ Visual Fundamentals (Contrast, Hierarchy):** High-contrast ring (4.5:1), elevated z-order creates temporary focal point
+
+**✅ WCAG (Perceivable, Operable, Understandable):** Keyboard support, ARIA announcements, respects `prefers-reduced-motion`
+
+**✅ Behavioral Science (Perceived Control):** Responsive system, user-initiated, low-commitment interaction
+
+**✅ Information Architecture (Wayfinding, Lensing):** Coordinates two views (list + map) of same data, reduces cognitive load
+
+**✅ Motion/Time (Continuity, Easing):** Smooth fade-in (150ms `ease-out`), instant removal, respects reduced motion
+
+**❌ Pan-on-Hover Rejected:** Violates user control (Norman), breaks instant feedback expectation (400-600ms pan duration), disorienting for keyboard users navigating list
+
+### Deferred Enhancements (Phase 6)
+
+**Edge Indicators for Off-Screen Features:**
+- "Starfighter" style directional arrow at screen edge pointing toward off-screen bookmarks
+- Shows direction + approximate distance
+- Estimated effort: 6-8 hours (medium complexity)
+- **Decision:** Defer to Phase 6 to preserve 15-day v2.0 timeline
+- Gather user feedback: "Do you wish you knew which direction bookmarks were?"
+- Implement if users express need; v2.0 text indicator may be sufficient
+
+**Bidirectional Highlighting:**
+- Map feature hover → highlight widget row
+- Added complexity (widget may not be visible)
+- Defer to Phase 6 for post-v2.0 user feedback
+
+### Tradeoffs
+
+**What we sacrifice:**
+- Off-screen feature spatial feedback (hover provides none)
+- Pan-to-feature on hover (users from consumer maps like Google Maps might expect it)
+- Bidirectional highlighting (map → widget)
+- Edge indicators (directional arrows)
+
+**Why acceptable:**
+- Click [View] is appropriate for deliberate pan action (keeps hover lightweight)
+- Target audience (GIS researchers, DFT-011) expect GIS conventions (highlight-only), not consumer map behavior
+- Unidirectional (widget → map) solves 80% use case; can add bidirectional based on feedback
+- Simple text indicator adequate for v2.0; edge indicators add ~6-8 hours to timeline
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file)
+- ✅ `docs/IMPLEMENTATION/phases/phase-0-foundation.md` (Task 0.6 acceptance criteria)
+- ✅ `docs/IMPLEMENTATION/phases/phase-6-polish.md` (Deferred enhancements)
+- ✅ `docs/master-plan.md` (Cross-Phase Decisions → UX Decisions)
+
+**✅ Verification Checklist:**
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with full specification
+- [x] Design principles cited (9 frameworks analyzed)
+- [x] Highlight visual specification provided
+- [x] Keyboard support specified (WCAG compliance)
+- [x] ARIA patterns specified
+- [x] Edge cases handled
+- [x] Off-screen behavior specified
+- [x] Tradeoffs analyzed
+- [x] Deferred enhancements documented (Phase 6)
+- [x] Cross-references added
+
+---
+
+## DFT-037: Generate Updated Mockups After Design Decisions Resolved
+
+**Category:** Task  
+**Status:** 🟡 Open  
+**Priority:** High  
+**Source:** Will, Feb 3, 2026
+
+**Context:**
+Mockups should NOT be generated until all design discussion tasks (DFT-015 through DFT-036) are resolved. Once resolved, updated mockups need to be created that reflect all design decisions from DFT-001 through DFT-036 (excluding any decisions that were explicitly omitted or deferred).
+
+**Prerequisites:**
+- All high-priority design issues resolved (DFT-015, DFT-018, DFT-020, DFT-030) -- DONE
+- All medium-priority design issues resolved (or explicitly deferred) -- DONE
+- All resolved decisions documented in phase documents and master plan -- DONE
+- DFT-038 (filter anatomy), DFT-039 (filter apply behavior), DFT-040 (dual-level distinction) -- DONE
+- Sidebar Template System defined in `design-system.md` (TabBar, OverviewTab, ResultCard, Pagination, LeftSidebar, theme tokens) -- DONE
+
+**Task:**
+Generate updated mockups (`mockups/02a-02f` or new versions) that demonstrate:
+- All resolved UX decisions from DFT-001 through DFT-040
+- Empty states (per DFT-015)
+- Loading states (per DFT-018)
+- Error states (per DFT-030)
+- All widget designs with final specifications
+- All sidebar designs with final specifications
+- All interaction patterns as resolved
+- **Template-driven consistency** (see below)
+
+**Subtasks:**
+- [ ] **DFT-037a:** Generate `mockups/02a-unified-layout.html` — Master template defining ALL shared structure (header, left sidebar, map area, right sidebar shell with TabBar, OverviewTab, FilterSection, ResultCard, Pagination, floating widgets). Uses iNaturalist as default data source. This is the canonical template that all other mockups inherit from.
+- [ ] **DFT-037b:** Generate `mockups/02b-browse-inaturalist.html` — iNaturalist browse view inheriting from 02a template. Only changes: iNaturalist-specific metadata fields in OverviewTab, iNaturalist filter controls (taxon dropdown, species dropdown, date range, quality grade checkbox), iNaturalist result card slots.
+- [ ] **DFT-037c:** Generate `mockups/02c-browse-animl.html` — ANiML browse view inheriting from 02a template. Includes documented exception: ANiML landing cards (Animal-First / Camera-First entry). Level 2: "Filter Cameras" (region, status). Level 3: FeatureDetailCard with "Filter Images" (species multi-select, date range, deployment dropdown).
+- [ ] **DFT-037d:** Generate `mockups/02d-browse-dendra.html` — Dendra browse view inheriting from 02a template. Includes documented exception: Dendra pop-up time-series chart with slider (DFT-004). Level 2: "Filter Sensors" (region, status). Level 3: FeatureDetailCard with "Filter Datapoints" (date range, aggregation dropdown).
+- [ ] **DFT-037e:** Generate `mockups/02e-browse-dataone.html` — DataOne browse view inheriting from 02a template. Search-first pattern (DFT-035): debounced instant search, immediate dropdown filters. Only changes: DataOne-specific metadata fields, DataOne filter controls (title search, repository dropdown, TNC category dropdown, date range), DataOne result card slots.
+- [ ] **DFT-037f:** Generate `mockups/02f-export-builder.html` — Export Builder modal (opens from global header shopping cart button per DFT-002). Shows unified export interface for pinned layers + bookmarked features.
+
+**Template-Driven Mockup Strategy:**
+
+The mockups must demonstrate the **Sidebar Template System** documented in `design-system.md`. This means:
+
+1. **02a (unified layout)** defines the shared template — TabBar, OverviewTab layout, ResultCard shape, Pagination, LeftSidebar categories. This is the "master mockup" that all data sources inherit from.
+
+2. **02b-02e (data source mockups)** only show content differences — which metadata fields, which filter controls, which result card slots. The structural layout (tabs, card shapes, spacing, typography) must be identical across all four.
+
+3. **Any styling change to the template in one mockup must be applied to all others.** If the team decides to try different tab styling, card padding, or accent colors, it changes everywhere — not per-data-source.
+
+4. **Documented exceptions** (ANiML landing cards, Dendra chart slider, Level 3 FeatureDetailCard) are the only places where data-source mockups diverge structurally from the template.
+
+5. **Theme tokens** from `sidebarTheme` in `design-system.md` define the initial values for all shared styling (colors, spacing, typography). Mockups establish these initial values; team adjusts by changing tokens.
+
+**Exclusions:**
+- Any DFT decisions explicitly omitted or deferred to v2.1+
+- Decisions marked as "defer to Phase 6" unless they affect mockup generation
+
+**Post-Completion:**
+After DFT-037 is complete, **archive resolved design decisions** to `PLANNING/resolved-decisions/` to keep `planning-task-tracker.md` manageable. The tracker should focus on open issues, not serve as a historical archive.
+
+**Discussion:**
+*Blocked until DFT-015 through DFT-036 are resolved*
+
+**Resolution:** *Pending*
+
+---
+
+## DFT-038: Filter Section Anatomy — Shared Structural Template
+
+**Category:** Design System  
+**Status:** 🟢 Resolved  
+**Priority:** High  
+**Source:** Will + Claude design discussion, Feb 5, 2026  
+**Resolved:** February 5, 2026
+
+**Context:**
+We have 4 data sources (iNaturalist, ANiML, Dendra, DataOne) that each need filter controls in the right sidebar Browse tab. Each has different applicable filters (species, date range, spatial filters, keywords, station selectors, etc.), but there is no shared design system for how these filters are visually structured. Without a consistent anatomy, 4 parallel Cursor agents will build 4 visually different filter UIs, making Phase 6 (Polish) significantly harder.
+
+**What this decides:**
+The structural skeleton that every Browse tab's filter section follows — not the exact styling (colors, border-radius, spacing values), which is deferred to mockup iteration (DFT-037).
+
+**Filter Parameter Inventory (from service analysis):**
+
+| Filter Type | iNaturalist | ANiML | Dendra | DataOne |
+|---|:---:|:---:|:---:|:---:|
+| Date range | Start/End | Start/End | Days-back / Range | Start/End |
+| Text search | Taxon name | — | — | Title search |
+| Single dropdown | Quality grade | Region, Status | Station, Datastream, Aggregation | Repository, TNC Category |
+| Multi-select | Iconic taxa, Months | Species labels, Deployments | — | — |
+| Toggle/Radio | Photo filter | — | "From most recent" | "Use preserve radius" |
+| Result count | "X of Y observations" | "X cameras, Y images" | "X sensors" / "X data points" | "X of Y datasets" |
+| Dual-level filters | No | Yes (camera + image) | Yes (station + datastream) | No |
+
+**Resolution:** **Shared `FilterSection` anatomy template adopted — consistent skeleton across all 4 data sources**
+
+### Design Decision
+
+#### 1. Structural Skeleton
+
+```
+┌─────────────────────────────────────────┐
+│ Filter [Plural Noun]         [Clear All]│  ← Header row (Clear All right-aligned, visible only when filters active)
+│─────────────────────────────────────────│  ← Subtle separator (border-b)
+│                                         │
+│  [Control 1: full-width]                │  ← Text search always first (if present)
+│  [Control 2] [Control 3] ← 2-col grid  │  ← Compact dropdowns paired
+│  [Control 4: full-width]                │  ← Date ranges, multi-selects
+│  ☐ [Toggle/checkbox option]             │  ← Checkboxes/toggles last
+│                                         │
+│─────────────────────────────────────────│  ← Subtle separator
+│  Showing 47 of 876 [noun]              │  ← Result count footer
+└─────────────────────────────────────────┘
+│ [Feature list / results below]          │
+```
+
+**"Clear All" placement:** Header row, right-aligned — near where the user's eye lands when reading the filter title (Fitts's Law). Visible only when at least one filter is active. Gray link style, not a button (low visual weight until needed).
+
+#### 2. Control Sizing Rules (within ~368px usable at 400px sidebar)
+
+| Control Type | Layout | Width | Rationale |
+|---|---|---|---|
+| Text search | Full-width, always first position | 100% (`col-span-2`) | Serial Position Effect — first seen, most used |
+| Single dropdown | Pair 2 side-by-side | ~50% each (`col-span-1`) | Compact, scannable |
+| Date range (start + end) | Full-width, inline pair | 100% (`col-span-2`, 2-col internal) | Dates need space for readability |
+| Multi-select (pills) | Full-width | 100% (`col-span-2`) | Pills need horizontal space |
+| Toggle/checkbox | Full-width, at end of controls | 100% (`col-span-2`) | Low visual weight, end of list |
+
+**Grid:** CSS Grid with `grid-template-columns: 1fr 1fr` and `gap: 8px` (8-point grid). Controls use `col-span-1` (half) or `col-span-2` (full).
+
+**When only 1-2 dropdowns and no text search** (e.g., Dendra Level 2 with Region + Status), they still use the 2-column grid to reduce filter section height and keep more results visible (Shneiderman's overview-first).
+
+#### 3. Section Header Convention
+
+| Context | Pattern | Examples |
+|---|---|---|
+| Single-level layers | `"Filter [Plural Noun]"` | "Filter Observations", "Filter Datasets" |
+| Dual-level, layer scope | `"Filter [Plural Noun]"` | "Filter Cameras", "Filter Sensors" |
+| Dual-level, feature scope | `"Filter [Feature Noun]"` | "Filter Images", "Filter Datapoints" |
+
+**Dropped:** The "Optional:" prefix from the ANiML mockup. Every filter is optional. The header convention is sufficient context. "Optional" adds cognitive load without value (Nielsen #8: Aesthetic minimalism).
+
+#### 4. Container Styling
+
+**Single flat background for all filter sections:**
+
+```css
+.filter-section {
+  @apply bg-slate-50 border border-slate-200 rounded-lg p-3;
+}
+```
+
+**Rejected:** Gradient backgrounds (`linear-gradient(135deg, ...)`) used in ANiML/Dendra mockups. Gradients add visual noise and diverge across data sources. A flat `slate-50` background creates sufficient Common Region grouping (Gestalt) without decoration. Exact values (border-radius, padding specifics) deferred to DFT-037 mockups, but the flat approach is locked in.
+
+#### 5. Shared `FilterSection` React Component
+
+A `FilterSection` wrapper enforces the anatomy. Each data source passes in its specific controls as children.
+
+**Component interface (conceptual):**
+
+```typescript
+interface FilterSectionProps {
+  label: string;              // "Filter Observations"
+  resultCount: number;        // 847
+  totalCount: number;         // 12430
+  noun: string;               // "observations"
+  hasActiveFilters: boolean;  // controls Clear All visibility
+  onClearAll: () => void;
+  children: React.ReactNode;  // Data-source-specific controls
+}
+
+// Usage:
+<FilterSection
+  label="Filter Observations"
+  resultCount={847}
+  totalCount={12430}
+  noun="observations"
+  hasActiveFilters={true}
+  onClearAll={handleClearAll}
+>
+  <SearchInput className="col-span-2" ... />
+  <Dropdown className="col-span-1" ... />
+  <Dropdown className="col-span-1" ... />
+  <DateRangePicker className="col-span-2" ... />
+  <Checkbox className="col-span-2" ... />
+</FilterSection>
+```
+
+The wrapper enforces:
+- Section header with `label` prop and conditional "Clear All" link
+- 2-column CSS grid layout for children
+- Result count footer ("Showing X of Y [noun]")
+- Consistent container styling (`bg-slate-50`, border, padding)
+- Consistent 8px gap between controls
+
+#### 6. Per-Data-Source Control Inventory
+
+| Data Source | Level | Header | Controls (as children) |
+|---|---|---|---|
+| **iNaturalist** | Single | "Filter Observations" | Taxon dropdown, Species dropdown (2-col), Date range (full), Quality grade checkbox |
+| **ANiML** | L2 | "Filter Cameras" | Region dropdown, Status dropdown (2-col) |
+| **ANiML** | L3 | "Filter Images" | Species multi-select (full), Date range (full), Deployment dropdown |
+| **Dendra** | L2 | "Filter Sensors" | Region dropdown, Status dropdown (2-col) |
+| **Dendra** | L3 | "Filter Datapoints" | Date range (full), Aggregation dropdown |
+| **DataOne** | Single | "Filter Datasets" | Title search (full), Repository dropdown, TNC Category dropdown (2-col), Date range (full) |
+
+#### 7. What Is Deferred
+
+| Deferred To | Item |
+|---|---|
+| **DFT-039** | Auto-apply vs Apply button behavior (consistency across data sources) |
+| **DFT-040** | Visual distinction between Level 2 and Level 3 filter sections |
+| **DFT-037** | Exact spacing values, border-radius, focus states, dropdown component choice, collapse/expand behavior, filter summary pill display |
+
+### Design Rationale
+
+Analyzed through 9 UI/UX frameworks with **strong cross-framework convergence:**
+
+| Principle | How This Template Addresses It | Rating |
+|---|---|:---:|
+| **Gestalt: Common Region** | Bounded container groups all filter controls as a cohesive unit | ✅ |
+| **Gestalt: Proximity** | Controls grouped tightly; result count at bottom adjacent to content it describes | ✅ |
+| **Gestalt: Similarity** | Same container, header style, and control styling across all 4 data sources | ✅ |
+| **Norman: Signifiers** | Section header ("Filter X") tells users exactly what they're editing | ✅ |
+| **Norman: Affordances** | Dropdowns look selectable, inputs look typeable, "Clear All" looks clickable | ✅ |
+| **Norman: Feedback** | Result count updates continuously as filters change (ties into DFT-039) | ✅ |
+| **Nielsen #4: Consistency** | Same anatomy across all Browse tabs — researchers learn once, apply everywhere | ✅ |
+| **Nielsen #6: Recognition** | Consistent control vocabulary reduces learning curve per new data source | ✅ |
+| **Nielsen #8: Minimalism** | No "Optional:" labels, no gradient decoration, no unnecessary visual weight | ✅ |
+| **Hick's Law** | 2-col grid keeps filter section compact; fewer visible items = faster scanning | ✅ |
+| **Miller's Law** | Max ~5 controls per section; dual-level splits complexity across levels | ✅ |
+| **IA: Wayfinding** | Header + result count = "where am I, what am I filtering, how many results" | ✅ |
+| **IA: Progressive Disclosure** | Level 2 collapses when Level 3 is active (addressed in DFT-040) | ✅ |
+| **Fitts's Law** | "Clear All" in header row (near eye focus); full-width inputs maximize target size | ✅ |
+| **WCAG: Operable** | Standard form controls, keyboard navigable, labeled inputs | ✅ |
+
+### Tradeoffs
+
+**What we sacrifice:**
+- Per-data-source visual flair (e.g., teal accent for Dendra filters) — replaced by uniform `slate-50`
+- "Optional:" contextual labels — dropped for minimalism
+- Gradient backgrounds in filter containers — dropped for consistency
+
+**Why acceptable:**
+- Uniform styling is the entire point (Nielsen #4) — data-source identity lives in the sidebar header, not the filter controls
+- "Optional" is redundant when filters default to "All" — the empty state communicates optionality
+- Gradients add visual noise at 400px width where space is premium
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file)
+- ✅ `docs/DESIGN-SYSTEM/design-system.md` (Filter Section Patterns)
+- ✅ `docs/master-plan.md` (Cross-Phase Decisions → UX Decisions)
+
+**✅ Verification Checklist:**
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with full specification
+- [x] Design principles cited (9+ frameworks analyzed)
+- [x] Structural skeleton specified (ASCII diagram)
+- [x] Control sizing rules specified (CSS Grid, col-span)
+- [x] Section header convention locked
+- [x] Container styling locked (flat `slate-50`, no gradients)
+- [x] Shared component interface defined (`FilterSection`)
+- [x] Per-data-source control inventory documented
+- [x] Tradeoffs analyzed
+- [x] Deferred items documented (DFT-039, DFT-040, DFT-037)
+- [x] Cross-references added (design-system.md, master-plan.md)
+
+---
+
+## DFT-039: Filter Apply Behavior — Auto-Apply vs Explicit Apply Button
+
+**Category:** UI/UX  
+**Status:** 🟢 Resolved  
+**Priority:** High  
+**Source:** Will + Claude design discussion, Feb 5, 2026  
+**Resolved:** February 5, 2026
+
+**Context:**
+DFT-035 decided DataOne uses auto-apply (debounced instant search, immediate dropdown response). The Phase 3 Dendra spec still showed `[Apply]` buttons in ASCII diagrams (Tasks 3.3, 3.6). ANiML was already updated to auto-apply via DFT-003 (Feb 3). iNaturalist implied auto-apply but wasn't explicit. This created an inconsistency that would confuse researchers switching between data sources (Nielsen #4: Consistency).
+
+**Actual state before resolution:**
+- **iNaturalist:** Auto-apply implied ("Filters update the pinned layer's activeQuery")
+- **ANiML:** Auto-apply explicit (DFT-003: "filter changes auto-apply to pinned layer")
+- **Dendra:** Explicit `[Apply]` button in both Layer View and Feature View ASCII diagrams
+- **DataOne:** Auto-apply explicit (DFT-035: debounced search + immediate dropdowns)
+
+3 of 4 data sources already used auto-apply. Only Dendra had `[Apply]` buttons.
+
+**Resolution:** **Option A — Auto-apply everywhere. No Apply button in any data source.**
+
+### Design Decision
+
+**Universal auto-apply rules (all data sources):**
+
+| Control Type | Trigger | Timing | Rationale |
+|---|---|---|---|
+| Text search | Keystroke | 500ms debounce, 2+ chars | Per DFT-035 pattern |
+| Single dropdown | Selection change | Immediate | Selecting = committed action (Norman) |
+| Multi-select (pills) | Each toggle | Immediate | Each pill toggle = discrete commit |
+| Date range (each field) | Calendar close / blur | Immediate per field | Calendar picker close = committed action |
+| Toggle / checkbox | Click | Immediate | Binary state = instant feedback |
+
+**Shared infrastructure (all data sources):**
+- `AbortController` cancels in-flight requests when new filter state arrives
+- Loading feedback per DFT-018 thresholds (300ms+ spinner, 3s+ text, 15s+ warning)
+- Stale results visible with opacity overlay during loading (not blanked)
+- Result count in `FilterSection` footer (DFT-038) updates continuously
+- "Clear All" in filter header fires immediately, resets to unfiltered state
+- ARIA live region announces result count changes
+
+**Date range edge case:** Changing start date fires a query with new start + existing end date. Changing end date fires another query. `AbortController` cancels intermediate queries. Previous results remain visible with subtle opacity overlay during loading. This is the same pattern DataOne uses for its year range picker.
+
+**Phase doc updates:**
+- **Dendra (Phase 3):** Removed `[Apply]` buttons from Tasks 3.3 and 3.6 ASCII diagrams
+- **iNaturalist (Phase 1):** Explicitly specified auto-apply behavior in Task 1.3
+- **ANiML (Phase 2):** Already correct (auto-apply per DFT-003)
+- **DataOne (Phase 4):** Already correct (auto-apply per DFT-035)
+
+### Design Rationale
+
+**Core tension:** Consistency (Nielsen #4) vs. Perceived Control (Shneiderman #7). An Apply button gives "I decide when to commit" feeling but breaks the feedback loop on every filter interaction. For a 4-control filter section, this adds 1 extra click per iteration cycle. Researchers (DFT-011) iterate frequently — this compounds.
+
+**Why Dendra doesn't need special treatment:**
+- Level 2 filters (Region, Status dropdowns): selecting from a dropdown *is* a committed action (Norman: Feedback). Apply after dropdown selection breaks the action-response link.
+- Level 3 filters (date range + aggregation): same control types that DataOne uses with auto-apply.
+- ANiML queries take 8-12s (slowest in the system) and already use auto-apply. If ANiML can handle it, Dendra can too.
+- `AbortController` + debounce + loading states (DFT-018) mitigate all performance concerns.
+
+| Principle | How Auto-Apply Addresses It | Rating |
+|---|---|:---:|
+| **Nielsen #4: Consistency** | Same behavior across all 4 Browse tabs — learn once, apply everywhere | ✅ |
+| **Norman: Feedback** | Every control change produces immediate, visible result update | ✅ |
+| **Norman: Conceptual Model** | "Adjust filter = see results" — no hidden staged state | ✅ |
+| **Hick's Law** | No "Apply" decision per iteration; reduces micro-decisions by 1 per cycle | ✅ |
+| **Nielsen #1: System Status** | Live result count always reflects current filter state | ✅ |
+| **Shneiderman #3: Feedback** | Action → response loop unbroken for every control type | ✅ |
+| **Shneiderman #4: Dialog Closure** | Each filter change = complete interaction cycle (not staged) | ✅ |
+| **Shneiderman #7: User Control** | Slight tradeoff — users can't compose filters "offline" before committing | 🟡 |
+| **Fitts's Law** | No Apply button target needed; full-width controls maximize hit area | ✅ |
+| **Nielsen #5: Error Prevention** | `AbortController` prevents race conditions; debounce prevents over-querying | ✅ |
+| **DFT-018 Compliance** | Tiered loading feedback for all query durations | ✅ |
+| **DFT-038 Compliance** | Shared `FilterSection` component works identically everywhere | ✅ |
+| **WCAG: Operable** | Standard form controls; Enter key bypass for text; ARIA announcements | ✅ |
+| **IA: Mental Models** | Matches ArcGIS Hub, modern data catalog conventions | ✅ |
+
+### Tradeoffs
+
+**What we sacrifice:**
+- "Compose multiple filters then commit" workflow — acceptable because each filter change is independently reversible via "Clear All" or individual control reset, and `AbortController` means intermediate queries have near-zero cost
+- Slightly more API calls than explicit Apply — acceptable because ArcGIS hosted services handle this well, cancellation prevents wasted work, and silent staged state is worse for feedback
+- Possible brief intermediate results during multi-filter changes — acceptable because stale results remain visible with overlay (not blanked), and intermediate state resolves in <500ms
+
+**What we gain:**
+- Perfect cross-source consistency (Nielsen #4)
+- Unbroken feedback loop on every interaction (Norman)
+- Fewer clicks per exploration cycle (Hick's Law)
+- Simpler `FilterSection` component (no Apply button state management)
+- Alignment with 3 existing data source decisions
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file)
+- ✅ `docs/IMPLEMENTATION/phases/phase-3-dendra.md` (Tasks 3.3, 3.6 — removed `[Apply]` buttons)
+- ✅ `docs/IMPLEMENTATION/phases/phase-1-inaturalist.md` (Task 1.3 — explicit auto-apply)
+- ✅ `docs/DESIGN-SYSTEM/design-system.md` (Filter Apply Behavior subsection)
+- ✅ `docs/master-plan.md` (Cross-Phase Decisions → UX Decisions)
+- ✅ `docs/PLANNING/resolved-decisions/dft-039-resolution-summary.md`
+
+**✅ Verification Checklist:**
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with full specification
+- [x] Design principles cited (14 principles analyzed)
+- [x] Universal auto-apply rules table provided (5 control types)
+- [x] Shared infrastructure specified (AbortController, loading states, ARIA)
+- [x] Date range edge case documented
+- [x] Phase 3 Dendra ASCII diagrams updated (removed `[Apply]`)
+- [x] Phase 1 iNaturalist auto-apply explicitly specified
+- [x] Design system updated with Filter Apply Behavior subsection
+- [x] Master plan Cross-Phase Decisions updated
+- [x] Resolution summary created
+- [x] Tradeoffs analyzed
+
+---
+
+## DFT-040: Dual-Level Filter Visual Distinction
+
+**Category:** UI/UX  
+**Status:** 🟢 Resolved  
+**Priority:** Medium  
+**Source:** Will + Claude design discussion, Feb 5, 2026  
+**Resolved:** February 5, 2026
+
+**Context:**
+ANiML and Dendra have two levels of filters that appear in the same right sidebar Browse tab:
+- **ANiML:** Level 2 = "Filter Cameras" (region, status) → Level 3 = "Filter Images" (species, date)
+- **Dendra:** Level 2 = "Filter Sensors" (region, status, time range) → Level 3 = "Filter Datapoints" (date range, aggregation)
+
+DFT-004 established progressive disclosure: sidebar is the canonical filter editor, level transitions happen when users drill in/out. DFT-038 established a shared `FilterSection` component with flat `slate-50` background. The question: how do the two filter levels look visually distinct when the user is at Level 3?
+
+**Key Insight:** Because of DFT-004, both levels are never fully expanded simultaneously. The user is always in one of two states:
+- **State A (Layer View):** Only Level 2 filter visible. Standard `FilterSection`. No distinction needed.
+- **State B (Feature View):** User drilled into a camera/sensor. Level 2 is irrelevant — the back button provides the escape hatch, and Level 2 filter state doesn't affect Level 3 content.
+
+**Resolution:** **Condensed Feature Detail layout — no Level 2 summary bar, merged feature header + filter controls**
+
+### Design Decision
+
+**When user drills into a feature (Level 3), the Browse tab uses a 6-zone layout:**
+
+```
+┌─────────────────────────────────────────┐
+│ ← Back to Cameras                      │  1. Navigation breadcrumb
+├─────────────────────────────────────────┤
+│ 📷 CAM-042 — North Ridge              │
+│ Active • 10,847 images   [Clear] [↩]  │  2. Feature identity + filter actions
+│─────────────────────────────────────────│
+│  [Species ▼] [Deployment ▼]  (2-col)  │
+│  [Date range: start — end]   (full)   │  3. Filter controls (DFT-038 grid)
+│─────────────────────────────────────────│
+│  Showing 47 of 10,847 images          │  4. Result count
+├─────────────────────────────────────────┤
+│  [Results list / image grid]           │  5. Results
+├─────────────────────────────────────────┤
+│  [← Prev]            [Next →]         │  6. Pagination
+└─────────────────────────────────────────┘
+```
+
+**What was dropped:**
+- **No Level 2 summary bar.** When drilled into CAM-042's images, the Level 2 filter ("All regions, Active") is irrelevant — it doesn't affect images at this camera. The back button is the only Level 2 reference needed. Level 2 filter state is preserved in memory and visible on return.
+- **No separate "Filter [Noun]" header at Level 3.** The feature header card provides scope context. You're at CAM-042 — the filter controls below obviously filter CAM-042's images. Adding "Filter Images" is redundant (Nielsen #8: Minimalism).
+
+**Feature header row specification:**
+
+| Element | Styling | Purpose |
+|---|---|---|
+| Feature icon + name | `text-sm font-bold text-gray-900` | Feature identity (camera/sensor ID + location) |
+| Status + count line | `text-[10px] text-gray-500` | Context metadata |
+| [Clear] link | `text-[10px] text-gray-400 hover:text-red-500` | Clear All filters (per DFT-038/DFT-031) |
+| [↩] undo button | `text-[10px] text-gray-400` (grayed when no actions) | Persistent undo (per DFT-031) |
+
+**Filter controls:** Use the same DFT-038 CSS grid layout (`grid-template-columns: 1fr 1fr`, `gap: 8px`), `col-span-1`/`col-span-2` rules. Controls are children of the feature detail card, not wrapped in a standalone `FilterSection`.
+
+**Per-data-source application:**
+
+| Data Source | Feature Header | Filter Controls | Result Count |
+|---|---|---|---|
+| **ANiML** | `📷 CAM-042 — North Ridge` / `Active • 10,847 images` | Species multi-select, Date range, Deployment dropdown | "Showing 47 of 10,847 images" |
+| **Dendra** | `🌧️ RS-042 — North Ridge` / `Active • Rain Gauge • 0.2mm` | Date range, Aggregation dropdown | "Showing 90 datapoints" |
+
+**Component structure:**
+
+| Context | Component | Notes |
+|---|---|---|
+| Single-level (iNaturalist, DataOne) | `FilterSection` (DFT-038) | Standard: header + grid + footer |
+| Level 2 (ANiML cameras, Dendra sensors) | `FilterSection` (DFT-038) | Standard: "Filter Cameras" / "Filter Sensors" |
+| Level 3 (drilled into feature) | `FeatureDetailCard` | Embeds filter controls directly; no separate `FilterSection` header |
+
+**`FeatureDetailCard` component interface (conceptual):**
+
+```typescript
+interface FeatureDetailCardProps {
+  icon: React.ReactNode;
+  name: string;                 // "CAM-042"
+  subtitle: string;             // "North Ridge"
+  metadata: string;             // "Active • 10,847 images"
+  resultCount: number;
+  totalCount: number;
+  noun: string;                 // "images" or "datapoints"
+  hasActiveFilters: boolean;
+  onClearAll: () => void;
+  onUndo: () => void;
+  canUndo: boolean;
+  children: React.ReactNode;    // Filter controls (use DFT-038 grid)
+}
+```
+
+**Location:** `src/v2/components/RightSidebar/FeatureDetailCard.tsx`
+
+### Edge Cases
+
+| Scenario | Behavior |
+|---|---|
+| User clicks "← Back" | Returns to Level 2 list view with Level 2 `FilterSection` visible; Level 2 filter state preserved |
+| Feature disappears (Level 2 filter change via widget) | Navigate back to list with "Feature no longer matches current filters" message |
+| All filters cleared | Result count shows full total; [Clear] link hidden; [↩] active for undo |
+| Screen reader | Back button: `aria-label="Back to camera list"`; Feature header: `role="banner"`; Filter controls: standard form labels |
+
+### Design Rationale
+
+| Principle | How This Solution Addresses It | Rating |
+|---|---|:---:|
+| **Gestalt: Figure-Ground** | Active filter controls on `slate-50` grid; feature header on `white` — clear editing surface | ✅ |
+| **Gestalt: Proximity** | Feature identity + filter actions + controls in one region — everything related is close | ✅ |
+| **Norman: Conceptual Model** | "I'm at a camera. I see its info and its filters. Back takes me to the list." Clean spatial metaphor | ✅ |
+| **Norman: Signifiers** | Form controls signal editability; back arrow signals escape; [Clear]/[↩] signal actions | ✅ |
+| **Nielsen #1: Visibility** | Feature identity always visible at top of drilled-down view | ✅ |
+| **Nielsen #4: Consistency** | Both ANiML and Dendra use same `FeatureDetailCard` pattern at Level 3 | ✅ |
+| **Nielsen #6: Recognition** | Feature header provides scope — no need to recall what "Filter Images" refers to | ✅ |
+| **Nielsen #8: Minimalism** | Dropped Level 2 summary bar (irrelevant), dropped "Filter [Noun]" header (redundant) | ✅ |
+| **Hick's Law** | Only one set of filter controls visible — no Level 2 vs Level 3 decision | ✅ |
+| **IA: Wayfinding** | Back button = "where I came from"; Feature header = "where I am" | ✅ |
+| **IA: Progressive Disclosure** | Level 2 fully hidden at Level 3; revealed on back navigation | ✅ |
+| **Fitts's Law** | [Clear] and [↩] in feature header row — near eye focus, no scrolling needed | ✅ |
+| **WCAG: Perceivable** | Standard form controls, labeled, keyboard navigable | ✅ |
+| **Motion: Continuity** | 150-200ms crossfade between Level 2 and Level 3 views (per DFT-019) | ✅ |
+
+### Rejected Options
+
+**Option A (original): Level 2 summary bar + separate FilterSection**
+- Level 2 summary bar is irrelevant at Level 3 — doesn't affect feature content
+- Creates 4 visual zones above results, wasting vertical space at 400px width
+- Adds cognitive load without aiding the task at hand
+
+**Option B: Accordion panels with colored left borders**
+- Adds permanent color-coding vocabulary to learn
+- Progressive disclosure already prevents simultaneous expansion
+- Conflicts with DFT-038's "no per-data-source decoration" principle
+
+**Option C: Sub-tabs within Browse tab**
+- Creates "tab within tab" pattern (parallel framing for hierarchical relationship)
+- Wastes horizontal space at 400px (DFT-033)
+- Breaks spatial drill-down metaphor
+
+### Tradeoffs
+
+**What we sacrifice:**
+- Visible Level 2 filter state when at Level 3 (acceptable: back button takes you there instantly)
+- Separate "Filter [Noun]" header at Level 3 (acceptable: feature header provides scope)
+- Ability to edit Level 2 filters without navigating back (acceptable: Level 2 doesn't affect Level 3 content)
+
+**Why acceptable:**
+- Level 2 filter state doesn't affect Level 3 content — cameras exist regardless of how the camera list was filtered
+- Back button restores full Level 2 context with one click
+- Condensed layout maximizes vertical space for results (critical at 400px sidebar width)
+- Matches GIS conventions — ArcGIS Pro hides parent-level controls when drilled into feature detail
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file)
+- ✅ `docs/IMPLEMENTATION/phases/phase-2-animl.md` (Task 2.4 decision note, updated acceptance criteria)
+- ✅ `docs/IMPLEMENTATION/phases/phase-3-dendra.md` (Tasks 3.5/3.6 decision notes, updated ASCII diagrams)
+- ✅ `docs/DESIGN-SYSTEM/design-system.md` (Dual-Level Filter Pattern section)
+- ✅ `docs/master-plan.md` (Cross-Phase Decisions → UX Decisions)
+- ✅ `docs/PLANNING/resolved-decisions/dft-040-resolution-summary.md`
+
+**✅ Verification Checklist:**
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with full specification
+- [x] Design principles cited (14 principles analyzed)
+- [x] 6-zone layout specified (ASCII diagram)
+- [x] Feature header row specification provided
+- [x] `FeatureDetailCard` component interface defined
+- [x] Per-data-source application documented (ANiML + Dendra)
+- [x] Edge cases handled
+- [x] Rejected options documented with rationale
+- [x] Tradeoffs analyzed
+- [x] Phase 2 ANiML updated (Task 2.4)
+- [x] Phase 3 Dendra updated (Tasks 3.5, 3.6 — removed collapsed summary, updated ASCII diagrams)
+- [x] Design system updated (Dual-Level Filter Pattern)
+- [x] Master plan Cross-Phase Decisions updated
+- [x] Resolution summary created
+- [x] Cross-references added
 
 ---
 
