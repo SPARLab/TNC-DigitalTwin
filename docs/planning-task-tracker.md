@@ -139,10 +139,11 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-038 | Filter section anatomy — shared structural template for Browse tab filter UI across all data sources | Design System | 🟢 Resolved | High |
 | DFT-039 | Filter apply behavior — auto-apply vs explicit Apply button consistency across data sources | UI/UX | 🟢 Resolved | High |
 | DFT-040 | Dual-level filter visual distinction — how Level 2 vs Level 3 filters look different (ANiML, Dendra) | UI/UX | 🟢 Resolved | Medium |
-| DFT-041 | Right sidebar Export tab content — what should the per-layer Export tab show? | UI/UX | 🟡 Open | Medium |
+| DFT-041 | Right sidebar Export tab content — what should the per-layer Export tab show? | UI/UX | 🟢 Resolved | Medium |
 | DFT-042 | ANiML landing cards mode-switch — how to switch between Animal-First and Camera-First after initial choice | UI/UX | 🟡 Open | Low |
 | DFT-043 | Dendra sidebar body at Level 3 — what shows in sidebar when chart renders in floating pop-up? | UI/UX | 🟡 Open | Low |
 | DFT-044 | Self-contained row detail view — shared component for iNaturalist observation and DataOne dataset detail views | UI/UX | 🟡 Open | Medium |
+|| DFT-045 | Left sidebar taxonomy: Should "Research Datasets" exist as a standalone category, or should DataOne be distributed/cross-referenced across domain categories? | IA | 🟡 Open | High |
 
    **Status Key:**
 - 🟢 Resolved — Decision made, ready for dev
@@ -980,9 +981,10 @@ interface FeatureDetailCardProps {
 ### DFT-041: Right Sidebar Export Tab Content
 
 **Category:** UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Medium  
-**Source:** Component spec review (DFT-037-P4), Feb 6, 2026
+**Source:** Component spec review (DFT-037-P4), Feb 6, 2026  
+**Resolved:** February 6, 2026
 
 **Context:**
 DFT-002 resolved that the Export Builder lives in a modal opened from the global header shopping cart button. The right sidebar has three tabs: Overview, Browse, Export. But no DFT specifies what the Export tab actually contains.
@@ -995,15 +997,93 @@ DFT-002 resolved that the Export Builder lives in a modal opened from the global
 3. **Per-layer export configuration** — Allow users to configure export settings (format, fields) for this specific layer within the tab. Could duplicate Export Builder modal functionality.
 4. **"Add to Export" action tab** — Shows what this layer would contribute to an export and has an "Add to Export Cart" button.
 
-**Questions for design principles analysis:**
-- Does a third tab that's mostly a redirect to a modal violate Nielsen #8 (minimalism)?
-- Does removing the Export tab make the export feature less discoverable (Nielsen #6)?
-- Is a 2-tab sidebar more learnable than 3-tab (Hick's Law)?
+**Resolution:** **Option 2 — Remove the Export tab. Promote export status to Overview tab.**
 
-**Discussion:**
-*Awaiting design principles analysis*
+### Design Decision
 
-**Resolution:** *Pending*
+**Tab bar becomes:** `Overview | Browse` (two tabs only)
+
+**Overview tab gains an export status section at the bottom:**
+
+When layer is pinned:
+```
+│─────────────────────────────────────────│
+│ Export Status                           │
+│ ┌─────────────────────────────────────┐ │
+│ │ ✓ Pinned · 3 filters · 2 bookmarks  │ │
+│ │   Open Export Builder [cart-icon]   │ │
+│ └─────────────────────────────────────┘ │
+```
+
+When layer is NOT pinned:
+```
+│─────────────────────────────────────────│
+│ Export                                  │
+│  Pin this layer to include in your      │
+│  export package. [Pin Now]              │
+```
+
+**Rationale:**
+- Export tab was a dead-end signpost — click → read → redirect to modal
+- Shopping cart badge in header already provides always-visible export awareness
+- Overview tab is the default landing screen (DFT-006), so export status is seen immediately
+- Export status section provides actionable shortcuts: "Pin Now" button or "Open Export Builder" link
+- Reduces cognitive load: 2 tabs < 3 tabs (Hick's Law)
+- Per-layer export preview still lives in Export Builder modal (Phase 5, Task 5.2) where it's actionable
+
+**What changes:**
+- `TabBar` component: Drop from 3 tabs to 2
+- `OverviewTab` component: Add export status section at bottom with conditional content (pinned vs unpinned)
+- `OverviewTabProps` interface: Add `isPinned`, `activeFilterCount`, `bookmarkCount`, `onPinClick`, `onOpenExportBuilder` props
+- Remove States 7 & 8 from right sidebar template spec (Export tab states)
+
+### Design Rationale
+
+Analyzed through 9 UI/UX frameworks with strong cross-framework convergence:
+
+| Principle | How This Solution Addresses It | Rating |
+|---|---|:---:|
+| **Nielsen #8: Minimalism** | Removes a tab whose content is either empty or a redirect | ✅ |
+| **Hick's Law** | 2 tabs < 3 tabs — faster tab selection per session | ✅ |
+| **Norman: Conceptual Model** | Export is global (modal), not per-layer. Tab removal reinforces correct mental model | ✅ |
+| **IA: Redundancy** | Eliminates 4th surface showing pin/bookmark status (left sidebar, widget, shopping cart badge, export tab) | ✅ |
+| **Nielsen #6: Discoverability** | Export status section in Overview tab + shopping cart badge in header maintain awareness | ✅ |
+| **Fitts's Law** | Eliminates dead-end click (tab → read → redirect). "Pin Now" and "Open Export Builder" are direct actions | ✅ |
+| **Norman: Feedback** | Shopping cart badge updates in real time (better than tab requiring navigation) | ✅ |
+| **Nielsen #4: Consistency** | Export Builder modal becomes the single export configuration surface (no competing UIs) | ✅ |
+| **Norman: Affordances** | "Pin Now" button provides actionable shortcut from Overview | ✅ |
+| **IA: Wayfinding** | "Open Export Builder" link provides direct path to canonical export surface | ✅ |
+| **Gestalt: Proximity** | Export status near layer metadata = related context grouped | ✅ |
+| **Serial Position Effect** | Browse CTA (most important) stays first; export status (secondary) at bottom | ✅ |
+
+### Tradeoffs
+
+**What we sacrifice:**
+- Export tab as visible word in tab bar (reduces surface area for export awareness)
+- A dedicated screen for per-layer export preview
+- Visual symmetry of three equally-weighted tabs
+
+**Why acceptable:**
+- Shopping cart badge in header is always visible (better than a tab you navigate to)
+- Per-layer export preview lives in Export Builder modal (Phase 5, Task 5.2) where it's actionable
+- Two-tab layouts are common in GIS apps (ArcGIS Online uses Overview + Data, not three tabs)
+- Overview tab's export status section is more useful because it's visible on default landing screen (DFT-006)
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file)
+- ✅ `docs/PLANNING/component-specs/right-sidebar-template.md` (TabBar updated, Export tab states removed, OverviewTab export section added)
+- ✅ `docs/PLANNING/component-specs/right-sidebar-inaturalist.md` (Updated to 2-tab layout)
+- ✅ `docs/master-plan.md` (Cross-Phase Decisions → UX Decisions)
+
+**✅ Verification Checklist:**
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with full specification
+- [x] Design principles cited (12 principles analyzed)
+- [x] ASCII diagrams provided for new export status section
+- [x] Component interface updates specified (`OverviewTabProps`)
+- [x] Tradeoffs analyzed
+- [x] Component specs updated (right-sidebar-template.md, right-sidebar-inaturalist.md)
+- [x] Cross-references added
 
 ---
 
@@ -1131,10 +1211,104 @@ But iNaturalist (Phase 1, Task 1.5) and DataOne (Phase 4, Task 4.5) both have **
 
 ---
 
+### DFT-045: Left Sidebar Taxonomy — "Research Datasets" Category Validation
+
+**Category:** Information Architecture  
+**Status:** 🟡 Open  
+**Priority:** High  
+**Source:** Will + Claude design discussion, Feb 6, 2026
+
+**Context:**
+
+During resolution of the Left Sidebar component spec open questions (DFT-037-P1), a design decision was made to place DataOne under a "Research Datasets" category in the left sidebar. This category would sit alongside the 13 TNC domain categories (Boundaries, Earth Observations, Elevation and Bathymetry, Fire, Freshwater, Infrastructure, Land Cover, Oceans and Coasts, Research and Sensor Equipment, Soils and Geology, Species, Threats and Hazards, Weather and Climate).
+
+The rationale: DataOne contains 22,221 datasets spanning all 13 domains (10,395 Oceans, 3,168 Freshwater, 2,740 Species, etc.), so it doesn't belong to any single domain. Creating "Research Datasets" as its own category gives DataOne a home, with TNC domain filtering handled in the Browse tab via a category dropdown.
+
+**The Question:**
+
+Should "Research Datasets" exist as a standalone category in the left sidebar, or are there better information architecture approaches?
+
+**Why this matters (IA: Mental Models, Findability, Labeling):**
+
+The left sidebar is the primary entry point for layer discovery. How we categorize DataOne affects:
+1. **Discoverability** — Will researchers browsing "Species" layers know that 2,740 relevant DataOne datasets exist?
+2. **Mental model clarity** — Is "Research Datasets" alongside domain categories confusing (mixing data type with subject area)?
+3. **Future extensibility** — If we add GBIF or other cross-domain datasets, does this category make sense?
+4. **Consistency** — Does this create a precedent for "type-based" categories mixing with "domain-based" categories?
+
+**Options to Analyze:**
+
+**Option A: "Research Datasets" as a standalone category** (current decision)
+- DataOne is one layer under "Research Datasets" with a `(1)` badge
+- TNC Category filtering happens in the Browse tab when you open it
+- No cross-category section, no dual placement
+- Simple, clean, consistent with how other layers live in one category
+
+**Option B: DataOne distributed into domain categories**
+- DataOne appears as a sub-layer under every relevant domain category
+- "Species" would have: Camera Traps, iNaturalist, eBird, *DataOne: Species Datasets*
+- Each entry opens the same DataOne Browse tab but pre-filtered to that domain
+- Maximum discoverability in context
+
+**Option C: "Research Datasets" category + discovery hints**
+- DataOne lives under "Research Datasets"
+- Domain categories show a subtle discovery cue — e.g., a small `[+datasets]` link or muted line under each category
+- Clicking the hint opens DataOne with TNC Category pre-filtered to that domain
+- *Lensing* approach (IA principle: multiple views of same data)
+
+**Option D: Hierarchical category with domain sub-sections**
+- "Research Datasets" category with sub-categories matching TNC domains
+- Expanding "Research Datasets" shows: Boundaries, Fire, Freshwater, Species, etc.
+- Each domain opens DataOne pre-filtered
+- Explicit hierarchy, but adds navigation depth
+
+**Option E: Remove "Research Datasets" category entirely**
+- DataOne lives in an existing domain category (e.g., "Research and Sensor Equipment")
+- TNC Category dropdown in Browse tab handles cross-domain filtering
+- Simplest structure, but buries DataOne in an arbitrary category
+
+**Questions for Analysis:**
+
+1. Which option best matches researchers' mental models?
+2. Which option maximizes DataOne discoverability without adding cognitive overhead?
+3. Does "Research Datasets" as a category name create confusion (is it a data type or a subject area)?
+4. If we add GBIF (species observations across all taxa), does it go in "Research Datasets" or "Species"?
+5. Should the sidebar prioritize functional grouping (data type) or domain grouping (subject area)?
+6. Do the 13 TNC domain categories actually represent domain grouping, or are they already a mix of types?
+
+**Framework Analysis Requested:**
+
+Analyze through:
+- IA: Mental Models (do users expect type-based or domain-based categories?)
+- IA: Findability (can users discover DataOne when browsing domains?)
+- IA: Labeling (is "Research Datasets" clear and consistent?)
+- Nielsen #4: Consistency (does mixing category types break consistency?)
+- Nielsen #6: Recognition over Recall (is the structure self-explanatory?)
+- Gestalt: Common Region (are categories semantically cohesive?)
+- Norman: Conceptual Models (does the hierarchy match expectations?)
+- Hick's Law (does each option reduce or increase decision overhead?)
+
+**Deliverables:**
+
+1. **Principle-based analysis** of each option
+2. **Recommendation** with rationale
+3. **Tradeoffs** clearly stated
+4. **Edge case handling** (GBIF, future cross-domain datasets)
+5. **User testing questions** if needed to validate the decision
+
+**Discussion:**
+
+*Add notes here as the team discusses options*
+
+**Resolution:** *Pending*
+
+---
+
 ## Changelog
 
 | Date | Change |
 |------|--------|
+| Feb 6, 2026 | Resolved DFT-041: Right sidebar Export tab — remove Export tab entirely (reduce to 2 tabs: Overview | Browse). Export status promoted to Overview tab with actionable shortcuts ("Pin Now" / "Open Export Builder"). Analyzed via 12 design principles (Nielsen #8 Minimalism, Hick's Law, Norman, IA Redundancy, Fitts's Law). Shopping cart badge in header provides always-visible export awareness. Updated component specs (right-sidebar-template.md, right-sidebar-inaturalist.md) |
 | Feb 6, 2026 | Added DFT-041 through DFT-044: open design questions surfaced during right sidebar component spec (DFT-037-P4). DFT-041: Export tab content. DFT-042: ANiML landing cards mode-switch. DFT-043: Dendra sidebar body at Level 3. DFT-044: Self-contained row detail view component (iNaturalist + DataOne shared pattern). All 🟡 Open, awaiting design principles analysis |
 | Feb 5, 2026 | Resolved DFT-038: Filter section anatomy — shared `FilterSection` component enforces consistent Browse tab filter anatomy across all 4 data sources. Structural skeleton: header row with conditional "Clear All", 2-col CSS grid, result count footer. Flat `slate-50` container (no gradients). Header convention: "Filter [Plural Noun]". "Optional:" labels dropped. Per-data-source control inventory documented. Analyzed via 9 UI/UX frameworks. See design-system.md Filter Section Patterns |
 | Feb 5, 2026 | Archived DFT-033 through DFT-035 to `PLANNING/resolved-decisions/` with full resolution summaries. Detailed sections removed from tracker to keep it manageable; summaries remain in Quick Reference table |
