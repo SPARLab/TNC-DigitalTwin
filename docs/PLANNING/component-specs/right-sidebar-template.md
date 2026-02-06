@@ -1,8 +1,8 @@
 # Component Spec: Right Sidebar Template
 
 **Date:** February 6, 2026  
-**DFTs Referenced:** DFT-004, DFT-006, DFT-015, DFT-018, DFT-019, DFT-020, DFT-027, DFT-030, DFT-031, DFT-033, DFT-038, DFT-039, DFT-040  
-**Status:** Draft — pending review
+**DFTs Referenced:** DFT-003c, DFT-004, DFT-005, DFT-006, DFT-015, DFT-017, DFT-018, DFT-019, DFT-020, DFT-026, DFT-027, DFT-028, DFT-030, DFT-031, DFT-033, DFT-038, DFT-039, DFT-040, DFT-041, DFT-042, DFT-043, DFT-044  
+**Status:** ✅ Complete — ready for dev
 
 ---
 
@@ -39,7 +39,7 @@
 │    Source: via [Data Source API]         │
 ├─────────────────────────────────────────┤
 │ B. TabBar                               │
-│    Overview   │   Browse   │   Export    │
+│    Overview   │   Browse                │
 │    ═══════════                          │  ← 2px active indicator
 ├─────────────────────────────────────────┤
 │ C. TabContent (scrollable)              │
@@ -711,7 +711,7 @@ This is the default state when a user selects a layer from the left sidebar.
 ┌─────────────────────────────────────────┐
 │ [icon]  iNaturalist Observations   [x]  │
 │         Source: via iNaturalist API     │
-├─── Overview === Browse ─── Export ──────┤
+├─── Overview === Browse ─────────────────┤
 ├─────────────────────────────────────────┤
 │                                         │
 │ Research-grade community science        │
@@ -1032,6 +1032,145 @@ When content fails to load, an inline error replaces the content area.
 
 ---
 
+### State 9: Browse Tab — Self-Contained Detail View (DFT-044)
+
+When user clicks a `ResultCard` for a **self-contained row** (iNaturalist observation, DataOne dataset), the Browse tab transitions to an expanded detail view. This is NOT a Level 3 drill-down — there is no `FeatureDetailCard`. It uses shared sub-components (`DetailBackButton`, `DetailActionRow`, `DetailMetadataGrid`) with purpose-built content per data source.
+
+**iNaturalist example (hero image + flat grid):**
+
+```
+┌─────────────────────────────────────────┐
+│ [icon]  iNaturalist Observations   [x]  │
+│         Source: via iNaturalist API     │
+├─── Overview ─── Browse ─────────────────┤
+├─────────────────────────────────────────┤
+│ [<-] Back to Observations               │  ← DetailBackButton
+├─────────────────────────────────────────┤
+│                                         │
+│ ┌─────────────────────────────────────┐ │
+│ │                                     │ │
+│ │        [large species photo]        │ │  ← Hero image (4:3, full width)
+│ │                                     │ │
+│ └─────────────────────────────────────┘ │
+│                                         │
+│ California Condor                       │  ← Title (bold)
+│ Gymnogyps californianus                 │  ← Scientific name (italic)
+│                                         │
+│─────────────────────────────────────────│
+│ Observer          @jane_doe             │  ← DetailMetadataGrid (dl/dt/dd)
+│ Date              January 15, 2024      │
+│ Location          34.4712, -120.4521    │
+│ Quality grade     Research Grade        │
+│ ID agreement      5 / 5                 │
+│ License           CC-BY-NC              │
+│─────────────────────────────────────────│
+│                                         │
+│ [View on Map]  [Bookmark]  [iNat ->]    │  ← DetailActionRow
+│                                         │
+└─────────────────────────────────────────┘
+```
+
+**DataOne example (multi-section hierarchical):**
+
+```
+┌─────────────────────────────────────────┐
+│ [icon]  DataOne Research Datasets  [x]  │
+│         Source: via DataOne API          │
+├─── Overview ─── Browse ─────────────────┤
+├─────────────────────────────────────────┤
+│ [<-] Back to Datasets                   │  ← DetailBackButton
+├─────────────────────────────────────────┤
+│                                         │
+│ Vegetation Survey: Dangermond           │  ← Title (bold)
+│ Preserve 2019-2024                      │
+│                                         │
+│─── About ──────────────────────────────│
+│ Abstract / description text spanning    │  ← Expandable section
+│ multiple lines with key findings...     │
+│─────────────────────────────────────────│
+│                                         │
+│─── Details ────────────────────────────│
+│ Authors          Smith, J.; Doe, K.     │  ← Metadata section
+│ Year             2024                   │
+│ Format           CSV, GeoTIFF           │
+│ Size             247 MB                 │
+│ License          CC-BY 4.0              │
+│ DOI              10.xxxx/xxxxx          │
+│─────────────────────────────────────────│
+│                                         │
+│ [Bookmark]  [DataOne ->]                │  ← DetailActionRow
+│                                         │
+└─────────────────────────────────────────┘
+```
+
+**Shared structural template:**
+- `DetailBackButton` — always first, returns to filtered list (filter state + scroll preserved)
+- Content area — purpose-built per data source (hero image for iNat, multi-section for DataOne)
+- `DetailMetadataGrid` — 2-col key-value grid (iNat uses this; DataOne uses custom sectioned layout)
+- `DetailActionRow` — action buttons at bottom with consistent styling
+
+**Behavior:**
+- Transition: 150-200ms crossfade from list to detail (DFT-019).
+- Back button preserves filter state and scroll position.
+- Focus moves to back button on entry (DFT-017).
+- Screen reader announces "Viewing [item name] details" via `aria-live`.
+
+**Note:** Self-contained row detail views do NOT use `FeatureDetailCard` (that's for pointer rows / Level 3). These are simpler expanded views with no embedded filter controls.
+
+---
+
+### State 10: Browse Tab — ANiML Landing Cards (DFT-003c, DFT-042)
+
+On first visit to the ANiML Browse tab, the user sees a choice between two mental models. This is a **documented exception** to the standard template — ANiML is the only data source with this entry point.
+
+```
+┌─────────────────────────────────────────┐
+│ [icon]  ANiML Camera Traps         [x]  │
+│         Source: via ANiML API           │
+├─── Overview ─── Browse ─────────────────┤
+├─────────────────────────────────────────┤
+│                                         │
+│ How would you like to explore?          │
+│                                         │
+│ ┌─────────────────────────────────────┐ │
+│ │ [paw-icon]                          │ │
+│ │ Animal-First                        │ │
+│ │ Search by species, see which        │ │
+│ │ cameras captured them.              │ │
+│ └─────────────────────────────────────┘ │
+│                                         │
+│ ┌─────────────────────────────────────┐ │
+│ │ [camera-icon]                       │ │
+│ │ Camera-First                        │ │
+│ │ Browse cameras by location, see     │ │
+│ │ what species were detected.         │ │
+│ └─────────────────────────────────────┘ │
+│                                         │
+└─────────────────────────────────────────┘
+```
+
+**Landing Card Tokens:**
+
+| Element | Styling |
+|---------|---------|
+| Question text | `text-sm font-medium text-gray-700 mb-4` |
+| Card container | `bg-white border border-gray-200 rounded-lg p-4 hover:border-emerald-400 hover:shadow-md cursor-pointer transition-all duration-150` |
+| Card icon | `w-8 h-8 text-gray-500 mb-2` |
+| Card title | `text-sm font-semibold text-gray-900` |
+| Card description | `text-xs text-gray-500 mt-1` |
+
+**Behavior:**
+- User preference stored in `localStorage` key `animl-browse-mode`.
+- On return visits, landing cards are skipped — user goes directly to their preferred mode.
+- Mode-switch: text link above filter section: `"Switch to [other mode]"` (DFT-042).
+  - Styling: `text-xs text-gray-500 hover:text-emerald-600 cursor-pointer`
+  - Always visible above `FilterSection`.
+  - If filters are active, shows confirmation dialog before switching (DFT-031: custom modal for potentially destructive action).
+- Keyboard: Tab focuses cards, Enter/Space selects.
+- ARIA: `role="group"` with `aria-label="Choose browse mode"` on container. Each card is `role="button"`.
+
+---
+
 ## Interactions
 
 | User Action | Result | Notes |
@@ -1044,9 +1183,15 @@ When content fails to load, an inline error replaces the content area.
 | Click close [x] | Layer deactivated, sidebar closes | |
 | Change any filter control | Auto-apply, results update, AbortController cancels previous | DFT-039 |
 | Click "Clear All" in filter header | All filters reset, immediate | DFT-038, DFT-031 |
-| Click ResultCard | Drill into item detail (Level 3 for pointer rows) | DFT-004 |
-| Click "[<-] Back to [Noun]" | Return to Level 2 list view, filter state preserved | DFT-040 |
+| Click ResultCard (pointer row) | Drill into item detail — Level 3 `FeatureDetailCard` (ANiML camera, Dendra sensor) | DFT-004, DFT-040 |
+| Click ResultCard (self-contained row) | Open detail view — expanded view with back button, metadata, actions (iNaturalist, DataOne) | DFT-044 |
+| Click "[<-] Back to [Noun]" (Level 3) | Return to Level 2 list view, filter state preserved | DFT-040 |
+| Click "[<-] Back to [Noun]" (detail view) | Return to Browse list, filter state + scroll position preserved | DFT-044 |
 | Click "Bookmark" button | Single button, auto-captures Level 3 filter if active | DFT-020 |
+| Select ANiML landing card | Enter Animal-First or Camera-First mode, preference saved to localStorage | DFT-003c |
+| Click "Switch to [other mode]" link | Change ANiML browse mode; confirmation dialog if filters active | DFT-042 |
+| Click "View on Map" (detail view) | Map zooms to feature, highlight applied | DFT-044 |
+| Click external link (detail view) | Opens source website in new tab (iNaturalist.org, DataOne.org) | DFT-044 |
 | Click Previous/Next pagination | Page changes, scroll to top, loading per DFT-018 | |
 | Click "Load More" (image grid) | More images appended, scroll maintained | ANiML only |
 | Press Escape | Close sidebar (or navigate back one level) | DFT-017 |
@@ -1072,6 +1217,9 @@ When content fails to load, an inline error replaces the content area.
 - **DataOne has NO Level 3 filtering** in V1. Datasets are bookmarked whole.
 - **ANiML landing cards** (DFT-003c) are a documented exception — Animal-First vs Camera-First entry on first Browse visit. User preference remembered. Mode-switch link (DFT-042): text link above filter section ("Switch to [other mode]"), always visible, confirmation dialog if filters active, stored in localStorage.
 - **Detail views use shared sub-components** (DFT-044): `DetailBackButton`, `DetailActionRow`, `DetailMetadataGrid`. Purpose-built detail views for iNaturalist (hero image + flat grid) and DataOne (multi-section hierarchical). Architectural principle: consistent structural template with flexibility for custom content.
+- **Dendra Level 3: minimal sidebar** (DFT-043). Filter controls + bookmark only. Stats appear in pop-up footer with chart, not in sidebar. Separation of concerns: sidebar = parametric control, pop-up = visualization + metadata.
+- **Zero-result cameras grayed out** (DFT-028). Cameras with 0 matching images show at 40-50% opacity, desaturated. Remain clickable. 300ms ease-out transition.
+- **Auto-collapse floating widgets** (DFT-005) when viewing time-series data (Dendra pop-ups) to reduce screen crowding.
 - **"Item" terminology** used throughout, per Trisalyn's direction. Configurable via `TERMINOLOGY` config.
 
 ---
@@ -1082,8 +1230,9 @@ When content fails to load, an inline error replaces the content area.
 - **Keyboard:** Arrow Left/Right cycles tabs, Enter/Space activates tab. Tab key navigates through filter controls.
 - **Tab order:** Right sidebar is last in global tab order (after left sidebar, map, floating widgets) (DFT-017).
 - **Escape:** Closes sidebar or navigates back one level (DFT-017).
-- **Focus management:** When tab switches, focus moves to first interactive element in new tab content. When drilling into Level 3, focus moves to back button.
-- **Screen reader:** Announces "Filter applied" / "Filters cleared" / "Item bookmarked" via `aria-live` (DFT-017).
+- **Focus management:** When tab switches, focus moves to first interactive element in new tab content. When drilling into Level 3 or detail view, focus moves to back button. When returning from detail/Level 3, focus returns to previously focused card.
+- **Screen reader:** Announces "Filter applied" / "Filters cleared" / "Item bookmarked" / "Viewing [item] details" via `aria-live` (DFT-017).
+- **Landing cards:** `role="group"` + `aria-label="Choose browse mode"`. Each card is `role="button"` (DFT-003c).
 - **ARIA live region:** Announces result count changes in FilterSection.
 
 ---
@@ -1107,6 +1256,7 @@ src/v2/components/RightSidebar/
   iNaturalist/               <- Only content/config, imports shared
     ObservationDetailView.tsx <- Uses DetailBackButton, DetailActionRow, DetailMetadataGrid
   ANiML/                     <- Only content/config + landing cards exception
+    LandingCards.tsx         <- DFT-003c Animal-First / Camera-First entry
   Dendra/                    <- Only content/config + chart exception
   DataOne/                   <- Only content/config
     DatasetDetailView.tsx     <- Uses DetailBackButton, DetailActionRow
