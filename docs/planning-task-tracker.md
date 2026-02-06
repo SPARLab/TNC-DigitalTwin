@@ -141,8 +141,8 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-040 | Dual-level filter visual distinction — how Level 2 vs Level 3 filters look different (ANiML, Dendra) | UI/UX | 🟢 Resolved | Medium |
 | DFT-041 | Right sidebar Export tab content — what should the per-layer Export tab show? | UI/UX | 🟢 Resolved | Medium |
 | DFT-042 | ANiML landing cards mode-switch — how to switch between Animal-First and Camera-First after initial choice | UI/UX | 🟢 Resolved | Low |
-| DFT-043 | Dendra sidebar body at Level 3 — what shows in sidebar when chart renders in floating pop-up? | UI/UX | 🟡 Open | Low |
-| DFT-044 | Self-contained row detail view — shared component for iNaturalist observation and DataOne dataset detail views | UI/UX | 🟡 Open | Medium |
+| DFT-043 | Dendra sidebar body at Level 3 — what shows in sidebar when chart renders in floating pop-up? | UI/UX | 🟢 Resolved | Low |
+| DFT-044 | Self-contained row detail view — shared component for iNaturalist observation and DataOne dataset detail views | UI/UX | 🟢 Resolved | Medium |
 || DFT-045 | Left sidebar taxonomy: Should "Research Datasets" exist as a standalone category, or should DataOne be distributed/cross-referenced across domain categories? | IA | 🟡 Open | High |
 
    **Status Key:**
@@ -1216,9 +1216,10 @@ Analyzed through 9 UI/UX frameworks with strong cross-framework convergence:
 ### DFT-043: Dendra Sidebar Body at Level 3
 
 **Category:** UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Low  
 **Source:** Component spec review (DFT-037-P4), Feb 6, 2026  
+**Resolved:** February 6, 2026  
 **Related:** DFT-004, DFT-040
 
 **Context:**
@@ -1226,21 +1227,61 @@ DFT-004 resolved that Dendra's time-series chart renders in a floating pop-up on
 
 **The problem:** The sidebar has vertical space below the filter controls and result count that could either show useful content or remain empty. The chart is elsewhere (pop-up), so the sidebar is primarily a filter control panel at Level 3.
 
-**Options:**
+**Options considered:**
 1. **Filter controls + bookmark only** — Sidebar is minimal at Level 3. All data visualization is in the pop-up. Clean separation.
 2. **Filter controls + stats summary** — Show min, max, avg, total below the result count. Quick reference without needing to look at the chart.
 3. **Filter controls + mini chart** — Small inline chart in the sidebar that mirrors the pop-up. Provides context if user closes the pop-up.
 4. **Filter controls + data table** — Tabular view of datapoints as an alternative to the chart. Useful for researchers who want exact values.
 
-**Questions for design principles analysis:**
-- Does duplicating the chart in sidebar and pop-up violate DRY/minimalism?
-- Do researchers need quick numeric stats without looking at the chart?
-- Is a data table view useful as a sidebar alternative to the pop-up chart?
+**Resolution:** **Option 1 — Minimal sidebar (filter controls + bookmark only). Stats appear in pop-up footer.**
 
-**Discussion:**
-*Awaiting design principles analysis*
+### Design Decision
 
-**Resolution:** *Pending*
+**Sidebar at Level 3 contains:**
+- Back button
+- Sensor header with actions (Clear, Undo)
+- Filter controls (time range, aggregation)
+- Result count
+- Bookmark button
+- **No stats, no chart, no data table**
+
+**Pop-up contains:**
+- Time-series chart
+- Interactive slider (exploration viewport, ephemeral)
+- **Stats footer**: "Min: 12.3° | Max: 28.7° | Avg: 19.2° | Total: 847 readings"
+- Action buttons: [View Full Chart] [Download CSV]
+
+**Rationale:**
+Analyzed through 9 UI/UX frameworks (Gestalt, Norman, Nielsen, Shneiderman, Cognitive Science, Visual Fundamentals, Accessibility, Behavioral Science, Information Architecture, Motion). **17 green / 0 yellow / 0 red** alignment score for Option 1.
+
+**Key principles:**
+- **Separation of concerns** (DFT-004 principle): Sidebar = parametric control, pop-up = visualization + metadata
+- **Spatial proximity = cognitive proximity** (Gestalt, Norman): Stats (descriptive metadata) belong with chart (primary artifact), not with controls
+- **Minimalism** (Nielsen #8): Sidebar remains focused control panel; no role creep
+- **Reduced cognitive load** (Miller's Law): Sidebar stays at 7 chunks (not 11)
+- **Reduced split attention**: Chart + stats co-located reduces eye travel and memory load
+- **Accessibility** (WCAG Operable): Logical Tab order within pop-up container
+- **Industry conventions** (IA Mental Models): Chart stats always appear with chart (Excel, Tableau, etc.)
+- **Fitts's Law**: Stats near chart reduce cursor travel for users exploring data
+
+**Tradeoffs accepted:**
+- Users must have pop-up open to see stats (acceptable because stats without chart context are meaningless)
+- Sidebar has white space below bookmark button (acceptable; reinforces "control panel" identity and reduces visual density)
+
+**Optional enhancement (low priority):** If user research shows researchers need quick numeric reference without opening pop-up, consider adding inline stats to result count: `847 datapoints (12.3° – 28.7°, avg 19.2°)`. Default to minimal sidebar unless user testing indicates otherwise.
+
+**Documented in:**
+- Phase 3 Task 3.5 acceptance criteria updated (stats location clarified)
+- right-sidebar-template.md open question #2 marked resolved
+- Master plan UX Decisions section (DFT-043 entry added)
+- Master plan Change Log updated
+
+**✅ Verification Checklist:**
+- [x] Decision documented in planning-task-tracker.md
+- [x] Phase 3 task 3.5 updated with stats location
+- [x] right-sidebar-template.md open question marked resolved
+- [x] Master plan UX Decisions section updated
+- [x] Master plan Change Log updated
 
 ---
 
@@ -1530,6 +1571,7 @@ Analyze through:
 
 | Date | Change |
 |------|--------|
+| Feb 6, 2026 | Resolved DFT-043: Dendra sidebar body at Level 3 — minimal sidebar (filter controls + bookmark only). Stats appear in pop-up footer with chart. Rationale: separation of concerns (sidebar = parametric control, pop-up = visualization + metadata), spatial/cognitive proximity (stats belong with chart), minimalism (Nielsen #8), reduced split attention, accessibility (logical Tab order), industry conventions (chart metadata lives with chart). Scored 17 green / 0 yellow / 0 red across 9 UI/UX frameworks. Updated Phase 3 Task 3.5, right-sidebar-template.md open question #2, master-plan.md UX Decisions |
 | Feb 6, 2026 | Resolved DFT-044: Self-contained row detail view component — no shared detail view component. Extract shared sub-components (`DetailBackButton`, `DetailActionRow`, `DetailMetadataGrid`) + design tokens for consistency. Purpose-built detail views for iNaturalist (hero image + flat grid) and DataOne (multi-section hierarchical). Architectural principle: consistent structural template (tabs, scaffolding) with flexibility for custom content. Analyzed via 11 design principles. See right-sidebar-template.md sub-components section |
 | Feb 6, 2026 | Resolved DFT-042: ANiML landing cards mode-switch — text link above filter section ("Switch to [other mode]"). Always visible, subtle styling (gray-500, hover emerald-500). Confirmation dialog if filters active. Analyzed via 17+ UI/UX principles. Rationale: discoverable near filters (where mode manifests), low visual weight (Nielsen #8), user control (Norman), flexibility for expert users (Nielsen #7). Rejected options: dropdown (confusing), settings gear (less discoverable), Overview reset (violates Fitts's Law). Mode preference stored per-layer in localStorage. Updated Phase 2 Task 2.2, master plan, created resolution summary |
 | Feb 6, 2026 | Resolved DFT-041: Right sidebar Export tab — remove Export tab entirely (reduce to 2 tabs: Overview | Browse). Export status promoted to Overview tab with actionable shortcuts ("Pin Now" / "Open Export Builder"). Analyzed via 12 design principles (Nielsen #8 Minimalism, Hick's Law, Norman, IA Redundancy, Fitts's Law). Shopping cart badge in header provides always-visible export awareness. Updated component specs (right-sidebar-template.md, right-sidebar-inaturalist.md) |
