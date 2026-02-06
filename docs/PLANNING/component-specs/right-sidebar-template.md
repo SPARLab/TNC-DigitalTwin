@@ -59,7 +59,7 @@
 | Part | Element | Description |
 |------|---------|-------------|
 | A | SidebarHeader | Data source icon (SVG/Lucide, no emoji — DFT-026), layer name, source badge, close [x] button. |
-| B | TabBar | Three tabs: Overview, Browse, Export. Underline style. Equal-width columns. Text-only (no icons — too narrow at 400px). |
+| B | TabBar | Two tabs: Overview, Browse. Underline style. Equal-width columns. Text-only (no icons — too narrow at 400px). |
 | C | TabContent | Scrollable content area. Renders the active tab's content. |
 
 ---
@@ -92,34 +92,27 @@
 ### Anatomy
 
 ```
-┌──────────────┬──────────────┬──────────────┐
-│   Overview   │    Browse    │    Export     │
-├──────────────┴──────────────┴──────────────┤
-│ ═══════════                                │  ← 2px emerald underline on active
+┌──────────────┬──────────────┐
+│   Overview   │    Browse    │
+├──────────────┴──────────────┤
+│ ═══════════                 │  ← 2px emerald underline on active
 ```
 
 ### States
 
 **Active tab:**
 ```
-│   Overview   │    Browse    │    Export     │
-│ ═══════════                                │
+│   Overview   │    Browse    │
+│ ═══════════                 │
 ```
 - `flex-1 py-2.5 text-sm font-semibold text-gray-900 border-b-2 border-emerald-600 text-center`
 
 **Inactive tab:**
 ```
-│   Overview   │    Browse    │    Export     │
-│              │ ═══════════                  │
+│   Overview   │    Browse    │
+│              │ ═══════════  │
 ```
 - `flex-1 py-2.5 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 text-center cursor-pointer transition-colors duration-150`
-
-**Disabled tab (Export when nothing to export):**
-```
-│   Overview   │    Browse    │   Export      │
-│ ═══════════                    (grayed)     │
-```
-- `flex-1 py-2.5 text-sm text-gray-300 cursor-not-allowed text-center`
 
 ### Behavior
 - Default active tab: **Overview** when layer is first selected (DFT-006).
@@ -141,7 +134,7 @@ The Overview tab provides layer context before the user dives into data.
 ┌─────────────────────────────────────────┐
 │ [icon]  Data Source Name                │  1. Header (from SidebarHeader)
 │ Source: via [API Name]                  │
-├─── Overview ─── Browse ─── Export ──────┤
+├─── Overview ─── Browse ─────────────────┤
 │ ═══════════                             │
 ├─────────────────────────────────────────┤
 │                                         │
@@ -163,6 +156,13 @@ The Overview tab provides layer context before the user dives into data.
 │ │        Browse Items -->             │ │     Full-width primary
 │ └─────────────────────────────────────┘ │
 │                                         │
+│─────────────────────────────────────────│
+│ Export Status                           │  5. Export status (DFT-041)
+│ ┌─────────────────────────────────────┐ │
+│ │ ✓ Pinned · 3 filters · 2 bookmarks  │ │  When pinned
+│ │   Open Export Builder [cart-icon]   │ │
+│ └─────────────────────────────────────┘ │
+│                                         │
 └─────────────────────────────────────────┘
 ```
 
@@ -178,6 +178,13 @@ The Overview tab provides layer context before the user dives into data.
 | CTA hover | Slight color shift + `scale(1.02)` |
 | CTA focus | 2px outline for keyboard navigation |
 | CTA transition | 150-200ms `ease-out` crossfade to Browse tab |
+| Export status title | `text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2` |
+| Export status box (pinned) | `bg-emerald-50 border border-emerald-200 rounded-lg p-3` |
+| Export status box (unpinned) | `bg-slate-50 border border-slate-200 rounded-lg p-3` |
+| Export status text (pinned) | `text-sm text-gray-800` |
+| Export status text (unpinned) | `text-sm text-gray-600` |
+| "Open Export Builder" link | `text-xs text-emerald-600 hover:text-emerald-700 hover:underline flex items-center gap-1` |
+| "Pin Now" button | `text-sm bg-emerald-600 text-white hover:bg-emerald-700 px-3 py-1.5 rounded-md inline-block mt-2` |
 
 ### Per-Data-Source Metadata Fields
 
@@ -199,10 +206,44 @@ interface OverviewTabProps {
   metadata: { label: string; value: string }[];
   onBrowseClick: () => void;        // Navigate to Browse tab
   browseLabel?: string;             // Default: "Browse Items -->"
+  // Export status props (DFT-041)
+  isPinned: boolean;                // Is this layer pinned?
+  activeFilterCount?: number;       // Number of active filters (if pinned)
+  bookmarkCount?: number;           // Number of bookmarks from this layer (if pinned)
+  onPinClick?: () => void;          // Pin action (if not pinned)
+  onOpenExportBuilder?: () => void; // Open Export Builder modal (if pinned)
 }
 ```
 
 **Note:** `browseLabel` should use `TERMINOLOGY` config. Default renders as `Browse ${TERMINOLOGY.childNounPlural} -->`.
+
+### Export Status Section (DFT-041)
+
+The export status section appears at the bottom of the Overview tab, providing export-related context and actions.
+
+**When layer is pinned:**
+```
+│─────────────────────────────────────────│
+│ Export Status                           │
+│ ┌─────────────────────────────────────┐ │
+│ │ ✓ Pinned · 3 filters · 2 bookmarks  │ │
+│ │   Open Export Builder [cart-icon]   │ │
+│ └─────────────────────────────────────┘ │
+```
+
+**When layer is NOT pinned:**
+```
+│─────────────────────────────────────────│
+│ Export                                  │
+│  Pin this layer to include in your      │
+│  export package.                        │
+│  [Pin Now]                              │
+```
+
+**Behavior:**
+- Pinned state: Shows checkmark, filter count, bookmark count. "Open Export Builder" link opens the global export modal (shopping cart button in header).
+- Unpinned state: Instructive message + "Pin Now" button. Clicking "Pin Now" pins the layer to the Map Layers widget.
+- Export Builder link includes shopping cart icon (Lucide `ShoppingCart`, `w-3 h-3`).
 
 ---
 
@@ -554,7 +595,7 @@ User has clicked "Browse Items -->" or the Browse tab directly.
 ┌─────────────────────────────────────────┐
 │ [icon]  iNaturalist Observations   [x]  │
 │         Source: via iNaturalist API     │
-├─── Overview ─── Browse === Export ──────┤
+├─── Overview ─── Browse ─────────────────┤
 ├─────────────────────────────────────────┤
 │ ┌─────────────────────────────────────┐ │
 │ │ FILTER OBSERVATIONS     [Clear All]│ │
@@ -602,7 +643,7 @@ User's filters returned zero results.
 ┌─────────────────────────────────────────┐
 │ [icon]  iNaturalist Observations   [x]  │
 │         Source: via iNaturalist API     │
-├─── Overview ─── Browse === Export ──────┤
+├─── Overview ─── Browse ─────────────────┤
 ├─────────────────────────────────────────┤
 │ ┌─────────────────────────────────────┐ │
 │ │ FILTER OBSERVATIONS     [Clear All]│ │
@@ -644,7 +685,7 @@ Content is loading after a filter change or initial load.
 ┌─────────────────────────────────────────┐
 │ [icon]  ANiML Camera Traps         [x]  │
 │         Source: via ANiML API           │
-├─── Overview ─── Browse === Export ──────┤
+├─── Overview ─── Browse ─────────────────┤
 ├─────────────────────────────────────────┤
 │ ┌─────────────────────────────────────┐ │
 │ │ FILTER CAMERAS          [Clear All]│ │
@@ -712,7 +753,7 @@ User has drilled into a specific item (ANiML camera or Dendra sensor). This stat
 ┌─────────────────────────────────────────┐
 │ [icon]  ANiML Camera Traps         [x]  │
 │         Source: via ANiML API           │
-├─── Overview ─── Browse === Export ──────┤
+├─── Overview ─── Browse ─────────────────┤
 ├─────────────────────────────────────────┤
 │ [<-] Back to Cameras                    │
 ├─────────────────────────────────────────┤
@@ -743,7 +784,7 @@ User has drilled into a specific item (ANiML camera or Dendra sensor). This stat
 ┌─────────────────────────────────────────┐
 │ [icon]  Dendra Sensors             [x]  │
 │         Source: via Dendra API          │
-├─── Overview ─── Browse === Export ──────┤
+├─── Overview ─── Browse ─────────────────┤
 ├─────────────────────────────────────────┤
 │ [<-] Back to Sensors                    │
 ├─────────────────────────────────────────┤
@@ -773,78 +814,7 @@ User has drilled into a specific item (ANiML camera or Dendra sensor). This stat
 
 ---
 
-### State 7: Export Tab — Disabled (Layer Not Pinned)
-
-When the active layer is not pinned, there's nothing to configure for export.
-
-```
-┌─────────────────────────────────────────┐
-│ [icon]  iNaturalist Observations   [x]  │
-│         Source: via iNaturalist API     │
-├─── Overview ─── Browse ─── Export ======┤
-├─────────────────────────────────────────┤
-│                                         │
-│                                         │
-│       [export-icon - muted]             │
-│                                         │
-│   Pin this layer to include its         │
-│   data in your export.                  │
-│                                         │
-│   Use the Export All button in the      │
-│   header to configure and download      │
-│   your data package.                    │
-│                                         │
-│                                         │
-└─────────────────────────────────────────┘
-```
-
-**Styling (DFT-015 pattern):**
-- Icon: `w-12 h-12 text-gray-300` (Lucide `PackageOpen` or `Download`)
-- Title: `text-sm font-medium text-gray-700`
-- Body: `text-sm text-gray-500`
-
----
-
-### State 8: Export Tab — Enabled (Layer Pinned)
-
-When the active layer is pinned, the Export tab shows a summary of what would be included in an export and directs the user to the Export Builder.
-
-```
-┌─────────────────────────────────────────┐
-│ [icon]  ANiML Camera Traps         [x]  │
-│         Source: via ANiML API           │
-├─── Overview ─── Browse ─── Export ======┤
-├─────────────────────────────────────────┤
-│                                         │
-│ Export Summary for This Layer           │
-│─────────────────────────────────────────│
-│ Status           Pinned                 │
-│ Active filters   3 (species, date,     │
-│                  region)                │
-│ Query results    47 cameras             │
-│ Bookmarked       2 cameras              │
-│─────────────────────────────────────────│
-│                                         │
-│ Bookmarked items from this layer:       │
-│   * CAM-042 --> Mountain Lions 2023     │
-│     47 images                           │
-│   * CAM-015                             │
-│     All images                          │
-│                                         │
-│─────────────────────────────────────────│
-│                                         │
-│ To configure export format and          │
-│ download, use the Export All button     │
-│ [shopping-cart-icon] in the header.     │
-│                                         │
-└─────────────────────────────────────────┘
-```
-
-**Open Question:** The Export tab content is not fully specified in any DFT. The above is a proposed design showing a per-layer export summary. The Export Builder modal (opened from the global header shopping cart, DFT-002) is the canonical export configuration UI. This tab serves as a read-only summary + wayfinding aid. See Open Questions section.
-
----
-
-### State 9: Error State — Toast (Action Failure, DFT-030)
+### State 7: Error State — Toast (Action Failure, DFT-030)
 
 When an action fails (bookmark save, filter apply, etc.), a toast appears at the top of the sidebar.
 
@@ -852,7 +822,7 @@ When an action fails (bookmark save, filter apply, etc.), a toast appears at the
 ┌─────────────────────────────────────────┐
 │ [icon]  iNaturalist Observations   [x]  │
 │         Source: via iNaturalist API     │
-├─── Overview ─── Browse === Export ──────┤
+├─── Overview ─── Browse ─────────────────┤
 ├─────────────────────────────────────────┤
 │ ┌─────────────────────────────────────┐ │
 │ │ [x-icon] Bookmark failed to save.  │ │  ← Toast
@@ -874,7 +844,7 @@ When an action fails (bookmark save, filter apply, etc.), a toast appears at the
 
 ---
 
-### State 10: Error State — Inline (Content Failure, DFT-030)
+### State 8: Error State — Inline (Content Failure, DFT-030)
 
 When content fails to load, an inline error replaces the content area.
 
@@ -882,7 +852,7 @@ When content fails to load, an inline error replaces the content area.
 ┌─────────────────────────────────────────┐
 │ [icon]  ANiML Camera Traps         [x]  │
 │         Source: via ANiML API           │
-├─── Overview ─── Browse === Export ──────┤
+├─── Overview ─── Browse ─────────────────┤
 ├─────────────────────────────────────────┤
 │                                         │
 │ ┌─────────────────────────────────────┐ │
@@ -916,8 +886,8 @@ When content fails to load, an inline error replaces the content area.
 | Select layer in left sidebar | Sidebar opens to Overview tab | DFT-006 |
 | Click "Browse Items -->" CTA | TabBar switches to Browse tab (150-200ms crossfade) | DFT-027 |
 | Click Browse tab | Tab switches (crossfade) | DFT-019 |
-| Click Export tab (enabled) | Tab switches to Export summary | |
-| Click Export tab (disabled) | No action (cursor-not-allowed) | |
+| Click "Pin Now" (Overview export status) | Pins layer to Map Layers widget | DFT-041 |
+| Click "Open Export Builder" (Overview export status) | Opens Export Builder modal from header shopping cart | DFT-041, DFT-002 |
 | Click close [x] | Layer deactivated, sidebar closes | |
 | Change any filter control | Auto-apply, results update, AbortController cancels previous | DFT-039 |
 | Click "Clear All" in filter header | All filters reset, immediate | DFT-038, DFT-031 |
@@ -933,8 +903,10 @@ When content fails to load, an inline error replaces the content area.
 
 ## Design Decision Summary
 
+- **Two tabs only: Overview | Browse** (DFT-041). Export tab removed. Export status promoted to Overview tab.
 - **Fixed 400px width**, not resizable (DFT-033). If content needs more space, use "Expand" modal.
 - **Overview tab opens first** when layer selected (DFT-006). Not context-dependent.
+- **Overview tab export status section** (DFT-041): Shows pin status, filter count, bookmark count when pinned. Shows "Pin Now" button when unpinned. Links to Export Builder modal.
 - **"Browse Items -->"** CTA button on Overview tab, full-width primary (DFT-027). Label uses `TERMINOLOGY` config.
 - **SVG/Lucide icons only**, no emojis (DFT-026). In ASCII, text placeholders used.
 - **Auto-apply everywhere** — no Apply button in any data source (DFT-039).
@@ -947,7 +919,6 @@ When content fails to load, an inline error replaces the content area.
 - **DataOne has NO Level 3 filtering** in V1. Datasets are bookmarked whole.
 - **ANiML landing cards** (DFT-003c) are a documented exception — Animal-First vs Camera-First entry on first Browse visit. User preference remembered. "Switch to [other mode]" link available after initial choice.
 - **"Item" terminology** used throughout, per Trisalyn's direction. Configurable via `TERMINOLOGY` config.
-- **Export tab** shows per-layer summary and directs user to Export Builder modal in header (DFT-002). Content is proposed (see Open Questions).
 
 ---
 
@@ -986,10 +957,8 @@ src/v2/components/RightSidebar/
 
 ## Open Questions
 
-1. **Export tab content:** The Export Builder lives in a modal opened from the global header (DFT-002). What should the per-layer Export tab contain? This spec proposes a read-only summary (pin status, filter count, bookmarked items from this layer) + wayfinding to the Export Builder. This needs team confirmation. Alternative: remove the Export tab entirely and rely solely on the header shopping cart button. If removed, TabBar becomes 2 tabs (Overview | Browse).
+1. **ANiML landing cards return path:** DFT-003c says user preference is remembered (skip landing cards on return). How does a user switch from Camera-First to Animal-First mode after the initial choice? Proposal: subtle "[switch-icon] Switch to [other mode]" link at the top of the Browse tab, below the filter section. This needs design specification (see DFT-042).
 
-2. **ANiML landing cards return path:** DFT-003c says user preference is remembered (skip landing cards on return). How does a user switch from Camera-First to Animal-First mode after the initial choice? Proposal: subtle "[switch-icon] Switch to [other mode]" link at the top of the Browse tab, below the filter section. This needs design specification.
+2. **Dendra sidebar content at Level 3:** When the time-series chart renders in a floating pop-up (DFT-004), what does the sidebar show? This spec shows filter controls + bookmark action. Should the sidebar also show stats (min, max, avg)? Or is that pop-up-only content? (see DFT-043)
 
-3. **Dendra sidebar content at Level 3:** When the time-series chart renders in a floating pop-up (DFT-004), what does the sidebar show? This spec shows filter controls + bookmark action. Should the sidebar also show stats (min, max, avg)? Or is that pop-up-only content?
-
-4. **ResultCard click behavior for self-contained rows:** iNaturalist observations are self-contained (no Level 3). Does clicking a ResultCard drill into a detail view (expanded observation) or is the card itself sufficient? Phase 1 has a Task 1.5 for "observation detail view" suggesting yes. This needs a state diagram in the iNaturalist variant spec.
+3. **ResultCard click behavior for self-contained rows:** iNaturalist observations are self-contained (no Level 3). Does clicking a ResultCard drill into a detail view (expanded observation) or is the card itself sufficient? Phase 1 has a Task 1.5 for "observation detail view" suggesting yes. This needs a state diagram in the iNaturalist variant spec (see DFT-044).

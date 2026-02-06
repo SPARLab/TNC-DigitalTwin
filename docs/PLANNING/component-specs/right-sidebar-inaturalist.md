@@ -36,7 +36,7 @@ iNaturalist fills the shared `OverviewTab` template with these specific props:
 │ [binoculars-icon]                       │
 │ iNaturalist Observations           [x]  │
 │ Source: via iNaturalist API             │
-├─── Overview === Browse ─── Export ──────┤
+├─── Overview === Browse ─────────────────┤
 ├─────────────────────────────────────────┤
 │                                         │
 │ Research-grade community science        │
