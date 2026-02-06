@@ -1,6 +1,6 @@
 # Design System - TNC Digital Catalog
 
-**Last Updated:** February 5, 2026 (Added Sidebar Template System — template-driven consistency across all data sources)  
+**Last Updated:** February 5, 2026 (Audit gap resolution — added 12 missing DFT specs: Viewport Requirements, Accessibility Baseline, Bookmark Hover-to-Highlight, Filter Indicator, Multiple Filtered Views, Widget Animation, Map Badge Behavior, Widget Auto-Collapse, TabBar default/transitions, ResultCard animation, TNC brand reference)  
 **Purpose:** Single source of truth for styling decisions, component patterns, and design policies that affect multiple phases.
 
 ---
@@ -69,6 +69,28 @@ Consider binary collapse toggle (hide/show sidebar entirely) as future enhanceme
 **Decision Date:** February 5, 2026  
 **Analyzed via:** 9 UI/UX frameworks (Gestalt, Norman, Nielsen, Shneiderman, Cognitive Laws, Visual Fundamentals, Accessibility, Behavioral Science, Information Architecture)
 
+### Viewport Requirements (DFT-016)
+
+**Policy:** Desktop-only for v2.0. Minimum supported viewport width is **1280px**. Mockups designed at **1440px**.
+
+**Specification:**
+- Below 1280px: render `DesktopOnlyGate` component instead of main app
+- No mobile/tablet responsive layouts in v2.0 (deferred to v2.1+)
+- Paradigm requires simultaneous visibility of 6 interaction zones (left sidebar, right sidebar, 2 floating widgets, map, header)
+
+**`DesktopOnlyGate` component:**
+- Full-viewport overlay when `window.innerWidth < 1280`
+- Message: "This application is optimized for desktop browsers (1280px+ width)."
+- Does not render main app content below the gate
+- Location: `src/v2/components/DesktopOnlyGate.tsx`
+
+**Rationale:**
+- **Nielsen (Recognition over Recall):** Mobile sequential disclosure loses spatial context between 6 zones
+- **Gestalt (Proximity):** Zones need simultaneous visibility for relationship perception
+- **Target Audience (DFT-011):** Researchers at workstations, not mobile users
+
+**Decision Date:** February 3, 2026
+
 ---
 
 ## Terminology Configuration
@@ -106,6 +128,62 @@ export const TERMINOLOGY = {
 **Usage:**
 - All widget titles, empty state messages, button labels, and tooltips must import from this config
 - Never hardcode "Feature" or "Item" in UI components
+
+---
+
+## Accessibility Baseline
+
+**Policy (DFT-017):** Baseline accessibility patterns applied across all components. Full WCAG 2.1 AA compliance audit deferred to Phase 6.
+
+### Tab Order
+
+Natural DOM order, left-to-right, top-to-bottom:
+1. Left sidebar
+2. Map
+3. Floating widgets (Pinned Layers → Bookmarked Features)
+4. Right sidebar
+
+### Escape Key Behavior
+
+Escape closes the **most recently opened** element, in priority order:
+1. Modal (Export Builder, critical error)
+2. Expanded widget row
+3. Expanded panel / pop-up (Dendra chart)
+4. Right sidebar content (navigates back one level)
+
+### Focus Management
+
+- When a container expands (widget row, sidebar panel, modal), focus moves to its **first interactive element**
+- When a container closes, focus returns to the element that triggered the open
+- Tab focus must never get trapped — user can always navigate away
+
+### Screen Reader Announcements
+
+Announce **significant actions only** (not every state change):
+- "Filter applied" / "Filters cleared"
+- "Layer pinned" / "Layer unpinned"
+- "Feature bookmarked" / "Bookmark removed"
+- Error messages (via `role="alert"` or `aria-live`)
+- Position changes during drag-and-drop (via `aria-live="polite"`)
+
+Do NOT announce: hover states, intermediate loading states, cursor position changes.
+
+### Global Keyboard Shortcuts
+
+| Shortcut | Action | Phase |
+|----------|--------|-------|
+| `Escape` | Close most recent element | Phase 0 |
+| `Tab` / `Shift+Tab` | Navigate focus forward/backward | Phase 0 |
+| `Cmd/Ctrl+Z` | Undo in most recently active region | Phase 6 |
+
+### Design Principles Applied
+
+- **WCAG 2.1.1 (Keyboard):** All functionality available via keyboard
+- **WCAG 2.4.3 (Focus Order):** Logical, predictable tab sequence
+- **WCAG 4.1.3 (Status Messages):** Screen reader announcements for state changes
+- **Nielsen #3 (User Control):** Escape always provides an exit
+
+**Decision Date:** February 3, 2026
 
 ---
 
@@ -799,8 +877,10 @@ interface FeatureDetailCardProps {
 
 | Decision | Status | Date | Details |
 |----------|--------|------|---------|
-| Overall color palette | ⚪ TBD | - | Mockups use emojis/colors - need to tone down |
-| Data source accent colors | ⚪ TBD | - | |
+| Overall color palette | 🟡 Defined in mockups | Feb 5 | Initial tokens in `sidebarTheme` (gray/emerald). Team adjusts via token file during review |
+| Data source accent colors | 🟡 Defined in mockups | Feb 5 | Default: emerald-600 for all. Per-data-source overrides possible but not required for v2.0 |
+| TNC brand colors (DFT-008) | ✅ Decided (Phase 6) | Feb 3 | Parrot Green `#05641c`, Leaf Green `#49a842`, Benthic Blue `#06063d`. Deferred to Phase 6 (Tasks 6.1-6.2). Not applied in v2.0 initial build |
+| TNC brand fonts (DFT-009) | ✅ Decided (Phase 6) | Feb 3 | Barlow (body), Chronicle (headers). Integration deferred to Phase 6 Task 6.1. Current: system default / Inter |
 
 ### Typography
 
@@ -832,6 +912,81 @@ interface FeatureDetailCardProps {
 | Pattern | Status | Date | Details |
 |---------|--------|------|---------|
 | Widget card styling | ✅ Decided | - | See phase-0-foundation.md task 0.5 |
+| Widget auto-collapse (DFT-005) | ✅ Decided | Jan 29 | See below |
+| Filter indicator (DFT-024) | ✅ Decided | Feb 4 | See below |
+| Map badge behavior (DFT-029) | ✅ Decided | Feb 4 | See below |
+
+### Widget Auto-Collapse Pattern (DFT-005)
+
+**Policy:** Floating widgets auto-collapse when viewing time-series data to reduce screen crowding.
+
+| Widget | Behavior During Time-Series View | Rationale |
+|--------|----------------------------------|-----------|
+| **Pinned Layers** | Auto-collapses | Not needed during sensor exploration |
+| **Bookmarked Features** | Remains expanded | Needed for "bookmark range" action |
+
+**Rules:**
+- Trigger: Time-series chart/pop-up is active (e.g., Dendra sensor detail view)
+- State restoration: Widgets restore to previous expand/collapse state when time-series view closes
+- User override: Manual expand/collapse overrides auto-collapse behavior
+- Detection: Widgets read time-series view state via context or prop
+
+**Decision Date:** January 29, 2026
+
+### Filter Indicator Pattern (DFT-024)
+
+**Policy:** Pinned layer rows in the widget display filter status using a Lucide icon + count pattern. No A/B testing — single approach.
+
+**Visual States:**
+
+| State | Display | Styling |
+|-------|---------|---------|
+| **Has filters** | Lucide `Filter` icon + count (e.g., `[Filter 5]`) | Colored badge, clickable |
+| **No filters** | Lucide `Filter` icon only | Muted gray (`text-gray-400`), still clickable |
+
+**Interaction:**
+- Click opens Browse tab in right sidebar (same as "Edit Filters →")
+- Tooltip: `"5 filters applied"` or `"No filters — click to add"`
+- ARIA: `aria-label="5 filters applied. Click to edit."`
+
+**Row Layout:**
+```
+[drag] [👁] [Layer Name (distinguisher)] [Filter N] [✕]
+```
+
+**Rationale:**
+- Icon-based approach is more compact than text summaries (Hick's Law)
+- Single-line rows improve scannability vs. two-line filter text
+- Tooltip bridges learnability gap for new users (Nielsen #6)
+
+**Decision Date:** February 4, 2026
+
+### Map Badge Behavior (DFT-029)
+
+**Policy:** Count badges on map features (camera icons, sensor markers) are **semantic indicators of filtered query results**. They only appear when a layer-level filter is active.
+
+| State | Badge Behavior | Rationale |
+|-------|----------------|-----------|
+| **No filter active** | No badges shown | Clean default; badges carry information about filtered state |
+| **Filter active, results > 0** | Badge shows filtered count (upper-right of icon) | Communicates "N matching results here" |
+| **Filter active, results = 0** | No badge, marker grayed out (DFT-028) | Preserves spatial context via grayed marker |
+
+**Badge Styling:**
+- Position: upper-right corner of map feature icon
+- Color: contrasting (red, blue, or TNC brand accent)
+- Size: min 18px diameter for readability at map zoom levels
+
+**Optional Enhancement:**
+- Hover tooltip shows total count even when no filter is active (e.g., "CAM-042: 1,247 images")
+
+**Applies To:** ANiML cameras (Phase 2), potentially Dendra sensors if count-based filtering is added.
+
+**Rationale:**
+- **Gestalt (Figure/Ground):** Badges stand out when meaningful, don't clutter when not
+- **Shneiderman (Overview First):** Unfiltered map shows spatial distribution; badges add detail on demand
+- **DFT-012 alignment:** Badges = filtered state; consistent semantic meaning
+
+**Decision Date:** February 4, 2026
 
 ### Map Tooltip Patterns
 
@@ -1176,6 +1331,149 @@ function announceToScreenReader(message) {
 
 ---
 
+## Bookmark Hover-to-Highlight Pattern
+
+**Policy (DFT-036):** Hovering a bookmark row in the Bookmarked Features widget highlights the corresponding feature on the map (if visible in viewport). No auto-pan on hover.
+
+### Highlight Specification
+
+| Property | Value |
+|----------|-------|
+| **Visual style** | Bright cyan ring around feature symbol |
+| **Ring width** | 4px |
+| **Ring offset** | 8px from feature symbol |
+| **Animation** | Subtle pulse (2 cycles, 800ms, `ease-in-out`) |
+| **Z-order** | Elevated above other features |
+| **Timing** | Instant feedback (<100ms via map API) |
+| **Reduced motion** | Static ring (no pulse) if `prefers-reduced-motion` set |
+| **Cleanup** | Highlight clears on unhover (instant or 50ms fade-out) |
+
+### Off-Screen Features
+
+- **No map highlight** (no forced pan on hover)
+- Widget row shows subtle "📍 Off-screen" text indicator (`text-gray-400`, 12px)
+- Click **[View]** button to pan + zoom to feature (deliberate action)
+
+### Keyboard Support (WCAG 2.1.1)
+
+- Highlight follows Tab focus when navigating bookmark rows
+- ARIA live region announces: "Feature CAM-042 highlighted on map" (`aria-live="polite"`)
+- Parity between mouse hover and keyboard focus
+
+### Performance
+
+- Debounce rapid hover events (50ms) to prevent map thrashing
+- Single highlight at a time (clear previous on new hover)
+- Only highlight when bookmark widget is expanded
+
+### Edge Cases
+
+| Scenario | Behavior |
+|----------|----------|
+| Layer headers | No hover highlight (non-interactive per DFT-007) |
+| Multiple bookmarks of same feature | Highlights same map feature |
+| Widget collapsed | No highlighting |
+| Feature not loaded | Graceful degradation, no error |
+| Map layer toggled off | No highlight (respects layer visibility) |
+
+### Deferred Enhancements (Phase 6)
+
+- **Edge indicators:** Directional arrow at screen edge pointing toward off-screen bookmarks (~6-8 hours)
+- **Bidirectional highlighting:** Map feature hover → highlight widget row
+
+**Decision Date:** February 5, 2026
+
+---
+
+## Multiple Filtered Views Pattern
+
+**Policy (DFT-013):** Users can save multiple filtered views of the same layer (e.g., "mountain lion" AND "deer" views of Camera Traps). Only ONE view is visible at a time (mutual exclusivity).
+
+### Widget Structure
+
+**Single-view layer (flat):**
+```
+[drag] [👁] Camera Traps (mt. lion)  [Filter 5] [✕]
+```
+
+**Multi-view layer (nested — when 2+ views exist):**
+```
+[drag] [👁] Camera Traps ▼                       [✕]   ← Parent row
+           [👁] mountain lion  [Filter 5]              ← Child (visible)
+                deer                                    ← Child (hidden, eye grayed)
+           [+ New View]                                 ← Create action
+```
+
+### Behavior Rules
+
+| Rule | Behavior |
+|------|----------|
+| **Mutual exclusivity** | Only ONE child view visible at a time. Clicking a child auto-hides the previously visible one. |
+| **Parent eye toggle ON** | Restores the previously-selected child view (memory-preserving) |
+| **Parent eye toggle OFF** | Hides all children |
+| **Click child eye OFF** | Also turns off parent eye (no children visible) |
+| **Click child row** | Entire row is clickable; toggles that view's visibility |
+| **"+ New View"** | Duplicates parent layer with current filters as a new child |
+| **Promotion** | When "Create New View" is clicked on a single-view layer, it promotes to nested structure with original as first child |
+
+### Parent Row Styling
+
+- Background: `bg-slate-50` or subtle left border
+- Text: `font-semibold`
+- Chevron: `▼` (rotates when collapsed)
+- Children: indented `ml-6` (24px) with subtle connecting line
+
+### Design Rationale
+
+- **80/20 Rule:** Quick toggling between views covers most researcher workflows
+- **Avoids badge stacking:** Only one view's badges on map at a time — prevents visual confusion
+- **Memory-preserving parent toggle:** Reduces clicks when toggling between "show a view" and "hide all"
+- **Norman (Conceptual Model):** "I have saved queries; I look at one at a time" — clean mental model
+
+**Decision Date:** February 3, 2026
+
+---
+
+## Widget Animation Patterns
+
+**Policy (DFT-025):** Structural widget changes (promotion from flat to nested, Create New View) use inline transformation with sequential staging. This pattern establishes the animation timing standard for widget layout changes.
+
+### Create New View Animation Sequence
+
+| Phase | Timing | Effect |
+|-------|--------|--------|
+| 1. Button press | 0ms | Visual feedback (button depress) |
+| 2. Row expansion | 0–150ms | Row expands vertically (`ease-out`). Parent styling appears (bg, border, chevron). |
+| 3. Children appear | 150–250ms | Child rows fade in. Original child has eye ON, new child has eye OFF. Children indented 24px with connecting line. |
+| 4. New child highlight | 300–500ms | New child row flashes `bg-green-100`, fading to normal over 200ms |
+
+**Total duration:** 250–300ms (excluding highlight fade)
+
+### Specifications
+
+- Focus moves to new child row after animation completes
+- Screen reader announces: "New view created. {LayerName} now has {count} views."
+- Respects `prefers-reduced-motion`: instant state change + brief highlight only (no expansion animation)
+- Debounce "Create New View" button to prevent animation stacking
+- No layout shift or janky scrolling during animation
+
+### Timing Alignment
+
+This pattern aligns with other animation standards in the system:
+
+| Pattern | Duration | Source |
+|---------|----------|--------|
+| Create New View expansion | 250–300ms | DFT-025 |
+| Drag-and-drop settle | 400ms | DFT-034 |
+| Undo button pulse | 400ms | DFT-031 |
+| Tab crossfade | 150–200ms | DFT-019 |
+| Error shake | 200ms | DFT-030 |
+| Zero-result camera transition | 300ms | DFT-028 |
+
+**Decision Date:** February 4, 2026
+
+---
+
 ## Sidebar Template System
 
 **Policy:** All right sidebar data source views share a common structural template. Changing the template's styling changes all data sources simultaneously. Individual data sources only customize *content* (which fields, which filters), never *layout or styling* (unless a documented exception exists).
@@ -1233,7 +1531,9 @@ SidebarShell (shared)
 | Tab (disabled) | `flex-1 py-2.5 text-sm text-gray-300 cursor-not-allowed text-center` |
 
 **Behavior:**
-- Tab click switches content with 150ms crossfade (per DFT-019)
+- **Default tab (DFT-006):** Overview tab is always the initial active tab when a layer is selected. Consistent across all data sources — not context-dependent. Overview includes prominent "Browse Features →" CTA (DFT-027).
+- Tab click switches content with **150-200ms crossfade** transition (per DFT-019)
+- **"Edit Filters →" navigation (DFT-019):** When triggered from Pinned Layers widget, sidebar transitions to Browse tab using same crossfade. If already on Browse tab, filter section receives conditional highlight (~200-300ms pulse). Widget panel remains expanded so user can reference filter state.
 - Active tab indicated by 2px bottom border (emerald-600 — TNC green family)
 - Text-only labels (no icons) — 400px sidebar is too narrow for icon+text tabs
 - Tab height: 40px total (meets 44px touch target with padding)
@@ -1342,7 +1642,7 @@ interface ResultCardProps {
 | Element | Styling |
 |---------|---------|
 | Container | `bg-white border border-gray-200 rounded-lg p-3 hover:border-gray-300 hover:shadow-sm transition-all duration-150 cursor-pointer` |
-| Container (grayed) | `opacity-50 saturate-50` (per DFT-028) |
+| Container (grayed) | `opacity-50 saturate-50` (per DFT-028). Transition: `300ms ease-out`, staggered `30ms` per item on map for visual sweep. No badge shown. Remains clickable and keyboard-accessible. Click shows metadata + "No [species] at this location" message. |
 | Thumbnail | `w-10 h-10 rounded object-cover` |
 | Icon | `w-10 h-10 text-gray-400 bg-gray-100 rounded flex items-center justify-center` |
 | Title | `text-sm font-medium text-gray-900 truncate` |
@@ -1529,6 +1829,7 @@ February 5, 2026
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 5, 2026 | Audit gap resolution — added 12 missing DFT specs: Viewport Requirements (DFT-016), Accessibility Baseline (DFT-017), Bookmark Hover-to-Highlight (DFT-036), Filter Indicator (DFT-024), Multiple Filtered Views (DFT-013), Widget Animation Patterns (DFT-025), Map Badge Behavior (DFT-029), Widget Auto-Collapse (DFT-005), TabBar default tab + Edit Filters transition (DFT-006/DFT-019), ResultCard grayed animation detail (DFT-028), TNC brand color/font reference (DFT-008/DFT-009) | Will + Claude |
 | Feb 5, 2026 | Added Sidebar Template System — shared structural templates (TabBar, OverviewTab, ResultCard, Pagination, LeftSidebar category pattern) enforced via components. Theme tokens centralized in `sidebarTheme`. All data sources use identical layout; only content varies. Exceptions documented (ANiML landing cards, Dendra chart, Level 3 FeatureDetailCard). Decisions: underline tabs (emerald accent), Previous/Next pagination (20/page), standard result card with icon/title/subtitle/actions slots, left sidebar with collapsible categories and emerald active state | Will + Claude |
 | Feb 5, 2026 | Added Filter Apply Behavior (DFT-039) — auto-apply everywhere, no Apply button in any data source. Universal rules: dropdowns immediate, text search 500ms debounce, date fields on calendar close/blur, toggles immediate. `AbortController` cancels in-flight requests. Loading per DFT-018 thresholds. Stale results visible with overlay. Result count updates continuously. ARIA live region announces changes | Will + Claude |
 | Feb 5, 2026 | Added Filter Section Patterns (DFT-038) — shared structural anatomy for all Browse tab filter UIs. `FilterSection` component enforces consistent header, 2-col CSS grid, result count footer, and `slate-50` container across all 4 data sources. Control sizing rules, header convention, and per-data-source inventory documented | Will + Claude |
