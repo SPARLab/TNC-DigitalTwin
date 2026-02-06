@@ -20,21 +20,20 @@
 ┌────────────────────────────────────────────┐
 │ [search] Search layers...                  │  A. Search bar
 │────────────────────────────────────────────│
-│ v [wildlife-icon] Wildlife             (3) │  B. Category header (expanded)
+│ v [icon] Species                       (3) │  B. Category header (expanded)
 │    * Camera Traps (ANiML)  [eye] [pin]     │  C. Layer row (active + pinned)
 │      iNaturalist Obs.      [eye] [pin]     │  D. Layer row (pinned, visible)
 │      eBird Sightings                       │  E. Layer row (not pinned)
-│ > [sensor-icon]  Env. Sensors          (2) │  F. Category header (collapsed)
-│ v [dataset-icon] Research              (1) │
-│      DataOne Datasets                      │
-│ > [fire-icon]    Fire & Hazards        (3) │
-│ > [ref-icon]     Reference             (5) │
-│────────────────────────────────────────────│  G. Separator
-│ > [research-icon] Research Datasets        │  H. Cross-category section
-│                    (All Categories)        │
-│      DataOne Datasets                      │
+│ > [icon] Freshwater                    (2) │  F. Category header (collapsed)
+│ > [icon] Fire                          (3) │
+│ > [icon] Research Datasets             (1) │
+│   ...                                      │  (remaining categories)
 └────────────────────────────────────────────┘
 ```
+
+**Note on categories:** The left sidebar uses the 13 TNC domain categories from the live Dangermond Preserve data catalog (Boundaries, Earth Observations, Elevation and Bathymetry, Fire, Freshwater, Infrastructure, Land Cover, Oceans and Coasts, Research and Sensor Equipment, Soils and Geology, Species, Threats and Hazards, Weather and Climate) in alphabetical order. **"Research Datasets"** is an additional category housing DataOne, which spans all 13 domains. TNC domain filtering for DataOne happens in the right sidebar Browse tab, not the left sidebar. See Phase 4 for details.
+
+The anatomy diagram above shows a representative subset for illustration. The component spec focuses on layer row states and interaction patterns, which are identical across all categories.
 
 **Labeled Parts:**
 
@@ -46,8 +45,6 @@
 | D | Layer row (pinned, not active) | Normal weight. [eye] toggle (blue=visible, gray=hidden) + solid [pin]. |
 | E | Layer row (not pinned) | Normal weight text. No icons at rest. Hover: grayed [pin] appears. |
 | F | Category header (collapsed) | Right-pointing chevron. Layer rows hidden. |
-| G | Separator | Thin horizontal rule before cross-category section. |
-| H | Cross-category section | DataOne and future cross-category sources. Labeled "(All Categories)". |
 
 **Icon visibility rules:**
 
@@ -63,26 +60,28 @@
 
 ## States
 
-### State 1: Default — Categories Expanded, Mixed Layer States
+### State 1: Default — All Categories Collapsed
 
-The initial populated state showing layers in various states.
+On first load, all categories start collapsed. The user opens what they're interested in. This respects user autonomy (Shneiderman #7: User Control) and avoids presuming which categories matter most. Category names and count badges provide enough signal for informed clicks (Nielsen #6: Recognition).
 
 ```
 ┌────────────────────────────────────────────┐
 │ [search] Search layers...                  │
 │────────────────────────────────────────────│
-│ v [icon] Wildlife Monitoring           (3) │
-│    * Camera Traps (ANiML)  [eye] [pin]     │  ← Active + pinned + visible
-│      iNaturalist Obs.   [eye-g] [pin]      │  ← Pinned but hidden (eye gray)
-│      eBird Sightings                       │  ← Not pinned (no icons)
-│ > [icon] Environmental Sensors         (2) │  ← Collapsed
-│ v [icon] Research Datasets             (1) │
-│      DataOne Datasets                      │
-│ > [icon] Reference Layers              (5) │  ← Collapsed
-│ > [icon] Fire & Hazards                (3) │  ← Collapsed
-│────────────────────────────────────────────│
-│ > [icon] Research Datasets                 │
-│          (All Categories)                  │
+│ > [icon] Boundaries                    (2) │  ← All collapsed
+│ > [icon] Earth Observations            (1) │
+│ > [icon] Elevation and Bathymetry      (2) │
+│ > [icon] Fire                          (3) │
+│ > [icon] Freshwater                    (2) │
+│ > [icon] Infrastructure                (1) │
+│ > [icon] Land Cover                    (2) │
+│ > [icon] Oceans and Coasts             (3) │
+│ > [icon] Research and Sensor Equipment (4) │
+│ > [icon] Research Datasets             (1) │  ← DataOne lives here
+│ > [icon] Soils and Geology             (1) │
+│ > [icon] Species                       (3) │
+│ > [icon] Threats and Hazards           (2) │
+│ > [icon] Weather and Climate           (2) │
 └────────────────────────────────────────────┘
 ```
 
@@ -93,6 +92,8 @@ The initial populated state showing layers in various states.
 - Non-pinned layers show no icons at rest (grayed [pin] appears on hover).
 - Chevron `v` = expanded, `>` = collapsed.
 - Category count badges show number of layers in that category.
+- Categories are the 13 TNC domain categories + "Research Datasets" (DataOne), in alphabetical order.
+- Layer counts shown are illustrative; actual counts depend on available data layers.
 
 ---
 
@@ -215,7 +216,7 @@ User has typed in the search bar. Layer list filters to matching results.
 ┌──────────────────────────────────────┐
 │ [search] cam                    [x]  │  ← Search input with clear button
 │──────────────────────────────────────│
-│ v [icon] Wildlife Monitoring     (1) │  ← Count updates to filtered
+│ v [icon] Species                 (1) │  ← Count updates to filtered
 │    * Camera Traps (ANiML)            │  ← Match
 │──────────────────────────────────────│
 │ (no other matches)                   │
@@ -285,7 +286,7 @@ User has typed in the search bar. Layer list filters to matching results.
 - **One active layer at a time** (DFT-001, DFT-021). Clicking a new layer replaces the previous active layer.
 - **Overview tab opens first** when a layer is selected (DFT-006).
 - **SVG/Lucide icons only**, no emojis (DFT-026).
-- **Cross-category section** (DataOne) appears below a separator with "(All Categories)" label.
+- **DataOne under "Research Datasets" category** (Feb 6 resolution). DataOne is a regular category alongside the 13 TNC domain categories. No cross-category section or dual placement. TNC domain filtering happens in the DataOne Browse tab via a category dropdown.
 - **Search is instant-filter** (substring matching, 500ms debounce, 2+ chars — matches DFT-035 pattern).
 
 ---
@@ -302,6 +303,6 @@ User has typed in the search bar. Layer list filters to matching results.
 ## Open Questions
 
 1. ~~**Pin icon interactivity:**~~ **RESOLVED (Feb 6):** Pin icons ARE clickable. Grayed pin = click to pin. Solid pin = click to unpin.
-2. **Category default state:** Should all categories start expanded or collapsed on first load? Current mockups show a mix. Recommend: top 2-3 categories expanded, rest collapsed.
-3. **DataOne dual placement:** DataOne appears both under "Research Datasets" category AND in the cross-category section. Is this correct, or should it only appear in the cross-category section? Need confirmation.
+2. ~~**Category default state:**~~ **RESOLVED (Feb 6):** All categories start collapsed on first load. Category names and count badges provide sufficient signal for users to choose what to explore (Shneiderman #7: User Control, Nielsen #6: Recognition over Recall).
+3. ~~**DataOne dual placement:**~~ **RESOLVED (Feb 6):** DataOne appears ONLY under "Research Datasets" as a regular category. No cross-category section, no dual placement. The original "cross-category" concept (Jan 22 plan) was designed for the 13-domain sidebar where DataOne had no single domain home. With "Research Datasets" as its own category, DataOne has a clear home. TNC domain filtering happens in the Browse tab via a category dropdown. If post-launch user testing reveals discoverability issues (researchers not finding DataOne datasets in domain context), cross-category discovery hints can be explored in v2.1+.
 4. ~~**Visibility icons in sidebar (pending):**~~ **RESOLVED (Feb 6):** Eye icons appear on pinned layers only (not on unpinned catalog layers). Blue `Eye` = visible on map, gray `EyeOff` = hidden. Syncs bidirectionally with Map Layers widget. Active styling already communicates visibility for the active layer, but active+pinned rows still show the eye icon for consistency.
