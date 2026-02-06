@@ -126,6 +126,12 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-035 | DataOne search behavior — instant search or explicit submit? | UI/UX | 🟢 Resolved | Medium |
 | DFT-036 | Feature highlight on map when hovering bookmark row | UI/UX | 🟢 Resolved | Low |
 | DFT-037 | Generate updated mockups reflecting all resolved design decisions (DFT-001 through DFT-040) | Task | 🟡 Open | High |
+| └─ DFT-037a | Generate `mockups/02a-unified-layout.html` — Master template defining ALL shared structure | Task | 🟡 Open | High |
+| └─ DFT-037b | Generate `mockups/02b-browse-inaturalist.html` — iNaturalist browse view (inherits from 02a) | Task | 🟡 Open | High |
+| └─ DFT-037c | Generate `mockups/02c-browse-animl.html` — ANiML browse view with landing cards exception | Task | 🟡 Open | High |
+| └─ DFT-037d | Generate `mockups/02d-browse-dendra.html` — Dendra browse view with chart slider exception | Task | 🟡 Open | High |
+| └─ DFT-037e | Generate `mockups/02e-browse-dataone.html` — DataOne browse view (search-first pattern) | Task | 🟡 Open | High |
+| └─ DFT-037f | Generate `mockups/02f-export-builder.html` — Export Builder modal | Task | 🟡 Open | High |
 | DFT-038 | Filter section anatomy — shared structural template for Browse tab filter UI across all data sources | Design System | 🟢 Resolved | High |
 | DFT-039 | Filter apply behavior — auto-apply vs explicit Apply button consistency across data sources | UI/UX | 🟢 Resolved | High |
 | DFT-040 | Dual-level filter visual distinction — how Level 2 vs Level 3 filters look different (ANiML, Dendra) | UI/UX | 🟢 Resolved | Medium |
@@ -422,6 +428,14 @@ Generate updated mockups (`mockups/02a-02f` or new versions) that demonstrate:
 - All sidebar designs with final specifications
 - All interaction patterns as resolved
 - **Template-driven consistency** (see below)
+
+**Subtasks:**
+- [ ] **DFT-037a:** Generate `mockups/02a-unified-layout.html` — Master template defining ALL shared structure (header, left sidebar, map area, right sidebar shell with TabBar, OverviewTab, FilterSection, ResultCard, Pagination, floating widgets). Uses iNaturalist as default data source. This is the canonical template that all other mockups inherit from.
+- [ ] **DFT-037b:** Generate `mockups/02b-browse-inaturalist.html` — iNaturalist browse view inheriting from 02a template. Only changes: iNaturalist-specific metadata fields in OverviewTab, iNaturalist filter controls (taxon dropdown, species dropdown, date range, quality grade checkbox), iNaturalist result card slots.
+- [ ] **DFT-037c:** Generate `mockups/02c-browse-animl.html` — ANiML browse view inheriting from 02a template. Includes documented exception: ANiML landing cards (Animal-First / Camera-First entry). Level 2: "Filter Cameras" (region, status). Level 3: FeatureDetailCard with "Filter Images" (species multi-select, date range, deployment dropdown).
+- [ ] **DFT-037d:** Generate `mockups/02d-browse-dendra.html` — Dendra browse view inheriting from 02a template. Includes documented exception: Dendra pop-up time-series chart with slider (DFT-004). Level 2: "Filter Sensors" (region, status). Level 3: FeatureDetailCard with "Filter Datapoints" (date range, aggregation dropdown).
+- [ ] **DFT-037e:** Generate `mockups/02e-browse-dataone.html` — DataOne browse view inheriting from 02a template. Search-first pattern (DFT-035): debounced instant search, immediate dropdown filters. Only changes: DataOne-specific metadata fields, DataOne filter controls (title search, repository dropdown, TNC category dropdown, date range), DataOne result card slots.
+- [ ] **DFT-037f:** Generate `mockups/02f-export-builder.html` — Export Builder modal (opens from global header shopping cart button per DFT-002). Shows unified export interface for pinned layers + bookmarked features.
 
 **Template-Driven Mockup Strategy:**
 
