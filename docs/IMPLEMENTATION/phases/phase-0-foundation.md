@@ -78,25 +78,39 @@ Set up the V2 application shell, routing, state management, and shared component
 
 **Goal:** Create the persistent left sidebar that shows categories and layers.
 
-**Design (Jan 27, 2026):** Resolved DFT-001 — sidebar shows only selection state, no eyeball/pin icons.
+**Component Spec (Feb 6, 2026):** ✅ Complete — `docs/PLANNING/component-specs/left-sidebar.md`
+
+**Design Decisions:**
+- **DFT-001 (Jan 27, 2026):** Resolved — sidebar shows active/pinned state. Eye/pin icons appear on pinned layers only (not unpinned catalog layers). Eye toggles map visibility, pin toggles pinned state. Grayed pin icon on hover for unpinned layers (click to pin). All icons are clickable and sync with Map Layers widget.
+- **DFT-045 (Feb 6, 2026):** Resolved — DataOne special shortcut rows. When domain categories expand, special shortcut rows appear at bottom ("📚 DataOne Datasets (count)"). Clicking activates DataOne with domain pre-filtered in Browse tab. Canonical location remains under "Research Datasets" category.
 
 **Acceptance Criteria:**
-- [ ] Left sidebar renders with correct width
-- [ ] Categories are collapsible/expandable
+- [ ] Left sidebar renders with correct width (280px fixed)
+- [ ] 13 TNC domain categories + "Research Datasets" category, alphabetically ordered
+- [ ] Categories are collapsible/expandable (all start collapsed)
 - [ ] Layers show within categories
-- [ ] Selection indicator (●) shows which layer is active
-- [ ] Clicking layer name selects it and makes it active (visible on map + right sidebar)
-- [ ] Clicking pinned layer restores visibility if it was hidden
-- [ ] No eyeball or pin icons in sidebar (widget handles this)
+- [ ] Active layer has bold text + emerald left border + green bg
+- [ ] Clicking layer name activates it (visible on map + right sidebar opens to Overview tab)
+- [ ] Clicking pinned-but-hidden layer restores visibility
+- [ ] Eye icons appear on pinned layers only (blue = visible, gray = hidden)
+- [ ] Pin icons: solid emerald when pinned (click to unpin), grayed on hover when unpinned (click to pin)
+- [ ] Eye and pin icons sync bidirectionally with Map Layers widget
+- [ ] Search bar filters layer list (500ms debounce, 2+ chars, substring matching)
+- [ ] DataOne shortcut rows render at bottom of expanded domain categories
+- [ ] Shortcut rows only show when DataOne has datasets for that domain (count > 0)
+- [ ] Clicking shortcut row activates DataOne with domain pre-filter
+- [ ] Keyboard navigation: Enter/Space toggles categories, Arrow keys navigate layers, Escape clears search
 
 **Reference:** 
-- Mockup: `mockups/01-full-layout-overview.html` (will be updated with this design)
-- Design discussion: See DFT-001 in `design-feedback-design-task-tracker.md`
+- Component Spec: `docs/PLANNING/component-specs/left-sidebar.md`
+- Mockup: `mockups/02a-unified-layout.html`
+- Design decisions: DFT-001 (sidebar icons), DFT-045 (DataOne shortcut rows)
 
 **Files to Create:**
 - `src/v2/components/LeftSidebar/LeftSidebar.tsx`
 - `src/v2/components/LeftSidebar/CategoryGroup.tsx`
 - `src/v2/components/LeftSidebar/LayerRow.tsx`
+- `src/v2/components/LeftSidebar/DataOneShortcutRow.tsx`
 
 **Data Source:**
 - Use existing category mappings from `src/data-sources/tnc-arcgis/category_mappings.json`

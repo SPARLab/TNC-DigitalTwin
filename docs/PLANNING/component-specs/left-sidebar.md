@@ -1,8 +1,8 @@
 # Component Spec: Left Sidebar
 
 **Date:** February 6, 2026  
-**DFTs Referenced:** DFT-001, DFT-006, DFT-015, DFT-017, DFT-021, DFT-026, DFT-031, DFT-035  
-**Status:** Draft — pending review
+**DFTs Referenced:** DFT-001, DFT-006, DFT-015, DFT-017, DFT-021, DFT-026, DFT-031, DFT-035, DFT-045  
+**Status:** ✅ Complete — ready for dev
 
 ---
 
@@ -31,7 +31,7 @@
 └────────────────────────────────────────────┘
 ```
 
-**Note on categories:** The left sidebar uses the 13 TNC domain categories from the live Dangermond Preserve data catalog (Boundaries, Earth Observations, Elevation and Bathymetry, Fire, Freshwater, Infrastructure, Land Cover, Oceans and Coasts, Research and Sensor Equipment, Soils and Geology, Species, Threats and Hazards, Weather and Climate) in alphabetical order. **"Research Datasets"** is an additional category housing DataOne, which spans all 13 domains. TNC domain filtering for DataOne happens in the right sidebar Browse tab, not the left sidebar. See Phase 4 for details.
+**Note on categories:** The left sidebar uses the 13 TNC domain categories from the live Dangermond Preserve data catalog (Boundaries, Earth Observations, Elevation and Bathymetry, Fire, Freshwater, Infrastructure, Land Cover, Oceans and Coasts, Research and Sensor Equipment, Soils and Geology, Species, Threats and Hazards, Weather and Climate) in alphabetical order. **"Research Datasets"** is an additional category housing DataOne, which spans all 13 domains. Special DataOne shortcut rows (DFT-045) appear at the bottom of expanded domain categories to improve discoverability — clicking a shortcut activates DataOne with that domain pre-filtered. The canonical "Research Datasets" category provides access to all DataOne datasets (no pre-filter). TNC domain filtering for DataOne happens in the right sidebar Browse tab via a category dropdown. See Phase 4 for details.
 
 The anatomy diagram above shows a representative subset for illustration. The component spec focuses on layer row states and interaction patterns, which are identical across all categories.
 
@@ -256,6 +256,75 @@ User has typed in the search bar. Layer list filters to matching results.
 
 ---
 
+### State 9: Special DataOne Shortcut Row (DFT-045)
+
+When a domain category is expanded, a special shortcut row appears at the bottom to provide quick access to DataOne datasets filtered to that domain.
+
+```
+┌────────────────────────────────────────────┐
+│ v [icon] Species                       (3) │
+│      Camera Traps (ANiML)                  │
+│      iNaturalist Observations              │
+│      eBird Sightings                       │
+│      ─────────────────────────────         │  ← Optional subtle divider
+│      📚 DataOne Datasets (15)              │  ← Special shortcut row
+│                                            │
+│ v [📚] Research Datasets               (1) │
+│      DataOne Datasets                      │  ← Canonical location
+└────────────────────────────────────────────┘
+```
+
+**Purpose:**
+- Improves discoverability — researchers exploring "Species" see DataOne datasets without needing to know about the "Research Datasets" category
+- Provides quick access to pre-filtered DataOne datasets by domain
+- Canonical location remains under "Research Datasets" (no pre-filter, shows all datasets)
+
+**Visual Specs:**
+- **Label:** `DataOne Datasets (count)` — explicit source name (not generic "Research Datasets")
+- **Icon:** Lucide `Library` or `BookOpen`, `w-4 h-4 text-gray-400`
+- **Count badge:** Shows number of DataOne datasets for that domain (e.g., "15" for Species)
+- **Styling:** `text-sm text-gray-600 italic` — muted and italic signals "shortcut/link"
+- **Spacing:** `mt-1.5` (small gap above to visually separate from regular layers)
+- **Optional divider:** `border-top border-gray-200` above row for subtle separation
+- **Hover:** `hover:bg-emerald-50` (subtle green tint to match DataOne theme)
+- **Placement:** Always last row within expanded category (after all regular layers)
+
+**Rendering Logic:**
+- Only appears when category is expanded
+- Only renders if DataOne has datasets for that domain (count > 0)
+- Hidden when category is collapsed
+- Not affected by search filter (always visible when category is expanded)
+
+**Click Behavior:**
+- Activates DataOne layer (right sidebar opens to Browse tab)
+- Pre-filters Browse tab category dropdown to that domain (e.g., "Species")
+- Map shows DataOne datasets filtered to that domain
+- Result count updates (e.g., "Showing 15 datasets")
+- Shortcut row gets active styling (bold text, emerald border, green bg)
+
+**Canonical vs. Shortcut:**
+
+| Access Path | Location | Pre-filter? | Shows |
+|---|---|---|---|
+| **Canonical** | "Research Datasets" category | No | All 156+ datasets across all domains |
+| **Shortcut** | Any domain category | Yes | Datasets for that domain only (e.g., 15 species datasets) |
+
+**Future Extension:**
+If we add other repositories (Dryad, Zenodo), we can add more shortcut rows:
+```
+│      📚 DataOne Datasets (15)              │
+│      🗂️ Dryad Datasets (8)                 │  ← Different icon for different repo
+```
+
+**Design Rationale (DFT-045):**
+- **Findability:** Special rows appear exactly where users are looking (domain context)
+- **Recognition over Recall (Nielsen #6):** Users don't need to remember DataOne exists
+- **Progressive Disclosure:** Only appears when category is expanded — no clutter when collapsed
+- **Efficiency (Fitts's Law):** Reduces clicks — no need to navigate to Research Datasets → filter by domain
+- **Conceptual Model (Norman):** DataOne has two access paths: direct (Research Datasets) and contextual (domain shortcuts)
+
+---
+
 ## Interactions
 
 | User Action | Result | Notes |
@@ -275,6 +344,7 @@ User has typed in the search bar. Layer list filters to matching results.
 | Press Enter/Space on category | Toggle expand/collapse | WCAG 2.1.1 |
 | Press Arrow Down | Navigate to next layer row | |
 | Press Escape | Clear search (if search is active) | DFT-017 |
+| Click DataOne shortcut row | Activate DataOne layer with domain pre-filter; right sidebar opens to Browse tab | DFT-045 |
 
 ---
 
@@ -286,7 +356,8 @@ User has typed in the search bar. Layer list filters to matching results.
 - **One active layer at a time** (DFT-001, DFT-021). Clicking a new layer replaces the previous active layer.
 - **Overview tab opens first** when a layer is selected (DFT-006).
 - **SVG/Lucide icons only**, no emojis (DFT-026).
-- **DataOne under "Research Datasets" category** (Feb 6 resolution). DataOne is a regular category alongside the 13 TNC domain categories. No cross-category section or dual placement. TNC domain filtering happens in the DataOne Browse tab via a category dropdown.
+- **DataOne under "Research Datasets" category** (Feb 6 resolution, DFT-045). DataOne is a regular category alongside the 13 TNC domain categories. TNC domain filtering happens in the DataOne Browse tab via a category dropdown.
+- **DataOne special shortcut rows** (DFT-045). When a domain category is expanded, a special shortcut row appears at the bottom: "📚 DataOne Datasets (count)". Clicking activates DataOne with that domain pre-filtered in the Browse tab. Improves discoverability for domain-first users. Canonical location remains "Research Datasets" category (no pre-filter).
 - **Search is instant-filter** (substring matching, 500ms debounce, 2+ chars — matches DFT-035 pattern).
 
 ---
@@ -304,5 +375,5 @@ User has typed in the search bar. Layer list filters to matching results.
 
 1. ~~**Pin icon interactivity:**~~ **RESOLVED (Feb 6):** Pin icons ARE clickable. Grayed pin = click to pin. Solid pin = click to unpin.
 2. ~~**Category default state:**~~ **RESOLVED (Feb 6):** All categories start collapsed on first load. Category names and count badges provide sufficient signal for users to choose what to explore (Shneiderman #7: User Control, Nielsen #6: Recognition over Recall).
-3. ~~**DataOne dual placement:**~~ **RESOLVED (Feb 6):** DataOne appears ONLY under "Research Datasets" as a regular category. No cross-category section, no dual placement. The original "cross-category" concept (Jan 22 plan) was designed for the 13-domain sidebar where DataOne had no single domain home. With "Research Datasets" as its own category, DataOne has a clear home. TNC domain filtering happens in the Browse tab via a category dropdown. If post-launch user testing reveals discoverability issues (researchers not finding DataOne datasets in domain context), cross-category discovery hints can be explored in v2.1+.
+3. ~~**DataOne dual placement:**~~ **RESOLVED (Feb 6, DFT-045):** Model C (Hybrid) with explicit DataOne-labeled shortcut rows. DataOne has canonical location under "Research Datasets" category (no pre-filter, shows all datasets). Special shortcut rows appear at bottom of expanded domain categories (e.g., "📚 DataOne Datasets (15)"), providing quick access to pre-filtered datasets. Clicking shortcut activates DataOne with that domain pre-filtered in Browse tab. Improves discoverability for domain-first users without cluttering sidebar. See State 9 for full specs.
 4. ~~**Visibility icons in sidebar (pending):**~~ **RESOLVED (Feb 6):** Eye icons appear on pinned layers only (not on unpinned catalog layers). Blue `Eye` = visible on map, gray `EyeOff` = hidden. Syncs bidirectionally with Map Layers widget. Active styling already communicates visibility for the active layer, but active+pinned rows still show the eye icon for consistency.

@@ -126,7 +126,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-035 | DataOne search behavior — instant search or explicit submit? | UI/UX | 🟢 Resolved | Medium |
 | DFT-036 | Feature highlight on map when hovering bookmark row | UI/UX | 🟢 Resolved | Low |
 | DFT-037 | Generate component specs + mockups reflecting all resolved design decisions | Task | 🟡 Open | High |
-| └─ DFT-037-P1 | Component Spec: Left Sidebar (docs/PLANNING/component-specs/left-sidebar.md) | Planning | 🟡 Open | High |
+| └─ DFT-037-P1 | Component Spec: Left Sidebar (docs/PLANNING/component-specs/left-sidebar.md) | Planning | ✅ Complete | High |
 | └─ DFT-037-P2 | Component Spec: Map Layers Widget (docs/PLANNING/component-specs/map-layers-widget.md) | Planning | 🟡 Open | High |
 | └─ DFT-037-P3 | Component Spec: Bookmarked Items Widget (docs/PLANNING/component-specs/bookmarked-items-widget.md) | Planning | 🟡 Open | High |
 | └─ DFT-037-P4 | Component Spec: Right Sidebar Template (docs/PLANNING/component-specs/right-sidebar-template.md) | Planning | 🟡 Open | High |
@@ -143,7 +143,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-042 | ANiML landing cards mode-switch — how to switch between Animal-First and Camera-First after initial choice | UI/UX | 🟢 Resolved | Low |
 | DFT-043 | Dendra sidebar body at Level 3 — what shows in sidebar when chart renders in floating pop-up? | UI/UX | 🟢 Resolved | Low |
 | DFT-044 | Self-contained row detail view — shared component for iNaturalist observation and DataOne dataset detail views | UI/UX | 🟢 Resolved | Medium |
-|| DFT-045 | Left sidebar taxonomy: Should "Research Datasets" exist as a standalone category, or should DataOne be distributed/cross-referenced across domain categories? | IA | 🟡 Open | High |
+|| DFT-045 | Left sidebar taxonomy: Should "Research Datasets" exist as a standalone category, or should DataOne be distributed/cross-referenced across domain categories? | IA | 🟢 Resolved | High |
 
    **Status Key:**
 - 🟢 Resolved — Decision made, ready for dev
@@ -1447,6 +1447,145 @@ Analyzed through 9 UI/UX frameworks with strong alignment for Option C (sub-comp
 
 ---
 
+### DFT-045: Left Sidebar Taxonomy for DataOne
+
+**Category:** IA  
+**Status:** 🟢 Resolved  
+**Priority:** High  
+**Source:** Phase 4 planning review, Feb 6, 2026
+
+**The Problem:** DataOne datasets span multiple scientific domains (species, freshwater, fire, soils, etc.). The left sidebar has 13 TNC domain categories. Should "Research Datasets" exist as a standalone category, or should DataOne be distributed/cross-referenced across domain categories?
+
+**Resolution:** **Hybrid model (Model C) — Standalone category + explicit DataOne shortcut rows in domain categories**
+
+### Design Decision
+
+**Left Sidebar — Category Expanded:**
+```
+┌────────────────────────────────────────────┐
+│ v [icon] Species                       (3) │
+│      Camera Traps (ANiML)                  │
+│      iNaturalist Observations              │
+│      eBird Sightings                       │
+│      📚 DataOne Datasets (15)              │  ← Special shortcut row
+│                                             │
+│ v [📚] Research Datasets                (1) │
+│      DataOne Datasets                      │  ← Canonical location
+└────────────────────────────────────────────┘
+```
+
+### How It Works
+
+1. **Canonical Location:**
+   - DataOne lives as a layer under "Research Datasets" category
+   - Clicking "DataOne Datasets" here opens right sidebar with **no domain pre-filter** (shows all datasets)
+
+2. **Domain Shortcuts:**
+   - When a domain category is expanded, a special row appears at the bottom: `📚 DataOne Datasets (count)`
+   - Count shows number of DataOne datasets for that domain (e.g., "15" species datasets)
+   - Special row only appears if count > 0 for that domain
+
+3. **Clicking Shortcut Row:**
+   - Activates DataOne layer (right sidebar opens to Browse tab)
+   - Pre-filters Browse tab category dropdown to that domain (e.g., "Species")
+   - Map shows DataOne datasets filtered to that domain
+   - Result count updates (e.g., "Showing 15 datasets")
+
+### Visual Specs
+
+**Special Shortcut Row:**
+- **Label:** `DataOne Datasets (count)` — explicitly shows source (not generic "Research Datasets")
+- **Icon:** Lucide `Library` or `BookOpen` (16×16px, books/library icon)
+- **Styling:** `text-sm text-gray-600 italic` (muted, italic signals "shortcut/link")
+- **Spacing:** `mt-1.5` (small gap above to visually separate from regular layers)
+- **Optional:** 1px `border-top border-gray-200` above row as subtle divider
+- **Hover:** `hover:bg-emerald-50` (subtle green tint to match DataOne theme)
+- **Placement:** Always last row within expanded category (after all regular layers)
+
+### Design Rationale
+
+**Core Insight:** Model A (standalone only) creates a discoverability cliff. Researchers exploring "Species" won't discover DataOne datasets without prior knowledge of the "Research Datasets" category. This is especially problematic for Jack Dangermond's demo — we want the app to feel comprehensive, not like it's hiding data.
+
+**Why Hybrid (Model C):**
+- ✅ **Findability:** Special rows appear exactly where users are looking (domain context)
+- ✅ **Actionable:** Shortcut row is clickable with clear affordance
+- ✅ **Efficiency:** Reduces clicks — no need to navigate to Research Datasets → filter by domain
+- ✅ **Conceptual clarity:** DataOne has two access paths: direct (Research Datasets) and contextual (domain shortcuts)
+- ✅ **Progressive disclosure:** Only appears when category is expanded
+- ✅ **Future-proof:** Explicit "DataOne" label allows adding other repos later (Dryad, Zenodo) with different icons
+
+**Why Explicit "DataOne" Label:**
+- Future extension: if we add Dryad, we add `🗂️ Dryad Datasets (8)` with different icon
+- Clarity: users know exactly what they're clicking
+- YAGNI: don't over-engineer for hypothetical multi-repo state
+
+### Implementation Details
+
+**Data loading:**
+```javascript
+// On sidebar mount
+const categoryBreakdown = await dataOneService.getCategoryCounts();
+// Returns: { species: 15, fire: 8, freshwater: 12, ... }
+```
+
+**Activation behavior:**
+```javascript
+function activateDataOneWithFilter(domain) {
+  activateLayer('dataone-datasets');
+  setActiveTab('browse');
+  setDataOneCategoryFilter(domain);
+  fetchDataOneDatasetsForCategory(domain);
+}
+```
+
+### Edge Cases
+
+**"Research Datasets" Category:** Clicking canonical "DataOne Datasets" layer activates DataOne without pre-filtering (shows all datasets, category dropdown = "All Categories")
+
+**Categories with 0 Datasets:** No shortcut row appears (e.g., Boundaries has 0 DataOne datasets)
+
+**Future: Multiple Repos:**
+```
+│      📚 DataOne Datasets (15)              │
+│      🗂️ Dryad Datasets (8)                 │  ← Different icon
+```
+If 2+ shortcuts feel cluttered, can add flyout/submenu logic in v2.1+.
+
+### Tradeoffs
+
+**What we sacrifice:**
+- Slightly more complex left sidebar (special rows add visual elements)
+- Small implementation cost (query DataOne for category counts, render shortcut component)
+
+**Why acceptable:**
+- Special rows are subtle and only appear when category is expanded
+- Implementation cost is low (1-2 hours)
+- Dramatically improves discoverability for domain-first users (majority use case)
+- Protects against "where did all the research datasets go?" confusion during demo
+- Natural extension path for future repositories
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file)
+- ✅ `docs/PLANNING/component-specs/left-sidebar.md` (State 9: Special DataOne Shortcut Row)
+- ✅ `docs/IMPLEMENTATION/phases/phase-4-dataone.md` (Updated Task 4.2)
+- ✅ `docs/master-plan.md` (Cross-Phase Decisions → UX Decisions)
+- ✅ `docs/PLANNING/resolved-decisions/dft-045-resolution-summary.md` (Resolution summary)
+
+**✅ Verification Checklist:**
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with full specification
+- [x] Design principles cited (9 frameworks analyzed)
+- [x] Visual examples provided (ASCII diagrams)
+- [x] Implementation details specified (data loading, rendering, activation)
+- [x] Edge cases handled
+- [x] Tradeoffs analyzed
+- [x] Component specs updated (left-sidebar.md)
+- [x] Phase document updated (phase-4-dataone.md)
+- [x] Cross-references added to master plan
+- [x] Resolution summary created
+
+---
+
 
 ### DFT-002: Export Button Placement/Visibility ✅
 
@@ -1474,103 +1613,12 @@ Analyzed through 9 UI/UX frameworks with strong alignment for Option C (sub-comp
 
 ---
 
-### DFT-045: Left Sidebar Taxonomy — "Research Datasets" Category Validation
-
-**Category:** Information Architecture  
-**Status:** 🟡 Open  
-**Priority:** High  
-**Source:** Will + Claude design discussion, Feb 6, 2026
-
-**Context:**
-
-During resolution of the Left Sidebar component spec open questions (DFT-037-P1), a design decision was made to place DataOne under a "Research Datasets" category in the left sidebar. This category would sit alongside the 13 TNC domain categories (Boundaries, Earth Observations, Elevation and Bathymetry, Fire, Freshwater, Infrastructure, Land Cover, Oceans and Coasts, Research and Sensor Equipment, Soils and Geology, Species, Threats and Hazards, Weather and Climate).
-
-The rationale: DataOne contains 22,221 datasets spanning all 13 domains (10,395 Oceans, 3,168 Freshwater, 2,740 Species, etc.), so it doesn't belong to any single domain. Creating "Research Datasets" as its own category gives DataOne a home, with TNC domain filtering handled in the Browse tab via a category dropdown.
-
-**The Question:**
-
-Should "Research Datasets" exist as a standalone category in the left sidebar, or are there better information architecture approaches?
-
-**Why this matters (IA: Mental Models, Findability, Labeling):**
-
-The left sidebar is the primary entry point for layer discovery. How we categorize DataOne affects:
-1. **Discoverability** — Will researchers browsing "Species" layers know that 2,740 relevant DataOne datasets exist?
-2. **Mental model clarity** — Is "Research Datasets" alongside domain categories confusing (mixing data type with subject area)?
-3. **Future extensibility** — If we add GBIF or other cross-domain datasets, does this category make sense?
-4. **Consistency** — Does this create a precedent for "type-based" categories mixing with "domain-based" categories?
-
-**Options to Analyze:**
-
-**Option A: "Research Datasets" as a standalone category** (current decision)
-- DataOne is one layer under "Research Datasets" with a `(1)` badge
-- TNC Category filtering happens in the Browse tab when you open it
-- No cross-category section, no dual placement
-- Simple, clean, consistent with how other layers live in one category
-
-**Option B: DataOne distributed into domain categories**
-- DataOne appears as a sub-layer under every relevant domain category
-- "Species" would have: Camera Traps, iNaturalist, eBird, *DataOne: Species Datasets*
-- Each entry opens the same DataOne Browse tab but pre-filtered to that domain
-- Maximum discoverability in context
-
-**Option C: "Research Datasets" category + discovery hints**
-- DataOne lives under "Research Datasets"
-- Domain categories show a subtle discovery cue — e.g., a small `[+datasets]` link or muted line under each category
-- Clicking the hint opens DataOne with TNC Category pre-filtered to that domain
-- *Lensing* approach (IA principle: multiple views of same data)
-
-**Option D: Hierarchical category with domain sub-sections**
-- "Research Datasets" category with sub-categories matching TNC domains
-- Expanding "Research Datasets" shows: Boundaries, Fire, Freshwater, Species, etc.
-- Each domain opens DataOne pre-filtered
-- Explicit hierarchy, but adds navigation depth
-
-**Option E: Remove "Research Datasets" category entirely**
-- DataOne lives in an existing domain category (e.g., "Research and Sensor Equipment")
-- TNC Category dropdown in Browse tab handles cross-domain filtering
-- Simplest structure, but buries DataOne in an arbitrary category
-
-**Questions for Analysis:**
-
-1. Which option best matches researchers' mental models?
-2. Which option maximizes DataOne discoverability without adding cognitive overhead?
-3. Does "Research Datasets" as a category name create confusion (is it a data type or a subject area)?
-4. If we add GBIF (species observations across all taxa), does it go in "Research Datasets" or "Species"?
-5. Should the sidebar prioritize functional grouping (data type) or domain grouping (subject area)?
-6. Do the 13 TNC domain categories actually represent domain grouping, or are they already a mix of types?
-
-**Framework Analysis Requested:**
-
-Analyze through:
-- IA: Mental Models (do users expect type-based or domain-based categories?)
-- IA: Findability (can users discover DataOne when browsing domains?)
-- IA: Labeling (is "Research Datasets" clear and consistent?)
-- Nielsen #4: Consistency (does mixing category types break consistency?)
-- Nielsen #6: Recognition over Recall (is the structure self-explanatory?)
-- Gestalt: Common Region (are categories semantically cohesive?)
-- Norman: Conceptual Models (does the hierarchy match expectations?)
-- Hick's Law (does each option reduce or increase decision overhead?)
-
-**Deliverables:**
-
-1. **Principle-based analysis** of each option
-2. **Recommendation** with rationale
-3. **Tradeoffs** clearly stated
-4. **Edge case handling** (GBIF, future cross-domain datasets)
-5. **User testing questions** if needed to validate the decision
-
-**Discussion:**
-
-*Add notes here as the team discusses options*
-
-**Resolution:** *Pending*
-
----
-
 ## Changelog
 
 | Date | Change |
 |------|--------|
+| Feb 6, 2026 | **Completed DFT-037-P1:** Left Sidebar component spec (docs/PLANNING/component-specs/left-sidebar.md) finalized with all resolved design decisions. Added State 9: Special DataOne Shortcut Row (DFT-045) with full visual specs, rendering logic, click behavior, and design rationale. Updated Interactions table, Design Decision Summary, Open Questions, and Anatomy section. Status: ✅ Complete — ready for dev |
+| Feb 6, 2026 | Resolved DFT-045: Left sidebar taxonomy — Hybrid model (Model C) with explicit DataOne shortcut rows. DataOne has canonical location under "Research Datasets" category (no pre-filter, shows all datasets). Special shortcut rows appear at bottom of expanded domain categories (e.g., "📚 DataOne Datasets (15)"), providing quick access to pre-filtered datasets. Clicking shortcut activates DataOne with that domain pre-filtered in Browse tab. Improves discoverability for domain-first users without cluttering sidebar. Analyzed via 9 UI/UX principles. See left-sidebar.md State 9, dft-045-resolution-summary.md |
 | Feb 6, 2026 | Resolved DFT-043: Dendra sidebar body at Level 3 — minimal sidebar (filter controls + bookmark only). Stats appear in pop-up footer with chart. Rationale: separation of concerns (sidebar = parametric control, pop-up = visualization + metadata), spatial/cognitive proximity (stats belong with chart), minimalism (Nielsen #8), reduced split attention, accessibility (logical Tab order), industry conventions (chart metadata lives with chart). Scored 17 green / 0 yellow / 0 red across 9 UI/UX frameworks. Updated Phase 3 Task 3.5, right-sidebar-template.md open question #2, master-plan.md UX Decisions |
 | Feb 6, 2026 | Resolved DFT-044: Self-contained row detail view component — no shared detail view component. Extract shared sub-components (`DetailBackButton`, `DetailActionRow`, `DetailMetadataGrid`) + design tokens for consistency. Purpose-built detail views for iNaturalist (hero image + flat grid) and DataOne (multi-section hierarchical). Architectural principle: consistent structural template (tabs, scaffolding) with flexibility for custom content. Analyzed via 11 design principles. See right-sidebar-template.md sub-components section |
 | Feb 6, 2026 | Resolved DFT-042: ANiML landing cards mode-switch — text link above filter section ("Switch to [other mode]"). Always visible, subtle styling (gray-500, hover emerald-500). Confirmation dialog if filters active. Analyzed via 17+ UI/UX principles. Rationale: discoverable near filters (where mode manifests), low visual weight (Nielsen #8), user control (Norman), flexibility for expert users (Nielsen #7). Rejected options: dropdown (confusing), settings gear (less discoverable), Overview reset (violates Fitts's Law). Mode preference stored per-layer in localStorage. Updated Phase 2 Task 2.2, master plan, created resolution summary |
