@@ -140,7 +140,7 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-039 | Filter apply behavior — auto-apply vs explicit Apply button consistency across data sources | UI/UX | 🟢 Resolved | High |
 | DFT-040 | Dual-level filter visual distinction — how Level 2 vs Level 3 filters look different (ANiML, Dendra) | UI/UX | 🟢 Resolved | Medium |
 | DFT-041 | Right sidebar Export tab content — what should the per-layer Export tab show? | UI/UX | 🟢 Resolved | Medium |
-| DFT-042 | ANiML landing cards mode-switch — how to switch between Animal-First and Camera-First after initial choice | UI/UX | 🟡 Open | Low |
+| DFT-042 | ANiML landing cards mode-switch — how to switch between Animal-First and Camera-First after initial choice | UI/UX | 🟢 Resolved | Low |
 | DFT-043 | Dendra sidebar body at Level 3 — what shows in sidebar when chart renders in floating pop-up? | UI/UX | 🟡 Open | Low |
 | DFT-044 | Self-contained row detail view — shared component for iNaturalist observation and DataOne dataset detail views | UI/UX | 🟡 Open | Medium |
 || DFT-045 | Left sidebar taxonomy: Should "Research Datasets" exist as a standalone category, or should DataOne be distributed/cross-referenced across domain categories? | IA | 🟡 Open | High |
@@ -1090,9 +1090,10 @@ Analyzed through 9 UI/UX frameworks with strong cross-framework convergence:
 ### DFT-042: ANiML Landing Cards Mode-Switch
 
 **Category:** UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Low  
 **Source:** Component spec review (DFT-037-P4), Feb 6, 2026  
+**Resolved:** February 6, 2026  
 **Related:** DFT-003c
 
 **Context:**
@@ -1100,21 +1101,115 @@ DFT-003c resolved that ANiML's Browse tab shows landing cards (Animal-First vs C
 
 **The problem:** Once a user chooses Camera-First browsing, there's no specified way to switch to Animal-First (or vice versa). The user is locked into their initial choice unless we provide a switch mechanism.
 
-**Options:**
-1. **"Switch to [other mode]" link** at the top of the Browse tab, below filter section. Subtle text link, not a button.
-2. **Dropdown/toggle in filter section header** — "Browsing by: [Camera ▼]" with Camera/Animal options.
-3. **Settings gear icon** in Browse tab header — opens mode selection.
-4. **Reset link in Overview tab** — "Change browse mode" link clears preference and shows landing cards again.
+**Resolution:** **Text link above filter section: "Switch to [other mode]"**
 
-**Questions for design principles analysis:**
-- Where should the switch control live (proximity to filters vs separate)?
-- How visible should it be (always visible vs tucked away)?
-- Should switching modes reset current filters?
+### Design Decision
 
-**Discussion:**
-*Awaiting design principles analysis*
+**Visual placement:**
+```
+┌─────────────────────────────────────────┐
+│ [shuffle-icon] Switch to Animal-First  │  ← Text link, gray-500, hover emerald-500
+│                                         │
+│ ┌─────────────────────────────────────┐ │
+│ │ FILTER CAMERAS         [Clear All] │ │
+│ │─────────────────────────────────────│ │
+│ │ Region: [All ▼]  Status: [Active ▼]│ │
+│ │─────────────────────────────────────│ │
+│ │ Showing 42 of 73 cameras           │ │
+│ └─────────────────────────────────────┘ │
+└─────────────────────────────────────────┘
+```
 
-**Resolution:** *Pending*
+**Link specification:**
+- **Location:** Above filter section, standalone line (not inside `FilterSection` header)
+- **Visual style:** Text link with shuffle icon (Lucide `ArrowLeftRight` or `Shuffle`), `text-gray-500 hover:text-emerald-500`, `text-sm`
+- **Text pattern:** Dynamic based on current mode:
+  - In Camera-First mode: "Switch to Animal-First"
+  - In Animal-First mode: "Switch to Camera-First"
+- **Always visible:** Present in both modes at all times
+- **ARIA label:** `aria-label="Switch from Camera-First to Animal-First browsing"` (or vice versa)
+
+**Behavior on click:**
+1. If filters are active: Show confirmation dialog: "Switching modes will clear your current filters. Continue?"
+2. If no filters: Switch immediately (no confirmation)
+3. Update localStorage preference (`animl-browse-mode`)
+4. 150-200ms crossfade transition (per DFT-019)
+5. Render new filter controls for new mode
+6. Clear results, load defaults for new mode
+7. Optional toast notification: "Switched to Animal-First browsing"
+
+**Confirmation dialog (when filters active):**
+- Custom modal component (not `window.confirm()`)
+- Title: "Switch Browse Mode?"
+- Message: "Switching modes will clear your current filters. Continue?"
+- Buttons: [Cancel] [Switch Mode]
+- Cancel preserves current state, Switch Mode proceeds with mode change
+
+**Mode preference storage:**
+- Stored per-layer in localStorage: `animl-browse-mode` (values: `"animal-first"` or `"camera-first"`)
+- Default for new users: `"camera-first"` (matches most common GIS workflow: browse by location first)
+
+### Design Rationale
+
+Analyzed through 9 UI/UX frameworks with strong cross-framework convergence:
+
+| Principle | How Solution Addresses It | Rating |
+|---|---|:---:|
+| **Gestalt: Proximity** | Link near filter controls (spatially groups mode with filtering) | ✅ |
+| **Gestalt: Figure-Ground** | Subtle styling (gray-500) keeps it background until needed | ✅ |
+| **Norman: User Control** | Users can reverse mode choice at any time | ✅ |
+| **Norman: Affordances** | Text link with icon signals clickability | ✅ |
+| **Norman: Feedback** | Transition + toast notification confirm mode change | ✅ |
+| **Nielsen #4: Consistency** | Always in same location (above filter section) | ✅ |
+| **Nielsen #6: Recognition** | Explicit text "Switch to Animal-First" removes recall burden | ✅ |
+| **Nielsen #7: Flexibility** | Expert users can switch modes when research question changes | ✅ |
+| **Nielsen #8: Minimalism** | Text link (not button) keeps visual weight low | ✅ |
+| **Shneiderman #6: Reversibility** | Mode switch is immediately reversible | ✅ |
+| **Shneiderman #7: User Control** | User-initiated action, not system-forced | ✅ |
+| **Hick's Law** | One additional control, but ignorable for satisfied users | ✅ |
+| **IA: Findability** | Near filter controls (where mode manifests) | ✅ |
+| **IA: Mental Models** | "This changes how I filter" → placed near filters | ✅ |
+| **WCAG: Operable** | Keyboard accessible, clear ARIA label | ✅ |
+| **WCAG: Understandable** | Explicit action text, predictable behavior | ✅ |
+| **Motion: Continuity** | 150-200ms crossfade transition provides smooth feedback | ✅ |
+
+**Core insight:** Researchers experiencing friction in one mode will look at the filter controls (where the mode manifests). Placing the switch link above the filter section maximizes discoverability while keeping visual weight low.
+
+**Rejected options:**
+- **Dropdown in header:** Competes with "Clear All", potentially confusing (is this filtering by mode or changing modes?)
+- **Settings gear icon:** Buried in header, less discoverable, requires 2 clicks vs 1
+- **Reset link in Overview tab:** Low discoverability (users in Browse tab won't see it), violates Fitts's Law
+
+### Tradeoffs
+
+**What we sacrifice:**
+- One line of vertical space in Browse tab (acceptable: sidebar is scrollable, ~20px is minimal)
+- Potential confusion if user accidentally clicks (acceptable: confirmation dialog prevents data loss)
+
+**Why acceptable:**
+- The alternative (no switch mechanism) violates Nielsen #7 (Flexibility) and Norman (User Control)
+- Vertical space sacrifice is minimal (~20px at `text-sm`)
+- Confirmation dialog for active filters prevents accidental data loss (DFT-031 patterns)
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file)
+- ✅ `docs/IMPLEMENTATION/phases/phase-2-animl.md` (Task 2.2 updated with mode-switch spec)
+- ✅ `docs/master-plan.md` (Cross-Phase Decisions → UX Decisions)
+- ✅ `docs/PLANNING/resolved-decisions/dft-042-resolution-summary.md`
+
+**✅ Verification Checklist:**
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with full specification
+- [x] Design principles cited (17+ principles analyzed)
+- [x] Visual placement specified (ASCII diagram)
+- [x] Link specification provided (location, style, text pattern, ARIA)
+- [x] Behavior specification provided (confirmation logic, transition, storage)
+- [x] Tradeoffs analyzed
+- [x] Rejected options documented with rationale
+- [x] Phase 2 ANiML updated (Task 2.2)
+- [x] Master plan Cross-Phase Decisions updated
+- [x] Resolution summary created
+- [x] Cross-references added
 
 ---
 
@@ -1152,9 +1247,10 @@ DFT-004 resolved that Dendra's time-series chart renders in a floating pop-up on
 ### DFT-044: Self-Contained Row Detail View Component
 
 **Category:** UI/UX  
-**Status:** 🟡 Open  
+**Status:** 🟢 Resolved  
 **Priority:** Medium  
 **Source:** Component spec review (DFT-037-P4), Feb 6, 2026  
+**Resolved:** February 6, 2026  
 **Related:** DFT-040, Phase 1 Task 1.5, Phase 4 Task 4.5
 
 **Context:**
@@ -1162,25 +1258,151 @@ The template defines two shared components for Browse tab content views:
 - `FilterSection` (DFT-038) — for list views with filters
 - `FeatureDetailCard` (DFT-040) — for Level 3 drill-downs (ANiML cameras, Dendra sensors)
 
-But iNaturalist (Phase 1, Task 1.5) and DataOne (Phase 4, Task 4.5) both have **detail views** for self-contained or simple-pointer rows that don't fit either component. These are "click an item to see expanded details" views, not Level 3 drill-downs.
+But iNaturalist (Phase 1, Task 1.5) and DataOne (Phase 4, Task 4.5) both have **detail views** for self-contained rows that don't fit either component. These are "click an item to see expanded details" views, not Level 3 drill-downs.
 
-**The problem:** Without a shared component, iNaturalist and DataOne will independently implement detail views that may drift visually. Both need: back button, expanded metadata, larger media display, action buttons.
+**The problem:** Without shared components, iNaturalist and DataOne will independently implement detail views that may drift visually. Both need: back button, expanded metadata, larger media display, action buttons.
 
-**Options:**
-1. **Create shared `ItemDetailView` component** — Back button + metadata grid + media area + actions. Used by both iNaturalist and DataOne. Part of the shared template.
-2. **Reuse `FeatureDetailCard` with no filter controls** — Pass empty children. Card becomes a read-only detail display. Simpler component tree.
-3. **No shared component** — Each data source implements its own detail view. Accept visual drift risk.
-4. **Extend `ResultCard` with "expanded" state** — Card expands inline instead of navigating to a separate view.
+**Resolution:** **No shared detail view component. Use shared sub-components + design tokens for consistency.**
 
-**Questions for design principles analysis:**
-- Is the iNaturalist observation detail view structurally similar enough to the DataOne dataset detail view to share a component?
-- Should clicking a self-contained item expand inline or navigate to a separate view?
-- How much metadata is appropriate for the detail view (full vs curated)?
+### Design Decision
 
-**Discussion:**
-*Awaiting design principles analysis*
+**Architectural principle:** Maintain **consistent structural template** (Overview | Browse tabs, shared FilterSection, shared ResultCard) with **flexibility for custom-built content components** when use cases differ.
 
-**Resolution:** *Pending*
+**Rationale:** iNaturalist observations (atomic events) and DataOne datasets (structured resources) are conceptually different:
+- **iNaturalist:** Hero image + flat metadata grid + 3 actions. Simple 6-zone layout.
+- **DataOne:** Multi-section hierarchical layout (abstract, files, keywords, spatial, temporal) + 4 actions + progressive disclosure.
+
+Forcing both into a shared `ItemDetailView` component creates a leaky abstraction with complex props (`sections[]`, optional hero, conditional actions). This violates Nielsen #8 (Minimalism) and increases cognitive load (Hick's Law).
+
+**Pattern:** Extract **shared sub-components** for scaffolding consistency, build **purpose-specific detail views** for content strategy.
+
+### Shared Sub-Components Created
+
+**1. `DetailBackButton.tsx`** (in `shared/`)
+```typescript
+interface DetailBackButtonProps {
+  label: string;              // "Back to Observations"
+  onClick: () => void;
+}
+```
+- Consistent styling: `text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1`
+- Icon: Lucide `ChevronLeft` (12px)
+- Keyboard: focusable, Enter activates
+- ARIA: `aria-label={label}`
+
+**2. `DetailActionRow.tsx`** (in `shared/`)
+```typescript
+interface DetailActionRowProps {
+  actions: {
+    label: string;
+    onClick: () => void;
+    variant: 'primary' | 'secondary';
+    icon?: React.ReactNode;
+  }[];
+}
+```
+- Consistent button styling (DFT-031 standards)
+- Flex layout with gap
+- Responsive: wraps on narrow screens
+
+**3. `DetailMetadataGrid.tsx`** (in `shared/`)
+```typescript
+interface DetailMetadataGridProps {
+  items: { label: string; value: string }[];
+}
+```
+- 2-col layout: `grid-cols-[auto_1fr]`
+- Label: `text-xs text-gray-500 font-medium`
+- Value: `text-sm text-gray-900`
+- Reusable by any detail view needing key-value pairs
+
+### Purpose-Built Detail Views
+
+**4. `iNaturalist/ObservationDetailView.tsx`**
+- Uses `DetailBackButton`, `DetailActionRow`, `DetailMetadataGrid`
+- Hero image section (unique to observations)
+- Simple layout: back → hero → title → grid → actions
+
+**5. `DataOne/DatasetDetailView.tsx`**
+- Uses `DetailBackButton`, `DetailActionRow`
+- Multi-section layout: back → title → abstract → files → keywords → spatial → temporal → actions
+- Progressive disclosure for abstract (expand/collapse at 500 chars)
+- Does NOT use `DetailMetadataGrid` (different layout strategy)
+
+### Design Tokens (added to `design-system.md`)
+
+```typescript
+export const detailViewTokens = {
+  container: 'bg-white p-4',
+  titlePrimary: 'text-base font-semibold text-gray-900',
+  titleSecondary: 'text-sm text-gray-500 italic',
+  sectionSeparator: 'border-t border-gray-200 my-3',
+  sectionLabel: 'text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2',
+  heroImage: 'w-full aspect-[4/3] object-cover rounded-lg mb-3',
+};
+```
+
+### Design Rationale
+
+Analyzed through 9 UI/UX frameworks with strong alignment for Option C (sub-components):
+
+| Principle | How This Solution Addresses It | Rating |
+|---|---|:---:|
+| **Gestalt: Common Region, Similarity** | Shared sub-components (back button, action row) create consistent boundaries and styling | ✅ |
+| **Norman: Conceptual Model** | Purpose-built components match mental models (observation = event, dataset = resource) | ✅ |
+| **Norman: Affordances** | Each view shows appropriate affordances (DOI/Cite for datasets, hero image for observations) | ✅ |
+| **Nielsen #4: Consistency** | Sub-components + tokens enforce consistency without forcing abstraction | 🟡 |
+| **Nielsen #6: Recognition** | Back button, action row, title hierarchy consistent → learnable pattern | ✅ |
+| **Nielsen #8: Minimalism** | No leaky abstraction; each component is simple and purpose-built | ✅ |
+| **Hick's Law** | Simple interfaces (no complex `sections[]` prop) reduce cognitive load | ✅ |
+| **IA: Mental Models** | Observations and datasets treated as distinct types (accurate to domain) | ✅ |
+| **IA: Progressive Disclosure** | DataOne can implement collapsible abstract; iNaturalist doesn't need it | ✅ |
+| **WCAG: Operable** | Shared sub-components ensure consistent keyboard navigation and ARIA | ✅ |
+| **Visual Fundamentals: Hierarchy** | Design tokens enforce consistent visual hierarchy across detail views | ✅ |
+
+**Note:** Nielsen #4 (Consistency) gets 🟡 because we rely on developer discipline to use shared sub-components + tokens. A monolithic shared component would *enforce* consistency but at the cost of complexity (Hick's Law) and conceptual clarity (Norman).
+
+### Edge Cases
+
+| Scenario | Handling |
+|---|---|
+| iNaturalist observation with no photo | No hero section. `DetailMetadataGrid` starts immediately after title. |
+| DataOne dataset with no files | Files section omitted. No empty state needed. |
+| DataOne abstract >500 characters | Truncate at 500 chars with "Read more" link. Expands inline (accordion). |
+| Screen reader navigation | `DetailBackButton` announces destination. Action row buttons have clear labels. Metadata grid uses `<dl>` semantic HTML. |
+| Keyboard navigation | Tab order: back → title (non-interactive) → actions (focusable). |
+| Mobile (future) | Hero image maintains aspect ratio. Metadata grid stacks to 1-col on <400px width. Action row wraps. |
+
+### Tradeoffs
+
+**What we sacrifice:**
+- Enforced layout consistency via single component — relies on developer discipline to use shared sub-components
+- Single source of truth for detail view layout — two components means two places to maintain
+
+**Why acceptable:**
+- iNaturalist and DataOne detail views are conceptually different (atomic event vs. structured resource)
+- The scaffolding (back button, action row) is shared via sub-components
+- The content strategy (hero + flat grid vs. multi-section hierarchical) should differ
+- Nielsen #4 (Consistency) applies to user-facing patterns (back button placement, action row styling), not component architecture
+- Users don't see components — they see consistent UI patterns
+- Future extensibility: New data sources can compose from same sub-components without touching existing ones
+
+**Documented in:**
+- ✅ `docs/planning-task-tracker.md` (this file)
+- ✅ `docs/PLANNING/component-specs/right-sidebar-template.md` (Sub-components section added)
+- ✅ `docs/DESIGN-SYSTEM/design-system.md` (Detail view tokens added)
+- ✅ `docs/master-plan.md` (Cross-Phase Decisions → UX Decisions)
+
+**✅ Verification Checklist:**
+- [x] Planning tracker status changed to 🟢 Resolved
+- [x] Resolution documented with full specification
+- [x] Design principles cited (11 principles analyzed)
+- [x] Sub-component interfaces defined (3 components)
+- [x] Purpose-built detail view components specified (iNaturalist, DataOne)
+- [x] Design tokens specified
+- [x] Edge cases handled
+- [x] Tradeoffs analyzed
+- [x] Cross-references added
 
 ---
 
@@ -1308,6 +1530,8 @@ Analyze through:
 
 | Date | Change |
 |------|--------|
+| Feb 6, 2026 | Resolved DFT-044: Self-contained row detail view component — no shared detail view component. Extract shared sub-components (`DetailBackButton`, `DetailActionRow`, `DetailMetadataGrid`) + design tokens for consistency. Purpose-built detail views for iNaturalist (hero image + flat grid) and DataOne (multi-section hierarchical). Architectural principle: consistent structural template (tabs, scaffolding) with flexibility for custom content. Analyzed via 11 design principles. See right-sidebar-template.md sub-components section |
+| Feb 6, 2026 | Resolved DFT-042: ANiML landing cards mode-switch — text link above filter section ("Switch to [other mode]"). Always visible, subtle styling (gray-500, hover emerald-500). Confirmation dialog if filters active. Analyzed via 17+ UI/UX principles. Rationale: discoverable near filters (where mode manifests), low visual weight (Nielsen #8), user control (Norman), flexibility for expert users (Nielsen #7). Rejected options: dropdown (confusing), settings gear (less discoverable), Overview reset (violates Fitts's Law). Mode preference stored per-layer in localStorage. Updated Phase 2 Task 2.2, master plan, created resolution summary |
 | Feb 6, 2026 | Resolved DFT-041: Right sidebar Export tab — remove Export tab entirely (reduce to 2 tabs: Overview | Browse). Export status promoted to Overview tab with actionable shortcuts ("Pin Now" / "Open Export Builder"). Analyzed via 12 design principles (Nielsen #8 Minimalism, Hick's Law, Norman, IA Redundancy, Fitts's Law). Shopping cart badge in header provides always-visible export awareness. Updated component specs (right-sidebar-template.md, right-sidebar-inaturalist.md) |
 | Feb 6, 2026 | Added DFT-041 through DFT-044: open design questions surfaced during right sidebar component spec (DFT-037-P4). DFT-041: Export tab content. DFT-042: ANiML landing cards mode-switch. DFT-043: Dendra sidebar body at Level 3. DFT-044: Self-contained row detail view component (iNaturalist + DataOne shared pattern). All 🟡 Open, awaiting design principles analysis |
 | Feb 5, 2026 | Resolved DFT-038: Filter section anatomy — shared `FilterSection` component enforces consistent Browse tab filter anatomy across all 4 data sources. Structural skeleton: header row with conditional "Clear All", 2-col CSS grid, result count footer. Flat `slate-50` container (no gradients). Header convention: "Filter [Plural Noun]". "Optional:" labels dropped. Per-data-source control inventory documented. Analyzed via 9 UI/UX frameworks. See design-system.md Filter Section Patterns |

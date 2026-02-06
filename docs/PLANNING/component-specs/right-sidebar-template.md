@@ -520,6 +520,159 @@ Images use "Load More" to avoid losing scroll position during visual scanning.
 
 ---
 
+## Component 8: DetailBackButton (DFT-044)
+
+Shared back navigation for detail views (iNaturalist observation detail, DataOne dataset detail).
+
+### Anatomy
+
+```
+┌─────────────────────────────────────────┐
+│ [<-] Back to Observations               │
+└─────────────────────────────────────────┘
+```
+
+### Component Interface
+
+```typescript
+interface DetailBackButtonProps {
+  label: string;              // "Back to Observations", "Back to Datasets"
+  onClick: () => void;
+}
+```
+
+### Design Tokens
+
+| Element | Styling |
+|---------|---------|
+| Container | `flex items-center gap-1 py-2 text-sm text-gray-600 hover:text-gray-800 cursor-pointer transition-colors` |
+| Icon | Lucide `ChevronLeft`, `w-4 h-4` |
+| Text | Inherits container text styling |
+
+### Behavior
+
+- Hover: text darkens from `gray-600` to `gray-800`
+- Keyboard: focusable, Enter/Space activates
+- ARIA: `aria-label={label}` for screen readers
+- Focus: 2px outline for keyboard navigation
+
+**Location:** `src/v2/components/RightSidebar/shared/DetailBackButton.tsx`
+
+---
+
+## Component 9: DetailActionRow (DFT-044)
+
+Shared action button row for detail views. Enforces consistent button layout and styling.
+
+### Anatomy
+
+```
+┌─────────────────────────────────────────┐
+│ [View on Map] [Bookmark] [iNat ->]      │
+└─────────────────────────────────────────┘
+```
+
+### Component Interface
+
+```typescript
+interface DetailActionRowProps {
+  actions: {
+    label: string;
+    onClick: () => void;
+    variant: 'primary' | 'secondary';
+    icon?: React.ReactNode;       // Optional icon (e.g., external link)
+  }[];
+}
+```
+
+### Design Tokens
+
+| Element | Styling |
+|---------|---------|
+| Container | `flex flex-wrap gap-2 pt-3 border-t border-gray-200` |
+| Primary button | `bg-emerald-600 text-white hover:bg-emerald-700 px-4 py-2 rounded-md text-sm font-medium transition-colors` |
+| Secondary button | `bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 px-4 py-2 rounded-md text-sm transition-colors` |
+| Icon (if present) | `w-4 h-4 inline-block ml-1` |
+
+### Behavior
+
+- Flex wrap: buttons wrap on narrow screens
+- Min button height: 40px (meets WCAG 44px with padding)
+- Keyboard: Tab cycles through buttons, Enter/Space activates
+- Focus: 2px outline for keyboard navigation
+- Icon position: right-aligned for external link indicators
+
+**Location:** `src/v2/components/RightSidebar/shared/DetailActionRow.tsx`
+
+---
+
+## Component 10: DetailMetadataGrid (DFT-044)
+
+Shared 2-column key-value grid for detail views. Reusable by any detail view needing simple metadata display.
+
+### Anatomy
+
+```
+┌─────────────────────────────────────────┐
+│ Observer     @jane_doe                  │
+│ Date         January 15, 2024           │
+│ Location     34.4712, -120.4521         │
+│ Quality      Research Grade             │
+│ ID agreement 5 / 5                      │
+│ License      CC-BY-NC                   │
+└─────────────────────────────────────────┘
+```
+
+### Component Interface
+
+```typescript
+interface DetailMetadataGridProps {
+  items: { label: string; value: string }[];
+}
+```
+
+### Design Tokens
+
+| Element | Styling |
+|---------|---------|
+| Container | `grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 py-3` |
+| Label (dt) | `text-xs text-gray-500 font-medium` |
+| Value (dd) | `text-sm text-gray-900` |
+
+### Semantic HTML
+
+Uses `<dl>`, `<dt>`, `<dd>` for accessibility:
+
+```tsx
+<dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 py-3">
+  {items.map(({ label, value }) => (
+    <>
+      <dt className="text-xs text-gray-500 font-medium">{label}</dt>
+      <dd className="text-sm text-gray-900">{value}</dd>
+    </>
+  ))}
+</dl>
+```
+
+Screen readers announce: "Observer: @jane_doe. Date: January 15, 2024..." etc.
+
+### Behavior
+
+- Responsive: stacks to 1-col on mobile (<400px width)
+- Label width: auto-sized to longest label
+- Value width: fills remaining space, wraps if needed
+
+**Location:** `src/v2/components/RightSidebar/shared/DetailMetadataGrid.tsx`
+
+**Used by:**
+- `iNaturalist/ObservationDetailView.tsx` (6 metadata fields)
+- Potentially reusable by other detail views with simple key-value pairs
+
+**NOT used by:**
+- `DataOne/DatasetDetailView.tsx` (uses custom multi-section layout)
+
+---
+
 ## States
 
 ### State 1: No Layer Selected — Empty Sidebar
@@ -917,7 +1070,8 @@ When content fails to load, an inline error replaces the content area.
 - **Toast at top of sidebar** for action failures. Inline error for content failures (DFT-030).
 - **Tab crossfade** 150-200ms (DFT-019). Same transition used for "Edit Filters" navigation from widget.
 - **DataOne has NO Level 3 filtering** in V1. Datasets are bookmarked whole.
-- **ANiML landing cards** (DFT-003c) are a documented exception — Animal-First vs Camera-First entry on first Browse visit. User preference remembered. "Switch to [other mode]" link available after initial choice.
+- **ANiML landing cards** (DFT-003c) are a documented exception — Animal-First vs Camera-First entry on first Browse visit. User preference remembered. Mode-switch link (DFT-042): text link above filter section ("Switch to [other mode]"), always visible, confirmation dialog if filters active, stored in localStorage.
+- **Detail views use shared sub-components** (DFT-044): `DetailBackButton`, `DetailActionRow`, `DetailMetadataGrid`. Purpose-built detail views for iNaturalist (hero image + flat grid) and DataOne (multi-section hierarchical). Architectural principle: consistent structural template with flexibility for custom content.
 - **"Item" terminology** used throughout, per Trisalyn's direction. Configurable via `TERMINOLOGY` config.
 
 ---
@@ -940,25 +1094,30 @@ When content fails to load, an inline error replaces the content area.
 src/v2/components/RightSidebar/
   shared/
     SidebarShell.tsx          <- Outer container (400px, scroll)
-    TabBar.tsx                <- Overview | Browse | Export
+    TabBar.tsx                <- Overview | Browse
     OverviewTab.tsx           <- Template (accepts metadata props)
     FilterSection.tsx         <- DFT-038 wrapper
     FeatureDetailCard.tsx     <- DFT-040 Level 3 wrapper
     ResultCard.tsx            <- Standard result card
     Pagination.tsx            <- Previous/Next or Load More
     BrowseItemsButton.tsx     <- DFT-027 CTA button
+    DetailBackButton.tsx      <- DFT-044 Back navigation for detail views
+    DetailActionRow.tsx       <- DFT-044 Action button row for detail views
+    DetailMetadataGrid.tsx    <- DFT-044 2-col key-value grid
   iNaturalist/               <- Only content/config, imports shared
+    ObservationDetailView.tsx <- Uses DetailBackButton, DetailActionRow, DetailMetadataGrid
   ANiML/                     <- Only content/config + landing cards exception
   Dendra/                    <- Only content/config + chart exception
   DataOne/                   <- Only content/config
+    DatasetDetailView.tsx     <- Uses DetailBackButton, DetailActionRow
 ```
 
 ---
 
 ## Open Questions
 
-1. **ANiML landing cards return path:** DFT-003c says user preference is remembered (skip landing cards on return). How does a user switch from Camera-First to Animal-First mode after the initial choice? Proposal: subtle "[switch-icon] Switch to [other mode]" link at the top of the Browse tab, below the filter section. This needs design specification (see DFT-042).
+1. **✅ RESOLVED (DFT-042, Feb 6):** ANiML landing cards return path — text link above filter section: "Switch to [other mode]". Always visible, subtle styling (gray-500, hover emerald-500). Confirmation dialog if filters active. Mode preference stored in localStorage (`animl-browse-mode`). See DFT-042 resolution summary.
 
 2. **Dendra sidebar content at Level 3:** When the time-series chart renders in a floating pop-up (DFT-004), what does the sidebar show? This spec shows filter controls + bookmark action. Should the sidebar also show stats (min, max, avg)? Or is that pop-up-only content? (see DFT-043)
 
-3. **ResultCard click behavior for self-contained rows:** iNaturalist observations are self-contained (no Level 3). Does clicking a ResultCard drill into a detail view (expanded observation) or is the card itself sufficient? Phase 1 has a Task 1.5 for "observation detail view" suggesting yes. This needs a state diagram in the iNaturalist variant spec (see DFT-044).
+3. **✅ RESOLVED (DFT-044, Feb 6):** Self-contained row detail views — no shared detail view component. Extract shared sub-components (`DetailBackButton`, `DetailActionRow`, `DetailMetadataGrid`) + design tokens. Purpose-built views: `iNaturalist/ObservationDetailView.tsx` (hero image + flat grid) and `DataOne/DatasetDetailView.tsx` (multi-section hierarchical). Architectural principle: consistent structural template with flexibility for custom content. See Components 8, 9, 10 above.
