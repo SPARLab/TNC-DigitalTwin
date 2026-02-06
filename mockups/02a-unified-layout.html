@@ -150,6 +150,9 @@
   - DFT-033: Right sidebar fixed 400px
   - DFT-034: Drag-and-drop handles
   - DFT-036: Bookmark hover-to-highlight
+  - DFT-038: Filter section patterns
+  - DFT-041: Export tab removed, Export Status section on Overview tab
+  - DFT-045: DataOne shortcut rows in domain categories
 
   Terminology: Using "Item" (per team direction, overrides DFT-010)
   Default data source: iNaturalist (as active layer in right sidebar)
@@ -195,7 +198,7 @@
          LEFT SIDEBAR (260px, scrollable, collapsible categories)
          DFT-021: Active layer uses emerald left border + bg
          ============================================================== -->
-    <aside id="left-sidebar" class="w-[260px] bg-slate-50 border-r border-gray-200 flex flex-col flex-shrink-0">
+    <aside id="left-sidebar" class="w-[300px] bg-slate-50 border-r border-gray-200 flex flex-col flex-shrink-0">
 
       <!-- Search bar -->
       <div id="layer-search-container" class="p-3 border-b border-gray-200">
@@ -209,87 +212,235 @@
         </div>
       </div>
 
-      <!-- Category Tree -->
+      <!-- Category Tree — 13 TNC domain categories + "Research Datasets" (alphabetical, all collapsed except active) -->
       <nav id="layer-categories" class="flex-1 overflow-y-auto sidebar-scroll py-2" role="tree" aria-label="Data source layers">
 
-        <!-- ── Category: Wildlife Monitoring (EXPANDED) ── -->
-        <div class="category" role="treeitem" aria-expanded="true">
-          <button id="cat-wildlife" class="category-header flex items-center gap-2 w-full py-2 px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer" aria-expanded="true">
-            <!-- Chevron (rotated when expanded) -->
-            <svg class="w-4 h-4 text-gray-400 category-chevron expanded" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-            </svg>
-            <!-- Lucide Bug (wildlife) -->
-            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 2l1.88 1.88M14.12 3.88L16 2M9 7.13v-1a3.003 3.003 0 116 0v1M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 014-4h4a4 4 0 014 4v3c0 3.3-2.7 6-6 6zM2 10h2M20 10h2M2 14h2M20 14h2"/>
-            </svg>
-            <span>Wildlife Monitoring</span>
-            <span class="text-xs text-gray-400 ml-auto">(3)</span>
-          </button>
-          <div class="category-children" id="children-wildlife">
-            <div id="layer-animl" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">
-              Camera Traps (ANiML)
-            </div>
-            <!-- ACTIVE layer (DFT-021) -->
-            <div id="layer-inat" class="layer-row active py-1.5 px-3 pl-9 text-sm rounded-sm cursor-pointer" role="treeitem" aria-current="true">
-              iNaturalist Observations
-            </div>
-            <div id="layer-ebird" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">
-              eBird Sightings
-            </div>
-          </div>
-        </div>
-
-        <!-- ── Category: Environmental Sensors (COLLAPSED) ── -->
+        <!-- ── Boundaries (COLLAPSED) ── -->
         <div class="category" role="treeitem" aria-expanded="false">
-          <button id="cat-sensors" class="category-header flex items-center gap-2 w-full py-2 px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer" aria-expanded="false">
+          <button id="cat-boundaries" class="category-header flex items-center gap-2 w-full py-2 px-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer" aria-expanded="false">
             <svg class="w-4 h-4 text-gray-400 category-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
-            <!-- Lucide Activity (sensors) -->
+            <!-- Lucide Map -->
             <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+              <line x1="8" y1="2" x2="8" y2="18"/>
+              <line x1="16" y1="6" x2="16" y2="22"/>
             </svg>
-            <span>Environmental Sensors</span>
+            <span>Boundaries</span>
             <span class="text-xs text-gray-400 ml-auto">(2)</span>
           </button>
-          <div class="category-children hidden" id="children-sensors">
-            <div id="layer-dendra" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">
-              Dendra Sensors
-            </div>
-            <div id="layer-weather" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">
-              Weather Stations
-            </div>
+          <div class="category-children hidden" id="children-boundaries">
+            <div id="layer-preserve-boundary" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Preserve Boundary</div>
+            <div id="layer-management-zones" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Management Zones</div>
           </div>
         </div>
 
-        <!-- ── Category: Research Datasets (EXPANDED) ── -->
-        <div class="category" role="treeitem" aria-expanded="true">
-          <button id="cat-research" class="category-header flex items-center gap-2 w-full py-2 px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer" aria-expanded="true">
-            <svg class="w-4 h-4 text-gray-400 category-chevron expanded" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <!-- ── Earth Observations (COLLAPSED) ── -->
+        <div class="category" role="treeitem" aria-expanded="false">
+          <button id="cat-earth-obs" class="category-header flex items-center gap-2 w-full py-2 px-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer" aria-expanded="false">
+            <svg class="w-4 h-4 text-gray-400 category-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
-            <!-- Lucide FileText (research) -->
+            <!-- Lucide Globe -->
             <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/>
-              <line x1="16" y1="17" x2="8" y2="17"/>
-              <polyline points="10 9 9 9 8 9"/>
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
+            </svg>
+            <span>Earth Observations</span>
+            <span class="text-xs text-gray-400 ml-auto">(1)</span>
+          </button>
+          <div class="category-children hidden" id="children-earth-obs">
+            <div id="layer-satellite-imagery" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Satellite Imagery</div>
+          </div>
+        </div>
+
+        <!-- ── Elevation and Bathymetry (COLLAPSED) ── -->
+        <div class="category" role="treeitem" aria-expanded="false">
+          <button id="cat-elevation" class="category-header flex items-center gap-2 w-full py-2 px-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer" aria-expanded="false">
+            <svg class="w-4 h-4 text-gray-400 category-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <!-- Lucide Mountain -->
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M8 3l4 8 5-5 7 14H2L8 3z"/>
+            </svg>
+            <span>Elevation and Bathymetry</span>
+            <span class="text-xs text-gray-400 ml-auto">(2)</span>
+          </button>
+          <div class="category-children hidden" id="children-elevation">
+            <div id="layer-dem" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Digital Elevation Model</div>
+            <div id="layer-bathymetry" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Coastal Bathymetry</div>
+          </div>
+        </div>
+
+        <!-- ── Fire (COLLAPSED) ── -->
+        <div class="category" role="treeitem" aria-expanded="false">
+          <button id="cat-fire" class="category-header flex items-center gap-2 w-full py-2 px-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer" aria-expanded="false">
+            <svg class="w-4 h-4 text-gray-400 category-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <!-- Lucide Flame -->
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1012 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z"/>
+            </svg>
+            <span>Fire</span>
+            <span class="text-xs text-gray-400 ml-auto">(3)</span>
+          </button>
+          <div class="category-children hidden" id="children-fire">
+            <div id="layer-fire-perimeters" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm flex items-center" role="treeitem">
+              <span class="flex-1 truncate">Fire Perimeters</span>
+              <!-- Eye + Pin icons (State 4: Pinned, Visible) -->
+              <button id="sidebar-eye-fire-perimeters" class="icon-btn w-4 h-4 text-blue-500 flex-shrink-0" aria-label="Fire Perimeters visible on map" title="Toggle visibility">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+              <button id="sidebar-pin-fire-perimeters" class="icon-btn w-4 h-4 text-emerald-600 flex-shrink-0 ml-1.5" aria-label="Unpin Fire Perimeters" title="Unpin layer">
+                <svg class="w-4 h-4" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 17v5M9 10.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24V16a1 1 0 001 1h12a1 1 0 001-1v-.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V7a1 1 0 011-1 1 1 0 001-1V4a1 1 0 00-1-1H8a1 1 0 00-1 1v1a1 1 0 001 1 1 1 0 011 1v3.76z"/>
+                </svg>
+              </button>
+            </div>
+            <div id="layer-fire-history" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Fire History (1950-2025)</div>
+            <div id="layer-burn-severity" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Burn Severity Index</div>
+          </div>
+        </div>
+
+        <!-- ── Freshwater (COLLAPSED) ── -->
+        <div class="category" role="treeitem" aria-expanded="false">
+          <button id="cat-freshwater" class="category-header flex items-center gap-2 w-full py-2 px-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer" aria-expanded="false">
+            <svg class="w-4 h-4 text-gray-400 category-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <!-- Lucide Droplets -->
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/>
+              <path d="M12.56 14.1c1.44 0 2.6-1.19 2.6-2.64 0-.76-.37-1.47-1.11-2.08S12.73 7.8 12.56 7c-.19.94-.74 1.84-1.49 2.44S10 10.7 10 11.46c0 1.45 1.16 2.64 2.56 2.64z"/>
+            </svg>
+            <span>Freshwater</span>
+            <span class="text-xs text-gray-400 ml-auto">(2)</span>
+          </button>
+          <div class="category-children hidden" id="children-freshwater">
+            <div id="layer-streams" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Streams and Watersheds</div>
+            <div id="layer-wetlands" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Wetlands</div>
+          </div>
+        </div>
+
+        <!-- ── Infrastructure (COLLAPSED) ── -->
+        <div class="category" role="treeitem" aria-expanded="false">
+          <button id="cat-infrastructure" class="category-header flex items-center gap-2 w-full py-2 px-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer" aria-expanded="false">
+            <svg class="w-4 h-4 text-gray-400 category-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <!-- Lucide Building2 -->
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M6 22V4a2 2 0 012-2h8a2 2 0 012 2v18z"/>
+              <path d="M6 12H4a2 2 0 00-2 2v6a2 2 0 002 2h2"/>
+              <path d="M18 9h2a2 2 0 012 2v9a2 2 0 01-2 2h-2"/>
+              <path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>
+            </svg>
+            <span>Infrastructure</span>
+            <span class="text-xs text-gray-400 ml-auto">(1)</span>
+          </button>
+          <div class="category-children hidden" id="children-infrastructure">
+            <div id="layer-roads-trails" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Roads and Trails</div>
+          </div>
+        </div>
+
+        <!-- ── Land Cover (COLLAPSED) ── -->
+        <div class="category" role="treeitem" aria-expanded="false">
+          <button id="cat-landcover" class="category-header flex items-center gap-2 w-full py-2 px-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer" aria-expanded="false">
+            <svg class="w-4 h-4 text-gray-400 category-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <!-- Lucide Trees -->
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M10 10v.2A3 3 0 018.9 16v0H5v0h0a3 3 0 01-1-5.8V10a3 3 0 016 0z"/>
+              <path d="M7 16v6"/><path d="M13 19v3"/>
+              <path d="M16 14v.2a3 3 0 01-1.1 5.8v0H11v0h0a3 3 0 01-1-5.8V14a3 3 0 016 0z"/>
+            </svg>
+            <span>Land Cover</span>
+            <span class="text-xs text-gray-400 ml-auto">(2)</span>
+          </button>
+          <div class="category-children hidden" id="children-landcover">
+            <div id="layer-vegetation-cover" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Vegetation Cover</div>
+            <div id="layer-land-classification" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Land Cover Classification</div>
+          </div>
+        </div>
+
+        <!-- ── Oceans and Coasts (COLLAPSED) ── -->
+        <div class="category" role="treeitem" aria-expanded="false">
+          <button id="cat-oceans" class="category-header flex items-center gap-2 w-full py-2 px-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer" aria-expanded="false">
+            <svg class="w-4 h-4 text-gray-400 category-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <!-- Lucide Waves -->
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+              <path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+              <path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
+            </svg>
+            <span>Oceans and Coasts</span>
+            <span class="text-xs text-gray-400 ml-auto">(3)</span>
+          </button>
+          <div class="category-children hidden" id="children-oceans">
+            <div id="layer-shoreline" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Shoreline</div>
+            <div id="layer-kelp-forests" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Kelp Forests</div>
+            <div id="layer-marine-protected" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Marine Protected Areas</div>
+          </div>
+        </div>
+
+        <!-- ── Research and Sensor Equipment (COLLAPSED) ── -->
+        <div class="category" role="treeitem" aria-expanded="false">
+          <button id="cat-research-equip" class="category-header flex items-center gap-2 w-full py-2 px-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer" aria-expanded="false">
+            <svg class="w-4 h-4 text-gray-400 category-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <!-- Lucide Radio -->
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/>
+              <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.4"/>
+              <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.4"/>
+              <path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"/>
+              <circle cx="12" cy="12" r="2"/>
+            </svg>
+            <span>Research and Sensor Equipment</span>
+            <span class="text-xs text-gray-400 ml-auto">(4)</span>
+          </button>
+          <div class="category-children hidden" id="children-research-equip">
+            <div id="layer-camera-traps" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Camera Trap Stations</div>
+            <div id="layer-dendra" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Dendra Sensors</div>
+            <div id="layer-weather-stations" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Weather Stations</div>
+            <div id="layer-acoustic-monitors" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Acoustic Monitors</div>
+          </div>
+        </div>
+
+        <!-- ── Research Datasets (COLLAPSED) — DataOne canonical location ── -->
+        <div class="category" role="treeitem" aria-expanded="false">
+          <button id="cat-research-data" class="category-header flex items-center gap-2 w-full py-2 px-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer" aria-expanded="false">
+            <svg class="w-4 h-4 text-gray-400 category-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <!-- Lucide Database -->
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
             </svg>
             <span>Research Datasets</span>
             <span class="text-xs text-gray-400 ml-auto">(1)</span>
           </button>
-          <div class="category-children" id="children-research">
-            <div id="layer-dataone" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">
-              DataOne Datasets
-            </div>
+          <div class="category-children hidden" id="children-research-data">
+            <div id="layer-dataone" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">DataOne Datasets</div>
           </div>
         </div>
 
-        <!-- ── Category: Reference Layers (COLLAPSED) ── -->
+        <!-- ── Soils and Geology (COLLAPSED) ── -->
         <div class="category" role="treeitem" aria-expanded="false">
-          <button id="cat-reference" class="category-header flex items-center gap-2 w-full py-2 px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer" aria-expanded="false">
+          <button id="cat-soils" class="category-header flex items-center gap-2 w-full py-2 px-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer" aria-expanded="false">
             <svg class="w-4 h-4 text-gray-400 category-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
@@ -299,51 +450,97 @@
               <polyline points="2 17 12 22 22 17"/>
               <polyline points="2 12 12 17 22 12"/>
             </svg>
-            <span>Reference Layers</span>
-            <span class="text-xs text-gray-400 ml-auto">(5)</span>
+            <span>Soils and Geology</span>
+            <span class="text-xs text-gray-400 ml-auto">(1)</span>
           </button>
-          <div class="category-children hidden" id="children-reference">
-            <div id="layer-boundaries" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">
-              Preserve Boundaries
+          <div class="category-children hidden" id="children-soils">
+            <div id="layer-soil-types" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Soil Types</div>
+          </div>
+        </div>
+
+        <!-- ── Species (EXPANDED — iNaturalist is active) ── -->
+        <div class="category" role="treeitem" aria-expanded="true">
+          <button id="cat-species" class="category-header flex items-center gap-2 w-full py-2 px-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer" aria-expanded="true">
+            <svg class="w-4 h-4 text-gray-400 category-chevron expanded" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <!-- Lucide Bug -->
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 2l1.88 1.88M14.12 3.88L16 2M9 7.13v-1a3.003 3.003 0 116 0v1M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 014-4h4a4 4 0 014 4v3c0 3.3-2.7 6-6 6zM2 10h2M20 10h2M2 14h2M20 14h2"/>
+            </svg>
+            <span>Species</span>
+            <span class="text-xs text-gray-400 ml-auto">(3)</span>
+          </button>
+          <div class="category-children" id="children-species">
+            <div id="layer-animl" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm flex items-center" role="treeitem">
+              <span class="flex-1 truncate">Camera Traps (ANiML)</span>
+              <!-- Eye + Pin icons (State 4: Pinned, Visible — syncs with Map Layers widget) -->
+              <button id="sidebar-eye-animl" class="icon-btn w-4 h-4 text-blue-500 flex-shrink-0" aria-label="Camera Traps visible on map" title="Toggle visibility">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+              </button>
+              <button id="sidebar-pin-animl" class="icon-btn w-4 h-4 text-emerald-600 flex-shrink-0 ml-1.5" aria-label="Unpin Camera Traps" title="Unpin layer">
+                <svg class="w-4 h-4" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 17v5M9 10.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24V16a1 1 0 001 1h12a1 1 0 001-1v-.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V7a1 1 0 011-1 1 1 0 001-1V4a1 1 0 00-1-1H8a1 1 0 00-1 1v1a1 1 0 001 1 1 1 0 011 1v3.76z"/>
+                </svg>
+              </button>
             </div>
-            <div id="layer-elevation" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">
-              Elevation (DEM)
+            <!-- ACTIVE layer (DFT-021) -->
+            <div id="layer-inat" class="layer-row active py-1.5 px-3 pl-9 text-sm rounded-sm cursor-pointer" role="treeitem" aria-current="true">
+              iNaturalist Observations
             </div>
-            <div id="layer-vegetation" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">
-              Vegetation Cover
+            <div id="layer-ebird" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">
+              eBird Sightings
             </div>
-            <div id="layer-landcover" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">
-              Land Cover Classification
-            </div>
-            <div id="layer-soils" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">
-              Soil Types
+            <!-- DataOne shortcut row (DFT-045) -->
+            <div id="shortcut-dataone-species" class="layer-row mt-1.5 border-t border-gray-200 py-1.5 px-3 pl-9 text-sm text-gray-500 hover:bg-emerald-50 cursor-pointer rounded-sm flex items-center gap-1.5" role="treeitem">
+              <!-- Lucide Database (small) -->
+              <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+              </svg>
+              DataOne Datasets (15)
             </div>
           </div>
         </div>
 
-        <!-- ── Category: Fire & Hazards (COLLAPSED) ── -->
+        <!-- ── Threats and Hazards (COLLAPSED) ── -->
         <div class="category" role="treeitem" aria-expanded="false">
-          <button id="cat-fire" class="category-header flex items-center gap-2 w-full py-2 px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer" aria-expanded="false">
+          <button id="cat-threats" class="category-header flex items-center gap-2 w-full py-2 px-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer" aria-expanded="false">
             <svg class="w-4 h-4 text-gray-400 category-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
-            <!-- Lucide Flame -->
+            <!-- Lucide AlertTriangle -->
             <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1012 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
             </svg>
-            <span>Fire & Hazards</span>
-            <span class="text-xs text-gray-400 ml-auto">(3)</span>
+            <span>Threats and Hazards</span>
+            <span class="text-xs text-gray-400 ml-auto">(2)</span>
           </button>
-          <div class="category-children hidden" id="children-fire">
-            <div id="layer-fire-perimeters" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">
-              Fire Perimeters
-            </div>
-            <div id="layer-fire-history" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">
-              Fire History (1950-2025)
-            </div>
-            <div id="layer-burn-severity" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">
-              Burn Severity Index
-            </div>
+          <div class="category-children hidden" id="children-threats">
+            <div id="layer-invasive-species" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Invasive Species</div>
+            <div id="layer-erosion-risk" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Erosion Risk</div>
+          </div>
+        </div>
+
+        <!-- ── Weather and Climate (COLLAPSED) ── -->
+        <div class="category" role="treeitem" aria-expanded="false">
+          <button id="cat-weather" class="category-header flex items-center gap-2 w-full py-2 px-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer" aria-expanded="false">
+            <svg class="w-4 h-4 text-gray-400 category-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <!-- Lucide Cloud -->
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/>
+            </svg>
+            <span>Weather and Climate</span>
+            <span class="text-xs text-gray-400 ml-auto">(2)</span>
+          </button>
+          <div class="category-children hidden" id="children-weather">
+            <div id="layer-climate-normals" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Climate Normals</div>
+            <div id="layer-precip-trends" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Precipitation Trends</div>
           </div>
         </div>
 
@@ -372,7 +569,15 @@
 
         <!-- Widget Header -->
         <div id="pinned-header" class="flex items-center justify-between px-4 py-2.5 bg-slate-50 rounded-t-xl border-b border-gray-200">
-          <span class="text-sm font-semibold text-gray-900">Map Layers</span>
+          <span class="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+            <!-- Lucide Layers -->
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+              <polyline points="2 17 12 22 22 17"/>
+              <polyline points="2 12 12 17 22 12"/>
+            </svg>
+            Map Layers
+          </span>
           <div class="flex items-center gap-1">
             <!-- Undo (DFT-031: always visible, grayed when inactive) -->
             <button id="pinned-undo" class="icon-btn p-1 text-gray-400 opacity-40 cursor-not-allowed"
@@ -394,12 +599,12 @@
         </div>
 
         <!-- Widget Body -->
-        <div id="pinned-body" class="widget-body max-h-[450px] overflow-y-auto sidebar-scroll">
+        <div id="pinned-body" class="widget-body max-h-[350px] overflow-y-auto sidebar-scroll">
 
           <!-- ════════════════════════════════════════════════════════════
                SECTION 1: ACTIVE LAYER (DFT-001)
                One non-pinned layer. Replaced when user selects another.
-               Pin button [📌] moves layer to Pinned section.
+               Pin button moves layer to Pinned section.
                ════════════════════════════════════════════════════════════ -->
           <div id="active-layer-section">
             <!-- Section header (amber accent — like old mockup) -->
@@ -845,7 +1050,7 @@
         </button>
       </div>
 
-      <!-- TabBar (underline style, emerald-600 active indicator) -->
+      <!-- TabBar (DFT-041: 2 tabs only — Overview | Browse. Export tab removed.) -->
       <div id="tab-bar" class="flex w-full border-b border-gray-200" role="tablist">
         <button id="tab-overview" role="tab" aria-selected="true" aria-controls="panel-overview"
           class="flex-1 py-2.5 text-sm font-semibold text-gray-900 border-b-2 border-emerald-600 text-center cursor-pointer"
@@ -856,10 +1061,6 @@
           class="flex-1 py-2.5 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 text-center cursor-pointer transition-colors duration-150"
           onclick="switchTab('browse')">
           Browse
-        </button>
-        <button id="tab-export" role="tab" aria-selected="false" disabled
-          class="flex-1 py-2.5 text-sm text-gray-300 cursor-not-allowed text-center">
-          Export
         </button>
       </div>
 
@@ -910,6 +1111,17 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
           </button>
+
+          <!-- Export Status Section (DFT-041: moved from Export tab to Overview tab) -->
+          <div id="export-status-section" class="border-t border-gray-200 pt-4">
+            <span class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Export</span>
+            <div class="mt-2 bg-slate-50 border border-slate-200 rounded-lg p-3">
+              <p class="text-sm text-gray-600">Pin this layer to include in your export package.</p>
+              <button id="export-pin-now" class="mt-2 px-3 py-1.5 text-sm font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md hover:bg-emerald-100 transition-colors cursor-pointer">
+                Pin Now
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- ── Browse Tab Panel (hidden by default) ── -->
@@ -962,21 +1174,32 @@
             </div>
           </div>
 
-          <!-- Sample ResultCards -->
+          <!-- Sample ResultCards (iNaturalist: View, Bookmark, iNat external link actions) -->
           <div id="browse-results" class="space-y-2">
             <div id="result-card-condor" class="bg-white border border-gray-200 rounded-lg p-3 hover:border-gray-300 hover:shadow-sm transition-all duration-150 cursor-pointer">
               <div class="flex gap-3">
                 <div class="w-10 h-10 rounded bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                  <!-- Lucide Bird -->
                   <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 20A7 7 0 019.8 6.9C15.5 4.9 20 .5 20 .5s-4.4 4.5-2.4 10.2A7 7 0 0111 20z"/>
+                    <path d="M16 7h.01M3.4 18H12a8 8 0 008-8V7a4 4 0 00-7.28-2.3L2 20"/>
+                    <path d="M20 7l2 .5-2 .5"/>
+                    <path d="M10 18v3"/>
+                    <path d="M14 17.75V21"/>
+                    <path d="M7 18a6 6 0 003.84-10.61"/>
                   </svg>
                 </div>
                 <div class="flex-1 min-w-0">
                   <h3 class="text-sm font-medium text-gray-900 truncate">California Condor</h3>
-                  <p class="text-xs text-gray-500">J. Martinez · Jan 12, 2025</p>
+                  <p class="text-xs text-gray-500">@jane_doe · Jan 15, 2024</p>
                   <div class="flex items-center gap-3 mt-1.5">
                     <button class="text-xs font-medium text-emerald-600 hover:text-emerald-700">View</button>
                     <button class="text-xs text-gray-500 hover:text-gray-700">Bookmark</button>
+                    <a href="#" class="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-0.5">
+                      iNat
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/>
+                      </svg>
+                    </a>
                   </div>
                 </div>
               </div>
@@ -984,16 +1207,49 @@
             <div id="result-card-owl" class="bg-white border border-gray-200 rounded-lg p-3 hover:border-gray-300 hover:shadow-sm transition-all duration-150 cursor-pointer">
               <div class="flex gap-3">
                 <div class="w-10 h-10 rounded bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                  <!-- Lucide Leaf (no photo fallback) -->
                   <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 20A7 7 0 019.8 6.9C15.5 4.9 20 .5 20 .5s-4.4 4.5-2.4 10.2A7 7 0 0111 20z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 20V8"/>
                   </svg>
                 </div>
                 <div class="flex-1 min-w-0">
-                  <h3 class="text-sm font-medium text-gray-900 truncate">Spotted Owl</h3>
-                  <p class="text-xs text-gray-500">A. Chen · Jan 8, 2025</p>
+                  <h3 class="text-sm font-medium text-gray-900 truncate">Coast Live Oak</h3>
+                  <p class="text-xs text-gray-500">@botanist22 · Mar 8, 2024</p>
                   <div class="flex items-center gap-3 mt-1.5">
                     <button class="text-xs font-medium text-emerald-600 hover:text-emerald-700">View</button>
                     <button class="text-xs text-gray-500 hover:text-gray-700">Bookmark</button>
+                    <a href="#" class="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-0.5">
+                      iNat
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/>
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div id="result-card-lion" class="bg-white border border-gray-200 rounded-lg p-3 hover:border-gray-300 hover:shadow-sm transition-all duration-150 cursor-pointer">
+              <div class="flex gap-3">
+                <div class="w-10 h-10 rounded bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                  <!-- Lucide Paw Print -->
+                  <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="4" cy="8" r="2"/>
+                    <path d="M11 12a4 4 0 00-4 4c0 1.1.9 2 2 2h6a2 2 0 002-2 4 4 0 00-4-4h-2z"/>
+                  </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-sm font-medium text-gray-900 truncate">Mountain Lion</h3>
+                  <p class="text-xs text-gray-500">@field_bio · Dec 3, 2023</p>
+                  <div class="flex items-center gap-3 mt-1.5">
+                    <button class="text-xs font-medium text-emerald-600 hover:text-emerald-700">View</button>
+                    <button class="text-xs text-gray-500 hover:text-gray-700">Bookmark</button>
+                    <a href="#" class="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-0.5">
+                      iNat
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/>
+                      </svg>
+                    </a>
                   </div>
                 </div>
               </div>
@@ -1006,7 +1262,7 @@
               <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
               Previous
             </button>
-            <span class="text-xs text-gray-500">Page 1 of 43</span>
+            <span class="text-xs text-gray-500">Page 1 of 622</span>
             <button class="text-sm text-gray-700 hover:text-gray-900 px-3 py-1.5 rounded hover:bg-gray-100">
               Next
               <svg class="w-4 h-4 inline ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
