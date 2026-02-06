@@ -85,10 +85,11 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 **Decision (Feb 2, 2026):** Resolved DFT-003c — Landing cards entry point for Animal-First vs Camera-First choice.  
 **Decision (Feb 2, 2026):** Resolved DFT-006 — Overview tab opens first when layer is selected, with prominent "Browse Features →" button.
 **Decision (Feb 4, 2026):** Resolved DFT-027 — "Browse Features →" button design specification: full-width primary button (TNC green, white text, min 44px height), bottom of Overview content, inline arrow (→), hover effects (color shift + 1.02x scale), 2px focus outline, 150-200ms ease-out transition.
+**Decision (Feb 6, 2026):** Resolved DFT-042 — Mode-switch mechanism: text link above filter section ("Switch to [other mode]"). Always visible, subtle styling (gray-500, hover emerald-500). Confirmation dialog if filters active. Mode preference stored in localStorage (`animl-browse-mode`).
 
 **Acceptance Criteria:**
 - [ ] Component renders when ANiML layer is selected
-- [ ] Tabs exist: Overview | Browse | Export
+- [ ] Tabs exist: Overview | Browse
 - [ ] **Overview tab is the default/active tab**
 - [ ] Overview tab includes prominent "Browse Features →" button to navigate to Browse tab
   - [ ] Button is full-width within sidebar content area
@@ -102,7 +103,13 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 - [ ] Browse tab shows landing cards on first visit (Animal-First vs Camera-First)
 - [ ] Landing cards include icon, title, and brief tagline for each mode
 - [ ] User preference is remembered (skip landing page on return visits)
-- [ ] Each mode includes subtle "Switch to [other mode]" link
+- [ ] **Mode-switch link visible in both modes** (DFT-042):
+  - [ ] Located above filter section, standalone line (not inside FilterSection header)
+  - [ ] Text pattern: "Switch to [other mode]" with shuffle icon (Lucide `ArrowLeftRight` or `Shuffle`)
+  - [ ] Styling: `text-gray-500 hover:text-emerald-500`, `text-sm`
+  - [ ] Click behavior: If filters active → confirmation dialog ("Switching modes will clear your current filters. Continue?"); if no filters → switch immediately
+  - [ ] On switch: Update localStorage (`animl-browse-mode`), 150-200ms crossfade, render new filter controls, clear results, optional toast notification
+  - [ ] Keyboard accessible with clear ARIA label
 - [ ] Component can show camera list OR camera detail (drill-down pattern)
 
 **Files to Create:**
