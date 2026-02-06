@@ -1,384 +1,655 @@
 # Component Spec: Map Layers Widget
 
 **Date:** February 6, 2026  
-**DFTs Referenced:** DFT-001, DFT-003, DFT-003b, DFT-004, DFT-005, DFT-013, DFT-015, DFT-019, DFT-024, DFT-025, DFT-026, DFT-031, DFT-034  
+**DFTs Referenced:** DFT-001, DFT-003b, DFT-005, DFT-013, DFT-015, DFT-017, DFT-019, DFT-024, DFT-025, DFT-026, DFT-029, DFT-031, DFT-034  
 **Status:** Draft — pending review
 
 ---
 
 ## Terminology
 
-- **Active Layer** = the layer the user most recently clicked in the left sidebar. Visible on map, shown in right sidebar. Temporary — replaced when another layer is clicked. Only ONE at a time.
-- **Pinned Layer** = a layer explicitly saved via the [pin] button. Persists until unpinned. Multiple allowed. Has independent visibility toggle.
-- **Filtered View** = a pinned layer with a specific query/filter applied. Multiple views of the same layer are possible (DFT-013).
-- **Item** = a record within a layer. Not "Feature."
+- **Active** = the layer currently being inspected; shown in right sidebar and visible on map. Only ONE at a time.
+- **Pinned** = a layer saved to this widget with optional filters. Multiple allowed. Persistent for session.
+- **Filtered view** = a pinned layer with specific query parameters (e.g., "Camera Traps — mountain lion").
+- **Nested / multi-view** = when a layer has 2+ filtered views, it promotes to a parent-child structure (DFT-013).
+- **Distinguisher** = the parenthetical label that differentiates views of the same layer (e.g., "(mountain lion)", "(deer)").
 
 ---
 
-## Anatomy
+## Widget Principle
 
-The widget has two layouts depending on whether the active layer is pinned or not.
+> **The Map Layers widget is the state management hub for all layers on the map.** The left sidebar is for _navigation and selection_; this widget is for _persistence, visibility, filtering, and ordering_. It answers: "What's on my map right now, and what have I saved?"
 
-**Layout A: Active layer is NOT pinned (ACTIVE LAYER section visible)**
+---
 
-```
-┌──────────────────────────────────────────────────┐
-│  Map Layers                  [undo] [collapse] ✕ │  A. Widget header
-├──────────────────────────────────────────────────┤
-│  ACTIVE LAYER                                    │  B. Section header (conditional)
-│  Dendra Sensors                            [pin] │  C. Active layer row
-├──────────────────────────────────────────────────┤
-│  PINNED LAYERS                                   │  D. Section header
-├──────────────────────────────────────────────────┤
-│  [drag] [eye] ANiML Cameras (mt. lion) [F 5] [x]│  E. Pinned layer row (flat)
-│  [drag] [eye] iNaturalist              [F]   [x]│  F. Pinned layer row (no filters)
-└──────────────────────────────────────────────────┘
-```
-
-**Layout B: Active layer IS pinned or no active layer (ACTIVE LAYER section hidden)**
+## Anatomy — Full Widget
 
 ```
 ┌──────────────────────────────────────────────────┐
-│  Map Layers                  [undo] [collapse] ✕ │  A. Widget header
+│ A. WidgetHeader                                  │
+│    [layers-icon]  Map Layers    [undo] [−] [x]   │
 ├──────────────────────────────────────────────────┤
-│  PINNED LAYERS                                   │  D. Section header
+│ B. ActiveLayerSection                            │
+│    ┌──────────────────────────────────────────┐  │
+│    │ ACTIVE LAYER                             │  │  ← amber section header
+│    │ [eye] iNaturalist Observations   [Pin]   │  │  ← active layer row
+│    └──────────────────────────────────────────┘  │
 ├──────────────────────────────────────────────────┤
-│ *[drag] [eye] ANiML Cameras (mt. lion) [F 5] [x]│  E. Pinned row + active indicator (*)
-│  [drag] [eye] iNaturalist              [F]   [x]│  F. Pinned layer row
-│  [drag] [eye] Camera Traps v                 [x]│  G. Pinned parent row (nested)
-│         [eye]   mountain lion     [F 5]          │  H. Nested child (visible)
-│                 deer                             │  I. Nested child (hidden)
-│         [+ New View]                             │  J. Create new view action
+│ C. PinnedLayersSection                           │
+│    ┌──────────────────────────────────────────┐  │
+│    │ PINNED LAYERS (2)                        │  │  ← blue section header
+│    │ [drag][eye] Camera Traps v   [Filter 5][x]│ │  ← nested parent row
+│    │       [eye] mountain lion    [Filter 5]  │  │  ← child (visible)
+│    │             deer             [Filter 3]  │  │  ← child (hidden)
+│    │       [+ New View]                       │  │
+│    │ [drag][eye] Fire Perimeter   [Filter]  [x]│ │  ← flat row (no filters)
+│    └──────────────────────────────────────────┘  │
+├──────────────────────────────────────────────────┤
+│ D. WidgetTip                                     │
+│    Pin layers to keep them on the map.           │
 └──────────────────────────────────────────────────┘
 ```
 
-**Labeled Parts:**
+**Positioning:** Floating, absolute, top-left of map area (`top-4 left-4`), `z-40`.  
+**Width:** 320px.  
+**Max body height:** 350px (scrollable via `sidebar-scroll`).
 
 | Part | Element | Description |
 |------|---------|-------------|
-| A | Widget header | Title + undo button + collapse toggle + close button. Title is configurable (default "Map Layers"; team can test "Pinned Item Layers" etc.). |
-| B | "ACTIVE LAYER" section header | **Conditional — only shown when active layer is NOT pinned.** Uppercase label, `text-[10px] font-semibold text-gray-500 tracking-wide` |
-| C | Active layer row | Shows non-pinned active layer with [pin] button. Hidden when active layer is pinned. |
-| D | "PINNED LAYERS" section header | Same styling as B. Always visible when pinned layers exist. |
-| E | Pinned layer row (flat) | Drag handle + eye toggle + name + filter indicator + remove. When this row's layer is also active, shows active indicator (`*` = emerald left border + bold text). |
-| F | Pinned layer row (no filter) | Same as E but filter icon is muted gray |
-| G | Pinned parent row (nested) | When 2+ views exist. Has chevron (v/>) and eye toggle |
-| H | Nested child (visible) | Indented. Eye icon ON. Filter indicator visible |
-| I | Nested child (hidden) | Indented. Eye icon grayed. No filter indicator shown |
-| J | Create new view | `[+ New View]` action link, indented with children |
+| A | WidgetHeader | Widget icon + title + undo button (DFT-031) + collapse toggle + close button. |
+| B | ActiveLayerSection | Amber-accented section for the currently selected (non-pinned) layer. Shows eye icon + layer name + [Pin] button. Empty when no layer is active or active layer is already pinned. |
+| C | PinnedLayersSection | Blue-accented section for all pinned layers. Supports flat rows, nested multi-view rows, drag reorder (DFT-034), filter indicators (DFT-024), expanded panels (DFT-003b). |
+| D | WidgetTip | Educational hint at bottom. `text-[11px] text-gray-500`. |
 
-**Active layer duplication rule (Feb 6 resolution):** The ACTIVE LAYER section appears **only when the active layer is NOT pinned.** When the active layer IS pinned, it is shown in the PINNED LAYERS section with an active indicator (emerald left border + bold text — mirrors the left sidebar's active styling). This eliminates visual duplication and follows Gestalt (Similarity), Norman (Conceptual Model), Nielsen #8 (Minimalism), and Hick's Law (fewer sections to scan).
+---
+
+## Component 1: WidgetHeader
+
+```
+┌──────────────────────────────────────────────────┐
+│ [layers-icon]  Map Layers       [undo] [−] [x]   │
+└──────────────────────────────────────────────────┘
+```
+
+| Element | Styling | Notes |
+|---------|---------|-------|
+| Container | `flex items-center justify-between px-4 py-2.5 bg-slate-50 rounded-t-xl border-b border-gray-200` | Matches Bookmarked Items widget header |
+| Icon | Lucide `Layers`, `w-4 h-4 text-gray-500` | SVG only (DFT-026) |
+| Title | `text-sm font-semibold text-gray-900` | "Map Layers" |
+| Undo button | DFT-031 pattern: always visible, grayed when inactive | See design system `UndoButton` pattern |
+| Collapse toggle | `icon-btn p-1 text-gray-400 hover:text-gray-600` | Lucide `Minus` |
+| Close button | Hidden for this widget — widget should always be visible | See Open Questions |
+
+### Undo Button States (DFT-031)
+
+| State | Styling | Tooltip |
+|-------|---------|---------|
+| Inactive | `text-gray-400 opacity-40 cursor-not-allowed` | "No actions to undo" |
+| Active | `text-emerald-600 hover:text-emerald-700 cursor-pointer` | "Undo: [action description]" |
+
+**Undo covers:** Unpin layer, delete filtered view, clear filters.
+
+---
+
+## Component 2: ActiveLayerSection
+
+The section that shows the currently selected (non-pinned) layer.
+
+### Anatomy
+
+```
+┌──────────────────────────────────────────────────┐
+│ [eye-icon] ACTIVE LAYER                          │  ← section header (amber)
+├──────────────────────────────────────────────────┤
+│ [eye] iNaturalist Observations           [Pin]   │  ← active layer row
+└──────────────────────────────────────────────────┘
+```
+
+### Section Header Tokens
+
+| Element | Styling |
+|---------|---------|
+| Container | `px-3 py-1.5 bg-amber-50 border-b border-amber-200` |
+| Label | `text-[10px] font-semibold text-amber-700 uppercase tracking-wide flex items-center gap-1` |
+| Icon | Lucide `Eye`, `w-3 h-3` (inline with label) |
+
+### Active Layer Row Tokens
+
+| Element | Styling |
+|---------|---------|
+| Container | `px-3 py-2.5 flex items-center gap-2 bg-amber-50/50` |
+| Eye icon | Lucide `Eye`, `w-4 h-4 text-amber-600` — always visible (active = on map) |
+| Layer name | `text-sm text-gray-800 font-medium flex-1 truncate` |
+| [Pin] button | `flex items-center gap-1 px-2 py-1 bg-white border border-amber-300 rounded-md text-amber-700 hover:bg-amber-100 hover:border-amber-400 transition-colors text-[11px] font-medium` |
+| Pin icon | Lucide `Pin`, `w-3.5 h-3.5` (inside button) |
+
+### Behavior
+
+- **One active layer at a time.** Selecting a new layer in the left sidebar replaces the current active layer (DFT-001, DFT-021).
+- **Active layer is always visible on map.** Eye icon is always ON (amber).
+- **[Pin] button** moves the layer from Active to Pinned section. Layer remains active but is now also pinned.
+- **Empty when:** No layer selected, or the active layer is already pinned (pinned+active layers show in the Pinned section with active styling instead).
+
+---
+
+## Component 3: PinnedLayersSection
+
+The section that shows all persistently saved layers.
+
+### Section Header Tokens
+
+| Element | Styling |
+|---------|---------|
+| Container | `px-3 py-1.5 bg-blue-50 border-y border-blue-200` |
+| Label | `text-[10px] font-semibold text-blue-700 uppercase tracking-wide flex items-center gap-1` |
+| Icon | Lucide `Pin`, `w-3 h-3` (inline with label) |
+| Count badge | `bg-blue-200 text-blue-800 px-1.5 rounded-full text-[10px] ml-1` |
+
+### Pinned Layer Row — Flat (Single View)
+
+When a layer has only one filtered view (or no filters).
+
+```
+┌──────────────────────────────────────────────────┐
+│ [drag] [eye] Fire Perimeter 2025   [Filter] [x]  │
+└──────────────────────────────────────────────────┘
+```
+
+| Element | Styling | Purpose |
+|---------|---------|---------|
+| Container | `widget-layer-card rounded-lg px-3 py-2 flex items-center gap-2 bg-white` | Standard card |
+| Drag handle | Lucide `GripVertical`, `w-4 h-4`, `cursor-grab` / `cursor-grabbing` (DFT-034) | Reorder layers |
+| Eye toggle (visible) | Lucide `Eye`, `w-4 h-4 text-emerald-600`, `icon-btn` | Toggle map visibility |
+| Eye toggle (hidden) | Lucide `EyeOff`, `w-4 h-4 text-gray-300`, `icon-btn` | Toggle map visibility |
+| Layer name | `text-sm text-gray-700 flex-1 truncate` | Includes distinguisher in parentheses if filtered |
+| Filter indicator (with filters) | `flex items-center gap-0.5 text-xs text-emerald-600 cursor-pointer` | DFT-024: Lucide `Filter` + count |
+| Filter indicator (no filters) | `flex items-center gap-0.5 text-xs text-gray-400 cursor-pointer` | DFT-024: Lucide `Filter` only |
+| Remove [x] | `icon-btn text-gray-300 hover:text-red-500`, Lucide `X`, `w-4 h-4` | Unpin layer |
+
+### Expanded Panel (DFT-003b)
+
+When a pinned layer row is clicked, an expanded panel appears below it showing filter summary and actions.
+
+```
+┌──────────────────────────────────────────────────┐
+│ [drag] [eye] Camera Traps (mt. lion) [F 5] [x]   │  ← row (with bg highlight)
+│ ┌──────────────────────────────────────────────┐ │
+│ │ species = Mountain Lion, date > 2024-01-01, │ │  ← filter summary (gray text)
+│ │ region = North Ridge, status = Active,      │ │
+│ │ confidence >= 80%                           │ │
+│ │                                             │ │
+│ │ [Clear]                  [Edit Filters ->]  │ │  ← action row
+│ └──────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────┘
+```
+
+| Element | Styling |
+|---------|---------|
+| Panel container | `bg-gray-50 border border-gray-200 rounded-lg mx-1 px-3 py-2.5` |
+| Filter summary | `text-[11px] text-gray-500 leading-relaxed mb-2` |
+| [Clear] link | `text-[11px] text-gray-400 hover:text-red-500 cursor-pointer` |
+| [Edit Filters ->] link | `text-[11px] font-medium text-emerald-600 hover:text-emerald-700 cursor-pointer` |
+| Chevron (inline with Edit Filters) | Lucide `ChevronRight`, `w-3 h-3 inline ml-0.5` |
+
+**Behavior:**
+- Only ONE panel expanded at a time. Clicking another row collapses the current panel.
+- Transition: `max-height 0.2s ease-out, opacity 0.15s ease` (collapse animation).
+- **"Edit Filters ->"** opens the right sidebar Browse tab for this layer, highlighting the filter section (DFT-019). Expanded panel remains open so user can reference filter summary.
+- **"Clear"** removes all filters. Executes immediately — no confirmation dialog (DFT-031). Undo available.
+- If no filters applied, panel shows: "No filters applied. Edit Filters ->" with "Edit Filters" link only.
+
+### Pinned Layer Row — Nested (Multi-View, DFT-013)
+
+When a layer has 2+ filtered views, it promotes to a parent-child structure.
+
+```
+┌──────────────────────────────────────────────────┐
+│ [drag] [eye] Camera Traps v                [x]   │  ← parent row
+│        [eye] mountain lion    [Filter 5]         │  ← child (visible, emerald bg)
+│              deer             [Filter 3]         │  ← child (hidden, grayed)
+│        [+ New View]                              │  ← create action
+└──────────────────────────────────────────────────┘
+```
+
+### Parent Row Tokens
+
+| Element | Styling |
+|---------|---------|
+| Container | `widget-layer-card rounded-lg px-3 py-2 flex items-center gap-2 bg-white` |
+| Name | `text-sm font-semibold text-gray-800 flex-1 truncate cursor-pointer` |
+| Chevron | `w-3 h-3 inline ml-0.5 text-gray-400`, rotates when collapsed |
+| No filter indicator on parent | Filter info is on each child row |
+| Remove [x] | Unpins ALL child views |
+
+### Child Row Tokens — Visible
+
+| Element | Styling |
+|---------|---------|
+| Container | `widget-layer-card nested-child rounded-lg px-3 py-2 flex items-center gap-2 bg-emerald-50 border-emerald-200 cursor-pointer` |
+| Eye | Lucide `Eye`, `w-3.5 h-3.5 text-emerald-600` |
+| Name | `text-sm text-gray-800 flex-1 truncate` |
+| Filter indicator | `flex items-center gap-0.5 text-xs text-emerald-600 cursor-pointer` |
+| Indentation | `ml-6` (24px) from parent, with `nested-child::before` connecting line |
+
+### Child Row Tokens — Hidden
+
+| Element | Styling |
+|---------|---------|
+| Container | `widget-layer-card nested-child rounded-lg px-3 py-2 flex items-center gap-2 bg-white cursor-pointer opacity-60` |
+| Eye | Lucide `EyeOff`, `w-3.5 h-3.5 text-gray-300` |
+| Name | `text-sm text-gray-400 flex-1 truncate` |
+| Filter indicator | `flex items-center gap-0.5 text-xs text-gray-300` |
+
+### "+ New View" Button
+
+| Element | Styling |
+|---------|---------|
+| Container | `w-full text-left px-3 py-1.5 text-[11px] text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-md cursor-pointer transition-colors` |
+| Icon | Lucide `Plus`, `w-3 h-3 inline mr-1` |
+| Label | "New View" |
+
+### Connecting Line (Nested Children)
+
+```css
+.nested-child {
+  position: relative;
+}
+.nested-child::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: -4px;
+  bottom: -4px;
+  width: 1px;
+  background: #e2e8f0;
+}
+```
+
+---
+
+## Component 4: WidgetTip
+
+```
+┌──────────────────────────────────────────────────┐
+│ Pin layers to keep them on the map. Only one     │
+│ non-pinned layer can be visible at a time.       │
+└──────────────────────────────────────────────────┘
+```
+
+| Element | Styling |
+|---------|---------|
+| Container | `px-3 py-2 bg-slate-50 border-t border-slate-100 rounded-b-xl` |
+| Text | `text-[11px] text-gray-500` |
+
+**Visibility:** Always visible when widget body is expanded. Hidden when widget is collapsed.
+
+---
+
+## Component 5: WidgetShell (Floating Container)
+
+The outer floating container shared with the Bookmarked Items widget.
+
+| Element | Styling |
+|---------|---------|
+| Container | `floating-widget absolute top-4 left-4 w-[320px] bg-white rounded-xl z-40` |
+| Shadow | `box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05)` |
+| Backdrop | `backdrop-filter: blur(8px)` |
 
 ---
 
 ## States
 
-### State 1a: Default — Non-Pinned Active Layer + Pinned Layers
+### State 1: Default — Active Layer + Pinned Layers Populated
 
-The active layer (Dendra Sensors) is NOT pinned, so the ACTIVE LAYER section is visible.
+The most common state during active use.
 
 ```
 ┌──────────────────────────────────────────────────┐
-│  Map Layers                    [undo]  [-]  [x]  │
+│ [layers]  Map Layers           [undo-g] [−]      │
 ├──────────────────────────────────────────────────┤
-│  ACTIVE LAYER                                    │
-│  Dendra Sensors                            [pin] │
+│ [eye] ACTIVE LAYER                               │
+│ [eye] iNaturalist Observations           [Pin]   │
 ├──────────────────────────────────────────────────┤
-│  PINNED LAYERS                                   │
-│  [drag] [eye] iNaturalist (birds)    [F 2]  [x] │
-│  [drag] [eye] Camera Traps v                [x] │
-│         [eye]   mountain lion   [F 5]            │
-│                 deer                             │
-│         [+ New View]                             │
+│ [pin] PINNED LAYERS (2)                          │
+│ [drag][eye] Camera Traps v               [x]     │
+│       [eye] mountain lion    [Filter 5]          │
+│             deer             [Filter 3]          │
+│       [+ New View]                               │
+│ [drag][eye] Fire Perimeter   [Filter]    [x]     │
+├──────────────────────────────────────────────────┤
+│ Pin layers to keep them on the map.              │
 └──────────────────────────────────────────────────┘
 ```
 
-### State 1b: Default — Active Layer IS Pinned
+---
 
-The active layer (iNaturalist) is already pinned. ACTIVE LAYER section is hidden. The active pinned row gets an active indicator.
+### State 2: Empty — No Layers Active or Pinned (First Visit)
+
+When user has never pinned a layer and no layer is currently selected.
 
 ```
 ┌──────────────────────────────────────────────────┐
-│  Map Layers                    [undo]  [-]  [x]  │
-├──────────────────────────────────────────────────┤
-│  PINNED LAYERS                                   │
-│ *[drag] [eye] iNaturalist (birds)    [F 2]  [x] │  ← Active indicator (emerald border)
-│  [drag] [eye] Camera Traps v                [x] │
-│         [eye]   mountain lion   [F 5]            │
-│                 deer                             │
-│         [+ New View]                             │
-└──────────────────────────────────────────────────┘
-```
-
-**Active indicator on pinned row:** `border-l-2 border-emerald-600 font-semibold` — same styling vocabulary as left sidebar active state.
-
-**Notes:**
-- Undo button `[undo]` is always visible in header. Gray/inactive when no actions to undo.
-- `[-]` collapses the widget. `[x]` closes it.
-- Pinned rows have: drag handle, eye toggle, name with distinguisher, filter indicator, remove button.
-- Nested "Camera Traps" has two child views. Only "mountain lion" has eye ON (visible).
-
----
-
-### State 2: Active Layer Section — With [pin] Button Visible
-
-When a non-pinned layer is active, the ACTIVE LAYER section shows it with a pin button.
-
-```
-├──────────────────────────────────────────────────┤
-│  ACTIVE LAYER                                    │
-│  Dendra Sensors                            [pin] │
-├──────────────────────────────────────────────────┤
-```
-
-**Behavior:**
-- Clicking [pin] moves the layer to the PINNED section and hides the ACTIVE LAYER section (since the active layer is now pinned).
-- Layer inherits its current filter state when pinned.
-- The pinned row receives the active indicator (emerald border).
-
----
-
-### State 3: Active Layer Section — Hidden (No Section Shown)
-
-The ACTIVE LAYER section is **hidden entirely** when:
-- The active layer is already pinned (shown in PINNED LAYERS with active indicator instead)
-- No layer has been selected yet (widget opens directly to PINNED LAYERS)
-- Active layer was just pinned (section disappears after pin action)
-
-This avoids empty placeholder text and dead space. The widget is more compact — only showing sections that have actionable content.
-
----
-
-### State 4: Pinned Layer Row — Flat, Single View, With Filters
-
-```
-│  [drag] [eye] ANiML Cameras (mt. lion) [F 5] [x]│
-```
-
-**Row elements (left to right):**
-
-| Element | Icon/Text | Styling | Behavior |
-|---------|-----------|---------|----------|
-| Drag handle | `[drag]` (Lucide `GripVertical`) | `text-gray-400 hover:text-gray-600 cursor-grab` | Drag to reorder (DFT-034) |
-| Eye toggle | `[eye]` (Lucide `Eye`) | Blue = visible, gray = hidden | Toggle map visibility |
-| Layer name | "ANiML Cameras" | `text-sm font-medium text-gray-900` | Click expands row |
-| Distinguisher | "(mt. lion)" | `text-sm text-gray-500` | Auto-generated from primary filter |
-| Filter indicator | `[F 5]` (Lucide `Filter` + count) | Colored badge when active (DFT-024) | Click → Browse tab in sidebar |
-| Remove | `[x]` (Lucide `X`) | `text-gray-400 hover:text-red-500` | Unpin layer (immediate, undo available) |
-
-**Filter indicator states (DFT-024):**
-- **Has filters:** Lucide `Filter` icon + count number. Tooltip: "5 filters applied. Click to edit."
-- **No filters:** Lucide `Filter` icon only, muted gray. Tooltip: "No filters — click to add."
-- ARIA: `aria-label="5 filters applied. Click to edit."`
-
----
-
-### State 5: Pinned Layer Row — Flat, No Filters
-
-```
-│  [drag] [eye] Fire Hazard              [F]  [x] │
-```
-
-**Notes:**
-- Filter icon `[F]` is muted gray (`text-gray-400`), still clickable.
-- No count number displayed.
-- No distinguisher text (no filter to derive it from).
-
----
-
-### State 6: Pinned Layer Row — Nested/Multi-View (DFT-013)
-
-When a layer has 2+ saved filtered views, it becomes a parent with nested children.
-
-```
-│  [drag] [eye] Camera Traps v                [x] │  ← Parent
-│         [eye]   mountain lion   [F 5]            │  ← Child (visible)
-│                 deer                             │  ← Child (hidden)
-│         [+ New View]                             │
-```
-
-**Parent row:**
-- Drag handle, eye toggle, layer name (no distinguisher), chevron `v`/`>`, remove `[x]`
-- Background: `bg-slate-50` or subtle left border
-- Text: `font-semibold`
-- Eye toggle: ON if any child is visible; OFF if all children hidden
-
-**Child rows:**
-- Indented: `ml-6` (24px) with subtle connecting line
-- Visible child: Eye icon ON (blue), filter indicator shown
-- Hidden child: Eye icon absent or grayed, name in `text-gray-400`
-- Entire child row is clickable → toggles that view's visibility
-
-**Visibility logic (DFT-013):**
-- Only ONE child view visible at a time (mutual exclusivity)
-- Clicking a hidden child → makes it visible, auto-hides previous
-- Clicking visible child's eye → turns it OFF, parent eye also OFF
-- Clicking parent eye ON → restores previously-selected child (memory-preserving)
-- Clicking parent eye OFF → hides all children; remembers which was selected
-
----
-
-### State 7: Nested Child — Visible View (Expanded with Filter Summary)
-
-When a child view's row is clicked/expanded, shows filter summary and actions.
-
-```
-│  [drag] [eye] Camera Traps v                [x] │
-│         [eye]   mountain lion   [F 5]            │  ← Expanded child
-│         ┌────────────────────────────────────┐   │
-│         │ Filters: species=mt. lion,         │   │
-│         │          date>2024                 │   │
-│         │ [Clear]  [+ New View]  [Edit F ->] │   │
-│         └────────────────────────────────────┘   │
-│                 deer                             │
-│         [+ New View]                             │
-```
-
-**Expanded panel (DFT-003b, DFT-019):**
-- Shows filter summary text (readable query description)
-- Action buttons:
-  - `[Clear]` — left-aligned. Clears all filters immediately, no confirmation (DFT-031). Undo available.
-  - `[+ New View]` — center. Duplicates layer with current filters as new child view.
-  - `[Edit Filters ->]` — right-aligned, includes arrow. Opens Browse tab in right sidebar.
-- Only ONE layer expanded at a time. Clicking another collapses the previous.
-- Widget panel stays expanded when "Edit Filters" is clicked (DFT-019) so user can reference filter state.
-
----
-
-### State 8: Nested Child — Hidden View
-
-```
-│                 deer                             │
-```
-
-**Styling:**
-- No eye icon (or grayed eye)
-- Name in `text-gray-400`
-- No filter indicator shown
-- Clickable — clicking makes this view visible
-
----
-
-### State 9: Widget Collapsed
-
-```
-┌──────────────────────────────────────────────────┐
-│  Map Layers (3)                            [+]   │
-└──────────────────────────────────────────────────┘
-```
-
-**Notes:**
-- Shows layer count in parentheses
-- `[+]` expand button
-- Collapsed by default when time-series data is active (DFT-005)
-- User can manually override collapse/expand
-
----
-
-### State 10: Widget Empty — First Visit (DFT-015)
-
-User has never pinned a layer before. ACTIVE LAYER section hidden (no active layer).
-
-```
-┌──────────────────────────────────────────────────┐
-│  Map Layers                    [undo]  [-]  [x]  │
+│ [layers]  Map Layers                     [−]      │
 ├──────────────────────────────────────────────────┤
 │                                                  │
-│              [pin-icon - muted]                  │
+│           [pin-icon - muted]                     │
 │                                                  │
-│         No layers pinned.                        │
+│     No layers pinned                             │
 │                                                  │
-│    Pin layers from the left sidebar              │
-│    to save them here.                            │
+│     Pin layers from the left sidebar             │
+│     to save them here.                           │
 │                                                  │
 └──────────────────────────────────────────────────┘
 ```
 
-**Styling:**
+**Styling (DFT-015):**
 - Icon: `w-12 h-12 text-gray-300` (Lucide `Pin`)
 - Title: `text-sm font-medium text-gray-700`
 - Body: `text-sm text-gray-500`
 - Container: `flex flex-col items-center justify-center text-center px-6 py-8`
-- Utilitarian tone (DFT-015)
+- Utilitarian tone — no apologies, no warmth.
 
-**Detection:** `localStorage.hasEverPinnedLayer === false`
+### State 2b: Empty — Returning User
 
----
-
-### State 11: Widget Empty — Returning User (DFT-015)
-
-User has pinned before, but currently has no pinned layers. ACTIVE LAYER section hidden.
+When user has previously pinned layers but currently has none.
 
 ```
 ┌──────────────────────────────────────────────────┐
-│  Map Layers                    [undo]  [-]  [x]  │
+│ [layers]  Map Layers                     [−]      │
 ├──────────────────────────────────────────────────┤
+│                                                  │
 │     Pinned layers appear here.                   │
+│                                                  │
 └──────────────────────────────────────────────────┘
 ```
 
-**Styling:**
-- `text-sm text-gray-500` — laconic, single line
+**Detection:** localStorage key `hasEverPinnedLayer` (DFT-015).
 
-**Detection:** `localStorage.hasEverPinnedLayer === true`
+---
 
-**Collapsed variant:**
+### State 3: Active Layer Only (Nothing Pinned)
+
+User has selected a layer from the left sidebar but hasn't pinned anything yet.
+
 ```
-┌─────────────────────────────────────────────────────────┐
-│  Map Layers (pin layers from the left)            [+]   │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│ [layers]  Map Layers                     [−]      │
+├──────────────────────────────────────────────────┤
+│ [eye] ACTIVE LAYER                               │
+│ [eye] iNaturalist Observations           [Pin]   │
+├──────────────────────────────────────────────────┤
+│ [pin] PINNED LAYERS (0)                          │
+│                                                  │
+│     Pinned layers appear here.                   │
+│     (or first-visit educational copy)            │
+│                                                  │
+└──────────────────────────────────────────────────┘
 ```
 
 ---
 
-### State 12: Drag in Progress (DFT-034)
+### State 4: Active Layer IS Pinned
 
-User is dragging a pinned layer to reorder it.
+When the active layer has been pinned, it appears in the Pinned section with active styling. The Active Layer section is empty/hidden.
 
 ```
 ┌──────────────────────────────────────────────────┐
-│  Map Layers                    [undo]  [-]  [x]  │
+│ [layers]  Map Layers           [undo-g] [−]      │
 ├──────────────────────────────────────────────────┤
-│  PINNED LAYERS                                   │
-│                                                  │
-│  ┄┄┄┄┄┄┄┄┄┄┄┄┄ 4px blue drop line ┄┄┄┄┄┄┄┄┄┄┄  │  ← Drop target indicator
-│  [drag] [eye] iNaturalist (birds)    [F 2]  [x] │
-│                                                  │
-│  ╔══════════════════════════════════════════════╗ │
-│  ║ [drag] [eye] ANiML (mt. lion)    [F 5] [x]  ║ │  ← Dragged row (lifted)
-│  ╚══════════════════════════════════════════════╝ │
-│                                                  │
-│  [drag] [eye] Fire Hazard            [F]    [x] │
+│ [pin] PINNED LAYERS (2)                          │
+│ [drag][eye] Camera Traps v               [x]     │  ← active + pinned (bold name)
+│       [eye] mountain lion    [Filter 5]          │  ← this is the active view
+│             deer             [Filter 3]          │
+│       [+ New View]                               │
+│ [drag][eye] Fire Perimeter   [Filter]    [x]     │
+├──────────────────────────────────────────────────┤
+│ Pin layers to keep them on the map.              │
 └──────────────────────────────────────────────────┘
 ```
 
-**Dragged row visual (DFT-034):**
-- `opacity: 0.6`
-- `transform: scale(0.95) rotate(2deg)`
-- `box-shadow: 0 12px 40px -8px rgba(0,0,0,0.3)`
-- `border: 2px dashed #3b82f6` (blue)
-- `cursor: grabbing`
-- Reduced motion: no rotation, just `scale(0.95)`
+**Notes:**
+- Active Layer section header is hidden (no amber section) when active layer is already pinned.
+- The active layer's row in the Pinned section shows additional bold/accent styling to indicate it's the current focus.
+- This avoids duplication — the same layer doesn't appear in both sections.
+
+---
+
+### State 5: Expanded Panel Open (DFT-003b)
+
+User has clicked a pinned layer row to see its filter summary and actions.
+
+```
+┌──────────────────────────────────────────────────┐
+│ [layers]  Map Layers           [undo-g] [−]      │
+├──────────────────────────────────────────────────┤
+│ [pin] PINNED LAYERS (2)                          │
+│ [drag][eye] Camera Traps (mt. lion) [F 5] [x]    │  ← active + highlighted
+│ ┌──────────────────────────────────────────────┐ │
+│ │ species = Mountain Lion, date > 2024-01-01, │ │
+│ │ region = North Ridge, status = Active,      │ │
+│ │ confidence >= 80%                           │ │
+│ │                                             │ │
+│ │ [Clear]                  [Edit Filters ->]  │ │
+│ └──────────────────────────────────────────────┘ │
+│ [drag][eye] Fire Perimeter   [Filter]    [x]     │
+├──────────────────────────────────────────────────┤
+│ Pin layers to keep them on the map.              │
+└──────────────────────────────────────────────────┘
+```
+
+---
+
+### State 6: Widget Collapsed
+
+User has clicked the collapse toggle [−].
+
+```
+┌──────────────────────────────────────────────────┐
+│ [layers]  Map Layers (3)                [+]      │
+└──────────────────────────────────────────────────┘
+```
+
+**Collapsed behavior:**
+- Header shows total layer count in parentheses: `"Map Layers (3)"`.
+- Toggle switches to [+] (expand icon).
+- Body transitions: `max-height: 0; opacity: 0; padding: 0;` over `0.2s ease-out`.
+- **No hint text when collapsed** — count badge provides sufficient context.
+
+---
+
+### State 7: Auto-Collapsed (DFT-005 — Time Series Active)
+
+When a Dendra time-series chart is open, this widget auto-collapses to free screen space.
+
+```
+┌──────────────────────────────────────────────────┐
+│ [layers]  Map Layers (3)                [+]      │
+└──────────────────────────────────────────────────┘
+```
+
+**Behavior (DFT-005):**
+- Auto-collapses when time-series chart/pop-up is active.
+- Restores to previous expand/collapse state when time-series view closes.
+- User override: if user manually expands during time-series, stays expanded.
+
+---
+
+### State 8: Pinned Layer — Eye Hidden
+
+A pinned layer has been toggled to invisible on the map.
+
+```
+│ [drag][eye-off] Fire Perimeter   [Filter]  [x]  │
+```
+
+| Element | Change from Visible |
+|---------|-------------------|
+| Eye icon | Switches to Lucide `EyeOff`, `text-gray-300` |
+| Layer name | `text-gray-400` (muted to reinforce hidden state) |
+| Filter indicator | `text-gray-300` (dimmed) |
+| Row opacity | Slight dimming but NOT `opacity-60` on entire row (keep [x] and drag handle visible) |
+
+---
+
+### State 9: Drag in Progress (DFT-034)
+
+User is dragging a pinned layer to reorder.
+
+```
+┌──────────────────────────────────────────────────┐
+│ [pin] PINNED LAYERS (3)                          │
+│ ─── ─── ─── ─── ─── ─── ─── ─── ─── ─── ───     │  ← 4px blue drop indicator
+│ [drag][eye] iNaturalist   [Filter 2]    [x]      │  ← normal row
+│                                                  │
+│ ╭ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─╮   │
+│ │ [drag][eye] Camera Traps   [Filter 5] [x] │   │  ← dragged row (lifted)
+│ ╰ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─╯   │
+│                                                  │
+│ [drag][eye] Fire Perimeter   [Filter]   [x]      │
+└──────────────────────────────────────────────────┘
+```
+
+**Dragged row styling (DFT-034):**
+```css
+.widget-layer-card.dragging {
+  opacity: 0.6;
+  transform: scale(0.95) rotate(2deg);
+  box-shadow: 0 12px 40px -8px rgba(0, 0, 0, 0.3);
+  cursor: grabbing;
+  border: 2px dashed #3b82f6;
+}
+```
 
 **Drop target indicator:**
-- 4px solid blue line (`#3b82f6`) at insertion point
-- Subtle background highlight on target row (`rgba(59,130,246,0.05)`)
-- Margin offset prevents layout shift
+```css
+.widget-layer-card.drag-over {
+  border-top: 4px solid #3b82f6;
+  margin-top: -4px;
+  background-color: rgba(59, 130, 246, 0.05);
+}
+```
 
-**After drop:**
-- 400ms settle animation (`ease-out`) with green highlight (`#dcfce7`)
-- Toast: "Map layer order updated" (2s auto-dismiss, bottom-center)
-- Map z-order updates (top of widget = top of map rendering)
+**Post-drop settle animation:**
+```css
+.widget-layer-card.just-dropped {
+  animation: settle 400ms ease-out;
+  background-color: #dcfce7; /* green = success */
+}
+```
 
-**Keyboard support (WCAG 2.1.1):**
-- Focus on drag handle → Arrow Up/Down moves layer one position
-- Shift+Home → move to top; Shift+End → move to bottom
-- ARIA announces: "{LayerName} moved to position {N} of {total}"
+**Reduced motion:** `transform: scale(0.95)` only (no rotation). No settle animation.
 
-**Edge cases:**
-- Single pinned layer: hide drag handles (nothing to reorder)
-- Invalid drop (outside widget): snap back with brief shake (2px, 2 cycles)
-- Rapid reorders: debounce map updates by 300ms
+---
+
+### State 10: Single Pinned Layer (No Drag Handle)
+
+When only one layer is pinned, drag handles are hidden (nothing to reorder).
+
+```
+┌──────────────────────────────────────────────────┐
+│ [pin] PINNED LAYERS (1)                          │
+│       [eye] Fire Perimeter   [Filter]    [x]     │  ← no drag handle
+└──────────────────────────────────────────────────┘
+```
+
+---
+
+## Multi-View Behavior (DFT-013)
+
+### Promotion to Nested Structure
+
+When a user clicks "+ New View" on a single-view (flat) pinned layer:
+
+1. The flat row promotes to a nested parent-child structure.
+2. Original view becomes the first child (retains its filters + distinguisher).
+3. New child appears with the current filter state as a duplicate.
+4. Animation: 250-300ms expansion (DFT-025).
+
+### Mutual Exclusivity
+
+| Rule | Behavior |
+|------|----------|
+| Only ONE child visible at a time | Clicking a child's eye auto-hides the previously visible one |
+| Parent eye toggle ON | Restores the previously-selected child view (memory-preserving) |
+| Parent eye toggle OFF | Hides all children |
+| Click child eye OFF | Also turns off parent eye (no children visible = parent "off") |
+| Click child row | Entire row is clickable; toggles that view's visibility |
+
+### Distinguisher Algorithm (DFT-001)
+
+Auto-generated label for differentiating views of the same layer:
+
+| Priority | Source | Example |
+|----------|--------|---------|
+| 1 | Species/taxon filter | "Camera Traps (mountain lion)" |
+| 2 | Date range | "Camera Traps (2024)" |
+| 3 | Spatial filter | "Camera Traps (North Ridge)" |
+| 4 | User-provided name | "Camera Traps (my query)" |
+| 5 | Fallback | "Camera Traps (View 1)" |
+
+### Create New View Animation (DFT-025)
+
+| Phase | Timing | Effect |
+|-------|--------|--------|
+| 1. Button press | 0ms | Visual feedback (button depress) |
+| 2. Row expansion | 0–150ms | Row expands vertically (`ease-out`). Parent styling appears. |
+| 3. Children appear | 150–250ms | Child rows fade in. Original has eye ON, new has eye OFF. |
+| 4. New child highlight | 300–500ms | New child flashes `bg-green-100`, fading to normal over 200ms. |
+
+**Total duration:** 250-300ms (excluding highlight fade).
+
+**Post-animation:**
+- Focus moves to new child row.
+- Screen reader announces: "New view created. [LayerName] now has [count] views."
+- Reduced motion: instant state change + brief highlight only.
+
+---
+
+## Filter Indicator (DFT-024)
+
+### Visual States
+
+| State | Display | Styling |
+|-------|---------|---------|
+| Has filters | Lucide `Filter` + count (e.g., "5") | `text-xs text-emerald-600` |
+| No filters | Lucide `Filter` only | `text-xs text-gray-400` |
+
+### Tokens
+
+| Element | Styling |
+|---------|---------|
+| Container | `flex items-center gap-0.5 cursor-pointer` |
+| Icon | Lucide `Filter`, `w-3 h-3` |
+| Count | `text-xs` (inherits container color) |
+
+### Behavior
+
+- **Click:** Opens Browse tab in right sidebar for this layer (same as "Edit Filters ->").
+- **Tooltip (with filters):** `"5 filters applied. Click to edit."`
+- **Tooltip (no filters):** `"No filters — click to add"`
+- **ARIA:** `aria-label="5 filters applied. Click to edit."` or `"No filters. Click to add."`
+
+---
+
+## Map Z-Order (DFT-034)
+
+Widget row order from top to bottom corresponds to map layer rendering order (top = renders on top).
+
+**After reorder:**
+- Map layer z-order updates (debounced 300ms).
+- Toast at bottom-center of map: "Map layer order updated" (2s auto-dismiss).
+
+---
+
+## Map Badge Behavior (DFT-029)
+
+Count badges on map features (camera icons, sensor markers) only appear when a layer-level filter is active.
+
+| State | Badge | Marker |
+|-------|-------|--------|
+| No filter active | No badge | Normal styling |
+| Filter active, results > 0 | Badge with filtered count | Normal styling |
+| Filter active, results = 0 | No badge | Grayed out (DFT-028) |
 
 ---
 
@@ -386,111 +657,172 @@ User is dragging a pinned layer to reorder it.
 
 | User Action | Result | Notes |
 |-------------|--------|-------|
-| Click [pin] on active layer | Layer moves from ACTIVE to PINNED section; [eye]+[pin] icons appear on sidebar row | DFT-001 |
-| Click [eye] on pinned layer | Toggle map visibility (blue=ON, gray=OFF); syncs with left sidebar eye icon | DFT-001, Feb 6 |
-| Click pinned layer row | Expand to show filter summary + action buttons | DFT-003b |
-| Click [x] on pinned layer | Unpin immediately (no confirmation); undo available | DFT-031 |
-| Click [Clear] in expanded panel | Clear all filters immediately; undo available | DFT-031 |
-| Click [Edit Filters ->] | Right sidebar switches to Browse tab (150-200ms crossfade); widget stays expanded | DFT-019 |
-| Click [+ New View] | Duplicate layer with current filters as new child view | DFT-003b, DFT-013 |
-| Click [F N] filter indicator | Same as [Edit Filters ->] — opens Browse tab | DFT-024 |
-| Click child view row | Toggle that view's visibility (mutual exclusivity) | DFT-013 |
-| Click [undo] in header | Undo most recent action (unpin, clear filters, delete view) | DFT-031 |
-| Click [-] collapse | Collapse widget to header-only bar | |
-| Click [x] close | Close widget entirely | |
-| Drag layer row | Reorder pinned layers (changes map z-order) | DFT-034 |
-| Filter changes in right sidebar | Widget row animates/highlights to confirm change | DFT-003 |
+| Click layer in left sidebar | Layer appears in Active Layer section; right sidebar opens to Overview | DFT-001, DFT-006 |
+| Click [Pin] button in Active section | Layer moves to Pinned section; Active section empties or hides | DFT-001 |
+| Click pinned layer row | Expanded panel opens with filter summary + actions | DFT-003b |
+| Click "Edit Filters ->" in expanded panel | Right sidebar opens to Browse tab; filter section highlighted | DFT-019 |
+| Click "Clear" in expanded panel | All filters removed immediately; undo available | DFT-031 |
+| Click "+ New View" button | Promotes to nested structure (or adds new child); animation per DFT-025 | DFT-013 |
+| Click filter indicator icon | Right sidebar opens to Browse tab for that layer | DFT-024 |
+| Click eye toggle (ON -> OFF) | Layer hidden on map; icon switches to `EyeOff`; row dims | DFT-001 |
+| Click eye toggle (OFF -> ON) | Layer visible on map; icon switches to `Eye`; row returns to normal | DFT-001 |
+| Click [x] on pinned layer | Layer unpinned; removed from widget; undo available | DFT-001, DFT-031 |
+| Click [x] on nested parent | All child views unpinned; undo available | DFT-013 |
+| Click child row (nested) | Toggles that child's visibility; previous visible child auto-hides | DFT-013 |
+| Click parent eye (ON -> OFF, nested) | All children hidden | DFT-013 |
+| Click parent eye (OFF -> ON, nested) | Previously-selected child restored | DFT-013 |
+| Drag a pinned row | Reorder with visual feedback; map z-order updates on drop | DFT-034 |
+| Click collapse toggle [−] | Widget collapses to header-only; count badge shown | |
+| Click expand toggle [+] | Widget expands to full body | |
+| Press Escape | Closes expanded panel (if open); otherwise no effect | DFT-017 |
+| Press Arrow Up/Down on drag handle | Reorder via keyboard; ARIA live announces position | DFT-034 |
+| Selecting hidden pinned layer in sidebar | Auto-restores visibility; layer becomes active | DFT-001 |
 
 ---
 
-## Widget Header Detail
+## Left Sidebar Sync
 
-```
-┌──────────────────────────────────────────────────┐
-│  Map Layers                    [undo]  [-]  [x]  │
-│  ^ title                       ^ undo  ^ min ^ close
-└──────────────────────────────────────────────────┘
-```
+The widget's visibility state syncs bidirectionally with the left sidebar's eye/pin icons (Feb 6 left-sidebar.md refinement):
 
-**Undo button (DFT-031):**
+| Widget Action | Left Sidebar Effect |
+|---|---|
+| Eye ON | Sidebar eye icon turns blue |
+| Eye OFF | Sidebar eye icon turns gray |
+| Unpin layer | Sidebar pin icon removed; eye icon removed |
+| Pin layer | Sidebar shows solid pin + eye icon |
 
-| State | Styling | Tooltip |
-|-------|---------|---------|
-| Inactive | `text-gray-400 opacity-40 cursor-not-allowed` | "No actions to undo" |
-| Active | `text-emerald-600 cursor-pointer` | "Undo: Unpinned ANiML Cameras" |
-
-- Icon: Lucide `Undo2` or `RotateCcw`, `w-5 h-5`
-- Pulse animation (1 cycle, 400ms) when activated
-- Respects `prefers-reduced-motion`
-- Stack size: 5 actions per widget (single-level for v2.0)
-- Actions covered: unpin layer, delete filtered view, clear filters
-
----
-
-## Create New View Animation (DFT-025)
-
-When user clicks [+ New View] on a single-view (flat) layer:
-
-| Phase | Timing | Effect |
-|-------|--------|--------|
-| 1. Button press | 0ms | Visual feedback (button depress) |
-| 2. Row expansion | 0–150ms | Row expands vertically (`ease-out`). Parent styling appears (bg, border, chevron). |
-| 3. Children appear | 150–250ms | Child rows fade in. Original child has eye ON, new child has eye OFF. Children indented 24px. |
-| 4. New child highlight | 300–500ms | New child row flashes `bg-green-100`, fading to normal over 200ms. |
-
-- Total duration: 250–300ms (excluding highlight fade)
-- Focus moves to new child row after animation
-- Screen reader: "New view created. {LayerName} now has {count} views."
-- `prefers-reduced-motion`: instant state change + brief highlight only
-- Debounce button to prevent animation stacking
-
----
-
-## Auto-Collapse Behavior (DFT-005)
-
-| Widget State | During Time-Series View | Rationale |
-|-------------|-------------------------|-----------|
-| Map Layers widget | Auto-collapses | Not needed during sensor exploration |
-| Bookmarked Items widget | Remains expanded | Needed for "bookmark range" action |
-
-- Trigger: Time-series chart/pop-up is active (e.g., Dendra sensor detail)
-- Restoration: Widget restores to previous expand/collapse state when time-series closes
-- Override: User can manually expand during time-series (overrides auto-collapse)
+| Sidebar Action | Widget Effect |
+|---|---|
+| Click eye icon (blue -> gray) | Widget eye turns gray; layer hidden on map |
+| Click eye icon (gray -> blue) | Widget eye turns blue; layer visible on map |
+| Click pin icon (hover, unpinned) | Layer added to Widget Pinned section |
+| Click pin icon (solid, pinned) | Layer removed from Widget Pinned section; undo available |
 
 ---
 
 ## Design Decision Summary
 
-- **Widget title:** "Map Layers" (default). Configurable for team testing — alternatives: "Pinned Item Layers". Configurable via `src/config/terminology.ts`.
-- **Conditional sections:** "ACTIVE LAYER" only appears when active layer is NOT pinned. "PINNED LAYERS" always shown. Active pinned layer gets emerald border indicator. No duplication. (Feb 6 resolution)
-- **Eye toggle sync:** Visibility toggles in this widget sync bidirectionally with eye icons on pinned layers in the left sidebar. Single source of truth for layer visibility state. (Feb 6 resolution)
-- **No filter editing in widget** — sidebar is the canonical filter editor (DFT-004). Widget shows filter status only.
-- **"Edit Filters ->"** includes arrow to indicate navigation to right sidebar (DFT-019)
-- **One expanded row at a time** — clicking another collapses the previous (DFT-003b)
-- **Multiple filtered views** use nested parent/child structure; mutual exclusivity (DFT-013)
-- **Single-view layers stay flat** — nesting only when 2+ views exist (DFT-013)
-- **Undo instead of confirmation** for all single-item destructive actions (DFT-031)
-- **Drag-and-drop** changes both widget order and map z-order (DFT-034)
-- **Filter indicator** uses Lucide Filter icon + count, single-line rows (DFT-024)
-- **SVG/Lucide icons only**, no emojis (DFT-026)
-- **Auto-collapse** during time-series viewing (DFT-005)
-- **Empty states** differentiate first-visit (educational) from returning (laconic) (DFT-015)
+- **Two-section layout: Active + Pinned** (DFT-001). Active is temporary (one at a time). Pinned is persistent (multiple). Clear separation of transient vs. saved state.
+- **Active Layer section hidden when active layer is pinned** — avoids duplication. Active styling moves to the Pinned section row.
+- **Pin action is explicit** (DFT-001). Clicking a layer in the sidebar makes it active but does NOT pin it. The [Pin] button is a deliberate save action.
+- **Multi-view nested structure** (DFT-013). Only promoted when 2+ views exist. Mutual exclusivity prevents badge confusion. Parent eye toggle is memory-preserving.
+- **Expanded panel for filter summary** (DFT-003b). Click row to expand. Shows filter text summary + "Edit Filters" and "Clear" actions. Only one expanded at a time.
+- **Filter indicator icon + count** (DFT-024). Compact, clickable, familiar funnel icon. Tooltip bridges learnability gap.
+- **Drag-to-reorder** (DFT-034). Drag handles visible when 2+ pinned layers. Map z-order matches widget order. Keyboard support via Arrow keys.
+- **No confirmation dialogs** (DFT-031). All destructive actions (unpin, clear, delete view) execute immediately. Persistent undo button in widget header.
+- **Auto-collapse during time-series** (DFT-005). Pinned Layers widget auto-collapses when Dendra chart is active. Bookmarked Features stays expanded.
+- **SVG/Lucide icons only** (DFT-026). No emojis.
+- **Widget always present** — collapses to header, never fully closes. This is the primary state management interface for map layers.
 
 ---
 
 ## Accessibility
 
-- **ARIA:** Widget container: `role="region"` with `aria-label="Map Layers"`
-- **Drag-and-drop:** `aria-label="Drag to reorder layer. Use arrow keys to move up or down."` on handles
-- **ARIA live region:** `role="status" aria-live="polite"` for drag position announcements
-- **Tab order:** Part of global tab order after map (DFT-017)
-- **Keyboard:** Enter/Space on buttons; Arrow keys on drag handles; Escape closes expanded panels
-- **Screen reader:** Announces significant actions — "Layer pinned", "Layer unpinned", "Filter applied"
+- **ARIA:** `role="region"` on widget, `aria-label="Map Layers"`.
+- **Sections:** `role="group"` on Active Layer and Pinned Layers sections with `aria-label`.
+- **Drag handles:** `aria-label="Drag to reorder layer. Use arrow keys to move up or down."` (DFT-034).
+- **Eye toggles:** `aria-label="[Layer name] is visible on map"` / `"[Layer name] is hidden"`. `aria-pressed` toggle state.
+- **Filter indicators:** `aria-label="5 filters applied. Click to edit."` (DFT-024).
+- **Keyboard:**
+  - Tab navigates between interactive elements (handles, eyes, filter indicators, buttons).
+  - Arrow Up/Down on drag handle reorders layers. Shift+Home moves to top, Shift+End to bottom.
+  - Enter/Space activates buttons and toggles.
+  - Escape closes expanded panel.
+- **Screen reader announcements** (via `aria-live="polite"`):
+  - "Layer pinned" / "Layer unpinned"
+  - "Layer visibility toggled on/off"
+  - "Filters cleared"
+  - "[Layer name] moved to position [N] of [total]" (during reorder)
+  - "New view created. [Layer name] now has [count] views."
+- **Tab order:** Widget is third in global tab order (after left sidebar, then map) (DFT-017).
+- **Focus management:** When expanded panel opens, focus moves to first action ("Clear" or "Edit Filters"). When panel closes, focus returns to the row that triggered it.
+- **ARIA live region for reorder announcements:**
+  ```html
+  <div id="drag-announcements" role="status" aria-live="polite" class="sr-only"></div>
+  ```
+
+---
+
+## File Structure
+
+```
+src/v2/components/FloatingWidgets/
+  MapLayersWidget/
+    MapLayersWidget.tsx         <- Main widget container (WidgetShell + Header + Body)
+    ActiveLayerSection.tsx      <- Section B: amber-accented active layer display
+    PinnedLayersSection.tsx     <- Section C: blue-accented pinned layers list
+    PinnedLayerRow.tsx          <- Flat row (single view) or nested parent row
+    PinnedLayerChildRow.tsx     <- Child row within nested multi-view
+    ExpandedFilterPanel.tsx     <- DFT-003b: filter summary + actions
+    FilterIndicator.tsx         <- DFT-024: funnel icon + count badge
+    NewViewButton.tsx           <- DFT-013: "+ New View" action
+  shared/
+    WidgetShell.tsx             <- Floating container (shadow, backdrop, rounded)
+    WidgetHeader.tsx            <- Title + undo + collapse + close buttons
+    WidgetTip.tsx               <- Educational hint at bottom
+  BookmarkedItemsWidget/
+    ...                         <- Separate widget (DFT-037-P3)
+```
 
 ---
 
 ## Open Questions
 
-1. ~~**Widget title terminology:**~~ **RESOLVED (Feb 6):** Use "Map Layers" as default. Configurable for team testing via terminology config.
-2. ~~**Active layer section when active layer is also pinned:**~~ **RESOLVED (Feb 6):** ACTIVE LAYER section hidden when active layer is pinned. Active pinned row gets emerald border indicator. No duplication.
-3. ~~**Parent row remove [x] behavior:**~~ **RESOLVED (Feb 6):** Treat as single action (remove parent + all children) with undo. The parent is "one thing" from the user's perspective.
+1. ~~**Widget close button:**~~ **RESOLVED (Feb 6):** Widget does not have a close [x] button. It collapses to header but is always visible. This is the primary state management interface — hiding it would orphan layers on the map with no way to manage them. Collapse toggle [−] is sufficient for screen space management.
+
+2. **Active Layer section when active layer is also pinned:** Current spec says Active section is hidden and active styling moves to the Pinned row. Alternative: always show Active section, with "Already pinned" badge instead of [Pin] button. **Decision needed** — hiding is cleaner (less vertical space), but always-showing provides consistent spatial layout. **Proposal:** Hide the Active section when active layer is pinned. The pinned row's active styling (bold name, left border accent) is sufficient to communicate "this is what I'm currently looking at."
+
+3. **Expanded panel for nested children:** Should clicking a child row open an expanded panel (like flat rows), or should expanding only work at the parent level? **Proposal:** Child rows are clickable to toggle visibility; parent row expansion shows the active child's filter summary. This keeps the interaction consistent — "click row = expand, click eye = toggle."
+
+---
+
+## Component Interface (Top-Level)
+
+```typescript
+interface MapLayersWidgetProps {
+  // Active layer
+  activeLayer?: {
+    id: string;
+    name: string;
+    isPinned: boolean;
+  };
+  onPinActiveLayer: () => void;
+
+  // Pinned layers
+  pinnedLayers: PinnedLayer[];
+  onToggleVisibility: (layerId: string, viewId?: string) => void;
+  onUnpin: (layerId: string) => void;
+  onReorder: (fromIndex: number, toIndex: number) => void;
+  onEditFilters: (layerId: string, viewId?: string) => void;
+  onClearFilters: (layerId: string, viewId?: string) => void;
+  onCreateNewView: (layerId: string) => void;
+
+  // Undo
+  canUndo: boolean;
+  onUndo: () => void;
+  undoDescription?: string;
+
+  // Widget state
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
+}
+
+interface PinnedLayer {
+  id: string;
+  name: string;
+  isVisible: boolean;
+  isActive: boolean;
+  filterCount: number;
+  filterSummary?: string;     // "species = Mountain Lion, date > 2024"
+  distinguisher?: string;     // "(mountain lion)"
+  views?: PinnedLayerView[];  // If multi-view (DFT-013)
+}
+
+interface PinnedLayerView {
+  id: string;
+  name: string;               // Distinguisher label
+  isVisible: boolean;
+  filterCount: number;
+  filterSummary?: string;
+}
+```
