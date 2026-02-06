@@ -179,6 +179,8 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 **Design Decision (Feb 5, 2026):** Resolved DFT-040 — No collapsed layer filter summary bar. Back button is only Level 2 reference. Feature header merges with filter actions. See design-system.md Dual-Level Filter Pattern.
 
+**Design Decision (Feb 6, 2026):** Resolved DFT-043 — Minimal sidebar at Level 3. Stats appear in pop-up footer (not sidebar). Sidebar contains only: back button, sensor header + actions, filter controls, result count, bookmark button. Rationale: separation of concerns (sidebar = control, pop-up = visualization + metadata), spatial proximity (stats with chart), minimalism, reduced cognitive load. See planning-task-tracker.md DFT-043.
+
 **Acceptance Criteria:**
 - [ ] "← Back to Sensors" navigation (returns to State A)
 - [ ] **No Level 2 summary bar** — back button is only Level 2 reference (DFT-040)
@@ -188,7 +190,7 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 - [ ] **Slider for time navigation** — exploration only, NOT saved
 - [ ] Slider state is **ephemeral** — resets when navigating away
 - [ ] **NO date pickers in pop-up** — avoids redundant affordances (date pickers are in sidebar)
-- [ ] Stats sidebar or panel (min, max, avg, total)
+- [ ] **Stats footer in pop-up** — Min, Max, Avg, Total displayed below chart (DFT-043)
 - [ ] "View Full Chart" option for larger view
 - [ ] "Download CSV" for current time range (uses sidebar filter, not slider position)
 
