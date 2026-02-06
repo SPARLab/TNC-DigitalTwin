@@ -139,6 +139,10 @@ When marking a DFT-XXX item as resolved, verify/update ALL of the following:
 | DFT-038 | Filter section anatomy — shared structural template for Browse tab filter UI across all data sources | Design System | 🟢 Resolved | High |
 | DFT-039 | Filter apply behavior — auto-apply vs explicit Apply button consistency across data sources | UI/UX | 🟢 Resolved | High |
 | DFT-040 | Dual-level filter visual distinction — how Level 2 vs Level 3 filters look different (ANiML, Dendra) | UI/UX | 🟢 Resolved | Medium |
+| DFT-041 | Right sidebar Export tab content — what should the per-layer Export tab show? | UI/UX | 🟡 Open | Medium |
+| DFT-042 | ANiML landing cards mode-switch — how to switch between Animal-First and Camera-First after initial choice | UI/UX | 🟡 Open | Low |
+| DFT-043 | Dendra sidebar body at Level 3 — what shows in sidebar when chart renders in floating pop-up? | UI/UX | 🟡 Open | Low |
+| DFT-044 | Self-contained row detail view — shared component for iNaturalist observation and DataOne dataset detail views | UI/UX | 🟡 Open | Medium |
 
    **Status Key:**
 - 🟢 Resolved — Decision made, ready for dev
@@ -973,6 +977,133 @@ interface FeatureDetailCardProps {
 
 ---
 
+### DFT-041: Right Sidebar Export Tab Content
+
+**Category:** UI/UX  
+**Status:** 🟡 Open  
+**Priority:** Medium  
+**Source:** Component spec review (DFT-037-P4), Feb 6, 2026
+
+**Context:**
+DFT-002 resolved that the Export Builder lives in a modal opened from the global header shopping cart button. The right sidebar has three tabs: Overview, Browse, Export. But no DFT specifies what the Export tab actually contains.
+
+**The problem:** If the Export Builder is a global modal, the per-layer Export tab risks being either (a) redundant, (b) empty/confusing, or (c) a useful summary that doesn't exist yet.
+
+**Options:**
+1. **Read-only per-layer summary** — Shows pin status, active filter count, bookmarked items from this layer, and directs user to the Export Builder modal. Informational only.
+2. **Remove the Export tab entirely** — Reduce to 2 tabs (Overview | Browse). Export is exclusively accessed via the global header shopping cart. Simpler.
+3. **Per-layer export configuration** — Allow users to configure export settings (format, fields) for this specific layer within the tab. Could duplicate Export Builder modal functionality.
+4. **"Add to Export" action tab** — Shows what this layer would contribute to an export and has an "Add to Export Cart" button.
+
+**Questions for design principles analysis:**
+- Does a third tab that's mostly a redirect to a modal violate Nielsen #8 (minimalism)?
+- Does removing the Export tab make the export feature less discoverable (Nielsen #6)?
+- Is a 2-tab sidebar more learnable than 3-tab (Hick's Law)?
+
+**Discussion:**
+*Awaiting design principles analysis*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-042: ANiML Landing Cards Mode-Switch
+
+**Category:** UI/UX  
+**Status:** 🟡 Open  
+**Priority:** Low  
+**Source:** Component spec review (DFT-037-P4), Feb 6, 2026  
+**Related:** DFT-003c
+
+**Context:**
+DFT-003c resolved that ANiML's Browse tab shows landing cards (Animal-First vs Camera-First) on first visit. User preference is remembered so landing cards are skipped on return. But how does a user switch modes after making their initial choice?
+
+**The problem:** Once a user chooses Camera-First browsing, there's no specified way to switch to Animal-First (or vice versa). The user is locked into their initial choice unless we provide a switch mechanism.
+
+**Options:**
+1. **"Switch to [other mode]" link** at the top of the Browse tab, below filter section. Subtle text link, not a button.
+2. **Dropdown/toggle in filter section header** — "Browsing by: [Camera ▼]" with Camera/Animal options.
+3. **Settings gear icon** in Browse tab header — opens mode selection.
+4. **Reset link in Overview tab** — "Change browse mode" link clears preference and shows landing cards again.
+
+**Questions for design principles analysis:**
+- Where should the switch control live (proximity to filters vs separate)?
+- How visible should it be (always visible vs tucked away)?
+- Should switching modes reset current filters?
+
+**Discussion:**
+*Awaiting design principles analysis*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-043: Dendra Sidebar Body at Level 3
+
+**Category:** UI/UX  
+**Status:** 🟡 Open  
+**Priority:** Low  
+**Source:** Component spec review (DFT-037-P4), Feb 6, 2026  
+**Related:** DFT-004, DFT-040
+
+**Context:**
+DFT-004 resolved that Dendra's time-series chart renders in a floating pop-up on the map (with slider for exploration). DFT-040 resolved that Level 3 uses a `FeatureDetailCard` with embedded filter controls. But the spec doesn't fully define what the sidebar body shows beyond filter controls and the bookmark button when the chart is in the pop-up.
+
+**The problem:** The sidebar has vertical space below the filter controls and result count that could either show useful content or remain empty. The chart is elsewhere (pop-up), so the sidebar is primarily a filter control panel at Level 3.
+
+**Options:**
+1. **Filter controls + bookmark only** — Sidebar is minimal at Level 3. All data visualization is in the pop-up. Clean separation.
+2. **Filter controls + stats summary** — Show min, max, avg, total below the result count. Quick reference without needing to look at the chart.
+3. **Filter controls + mini chart** — Small inline chart in the sidebar that mirrors the pop-up. Provides context if user closes the pop-up.
+4. **Filter controls + data table** — Tabular view of datapoints as an alternative to the chart. Useful for researchers who want exact values.
+
+**Questions for design principles analysis:**
+- Does duplicating the chart in sidebar and pop-up violate DRY/minimalism?
+- Do researchers need quick numeric stats without looking at the chart?
+- Is a data table view useful as a sidebar alternative to the pop-up chart?
+
+**Discussion:**
+*Awaiting design principles analysis*
+
+**Resolution:** *Pending*
+
+---
+
+### DFT-044: Self-Contained Row Detail View Component
+
+**Category:** UI/UX  
+**Status:** 🟡 Open  
+**Priority:** Medium  
+**Source:** Component spec review (DFT-037-P4), Feb 6, 2026  
+**Related:** DFT-040, Phase 1 Task 1.5, Phase 4 Task 4.5
+
+**Context:**
+The template defines two shared components for Browse tab content views:
+- `FilterSection` (DFT-038) — for list views with filters
+- `FeatureDetailCard` (DFT-040) — for Level 3 drill-downs (ANiML cameras, Dendra sensors)
+
+But iNaturalist (Phase 1, Task 1.5) and DataOne (Phase 4, Task 4.5) both have **detail views** for self-contained or simple-pointer rows that don't fit either component. These are "click an item to see expanded details" views, not Level 3 drill-downs.
+
+**The problem:** Without a shared component, iNaturalist and DataOne will independently implement detail views that may drift visually. Both need: back button, expanded metadata, larger media display, action buttons.
+
+**Options:**
+1. **Create shared `ItemDetailView` component** — Back button + metadata grid + media area + actions. Used by both iNaturalist and DataOne. Part of the shared template.
+2. **Reuse `FeatureDetailCard` with no filter controls** — Pass empty children. Card becomes a read-only detail display. Simpler component tree.
+3. **No shared component** — Each data source implements its own detail view. Accept visual drift risk.
+4. **Extend `ResultCard` with "expanded" state** — Card expands inline instead of navigating to a separate view.
+
+**Questions for design principles analysis:**
+- Is the iNaturalist observation detail view structurally similar enough to the DataOne dataset detail view to share a component?
+- Should clicking a self-contained item expand inline or navigate to a separate view?
+- How much metadata is appropriate for the detail view (full vs curated)?
+
+**Discussion:**
+*Awaiting design principles analysis*
+
+**Resolution:** *Pending*
+
+---
+
 
 ### DFT-002: Export Button Placement/Visibility ✅
 
@@ -1004,6 +1135,7 @@ interface FeatureDetailCardProps {
 
 | Date | Change |
 |------|--------|
+| Feb 6, 2026 | Added DFT-041 through DFT-044: open design questions surfaced during right sidebar component spec (DFT-037-P4). DFT-041: Export tab content. DFT-042: ANiML landing cards mode-switch. DFT-043: Dendra sidebar body at Level 3. DFT-044: Self-contained row detail view component (iNaturalist + DataOne shared pattern). All 🟡 Open, awaiting design principles analysis |
 | Feb 5, 2026 | Resolved DFT-038: Filter section anatomy — shared `FilterSection` component enforces consistent Browse tab filter anatomy across all 4 data sources. Structural skeleton: header row with conditional "Clear All", 2-col CSS grid, result count footer. Flat `slate-50` container (no gradients). Header convention: "Filter [Plural Noun]". "Optional:" labels dropped. Per-data-source control inventory documented. Analyzed via 9 UI/UX frameworks. See design-system.md Filter Section Patterns |
 | Feb 5, 2026 | Archived DFT-033 through DFT-035 to `PLANNING/resolved-decisions/` with full resolution summaries. Detailed sections removed from tracker to keep it manageable; summaries remain in Quick Reference table |
 | Feb 5, 2026 | Added DFT-038 (filter section anatomy), DFT-039 (filter apply behavior consistency), DFT-040 (dual-level filter visual distinction). These three items establish the Browse tab filter design system before mockup generation. DFT-038 proposes a shared `FilterSection` component to enforce consistent anatomy across all data sources. DFT-039 addresses inconsistency between DataOne's auto-apply (DFT-035) and ANiML/Dendra's `[Apply]` button pattern. DFT-040 addresses visual distinction for dual-level data sources (ANiML, Dendra). Updated DFT-037 prerequisites to include DFT-038 and DFT-039 as blocking |
