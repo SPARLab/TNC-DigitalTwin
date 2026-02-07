@@ -69,6 +69,7 @@
     .layer-row {
       transition: all 0.15s ease;
       border-left: 3px solid transparent;
+      position: relative;
     }
     .layer-row:hover { background-color: #f1f5f9; }
     .layer-row.active {
@@ -76,6 +77,31 @@
       background-color: #ecfdf5;
       font-weight: 600;
       color: #111827;
+    }
+    
+    /* Pin icon - hidden by default, shown on hover or active */
+    .layer-row .pin-icon {
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    .layer-row:hover .pin-icon,
+    .layer-row.active .pin-icon {
+      opacity: 1;
+    }
+    
+    /* Pin icon color states */
+    .layer-row .pin-icon {
+      color: #d1d5db; /* gray-300 - unpinned state */
+    }
+    .layer-row .pin-icon:hover {
+      color: #9ca3af; /* gray-400 */
+    }
+    .layer-row.pinned .pin-icon {
+      color: #059669; /* emerald-600 - pinned state */
+      opacity: 1; /* Always visible when pinned */
+    }
+    .layer-row.pinned .pin-icon:hover {
+      color: #047857; /* emerald-700 */
     }
 
     /* Floating widget card shadow */
@@ -110,8 +136,9 @@
 
     /* Expanded panel within pinned widget */
     .expanded-panel {
-      transition: max-height 0.2s ease-out, opacity 0.15s ease;
+      transition: max-height 0.2s ease-out, opacity 0.15s ease, padding 0.15s ease, border-width 0.15s ease;
       overflow: hidden;
+      max-height: 1000px; /* Large enough for content */
     }
 
     /* Nested child relationship lines - tree structure connectors */
@@ -315,17 +342,11 @@
             <span class="text-xs text-gray-400 ml-auto">(3)</span>
           </button>
           <div class="category-children hidden" id="children-fire">
-            <div id="layer-fire-perimeters" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm flex items-center" role="treeitem">
+            <div id="layer-fire-perimeters" class="layer-row pinned py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm flex items-center" role="treeitem">
               <span class="flex-1 truncate">Fire Perimeters</span>
-              <!-- Eye + Pin icons (State 4: Pinned, Visible) -->
-              <button id="sidebar-eye-fire-perimeters" class="icon-btn w-4 h-4 text-blue-500 flex-shrink-0" aria-label="Fire Perimeters visible on map" title="Toggle visibility">
+              <!-- Pin icon (emerald when pinned, always visible) -->
+              <button id="sidebar-pin-fire-perimeters" class="pin-icon icon-btn w-4 h-4 flex-shrink-0 ml-1.5" aria-label="Unpin Fire Perimeters" title="Unpin layer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                </svg>
-              </button>
-              <button id="sidebar-pin-fire-perimeters" class="icon-btn w-4 h-4 text-emerald-600 flex-shrink-0 ml-1.5" aria-label="Unpin Fire Perimeters" title="Unpin layer">
-                <svg class="w-4 h-4" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 17v5M9 10.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24V16a1 1 0 001 1h12a1 1 0 001-1v-.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V7a1 1 0 011-1 1 1 0 001-1V4a1 1 0 00-1-1H8a1 1 0 00-1 1v1a1 1 0 001 1 1 1 0 011 1v3.76z"/>
                 </svg>
               </button>
@@ -333,7 +354,7 @@
             <div id="layer-fire-history" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Fire History (1950-2025)</div>
             <div id="layer-burn-severity" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Burn Severity Index</div>
             <!-- DataOne shortcut row (DFT-045) -->
-            <div id="shortcut-dataone-fire" class="layer-row mt-1.5 border-t border-gray-200 py-1.5 px-3 pl-9 text-sm text-gray-500 hover:bg-emerald-50 cursor-pointer rounded-sm flex items-center gap-1.5" role="treeitem">
+            <div id="shortcut-dataone-fire" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-500 hover:bg-emerald-50 cursor-pointer rounded-sm flex items-center gap-1.5" role="treeitem">
               <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="14" width="18" height="5" rx="1"/><rect x="5" y="8" width="14" height="5" rx="1"/><rect x="2" y="2" width="17" height="5" rx="1"/>
               </svg>
@@ -348,8 +369,8 @@
             <svg class="w-4 h-4 text-gray-400 category-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
-            <!-- Lucide Droplets -->
-            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- Lucide Droplets (fixed size) -->
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
               <path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/>
               <path d="M12.56 14.1c1.44 0 2.6-1.19 2.6-2.64 0-.76-.37-1.47-1.11-2.08S12.73 7.8 12.56 7c-.19.94-.74 1.84-1.49 2.44S10 10.7 10 11.46c0 1.45 1.16 2.64 2.56 2.64z"/>
             </svg>
@@ -360,7 +381,7 @@
             <div id="layer-streams" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Streams and Watersheds</div>
             <div id="layer-wetlands" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Wetlands</div>
             <!-- DataOne shortcut row (DFT-045) -->
-            <div id="shortcut-dataone-freshwater" class="layer-row mt-1.5 border-t border-gray-200 py-1.5 px-3 pl-9 text-sm text-gray-500 hover:bg-emerald-50 cursor-pointer rounded-sm flex items-center gap-1.5" role="treeitem">
+            <div id="shortcut-dataone-freshwater" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-500 hover:bg-emerald-50 cursor-pointer rounded-sm flex items-center gap-1.5" role="treeitem">
               <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="14" width="18" height="5" rx="1"/><rect x="5" y="8" width="14" height="5" rx="1"/><rect x="2" y="2" width="17" height="5" rx="1"/>
               </svg>
@@ -396,8 +417,8 @@
             <svg class="w-4 h-4 text-gray-400 category-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
-            <!-- Lucide Trees -->
-            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- Lucide Trees (fixed size) -->
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
               <path d="M10 10v.2A3 3 0 018.9 16v0H5v0h0a3 3 0 01-1-5.8V10a3 3 0 016 0z"/>
               <path d="M7 16v6"/><path d="M13 19v3"/>
               <path d="M16 14v.2a3 3 0 01-1.1 5.8v0H11v0h0a3 3 0 01-1-5.8V14a3 3 0 016 0z"/>
@@ -431,7 +452,7 @@
             <div id="layer-kelp-forests" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Kelp Forests</div>
             <div id="layer-marine-protected" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Marine Protected Areas</div>
             <!-- DataOne shortcut row (DFT-045) -->
-            <div id="shortcut-dataone-oceans" class="layer-row mt-1.5 border-t border-gray-200 py-1.5 px-3 pl-9 text-sm text-gray-500 hover:bg-emerald-50 cursor-pointer rounded-sm flex items-center gap-1.5" role="treeitem">
+            <div id="shortcut-dataone-oceans" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-500 hover:bg-emerald-50 cursor-pointer rounded-sm flex items-center gap-1.5" role="treeitem">
               <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="14" width="18" height="5" rx="1"/><rect x="5" y="8" width="14" height="5" rx="1"/><rect x="2" y="2" width="17" height="5" rx="1"/>
               </svg>
@@ -519,30 +540,36 @@
             <span class="text-xs text-gray-400 ml-auto">(3)</span>
           </button>
           <div class="category-children" id="children-species">
-            <div id="layer-animl" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm flex items-center" role="treeitem">
+            <div id="layer-animl" class="layer-row pinned py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm flex items-center" role="treeitem">
               <span class="flex-1 truncate">Camera Traps (ANiML)</span>
-              <!-- Eye + Pin icons (State 4: Pinned, Visible — syncs with Map Layers widget) -->
-              <button id="sidebar-eye-animl" class="icon-btn w-4 h-4 text-blue-500 flex-shrink-0" aria-label="Camera Traps visible on map" title="Toggle visibility">
+              <!-- Pin icon (emerald when pinned, always visible) -->
+              <button id="sidebar-pin-animl" class="pin-icon icon-btn w-4 h-4 flex-shrink-0 ml-1.5" aria-label="Unpin Camera Traps" title="Unpin layer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                </svg>
-              </button>
-              <button id="sidebar-pin-animl" class="icon-btn w-4 h-4 text-emerald-600 flex-shrink-0 ml-1.5" aria-label="Unpin Camera Traps" title="Unpin layer">
-                <svg class="w-4 h-4" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 17v5M9 10.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24V16a1 1 0 001 1h12a1 1 0 001-1v-.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V7a1 1 0 011-1 1 1 0 001-1V4a1 1 0 00-1-1H8a1 1 0 00-1 1v1a1 1 0 001 1 1 1 0 011 1v3.76z"/>
                 </svg>
               </button>
             </div>
             <!-- ACTIVE layer (DFT-021) -->
-            <div id="layer-inat" class="layer-row active py-1.5 px-3 pl-9 text-sm rounded-sm cursor-pointer" role="treeitem" aria-current="true">
-              iNaturalist Observations
+            <div id="layer-inat" class="layer-row active py-1.5 px-3 pl-9 text-sm rounded-sm cursor-pointer flex items-center" role="treeitem" aria-current="true">
+              <span class="flex-1 truncate">iNaturalist Observations</span>
+              <!-- Pin icon (grayed out, shows on hover/active) -->
+              <button class="pin-icon icon-btn w-4 h-4 flex-shrink-0 ml-1.5" aria-label="Pin iNaturalist Observations" title="Pin layer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 17v5M9 10.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24V16a1 1 0 001 1h12a1 1 0 001-1v-.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V7a1 1 0 011-1 1 1 0 001-1V4a1 1 0 00-1-1H8a1 1 0 00-1 1v1a1 1 0 001 1 1 1 0 011 1v3.76z"/>
+                </svg>
+              </button>
             </div>
-            <div id="layer-ebird" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">
-              eBird Sightings
+            <div id="layer-ebird" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm flex items-center" role="treeitem">
+              <span class="flex-1 truncate">eBird Sightings</span>
+              <!-- Pin icon (grayed out, shows on hover) -->
+              <button class="pin-icon icon-btn w-4 h-4 flex-shrink-0 ml-1.5" aria-label="Pin eBird Sightings" title="Pin layer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 17v5M9 10.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24V16a1 1 0 001 1h12a1 1 0 001-1v-.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V7a1 1 0 011-1 1 1 0 001-1V4a1 1 0 00-1-1H8a1 1 0 00-1 1v1a1 1 0 001 1 1 1 0 011 1v3.76z"/>
+                </svg>
+              </button>
             </div>
             <!-- DataOne shortcut row (DFT-045) -->
-            <div id="shortcut-dataone-species" class="layer-row mt-1.5 border-t border-gray-200 py-1.5 px-3 pl-9 text-sm text-gray-500 hover:bg-emerald-50 cursor-pointer rounded-sm flex items-center gap-1.5" role="treeitem">
+            <div id="shortcut-dataone-species" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-500 hover:bg-emerald-50 cursor-pointer rounded-sm flex items-center gap-1.5" role="treeitem">
               <!-- Stacked Books (small) -->
               <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="14" width="18" height="5" rx="1"/><rect x="5" y="8" width="14" height="5" rx="1"/><rect x="2" y="2" width="17" height="5" rx="1"/>
@@ -705,7 +732,7 @@
               </span>
             </div>
 
-            <div class="p-2 space-y-1.5">
+            <div class="p-2 pb-3 space-y-1.5">
 
               <!-- ── Row 1: Camera Traps — NESTED (DFT-013: multiple views) ── -->
               <div id="pinned-layer-animl" class="space-y-1" data-layer-id="animl">
@@ -750,42 +777,49 @@
                 <div id="animl-children" class="nested-children-container ml-6 space-y-1">
 
                   <!-- Child 1: Mountain Lion view (VISIBLE, EXPANDED — showing filter summary) -->
-                  <div id="pinned-view-animl-mtlion" class="space-y-1">
-                    <div class="widget-layer-card nested-child rounded-lg px-3 py-2 flex items-center gap-2 bg-emerald-50 border-emerald-200 cursor-pointer">
-                      <!-- Eye (visible — emerald) -->
-                      <button class="icon-btn text-emerald-600" aria-label="Mountain lion view is visible">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                        </svg>
-                      </button>
-                      <!-- View name -->
-                      <span class="text-sm text-gray-800 flex-1 truncate">mountain lion</span>
-                      <!-- Filter indicator (DFT-024: icon + count, colored) -->
-                      <span id="filter-indicator-animl-mtlion" class="flex items-center gap-0.5 text-xs text-emerald-600 cursor-pointer" title="5 filters applied. Click to edit." aria-label="5 filters applied. Click to edit.">
-                        <!-- Lucide Filter -->
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
-                        </svg>
-                        5
-                      </span>
-                    </div>
-
-                    <!-- Expanded panel (DFT-003b: filter summary + actions) -->
-                    <div id="expanded-panel-animl-mtlion" class="expanded-panel bg-gray-50 border border-gray-200 rounded-lg mx-1 px-3 py-2.5">
-                      <p class="text-[11px] text-gray-500 leading-relaxed mb-2">
-                        species = Mountain Lion, date &gt; 2024-01-01, region = North Ridge, status = Active, confidence &ge; 80%
-                      </p>
-                      <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                          <button id="panel-clear-animl-mtlion" class="text-[11px] text-gray-400 hover:text-red-500 cursor-pointer">Clear</button>
-                        </div>
-                        <button id="panel-edit-filters-animl-mtlion" class="text-[11px] font-medium text-emerald-600 hover:text-emerald-700 cursor-pointer">
-                          Edit Filters
-                          <svg class="w-3 h-3 inline ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  <div id="pinned-view-animl-mtlion">
+                    <div class="widget-layer-card nested-child rounded-lg bg-emerald-50 border-emerald-200">
+                      <!-- Main row -->
+                      <div class="px-3 py-2 flex items-center gap-2 cursor-pointer">
+                        <!-- Eye (visible — emerald) -->
+                        <button class="icon-btn text-emerald-600" aria-label="Mountain lion view is visible">
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                           </svg>
                         </button>
+                        <!-- View name -->
+                        <span class="text-sm text-gray-800 flex-1 truncate">mountain lion</span>
+                        <!-- Filter indicator with expand/collapse chevron (DFT-024: icon + count, colored) -->
+                        <button id="filter-toggle-animl-mtlion" class="flex items-center gap-0.5 text-xs text-emerald-600 hover:text-emerald-700 transition-colors" title="5 filters applied. Click to expand/collapse." aria-label="5 filters applied. Click to expand or collapse filter details." aria-expanded="true">
+                          <!-- Lucide Filter -->
+                          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+                          </svg>
+                          <span>5</span>
+                          <!-- Chevron down (expanded state) -->
+                          <svg class="w-3 h-3 category-chevron expanded" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                          </svg>
+                        </button>
+                      </div>
+
+                      <!-- Expanded panel (DFT-003b: filter summary + actions) - INSIDE the green card -->
+                      <div id="expanded-panel-animl-mtlion" class="expanded-panel border-t border-emerald-200 bg-emerald-50 px-3 py-2.5">
+                        <p class="text-[11px] text-gray-600 leading-relaxed mb-2">
+                          species = Mountain Lion, date &gt; 2024-01-01, region = North Ridge, status = Active, confidence &ge; 80%
+                        </p>
+                        <div class="flex items-center justify-between">
+                          <div class="flex items-center gap-2">
+                            <button id="panel-clear-animl-mtlion" class="text-[11px] text-gray-400 hover:text-red-500 cursor-pointer">Clear</button>
+                          </div>
+                          <button id="panel-edit-filters-animl-mtlion" class="text-[11px] font-medium text-emerald-600 hover:text-emerald-700 cursor-pointer">
+                            Edit Filters
+                            <svg class="w-3 h-3 inline ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -857,11 +891,11 @@
             </div>
           </div>
 
-          <!-- Tip (DFT-015: educational hint) -->
-          <div id="pinned-tip" class="px-3 py-2 bg-slate-50 border-t border-slate-100 rounded-b-xl">
-            <p class="text-[11px] text-gray-500">Pin layers to keep them on the map. Only one non-pinned layer can be visible at a time.</p>
-          </div>
+        </div>
 
+        <!-- Tip (DFT-015: educational hint) - STICKY FOOTER outside scrollable area -->
+        <div id="pinned-tip" class="px-3 py-2 bg-slate-50 border-t border-slate-200 rounded-b-xl">
+          <p class="text-[11px] text-gray-500">Pin layers to keep them on the map. Only one non-pinned layer can be visible at a time.</p>
         </div>
 
         <!--
@@ -1386,6 +1420,40 @@
         children.classList.toggle('hidden');
       }
     }
+
+    // ── Filter panel expand/collapse toggle ──
+    document.querySelectorAll('[id^="filter-toggle-"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent triggering parent click handlers
+        const btnId = btn.id;
+        const panelId = btnId.replace('filter-toggle-', 'expanded-panel-');
+        const panel = document.getElementById(panelId);
+        const chevron = btn.querySelector('.category-chevron');
+        const isExpanded = btn.getAttribute('aria-expanded') === 'true';
+
+        if (panel && chevron) {
+          btn.setAttribute('aria-expanded', !isExpanded);
+          
+          if (isExpanded) {
+            // Collapse - hide the panel
+            panel.style.maxHeight = '0';
+            panel.style.opacity = '0';
+            panel.style.paddingTop = '0';
+            panel.style.paddingBottom = '0';
+            panel.style.borderTopWidth = '0';
+            chevron.classList.remove('expanded');
+          } else {
+            // Expand - show the panel
+            panel.style.maxHeight = panel.scrollHeight + 'px';
+            panel.style.opacity = '1';
+            panel.style.paddingTop = '0.625rem'; // py-2.5
+            panel.style.paddingBottom = '0.625rem';
+            panel.style.borderTopWidth = '1px';
+            chevron.classList.add('expanded');
+          }
+        }
+      });
+    });
 
     // ── Tab switching (right sidebar) ──
     function switchTab(tabName) {
