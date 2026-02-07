@@ -151,10 +151,13 @@
       content: '';
       position: absolute;
       left: -12px;
-      top: -5px;
-      bottom: 16px;
+      top: 0;
+      bottom: 0;
       width: 1px;
       background: #cbd5e1;
+      /* Mask out the bottom portion to stop at last child */
+      mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 3rem), transparent calc(100% - 3rem));
+      -webkit-mask-image: linear-gradient(to bottom, black 0%, black calc(100% - 3rem), transparent calc(100% - 3rem));
     }
     
     /* Horizontal line for each child */
@@ -170,6 +173,18 @@
       width: 12px;
       height: 1px;
       background: #cbd5e1;
+    }
+    
+    /* Hide the vertical line past the last child */
+    .nested-child:last-child::after {
+      content: '';
+      position: absolute;
+      left: -12px;
+      top: 50%;
+      bottom: -100px;
+      width: 1px;
+      background: white;
+      z-index: 1;
     }
 
     /* Tab crossfade (DFT-019: 150-200ms) */
@@ -218,25 +233,25 @@
        DFT-002: Cart button top-right
        DFT-008: TNC brand accent
        ================================================================ -->
-  <header id="global-header" class="h-12 bg-white border-b border-gray-200 shadow-sm flex items-center px-4 justify-between z-50 flex-shrink-0">
+  <header id="global-header" class="h-12 bg-gradient-to-b from-[#00703c] to-[#008f4a] flex items-center px-4 justify-between z-50 flex-shrink-0">
     <div class="flex items-center gap-3">
       <!-- TNC brand badge -->
-      <div id="tnc-badge" class="w-8 h-8 bg-tnc-green rounded flex items-center justify-center flex-shrink-0">
+      <div id="tnc-badge" class="w-8 h-8 bg-white/20 rounded flex items-center justify-center flex-shrink-0">
         <span class="text-white font-bold text-xs tracking-tight">TNC</span>
       </div>
       <div class="flex flex-col">
-        <span id="app-title" class="text-sm font-semibold text-gray-900 leading-tight">Dangermond Preserve Data Catalog</span>
-        <span id="app-subtitle" class="text-[11px] text-gray-400 leading-tight">Digital Twin v2.0</span>
+        <span id="app-title" class="text-sm font-semibold text-white leading-tight">Dangermond Preserve Data Catalog</span>
+        <span id="app-subtitle" class="text-[11px] text-white/70 leading-tight">Digital Twin v2.0</span>
       </div>
     </div>
 
     <!-- Cart / Export button (DFT-002) -->
-    <button id="cart-button" class="relative flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors">
+    <button id="cart-button" class="relative flex items-center gap-2 px-3 py-1.5 bg-white/95 border border-white/20 rounded-lg hover:bg-white transition-colors shadow-sm">
       <!-- Lucide ShoppingCart -->
-      <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg class="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/>
       </svg>
-      <span class="text-sm font-medium text-gray-700">Export</span>
+      <span class="text-sm font-medium text-gray-800">Export</span>
       <!-- Badge: total pinned + bookmarked count -->
       <span id="cart-badge" class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">7</span>
     </button>
@@ -328,10 +343,10 @@
           </div>
         </div>
 
-        <!-- ── Fire (COLLAPSED) ── -->
-        <div class="category" role="treeitem" aria-expanded="false">
-          <button id="cat-fire" class="category-header flex items-center gap-2 w-full py-2 px-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer" aria-expanded="false">
-            <svg class="w-4 h-4 text-gray-400 category-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <!-- ── Fire (EXPANDED by default for testing) ── -->
+        <div class="category" role="treeitem" aria-expanded="true">
+          <button id="cat-fire" class="category-header flex items-center gap-2 w-full py-2 px-3 text-[13px] font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer" aria-expanded="true">
+            <svg class="w-4 h-4 text-gray-400 category-chevron expanded" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
             <!-- Lucide Flame -->
@@ -341,7 +356,7 @@
             <span>Fire</span>
             <span class="text-xs text-gray-400 ml-auto">(3)</span>
           </button>
-          <div class="category-children hidden" id="children-fire">
+          <div class="category-children" id="children-fire">
             <div id="layer-fire-perimeters" class="layer-row pinned py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm flex items-center" role="treeitem">
               <span class="flex-1 truncate">Fire Perimeters</span>
               <!-- Pin icon (emerald when pinned, always visible) -->
@@ -1478,7 +1493,37 @@
       }
     }
 
-    // ── Layer row active state + widget active-layer sync ──
+    // ================================================================
+    // CATEGORY TOGGLES — Expand/collapse categories in left sidebar
+    // ================================================================
+    document.querySelectorAll('.category-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const category = header.closest('.category');
+        const children = category.querySelector('.category-children');
+        const chevron = header.querySelector('.category-chevron');
+        const isExpanded = header.getAttribute('aria-expanded') === 'true';
+        
+        if (children && chevron) {
+          if (isExpanded) {
+            // Collapse
+            children.classList.add('hidden');
+            chevron.classList.remove('expanded');
+            header.setAttribute('aria-expanded', 'false');
+            category.setAttribute('aria-expanded', 'false');
+          } else {
+            // Expand
+            children.classList.remove('hidden');
+            chevron.classList.add('expanded');
+            header.setAttribute('aria-expanded', 'true');
+            category.setAttribute('aria-expanded', 'true');
+          }
+        }
+      });
+    });
+
+    // ================================================================
+    // LAYER ROW CLICK — Active state + widget sync
+    // ================================================================
     document.querySelectorAll('.layer-row').forEach(row => {
       row.addEventListener('click', (e) => {
         // Don't activate if user clicked an icon button (eye/pin)
@@ -1700,6 +1745,216 @@
     // Wire existing unpin (x) buttons
     document.querySelectorAll('[id^="pinned-remove-"]').forEach(b => {
       b.addEventListener('click', () => unpinRow(b));
+    });
+
+    // ================================================================
+    // SIDEBAR PIN BUTTONS — Pin layer from sidebar to Map Layers widget
+    // ================================================================
+    function toggleSidebarPin(button, layerId, layerName) {
+      const sidebarRow = button.closest('.layer-row');
+      const isPinned = sidebarRow.classList.contains('pinned');
+      
+      if (isPinned) {
+        // UNPIN: Remove from pinned layers widget
+        unpinLayerFromWidget(layerId, sidebarRow);
+      } else {
+        // PIN: Add to pinned layers widget
+        pinLayerFromSidebar(layerId, layerName, sidebarRow);
+      }
+    }
+
+    function pinLayerFromSidebar(layerId, layerName, sidebarRow) {
+      const pinnedContainer = document.querySelector('#pinned-layers-section .p-2');
+      const countBadge = document.getElementById('pinned-count');
+      const announce = document.getElementById('widget-announcements');
+      if (!pinnedContainer) return;
+
+      // 1. Mark sidebar row as pinned
+      sidebarRow.classList.add('pinned');
+      const pinButton = sidebarRow.querySelector('.pin-icon');
+      if (pinButton) {
+        pinButton.setAttribute('aria-label', 'Unpin ' + layerName);
+        pinButton.setAttribute('title', 'Unpin layer');
+      }
+
+      // 2. Create new pinned layer card in widget
+      const newRow = buildPinnedRow('pinned-layer-' + layerId, layerName);
+      newRow.dataset.layerId = layerId; // Store layer ID for unpinning
+      
+      // Add click handler to unpin button
+      const unpinBtn = newRow.querySelector('[class*="hover:text-red-500"]');
+      if (unpinBtn) {
+        unpinBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          unpinLayerFromWidget(layerId, sidebarRow);
+        });
+      }
+
+      pinnedContainer.insertBefore(newRow, pinnedContainer.firstChild);
+
+      // Slide-in animation
+      newRow.style.opacity = '0';
+      newRow.style.transform = 'translateY(-6px)';
+      newRow.style.transition = 'all 0.25s ease';
+      requestAnimationFrame(() => {
+        newRow.style.opacity = '1';
+        newRow.style.transform = 'translateY(0)';
+      });
+
+      // Green flash (DFT-025 success highlight)
+      setTimeout(() => {
+        newRow.style.backgroundColor = '#dcfce7';
+        setTimeout(() => {
+          newRow.style.transition = 'background-color 0.5s ease';
+          newRow.style.backgroundColor = '';
+        }, 500);
+      }, 280);
+
+      // 3. Update pinned count badge
+      countBadge.textContent = (parseInt(countBadge.textContent) || 0) + 1;
+
+      // 4. Export cart badge +1
+      const cart = document.getElementById('cart-badge');
+      if (cart) cart.textContent = parseInt(cart.textContent) + 1;
+
+      // 5. Enable undo (DFT-031)
+      const undo = document.getElementById('pinned-undo');
+      if (undo) {
+        undo.classList.remove('opacity-40', 'cursor-not-allowed');
+        undo.classList.add('text-emerald-600', 'hover:text-emerald-700', 'cursor-pointer');
+        undo.title = 'Undo: Pin ' + layerName;
+        undo.setAttribute('aria-disabled', 'false');
+      }
+
+      // 6. Screen reader announcement
+      if (announce) announce.textContent = layerName + ' pinned to Map Layers.';
+    }
+
+    function unpinLayerFromWidget(layerId, sidebarRow) {
+      const widgetRow = document.querySelector('[id="pinned-layer-' + layerId + '"]');
+      const countBadge = document.getElementById('pinned-count');
+      const announce = document.getElementById('widget-announcements');
+
+      // 1. Remove pinned styling from sidebar
+      sidebarRow.classList.remove('pinned');
+      const pinButton = sidebarRow.querySelector('.pin-icon');
+      if (pinButton) {
+        const layerNameEl = sidebarRow.querySelector('.flex-1');
+        const layerName = layerNameEl ? layerNameEl.textContent.trim() : 'layer';
+        pinButton.setAttribute('aria-label', 'Pin ' + layerName);
+        pinButton.setAttribute('title', 'Pin layer');
+      }
+
+      // 2. Remove from widget with animation
+      if (widgetRow) {
+        widgetRow.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
+        widgetRow.style.opacity = '0';
+        widgetRow.style.transform = 'translateX(16px)';
+        setTimeout(() => widgetRow.remove(), 200);
+      }
+
+      // 3. Update count badge
+      setTimeout(() => {
+        countBadge.textContent = Math.max(0, (parseInt(countBadge.textContent) || 0) - 1);
+      }, 200);
+
+      // 4. Export cart badge -1
+      const cart = document.getElementById('cart-badge');
+      if (cart) {
+        setTimeout(() => {
+          cart.textContent = Math.max(0, parseInt(cart.textContent) - 1);
+        }, 200);
+      }
+
+      // 5. Enable undo
+      const undo = document.getElementById('pinned-undo');
+      if (undo) {
+        undo.classList.remove('opacity-40', 'cursor-not-allowed');
+        undo.classList.add('text-emerald-600', 'hover:text-emerald-700', 'cursor-pointer');
+        undo.title = 'Undo: Unpin layer';
+        undo.setAttribute('aria-disabled', 'false');
+      }
+
+      // 6. Screen reader announcement
+      if (announce) {
+        const layerNameEl = sidebarRow.querySelector('.flex-1');
+        const layerName = layerNameEl ? layerNameEl.textContent.trim() : 'Layer';
+        announce.textContent = layerName + ' unpinned from Map Layers.';
+      }
+    }
+
+    // Wire up the Fire Perimeters pin button (already in the mockup as pinned)
+    const firePerimetersPinBtn = document.getElementById('sidebar-pin-fire-perimeters');
+    if (firePerimetersPinBtn) {
+      firePerimetersPinBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent triggering layer row click
+        toggleSidebarPin(firePerimetersPinBtn, 'fire-perimeters', 'Fire Perimeters');
+      });
+    }
+
+    // Wire up the Camera Traps (ANiML) pin button
+    const animlPinBtn = document.getElementById('sidebar-pin-animl');
+    if (animlPinBtn) {
+      animlPinBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const row = animlPinBtn.closest('.layer-row');
+        const layerName = row.querySelector('.flex-1').textContent.trim();
+        toggleSidebarPin(animlPinBtn, 'animl', layerName);
+      });
+    }
+
+    // Wire up the iNaturalist pin button (on the active layer)
+    const inatPinBtn = document.querySelector('#layer-inat .pin-icon');
+    if (inatPinBtn) {
+      inatPinBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const row = inatPinBtn.closest('.layer-row');
+        const layerName = row.querySelector('.flex-1').textContent.trim();
+        toggleSidebarPin(inatPinBtn, 'inat', layerName);
+      });
+    }
+
+    // Add pin buttons to all other layer rows dynamically
+    document.querySelectorAll('.layer-row').forEach(row => {
+      // Skip if already has a pin button or is a shortcut row
+      if (row.querySelector('.pin-icon') || row.id.startsWith('shortcut-')) return;
+      
+      // Skip if it's already set up as flex with a pin
+      if (row.classList.contains('pinned')) return;
+
+      const layerId = row.id.replace('layer-', '');
+      
+      // Store original text content before any modifications
+      const originalText = row.textContent.trim();
+
+      // Add pin button on hover (only run once per row)
+      let pinButtonAdded = false;
+      row.addEventListener('mouseenter', function addPinButton() {
+        if (pinButtonAdded || row.querySelector('.pin-icon')) return; // Already added
+        pinButtonAdded = true;
+        
+        // Convert row to flex layout if not already
+        if (!row.classList.contains('flex')) {
+          row.classList.add('flex', 'items-center');
+          row.innerHTML = '<span class="flex-1 truncate">' + originalText + '</span>';
+        }
+
+        // Add pin button
+        const pinBtn = document.createElement('button');
+        pinBtn.className = 'pin-icon icon-btn w-4 h-4 flex-shrink-0 ml-1.5';
+        pinBtn.setAttribute('aria-label', 'Pin ' + originalText);
+        pinBtn.setAttribute('title', 'Pin layer');
+        pinBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+          '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 17v5M9 10.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24V16a1 1 0 001 1h12a1 1 0 001-1v-.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V7a1 1 0 011-1 1 1 0 001-1V4a1 1 0 00-1-1H8a1 1 0 00-1 1v1a1 1 0 001 1 1 1 0 011 1v3.76z"/>' +
+          '</svg>';
+        
+        pinBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleSidebarPin(pinBtn, layerId, originalText);
+        });
+
+        row.appendChild(pinBtn);
+      });
     });
 
     // ================================================================
