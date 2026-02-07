@@ -97,6 +97,18 @@ const Header: React.FC<HeaderProps> = ({ theme, onThemeChange, cartItemCount = 0
               )}
             </div>
 
+            {/* V2 Toggle */}
+            <button
+              id="v2-toggle-button"
+              onClick={() => { window.location.search = '?v2'; }}
+              className={`px-2 py-1 rounded-button text-body-base lg:text-body-lg xl:text-body-xl 2xl:text-body-2xl font-medium transition-colors ${
+                isDarkTheme ? 'text-emerald-300 hover:bg-white/10' : 'text-emerald-600 hover:bg-emerald-50'
+              }`}
+              title="Switch to v2.0 interface"
+            >
+              Try v2.0
+            </button>
+
             {/* Shopping Cart Button */}
             {onCartClick && (
               <button
