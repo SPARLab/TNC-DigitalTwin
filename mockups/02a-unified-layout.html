@@ -114,16 +114,35 @@
       overflow: hidden;
     }
 
-    /* Nested child indentation line */
-    .nested-child { position: relative; }
+    /* Nested child relationship lines - tree structure connectors */
+    .nested-children-container {
+      position: relative;
+    }
+    
+    /* Vertical line connecting all children */
+    .nested-children-container::before {
+      content: '';
+      position: absolute;
+      left: -12px;
+      top: -5px;
+      bottom: 16px;
+      width: 1px;
+      background: #cbd5e1;
+    }
+    
+    /* Horizontal line for each child */
+    .nested-child {
+      position: relative;
+    }
+    
     .nested-child::before {
       content: '';
       position: absolute;
-      left: 12px;
-      top: -4px;
-      bottom: -4px;
-      width: 1px;
-      background: #e2e8f0;
+      left: -12px;
+      top: 50%;
+      width: 12px;
+      height: 1px;
+      background: #cbd5e1;
     }
 
     /* Tab crossfade (DFT-019: 150-200ms) */
@@ -728,7 +747,7 @@
                 </div>
 
                 <!-- Children (nested views, indented) -->
-                <div id="animl-children" class="ml-6 space-y-1">
+                <div id="animl-children" class="nested-children-container ml-6 space-y-1">
 
                   <!-- Child 1: Mountain Lion view (VISIBLE, EXPANDED — showing filter summary) -->
                   <div id="pinned-view-animl-mtlion" class="space-y-1">
