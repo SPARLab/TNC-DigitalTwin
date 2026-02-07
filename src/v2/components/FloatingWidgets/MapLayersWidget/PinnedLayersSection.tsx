@@ -11,11 +11,23 @@ interface PinnedLayersSectionProps {
   layers: PinnedLayer[];
   onToggleVisibility: (pinnedId: string) => void;
   onRemove: (pinnedId: string) => void;
+  onReorder: (fromIndex: number, toIndex: number) => void;
 }
 
-export function PinnedLayersSection({ layers, onToggleVisibility, onRemove }: PinnedLayersSectionProps) {
+export function PinnedLayersSection({
+  layers,
+  onToggleVisibility,
+  onRemove,
+  onReorder,
+}: PinnedLayersSectionProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const showDragHandles = layers.length > 1;
+
+  // Keyboard reorder: move layer up/down via arrow keys on drag handle
+  const handleKeyReorder = (index: number, direction: 'up' | 'down') => {
+    const target = direction === 'up' ? index - 1 : index + 1;
+    if (target >= 0 && target < layers.length) onReorder(index, target);
+  };
 
   return (
     <div id="pinned-layers-section">
@@ -33,7 +45,7 @@ export function PinnedLayersSection({ layers, onToggleVisibility, onRemove }: Pi
       {/* Layer rows */}
       <div className="px-2 py-2 space-y-1">
         {layers.length > 0 ? (
-          layers.map(layer => (
+          layers.map((layer, index) => (
             <PinnedLayerRow
               key={layer.id}
               layer={layer}
@@ -42,6 +54,7 @@ export function PinnedLayersSection({ layers, onToggleVisibility, onRemove }: Pi
               onToggleExpand={() => setExpandedId(prev => prev === layer.id ? null : layer.id)}
               onToggleVisibility={() => onToggleVisibility(layer.id)}
               onRemove={() => onRemove(layer.id)}
+              onKeyReorder={(dir) => handleKeyReorder(index, dir)}
             />
           ))
         ) : (

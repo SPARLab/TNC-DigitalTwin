@@ -35,23 +35,32 @@ export function BookmarkedItemsWidget() {
       />
 
       {!isCollapsed && (
-        <div className="max-h-[350px] overflow-y-auto">
+        <div id="bookmarked-items-body" className="max-h-[350px] overflow-y-auto">
           {bookmarks.length > 0 ? (
             // Render grouped bookmarks
-            Array.from(bookmarksByLayer.entries()).map(([layerName, layerBookmarks]) => (
-              <div key={layerName}>
-                <LayerGroupHeader layerName={layerName} />
-                {layerBookmarks.map(bm => (
-                  <BookmarkRow
-                    key={bm.id}
-                    bookmark={bm}
-                    onView={() => {/* Phase 1+: navigate to item */}}
-                    onEditFilter={bm.type === 'pointer-filtered' ? () => {/* Phase 1+ */} : undefined}
-                    onRemove={() => removeBookmark(bm.id)}
-                  />
-                ))}
+            <>
+              {Array.from(bookmarksByLayer.entries()).map(([layerName, layerBookmarks]) => (
+                <div key={layerName}>
+                  <LayerGroupHeader layerName={layerName} />
+                  {layerBookmarks.map(bm => (
+                    <BookmarkRow
+                      key={bm.id}
+                      bookmark={bm}
+                      onView={() => {/* Phase 1+: navigate to item */}}
+                      onEditFilter={bm.type === 'pointer-filtered' ? () => {/* Phase 1+ */} : undefined}
+                      onRemove={() => removeBookmark(bm.id)}
+                    />
+                  ))}
+                </div>
+              ))}
+
+              {/* Tip for populated widget */}
+              <div className="px-3 py-1.5 bg-slate-50 border-t border-slate-100 rounded-b-xl">
+                <p className="text-[11px] text-gray-400">
+                  Hover to highlight on map. Click to view details.
+                </p>
               </div>
-            ))
+            </>
           ) : hasEverBookmarked ? (
             // Returning user — laconic empty state
             <p className="text-sm text-gray-500 px-3 py-4">Bookmarked items appear here.</p>

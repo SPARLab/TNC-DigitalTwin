@@ -15,7 +15,7 @@ interface WidgetShellProps {
 export function WidgetShell({ id, position, children, className = '' }: WidgetShellProps) {
   const positionClasses = position === 'top-left'
     ? 'left-4 top-4'
-    : 'right-[416px] top-4'; // offset for 400px right sidebar + 16px gap
+    : 'right-4 top-4'; // right sidebar is a sibling outside MapContainer
 
   return (
     <div

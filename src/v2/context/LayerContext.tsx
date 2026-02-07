@@ -32,9 +32,44 @@ interface LayerContextValue {
 
 const LayerContext = createContext<LayerContextValue | null>(null);
 
+// Pre-pinned dummy layers for Phase 0 demo
+const INITIAL_PINNED: PinnedLayer[] = [
+  {
+    id: 'pinned-1',
+    layerId: 'animl-camera-traps',
+    name: 'Camera Traps (ANiML)',
+    isVisible: true,
+    isActive: false,
+    filterCount: 3,
+    filterSummary: 'species = Mountain Lion, date > 2024-01-01, confidence >= 80%',
+    distinguisher: 'mountain lion',
+    order: 0,
+  },
+  {
+    id: 'pinned-2',
+    layerId: 'fire-perimeters',
+    name: 'Fire Perimeters',
+    isVisible: true,
+    isActive: false,
+    filterCount: 0,
+    order: 1,
+  },
+  {
+    id: 'pinned-3',
+    layerId: 'water-sensors',
+    name: 'Water Level Sensors (Dendra)',
+    isVisible: false,
+    isActive: false,
+    filterCount: 2,
+    filterSummary: 'date range = Mar 2024, sensor type = Pressure',
+    distinguisher: 'Mar 2024',
+    order: 2,
+  },
+];
+
 export function LayerProvider({ children }: { children: ReactNode }) {
   const [activeLayer, setActiveLayer] = useState<ActiveLayer | null>(null);
-  const [pinnedLayers, setPinnedLayers] = useState<PinnedLayer[]>([]);
+  const [pinnedLayers, setPinnedLayers] = useState<PinnedLayer[]>(INITIAL_PINNED);
   const [undoStack, setUndoStack] = useState<UndoAction[]>([]);
 
   const pushUndo = useCallback((description: string, undoFn: () => void) => {

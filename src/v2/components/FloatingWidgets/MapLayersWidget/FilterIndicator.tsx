@@ -6,7 +6,7 @@ import { Filter } from 'lucide-react';
 
 interface FilterIndicatorProps {
   count: number;
-  onClick?: () => void;
+  onClick?: (e?: React.MouseEvent) => void;
 }
 
 export function FilterIndicator({ count, onClick }: FilterIndicatorProps) {
@@ -20,8 +20,8 @@ export function FilterIndicator({ count, onClick }: FilterIndicatorProps) {
       onClick={onClick}
       aria-label={label}
       title={hasFilters ? `${count} filters applied` : 'No filters — click to add'}
-      className={`flex items-center gap-0.5 text-xs cursor-pointer transition-colors ${
-        hasFilters ? 'text-emerald-600 hover:text-emerald-700' : 'text-gray-400 hover:text-gray-500'
+      className={`flex items-center gap-0.5 text-xs cursor-pointer transition-colors flex-shrink-0 ${
+        hasFilters ? 'text-emerald-600 hover:text-emerald-700' : 'text-gray-300 hover:text-gray-400'
       }`}
     >
       <Filter className="w-3 h-3" />

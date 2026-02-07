@@ -3,7 +3,7 @@
 // Supports expanded panel for filter summary + actions (DFT-003b)
 // ============================================================================
 
-import { Eye, EyeOff, GripVertical, X, ChevronRight } from 'lucide-react';
+import { Eye, EyeOff, GripVertical, X, ChevronRight, ChevronDown } from 'lucide-react';
 import type { PinnedLayer } from '../../../types';
 import { FilterIndicator } from './FilterIndicator';
 
@@ -16,6 +16,7 @@ interface PinnedLayerRowProps {
   onRemove: () => void;
   onEditFilters?: () => void;
   onClearFilters?: () => void;
+  onKeyReorder?: (direction: 'up' | 'down') => void;
 }
 
 export function PinnedLayerRow({
@@ -27,26 +28,38 @@ export function PinnedLayerRow({
   onRemove,
   onEditFilters,
   onClearFilters,
+  onKeyReorder,
 }: PinnedLayerRowProps) {
   const displayName = layer.distinguisher
     ? `${layer.name} (${layer.distinguisher})`
     : layer.name;
 
+  const handleDragKeyDown = (e: React.KeyboardEvent) => {
+    if (!onKeyReorder) return;
+    if (e.key === 'ArrowUp') { e.preventDefault(); onKeyReorder('up'); }
+    if (e.key === 'ArrowDown') { e.preventDefault(); onKeyReorder('down'); }
+  };
+
   return (
     <div id={`pinned-row-${layer.id}`}>
       {/* Main row */}
       <div
-        className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
-          layer.isActive ? 'bg-emerald-50 border border-emerald-200' : 'bg-white hover:bg-gray-50'
+        className={`flex items-center gap-1.5 px-2 py-2 rounded-lg cursor-pointer transition-colors ${
+          isExpanded
+            ? 'bg-gray-50 ring-1 ring-gray-200'
+            : layer.isActive
+              ? 'bg-emerald-50 ring-1 ring-emerald-200'
+              : 'bg-white hover:bg-gray-50'
         }`}
         onClick={onToggleExpand}
       >
         {/* Drag handle */}
         {showDragHandle && (
           <button
-            className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 flex-shrink-0"
-            aria-label="Drag to reorder"
+            className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 flex-shrink-0"
+            aria-label={`Drag to reorder ${layer.name}. Use arrow keys to move.`}
             onClick={e => e.stopPropagation()}
+            onKeyDown={handleDragKeyDown}
           >
             <GripVertical className="w-4 h-4" />
           </button>
@@ -55,8 +68,10 @@ export function PinnedLayerRow({
         {/* Eye toggle */}
         <button
           onClick={e => { e.stopPropagation(); onToggleVisibility(); }}
-          className="flex-shrink-0"
+          className="flex-shrink-0 p-0.5 rounded hover:bg-gray-100 transition-colors"
           title={layer.isVisible ? 'Hide on map' : 'Show on map'}
+          aria-label={`${layer.name} is ${layer.isVisible ? 'visible' : 'hidden'} on map`}
+          aria-pressed={layer.isVisible}
         >
           {layer.isVisible ? (
             <Eye className="w-4 h-4 text-emerald-600" />
@@ -72,22 +87,28 @@ export function PinnedLayerRow({
           {displayName}
         </span>
 
+        {/* Expand/collapse chevron */}
+        {isExpanded
+          ? <ChevronDown className="w-3 h-3 text-gray-400 flex-shrink-0" />
+          : <ChevronRight className="w-3 h-3 text-gray-400 flex-shrink-0 opacity-0 group-hover:opacity-100" />
+        }
+
         {/* Filter indicator */}
-        <FilterIndicator count={layer.filterCount} onClick={onEditFilters} />
+        <FilterIndicator count={layer.filterCount} onClick={e => { e?.stopPropagation(); onEditFilters?.(); }} />
 
         {/* Remove button */}
         <button
           onClick={e => { e.stopPropagation(); onRemove(); }}
-          className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0"
+          className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0 p-0.5"
           title="Unpin layer"
         >
-          <X className="w-4 h-4" />
+          <X className="w-3.5 h-3.5" />
         </button>
       </div>
 
       {/* Expanded panel (DFT-003b) */}
       {isExpanded && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg mx-1 px-3 py-2.5 mt-1 transition-all">
+        <div className="bg-gray-50 border border-gray-200 rounded-lg mx-1 px-3 py-2.5 mt-1">
           {/* Filter summary */}
           <p className="text-[11px] text-gray-500 leading-relaxed mb-2">
             {layer.filterSummary || 'No filters applied.'}
