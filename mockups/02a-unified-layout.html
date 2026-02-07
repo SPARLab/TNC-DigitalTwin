@@ -152,7 +152,14 @@
   - DFT-036: Bookmark hover-to-highlight
   - DFT-038: Filter section patterns
   - DFT-041: Export tab removed, Export Status section on Overview tab
-  - DFT-045: DataOne shortcut rows in domain categories
+  - DFT-045: DataOne shortcut rows in domain categories (stacked-books icon)
+
+  Interactive demos (mockup JS):
+  - Pin button: click [Pin] on active layer → animates to Pinned section + sidebar sync
+  - Eye toggles: click eye icons → toggles map GraphicsLayer visibility
+  - Unpin: click [x] → animated removal with undo enable
+  - Layer selection: click sidebar row → updates Active Layer widget section
+  - Mock map features: 15 iNat points, 8 camera traps, 1 fire polygon near preserve
 
   Terminology: Using "Item" (per team direction, overrides DFT-010)
   Default data source: iNaturalist (as active layer in right sidebar)
@@ -198,7 +205,7 @@
          LEFT SIDEBAR (260px, scrollable, collapsible categories)
          DFT-021: Active layer uses emerald left border + bg
          ============================================================== -->
-    <aside id="left-sidebar" class="w-[300px] bg-slate-50 border-r border-gray-200 flex flex-col flex-shrink-0">
+    <aside id="left-sidebar" class="w-[330px] bg-slate-50 border-r border-gray-200 flex flex-col flex-shrink-0">
 
       <!-- Search bar -->
       <div id="layer-search-container" class="p-3 border-b border-gray-200">
@@ -306,6 +313,13 @@
             </div>
             <div id="layer-fire-history" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Fire History (1950-2025)</div>
             <div id="layer-burn-severity" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Burn Severity Index</div>
+            <!-- DataOne shortcut row (DFT-045) -->
+            <div id="shortcut-dataone-fire" class="layer-row mt-1.5 border-t border-gray-200 py-1.5 px-3 pl-9 text-sm text-gray-500 hover:bg-emerald-50 cursor-pointer rounded-sm flex items-center gap-1.5" role="treeitem">
+              <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="14" width="18" height="5" rx="1"/><rect x="5" y="8" width="14" height="5" rx="1"/><rect x="2" y="2" width="17" height="5" rx="1"/>
+              </svg>
+              DataOne Datasets (8)
+            </div>
           </div>
         </div>
 
@@ -326,6 +340,13 @@
           <div class="category-children hidden" id="children-freshwater">
             <div id="layer-streams" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Streams and Watersheds</div>
             <div id="layer-wetlands" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Wetlands</div>
+            <!-- DataOne shortcut row (DFT-045) -->
+            <div id="shortcut-dataone-freshwater" class="layer-row mt-1.5 border-t border-gray-200 py-1.5 px-3 pl-9 text-sm text-gray-500 hover:bg-emerald-50 cursor-pointer rounded-sm flex items-center gap-1.5" role="treeitem">
+              <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="14" width="18" height="5" rx="1"/><rect x="5" y="8" width="14" height="5" rx="1"/><rect x="2" y="2" width="17" height="5" rx="1"/>
+              </svg>
+              DataOne Datasets (12)
+            </div>
           </div>
         </div>
 
@@ -390,6 +411,13 @@
             <div id="layer-shoreline" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Shoreline</div>
             <div id="layer-kelp-forests" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Kelp Forests</div>
             <div id="layer-marine-protected" class="layer-row py-1.5 px-3 pl-9 text-sm text-gray-600 hover:text-gray-900 cursor-pointer rounded-sm" role="treeitem">Marine Protected Areas</div>
+            <!-- DataOne shortcut row (DFT-045) -->
+            <div id="shortcut-dataone-oceans" class="layer-row mt-1.5 border-t border-gray-200 py-1.5 px-3 pl-9 text-sm text-gray-500 hover:bg-emerald-50 cursor-pointer rounded-sm flex items-center gap-1.5" role="treeitem">
+              <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="14" width="18" height="5" rx="1"/><rect x="5" y="8" width="14" height="5" rx="1"/><rect x="2" y="2" width="17" height="5" rx="1"/>
+              </svg>
+              DataOne Datasets (23)
+            </div>
           </div>
         </div>
 
@@ -424,11 +452,11 @@
             <svg class="w-4 h-4 text-gray-400 category-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
-            <!-- Lucide Database -->
-            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <ellipse cx="12" cy="5" rx="9" ry="3"/>
-              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
-              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            <!-- Stacked Books (DataOne research datasets) -->
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="14" width="18" height="5" rx="1"/>
+              <rect x="5" y="8" width="14" height="5" rx="1"/>
+              <rect x="2" y="2" width="17" height="5" rx="1"/>
             </svg>
             <span>Research Datasets</span>
             <span class="text-xs text-gray-400 ml-auto">(1)</span>
@@ -496,9 +524,9 @@
             </div>
             <!-- DataOne shortcut row (DFT-045) -->
             <div id="shortcut-dataone-species" class="layer-row mt-1.5 border-t border-gray-200 py-1.5 px-3 pl-9 text-sm text-gray-500 hover:bg-emerald-50 cursor-pointer rounded-sm flex items-center gap-1.5" role="treeitem">
-              <!-- Lucide Database (small) -->
-              <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+              <!-- Stacked Books (small) -->
+              <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="14" width="18" height="5" rx="1"/><rect x="5" y="8" width="14" height="5" rx="1"/><rect x="2" y="2" width="17" height="5" rx="1"/>
               </svg>
               DataOne Datasets (15)
             </div>
@@ -1363,28 +1391,342 @@
       }
     }
 
-    // ── Layer row active state toggle (left sidebar) ──
+    // ── Layer row active state + widget active-layer sync ──
     document.querySelectorAll('.layer-row').forEach(row => {
-      row.addEventListener('click', () => {
+      row.addEventListener('click', (e) => {
+        // Don't activate if user clicked an icon button (eye/pin)
+        if (e.target.closest('.icon-btn')) return;
+
+        // Update sidebar active styling
         document.querySelectorAll('.layer-row').forEach(r => {
           r.classList.remove('active');
           r.removeAttribute('aria-current');
         });
         row.classList.add('active');
         row.setAttribute('aria-current', 'true');
+
+        // Sync: update Active Layer name in the Map Layers widget
+        const rawText = (row.querySelector('.flex-1') || row).textContent.trim();
+        const nameEl = document.querySelector('#active-layer-inat .text-sm.font-medium');
+        if (nameEl && rawText) nameEl.textContent = rawText;
+
+        // Restore Active Layer section if it was hidden after pinning
+        const activeSection = document.getElementById('active-layer-section');
+        if (activeSection && activeSection.style.display === 'none') {
+          activeSection.style.display = '';
+          activeSection.style.opacity = '0';
+          activeSection.style.maxHeight = '200px';
+          activeSection.style.overflow = '';
+          requestAnimationFrame(() => {
+            activeSection.style.transition = 'opacity 0.2s ease';
+            activeSection.style.opacity = '1';
+          });
+        }
       });
     });
 
-    // ── ArcGIS Map initialization (Dangermond Preserve area) ──
-    require(["esri/Map", "esri/views/MapView"], function(Map, MapView) {
-      const map = new Map({ basemap: "topo-vector" });
-      const view = new MapView({
+    // ================================================================
+    // PIN BUTTON — Active Layer → Pinned Layers
+    // Demonstrates DFT-001 pin action + left-sidebar sync
+    // ================================================================
+    const pinBtn = document.getElementById('active-pin-inat');
+    if (pinBtn) pinBtn.addEventListener('click', pinActiveLayer);
+
+    function pinActiveLayer() {
+      const activeSection = document.getElementById('active-layer-section');
+      const pinnedContainer = document.querySelector('#pinned-layers-section .p-2');
+      const countBadge = document.getElementById('pinned-count');
+      const announce = document.getElementById('widget-announcements');
+      if (!activeSection || !pinnedContainer) return;
+
+      const nameEl = activeSection.querySelector('.text-sm.font-medium');
+      const layerName = nameEl ? nameEl.textContent.trim() : 'Layer';
+
+      // 1. Fade-out Active Layer section
+      activeSection.style.transition = 'opacity 0.2s ease, max-height 0.3s ease-out';
+      activeSection.style.opacity = '0';
+      setTimeout(() => { activeSection.style.maxHeight = '0'; activeSection.style.overflow = 'hidden'; }, 150);
+
+      // 2. After fade, create a new Pinned row
+      setTimeout(() => {
+        activeSection.style.display = 'none';
+        const newRow = buildPinnedRow('pinned-layer-inat', layerName);
+        pinnedContainer.insertBefore(newRow, pinnedContainer.firstChild);
+
+        // Slide-in animation
+        newRow.style.opacity = '0';
+        newRow.style.transform = 'translateY(-6px)';
+        newRow.style.transition = 'all 0.25s ease';
+        requestAnimationFrame(() => {
+          newRow.style.opacity = '1';
+          newRow.style.transform = 'translateY(0)';
+        });
+
+        // Green flash (DFT-025 success highlight)
+        setTimeout(() => {
+          newRow.style.backgroundColor = '#dcfce7';
+          setTimeout(() => {
+            newRow.style.transition = 'background-color 0.5s ease';
+            newRow.style.backgroundColor = '';
+          }, 500);
+        }, 280);
+
+        // 3. Update pinned count badge
+        countBadge.textContent = (parseInt(countBadge.textContent) || 0) + 1;
+
+        // 4. Sidebar sync — show pin + eye on iNat row
+        const sidebarRow = document.getElementById('layer-inat');
+        if (sidebarRow) {
+          sidebarRow.classList.add('flex', 'items-center');
+          sidebarRow.innerHTML =
+            '<span class="flex-1 truncate">iNaturalist Observations</span>' +
+            '<button class="icon-btn w-4 h-4 text-blue-500 flex-shrink-0" title="Toggle visibility">' +
+              '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>' +
+                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>' +
+              '</svg>' +
+            '</button>' +
+            '<button class="icon-btn w-4 h-4 text-emerald-600 flex-shrink-0 ml-1.5" title="Unpin layer">' +
+              '<svg class="w-4 h-4" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">' +
+                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 17v5M9 10.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24V16a1 1 0 001 1h12a1 1 0 001-1v-.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V7a1 1 0 011-1 1 1 0 001-1V4a1 1 0 00-1-1H8a1 1 0 00-1 1v1a1 1 0 001 1 1 1 0 011 1v3.76z"/>' +
+              '</svg>' +
+            '</button>';
+        }
+
+        // 5. Export cart badge +1
+        const cart = document.getElementById('cart-badge');
+        if (cart) cart.textContent = parseInt(cart.textContent) + 1;
+
+        // 6. Enable undo (DFT-031)
+        const undo = document.getElementById('pinned-undo');
+        if (undo) {
+          undo.classList.remove('opacity-40', 'cursor-not-allowed');
+          undo.classList.add('text-emerald-600', 'hover:text-emerald-700', 'cursor-pointer');
+          undo.title = 'Undo: Pin ' + layerName;
+          undo.setAttribute('aria-disabled', 'false');
+        }
+
+        // 7. Screen reader announcement
+        if (announce) announce.textContent = layerName + ' pinned to Map Layers.';
+      }, 300);
+    }
+
+    // Build a standard flat pinned-layer card
+    function buildPinnedRow(id, name) {
+      const d = document.createElement('div');
+      d.id = id;
+      d.className = 'widget-layer-card rounded-lg px-3 py-2 flex items-center gap-2 bg-white';
+      d.innerHTML =
+        '<span class="drag-handle"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">' +
+          '<circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>' +
+          '<circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>' +
+          '<circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>' +
+        '</svg></span>' +
+        '<button class="icon-btn eye-toggle text-emerald-600" onclick="toggleEye(this)">' +
+          '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>' +
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>' +
+          '</svg>' +
+        '</button>' +
+        '<span class="text-sm text-gray-700 flex-1 truncate">' + name + '</span>' +
+        '<span class="flex items-center gap-0.5 text-xs text-gray-400 cursor-pointer" title="No filters — click to add">' +
+          '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>' +
+          '</svg>' +
+        '</span>' +
+        '<button class="icon-btn text-gray-300 hover:text-red-500" onclick="unpinRow(this)">' +
+          '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>' +
+          '</svg>' +
+        '</button>';
+      return d;
+    }
+
+    // ================================================================
+    // EYE TOGGLE — Visibility on/off (widget row + map layer sync)
+    // ================================================================
+    function toggleEye(btn) {
+      const on = btn.classList.contains('text-emerald-600');
+      const card = btn.closest('[id^="pinned-layer-"]') || btn.closest('.widget-layer-card');
+
+      if (on) {
+        btn.classList.replace('text-emerald-600', 'text-gray-300');
+        btn.innerHTML =
+          '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>' +
+            '<line x1="1" y1="1" x2="23" y2="23"/>' +
+          '</svg>';
+        if (card) card.style.opacity = '0.5';
+        syncMapVis(card, false);
+      } else {
+        btn.classList.replace('text-gray-300', 'text-emerald-600');
+        btn.innerHTML =
+          '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>' +
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>' +
+          '</svg>';
+        if (card) card.style.opacity = '1';
+        syncMapVis(card, true);
+      }
+    }
+
+    // Map layer visibility sync helper
+    function syncMapVis(card, vis) {
+      if (!window._mapLayers || !card) return;
+      const id = (card.id || card.dataset?.layerId || '').toLowerCase();
+      if (id.includes('animl')) window._mapLayers.animl.visible = vis;
+      if (id.includes('fire'))  window._mapLayers.fire.visible  = vis;
+      if (id.includes('inat'))  window._mapLayers.inat.visible  = vis;
+    }
+
+    // Wire existing eye buttons in the pinned widget
+    document.querySelectorAll('[id^="pinned-eye-"]').forEach(b => {
+      b.addEventListener('click', () => toggleEye(b));
+    });
+
+    // ================================================================
+    // UNPIN — Remove a pinned layer row with animation
+    // ================================================================
+    function unpinRow(btn) {
+      const row = btn.closest('[id^="pinned-layer-"]') || btn.closest('.widget-layer-card');
+      if (!row) return;
+      // Fade + slide out
+      row.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
+      row.style.opacity = '0';
+      row.style.transform = 'translateX(16px)';
+      setTimeout(() => row.remove(), 200);
+      // Update count badge
+      const badge = document.getElementById('pinned-count');
+      setTimeout(() => {
+        badge.textContent = Math.max(0, (parseInt(badge.textContent) || 0) - 1);
+      }, 200);
+      // Enable undo
+      const undo = document.getElementById('pinned-undo');
+      if (undo) {
+        undo.classList.remove('opacity-40', 'cursor-not-allowed');
+        undo.classList.add('text-emerald-600', 'hover:text-emerald-700', 'cursor-pointer');
+        undo.title = 'Undo: Unpin layer';
+        undo.setAttribute('aria-disabled', 'false');
+      }
+    }
+
+    // Wire existing unpin (x) buttons
+    document.querySelectorAll('[id^="pinned-remove-"]').forEach(b => {
+      b.addEventListener('click', () => unpinRow(b));
+    });
+
+    // ================================================================
+    // ARCGIS MAP — Mock geographic features near Dangermond Preserve
+    // ================================================================
+    require([
+      "esri/Map", "esri/views/MapView",
+      "esri/layers/GraphicsLayer", "esri/Graphic"
+    ], function(Map, MapView, GraphicsLayer, Graphic) {
+
+      // One GraphicsLayer per data source — z-order: bottom → top
+      var fireLayer  = new GraphicsLayer({ id: 'gl-fire',  title: 'Fire Perimeters' });
+      var animlLayer = new GraphicsLayer({ id: 'gl-animl', title: 'Camera Trap Stations' });
+      var inatLayer  = new GraphicsLayer({ id: 'gl-inat',  title: 'iNaturalist Observations' });
+
+      var map = new Map({
+        basemap: "topo-vector",
+        layers: [fireLayer, animlLayer, inatLayer]
+      });
+
+      var view = new MapView({
         container: "map-view",
         map: map,
-        center: [-120.43, 34.46],
-        zoom: 12,
-        ui: { components: [] } // Hide all default ArcGIS UI
+        center: [-120.445, 34.461],
+        zoom: 13,
+        ui: { components: [] }
       });
+
+      // Preserve center coordinates
+      var CX = -120.445, CY = 34.461;
+
+      // ── Fire Perimeter polygon (semi-transparent red) ──
+      fireLayer.add(new Graphic({
+        geometry: {
+          type: "polygon",
+          rings: [[
+            [CX - 0.025, CY + 0.005], [CX - 0.015, CY + 0.020],
+            [CX + 0.005, CY + 0.022], [CX + 0.015, CY + 0.012],
+            [CX + 0.012, CY - 0.002], [CX + 0.002, CY - 0.008],
+            [CX - 0.018, CY - 0.005], [CX - 0.025, CY + 0.005]
+          ]]
+        },
+        symbol: {
+          type: "simple-fill",
+          color: [239, 68, 68, 0.12],
+          outline: { width: 2.5, color: [220, 38, 38, 0.7] }
+        },
+        popupTemplate: {
+          title: "Fire Perimeter 2025",
+          content: "Estimated burn area &mdash; mock data for demonstration"
+        }
+      }));
+
+      // ── Camera Trap stations (orange diamonds) ──
+      var cams = [
+        { id: "CAM-042", nm: "North Ridge",   dx: -0.016, dy:  0.012 },
+        { id: "CAM-015", nm: "South Canyon",  dx:  0.028, dy: -0.008 },
+        { id: "CAM-028", nm: "West Meadow",   dx: -0.030, dy:  0.000 },
+        { id: "CAM-033", nm: "Oak Hollow",    dx:  0.010, dy:  0.018 },
+        { id: "CAM-009", nm: "Coastal Bluff", dx:  0.022, dy: -0.015 },
+        { id: "CAM-051", nm: "East Creek",    dx:  0.018, dy:  0.008 },
+        { id: "CAM-007", nm: "Ridgeline",     dx: -0.008, dy:  0.022 },
+        { id: "CAM-019", nm: "Grassland",     dx: -0.020, dy: -0.012 }
+      ];
+      cams.forEach(function(c) {
+        animlLayer.add(new Graphic({
+          geometry: { type: "point", longitude: CX + c.dx, latitude: CY + c.dy },
+          symbol: {
+            type: "simple-marker", style: "diamond",
+            color: [249, 115, 22, 0.9], size: 11,
+            outline: { width: 1.5, color: "white" }
+          },
+          popupTemplate: {
+            title: c.id + " &mdash; " + c.nm,
+            content: "Camera trap station &middot; 12 deployments"
+          }
+        }));
+      });
+
+      // ── iNaturalist observations (green circles) ──
+      var obs = [
+        { sp: "California Condor",     who: "@jane_doe",    dt: "Jan 15, 2024", dx: -0.002, dy:  0.009 },
+        { sp: "Coast Live Oak",        who: "@botanist22",  dt: "Mar 8, 2024",  dx:  0.015, dy:  0.003 },
+        { sp: "Mountain Lion",         who: "@field_bio",   dt: "Dec 3, 2023",  dx: -0.012, dy: -0.017 },
+        { sp: "Red-tailed Hawk",       who: "@birdwatcher", dt: "Feb 20, 2024", dx:  0.022, dy:  0.014 },
+        { sp: "Western Fence Lizard",  who: "@herp_fan",    dt: "Apr 1, 2024",  dx:  0.005, dy: -0.003 },
+        { sp: "California Newt",       who: "@amphibi",     dt: "Jan 30, 2024", dx: -0.025, dy:  0.004 },
+        { sp: "Spotted Owl",           who: "@owlwatch",    dt: "Nov 12, 2023", dx:  0.008, dy:  0.020 },
+        { sp: "Black-tailed Deer",     who: "@nature_cam",  dt: "Sep 5, 2023",  dx: -0.018, dy:  0.015 },
+        { sp: "Coyote",                who: "@k9tracker",   dt: "Jul 19, 2024", dx:  0.012, dy: -0.010 },
+        { sp: "Western Scrub-Jay",     who: "@bluebirder",  dt: "May 2, 2024",  dx: -0.007, dy: -0.007 },
+        { sp: "California Quail",      who: "@quailspot",   dt: "Jun 14, 2024", dx:  0.019, dy:  0.006 },
+        { sp: "Bobcat",                who: "@wildcatter",  dt: "Aug 22, 2024", dx: -0.022, dy: -0.013 },
+        { sp: "Pacific Tree Frog",     who: "@froglog",     dt: "Mar 15, 2024", dx:  0.003, dy:  0.017 },
+        { sp: "California Poppy",      who: "@florafan",    dt: "Apr 18, 2024", dx: -0.010, dy:  0.010 },
+        { sp: "Mule Deer",             who: "@deerwatch",   dt: "Oct 7, 2023",  dx:  0.025, dy: -0.005 }
+      ];
+      obs.forEach(function(o) {
+        inatLayer.add(new Graphic({
+          geometry: { type: "point", longitude: CX + o.dx, latitude: CY + o.dy },
+          symbol: {
+            type: "simple-marker", style: "circle",
+            color: [16, 185, 129, 0.85], size: 9,
+            outline: { width: 1.5, color: "white" }
+          },
+          popupTemplate: {
+            title: o.sp,
+            content: "Observer: " + o.who + "<br>Date: " + o.dt
+          }
+        }));
+      });
+
+      // Expose layers globally so eye-toggles can control visibility
+      window._mapLayers = { inat: inatLayer, animl: animlLayer, fire: fireLayer };
     });
   </script>
 
