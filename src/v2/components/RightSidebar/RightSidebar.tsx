@@ -3,7 +3,7 @@
 // Two tabs: Overview | Browse (DFT-041). Overview opens first (DFT-006).
 // ============================================================================
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Layers } from 'lucide-react';
 import { useLayers } from '../../context/LayerContext';
 import type { SidebarTab } from '../../types';
@@ -11,8 +11,9 @@ import { SidebarHeader } from './SidebarHeader';
 import { TabBar } from './TabBar';
 
 export function RightSidebar() {
-  const { activeLayer, deactivateLayer } = useLayers();
+  const { activeLayer, deactivateLayer, lastEditFiltersRequest } = useLayers();
   const [activeTab, setActiveTab] = useState<SidebarTab>('overview');
+  const consumedRequestRef = useRef(0);
 
   // Reset to Overview when layer changes (DFT-006)
   const [prevLayerId, setPrevLayerId] = useState<string | null>(null);
@@ -20,6 +21,14 @@ export function RightSidebar() {
     setPrevLayerId(activeLayer.layerId);
     setActiveTab('overview');
   }
+
+  // DFT-019: Edit Filters → open Browse tab
+  useEffect(() => {
+    if (activeLayer && lastEditFiltersRequest > 0 && lastEditFiltersRequest !== consumedRequestRef.current) {
+      setActiveTab('browse');
+      consumedRequestRef.current = lastEditFiltersRequest;
+    }
+  }, [activeLayer, lastEditFiltersRequest]);
 
   return (
     <aside

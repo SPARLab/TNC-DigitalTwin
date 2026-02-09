@@ -78,6 +78,8 @@ export interface ActiveLayer {
   name: string;
   dataSource: DataSource;
   isPinned: boolean;
+  /** When editing filters for a nested child view */
+  viewId?: string;
 }
 
 /** Undo action record */

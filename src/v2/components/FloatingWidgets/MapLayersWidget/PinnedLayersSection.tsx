@@ -27,8 +27,10 @@ interface PinnedLayersSectionProps {
   onToggleVisibility: (pinnedId: string) => void;
   onRemove: (pinnedId: string) => void;
   onReorder: (fromIndex: number, toIndex: number) => void;
-  onCreateNewView?: (pinnedId: string) => void;
+  onEditFilters?: (layerId: string, viewId?: string) => void;
+  onClearFilters?: (pinnedId: string, viewId?: string) => void;
   onToggleChildView?: (pinnedId: string, viewId: string) => void;
+  onCreateNewView?: (pinnedId: string) => void;
 }
 
 export function PinnedLayersSection({
@@ -36,8 +38,10 @@ export function PinnedLayersSection({
   onToggleVisibility,
   onRemove,
   onReorder,
-  onCreateNewView,
+  onEditFilters,
+  onClearFilters,
   onToggleChildView,
+  onCreateNewView,
 }: PinnedLayersSectionProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [justDroppedId, setJustDroppedId] = useState<string | null>(null);
@@ -115,9 +119,13 @@ export function PinnedLayersSection({
                   onToggleExpand={() => setExpandedId(prev => prev === layer.id ? null : layer.id)}
                   onToggleVisibility={() => onToggleVisibility(layer.id)}
                   onRemove={() => onRemove(layer.id)}
+                  onEditFilters={() => onEditFilters?.(layer.layerId)}
+                  onClearFilters={() => onClearFilters?.(layer.id)}
                   onKeyReorder={(dir) => handleKeyReorder(index, dir)}
-                  onCreateNewView={() => onCreateNewView?.(layer.id)}
                   onToggleChildView={(viewId) => onToggleChildView?.(layer.id, viewId)}
+                  onEditFiltersForChild={(viewId) => onEditFilters?.(layer.layerId, viewId)}
+                  onClearFiltersForChild={(viewId) => onClearFilters?.(layer.id, viewId)}
+                  onCreateNewView={() => onCreateNewView?.(layer.id)}
                 />
               ))
             ) : (

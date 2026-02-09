@@ -30,12 +30,13 @@
 |---|------|--------|----------|-------|
 | 1 | **0.4** Map Container — ArcGIS WebMap integration | 🟡 | High | Blocks Phase 0 completion |
 | 2 | **0.5** Drag-and-Drop Reorder — Pinned layers | 🟡 | Medium | Drag handles visible but non-functional |
-| 3 | **Enable Map Layers Drag Reordering** | 🟡 | Medium | Related to Task 0.5, may consolidate |
-| 4 | **Make Filter Icons Clickable for Child Views** | 🟡 | Medium | Show filter queries on click |
-| 5 | **Remove Gray Divider in Left Sidebar** | 🟡 | Low | Simple CSS removal |
-| 6 | **0.6** Map Feature Highlight — Bookmark hover | 🟡 | Low | Requires map integration first |
+| 3 | **Enable Map Layers Drag Reordering** | ✅ | Medium | Related to Task 0.5, may consolidate |
+| 4 | **Make Filter Icons Clickable for Child Views** | 🟢 | Medium | Child row click expands filter clauses; Edit Filters opens Browse tab |
+| 5 | **Prevent Map Layers Widget Scrollbar from Pushing Content** | 🟡 | Medium | Scrollbar overlays or reserves space; content width stays stable |
+| 6 | **Remove Gray Divider in Left Sidebar** | 🟡 | Low | Simple CSS removal |
+| 7 | **0.6** Map Feature Highlight — Bookmark hover | 🟡 | Low | Requires map integration first |
 
-**Total Phase 0 Tasks Remaining:** 6  
+**Total Phase 0 Tasks Remaining:** 7  
 **Recently Completed:** Fix Map Layers Widget Horizontal Scrollbar ✅, Fix Nested Layer Expand/Collapse ✅, Add Rounded Bottom Corners to Collapsed Widgets ✅
 
 ---
@@ -104,11 +105,15 @@
   - Files: `src/v2/components/FloatingWidgets/MapLayersWidget/PinnedLayerRow.tsx`, `src/v2/components/FloatingWidgets/MapLayersWidget/PinnedLayersSection.tsx`
   - Related: Task 0.5 (may consolidate)
 
-- [ ] **Make Filter Icons Clickable for Child Views** — Show filter queries when clicking filter indicator
-  - Current: Filter indicators show count (e.g., "Filter 3") but are not clickable to view details
-  - Needed: Click handler to display/list the actual filter queries applied to child views
-  - Files: `src/v2/components/FloatingWidgets/MapLayersWidget/PinnedLayerChildRow.tsx`, `src/v2/components/FloatingWidgets/MapLayersWidget/FilterIndicator.tsx`
-  - Implementation: Modal, dropdown, or expandable section showing filter details
+- [x] **Make Filter Icons Clickable for Child Views** — Show filter queries when clicking filter indicator
+  - Completed: Child row click expands to show filter clauses (split on comma). Filter icon or "Edit Filters" navigates to right sidebar Browse tab. One child expanded at a time. LayerContext: toggleChildVisibility, clearFilters, requestEditFilters. Flat rows also use multi-clause display.
+  - Files: `PinnedLayerChildRow.tsx`, `PinnedLayerRow.tsx`, `PinnedLayersSection.tsx`, `MapLayersWidget.tsx`, `LayerContext.tsx`, `RightSidebar.tsx`, `types/index.ts`
+
+- [ ] **Prevent Map Layers Widget Scrollbar from Pushing Content** — Scrollbar should not reduce content width
+  - Current: Expanding child filter panels triggers vertical scroll. Scrollbar renders inside the widget width, pushing content (e.g., "Edit Filters" button) inward.
+  - Needed: Ensure scrollbar either overlays content (does not take layout space) or reserves stable gutter space so content width stays consistent whether scrollbar is visible or not. Options: `scrollbar-gutter: stable`, overlay scrollbar styling, or explicit padding reserved for scrollbar.
+  - Files: `src/v2/components/FloatingWidgets/MapLayersWidget/MapLayersWidget.tsx`, `map-layers-body` / scroll container structure
+  - Related: Fix Map Layers Widget Horizontal Scrollbar (previous fix addressed horizontal; this addresses vertical)
 
 - [ ] **Remove Gray Divider in Left Sidebar** — Remove separator between normal layers and DataOne datasets
   - Current: Gray horizontal divider (`border-t border-gray-200`) separates DataOne shortcut from regular layers
@@ -192,6 +197,8 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 9, 2026 | Phase 0 | Added task: Prevent Map Layers Widget Scrollbar from Pushing Content — vertical scrollbar compresses content when child filter panels expand; fix so scrollbar overlays or reserves stable space. | Claude |
+| Feb 9, 2026 | Phase 0 | ✅ Task 4 complete: Make Filter Icons Clickable for Child Views. Child row click expands filter clauses (split on comma). Edit Filters / filter icon opens Browse tab. One child expanded at a time. Added toggleChildVisibility, clearFilters, requestEditFilters to LayerContext. | Claude |
 | Feb 9, 2026 | Phase 0 | ✅ Task 0.8 complete: Fixed tree connector gaps by extending lines into spacing gaps. Used CSS borders for seamless L-shape corners. | Claude |
 | Feb 7, 2026 | Phase 0 | WIP: Multi-view nested structure, tree connectors (L-shaped), pin-to-top behavior, smooth animations. New components: PinnedLayerChildRow, NewViewButton. Card styling restored. Commit: 4fd430e | Claude |
 | Feb 6, 2026 | Phase 0 | Built core shell: left sidebar, map layers widget, bookmarked items widget, right sidebar shell, state management. 27 files, 1,748 lines. Zero TypeScript/linter errors. | Opus |

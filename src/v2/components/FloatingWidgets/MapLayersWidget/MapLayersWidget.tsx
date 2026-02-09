@@ -19,10 +19,23 @@ export function MapLayersWidget() {
     pinLayer,
     unpinLayer,
     toggleVisibility,
+    toggleChildVisibility,
+    clearFilters,
     reorderLayers,
+    activateLayer,
+    requestEditFilters,
     undoStack,
     undo,
   } = useLayers();
+
+  const handleEditFilters = (layerId: string, viewId?: string) => {
+    activateLayer(layerId, viewId);
+    requestEditFilters();
+  };
+
+  const handleClearFilters = (pinnedId: string, viewId?: string) => {
+    clearFilters(pinnedId, viewId);
+  };
 
   const totalCount = pinnedLayers.length + (activeLayer && !activeLayer.isPinned ? 1 : 0);
   const canUndo = undoStack.length > 0;
@@ -75,8 +88,10 @@ export function MapLayersWidget() {
               onToggleVisibility={toggleVisibility}
               onRemove={unpinLayer}
               onReorder={reorderLayers}
+              onEditFilters={handleEditFilters}
+              onClearFilters={handleClearFilters}
+              onToggleChildView={toggleChildVisibility}
               onCreateNewView={(_pinnedId) => {/* Phase 1+: implement view creation */}}
-              onToggleChildView={(_pinnedId, _viewId) => {/* Phase 1+: implement child toggle */}}
             />
               </>
             )}

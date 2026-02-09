@@ -5,6 +5,7 @@
 // Drag-and-drop powered by @dnd-kit (DFT-034)
 // ============================================================================
 
+import { useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent, CSSProperties } from 'react';
 import { Eye, EyeOff, GripVertical, X, ChevronRight, ChevronDown } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
@@ -25,8 +26,10 @@ interface PinnedLayerRowProps {
   onEditFilters?: () => void;
   onClearFilters?: () => void;
   onKeyReorder?: (direction: 'up' | 'down') => void;
-  onCreateNewView?: () => void;
   onToggleChildView?: (viewId: string) => void;
+  onEditFiltersForChild?: (viewId: string) => void;
+  onClearFiltersForChild?: (viewId: string) => void;
+  onCreateNewView?: () => void;
 }
 
 export function PinnedLayerRow({
@@ -40,10 +43,13 @@ export function PinnedLayerRow({
   onEditFilters,
   onClearFilters,
   onKeyReorder,
-  onCreateNewView,
   onToggleChildView,
+  onEditFiltersForChild,
+  onClearFiltersForChild,
+  onCreateNewView,
 }: PinnedLayerRowProps) {
   const isNested = layer.views && layer.views.length > 0;
+  const [expandedChildViewId, setExpandedChildViewId] = useState<string | null>(null);
   const displayName = !isNested && layer.distinguisher
     ? `${layer.name} (${layer.distinguisher})`
     : layer.name;
@@ -175,8 +181,11 @@ export function PinnedLayerRow({
                   key={view.id}
                   view={view}
                   isLast={index === layer.views!.length - 1}
-                  onToggle={() => onToggleChildView?.(view.id)}
-                  onEditFilters={onEditFilters}
+                  isExpanded={expandedChildViewId === view.id}
+                  onToggleExpand={() => setExpandedChildViewId(prev => prev === view.id ? null : view.id)}
+                  onToggleVisibility={() => onToggleChildView?.(view.id)}
+                  onEditFilters={() => onEditFiltersForChild?.(view.id)}
+                  onClearFilters={() => onClearFiltersForChild?.(view.id)}
                 />
               ))}
               <NewViewButton onClick={() => onCreateNewView?.()} />
@@ -195,11 +204,17 @@ export function PinnedLayerRow({
           }}
         >
           <div className="overflow-hidden">
-            <div className="bg-gray-50 border border-gray-200 rounded-lg mx-1 px-3 py-2.5 mt-1">
-              {/* Filter summary */}
-              <p className="text-[11px] text-gray-500 leading-relaxed mb-2">
-                {layer.filterSummary || 'No filters applied.'}
-              </p>
+            <div id={`flat-filter-panel-${layer.id}`} className="bg-gray-50 border border-gray-200 rounded-lg mx-1 px-3 py-2.5 mt-1">
+              {/* Filter summary — multi-clause display (split on comma) */}
+              {layer.filterSummary ? (
+                <ul className="text-[11px] text-gray-500 space-y-0.5 mb-2 list-none">
+                  {layer.filterSummary.split(',').map((s, i) => (
+                    <li key={i}>{s.trim()}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[11px] text-gray-500 leading-relaxed mb-2">No filters applied.</p>
+              )}
 
               {/* Action row */}
               <div className="flex items-center justify-between">

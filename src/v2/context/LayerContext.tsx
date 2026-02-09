@@ -10,7 +10,7 @@ import { LAYER_MAP } from '../data/layerRegistry';
 interface LayerContextValue {
   // Active layer (one at a time)
   activeLayer: ActiveLayer | null;
-  activateLayer: (layerId: string) => void;
+  activateLayer: (layerId: string, viewId?: string) => void;
   deactivateLayer: () => void;
 
   // Pinned layers (multiple)
@@ -18,7 +18,13 @@ interface LayerContextValue {
   pinLayer: (layerId: string) => void;
   unpinLayer: (pinnedId: string) => void;
   toggleVisibility: (pinnedId: string) => void;
+  toggleChildVisibility: (pinnedId: string, viewId: string) => void;
+  clearFilters: (pinnedId: string, viewId?: string) => void;
   reorderLayers: (fromIndex: number, toIndex: number) => void;
+
+  // Edit Filters → open Browse tab (DFT-019)
+  lastEditFiltersRequest: number;
+  requestEditFilters: () => void;
 
   // Helpers
   isLayerPinned: (layerId: string) => boolean;
@@ -94,7 +100,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     ].slice(0, 5)); // DFT-031: max 5 actions
   }, []);
 
-  const activateLayer = useCallback((layerId: string) => {
+  const activateLayer = useCallback((layerId: string, viewId?: string) => {
     const layer = LAYER_MAP.get(layerId);
     if (!layer) return;
 
@@ -105,6 +111,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
       name: layer.name,
       dataSource: layer.dataSource as DataSource,
       isPinned: !!pinned,
+      viewId,
     });
 
     // DFT-001: clicking a pinned-but-hidden layer restores visibility
@@ -114,6 +121,9 @@ export function LayerProvider({ children }: { children: ReactNode }) {
       );
     }
   }, [pinnedLayers]);
+
+  const [lastEditFiltersRequest, setLastEditFiltersRequest] = useState(0);
+  const requestEditFilters = useCallback(() => setLastEditFiltersRequest(Date.now()), []);
 
   const deactivateLayer = useCallback(() => setActiveLayer(null), []);
 
@@ -166,6 +176,47 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const toggleChildVisibility = useCallback((pinnedId: string, viewId: string) => {
+    setPinnedLayers(prev =>
+      prev.map(p => {
+        if (p.id !== pinnedId || !p.views) return p;
+        const view = p.views.find(v => v.id === viewId);
+        if (!view) return p;
+        const turningOn = !view.isVisible;
+        const nextViews = p.views.map(v => {
+          if (v.id === viewId) return { ...v, isVisible: !v.isVisible };
+          if (turningOn) return { ...v, isVisible: false }; // DFT-013: mutual exclusivity
+          return v;
+        });
+        const anyVisible = nextViews.some(v => v.isVisible);
+        return { ...p, views: nextViews, isVisible: anyVisible };
+      })
+    );
+  }, []);
+
+  const clearFilters = useCallback((pinnedId: string, viewId?: string) => {
+    const target = pinnedLayers.find(p => p.id === pinnedId);
+    if (!target) return;
+    const prevState = JSON.parse(JSON.stringify(pinnedLayers));
+
+    setPinnedLayers(prev =>
+      prev.map(p => {
+        if (p.id !== pinnedId) return p;
+        if (viewId && p.views) {
+          return {
+            ...p,
+            views: p.views.map(v =>
+              v.id === viewId ? { ...v, filterCount: 0, filterSummary: undefined } : v
+            ),
+          };
+        }
+        return { ...p, filterCount: 0, filterSummary: undefined, distinguisher: undefined };
+      })
+    );
+
+    pushUndo('Filters cleared', () => setPinnedLayers(prevState));
+  }, [pinnedLayers, pushUndo]);
+
   const reorderLayers = useCallback((fromIndex: number, toIndex: number) => {
     setPinnedLayers(prev => {
       const next = [...prev];
@@ -216,7 +267,11 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         pinLayer,
         unpinLayer,
         toggleVisibility,
+        toggleChildVisibility,
+        clearFilters,
         reorderLayers,
+        lastEditFiltersRequest,
+        requestEditFilters,
         isLayerPinned,
         isLayerVisible,
         getPinnedByLayerId,
