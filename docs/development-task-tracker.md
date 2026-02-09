@@ -136,6 +136,17 @@
   - Files: `src/v2/components/LeftSidebar/CategoryGroup.tsx` (line ~70)
   - Note: Italics styling is acceptable, only the divider needs removal
 
+- [x] **Active Layer Click Interactions** — Clicking layers activates them and shows in right sidebar
+  - Completed: Clicking pinned layer activates it, expands panel, and collapses others (accordion pattern)
+  - Clicking child view activates it and makes it visible (mutual exclusivity maintained)
+  - Clicking non-pinned layer collapses all pinned panels
+  - Active state changed from emerald to amber highlighting (parent + active child both amber)
+  - Eye icons changed to gray scheme (dark gray visible, light gray hidden)
+  - Parent eye toggle controls all children (hide all when off, restore when on)
+  - Auto-collapse via useEffect ensures only one panel open at a time
+  - Files: `PinnedLayerRow.tsx`, `PinnedLayerChildRow.tsx`, `PinnedLayersSection.tsx`, `LayerContext.tsx`, `MapLayersWidget.tsx`
+  - Result: Clear interaction model where "active = inspecting = expanded = amber"
+
 ### 📋 Phase 0 Acceptance Criteria
 
 - [x] Clean component architecture with TypeScript
@@ -243,4 +254,24 @@ See `docs/master-plan.md` for full phase breakdown.
 - **Change**: Clicking filter icon on child views now expands/collapses row (instead of triggering Edit Filters)
 - **Rationale**: More intuitive - icon shows filter count, clicking shows filters; "Edit Filters" button in expanded panel opens Browse tab
 - **Files**: PinnedLayerChildRow.tsx
+
+### Active Layer Interaction System (Feb 9, 2026 PM)
+- **Feature**: Comprehensive click interaction overhaul for active layer management
+- **Clicking Layers**:
+  - Click parent layer → activates visible child + expands panel + collapses all others (accordion)
+  - Click child view → activates it + makes visible + hides siblings (mutual exclusivity)
+  - Click non-pinned layer → collapses all pinned panels
+  - Active layer section hides when pinned layer is active (no duplication)
+- **Visual Changes**:
+  - Active state changed from emerald to amber highlighting
+  - Parent and active child both get amber background/border
+  - Eye icons changed to gray (dark gray visible, light gray hidden)
+  - Removed all emerald backgrounds
+- **Interaction Improvements**:
+  - Parent eye toggle controls all children (hide all when off, restore first visible when on)
+  - Clicking child view makes it visible and active simultaneously
+  - Auto-collapse ensures only one panel open at a time (focused UX)
+  - useEffect syncs expansion state with active layer changes
+- **Result**: Clear mental model where "active = inspecting = expanded = amber"
+- **Files**: PinnedLayerRow.tsx, PinnedLayerChildRow.tsx, PinnedLayersSection.tsx, LayerContext.tsx, MapLayersWidget.tsx
 

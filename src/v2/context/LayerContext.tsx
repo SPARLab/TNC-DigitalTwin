@@ -174,7 +174,39 @@ export function LayerProvider({ children }: { children: ReactNode }) {
 
   const toggleVisibility = useCallback((pinnedId: string) => {
     setPinnedLayers(prev =>
-      prev.map(p => (p.id === pinnedId ? { ...p, isVisible: !p.isVisible } : p))
+      prev.map(p => {
+        if (p.id !== pinnedId) return p;
+        
+        // If nested (has views), handle parent-child visibility relationship
+        if (p.views && p.views.length > 0) {
+          const turningOn = !p.isVisible;
+          
+          if (turningOn) {
+            // Turning ON: restore the first visible child (or make first child visible if none are)
+            const hasVisibleChild = p.views.some(v => v.isVisible);
+            if (!hasVisibleChild) {
+              // No visible children, turn on the first one
+              return {
+                ...p,
+                isVisible: true,
+                views: p.views.map((v, i) => ({ ...v, isVisible: i === 0 })),
+              };
+            }
+            // Has visible child, just turn parent on
+            return { ...p, isVisible: true };
+          } else {
+            // Turning OFF: hide parent and all children
+            return {
+              ...p,
+              isVisible: false,
+              views: p.views.map(v => ({ ...v, isVisible: false })),
+            };
+          }
+        }
+        
+        // For flat layers, just toggle visibility
+        return { ...p, isVisible: !p.isVisible };
+      })
     );
   }, []);
 

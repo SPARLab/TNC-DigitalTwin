@@ -87,9 +87,13 @@ export function MapLayersWidget() {
             {/* Pinned Layers section */}
             <PinnedLayersSection
               layers={pinnedLayers}
+              activeLayerId={activeLayer?.layerId}
+              activeViewId={activeLayer?.viewId}
               onToggleVisibility={toggleVisibility}
               onRemove={unpinLayer}
               onReorder={reorderLayers}
+              onActivate={activateLayer}
+              onActivateView={(layerId, viewId) => activateLayer(layerId, viewId)}
               onEditFilters={handleEditFilters}
               onClearFilters={handleClearFilters}
               onToggleChildView={toggleChildVisibility}

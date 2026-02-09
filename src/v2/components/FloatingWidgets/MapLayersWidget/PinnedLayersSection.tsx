@@ -4,7 +4,7 @@
 // Drag-and-drop powered by @dnd-kit (DFT-034)
 // ============================================================================
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Pin } from 'lucide-react';
 import {
   DndContext,
@@ -24,9 +24,13 @@ import { PinnedLayerRow } from './PinnedLayerRow';
 
 interface PinnedLayersSectionProps {
   layers: PinnedLayer[];
+  activeLayerId?: string; // NEW: which layer is currently active
+  activeViewId?: string; // NEW: which child view is currently active (for nested layers)
   onToggleVisibility: (pinnedId: string) => void;
   onRemove: (pinnedId: string) => void;
   onReorder: (fromIndex: number, toIndex: number) => void;
+  onActivate?: (layerId: string) => void; // NEW: activate a layer (show in right sidebar)
+  onActivateView?: (layerId: string, viewId: string) => void; // NEW: activate a child view
   onEditFilters?: (layerId: string, viewId?: string) => void;
   onClearFilters?: (pinnedId: string, viewId?: string) => void;
   onToggleChildView?: (pinnedId: string, viewId: string) => void;
@@ -36,9 +40,13 @@ interface PinnedLayersSectionProps {
 
 export function PinnedLayersSection({
   layers,
+  activeLayerId,
+  activeViewId,
   onToggleVisibility,
   onRemove,
   onReorder,
+  onActivate,
+  onActivateView,
   onEditFilters,
   onClearFilters,
   onToggleChildView,
@@ -48,6 +56,17 @@ export function PinnedLayersSection({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [justDroppedId, setJustDroppedId] = useState<string | null>(null);
   const showDragHandles = layers.length > 1;
+
+  // Collapse all pinned layers when active layer changes to non-pinned
+  useEffect(() => {
+    if (activeLayerId) {
+      const activePinned = layers.find(l => l.layerId === activeLayerId);
+      if (!activePinned) {
+        // Active layer is not in pinned list, collapse all
+        setExpandedId(null);
+      }
+    }
+  }, [activeLayerId, layers]);
 
   // Configure drag sensors
   const sensors = useSensors(
@@ -121,14 +140,17 @@ export function PinnedLayersSection({
                   onToggleExpand={() => setExpandedId(prev => prev === layer.id ? null : layer.id)}
                   onToggleVisibility={() => onToggleVisibility(layer.id)}
                   onRemove={() => onRemove(layer.id)}
+                  onActivate={() => onActivate?.(layer.layerId)}
                   onEditFilters={() => onEditFilters?.(layer.layerId)}
                   onClearFilters={() => onClearFilters?.(layer.id)}
                   onKeyReorder={(dir) => handleKeyReorder(index, dir)}
                   onToggleChildView={(viewId: string) => onToggleChildView?.(layer.id, viewId)}
                   onEditFiltersForChild={(viewId: string) => onEditFilters?.(layer.layerId, viewId)}
                   onClearFiltersForChild={(viewId: string) => onClearFilters?.(layer.id, viewId)}
+                  onActivateChildView={(viewId: string) => onActivateView?.(layer.layerId, viewId)}
                   onCreateNewView={() => onCreateNewView?.(layer.id)}
                   onRemoveChildView={(viewId: string) => onRemoveView?.(layer.id, viewId)}
+                  activeViewId={activeLayerId === layer.layerId ? activeViewId : undefined}
                 />
               ))
             ) : (

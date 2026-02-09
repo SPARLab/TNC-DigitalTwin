@@ -5,7 +5,6 @@
 // Drag-and-drop powered by @dnd-kit (DFT-034)
 // ============================================================================
 
-import { useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent, CSSProperties } from 'react';
 import { Eye, EyeOff, GripVertical, X, ChevronRight, ChevronDown, Plus } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
@@ -20,9 +19,11 @@ interface PinnedLayerRowProps {
   isExpanded: boolean;
   showDragHandle: boolean;
   justDropped?: boolean;
+  activeViewId?: string; // NEW: which child view is currently active (if nested)
   onToggleExpand: () => void;
   onToggleVisibility: () => void;
   onRemove: () => void;
+  onActivate?: () => void; // NEW: activate this layer (show in right sidebar)
   onEditFilters?: () => void;
   onClearFilters?: () => void;
   onKeyReorder?: (direction: 'up' | 'down') => void;
@@ -31,6 +32,7 @@ interface PinnedLayerRowProps {
   onClearFiltersForChild?: (viewId: string) => void;
   onCreateNewView?: () => void;
   onRemoveChildView?: (viewId: string) => void;
+  onActivateChildView?: (viewId: string) => void; // NEW: activate a specific child view
 }
 
 export function PinnedLayerRow({
@@ -38,9 +40,11 @@ export function PinnedLayerRow({
   isExpanded,
   showDragHandle,
   justDropped = false,
+  activeViewId,
   onToggleExpand,
   onToggleVisibility,
   onRemove,
+  onActivate,
   onEditFilters,
   onClearFilters,
   onKeyReorder,
@@ -49,9 +53,9 @@ export function PinnedLayerRow({
   onClearFiltersForChild,
   onCreateNewView,
   onRemoveChildView,
+  onActivateChildView,
 }: PinnedLayerRowProps) {
   const isNested = layer.views && layer.views.length > 0;
-  const [expandedChildViewId, setExpandedChildViewId] = useState<string | null>(null);
   const displayName = !isNested && layer.distinguisher
     ? `${layer.name} (${layer.distinguisher})`
     : layer.name;
@@ -96,19 +100,38 @@ export function PinnedLayerRow({
                     ${isDragging ? 'border-2' : 'border'} ${
           isDragging
             ? `opacity-60 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.3)] ${
-                layer.isActive ? 'border-emerald-300 bg-emerald-50' : 
+                layer.isActive ? 'border-amber-300 bg-amber-50' : 
                 isExpanded ? 'border-gray-300 bg-gray-50' : 
                 'border-gray-300 bg-white'
               }`
             : justDropped
               ? 'animate-settle'
-              : isExpanded
-                ? 'bg-gray-50 border-gray-300 shadow-sm'
-                : layer.isActive
-                  ? 'bg-emerald-50 border-emerald-300 shadow-sm'
+              : layer.isActive
+                ? 'bg-amber-50 border-amber-300 shadow-sm'
+                : isExpanded
+                  ? 'bg-gray-50 border-gray-300 shadow-sm'
                   : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm'
         }`}
-        onClick={onToggleExpand}
+        onClick={() => {
+          // Clicking the row activates this layer (shows in right sidebar)
+          // AND expands/collapses the panel to show filters/options
+          
+          if (isNested) {
+            // For nested: activate visible child and toggle expand to show/hide children
+            const visibleChild = layer.views!.find(v => v.isVisible);
+            if (visibleChild) {
+              onActivateChildView?.(visibleChild.id);
+            } else {
+              onActivate?.();
+            }
+            // Toggle expand to show/hide children
+            onToggleExpand();
+          } else {
+            // For flat: activate and toggle expand panel
+            onActivate?.();
+            onToggleExpand();
+          }
+        }}
       >
         {/* Drag handle */}
         {showDragHandle && (
@@ -133,7 +156,7 @@ export function PinnedLayerRow({
           aria-pressed={layer.isVisible}
         >
           {(isNested ? parentEyeOn : layer.isVisible) ? (
-            <Eye className="w-4 h-4 text-emerald-600" />
+            <Eye className="w-4 h-4 text-gray-700" />
           ) : (
             <EyeOff className="w-4 h-4 text-gray-300" />
           )}
@@ -194,11 +217,9 @@ export function PinnedLayerRow({
                   key={view.id}
                   view={view}
                   isLast={index === layer.views!.length - 1}
-                  isExpanded={expandedChildViewId === view.id}
-                  onToggleExpand={() => setExpandedChildViewId(prev => prev === view.id ? null : view.id)}
+                  isActive={activeViewId === view.id}
                   onToggleVisibility={() => onToggleChildView?.(view.id)}
-                  onEditFilters={() => onEditFiltersForChild?.(view.id)}
-                  onClearFilters={() => onClearFiltersForChild?.(view.id)}
+                  onActivate={() => onActivateChildView?.(view.id)}
                   onRemove={() => onRemoveChildView?.(view.id)}
                 />
               ))}
