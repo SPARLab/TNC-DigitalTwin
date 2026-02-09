@@ -62,7 +62,7 @@ export function MapLayersWidget() {
         }}
       >
         <div id="map-layers-body" className="overflow-hidden">
-          <div className="max-h-[350px] overflow-y-auto">
+          <div id="map-layers-scroll" className="scroll-area-widget max-h-[350px] overflow-y-auto">
             {isEmpty ? (
               // Empty state — nothing active or pinned
               <div className="flex flex-col items-center justify-center text-center px-6 py-8">

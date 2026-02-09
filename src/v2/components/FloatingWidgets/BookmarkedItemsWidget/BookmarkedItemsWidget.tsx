@@ -35,7 +35,7 @@ export function BookmarkedItemsWidget() {
       />
 
       {!isCollapsed && (
-        <div id="bookmarked-items-body" className="max-h-[350px] overflow-y-auto">
+        <div id="bookmarked-items-body" className="scroll-area-widget max-h-[350px] overflow-y-auto">
           {bookmarks.length > 0 ? (
             // Render grouped bookmarks
             <>

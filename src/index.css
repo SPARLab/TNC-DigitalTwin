@@ -144,6 +144,21 @@ body {
   background-color: rgba(107, 114, 128, 0.8); /* Darker when directly hovering thumb */
 }
 
+/* -----------------------------------------------------------------------------
+   Floating widget scroll areas (Map Layers, Bookmarked Items)
+   - Completely hidden scrollbar for clean, minimal appearance
+   - Scrolling still works perfectly with mouse/trackpad
+   - Content uses full width at all times
+   ----------------------------------------------------------------------------- */
+.scroll-area-widget {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.scroll-area-widget::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
+}
+
 /* Remove blue outline on ArcGIS map view click (ArcGIS CSS variables) */
 .esri-view {
   --esri-view-outline: none !important;

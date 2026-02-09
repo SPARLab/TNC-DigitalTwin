@@ -86,7 +86,8 @@ export function PinnedLayerRow({
       style={style}
       className={isDragging ? 'relative z-50' : ''}
     >
-      {/* Main row */}
+      {/* Main row — wrapped in relative for tree connector stub */}
+      <div className="relative">
       <div
         className={`flex items-center gap-1.5 px-3 py-2 rounded-lg cursor-pointer 
                     transition-all duration-200 ease-in-out
@@ -164,6 +165,16 @@ export function PinnedLayerRow({
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
+
+      {/* Tree connector stub — bridges gap from parent row to children */}
+      {isNested && isExpanded && (
+        <div
+          className="absolute w-px bg-gray-300"
+          style={{ left: '12px', top: '100%', height: '8px' }}
+          aria-hidden="true"
+        />
+      )}
+      </div>{/* close relative wrapper */}
 
       {/* Nested child views (DFT-013) */}
       {isNested && (
