@@ -4,7 +4,7 @@
 // Filter clauses displayed split by comma when expanded.
 // ============================================================================
 
-import { Eye, EyeOff, ChevronRight } from 'lucide-react';
+import { Eye, EyeOff, ChevronRight, X } from 'lucide-react';
 import type { PinnedLayerView } from '../../../types';
 import { FilterIndicator } from './FilterIndicator';
 
@@ -16,6 +16,7 @@ interface PinnedLayerChildRowProps {
   onToggleVisibility: () => void;
   onEditFilters?: () => void;
   onClearFilters?: () => void;
+  onRemove?: () => void;
 }
 
 /** Split filterSummary into individual clauses (comma-separated) for display */
@@ -32,6 +33,7 @@ export function PinnedLayerChildRow({
   onToggleVisibility,
   onEditFilters,
   onClearFilters,
+  onRemove,
 }: PinnedLayerChildRowProps) {
   const clauses = filterClauses(view.filterSummary);
 
@@ -109,8 +111,18 @@ export function PinnedLayerChildRow({
         {/* Filter indicator */}
         <FilterIndicator
           count={view.filterCount}
-          onClick={e => { e?.stopPropagation(); onEditFilters?.(); }}
+          onClick={undefined}
         />
+
+        {/* Remove button */}
+        <button
+          onClick={e => { e.stopPropagation(); onRemove?.(); }}
+          className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0 p-0.5"
+          title="Remove this view"
+          aria-label="Remove view"
+        >
+          <X className="w-3 h-3" />
+        </button>
       </div>
 
       {/* Expanded filter panel — filter clauses + Clear + Edit Filters */}
@@ -126,31 +138,35 @@ export function PinnedLayerChildRow({
             id={`child-filter-panel-${view.id}`}
             className="bg-gray-50 border border-gray-200 rounded-lg mx-1 px-3 py-2.5 mt-1 ml-6"
           >
-            {clauses.length > 0 ? (
-              <ul className="text-[11px] text-gray-500 space-y-0.5 mb-2 list-none">
-                {clauses.map((clause, i) => (
-                  <li key={i}>{clause}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-[11px] text-gray-500 leading-relaxed mb-2">
-                No filters applied.
-              </p>
-            )}
-
-            <div className="flex items-center justify-between">
+            {/* Filter summary with Clear in top right */}
+            <div className="flex items-start justify-between gap-2 mb-2">
+              {clauses.length > 0 ? (
+                <ul className="text-[11px] text-gray-500 space-y-0.5 list-none flex-1">
+                  {clauses.map((clause, i) => (
+                    <li key={i}>{clause}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[11px] text-gray-500 leading-relaxed flex-1">
+                  No filters applied.
+                </p>
+              )}
               {view.filterCount > 0 && (
                 <button
                   onClick={onClearFilters}
-                  className="text-[11px] text-gray-400 hover:text-red-500 cursor-pointer transition-colors"
+                  className="text-[11px] text-gray-400 hover:text-red-500 cursor-pointer transition-colors flex-shrink-0"
                 >
                   Clear
                 </button>
               )}
+            </div>
+
+            {/* Bottom row: Edit Filters (right-aligned) */}
+            <div className="flex items-center justify-end">
               <button
                 onClick={onEditFilters}
                 className="text-[11px] font-medium text-emerald-600 hover:text-emerald-700 cursor-pointer
-                           flex items-center gap-0.5 ml-auto"
+                           flex items-center gap-0.5"
               >
                 Edit Filters
                 <ChevronRight className="w-3 h-3" />

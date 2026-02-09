@@ -38,7 +38,7 @@
 | 8 | **0.6** Map Feature Highlight — Bookmark hover | 🟡 | Low | Requires map integration first |
 
 **Total Phase 0 Tasks Remaining:** 7  
-**Recently Completed:** Fix Tree Connector Lines Between Parent and Child Rows ✅, Fix Map Layers Widget Horizontal Scrollbar ✅, Fix Nested Layer Expand/Collapse ✅
+**Recently Completed:** Multi-View Management (Create/Remove Views) ✅, Filter Panel Layout Reorganization ✅, Fix Tree Connector Lines ✅
 
 ---
 
@@ -108,7 +108,17 @@
 
 - [x] **Make Filter Icons Clickable for Child Views** — Show filter queries when clicking filter indicator
   - Completed: Child row click expands to show filter clauses (split on comma). Filter icon or "Edit Filters" navigates to right sidebar Browse tab. One child expanded at a time. LayerContext: toggleChildVisibility, clearFilters, requestEditFilters. Flat rows also use multi-clause display.
+  - Updated (Feb 9): Filter icon now expands row (no stopPropagation); "Edit Filters" button in expanded panel opens Browse tab.
   - Files: `PinnedLayerChildRow.tsx`, `PinnedLayerRow.tsx`, `PinnedLayersSection.tsx`, `MapLayersWidget.tsx`, `LayerContext.tsx`, `RightSidebar.tsx`, `types/index.ts`
+
+- [x] **Multi-View Management for Pinned Layers** — Create and remove filtered views
+  - Completed: Added "+ New View" button in flat expanded filter panel to convert flat→nested structure. Creates two views: current filters become "View 1" (or uses distinguisher name), new empty "View 2". Added "X" button to remove individual child views. Smart conversion: removing views to leave only 1 converts back to flat, preserving last view's state as distinguisher.
+  - Implementation: `createNewView(pinnedId)` and `removeView(pinnedId, viewId)` in LayerContext. Wired through MapLayersWidget → PinnedLayersSection → PinnedLayerRow → PinnedLayerChildRow.
+  - Files: `LayerContext.tsx`, `MapLayersWidget.tsx`, `PinnedLayersSection.tsx`, `PinnedLayerRow.tsx`, `PinnedLayerChildRow.tsx`
+
+- [x] **Reorganize Filter Panel Layout** — Optimize spacing and button placement
+  - Completed: Reorganized both flat and child filter panels for clarity. Top section: filter summary (left) + "Clear" button (top right). Bottom section: flat has "+ New View" (left) + "Edit Filters >" (right); child has "Edit Filters >" (right only). Removed unnecessary whitespace while maintaining readability.
+  - Files: `PinnedLayerRow.tsx`, `PinnedLayerChildRow.tsx`
 
 - [ ] **Prevent Map Layers Widget Scrollbar from Pushing Content** — Scrollbar should not reduce content width
   - Current: Expanding child filter panels triggers vertical scroll. Scrollbar renders inside the widget width, pushing content (e.g., "Edit Filters" button) inward.
@@ -209,3 +219,28 @@ See `docs/master-plan.md` for full phase breakdown.
 | Feb 7, 2026 | Phase 0 | WIP: Multi-view nested structure, tree connectors (L-shaped), pin-to-top behavior, smooth animations. New components: PinnedLayerChildRow, NewViewButton. Card styling restored. Commit: 4fd430e | Claude |
 | Feb 6, 2026 | Phase 0 | Built core shell: left sidebar, map layers widget, bookmarked items widget, right sidebar shell, state management. 27 files, 1,748 lines. Zero TypeScript/linter errors. | Opus |
 | Feb 6, 2026 | Phase 0 | Added v1/v2 toggle via `?v2` URL param. "Try v2.0" button in legacy header. | Opus |
+
+---
+
+## Recent Work Summary (Feb 9, 2026 PM)
+
+### Multi-View Management for Pinned Layers
+- **Feature**: Create and remove filtered views for pinned layers
+- **"+ New View" Button**: Converts flat (single view) → nested (multi-view) structure. Creates 2 views: current filters become View 1 (uses distinguisher name like "Mar 2024" if available), new empty View 2.
+- **"X" Remove Button**: Removes individual child views. Smart conversion: when only 1 view remains, converts back to flat structure preserving last view's state.
+- **Implementation**: Added `createNewView(pinnedId)` and `removeView(pinnedId, viewId)` to LayerContext. Wired through: MapLayersWidget → PinnedLayersSection → PinnedLayerRow → PinnedLayerChildRow.
+- **Files**: LayerContext.tsx, MapLayersWidget.tsx, PinnedLayersSection.tsx, PinnedLayerRow.tsx, PinnedLayerChildRow.tsx
+
+### Filter Panel Layout Reorganization
+- **Layout Changes**:
+  - Top: Filter summary (left) + "Clear" button (top right)
+  - Bottom: "+ New View" (left, flat only) + "Edit Filters >" (right)
+  - Child panels: Just "Edit Filters >" (right-aligned)
+- **Optimization**: Removed unnecessary whitespace for more compact presentation
+- **Files**: PinnedLayerRow.tsx, PinnedLayerChildRow.tsx
+
+### Filter Icon Behavior Update
+- **Change**: Clicking filter icon on child views now expands/collapses row (instead of triggering Edit Filters)
+- **Rationale**: More intuitive - icon shows filter count, clicking shows filters; "Edit Filters" button in expanded panel opens Browse tab
+- **Files**: PinnedLayerChildRow.tsx
+

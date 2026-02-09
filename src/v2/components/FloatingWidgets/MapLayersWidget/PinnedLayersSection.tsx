@@ -31,6 +31,7 @@ interface PinnedLayersSectionProps {
   onClearFilters?: (pinnedId: string, viewId?: string) => void;
   onToggleChildView?: (pinnedId: string, viewId: string) => void;
   onCreateNewView?: (pinnedId: string) => void;
+  onRemoveView?: (pinnedId: string, viewId: string) => void;
 }
 
 export function PinnedLayersSection({
@@ -42,6 +43,7 @@ export function PinnedLayersSection({
   onClearFilters,
   onToggleChildView,
   onCreateNewView,
+  onRemoveView,
 }: PinnedLayersSectionProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [justDroppedId, setJustDroppedId] = useState<string | null>(null);
@@ -122,10 +124,11 @@ export function PinnedLayersSection({
                   onEditFilters={() => onEditFilters?.(layer.layerId)}
                   onClearFilters={() => onClearFilters?.(layer.id)}
                   onKeyReorder={(dir) => handleKeyReorder(index, dir)}
-                  onToggleChildView={(viewId) => onToggleChildView?.(layer.id, viewId)}
-                  onEditFiltersForChild={(viewId) => onEditFilters?.(layer.layerId, viewId)}
-                  onClearFiltersForChild={(viewId) => onClearFilters?.(layer.id, viewId)}
+                  onToggleChildView={(viewId: string) => onToggleChildView?.(layer.id, viewId)}
+                  onEditFiltersForChild={(viewId: string) => onEditFilters?.(layer.layerId, viewId)}
+                  onClearFiltersForChild={(viewId: string) => onClearFilters?.(layer.id, viewId)}
                   onCreateNewView={() => onCreateNewView?.(layer.id)}
+                  onRemoveChildView={(viewId: string) => onRemoveView?.(layer.id, viewId)}
                 />
               ))
             ) : (

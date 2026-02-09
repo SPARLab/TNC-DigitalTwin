@@ -22,6 +22,8 @@ export function MapLayersWidget() {
     toggleChildVisibility,
     clearFilters,
     reorderLayers,
+    createNewView,
+    removeView,
     activateLayer,
     requestEditFilters,
     undoStack,
@@ -91,7 +93,8 @@ export function MapLayersWidget() {
               onEditFilters={handleEditFilters}
               onClearFilters={handleClearFilters}
               onToggleChildView={toggleChildVisibility}
-              onCreateNewView={(_pinnedId) => {/* Phase 1+: implement view creation */}}
+              onCreateNewView={createNewView}
+              onRemoveView={removeView}
             />
               </>
             )}

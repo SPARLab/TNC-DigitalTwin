@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent, CSSProperties } from 'react';
-import { Eye, EyeOff, GripVertical, X, ChevronRight, ChevronDown } from 'lucide-react';
+import { Eye, EyeOff, GripVertical, X, ChevronRight, ChevronDown, Plus } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { PinnedLayer } from '../../../types';
@@ -30,6 +30,7 @@ interface PinnedLayerRowProps {
   onEditFiltersForChild?: (viewId: string) => void;
   onClearFiltersForChild?: (viewId: string) => void;
   onCreateNewView?: () => void;
+  onRemoveChildView?: (viewId: string) => void;
 }
 
 export function PinnedLayerRow({
@@ -47,6 +48,7 @@ export function PinnedLayerRow({
   onEditFiltersForChild,
   onClearFiltersForChild,
   onCreateNewView,
+  onRemoveChildView,
 }: PinnedLayerRowProps) {
   const isNested = layer.views && layer.views.length > 0;
   const [expandedChildViewId, setExpandedChildViewId] = useState<string | null>(null);
@@ -197,6 +199,7 @@ export function PinnedLayerRow({
                   onToggleVisibility={() => onToggleChildView?.(view.id)}
                   onEditFilters={() => onEditFiltersForChild?.(view.id)}
                   onClearFilters={() => onClearFiltersForChild?.(view.id)}
+                  onRemove={() => onRemoveChildView?.(view.id)}
                 />
               ))}
               <NewViewButton onClick={() => onCreateNewView?.()} />
@@ -216,31 +219,42 @@ export function PinnedLayerRow({
         >
           <div className="overflow-hidden">
             <div id={`flat-filter-panel-${layer.id}`} className="bg-gray-50 border border-gray-200 rounded-lg mx-1 px-3 py-2.5 mt-1">
-              {/* Filter summary — multi-clause display (split on comma) */}
-              {layer.filterSummary ? (
-                <ul className="text-[11px] text-gray-500 space-y-0.5 mb-2 list-none">
-                  {layer.filterSummary.split(',').map((s, i) => (
-                    <li key={i}>{s.trim()}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-[11px] text-gray-500 leading-relaxed mb-2">No filters applied.</p>
-              )}
-
-              {/* Action row */}
-              <div className="flex items-center justify-between">
+              {/* Filter summary with Clear in top right */}
+              <div className="flex items-start justify-between gap-2 mb-2">
+                {layer.filterSummary ? (
+                  <ul className="text-[11px] text-gray-500 space-y-0.5 list-none flex-1">
+                    {layer.filterSummary.split(',').map((s, i) => (
+                      <li key={i}>{s.trim()}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-[11px] text-gray-500 leading-relaxed flex-1">No filters applied.</p>
+                )}
                 {layer.filterCount > 0 && (
                   <button
                     onClick={onClearFilters}
-                    className="text-[11px] text-gray-400 hover:text-red-500 cursor-pointer transition-colors"
+                    className="text-[11px] text-gray-400 hover:text-red-500 cursor-pointer transition-colors flex-shrink-0"
                   >
                     Clear
                   </button>
                 )}
+              </div>
+
+              {/* Bottom row: New View (left) + Edit Filters (right) */}
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onCreateNewView?.(); }}
+                  className="text-[11px] text-emerald-600 hover:text-emerald-700 cursor-pointer transition-colors 
+                             flex items-center gap-1 px-0 py-0.5"
+                  aria-label="Create new filtered view"
+                >
+                  <Plus className="w-3 h-3" />
+                  New View
+                </button>
                 <button
                   onClick={onEditFilters}
                   className="text-[11px] font-medium text-emerald-600 hover:text-emerald-700 cursor-pointer
-                             flex items-center gap-0.5 ml-auto"
+                             flex items-center gap-0.5"
                 >
                   Edit Filters
                   <ChevronRight className="w-3 h-3" />

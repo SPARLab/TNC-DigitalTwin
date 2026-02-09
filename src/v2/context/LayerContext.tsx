@@ -21,6 +21,8 @@ interface LayerContextValue {
   toggleChildVisibility: (pinnedId: string, viewId: string) => void;
   clearFilters: (pinnedId: string, viewId?: string) => void;
   reorderLayers: (fromIndex: number, toIndex: number) => void;
+  createNewView: (pinnedId: string) => void;
+  removeView: (pinnedId: string, viewId: string) => void;
 
   // Edit Filters → open Browse tab (DFT-019)
   lastEditFiltersRequest: number;
@@ -226,6 +228,76 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const createNewView = useCallback((pinnedId: string) => {
+    setPinnedLayers(prev =>
+      prev.map(p => {
+        if (p.id !== pinnedId) return p;
+        
+        // If already nested, add a new view
+        if (p.views && p.views.length > 0) {
+          const newView = {
+            id: crypto.randomUUID(),
+            name: `View ${p.views.length + 1}`,
+            isVisible: false,
+            filterCount: 0,
+          };
+          return { ...p, views: [...p.views, newView] };
+        }
+        
+        // Convert flat → nested: current state becomes View 1, add empty View 2
+        const view1Name = p.distinguisher || 'View 1';
+        const view1 = {
+          id: crypto.randomUUID(),
+          name: view1Name,
+          isVisible: p.isVisible,
+          filterCount: p.filterCount,
+          filterSummary: p.filterSummary,
+        };
+        const view2 = {
+          id: crypto.randomUUID(),
+          name: 'View 2',
+          isVisible: false,
+          filterCount: 0,
+        };
+        
+        // Clear flat-level filter data (now in views)
+        return {
+          ...p,
+          views: [view1, view2],
+          filterCount: 0,
+          filterSummary: undefined,
+          distinguisher: undefined,
+        };
+      })
+    );
+  }, []);
+
+  const removeView = useCallback((pinnedId: string, viewId: string) => {
+    setPinnedLayers(prev =>
+      prev.map(p => {
+        if (p.id !== pinnedId || !p.views) return p;
+        
+        const remainingViews = p.views.filter(v => v.id !== viewId);
+        
+        // If only one view left, convert back to flat
+        if (remainingViews.length === 1) {
+          const lastView = remainingViews[0];
+          return {
+            ...p,
+            views: undefined,
+            isVisible: lastView.isVisible,
+            filterCount: lastView.filterCount,
+            filterSummary: lastView.filterSummary,
+            distinguisher: lastView.name !== 'View 1' ? lastView.name : undefined,
+          };
+        }
+        
+        // Keep as nested with remaining views
+        return { ...p, views: remainingViews };
+      })
+    );
+  }, []);
+
   const isLayerPinned = useCallback(
     (layerId: string) => pinnedLayers.some(p => p.layerId === layerId),
     [pinnedLayers]
@@ -270,6 +342,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         toggleChildVisibility,
         clearFilters,
         reorderLayers,
+        createNewView,
+        removeView,
         lastEditFiltersRequest,
         requestEditFilters,
         isLayerPinned,
