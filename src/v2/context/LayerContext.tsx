@@ -40,10 +40,25 @@ const INITIAL_PINNED: PinnedLayer[] = [
     name: 'Camera Traps (ANiML)',
     isVisible: true,
     isActive: false,
-    filterCount: 3,
-    filterSummary: 'species = Mountain Lion, date > 2024-01-01, confidence >= 80%',
-    distinguisher: 'mountain lion',
+    filterCount: 0,
     order: 0,
+    // Multi-view example (DFT-013)
+    views: [
+      {
+        id: 'view-1',
+        name: 'mountain lion',
+        isVisible: true,
+        filterCount: 3,
+        filterSummary: 'species = Mountain Lion, date > 2024-01-01, confidence >= 80%',
+      },
+      {
+        id: 'view-2',
+        name: 'deer',
+        isVisible: false,
+        filterCount: 2,
+        filterSummary: 'species = Deer, date > 2024-01-01',
+      },
+    ],
   },
   {
     id: 'pinned-2',
@@ -114,9 +129,10 @@ export function LayerProvider({ children }: { children: ReactNode }) {
       isVisible: true,
       isActive: activeLayer?.layerId === layerId,
       filterCount: 0,
-      order: pinnedLayers.length,
+      order: 0, // new layers go to the top
     };
-    setPinnedLayers(prev => [...prev, newPinned]);
+    // Prepend new layer at top, reorder existing
+    setPinnedLayers(prev => [newPinned, ...prev.map((p, i) => ({ ...p, order: i + 1 }))]);
 
     // Update active layer's isPinned flag
     if (activeLayer?.layerId === layerId) {

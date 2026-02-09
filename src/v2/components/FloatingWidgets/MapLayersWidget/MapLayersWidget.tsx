@@ -62,13 +62,15 @@ export function MapLayersWidget() {
                 />
               )}
 
-              {/* Pinned Layers section */}
-              <PinnedLayersSection
-                layers={pinnedLayers}
-                onToggleVisibility={toggleVisibility}
-                onRemove={unpinLayer}
-                onReorder={reorderLayers}
-              />
+          {/* Pinned Layers section */}
+          <PinnedLayersSection
+            layers={pinnedLayers}
+            onToggleVisibility={toggleVisibility}
+            onRemove={unpinLayer}
+            onReorder={reorderLayers}
+            onCreateNewView={(_pinnedId) => {/* Phase 1+: implement view creation */}}
+            onToggleChildView={(_pinnedId, _viewId) => {/* Phase 1+: implement child toggle */}}
+          />
             </>
           )}
 

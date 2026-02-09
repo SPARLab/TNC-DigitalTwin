@@ -1,8 +1,8 @@
 # Development Task Tracker — V2 Digital Catalog
 
-**Last Updated:** February 6, 2026  
+**Last Updated:** February 7, 2026  
 **Current Phase:** Phase 0 (Foundation) — 🟡 In Progress  
-**Target Deadline:** February 20, 2026 (14 days remaining)
+**Target Deadline:** February 20, 2026 (13 days remaining)
 
 ---
 
@@ -53,6 +53,13 @@
   - Reference: `docs/PLANNING/component-specs/bookmarked-items-widget.md` DFT-036
   - Current: Placeholder (no map integration yet)
   - Needed: Cyan ring highlight, off-screen indicator, keyboard support
+
+- [ ] **0.8** Refine Tree Connectors — Polish L-shaped connectors for nested child views
+  - Reference: `docs/PLANNING/component-specs/map-layers-widget.md` (Connecting Line section)
+  - Current: Basic L-shaped connectors implemented (vertical + horizontal branches)
+  - Needed: Refine positioning, alignment, corner styling (├─ and └─ style)
+  - Files: `src/v2/components/FloatingWidgets/MapLayersWidget/PinnedLayerChildRow.tsx`
+  - Notes: Use ::before and ::after pseudo-elements for clean tree structure
 
 ### 📋 Phase 0 Acceptance Criteria
 
@@ -130,5 +137,6 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 7, 2026 | Phase 0 | WIP: Multi-view nested structure, tree connectors (L-shaped), pin-to-top behavior, smooth animations. New components: PinnedLayerChildRow, NewViewButton. Card styling restored. Commit: 4fd430e | Claude |
 | Feb 6, 2026 | Phase 0 | Built core shell: left sidebar, map layers widget, bookmarked items widget, right sidebar shell, state management. 27 files, 1,748 lines. Zero TypeScript/linter errors. | Opus |
 | Feb 6, 2026 | Phase 0 | Added v1/v2 toggle via `?v2` URL param. "Try v2.0" button in legacy header. | Opus |

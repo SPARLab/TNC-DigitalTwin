@@ -1,5 +1,6 @@
 // ============================================================================
 // PinnedLayersSection — Blue-accented section for all pinned layers
+// Supports both flat and nested (multi-view) structures
 // ============================================================================
 
 import { useState } from 'react';
@@ -12,6 +13,8 @@ interface PinnedLayersSectionProps {
   onToggleVisibility: (pinnedId: string) => void;
   onRemove: (pinnedId: string) => void;
   onReorder: (fromIndex: number, toIndex: number) => void;
+  onCreateNewView?: (pinnedId: string) => void;
+  onToggleChildView?: (pinnedId: string, viewId: string) => void;
 }
 
 export function PinnedLayersSection({
@@ -19,6 +22,8 @@ export function PinnedLayersSection({
   onToggleVisibility,
   onRemove,
   onReorder,
+  onCreateNewView,
+  onToggleChildView,
 }: PinnedLayersSectionProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const showDragHandles = layers.length > 1;
@@ -55,6 +60,8 @@ export function PinnedLayersSection({
               onToggleVisibility={() => onToggleVisibility(layer.id)}
               onRemove={() => onRemove(layer.id)}
               onKeyReorder={(dir) => handleKeyReorder(index, dir)}
+              onCreateNewView={() => onCreateNewView?.(layer.id)}
+              onToggleChildView={(viewId) => onToggleChildView?.(layer.id, viewId)}
             />
           ))
         ) : (
