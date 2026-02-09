@@ -55,18 +55,24 @@ export function PinnedLayersSection({
 }: PinnedLayersSectionProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [justDroppedId, setJustDroppedId] = useState<string | null>(null);
+  const [lastActiveLayerId, setLastActiveLayerId] = useState<string | null>(null);
   const showDragHandles = layers.length > 1;
 
-  // Collapse all pinned layers when active layer changes to non-pinned
+  // Auto-expand when active layer changes (but only on first activation)
   useEffect(() => {
-    if (activeLayerId) {
+    if (activeLayerId && activeLayerId !== lastActiveLayerId) {
+      // Active layer changed to a new layer
+      setLastActiveLayerId(activeLayerId);
       const activePinned = layers.find(l => l.layerId === activeLayerId);
-      if (!activePinned) {
-        // Active layer is not in pinned list, collapse all
+      if (activePinned) {
+        // Active layer IS pinned → expand it (only on first activation)
+        setExpandedId(activePinned.id);
+      } else {
+        // Active layer is not in pinned list → collapse all
         setExpandedId(null);
       }
     }
-  }, [activeLayerId, layers]);
+  }, [activeLayerId, lastActiveLayerId, layers]);
 
   // Configure drag sensors
   const sensors = useSensors(

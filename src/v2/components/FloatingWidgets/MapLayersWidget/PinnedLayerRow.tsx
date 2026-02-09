@@ -5,8 +5,9 @@
 // Drag-and-drop powered by @dnd-kit (DFT-034)
 // ============================================================================
 
+import { useState, useEffect } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent, CSSProperties } from 'react';
-import { Eye, EyeOff, GripVertical, X, ChevronRight, ChevronDown, Plus } from 'lucide-react';
+import { Eye, EyeOff, GripVertical, X, ChevronRight, Plus } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { PinnedLayer } from '../../../types';
@@ -60,6 +61,29 @@ export function PinnedLayerRow({
     ? `${layer.name} (${layer.distinguisher})`
     : layer.name;
 
+  // Track which child view is expanded (accordion pattern)
+  const [expandedChildId, setExpandedChildId] = useState<string | null>(null);
+
+  // Auto-activate and expand visible child when parent becomes active
+  useEffect(() => {
+    if (layer.isActive && isNested && isExpanded) {
+      // Parent is active and expanded → find visible child and activate it
+      const visibleChild = layer.views!.find(v => v.isVisible);
+      if (visibleChild && !activeViewId) {
+        // No child is active yet, activate the visible one
+        onActivateChildView?.(visibleChild.id);
+      }
+    }
+  }, [layer.isActive, isNested, isExpanded, activeViewId, layer.views, onActivateChildView]);
+
+  // Auto-expand active child when parent is expanded from sidebar
+  useEffect(() => {
+    if (isExpanded && isNested && activeViewId) {
+      // Parent just expanded and there's an active child → expand that child
+      setExpandedChildId(activeViewId);
+    }
+  }, [isExpanded, isNested, activeViewId]);
+
   // Drag-and-drop setup
   const {
     attributes,
@@ -78,6 +102,11 @@ export function PinnedLayerRow({
 
   // For nested: parent eye is ON if any child is visible, OFF if all hidden
   const parentEyeOn = isNested && layer.views!.some(v => v.isVisible);
+
+  // For nested: parent filter count should match the visible child's count
+  const parentFilterCount = isNested 
+    ? layer.views!.find(v => v.isVisible)?.filterCount ?? 0
+    : layer.filterCount;
 
   // Build drag styles (DFT-034)
   const style: CSSProperties = {
@@ -169,17 +198,11 @@ export function PinnedLayerRow({
           {displayName}
         </span>
 
-        {/* Expand/collapse chevron (for nested or when expanded) */}
-        {(isNested || isExpanded) && (
-          isExpanded
-            ? <ChevronDown className="w-3 h-3 text-gray-400 flex-shrink-0 transition-transform duration-200" />
-            : <ChevronRight className="w-3 h-3 text-gray-400 flex-shrink-0 transition-transform duration-200" />
-        )}
-
-        {/* Filter indicator (only for flat rows) */}
-        {!isNested && (
-          <FilterIndicator count={layer.filterCount} onClick={e => { e?.stopPropagation(); onEditFilters?.(); }} />
-        )}
+        {/* Filter indicator — always visible (parent shows visible child's count) */}
+        <FilterIndicator 
+          count={parentFilterCount} 
+          onClick={e => { e?.stopPropagation(); onEditFilters?.(); }} 
+        />
 
         {/* Remove button */}
         <button
@@ -218,9 +241,13 @@ export function PinnedLayerRow({
                   view={view}
                   isLast={index === layer.views!.length - 1}
                   isActive={activeViewId === view.id}
+                  isExpanded={expandedChildId === view.id}
+                  onToggleExpand={() => setExpandedChildId(prev => prev === view.id ? null : view.id)}
                   onToggleVisibility={() => onToggleChildView?.(view.id)}
                   onActivate={() => onActivateChildView?.(view.id)}
                   onRemove={() => onRemoveChildView?.(view.id)}
+                  onEditFilters={() => onEditFiltersForChild?.(view.id)}
+                  onClearFilters={() => onClearFiltersForChild?.(view.id)}
                 />
               ))}
               <NewViewButton onClick={() => onCreateNewView?.()} />

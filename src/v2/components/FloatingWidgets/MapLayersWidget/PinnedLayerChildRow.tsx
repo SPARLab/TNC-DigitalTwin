@@ -1,29 +1,37 @@
 // ============================================================================
 // PinnedLayerChildRow — Child view within nested multi-view structure (DFT-013)
-// Row click = expand filter panel. Eye = toggle visibility.
-// Filter clauses displayed split by comma when expanded.
+// Row click = activate + expand filter panel. Eye = toggle visibility.
+// Expansion state managed by parent (accordion pattern: only one child expanded).
 // ============================================================================
 
-import { Eye, EyeOff, X } from 'lucide-react';
+import { Eye, EyeOff, X, ChevronRight } from 'lucide-react';
 import type { PinnedLayerView } from '../../../types';
 import { FilterIndicator } from './FilterIndicator';
 
 interface PinnedLayerChildRowProps {
   view: PinnedLayerView;
   isLast: boolean;
-  isActive: boolean; // NEW: is this view currently active in the right sidebar?
+  isActive: boolean;
+  isExpanded: boolean; // CHANGED: now controlled by parent
+  onToggleExpand: () => void; // CHANGED: now calls parent to manage accordion
   onToggleVisibility: () => void;
-  onActivate?: () => void; // NEW: activate this child view
+  onActivate?: () => void;
   onRemove?: () => void;
+  onEditFilters?: () => void;
+  onClearFilters?: () => void;
 }
 
 export function PinnedLayerChildRow({
   view,
   isLast,
   isActive,
+  isExpanded,
+  onToggleExpand,
   onToggleVisibility,
   onActivate,
   onRemove,
+  onEditFilters,
+  onClearFilters,
 }: PinnedLayerChildRowProps) {
 
   return (
@@ -66,20 +74,19 @@ export function PinnedLayerChildRow({
               : 'bg-white border-gray-200 opacity-60 hover:opacity-80'
         }`}
         onClick={() => {
-          // Clicking child row activates it AND makes it visible
           onActivate?.();
-          // If not already visible, toggle visibility (will hide others due to mutual exclusivity)
-          if (!view.isVisible) {
-            onToggleVisibility();
-          }
+          if (!view.isVisible) onToggleVisibility();
+          onToggleExpand();
         }}
         role="button"
         tabIndex={0}
         aria-label={`${view.name} — ${view.isVisible ? 'visible' : 'hidden'}. ${view.filterCount} filters. Click to view details.`}
+        aria-expanded={isExpanded}
         onKeyDown={e => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             onActivate?.();
+            onToggleExpand();
           }
         }}
       >
@@ -103,7 +110,7 @@ export function PinnedLayerChildRow({
           {view.name}
         </span>
 
-        {/* Filter indicator */}
+        {/* Filter indicator — always visible */}
         <FilterIndicator
           count={view.filterCount}
           onClick={undefined}
@@ -118,6 +125,51 @@ export function PinnedLayerChildRow({
         >
           <X className="w-3 h-3" />
         </button>
+      </div>
+
+      {/* Expanded filter panel */}
+      <div
+        className="grid transition-all duration-300 ease-in-out ml-6"
+        style={{
+          gridTemplateRows: isExpanded ? '1fr' : '0fr',
+          opacity: isExpanded ? 1 : 0,
+        }}
+      >
+        <div className="overflow-hidden">
+          <div id={`child-filter-panel-${view.id}`} className="bg-gray-50 border border-gray-200 rounded-lg mx-1 px-3 py-2.5 mt-1">
+            {/* Filter summary with Clear in top right */}
+            <div className="flex items-start justify-between gap-2 mb-2">
+              {view.filterSummary ? (
+                <ul className="text-[11px] text-gray-500 space-y-0.5 list-none flex-1">
+                  {view.filterSummary.split(',').map((s, i) => (
+                    <li key={i}>{s.trim()}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[11px] text-gray-500 leading-relaxed flex-1">No filters applied.</p>
+              )}
+              {view.filterCount > 0 && (
+                <button
+                  onClick={onClearFilters}
+                  className="text-[11px] text-gray-400 hover:text-red-500 cursor-pointer transition-colors flex-shrink-0"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
+            {/* Bottom row: Edit Filters (right-aligned) */}
+            <div className="flex items-center justify-end">
+              <button
+                onClick={onEditFilters}
+                className="text-[11px] font-medium text-emerald-600 hover:text-emerald-700 cursor-pointer flex items-center gap-0.5"
+              >
+                Edit Filters
+                <ChevronRight className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
