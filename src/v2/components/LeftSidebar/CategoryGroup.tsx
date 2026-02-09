@@ -66,17 +66,14 @@ export function CategoryGroup({ category, filteredLayerIds }: CategoryGroupProps
 
           {/* DFT-045: DataOne shortcut row */}
           {showDataoneShortcut && (
-            <>
-              <div className="mx-6 mt-1.5 border-t border-gray-200" />
-              <button
-                onClick={handleDataoneClick}
-                className="flex items-center w-full py-1.5 px-3 pl-9 mt-1 text-sm text-gray-500 italic
-                           hover:bg-emerald-50 transition-colors cursor-pointer"
-              >
-                <BookOpen className="w-4 h-4 text-gray-400 mr-2 flex-shrink-0" />
-                <span>DataOne Datasets ({dataoneCount})</span>
-              </button>
-            </>
+            <button
+              onClick={handleDataoneClick}
+              className="flex items-center w-full py-1.5 px-3 pl-9 mt-1 text-sm text-gray-500 italic
+                         hover:bg-emerald-50 transition-colors cursor-pointer"
+            >
+              <BookOpen className="w-4 h-4 text-gray-400 mr-2 flex-shrink-0" />
+              <span>DataOne Datasets ({dataoneCount})</span>
+            </button>
           )}
         </div>
       )}
