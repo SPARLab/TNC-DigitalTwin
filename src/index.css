@@ -231,3 +231,41 @@ body {
   animation: filter-button-blink 0.35s ease-in-out forwards;
   animation-delay: 1.4s;
 }
+
+/* =============================================================================
+   DRAG-AND-DROP ANIMATIONS (DFT-034)
+   Settle animation for pinned layers after successful reorder
+   ============================================================================= */
+
+/* Settle animation - green flash after drop */
+@keyframes settle {
+  0% {
+    background-color: #dcfce7; /* green-100 */
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.animate-settle {
+  animation: settle 400ms ease-out;
+}
+
+/* Reduced motion support - simplify drag animations for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  /* Remove scale transform during drag */
+  .scale-95 {
+    transform: none !important;
+  }
+  
+  /* Disable settle animation */
+  .animate-settle {
+    animation: none;
+    background-color: #dcfce7; /* Just show the color without animation */
+  }
+  
+  /* Simplify transitions */
+  .transition-all {
+    transition: opacity 150ms ease-in-out;
+  }
+}

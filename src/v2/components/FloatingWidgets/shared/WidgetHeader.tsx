@@ -36,7 +36,7 @@ export function WidgetHeader({
       className={`flex items-center justify-between px-4 py-2.5 bg-slate-50 transition-all duration-300 ${
         isCollapsed 
           ? 'rounded-xl' // Rounded corners on all sides when collapsed
-          : 'rounded-t-xl border-b border-gray-200' // Top corners + bottom border when expanded
+          : 'rounded-t-xl' // Top corners + bottom border when expanded
       }`}
     >
       <div className="flex items-center gap-2 min-w-0">

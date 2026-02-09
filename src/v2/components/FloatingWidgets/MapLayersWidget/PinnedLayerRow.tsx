@@ -2,10 +2,13 @@
 // PinnedLayerRow — A single pinned layer row with drag, eye, filter, remove
 // Supports: flat (single view) or nested (multi-view parent) structures
 // Expanded panel for filter summary + actions (DFT-003b)
+// Drag-and-drop powered by @dnd-kit (DFT-034)
 // ============================================================================
 
-import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent, CSSProperties } from 'react';
 import { Eye, EyeOff, GripVertical, X, ChevronRight, ChevronDown } from 'lucide-react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import type { PinnedLayer } from '../../../types';
 import { FilterIndicator } from './FilterIndicator';
 import { PinnedLayerChildRow } from './PinnedLayerChildRow';
@@ -15,6 +18,7 @@ interface PinnedLayerRowProps {
   layer: PinnedLayer;
   isExpanded: boolean;
   showDragHandle: boolean;
+  justDropped?: boolean;
   onToggleExpand: () => void;
   onToggleVisibility: () => void;
   onRemove: () => void;
@@ -29,6 +33,7 @@ export function PinnedLayerRow({
   layer,
   isExpanded,
   showDragHandle,
+  justDropped = false,
   onToggleExpand,
   onToggleVisibility,
   onRemove,
@@ -43,6 +48,16 @@ export function PinnedLayerRow({
     ? `${layer.name} (${layer.distinguisher})`
     : layer.name;
 
+  // Drag-and-drop setup
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: layer.id });
+
   const handleDragKeyDown = (e: ReactKeyboardEvent) => {
     if (!onKeyReorder) return;
     if (e.key === 'ArrowUp') { e.preventDefault(); onKeyReorder('up'); }
@@ -52,24 +67,46 @@ export function PinnedLayerRow({
   // For nested: parent eye is ON if any child is visible, OFF if all hidden
   const parentEyeOn = isNested && layer.views!.some(v => v.isVisible);
 
+  // Build drag styles (DFT-034)
+  const style: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
   return (
-    <div id={`pinned-row-${layer.id}`}>
+    <div 
+      id={`pinned-row-${layer.id}`} 
+      ref={setNodeRef} 
+      style={style}
+      className={isDragging ? 'relative z-50' : ''}
+    >
       {/* Main row */}
       <div
-        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border cursor-pointer 
-                    transition-all duration-200 ease-in-out ${
-          isExpanded
-            ? 'bg-gray-50 border-gray-300 shadow-sm'
-            : layer.isActive
-              ? 'bg-emerald-50 border-emerald-300 shadow-sm'
-              : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm'
+        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg cursor-pointer 
+                    transition-all duration-200 ease-in-out
+                    ${isDragging ? 'border-2' : 'border'} ${
+          isDragging
+            ? `opacity-60 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.3)] ${
+                layer.isActive ? 'border-emerald-300 bg-emerald-50' : 
+                isExpanded ? 'border-gray-300 bg-gray-50' : 
+                'border-gray-300 bg-white'
+              }`
+            : justDropped
+              ? 'animate-settle'
+              : isExpanded
+                ? 'bg-gray-50 border-gray-300 shadow-sm'
+                : layer.isActive
+                  ? 'bg-emerald-50 border-emerald-300 shadow-sm'
+                  : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm'
         }`}
         onClick={onToggleExpand}
       >
         {/* Drag handle */}
         {showDragHandle && (
           <button
-            className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 flex-shrink-0"
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 flex-shrink-0 touch-none"
             aria-label={`Drag to reorder ${layer.name}. Use arrow keys to move.`}
             onClick={e => e.stopPropagation()}
             onKeyDown={handleDragKeyDown}
