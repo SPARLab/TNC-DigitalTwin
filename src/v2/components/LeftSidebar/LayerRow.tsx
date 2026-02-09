@@ -3,6 +3,7 @@
 // States: default, active, pinned-visible, pinned-hidden, active+pinned
 // ============================================================================
 
+import type { MouseEvent as ReactMouseEvent } from 'react';
 import { Eye, EyeOff, Pin } from 'lucide-react';
 import { useLayers } from '../../context/LayerContext';
 
@@ -30,7 +31,7 @@ export function LayerRow({ layerId, name }: LayerRowProps) {
 
   const handleClick = () => activateLayer(layerId);
 
-  const handlePinClick = (e: React.MouseEvent) => {
+  const handlePinClick = (e: ReactMouseEvent) => {
     e.stopPropagation();
     if (isPinned && pinned) {
       unpinLayer(pinned.id);
@@ -39,7 +40,7 @@ export function LayerRow({ layerId, name }: LayerRowProps) {
     }
   };
 
-  const handleEyeClick = (e: React.MouseEvent) => {
+  const handleEyeClick = (e: ReactMouseEvent) => {
     e.stopPropagation();
     if (pinned) toggleVisibility(pinned.id);
   };

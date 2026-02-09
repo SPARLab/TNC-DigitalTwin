@@ -18,7 +18,7 @@ export function PinnedLayerChildRow({ view, isLast, onToggle, onEditFilters }: P
   return (
     <div
       className={`nested-child relative flex items-center gap-1.5 px-3 py-2 ml-6 rounded-lg 
-                  cursor-pointer transition-all duration-150 border ${
+                  cursor-pointer transition-all duration-200 ease-in-out border ${
         view.isVisible
           ? 'bg-emerald-50 border-emerald-200 shadow-sm'
           : 'bg-white border-gray-200 opacity-60 hover:opacity-80'
@@ -29,18 +29,31 @@ export function PinnedLayerChildRow({ view, isLast, onToggle, onEditFilters }: P
       aria-label={`${view.name} — ${view.isVisible ? 'visible' : 'hidden'}`}
       onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onToggle()}
     >
-      {/* Vertical line connector (::before) */}
+      {/* Tree connector: L-shape extending upward into the space-y-1 gap (4px) */}
       <div
-        className="absolute left-[-12px] top-0 w-px bg-gray-300"
-        style={{ height: isLast ? '50%' : '100%' }}
+        className="absolute w-3"
+        style={{
+          left: '-12px',
+          top: '-4px',              // extend up into the 4px gap
+          height: 'calc(50% + 4px)', // from gap top → row center
+          borderLeft: '1px solid rgb(209 213 219)',
+          borderBottom: '1px solid rgb(209 213 219)',
+        }}
         aria-hidden="true"
       />
       
-      {/* Horizontal branch connector (::after) */}
-      <div
-        className="absolute left-[-12px] top-1/2 h-px w-3 bg-gray-300 -translate-y-px"
-        aria-hidden="true"
-      />
+      {/* Vertical line continuation into gap below (only for non-last items) */}
+      {!isLast && (
+        <div
+          className="absolute w-px bg-gray-300"
+          style={{
+            left: '-12px',
+            top: '50%',
+            height: 'calc(50% + 4px)', // extend down into the 4px gap
+          }}
+          aria-hidden="true"
+        />
+      )}
 
       {/* Eye toggle */}
       <button

@@ -1,6 +1,6 @@
 # Development Task Tracker — V2 Digital Catalog
 
-**Last Updated:** February 7, 2026  
+**Last Updated:** February 9, 2026  
 **Current Phase:** Phase 0 (Foundation) — 🟡 In Progress  
 **Target Deadline:** February 20, 2026 (13 days remaining)
 
@@ -19,6 +19,24 @@
 | 6. Polish & Consistency | ⚪ Not Started | 0% | `v2/polish` | No |
 
 **Status Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
+
+---
+
+## Quick Tasks Summary — Phase 0
+
+**All Active Phase 0 Development Tasks (ordered by priority):**
+
+| # | Task | Status | Priority | Notes |
+|---|------|--------|----------|-------|
+| 1 | **0.4** Map Container — ArcGIS WebMap integration | 🟡 | High | Blocks Phase 0 completion |
+| 2 | **0.5** Drag-and-Drop Reorder — Pinned layers | 🟡 | Medium | Drag handles visible but non-functional |
+| 3 | **Enable Map Layers Drag Reordering** | 🟡 | Medium | Related to Task 0.5, may consolidate |
+| 4 | **Make Filter Icons Clickable for Child Views** | 🟡 | Medium | Show filter queries on click |
+| 5 | **Remove Gray Divider in Left Sidebar** | 🟡 | Low | Simple CSS removal |
+| 6 | **0.6** Map Feature Highlight — Bookmark hover | 🟡 | Low | Requires map integration first |
+
+**Total Phase 0 Tasks Remaining:** 6  
+**Recently Completed:** Fix Map Layers Widget Horizontal Scrollbar ✅, Fix Nested Layer Expand/Collapse ✅, Add Rounded Bottom Corners to Collapsed Widgets ✅
 
 ---
 
@@ -54,12 +72,49 @@
   - Current: Placeholder (no map integration yet)
   - Needed: Cyan ring highlight, off-screen indicator, keyboard support
 
-- [ ] **0.8** Refine Tree Connectors — Polish L-shaped connectors for nested child views
+- [x] **0.8** Refine Tree Connectors — Polish L-shaped connectors for nested child views
   - Reference: `docs/PLANNING/component-specs/map-layers-widget.md` (Connecting Line section)
-  - Current: Basic L-shaped connectors implemented (vertical + horizontal branches)
-  - Needed: Refine positioning, alignment, corner styling (├─ and └─ style)
+  - Completed: Fixed gaps in tree connectors by extending lines into `space-y-1` gaps (4px) between child rows
+  - Implementation: Used CSS borders for seamless L-shape corners, extended vertical lines with `calc(50% + 4px)` to bridge gaps
   - Files: `src/v2/components/FloatingWidgets/MapLayersWidget/PinnedLayerChildRow.tsx`
-  - Notes: Use ::before and ::after pseudo-elements for clean tree structure
+
+### 🔧 Ad-Hoc Tasks (Phase 0)
+
+- [x] **Fix Map Layers Widget Horizontal Scrollbar** — Ensure widget width accommodates all content
+  - Completed: User fixed horizontal scrollbar issue by removing `overflow-y-auto` from map-layers-body div
+  - Files: `src/v2/components/FloatingWidgets/MapLayersWidget/MapLayersWidget.tsx`
+
+- [x] **Fix Nested Layer Expand/Collapse** — Make Camera Traps child views collapsible
+  - Completed: Added `isExpanded` check to nested child views rendering
+  - Added: Smooth bidirectional animations using CSS Grid technique (grid-template-rows: 0fr → 1fr)
+  - Implementation: Elements stay in DOM with grid + opacity transitions for smooth expand/collapse in both directions
+  - Timing: 300ms ease-in-out for all expand/collapse, 200ms for chevron rotation and hover states
+  - Fixed: React type imports (MouseEvent → ReactMouseEvent, KeyboardEvent → ReactKeyboardEvent)
+  - Files: `PinnedLayerRow.tsx`, `MapLayersWidget.tsx`, `ActiveLayerSection.tsx`, `PinnedLayerChildRow.tsx`, `FilterIndicator.tsx`, `LayerRow.tsx`, `LucideIcon.tsx`
+  - Behavior: Click Camera Traps row or widget collapse button to see smooth height/opacity animations
+
+- [x] **Add Rounded Bottom Corners to Collapsed Widgets** — Polish widget header appearance when collapsed
+  - Completed: Header now conditionally applies `rounded-xl` (all corners) when collapsed, `rounded-t-xl + border-b` when expanded
+  - Files: `src/v2/components/FloatingWidgets/shared/WidgetHeader.tsx`
+  - Applies to: Both Map Layers and Bookmarked Items widgets
+
+- [ ] **Enable Map Layers Drag Reordering** — Make pinned layers draggable to change order
+  - Current: Drag handles visible but non-functional
+  - Needed: Implement drag-and-drop functionality for reordering pinned layers
+  - Files: `src/v2/components/FloatingWidgets/MapLayersWidget/PinnedLayerRow.tsx`, `src/v2/components/FloatingWidgets/MapLayersWidget/PinnedLayersSection.tsx`
+  - Related: Task 0.5 (may consolidate)
+
+- [ ] **Make Filter Icons Clickable for Child Views** — Show filter queries when clicking filter indicator
+  - Current: Filter indicators show count (e.g., "Filter 3") but are not clickable to view details
+  - Needed: Click handler to display/list the actual filter queries applied to child views
+  - Files: `src/v2/components/FloatingWidgets/MapLayersWidget/PinnedLayerChildRow.tsx`, `src/v2/components/FloatingWidgets/MapLayersWidget/FilterIndicator.tsx`
+  - Implementation: Modal, dropdown, or expandable section showing filter details
+
+- [ ] **Remove Gray Divider in Left Sidebar** — Remove separator between normal layers and DataOne datasets
+  - Current: Gray horizontal divider (`border-t border-gray-200`) separates DataOne shortcut from regular layers
+  - Needed: Remove divider while keeping italics styling for DataOne row
+  - Files: `src/v2/components/LeftSidebar/CategoryGroup.tsx` (line ~70)
+  - Note: Italics styling is acceptable, only the divider needs removal
 
 ### 📋 Phase 0 Acceptance Criteria
 
@@ -137,6 +192,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 9, 2026 | Phase 0 | ✅ Task 0.8 complete: Fixed tree connector gaps by extending lines into spacing gaps. Used CSS borders for seamless L-shape corners. | Claude |
 | Feb 7, 2026 | Phase 0 | WIP: Multi-view nested structure, tree connectors (L-shaped), pin-to-top behavior, smooth animations. New components: PinnedLayerChildRow, NewViewButton. Card styling restored. Commit: 4fd430e | Claude |
 | Feb 6, 2026 | Phase 0 | Built core shell: left sidebar, map layers widget, bookmarked items widget, right sidebar shell, state management. 27 files, 1,748 lines. Zero TypeScript/linter errors. | Opus |
 | Feb 6, 2026 | Phase 0 | Added v1/v2 toggle via `?v2` URL param. "Try v2.0" button in legacy header. | Opus |

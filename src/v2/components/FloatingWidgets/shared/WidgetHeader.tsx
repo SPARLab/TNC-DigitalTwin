@@ -33,7 +33,11 @@ export function WidgetHeader({
   return (
     <div
       id={`${title.replace(/\s/g, '-').toLowerCase()}-header`}
-      className="flex items-center justify-between px-4 py-2.5 bg-slate-50 rounded-t-xl border-b border-gray-200"
+      className={`flex items-center justify-between px-4 py-2.5 bg-slate-50 transition-all duration-300 ${
+        isCollapsed 
+          ? 'rounded-xl' // Rounded corners on all sides when collapsed
+          : 'rounded-t-xl border-b border-gray-200' // Top corners + bottom border when expanded
+      }`}
     >
       <div className="flex items-center gap-2 min-w-0">
         <span className="text-gray-500 flex-shrink-0">{icon}</span>

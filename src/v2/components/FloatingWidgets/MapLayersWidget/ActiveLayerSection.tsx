@@ -17,7 +17,10 @@ export function ActiveLayerSection({ activeLayer, onPin }: ActiveLayerSectionPro
   if (activeLayer.isPinned) return null;
 
   return (
-    <div id="active-layer-section">
+    <div 
+      id="active-layer-section" 
+      className="overflow-hidden transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-top-1"
+    >
       {/* Section header */}
       <div className="px-3 py-1.5 bg-amber-50 border-b border-amber-200 flex items-center gap-1">
         <Eye className="w-3 h-3 text-amber-700" />

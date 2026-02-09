@@ -2,11 +2,12 @@
 // FilterIndicator — Lucide Filter icon + count badge (DFT-024)
 // ============================================================================
 
+import type { MouseEvent as ReactMouseEvent } from 'react';
 import { Filter } from 'lucide-react';
 
 interface FilterIndicatorProps {
   count: number;
-  onClick?: (e?: React.MouseEvent) => void;
+  onClick?: (e?: ReactMouseEvent) => void;
 }
 
 export function FilterIndicator({ count, onClick }: FilterIndicatorProps) {

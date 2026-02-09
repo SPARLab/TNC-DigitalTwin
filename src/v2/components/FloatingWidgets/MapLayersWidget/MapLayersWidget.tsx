@@ -41,47 +41,55 @@ export function MapLayersWidget() {
         onUndo={undo}
       />
 
-      {!isCollapsed && (
-        <div id="map-layers-body" className="max-h-[350px] overflow-y-auto">
-          {isEmpty ? (
-            // Empty state — nothing active or pinned
-            <div className="flex flex-col items-center justify-center text-center px-6 py-8">
-              <Pin className="w-12 h-12 text-gray-300 mb-3" />
-              <p className="text-sm font-medium text-gray-700">No layers pinned</p>
-              <p className="text-sm text-gray-500 mt-1">
-                Pin layers from the left sidebar to save them here.
+      <div 
+        className="grid transition-all duration-300 ease-in-out"
+        style={{
+          gridTemplateRows: isCollapsed ? '0fr' : '1fr',
+          opacity: isCollapsed ? 0 : 1,
+        }}
+      >
+        <div id="map-layers-body" className="overflow-hidden">
+          <div className="max-h-[350px] overflow-y-auto">
+            {isEmpty ? (
+              // Empty state — nothing active or pinned
+              <div className="flex flex-col items-center justify-center text-center px-6 py-8">
+                <Pin className="w-12 h-12 text-gray-300 mb-3" />
+                <p className="text-sm font-medium text-gray-700">No layers pinned</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Pin layers from the left sidebar to save them here.
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Active Layer section — only shows non-pinned active layer */}
+                {activeLayer && !activeLayer.isPinned && (
+                  <ActiveLayerSection
+                    activeLayer={activeLayer}
+                    onPin={() => pinLayer(activeLayer.layerId)}
+                  />
+                )}
+
+            {/* Pinned Layers section */}
+            <PinnedLayersSection
+              layers={pinnedLayers}
+              onToggleVisibility={toggleVisibility}
+              onRemove={unpinLayer}
+              onReorder={reorderLayers}
+              onCreateNewView={(_pinnedId) => {/* Phase 1+: implement view creation */}}
+              onToggleChildView={(_pinnedId, _viewId) => {/* Phase 1+: implement child toggle */}}
+            />
+              </>
+            )}
+
+            {/* Widget tip — always visible when expanded */}
+            <div className="px-3 py-2 bg-slate-50 border-t border-slate-100 rounded-b-xl">
+              <p className="text-[11px] text-gray-500">
+                Pin layers to keep them on the map.
               </p>
             </div>
-          ) : (
-            <>
-              {/* Active Layer section — only shows non-pinned active layer */}
-              {activeLayer && !activeLayer.isPinned && (
-                <ActiveLayerSection
-                  activeLayer={activeLayer}
-                  onPin={() => pinLayer(activeLayer.layerId)}
-                />
-              )}
-
-          {/* Pinned Layers section */}
-          <PinnedLayersSection
-            layers={pinnedLayers}
-            onToggleVisibility={toggleVisibility}
-            onRemove={unpinLayer}
-            onReorder={reorderLayers}
-            onCreateNewView={(_pinnedId) => {/* Phase 1+: implement view creation */}}
-            onToggleChildView={(_pinnedId, _viewId) => {/* Phase 1+: implement child toggle */}}
-          />
-            </>
-          )}
-
-          {/* Widget tip — always visible when expanded */}
-          <div className="px-3 py-2 bg-slate-50 border-t border-slate-100 rounded-b-xl">
-            <p className="text-[11px] text-gray-500">
-              Pin layers to keep them on the map.
-            </p>
           </div>
         </div>
-      )}
+      </div>
     </WidgetShell>
   );
 }

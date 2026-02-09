@@ -585,6 +585,7 @@ interface Bookmark {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 9, 2026 | 0.8 | ✅ Completed tree connector refinement — Fixed gaps by extending lines into `space-y-1` gaps (4px) between child rows. Used CSS borders for seamless L-shape corners. | Claude |
 | Feb 4, 2026 | 0.5, 0.6 | Updated with DFT-031 resolution (Confirmation dialog strategy: hybrid approach with undo for single-item actions, confirmation for bulk operations) | Will + Claude |
 | Feb 4, 2026 | 0.7 | Added error handling components task (DFT-030 resolution) — toast, inline error, partial failure, critical modal | Will + Claude |
 | Jan 23, 2026 | - | Created phase document | Will + Claude |

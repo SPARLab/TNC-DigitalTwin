@@ -4,6 +4,7 @@
 // Expanded panel for filter summary + actions (DFT-003b)
 // ============================================================================
 
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Eye, EyeOff, GripVertical, X, ChevronRight, ChevronDown } from 'lucide-react';
 import type { PinnedLayer } from '../../../types';
 import { FilterIndicator } from './FilterIndicator';
@@ -42,7 +43,7 @@ export function PinnedLayerRow({
     ? `${layer.name} (${layer.distinguisher})`
     : layer.name;
 
-  const handleDragKeyDown = (e: React.KeyboardEvent) => {
+  const handleDragKeyDown = (e: ReactKeyboardEvent) => {
     if (!onKeyReorder) return;
     if (e.key === 'ArrowUp') { e.preventDefault(); onKeyReorder('up'); }
     if (e.key === 'ArrowDown') { e.preventDefault(); onKeyReorder('down'); }
@@ -56,7 +57,7 @@ export function PinnedLayerRow({
       {/* Main row */}
       <div
         className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border cursor-pointer 
-                    transition-all duration-150 ${
+                    transition-all duration-200 ease-in-out ${
           isExpanded
             ? 'bg-gray-50 border-gray-300 shadow-sm'
             : layer.isActive
@@ -102,8 +103,8 @@ export function PinnedLayerRow({
         {/* Expand/collapse chevron (for nested or when expanded) */}
         {(isNested || isExpanded) && (
           isExpanded
-            ? <ChevronDown className="w-3 h-3 text-gray-400 flex-shrink-0" />
-            : <ChevronRight className="w-3 h-3 text-gray-400 flex-shrink-0" />
+            ? <ChevronDown className="w-3 h-3 text-gray-400 flex-shrink-0 transition-transform duration-200" />
+            : <ChevronRight className="w-3 h-3 text-gray-400 flex-shrink-0 transition-transform duration-200" />
         )}
 
         {/* Filter indicator (only for flat rows) */}
@@ -123,49 +124,66 @@ export function PinnedLayerRow({
 
       {/* Nested child views (DFT-013) */}
       {isNested && (
-        <div className="mt-1 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
-          {layer.views!.map((view, index) => (
-            <PinnedLayerChildRow
-              key={view.id}
-              view={view}
-              isLast={index === layer.views!.length - 1}
-              onToggle={() => onToggleChildView?.(view.id)}
-              onEditFilters={onEditFilters}
-            />
-          ))}
-          <NewViewButton onClick={() => onCreateNewView?.()} />
+        <div 
+          className="grid transition-all duration-300 ease-in-out"
+          style={{
+            gridTemplateRows: isExpanded ? '1fr' : '0fr',
+            opacity: isExpanded ? 1 : 0,
+          }}
+        >
+          <div className="overflow-hidden">
+            <div className="mt-1 space-y-1">
+              {layer.views!.map((view, index) => (
+                <PinnedLayerChildRow
+                  key={view.id}
+                  view={view}
+                  isLast={index === layer.views!.length - 1}
+                  onToggle={() => onToggleChildView?.(view.id)}
+                  onEditFilters={onEditFilters}
+                />
+              ))}
+              <NewViewButton onClick={() => onCreateNewView?.()} />
+            </div>
+          </div>
         </div>
       )}
 
       {/* Expanded panel (DFT-003b) — only for flat rows */}
-      {!isNested && isExpanded && (
-        <div
-          className="bg-gray-50 border border-gray-200 rounded-lg mx-1 px-3 py-2.5 mt-1
-                     animate-in fade-in slide-in-from-top-2 duration-200"
+      {!isNested && (
+        <div 
+          className="grid transition-all duration-300 ease-in-out"
+          style={{
+            gridTemplateRows: isExpanded ? '1fr' : '0fr',
+            opacity: isExpanded ? 1 : 0,
+          }}
         >
-          {/* Filter summary */}
-          <p className="text-[11px] text-gray-500 leading-relaxed mb-2">
-            {layer.filterSummary || 'No filters applied.'}
-          </p>
+          <div className="overflow-hidden">
+            <div className="bg-gray-50 border border-gray-200 rounded-lg mx-1 px-3 py-2.5 mt-1">
+              {/* Filter summary */}
+              <p className="text-[11px] text-gray-500 leading-relaxed mb-2">
+                {layer.filterSummary || 'No filters applied.'}
+              </p>
 
-          {/* Action row */}
-          <div className="flex items-center justify-between">
-            {layer.filterCount > 0 && (
-              <button
-                onClick={onClearFilters}
-                className="text-[11px] text-gray-400 hover:text-red-500 cursor-pointer transition-colors"
-              >
-                Clear
-              </button>
-            )}
-            <button
-              onClick={onEditFilters}
-              className="text-[11px] font-medium text-emerald-600 hover:text-emerald-700 cursor-pointer
-                         flex items-center gap-0.5 ml-auto"
-            >
-              Edit Filters
-              <ChevronRight className="w-3 h-3" />
-            </button>
+              {/* Action row */}
+              <div className="flex items-center justify-between">
+                {layer.filterCount > 0 && (
+                  <button
+                    onClick={onClearFilters}
+                    className="text-[11px] text-gray-400 hover:text-red-500 cursor-pointer transition-colors"
+                  >
+                    Clear
+                  </button>
+                )}
+                <button
+                  onClick={onEditFilters}
+                  className="text-[11px] font-medium text-emerald-600 hover:text-emerald-700 cursor-pointer
+                             flex items-center gap-0.5 ml-auto"
+                >
+                  Edit Filters
+                  <ChevronRight className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
