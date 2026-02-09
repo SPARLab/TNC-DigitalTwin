@@ -33,12 +33,12 @@
 | 3 | **Enable Map Layers Drag Reordering** | ✅ | Medium | Related to Task 0.5, may consolidate |
 | 4 | **Make Filter Icons Clickable for Child Views** | 🟢 | Medium | Child row click expands filter clauses; Edit Filters opens Browse tab |
 | 5 | **Prevent Map Layers Widget Scrollbar from Pushing Content** | 🟡 | Medium | Scrollbar overlays or reserves space; content width stays stable |
-| 6 | **Fix Tree Connector Lines Between Parent and Child Rows** | 🔴 | Medium | Visual gaps in nested layer hierarchy; needs fresh context |
+| 6 | **Fix Tree Connector Lines Between Parent and Child Rows** | ✅ | Medium | Completed: moved connectors to outer wrapper, consistent #d1d5db |
 | 7 | **Remove Gray Divider in Left Sidebar** | 🟡 | Low | Simple CSS removal |
 | 8 | **0.6** Map Feature Highlight — Bookmark hover | 🟡 | Low | Requires map integration first |
 
-**Total Phase 0 Tasks Remaining:** 8  
-**Recently Completed:** Fix Map Layers Widget Horizontal Scrollbar ✅, Fix Nested Layer Expand/Collapse ✅, Add Rounded Bottom Corners to Collapsed Widgets ✅
+**Total Phase 0 Tasks Remaining:** 7  
+**Recently Completed:** Fix Tree Connector Lines Between Parent and Child Rows ✅, Fix Map Layers Widget Horizontal Scrollbar ✅, Fix Nested Layer Expand/Collapse ✅
 
 ---
 
@@ -116,15 +116,9 @@
   - Files: `src/v2/components/FloatingWidgets/MapLayersWidget/MapLayersWidget.tsx`, `map-layers-body` / scroll container structure
   - Related: Fix Map Layers Widget Horizontal Scrollbar (previous fix addressed horizontal; this addresses vertical)
 
-- [ ] **Fix Tree Connector Lines Between Parent and Child Rows** — Ensure continuous visual connection in nested layer hierarchy
-  - **Issue:** Tree connector lines (L-shaped) from parent "Camera Traps (ANiML)" to child rows ("mountain lion", "deer") have visual gaps and inconsistent appearance. Lines should be continuous gray-300 regardless of child state (active/selected/pinned).
-  - **What's Been Tried:**
-    1. **First attempt:** Added vertical line inside children container with `height: calc(50% + 4px)` — FAILED: Used 50% of entire container height, creating massive overlapping line that doubled up with existing connectors.
-    2. **Second attempt:** Added tree stub below parent row (`left: 12px`, `top: 100%`, `height: 8px`) wrapped in relative div — FAILED: Still shows gaps and inconsistent connection.
-  - **Current State:** Tree connectors exist in `PinnedLayerChildRow.tsx` (L-shape with `left: -12px`, `top: -4px`, `height: calc(50% + 4px)`). Parent row has stub at `left: 12px`. Gap between parent bottom and first child's connector start is not properly bridged.
-  - **Files:** `src/v2/components/FloatingWidgets/MapLayersWidget/PinnedLayerRow.tsx`, `src/v2/components/FloatingWidgets/MapLayersWidget/PinnedLayerChildRow.tsx`
-  - **Note:** Recommend fresh chat context (Opus 4.6) to approach this with clean analysis. Consider: positioning context (overflow-hidden clipping), alignment of stub vs child connectors, consistent gray-300 color regardless of child state, proper height calculations for gap bridging.
-  - **Reference:** Task 0.8 previously fixed gaps between siblings, but parent-to-first-child connection remains broken.
+- [x] **Fix Tree Connector Lines Between Parent and Child Rows** — Ensure continuous visual connection in nested layer hierarchy
+  - Completed: Moved connector elements from inside `.nested-child` to outer wrapper so they span full height including expanded filter panels. Vertical continuation uses `bottom: -4px` for dynamic height. All connectors standardized to `1px solid #d1d5db`. Parent stub height increased from 8px to 12px for solid overlap.
+  - Files: `PinnedLayerRow.tsx`, `PinnedLayerChildRow.tsx`
 
 - [ ] **Remove Gray Divider in Left Sidebar** — Remove separator between normal layers and DataOne datasets
   - Current: Gray horizontal divider (`border-t border-gray-200`) separates DataOne shortcut from regular layers
@@ -208,7 +202,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
-| Feb 9, 2026 | Phase 0 | Added task: Fix Tree Connector Lines Between Parent and Child Rows — visual gaps in nested layer hierarchy, multiple attempts failed (see task notes for details). Recommend fresh chat context. | Claude |
+| Feb 9, 2026 | Phase 0 | ✅ Task 6 complete: Fix Tree Connector Lines Between Parent and Child Rows. Moved connectors to outer wrapper for full-height coverage including expanded filter panels; standardized 1px solid #d1d5db; parent stub 12px. | Claude |
 | Feb 9, 2026 | Phase 0 | Added task: Prevent Map Layers Widget Scrollbar from Pushing Content — vertical scrollbar compresses content when child filter panels expand; fix so scrollbar overlays or reserves stable space. | Claude |
 | Feb 9, 2026 | Phase 0 | ✅ Task 4 complete: Make Filter Icons Clickable for Child Views. Child row click expands filter clauses (split on comma). Edit Filters / filter icon opens Browse tab. One child expanded at a time. Added toggleChildVisibility, clearFilters, requestEditFilters to LayerContext. | Claude |
 | Feb 9, 2026 | Phase 0 | ✅ Task 0.8 complete: Fixed tree connector gaps by extending lines into spacing gaps. Used CSS borders for seamless L-shape corners. | Claude |

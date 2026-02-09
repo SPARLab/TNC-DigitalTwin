@@ -169,8 +169,8 @@ export function PinnedLayerRow({
       {/* Tree connector stub — bridges gap from parent row to children */}
       {isNested && isExpanded && (
         <div
-          className="absolute w-px bg-gray-300"
-          style={{ left: '12px', top: '100%', height: '8px' }}
+          className="absolute pointer-events-none"
+          style={{ left: '12px', top: '100%', height: '12px', borderLeft: '1px solid #d1d5db' }}
           aria-hidden="true"
         />
       )}

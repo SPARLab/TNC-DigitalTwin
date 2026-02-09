@@ -36,7 +36,35 @@ export function PinnedLayerChildRow({
   const clauses = filterClauses(view.filterSummary);
 
   return (
-    <div id={`pinned-child-row-${view.id}`}>
+    <div id={`pinned-child-row-${view.id}`} className="relative">
+      {/* L-shape tree connector: vertical from top + horizontal arm to row */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          left: '12px',
+          top: 0,
+          height: '19px',
+          width: '12px',
+          borderLeft: '1px solid #d1d5db',
+          borderBottom: '1px solid #d1d5db',
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Vertical continuation: row center to bottom of wrapper + gap (non-last only) */}
+      {!isLast && (
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            left: '12px',
+            top: '19px',
+            bottom: '-4px',
+            borderLeft: '1px solid #d1d5db',
+          }}
+          aria-hidden="true"
+        />
+      )}
+
       <div
         className={`nested-child relative flex items-center gap-1.5 px-3 py-2 ml-6 rounded-lg 
                     cursor-pointer transition-all duration-200 ease-in-out border ${
@@ -51,32 +79,6 @@ export function PinnedLayerChildRow({
         aria-expanded={isExpanded}
         onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onToggleExpand()}
       >
-        {/* Tree connector: L-shape extending upward into the space-y-1 gap (4px) */}
-        <div
-          className="absolute w-3"
-          style={{
-            left: '-12px',
-            top: '-4px',
-            height: 'calc(50% + 4px)',
-            borderLeft: '1px solid rgb(209 213 219)',
-            borderBottom: '1px solid rgb(209 213 219)',
-          }}
-          aria-hidden="true"
-        />
-
-        {/* Vertical line continuation into gap below (only for non-last items) */}
-        {!isLast && (
-          <div
-            className="absolute w-px bg-gray-300"
-            style={{
-              left: '-12px',
-              top: '50%',
-              height: 'calc(50% + 4px)',
-            }}
-            aria-hidden="true"
-          />
-        )}
-
         {/* Expand chevron */}
         <ChevronRight
           className={`w-3.5 h-3.5 flex-shrink-0 text-gray-400 transition-transform duration-200 ${
