@@ -18,12 +18,12 @@
 | 4 | 0 | **Unify Map Layers Expansion Affordances** | ✅ | Medium | Filter icon as primary control; child accordion pattern; auto-expand on sidebar activation |
 | 5 | 0 | **Prevent Map Layers Widget Scrollbar from Pushing Content** | ✅ | Medium | Scrollbar overlays or reserves space; content width stays stable |
 | 6 | 0 | **Fix Tree Connector Lines Between Parent and Child Rows** | ✅ | Medium | Completed: moved connectors to outer wrapper, consistent #d1d5db |
-| 7 | 0 | **Remove Gray Divider in Left Sidebar** | 🟡 | Low | Simple CSS removal |
+| 7 | 0 | **Remove Gray Divider in Left Sidebar** | ✅ | Low | Simple CSS removal |
 | 8 | 0 | **Refine Active Layer → Pinned Layer Transition** | 🟡 | Low | Newly pinned row slides down from under header; section expands; no flash |
 | 9 | 0 | **0.6** Map Feature Highlight — Bookmark hover | 🟡 | Low | Requires map integration first |
 
-**Active tasks remaining:** 4  
-**Recently completed:** Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors ✅
+**Active tasks remaining:** 3  
+**Recently completed:** Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors ✅
 
 ---
 
@@ -154,11 +154,10 @@
   - Completed: Moved connector elements from inside `.nested-child` to outer wrapper so they span full height including expanded filter panels. Vertical continuation uses `bottom: -4px` for dynamic height. All connectors standardized to `1px solid #d1d5db`. Parent stub height increased from 8px to 12px for solid overlap.
   - Files: `PinnedLayerRow.tsx`, `PinnedLayerChildRow.tsx`
 
-- [ ] **Remove Gray Divider in Left Sidebar** — Remove separator between normal layers and DataOne datasets
-  - Current: Gray horizontal divider (`border-t border-gray-200`) separates DataOne shortcut from regular layers
-  - Needed: Remove divider while keeping italics styling for DataOne row
-  - Files: `src/v2/components/LeftSidebar/CategoryGroup.tsx` (line ~70)
-  - Note: Italics styling is acceptable, only the divider needs removal
+- [x] **Remove Gray Divider in Left Sidebar** — Remove separator between normal layers and DataOne datasets
+  - Completed: Removed gray horizontal divider (`border-t border-gray-200`) between DataOne shortcut and regular layers
+  - Preserved: Italics styling for DataOne row
+  - Files: `src/v2/components/LeftSidebar/CategoryGroup.tsx`
 
 - [x] **Active Layer Click Interactions** — Clicking layers activates them and shows in right sidebar
   - Completed: Clicking pinned layer activates it, expands panel, and collapses others (accordion pattern)
@@ -247,6 +246,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 10, 2026 | Phase 0 | ✅ Task 7 complete: Remove Gray Divider in Left Sidebar. Removed border-t between DataOne shortcut and regular layers; italics preserved. | User |
 | Feb 10, 2026 | Phase 0 | ✅ Task 2 & 5 complete: Drag-and-Drop Reorder for pinned layers (Map Layers widget); Prevent Map Layers Widget Scrollbar from Pushing Content. Both done within Map Layers widget. | User |
 | Feb 10, 2026 | Phase 0 | ✅ Smooth CSS Transitions for Map Layers Widget: Active Layer section slides up/fades out on pin (300ms). New pinned layers slide down from above (400ms, no opacity). Snapshot state pattern for exit animation. Reduced-motion support. | Claude |
 | Feb 10, 2026 | Phase 0 | ✅ Map Layers UX polish: Consolidated filter details inside layer containers (no separate gray boxes); added "Add Filters" naming for new views; dashed border for placeholder views; removed opacity so non-selected text stays readable (text-gray-800). | Composer |
