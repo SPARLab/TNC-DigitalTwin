@@ -19,11 +19,11 @@
 | 5 | 0 | **Prevent Map Layers Widget Scrollbar from Pushing Content** | ✅ | Medium | Scrollbar overlays or reserves space; content width stays stable |
 | 6 | 0 | **Fix Tree Connector Lines Between Parent and Child Rows** | ✅ | Medium | Completed: moved connectors to outer wrapper, consistent #d1d5db |
 | 7 | 0 | **Remove Gray Divider in Left Sidebar** | ✅ | Low | Simple CSS removal |
-| 8 | 0 | **Refine Active Layer → Pinned Layer Transition** | 🟡 | Low | Newly pinned row slides down from under header; section expands; no flash |
+| 8 | 0 | **Refine Active Layer → Pinned Layer Transition** | ✅ | Low | Newly pinned row slides down from under header; section expands; no flash |
 | 9 | 0 | **0.6** Map Feature Highlight — Bookmark hover | 🟡 | Low | Requires map integration first |
 
-**Active tasks remaining:** 3  
-**Recently completed:** Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors ✅
+**Active tasks remaining:** 2  
+**Recently completed:** Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors ✅
 
 ---
 
@@ -140,7 +140,7 @@
   - Files: `MapLayersWidget.tsx`, `ActiveLayerSection.tsx`, `PinnedLayersSection.tsx`, `PinnedLayerRow.tsx`, `index.css`
   - Result: Smooth coordinated animations as layers transition from Active → Pinned state
 
-- [ ] **Refine Active Layer → Pinned Layer Transition** — Further polish for the transition when pinning
+- [x] **Refine Active Layer → Pinned Layer Transition** — Further polish for the transition when pinning
   - Done: Removed flash; newly pinned row now slides down from under the Pinned Layers header while the section expands (wrapper animates max-height 0→280px, row animates translateY(-100%)→0). Single 400ms ease-out; reduced-motion respected.
   - Implementation: `pin-row-expand` + `slide-down-from-above` in `index.css`; `PinnedLayersSection` wraps justPinned row in expanding wrapper; `PinnedLayerRow` uses `animate-slide-down-from-above`.
   - Optional later: Even tighter choreography with Active Layer exit (e.g. shared easing or position handoff).
@@ -246,6 +246,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 10, 2026 | Phase 0 | ✅ Task 8 complete: Refine Active Layer → Pinned Layer Transition. Newly pinned row slides down from under header; section expands; no flash. | User |
 | Feb 10, 2026 | Phase 0 | ✅ Task 7 complete: Remove Gray Divider in Left Sidebar. Removed border-t between DataOne shortcut and regular layers; italics preserved. | User |
 | Feb 10, 2026 | Phase 0 | ✅ Task 2 & 5 complete: Drag-and-Drop Reorder for pinned layers (Map Layers widget); Prevent Map Layers Widget Scrollbar from Pushing Content. Both done within Map Layers widget. | User |
 | Feb 10, 2026 | Phase 0 | ✅ Smooth CSS Transitions for Map Layers Widget: Active Layer section slides up/fades out on pin (300ms). New pinned layers slide down from above (400ms, no opacity). Snapshot state pattern for exit animation. Reduced-motion support. | Claude |
