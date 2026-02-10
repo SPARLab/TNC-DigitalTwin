@@ -20,6 +20,7 @@ interface PinnedLayerRowProps {
   isExpanded: boolean;
   showDragHandle: boolean;
   justDropped?: boolean;
+  justPinned?: boolean;
   activeViewId?: string; // NEW: which child view is currently active (if nested)
   onToggleExpand: () => void;
   onToggleVisibility: () => void;
@@ -41,6 +42,7 @@ export function PinnedLayerRow({
   isExpanded,
   showDragHandle,
   justDropped = false,
+  justPinned = false,
   activeViewId,
   onToggleExpand,
   onToggleVisibility,
@@ -132,13 +134,15 @@ export function PinnedLayerRow({
                 isExpanded ? 'border-gray-300 bg-gray-50' : 
                 'border-gray-300 bg-white'
               }`
-            : justDropped
-              ? 'animate-settle'
-              : layer.isActive
-                ? 'bg-amber-50 border-amber-300 shadow-sm'
-                : isExpanded
-                  ? 'bg-gray-50 border-gray-300 shadow-sm'
-                  : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm'
+            : justPinned
+              ? 'animate-slide-down'
+              : justDropped
+                ? 'animate-settle'
+                : layer.isActive
+                  ? 'bg-amber-50 border-amber-300 shadow-sm'
+                  : isExpanded
+                    ? 'bg-gray-50 border-gray-300 shadow-sm'
+                    : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm'
         }`}
       >
         {/* Top row: Drag, Eye, Name, Filter, Remove */}

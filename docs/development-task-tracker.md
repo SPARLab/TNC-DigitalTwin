@@ -132,6 +132,12 @@
   - Completed: "Add Filters" views display dashed border to indicate empty/placeholder state. Removed container opacity for non-visible views; text now consistently `text-gray-800` for readability across all states.
   - Files: `PinnedLayerChildRow.tsx`
 
+- [x] **Smooth CSS Transitions for Map Layers Widget** — Polish Active Layer and Pinned Layer animations (Feb 10)
+  - Completed: Added smooth slide-up/fade-out when Active Layer section disappears (pinned). Added slide-down entrance animation for newly pinned layers (no opacity change, pure vertical motion). Both animations 300-400ms ease-out with reduced-motion support.
+  - Implementation: Snapshot state pattern in MapLayersWidget preserves Active Layer data during 300ms exit transition. PinnedLayersSection detects new layer additions and triggers 400ms slide-down from -8px above final position.
+  - Files: `MapLayersWidget.tsx`, `ActiveLayerSection.tsx`, `PinnedLayersSection.tsx`, `PinnedLayerRow.tsx`, `index.css`
+  - Result: Smooth coordinated animations as layers transition from Active → Pinned state
+
 - [ ] **Prevent Map Layers Widget Scrollbar from Pushing Content** — Scrollbar should not reduce content width
   - Current: Expanding child filter panels triggers vertical scroll. Scrollbar renders inside the widget width, pushing content (e.g., "Edit Filters" button) inward.
   - Needed: Ensure scrollbar either overlays content (does not take layout space) or reserves stable gutter space so content width stays consistent whether scrollbar is visible or not. Options: `scrollbar-gutter: stable`, overlay scrollbar styling, or explicit padding reserved for scrollbar.
@@ -235,6 +241,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 10, 2026 | Phase 0 | ✅ Smooth CSS Transitions for Map Layers Widget: Active Layer section slides up/fades out on pin (300ms). New pinned layers slide down from above (400ms, no opacity). Snapshot state pattern for exit animation. Reduced-motion support. | Claude |
 | Feb 10, 2026 | Phase 0 | ✅ Map Layers UX polish: Consolidated filter details inside layer containers (no separate gray boxes); added "Add Filters" naming for new views; dashed border for placeholder views; removed opacity so non-selected text stays readable (text-gray-800). | Composer |
 | Feb 9, 2026 (eve) | Phase 0 | ✅ Task 4 complete: Unify Map Layers Expansion Affordances. Removed chevrons; filter icon is now primary expansion control. Parent shows visible child's filter count. Child rows use accordion pattern (one expanded at a time). Auto-activate + auto-expand visible child when pinned layer clicked from sidebar. User can manually collapse active layers without forced re-expansion. | Claude |
 | Feb 9, 2026 | Phase 0 | ✅ Task 6 complete: Fix Tree Connector Lines Between Parent and Child Rows. Moved connectors to outer wrapper for full-height coverage including expanded filter panels; standardized 1px solid #d1d5db; parent stub 12px. | Claude |

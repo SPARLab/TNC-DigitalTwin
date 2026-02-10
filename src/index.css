@@ -266,6 +266,20 @@ body {
   animation: settle 400ms ease-out;
 }
 
+/* Slide-down animation - smooth entrance for newly pinned layers */
+@keyframes slide-down {
+  0% {
+    transform: translateY(-8px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-down {
+  animation: slide-down 400ms ease-out;
+}
+
 /* Reduced motion support - simplify drag animations for accessibility */
 @media (prefers-reduced-motion: reduce) {
   /* Remove scale transform during drag */
@@ -277,6 +291,12 @@ body {
   .animate-settle {
     animation: none;
     background-color: #dcfce7; /* Just show the color without animation */
+  }
+  
+  /* Disable slide-down animation */
+  .animate-slide-down {
+    animation: none;
+    transform: none;
   }
   
   /* Simplify transitions */
