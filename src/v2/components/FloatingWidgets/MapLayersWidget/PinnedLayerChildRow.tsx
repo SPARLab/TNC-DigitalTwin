@@ -64,109 +64,117 @@ export function PinnedLayerChildRow({
         />
       )}
 
+      {/* Main container that expands to include filter details */}
       <div
-        className={`nested-child relative flex items-center gap-1.5 px-3 py-2 ml-6 rounded-lg 
-                    cursor-pointer transition-all duration-200 ease-in-out border ${
+        className={`nested-child relative ml-6 rounded-lg cursor-pointer transition-all duration-200 ease-in-out border ${
           isActive
             ? 'bg-amber-50 border-amber-300 shadow-sm'
             : view.isVisible
               ? 'bg-white border-gray-300 shadow-sm'
               : 'bg-white border-gray-200 opacity-60 hover:opacity-80'
         }`}
-        onClick={() => {
-          onActivate?.();
-          if (!view.isVisible) onToggleVisibility();
-          onToggleExpand();
-        }}
-        role="button"
-        tabIndex={0}
-        aria-label={`${view.name} — ${view.isVisible ? 'visible' : 'hidden'}. ${view.filterCount} filters. Click to view details.`}
-        aria-expanded={isExpanded}
-        onKeyDown={e => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
+      >
+        {/* Top row: Eye, Name, Filter Count, Remove */}
+        <div
+          className="flex items-center gap-1.5 px-3 py-2"
+          onClick={() => {
             onActivate?.();
+            if (!view.isVisible) onToggleVisibility();
             onToggleExpand();
-          }
-        }}
-      >
-        {/* Eye toggle */}
-        <button
-          onClick={e => { e.stopPropagation(); onToggleVisibility(); }}
-          className="flex-shrink-0"
-          aria-label={view.isVisible ? 'Hide view' : 'Show view'}
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label={`${view.name} — ${view.isVisible ? 'visible' : 'hidden'}. ${view.filterCount} filters. Click to view details.`}
+          aria-expanded={isExpanded}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onActivate?.();
+              onToggleExpand();
+            }
+          }}
         >
-          {view.isVisible ? (
-            <Eye className="w-3.5 h-3.5 text-gray-700" />
-          ) : (
-            <EyeOff className="w-3.5 h-3.5 text-gray-300" />
-          )}
-        </button>
+          {/* Eye toggle */}
+          <button
+            onClick={e => { e.stopPropagation(); onToggleVisibility(); }}
+            className="flex-shrink-0"
+            aria-label={view.isVisible ? 'Hide view' : 'Show view'}
+          >
+            {view.isVisible ? (
+              <Eye className="w-3.5 h-3.5 text-gray-700" />
+            ) : (
+              <EyeOff className="w-3.5 h-3.5 text-gray-300" />
+            )}
+          </button>
 
-        {/* View name (distinguisher) */}
-        <span className={`text-sm flex-1 truncate ${
-          view.isVisible ? 'text-gray-800' : 'text-gray-400'
-        }`}>
-          {view.name}
-        </span>
+          {/* View name (distinguisher) */}
+          <span className={`text-sm flex-1 truncate ${
+            view.isVisible ? 'text-gray-800' : 'text-gray-400'
+          }`}>
+            {view.name}
+          </span>
 
-        {/* Filter indicator — always visible */}
-        <FilterIndicator
-          count={view.filterCount}
-          onClick={undefined}
-        />
+          {/* Filter indicator — always visible */}
+          <FilterIndicator
+            count={view.filterCount}
+            onClick={undefined}
+          />
 
-        {/* Remove button */}
-        <button
-          onClick={e => { e.stopPropagation(); onRemove?.(); }}
-          className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0 p-0.5"
-          title="Remove this view"
-          aria-label="Remove view"
+          {/* Remove button */}
+          <button
+            onClick={e => { e.stopPropagation(); onRemove?.(); }}
+            className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0 p-0.5"
+            title="Remove this view"
+            aria-label="Remove view"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+
+        {/* Expanded filter details — inside the same container */}
+        <div
+          className="grid transition-all duration-300 ease-in-out"
+          style={{
+            gridTemplateRows: isExpanded ? '1fr' : '0fr',
+            opacity: isExpanded ? 1 : 0,
+          }}
         >
-          <X className="w-3 h-3" />
-        </button>
-      </div>
+          <div className="overflow-hidden">
+            <div id={`child-filter-panel-${view.id}`} className="px-3 pb-2.5">
+              {/* Light gray divider */}
+              <div className="border-t border-gray-200 mb-2.5" />
 
-      {/* Expanded filter panel */}
-      <div
-        className="grid transition-all duration-300 ease-in-out ml-6"
-        style={{
-          gridTemplateRows: isExpanded ? '1fr' : '0fr',
-          opacity: isExpanded ? 1 : 0,
-        }}
-      >
-        <div className="overflow-hidden">
-          <div id={`child-filter-panel-${view.id}`} className="bg-gray-50 border border-gray-200 rounded-lg mx-1 px-3 py-2.5 mt-1">
-            {/* Filter summary with Clear in top right */}
-            <div className="flex items-start justify-between gap-2 mb-2">
-              {view.filterSummary ? (
-                <ul className="text-[11px] text-gray-500 space-y-0.5 list-none flex-1">
-                  {view.filterSummary.split(',').map((s, i) => (
-                    <li key={i}>{s.trim()}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-[11px] text-gray-500 leading-relaxed flex-1">No filters applied.</p>
-              )}
-              {view.filterCount > 0 && (
+              {/* Filter summary with Clear in top right */}
+              <div className="flex items-start justify-between gap-2 mb-2">
+                {view.filterSummary ? (
+                  <ul className="text-[11px] text-gray-500 space-y-0.5 list-none flex-1">
+                    {view.filterSummary.split(',').map((s, i) => (
+                      <li key={i}>{s.trim()}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-[11px] text-gray-500 leading-relaxed flex-1">No filters applied.</p>
+                )}
+                {view.filterCount > 0 && (
+                  <button
+                    onClick={e => { e.stopPropagation(); onClearFilters?.(); }}
+                    className="text-[11px] text-gray-400 hover:text-red-500 cursor-pointer transition-colors flex-shrink-0"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+
+              {/* Bottom row: Edit Filters (right-aligned) */}
+              <div className="flex items-center justify-end">
                 <button
-                  onClick={onClearFilters}
-                  className="text-[11px] text-gray-400 hover:text-red-500 cursor-pointer transition-colors flex-shrink-0"
+                  onClick={e => { e.stopPropagation(); onEditFilters?.(); }}
+                  className="text-[11px] font-medium text-emerald-600 hover:text-emerald-700 cursor-pointer flex items-center gap-0.5"
                 >
-                  Clear
+                  Edit Filters
+                  <ChevronRight className="w-3 h-3" />
                 </button>
-              )}
-            </div>
-
-            {/* Bottom row: Edit Filters (right-aligned) */}
-            <div className="flex items-center justify-end">
-              <button
-                onClick={onEditFilters}
-                className="text-[11px] font-medium text-emerald-600 hover:text-emerald-700 cursor-pointer flex items-center gap-0.5"
-              >
-                Edit Filters
-                <ChevronRight className="w-3 h-3" />
-              </button>
+              </div>
             </div>
           </div>
         </div>

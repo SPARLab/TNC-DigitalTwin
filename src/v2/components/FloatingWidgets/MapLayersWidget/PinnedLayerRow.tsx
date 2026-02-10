@@ -124,8 +124,7 @@ export function PinnedLayerRow({
       {/* Main row — wrapped in relative for tree connector stub */}
       <div className="relative">
       <div
-        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg cursor-pointer 
-                    transition-all duration-200 ease-in-out
+        className={`rounded-lg cursor-pointer transition-all duration-200 ease-in-out
                     ${isDragging ? 'border-2' : 'border'} ${
           isDragging
             ? `opacity-60 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.3)] ${
@@ -141,77 +140,142 @@ export function PinnedLayerRow({
                   ? 'bg-gray-50 border-gray-300 shadow-sm'
                   : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm'
         }`}
-        onClick={() => {
-          // Clicking the row activates this layer (shows in right sidebar)
-          // AND expands/collapses the panel to show filters/options
-          
-          if (isNested) {
-            // For nested: activate visible child and toggle expand to show/hide children
-            const visibleChild = layer.views!.find(v => v.isVisible);
-            if (visibleChild) {
-              onActivateChildView?.(visibleChild.id);
-            } else {
-              onActivate?.();
-            }
-            // Toggle expand to show/hide children
-            onToggleExpand();
-          } else {
-            // For flat: activate and toggle expand panel
-            onActivate?.();
-            onToggleExpand();
-          }
-        }}
       >
-        {/* Drag handle */}
-        {showDragHandle && (
-          <button
-            {...attributes}
-            {...listeners}
-            className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 flex-shrink-0 touch-none"
-            aria-label={`Drag to reorder ${layer.name}. Use arrow keys to move.`}
-            onClick={e => e.stopPropagation()}
-            onKeyDown={handleDragKeyDown}
-          >
-            <GripVertical className="w-4 h-4" />
-          </button>
-        )}
-
-        {/* Eye toggle — different behavior for nested vs flat */}
-        <button
-          onClick={e => { e.stopPropagation(); onToggleVisibility(); }}
-          className="flex-shrink-0 p-0.5 rounded hover:bg-gray-100 transition-colors"
-          title={layer.isVisible ? 'Hide on map' : 'Show on map'}
-          aria-label={`${layer.name} is ${layer.isVisible ? 'visible' : 'hidden'} on map`}
-          aria-pressed={layer.isVisible}
+        {/* Top row: Drag, Eye, Name, Filter, Remove */}
+        <div 
+          className="flex items-center gap-1.5 px-3 py-2"
+          onClick={() => {
+            // Clicking the row activates this layer (shows in right sidebar)
+            // AND expands/collapses the panel to show filters/options
+            
+            if (isNested) {
+              // For nested: activate visible child and toggle expand to show/hide children
+              const visibleChild = layer.views!.find(v => v.isVisible);
+              if (visibleChild) {
+                onActivateChildView?.(visibleChild.id);
+              } else {
+                onActivate?.();
+              }
+              // Toggle expand to show/hide children
+              onToggleExpand();
+            } else {
+              // For flat: activate and toggle expand panel
+              onActivate?.();
+              onToggleExpand();
+            }
+          }}
         >
-          {(isNested ? parentEyeOn : layer.isVisible) ? (
-            <Eye className="w-4 h-4 text-gray-700" />
-          ) : (
-            <EyeOff className="w-4 h-4 text-gray-300" />
+          {/* Drag handle */}
+          {showDragHandle && (
+            <button
+              {...attributes}
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 flex-shrink-0 touch-none"
+              aria-label={`Drag to reorder ${layer.name}. Use arrow keys to move.`}
+              onClick={e => e.stopPropagation()}
+              onKeyDown={handleDragKeyDown}
+            >
+              <GripVertical className="w-4 h-4" />
+            </button>
           )}
-        </button>
 
-        {/* Layer name */}
-        <span className={`text-sm flex-1 truncate ${
-          layer.isVisible ? 'text-gray-700' : 'text-gray-400'
-        } ${layer.isActive || isNested ? 'font-semibold text-gray-900' : ''}`}>
-          {displayName}
-        </span>
+          {/* Eye toggle — different behavior for nested vs flat */}
+          <button
+            onClick={e => { e.stopPropagation(); onToggleVisibility(); }}
+            className="flex-shrink-0 p-0.5 rounded hover:bg-gray-100 transition-colors"
+            title={layer.isVisible ? 'Hide on map' : 'Show on map'}
+            aria-label={`${layer.name} is ${layer.isVisible ? 'visible' : 'hidden'} on map`}
+            aria-pressed={layer.isVisible}
+          >
+            {(isNested ? parentEyeOn : layer.isVisible) ? (
+              <Eye className="w-4 h-4 text-gray-700" />
+            ) : (
+              <EyeOff className="w-4 h-4 text-gray-300" />
+            )}
+          </button>
 
-        {/* Filter indicator — always visible (parent shows visible child's count) */}
-        <FilterIndicator 
-          count={parentFilterCount} 
-          onClick={e => { e?.stopPropagation(); onEditFilters?.(); }} 
-        />
+          {/* Layer name */}
+          <span className={`text-sm flex-1 truncate ${
+            layer.isVisible ? 'text-gray-700' : 'text-gray-400'
+          } ${layer.isActive || isNested ? 'font-semibold text-gray-900' : ''}`}>
+            {displayName}
+          </span>
 
-        {/* Remove button */}
-        <button
-          onClick={e => { e.stopPropagation(); onRemove(); }}
-          className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0 p-0.5"
-          title={isNested ? "Unpin all views" : "Unpin layer"}
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
+          {/* Filter indicator — always visible (parent shows visible child's count) */}
+          <FilterIndicator 
+            count={parentFilterCount} 
+            onClick={e => { e?.stopPropagation(); onEditFilters?.(); }} 
+          />
+
+          {/* Remove button */}
+          <button
+            onClick={e => { e.stopPropagation(); onRemove(); }}
+            className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0 p-0.5"
+            title={isNested ? "Unpin all views" : "Unpin layer"}
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Expanded panel for flat rows — inside the same container */}
+        {!isNested && (
+          <div 
+            className="grid transition-all duration-300 ease-in-out"
+            style={{
+              gridTemplateRows: isExpanded ? '1fr' : '0fr',
+              opacity: isExpanded ? 1 : 0,
+            }}
+          >
+            <div className="overflow-hidden">
+              <div id={`flat-filter-panel-${layer.id}`} className="px-3 pb-2.5">
+                {/* Light gray divider */}
+                <div className="border-t border-gray-200 mb-2.5" />
+
+                {/* Filter summary with Clear in top right */}
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  {layer.filterSummary ? (
+                    <ul className="text-[11px] text-gray-500 space-y-0.5 list-none flex-1">
+                      {layer.filterSummary.split(',').map((s, i) => (
+                        <li key={i}>{s.trim()}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-[11px] text-gray-500 leading-relaxed flex-1">No filters applied.</p>
+                  )}
+                  {layer.filterCount > 0 && (
+                    <button
+                      onClick={e => { e.stopPropagation(); onClearFilters?.(); }}
+                      className="text-[11px] text-gray-400 hover:text-red-500 cursor-pointer transition-colors flex-shrink-0"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {/* Bottom row: New View (left) + Edit Filters (right) */}
+                <div className="flex items-center justify-between gap-2">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onCreateNewView?.(); }}
+                    className="text-[11px] text-emerald-600 hover:text-emerald-700 cursor-pointer transition-colors 
+                               flex items-center gap-1 px-0 py-0.5"
+                    aria-label="Create new filtered view"
+                  >
+                    <Plus className="w-3 h-3" />
+                    New View
+                  </button>
+                  <button
+                    onClick={e => { e.stopPropagation(); onEditFilters?.(); }}
+                    className="text-[11px] font-medium text-emerald-600 hover:text-emerald-700 cursor-pointer
+                               flex items-center gap-0.5"
+                  >
+                    Edit Filters
+                    <ChevronRight className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tree connector stub — bridges gap from parent row to children */}
@@ -234,7 +298,7 @@ export function PinnedLayerRow({
           }}
         >
           <div className="overflow-hidden">
-            <div className="mt-1 space-y-1">
+            <div className="mt-1 space-y-1 pb-1">
               {layer.views!.map((view, index) => (
                 <PinnedLayerChildRow
                   key={view.id}
@@ -251,63 +315,6 @@ export function PinnedLayerRow({
                 />
               ))}
               <NewViewButton onClick={() => onCreateNewView?.()} />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Expanded panel (DFT-003b) — only for flat rows */}
-      {!isNested && (
-        <div 
-          className="grid transition-all duration-300 ease-in-out"
-          style={{
-            gridTemplateRows: isExpanded ? '1fr' : '0fr',
-            opacity: isExpanded ? 1 : 0,
-          }}
-        >
-          <div className="overflow-hidden">
-            <div id={`flat-filter-panel-${layer.id}`} className="bg-gray-50 border border-gray-200 rounded-lg mx-1 px-3 py-2.5 mt-1">
-              {/* Filter summary with Clear in top right */}
-              <div className="flex items-start justify-between gap-2 mb-2">
-                {layer.filterSummary ? (
-                  <ul className="text-[11px] text-gray-500 space-y-0.5 list-none flex-1">
-                    {layer.filterSummary.split(',').map((s, i) => (
-                      <li key={i}>{s.trim()}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-[11px] text-gray-500 leading-relaxed flex-1">No filters applied.</p>
-                )}
-                {layer.filterCount > 0 && (
-                  <button
-                    onClick={onClearFilters}
-                    className="text-[11px] text-gray-400 hover:text-red-500 cursor-pointer transition-colors flex-shrink-0"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-
-              {/* Bottom row: New View (left) + Edit Filters (right) */}
-              <div className="flex items-center justify-between gap-2">
-                <button
-                  onClick={(e) => { e.stopPropagation(); onCreateNewView?.(); }}
-                  className="text-[11px] text-emerald-600 hover:text-emerald-700 cursor-pointer transition-colors 
-                             flex items-center gap-1 px-0 py-0.5"
-                  aria-label="Create new filtered view"
-                >
-                  <Plus className="w-3 h-3" />
-                  New View
-                </button>
-                <button
-                  onClick={onEditFilters}
-                  className="text-[11px] font-medium text-emerald-600 hover:text-emerald-700 cursor-pointer
-                             flex items-center gap-0.5"
-                >
-                  Edit Filters
-                  <ChevronRight className="w-3 h-3" />
-                </button>
-              </div>
             </div>
           </div>
         </div>
