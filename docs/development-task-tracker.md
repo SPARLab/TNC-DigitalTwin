@@ -35,9 +35,10 @@
 | 5 | **Prevent Map Layers Widget Scrollbar from Pushing Content** | 🟡 | Medium | Scrollbar overlays or reserves space; content width stays stable |
 | 6 | **Fix Tree Connector Lines Between Parent and Child Rows** | ✅ | Medium | Completed: moved connectors to outer wrapper, consistent #d1d5db |
 | 7 | **Remove Gray Divider in Left Sidebar** | 🟡 | Low | Simple CSS removal |
-| 8 | **0.6** Map Feature Highlight — Bookmark hover | 🟡 | Low | Requires map integration first |
+| 8 | **Refine Active Layer → Pinned Layer Transition** | 🟡 | Low | Further polish timing/easing for pin transition |
+| 9 | **0.6** Map Feature Highlight — Bookmark hover | 🟡 | Low | Requires map integration first |
 
-**Total Phase 0 Tasks Remaining:** 5  
+**Total Phase 0 Tasks Remaining:** 6  
 **Recently Completed:** Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors ✅
 
 ---
@@ -137,6 +138,11 @@
   - Implementation: Snapshot state pattern in MapLayersWidget preserves Active Layer data during 300ms exit transition. PinnedLayersSection detects new layer additions and triggers 400ms slide-down from -8px above final position.
   - Files: `MapLayersWidget.tsx`, `ActiveLayerSection.tsx`, `PinnedLayersSection.tsx`, `PinnedLayerRow.tsx`, `index.css`
   - Result: Smooth coordinated animations as layers transition from Active → Pinned state
+
+- [ ] **Refine Active Layer → Pinned Layer Transition** — Further polish for the transition when pinning
+  - Current: Active Layer slides up/fades out; new pinned layer slides down. Both work but could feel more cohesive.
+  - Needed: Evaluate and refine timing, easing, or choreography so the transition feels more like a single continuous motion (e.g., position handoff, shared easing curve).
+  - Files: `MapLayersWidget.tsx`, `PinnedLayersSection.tsx`, `PinnedLayerRow.tsx`, `index.css`
 
 - [ ] **Prevent Map Layers Widget Scrollbar from Pushing Content** — Scrollbar should not reduce content width
   - Current: Expanding child filter panels triggers vertical scroll. Scrollbar renders inside the widget width, pushing content (e.g., "Edit Filters" button) inward.
