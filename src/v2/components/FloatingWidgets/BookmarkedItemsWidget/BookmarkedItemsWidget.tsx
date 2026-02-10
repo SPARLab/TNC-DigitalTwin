@@ -35,27 +35,30 @@ export function BookmarkedItemsWidget() {
       />
 
       {!isCollapsed && (
-        <div id="bookmarked-items-body" className="scroll-area-widget max-h-[350px] overflow-y-auto">
+        <div id="bookmarked-items-body" className="scroll-area-widget max-h-[calc(50vh-6rem)] overflow-y-auto">
           {bookmarks.length > 0 ? (
             // Render grouped bookmarks
             <>
               {Array.from(bookmarksByLayer.entries()).map(([layerName, layerBookmarks]) => (
-                <div key={layerName}>
+                <div key={layerName} id={`bookmark-group-${layerName.toLowerCase().replace(/\s+/g, '-')}`} className="mb-2">
                   <LayerGroupHeader layerName={layerName} />
-                  {layerBookmarks.map(bm => (
-                    <BookmarkRow
-                      key={bm.id}
-                      bookmark={bm}
-                      onView={() => {/* Phase 1+: navigate to item */}}
-                      onEditFilter={bm.type === 'pointer-filtered' ? () => {/* Phase 1+ */} : undefined}
-                      onRemove={() => removeBookmark(bm.id)}
-                    />
-                  ))}
+                  <div className="space-y-1.5">
+                    {layerBookmarks.map((bm, index) => (
+                      <BookmarkRow
+                        key={bm.id}
+                        bookmark={bm}
+                        isLast={index === layerBookmarks.length - 1}
+                        onView={() => {/* Phase 1+: navigate to item */}}
+                        onEditFilter={bm.type === 'pointer-filtered' ? () => {/* Phase 1+ */} : undefined}
+                        onRemove={() => removeBookmark(bm.id)}
+                      />
+                    ))}
+                  </div>
                 </div>
               ))}
 
               {/* Tip for populated widget */}
-              <div className="px-3 py-1.5 bg-slate-50 border-t border-slate-100 rounded-b-xl">
+              <div className="px-3 py-1.5 bg-slate-50 rounded-b-xl">
                 <p className="text-[11px] text-gray-600">
                   Save items from layers using the right sidebar. If an item has related data, filters for that data are saved as well.
                 </p>

@@ -25,7 +25,7 @@
 | 11 | 0 | **Right Sidebar: Active Layer Color Coordination & Flash** | ⚪ | Medium | Yellow header; unify left sidebar active to yellow; flash on layer change; animation feedback when inspecting different layer |
 
 **Active tasks remaining:** 2  
-**Recently completed:** Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors ✅
+**Recently completed:** Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
 
 ---
 
@@ -84,6 +84,13 @@
   - Completed: Fixed gaps in tree connectors by extending lines into `space-y-1` gaps (4px) between child rows
   - Implementation: Used CSS borders for seamless L-shape corners, extended vertical lines with `calc(50% + 4px)` to bridge gaps
   - Files: `src/v2/components/FloatingWidgets/MapLayersWidget/PinnedLayerChildRow.tsx`
+
+- [x] **Add Hierarchical Tree Connectors to Saved Items Widget** — Show parent-child relationship between layer categories and saved items
+  - Completed: Added L-shaped tree connector lines matching Map Layers widget pattern
+  - Features: Emerald left border accent on items, full-width boxed headers, dynamic height with 50vh cap
+  - Visual hierarchy: Tree lines at `left: 12px`, 6px spacing between items, stub connector from header to first child
+  - Differentiation: Left border accent (not full boxes) distinguishes saved items from Map Layers child views
+  - Files: `BookmarkRow.tsx`, `LayerGroupHeader.tsx`, `BookmarkedItemsWidget.tsx`
 
 ### 🔧 Ad-Hoc Tasks (Phase 0)
 
@@ -265,6 +272,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 10, 2026 | Phase 0 | ✅ Saved Items hierarchical tree connectors complete: Added L-shaped tree lines, emerald left border accent, full-width boxed headers, dynamic height (50vh cap), stub connector from headers. Distinguishes saved items (left border) from Map Layers child views (full boxes). | Claude |
 | Feb 10, 2026 | Phase 0 | Added tasks 10 & 11: Left Sidebar visual distinction (categories vs layers); Right Sidebar color coordination (yellow header, active layer sync, flash on change). | User |
 | Feb 10, 2026 | Phase 0 | ✅ Task 8 complete: Refine Active Layer → Pinned Layer Transition. Newly pinned row slides down from under header; section expands; no flash. | User |
 | Feb 10, 2026 | Phase 0 | ✅ Task 7 complete: Remove Gray Divider in Left Sidebar. Removed border-t between DataOne shortcut and regular layers; italics preserved. | User |

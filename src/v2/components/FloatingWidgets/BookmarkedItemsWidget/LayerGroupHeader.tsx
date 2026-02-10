@@ -1,6 +1,8 @@
 // ============================================================================
-// LayerGroupHeader — Non-interactive context label (DFT-007)
-// Muted styling, no hover, no buttons. Just a visual divider.
+// LayerGroupHeader — Section label for saved item groups
+// Styled like the "PINNED LAYERS" header in Map Layers widget
+// Full-width, square corners, edge-to-edge
+// Includes tree connector stub to first child
 // ============================================================================
 
 interface LayerGroupHeaderProps {
@@ -9,14 +11,28 @@ interface LayerGroupHeaderProps {
 
 export function LayerGroupHeader({ layerName }: LayerGroupHeaderProps) {
   return (
-    <div
-      role="separator"
-      className="px-3 py-1 flex items-center gap-2 cursor-default"
-    >
-      <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">
-        {layerName}
-      </span>
-      <span className="flex-1 border-t border-dashed border-gray-200" />
+    <div className="relative">
+      <div
+        role="separator"
+        className="mb-1.5 px-3 py-1 bg-gray-50 border-y border-gray-200 flex items-center cursor-default"
+        id={`saved-items-header-${layerName.toLowerCase().replace(/\s+/g, '-')}`}
+      >
+        <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
+          {layerName}
+        </span>
+      </div>
+      
+      {/* Tree connector stub from header to first child */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          left: '12px',
+          top: '100%',
+          height: '6px',
+          borderLeft: '1px solid #d1d5db',
+        }}
+        aria-hidden="true"
+      />
     </div>
   );
 }
