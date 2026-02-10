@@ -37,46 +37,55 @@ export function CategoryGroup({ category, filteredLayerIds }: CategoryGroupProps
   };
 
   return (
-    <div id={`category-${category.id}`} role="group">
-      {/* Category header */}
+    <div id={`category-${category.id}`} role="group" className="border-b border-gray-300">
+      {/* Category header — persistent banner background */}
       <button
         onClick={toggle}
         onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && toggle()}
-        className="flex items-center w-full px-3 py-2 text-sm font-medium text-gray-700
-                   hover:bg-gray-50 transition-colors cursor-pointer"
+        className="flex items-center w-full px-3 py-2.5 text-sm font-semibold text-gray-800
+                   bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
         aria-expanded={isExpanded}
       >
         {isExpanded
-          ? <ChevronDown className="w-4 h-4 text-gray-400 mr-1.5 flex-shrink-0" />
-          : <ChevronRight className="w-4 h-4 text-gray-400 mr-1.5 flex-shrink-0" />
+          ? <ChevronDown className="w-4 h-4 text-gray-600 mr-1.5 flex-shrink-0 transition-transform duration-200" />
+          : <ChevronRight className="w-4 h-4 text-gray-600 mr-1.5 flex-shrink-0 transition-transform duration-200" />
         }
-        <LucideIcon name={category.icon} className="w-4 h-4 text-gray-500 mr-2 flex-shrink-0" />
+        <LucideIcon name={category.icon} className="w-4 h-4 text-gray-600 mr-2 flex-shrink-0" />
         <span className="flex-1 text-left truncate">{category.name}</span>
-        <span className="ml-2 text-xs text-gray-400 bg-gray-100 rounded-full px-1.5 py-0.5 flex-shrink-0">
+        <span className="ml-2 text-xs text-gray-600 bg-white rounded-full px-1.5 py-0.5 flex-shrink-0 font-medium shadow-sm">
           {visibleLayers.length}
         </span>
       </button>
 
-      {/* Layer rows + DataOne shortcut */}
-      {isExpanded && (
-        <div role="group" className="pb-1">
-          {visibleLayers.map(layer => (
-            <LayerRow key={layer.id} layerId={layer.id} name={layer.name} />
-          ))}
+      {/* Layer rows + DataOne shortcut — smooth collapse/expand animation */}
+      <div 
+        className="grid transition-all duration-300 ease-in-out"
+        style={{
+          gridTemplateRows: isExpanded ? '1fr' : '0fr',
+          opacity: isExpanded ? 1 : 0,
+        }}
+      >
+        <div className="overflow-hidden">
+          <div role="group" className="bg-gray-50/50 border-l-2 border-gray-200 ml-2 mr-2 py-1.5 space-y-1">
+            {visibleLayers.map(layer => (
+              <LayerRow key={layer.id} layerId={layer.id} name={layer.name} />
+            ))}
 
-          {/* DFT-045: DataOne shortcut row */}
+          {/* DFT-045: DataOne shortcut row — styled as a layer card */}
           {showDataoneShortcut && (
             <button
               onClick={handleDataoneClick}
-              className="flex items-center w-full py-1.5 px-3 pl-9 mt-1 text-sm text-gray-500 italic
-                         hover:bg-emerald-50 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 py-[9px] px-3 mx-2 text-sm text-gray-700 italic
+                         bg-white border border-gray-200 hover:border-gray-300 hover:shadow-sm 
+                         rounded-lg transition-all duration-200 cursor-pointer"
             >
-              <BookOpen className="w-4 h-4 text-gray-400 mr-2 flex-shrink-0" />
-              <span>DataOne Datasets ({dataoneCount})</span>
+              <BookOpen className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <span className="flex-1 text-left">DataOne Datasets ({dataoneCount})</span>
             </button>
           )}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

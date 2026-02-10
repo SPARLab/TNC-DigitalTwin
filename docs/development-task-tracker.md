@@ -21,10 +21,11 @@
 | 7 | 0 | **Remove Gray Divider in Left Sidebar** | ✅ | Low | Simple CSS removal |
 | 8 | 0 | **Refine Active Layer → Pinned Layer Transition** | ✅ | Low | Newly pinned row slides down from under header; section expands; no flash |
 | 9 | 0 | **0.6** Map Feature Highlight — Bookmark hover | 🟡 | Low | Requires map integration first |
-| 10 | 0 | **Left Sidebar: Visual Distinction Between Categories and Layers** | ⚪ | Medium | Backgrounds around categories; indentation + highlight differences in dropdown; layers conceptually distinct from categories |
+| 10 | 0 | **Left Sidebar: Visual Distinction Between Categories and Layers** | 🟡 | Medium | In progress: Category banners with animations, layer cards with yellow active state, blue pins; DataOne width issue remains |
 | 11 | 0 | **Right Sidebar: Active Layer Color Coordination & Flash** | ⚪ | Medium | Yellow header; unify left sidebar active to yellow; flash on layer change; animation feedback when inspecting different layer |
+| 12 | 0 | **Fix DataOne Datasets Card Width in Left Sidebar** | ⚪ | Low | DataOne shortcut row narrower than regular layer cards; needs width matching |
 
-**Active tasks remaining:** 2  
+**Active tasks remaining:** 3  
 **Recently completed:** Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
 
 ---
