@@ -1,6 +1,6 @@
 # Development Task Tracker — V2 Digital Catalog
 
-**Last Updated:** February 9, 2026  
+**Last Updated:** February 9, 2026 (evening)  
 **Current Phase:** Phase 0 (Foundation) — 🟡 In Progress  
 **Target Deadline:** February 20, 2026 (13 days remaining)
 
@@ -10,7 +10,7 @@
 
 | Phase | Status | Progress | Branch | Blocking? |
 |-------|--------|----------|--------|-----------|
-| **0. Foundation** | 🟡 In Progress | ~85% | `v2/foundation` | YES — blocks all |
+| **0. Foundation** | 🟡 In Progress | ~90% | `v2/foundation` | YES — blocks all |
 | 1. iNaturalist | ⚪ Not Started | 0% | `v2/inaturalist` | No |
 | 2. ANiML | ⚪ Not Started | 0% | `v2/animl` | No |
 | 3. Dendra | ⚪ Not Started | 0% | `v2/dendra` | No |
@@ -31,14 +31,14 @@
 | 1 | **0.4** Map Container — ArcGIS WebMap integration | 🟡 | High | Blocks Phase 0 completion |
 | 2 | **0.5** Drag-and-Drop Reorder — Pinned layers | 🟡 | Medium | Drag handles visible but non-functional |
 | 3 | **Enable Map Layers Drag Reordering** | ✅ | Medium | Related to Task 0.5, may consolidate |
-| 4 | **Make Filter Icons Clickable for Child Views** | 🟢 | Medium | Child row click expands filter clauses; Edit Filters opens Browse tab |
+| 4 | **Unify Map Layers Expansion Affordances** | ✅ | Medium | Filter icon as primary control; child accordion pattern; auto-expand on sidebar activation |
 | 5 | **Prevent Map Layers Widget Scrollbar from Pushing Content** | 🟡 | Medium | Scrollbar overlays or reserves space; content width stays stable |
 | 6 | **Fix Tree Connector Lines Between Parent and Child Rows** | ✅ | Medium | Completed: moved connectors to outer wrapper, consistent #d1d5db |
 | 7 | **Remove Gray Divider in Left Sidebar** | 🟡 | Low | Simple CSS removal |
 | 8 | **0.6** Map Feature Highlight — Bookmark hover | 🟡 | Low | Requires map integration first |
 
-**Total Phase 0 Tasks Remaining:** 7  
-**Recently Completed:** Multi-View Management (Create/Remove Views) ✅, Filter Panel Layout Reorganization ✅, Fix Tree Connector Lines ✅
+**Total Phase 0 Tasks Remaining:** 5  
+**Recently Completed:** Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors ✅
 
 ---
 
@@ -223,6 +223,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 9, 2026 (eve) | Phase 0 | ✅ Task 4 complete: Unify Map Layers Expansion Affordances. Removed chevrons; filter icon is now primary expansion control. Parent shows visible child's filter count. Child rows use accordion pattern (one expanded at a time). Auto-activate + auto-expand visible child when pinned layer clicked from sidebar. User can manually collapse active layers without forced re-expansion. | Claude |
 | Feb 9, 2026 | Phase 0 | ✅ Task 6 complete: Fix Tree Connector Lines Between Parent and Child Rows. Moved connectors to outer wrapper for full-height coverage including expanded filter panels; standardized 1px solid #d1d5db; parent stub 12px. | Claude |
 | Feb 9, 2026 | Phase 0 | Added task: Prevent Map Layers Widget Scrollbar from Pushing Content — vertical scrollbar compresses content when child filter panels expand; fix so scrollbar overlays or reserves stable space. | Claude |
 | Feb 9, 2026 | Phase 0 | ✅ Task 4 complete: Make Filter Icons Clickable for Child Views. Child row click expands filter clauses (split on comma). Edit Filters / filter icon opens Browse tab. One child expanded at a time. Added toggleChildVisibility, clearFilters, requestEditFilters to LayerContext. | Claude |
@@ -274,4 +275,27 @@ See `docs/master-plan.md` for full phase breakdown.
   - useEffect syncs expansion state with active layer changes
 - **Result**: Clear mental model where "active = inspecting = expanded = amber"
 - **Files**: PinnedLayerRow.tsx, PinnedLayerChildRow.tsx, PinnedLayersSection.tsx, LayerContext.tsx, MapLayersWidget.tsx
+
+### Unified Expansion Affordances (Feb 9, 2026 Evening)
+- **Feature**: Consolidated expansion controls and improved child view interactions
+- **Chevron Removal**: Replaced chevron (>) with filter icon as primary expansion affordance
+  - Filter icon semantically matches action (expand to see filters)
+  - Simpler visual pattern — one icon, one purpose
+- **Parent Filter Count Sync**: Parent row filter count now matches visible child's count
+  - Dynamic: changes when switching between child views
+  - Provides at-a-glance info about active filters
+- **Child Row Accordion**: Only one child expanded at a time within same parent
+  - Prevents cognitive overload from multiple expanded panels
+  - Helps user track focus
+  - State managed by parent component (PinnedLayerRow)
+- **Auto-Expand from Sidebar**:
+  - Clicking pinned layer from left sidebar → parent expands
+  - Visible child view auto-activates (amber highlight)
+  - Active child's filter panel auto-expands showing filter details
+- **User Control**: Users can manually collapse active layers
+  - Prevents forced re-expansion on re-click
+  - Tracks `lastActiveLayerId` to only auto-expand on first activation
+  - Respects user intent to keep things collapsed
+- **Files**: FilterIndicator.tsx, PinnedLayerRow.tsx, PinnedLayerChildRow.tsx, PinnedLayersSection.tsx
+- **Status**: Map Layers widget considered complete for Phase 0
 
