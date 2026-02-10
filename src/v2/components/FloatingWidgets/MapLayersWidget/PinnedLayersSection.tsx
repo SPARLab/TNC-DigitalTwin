@@ -56,9 +56,21 @@ export function PinnedLayersSection({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [justDroppedId, setJustDroppedId] = useState<string | null>(null);
   const [justPinnedId, setJustPinnedId] = useState<string | null>(null);
+  const [exitingId, setExitingId] = useState<string | null>(null);
   const [lastActiveLayerId, setLastActiveLayerId] = useState<string | null>(null);
   const [prevLayerIds, setPrevLayerIds] = useState<Set<string>>(new Set());
   const showDragHandles = layers.length > 1;
+
+  const EXIT_DURATION_MS = 400;
+
+  // Remove with exit animation: collapse + fade, then actually remove
+  const handleRemove = (pinnedId: string) => {
+    setExitingId(pinnedId);
+    setTimeout(() => {
+      onRemove(pinnedId);
+      setExitingId(null);
+    }, EXIT_DURATION_MS);
+  };
 
   // Auto-expand when active layer changes (but only on first activation)
   useEffect(() => {
@@ -154,32 +166,57 @@ export function PinnedLayersSection({
           items={layers.map(l => l.id)}
           strategy={verticalListSortingStrategy}
         >
-          <div className="px-2 py-2 space-y-1">
+          <div id="pinned-layers-list" className="px-2 py-2 space-y-1">
             {layers.length > 0 ? (
-              layers.map((layer, index) => (
-                <PinnedLayerRow
-                  key={layer.id}
-                  layer={layer}
-                  isExpanded={expandedId === layer.id}
-                  showDragHandle={showDragHandles}
-                  justDropped={justDroppedId === layer.id}
-                  justPinned={justPinnedId === layer.id}
-                  onToggleExpand={() => setExpandedId(prev => prev === layer.id ? null : layer.id)}
-                  onToggleVisibility={() => onToggleVisibility(layer.id)}
-                  onRemove={() => onRemove(layer.id)}
-                  onActivate={() => onActivate?.(layer.layerId)}
-                  onEditFilters={() => onEditFilters?.(layer.layerId)}
-                  onClearFilters={() => onClearFilters?.(layer.id)}
-                  onKeyReorder={(dir) => handleKeyReorder(index, dir)}
-                  onToggleChildView={(viewId: string) => onToggleChildView?.(layer.id, viewId)}
-                  onEditFiltersForChild={(viewId: string) => onEditFilters?.(layer.layerId, viewId)}
-                  onClearFiltersForChild={(viewId: string) => onClearFilters?.(layer.id, viewId)}
-                  onActivateChildView={(viewId: string) => onActivateView?.(layer.layerId, viewId)}
-                  onCreateNewView={() => onCreateNewView?.(layer.id)}
-                  onRemoveChildView={(viewId: string) => onRemoveView?.(layer.id, viewId)}
-                  activeViewId={activeLayerId === layer.layerId ? activeViewId : undefined}
-                />
-              ))
+              layers.map((layer, index) => {
+                const isJustPinned = justPinnedId === layer.id;
+                const isExiting = exitingId === layer.id;
+                const row = (
+                  <PinnedLayerRow
+                    key={layer.id}
+                    layer={layer}
+                    isExpanded={expandedId === layer.id}
+                    showDragHandle={showDragHandles}
+                    justDropped={justDroppedId === layer.id}
+                    justPinned={isJustPinned}
+                    onToggleExpand={() => setExpandedId(prev => prev === layer.id ? null : layer.id)}
+                    onToggleVisibility={() => onToggleVisibility(layer.id)}
+                    onRemove={() => handleRemove(layer.id)}
+                    onActivate={() => onActivate?.(layer.layerId)}
+                    onEditFilters={() => onEditFilters?.(layer.layerId)}
+                    onClearFilters={() => onClearFilters?.(layer.id)}
+                    onKeyReorder={(dir) => handleKeyReorder(index, dir)}
+                    onToggleChildView={(viewId: string) => onToggleChildView?.(layer.id, viewId)}
+                    onEditFiltersForChild={(viewId: string) => onEditFilters?.(layer.layerId, viewId)}
+                    onClearFiltersForChild={(viewId: string) => onClearFilters?.(layer.id, viewId)}
+                    onActivateChildView={(viewId: string) => onActivateView?.(layer.layerId, viewId)}
+                    onCreateNewView={() => onCreateNewView?.(layer.id)}
+                    onRemoveChildView={(viewId: string) => onRemoveView?.(layer.id, viewId)}
+                    activeViewId={activeLayerId === layer.layerId ? activeViewId : undefined}
+                  />
+                );
+                const collapseWrapper = (
+                  <div
+                    key={layer.id}
+                    id={isExiting ? undefined : `pinned-row-wrapper-${layer.id}`}
+                    className={`pin-row-wrapper${isExiting ? ' pin-row-exit' : ''}`}
+                  >
+                    {row}
+                  </div>
+                );
+                if (isJustPinned) {
+                  return (
+                    <div
+                      key={layer.id}
+                      id={`pinned-row-expand-wrapper-${layer.id}`}
+                      className="overflow-hidden animate-pin-row-expand"
+                    >
+                      {collapseWrapper}
+                    </div>
+                  );
+                }
+                return collapseWrapper;
+              })
             ) : (
               <p className="text-sm text-gray-500 px-1 py-2">Pinned layers appear here.</p>
             )}

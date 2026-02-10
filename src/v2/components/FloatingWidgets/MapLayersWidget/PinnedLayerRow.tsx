@@ -135,7 +135,7 @@ export function PinnedLayerRow({
                 'border-gray-300 bg-white'
               }`
             : justPinned
-              ? 'animate-slide-down'
+              ? 'animate-slide-down-from-above'
               : justDropped
                 ? 'animate-settle'
                 : layer.isActive

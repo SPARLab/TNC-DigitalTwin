@@ -35,7 +35,7 @@
 | 5 | **Prevent Map Layers Widget Scrollbar from Pushing Content** | 🟡 | Medium | Scrollbar overlays or reserves space; content width stays stable |
 | 6 | **Fix Tree Connector Lines Between Parent and Child Rows** | ✅ | Medium | Completed: moved connectors to outer wrapper, consistent #d1d5db |
 | 7 | **Remove Gray Divider in Left Sidebar** | 🟡 | Low | Simple CSS removal |
-| 8 | **Refine Active Layer → Pinned Layer Transition** | 🟡 | Low | Further polish timing/easing for pin transition |
+| 8 | **Refine Active Layer → Pinned Layer Transition** | 🟡 | Low | Newly pinned row slides down from under header; section expands; no flash |
 | 9 | **0.6** Map Feature Highlight — Bookmark hover | 🟡 | Low | Requires map integration first |
 
 **Total Phase 0 Tasks Remaining:** 6  
@@ -140,8 +140,9 @@
   - Result: Smooth coordinated animations as layers transition from Active → Pinned state
 
 - [ ] **Refine Active Layer → Pinned Layer Transition** — Further polish for the transition when pinning
-  - Current: Active Layer slides up/fades out; new pinned layer slides down. Both work but could feel more cohesive.
-  - Needed: Evaluate and refine timing, easing, or choreography so the transition feels more like a single continuous motion (e.g., position handoff, shared easing curve).
+  - Done: Removed flash; newly pinned row now slides down from under the Pinned Layers header while the section expands (wrapper animates max-height 0→280px, row animates translateY(-100%)→0). Single 400ms ease-out; reduced-motion respected.
+  - Implementation: `pin-row-expand` + `slide-down-from-above` in `index.css`; `PinnedLayersSection` wraps justPinned row in expanding wrapper; `PinnedLayerRow` uses `animate-slide-down-from-above`.
+  - Optional later: Even tighter choreography with Active Layer exit (e.g. shared easing or position handoff).
   - Files: `MapLayersWidget.tsx`, `PinnedLayersSection.tsx`, `PinnedLayerRow.tsx`, `index.css`
 
 - [ ] **Prevent Map Layers Widget Scrollbar from Pushing Content** — Scrollbar should not reduce content width

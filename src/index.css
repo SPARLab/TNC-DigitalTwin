@@ -266,18 +266,45 @@ body {
   animation: settle 400ms ease-out;
 }
 
-/* Slide-down animation - smooth entrance for newly pinned layers */
-@keyframes slide-down {
+/* Pin entrance: section expands while row slides down from under header */
+@keyframes pin-row-expand {
   0% {
-    transform: translateY(-8px);
+    max-height: 0;
+  }
+  100% {
+    max-height: 280px;
+  }
+}
+
+@keyframes slide-down-from-above {
+  0% {
+    transform: translateY(-100%);
   }
   100% {
     transform: translateY(0);
   }
 }
 
-.animate-slide-down {
-  animation: slide-down 400ms ease-out;
+.animate-pin-row-expand {
+  animation: pin-row-expand 400ms ease-out;
+}
+
+.animate-slide-down-from-above {
+  animation: slide-down-from-above 400ms ease-out;
+}
+
+/* Pin exit: row fades and space shrinks before removal */
+.pin-row-wrapper {
+  overflow: hidden;
+  max-height: 500px;
+  transition: max-height 0.4s ease-out, opacity 0.4s ease-out, margin 0.4s ease-out;
+}
+.pin-row-wrapper.pin-row-exit {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  pointer-events: none;
 }
 
 /* Reduced motion support - simplify drag animations for accessibility */
@@ -293,10 +320,21 @@ body {
     background-color: #dcfce7; /* Just show the color without animation */
   }
   
-  /* Disable slide-down animation */
-  .animate-slide-down {
+  /* Disable pin entrance animations */
+  .animate-pin-row-expand {
+    animation: none;
+    max-height: 280px;
+  }
+  .animate-slide-down-from-above {
     animation: none;
     transform: none;
+  }
+  
+  /* Pin exit: collapse immediately */
+  .pin-row-wrapper.pin-row-exit {
+    max-height: 0;
+    opacity: 0;
+    transition: none;
   }
   
   /* Simplify transitions */
