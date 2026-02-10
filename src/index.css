@@ -307,6 +307,27 @@ body {
   pointer-events: none;
 }
 
+/* Bookmark entrance: section expands (same pattern as pin-row-expand) */
+.animate-bookmark-row-expand {
+  animation: pin-row-expand 400ms ease-out;
+}
+
+/* Bookmark exit: row fades and space shrinks before removal (same pattern as pin-row-wrapper) */
+/* overflow: visible in normal state so tree connector lines aren't clipped */
+.bookmark-row-wrapper {
+  overflow: visible;
+  max-height: 500px;
+  transition: max-height 0.4s ease-out, opacity 0.4s ease-out, margin 0.4s ease-out;
+}
+.bookmark-row-wrapper.bookmark-row-exit {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  pointer-events: none;
+}
+
 /* Reduced motion support - simplify drag animations for accessibility */
 @media (prefers-reduced-motion: reduce) {
   /* Remove scale transform during drag */
@@ -332,6 +353,19 @@ body {
   
   /* Pin exit: collapse immediately */
   .pin-row-wrapper.pin-row-exit {
+    max-height: 0;
+    opacity: 0;
+    transition: none;
+  }
+  
+  /* Disable bookmark entrance animations */
+  .animate-bookmark-row-expand {
+    animation: none;
+    max-height: 280px;
+  }
+  
+  /* Bookmark exit: collapse immediately */
+  .bookmark-row-wrapper.bookmark-row-exit {
     max-height: 0;
     opacity: 0;
     transition: none;

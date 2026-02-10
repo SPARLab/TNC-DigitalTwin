@@ -40,7 +40,7 @@ export function BookmarkRow({ bookmark, isLast, onView, onEditFilter, onRemove }
           style={{
             left: '12px',
             top: '50%',
-            bottom: '-6px',
+            bottom: '-12px',
             borderLeft: '1px solid #d1d5db',
           }}
           aria-hidden="true"
@@ -52,9 +52,13 @@ export function BookmarkRow({ bookmark, isLast, onView, onEditFilter, onRemove }
         id={`bookmark-row-${bookmark.id}`}
         className="group ml-6 pl-2.5 pr-3 py-2 flex flex-col gap-0.5 
                    border-l-2 border-l-emerald-500
-                   cursor-pointer hover:border-l-emerald-600 hover:bg-emerald-50 transition-colors rounded
-                   focus-within:ring-2 focus-within:ring-emerald-500 focus-within:ring-offset-1"
-        onClick={onView}
+                   cursor-pointer hover:border-l-emerald-600 hover:bg-emerald-50 
+                   active:border-l-emerald-700 active:bg-emerald-100
+                   focus-visible:border-l-emerald-600 focus-visible:bg-emerald-50
+                   transition-colors rounded
+                   outline-none ring-0 focus:outline-none focus:ring-0"
+        style={{ WebkitTapHighlightColor: 'transparent' }}
+        onClick={(e) => { onView(); (e.currentTarget as HTMLElement).blur(); }}
         tabIndex={0}
         role="button"
         aria-label={`View ${bookmark.itemName}${bookmark.filterDescription ? ` — ${bookmark.filterDescription}` : ''}`}
