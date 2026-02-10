@@ -18,8 +18,7 @@ export function ActiveLayerSection({ activeLayer, onPin }: ActiveLayerSectionPro
 
   return (
     <div 
-      id="active-layer-section" 
-      className="overflow-hidden transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-top-1"
+      id="active-layer-section"
     >
       {/* Section header */}
       <div className="px-3 py-1.5 bg-amber-50 border-b border-amber-200 flex items-center gap-1">

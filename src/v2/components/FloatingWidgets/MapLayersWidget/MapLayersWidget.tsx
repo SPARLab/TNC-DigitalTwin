@@ -3,16 +3,20 @@
 // Position: top-left of map area. Always visible (no close, only collapse).
 // ============================================================================
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Layers, Pin } from 'lucide-react';
 import { useLayers } from '../../../context/LayerContext';
 import { WidgetShell } from '../shared/WidgetShell';
 import { WidgetHeader } from '../shared/WidgetHeader';
 import { ActiveLayerSection } from './ActiveLayerSection';
 import { PinnedLayersSection } from './PinnedLayersSection';
+import type { ActiveLayer } from '../../../types';
 
 export function MapLayersWidget() {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [displayedActiveLayer, setDisplayedActiveLayer] = useState<ActiveLayer | null>(null);
+  const [isExiting, setIsExiting] = useState(false);
+  const exitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const {
     activeLayer,
     pinnedLayers,
@@ -38,6 +42,39 @@ export function MapLayersWidget() {
   const handleClearFilters = (pinnedId: string, viewId?: string) => {
     clearFilters(pinnedId, viewId);
   };
+
+  // Track active layer changes for smooth exit transitions
+  useEffect(() => {
+    const shouldShow = activeLayer && !activeLayer.isPinned;
+    
+    if (shouldShow) {
+      // New active layer appeared or changed
+      if (exitTimeoutRef.current) {
+        clearTimeout(exitTimeoutRef.current);
+        exitTimeoutRef.current = null;
+      }
+      setIsExiting(false);
+      setDisplayedActiveLayer(activeLayer);
+    } else if (displayedActiveLayer && !shouldShow) {
+      // Active layer should disappear (was pinned or cleared)
+      setIsExiting(true);
+      
+      // Clear displayed layer after transition completes
+      exitTimeoutRef.current = setTimeout(() => {
+        setDisplayedActiveLayer(null);
+        setIsExiting(false);
+        exitTimeoutRef.current = null;
+      }, 300); // Match transition duration
+    }
+    
+    return () => {
+      if (exitTimeoutRef.current) {
+        clearTimeout(exitTimeoutRef.current);
+      }
+    };
+  }, [activeLayer, displayedActiveLayer]);
+
+  const showActiveSection = !isExiting && displayedActiveLayer && !displayedActiveLayer.isPinned;
 
   const totalCount = pinnedLayers.length + (activeLayer && !activeLayer.isPinned ? 1 : 0);
   const canUndo = undoStack.length > 0;
@@ -77,12 +114,28 @@ export function MapLayersWidget() {
             ) : (
               <>
                 {/* Active Layer section — only shows non-pinned active layer */}
-                {activeLayer && !activeLayer.isPinned && (
-                  <ActiveLayerSection
-                    activeLayer={activeLayer}
-                    onPin={() => pinLayer(activeLayer.layerId)}
-                  />
-                )}
+                <div 
+                  className="grid transition-all duration-300 ease-in-out"
+                  style={{
+                    gridTemplateRows: showActiveSection ? '1fr' : '0fr',
+                  }}
+                >
+                  <div className="overflow-hidden">
+                    {displayedActiveLayer && (
+                      <div
+                        className="transition-opacity duration-300 ease-in-out"
+                        style={{
+                          opacity: showActiveSection ? 1 : 0,
+                        }}
+                      >
+                        <ActiveLayerSection
+                          activeLayer={displayedActiveLayer}
+                          onPin={() => pinLayer(displayedActiveLayer.layerId)}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
 
             {/* Pinned Layers section */}
             <PinnedLayersSection
