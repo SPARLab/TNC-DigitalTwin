@@ -66,7 +66,7 @@ export function CategoryGroup({ category, filteredLayerIds }: CategoryGroupProps
         }}
       >
         <div className="overflow-hidden">
-          <div role="group" className="bg-gray-50/50 border-l-2 border-gray-200 ml-2 mr-2 py-1.5 space-y-1">
+          <div role="group" className="bg-gray-50/50 ml-2 mr-3 py-1.5 space-y-1">
             {visibleLayers.map(layer => (
               <LayerRow key={layer.id} layerId={layer.id} name={layer.name} />
             ))}
@@ -75,7 +75,7 @@ export function CategoryGroup({ category, filteredLayerIds }: CategoryGroupProps
           {showDataoneShortcut && (
             <button
               onClick={handleDataoneClick}
-              className="flex items-center gap-1.5 py-[9px] px-3 mx-2 text-sm text-gray-700 italic
+              className="w-full flex items-center gap-1.5 py-[9px] px-3 mx-1 text-sm text-gray-700 italic
                          bg-white border border-gray-200 hover:border-gray-300 hover:shadow-sm 
                          rounded-lg transition-all duration-200 cursor-pointer"
             >

@@ -21,12 +21,12 @@
 | 7 | 0 | **Remove Gray Divider in Left Sidebar** | ✅ | Low | Simple CSS removal |
 | 8 | 0 | **Refine Active Layer → Pinned Layer Transition** | ✅ | Low | Newly pinned row slides down from under header; section expands; no flash |
 | 9 | 0 | **0.6** Map Feature Highlight — Bookmark hover | 🟡 | Low | Requires map integration first |
-| 10 | 0 | **Left Sidebar: Visual Distinction Between Categories and Layers** | 🟡 | Medium | In progress: Category banners with animations, layer cards with yellow active state, blue pins; DataOne width issue remains |
+| 10 | 0 | **Left Sidebar: Visual Distinction Between Categories and Layers** | 🟡 | Medium | In progress: Category banners with animations, layer cards with yellow active state, blue pins |
 | 11 | 0 | **Right Sidebar: Active Layer Color Coordination & Flash** | ⚪ | Medium | Yellow header; unify left sidebar active to yellow; flash on layer change; animation feedback when inspecting different layer |
-| 12 | 0 | **Fix DataOne Datasets Card Width in Left Sidebar** | ⚪ | Low | DataOne shortcut row narrower than regular layer cards; needs width matching |
+| 12 | 0 | **Fix DataOne Datasets Card Width in Left Sidebar** | ✅ | Low | DataOne shortcut row width matching; right padding; removed redundant left border |
 
-**Active tasks remaining:** 3  
-**Recently completed:** Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
+**Active tasks remaining:** 2  
+**Recently completed:** Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
 
 ---
 
@@ -169,6 +169,10 @@
   - Preserved: Italics styling for DataOne row
   - Files: `src/v2/components/LeftSidebar/CategoryGroup.tsx`
 
+- [x] **Fix DataOne Datasets Card Width in Left Sidebar** — Match DataOne shortcut row width with regular layer cards
+  - Completed: Added `w-full` to DataOne shortcut button and LayerRow for consistent full-width behavior; increased parent right margin (`mr-2` → `mr-3`) for proper edge spacing; removed redundant left vertical border (`border-l-2 border-gray-200`) that added visual noise (background color + indentation already establish hierarchy)
+  - Files: `src/v2/components/LeftSidebar/CategoryGroup.tsx`, `src/v2/components/LeftSidebar/LayerRow.tsx`
+
 - [x] **Active Layer Click Interactions** — Clicking layers activates them and shows in right sidebar
   - Completed: Clicking pinned layer activates it, expands panel, and collapses others (accordion pattern)
   - Clicking child view activates it and makes it visible (mutual exclusivity maintained)
@@ -273,6 +277,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 10, 2026 | Phase 0 | ✅ Task 12 complete: Fix DataOne Datasets Card Width. Added w-full to DataOne shortcut and LayerRow; mr-3 for right padding; removed redundant left border from category content (background + indentation sufficient for hierarchy). | Claude |
 | Feb 10, 2026 | Phase 0 | ✅ Saved Items hierarchical tree connectors complete: Added L-shaped tree lines, emerald left border accent, full-width boxed headers, dynamic height (50vh cap), stub connector from headers. Distinguishes saved items (left border) from Map Layers child views (full boxes). | Claude |
 | Feb 10, 2026 | Phase 0 | Added tasks 10 & 11: Left Sidebar visual distinction (categories vs layers); Right Sidebar color coordination (yellow header, active layer sync, flash on change). | User |
 | Feb 10, 2026 | Phase 0 | ✅ Task 8 complete: Refine Active Layer → Pinned Layer Transition. Newly pinned row slides down from under header; section expands; no flash. | User |
