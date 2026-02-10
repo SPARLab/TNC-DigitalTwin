@@ -6,7 +6,30 @@
 
 ---
 
-## Quick Status
+## Quick Tasks Summary
+
+**Active development tasks (ordered by priority).** Phase column indicates which phase the task belongs to; tasks may be deferred to a later phase.
+
+| # | Phase | Task | Status | Priority | Notes |
+|---|-------|------|--------|----------|-------|
+| 1 | 0 | **0.4** Map Container — ArcGIS WebMap integration | 🟡 | High | Blocks Phase 0 completion |
+| 2 | 0 | **0.5** Drag-and-Drop Reorder — Pinned layers | 🟡 | Medium | Drag handles visible but non-functional |
+| 3 | 0 | **Enable Map Layers Drag Reordering** | ✅ | Medium | Related to Task 0.5, may consolidate |
+| 4 | 0 | **Unify Map Layers Expansion Affordances** | ✅ | Medium | Filter icon as primary control; child accordion pattern; auto-expand on sidebar activation |
+| 5 | 0 | **Prevent Map Layers Widget Scrollbar from Pushing Content** | 🟡 | Medium | Scrollbar overlays or reserves space; content width stays stable |
+| 6 | 0 | **Fix Tree Connector Lines Between Parent and Child Rows** | ✅ | Medium | Completed: moved connectors to outer wrapper, consistent #d1d5db |
+| 7 | 0 | **Remove Gray Divider in Left Sidebar** | 🟡 | Low | Simple CSS removal |
+| 8 | 0 | **Refine Active Layer → Pinned Layer Transition** | 🟡 | Low | Newly pinned row slides down from under header; section expands; no flash |
+| 9 | 0 | **0.6** Map Feature Highlight — Bookmark hover | 🟡 | Low | Requires map integration first |
+
+**Active tasks remaining:** 6  
+**Recently completed:** Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors ✅
+
+---
+
+## Status by Phase
+
+**High-level status across all phases.** Use this to see which phases are in progress, blocked, or not started.
 
 | Phase | Status | Progress | Branch | Blocking? |
 |-------|--------|----------|--------|-----------|
@@ -18,28 +41,7 @@
 | 5. Export Builder | ⚪ Not Started | 0% | `v2/export` | No |
 | 6. Polish & Consistency | ⚪ Not Started | 0% | `v2/polish` | No |
 
-**Status Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
-
----
-
-## Quick Tasks Summary — Phase 0
-
-**All Active Phase 0 Development Tasks (ordered by priority):**
-
-| # | Task | Status | Priority | Notes |
-|---|------|--------|----------|-------|
-| 1 | **0.4** Map Container — ArcGIS WebMap integration | 🟡 | High | Blocks Phase 0 completion |
-| 2 | **0.5** Drag-and-Drop Reorder — Pinned layers | 🟡 | Medium | Drag handles visible but non-functional |
-| 3 | **Enable Map Layers Drag Reordering** | ✅ | Medium | Related to Task 0.5, may consolidate |
-| 4 | **Unify Map Layers Expansion Affordances** | ✅ | Medium | Filter icon as primary control; child accordion pattern; auto-expand on sidebar activation |
-| 5 | **Prevent Map Layers Widget Scrollbar from Pushing Content** | 🟡 | Medium | Scrollbar overlays or reserves space; content width stays stable |
-| 6 | **Fix Tree Connector Lines Between Parent and Child Rows** | ✅ | Medium | Completed: moved connectors to outer wrapper, consistent #d1d5db |
-| 7 | **Remove Gray Divider in Left Sidebar** | 🟡 | Low | Simple CSS removal |
-| 8 | **Refine Active Layer → Pinned Layer Transition** | 🟡 | Low | Newly pinned row slides down from under header; section expands; no flash |
-| 9 | **0.6** Map Feature Highlight — Bookmark hover | 🟡 | Low | Requires map integration first |
-
-**Total Phase 0 Tasks Remaining:** 6  
-**Recently Completed:** Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors ✅
+**Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
 
 ---
 
