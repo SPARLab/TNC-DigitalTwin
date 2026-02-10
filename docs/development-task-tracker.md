@@ -13,17 +13,17 @@
 | # | Phase | Task | Status | Priority | Notes |
 |---|-------|------|--------|----------|-------|
 | 1 | 0 | **0.4** Map Container — ArcGIS WebMap integration | 🟡 | High | Blocks Phase 0 completion |
-| 2 | 0 | **0.5** Drag-and-Drop Reorder — Pinned layers | 🟡 | Medium | Drag handles visible but non-functional |
+| 2 | 0 | **0.5** Drag-and-Drop Reorder — Pinned layers | ✅ | Medium | Completed within Map Layers widget |
 | 3 | 0 | **Enable Map Layers Drag Reordering** | ✅ | Medium | Related to Task 0.5, may consolidate |
 | 4 | 0 | **Unify Map Layers Expansion Affordances** | ✅ | Medium | Filter icon as primary control; child accordion pattern; auto-expand on sidebar activation |
-| 5 | 0 | **Prevent Map Layers Widget Scrollbar from Pushing Content** | 🟡 | Medium | Scrollbar overlays or reserves space; content width stays stable |
+| 5 | 0 | **Prevent Map Layers Widget Scrollbar from Pushing Content** | ✅ | Medium | Scrollbar overlays or reserves space; content width stays stable |
 | 6 | 0 | **Fix Tree Connector Lines Between Parent and Child Rows** | ✅ | Medium | Completed: moved connectors to outer wrapper, consistent #d1d5db |
 | 7 | 0 | **Remove Gray Divider in Left Sidebar** | 🟡 | Low | Simple CSS removal |
 | 8 | 0 | **Refine Active Layer → Pinned Layer Transition** | 🟡 | Low | Newly pinned row slides down from under header; section expands; no flash |
 | 9 | 0 | **0.6** Map Feature Highlight — Bookmark hover | 🟡 | Low | Requires map integration first |
 
-**Active tasks remaining:** 6  
-**Recently completed:** Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors ✅
+**Active tasks remaining:** 4  
+**Recently completed:** Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors ✅
 
 ---
 
@@ -67,10 +67,10 @@
   - Current: Placeholder div with "ArcGIS Map" text
   - Needed: Real ArcGIS JS API 4.28 WebMap, GraphicsLayers per data source, z-order control
 
-- [ ] **0.5** Drag-and-Drop Reorder — Implement drag handles for pinned layers
+- [x] **0.5** Drag-and-Drop Reorder — Implement drag handles for pinned layers
   - Reference: `docs/PLANNING/component-specs/map-layers-widget.md` DFT-034
-  - Current: Drag handles render but don't function
-  - Needed: `@dnd-kit/core` integration, visual feedback (60% opacity, 2deg rotation), keyboard support
+  - Completed: Drag-and-drop reordering implemented within Map Layers widget
+  - Implementation: `@dnd-kit/core` integration with visual feedback
 
 - [ ] **0.6** Map Feature Highlight — Hover bookmark row → highlight on map
   - Reference: `docs/PLANNING/component-specs/bookmarked-items-widget.md` DFT-036
@@ -103,11 +103,10 @@
   - Files: `src/v2/components/FloatingWidgets/shared/WidgetHeader.tsx`
   - Applies to: Both Map Layers and Bookmarked Items widgets
 
-- [ ] **Enable Map Layers Drag Reordering** — Make pinned layers draggable to change order
-  - Current: Drag handles visible but non-functional
-  - Needed: Implement drag-and-drop functionality for reordering pinned layers
+- [x] **Enable Map Layers Drag Reordering** — Make pinned layers draggable to change order
+  - Completed: Drag-and-drop reordering implemented within Map Layers widget
   - Files: `src/v2/components/FloatingWidgets/MapLayersWidget/PinnedLayerRow.tsx`, `src/v2/components/FloatingWidgets/MapLayersWidget/PinnedLayersSection.tsx`
-  - Related: Task 0.5 (may consolidate)
+  - Consolidated with Task 0.5
 
 - [x] **Make Filter Icons Clickable for Child Views** — Show filter queries when clicking filter indicator
   - Completed: Child row click expands to show filter clauses (split on comma). Filter icon or "Edit Filters" navigates to right sidebar Browse tab. One child expanded at a time. LayerContext: toggleChildVisibility, clearFilters, requestEditFilters. Flat rows also use multi-clause display.
@@ -147,11 +146,9 @@
   - Optional later: Even tighter choreography with Active Layer exit (e.g. shared easing or position handoff).
   - Files: `MapLayersWidget.tsx`, `PinnedLayersSection.tsx`, `PinnedLayerRow.tsx`, `index.css`
 
-- [ ] **Prevent Map Layers Widget Scrollbar from Pushing Content** — Scrollbar should not reduce content width
-  - Current: Expanding child filter panels triggers vertical scroll. Scrollbar renders inside the widget width, pushing content (e.g., "Edit Filters" button) inward.
-  - Needed: Ensure scrollbar either overlays content (does not take layout space) or reserves stable gutter space so content width stays consistent whether scrollbar is visible or not. Options: `scrollbar-gutter: stable`, overlay scrollbar styling, or explicit padding reserved for scrollbar.
+- [x] **Prevent Map Layers Widget Scrollbar from Pushing Content** — Scrollbar should not reduce content width
+  - Completed: Scrollbar overlays or reserves space; content width stays stable within Map Layers widget
   - Files: `src/v2/components/FloatingWidgets/MapLayersWidget/MapLayersWidget.tsx`, `map-layers-body` / scroll container structure
-  - Related: Fix Map Layers Widget Horizontal Scrollbar (previous fix addressed horizontal; this addresses vertical)
 
 - [x] **Fix Tree Connector Lines Between Parent and Child Rows** — Ensure continuous visual connection in nested layer hierarchy
   - Completed: Moved connector elements from inside `.nested-child` to outer wrapper so they span full height including expanded filter panels. Vertical continuation uses `bottom: -4px` for dynamic height. All connectors standardized to `1px solid #d1d5db`. Parent stub height increased from 8px to 12px for solid overlap.
@@ -182,7 +179,7 @@
 - [x] Visual polish matching design system (Tailwind, no custom CSS)
 - [x] Zero linter errors
 - [ ] Real ArcGIS map integration (blocked by Task 0.4)
-- [ ] Drag-and-drop reorder (nice-to-have for Phase 0, can defer)
+- [x] Drag-and-drop reorder (completed within Map Layers widget)
 
 ---
 
@@ -250,6 +247,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 10, 2026 | Phase 0 | ✅ Task 2 & 5 complete: Drag-and-Drop Reorder for pinned layers (Map Layers widget); Prevent Map Layers Widget Scrollbar from Pushing Content. Both done within Map Layers widget. | User |
 | Feb 10, 2026 | Phase 0 | ✅ Smooth CSS Transitions for Map Layers Widget: Active Layer section slides up/fades out on pin (300ms). New pinned layers slide down from above (400ms, no opacity). Snapshot state pattern for exit animation. Reduced-motion support. | Claude |
 | Feb 10, 2026 | Phase 0 | ✅ Map Layers UX polish: Consolidated filter details inside layer containers (no separate gray boxes); added "Add Filters" naming for new views; dashed border for placeholder views; removed opacity so non-selected text stays readable (text-gray-800). | Composer |
 | Feb 9, 2026 (eve) | Phase 0 | ✅ Task 4 complete: Unify Map Layers Expansion Affordances. Removed chevrons; filter icon is now primary expansion control. Parent shows visible child's filter count. Child rows use accordion pattern (one expanded at a time). Auto-activate + auto-expand visible child when pinned layer clicked from sidebar. User can manually collapse active layers without forced re-expansion. | Claude |
