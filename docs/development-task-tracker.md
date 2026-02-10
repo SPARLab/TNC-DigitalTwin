@@ -1,6 +1,6 @@
 # Development Task Tracker — V2 Digital Catalog
 
-**Last Updated:** February 9, 2026 (evening)  
+**Last Updated:** February 10, 2026  
 **Current Phase:** Phase 0 (Foundation) — 🟡 In Progress  
 **Target Deadline:** February 20, 2026 (13 days remaining)
 
@@ -120,6 +120,18 @@
   - Completed: Reorganized both flat and child filter panels for clarity. Top section: filter summary (left) + "Clear" button (top right). Bottom section: flat has "+ New View" (left) + "Edit Filters >" (right); child has "Edit Filters >" (right only). Removed unnecessary whitespace while maintaining readability.
   - Files: `PinnedLayerRow.tsx`, `PinnedLayerChildRow.tsx`
 
+- [x] **Consolidate Filter Details in Layer Containers** — Move filter details inside expandable layer boxes (Feb 10)
+  - Completed: Filter details (species, date, confidence, Clear, Edit Filters) now live inside the same yellow/amber container as the layer row. Added light gray divider between collapsed row and expanded details. Eliminates visual disconnect of separate gray boxes. "+ New View" remains inside expanded parent container.
+  - Files: `PinnedLayerChildRow.tsx`, `PinnedLayerRow.tsx`
+
+- [x] **Meaningful Default View Names** — Replace "View 1/2/3" with action-oriented labels (Feb 10)
+  - Completed: New empty views named "Add Filters". Initial view uses distinguisher, "Filtered View", or "Default View" as appropriate. Improves recognition over recall (Nielsen).
+  - Files: `LayerContext.tsx`
+
+- [x] **Differentiate "Add Filters" Placeholder Views** — Visual signifier for empty views (Feb 10)
+  - Completed: "Add Filters" views display dashed border to indicate empty/placeholder state. Removed container opacity for non-visible views; text now consistently `text-gray-800` for readability across all states.
+  - Files: `PinnedLayerChildRow.tsx`
+
 - [ ] **Prevent Map Layers Widget Scrollbar from Pushing Content** — Scrollbar should not reduce content width
   - Current: Expanding child filter panels triggers vertical scroll. Scrollbar renders inside the widget width, pushing content (e.g., "Edit Filters" button) inward.
   - Needed: Ensure scrollbar either overlays content (does not take layout space) or reserves stable gutter space so content width stays consistent whether scrollbar is visible or not. Options: `scrollbar-gutter: stable`, overlay scrollbar styling, or explicit padding reserved for scrollbar.
@@ -223,6 +235,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 10, 2026 | Phase 0 | ✅ Map Layers UX polish: Consolidated filter details inside layer containers (no separate gray boxes); added "Add Filters" naming for new views; dashed border for placeholder views; removed opacity so non-selected text stays readable (text-gray-800). | Composer |
 | Feb 9, 2026 (eve) | Phase 0 | ✅ Task 4 complete: Unify Map Layers Expansion Affordances. Removed chevrons; filter icon is now primary expansion control. Parent shows visible child's filter count. Child rows use accordion pattern (one expanded at a time). Auto-activate + auto-expand visible child when pinned layer clicked from sidebar. User can manually collapse active layers without forced re-expansion. | Claude |
 | Feb 9, 2026 | Phase 0 | ✅ Task 6 complete: Fix Tree Connector Lines Between Parent and Child Rows. Moved connectors to outer wrapper for full-height coverage including expanded filter panels; standardized 1px solid #d1d5db; parent stub 12px. | Claude |
 | Feb 9, 2026 | Phase 0 | Added task: Prevent Map Layers Widget Scrollbar from Pushing Content — vertical scrollbar compresses content when child filter panels expand; fix so scrollbar overlays or reserves stable space. | Claude |
@@ -298,4 +311,11 @@ See `docs/master-plan.md` for full phase breakdown.
   - Respects user intent to keep things collapsed
 - **Files**: FilterIndicator.tsx, PinnedLayerRow.tsx, PinnedLayerChildRow.tsx, PinnedLayersSection.tsx
 - **Status**: Map Layers widget considered complete for Phase 0
+
+### Map Layers UX Polish (Feb 10, 2026)
+- **Filter Panel Consolidation**: Filter details (species, date, confidence, Clear, Edit Filters) now live inside the same yellow/amber container as the layer row. Added light gray divider between collapsed row and expanded details. Eliminates visual disconnect of separate gray boxes; improves Gestalt proximity.
+- **Default View Names**: New empty views named "Add Filters" (action-oriented). Initial view uses distinguisher, "Filtered View", or "Default View". Replaces generic "View 1/2/3".
+- **Placeholder Differentiation**: "Add Filters" views display dashed border to signal empty/actionable state.
+- **Text Readability**: Removed container opacity for non-visible views; text consistently `text-gray-800` for all states. Visibility communicated via eye icon only.
+- **Files**: PinnedLayerChildRow.tsx, PinnedLayerRow.tsx, LayerContext.tsx
 

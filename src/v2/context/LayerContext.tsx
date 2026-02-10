@@ -269,7 +269,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         if (p.views && p.views.length > 0) {
           const newView = {
             id: crypto.randomUUID(),
-            name: `View ${p.views.length + 1}`,
+            name: 'Add Filters',
             isVisible: false,
             filterCount: 0,
           };
@@ -277,7 +277,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         }
         
         // Convert flat → nested: current state becomes View 1, add empty View 2
-        const view1Name = p.distinguisher || 'View 1';
+        const view1Name = p.distinguisher || (p.filterCount > 0 ? 'Filtered View' : 'Default View');
         const view1 = {
           id: crypto.randomUUID(),
           name: view1Name,
@@ -287,7 +287,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         };
         const view2 = {
           id: crypto.randomUUID(),
-          name: 'View 2',
+          name: 'Add Filters',
           isVisible: false,
           filterCount: 0,
         };

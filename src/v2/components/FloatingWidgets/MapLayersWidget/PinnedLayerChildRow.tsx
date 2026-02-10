@@ -33,6 +33,7 @@ export function PinnedLayerChildRow({
   onEditFilters,
   onClearFilters,
 }: PinnedLayerChildRowProps) {
+  const isPlaceholder = view.name === 'Add Filters';
 
   return (
     <div id={`pinned-child-row-${view.id}`} className="relative">
@@ -66,12 +67,14 @@ export function PinnedLayerChildRow({
 
       {/* Main container that expands to include filter details */}
       <div
-        className={`nested-child relative ml-6 rounded-lg cursor-pointer transition-all duration-200 ease-in-out border ${
+        className={`nested-child relative ml-6 rounded-lg cursor-pointer transition-all duration-200 ease-in-out ${
+          isPlaceholder ? 'border-dashed border' : 'border'
+        } ${
           isActive
             ? 'bg-amber-50 border-amber-300 shadow-sm'
             : view.isVisible
               ? 'bg-white border-gray-300 shadow-sm'
-              : 'bg-white border-gray-200 opacity-60 hover:opacity-80'
+              : 'bg-white border-gray-200 shadow-sm'
         }`}
       >
         {/* Top row: Eye, Name, Filter Count, Remove */}
@@ -108,9 +111,7 @@ export function PinnedLayerChildRow({
           </button>
 
           {/* View name (distinguisher) */}
-          <span className={`text-sm flex-1 truncate ${
-            view.isVisible ? 'text-gray-800' : 'text-gray-400'
-          }`}>
+          <span className="text-sm flex-1 truncate text-gray-800">
             {view.name}
           </span>
 
