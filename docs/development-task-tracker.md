@@ -22,11 +22,11 @@
 | 8 | 0 | **Refine Active Layer → Pinned Layer Transition** | ✅ | Low | Newly pinned row slides down from under header; section expands; no flash |
 | 9 | 0 | **0.6** Map Feature Highlight — Bookmark hover | 🟡 | Low | Requires map integration first |
 | 10 | 0 | **Left Sidebar: Visual Distinction Between Categories and Layers** | 🟡 | Medium | In progress: Category banners with animations, layer cards with yellow active state, blue pins |
-| 11 | 0 | **Right Sidebar: Active Layer Color Coordination & Flash** | ⚪ | Medium | Yellow header; unify left sidebar active to yellow; flash on layer change; animation feedback when inspecting different layer |
+| 11 | 0 | **Right Sidebar: Active Layer Color Coordination & Flash** | ✅ | Medium | Yellow header (amber-50); flash animation on layer change (white→amber-100→amber-50, 600ms); coordinated with left sidebar and Map Layers widget |
 | 12 | 0 | **Fix DataOne Datasets Card Width in Left Sidebar** | ✅ | Low | DataOne shortcut row width matching; right padding; removed redundant left border |
 
-**Active tasks remaining:** 2  
-**Recently completed:** Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
+**Active tasks remaining:** 1  
+**Recently completed:** Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
 
 ---
 
@@ -36,7 +36,7 @@
 
 | Phase | Status | Progress | Branch | Blocking? |
 |-------|--------|----------|--------|-----------|
-| **0. Foundation** | 🟡 In Progress | ~90% | `v2/foundation` | YES — blocks all |
+| **0. Foundation** | 🟡 In Progress | ~92% | `v2/foundation` | YES — blocks all |
 | 1. iNaturalist | ⚪ Not Started | 0% | `v2/inaturalist` | No |
 | 2. ANiML | ⚪ Not Started | 0% | `v2/animl` | No |
 | 3. Dendra | ⚪ Not Started | 0% | `v2/dendra` | No |

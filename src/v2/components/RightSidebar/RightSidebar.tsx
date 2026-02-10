@@ -15,11 +15,19 @@ export function RightSidebar() {
   const [activeTab, setActiveTab] = useState<SidebarTab>('overview');
   const consumedRequestRef = useRef(0);
 
-  // Reset to Overview when layer changes (DFT-006)
+  // Track layer changes for flash animation
   const [prevLayerId, setPrevLayerId] = useState<string | null>(null);
+  const [shouldFlash, setShouldFlash] = useState(false);
+
+  // Reset to Overview and trigger flash when layer changes (DFT-006)
   if (activeLayer && activeLayer.layerId !== prevLayerId) {
     setPrevLayerId(activeLayer.layerId);
     setActiveTab('overview');
+    
+    // Trigger flash animation
+    setShouldFlash(true);
+    // Reset flash after animation completes (600ms duration)
+    setTimeout(() => setShouldFlash(false), 600);
   }
 
   // DFT-019: Edit Filters → open Browse tab
@@ -37,7 +45,7 @@ export function RightSidebar() {
     >
       {activeLayer ? (
         <>
-          <SidebarHeader activeLayer={activeLayer} onClose={deactivateLayer} />
+          <SidebarHeader activeLayer={activeLayer} onClose={deactivateLayer} shouldFlash={shouldFlash} />
           <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
 
           {/* Tab content — placeholder for Phase 1+ */}

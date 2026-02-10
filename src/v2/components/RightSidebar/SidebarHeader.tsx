@@ -1,5 +1,7 @@
 // ============================================================================
 // SidebarHeader — Data source icon + layer name + source badge + close [x]
+// Yellow/amber header to coordinate with left sidebar active state
+// Flash animation when active layer changes
 // ============================================================================
 
 import { X } from 'lucide-react';
@@ -10,6 +12,7 @@ import { LAYER_MAP } from '../../data/layerRegistry';
 interface SidebarHeaderProps {
   activeLayer: ActiveLayer;
   onClose: () => void;
+  shouldFlash?: boolean;
 }
 
 const DATA_SOURCE_LABELS: Record<string, string> = {
@@ -23,21 +26,27 @@ const DATA_SOURCE_LABELS: Record<string, string> = {
   lidar: 'LiDAR Scans',
 };
 
-export function SidebarHeader({ activeLayer, onClose }: SidebarHeaderProps) {
+export function SidebarHeader({ activeLayer, onClose, shouldFlash = false }: SidebarHeaderProps) {
   const layer = LAYER_MAP.get(activeLayer.layerId);
   const iconName = layer?.icon ?? 'HelpCircle';
   const sourceLabel = DATA_SOURCE_LABELS[activeLayer.dataSource] ?? activeLayer.dataSource;
 
+  // Yellow/amber background to coordinate with left sidebar active state
+  // Flash animation when active layer changes
+  const headerClasses = `flex items-start gap-3 px-4 py-3 border-b bg-amber-50 border-amber-200 ${
+    shouldFlash ? 'animate-header-flash' : ''
+  }`;
+
   return (
-    <div id="right-sidebar-header" className="flex items-start gap-3 px-4 py-3 border-b border-gray-200">
-      <LucideIcon name={iconName} className="w-8 h-8 text-gray-600 flex-shrink-0 mt-0.5" />
+    <div id="right-sidebar-header" className={headerClasses}>
+      <LucideIcon name={iconName} className="w-8 h-8 text-gray-700 flex-shrink-0 mt-0.5" />
       <div className="flex-1 min-w-0">
         <h2 className="text-base font-semibold text-gray-900 truncate">{activeLayer.name}</h2>
-        <p className="text-xs text-gray-400 mt-0.5">Source: via {sourceLabel}</p>
+        <p className="text-xs text-gray-500 mt-0.5">Source: via {sourceLabel}</p>
       </div>
       <button
         onClick={onClose}
-        className="w-5 h-5 text-gray-400 hover:text-gray-600 cursor-pointer flex-shrink-0 mt-1"
+        className="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-pointer flex-shrink-0 mt-1"
         title="Close sidebar"
       >
         <X className="w-5 h-5" />

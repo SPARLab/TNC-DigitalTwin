@@ -328,6 +328,31 @@ body {
   pointer-events: none;
 }
 
+/* =============================================================================
+   ACTIVE LAYER CHANGE ANIMATION (Right Sidebar Header Flash)
+   Flash animation for right sidebar header when active layer changes
+   ============================================================================= */
+
+/* Flash animation - white → soft yellow → settle to amber-50 */
+@keyframes header-flash {
+  0% {
+    background-color: #ffffff; /* white - fresh start */
+    border-color: #e5e7eb; /* gray-200 */
+  }
+  30% {
+    background-color: #fef3c7; /* amber-100 - softer yellow peak */
+    border-color: #fbbf24; /* amber-400 - medium border */
+  }
+  100% {
+    background-color: #fffbeb; /* amber-50 - final resting state */
+    border-color: #fde68a; /* amber-200 */
+  }
+}
+
+.animate-header-flash {
+  animation: header-flash 600ms ease-in-out;
+}
+
 /* Reduced motion support - simplify drag animations for accessibility */
 @media (prefers-reduced-motion: reduce) {
   /* Remove scale transform during drag */
@@ -369,6 +394,12 @@ body {
     max-height: 0;
     opacity: 0;
     transition: none;
+  }
+  
+  /* Disable header flash animation */
+  .animate-header-flash {
+    animation: none;
+    background-color: #fffbeb; /* Just show the color without animation */
   }
   
   /* Simplify transitions */
