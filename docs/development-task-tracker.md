@@ -21,6 +21,8 @@
 | 7 | 0 | **Remove Gray Divider in Left Sidebar** | ✅ | Low | Simple CSS removal |
 | 8 | 0 | **Refine Active Layer → Pinned Layer Transition** | ✅ | Low | Newly pinned row slides down from under header; section expands; no flash |
 | 9 | 0 | **0.6** Map Feature Highlight — Bookmark hover | 🟡 | Low | Requires map integration first |
+| 10 | 0 | **Left Sidebar: Visual Distinction Between Categories and Layers** | ⚪ | Medium | Backgrounds around categories; indentation + highlight differences in dropdown; layers conceptually distinct from categories |
+| 11 | 0 | **Right Sidebar: Active Layer Color Coordination & Flash** | ⚪ | Medium | Yellow header; unify left sidebar active to yellow; flash on layer change; animation feedback when inspecting different layer |
 
 **Active tasks remaining:** 2  
 **Recently completed:** Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors ✅
@@ -170,6 +172,23 @@
   - Files: `PinnedLayerRow.tsx`, `PinnedLayerChildRow.tsx`, `PinnedLayersSection.tsx`, `LayerContext.tsx`, `MapLayersWidget.tsx`
   - Result: Clear interaction model where "active = inspecting = expanded = amber"
 
+- [ ] **Left Sidebar: Visual Distinction Between Categories and Layers** — Improve hierarchy perception
+  - Goal: Clearly differentiate categories from their child layers in the left sidebar
+  - Add backgrounds around category groups so dropdown content feels nested
+  - Use indentation + distinct highlight treatments for layers vs categories
+  - Layers should read as conceptually subordinate to categories (parent-child hierarchy)
+  - Addresses: Low visual distinction between category and layer rows when expanded
+  - Files: `src/v2/components/LeftSidebar/` (CategoryGroup, LayerRow, etc.)
+
+- [ ] **Right Sidebar: Active Layer Color Coordination & Flash** — Unify active semantics and feedback
+  - Header: Add yellow background to right sidebar header (match mapped item layers active indicator)
+  - Left sidebar: Change active layer highlight from green to yellow to sync with Map Layers widget
+  - Rationale: Green (left) vs yellow (mapped items) creates confusion; unify on yellow
+  - Flash/animation: When active layer changes, right sidebar header flashes (white → yellow) so eyes quickly register "right sidebar changed"
+  - Mapped item layers widget: Consider animation when layers change (e.g. subtle transition) to reinforce "inspecting different layer"
+  - Goal: User immediately perceives that clicking a different item layer = inspecting different content
+  - Files: `src/v2/components/RightSidebar/`, `LeftSidebar/`, `MapLayersWidget/`
+
 ### 📋 Phase 0 Acceptance Criteria
 
 - [x] Clean component architecture with TypeScript
@@ -246,6 +265,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 10, 2026 | Phase 0 | Added tasks 10 & 11: Left Sidebar visual distinction (categories vs layers); Right Sidebar color coordination (yellow header, active layer sync, flash on change). | User |
 | Feb 10, 2026 | Phase 0 | ✅ Task 8 complete: Refine Active Layer → Pinned Layer Transition. Newly pinned row slides down from under header; section expands; no flash. | User |
 | Feb 10, 2026 | Phase 0 | ✅ Task 7 complete: Remove Gray Divider in Left Sidebar. Removed border-t between DataOne shortcut and regular layers; italics preserved. | User |
 | Feb 10, 2026 | Phase 0 | ✅ Task 2 & 5 complete: Drag-and-Drop Reorder for pinned layers (Map Layers widget); Prevent Map Layers Widget Scrollbar from Pushing Content. Both done within Map Layers widget. | User |
