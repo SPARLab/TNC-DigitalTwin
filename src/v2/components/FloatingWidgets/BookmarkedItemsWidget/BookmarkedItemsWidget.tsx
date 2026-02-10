@@ -56,8 +56,8 @@ export function BookmarkedItemsWidget() {
 
               {/* Tip for populated widget */}
               <div className="px-3 py-1.5 bg-slate-50 border-t border-slate-100 rounded-b-xl">
-                <p className="text-[11px] text-gray-400">
-                  Hover to highlight on map. Click to view details.
+                <p className="text-[11px] text-gray-600">
+                  Save items from layers using the right sidebar. If an item has related data, filters for that data are saved as well.
                 </p>
               </div>
             </>

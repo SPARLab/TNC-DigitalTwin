@@ -158,8 +158,8 @@ export function MapLayersWidget() {
 
             {/* Widget tip — always visible when expanded */}
             <div className="px-3 py-2 bg-slate-50 border-t border-slate-100 rounded-b-xl">
-              <p className="text-[11px] text-gray-500">
-                Pin layers to keep them on the map.
+              <p className="text-[11px] text-gray-600">
+                Pin layers to save them. Click the eye icon to toggle the visibility. Layers have multiple items.
               </p>
             </div>
           </div>
