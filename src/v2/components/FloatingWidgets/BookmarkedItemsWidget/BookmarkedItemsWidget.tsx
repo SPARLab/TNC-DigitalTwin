@@ -24,7 +24,7 @@ export function BookmarkedItemsWidget() {
     <WidgetShell id="bookmarked-items-widget" position="top-right">
       <WidgetHeader
         icon={<Bookmark className="w-4 h-4" />}
-        title="Bookmarked Items"
+        title="Saved Items"
         count={bookmarks.length}
         isCollapsed={isCollapsed}
         onToggleCollapse={() => setIsCollapsed(prev => !prev)}

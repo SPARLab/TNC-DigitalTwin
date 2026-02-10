@@ -47,7 +47,7 @@ export function MapLayersWidget() {
     <WidgetShell id="map-layers-widget" position="top-left">
       <WidgetHeader
         icon={<Layers className="w-4 h-4" />}
-        title="Map Layers"
+        title="Mapped Item Layers"
         count={totalCount}
         isCollapsed={isCollapsed}
         onToggleCollapse={() => setIsCollapsed(prev => !prev)}
