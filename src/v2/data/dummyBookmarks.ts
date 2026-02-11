@@ -16,6 +16,7 @@ export const DUMMY_BOOKMARKS: BookmarkedItem[] = [
     resultCount: 47,
     resultNoun: 'images',
     createdAt: Date.now() - 3600000,
+    geometry: { type: 'Point', coordinates: [-120.448, 34.482] },
   },
   {
     id: 'bm-2',
@@ -26,6 +27,7 @@ export const DUMMY_BOOKMARKS: BookmarkedItem[] = [
     type: 'pointer-unfiltered',
     allNoun: 'images',
     createdAt: Date.now() - 1800000,
+    geometry: { type: 'Point', coordinates: [-120.462, 34.458] },
   },
   {
     id: 'bm-3',
@@ -38,6 +40,7 @@ export const DUMMY_BOOKMARKS: BookmarkedItem[] = [
     resultCount: 90,
     resultNoun: 'datapoints',
     createdAt: Date.now() - 900000,
+    geometry: { type: 'Point', coordinates: [-120.435, 34.497] },
   },
   {
     id: 'bm-4',
@@ -47,5 +50,6 @@ export const DUMMY_BOOKMARKS: BookmarkedItem[] = [
     layerName: 'iNaturalist',
     type: 'self-contained',
     createdAt: Date.now() - 600000,
+    geometry: { type: 'Point', coordinates: [-120.471, 34.475] },
   },
 ];

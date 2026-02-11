@@ -5,8 +5,10 @@
 // Tree connector lines show parent–child relationship with layer header.
 // ============================================================================
 
+import { useCallback } from 'react';
 import { X } from 'lucide-react';
 import type { BookmarkedItem } from '../../../types';
+import { useMap } from '../../../context/MapContext';
 
 interface BookmarkRowProps {
   bookmark: BookmarkedItem;
@@ -17,6 +19,18 @@ interface BookmarkRowProps {
 }
 
 export function BookmarkRow({ bookmark, isLast, onView, onEditFilter, onRemove }: BookmarkRowProps) {
+  const { highlightPoint, clearHighlight } = useMap();
+
+  const handleMouseEnter = useCallback(() => {
+    if (bookmark.geometry) {
+      const [lon, lat] = bookmark.geometry.coordinates;
+      highlightPoint(lon, lat);
+    }
+  }, [bookmark.geometry, highlightPoint]);
+
+  const handleMouseLeave = useCallback(() => {
+    clearHighlight();
+  }, [clearHighlight]);
   // Check if we have second-line content (count/noun or Edit Filter button)
   const hasSecondLineContent = 
     (bookmark.type === 'pointer-filtered' && bookmark.resultCount !== undefined) ||
@@ -65,6 +79,10 @@ export function BookmarkRow({ bookmark, isLast, onView, onEditFilter, onRemove }
                    outline-none ring-0 focus:outline-none focus:ring-0"
         style={{ WebkitTapHighlightColor: 'transparent' }}
         onClick={(e) => { onView(); (e.currentTarget as HTMLElement).blur(); }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onFocus={handleMouseEnter}
+        onBlur={handleMouseLeave}
         tabIndex={0}
         role="button"
         aria-label={`View ${bookmark.itemName}${bookmark.filterDescription ? ` — ${bookmark.filterDescription}` : ''}`}

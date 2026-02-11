@@ -69,13 +69,22 @@ const INITIAL_PINNED: PinnedLayer[] = [
     ],
   },
   {
+    id: 'pinned-inat',
+    layerId: 'inaturalist-obs',
+    name: 'iNaturalist Observations',
+    isVisible: true,
+    isActive: false,
+    filterCount: 0,
+    order: 1,
+  },
+  {
     id: 'pinned-2',
     layerId: 'fire-perimeters',
     name: 'Fire Perimeters',
     isVisible: true,
     isActive: false,
     filterCount: 0,
-    order: 1,
+    order: 2,
   },
   {
     id: 'pinned-3',
@@ -86,7 +95,7 @@ const INITIAL_PINNED: PinnedLayer[] = [
     filterCount: 2,
     filterSummary: 'date range = Mar 2024, sensor type = Pressure',
     distinguisher: 'Mar 2024',
-    order: 2,
+    order: 3,
   },
 ];
 

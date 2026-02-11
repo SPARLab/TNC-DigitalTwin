@@ -1,6 +1,7 @@
 // ============================================================================
 // RightSidebar — 400px fixed width. Shows layer details or empty state.
 // Two tabs: Overview | Browse (DFT-041). Overview opens first (DFT-006).
+// Renders data-source-specific content when iNaturalist layer is active.
 // ============================================================================
 
 import { useState, useEffect, useRef } from 'react';
@@ -9,6 +10,9 @@ import { useLayers } from '../../context/LayerContext';
 import type { SidebarTab } from '../../types';
 import { SidebarHeader } from './SidebarHeader';
 import { TabBar } from './TabBar';
+import { INaturalistOverviewTab } from './iNaturalist/INaturalistOverviewTab';
+import { INaturalistBrowseTab } from './iNaturalist/INaturalistBrowseTab';
+import { useINaturalistObservations } from '../../hooks/useINaturalistObservations';
 
 export function RightSidebar() {
   const { activeLayer, deactivateLayer, lastEditFiltersRequest } = useLayers();
@@ -19,14 +23,15 @@ export function RightSidebar() {
   const [prevLayerId, setPrevLayerId] = useState<string | null>(null);
   const [shouldFlash, setShouldFlash] = useState(false);
 
+  // iNaturalist data (only fetched when iNat layer is active)
+  const isINat = activeLayer?.dataSource === 'inaturalist';
+  const inatData = useINaturalistObservations({ skip: !isINat });
+
   // Reset to Overview and trigger flash when layer changes (DFT-006)
   if (activeLayer && activeLayer.layerId !== prevLayerId) {
     setPrevLayerId(activeLayer.layerId);
     setActiveTab('overview');
-    
-    // Trigger flash animation
     setShouldFlash(true);
-    // Reset flash after animation completes (600ms duration)
     setTimeout(() => setShouldFlash(false), 600);
   }
 
@@ -48,27 +53,41 @@ export function RightSidebar() {
           <SidebarHeader activeLayer={activeLayer} onClose={deactivateLayer} shouldFlash={shouldFlash} />
           <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
 
-          {/* Tab content — placeholder for Phase 1+ */}
+          {/* Tab content */}
           <div className="flex-1 overflow-y-auto p-4" role="tabpanel">
-            {activeTab === 'overview' ? (
-              <div className="space-y-4">
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  Overview content for <strong>{activeLayer.name}</strong> will be implemented
-                  in Phase 1-4 (per data source).
-                </p>
-                <button
-                  onClick={() => setActiveTab('browse')}
-                  className="w-full py-3 bg-[#2e7d32] text-white font-medium rounded-lg
-                             hover:bg-[#256d29] transition-colors text-sm"
-                >
-                  Browse Items &rarr;
-                </button>
-              </div>
+            {isINat ? (
+              /* iNaturalist-specific content */
+              activeTab === 'overview' ? (
+                <INaturalistOverviewTab
+                  totalCount={inatData.totalCount}
+                  loading={inatData.loading}
+                  onBrowseClick={() => setActiveTab('browse')}
+                />
+              ) : (
+                <INaturalistBrowseTab />
+              )
             ) : (
-              <p className="text-sm text-gray-500">
-                Browse tab content for <strong>{activeLayer.name}</strong> will be implemented
-                in Phase 1-4.
-              </p>
+              /* Generic placeholder for other data sources */
+              activeTab === 'overview' ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    Overview content for <strong>{activeLayer.name}</strong> will be implemented
+                    in Phase 2-4 (per data source).
+                  </p>
+                  <button
+                    onClick={() => setActiveTab('browse')}
+                    className="w-full py-3 bg-[#2e7d32] text-white font-medium rounded-lg
+                               hover:bg-[#256d29] transition-colors text-sm"
+                  >
+                    Browse Items &rarr;
+                  </button>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">
+                  Browse tab content for <strong>{activeLayer.name}</strong> will be implemented
+                  in Phase 2-4.
+                </p>
+              )
             )}
           </div>
         </>
