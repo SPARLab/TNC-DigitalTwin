@@ -52,7 +52,7 @@ const LAYERS: CatalogLayer[] = [
   { id: 'dataone-datasets', name: 'DataOne Datasets', categoryId: 'research-datasets', dataSource: 'dataone', icon: 'BookOpen' },
 ];
 
-/** The 13 TNC domain categories + Research Datasets, alphabetical */
+/** The 13 TNC domain categories + Research Datasets (Research Datasets at bottom) */
 export const CATEGORIES: Category[] = [
   { id: 'boundaries', name: 'Boundaries', icon: 'Square', layers: [] },
   { id: 'earth-obs', name: 'Earth Observations', icon: 'Satellite', layers: [] },
@@ -63,11 +63,11 @@ export const CATEGORIES: Category[] = [
   { id: 'land-cover', name: 'Land Cover', icon: 'TreePine', layers: [] },
   { id: 'oceans', name: 'Oceans and Coasts', icon: 'Waves', layers: [] },
   { id: 'research-sensor', name: 'Research and Sensor Equipment', icon: 'Thermometer', layers: [] },
-  { id: 'research-datasets', name: 'Research Datasets', icon: 'BookOpen', layers: [] },
   { id: 'soils', name: 'Soils and Geology', icon: 'Layers', layers: [] },
   { id: 'species', name: 'Species', icon: 'PawPrint', layers: [] },
   { id: 'threats', name: 'Threats and Hazards', icon: 'AlertTriangle', layers: [] },
   { id: 'weather', name: 'Weather and Climate', icon: 'CloudSun', layers: [] },
+  { id: 'research-datasets', name: 'Research Datasets', icon: 'BookOpen', layers: [] },
 ].map(cat => ({
   ...cat,
   layers: LAYERS.filter(l => l.categoryId === cat.id),

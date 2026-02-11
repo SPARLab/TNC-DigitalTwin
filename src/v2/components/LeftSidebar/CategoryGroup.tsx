@@ -36,14 +36,22 @@ export function CategoryGroup({ category, filteredLayerIds }: CategoryGroupProps
     activateLayer('dataone-datasets');
   };
 
+  // Use darker gray background for research-datasets to distinguish it
+  const isResearchDatasets = category.id === 'research-datasets';
+  const headerBgClasses = isResearchDatasets
+    ? 'bg-gray-200 hover:bg-gray-300'
+    : 'bg-slate-100 hover:bg-slate-200';
+  // Remove bottom border for research-datasets since it's at the end
+  const borderClasses = isResearchDatasets ? '' : 'border-b border-gray-300';
+
   return (
-    <div id={`category-${category.id}`} role="group" className="border-b border-gray-300">
+    <div id={`category-${category.id}`} role="group" className={borderClasses}>
       {/* Category header — persistent banner background */}
       <button
         onClick={toggle}
         onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && toggle()}
-        className="flex items-center w-full px-3 py-2.5 text-sm font-semibold text-gray-800
-                   bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+        className={`flex items-center w-full px-3 py-2.5 text-sm font-semibold text-gray-800
+                   ${headerBgClasses} transition-colors cursor-pointer`}
         aria-expanded={isExpanded}
       >
         {isExpanded
