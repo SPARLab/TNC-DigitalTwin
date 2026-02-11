@@ -9,10 +9,12 @@ import Map from '@arcgis/core/Map';
 import MapView from '@arcgis/core/views/MapView';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import { MapLayersWidget } from '../FloatingWidgets/MapLayersWidget/MapLayersWidget';
+import { INaturalistLegendWidget } from '../FloatingWidgets/INaturalistLegendWidget/INaturalistLegendWidget';
 // NOTE: BookmarkedItemsWidget disabled per Feb 11 design decision.
 // Saved Items merged into Map Layers. Code preserved for CSS/animation reuse.
 // import { BookmarkedItemsWidget } from '../FloatingWidgets/BookmarkedItemsWidget/BookmarkedItemsWidget';
 import { useMap } from '../../context/MapContext';
+import { useLayers } from '../../context/LayerContext';
 import { useMapLayers } from './useMapLayers';
 import { MapToasts } from './MapToasts';
 
@@ -23,6 +25,10 @@ const INITIAL_ZOOM = 12;
 export function MapContainer() {
   const mapDivRef = useRef<HTMLDivElement>(null);
   const { viewRef, highlightLayerRef, setMapReady } = useMap();
+  const { activeLayer } = useLayers();
+
+  // Check if iNaturalist layer is active (showing in right sidebar)
+  const isINatActive = activeLayer?.layerId === 'inaturalist-obs';
 
   // Sync pinned/active layers with ArcGIS layers
   useMapLayers();
@@ -71,6 +77,9 @@ export function MapContainer() {
       {/* Floating widgets overlay */}
       <MapLayersWidget />
       {/* BookmarkedItemsWidget removed — Feb 11 design decision: unified into Map Layers */}
+
+      {/* iNaturalist floating legend — only show when iNat layer is ACTIVE in right sidebar */}
+      {isINatActive && <INaturalistLegendWidget />}
 
       {/* Toast notifications (layer not implemented, etc.) */}
       <MapToasts />

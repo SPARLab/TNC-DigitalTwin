@@ -1,12 +1,13 @@
 // ============================================================================
 // RightSidebar — 400px fixed width. Shows layer details or empty state.
 // Two tabs: Overview | Browse (DFT-041). Overview opens first (DFT-006).
-// Renders data-source-specific content when iNaturalist layer is active.
+// Filter state is global (INaturalistFilterContext) — shared with floating legend.
 // ============================================================================
 
 import { useState, useEffect, useRef } from 'react';
 import { Layers } from 'lucide-react';
 import { useLayers } from '../../context/LayerContext';
+import { useINaturalistFilter } from '../../context/INaturalistFilterContext';
 import type { SidebarTab } from '../../types';
 import { SidebarHeader } from './SidebarHeader';
 import { TabBar } from './TabBar';
@@ -16,6 +17,7 @@ import { useINaturalistObservations } from '../../hooks/useINaturalistObservatio
 
 export function RightSidebar() {
   const { activeLayer, deactivateLayer, lastEditFiltersRequest } = useLayers();
+  const { clearFilter } = useINaturalistFilter();
   const [activeTab, setActiveTab] = useState<SidebarTab>('overview');
   const consumedRequestRef = useRef(0);
 
@@ -27,10 +29,11 @@ export function RightSidebar() {
   const isINat = activeLayer?.dataSource === 'inaturalist';
   const inatData = useINaturalistObservations({ skip: !isINat });
 
-  // Reset to Overview and trigger flash when layer changes (DFT-006)
+  // Reset to Overview, clear filter, and trigger flash when layer changes (DFT-006)
   if (activeLayer && activeLayer.layerId !== prevLayerId) {
     setPrevLayerId(activeLayer.layerId);
     setActiveTab('overview');
+    clearFilter();
     setShouldFlash(true);
     setTimeout(() => setShouldFlash(false), 600);
   }
@@ -56,7 +59,6 @@ export function RightSidebar() {
           {/* Tab content */}
           <div className="flex-1 overflow-y-auto p-4" role="tabpanel">
             {isINat ? (
-              /* iNaturalist-specific content */
               activeTab === 'overview' ? (
                 <INaturalistOverviewTab
                   totalCount={inatData.totalCount}

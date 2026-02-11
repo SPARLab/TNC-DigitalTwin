@@ -1,6 +1,9 @@
 // ============================================================================
 // INaturalistBrowseTab — Filter section + observation cards + pagination
-// Taxon filter auto-applies (DFT-039). Self-contained observations (no Level 3).
+// Taxon filter auto-applies (DFT-039). Filter can be controlled from:
+//   1. The floating legend widget over the map
+//   2. The taxon dropdown in this Browse tab
+// Both use the global INaturalistFilterContext.
 // ============================================================================
 
 import { useState, useMemo, useCallback } from 'react';
@@ -11,17 +14,13 @@ import {
   type INatFilters,
   type INatObservation,
 } from '../../../hooks/useINaturalistObservations';
-// NOTE: useBookmarks removed — Saved Items widget merged into Map Layers (Feb 11 decision).
-// Bookmark action will be replaced with "Save as View" in a future task.
-// import { useBookmarks } from '../../../context/BookmarkContext';
 import { useMap } from '../../../context/MapContext';
+import { useINaturalistFilter } from '../../../context/INaturalistFilterContext';
 import { ObservationCard } from './ObservationCard';
 import { INaturalistDetailView } from './INaturalistDetailView';
-import { TaxonLegend } from './TaxonLegend';
 
 export function INaturalistBrowseTab() {
-  // Filter state
-  const [taxonCategory, setTaxonCategory] = useState<string>('');
+  const { taxonCategory, setTaxonCategory } = useINaturalistFilter();
 
   const filters: INatFilters = useMemo(() => ({
     taxonCategory: taxonCategory || undefined,
@@ -29,8 +28,7 @@ export function INaturalistBrowseTab() {
 
   // Data fetching
   const {
-    observations, allObservations, loading, error,
-    totalCount, fetchedCount,
+    observations, loading, error,
     page, totalPages, goToPage,
   } = useINaturalistObservations(filters);
 
@@ -107,24 +105,11 @@ export function INaturalistBrowseTab() {
           ))}
         </select>
 
-        {/* Result count */}
-        <p className="text-xs text-gray-500">
-          {loading ? (
-            'Loading...'
-          ) : (
-            <>Showing {fetchedCount.toLocaleString()} of {totalCount.toLocaleString()} observations</>
-          )}
+        {/* Note about legend widget sync */}
+        <p className="text-xs text-gray-500 italic">
+          Tip: You can also filter using the legend widget on the map
         </p>
       </div>
-
-      {/* Taxon legend — clickable filter shortcut */}
-      {!loading && allObservations.length > 0 && (
-        <TaxonLegend
-          observations={allObservations}
-          activeTaxon={taxonCategory}
-          onTaxonClick={setTaxonCategory}
-        />
-      )}
 
       {/* Loading state */}
       {loading && (

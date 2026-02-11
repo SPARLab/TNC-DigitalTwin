@@ -2,6 +2,7 @@
 // iNaturalist Map Layer — FeatureLayer config with emoji PictureMarkerSymbols
 // Uses TNC's ArcGIS-hosted iNaturalist FeatureServer.
 // Emoji markers colored by taxon category (Birds=🐦, Mammals=🦌, etc.)
+// Supports dynamic filtering via definitionExpression.
 // ============================================================================
 
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
@@ -40,12 +41,14 @@ function buildEmojiRenderer(): UniqueValueRenderer {
 export function createINaturalistLayer(options: {
   id?: string;
   visible?: boolean;
+  definitionExpression?: string; // Server-side SQL filter
 } = {}): FeatureLayer {
   return new FeatureLayer({
     url: FEATURE_SERVER_URL,
     id: options.id ?? 'v2-inaturalist-obs',
     visible: options.visible ?? true,
     renderer: buildEmojiRenderer(),
+    definitionExpression: options.definitionExpression ?? '1=1', // Default: show all
     popupEnabled: true,
     popupTemplate: {
       title: '{common_name}',
@@ -62,4 +65,13 @@ export function createINaturalistLayer(options: {
       ],
     } as __esri.PopupTemplateProperties,
   });
+}
+
+/**
+ * Build a SQL definitionExpression for filtering by taxon category.
+ * Empty string = show all (1=1).
+ */
+export function buildTaxonFilterExpression(taxonCategory: string): string {
+  if (!taxonCategory) return '1=1'; // Show all
+  return `taxon_category_name = '${taxonCategory}'`;
 }
