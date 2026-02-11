@@ -132,16 +132,5 @@ export function useINaturalistObservations(filters: INatFilters) {
   };
 }
 
-/** Available taxon categories for the filter dropdown */
-export const TAXON_CATEGORIES = [
-  { value: 'Aves', label: 'Birds' },
-  { value: 'Mammalia', label: 'Mammals' },
-  { value: 'Reptilia', label: 'Reptiles' },
-  { value: 'Amphibia', label: 'Amphibians' },
-  { value: 'Actinopterygii', label: 'Fish' },
-  { value: 'Insecta', label: 'Insects' },
-  { value: 'Arachnida', label: 'Spiders' },
-  { value: 'Plantae', label: 'Plants' },
-  { value: 'Fungi', label: 'Fungi' },
-  { value: 'Mollusca', label: 'Mollusks' },
-] as const;
+// Re-export shared taxon config for sidebar use
+export { TAXON_CONFIG as TAXON_CATEGORIES } from '../components/Map/layers/taxonConfig';

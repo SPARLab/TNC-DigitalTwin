@@ -1,6 +1,6 @@
 # Development Task Tracker — V2 Digital Catalog
 
-**Last Updated:** February 10, 2026  
+**Last Updated:** February 11, 2026  
 **Current Phase:** Phase 0 (Foundation) — 🟡 In Progress  
 **Target Deadline:** February 20, 2026 (13 days remaining)
 
@@ -20,13 +20,13 @@
 | 6 | 0 | **Fix Tree Connector Lines Between Parent and Child Rows** | ✅ | Medium | Completed: moved connectors to outer wrapper, consistent #d1d5db |
 | 7 | 0 | **Remove Gray Divider in Left Sidebar** | ✅ | Low | Simple CSS removal |
 | 8 | 0 | **Refine Active Layer → Pinned Layer Transition** | ✅ | Low | Newly pinned row slides down from under header; section expands; no flash |
-| 9 | 0 | **0.6** Map Feature Highlight — Bookmark hover | 🟡 | Low | Requires map integration first |
+| 9 | 0 | **0.6** Map Feature Highlight — View-on-map hover | 🟡 | Low | Requires map integration first |
 | 10 | 0 | **Left Sidebar: Visual Distinction Between Categories and Layers** | ✅ | Medium | Category banners (slate-100), Research Datasets at bottom with darker gray bg, no bottom border; layer cards with amber active state, blue pins |
 | 11 | 0 | **Right Sidebar: Active Layer Color Coordination & Flash** | ✅ | Medium | Yellow header (amber-50); flash animation on layer change (white→amber-100→amber-50, 600ms); coordinated with left sidebar and Map Layers widget |
 | 12 | 0 | **Fix DataOne Datasets Card Width in Left Sidebar** | ✅ | Low | DataOne shortcut row width matching; right padding; removed redundant left border |
 
 **Active tasks remaining:** 1  
-**Recently completed:** Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
+**Recently completed:** DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
 
 ---
 
@@ -55,9 +55,9 @@
 - [x] **0.1** App Shell & Router — v1/v2 toggle via `?v2` URL param
 - [x] **0.2** Left Sidebar — 14 categories, layer rows, search, pin/eye interactions
 - [x] **0.3** Pinned Layers State Management — `LayerContext` with undo support
-- [x] **0.4** Bookmarks State Management — `BookmarkContext` with grouping
+- [x] ~~**0.4** Bookmarks State Management — `BookmarkContext` with grouping~~ **(DROPPED: DFT-046 — Saved Items widget merged into Map Layers, Feb 11)**
 - [x] **0.5** Map Layers Widget — Active (amber) + Pinned (blue) sections, expandable panels
-- [x] **0.6** Bookmarked Items Widget — Grouped rows, 3 bookmark variants
+- [x] ~~**0.6** Bookmarked Items Widget — Grouped rows, 3 bookmark variants~~ **(DROPPED: DFT-046 — code preserved but disabled, Feb 11)**
 - [x] **0.7** Right Sidebar Shell — Empty state, TabBar (Overview | Browse), header
 
 **Files Created:** 27 files, 1,748 lines total  
@@ -75,10 +75,10 @@
   - Completed: Drag-and-drop reordering implemented within Map Layers widget
   - Implementation: `@dnd-kit/core` integration with visual feedback
 
-- [ ] **0.6** Map Feature Highlight — Hover bookmark row → highlight on map
-  - Reference: `docs/PLANNING/component-specs/bookmarked-items-widget.md` DFT-036
-  - Current: Placeholder (no map integration yet)
-  - Needed: Cyan ring highlight, off-screen indicator, keyboard support
+- [ ] **0.6** Map Feature Highlight — Hover/view-on-map → highlight on map
+  - Reference: DFT-036 (adapted — no longer tied to Saved Items widget)
+  - Current: Basic highlight implemented for iNaturalist view-on-map
+  - Needed: Cyan ring highlight for all data sources, off-screen indicator, keyboard support
 
 - [x] **0.8** Refine Tree Connectors — Polish L-shaped connectors for nested child views
   - Reference: `docs/PLANNING/component-specs/map-layers-widget.md` (Connecting Line section)
@@ -86,12 +86,9 @@
   - Implementation: Used CSS borders for seamless L-shape corners, extended vertical lines with `calc(50% + 4px)` to bridge gaps
   - Files: `src/v2/components/FloatingWidgets/MapLayersWidget/PinnedLayerChildRow.tsx`
 
-- [x] **Add Hierarchical Tree Connectors to Saved Items Widget** — Show parent-child relationship between layer categories and saved items
-  - Completed: Added L-shaped tree connector lines matching Map Layers widget pattern
-  - Features: Emerald left border accent on items, full-width boxed headers, dynamic height with 50vh cap
-  - Visual hierarchy: Tree lines at `left: 12px`, 6px spacing between items, stub connector from header to first child
-  - Differentiation: Left border accent (not full boxes) distinguishes saved items from Map Layers child views
-  - Files: `BookmarkRow.tsx`, `LayerGroupHeader.tsx`, `BookmarkedItemsWidget.tsx`
+- [x] ~~**Add Hierarchical Tree Connectors to Saved Items Widget**~~ **(DROPPED: DFT-046 — Saved Items widget disabled, Feb 11)**
+  - Was completed but widget is now disabled. CSS animations preserved for future reuse.
+  - Files: `BookmarkRow.tsx`, `LayerGroupHeader.tsx`, `BookmarkedItemsWidget.tsx` (preserved, not deleted)
 
 ### 🔧 Ad-Hoc Tasks (Phase 0)
 
@@ -259,7 +256,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 - **Code Location:** All v2 code in `src/v2/`
 - **Access:** V2 app at `http://localhost:5173/?v2`
-- **State Management:** React Context API (`LayerContext`, `BookmarkContext`)
+- **State Management:** React Context API (`LayerContext`) — `BookmarkContext` disabled (DFT-046)
 - **Styling:** Tailwind CSS only (no custom CSS files)
 - **Icons:** Lucide React (no emojis per DFT-026)
 - **File Size Target:** Keep files <200 lines for Cursor context efficiency
@@ -278,6 +275,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 11, 2026 | Phase 0 | ✅ **DFT-046: Saved Items widget dropped.** Unified into Map Layers. "Mapped Item Layers" renamed to "Map Layers". BookmarkProvider/BookmarkedItemsWidget disabled (code preserved). Bookmark actions in iNaturalist stubbed as TODO ("Save as View"). All documentation updated. | Claude |
 | Feb 10, 2026 | Phase 0 | ✅ Task 12 complete: Fix DataOne Datasets Card Width. Added w-full to DataOne shortcut and LayerRow; mr-3 for right padding; removed redundant left border from category content (background + indentation sufficient for hierarchy). | Claude |
 | Feb 10, 2026 | Phase 0 | ✅ Saved Items hierarchical tree connectors complete: Added L-shaped tree lines, emerald left border accent, full-width boxed headers, dynamic height (50vh cap), stub connector from headers. Distinguishes saved items (left border) from Map Layers child views (full boxes). | Claude |
 | Feb 10, 2026 | Phase 0 | Added tasks 10 & 11: Left Sidebar visual distinction (categories vs layers); Right Sidebar color coordination (yellow header, active layer sync, flash on change). | User |

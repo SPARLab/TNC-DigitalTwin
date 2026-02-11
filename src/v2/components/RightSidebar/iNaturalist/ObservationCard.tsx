@@ -5,6 +5,7 @@
 
 import { Leaf, ExternalLink, MapPin, Bookmark } from 'lucide-react';
 import type { INatObservation } from '../../../hooks/useINaturalistObservations';
+import { getTaxonEmoji } from '../../Map/layers/taxonConfig';
 
 interface ObservationCardProps {
   observation: INatObservation;
@@ -59,7 +60,10 @@ export function ObservationCard({ observation, onViewDetail, onViewOnMap, onBook
 
         {/* Info */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 truncate">{displayName}</p>
+          <p className="text-sm font-medium text-gray-900 truncate">
+            <span className="mr-1">{getTaxonEmoji(observation.taxonCategory)}</span>
+            {displayName}
+          </p>
           {observation.commonName && (
             <p className="text-xs text-gray-500 italic truncate">{observation.scientificName}</p>
           )}

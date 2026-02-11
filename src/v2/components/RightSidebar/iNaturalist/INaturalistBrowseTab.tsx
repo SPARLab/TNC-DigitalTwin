@@ -17,6 +17,7 @@ import {
 import { useMap } from '../../../context/MapContext';
 import { ObservationCard } from './ObservationCard';
 import { INaturalistDetailView } from './INaturalistDetailView';
+import { TaxonLegend } from './TaxonLegend';
 
 export function INaturalistBrowseTab() {
   // Filter state
@@ -28,7 +29,7 @@ export function INaturalistBrowseTab() {
 
   // Data fetching
   const {
-    observations, loading, error,
+    observations, allObservations, loading, error,
     totalCount, fetchedCount,
     page, totalPages, goToPage,
   } = useINaturalistObservations(filters);
@@ -115,6 +116,15 @@ export function INaturalistBrowseTab() {
           )}
         </p>
       </div>
+
+      {/* Taxon legend — clickable filter shortcut */}
+      {!loading && allObservations.length > 0 && (
+        <TaxonLegend
+          observations={allObservations}
+          activeTaxon={taxonCategory}
+          onTaxonClick={setTaxonCategory}
+        />
+      )}
 
       {/* Loading state */}
       {loading && (
