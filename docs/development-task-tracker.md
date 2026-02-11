@@ -21,12 +21,12 @@
 | 7 | 0 | **Remove Gray Divider in Left Sidebar** | ✅ | Low | Simple CSS removal |
 | 8 | 0 | **Refine Active Layer → Pinned Layer Transition** | ✅ | Low | Newly pinned row slides down from under header; section expands; no flash |
 | 9 | 0 | **0.6** Map Feature Highlight — Bookmark hover | 🟡 | Low | Requires map integration first |
-| 10 | 0 | **Left Sidebar: Visual Distinction Between Categories and Layers** | 🟡 | Medium | In progress: Category banners with animations, layer cards with yellow active state, blue pins |
+| 10 | 0 | **Left Sidebar: Visual Distinction Between Categories and Layers** | ✅ | Medium | Category banners (slate-100), Research Datasets at bottom with darker gray bg, no bottom border; layer cards with amber active state, blue pins |
 | 11 | 0 | **Right Sidebar: Active Layer Color Coordination & Flash** | ✅ | Medium | Yellow header (amber-50); flash animation on layer change (white→amber-100→amber-50, 600ms); coordinated with left sidebar and Map Layers widget |
 | 12 | 0 | **Fix DataOne Datasets Card Width in Left Sidebar** | ✅ | Low | DataOne shortcut row width matching; right padding; removed redundant left border |
 
 **Active tasks remaining:** 1  
-**Recently completed:** Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
+**Recently completed:** Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
 
 ---
 
@@ -184,13 +184,14 @@
   - Files: `PinnedLayerRow.tsx`, `PinnedLayerChildRow.tsx`, `PinnedLayersSection.tsx`, `LayerContext.tsx`, `MapLayersWidget.tsx`
   - Result: Clear interaction model where "active = inspecting = expanded = amber"
 
-- [ ] **Left Sidebar: Visual Distinction Between Categories and Layers** — Improve hierarchy perception
+- [x] **Left Sidebar: Visual Distinction Between Categories and Layers** — Improve hierarchy perception
   - Goal: Clearly differentiate categories from their child layers in the left sidebar
   - Add backgrounds around category groups so dropdown content feels nested
   - Use indentation + distinct highlight treatments for layers vs categories
   - Layers should read as conceptually subordinate to categories (parent-child hierarchy)
   - Addresses: Low visual distinction between category and layer rows when expanded
-  - Files: `src/v2/components/LeftSidebar/` (CategoryGroup, LayerRow, etc.)
+  - Completed: Category banners (slate-100), Research Datasets moved to bottom with darker gray bg (gray-200), no bottom border; layer cards with amber active state, blue pins
+  - Files: `src/v2/components/LeftSidebar/` (CategoryGroup, LayerRow, etc.), `src/v2/data/layerRegistry.ts`
 
 - [ ] **Right Sidebar: Active Layer Color Coordination & Flash** — Unify active semantics and feedback
   - Header: Add yellow background to right sidebar header (match mapped item layers active indicator)
