@@ -145,7 +145,7 @@ body {
 }
 
 /* -----------------------------------------------------------------------------
-   Floating widget scroll areas (Map Layers, Bookmarked Items)
+   Floating widget scroll areas (Map Layers)
    - Completely hidden scrollbar for clean, minimal appearance
    - Scrolling still works perfectly with mouse/trackpad
    - Content uses full width at all times
@@ -307,6 +307,11 @@ body {
   pointer-events: none;
 }
 
+/* =============================================================================
+   BOOKMARK ANIMATIONS (PRESERVED — Saved Items widget disabled Feb 11, 2026)
+   Keeping these CSS classes for potential reuse in future view animations.
+   ============================================================================= */
+
 /* Bookmark entrance: section expands (same pattern as pin-row-expand) */
 .animate-bookmark-row-expand {
   animation: pin-row-expand 400ms ease-out;
@@ -351,6 +356,15 @@ body {
 
 .animate-header-flash {
   animation: header-flash 600ms ease-in-out;
+}
+
+/* Toast fade-in-up animation (map area notifications) */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 250ms ease-out;
 }
 
 /* Reduced motion support - simplify drag animations for accessibility */
@@ -400,6 +414,11 @@ body {
   .animate-header-flash {
     animation: none;
     background-color: #fffbeb; /* Just show the color without animation */
+  }
+  
+  /* Disable toast animation */
+  .animate-fade-in-up {
+    animation: none;
   }
   
   /* Simplify transitions */

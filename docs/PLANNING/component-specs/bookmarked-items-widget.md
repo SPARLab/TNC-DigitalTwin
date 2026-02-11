@@ -1,8 +1,10 @@
 # Component Spec: Bookmarked Items Widget
 
+> **⚠️ DEPRECATED (Feb 11, 2026):** This widget has been dropped per DFT-046. All saved state is now unified into the Map Layers widget ("Map Layers"). Individual items are saved as filtered views. This spec is preserved for historical reference and CSS/animation pattern reuse. See `docs/PLANNING/resolved-decisions/dft-046-resolution-summary.md`.
+
 **Date:** February 6, 2026  
 **DFTs Referenced:** DFT-005, DFT-007, DFT-015, DFT-017, DFT-018, DFT-020, DFT-026, DFT-030, DFT-031, DFT-036  
-**Status:** ✅ Complete — ready for dev
+**Status:** ❌ Deprecated — widget dropped (DFT-046)
 
 ---
 

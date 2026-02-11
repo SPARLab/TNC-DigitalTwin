@@ -4,7 +4,10 @@
 // ============================================================================
 
 import { LayerProvider } from './context/LayerContext';
-import { BookmarkProvider } from './context/BookmarkContext';
+// NOTE: BookmarkProvider disabled per Feb 11 design decision.
+// Saved Items widget merged into Map Layers. Code preserved for future reuse.
+// import { BookmarkProvider } from './context/BookmarkContext';
+import { MapProvider } from './context/MapContext';
 import { V2Header } from './components/Header/V2Header';
 import { LeftSidebar } from './components/LeftSidebar/LeftSidebar';
 import { MapContainer } from './components/Map/MapContainer';
@@ -13,7 +16,7 @@ import { RightSidebar } from './components/RightSidebar/RightSidebar';
 export default function V2App() {
   return (
     <LayerProvider>
-      <BookmarkProvider>
+      <MapProvider>
         <div id="v2-app" className="flex flex-col h-screen w-screen overflow-hidden">
           <V2Header />
           <div className="flex flex-1 overflow-hidden">
@@ -22,7 +25,7 @@ export default function V2App() {
             <RightSidebar />
           </div>
         </div>
-      </BookmarkProvider>
+      </MapProvider>
     </LayerProvider>
   );
 }

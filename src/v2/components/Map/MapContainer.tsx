@@ -1,27 +1,79 @@
 // ============================================================================
-// MapContainer — Placeholder for ArcGIS WebMap (Phase 0 shell)
-// Will be replaced with real ArcGIS integration later.
+// MapContainer — ArcGIS MapView centered on Jack & Laura Dangermond Preserve
+// Renders floating widgets (MapLayersWidget) on top.
+// Initializes the real ArcGIS map and syncs with LayerContext via useMapLayers.
 // ============================================================================
 
-import { Map } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import Map from '@arcgis/core/Map';
+import MapView from '@arcgis/core/views/MapView';
+import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import { MapLayersWidget } from '../FloatingWidgets/MapLayersWidget/MapLayersWidget';
-import { BookmarkedItemsWidget } from '../FloatingWidgets/BookmarkedItemsWidget/BookmarkedItemsWidget';
+// NOTE: BookmarkedItemsWidget disabled per Feb 11 design decision.
+// Saved Items merged into Map Layers. Code preserved for CSS/animation reuse.
+// import { BookmarkedItemsWidget } from '../FloatingWidgets/BookmarkedItemsWidget/BookmarkedItemsWidget';
+import { useMap } from '../../context/MapContext';
+import { useMapLayers } from './useMapLayers';
+import { MapToasts } from './MapToasts';
+
+/** Dangermond Preserve center coordinates */
+const PRESERVE_CENTER: [number, number] = [-120.47, 34.47];
+const INITIAL_ZOOM = 12;
 
 export function MapContainer() {
+  const mapDivRef = useRef<HTMLDivElement>(null);
+  const { viewRef, highlightLayerRef, setMapReady } = useMap();
+
+  // Sync pinned/active layers with ArcGIS layers
+  useMapLayers();
+
+  // Initialize ArcGIS Map + MapView
+  useEffect(() => {
+    if (!mapDivRef.current) return;
+
+    const map = new Map({ basemap: 'topo-vector' });
+
+    // Graphics layer for bookmark hover highlights (task 0.6)
+    const highlightLayer = new GraphicsLayer({ id: 'v2-highlight-layer' });
+    map.add(highlightLayer);
+    highlightLayerRef.current = highlightLayer;
+
+    const view = new MapView({
+      container: mapDivRef.current,
+      map,
+      center: PRESERVE_CENTER,
+      zoom: INITIAL_ZOOM,
+      ui: { components: ['attribution'] },
+    });
+
+    viewRef.current = view;
+
+    // Signal map ready once the view finishes loading
+    view.when(() => {
+      if (view.popup) {
+        view.popup.dockEnabled = false;
+      }
+      setMapReady();
+    });
+
+    return () => {
+      viewRef.current = null;
+      highlightLayerRef.current = null;
+      view.destroy();
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div id="map-container" className="flex-1 relative bg-stone-100 overflow-hidden">
-      {/* Map placeholder — subtle background pattern */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="text-center text-gray-300">
-          <Map className="w-16 h-16 mx-auto mb-3 opacity-40" />
-          <p className="text-lg font-medium">ArcGIS Map</p>
-          <p className="text-sm mt-1 text-gray-300/80">WebMap integration — Phase 0.4</p>
-        </div>
-      </div>
+      {/* ArcGIS map target div */}
+      <div id="arcgis-map-view" ref={mapDivRef} className="absolute inset-0" />
 
       {/* Floating widgets overlay */}
       <MapLayersWidget />
-      <BookmarkedItemsWidget />
+      {/* BookmarkedItemsWidget removed — Feb 11 design decision: unified into Map Layers */}
+
+      {/* Toast notifications (layer not implemented, etc.) */}
+      <MapToasts />
     </div>
   );
 }

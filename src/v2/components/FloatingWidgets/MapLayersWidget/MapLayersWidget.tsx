@@ -84,7 +84,7 @@ export function MapLayersWidget() {
     <WidgetShell id="map-layers-widget" position="top-left">
       <WidgetHeader
         icon={<Layers className="w-4 h-4" />}
-        title="Mapped Item Layers"
+        title="Map Layers"
         count={totalCount}
         isCollapsed={isCollapsed}
         onToggleCollapse={() => setIsCollapsed(prev => !prev)}
@@ -159,7 +159,7 @@ export function MapLayersWidget() {
             {/* Widget tip — always visible when expanded */}
             <div className="px-3 py-2 bg-slate-50 border-t border-slate-100 rounded-b-xl">
               <p className="text-[11px] text-gray-600">
-                Pin layers to save them. Click the eye icon to toggle the visibility. Layers have multiple items.
+                Each layer contains multiple items on the map. Pin layers to save them. Create filtered views to focus on specific items.
               </p>
             </div>
           </div>

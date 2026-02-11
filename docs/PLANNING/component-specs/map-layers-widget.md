@@ -1,8 +1,10 @@
 # Component Spec: Map Layers Widget
 
-**Date:** February 6, 2026  
-**DFTs Referenced:** DFT-001, DFT-003b, DFT-005, DFT-013, DFT-015, DFT-017, DFT-019, DFT-024, DFT-025, DFT-026, DFT-029, DFT-031, DFT-034  
-**Status:** Draft — pending review
+> **Updated Feb 11, 2026 (DFT-046):** Widget title changed from "Mapped Item Layers" to **"Map Layers"**. The Saved Items widget has been dropped; all saved state (layers AND individual items) is now unified into this widget. Individual items are saved as filtered views returning one result. See `docs/PLANNING/resolved-decisions/dft-046-resolution-summary.md`.
+
+**Date:** February 6, 2026 (updated Feb 11, 2026)  
+**DFTs Referenced:** DFT-001, DFT-003b, DFT-005, DFT-013, DFT-015, DFT-017, DFT-019, DFT-024, DFT-025, DFT-026, DFT-029, DFT-031, DFT-034, DFT-046  
+**Status:** Active — primary widget for all saved map state
 
 ---
 
@@ -18,7 +20,7 @@
 
 ## Widget Principle
 
-> **The Map Layers widget is the state management hub for all layers on the map.** The left sidebar is for _navigation and selection_; this widget is for _persistence, visibility, filtering, and ordering_. It answers: "What's on my map right now, and what have I saved?"
+> **The Map Layers widget is the single state management hub for all saved map state.** The left sidebar is for _navigation and selection_; this widget is for _persistence, visibility, filtering, and ordering_. It answers: "What's on my map right now, and what have I saved?" As of DFT-046, this includes both layer-level filtered views (multiple results) AND individual item references (single-result filtered views).
 
 ---
 

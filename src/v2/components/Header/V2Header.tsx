@@ -4,12 +4,11 @@
 
 import { ShoppingCart } from 'lucide-react';
 import { useLayers } from '../../context/LayerContext';
-import { useBookmarks } from '../../context/BookmarkContext';
+// NOTE: useBookmarks removed — Saved Items widget merged into Map Layers (Feb 11 decision)
 
 export function V2Header() {
   const { pinnedLayers } = useLayers();
-  const { totalCount: bookmarkCount } = useBookmarks();
-  const cartCount = pinnedLayers.length + bookmarkCount;
+  const cartCount = pinnedLayers.length;
 
   const switchToV1 = () => {
     window.location.search = '';

@@ -53,10 +53,14 @@ export interface PinnedLayerView {
   filterSummary?: string;
 }
 
-/** Bookmark type variants (DFT-020) */
+// =============================================================================
+// DEPRECATED: Bookmark types — Saved Items widget merged into Map Layers
+// (Feb 11, 2026 design decision). Types preserved because BookmarkedItemsWidget
+// code is flagged off but not deleted (CSS/animation reuse).
+// =============================================================================
+/** @deprecated Saved Items widget disabled. Bookmark types preserved for code reference only. */
 export type BookmarkType = 'pointer-filtered' | 'pointer-unfiltered' | 'self-contained';
-
-/** A bookmarked item in the Bookmarked Items widget */
+/** @deprecated Saved Items widget disabled. Bookmark types preserved for code reference only. */
 export interface BookmarkedItem {
   id: string;
   itemId: string;
@@ -69,6 +73,8 @@ export interface BookmarkedItem {
   resultNoun?: string;
   allNoun?: string;
   createdAt: number;
+  /** Optional map location for highlight on hover */
+  geometry?: { type: 'Point'; coordinates: [number, number] };
 }
 
 /** Active layer state — the layer currently shown in the right sidebar */
