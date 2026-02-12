@@ -1,7 +1,7 @@
 # Phase 2: ANiML Right Sidebar
 
-**Status:** 🟢 Ready to Start  
-**Progress:** 0 / 7 tasks  
+**Status:** 🟡 In Progress  
+**Progress:** 2 / 9 tasks  
 **Branch:** `v2/animl`  
 **Depends On:** Phase 0 (Foundation) — Data Source Adapter Pattern ✅ Complete  
 **Owner:** TBD
@@ -86,13 +86,15 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
-| 2.1 | Query ANiML service to understand attributes | ⚪ Not Started | | |
-| 2.2 | Create ANiML right sidebar shell | ⚪ Not Started | | |
-| 2.3 | Implement camera filter UI (Level 2) | ⚪ Not Started | | |
-| 2.4 | Implement global image filter UI (Level 3) | ⚪ Not Started | | Dual-level pattern |
+| 2.1 | Query ANiML service to understand attributes | 🟢 Complete | Will + Claude | Existing animlService.ts (1,512 lines) covers this |
+| 2.2 | Create ANiML adapter, context, map layer, and sidebar shell (WIP) | 🟢 Complete | Will + Claude | Foundation pipeline done; sidebar UI is placeholder |
+| 2.3 | Design decision: Browse tab interaction flow | ⚪ Not Started | | **Part A**: Think through UX flows, make design decision |
+| 2.4 | Implement Browse tab interaction flow | ⚪ Not Started | | **Part B**: Build the flow decided in 2.3 |
 | 2.5 | Implement camera list with filtered image counts | ⚪ Not Started | | |
 | 2.6 | Implement camera detail drill-down | ⚪ Not Started | | |
 | 2.7 | Investigate and decide on caching strategy | ⚪ Not Started | | Current load: 8-12s |
+| 2.8 | Use v1 SVG icons for map markers and animal tags | ⚪ Not Started | | Replace emoji markers with proper SVGs |
+| 2.9 | Map Layers widget sync with browse filters | ⚪ Not Started | | Widget reflects active query state |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -168,77 +170,100 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 ---
 
-### 2.3: Implement Camera Filter UI (Level 2)
+### 2.3: Design Decision — Browse Tab Interaction Flow
 
-**Goal:** Create filters for the cameras themselves.
+**Goal:** Think through and decide on the UX for the two browse modes before implementing.
 
-**Design Decision (Feb 3, 2026):** Resolved DFT-003 — Button visibility is context-dependent. "📌 Pin Layer" only appears when layer is NOT pinned. Once pinned, filter changes auto-apply to the pinned layer.
+**Status:** ⚪ Not Started
 
-**Acceptance Criteria:**
-- [ ] Region dropdown
-- [ ] Status dropdown (Active, Inactive, etc.)
-- [ ] Filter updates camera list below
-- [ ] Filter updates map markers (badge counts reflect active filter)
-- [ ] **Context-dependent pin button:**
-  - [ ] If layer NOT pinned: Show "📌 Pin Layer" or "📌 Pin with [filter summary]" button
-  - [ ] If layer IS pinned: No pin button needed — filter changes auto-apply to pinned layer
-  - [ ] Widget row animates/highlights when filter changes (visual feedback)
+**Background (Feb 12, 2026):**
+The Browse tab has two modes — "Animal-Tag-First" and "Camera-First" — with different interaction flows. The v1 implementation handled this as two views in AnimlSidebar.tsx with a toggle. The v2 implementation needs to refine this into a progressive-disclosure pattern that integrates with the Map Layers widget.
 
-**Reference:** Mockup `02c-browse-animl.html` "Filter Cameras" section
+**Two Browse Flows to Design:**
+
+**Flow A — Animal-Tag-First:**
+```
+1. User selects one or more animal tags (e.g., "Mountain Lion", "Coyote")
+2. Sidebar shows cameras that have images matching those tags
+   → Map updates: matching cameras highlighted, non-matching grayed out (DFT-028)
+   → Map Layers widget reflects: "Camera Traps • Mountain Lion, Coyote"
+3. User selects one or more cameras from the filtered list
+4. Sidebar shows images for the selected cameras × selected tags
+   → Map Layers widget reflects: "Camera Traps • Mountain Lion, Coyote • 3 cameras"
+```
+
+**Flow B — Camera-First:**
+```
+1. User selects one camera from the deployment list
+2. Sidebar shows all animal tags detected at that camera (with counts)
+   → Map updates: selected camera highlighted
+   → Map Layers widget reflects: "Camera Traps • CAM-042"
+3. User selects one or more animal tags to filter images
+4. Sidebar shows images for the selected camera × selected tags
+   → Map Layers widget reflects: "Camera Traps • CAM-042 • Mountain Lion, Coyote"
+```
+
+**Key Asymmetry to Note:**
+- Animal-tag-first: 1+ tags → 1+ cameras → images
+- Camera-first: 1 camera → 1+ tags → images
+
+**Design Questions to Resolve:**
+
+| Question | Options | Notes |
+|----------|---------|-------|
+| **Step transitions** | Progressive panels (slide in/out)? Accordion sections? All visible at once? | v1 used drill-down (click → replace list with observations) |
+| **Filter persistence** | When user goes "back", do filter selections persist? | v1: selections persisted |
+| **Map Layers widget format** | How to summarize the active query in the widget row? | Need concise text like "2 tags • 3 cameras" |
+| **Legend widget role** | Should the legend widget also serve as the tag selector in animal-first mode? | Would reduce sidebar complexity |
+| **Multi-select UX** | Checkboxes for multi-select? Click-to-toggle chips? | v1 used checkboxes in export tab |
+| **Image result display** | Grid of thumbnails? Vertical list with metadata? | v1 used vertical list with ThumbnailImage |
+| **Pagination** | Client-side pagination? Infinite scroll? Load more button? | v1 used 20-per-page client-side |
+
+**Part A — Deliverable:** Design decision document (add to Discoveries/Decisions below). Include:
+1. Wireframe or ASCII layout for each flow step
+2. Map Layers widget text format
+3. Component breakdown (which components handle which step)
+4. State management approach (what lives in AnimlFilterContext vs local component state)
+
+**Reference Implementations:**
+- v1 AnimlSidebar: `src/components/AnimlSidebar.tsx` (camera-centric and animal-centric modes)
+- v1 AnimlDetailsSidebar: `src/components/AnimlDetailsSidebar.tsx` (export tab with multi-select)
+- v1 count lookups: `animlService.buildCountLookups()` (fast cross-referencing without loading all images)
 
 ---
 
-### 2.4: Implement Global Image Filter UI (Level 3)
+### 2.4: Implement Browse Tab Interaction Flow
 
-**Goal:** Create filters for images that apply to ALL cameras in the result.
+**Goal:** Build the interaction flow decided in Task 2.3.
 
-**This is the dual-level filtering pattern unique to ANiML.**
+**Status:** ⚪ Not Started — **Blocked on 2.3 design decision**
 
-**Design Decision (Feb 3, 2026):** Resolved DFT-003 — Once layer is pinned, both camera filter AND image filter changes auto-apply. No "Pin Layer with Query" button needed after initial pin.
-**Design Decision (Feb 5, 2026):** Resolved DFT-040 — Condensed `FeatureDetailCard` layout at Level 3. No Level 2 summary bar (Level 2 filter state is irrelevant when drilled into a camera — back button returns to Level 2). No separate "Filter Images" header (feature header card provides scope). Filter controls embedded directly in `FeatureDetailCard`. See design-system.md Dual-Level Filter Pattern.
+**Acceptance Criteria (preliminary — refine after 2.3):**
+- [ ] Animal-tag-first flow: tag selection → camera list → image results
+- [ ] Camera-first flow: camera selection → tag selection → image results
+- [ ] Filter state syncs with Map Layers widget (query summary visible in widget row)
+- [ ] Filter state syncs with map (camera markers update: highlighted/grayed)
+- [ ] Filter state syncs with legend widget (selected animals highlighted)
+- [ ] Mode-switch link (DFT-042) clears filters and switches between flows
+- [ ] "Clear" and "Undo" controls available at each step
+- [ ] Auto-apply behavior (DFT-039): changes apply immediately, no "Search" button
+- [ ] All count displays use `animlService.buildCountLookups()` for performance (no full image fetch until viewing results)
 
-**Acceptance Criteria:**
-- [ ] Species multi-select (full-width, `col-span-2`)
-- [ ] Date range picker (full-width, `col-span-2`)
-- [ ] Deployment dropdown (`col-span-1`)
-- [ ] **No Level 2 summary bar** — back button is only Level 2 reference (DFT-040)
-- [ ] **No separate "Filter [Noun]" header** — feature header provides scope (DFT-040)
-- [ ] Filter controls use DFT-038 grid layout (`1fr 1fr`, `gap: 8px`)
-- [ ] Result count: "Showing X of Y images" below controls
-- [ ] [Clear] and [↩ Undo] in feature header row (per DFT-031)
-- [ ] **Auto-apply behavior:** All filters auto-apply (DFT-039)
-- [ ] Widget row animates/highlights when filter changes (confirms change was applied)
+**Files to Modify/Create:**
+- `src/v2/components/RightSidebar/ANiML/AnimlBrowseTab.tsx` (refactor)
+- `src/v2/components/RightSidebar/ANiML/CameraListView.tsx` (refactor)
+- `src/v2/components/RightSidebar/ANiML/CameraDetailView.tsx` (refactor)
+- `src/v2/context/AnimlFilterContext.tsx` (add selected cameras, query state)
+- New components TBD based on 2.3 decision
 
-**Level 3 Sidebar Layout (Feature View — drilled into camera):**
-```
-┌─────────────────────────────────────────┐
-│ ← Back to Cameras                      │  1. Navigation breadcrumb
-├─────────────────────────────────────────┤
-│ 📷 CAM-042 — North Ridge              │
-│ Active • 10,847 images   [Clear] [↩]  │  2. Feature identity + actions
-│─────────────────────────────────────────│
-│  [Species ▼] [Deployment ▼]  (2-col)  │
-│  [Date range: start — end]   (full)   │  3. Filter controls
-│─────────────────────────────────────────│
-│  Showing 47 of 10,847 images          │  4. Result count
-├─────────────────────────────────────────┤
-│  [Image grid]                          │  5. Results
-├─────────────────────────────────────────┤
-│  [← Prev]            [Next →]         │  6. Pagination
-└─────────────────────────────────────────┘
-```
-
-**Reference:** Mockup `02c-browse-animl.html` "Filter Images" section (note the info text)
-
-**Component:** `FeatureDetailCard` (`src/v2/components/RightSidebar/FeatureDetailCard.tsx`)
-
-**State Shape (for dual-level query):**
-```typescript
-activeQuery: {
-  cameraFilter: { region: "north", status: "active" },
-  globalImageFilter: { species: "mountain lion", year: 2023 }
-}
-```
+**Previous Design Decisions That Still Apply:**
+- DFT-003: Context-dependent pin button visibility
+- DFT-028: Zero-result cameras grayed out, not hidden
+- DFT-029: No badges when no filter active
+- DFT-038: 2-column grid layout for filter controls
+- DFT-039: Auto-apply filters
+- DFT-040: Condensed feature detail card at Level 3
+- DFT-042: Mode-switch mechanism
 
 ---
 
@@ -348,13 +373,56 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 
 ---
 
+### 2.8: Use v1 SVG Icons for Map Markers and Animal Tags
+
+**Goal:** Replace emoji-based map markers (`📷`) with the SVG icons used in the v1 implementation for a more polished look.
+
+**Status:** ⚪ Not Started
+
+**Acceptance Criteria:**
+- [ ] Camera markers on map use SVG icon instead of emoji
+- [ ] Animal tag rows in legend widget and browse tab use appropriate icons
+- [ ] SVG icons sourced from v1 components (Lucide `Camera`, `Tag`, etc.) or custom SVGs
+- [ ] Icons render correctly at map marker sizes (24-28px)
+
+**Files to Modify:**
+- `src/v2/components/Map/layers/animlLayer.ts` — replace `emojiToDataUri(CAMERA_EMOJI)` with SVG
+- `src/v2/components/FloatingWidgets/AnimlLegendWidget/AnimlLegendWidget.tsx` — add icons to rows
+- `src/v2/components/RightSidebar/ANiML/AnimlBrowseTab.tsx` — add icons to tag rows
+
+**Reference:** v1 `AnimlSidebar.tsx` uses Lucide `Camera`, `Tag` icons. Map markers in v1 used the MapView loaders.
+
+---
+
+### 2.9: Map Layers Widget Sync with Browse Filters
+
+**Goal:** When the user builds a query in the ANiML Browse tab (selecting tags, cameras), the Map Layers widget row for "Camera Traps (ANiML)" should reflect the active query state.
+
+**Status:** ⚪ Not Started
+
+**Acceptance Criteria:**
+- [ ] Widget row shows filter summary (e.g., "Mountain Lion, Coyote • 3 cameras")
+- [ ] Filter count updates as user adds/removes filters
+- [ ] Widget row highlights/animates when filter changes (visual feedback)
+- [ ] Clearing filters in Browse tab resets widget row to default
+- [ ] Filter summary format defined in Task 2.3 design decision
+
+**Dependencies:** Task 2.3 (design decision defines widget text format), Task 2.4 (implementation)
+
+**Files to Modify:**
+- `src/v2/components/FloatingWidgets/MapLayersWidget/` — active layer row rendering
+- `src/v2/context/AnimlFilterContext.tsx` — expose filter summary for widget consumption
+
+---
+
 ## Service Analysis
 
-> Fill this out during Task 2.1
+> Completed via existing `animlService.ts` (1,512 lines, Dec 2025)
 
 ### Feature Service URLs
-- Cameras: TBD
-- Images/Tags: TBD
+- Deployments (cameras): `https://dangermondpreserve-spatial.com/server/rest/services/Animl/MapServer/0`
+- Image Labels (flattened): `https://dangermondpreserve-spatial.com/server/rest/services/Animl/MapServer/4`
+- Image Labels (deduplicated): `https://dangermondpreserve-spatial.com/server/rest/services/Animl/MapServer/3`
 
 ### Camera Service Attributes
 | Attribute | Type | Useful For | Notes |
@@ -402,10 +470,12 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 
 ## Open Questions
 
-- [ ] Should we reuse any code from existing `AnimlDetailsSidebar.tsx`?
-- [ ] How to handle image thumbnails vs full images?
-- [ ] What's the relationship structure between cameras and images in the service?
+- [x] ~~Should we reuse any code from existing `AnimlDetailsSidebar.tsx`?~~ → Yes, reference v1 patterns; v2 reimplements with adapter pattern
+- [ ] How to handle image thumbnails vs full images? (service provides `small_url` and `medium_url`)
+- [x] ~~What's the relationship structure between cameras and images in the service?~~ → deployment_id links deployments (layer 0) to image_labels (layer 4)
 - [ ] Backend work needed from Dan for caching?
+- [ ] **NEW:** Browse tab UX flow — how to lay out the progressive filter steps (Task 2.3)
+- [ ] **NEW:** Map Layers widget filter summary format — what text to show (Task 2.9)
 
 ---
 
@@ -422,6 +492,8 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | Feb 4, 2026 | 2.5 | Resolved DFT-029: No badges when layer has no filter. Badges only appear when layer-level filter is applied (semantic indicator). Optional hover tooltip shows total count. Follows Gestalt figure/ground and Shneiderman's overview-first principles. | Will + Claude |
 
 | Feb 12, 2026 | All | Added Readiness Assessment and Implementation Guide. Data Source Adapter Pattern complete (Phase 0 Task 23). Ready for parallel development on v2/animl branch. | Will + Claude |
+| Feb 12, 2026 | 2.1, 2.2 | WIP: Created AnimlFilterContext, adapter, map layer, map behavior hook, sidebar shell (Overview + Browse tabs), legend widget. Wired into registry, V2App, layer factory. 8 new files, 4 modified files. | Will + Claude |
+| Feb 12, 2026 | 2.3, 2.4, 2.8, 2.9 | Added new tasks: Browse tab interaction flow design decision (2.3), implementation (2.4), v1 SVG icons (2.8), Map Layers widget sync (2.9). Replaced old 2.3/2.4 (camera/image filter UI) with interaction-flow-first approach. | Will + Claude |
 
 ---
 
