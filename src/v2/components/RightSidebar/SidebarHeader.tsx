@@ -7,7 +7,7 @@
 import { X } from 'lucide-react';
 import type { ActiveLayer } from '../../types';
 import { LucideIcon } from '../shared/LucideIcon';
-import { LAYER_MAP } from '../../data/layerRegistry';
+import { useCatalog } from '../../context/CatalogContext';
 
 interface SidebarHeaderProps {
   activeLayer: ActiveLayer;
@@ -27,7 +27,8 @@ const DATA_SOURCE_LABELS: Record<string, string> = {
 };
 
 export function SidebarHeader({ activeLayer, onClose, shouldFlash = false }: SidebarHeaderProps) {
-  const layer = LAYER_MAP.get(activeLayer.layerId);
+  const { layerMap } = useCatalog();
+  const layer = layerMap.get(activeLayer.layerId);
   const iconName = layer?.icon ?? 'HelpCircle';
   const sourceLabel = DATA_SOURCE_LABELS[activeLayer.dataSource] ?? activeLayer.dataSource;
 
