@@ -49,11 +49,11 @@
 
 | Phase | Status | Progress | Branch | Blocking? |
 |-------|--------|----------|--------|-----------|
-| **0. Foundation** | 🟡 In Progress | ~95% | `v2/foundation` | YES — blocks all |
-| 1. iNaturalist | ⚪ Not Started | 0% | `v2/inaturalist` | 🔴 Paused — waiting for Task 0.9 |
-| 2. ANiML | ⚪ Not Started | 0% | `v2/animl` | 🔴 Paused — waiting for Task 0.9 |
-| 3. Dendra | ⚪ Not Started | 0% | `v2/dendra` | 🔴 Paused — waiting for Task 0.9 |
-| 4. DataOne | ⚪ Not Started | 0% | `v2/dataone` | 🔴 Paused — waiting for Task 0.9 |
+| **0. Foundation** | 🟡 In Progress | ~98% | `v2/foundation` | YES — blocks all |
+| 1. iNaturalist | ⚪ Not Started | 0% | `v2/inaturalist` | No — Task 0.6 optional polish |
+| 2. ANiML | 🟢 Ready to Start | 0% | `v2/animl` | No — adapter pattern ready |
+| 3. Dendra | ⚪ Not Started | 0% | `v2/dendra` | No — adapter pattern ready |
+| 4. DataOne | ⚪ Not Started | 0% | `v2/dataone` | No — adapter pattern ready |
 | 5. Export Builder | ⚪ Not Started | 0% | `v2/export` | No |
 | 6. Polish & Consistency | ⚪ Not Started | 0% | `v2/polish` | No |
 

@@ -1,10 +1,56 @@
 # Phase 2: ANiML Right Sidebar
 
-**Status:** ⚪ Not Started  
+**Status:** 🟢 Ready to Start  
 **Progress:** 0 / 7 tasks  
 **Branch:** `v2/animl`  
-**Depends On:** Phase 0 (Foundation)  
+**Depends On:** Phase 0 (Foundation) — Data Source Adapter Pattern ✅ Complete  
 **Owner:** TBD
+
+---
+
+## ✅ Readiness Assessment (Feb 12, 2026)
+
+**The adapter pattern is ready for parallel development.** All core architecture is in place:
+
+### What's Already Complete
+- ✅ `DataSourceAdapter` interface defined (`src/v2/dataSources/types.ts`)
+- ✅ Registry with commented placeholders for Animl (`src/v2/dataSources/registry.ts`)
+- ✅ Layer catalog entry (`animl-camera-traps` in `layerRegistry.ts`)
+- ✅ Type system includes `'animl'` data source
+- ✅ iNaturalist reference implementation (complete working example)
+- ✅ Existing v1 service layer (`src/services/animlService.ts` — 1,512 lines, fully functional)
+
+### Merge Conflict Surface
+**Only ~11 lines across 3 shared files:**
+- `src/v2/dataSources/registry.ts` — uncomment 6 lines (imports + map + hooks)
+- `src/v2/components/Map/layers/index.ts` — add `animl-camera-traps` case (~3 lines)
+- `src/v2/V2App.tsx` — wrap with `<AnimlFilterProvider>` (~2 lines)
+
+### Files to Create (No Shared File Conflicts)
+All work is isolated in new directories:
+- `src/v2/context/AnimlFilterContext.tsx` (cache + filter state)
+- `src/v2/dataSources/animl/adapter.tsx`
+- `src/v2/dataSources/animl/useMapBehavior.ts`
+- `src/v2/components/Map/layers/animlLayer.ts`
+- `src/v2/components/RightSidebar/ANiML/*.tsx` (6 files)
+- `src/v2/components/FloatingWidgets/AnimlLegendWidget/AnimlLegendWidget.tsx`
+
+### Recommended Build Order
+1. **AnimlFilterContext** — Data fetching, caching, filter state (foundation)
+2. **Animl Adapter + Registry wiring** — Uncomment registry entries
+3. **Animl Map Layer** — Camera trap icons with badges
+4. **Animl Overview Tab** — Simple metadata display
+5. **Animl Browse Tab (shell)** — Landing cards (Animal-First vs Camera-First)
+6. **Animl Legend Widget** — Species filter floating widget
+7. **Camera List + Detail views** — Full browse experience
+
+Items 3-6 can be done in parallel once items 1-2 are complete.
+
+### Reference Implementations
+- iNaturalist adapter: `src/v2/dataSources/inaturalist/adapter.tsx`
+- iNaturalist context: `src/v2/context/INaturalistFilterContext.tsx`
+- iNaturalist map layer: `src/v2/components/Map/layers/inaturalistLayer.ts`
+- iNaturalist legend: `src/v2/components/FloatingWidgets/INaturalistLegendWidget/`
 
 ---
 
@@ -374,4 +420,274 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | Feb 4, 2026 | 2.2 | Resolved DFT-027: "Browse Features →" button design specification (full-width primary, TNC green, inline arrow, hover/focus states, 150-200ms transition) | Will + Claude |
 | Feb 4, 2026 | 2.5 | Resolved DFT-028: Zero-result cameras grayed out (not hidden). 40-50% opacity, desaturated, no badge. Remain clickable/keyboard-accessible. Preserves spatial context for negative evidence discovery. Animation: 300ms ease-out, staggered 30ms. | Will + Claude |
 | Feb 4, 2026 | 2.5 | Resolved DFT-029: No badges when layer has no filter. Badges only appear when layer-level filter is applied (semantic indicator). Optional hover tooltip shows total count. Follows Gestalt figure/ground and Shneiderman's overview-first principles. | Will + Claude |
+
+| Feb 12, 2026 | All | Added Readiness Assessment and Implementation Guide. Data Source Adapter Pattern complete (Phase 0 Task 23). Ready for parallel development on v2/animl branch. | Will + Claude |
+
+---
+
+## Implementation Guide for Next Session
+
+### Step-by-Step Instructions
+
+This section provides detailed guidance for implementing the Animl adapter following the proven iNaturalist pattern.
+
+#### STEP 1: Create AnimlFilterContext (Foundation)
+
+**File:** `src/v2/context/AnimlFilterContext.tsx`
+
+**Purpose:** Central cache and filter state for Animl camera trap data. Similar to `INaturalistFilterContext.tsx`.
+
+**Key Features:**
+- Lazy loading: Data NOT fetched on mount, only when `warmCache()` is called
+- Camera deployments: Fetch from `animlService.queryDeploymentsCached()`
+- Image labels: Fetch from `animlService.queryImageLabelsCached()`
+- Animal category counts: Use `animlService.getAnimalCategoryCountsCached()`
+- Filter state: `selectedAnimals` Set, `dateRange`, `deploymentFilter`, `regionFilter`
+- Methods: `toggleAnimal()`, `setDateRange()`, `selectAll()`, `clearFilters()`
+
+**State Shape:**
+```typescript
+{
+  // Cache
+  deployments: AnimlDeployment[],
+  imageLabels: AnimlImageLabel[],
+  animalTags: AnimlAnimalTag[],
+  loading: boolean,
+  error: string | null,
+  dataLoaded: boolean,
+  
+  // Filters
+  selectedAnimals: Set<string>,  // Animal category names
+  dateRange: { start: Date | null, end: Date | null },
+  deploymentFilter: string | null,  // "All" | specific deployment ID
+  regionFilter: string | null,  // "All" | "North" | "South" etc.
+  
+  // Methods
+  warmCache: () => void,
+  toggleAnimal: (animalName: string) => void,
+  setDateRange: (start: Date | null, end: Date | null) => void,
+  setDeploymentFilter: (deployment: string | null) => void,
+  setRegionFilter: (region: string | null) => void,
+  selectAll: () => void,
+  clearFilters: () => void,
+}
+```
+
+**Import Existing Service:**
+```typescript
+import {
+  queryDeploymentsCached,
+  queryImageLabelsCached,
+  getAnimalCategoryCountsCached,
+  type AnimlDeployment,
+  type AnimlImageLabel,
+  type AnimlAnimalTag,
+} from '../../services/animlService';
+```
+
+**Provider Mounting:** Will be added to `V2App.tsx` in Step 6.
+
+---
+
+#### STEP 2: Create Animl Adapter
+
+**File:** `src/v2/dataSources/animl/adapter.tsx`
+
+**Pattern:** Follow `src/v2/dataSources/inaturalist/adapter.tsx`
+
+**Content:**
+```typescript
+import type { DataSourceAdapter, OverviewTabProps, CacheStatus } from '../types';
+import { AnimlOverviewTab } from '../../components/RightSidebar/ANiML/AnimlOverviewTab';
+import { AnimlBrowseTab } from '../../components/RightSidebar/ANiML/AnimlBrowseTab';
+import { AnimlLegendWidget } from '../../components/FloatingWidgets/AnimlLegendWidget/AnimlLegendWidget';
+import { AnimlFilterProvider, useAnimlFilter } from '../../context/AnimlFilterContext';
+
+// Wrapper that warms cache when Overview tab mounts
+function AnimlOverviewTabWithCache(props: OverviewTabProps) {
+  const { warmCache } = useAnimlFilter();
+  
+  React.useEffect(() => {
+    warmCache();
+  }, [warmCache]);
+  
+  return <AnimlOverviewTab {...props} />;
+}
+
+export const animlAdapter: DataSourceAdapter = {
+  id: 'animl',
+  layerIds: ['animl-camera-traps'],
+  OverviewTab: AnimlOverviewTabWithCache,
+  BrowseTab: AnimlBrowseTab,
+  LegendWidget: AnimlLegendWidget,
+  CacheProvider: AnimlFilterProvider,
+};
+
+export function useAnimlCacheStatus(): CacheStatus {
+  const { loading, dataLoaded, warmCache } = useAnimlFilter();
+  return { loading, dataLoaded, warmCache };
+}
+```
+
+---
+
+#### STEP 3: Create Map Behavior Hook
+
+**File:** `src/v2/dataSources/animl/useMapBehavior.ts`
+
+**Pattern:** Follow `src/v2/dataSources/inaturalist/useMapBehavior.ts`
+
+**Key Logic:**
+- Warm cache when layer first appears (pinned OR activated)
+- Populate GraphicsLayer when data loads (one-time)
+- Update badge counts when filters change
+- Reset populated flag when layer is removed
+
+**Dependencies:**
+- `useAnimlFilter()` for data and filter state
+- `populateAnimlLayer()` from `layers/animlLayer.ts` (create in Step 4)
+- `updateAnimlBadges()` from `layers/animlLayer.ts`
+
+---
+
+#### STEP 4: Create Animl Map Layer
+
+**File:** `src/v2/components/Map/layers/animlLayer.ts`
+
+**Pattern:** Follow `src/v2/components/Map/layers/inaturalistLayer.ts`
+
+**Functions:**
+```typescript
+export function createAnimlLayer(options): GraphicsLayer
+export function populateAnimlLayer(layer, deployments): void
+export function updateAnimlBadges(layer, deployments, imageLabels, filters): void
+```
+
+**Camera Icon Design:**
+- Use PictureMarkerSymbol with camera emoji or SVG icon
+- Badge overlay showing filtered image count (TextSymbol)
+- Badge only appears when filters are active (DFT-029)
+- Zero-result cameras: grayed out (40-50% opacity, DFT-028)
+
+**Update Layer Factory:** Add case to `src/v2/components/Map/layers/index.ts`:
+```typescript
+case 'animl-camera-traps':
+  return createAnimlLayer({ id: `v2-${layerId}`, ...options });
+```
+
+---
+
+#### STEP 5: Update Registry
+
+**File:** `src/v2/dataSources/registry.ts`
+
+**Changes:** Uncomment all Animl lines (marked with `// ← v2/animl`):
+```typescript
+// Line 21-22: Uncomment imports
+import { animlAdapter, useAnimlCacheStatus } from './animl/adapter';
+import { useAnimlMapBehavior } from './animl/useMapBehavior';
+
+// Line 32: Uncomment map entry
+animl: animlAdapter,
+
+// Line 57: Uncomment hook call
+useAnimlMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
+
+// Line 69, 75: Uncomment cache status
+const animl = useAnimlCacheStatus();
+case 'animl': return animl;
+```
+
+---
+
+#### STEP 6: Mount Provider in V2App
+
+**File:** `src/v2/V2App.tsx`
+
+**Change:** Add `AnimlFilterProvider` wrapper:
+```typescript
+import { AnimlFilterProvider } from './context/AnimlFilterContext';
+
+// Wrap existing providers:
+<LayerProvider>
+  <MapProvider>
+    <INaturalistFilterProvider>
+      <AnimlFilterProvider>
+        {/* existing content */}
+      </AnimlFilterProvider>
+    </INaturalistFilterProvider>
+  </MapProvider>
+</LayerProvider>
+```
+
+---
+
+#### STEP 7: Create Right Sidebar Components
+
+**Files to Create:**
+1. `src/v2/components/RightSidebar/ANiML/AnimlSidebar.tsx` (may not need — adapter handles routing)
+2. `src/v2/components/RightSidebar/ANiML/AnimlOverviewTab.tsx`
+3. `src/v2/components/RightSidebar/ANiML/AnimlBrowseTab.tsx`
+4. `src/v2/components/RightSidebar/ANiML/CameraListView.tsx`
+5. `src/v2/components/RightSidebar/ANiML/CameraDetailView.tsx`
+6. `src/v2/components/RightSidebar/ANiML/CameraCard.tsx`
+
+**AnimlOverviewTab Pattern:**
+- Read from `useAnimlFilter()` for total counts
+- Display dataset description
+- "Browse Features →" button (per DFT-027)
+
+**AnimlBrowseTab Pattern:**
+- Landing cards on first visit: "Browse by Animal" vs "Browse by Camera" (DFT-003c)
+- Mode-switch link (DFT-042)
+- Dual-level filtering (camera filters + image filters, Task 2.3/2.4)
+- Camera list with badges (Task 2.5)
+- Drill-down to camera detail (Task 2.6)
+
+---
+
+#### STEP 8: Create Legend Widget
+
+**File:** `src/v2/components/FloatingWidgets/AnimlLegendWidget/AnimlLegendWidget.tsx`
+
+**Pattern:** Follow `INaturalistLegendWidget.tsx`
+
+**Features:**
+- Positioned `bottom-6 right-6` (floating over map)
+- Collapsible with expand/collapse button
+- Animal category list (sorted by count descending)
+- Each row: color dot, icon, label, count
+- Click toggles filter (syncs with Browse tab)
+- Loading state with spinner
+
+**Data Source:** `useAnimlFilter()` for `animalTags`, `selectedAnimals`, `toggleAnimal()`
+
+---
+
+### Testing Checklist
+
+After implementation:
+
+- [ ] Activate "Camera Traps (ANiML)" layer → Overview tab loads
+- [ ] Data warms cache on first activation (~2-3s load time)
+- [ ] Revisiting layer shows instant data (cache hit)
+- [ ] "Browse Features →" button switches to Browse tab
+- [ ] Landing cards appear: "Browse by Animal" vs "Browse by Camera"
+- [ ] Legend widget appears at bottom-right
+- [ ] Camera icons appear on map
+- [ ] Clicking animal in legend filters cameras (badges update)
+- [ ] Clicking camera navigates to detail view
+- [ ] Filter changes sync between Browse tab, legend, and map
+
+---
+
+### Common Pitfalls
+
+1. **Forgetting to warm cache** — AnimlFilterContext must call `warmCache()` when Overview tab mounts
+2. **Not using idempotent cache warming** — Check `loading` or `dataLoaded` flags before fetching
+3. **GraphicsLayer not refreshing** — Call `layer.graphics.removeAll()` before re-populating
+4. **Badge visibility** — Only show badges when filters are active (DFT-029)
+5. **React hooks order** — All hooks in `useAllMapBehaviors` must be called unconditionally
+
+---
 
