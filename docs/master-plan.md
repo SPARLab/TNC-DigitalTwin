@@ -1,7 +1,7 @@
 # Master Development Plan - V2 Digital Catalog
 
 **Created:** January 23, 2026  
-**Last Updated:** February 6, 2026  
+**Last Updated:** February 12, 2026  
 **Target Deadline:** February 20, 2026  
 **Status:** 🟡 Planning
 
@@ -60,7 +60,8 @@ Phase 0: Foundation
 ```
 
 **Parallelization:**
-- Phases 1-4 can be worked on simultaneously (different Cursor windows, different branches)
+- Phases 1-4 can be worked on simultaneously (different Cursor windows, different branches) — **PAUSED until Task 0.9 complete**
+- Task 0.9 (Dynamic Layer Registry from Data Catalog Service) is foundational; must merge to main before parallel branches continue
 - Each phase has its own branch, merged to `v2/main` when complete
 - Phase 5 requires all data sources to be functional
 - Phase 6 is the final consistency pass
@@ -80,6 +81,7 @@ Phase 0: Foundation
 | State management for bookmarks | ✅ Decided | Will | Feb 11 | DFT-046: Saved Items widget merged into Map Layers. `BookmarkContext` disabled. |
 | Data source adapter pattern | ✅ Decided | Will + Claude | Feb 12 | Plugin architecture for data sources. Each source implements `DataSourceAdapter` interface. Enables parallel branch development with minimal merge conflicts. See `src/v2/dataSources/` |
 | Caching strategy | ✅ Decided | Will + Claude | Feb 12 | Lazy per-source caching. Each data source context has `warmCache()` method (idempotent). Cache warms on first pin or activation. Data persists while provider mounted. Eliminates eager page-load fetches. |
+| Dynamic layer registry from Data Catalog Service | ✅ Decided | User + Claude | Feb 12 | Replace static `layerRegistry.ts` with dynamic fetch from Dan's Data Catalog FeatureServer (`Dangermond_Preserve_Data_Catalog`). ~90+ real datasets across 14 categories. Left sidebar populated from catalog. Layers without adapters show "Not Yet Implemented" toast. **Blocks all parallel branches until Task 0.9 complete.** See `docs/development-task-tracker.md` Task 24. |
 
 ### Styling Decisions
 

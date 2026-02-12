@@ -177,30 +177,78 @@ bookmark: {
 
 ## Service Analysis
 
-> Fill this out during Task 3.1
+> **Completed Feb 12, 2026** — Discovery via Dan's Data Catalog FeatureServer
 
-### Feature Service / API URLs
-- Stations/Sensors: TBD
-- Datastream API: TBD
+### Data Catalog Service (Master Registry)
+- **URL:** `https://dangermondpreserve-spatial.com/server/rest/services/Dangermond_Preserve_Data_Catalog/FeatureServer`
+- **Table 0:** Categories (id, name, parent_id, display_order)
+- **Table 1:** Datasets (id, service_name, display_title, server_base_url, service_path, has_feature/map/image_server, is_visible)
+- **Table 2:** Dataset Categories (junction: dataset_id ↔ category_id, many-to-many)
 
-### Sensor Attributes
-| Attribute | Type | Useful For | Notes |
-|-----------|------|------------|-------|
-| | | | |
+### Dendra Sensor Feature Services (10 total, all category_id=36)
 
-### Datastream API
-| Parameter | Values | Notes |
-|-----------|--------|-------|
-| start_time | ISO date | |
-| end_time | ISO date | |
-| aggregation | hourly, daily, etc. | |
+| Dataset ID | Service Path | Display Title | Base URL |
+|------------|-------------|---------------|----------|
+| 179 | `Dangermond_Dataloggers_Sensor` | Dataloggers | dangermondpreserve-spatial.com |
+| 180 | `Dangermond_Barometers_Sensor` | Barometer Sensors | dangermondpreserve-spatial.com |
+| 182 | `Dangermond_Wind_Monitors_Sensor` | Wind Sensors | dangermondpreserve-spatial.com |
+| 183 | `Dangermond_Weather_Stations_Sensor` | Weather Stations | dangermondpreserve-spatial.com |
+| 184 | `Dangermond_Water_Level_Meters_Sensor` | Handheld Water Level Sensors | dangermondpreserve-spatial.com |
+| 185 | `Dangermond_Solinst_Leveloggers_Sensor` | Solinst Groundwater Sensors | dangermondpreserve-spatial.com |
+| 186 | `Dangermond_RanchBot_Water_Monitors_Sensor` | RanchBot Water Monitors | dangermondpreserve-spatial.com |
+| 187 | `Dangermond_RanchBot_Rain_Gauges_Sensor` | RanchBot Rain Gauge Sensors | dangermondpreserve-spatial.com |
+| 188 | `Dangermond_Rain_Gages_Sensor` | Rain Gage Sensors | dangermondpreserve-spatial.com |
+| 189 | `Dangermond_Pressure_Level_Sensors` | Water Pressure Level Sensors | dangermondpreserve-spatial.com |
+
+### Per-Service Schema (All 10 follow same pattern)
+
+**Layer 0 — Sensor Locations** (Point Feature Layer):
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| station_id | OID | Primary key |
+| dendra_st_id | String | Dendra platform ID |
+| station_name | String | e.g., "Dangermond_Army Camp" |
+| station_description | String | |
+| latitude / longitude | Double | |
+| elevation | Double | Meters |
+| time_zone | String | e.g., "PST" |
+| is_active | SmallInt | 1 = active |
+| sensor_id | Int | FK to sensor type |
+| sensor_name | String | e.g., "All-in-one Weather Station" |
+| sensor_thing_type_id | String | Dendra thing type |
+| datastream_count | BigInt | Number of datastreams |
+
+**Table 1 — Sensor Data** (Time Series):
+- Fields: station_id, station_name, lat/lon, elevation, timestamp_utc
+- **Variable columns differ per sensor type** (e.g., Weather Stations: air_temp_avg, rainfall, wind_speed_avg, relative_humidity_max, etc.)
+- maxRecordCount: 2000 per query
+
+**Table 2 — Sensor Summary** (Per-Datastream Stats):
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| datastream_id | OID | |
+| dendra_ds_id | String | Dendra platform ID |
+| datastream_name | String | e.g., "Air Temp Avg" |
+| variable | String | e.g., "DegreeCelsius" |
+| unit | String | |
+| station_id / station_name | Int / String | FK to station |
+| total_records | BigInt | e.g., 197,271 |
+| first_reading_time | Date | |
+| last_reading_time | Date | |
+| min_value / max_value / avg_value | Double | Pre-computed stats |
+
+### Legacy Service (v0 — may deprecate)
+- **URL:** `https://dangermondpreserve-spatial.com/server/rest/services/Dendra_Stations/FeatureServer`
+- Layer 0: Stations, Table 3: Datastreams, Table 4: Datapoints (generic `value` column)
+- Monolithic — all sensor types in one service
+- New per-type services have named measurement columns and pre-computed summaries
 
 ### Query Performance
 | Query Type | Avg Response Time | Notes |
 |------------|-------------------|-------|
-| All sensors | | |
-| Datastream for 1 sensor (1 month) | | |
-| Datastream for 1 sensor (1 year) | | |
+| All stations (Weather, 10 stations) | ~200ms | Layer 0 query |
+| Summary table (all datastreams) | ~300ms | Pre-computed, no time series load needed |
+| Time series data (2000 records) | TBD | Table 1, paginated |
 
 ---
 
@@ -212,7 +260,10 @@ bookmark: {
 
 | Decision | Date | Rationale |
 |----------|------|-----------|
-| (none yet) | | |
+| Use new per-type feature services (not v0 monolithic) | Feb 12 | Dan already split Dendra into 10 per-sensor-type services with standardized schema. Better than filtering v0 monolithic service. Each has Locations/Data/Summary tables. |
+| Dynamic layer registry from Data Catalog FeatureServer | Feb 12 | Dan's catalog has ~90+ datasets with categories, service URLs. Replaces static layerRegistry.ts. Added as foundational Task 0.9 — blocks all parallel branches. |
+| Shared Dendra adapter across all sensor types | Feb 12 | All 10 services follow identical schema. One adapter handles all; per-type config maps layerId → service URL + measurement columns. |
+| Use ECharts for time series (consistent with v0) | Feb 12 | Already a project dependency; v0 DendraDetailsSidebar.tsx uses it. |
 
 ### Styling Decisions
 
@@ -224,10 +275,12 @@ bookmark: {
 
 ## Open Questions
 
-- [ ] Should we reuse any code from existing `DendraDetailsSidebar.tsx`?
-- [ ] Which charting library to use?
-- [ ] Floating panel vs. in-sidebar for time series? (mockups show both options)
-- [ ] How to handle sensors with very long data ranges?
+- [ ] Should we reuse any code from existing `DendraDetailsSidebar.tsx`? (ECharts setup likely reusable)
+- [x] Which charting library to use? → ECharts (already a dependency, v0 uses it)
+- [ ] Floating panel vs. in-sidebar for time series? (mockups show both; start with sidebar)
+- [ ] How to handle sensors with very long data ranges? (Summary table has pre-computed stats; paginated Data table)
+- [ ] When will sensor datasets be cross-categorized? (Currently all in category 36; junction table supports many-to-many)
+- [ ] Should "Not Yet Implemented" toast include service description from catalog?
 
 ---
 
@@ -235,5 +288,6 @@ bookmark: {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 12, 2026 | 3.1 | **Service analysis complete.** Discovered 10 per-type Dendra sensor services via Dan's Data Catalog FeatureServer. Documented schemas, URLs, and architectural decisions. Added Task 0.9 (Dynamic Layer Registry) to Phase 0 as blocking prerequisite. | Claude |
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 

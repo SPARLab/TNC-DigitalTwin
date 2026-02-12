@@ -1,8 +1,8 @@
 # Development Task Tracker — V2 Digital Catalog
 
-**Last Updated:** February 11, 2026  
+**Last Updated:** February 12, 2026  
 **Current Phase:** Phase 0 (Foundation) — 🟡 In Progress  
-**Target Deadline:** February 20, 2026 (13 days remaining)
+**Target Deadline:** February 20, 2026 (8 days remaining)
 
 ---
 
@@ -36,8 +36,9 @@
 | 21 | 1 | **iNaturalist: Add Date Range Filter** | ⚪ | Medium | Add start/end date pickers in Browse tab filter section |
 | 22 | 1 | **iNaturalist: Remember Last Active Tab** | ⚪ | Low | Persist Overview vs Browse tab per layer; restore on reactivation |
 | 14 | 0 | **Fix Map Layers Widget Drag Animation** | ✅ | Medium | Fixed: disabled @dnd-kit auto layout animations to prevent jarring transforms |
+| 24 | 0 | **0.9 Dynamic Layer Registry from Data Catalog Service** | 🟡 | **Critical** | Replace static layerRegistry with dynamic fetch from Data Catalog FeatureServer (~90+ real datasets, 14 categories); "Not Yet Implemented" toast for layers without adapters. **BLOCKS all parallel branches.** |
 
-**Active tasks remaining:** 8  
+**Active tasks remaining:** 9  
 **Recently completed:** **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
 
 ---
@@ -48,11 +49,11 @@
 
 | Phase | Status | Progress | Branch | Blocking? |
 |-------|--------|----------|--------|-----------|
-| **0. Foundation** | 🟡 In Progress | ~98% | `v2/foundation` | YES — blocks all |
-| 1. iNaturalist | ⚪ Not Started | 0% | `v2/inaturalist` | No |
-| 2. ANiML | ⚪ Not Started | 0% | `v2/animl` | No |
-| 3. Dendra | ⚪ Not Started | 0% | `v2/dendra` | No |
-| 4. DataOne | ⚪ Not Started | 0% | `v2/dataone` | No |
+| **0. Foundation** | 🟡 In Progress | ~95% | `v2/foundation` | YES — blocks all |
+| 1. iNaturalist | ⚪ Not Started | 0% | `v2/inaturalist` | 🔴 Paused — waiting for Task 0.9 |
+| 2. ANiML | ⚪ Not Started | 0% | `v2/animl` | 🔴 Paused — waiting for Task 0.9 |
+| 3. Dendra | ⚪ Not Started | 0% | `v2/dendra` | 🔴 Paused — waiting for Task 0.9 |
+| 4. DataOne | ⚪ Not Started | 0% | `v2/dataone` | 🔴 Paused — waiting for Task 0.9 |
 | 5. Export Builder | ⚪ Not Started | 0% | `v2/export` | No |
 | 6. Polish & Consistency | ⚪ Not Started | 0% | `v2/polish` | No |
 
@@ -101,6 +102,34 @@
   - Reference: DFT-036 (adapted — no longer tied to Saved Items widget)
   - Current: Basic highlight implemented for iNaturalist view-on-map
   - Needed: Cyan ring highlight for all data sources, off-screen indicator, keyboard support
+
+- [ ] **0.9** Dynamic Layer Registry from Data Catalog Service **(CRITICAL — BLOCKS ALL PARALLEL BRANCHES)**
+  - **Discovery (Feb 12):** Dan's Data Catalog FeatureServer contains metadata for ~90+ real datasets with hierarchical categories, service URLs, and display titles. This replaces the static `layerRegistry.ts` (27 hardcoded placeholders) with the real catalog.
+  - **Service URL:** `https://dangermondpreserve-spatial.com/server/rest/services/Dangermond_Preserve_Data_Catalog/FeatureServer`
+  - **Service Structure:**
+    - Table 0: Categories (id, name, parent_id for hierarchy, display_order)
+    - Table 1: Datasets (id, service_name, display_title, server_base_url, service_path, has_feature_server/map_server/image_server, is_visible)
+    - Table 2: Dataset Categories (junction table: dataset_id ↔ category_id, supports many-to-many)
+  - **Dendra Sensors: 10 per-type feature services discovered:**
+    - Dataloggers, Barometers, Wind Monitors, Weather Stations (all-in-one), Water Level Meters, Solinst Leveloggers, RanchBot Water Monitors, RanchBot Rain Gauges, Rain Gages, Pressure Level Sensors
+    - Each follows identical 3-part schema: Layer 0 (Locations), Table 1 (Data), Table 2 (Summary)
+    - All on `dangermondpreserve-spatial.com/server/rest/services/`
+  - **Other notable datasets:** Camera Trap Data, CalFlora Plant Obs, GBIF Species Occurrences, MOTUS Wildlife Telemetry
+  - **Implementation:**
+    1. Create `useCatalogRegistry` hook — fetches Categories + Datasets + junction from Data Catalog on app load
+    2. Replace static `CATEGORIES` / `LAYERS` arrays with fetched data, mapped to `CatalogLayer[]` / `Category[]`
+    3. Map `dataSource` field based on service pattern detection (Dendra sensor → `'dendra'`, iNaturalist → `'inaturalist'`, etc.)
+    4. Add "Not Yet Implemented" toast when user activates a layer without an adapter
+    5. Preserve existing `LAYER_MAP` / `getAdapter()` lookup pattern — adapters still registered statically
+  - **Acceptance Criteria:**
+    - [ ] Left sidebar shows all ~90+ datasets from Data Catalog, grouped by real categories
+    - [ ] Category counts reflect real dataset counts
+    - [ ] Categories with subcategories show nested hierarchy
+    - [ ] Layers with adapters (iNaturalist) work as before (sidebar, map, legend)
+    - [ ] Layers without adapters show informational toast: "This layer is coming soon"
+    - [ ] Loading state while catalog fetches
+  - **Must merge to main before any parallel branch continues**
+  - Files: `src/v2/data/layerRegistry.ts` (refactor), `src/v2/hooks/useCatalogRegistry.ts` (new), `src/v2/components/MapArea/` (toast)
 
 - [x] **0.8** Refine Tree Connectors — Polish L-shaped connectors for nested child views
   - Reference: `docs/PLANNING/component-specs/map-layers-widget.md` (Connecting Line section)
@@ -362,6 +391,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 12, 2026 | Phase 0 | 🟡 **Task 24 (0.9): Dynamic Layer Registry from Data Catalog Service.** Discovered Dan's Data Catalog FeatureServer with ~90+ real datasets, 14 categories (with subcategories), and 10 per-type Dendra sensor services. All sensor services follow identical 3-part schema (Locations/Data/Summary). Replaces static layerRegistry.ts. **All parallel branches paused until complete.** | Claude |
 | Feb 12, 2026 | Phase 0 | ✅ **Task 23 complete: Data Source Adapter Pattern refactor.** Created plugin architecture: each data source implements `DataSourceAdapter` interface. Core files (MapContainer, RightSidebar, useMapLayers) made data-source-agnostic — read from registry. Lazy caching: `warmCache()` pattern (iNat: 2.18s initial, instant revisit). Active-but-not-pinned layers visible on map. Files: `dataSources/{types.ts, registry.ts, inaturalist/{adapter.tsx, useMapBehavior.ts}}`. Modified: INaturalistFilterContext (lazy), useMapLayers (generic), MapContainer/RightSidebar (generic), LayerContext (removed iNat from initial). Merge conflicts: ~4 lines/source. **Enables parallel branch development.** | Claude |
 | Feb 12, 2026 | Phase 0 | ✅ **Task 1 complete: ArcGIS Map Integration (0.4).** Replaced placeholder with real ArcGIS WebMap. Layers added when pinned OR active. GraphicsLayer for highlights. | Claude |
 | Feb 11, 2026 | Phase 1 | Added **Tasks 14-22** for iNaturalist UX improvements: map marker interactions, compact filter dropdown, search bar, date filter, pagination (10/page), tab memory, legend rename. Future: save observation → filtered view (low priority). | Claude |
