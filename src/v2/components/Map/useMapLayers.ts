@@ -17,7 +17,7 @@ import { buildTaxonFilterExpression } from './layers/inaturalistLayer';
 export function useMapLayers() {
   const { pinnedLayers, activeLayer } = useLayers();
   const { viewRef, mapReady, showToast } = useMap();
-  const { taxonCategory } = useINaturalistFilter();
+  const { selectedTaxa } = useINaturalistFilter();
   const managedLayersRef = useRef<Map<string, Layer>>(new Map());
   const warnedLayersRef = useRef<Set<string>>(new Set());
 
@@ -77,14 +77,14 @@ export function useMapLayers() {
     showToast(`"${activeLayer.name}" — map data not available yet`, 'info');
   }, [activeLayer?.layerId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Update iNaturalist layer filter when taxonCategory changes
+  // Update iNaturalist layer filter when selectedTaxa changes
   useEffect(() => {
     const inatLayer = managedLayersRef.current.get('inaturalist-obs');
     if (inatLayer && inatLayer.type === 'feature') {
       const featureLayer = inatLayer as FeatureLayer;
-      featureLayer.definitionExpression = buildTaxonFilterExpression(taxonCategory);
+      featureLayer.definitionExpression = buildTaxonFilterExpression(selectedTaxa);
     }
-  }, [taxonCategory]);
+  }, [selectedTaxa]);
 
   // Cleanup on unmount
   useEffect(() => {

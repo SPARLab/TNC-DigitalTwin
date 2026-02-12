@@ -1,26 +1,55 @@
 // ============================================================================
 // INaturalistLegendWidget — Floating legend over map for taxon filtering
 // Matches v1 app's MapLegend with collapsible header + taxon filter buttons.
+// Gets counts directly from service (fast) instead of fetching all observations.
 // ============================================================================
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { TAXON_CONFIG, getTaxonEmoji, getTaxonColor } from '../../Map/layers/taxonConfig';
-import { useINaturalistObservations } from '../../../hooks/useINaturalistObservations';
 import { useINaturalistFilter } from '../../../context/INaturalistFilterContext';
+import { tncINaturalistService } from '../../../../services/tncINaturalistService';
 
 export function INaturalistLegendWidget() {
   const [isExpanded, setIsExpanded] = useState(true);
-  const { taxonCategory, setTaxonCategory } = useINaturalistFilter();
+  const { selectedTaxa, toggleTaxon, selectAll, hasFilter } = useINaturalistFilter();
+  const [counts, setCounts] = useState<Map<string, number>>(new Map());
+  const [loading, setLoading] = useState(true);
 
-  // Fetch all observations (no skip) to get counts for legend
-  const { allObservations, loading } = useINaturalistObservations({ skip: false });
+  // Fetch counts per taxon from service (much faster than fetching all observations)
+  useEffect(() => {
+    let cancelled = false;
 
-  // Count observations per taxon
-  const counts = new Map<string, number>();
-  for (const obs of allObservations) {
-    counts.set(obs.taxonCategory, (counts.get(obs.taxonCategory) ?? 0) + 1);
-  }
+    async function fetchCounts() {
+      setLoading(true);
+      const newCounts = new Map<string, number>();
+
+      try {
+        // Fetch count for each taxon category in parallel
+        const countPromises = TAXON_CONFIG.map(async (taxon) => {
+          const count = await tncINaturalistService.queryObservationsCount({
+            taxonCategories: [taxon.value],
+            searchMode: 'expanded', // Use expanded bounding box
+          });
+          return { taxon: taxon.value, count };
+        });
+
+        const results = await Promise.all(countPromises);
+        
+        if (!cancelled) {
+          results.forEach(({ taxon, count }) => newCounts.set(taxon, count));
+          setCounts(newCounts);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Failed to fetch legend counts:', err);
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchCounts();
+    return () => { cancelled = true; };
+  }, []);
 
   // Build legend groups (only taxa with observations, sorted by count desc)
   const groups = TAXON_CONFIG
@@ -30,7 +59,7 @@ export function INaturalistLegendWidget() {
 
   if (loading || groups.length === 0) return null;
 
-  const allVisible = !taxonCategory; // No filter = all visible
+  const allVisible = !hasFilter; // No filter = all visible
 
   return (
     <div
@@ -60,7 +89,7 @@ export function INaturalistLegendWidget() {
         {!allVisible && (
           <button
             id="inat-legend-show-all"
-            onClick={() => setTaxonCategory('')}
+            onClick={selectAll}
             className="text-xs text-blue-600 hover:text-blue-700 font-medium"
           >
             Show All
@@ -75,18 +104,18 @@ export function INaturalistLegendWidget() {
           className="p-2 max-h-[32rem] overflow-y-auto space-y-1"
         >
           {groups.map(group => {
-            const isActive = taxonCategory === group.value;
-            const bgColor = isActive
+            const isSelected = hasFilter ? selectedTaxa.has(group.value) : true;
+            const bgColor = isSelected
               ? 'bg-blue-50 hover:bg-blue-100 border-blue-200'
-              : 'bg-gray-50 hover:bg-gray-100 border-gray-200';
+              : 'bg-gray-100 hover:bg-gray-150 border-gray-200 opacity-60';
 
             return (
               <button
                 key={group.value}
                 id={`inat-legend-item-${group.value}`}
-                onClick={() => setTaxonCategory(isActive ? '' : group.value)}
+                onClick={() => toggleTaxon(group.value)}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded border transition-all ${bgColor}`}
-                title={`${isActive ? 'Show all' : 'Filter to'} ${group.label}`}
+                title={`${isSelected ? 'Hide' : 'Show'} ${group.label}`}
               >
                 <div className="flex items-center gap-2">
                   <span
@@ -94,7 +123,9 @@ export function INaturalistLegendWidget() {
                     style={{ backgroundColor: getTaxonColor(group.value) }}
                   />
                   <span className="text-base leading-none">{getTaxonEmoji(group.value)}</span>
-                  <span className="text-sm text-gray-800">{group.label}</span>
+                  <span className={`text-sm ${isSelected ? 'text-gray-800 font-medium' : 'text-gray-500'}`}>
+                    {group.label}
+                  </span>
                 </div>
                 <span className="text-xs text-gray-600">{group.count}</span>
               </button>

@@ -68,10 +68,19 @@ export function createINaturalistLayer(options: {
 }
 
 /**
- * Build a SQL definitionExpression for filtering by taxon category.
- * Empty string = show all (1=1).
+ * Build a SQL definitionExpression for filtering by taxon categories.
+ * Empty set = show all (1=1).
+ * Multiple taxa = SQL IN clause.
  */
-export function buildTaxonFilterExpression(taxonCategory: string): string {
-  if (!taxonCategory) return '1=1'; // Show all
-  return `taxon_category_name = '${taxonCategory}'`;
+export function buildTaxonFilterExpression(selectedTaxa: Set<string>): string {
+  if (selectedTaxa.size === 0) return '1=1'; // Show all
+  
+  const taxaArray = Array.from(selectedTaxa);
+  if (taxaArray.length === 1) {
+    return `taxon_category_name = '${taxaArray[0]}'`;
+  }
+  
+  // Multiple taxa: use IN clause
+  const taxaList = taxaArray.map(t => `'${t}'`).join(', ');
+  return `taxon_category_name IN (${taxaList})`;
 }

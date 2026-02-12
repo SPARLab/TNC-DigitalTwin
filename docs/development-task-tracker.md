@@ -24,8 +24,9 @@
 | 10 | 0 | **Left Sidebar: Visual Distinction Between Categories and Layers** | ✅ | Medium | Category banners (slate-100), Research Datasets at bottom with darker gray bg, no bottom border; layer cards with amber active state, blue pins |
 | 11 | 0 | **Right Sidebar: Active Layer Color Coordination & Flash** | ✅ | Medium | Yellow header (amber-50); flash animation on layer change (white→amber-100→amber-50, 600ms); coordinated with left sidebar and Map Layers widget |
 | 12 | 0 | **Fix DataOne Datasets Card Width in Left Sidebar** | ✅ | Low | DataOne shortcut row width matching; right padding; removed redundant left border |
+| 13 | 1 | **Fix iNaturalist Layer Icons & Loading** | 🟡 | High | Wrong/fake icons before active; delay on layer click; slow taxa filter in legend |
 
-**Active tasks remaining:** 1  
+**Active tasks remaining:** 2  
 **Recently completed:** DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
 
 ---
@@ -230,6 +231,13 @@
 ### After Phase 0 (Phase 1-4)
 
 - **Phase 1:** iNaturalist data source (5 tasks)
+
+  - [ ] **Fix iNaturalist Layer Icons & Loading** (Task 13)
+    - **Problem:** Map appears to draw icons that aren't iNaturalist-related before the layer is active. When clicking iNaturalist Observations, it takes a while to load; then a batch of iNaturalist icons loads quickly. Taxa filtering in the legend is slow to apply.
+    - **Root cause (hypothesis):** May be drawing placeholder/wrong icons before layer activation; map layer may load independently of user interaction; legend filter may not be tightly coupled to map layer `definitionExpression` updates.
+    - **Needed:** Ensure only iNaturalist emoji icons are drawn when iNaturalist layer is active/pinned; optimize loading so icons appear promptly when layer is selected; reduce latency between legend taxa filter change and map update.
+    - **Refer:** `src/v2/components/Map/layers/inaturalistLayer.ts`, `useMapLayers.ts`, `INaturalistLegendWidget.tsx`, `INaturalistFilterContext.tsx`
+
 - **Phase 2:** ANiML data source (7 tasks)
 - **Phase 3:** Dendra data source (6 tasks)
 - **Phase 4:** DataOne data source (5 tasks)
@@ -275,6 +283,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 11, 2026 | Phase 1 | Added **Task 13: Fix iNaturalist Layer Icons & Loading** — Wrong/fake icons before active; delay on layer click; slow taxa filter in legend. WIP commit. | User |
 | Feb 11, 2026 | Phase 0 | ✅ **DFT-046: Saved Items widget dropped.** Unified into Map Layers. "Mapped Item Layers" renamed to "Map Layers". BookmarkProvider/BookmarkedItemsWidget disabled (code preserved). Bookmark actions in iNaturalist stubbed as TODO ("Save as View"). All documentation updated. | Claude |
 | Feb 10, 2026 | Phase 0 | ✅ Task 12 complete: Fix DataOne Datasets Card Width. Added w-full to DataOne shortcut and LayerRow; mr-3 for right padding; removed redundant left border from category content (background + indentation sufficient for hierarchy). | Claude |
 | Feb 10, 2026 | Phase 0 | ✅ Saved Items hierarchical tree connectors complete: Added L-shaped tree lines, emerald left border accent, full-width boxed headers, dynamic height (50vh cap), stub connector from headers. Distinguishes saved items (left border) from Map Layers child views (full boxes). | Claude |

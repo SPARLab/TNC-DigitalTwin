@@ -17,7 +17,7 @@ import { useINaturalistObservations } from '../../hooks/useINaturalistObservatio
 
 export function RightSidebar() {
   const { activeLayer, deactivateLayer, lastEditFiltersRequest } = useLayers();
-  const { clearFilter } = useINaturalistFilter();
+  const { selectAll } = useINaturalistFilter();
   const [activeTab, setActiveTab] = useState<SidebarTab>('overview');
   const consumedRequestRef = useRef(0);
 
@@ -33,7 +33,7 @@ export function RightSidebar() {
   if (activeLayer && activeLayer.layerId !== prevLayerId) {
     setPrevLayerId(activeLayer.layerId);
     setActiveTab('overview');
-    clearFilter();
+    selectAll();
     setShouldFlash(true);
     setTimeout(() => setShouldFlash(false), 600);
   }

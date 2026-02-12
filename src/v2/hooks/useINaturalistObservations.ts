@@ -24,7 +24,7 @@ export interface INatObservation {
 }
 
 export interface INatFilters {
-  taxonCategory?: string; // e.g., 'Aves', 'Mammalia'
+  selectedTaxa?: Set<string>; // Empty set = show all
   startDate?: string;     // YYYY-MM-DD
   endDate?: string;       // YYYY-MM-DD
   /** When true, skip fetching entirely (for conditional hook usage) */
@@ -77,9 +77,14 @@ export function useINaturalistObservations(filters: INatFilters) {
       setPage(1);
 
       try {
+        // Convert Set to array for service
+        const taxonArray = filters.selectedTaxa && filters.selectedTaxa.size > 0
+          ? Array.from(filters.selectedTaxa)
+          : [];
+
         // Get total count first
         const count = await tncINaturalistService.queryObservationsCount({
-          taxonCategories: filters.taxonCategory ? [filters.taxonCategory] : [],
+          taxonCategories: taxonArray,
           startDate: filters.startDate,
           endDate: filters.endDate,
           searchMode: 'expanded',
@@ -89,7 +94,7 @@ export function useINaturalistObservations(filters: INatFilters) {
 
         // Fetch observations
         const raw = await tncINaturalistService.queryObservations({
-          taxonCategories: filters.taxonCategory ? [filters.taxonCategory] : [],
+          taxonCategories: taxonArray,
           startDate: filters.startDate,
           endDate: filters.endDate,
           maxResults: MAX_RESULTS,
@@ -108,7 +113,7 @@ export function useINaturalistObservations(filters: INatFilters) {
 
     fetchData();
     return () => { cancelled = true; controller.abort(); };
-  }, [filters.skip, filters.taxonCategory, filters.startDate, filters.endDate]);
+  }, [filters.skip, filters.selectedTaxa, filters.startDate, filters.endDate]);
 
   // Pagination helpers
   const totalPages = Math.ceil(observations.length / PAGE_SIZE);

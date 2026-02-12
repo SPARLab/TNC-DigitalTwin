@@ -20,11 +20,11 @@ import { ObservationCard } from './ObservationCard';
 import { INaturalistDetailView } from './INaturalistDetailView';
 
 export function INaturalistBrowseTab() {
-  const { taxonCategory, setTaxonCategory } = useINaturalistFilter();
+  const { selectedTaxa, toggleTaxon, selectAll } = useINaturalistFilter();
 
   const filters: INatFilters = useMemo(() => ({
-    taxonCategory: taxonCategory || undefined,
-  }), [taxonCategory]);
+    selectedTaxa,
+  }), [selectedTaxa]);
 
   // Data fetching
   const {
@@ -71,7 +71,7 @@ export function INaturalistBrowseTab() {
     );
   }
 
-  const hasFilter = !!taxonCategory;
+  const hasFilter = selectedTaxa.size > 0;
 
   return (
     <div id="inat-browse-tab" className="space-y-3">
@@ -83,27 +83,39 @@ export function INaturalistBrowseTab() {
           </span>
           {hasFilter && (
             <button
-              onClick={() => setTaxonCategory('')}
+              onClick={selectAll}
               className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
             >
-              Clear All
+              Show All
             </button>
           )}
         </div>
 
-        {/* Taxon dropdown */}
-        <select
-          id="inat-taxon-filter"
-          value={taxonCategory}
-          onChange={e => setTaxonCategory(e.target.value)}
-          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md bg-white
-                     focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-        >
-          <option value="">All Taxon Groups</option>
-          {TAXON_CATEGORIES.map(t => (
-            <option key={t.value} value={t.value}>{t.label}</option>
-          ))}
-        </select>
+        {/* Multi-select checkboxes for taxa */}
+        <div className="space-y-1 max-h-48 overflow-y-auto">
+          {TAXON_CATEGORIES.map(taxon => {
+            const isSelected = !hasFilter || selectedTaxa.has(taxon.value);
+            return (
+              <label
+                key={taxon.value}
+                className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors ${
+                  isSelected ? 'bg-emerald-50 hover:bg-emerald-100' : 'bg-gray-50 hover:bg-gray-100 opacity-60'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => toggleTaxon(taxon.value)}
+                  className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                />
+                <span className="text-[10px]">{taxon.emoji}</span>
+                <span className={`text-sm flex-1 ${isSelected ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
+                  {taxon.label}
+                </span>
+              </label>
+            );
+          })}
+        </div>
 
         {/* Note about legend widget sync */}
         <p className="text-xs text-gray-500 italic">

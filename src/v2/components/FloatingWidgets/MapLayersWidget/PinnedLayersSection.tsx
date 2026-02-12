@@ -104,7 +104,7 @@ export function PinnedLayersSection({
     
     // Update previous IDs for next comparison
     setPrevLayerIds(currentIds);
-  }, [layers, prevLayerIds]);
+  }, [layers]); // Remove prevLayerIds from dependencies to prevent infinite loop
 
   // Configure drag sensors
   const sensors = useSensors(
