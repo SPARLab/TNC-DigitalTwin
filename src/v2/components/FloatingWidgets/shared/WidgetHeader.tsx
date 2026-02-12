@@ -17,6 +17,8 @@ interface WidgetHeaderProps {
   onUndo: () => void;
   // Optional close button (Bookmarked Items has it, Map Layers does not)
   onClose?: () => void;
+  // Optional custom actions (e.g., settings dropdown)
+  customActions?: ReactNode;
 }
 
 export function WidgetHeader({
@@ -29,6 +31,7 @@ export function WidgetHeader({
   undoDescription,
   onUndo,
   onClose,
+  customActions,
 }: WidgetHeaderProps) {
   return (
     <div
@@ -50,6 +53,9 @@ export function WidgetHeader({
       </div>
 
       <div className="flex items-center gap-1 flex-shrink-0">
+        {/* Custom actions (e.g., settings dropdown) */}
+        {customActions}
+
         {/* Undo button — always visible, grayed when inactive */}
         <button
           onClick={onUndo}

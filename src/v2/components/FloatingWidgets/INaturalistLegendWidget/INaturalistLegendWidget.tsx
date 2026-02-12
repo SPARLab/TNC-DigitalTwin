@@ -1,65 +1,45 @@
 // ============================================================================
 // INaturalistLegendWidget — Floating legend over map for taxon filtering
-// Matches v1 app's MapLegend with collapsible header + taxon filter buttons.
-// Gets counts directly from service (fast) instead of fetching all observations.
+// Uses locally-cached taxon counts from context (no separate API calls).
+// Shows loading shimmer while data is being fetched.
 // ============================================================================
 
-import { useState, useEffect } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
 import { TAXON_CONFIG, getTaxonEmoji, getTaxonColor } from '../../Map/layers/taxonConfig';
 import { useINaturalistFilter } from '../../../context/INaturalistFilterContext';
-import { tncINaturalistService } from '../../../../services/tncINaturalistService';
 
 export function INaturalistLegendWidget() {
   const [isExpanded, setIsExpanded] = useState(true);
-  const { selectedTaxa, toggleTaxon, selectAll, hasFilter } = useINaturalistFilter();
-  const [counts, setCounts] = useState<Map<string, number>>(new Map());
-  const [loading, setLoading] = useState(true);
+  const {
+    selectedTaxa, toggleTaxon, selectAll, hasFilter,
+    taxonCounts, loading, dataLoaded,
+  } = useINaturalistFilter();
 
-  // Fetch counts per taxon from service (much faster than fetching all observations)
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchCounts() {
-      setLoading(true);
-      const newCounts = new Map<string, number>();
-
-      try {
-        // Fetch count for each taxon category in parallel
-        const countPromises = TAXON_CONFIG.map(async (taxon) => {
-          const count = await tncINaturalistService.queryObservationsCount({
-            taxonCategories: [taxon.value],
-            searchMode: 'expanded', // Use expanded bounding box
-          });
-          return { taxon: taxon.value, count };
-        });
-
-        const results = await Promise.all(countPromises);
-        
-        if (!cancelled) {
-          results.forEach(({ taxon, count }) => newCounts.set(taxon, count));
-          setCounts(newCounts);
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error('Failed to fetch legend counts:', err);
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    fetchCounts();
-    return () => { cancelled = true; };
-  }, []);
-
-  // Build legend groups (only taxa with observations, sorted by count desc)
+  // Build legend groups from local counts (sorted by count desc)
   const groups = TAXON_CONFIG
-    .map(t => ({ ...t, count: counts.get(t.value) ?? 0 }))
+    .map(t => ({ ...t, count: taxonCounts.get(t.value) ?? 0 }))
     .filter(t => t.count > 0)
     .sort((a, b) => b.count - a.count);
 
-  if (loading || groups.length === 0) return null;
+  // Loading state — show shimmer while fetching
+  if (loading || !dataLoaded) {
+    return (
+      <div
+        id="inat-legend-widget"
+        className="absolute bottom-6 right-6 bg-white rounded-lg shadow-lg border border-gray-300 z-30 w-72"
+      >
+        <div id="inat-legend-loading" className="flex items-center gap-2 px-4 py-3">
+          <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+          <span className="text-sm text-gray-500">Loading observations...</span>
+        </div>
+      </div>
+    );
+  }
 
-  const allVisible = !hasFilter; // No filter = all visible
+  if (groups.length === 0) return null;
+
+  const allVisible = !hasFilter;
 
   return (
     <div
@@ -78,11 +58,9 @@ export function INaturalistLegendWidget() {
             className="p-0.5 hover:bg-gray-200 rounded transition-colors"
             aria-label={isExpanded ? 'Collapse legend' : 'Expand legend'}
           >
-            {isExpanded ? (
-              <ChevronDown className="w-4 h-4 text-gray-600" />
-            ) : (
-              <ChevronRight className="w-4 h-4 text-gray-600" />
-            )}
+            {isExpanded
+              ? <ChevronDown className="w-4 h-4 text-gray-600" />
+              : <ChevronRight className="w-4 h-4 text-gray-600" />}
           </button>
           <h3 className="text-sm font-semibold text-gray-900">Filter Observations</h3>
         </div>
@@ -97,12 +75,9 @@ export function INaturalistLegendWidget() {
         )}
       </div>
 
-      {/* Content */}
+      {/* Taxon filter list */}
       {isExpanded && (
-        <div
-          id="inat-legend-content"
-          className="p-2 max-h-[32rem] overflow-y-auto space-y-1"
-        >
+        <div id="inat-legend-content" className="p-2 max-h-[32rem] overflow-y-auto space-y-1">
           {groups.map(group => {
             const isSelected = hasFilter ? selectedTaxa.has(group.value) : true;
             const bgColor = isSelected
@@ -127,7 +102,7 @@ export function INaturalistLegendWidget() {
                     {group.label}
                   </span>
                 </div>
-                <span className="text-xs text-gray-600">{group.count}</span>
+                <span className="text-xs text-gray-600">{group.count.toLocaleString()}</span>
               </button>
             );
           })}

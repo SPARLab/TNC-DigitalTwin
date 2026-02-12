@@ -8,12 +8,14 @@ import { Layers, Pin } from 'lucide-react';
 import { useLayers } from '../../../context/LayerContext';
 import { WidgetShell } from '../shared/WidgetShell';
 import { WidgetHeader } from '../shared/WidgetHeader';
+import { CountDisplayDropdown } from '../shared/CountDisplayDropdown';
 import { ActiveLayerSection } from './ActiveLayerSection';
 import { PinnedLayersSection } from './PinnedLayersSection';
-import type { ActiveLayer } from '../../../types';
+import type { ActiveLayer, CountDisplayMode } from '../../../types';
 
 export function MapLayersWidget() {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [countDisplayMode, setCountDisplayMode] = useState<CountDisplayMode>('results-expanded');
   const [displayedActiveLayer, setDisplayedActiveLayer] = useState<ActiveLayer | null>(null);
   const [isExiting, setIsExiting] = useState(false);
   const exitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -91,6 +93,12 @@ export function MapLayersWidget() {
         canUndo={canUndo}
         undoDescription={undoStack[0]?.description}
         onUndo={undo}
+        customActions={
+          <CountDisplayDropdown 
+            currentMode={countDisplayMode} 
+            onModeChange={setCountDisplayMode} 
+          />
+        }
       />
 
       <div 
@@ -142,6 +150,7 @@ export function MapLayersWidget() {
               layers={pinnedLayers}
               activeLayerId={activeLayer?.layerId}
               activeViewId={activeLayer?.viewId}
+              countDisplayMode={countDisplayMode}
               onToggleVisibility={toggleVisibility}
               onRemove={unpinLayer}
               onReorder={reorderLayers}

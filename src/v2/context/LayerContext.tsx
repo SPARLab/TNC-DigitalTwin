@@ -58,6 +58,7 @@ const INITIAL_PINNED: PinnedLayer[] = [
         isVisible: true,
         filterCount: 3,
         filterSummary: 'species = Mountain Lion, date > 2024-01-01, confidence >= 80%',
+        resultCount: 47, // Mock result count
       },
       {
         id: 'view-2',
@@ -65,6 +66,7 @@ const INITIAL_PINNED: PinnedLayer[] = [
         isVisible: false,
         filterCount: 2,
         filterSummary: 'species = Deer, date > 2024-01-01',
+        resultCount: 128, // Mock result count
       },
     ],
   },
@@ -72,10 +74,11 @@ const INITIAL_PINNED: PinnedLayer[] = [
     id: 'pinned-inat',
     layerId: 'inaturalist-obs',
     name: 'iNaturalist Observations',
-    isVisible: true,
+    isVisible: false, // Start hidden — user activates via sidebar click (auto-restores visibility)
     isActive: false,
     filterCount: 0,
     order: 1,
+    resultCount: 342, // Mock result count
   },
   {
     id: 'pinned-2',
@@ -85,6 +88,7 @@ const INITIAL_PINNED: PinnedLayer[] = [
     isActive: false,
     filterCount: 0,
     order: 2,
+    resultCount: 8, // Mock result count
   },
   {
     id: 'pinned-3',
@@ -96,6 +100,7 @@ const INITIAL_PINNED: PinnedLayer[] = [
     filterSummary: 'date range = Mar 2024, sensor type = Pressure',
     distinguisher: 'Mar 2024',
     order: 3,
+    resultCount: 12, // Mock result count
   },
 ];
 

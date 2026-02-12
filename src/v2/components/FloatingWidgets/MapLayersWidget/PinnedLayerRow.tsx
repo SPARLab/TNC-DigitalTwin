@@ -10,7 +10,7 @@ import type { KeyboardEvent as ReactKeyboardEvent, CSSProperties } from 'react';
 import { Eye, EyeOff, GripVertical, X, ChevronRight, Plus } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { PinnedLayer } from '../../../types';
+import type { PinnedLayer, CountDisplayMode } from '../../../types';
 import { FilterIndicator } from './FilterIndicator';
 import { PinnedLayerChildRow } from './PinnedLayerChildRow';
 import { NewViewButton } from './NewViewButton';
@@ -22,6 +22,7 @@ interface PinnedLayerRowProps {
   justDropped?: boolean;
   justPinned?: boolean;
   activeViewId?: string; // NEW: which child view is currently active (if nested)
+  countDisplayMode: CountDisplayMode; // NEW: how to display counts
   onToggleExpand: () => void;
   onToggleVisibility: () => void;
   onRemove: () => void;
@@ -44,6 +45,7 @@ export function PinnedLayerRow({
   justDropped = false,
   justPinned = false,
   activeViewId,
+  countDisplayMode,
   onToggleExpand,
   onToggleVisibility,
   onRemove,
@@ -86,7 +88,7 @@ export function PinnedLayerRow({
     }
   }, [isExpanded, isNested, activeViewId]);
 
-  // Drag-and-drop setup
+  // Drag-and-drop setup — let dnd-kit handle all drag/reorder animations natively
   const {
     attributes,
     listeners,
@@ -110,9 +112,22 @@ export function PinnedLayerRow({
     ? layer.views!.find(v => v.isVisible)?.filterCount ?? 0
     : layer.filterCount;
 
-  // Build drag styles (DFT-034)
+  // For nested: parent result count should match the visible child's count
+  const parentResultCount = isNested
+    ? layer.views!.find(v => v.isVisible)?.resultCount
+    : layer.resultCount;
+
+  // Determine what to show in the collapsed row based on count display mode
+  const shouldShowFilterCount = 
+    countDisplayMode === 'filters-only' || countDisplayMode === 'filters-and-results';
+  const shouldShowResultCount = 
+    (countDisplayMode === 'results-collapsed' || countDisplayMode === 'filters-and-results') && !isExpanded;
+  const showResultCountInExpanded =
+    countDisplayMode === 'results-expanded' && isExpanded;
+
+  // Build drag styles (DFT-034) — Translate only (no scale/rotate)
   const style: CSSProperties = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Translate.toString(transform),
     transition,
   };
 
@@ -205,11 +220,26 @@ export function PinnedLayerRow({
             {displayName}
           </span>
 
-          {/* Filter indicator — always visible (parent shows visible child's count) */}
-          <FilterIndicator 
-            count={parentFilterCount} 
-            onClick={e => { e?.stopPropagation(); onEditFilters?.(); }} 
-          />
+          {/* Count indicators based on display mode */}
+          {countDisplayMode !== 'none' && (
+            <div className="flex items-center gap-1.5">
+              {/* Filter count */}
+              {shouldShowFilterCount && (
+                <FilterIndicator 
+                  count={parentFilterCount} 
+                  onClick={e => { e?.stopPropagation(); onEditFilters?.(); }} 
+                />
+              )}
+              
+              {/* Result count */}
+              {shouldShowResultCount && parentResultCount !== undefined && (
+                <span className="text-xs text-gray-500 flex items-center gap-0.5">
+                  <span className="font-medium">{parentResultCount}</span>
+                  <span className="text-[10px]">results</span>
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Remove button */}
           <button
@@ -255,6 +285,15 @@ export function PinnedLayerRow({
                     </button>
                   )}
                 </div>
+
+                {/* Result count (if mode is results-expanded) — appears AFTER filters */}
+                {showResultCountInExpanded && layer.resultCount !== undefined && (
+                  <div className="mb-2 pt-1 border-t border-gray-100">
+                    <p className="text-xs text-gray-600 mt-2">
+                      <span className="font-semibold">{layer.resultCount}</span> results match your filters
+                    </p>
+                  </div>
+                )}
 
                 {/* Bottom row: New View (left) + Edit Filters (right) */}
                 <div className="flex items-center justify-between gap-2">
@@ -310,6 +349,7 @@ export function PinnedLayerRow({
                   isLast={index === layer.views!.length - 1}
                   isActive={activeViewId === view.id}
                   isExpanded={expandedChildId === view.id}
+                  countDisplayMode={countDisplayMode}
                   onToggleExpand={() => setExpandedChildId(prev => prev === view.id ? null : view.id)}
                   onToggleVisibility={() => onToggleChildView?.(view.id)}
                   onActivate={() => onActivateChildView?.(view.id)}

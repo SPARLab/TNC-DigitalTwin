@@ -19,13 +19,14 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import type { PinnedLayer } from '../../../types';
+import type { PinnedLayer, CountDisplayMode } from '../../../types';
 import { PinnedLayerRow } from './PinnedLayerRow';
 
 interface PinnedLayersSectionProps {
   layers: PinnedLayer[];
   activeLayerId?: string; // NEW: which layer is currently active
   activeViewId?: string; // NEW: which child view is currently active (for nested layers)
+  countDisplayMode: CountDisplayMode; // NEW: how to display counts
   onToggleVisibility: (pinnedId: string) => void;
   onRemove: (pinnedId: string) => void;
   onReorder: (fromIndex: number, toIndex: number) => void;
@@ -42,6 +43,7 @@ export function PinnedLayersSection({
   layers,
   activeLayerId,
   activeViewId,
+  countDisplayMode,
   onToggleVisibility,
   onRemove,
   onReorder,
@@ -179,6 +181,7 @@ export function PinnedLayersSection({
                     showDragHandle={showDragHandles}
                     justDropped={justDroppedId === layer.id}
                     justPinned={isJustPinned}
+                    countDisplayMode={countDisplayMode}
                     onToggleExpand={() => setExpandedId(prev => prev === layer.id ? null : layer.id)}
                     onToggleVisibility={() => onToggleVisibility(layer.id)}
                     onRemove={() => handleRemove(layer.id)}

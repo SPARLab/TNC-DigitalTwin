@@ -29,14 +29,22 @@ export function RightSidebar() {
   const isINat = activeLayer?.dataSource === 'inaturalist';
   const inatData = useINaturalistObservations({ skip: !isINat });
 
-  // Reset to Overview, clear filter, and trigger flash when layer changes (DFT-006)
+  // Reset to Overview and trigger flash when layer changes (DFT-006)
+  // NOTE: Own-state updates (setPrevLayerId, setActiveTab, setShouldFlash) are safe during render.
+  // selectAll() is moved to a useEffect below because it updates a DIFFERENT component's state.
   if (activeLayer && activeLayer.layerId !== prevLayerId) {
     setPrevLayerId(activeLayer.layerId);
     setActiveTab('overview');
-    selectAll();
     setShouldFlash(true);
     setTimeout(() => setShouldFlash(false), 600);
   }
+
+  // Clear iNaturalist taxon filter on layer change
+  // Must be in useEffect — calling selectAll() during render would trigger
+  // a setState on INaturalistFilterProvider (a different component), causing a render loop.
+  useEffect(() => {
+    selectAll();
+  }, [activeLayer?.layerId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // DFT-019: Edit Filters → open Browse tab
   useEffect(() => {

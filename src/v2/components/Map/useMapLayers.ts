@@ -1,25 +1,29 @@
 // ============================================================================
 // useMapLayers — Syncs LayerContext pinned/active layers with ArcGIS layers
-// Delegates layer creation to per-source modules under layers/.
-// For iNaturalist: listens to filter context and updates definitionExpression.
+// For iNaturalist: uses GraphicsLayer populated from locally-cached data.
+// Taxon filtering toggles individual graphic visibility (instant, no network).
 // Shows toast for unimplemented layers.
 // ============================================================================
 
 import { useEffect, useRef } from 'react';
 import type Layer from '@arcgis/core/layers/Layer';
-import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
+import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import { useLayers } from '../../context/LayerContext';
 import { useMap } from '../../context/MapContext';
 import { useINaturalistFilter } from '../../context/INaturalistFilterContext';
 import { createMapLayer, IMPLEMENTED_LAYERS } from './layers';
-import { buildTaxonFilterExpression } from './layers/inaturalistLayer';
+import {
+  populateINaturalistLayer,
+  filterINaturalistLayer,
+} from './layers/inaturalistLayer';
 
 export function useMapLayers() {
   const { pinnedLayers, activeLayer } = useLayers();
   const { viewRef, mapReady, showToast } = useMap();
-  const { selectedTaxa } = useINaturalistFilter();
+  const { selectedTaxa, allObservations, dataLoaded } = useINaturalistFilter();
   const managedLayersRef = useRef<Map<string, Layer>>(new Map());
   const warnedLayersRef = useRef<Set<string>>(new Set());
+  const inatPopulatedRef = useRef(false);
 
   // Sync pinned layers → ArcGIS layers
   useEffect(() => {
@@ -36,6 +40,7 @@ export function useMapLayers() {
         map.remove(arcLayer);
         managed.delete(layerId);
         warnedLayersRef.current.delete(layerId);
+        if (layerId === 'inaturalist-obs') inatPopulatedRef.current = false;
       }
     }
 
@@ -47,7 +52,6 @@ export function useMapLayers() {
       const arcLayer = createMapLayer(layerId, { visible: pinned.isVisible });
 
       if (!arcLayer) {
-        // Not implemented — warn once per layer
         if (!warnedLayersRef.current.has(layerId)) {
           warnedLayersRef.current.add(layerId);
           showToast(`"${pinned.name}" — layer not implemented yet`, 'warning');
@@ -57,8 +61,15 @@ export function useMapLayers() {
 
       map.add(arcLayer);
       managed.set(layerId, arcLayer);
+
+      // If iNaturalist data is already loaded, populate immediately
+      if (layerId === 'inaturalist-obs' && dataLoaded && arcLayer instanceof GraphicsLayer) {
+        populateINaturalistLayer(arcLayer, allObservations);
+        filterINaturalistLayer(arcLayer, selectedTaxa);
+        inatPopulatedRef.current = true;
+      }
     }
-  }, [pinnedLayers, viewRef, mapReady, showToast]);
+  }, [pinnedLayers, viewRef, mapReady, showToast, dataLoaded, allObservations, selectedTaxa]);
 
   // Sync visibility
   useEffect(() => {
@@ -77,13 +88,23 @@ export function useMapLayers() {
     showToast(`"${activeLayer.name}" — map data not available yet`, 'info');
   }, [activeLayer?.layerId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Update iNaturalist layer filter when selectedTaxa changes
+  // Populate iNaturalist GraphicsLayer when data arrives (after layer exists)
   useEffect(() => {
+    if (!dataLoaded || inatPopulatedRef.current) return;
     const inatLayer = managedLayersRef.current.get('inaturalist-obs');
-    if (inatLayer && inatLayer.type === 'feature') {
-      const featureLayer = inatLayer as FeatureLayer;
-      featureLayer.definitionExpression = buildTaxonFilterExpression(selectedTaxa);
-    }
+    if (!inatLayer || !(inatLayer instanceof GraphicsLayer)) return;
+
+    populateINaturalistLayer(inatLayer, allObservations);
+    filterINaturalistLayer(inatLayer, selectedTaxa);
+    inatPopulatedRef.current = true;
+  }, [dataLoaded, allObservations, mapReady, selectedTaxa]);
+
+  // Update iNaturalist filter when selectedTaxa changes (instant local toggle)
+  useEffect(() => {
+    if (!inatPopulatedRef.current) return;
+    const inatLayer = managedLayersRef.current.get('inaturalist-obs');
+    if (!inatLayer || !(inatLayer instanceof GraphicsLayer)) return;
+    filterINaturalistLayer(inatLayer, selectedTaxa);
   }, [selectedTaxa]);
 
   // Cleanup on unmount

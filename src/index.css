@@ -293,18 +293,20 @@ body {
   animation: slide-down-from-above 400ms ease-out;
 }
 
-/* Pin exit: row fades and space shrinks before removal */
+/* Pin exit: row fades and space shrinks before removal.
+   Normal state has NO overflow:hidden or transitions — those would clip
+   dnd-kit's native drag transforms and cause items to "disappear" during drag. */
 .pin-row-wrapper {
-  overflow: hidden;
   max-height: 500px;
-  transition: max-height 0.4s ease-out, opacity 0.4s ease-out, margin 0.4s ease-out;
 }
 .pin-row-wrapper.pin-row-exit {
+  overflow: hidden;
   max-height: 0;
   opacity: 0;
   margin-top: 0 !important;
   margin-bottom: 0 !important;
   pointer-events: none;
+  transition: max-height 0.4s ease-out, opacity 0.4s ease-out, margin 0.4s ease-out;
 }
 
 /* =============================================================================

@@ -5,7 +5,7 @@
 // ============================================================================
 
 import { Eye, EyeOff, X, ChevronRight } from 'lucide-react';
-import type { PinnedLayerView } from '../../../types';
+import type { PinnedLayerView, CountDisplayMode } from '../../../types';
 import { FilterIndicator } from './FilterIndicator';
 
 interface PinnedLayerChildRowProps {
@@ -13,6 +13,7 @@ interface PinnedLayerChildRowProps {
   isLast: boolean;
   isActive: boolean;
   isExpanded: boolean; // CHANGED: now controlled by parent
+  countDisplayMode: CountDisplayMode; // NEW: how to display counts
   onToggleExpand: () => void; // CHANGED: now calls parent to manage accordion
   onToggleVisibility: () => void;
   onActivate?: () => void;
@@ -26,6 +27,7 @@ export function PinnedLayerChildRow({
   isLast,
   isActive,
   isExpanded,
+  countDisplayMode,
   onToggleExpand,
   onToggleVisibility,
   onActivate,
@@ -34,6 +36,17 @@ export function PinnedLayerChildRow({
   onClearFilters,
 }: PinnedLayerChildRowProps) {
   const isPlaceholder = view.name === 'Add Filters';
+
+  // Determine what to show based on count display mode
+  const shouldShowFilterCount = 
+    countDisplayMode === 'filters-only' || countDisplayMode === 'filters-and-results';
+  const shouldShowResultCount = 
+    (countDisplayMode === 'results-children' || 
+     countDisplayMode === 'results-collapsed' || 
+     countDisplayMode === 'filters-and-results') && !isExpanded;
+  const showResultCountInExpanded =
+    (countDisplayMode === 'results-expanded' || 
+     countDisplayMode === 'results-children') && isExpanded;
 
   return (
     <div id={`pinned-child-row-${view.id}`} className="relative">
@@ -115,11 +128,26 @@ export function PinnedLayerChildRow({
             {view.name}
           </span>
 
-          {/* Filter indicator — always visible */}
-          <FilterIndicator
-            count={view.filterCount}
-            onClick={undefined}
-          />
+          {/* Count indicators based on display mode */}
+          {countDisplayMode !== 'none' && (
+            <div className="flex items-center gap-1.5">
+              {/* Filter count */}
+              {shouldShowFilterCount && (
+                <FilterIndicator
+                  count={view.filterCount}
+                  onClick={undefined}
+                />
+              )}
+              
+              {/* Result count */}
+              {shouldShowResultCount && view.resultCount !== undefined && (
+                <span className="text-xs text-gray-500 flex items-center gap-0.5">
+                  <span className="font-medium">{view.resultCount}</span>
+                  <span className="text-[10px]">results</span>
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Remove button */}
           <button
@@ -165,6 +193,15 @@ export function PinnedLayerChildRow({
                   </button>
                 )}
               </div>
+
+              {/* Result count (if mode includes results in expanded) — appears AFTER filters */}
+              {showResultCountInExpanded && view.resultCount !== undefined && (
+                <div className="mb-2 pt-1 border-t border-gray-100">
+                  <p className="text-xs text-gray-600 mt-2">
+                    <span className="font-semibold">{view.resultCount}</span> results match your filters
+                  </p>
+                </div>
+              )}
 
               {/* Bottom row: Edit Filters (right-aligned) */}
               <div className="flex items-center justify-end">
