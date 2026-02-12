@@ -84,11 +84,6 @@ export function INaturalistFilterProvider({ children }: { children: ReactNode })
   const [fetchRequested, setFetchRequested] = useState(false);
   const fetchStartedRef = useRef(false);
 
-  // Log mount for debugging
-  useEffect(() => {
-    console.log('[iNat Cache] 🎬 INaturalistFilterProvider mounted');
-    return () => console.log('[iNat Cache] 💀 INaturalistFilterProvider unmounted');
-  }, []);
 
   // Filter actions
   const toggleTaxon = useCallback((taxon: string) => {
@@ -108,10 +103,8 @@ export function INaturalistFilterProvider({ children }: { children: ReactNode })
   /** Idempotent fetch trigger — safe to call multiple times */
   const warmCache = useCallback(() => {
     if (fetchStartedRef.current) {
-      console.log('[iNat Cache] warmCache() called but already fetched/fetching');
       return;
     }
-    console.log('[iNat Cache] 🔥 warmCache() triggered — starting fetch');
     fetchStartedRef.current = true;
     setLoading(true); // Show loading immediately (avoids 1-frame flash)
     setFetchRequested(true);
@@ -131,16 +124,13 @@ export function INaturalistFilterProvider({ children }: { children: ReactNode })
   useEffect(() => {
     if (!fetchRequested) return;
 
-    console.log('[iNat Cache] ⏳ Fetch effect running — about to call API');
     let cancelled = false;
 
     async function fetchData() {
-      const startTime = performance.now();
       setLoading(true);
       setError(null);
 
       try {
-        console.log('[iNat Cache] 📡 Calling TNC ArcGIS API...');
         // Fetch count + observations in parallel (both use expanded bounding box)
         const [count, raw] = await Promise.all([
           tncINaturalistService.queryObservationsCount({ searchMode: 'expanded' }),
@@ -150,9 +140,7 @@ export function INaturalistFilterProvider({ children }: { children: ReactNode })
           }),
         ]);
 
-        const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
         if (cancelled) return;
-        console.log(`[iNat Cache] ✅ Fetched ${raw.length} observations in ${elapsed}s`);
         setTotalServiceCount(count);
         setAllObservations(raw.map(transformObservation));
         setDataLoaded(true);

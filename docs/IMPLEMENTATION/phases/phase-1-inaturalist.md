@@ -130,13 +130,13 @@ Implement the iNaturalist observations browse experience in the right sidebar. T
 **Goal:** Display filtered observations as browseable cards.
 
 **Acceptance Criteria:**
-- [ ] Cards show: species name, observer, date, location
-- [ ] Cards show photo thumbnail (if available)
-- [ ] "View on Map" button zooms to observation
-- [ ] "Bookmark" button adds to bookmarks (simple, no filter)
-- [ ] "Open in iNat" button links to iNaturalist.org
-- [ ] List is paginated or virtualized for performance
-- [ ] Clicking card selects it (for detail view)
+- [x] Cards show: species name, observer, date, location
+- [x] Cards show photo thumbnail (if available)
+- [x] Clicking card opens detail view AND triggers map: pan + zoom to observation, highlight marker, open popup (Task 14, Feb 12)
+- [x] "View on Map" button also pans + zooms + highlights + opens popup
+- [x] "Bookmark" button adds to bookmarks (simple, no filter) — stubbed as TODO per DFT-046
+- [x] "Open in iNat" button links to iNaturalist.org
+- [x] List is paginated or virtualized for performance
 
 **Reference:** Mockup `02b-browse-inaturalist.html` results section
 
@@ -204,6 +204,7 @@ TBD - Document the actual URL
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 12, 2026 | 1.4 | Task 14 complete: Observation card click opens detail view + pans/zooms/highlights marker on map + opens popup. Updated acceptance criteria. | Claude |
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 | Feb 2, 2026 | 1.2 | Resolved DFT-006: Overview tab opens first when layer is selected, with prominent "Browse Features →" button | Will + Claude |
 | Feb 4, 2026 | 1.2 | Resolved DFT-027: "Browse Features →" button design specification (full-width primary, TNC green, inline arrow, hover/focus states, 150-200ms transition) | Will + Claude |

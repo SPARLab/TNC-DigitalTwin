@@ -200,7 +200,6 @@ class TNCArcGISService {
       spatialReference: { wkid: 4326 }
     };
     
-    console.log('🧪 DEBUG: Using test polygon:', testPolygon);
     return JSON.stringify(testPolygon);
   }
 
@@ -224,9 +223,7 @@ class TNCArcGISService {
         // Simplify polygon if it has too many points (ArcGIS services can have issues with very detailed polygons)
         let processedCoordinates = coordinates;
         if (coordinates.length > 1000) {
-          console.log('🔍 DEBUG: Polygon has', coordinates.length, 'points, simplifying...');
           processedCoordinates = this.simplifyPolygon(coordinates, 0.0005); // ~50m tolerance
-          console.log('🔍 DEBUG: Simplified to', processedCoordinates.length, 'points');
         }
         
         // Convert to ArcGIS polygon format: [[x1,y1],[x2,y2],...,[x1,y1]]
@@ -237,36 +234,6 @@ class TNCArcGISService {
           rings: [rings],
           spatialReference: { wkid: 4326 }
         };
-        
-        // Debug logging
-        console.log('🔍 DEBUG: Original GeoJSON coordinates count:', coordinates.length);
-        console.log('🔍 DEBUG: Processed coordinates count:', processedCoordinates.length);
-        console.log('🔍 DEBUG: First few coordinates:', processedCoordinates.slice(0, 3));
-        console.log('🔍 DEBUG: Last few coordinates:', processedCoordinates.slice(-3));
-        console.log('🔍 DEBUG: ArcGIS polygon structure:', {
-          ringCount: arcgisPolygon.rings.length,
-          firstRingPointCount: arcgisPolygon.rings[0].length,
-          firstFewPoints: arcgisPolygon.rings[0].slice(0, 3),
-          lastFewPoints: arcgisPolygon.rings[0].slice(-3),
-          spatialReference: arcgisPolygon.spatialReference
-        });
-        
-        // Check if polygon is properly closed
-        const firstPoint = arcgisPolygon.rings[0][0];
-        const lastPoint = arcgisPolygon.rings[0][arcgisPolygon.rings[0].length - 1];
-        const isClosed = firstPoint[0] === lastPoint[0] && firstPoint[1] === lastPoint[1];
-        console.log('🔍 DEBUG: Polygon closed?', isClosed, 'First:', firstPoint, 'Last:', lastPoint);
-        
-        // Calculate rough bounds for verification
-        const lons = arcgisPolygon.rings[0].map((p: number[]) => p[0]);
-        const lats = arcgisPolygon.rings[0].map((p: number[]) => p[1]);
-        const bounds = {
-          minLon: Math.min(...lons),
-          maxLon: Math.max(...lons),
-          minLat: Math.min(...lats),
-          maxLat: Math.max(...lats)
-        };
-        console.log('🔍 DEBUG: Polygon bounds:', bounds);
         
         // Return as JSON string for ArcGIS geometry parameter
         return JSON.stringify(arcgisPolygon);
@@ -340,27 +307,18 @@ class TNCArcGISService {
         geometryParams.geometry = customPolygon;
         geometryParams.geometryType = 'esriGeometryPolygon';
         geometryParams.spatialRel = 'esriSpatialRelIntersects';
-        console.log('🎨 Using custom drawn polygon for spatial filtering');
       } else if (searchMode === 'preserve-only') {
         geometryParams.geometry = await this.getPreserveBoundaryPolygon(false);
         geometryParams.geometryType = 'esriGeometryPolygon';
         geometryParams.spatialRel = 'esriSpatialRelIntersects';
-        console.log('🎯 Using preserve polygon for spatial filtering with intersects relationship');
-        console.log('🔍 DEBUG: Polygon geometry length:', geometryParams.geometry.length);
       } else {
         const extent = spatialExtent || await this.getPreserveExtent(searchMode === 'expanded' ? 'expanded' : 'preserve-only');
         geometryParams.geometry = `${extent.xmin},${extent.ymin},${extent.xmax},${extent.ymax}`;
         geometryParams.geometryType = 'esriGeometryEnvelope';
         geometryParams.spatialRel = 'esriSpatialRelIntersects';
-        console.log('📦 Using bounding box for spatial filtering:', extent);
       }
 
       const queryUrl = `${this.baseUrl}/${this.observationsLayerId}/query`;
-
-      // Debug: Query service info on first run to understand limits
-      if (pageNumber === 1) {
-        await this.getServiceInfo();
-      }
 
       // Pagination loop
       while (hasMoreData && allObservations.length < maxResults) {
@@ -378,8 +336,6 @@ class TNCArcGISService {
           ...geometryParams
         };
 
-        console.log(`📄 TNC ArcGIS: Fetching page ${pageNumber} (offset: ${currentOffset}, limit: ${currentPageSize})`);
-
         let response: Response;
 
         // Use POST for preserve-only mode to avoid URL length limits
@@ -391,11 +347,6 @@ class TNCArcGISService {
             }
           });
 
-          if (pageNumber === 1) {
-            console.log('🔍 DEBUG: TNC ArcGIS Query (POST):', queryUrl);
-            console.log('🔍 DEBUG: POST body preview:', formBody.toString().substring(0, 500) + '...');
-          }
-
           response = await fetch(queryUrl, {
             method: 'POST',
             headers: {
@@ -405,9 +356,6 @@ class TNCArcGISService {
           });
         } else {
           const fullUrl = `${queryUrl}?${new URLSearchParams(params as any)}`;
-          if (pageNumber === 1) {
-            console.log('🔍 DEBUG: TNC ArcGIS Query (GET):', fullUrl);
-          }
           response = await fetch(fullUrl);
         }
 
@@ -436,17 +384,6 @@ class TNCArcGISService {
 
         allObservations.push(...pageObservations);
 
-        console.log(`📄 TNC ArcGIS: Page ${pageNumber} fetched ${pageObservations.length} observations (total: ${allObservations.length})`);
-
-        // Debug: Log response details
-        console.log('🔍 DEBUG: Response details:', {
-          featuresLength: data.features?.length,
-          exceededTransferLimit: data.exceededTransferLimit,
-          hasMoreData: pageObservations.length === currentPageSize,
-          currentPageSize,
-          pageObservationsLength: pageObservations.length
-        });
-
         // Report progress
         if (onProgress) {
           const percentage = Math.min(100, Math.round((allObservations.length / maxResults) * 100));
@@ -457,20 +394,6 @@ class TNCArcGISService {
         // Continue if we got a full page, regardless of exceededTransferLimit
         // The service may set exceededTransferLimit even when more pages are available
         hasMoreData = pageObservations.length === currentPageSize;
-        
-        if (data.exceededTransferLimit) {
-          console.warn('⚠️ TNC ArcGIS: Transfer limit exceeded on page', pageNumber);
-          console.warn('🔍 DEBUG: Service reports transfer limit, but continuing pagination if we got full page');
-        }
-        
-        // Additional debug for pagination logic
-        console.log('🔍 DEBUG: Pagination decision:', {
-          hasMoreData,
-          pageObservationsLength: pageObservations.length,
-          currentPageSize,
-          exceededTransferLimit: data.exceededTransferLimit,
-          willContinue: hasMoreData && allObservations.length < maxResults
-        });
 
         currentOffset += pageObservations.length;
         pageNumber++;
@@ -479,38 +402,6 @@ class TNCArcGISService {
         if (pageNumber > 50) {
           console.warn('⚠️ TNC ArcGIS: Reached maximum page limit (50), stopping pagination');
           break;
-        }
-      }
-
-      console.log(`✅ TNC ArcGIS: Completed pagination. Fetched ${allObservations.length} total observations across ${pageNumber - 1} pages`);
-
-      // Debug: Check if we should query the total count to see how many records are actually available
-      if (allObservations.length >= 1000) {
-        console.log('🔍 DEBUG: Fetched 1000+ records, checking total count available...');
-        try {
-          const totalCount = await this.queryObservationsCount({
-            taxonCategories,
-            startDate,
-            endDate,
-            spatialExtent,
-            useFilters,
-            searchMode
-          });
-          console.log(`🔍 DEBUG: Total records available in service: ${totalCount}`);
-          if (totalCount > allObservations.length) {
-            const missing = totalCount - allObservations.length;
-            console.warn(`⚠️ WARNING: Service has ${totalCount} total records, but we only fetched ${allObservations.length} (missing ${missing})`);
-            
-            // If we're only missing a few records, try one more page with smaller size
-            if (missing <= 100 && pageNumber <= 10) {
-              console.log('🔄 Attempting to fetch remaining records with smaller page size...');
-              // This could be implemented as a final small request
-            }
-          } else {
-            console.log('✅ Successfully fetched all available records');
-          }
-        } catch (error) {
-          console.warn('🔍 DEBUG: Could not query total count:', error);
         }
       }
 
@@ -658,7 +549,6 @@ class TNCArcGISService {
       // This would need to be adjusted based on the actual hexbin layer schema
       if (taxonCategories.length > 0) {
         // Hexbins might aggregate by dominant category or have category counts
-        console.log(`Filtering hexbins by categories: ${taxonCategories.join(', ')}`);
       }
 
       const extent = spatialExtent || await this.getPreserveExtent();
@@ -681,8 +571,6 @@ class TNCArcGISService {
       }
 
       const data = await response.json();
-      console.log(`TNC ArcGIS: Fetched ${data.features.length} hexbins at resolution ${resolution}`);
-
       return data.features;
 
     } catch (error) {
@@ -749,14 +637,6 @@ class TNCArcGISService {
       }
       
       const serviceInfo = await response.json();
-      console.log('🔍 DEBUG: ArcGIS Service Info:', {
-        maxRecordCount: serviceInfo.maxRecordCount,
-        standardMaxRecordCount: serviceInfo.standardMaxRecordCount,
-        tileMaxRecordCount: serviceInfo.tileMaxRecordCount,
-        maxRecordCountFactor: serviceInfo.maxRecordCountFactor,
-        capabilities: serviceInfo.capabilities
-      });
-      
       return serviceInfo;
     } catch (error) {
       console.error('Error querying service info:', error);
