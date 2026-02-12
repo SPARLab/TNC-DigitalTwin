@@ -1,7 +1,7 @@
 # Phase 3: Dendra Right Sidebar
 
-**Status:** ⚪ Not Started  
-**Progress:** 0 / 6 tasks  
+**Status:** 🟡 In Progress  
+**Progress:** 4 / 6 tasks  
 **Branch:** `v2/dendra`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -41,12 +41,12 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
-| 3.1 | Query Dendra service to understand attributes | ⚪ Not Started | | |
-| 3.2 | Create Dendra right sidebar shell | ⚪ Not Started | | |
-| 3.3 | Implement sensor filter UI | ⚪ Not Started | | |
-| 3.4 | Implement sensor list with cards | ⚪ Not Started | | |
-| 3.5 | Implement sensor detail with time series chart | ⚪ Not Started | | |
-| 3.6 | Implement time range filter (Level 3) | ⚪ Not Started | | |
+| 3.1 | Query Dendra service to understand attributes | 🟢 Complete | | Feb 12: Service analysis in doc |
+| 3.2 | Create Dendra right sidebar shell | 🟢 Complete | | Overview/Browse tabs, drill-down |
+| 3.3 | Implement sensor filter UI | 🟢 Complete | | Active-only toggle |
+| 3.4 | Implement sensor list with cards | 🟢 Complete | | StationCard, StationDetailView |
+| 3.5 | Implement sensor detail with time series chart | ⚪ Not Started | | **NEXT:** Floating chart (ECharts) |
+| 3.6 | Implement time range filter (Level 3) | ⚪ Not Started | | Date range + aggregation |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -277,7 +277,7 @@ bookmark: {
 
 - [ ] Should we reuse any code from existing `DendraDetailsSidebar.tsx`? (ECharts setup likely reusable)
 - [x] Which charting library to use? → ECharts (already a dependency, v0 uses it)
-- [ ] Floating panel vs. in-sidebar for time series? (mockups show both; start with sidebar)
+- [ ] Floating panel vs. in-sidebar for time series? (mockups show both; **floating chart chosen for next task 3.5**)
 - [ ] How to handle sensors with very long data ranges? (Summary table has pre-computed stats; paginated Data table)
 - [ ] When will sensor datasets be cross-categorized? (Currently all in category 36; junction table supports many-to-many)
 - [ ] Should "Not Yet Implemented" toast include service description from catalog?
@@ -288,6 +288,7 @@ bookmark: {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 12, 2026 | 3.1-3.4 | **Tasks complete.** Full Dendra station browse adapter. Service layer (`dendraStationService.ts`), DendraContext (per-service cache), adapter + useMapBehavior, dendraLayer.ts (green/gray station markers), Overview/Browse tabs, StationCard, StationDetailView with datastream summaries. Fixes: buildServiceUrl (no double path), elevation null/NaN, layer-switch graphics clearing (only active layer populated). **Next: 3.5 floating time series chart.** | Claude |
 | Feb 12, 2026 | 3.1 | **Service analysis complete.** Discovered 10 per-type Dendra sensor services via Dan's Data Catalog FeatureServer. Documented schemas, URLs, and architectural decisions. Added Task 0.9 (Dynamic Layer Registry) to Phase 0 as blocking prerequisite. | Claude |
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 

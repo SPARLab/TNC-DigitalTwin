@@ -1,0 +1,133 @@
+// ============================================================================
+// DendraBrowseTab — Station filter + station cards + drill-down to detail.
+// Filter: toggle "Active only" to hide inactive stations.
+// Station card click → StationDetailView with datastream summaries.
+// ============================================================================
+
+import { useState, useCallback } from 'react';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { useDendra, useSummariesByStation } from '../../../context/DendraContext';
+import { useMap } from '../../../context/MapContext';
+import { StationCard } from './StationCard';
+import { StationDetailView } from './StationDetailView';
+import type { DendraStation } from '../../../services/dendraStationService';
+
+export function DendraBrowseTab() {
+  const {
+    filteredStations, loading, error, dataLoaded,
+    showActiveOnly, toggleActiveOnly, stationCount,
+  } = useDendra();
+  const summariesByStation = useSummariesByStation();
+
+  // Detail view state
+  const [selectedStation, setSelectedStation] = useState<DendraStation | null>(null);
+
+  // Map interactions
+  const { highlightPoint, clearHighlight, viewRef } = useMap();
+
+  const handleViewOnMap = useCallback((station: DendraStation) => {
+    highlightPoint(station.longitude, station.latitude);
+    const view = viewRef.current;
+    if (view) {
+      view.goTo(
+        { center: [station.longitude, station.latitude], zoom: 15 },
+        { duration: 800 },
+      );
+    }
+    setTimeout(clearHighlight, 5000);
+  }, [highlightPoint, clearHighlight, viewRef]);
+
+  // Drill-down: station detail view
+  if (selectedStation) {
+    const stationSummaries = summariesByStation.get(selectedStation.station_id) ?? [];
+    return (
+      <StationDetailView
+        station={selectedStation}
+        summaries={stationSummaries}
+        onBack={() => setSelectedStation(null)}
+        onViewOnMap={() => handleViewOnMap(selectedStation)}
+      />
+    );
+  }
+
+  const activeCount = filteredStations.filter(s => s.is_active === 1).length;
+  const inactiveCount = stationCount - activeCount;
+
+  return (
+    <div id="dendra-browse-tab" className="space-y-3">
+      {/* Filter section */}
+      <div id="dendra-filter-section" className="bg-slate-50 rounded-lg p-3 space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            Filter Stations
+          </span>
+          <span className="text-xs text-gray-400">
+            {filteredStations.length} of {stationCount}
+          </span>
+        </div>
+
+        {/* Active only toggle */}
+        <label
+          id="dendra-active-filter"
+          className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors ${
+            showActiveOnly
+              ? 'bg-emerald-50 hover:bg-emerald-100'
+              : 'bg-gray-50 hover:bg-gray-100'
+          }`}
+        >
+          <input
+            type="checkbox"
+            checked={showActiveOnly}
+            onChange={toggleActiveOnly}
+            className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+          />
+          <span className={`text-sm flex-1 ${showActiveOnly ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
+            Active stations only
+          </span>
+          {inactiveCount > 0 && (
+            <span className="text-xs text-gray-400">
+              ({inactiveCount} inactive)
+            </span>
+          )}
+        </label>
+      </div>
+
+      {/* Loading state */}
+      {loading && !dataLoaded && (
+        <div className="flex items-center justify-center py-8 text-gray-400">
+          <Loader2 className="w-5 h-5 animate-spin mr-2" />
+          <span className="text-sm">Loading stations...</span>
+        </div>
+      )}
+
+      {/* Error state */}
+      {error && (
+        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          {error}
+        </div>
+      )}
+
+      {/* Station cards */}
+      {dataLoaded && !error && (
+        <div className="space-y-2">
+          {filteredStations.map(station => (
+            <StationCard
+              key={station.station_id}
+              station={station}
+              summaryCount={summariesByStation.get(station.station_id)?.length ?? 0}
+              onViewDetail={() => setSelectedStation(station)}
+              onViewOnMap={() => handleViewOnMap(station)}
+            />
+          ))}
+
+          {filteredStations.length === 0 && (
+            <p className="text-sm text-gray-400 text-center py-6">
+              No stations found{showActiveOnly ? ' (try disabling "Active only" filter)' : ''}.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

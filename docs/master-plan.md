@@ -32,7 +32,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 0 | Foundation | ⚪ Not Started | 0 / 7 tasks | `v2/foundation` | YES - blocks all |
 | 1 | iNaturalist | ⚪ Not Started | 0 / 5 tasks | `v2/inaturalist` | No |
 | 2 | ANiML | ⚪ Not Started | 0 / 7 tasks | `v2/animl` | No |
-| 3 | Dendra | ⚪ Not Started | 0 / 6 tasks | `v2/dendra` | No |
+| 3 | Dendra | 🟡 In Progress | 4 / 6 tasks | `v2/dendra` | No |
 | 4 | DataOne | ⚪ Not Started | 0 / 5 tasks | `v2/dataone` | No |
 | 5 | Export Builder | ⚪ Not Started | 0 / 4 tasks | `v2/export` | No |
 | 6 | Polish & Consistency | ⚪ Not Started | 0 / 7+ tasks | `v2/polish` | No |

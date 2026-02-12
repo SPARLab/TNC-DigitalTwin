@@ -37,9 +37,11 @@
 | 22 | 1 | **iNaturalist: Remember Last Active Tab** | ⚪ | Low | Persist Overview vs Browse tab per layer; restore on reactivation |
 | 14 | 0 | **Fix Map Layers Widget Drag Animation** | ✅ | Medium | Fixed: disabled @dnd-kit auto layout animations to prevent jarring transforms |
 | 24 | 0 | **0.9 Dynamic Layer Registry from Data Catalog Service** | 🟡 | **Critical** | Replace static layerRegistry with dynamic fetch from Data Catalog FeatureServer (~90+ real datasets, 14 categories); "Not Yet Implemented" toast for layers without adapters. **BLOCKS all parallel branches.** |
+| 25 | 3 | **Dendra: Tasks 3.1-3.4 — Station browse adapter** | ✅ | High | Service, context, map layer, sidebar shell, filters, station cards, detail view with datastream summaries. Next: Floating time series chart (3.5). |
+| 26 | 3 | **Dendra: Task 3.5 — Floating time series chart** | ⚪ | High | ECharts in sensor detail; interactive hover; stats panel. Reference: mockup 02d-browse-dendra.html |
 
-**Active tasks remaining:** 9  
-**Recently completed:** **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
+**Active tasks remaining:** 10  
+**Recently completed:** **Dendra 3.1-3.4** ✅ (Feb 12), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
 
 ---
 
@@ -52,7 +54,7 @@
 | **0. Foundation** | 🟡 In Progress | ~95% | `v2/foundation` | YES — blocks all |
 | 1. iNaturalist | ⚪ Not Started | 0% | `v2/inaturalist` | 🔴 Paused — waiting for Task 0.9 |
 | 2. ANiML | ⚪ Not Started | 0% | `v2/animl` | 🔴 Paused — waiting for Task 0.9 |
-| 3. Dendra | ⚪ Not Started | 0% | `v2/dendra` | 🔴 Paused — waiting for Task 0.9 |
+| 3. Dendra | 🟡 In Progress | 4 / 6 tasks | `v2/dendra` | No |
 | 4. DataOne | ⚪ Not Started | 0% | `v2/dataone` | 🔴 Paused — waiting for Task 0.9 |
 | 5. Export Builder | ⚪ Not Started | 0% | `v2/export` | No |
 | 6. Polish & Consistency | ⚪ Not Started | 0% | `v2/polish` | No |
@@ -347,7 +349,14 @@
     - **Files:** `INaturalistBrowseTab.tsx`, `LayerContext.tsx`, `inaturalistLayer.ts`
 
 - **Phase 2:** ANiML data source (7 tasks)
+
 - **Phase 3:** Dendra data source (6 tasks)
+  - [x] **Tasks 3.1-3.4 complete:** Dendra station browse adapter ✅ (Feb 12)
+    - **Completed:** Full adapter for 10 per-type sensor services (Weather Stations, Barometers, Rain Gauges, etc.). Service layer, DendraContext, map behavior, sidebar (Overview/Browse), StationCard, StationDetailView with datastream summaries. Map markers now correctly show only active layer's stations. Fixed: buildServiceUrl (no double path), elevation null/NaN handling, layer-switch graphics clearing.
+    - **Files:** `src/v2/services/dendraStationService.ts`, `src/v2/context/DendraContext.tsx`, `src/v2/dataSources/dendra/`, `src/v2/components/RightSidebar/Dendra/`, `src/v2/components/Map/layers/dendraLayer.ts`
+  - [ ] **Task 3.5 (NEXT):** Floating time series chart — sensor detail view with ECharts, interactive hover, stats panel
+  - [ ] **Task 3.6:** Time range filter (Level 3) — date picker, aggregation dropdown
+
 - **Phase 4:** DataOne data source (5 tasks)
 
 See `docs/master-plan.md` for full phase breakdown.
@@ -391,6 +400,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 12, 2026 | Phase 3 | ✅ **Dendra Tasks 3.1-3.4 complete.** Full station browse adapter for 10 per-type sensor services. Service layer, DendraContext (per-service cache), map behavior (active-layer-only populate), Overview/Browse tabs, StationCard, StationDetailView with datastream summaries. Fixes: buildServiceUrl (no double path), elevation null/NaN, layer-switch graphics clearing. **Next: Task 3.5 floating time series chart.** | Claude |
 | Feb 12, 2026 | Phase 0 | 🟡 **Task 24 (0.9): Dynamic Layer Registry from Data Catalog Service.** Discovered Dan's Data Catalog FeatureServer with ~90+ real datasets, 14 categories (with subcategories), and 10 per-type Dendra sensor services. All sensor services follow identical 3-part schema (Locations/Data/Summary). Replaces static layerRegistry.ts. **All parallel branches paused until complete.** | Claude |
 | Feb 12, 2026 | Phase 0 | ✅ **Task 23 complete: Data Source Adapter Pattern refactor.** Created plugin architecture: each data source implements `DataSourceAdapter` interface. Core files (MapContainer, RightSidebar, useMapLayers) made data-source-agnostic — read from registry. Lazy caching: `warmCache()` pattern (iNat: 2.18s initial, instant revisit). Active-but-not-pinned layers visible on map. Files: `dataSources/{types.ts, registry.ts, inaturalist/{adapter.tsx, useMapBehavior.ts}}`. Modified: INaturalistFilterContext (lazy), useMapLayers (generic), MapContainer/RightSidebar (generic), LayerContext (removed iNat from initial). Merge conflicts: ~4 lines/source. **Enables parallel branch development.** | Claude |
 | Feb 12, 2026 | Phase 0 | ✅ **Task 1 complete: ArcGIS Map Integration (0.4).** Replaced placeholder with real ArcGIS WebMap. Layers added when pinned OR active. GraphicsLayer for highlights. | Claude |

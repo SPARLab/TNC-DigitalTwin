@@ -7,12 +7,27 @@
 import type Layer from '@arcgis/core/layers/Layer';
 import { createINaturalistLayer } from './inaturalistLayer';
 import { createPreserveBoundaryLayer } from './preserveBoundaryLayer';
+import { createDendraLayer } from './dendraLayer';
 
 /** Set of catalog layer IDs that have real map layer implementations */
 export const IMPLEMENTED_LAYERS = new Set([
   'inaturalist-obs',
   'preserve-boundary',
 ]);
+
+/** Layer IDs known to be Dendra sensor services (detected dynamically) */
+const dendraLayerIds = new Set<string>();
+
+/** Register a layer ID as a Dendra sensor layer (called by DendraContext/adapter) */
+export function registerDendraLayerId(layerId: string): void {
+  dendraLayerIds.add(layerId);
+  IMPLEMENTED_LAYERS.add(layerId);
+}
+
+/** Check if a layer ID is a registered Dendra layer */
+export function isDendraLayer(layerId: string): boolean {
+  return dendraLayerIds.has(layerId);
+}
 
 /**
  * Create an ArcGIS layer for a given catalog layer ID.
@@ -30,6 +45,10 @@ export function createMapLayer(layerId: string, options: {
       return createPreserveBoundaryLayer({ id: `v2-${layerId}`, ...options });
 
     default:
+      // Dynamically registered Dendra layers
+      if (dendraLayerIds.has(layerId)) {
+        return createDendraLayer({ id: `v2-${layerId}`, ...options });
+      }
       return null;
   }
 }

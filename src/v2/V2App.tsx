@@ -10,6 +10,7 @@ import { LayerProvider } from './context/LayerContext';
 // import { BookmarkProvider } from './context/BookmarkContext';
 import { MapProvider } from './context/MapContext';
 import { INaturalistFilterProvider } from './context/INaturalistFilterContext';
+import { DendraProvider } from './context/DendraContext';
 import { V2Header } from './components/Header/V2Header';
 import { LeftSidebar } from './components/LeftSidebar/LeftSidebar';
 import { MapContainer } from './components/Map/MapContainer';
@@ -21,14 +22,16 @@ export default function V2App() {
       <LayerProvider>
         <MapProvider>
           <INaturalistFilterProvider>
-            <div id="v2-app" className="flex flex-col h-screen w-screen overflow-hidden">
-              <V2Header />
-              <div className="flex flex-1 overflow-hidden">
-                <LeftSidebar />
-                <MapContainer />
-                <RightSidebar />
+            <DendraProvider>
+              <div id="v2-app" className="flex flex-col h-screen w-screen overflow-hidden">
+                <V2Header />
+                <div className="flex flex-1 overflow-hidden">
+                  <LeftSidebar />
+                  <MapContainer />
+                  <RightSidebar />
+                </div>
               </div>
-            </div>
+            </DendraProvider>
           </INaturalistFilterProvider>
         </MapProvider>
       </LayerProvider>
