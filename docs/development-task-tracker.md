@@ -25,8 +25,9 @@
 | 11 | 0 | **Right Sidebar: Active Layer Color Coordination & Flash** | ✅ | Medium | Yellow header (amber-50); flash animation on layer change (white→amber-100→amber-50, 600ms); coordinated with left sidebar and Map Layers widget |
 | 12 | 0 | **Fix DataOne Datasets Card Width in Left Sidebar** | ✅ | Low | DataOne shortcut row width matching; right padding; removed redundant left border |
 | 13 | 1 | **Fix iNaturalist Layer Icons & Loading** | 🟡 | High | Wrong/fake icons before active; delay on layer click; slow taxa filter in legend |
+| 14 | 0 | **Fix Map Layers Widget Drag Animation** | 🟡 | Medium | Dragging animations broken; layer underneath does upward transform then disappears during drag |
 
-**Active tasks remaining:** 2  
+**Active tasks remaining:** 3  
 **Recently completed:** DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
 
 ---
@@ -166,6 +167,12 @@
   - Completed: Removed gray horizontal divider (`border-t border-gray-200`) between DataOne shortcut and regular layers
   - Preserved: Italics styling for DataOne row
   - Files: `src/v2/components/LeftSidebar/CategoryGroup.tsx`
+
+- [ ] **Fix Map Layers Widget Drag Animation** — Restore smooth drag-and-drop animations
+  - Problem: When dragging a layer down, the layer underneath performs an upward transform, then disappears. Animations were previously smooth but are now broken.
+  - Expected: Smooth drag animations where layers transition positions without jarring transforms or disappearing elements
+  - Needed: Debug and fix drag animation behavior in pinned layers section
+  - Files: `src/v2/components/FloatingWidgets/MapLayersWidget/PinnedLayersSection.tsx`, `src/v2/components/FloatingWidgets/MapLayersWidget/PinnedLayerRow.tsx`
 
 - [x] **Fix DataOne Datasets Card Width in Left Sidebar** — Match DataOne shortcut row width with regular layer cards
   - Completed: Added `w-full` to DataOne shortcut button and LayerRow for consistent full-width behavior; increased parent right margin (`mr-2` → `mr-3`) for proper edge spacing; removed redundant left vertical border (`border-l-2 border-gray-200`) that added visual noise (background color + indentation already establish hierarchy)
