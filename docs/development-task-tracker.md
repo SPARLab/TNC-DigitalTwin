@@ -24,11 +24,20 @@
 | 10 | 0 | **Left Sidebar: Visual Distinction Between Categories and Layers** | ✅ | Medium | Category banners (slate-100), Research Datasets at bottom with darker gray bg, no bottom border; layer cards with amber active state, blue pins |
 | 11 | 0 | **Right Sidebar: Active Layer Color Coordination & Flash** | ✅ | Medium | Yellow header (amber-50); flash animation on layer change (white→amber-100→amber-50, 600ms); coordinated with left sidebar and Map Layers widget |
 | 12 | 0 | **Fix DataOne Datasets Card Width in Left Sidebar** | ✅ | Low | DataOne shortcut row width matching; right padding; removed redundant left border |
-| 13 | 1 | **Fix iNaturalist Layer Icons & Loading** | 🟡 | High | Wrong/fake icons before active; delay on layer click; slow taxa filter in legend |
+| 13 | 1 | **Fix iNaturalist Layer Icons & Loading** | ✅ | High | Replaced FeatureLayer with spatially-filtered GraphicsLayer; local filtering; removed dummy data |
+| 14 | 1 | **iNaturalist: Observation Card Click → Map Highlight + Detail View** | ⚪ | High | Click obs card: highlight map marker, show tooltip, navigate to detail page |
+| 15 | 1 | **iNaturalist: Map Marker Click → Zoom + Detail View** | ⚪ | High | Click map marker: zoom to observation, open detail view in right sidebar |
+| 16 | 1 | **iNaturalist: Remove Bookmark Button/Action** | ⚪ | Low | Already stubbed; clean up unused bookmark logic from observation cards |
+| 17 | 1 | **iNaturalist: Compact Filter Section (Dropdown)** | ⚪ | Medium | Filter Observations in Browse tab: tall list → dropdown; include Select All |
+| 18 | 1 | **iNaturalist: Rename Legend Widget Title** | ⚪ | Low | Change "Filter Observations" → "iNaturalist Taxa" in floating legend widget |
+| 19 | 1 | **iNaturalist: Add Observation Search Bar** | ⚪ | Medium | Search observations by common/scientific name in Browse tab |
+| 20 | 1 | **iNaturalist: Reduce Pagination to 10 per Page** | ⚪ | Low | Change PAGE_SIZE from 20 → 10 in useINaturalistObservations |
+| 21 | 1 | **iNaturalist: Add Date Range Filter** | ⚪ | Medium | Add start/end date pickers in Browse tab filter section |
+| 22 | 1 | **iNaturalist: Remember Last Active Tab** | ⚪ | Low | Persist Overview vs Browse tab per layer; restore on reactivation |
 | 14 | 0 | **Fix Map Layers Widget Drag Animation** | ✅ | Medium | Fixed: disabled @dnd-kit auto layout animations to prevent jarring transforms |
 
-**Active tasks remaining:** 2  
-**Recently completed:** DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
+**Active tasks remaining:** 9  
+**Recently completed:** Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
 
 ---
 
@@ -238,13 +247,64 @@
 
 ### After Phase 0 (Phase 1-4)
 
-- **Phase 1:** iNaturalist data source (5 tasks)
+- **Phase 1:** iNaturalist data source — 9 active tasks
 
-  - [ ] **Fix iNaturalist Layer Icons & Loading** (Task 13)
-    - **Problem:** Map appears to draw icons that aren't iNaturalist-related before the layer is active. When clicking iNaturalist Observations, it takes a while to load; then a batch of iNaturalist icons loads quickly. Taxa filtering in the legend is slow to apply.
-    - **Root cause (hypothesis):** May be drawing placeholder/wrong icons before layer activation; map layer may load independently of user interaction; legend filter may not be tightly coupled to map layer `definitionExpression` updates.
-    - **Needed:** Ensure only iNaturalist emoji icons are drawn when iNaturalist layer is active/pinned; optimize loading so icons appear promptly when layer is selected; reduce latency between legend taxa filter change and map update.
-    - **Refer:** `src/v2/components/Map/layers/inaturalistLayer.ts`, `useMapLayers.ts`, `INaturalistLegendWidget.tsx`, `INaturalistFilterContext.tsx`
+  - [x] **Task 13: Fix iNaturalist Layer Icons & Loading** ✅
+    - **Completed:** Replaced FeatureLayer (no spatial filter, loaded all US data) with GraphicsLayer populated from locally-cached observations (expanded preserve bounding box). Legend counts computed locally (eliminated 11 API calls). Instant taxon filtering. Layer starts hidden.
+    - **Files:** `INaturalistFilterContext.tsx`, `inaturalistLayer.ts`, `useMapLayers.ts`, `INaturalistLegendWidget.tsx`, `useINaturalistObservations.ts`, `LayerContext.tsx`, `MapContainer.tsx`
+
+  - [ ] **Task 14: Observation Card Click → Map Highlight + Detail View**
+    - **Goal:** Clicking an observation card in Browse tab should (1) highlight the corresponding map marker with cyan ring + tooltip, (2) zoom map to observation, (3) navigate to detail view in right sidebar.
+    - **Implementation:** Wire `onViewDetail` in `ObservationCard` to call `highlightPoint()` + `view.goTo()` from MapContext, then transition Browse tab to detail view state.
+    - **Files:** `INaturalistBrowseTab.tsx`, `ObservationCard.tsx`, `MapContext.tsx`
+
+  - [ ] **Task 15: Map Marker Click → Zoom + Detail View**
+    - **Goal:** Clicking an iNaturalist map marker (emoji icon) should zoom to the observation and open its detail view in the right sidebar.
+    - **Implementation:** Add popupTemplate click handler or graphic click event listener in `inaturalistLayer.ts`. Trigger `activateLayer()` with observation ID, pass to Browse tab to show detail view.
+    - **Files:** `inaturalistLayer.ts`, `LayerContext.tsx`, `INaturalistBrowseTab.tsx`
+    - **Note:** May require passing observation ID through active layer state or MapContext event bus.
+
+  - [ ] **Task 16: Remove Bookmark Button/Action**
+    - **Goal:** Clean up unused bookmark logic from observation cards and detail view (already stubbed as TODO).
+    - **Implementation:** Remove "Bookmark" button from `ObservationCard` and `INaturalistDetailView`. Remove `handleBookmark` stub functions.
+    - **Files:** `ObservationCard.tsx`, `INaturalistDetailView.tsx`, `INaturalistBrowseTab.tsx`
+
+  - [ ] **Task 17: Compact Filter Section (Dropdown)**
+    - **Goal:** Filter Observations section in Browse tab is too tall (12 checkboxes). Convert to a dropdown menu with multi-select checkboxes inside. Include "Select All" option.
+    - **Implementation:** Replace checkbox list with a `<select>` or custom dropdown component. Show selected count badge (e.g., "3 taxa selected"). Expand to show checkboxes on click.
+    - **Files:** `INaturalistBrowseTab.tsx`
+    - **Design:** Match filter dropdown pattern from other data sources (ANiML, Dendra).
+
+  - [ ] **Task 18: Rename Legend Widget Title**
+    - **Goal:** Change floating legend header from "Filter Observations" to "iNaturalist Taxa" (more descriptive, avoids confusion with Browse tab filter section).
+    - **Implementation:** Update `<h3>` text in `INaturalistLegendWidget.tsx`.
+    - **Files:** `INaturalistLegendWidget.tsx`
+
+  - [ ] **Task 19: Add Observation Search Bar**
+    - **Goal:** Add a search input in Browse tab to filter observations by common name or scientific name (client-side substring match).
+    - **Implementation:** Add text input above filter section. Filter `allObservations` in `useINaturalistObservations` by search term. Reset page to 1 on search change.
+    - **Files:** `INaturalistBrowseTab.tsx`, `useINaturalistObservations.ts`
+
+  - [ ] **Task 20: Reduce Pagination to 10 per Page**
+    - **Goal:** Show 10 observations per page instead of 20 in Browse tab (better vertical scrolling UX).
+    - **Implementation:** Change `PAGE_SIZE` from 20 → 10 in `useINaturalistObservations.ts`.
+    - **Files:** `useINaturalistObservations.ts`
+
+  - [ ] **Task 21: Add Date Range Filter**
+    - **Goal:** Add start/end date pickers in Browse tab filter section to filter observations by `observed_on` date.
+    - **Implementation:** Add two `<input type="date">` fields. Pass `startDate`/`endDate` to `useINaturalistObservations`. Filter observations client-side by date range.
+    - **Files:** `INaturalistBrowseTab.tsx`, `useINaturalistObservations.ts`
+
+  - [ ] **Task 22: Remember Last Active Tab**
+    - **Goal:** When user switches away from iNaturalist and returns, restore the last active tab (Overview or Browse) instead of always resetting to Overview.
+    - **Implementation:** Store `lastActiveTab` per layer ID in a ref or local state map. Restore on layer reactivation. Consider using `LayerContext` or a new `lastTabByLayer` map in `RightSidebar`.
+    - **Files:** `RightSidebar.tsx`, `LayerContext.tsx`
+
+  - [ ] **Future/Low Priority: Save Observation → Create Filtered View**
+    - **Goal:** Clicking "Save" on an observation creates a new child view in Map Layers widget filtered to that specific observation (by ID or name).
+    - **Implementation:** Wire "Save" action to `createNewView(pinnedId)` in LayerContext. Set filter to `observation_id = {id}`. Complex — requires linking browse actions to Map Layers state.
+    - **Priority:** Deferred — low user value, high complexity.
+    - **Files:** `INaturalistBrowseTab.tsx`, `LayerContext.tsx`, `inaturalistLayer.ts`
 
 - **Phase 2:** ANiML data source (7 tasks)
 - **Phase 3:** Dendra data source (6 tasks)
@@ -291,6 +351,8 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 11, 2026 | Phase 1 | Added **Tasks 14-22** for iNaturalist UX improvements: map marker interactions, compact filter dropdown, search bar, date filter, pagination (10/page), tab memory, legend rename. Future: save observation → filtered view (low priority). | Claude |
+| Feb 11, 2026 | Phase 1 | ✅ **Task 13 complete: Fix iNaturalist Layer Icons & Loading.** Replaced FeatureLayer with spatially-filtered GraphicsLayer; local counts; instant filtering; starts hidden. | Claude |
 | Feb 11, 2026 | Phase 1 | Added **Task 13: Fix iNaturalist Layer Icons & Loading** — Wrong/fake icons before active; delay on layer click; slow taxa filter in legend. WIP commit. | User |
 | Feb 11, 2026 | Phase 0 | ✅ **DFT-046: Saved Items widget dropped.** Unified into Map Layers. "Mapped Item Layers" renamed to "Map Layers". BookmarkProvider/BookmarkedItemsWidget disabled (code preserved). Bookmark actions in iNaturalist stubbed as TODO ("Save as View"). All documentation updated. | Claude |
 | Feb 10, 2026 | Phase 0 | ✅ Task 12 complete: Fix DataOne Datasets Card Width. Added w-full to DataOne shortcut and LayerRow; mr-3 for right padding; removed redundant left border from category content (background + indentation sufficient for hierarchy). | Claude |
