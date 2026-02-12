@@ -42,6 +42,7 @@ export interface PinnedLayer {
   distinguisher?: string;
   views?: PinnedLayerView[];
   order: number; // for drag-reorder z-order
+  resultCount?: number; // Number of features matching filters (for count display testing)
 }
 
 /** A filtered view within a nested pinned layer (DFT-013) */
@@ -51,6 +52,7 @@ export interface PinnedLayerView {
   isVisible: boolean;
   filterCount: number;
   filterSummary?: string;
+  resultCount?: number; // Number of features matching filters (for count display testing)
 }
 
 // =============================================================================
@@ -98,3 +100,12 @@ export interface UndoAction {
 
 /** Right sidebar tab */
 export type SidebarTab = 'overview' | 'browse';
+
+/** Count display mode for Map Layers widget (design testing) */
+export type CountDisplayMode = 
+  | 'none'                    // No counts shown
+  | 'filters-only'           // Show filter count only (current behavior)
+  | 'results-collapsed'      // Show result count in collapsed parent row
+  | 'results-expanded'       // Show result count in expanded panel only
+  | 'results-children'       // Show result count on child views only
+  | 'filters-and-results';   // Show both filter and result counts (for comparison)
