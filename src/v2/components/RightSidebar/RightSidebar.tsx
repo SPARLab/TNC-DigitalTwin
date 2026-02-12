@@ -1,23 +1,19 @@
 // ============================================================================
 // RightSidebar — 400px fixed width. Shows layer details or empty state.
 // Two tabs: Overview | Browse (DFT-041). Overview opens first (DFT-006).
-// Filter state is global (INaturalistFilterContext) — shared with floating legend.
+// Uses data source registry for tab content — no data-source-specific imports.
 // ============================================================================
 
 import { useState, useEffect, useRef } from 'react';
 import { Layers } from 'lucide-react';
 import { useLayers } from '../../context/LayerContext';
-import { useINaturalistFilter } from '../../context/INaturalistFilterContext';
 import type { SidebarTab } from '../../types';
 import { SidebarHeader } from './SidebarHeader';
 import { TabBar } from './TabBar';
-import { INaturalistOverviewTab } from './iNaturalist/INaturalistOverviewTab';
-import { INaturalistBrowseTab } from './iNaturalist/INaturalistBrowseTab';
-import { useINaturalistObservations } from '../../hooks/useINaturalistObservations';
+import { getAdapter } from '../../dataSources/registry';
 
 export function RightSidebar() {
   const { activeLayer, deactivateLayer, lastEditFiltersRequest } = useLayers();
-  const { selectAll } = useINaturalistFilter();
   const [activeTab, setActiveTab] = useState<SidebarTab>('overview');
   const consumedRequestRef = useRef(0);
 
@@ -25,26 +21,17 @@ export function RightSidebar() {
   const [prevLayerId, setPrevLayerId] = useState<string | null>(null);
   const [shouldFlash, setShouldFlash] = useState(false);
 
-  // iNaturalist data (only fetched when iNat layer is active)
-  const isINat = activeLayer?.dataSource === 'inaturalist';
-  const inatData = useINaturalistObservations({ skip: !isINat });
+  // Look up the adapter for the active layer's data source
+  const adapter = getAdapter(activeLayer?.dataSource);
 
   // Reset to Overview and trigger flash when layer changes (DFT-006)
   // NOTE: Own-state updates (setPrevLayerId, setActiveTab, setShouldFlash) are safe during render.
-  // selectAll() is moved to a useEffect below because it updates a DIFFERENT component's state.
   if (activeLayer && activeLayer.layerId !== prevLayerId) {
     setPrevLayerId(activeLayer.layerId);
     setActiveTab('overview');
     setShouldFlash(true);
     setTimeout(() => setShouldFlash(false), 600);
   }
-
-  // Clear iNaturalist taxon filter on layer change
-  // Must be in useEffect — calling selectAll() during render would trigger
-  // a setState on INaturalistFilterProvider (a different component), causing a render loop.
-  useEffect(() => {
-    selectAll();
-  }, [activeLayer?.layerId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // DFT-019: Edit Filters → open Browse tab
   useEffect(() => {
@@ -64,20 +51,16 @@ export function RightSidebar() {
           <SidebarHeader activeLayer={activeLayer} onClose={deactivateLayer} shouldFlash={shouldFlash} />
           <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
 
-          {/* Tab content */}
+          {/* Tab content — delegated to data source adapter */}
           <div className="flex-1 overflow-y-auto p-4" role="tabpanel">
-            {isINat ? (
+            {adapter ? (
               activeTab === 'overview' ? (
-                <INaturalistOverviewTab
-                  totalCount={inatData.totalCount}
-                  loading={inatData.loading}
-                  onBrowseClick={() => setActiveTab('browse')}
-                />
+                <adapter.OverviewTab onBrowseClick={() => setActiveTab('browse')} />
               ) : (
-                <INaturalistBrowseTab />
+                <adapter.BrowseTab />
               )
             ) : (
-              /* Generic placeholder for other data sources */
+              /* Generic placeholder for unimplemented data sources */
               activeTab === 'overview' ? (
                 <div className="space-y-4">
                   <p className="text-sm text-gray-600 leading-relaxed">
@@ -85,6 +68,7 @@ export function RightSidebar() {
                     in Phase 2-4 (per data source).
                   </p>
                   <button
+                    id="generic-browse-cta"
                     onClick={() => setActiveTab('browse')}
                     className="w-full py-3 bg-[#2e7d32] text-white font-medium rounded-lg
                                hover:bg-[#256d29] transition-colors text-sm"

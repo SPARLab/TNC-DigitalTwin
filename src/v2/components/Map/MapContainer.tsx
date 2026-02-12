@@ -1,7 +1,8 @@
 // ============================================================================
 // MapContainer — ArcGIS MapView centered on Jack & Laura Dangermond Preserve
 // Renders floating widgets (MapLayersWidget) on top.
-// Initializes the real ArcGIS map and syncs with LayerContext via useMapLayers.
+// Uses data source registry for legend widgets and loading overlays —
+// no data-source-specific imports needed in this file.
 // ============================================================================
 
 import { useEffect, useRef } from 'react';
@@ -10,14 +11,13 @@ import MapView from '@arcgis/core/views/MapView';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import { Loader2 } from 'lucide-react';
 import { MapLayersWidget } from '../FloatingWidgets/MapLayersWidget/MapLayersWidget';
-import { INaturalistLegendWidget } from '../FloatingWidgets/INaturalistLegendWidget/INaturalistLegendWidget';
 // NOTE: BookmarkedItemsWidget disabled per Feb 11 design decision.
 // Saved Items merged into Map Layers. Code preserved for CSS/animation reuse.
 // import { BookmarkedItemsWidget } from '../FloatingWidgets/BookmarkedItemsWidget/BookmarkedItemsWidget';
 import { useMap } from '../../context/MapContext';
 import { useLayers } from '../../context/LayerContext';
-import { useINaturalistFilter } from '../../context/INaturalistFilterContext';
 import { useMapLayers } from './useMapLayers';
+import { getAdapter, useActiveCacheStatus } from '../../dataSources/registry';
 import { MapToasts } from './MapToasts';
 
 /** Dangermond Preserve center coordinates */
@@ -28,11 +28,14 @@ export function MapContainer() {
   const mapDivRef = useRef<HTMLDivElement>(null);
   const { viewRef, highlightLayerRef, setMapReady } = useMap();
   const { activeLayer } = useLayers();
-  const { loading: inatLoading } = useINaturalistFilter();
 
-  // Check if iNaturalist layer is active (showing in right sidebar)
-  const isINatActive = activeLayer?.layerId === 'inaturalist-obs';
-  const showInatLoading = isINatActive && inatLoading;
+  // Data source adapter for the active layer (legend widget lookup)
+  const adapter = getAdapter(activeLayer?.dataSource);
+  const LegendWidget = adapter?.LegendWidget;
+
+  // Cache/loading status for the active data source (generic loading overlay)
+  const cacheStatus = useActiveCacheStatus(activeLayer?.dataSource);
+  const showLoading = !!activeLayer && (cacheStatus?.loading ?? false);
 
   // Sync pinned/active layers with ArcGIS layers
   useMapLayers();
@@ -82,18 +85,20 @@ export function MapContainer() {
       <MapLayersWidget />
       {/* BookmarkedItemsWidget removed — Feb 11 design decision: unified into Map Layers */}
 
-      {/* iNaturalist floating legend — only show when iNat layer is ACTIVE in right sidebar */}
-      {isINatActive && <INaturalistLegendWidget />}
+      {/* Legend widget — only for the ACTIVE layer's data source */}
+      {LegendWidget && <LegendWidget />}
 
-      {/* Loading overlay — iNaturalist data fetch in progress */}
-      {showInatLoading && (
+      {/* Loading overlay — shown when active data source is fetching initial data */}
+      {showLoading && (
         <div
           id="map-loading-overlay"
           className="absolute inset-0 flex items-center justify-center bg-white/30 z-20 pointer-events-none"
         >
           <div className="bg-white px-4 py-3 rounded-lg shadow-md flex items-center gap-2">
             <Loader2 className="w-5 h-5 animate-spin text-green-600" />
-            <span className="text-sm text-gray-700 font-medium">Loading iNaturalist observations...</span>
+            <span className="text-sm text-gray-700 font-medium">
+              Loading {activeLayer?.name ?? 'data'}...
+            </span>
           </div>
         </div>
       )}

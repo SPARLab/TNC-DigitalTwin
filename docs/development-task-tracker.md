@@ -12,7 +12,7 @@
 
 | # | Phase | Task | Status | Priority | Notes |
 |---|-------|------|--------|----------|-------|
-| 1 | 0 | **0.4** Map Container — ArcGIS WebMap integration | 🟡 | High | Blocks Phase 0 completion |
+| 1 | 0 | **0.4** Map Container — ArcGIS WebMap integration | ✅ | High | Completed: real ArcGIS map + GraphicsLayer for highlights |
 | 2 | 0 | **0.5** Drag-and-Drop Reorder — Pinned layers | ✅ | Medium | Completed within Map Layers widget |
 | 3 | 0 | **Enable Map Layers Drag Reordering** | ✅ | Medium | Related to Task 0.5, may consolidate |
 | 4 | 0 | **Unify Map Layers Expansion Affordances** | ✅ | Medium | Filter icon as primary control; child accordion pattern; auto-expand on sidebar activation |
@@ -25,6 +25,7 @@
 | 11 | 0 | **Right Sidebar: Active Layer Color Coordination & Flash** | ✅ | Medium | Yellow header (amber-50); flash animation on layer change (white→amber-100→amber-50, 600ms); coordinated with left sidebar and Map Layers widget |
 | 12 | 0 | **Fix DataOne Datasets Card Width in Left Sidebar** | ✅ | Low | DataOne shortcut row width matching; right padding; removed redundant left border |
 | 13 | 1 | **Fix iNaturalist Layer Icons & Loading** | ✅ | High | Replaced FeatureLayer with spatially-filtered GraphicsLayer; local filtering; removed dummy data |
+| 23 | 0 | **Data Source Adapter Pattern Refactor** | ✅ | Critical | Extract data-source logic into plugin architecture; enable parallel branch development |
 | 14 | 1 | **iNaturalist: Observation Card Click → Map Highlight + Detail View** | ⚪ | High | Click obs card: highlight map marker, show tooltip, navigate to detail page |
 | 15 | 1 | **iNaturalist: Map Marker Click → Zoom + Detail View** | ⚪ | High | Click map marker: zoom to observation, open detail view in right sidebar |
 | 16 | 1 | **iNaturalist: Remove Bookmark Button/Action** | ⚪ | Low | Already stubbed; clean up unused bookmark logic from observation cards |
@@ -36,8 +37,8 @@
 | 22 | 1 | **iNaturalist: Remember Last Active Tab** | ⚪ | Low | Persist Overview vs Browse tab per layer; restore on reactivation |
 | 14 | 0 | **Fix Map Layers Widget Drag Animation** | ✅ | Medium | Fixed: disabled @dnd-kit auto layout animations to prevent jarring transforms |
 
-**Active tasks remaining:** 9  
-**Recently completed:** Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
+**Active tasks remaining:** 8  
+**Recently completed:** **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
 
 ---
 
@@ -47,7 +48,7 @@
 
 | Phase | Status | Progress | Branch | Blocking? |
 |-------|--------|----------|--------|-----------|
-| **0. Foundation** | 🟡 In Progress | ~92% | `v2/foundation` | YES — blocks all |
+| **0. Foundation** | 🟡 In Progress | ~98% | `v2/foundation` | YES — blocks all |
 | 1. iNaturalist | ⚪ Not Started | 0% | `v2/inaturalist` | No |
 | 2. ANiML | ⚪ Not Started | 0% | `v2/animl` | No |
 | 3. Dendra | ⚪ Not Started | 0% | `v2/dendra` | No |
@@ -76,10 +77,20 @@
 
 ### 🟡 Remaining (Phase 0)
 
-- [ ] **0.4** Map Container — Replace placeholder with ArcGIS WebMap integration
+- [x] **0.4** Map Container — Replace placeholder with ArcGIS WebMap integration
   - Reference: `docs/IMPLEMENTATION/phases/phase-0-foundation.md` Task 0.4
-  - Current: Placeholder div with "ArcGIS Map" text
-  - Needed: Real ArcGIS JS API 4.28 WebMap, GraphicsLayers per data source, z-order control
+  - ~~Current: Placeholder div with "ArcGIS Map" text~~
+  - **Completed (Feb 12):** Real ArcGIS JS API 4.28 WebMap, GraphicsLayers per data source, z-order control
+  - **Architecture:** Data source adapter pattern — layers added when pinned OR active
+
+- [x] **Data Source Adapter Pattern Refactor** (Task 23)
+  - **Completed (Feb 12):** Extract all data-source-specific logic into plugin system
+  - **Files Created:** `src/v2/dataSources/{types.ts, registry.ts, inaturalist/{adapter.tsx, useMapBehavior.ts}}`
+  - **Files Modified:** `INaturalistFilterContext.tsx` (lazy cache), `useMapLayers.ts` (generic), `MapContainer.tsx` (generic), `RightSidebar.tsx` (generic), `LayerContext.tsx` (removed iNat from initial pinned)
+  - **Lazy Caching:** `warmCache()` idempotent method — fetch on first pin/activation (~2s), instant on revisit
+  - **Active Layer Visibility:** Active-but-not-pinned layers now visible on map (DFT-021)
+  - **Merge Conflict Surface:** ~4 one-liners per new data source (registry.ts)
+  - **Enables:** Safe parallel branch development for Phases 1-4
 
 - [x] **0.5** Drag-and-Drop Reorder — Implement drag handles for pinned layers
   - Reference: `docs/PLANNING/component-specs/map-layers-widget.md` DFT-034
@@ -351,6 +362,8 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 12, 2026 | Phase 0 | ✅ **Task 23 complete: Data Source Adapter Pattern refactor.** Created plugin architecture: each data source implements `DataSourceAdapter` interface. Core files (MapContainer, RightSidebar, useMapLayers) made data-source-agnostic — read from registry. Lazy caching: `warmCache()` pattern (iNat: 2.18s initial, instant revisit). Active-but-not-pinned layers visible on map. Files: `dataSources/{types.ts, registry.ts, inaturalist/{adapter.tsx, useMapBehavior.ts}}`. Modified: INaturalistFilterContext (lazy), useMapLayers (generic), MapContainer/RightSidebar (generic), LayerContext (removed iNat from initial). Merge conflicts: ~4 lines/source. **Enables parallel branch development.** | Claude |
+| Feb 12, 2026 | Phase 0 | ✅ **Task 1 complete: ArcGIS Map Integration (0.4).** Replaced placeholder with real ArcGIS WebMap. Layers added when pinned OR active. GraphicsLayer for highlights. | Claude |
 | Feb 11, 2026 | Phase 1 | Added **Tasks 14-22** for iNaturalist UX improvements: map marker interactions, compact filter dropdown, search bar, date filter, pagination (10/page), tab memory, legend rename. Future: save observation → filtered view (low priority). | Claude |
 | Feb 11, 2026 | Phase 1 | ✅ **Task 13 complete: Fix iNaturalist Layer Icons & Loading.** Replaced FeatureLayer with spatially-filtered GraphicsLayer; local counts; instant filtering; starts hidden. | Claude |
 | Feb 11, 2026 | Phase 1 | Added **Task 13: Fix iNaturalist Layer Icons & Loading** — Wrong/fake icons before active; delay on layer click; slow taxa filter in legend. WIP commit. | User |

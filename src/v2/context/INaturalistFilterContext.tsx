@@ -1,11 +1,12 @@
 // ============================================================================
 // INaturalistFilterContext — Central iNaturalist data + filter state
-// Fetches observations once from TNC ArcGIS (with bounding box), stores locally.
-// Provides: filter state, observations, loading/error, taxon counts.
+// Fetches observations from TNC ArcGIS (with bounding box), stores locally.
+// LAZY: data is NOT fetched on mount. Call warmCache() to trigger the fetch.
+// Provides: filter state, observations, loading/error, taxon counts, cache.
 // Shared between: floating legend widget, right sidebar, map layer.
 // ============================================================================
 
-import { createContext, useContext, ReactNode, useState, useCallback, useEffect, useMemo } from 'react';
+import { createContext, useContext, ReactNode, useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   tncINaturalistService,
   type TNCArcGISObservation,
@@ -41,6 +42,10 @@ interface INaturalistContextValue {
   dataLoaded: boolean;
   totalServiceCount: number;
   taxonCounts: Map<string, number>;
+
+  // Cache lifecycle
+  /** Trigger data fetch. Idempotent — no-op if already fetched or in-flight. */
+  warmCache: () => void;
 }
 
 const INaturalistFilterContext = createContext<INaturalistContextValue | null>(null);
@@ -70,10 +75,20 @@ export function INaturalistFilterProvider({ children }: { children: ReactNode })
 
   // Data state
   const [allObservations, setAllObservations] = useState<INatObservation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [totalServiceCount, setTotalServiceCount] = useState(0);
+
+  // Cache lifecycle — fetch is lazy, triggered by warmCache()
+  const [fetchRequested, setFetchRequested] = useState(false);
+  const fetchStartedRef = useRef(false);
+
+  // Log mount for debugging
+  useEffect(() => {
+    console.log('[iNat Cache] 🎬 INaturalistFilterProvider mounted');
+    return () => console.log('[iNat Cache] 💀 INaturalistFilterProvider unmounted');
+  }, []);
 
   // Filter actions
   const toggleTaxon = useCallback((taxon: string) => {
@@ -90,6 +105,18 @@ export function INaturalistFilterProvider({ children }: { children: ReactNode })
   const clearAll = useCallback(() => setSelectedTaxa(prev => prev.size === 0 ? prev : new Set()), []);
   const hasFilter = selectedTaxa.size > 0;
 
+  /** Idempotent fetch trigger — safe to call multiple times */
+  const warmCache = useCallback(() => {
+    if (fetchStartedRef.current) {
+      console.log('[iNat Cache] warmCache() called but already fetched/fetching');
+      return;
+    }
+    console.log('[iNat Cache] 🔥 warmCache() triggered — starting fetch');
+    fetchStartedRef.current = true;
+    setLoading(true); // Show loading immediately (avoids 1-frame flash)
+    setFetchRequested(true);
+  }, []);
+
   // Compute taxon counts from locally-cached data (instant, no network)
   const taxonCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -99,19 +126,21 @@ export function INaturalistFilterProvider({ children }: { children: ReactNode })
     return counts;
   }, [allObservations]);
 
-  // Fetch observations on mount — spatially filtered to preserve area.
-  // No fetchedRef guard — React 18 StrictMode remounts effects; the cancelled
-  // flag from cleanup handles the first (discarded) mount, and the second
-  // mount re-fetches cleanly. The browser HTTP cache prevents duplicate network
-  // requests so the performance cost is negligible.
+  // Fetch observations when warmCache() is called — spatially filtered to preserve area.
+  // Lazy: does NOT run on mount. First call to warmCache() sets fetchRequested = true.
   useEffect(() => {
+    if (!fetchRequested) return;
+
+    console.log('[iNat Cache] ⏳ Fetch effect running — about to call API');
     let cancelled = false;
 
     async function fetchData() {
+      const startTime = performance.now();
       setLoading(true);
       setError(null);
 
       try {
+        console.log('[iNat Cache] 📡 Calling TNC ArcGIS API...');
         // Fetch count + observations in parallel (both use expanded bounding box)
         const [count, raw] = await Promise.all([
           tncINaturalistService.queryObservationsCount({ searchMode: 'expanded' }),
@@ -121,12 +150,15 @@ export function INaturalistFilterProvider({ children }: { children: ReactNode })
           }),
         ]);
 
+        const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
         if (cancelled) return;
+        console.log(`[iNat Cache] ✅ Fetched ${raw.length} observations in ${elapsed}s`);
         setTotalServiceCount(count);
         setAllObservations(raw.map(transformObservation));
         setDataLoaded(true);
       } catch (err) {
         if (cancelled) return;
+        console.error('[iNat Cache] ❌ Fetch failed:', err);
         setError(err instanceof Error ? err.message : 'Failed to load observations');
       } finally {
         if (!cancelled) setLoading(false);
@@ -135,7 +167,7 @@ export function INaturalistFilterProvider({ children }: { children: ReactNode })
 
     fetchData();
     return () => { cancelled = true; };
-  }, []);
+  }, [fetchRequested]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <INaturalistFilterContext.Provider
@@ -143,6 +175,7 @@ export function INaturalistFilterProvider({ children }: { children: ReactNode })
         selectedTaxa, toggleTaxon, selectAll, clearAll, hasFilter,
         allObservations, loading, error, dataLoaded,
         totalServiceCount, taxonCounts,
+        warmCache,
       }}
     >
       {children}

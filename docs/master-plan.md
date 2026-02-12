@@ -76,9 +76,10 @@ Phase 0: Foundation
 | Decision | Status | Made By | Date | Details |
 |----------|--------|---------|------|---------|
 | Code structure (v2/ folder approach) | ✅ Decided | Will | Jan 23 | See "Code Structure" section below |
-| State management for pinned layers | ⚪ TBD | - | - | |
-| State management for bookmarks | ⚪ TBD | - | - | |
-| Caching strategy | ⚪ TBD | - | - | See Phase 2 task 2.7 |
+| State management for pinned layers | ✅ Decided | Will | Feb 12 | React Context API (`LayerContext`) with undo stack. See `src/v2/context/LayerContext.tsx` |
+| State management for bookmarks | ✅ Decided | Will | Feb 11 | DFT-046: Saved Items widget merged into Map Layers. `BookmarkContext` disabled. |
+| Data source adapter pattern | ✅ Decided | Will + Claude | Feb 12 | Plugin architecture for data sources. Each source implements `DataSourceAdapter` interface. Enables parallel branch development with minimal merge conflicts. See `src/v2/dataSources/` |
+| Caching strategy | ✅ Decided | Will + Claude | Feb 12 | Lazy per-source caching. Each data source context has `warmCache()` method (idempotent). Cache warms on first pin or activation. Data persists while provider mounted. Eliminates eager page-load fetches. |
 
 ### Styling Decisions
 
@@ -234,6 +235,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 12, 2026 | Phase 0 | **Data Source Adapter Pattern** — Refactored architecture to enable parallel branch development. Created plugin system: each data source implements `DataSourceAdapter` interface. Core files (MapContainer, RightSidebar, useMapLayers) now data-source-agnostic — read from registry instead of hardcoding imports. **Lazy caching:** `warmCache()` pattern replaces eager on-mount fetch (iNaturalist: 2.18s initial, instant on revisit). Active-but-not-pinned layers now visible on map. Merge conflict surface reduced to ~4 one-liners in registry.ts per new source. Files: `src/v2/dataSources/{types.ts, registry.ts, inaturalist/{adapter.tsx, useMapBehavior.ts}}`. Ready for parallelization. | Will + Claude |
 | Feb 5, 2026 | All | Added Sidebar Template System — shared structural templates for all data sources (TabBar, OverviewTab, ResultCard, Pagination, LeftSidebar categories). Theme tokens centralized in `sidebarTheme`. Change once, changes everywhere. Resolved stale entries: bookmark widget (DFT-007), filter representation (DFT-024). Resolved styling TBDs: sidebar header, card component. See design-system.md | Will + Claude |
 | Feb 5, 2026 | All | Resolved DFT-038: Filter section anatomy — shared `FilterSection` component enforces consistent Browse tab filter UI across all 4 data sources. Structural skeleton: header with "Clear All", 2-col CSS grid, result count footer. Flat `slate-50` container (no gradients). Header convention: "Filter [Plural Noun]". Per-data-source control inventory. "Optional:" labels dropped. Analyzed via Gestalt, Norman, Nielsen, Hick, Miller, IA, Fitts, WCAG. See design-system.md | Will + Claude |
 | Feb 5, 2026 | Phase 4 | Resolved DFT-035: DataOne search behavior — debounced instant search (500ms, 2+ chars) with immediate dropdown filters. Enter key bypass. Initial state loads all datasets, eliminating "pre-search" state. `AbortController` cancels in-flight requests. Analyzed via Norman, Nielsen, Shneiderman, Hick, Fitts, Mental Models, Wayfinding, Accessibility | Will + Claude |

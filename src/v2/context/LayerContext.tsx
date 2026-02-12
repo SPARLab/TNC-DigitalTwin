@@ -70,6 +70,8 @@ const INITIAL_PINNED: PinnedLayer[] = [
       },
     ],
   },
+  // iNaturalist removed from initial pinned — test lazy cache loading
+  /*
   {
     id: 'pinned-inat',
     layerId: 'inaturalist-obs',
@@ -80,6 +82,7 @@ const INITIAL_PINNED: PinnedLayer[] = [
     order: 1,
     resultCount: 342, // Mock result count
   },
+  */
   {
     id: 'pinned-2',
     layerId: 'fire-perimeters',

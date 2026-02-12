@@ -1,113 +1,114 @@
 // ============================================================================
-// useMapLayers — Syncs LayerContext pinned/active layers with ArcGIS layers
-// For iNaturalist: uses GraphicsLayer populated from locally-cached data.
-// Taxon filtering toggles individual graphic visibility (instant, no network).
-// Shows toast for unimplemented layers.
+// useMapLayers — Syncs LayerContext pinned/active layers with ArcGIS layers.
+// Generic: manages layer lifecycle (add/remove/visibility/z-order). All
+// data-source-specific behavior (population, filtering, cache warming) is
+// delegated to adapter hooks via the registry's useAllMapBehaviors.
+//
+// Layers are added to the map when PINNED or ACTIVE (whichever comes first).
+//   - Pinned layers: visibility controlled by eye toggle (isVisible flag)
+//   - Active-but-not-pinned: always visible (DFT-021)
+//   - Removed from map when neither pinned nor active
 // ============================================================================
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import type Layer from '@arcgis/core/layers/Layer';
-import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import { useLayers } from '../../context/LayerContext';
 import { useMap } from '../../context/MapContext';
-import { useINaturalistFilter } from '../../context/INaturalistFilterContext';
 import { createMapLayer, IMPLEMENTED_LAYERS } from './layers';
-import {
-  populateINaturalistLayer,
-  filterINaturalistLayer,
-} from './layers/inaturalistLayer';
+import { useAllMapBehaviors } from '../../dataSources/registry';
 
 export function useMapLayers() {
   const { pinnedLayers, activeLayer } = useLayers();
   const { viewRef, mapReady, showToast } = useMap();
-  const { selectedTaxa, allObservations, dataLoaded } = useINaturalistFilter();
   const managedLayersRef = useRef<Map<string, Layer>>(new Map());
   const warnedLayersRef = useRef<Set<string>>(new Set());
-  const inatPopulatedRef = useRef(false);
 
-  // Sync pinned layers → ArcGIS layers
+  // Stable callback for adapter hooks to look up managed ArcGIS layers by ID
+  const getManagedLayer = useCallback(
+    (layerId: string) => managedLayersRef.current.get(layerId),
+    [],
+  );
+
+  // ── Core effects (declared BEFORE adapter hooks — run order matters) ───────
+
+  // Sync layers on map: pinned layers + active layer (if not already pinned)
   useEffect(() => {
     const view = viewRef.current;
     if (!view?.map) return;
 
     const map = view.map;
     const managed = managedLayersRef.current;
-    const pinnedIds = new Set(pinnedLayers.map(p => p.layerId));
 
-    // Remove layers for unpinned catalog layers
+    // Build map of layerIds that should currently be on the ArcGIS map
+    const shouldBeOnMap = new Map<string, { name: string; visible: boolean }>();
+    for (const p of pinnedLayers) {
+      shouldBeOnMap.set(p.layerId, { name: p.name, visible: p.isVisible });
+    }
+    // Active but not pinned → always visible (DFT-021: clicking makes active AND visible)
+    if (activeLayer && !shouldBeOnMap.has(activeLayer.layerId)) {
+      shouldBeOnMap.set(activeLayer.layerId, { name: activeLayer.name, visible: true });
+    }
+
+    // Remove layers that should no longer be on the map
     for (const [layerId, arcLayer] of managed.entries()) {
-      if (!pinnedIds.has(layerId)) {
+      if (!shouldBeOnMap.has(layerId)) {
         map.remove(arcLayer);
         managed.delete(layerId);
         warnedLayersRef.current.delete(layerId);
-        if (layerId === 'inaturalist-obs') inatPopulatedRef.current = false;
       }
     }
 
-    // Add layers for newly pinned catalog layers
-    for (const pinned of pinnedLayers) {
-      const { layerId } = pinned;
+    // Add layers that should be on the map but aren't yet
+    for (const [layerId, { name, visible }] of shouldBeOnMap) {
       if (managed.has(layerId)) continue;
 
-      const arcLayer = createMapLayer(layerId, { visible: pinned.isVisible });
+      const arcLayer = createMapLayer(layerId, { visible });
 
       if (!arcLayer) {
         if (!warnedLayersRef.current.has(layerId)) {
           warnedLayersRef.current.add(layerId);
-          showToast(`"${pinned.name}" — layer not implemented yet`, 'warning');
+          showToast(`"${name}" — layer not implemented yet`, 'warning');
         }
         continue;
       }
 
       map.add(arcLayer);
       managed.set(layerId, arcLayer);
-
-      // If iNaturalist data is already loaded, populate immediately
-      if (layerId === 'inaturalist-obs' && dataLoaded && arcLayer instanceof GraphicsLayer) {
-        populateINaturalistLayer(arcLayer, allObservations);
-        filterINaturalistLayer(arcLayer, selectedTaxa);
-        inatPopulatedRef.current = true;
-      }
     }
-  }, [pinnedLayers, viewRef, mapReady, showToast, dataLoaded, allObservations, selectedTaxa]);
+  }, [pinnedLayers, activeLayer, viewRef, mapReady, showToast]);
 
-  // Sync visibility
+  // Sync visibility: pinned layers use eye toggle; active-only always visible
   useEffect(() => {
     const managed = managedLayersRef.current;
     for (const pinned of pinnedLayers) {
       const arcLayer = managed.get(pinned.layerId);
       if (arcLayer) arcLayer.visible = pinned.isVisible;
     }
-  }, [pinnedLayers]);
+    // Active but not pinned: ensure visible
+    if (activeLayer) {
+      const isPinned = pinnedLayers.some(p => p.layerId === activeLayer.layerId);
+      if (!isPinned) {
+        const arcLayer = managed.get(activeLayer.layerId);
+        if (arcLayer) arcLayer.visible = true;
+      }
+    }
+  }, [pinnedLayers, activeLayer]);
 
-  // Toast for activating unimplemented layers (browsing, not pinned)
+  // Toast for activating unimplemented layers (browsing, not yet pinned)
   useEffect(() => {
     if (!activeLayer) return;
     if (IMPLEMENTED_LAYERS.has(activeLayer.layerId)) return;
+    // Only toast if not pinned (pinned layers toast in the add-layer effect)
     if (pinnedLayers.some(p => p.layerId === activeLayer.layerId)) return;
     showToast(`"${activeLayer.name}" — map data not available yet`, 'info');
   }, [activeLayer?.layerId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Populate iNaturalist GraphicsLayer when data arrives (after layer exists)
-  useEffect(() => {
-    if (!dataLoaded || inatPopulatedRef.current) return;
-    const inatLayer = managedLayersRef.current.get('inaturalist-obs');
-    if (!inatLayer || !(inatLayer instanceof GraphicsLayer)) return;
+  // ── Adapter hooks (declared AFTER core effects — their effects fire later) ─
 
-    populateINaturalistLayer(inatLayer, allObservations);
-    filterINaturalistLayer(inatLayer, selectedTaxa);
-    inatPopulatedRef.current = true;
-  }, [dataLoaded, allObservations, mapReady, selectedTaxa]);
+  useAllMapBehaviors(getManagedLayer, pinnedLayers, activeLayer, mapReady);
 
-  // Update iNaturalist filter when selectedTaxa changes (instant local toggle)
-  useEffect(() => {
-    if (!inatPopulatedRef.current) return;
-    const inatLayer = managedLayersRef.current.get('inaturalist-obs');
-    if (!inatLayer || !(inatLayer instanceof GraphicsLayer)) return;
-    filterINaturalistLayer(inatLayer, selectedTaxa);
-  }, [selectedTaxa]);
+  // ── Cleanup on unmount ─────────────────────────────────────────────────────
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       const view = viewRef.current;
