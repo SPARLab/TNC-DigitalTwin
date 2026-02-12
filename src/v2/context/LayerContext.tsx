@@ -5,7 +5,7 @@
 
 import { createContext, useContext, useCallback, useState, type ReactNode } from 'react';
 import type { ActiveLayer, PinnedLayer, UndoAction, DataSource } from '../types';
-import { LAYER_MAP } from '../data/layerRegistry';
+import { useCatalog } from './CatalogContext';
 
 interface LayerContextValue {
   // Active layer (one at a time)
@@ -40,76 +40,10 @@ interface LayerContextValue {
 
 const LayerContext = createContext<LayerContextValue | null>(null);
 
-// Pre-pinned dummy layers for Phase 0 demo
-const INITIAL_PINNED: PinnedLayer[] = [
-  {
-    id: 'pinned-1',
-    layerId: 'animl-camera-traps',
-    name: 'Camera Traps (ANiML)',
-    isVisible: true,
-    isActive: false,
-    filterCount: 0,
-    order: 0,
-    // Multi-view example (DFT-013)
-    views: [
-      {
-        id: 'view-1',
-        name: 'mountain lion',
-        isVisible: true,
-        filterCount: 3,
-        filterSummary: 'species = Mountain Lion, date > 2024-01-01, confidence >= 80%',
-        resultCount: 47, // Mock result count
-      },
-      {
-        id: 'view-2',
-        name: 'deer',
-        isVisible: false,
-        filterCount: 2,
-        filterSummary: 'species = Deer, date > 2024-01-01',
-        resultCount: 128, // Mock result count
-      },
-    ],
-  },
-  // iNaturalist removed from initial pinned — test lazy cache loading
-  /*
-  {
-    id: 'pinned-inat',
-    layerId: 'inaturalist-obs',
-    name: 'iNaturalist Observations',
-    isVisible: false, // Start hidden — user activates via sidebar click (auto-restores visibility)
-    isActive: false,
-    filterCount: 0,
-    order: 1,
-    resultCount: 342, // Mock result count
-  },
-  */
-  {
-    id: 'pinned-2',
-    layerId: 'fire-perimeters',
-    name: 'Fire Perimeters',
-    isVisible: true,
-    isActive: false,
-    filterCount: 0,
-    order: 2,
-    resultCount: 8, // Mock result count
-  },
-  {
-    id: 'pinned-3',
-    layerId: 'water-sensors',
-    name: 'Water Level Sensors (Dendra)',
-    isVisible: false,
-    isActive: false,
-    filterCount: 2,
-    filterSummary: 'date range = Mar 2024, sensor type = Pressure',
-    distinguisher: 'Mar 2024',
-    order: 3,
-    resultCount: 12, // Mock result count
-  },
-];
-
 export function LayerProvider({ children }: { children: ReactNode }) {
+  const { layerMap } = useCatalog();
   const [activeLayer, setActiveLayer] = useState<ActiveLayer | null>(null);
-  const [pinnedLayers, setPinnedLayers] = useState<PinnedLayer[]>(INITIAL_PINNED);
+  const [pinnedLayers, setPinnedLayers] = useState<PinnedLayer[]>([]);
   const [undoStack, setUndoStack] = useState<UndoAction[]>([]);
 
   const pushUndo = useCallback((description: string, undoFn: () => void) => {
@@ -120,7 +54,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const activateLayer = useCallback((layerId: string, viewId?: string) => {
-    const layer = LAYER_MAP.get(layerId);
+    const layer = layerMap.get(layerId);
     if (!layer) return;
 
     const pinned = pinnedLayers.find(p => p.layerId === layerId);
@@ -139,7 +73,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         prev.map(p => (p.layerId === layerId ? { ...p, isVisible: true } : p))
       );
     }
-  }, [pinnedLayers]);
+  }, [pinnedLayers, layerMap]);
 
   const [lastEditFiltersRequest, setLastEditFiltersRequest] = useState(0);
   const requestEditFilters = useCallback(() => setLastEditFiltersRequest(Date.now()), []);
@@ -147,7 +81,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
   const deactivateLayer = useCallback(() => setActiveLayer(null), []);
 
   const pinLayer = useCallback((layerId: string) => {
-    const layer = LAYER_MAP.get(layerId);
+    const layer = layerMap.get(layerId);
     if (!layer) return;
     if (pinnedLayers.some(p => p.layerId === layerId)) return; // already pinned
 
@@ -167,7 +101,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     if (activeLayer?.layerId === layerId) {
       setActiveLayer(prev => prev ? { ...prev, isPinned: true } : null);
     }
-  }, [pinnedLayers, activeLayer]);
+  }, [pinnedLayers, activeLayer, layerMap]);
 
   const unpinLayer = useCallback((pinnedId: string) => {
     const target = pinnedLayers.find(p => p.id === pinnedId);

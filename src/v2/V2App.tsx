@@ -3,6 +3,7 @@
 // Structure: Header → (LeftSidebar | Map + FloatingWidgets | RightSidebar)
 // ============================================================================
 
+import { CatalogProvider } from './context/CatalogContext';
 import { LayerProvider } from './context/LayerContext';
 // NOTE: BookmarkProvider disabled per Feb 11 design decision.
 // Saved Items widget merged into Map Layers. Code preserved for future reuse.
@@ -16,19 +17,21 @@ import { RightSidebar } from './components/RightSidebar/RightSidebar';
 
 export default function V2App() {
   return (
-    <LayerProvider>
-      <MapProvider>
-        <INaturalistFilterProvider>
-          <div id="v2-app" className="flex flex-col h-screen w-screen overflow-hidden">
-            <V2Header />
-            <div className="flex flex-1 overflow-hidden">
-              <LeftSidebar />
-              <MapContainer />
-              <RightSidebar />
+    <CatalogProvider>
+      <LayerProvider>
+        <MapProvider>
+          <INaturalistFilterProvider>
+            <div id="v2-app" className="flex flex-col h-screen w-screen overflow-hidden">
+              <V2Header />
+              <div className="flex flex-1 overflow-hidden">
+                <LeftSidebar />
+                <MapContainer />
+                <RightSidebar />
+              </div>
             </div>
-          </div>
-        </INaturalistFilterProvider>
-      </MapProvider>
-    </LayerProvider>
+          </INaturalistFilterProvider>
+        </MapProvider>
+      </LayerProvider>
+    </CatalogProvider>
   );
 }

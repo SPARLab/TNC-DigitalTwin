@@ -9,6 +9,17 @@ export interface CatalogLayer {
   categoryId: string;
   dataSource: DataSource;
   icon?: string; // Lucide icon name
+  /** Service metadata from Data Catalog (absent for external API layers) */
+  catalogMeta?: {
+    datasetId: number;
+    serverBaseUrl: string;
+    servicePath: string;
+    hasFeatureServer: boolean;
+    hasMapServer: boolean;
+    hasImageServer: boolean;
+    description?: string;
+    layerIdInService?: number;
+  };
 }
 
 /** Supported data sources */
@@ -28,6 +39,8 @@ export interface Category {
   name: string;
   icon: string; // Lucide icon name
   layers: CatalogLayer[];
+  subcategories?: Category[];
+  parentId?: string;
 }
 
 /** A pinned layer in the Map Layers widget */
