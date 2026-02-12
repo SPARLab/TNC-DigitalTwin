@@ -4,9 +4,12 @@
 //   1. The floating legend widget over the map
 //   2. The taxon dropdown in this Browse tab
 // Both use the global INaturalistFilterContext.
+//
+// Map Marker Click Integration: When activeLayer.featureId is set (from map
+// marker click), automatically opens the detail view for that observation.
 // ============================================================================
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import {
   useINaturalistObservations,
@@ -16,11 +19,13 @@ import {
 } from '../../../hooks/useINaturalistObservations';
 import { useMap } from '../../../context/MapContext';
 import { useINaturalistFilter } from '../../../context/INaturalistFilterContext';
+import { useLayers } from '../../../context/LayerContext';
 import { ObservationCard } from './ObservationCard';
 import { INaturalistDetailView } from './INaturalistDetailView';
 
 export function INaturalistBrowseTab() {
-  const { selectedTaxa, toggleTaxon, selectAll } = useINaturalistFilter();
+  const { selectedTaxa, toggleTaxon, selectAll, allObservations } = useINaturalistFilter();
+  const { activeLayer } = useLayers();
 
   const filters: INatFilters = useMemo(() => ({
     selectedTaxa,
@@ -34,6 +39,16 @@ export function INaturalistBrowseTab() {
 
   // Detail view state
   const [selectedObs, setSelectedObs] = useState<INatObservation | null>(null);
+
+  // Auto-open detail view when map marker is clicked (activeLayer.featureId is set)
+  useEffect(() => {
+    if (activeLayer?.featureId && activeLayer.layerId === 'inaturalist-obs') {
+      const obs = allObservations.find(o => o.id === activeLayer.featureId);
+      if (obs) {
+        setSelectedObs(obs);
+      }
+    }
+  }, [activeLayer, allObservations]);
 
   // Actions
   // TODO: Replace addBookmark with "Save as View" action (Feb 11 design decision)

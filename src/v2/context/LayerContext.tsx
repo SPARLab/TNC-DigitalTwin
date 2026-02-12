@@ -10,7 +10,7 @@ import { LAYER_MAP } from '../data/layerRegistry';
 interface LayerContextValue {
   // Active layer (one at a time)
   activeLayer: ActiveLayer | null;
-  activateLayer: (layerId: string, viewId?: string) => void;
+  activateLayer: (layerId: string, viewId?: string, featureId?: string | number) => void;
   deactivateLayer: () => void;
 
   // Pinned layers (multiple)
@@ -119,7 +119,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     ].slice(0, 5)); // DFT-031: max 5 actions
   }, []);
 
-  const activateLayer = useCallback((layerId: string, viewId?: string) => {
+  const activateLayer = useCallback((layerId: string, viewId?: string, featureId?: string | number) => {
     const layer = LAYER_MAP.get(layerId);
     if (!layer) return;
 
@@ -131,6 +131,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
       dataSource: layer.dataSource as DataSource,
       isPinned: !!pinned,
       viewId,
+      featureId,
     });
 
     // DFT-001: clicking a pinned-but-hidden layer restores visibility

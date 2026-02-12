@@ -88,6 +88,8 @@ export interface ActiveLayer {
   isPinned: boolean;
   /** When editing filters for a nested child view */
   viewId?: string;
+  /** When opening a specific observation/feature detail (e.g., from map marker click) */
+  featureId?: string | number;
 }
 
 /** Undo action record */

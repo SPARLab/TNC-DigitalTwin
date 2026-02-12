@@ -27,7 +27,7 @@
 | 13 | 1 | **Fix iNaturalist Layer Icons & Loading** | ✅ | High | Replaced FeatureLayer with spatially-filtered GraphicsLayer; local filtering; removed dummy data |
 | 23 | 0 | **Data Source Adapter Pattern Refactor** | ✅ | Critical | Extract data-source logic into plugin architecture; enable parallel branch development |
 | 14 | 1 | **iNaturalist: Observation Card Click → Map Highlight + Detail View** | ⚪ | High | Click obs card: highlight map marker, show tooltip, navigate to detail page |
-| 15 | 1 | **iNaturalist: Map Marker Click → Zoom + Detail View** | ⚪ | High | Click map marker: zoom to observation, open detail view in right sidebar |
+| 15 | 1 | **iNaturalist: Map Marker Click → Zoom + Detail View** | ✅ | High | Click map marker: zoom to observation, open detail view in right sidebar |
 | 16 | 1 | **iNaturalist: Remove Bookmark Button/Action** | ⚪ | Low | Already stubbed; clean up unused bookmark logic from observation cards |
 | 17 | 1 | **iNaturalist: Compact Filter Section (Dropdown)** | ⚪ | Medium | Filter Observations in Browse tab: tall list → dropdown; include Select All |
 | 18 | 1 | **iNaturalist: Rename Legend Widget Title** | ⚪ | Low | Change "Filter Observations" → "iNaturalist Taxa" in floating legend widget |
@@ -37,8 +37,8 @@
 | 22 | 1 | **iNaturalist: Remember Last Active Tab** | ⚪ | Low | Persist Overview vs Browse tab per layer; restore on reactivation |
 | 14 | 0 | **Fix Map Layers Widget Drag Animation** | ✅ | Medium | Fixed: disabled @dnd-kit auto layout animations to prevent jarring transforms |
 
-**Active tasks remaining:** 8  
-**Recently completed:** **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
+**Active tasks remaining:** 7  
+**Recently completed:** Task 15 (Map Marker Click → Zoom + Detail View) ✅ (Feb 12), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
 
 ---
 
@@ -269,11 +269,16 @@
     - **Implementation:** Wire `onViewDetail` in `ObservationCard` to call `highlightPoint()` + `view.goTo()` from MapContext, then transition Browse tab to detail view state.
     - **Files:** `INaturalistBrowseTab.tsx`, `ObservationCard.tsx`, `MapContext.tsx`
 
-  - [ ] **Task 15: Map Marker Click → Zoom + Detail View**
-    - **Goal:** Clicking an iNaturalist map marker (emoji icon) should zoom to the observation and open its detail view in the right sidebar.
-    - **Implementation:** Add popupTemplate click handler or graphic click event listener in `inaturalistLayer.ts`. Trigger `activateLayer()` with observation ID, pass to Browse tab to show detail view.
-    - **Files:** `inaturalistLayer.ts`, `LayerContext.tsx`, `INaturalistBrowseTab.tsx`
-    - **Note:** May require passing observation ID through active layer state or MapContext event bus.
+  - [x] **Task 15: Map Marker Click → Zoom + Detail View**
+    - **Completed (Feb 12):** Clicking an iNaturalist map marker (emoji icon) now zooms to the observation and opens its detail view in the right sidebar.
+    - **Implementation:** 
+      - Extended `ActiveLayer` type with optional `featureId` field
+      - Updated `LayerContext.activateLayer()` to accept `featureId` parameter
+      - Added map click handler in `useINaturalistMapBehavior` using ArcGIS `view.hitTest()`
+      - When iNaturalist graphic clicked: activates layer with observation ID + zooms to point (800ms duration)
+      - `INaturalistBrowseTab` listens for `activeLayer.featureId` and auto-opens detail view
+    - **Files Modified:** `types/index.ts`, `LayerContext.tsx`, `useMapBehavior.ts`, `INaturalistBrowseTab.tsx`
+    - **UX:** Seamless map → sidebar navigation with smooth zoom animation
 
   - [ ] **Task 16: Remove Bookmark Button/Action**
     - **Goal:** Clean up unused bookmark logic from observation cards and detail view (already stubbed as TODO).
@@ -363,6 +368,7 @@ See `docs/master-plan.md` for full phase breakdown.
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
 | Feb 12, 2026 | Phase 0 | ✅ **Task 23 complete: Data Source Adapter Pattern refactor.** Created plugin architecture: each data source implements `DataSourceAdapter` interface. Core files (MapContainer, RightSidebar, useMapLayers) made data-source-agnostic — read from registry. Lazy caching: `warmCache()` pattern (iNat: 2.18s initial, instant revisit). Active-but-not-pinned layers visible on map. Files: `dataSources/{types.ts, registry.ts, inaturalist/{adapter.tsx, useMapBehavior.ts}}`. Modified: INaturalistFilterContext (lazy), useMapLayers (generic), MapContainer/RightSidebar (generic), LayerContext (removed iNat from initial). Merge conflicts: ~4 lines/source. **Enables parallel branch development.** | Claude |
+|| Feb 12, 2026 | Phase 1 | ✅ **Task 15 complete: iNaturalist Map Marker Click → Zoom + Detail View.** Clicking observation markers on the map now zooms to the observation and opens its detail view in right sidebar. Extended ActiveLayer type with featureId field. Added map click handler in useINaturalistMapBehavior using view.hitTest(). Auto-opens detail view when activeLayer.featureId is set. Files: types/index.ts, LayerContext.tsx, useMapBehavior.ts, INaturalistBrowseTab.tsx. | Claude |
 | Feb 12, 2026 | Phase 0 | ✅ **Task 1 complete: ArcGIS Map Integration (0.4).** Replaced placeholder with real ArcGIS WebMap. Layers added when pinned OR active. GraphicsLayer for highlights. | Claude |
 | Feb 11, 2026 | Phase 1 | Added **Tasks 14-22** for iNaturalist UX improvements: map marker interactions, compact filter dropdown, search bar, date filter, pagination (10/page), tab memory, legend rename. Future: save observation → filtered view (low priority). | Claude |
 | Feb 11, 2026 | Phase 1 | ✅ **Task 13 complete: Fix iNaturalist Layer Icons & Loading.** Replaced FeatureLayer with spatially-filtered GraphicsLayer; local counts; instant filtering; starts hidden. | Claude |
