@@ -1,6 +1,6 @@
 # Development Task Tracker — V2 Digital Catalog
 
-**Last Updated:** February 12, 2026  
+**Last Updated:** February 13, 2026  
 **Current Phase:** Phase 0 (Foundation) — 🟡 In Progress  
 **Target Deadline:** February 20, 2026 (8 days remaining)
 
@@ -38,7 +38,7 @@
 | 14 | 0 | **Fix Map Layers Widget Drag Animation** | ✅ | Medium | Fixed: disabled @dnd-kit auto layout animations to prevent jarring transforms |
 | 24 | 0 | **0.9 Dynamic Layer Registry from Data Catalog Service** | 🟡 | **Critical** | Replace static layerRegistry with dynamic fetch from Data Catalog FeatureServer (~90+ real datasets, 14 categories); "Not Yet Implemented" toast for layers without adapters. **BLOCKS all parallel branches.** |
 | 25 | 3 | **Dendra: Tasks 3.1-3.4 — Station browse adapter** | ✅ | High | Service, context, map layer, sidebar shell, filters, station cards, detail view with datastream summaries. Next: Floating time series chart (3.5). |
-| 26 | 3 | **Dendra: Task 3.5 — Floating time series chart** | ⚪ | High | ECharts in sensor detail; interactive hover; stats panel. Reference: mockup 02d-browse-dendra.html |
+| 26 | 3 | **Dendra: Task 3.5 — Floating time series chart** | 🟡 | High | In progress. 3.5c complete (glassmorphism + readability + layout pass). Remaining: 3.5a datastream click refresh, 3.5b 0-data inconsistency. Reference: mockup 02d-browse-dendra.html |
 
 **Active tasks remaining:** 10  
 **Recently completed:** **Dendra 3.1-3.4** ✅ (Feb 12), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
@@ -400,6 +400,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 13, 2026 | Phase 3 | 🟡 **Task 26 (Dendra 3.5) in progress; sub-task 3.5c complete.** Floating chart UI polish shipped: visible glassmorphism, bottom-right placement, half-height panel sizing, stronger contrast/readability, larger axis labels, larger/higher range slider, darker header, and measurement-first header text hierarchy. **Still open:** 3.5a (chart not refreshing on subsequent datastream clicks), 3.5b (0-data inconsistency). | Claude |
 | Feb 12, 2026 | Phase 3 | ✅ **Dendra Tasks 3.1-3.4 complete.** Full station browse adapter for 10 per-type sensor services. Service layer, DendraContext (per-service cache), map behavior (active-layer-only populate), Overview/Browse tabs, StationCard, StationDetailView with datastream summaries. Fixes: buildServiceUrl (no double path), elevation null/NaN, layer-switch graphics clearing. **Next: Task 3.5 floating time series chart.** | Claude |
 | Feb 12, 2026 | Phase 0 | 🟡 **Task 24 (0.9): Dynamic Layer Registry from Data Catalog Service.** Discovered Dan's Data Catalog FeatureServer with ~90+ real datasets, 14 categories (with subcategories), and 10 per-type Dendra sensor services. All sensor services follow identical 3-part schema (Locations/Data/Summary). Replaces static layerRegistry.ts. **All parallel branches paused until complete.** | Claude |
 | Feb 12, 2026 | Phase 0 | ✅ **Task 23 complete: Data Source Adapter Pattern refactor.** Created plugin architecture: each data source implements `DataSourceAdapter` interface. Core files (MapContainer, RightSidebar, useMapLayers) made data-source-agnostic — read from registry. Lazy caching: `warmCache()` pattern (iNat: 2.18s initial, instant revisit). Active-but-not-pinned layers visible on map. Files: `dataSources/{types.ts, registry.ts, inaturalist/{adapter.tsx, useMapBehavior.ts}}`. Modified: INaturalistFilterContext (lazy), useMapLayers (generic), MapContainer/RightSidebar (generic), LayerContext (removed iNat from initial). Merge conflicts: ~4 lines/source. **Enables parallel branch development.** | Claude |

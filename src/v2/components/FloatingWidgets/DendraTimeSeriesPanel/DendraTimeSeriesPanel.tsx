@@ -35,10 +35,14 @@ function MinimizedBar() {
   return (
     <div
       id="dendra-chart-minimized"
-      className="absolute bottom-4 left-4 rounded-xl z-30
-                 bg-white/80 backdrop-blur-xl border border-white/40
+      className="absolute bottom-4 right-4 rounded-xl z-30
+                 bg-white/55 backdrop-blur-2xl backdrop-saturate-150 border border-white/50
                  cursor-pointer hover:shadow-xl transition-shadow"
-      style={{ boxShadow: '0 8px 32px -8px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.3)' }}
+      style={{
+        boxShadow: '0 8px 32px -8px rgba(0,0,0,0.22), 0 0 0 1px rgba(255,255,255,0.35)',
+        backdropFilter: 'blur(18px) saturate(160%)',
+        WebkitBackdropFilter: 'blur(18px) saturate(160%)',
+      }}
       onClick={toggleMinimizeChart}
     >
       <div className="flex items-center gap-3 px-4 py-2">
@@ -155,7 +159,7 @@ function ExpandedPanel() {
       dataZoom: [
         {
           type: 'slider', show: true, xAxisIndex: [0],
-          start: 0, end: 100, height: 24, bottom: 8,
+          start: 0, end: 100, height: 30, bottom: 16,
           borderColor: '#99f6e4', fillerColor: 'rgba(20, 184, 166, 0.12)',
           handleStyle: { color: '#14b8a6', borderColor: '#14b8a6' },
           showDataShadow: true, showDetail: false,
@@ -164,19 +168,22 @@ function ExpandedPanel() {
       ],
       xAxis: {
         type: 'category', data: timestamps,
+        axisLine: { lineStyle: { color: '#94a3b8' } },
         axisLabel: {
           formatter: (v: string) => new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          rotate: 0, fontSize: 10,
+          rotate: 0, fontSize: 11, color: '#475569',
         },
       },
       yAxis: {
         type: 'value',
         name: summary?.unit ?? '',
         nameLocation: 'middle', nameGap: 36,
-        nameTextStyle: { fontSize: 11 },
+        nameTextStyle: { fontSize: 11, color: '#475569' },
         min: valMin - range * 0.05,
         max: valMax + range * 0.05,
-        axisLabel: { fontSize: 10, formatter: (v: number) => v.toFixed(1) },
+        axisLine: { lineStyle: { color: '#94a3b8' } },
+        splitLine: { lineStyle: { color: '#cbd5e1' } },
+        axisLabel: { fontSize: 11, color: '#475569', formatter: (v: number) => v.toFixed(1) },
       },
       series: [{
         data: values, type: 'line', smooth: false, symbol: 'none',
@@ -212,27 +219,33 @@ function ExpandedPanel() {
   return (
     <div
       id="dendra-time-series-panel"
-      className="absolute bottom-4 left-4 right-4 max-w-3xl rounded-xl z-30
-                 bg-white/80 backdrop-blur-xl border border-white/40"
+      className="absolute bottom-8 right-4 w-[56rem] max-w-[calc(100%-2rem)] rounded-xl z-30
+                 bg-white/65 backdrop-blur-2xl backdrop-saturate-150 border border-white/60
+                 flex flex-col"
       style={{
-        boxShadow: '0 8px 32px -8px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.3)',
-        maxHeight: '45vh',
+        boxShadow: '0 8px 32px -8px rgba(0,0,0,0.22), 0 0 0 1px rgba(255,255,255,0.35)',
+        backdropFilter: 'blur(18px) saturate(160%)',
+        WebkitBackdropFilter: 'blur(18px) saturate(160%)',
+        height: '50%',
+        minHeight: '320px',
       }}
     >
       {/* Header */}
       <div
         id="dendra-chart-header"
-        className="flex items-center justify-between px-4 py-2.5 border-b border-teal-200/50
-                   bg-gradient-to-r from-teal-50/70 to-cyan-50/70 rounded-t-xl"
+        className="flex items-center justify-between px-4 py-2.5 border-b border-teal-300/70
+                   bg-gradient-to-r from-teal-100/85 to-cyan-100/75 rounded-t-xl"
       >
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-gradient-to-br from-teal-400 to-teal-600 rounded-lg flex items-center justify-center shadow-sm">
             <BarChart3 className="w-4 h-4 text-white" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-800">{displayName}</h3>
-            <p className="text-[10px] text-slate-500">
-              {chartLabel} • {summary?.unit ?? '—'}
+            <h3 className="text-sm font-bold text-slate-900">
+              {chartLabel || displayName}
+            </h3>
+            <p className="text-[10px] text-slate-700">
+              {chartLabel || 'Measurement'} • {displayName}
             </p>
           </div>
         </div>
@@ -257,7 +270,7 @@ function ExpandedPanel() {
       </div>
 
       {/* Content */}
-      <div id="dendra-chart-content" className="p-4 bg-white/60 backdrop-blur-md">
+      <div id="dendra-chart-content" className="flex-1 min-h-0 p-4 bg-white/45">
         {/* Loading */}
         {chart.loading && (
           <div className="flex items-center justify-center py-12">
@@ -284,14 +297,13 @@ function ExpandedPanel() {
 
         {/* Chart + Stats */}
         {!chart.loading && data.length > 0 && (
-          <div className="flex gap-4">
+          <div className="flex gap-4 h-full">
             {/* Chart area */}
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 h-full">
               <div
                 id="dendra-echarts"
                 ref={chartRef}
-                className="w-full rounded-lg border border-slate-200"
-                style={{ height: '200px' }}
+                className="w-full h-full rounded-lg border border-slate-300/80 bg-white/70"
               />
             </div>
 
@@ -325,8 +337,8 @@ function ExpandedPanel() {
                   <button
                     id="dendra-chart-export-csv"
                     onClick={handleExportCSV}
-                    className="w-full text-[10px] bg-white hover:bg-slate-50 text-slate-600
-                               border border-slate-200 font-medium py-1.5 px-2 rounded-lg
+                    className="w-full text-[10px] bg-white/90 hover:bg-white text-slate-700
+                               border border-slate-300 font-medium py-1.5 px-2 rounded-lg
                                flex items-center justify-center gap-1 transition-colors"
                   >
                     <Download className="w-3 h-3" />
@@ -342,10 +354,10 @@ function ExpandedPanel() {
       {/* Footer */}
       <div
         id="dendra-chart-footer"
-        className="px-4 py-1.5 border-t border-slate-100/50 bg-slate-50/50 rounded-b-xl
+        className="px-4 py-1.5 border-t border-slate-200/60 bg-slate-50/55 rounded-b-xl
                    flex items-center justify-between"
       >
-        <span className="text-[10px] text-slate-500">
+        <span className="text-[10px] text-slate-700">
           Data from Dendra •{' '}
           {summary ? `${formatTimestamp(summary.first_reading_time)} — ${formatTimestamp(summary.last_reading_time)}` : ''}
         </span>
@@ -372,13 +384,13 @@ function StatBox({
 }) {
   return (
     <div className={`text-center p-1.5 rounded-lg border ${
-      highlight ? 'bg-teal-50 border-teal-100' : 'bg-slate-50 border-slate-100'
+      highlight ? 'bg-teal-50/90 border-teal-200' : 'bg-slate-100/80 border-slate-200'
     }`}>
       <div className="flex items-center justify-center gap-1 mb-0.5">
         {icon}
-        <span className="text-[9px] text-slate-500 uppercase tracking-wide">{label}</span>
+        <span className="text-[9px] text-slate-600 uppercase tracking-wide">{label}</span>
       </div>
-      <p className={`text-sm font-bold ${highlight ? 'text-teal-600' : 'text-slate-700'}`}>
+      <p className={`text-sm font-bold ${highlight ? 'text-teal-700' : 'text-slate-800'}`}>
         {value}
       </p>
     </div>
