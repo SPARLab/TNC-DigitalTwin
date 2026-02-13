@@ -34,13 +34,13 @@
 | 19 | 1 | **iNaturalist: Add Observation Search Bar** | ✅ | Medium | Search observations by common/scientific name in Browse tab |
 | 20 | 1 | **iNaturalist: Reduce Pagination to 10 per Page** | ✅ | Low | Change PAGE_SIZE from 20 → 10 in useINaturalistObservations |
 | 21 | 1 | **iNaturalist: Add Date Range Filter** | ✅ | Medium | Add start/end date pickers in Browse tab filter section |
-| 22 | 1 | **iNaturalist: Remember Last Active Tab** | ⚪ | Low | Persist Overview vs Browse tab per layer; restore on reactivation |
+| 22 | 1 | **iNaturalist: Remember Last Active Tab** | ✅ | Low | Completed: per-layer tab memory in RightSidebar; restores Overview/Browse on layer reactivation |
 | 25 | 1 | **iNaturalist: Sync Filters with Map Layers Widget** | ⚪ | Medium | Apply date + taxon filters to Map Layers widget; show current filters per view; Edit Filters opens Browse with those filters pre-applied |
 | 14 | 0 | **Fix Map Layers Widget Drag Animation** | ✅ | Medium | Fixed: disabled @dnd-kit auto layout animations to prevent jarring transforms |
 | 24 | 0 | **0.9 Dynamic Layer Registry from Data Catalog Service** | 🟡 | **Critical** | Replace static layerRegistry with dynamic fetch from Data Catalog FeatureServer (~90+ real datasets, 14 categories); "Not Yet Implemented" toast for layers without adapters. **BLOCKS all parallel branches.** |
 
-**Active tasks remaining:** 2  
-**Recently completed:** Task 21 (Add Date Range Filter) ✅ (Feb 13), Task 20 (Reduce Pagination to 10 per Page) ✅ (Feb 13), Task 19 (Add Observation Search Bar) ✅ (Feb 13), Task 18 (Rename Legend Widget Title) ✅ (Feb 13), Task 16 (Remove Bookmark Button) ✅ (Feb 13), Task 17 (Compact Filter Section) ✅ (Feb 13), iNaturalist label fix (iNat → iNaturalist) ✅ (Feb 13), Task 14 (Observation Card Click → Map Highlight + Detail View) ✅ (Feb 12), Task 15 (Map Marker Click → Zoom + Detail View) ✅ (Feb 12), Task 24 (Dynamic Layer Registry) 🟡 (Feb 12), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
+**Active tasks remaining:** 1  
+**Recently completed:** Task 22 (Remember Last Active Tab) ✅ (Feb 13), Task 21 (Add Date Range Filter) ✅ (Feb 13), Task 20 (Reduce Pagination to 10 per Page) ✅ (Feb 13), Task 19 (Add Observation Search Bar) ✅ (Feb 13), Task 18 (Rename Legend Widget Title) ✅ (Feb 13), Task 16 (Remove Bookmark Button) ✅ (Feb 13), Task 17 (Compact Filter Section) ✅ (Feb 13), iNaturalist label fix (iNat → iNaturalist) ✅ (Feb 13), Task 14 (Observation Card Click → Map Highlight + Detail View) ✅ (Feb 12), Task 15 (Map Marker Click → Zoom + Detail View) ✅ (Feb 12), Task 24 (Dynamic Layer Registry) 🟡 (Feb 12), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
 
 ---
 
@@ -291,8 +291,8 @@
 - **Phase 1:** iNaturalist data source
   - **See detailed task breakdown:** `docs/IMPLEMENTATION/phases/phase-1-inaturalist.md`
   - **Quick Summary:**
-    - 7 / 10 tasks complete
-    - Remaining: Remember Last Tab (Task 22)
+    - 10 / 11 tasks complete
+    - Remaining: Sync Filters with Map Layers Widget (Task 25)
     - Recently completed: Search Bar (Feb 13), Legend Widget Title (Feb 13), Compact Filter Dropdown (Feb 13), Remove Bookmark Button (Feb 13), Map Marker Click (Feb 12), Observation Card Click (Feb 12), Layer Icons & Loading (Feb 11)
 
 - **Phase 2:** ANiML data source (7 tasks)
@@ -340,6 +340,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 13, 2026 | Phase 1 | ✅ **Task 22 complete: Remember Last Active Tab.** RightSidebar now persists Overview vs Browse tab per layer; restores on reactivation. First visit defaults to Overview (DFT-006). Edit Filters still opens Browse. Files: RightSidebar.tsx. | Claude |
 | Feb 13, 2026 | Phase 1 | ✅ **Tasks 20 & 21 complete: Pagination 10/page + Date Range Filter.** Task 20: Changed PAGE_SIZE from 20 → 10 in useINaturalistObservations. Task 21: Added start/end date pickers in Browse tab filter section (native date inputs, Clear button, min/max constraints). **Bug fix:** ArcGIS returns `observed_on` as epoch-ms; added `normalizeDate()` in INaturalistFilterContext to convert to YYYY-MM-DD so date comparisons work. Files: useINaturalistObservations.ts, INaturalistBrowseTab.tsx, INaturalistFilterContext.tsx, tncINaturalistService.ts. | Claude |
 | Feb 13, 2026 | Phase 1 | ✅ **Task 19 complete: Add Observation Search Bar.** Added search input above filter section in Browse tab. Searches both common name and scientific name (case-insensitive substring match). 300ms debounce for smooth typing. Clear button (X icon) appears when text entered. Resets to page 1 on search change. Focus state uses box-shadow (no layout shift). Contextual helper text shows which taxa are being searched. Files: INaturalistBrowseTab.tsx, useINaturalistObservations.ts. | Claude |
 | Feb 13, 2026 | Phase 1 | ✅ **Task 18 complete: Rename Legend Widget Title.** Changed floating legend header from "Filter Observations" to "iNaturalist Taxa". Files: INaturalistLegendWidget.tsx. | Claude |
