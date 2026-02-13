@@ -1,18 +1,22 @@
 // ============================================================================
-// ImageList — Vertical image list with prominent date metadata
+// ImageList — Vertical image list with prominent date metadata.
 // Each row: thumbnail + label + date + time + camera name.
-// "Load More" button for client-side pagination.
+// Uses page-based navigation (Prev/Next) with indicator.
 // ============================================================================
 
-import { Camera } from 'lucide-react';
+import { Camera, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { AnimlImageLabel } from '../../../../services/animlService';
 
 interface ImageListProps {
   images: AnimlImageLabel[];
   totalCount: number;
-  hasMore: boolean;
-  onLoadMore: () => void;
-  loadingMore?: boolean;
+  currentPage: number;
+  pageSize: number;
+  totalPages: number;
+  onPrevPage: () => void;
+  onNextPage: () => void;
+  /** Fill available parent height (used by Browse tab results panel). */
+  expandToFill?: boolean;
   /** Show camera name column (useful in animal-first mode where images span cameras) */
   showCameraName?: boolean;
 }
@@ -20,9 +24,12 @@ interface ImageListProps {
 export function ImageList({
   images,
   totalCount,
-  hasMore,
-  onLoadMore,
-  loadingMore = false,
+  currentPage,
+  pageSize,
+  totalPages,
+  onPrevPage,
+  onNextPage,
+  expandToFill = false,
   showCameraName = false,
 }: ImageListProps) {
   if (images.length === 0) {
@@ -34,17 +41,25 @@ export function ImageList({
   }
 
   return (
-    <div id="animl-image-list" className="space-y-2">
-      <div className="flex items-center justify-between">
+    <div
+      id="animl-image-list"
+      className={expandToFill ? 'h-full min-h-0 flex flex-col gap-2' : 'space-y-2'}
+    >
+      <div id="animl-image-list-header" className="flex items-center justify-between">
         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
           Images
         </span>
         <span className="text-xs text-gray-400 tabular-nums">
-          {images.length} of {totalCount.toLocaleString()}
+          {getPageRangeStart(currentPage, pageSize)}-{getPageRangeEnd(currentPage, pageSize, totalCount)} of {totalCount.toLocaleString()}
         </span>
       </div>
 
-      <div className="space-y-1.5">
+      <div
+        id="animl-image-list-scrollable"
+        className={expandToFill
+          ? 'space-y-1.5 flex-1 min-h-0 overflow-y-auto pr-1 scroll-area-animl-images'
+          : 'space-y-1.5 max-h-96 overflow-y-auto pr-1 scroll-area-animl-images'}
+      >
         {images.map((img, idx) => {
           const date = parseDate(img.timestamp);
 
@@ -87,19 +102,45 @@ export function ImageList({
         })}
       </div>
 
-      {hasMore && (
+      <div id="animl-image-pagination" className="flex items-center justify-between border-t border-gray-100 pt-2">
         <button
-          id="animl-load-more"
-          onClick={onLoadMore}
-          disabled={loadingMore}
-          className="w-full py-2.5 text-sm font-medium text-emerald-600 bg-emerald-50
-                     hover:bg-emerald-100 rounded-lg transition-colors disabled:opacity-50"
+          id="animl-pagination-prev"
+          onClick={onPrevPage}
+          disabled={currentPage <= 1}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium
+                     text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors
+                     disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loadingMore ? 'Loading...' : `Load More (${(totalCount - images.length).toLocaleString()} remaining)`}
+          <ChevronLeft className="w-3.5 h-3.5" />
+          Prev Page
         </button>
-      )}
+
+        <span id="animl-pagination-indicator" className="text-xs text-gray-500 tabular-nums">
+          Page {currentPage} of {totalPages}
+        </span>
+
+        <button
+          id="animl-pagination-next"
+          onClick={onNextPage}
+          disabled={currentPage >= totalPages}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium
+                     text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors
+                     disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Next Page
+          <ChevronRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
     </div>
   );
+}
+
+function getPageRangeStart(currentPage: number, pageSize: number): number {
+  return ((currentPage - 1) * pageSize) + 1;
+}
+
+function getPageRangeEnd(currentPage: number, pageSize: number, totalCount: number): number {
+  return Math.min(currentPage * pageSize, totalCount);
 }
 
 function parseDate(timestamp: string): { dateStr: string; timeStr: string } {

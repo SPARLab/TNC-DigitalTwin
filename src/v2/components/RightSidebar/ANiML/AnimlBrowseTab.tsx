@@ -34,8 +34,7 @@ export function AnimlBrowseTab() {
   const [images, setImages] = useState<AnimlImageLabel[]>([]);
   const [imgLoading, setImgLoading] = useState(false);
   const [imgError, setImgError] = useState<string | null>(null);
-  const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // ── Build filter section items ──────────────────────────────────────────
 
@@ -100,7 +99,7 @@ export function AnimlBrowseTab() {
 
         if (cancelled) return;
         setImages(imgs);
-        setDisplayCount(PAGE_SIZE);
+        setCurrentPage(1);
       } catch (err) {
         if (cancelled) return;
         setImgError(err instanceof Error ? err.message : 'Failed to load images');
@@ -117,16 +116,19 @@ export function AnimlBrowseTab() {
 
   // ── Pagination ──────────────────────────────────────────────────────────
 
-  const handleLoadMore = useCallback(() => {
-    setLoadingMore(true);
-    setTimeout(() => {
-      setDisplayCount(prev => Math.min(prev + PAGE_SIZE, images.length));
-      setLoadingMore(false);
-    }, 150);
-  }, [images.length]);
+  const totalPages = Math.max(1, Math.ceil(images.length / PAGE_SIZE));
+  const visibleImages = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return images.slice(start, start + PAGE_SIZE);
+  }, [images, currentPage]);
 
-  const visibleImages = images.slice(0, displayCount);
-  const hasMore = displayCount < images.length;
+  const handlePrevPage = useCallback(() => {
+    setCurrentPage(prev => Math.max(1, prev - 1));
+  }, []);
+
+  const handleNextPage = useCallback(() => {
+    setCurrentPage(prev => Math.min(totalPages, prev + 1));
+  }, [totalPages]);
 
   // ── Loading / Error ─────────────────────────────────────────────────────
 
@@ -160,7 +162,7 @@ export function AnimlBrowseTab() {
   // ── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div id="animl-browse-tab" className="space-y-3">
+    <div id="animl-browse-tab" className="h-full min-h-0 flex flex-col gap-3">
       {/* Date range filter — above species and cameras */}
       <DateFilterSection
         id="animl-filter-date"
@@ -226,39 +228,46 @@ export function AnimlBrowseTab() {
         )}
       </div>
 
-      {/* Prompt when no filter */}
-      {!hasAnyFilter && (
-        <p id="animl-browse-prompt" className="text-sm text-gray-400 text-center py-6">
-          Select a date range, species, or cameras above to browse images.
-        </p>
-      )}
+      <div id="animl-browse-results-region" className="flex-1 min-h-0 flex flex-col">
+        {/* Prompt when no filter */}
+        {!hasAnyFilter && (
+          <p id="animl-browse-prompt" className="text-sm text-gray-400 text-center py-6">
+            Select a date range, species, or cameras above to browse images.
+          </p>
+        )}
 
-      {/* Image loading spinner */}
-      {hasAnyFilter && imgLoading && (
-        <div id="animl-browse-img-loading" className="flex items-center justify-center py-8 text-gray-400">
-          <Loader2 className="w-5 h-5 animate-spin mr-2" />
-          <span className="text-sm">Loading images...</span>
-        </div>
-      )}
+        {/* Image loading spinner */}
+        {hasAnyFilter && imgLoading && (
+          <div id="animl-browse-img-loading" className="flex items-center justify-center py-8 text-gray-400">
+            <Loader2 className="w-5 h-5 animate-spin mr-2" />
+            <span className="text-sm">Loading images...</span>
+          </div>
+        )}
 
-      {/* Image fetch error */}
-      {hasAnyFilter && imgError && (
-        <div id="animl-browse-img-error" className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          {imgError}
-        </div>
-      )}
+        {/* Image fetch error */}
+        {hasAnyFilter && imgError && (
+          <div id="animl-browse-img-error" className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            {imgError}
+          </div>
+        )}
 
-      {/* Image list with pagination */}
-      {hasAnyFilter && !imgLoading && !imgError && (
-        <ImageList
-          images={visibleImages}
-          totalCount={images.length}
-          hasMore={hasMore}
-          onLoadMore={handleLoadMore}
-          loadingMore={loadingMore}
-          showCameraName
-        />
-      )}
+        {/* Image list with pagination */}
+        {hasAnyFilter && !imgLoading && !imgError && (
+          <div id="animl-browse-image-list-wrapper" className="flex-1 min-h-0">
+            <ImageList
+              images={visibleImages}
+              totalCount={images.length}
+              currentPage={currentPage}
+              pageSize={PAGE_SIZE}
+              totalPages={totalPages}
+              onPrevPage={handlePrevPage}
+              onNextPage={handleNextPage}
+              expandToFill
+              showCameraName
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

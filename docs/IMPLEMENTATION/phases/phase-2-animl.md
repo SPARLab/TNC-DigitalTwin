@@ -1,8 +1,8 @@
 # Phase 2: ANiML Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 5 / 12 tasks  
-**Last Completed:** Task 2.11 (Date/Time Frame Filter) ✅  
+**Progress:** 6 / 12 tasks  
+**Last Completed:** Task 2.12 (Image List Pagination) ✅  
 **Branch:** `v2/animl`  
 **Depends On:** Phase 0 (Foundation) — Data Source Adapter Pattern ✅ Complete  
 **Owner:** TBD
@@ -98,7 +98,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | 2.9 | Map Layers widget sync with browse filters | ⚪ Not Started | | Widget reflects active query state |
 | 2.10 | Right sidebar scrollbar — prevent content shift | 🟢 Complete | Will + Claude | scrollbar-gutter: stable on right sidebar scroll area |
 | 2.11 | Add date/time frame filter above Species and Cameras | 🟢 Complete | Will + Claude | DateFilterSection with date pickers + presets. Passes startDate/endDate to queryImageLabelsCached. Count fix: use images.length when fetched. |
-| 2.12 | Image list pagination (Prev/Next Page) | ⚪ Not Started | | Scrollable image list + Prev/Next controls underneath |
+| 2.12 | Image list pagination (Prev/Next Page) | 🟢 Complete | Will + Claude | Replaced "Load More" with page-based Prev/Next; added page/range indicators |
 | 2.13 | Expanded image view on click | ⚪ Not Started | | Click thumbnail → larger view in sidebar |
 | 2.14 | Arrow key navigation in expanded view | ⚪ Not Started | | Left/right keys to navigate between images |
 
@@ -474,15 +474,22 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 
 **Goal:** Replace "Load More" with a scrollable image list and Prev/Next Page controls underneath. Enables page-based navigation through large result sets.
 
-**Status:** ⚪ Not Started
+**Status:** 🟢 Complete (Feb 13, 2026)
 
 **Acceptance Criteria:**
-- [ ] Image list in scrollable container
-- [ ] Prev/Next Page buttons below the list
-- [ ] Page indicator (e.g., "Page 2 of 5" or "1–20 of 52")
-- [ ] Page size configurable (e.g., 20 per page)
+- [x] Image list in scrollable container
+- [x] Prev/Next Page buttons below the list
+- [x] Page indicator (e.g., "Page 2 of 5" and "1-20 of 52")
+- [x] Page size configurable (set to 20 per page via `PAGE_SIZE`)
 
-**Files to Modify:** `AnimlBrowseTab.tsx`, `ImageList.tsx`
+**Implementation Notes:**
+- Replaced "Load More" flow with explicit page state (`currentPage`) and fixed-size page slicing.
+- Added reusable pagination controls in `ImageList` (Prev/Next buttons + page/range indicators).
+- Applied consistently in Browse tab and both detail views so all ANiML image browsing follows one interaction pattern.
+
+**Refinement (Feb 13):** Image results area expands to fill remaining sidebar space; always-visible scrollbar (`.scroll-area-animl-images`) so users can detect scrollability. Flex layout in `AnimlBrowseTab` + `expandToFill` prop in `ImageList`.
+
+**Files Modified:** `AnimlBrowseTab.tsx`, `ImageList.tsx`, `CameraDetailView.tsx`, `AnimalDetailView.tsx`, `index.css`
 
 ---
 
@@ -562,6 +569,7 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | DFT-045: Shared AnimalFilterSection component | Feb 12, 2026 | Same checkbox filter used in both modes and synced with legend widget via AnimlFilterContext. Camera-first shows camera-specific counts via `deploymentId` prop. |
 | DFT-046: 3-column ImageGrid with Load More | Feb 12, 2026 | Grid layout for photo scanning (3 cols). Client-side "Load More" pagination (21 per batch = 3×7). Less jarring than page numbers; explicit user control. |
 | DFT-047: Map Layers widget filter summary format | Feb 12, 2026 | Animal-first: "Mountain Lion, Coyote • 8 cameras". Camera-first: "CAM-042 • Mountain Lion, Coyote". No filter: "No filter applied". |
+| DFT-048: ANiML image pagination uses Prev/Next pages | Feb 13, 2026 | Replaced "Load More" with explicit page navigation to improve wayfinding and positional awareness in large image result sets. Uses scrollable list + controls beneath (`Page X of Y`, `A-B of N`). |
 
 ### Styling Decisions
 
@@ -610,6 +618,8 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | Feb 13, 2026 | 2.10, 2.11 | **New tasks added.** 2.10: Right sidebar scrollbar — prevent content shift when scrollbar appears (e.g., selecting species + camera). 2.11: Add date/time frame filter above Species and Cameras in Browse tab. | Will + Claude |
 | Feb 13, 2026 | 2.10 | **Complete.** Added `scrollbar-gutter: stable` to right sidebar scroll area in `RightSidebar.tsx` + `.scroll-area-right-sidebar` CSS class in `index.css`. Prevents horizontal content shift when overflow scrollbar appears (e.g., expanding filter sections). Thin hover-reveal scrollbar for visual consistency. | Will + Claude |
 | Feb 13, 2026 | 2.11 | **Complete.** DateFilterSection component: collapsible date range picker with start/end date inputs + quick-select presets (Last 30 days, Last 6 months, This Year, Last Year). AnimlFilterContext: added startDate/endDate state, setDateRange, clearDateRange, hasDateFilter. AnimlBrowseTab: DateFilterSection placed above Species, passes dates to queryImageLabelsCached. Auto-apply per DFT-039. **Count fix:** use actual images.length when fetched (not countLookups) so date-filtered counts match displayed results. Added Tasks 2.12 (image list pagination), 2.13 (expanded image view), 2.14 (arrow key nav). | Will + Claude |
+| Feb 13, 2026 | 2.12 | **Complete.** Replaced "Load More" with page-based pagination across ANiML image views. Added scrollable image list containers, Prev/Next controls under list, page indicator (`Page X of Y`), and range indicator (`A-B of N`). Implemented in `AnimlBrowseTab`, `CameraDetailView`, `AnimalDetailView`, and shared `ImageList`. | Will + Claude |
+| Feb 13, 2026 | 2.12 | **Refinement.** Image results expand to fill remaining sidebar space; always-visible scrollbar (`.scroll-area-animl-images`) for scrollability affordance. Flex layout + `expandToFill` in ImageList. **Next:** 2.13 (expanded view on click), 2.14 (arrow key nav). | Will + Claude |
 
 ---
 

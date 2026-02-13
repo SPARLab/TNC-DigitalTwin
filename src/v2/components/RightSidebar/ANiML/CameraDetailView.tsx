@@ -28,8 +28,7 @@ export function CameraDetailView({ deployment, onBack }: CameraDetailViewProps) 
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
 
   // Species at this camera, sorted by count descending
@@ -56,7 +55,7 @@ export function CameraDetailView({ deployment, onBack }: CameraDetailViewProps) 
   const fetchImages = useCallback(async () => {
     setLoading(true);
     setError(null);
-    setDisplayCount(PAGE_SIZE);
+    setCurrentPage(1);
     try {
       const [labels, count] = await Promise.all([
         animlService.queryImageLabelsCached({
@@ -80,16 +79,19 @@ export function CameraDetailView({ deployment, onBack }: CameraDetailViewProps) 
 
   useEffect(() => { fetchImages(); }, [fetchImages]);
 
-  const handleLoadMore = useCallback(() => {
-    setLoadingMore(true);
-    setTimeout(() => {
-      setDisplayCount(prev => Math.min(prev + PAGE_SIZE, allImages.length));
-      setLoadingMore(false);
-    }, 150);
-  }, [allImages.length]);
+  const totalPages = Math.max(1, Math.ceil(allImages.length / PAGE_SIZE));
+  const visibleImages = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return allImages.slice(start, start + PAGE_SIZE);
+  }, [allImages, currentPage]);
 
-  const visibleImages = allImages.slice(0, displayCount);
-  const hasMore = displayCount < allImages.length;
+  const handlePrevPage = useCallback(() => {
+    setCurrentPage(prev => Math.max(1, prev - 1));
+  }, []);
+
+  const handleNextPage = useCallback(() => {
+    setCurrentPage(prev => Math.min(totalPages, prev + 1));
+  }, [totalPages]);
   const coords = deployment.geometry?.coordinates;
 
   return (
@@ -199,9 +201,11 @@ export function CameraDetailView({ deployment, onBack }: CameraDetailViewProps) 
         <ImageList
           images={visibleImages}
           totalCount={totalCount}
-          hasMore={hasMore}
-          onLoadMore={handleLoadMore}
-          loadingMore={loadingMore}
+          currentPage={currentPage}
+          pageSize={PAGE_SIZE}
+          totalPages={totalPages}
+          onPrevPage={handlePrevPage}
+          onNextPage={handleNextPage}
         />
       )}
     </div>
