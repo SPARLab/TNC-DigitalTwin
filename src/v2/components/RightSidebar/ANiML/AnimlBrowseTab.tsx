@@ -149,10 +149,13 @@ export function AnimlBrowseTab() {
   }
 
   // ── Result count text ───────────────────────────────────────────────────
+  // Once images are fetched, use actual count (accurate for date-filtered queries).
+  // Fall back to countLookups estimate while loading or before fetch.
 
-  const countText = filteredImageCount !== null
-    ? filteredImageCount.toLocaleString()
-    : '—';
+  const imagesFetched = hasAnyFilter && !imgLoading && !imgError;
+  const countText = imagesFetched
+    ? images.length.toLocaleString()
+    : (filteredImageCount !== null ? filteredImageCount.toLocaleString() : '—');
 
   // ── Render ──────────────────────────────────────────────────────────────
 

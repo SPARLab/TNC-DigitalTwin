@@ -1,6 +1,6 @@
 # Development Task Tracker — V2 Digital Catalog
 
-**Last Updated:** February 12, 2026  
+**Last Updated:** February 13, 2026  
 **Current Phase:** Phase 0 (Foundation) — 🟡 In Progress  
 **Target Deadline:** February 20, 2026 (8 days remaining)
 
@@ -39,9 +39,12 @@
 | 24 | 0 | **0.9 Dynamic Layer Registry from Data Catalog Service** | 🟡 | **Critical** | Replace static layerRegistry with dynamic fetch from Data Catalog FeatureServer (~90+ real datasets, 14 categories); "Not Yet Implemented" toast for layers without adapters. **BLOCKS all parallel branches.** |
 | 25 | 2 | **2.3–2.6** ANiML Browse tab — multi-dimensional filter system | ✅ | High | FilterSection (Species, Cameras), Select All/Clear All, live result count, ImageList. Iteration 2 Phase 1 MVP complete. |
 | 26 | 2 | **2.10** Right Sidebar Scrollbar — Prevent content shift | ✅ | Medium | Scrollbar should not move content when it appears (e.g., selecting species + camera). Use scrollbar-gutter: stable or overlay. |
-| 27 | 2 | **2.11** ANiML Date/Time Frame Filter — Above Species and Cameras | ✅ | Medium | DateFilterSection with date pickers + presets (Last 30d, 6mo, This Year, Last Year). Passes startDate/endDate to queryImageLabelsCached. |
+| 27 | 2 | **2.11** ANiML Date/Time Frame Filter — Above Species and Cameras | ✅ | Medium | DateFilterSection with date pickers + presets (Last 30d, 6mo, This Year, Last Year). Passes startDate/endDate to queryImageLabelsCached. Count fix: use actual images.length when fetched (not countLookups) so date-filtered counts match. |
+| 28 | 2 | **2.12** ANiML Image List — Pagination (Prev/Next Page) | ⚪ | Medium | Scrollable image list with Prev/Next Page controls underneath. Replace "Load More" with page-based navigation. |
+| 29 | 2 | **2.13** ANiML Image — Expanded View on Click | ⚪ | Medium | Click image thumbnail → show larger version in right sidebar. Lightbox-style expanded view within sidebar. |
+| 30 | 2 | **2.14** ANiML Expanded View — Arrow Key Navigation | ⚪ | Low | In expanded image view, left/right arrow keys navigate between images. |
 
-**Active tasks remaining:** 10  
+**Active tasks remaining:** 13  
 **Recently completed:** **Task 27** (ANiML Date/Time Frame Filter) ✅ (Feb 13), **Task 26** (Right Sidebar Scrollbar Fix) ✅ (Feb 13), **Phase 2 Tasks 2.3–2.6** (ANiML multi-dimensional filter) ✅ (Feb 13), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
 
 ---
@@ -355,13 +358,25 @@
     - **Completed (Feb 13):** FilterSection.tsx (expandable, multi-select, Select All/Clear All). AnimlFilterContext: selectedCameras, toggleCamera, clearCameras, selectAllAnimals, selectAllCameras, filteredImageCount, getFilteredCountForSpecies. AnimlBrowseTab: Species + Cameras FilterSections, live result count, debounced image fetch, ImageList. Researchers can select multiple species AND cameras.
     - **Files:** `FilterSection.tsx`, `AnimlFilterContext.tsx`, `AnimlBrowseTab.tsx`
 
-  - [ ] **Task 2.10: Right Sidebar Scrollbar — Prevent content shift**
-    - **Goal:** When right sidebar content grows (selecting species + camera), scrollbar appears. Content should NOT shift left. Use `scrollbar-gutter: stable` or overlay scrollbar.
-    - **Files:** `src/v2/components/RightSidebar/RightSidebar.tsx`
+  - [x] **Task 2.10: Right Sidebar Scrollbar — Prevent content shift** ✅
+    - **Completed (Feb 13):** scrollbar-gutter: stable on right sidebar scroll area.
+    - **Files:** `RightSidebar.tsx`, `index.css`
 
   - [x] **Task 2.11: Date/Time Frame Filter — Above Species and Cameras** ✅
-    - **Completed (Feb 13):** DateFilterSection component with collapsible date range picker + quick-select presets (Last 30 days, Last 6 months, This Year, Last Year). AnimlFilterContext: startDate/endDate state, setDateRange, clearDateRange, hasDateFilter. AnimlBrowseTab passes dates to queryImageLabelsCached. Auto-apply per DFT-039. Species/camera counts remain all-time (countLookups not date-aware); image results are date-filtered.
+    - **Completed (Feb 13):** DateFilterSection component with collapsible date range picker + quick-select presets (Last 30 days, Last 6 months, This Year, Last Year). AnimlFilterContext: startDate/endDate state, setDateRange, clearDateRange, hasDateFilter. AnimlBrowseTab passes dates to queryImageLabelsCached. Auto-apply per DFT-039. Count fix: use actual `images.length` when fetched (not countLookups) so date-filtered counts match displayed results.
     - **Files:** `DateFilterSection.tsx` (new), `AnimlFilterContext.tsx`, `AnimlBrowseTab.tsx`
+
+  - [ ] **Task 2.12: ANiML Image List — Pagination (Prev/Next Page)**
+    - **Goal:** Replace "Load More" with scrollable image list + Prev/Next Page controls underneath. Enables page-based navigation through large result sets.
+    - **Files:** `AnimlBrowseTab.tsx`, `ImageList.tsx`
+
+  - [ ] **Task 2.13: ANiML Image — Expanded View on Click**
+    - **Goal:** Click image thumbnail → show larger version in right sidebar. Lightbox-style expanded view within sidebar (not modal overlay).
+    - **Files:** `ImageList.tsx`, new `ImageExpandedView.tsx` or similar
+
+  - [ ] **Task 2.14: ANiML Expanded View — Arrow Key Navigation**
+    - **Goal:** In expanded image view, left/right arrow keys navigate between images. Depends on Task 2.13.
+    - **Files:** `ImageExpandedView.tsx` (or equivalent)
 - **Phase 3:** Dendra data source (6 tasks)
 - **Phase 4:** DataOne data source (5 tasks)
 
@@ -406,6 +421,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 13, 2026 | Phase 2 | ✅ **Task 27 (2.11) complete + count fix.** DateFilterSection, date filter state, pass dates to queryImageLabelsCached. Fix: use actual images.length when fetched (not countLookups) so date-filtered counts match. Added Tasks 2.12 (image list pagination Prev/Next), 2.13 (expanded image view on click), 2.14 (arrow key nav in expanded view). | Claude |
 | Feb 13, 2026 | Phase 2 | ✅ **Tasks 2.3–2.6 complete: ANiML Browse tab multi-dimensional filter system.** FilterSection.tsx (expandable, multi-select, Select All/Clear All). AnimlFilterContext: selectedCameras, toggleCamera, clearCameras, selectAllAnimals, selectAllCameras, filteredImageCount. AnimlBrowseTab: Species + Cameras FilterSections, live result count, debounced image fetch, ImageList. Researchers can select multiple species AND cameras. Added Tasks 2.10 (right sidebar scrollbar — prevent content shift) and 2.11 (date/time frame filter above Species and Cameras). | Claude |
 | Feb 12, 2026 | Phase 0 | 🟡 **Task 24 (0.9): Dynamic Layer Registry from Data Catalog Service.** Discovered Dan's Data Catalog FeatureServer with ~90+ real datasets, 14 categories (with subcategories), and 10 per-type Dendra sensor services. All sensor services follow identical 3-part schema (Locations/Data/Summary). Replaces static layerRegistry.ts. **All parallel branches paused until complete.** | Claude |
 | Feb 12, 2026 | Phase 0 | ✅ **Task 23 complete: Data Source Adapter Pattern refactor.** Created plugin architecture: each data source implements `DataSourceAdapter` interface. Core files (MapContainer, RightSidebar, useMapLayers) made data-source-agnostic — read from registry. Lazy caching: `warmCache()` pattern (iNat: 2.18s initial, instant revisit). Active-but-not-pinned layers visible on map. Files: `dataSources/{types.ts, registry.ts, inaturalist/{adapter.tsx, useMapBehavior.ts}}`. Modified: INaturalistFilterContext (lazy), useMapLayers (generic), MapContainer/RightSidebar (generic), LayerContext (removed iNat from initial). Merge conflicts: ~4 lines/source. **Enables parallel branch development.** | Claude |

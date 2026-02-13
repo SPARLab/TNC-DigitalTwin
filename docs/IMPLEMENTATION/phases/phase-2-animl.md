@@ -1,7 +1,7 @@
 # Phase 2: ANiML Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 5 / 9 tasks  
+**Progress:** 5 / 12 tasks  
 **Last Completed:** Task 2.11 (Date/Time Frame Filter) ✅  
 **Branch:** `v2/animl`  
 **Depends On:** Phase 0 (Foundation) — Data Source Adapter Pattern ✅ Complete  
@@ -97,7 +97,10 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | 2.8 | Use v1 SVG icons for map markers and animal tags | ⚪ Not Started | | Replace emoji markers with proper SVGs |
 | 2.9 | Map Layers widget sync with browse filters | ⚪ Not Started | | Widget reflects active query state |
 | 2.10 | Right sidebar scrollbar — prevent content shift | 🟢 Complete | Will + Claude | scrollbar-gutter: stable on right sidebar scroll area |
-| 2.11 | Add date/time frame filter above Species and Cameras | 🟢 Complete | Will + Claude | DateFilterSection with date pickers + presets. Passes startDate/endDate to queryImageLabelsCached. |
+| 2.11 | Add date/time frame filter above Species and Cameras | 🟢 Complete | Will + Claude | DateFilterSection with date pickers + presets. Passes startDate/endDate to queryImageLabelsCached. Count fix: use images.length when fetched. |
+| 2.12 | Image list pagination (Prev/Next Page) | ⚪ Not Started | | Scrollable image list + Prev/Next controls underneath |
+| 2.13 | Expanded image view on click | ⚪ Not Started | | Click thumbnail → larger view in sidebar |
+| 2.14 | Arrow key navigation in expanded view | ⚪ Not Started | | Left/right keys to navigate between images |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -463,7 +466,57 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 **Files Created/Modified:**
 - `src/v2/components/RightSidebar/ANiML/DateFilterSection.tsx` — new collapsible date range picker component
 - `src/v2/context/AnimlFilterContext.tsx` — added startDate/endDate state, setDateRange, clearDateRange, hasDateFilter, updated clearFilters
-- `src/v2/components/RightSidebar/ANiML/AnimlBrowseTab.tsx` — added DateFilterSection above Species, passes dates to image query
+- `src/v2/components/RightSidebar/ANiML/AnimlBrowseTab.tsx` — added DateFilterSection above Species, passes dates to image query. **Count fix:** use actual `images.length` when fetched (not countLookups) so date-filtered counts match displayed results.
+
+---
+
+### 2.12: Image List Pagination (Prev/Next Page)
+
+**Goal:** Replace "Load More" with a scrollable image list and Prev/Next Page controls underneath. Enables page-based navigation through large result sets.
+
+**Status:** ⚪ Not Started
+
+**Acceptance Criteria:**
+- [ ] Image list in scrollable container
+- [ ] Prev/Next Page buttons below the list
+- [ ] Page indicator (e.g., "Page 2 of 5" or "1–20 of 52")
+- [ ] Page size configurable (e.g., 20 per page)
+
+**Files to Modify:** `AnimlBrowseTab.tsx`, `ImageList.tsx`
+
+---
+
+### 2.13: Expanded Image View on Click
+
+**Goal:** Click image thumbnail → show larger version in right sidebar. Lightbox-style expanded view within the sidebar (not modal overlay).
+
+**Status:** ⚪ Not Started
+
+**Acceptance Criteria:**
+- [ ] Click thumbnail opens expanded view
+- [ ] Larger image displayed within right sidebar
+- [ ] Close button or click-outside to dismiss
+- [ ] Metadata visible (species, timestamp, camera)
+
+**Files to Create/Modify:** `ImageList.tsx`, new `ImageExpandedView.tsx` or equivalent
+
+---
+
+### 2.14: Arrow Key Navigation in Expanded View
+
+**Goal:** In expanded image view, left/right arrow keys navigate between images.
+
+**Status:** ⚪ Not Started
+
+**Dependencies:** Task 2.13 (expanded view must exist)
+
+**Acceptance Criteria:**
+- [ ] Left arrow → previous image
+- [ ] Right arrow → next image
+- [ ] Wrap at ends (optional) or disable at first/last
+- [ ] Focus/keyboard trap when expanded view is open
+
+**Files to Modify:** `ImageExpandedView.tsx` (or equivalent)
 
 ---
 
@@ -556,7 +609,7 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | Feb 13, 2026 | 2.3–2.6 | **Iteration 2 Phase 1 MVP complete.** FilterSection.tsx (expandable, multi-select, Select All/Clear All). AnimlFilterContext: selectedCameras, toggleCamera, clearCameras, selectAllAnimals, selectAllCameras, filteredImageCount, getFilteredCountForSpecies. AnimlBrowseTab: Species + Cameras FilterSections, live result count, debounced image fetch, ImageList. Researchers can select multiple species AND cameras for complex queries. | Will + Claude |
 | Feb 13, 2026 | 2.10, 2.11 | **New tasks added.** 2.10: Right sidebar scrollbar — prevent content shift when scrollbar appears (e.g., selecting species + camera). 2.11: Add date/time frame filter above Species and Cameras in Browse tab. | Will + Claude |
 | Feb 13, 2026 | 2.10 | **Complete.** Added `scrollbar-gutter: stable` to right sidebar scroll area in `RightSidebar.tsx` + `.scroll-area-right-sidebar` CSS class in `index.css`. Prevents horizontal content shift when overflow scrollbar appears (e.g., expanding filter sections). Thin hover-reveal scrollbar for visual consistency. | Will + Claude |
-| Feb 13, 2026 | 2.11 | **Complete.** DateFilterSection component: collapsible date range picker with start/end date inputs + quick-select presets (Last 30 days, Last 6 months, This Year, Last Year). AnimlFilterContext: added startDate/endDate state, setDateRange, clearDateRange, hasDateFilter. AnimlBrowseTab: DateFilterSection placed above Species, passes dates to queryImageLabelsCached. Auto-apply per DFT-039. Note: species/camera counts remain all-time (countLookups not date-aware); only image results are date-filtered. | Will + Claude |
+| Feb 13, 2026 | 2.11 | **Complete.** DateFilterSection component: collapsible date range picker with start/end date inputs + quick-select presets (Last 30 days, Last 6 months, This Year, Last Year). AnimlFilterContext: added startDate/endDate state, setDateRange, clearDateRange, hasDateFilter. AnimlBrowseTab: DateFilterSection placed above Species, passes dates to queryImageLabelsCached. Auto-apply per DFT-039. **Count fix:** use actual images.length when fetched (not countLookups) so date-filtered counts match displayed results. Added Tasks 2.12 (image list pagination), 2.13 (expanded image view), 2.14 (arrow key nav). | Will + Claude |
 
 ---
 
