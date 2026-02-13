@@ -62,7 +62,7 @@ export function INaturalistLegendWidget() {
               ? <ChevronDown className="w-4 h-4 text-gray-600" />
               : <ChevronRight className="w-4 h-4 text-gray-600" />}
           </button>
-          <h3 className="text-sm font-semibold text-gray-900">Filter Observations</h3>
+          <h3 className="text-sm font-semibold text-gray-900">iNaturalist Taxa</h3>
         </div>
         {!allVisible && (
           <button
