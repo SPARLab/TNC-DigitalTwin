@@ -4,6 +4,12 @@
 // LAZY: data is NOT fetched on mount. Call warmCache() to trigger the fetch.
 // Provides: filter state, deployments, animal counts, countLookups, cache.
 // Shared between: floating legend widget, right sidebar, map layer.
+//
+// Iteration 2: Multi-dimensional filtering (species × cameras).
+//   - selectedAnimals: species filter (empty = no restriction)
+//   - selectedCameras: camera/deployment filter (empty = no restriction)
+//   - filteredImageCount: instant count from countLookups (no API call)
+//   - getFilteredCountForSpecies: per-species count reflecting camera filter
 // ============================================================================
 
 import {
@@ -33,18 +39,34 @@ export interface AnimlFilterContextValue {
 
   // Filters
   selectedAnimals: Set<string>;
-  hasFilter: boolean;
+  selectedCameras: Set<number>;
+  hasFilter: boolean;          // species filter active (backward compat)
+  hasCameraFilter: boolean;    // camera filter active
+  hasAnyFilter: boolean;       // either filter active
 
-  // Filter actions
+  // Filter actions — species
   toggleAnimal: (label: string) => void;
   selectAll: () => void;
   clearAll: () => void;
+  selectAllAnimals: () => void;
+
+  // Filter actions — cameras
+  toggleCamera: (deploymentId: number) => void;
+  clearCameras: () => void;
+  selectAllCameras: () => void;
+
+  // Filter actions — combined
+  clearFilters: () => void;
 
   // Derived helpers
-  /** Get filtered image count for a deployment. Uses countLookups when available. */
+  /** Filtered image count for a deployment. Reflects species filter. */
   getFilteredCountForDeployment: (deploymentId: number) => number | null;
-  /** Get deployments that match the current animal filter. null = all match. */
+  /** Filtered image count for a species label. Reflects camera filter. */
+  getFilteredCountForSpecies: (label: string) => number | null;
+  /** Deployments matching the current filters. null = all match. */
   matchingDeploymentIds: Set<number> | null;
+  /** Total images matching both filters. null if countLookups not ready. */
+  filteredImageCount: number | null;
 
   // Cache lifecycle
   /** Trigger data fetch. Idempotent — no-op if already fetched or in-flight. */
@@ -58,6 +80,7 @@ const AnimlFilterContext = createContext<AnimlFilterContextValue | null>(null);
 export function AnimlFilterProvider({ children }: { children: ReactNode }) {
   // Filter state
   const [selectedAnimals, setSelectedAnimals] = useState<Set<string>>(new Set());
+  const [selectedCameras, setSelectedCameras] = useState<Set<number>>(new Set());
 
   // Data state
   const [deployments, setDeployments] = useState<AnimlDeployment[]>([]);
@@ -77,7 +100,7 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
     return () => console.log('[Animl Cache] 💀 AnimlFilterProvider unmounted');
   }, []);
 
-  // ── Filter actions ───────────────────────────────────────────────────────
+  // ── Filter actions — species ────────────────────────────────────────────
 
   const toggleAnimal = useCallback((label: string) => {
     setSelectedAnimals(prev => {
@@ -96,7 +119,45 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
     () => setSelectedAnimals(prev => (prev.size === 0 ? prev : new Set())),
     [],
   );
+
+  const selectAllAnimals = useCallback(
+    () => setSelectedAnimals(new Set(animalTags.map(t => t.label))),
+    [animalTags],
+  );
+
+  // ── Filter actions — cameras ────────────────────────────────────────────
+
+  const toggleCamera = useCallback((deploymentId: number) => {
+    setSelectedCameras(prev => {
+      const next = new Set(prev);
+      if (next.has(deploymentId)) next.delete(deploymentId);
+      else next.add(deploymentId);
+      return next;
+    });
+  }, []);
+
+  const clearCameras = useCallback(
+    () => setSelectedCameras(prev => (prev.size === 0 ? prev : new Set())),
+    [],
+  );
+
+  const selectAllCameras = useCallback(
+    () => setSelectedCameras(new Set(deployments.map(d => d.id))),
+    [deployments],
+  );
+
+  // ── Filter actions — combined ───────────────────────────────────────────
+
+  const clearFilters = useCallback(() => {
+    setSelectedAnimals(prev => (prev.size === 0 ? prev : new Set()));
+    setSelectedCameras(prev => (prev.size === 0 ? prev : new Set()));
+  }, []);
+
+  // ── Derived booleans ────────────────────────────────────────────────────
+
   const hasFilter = selectedAnimals.size > 0;
+  const hasCameraFilter = selectedCameras.size > 0;
+  const hasAnyFilter = hasFilter || hasCameraFilter;
 
   // ── Cache warming ────────────────────────────────────────────────────────
 
@@ -111,7 +172,7 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
     setFetchRequested(true);
   }, []);
 
-  // Compute total image count from grouped counts
+  // Total image count from grouped counts
   const totalImageCount = useMemo(
     () => groupedCounts.reduce((sum, gc) => sum + gc.observation_count, 0),
     [groupedCounts],
@@ -119,24 +180,41 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
 
   // ── Derived filter helpers ──────────────────────────────────────────────
 
-  /** Get the set of deployment IDs matching the current animal filter. null = all. */
+  /** Deployments matching all active filters. null = all match. */
   const matchingDeploymentIds = useMemo(() => {
-    if (!hasFilter || !countLookups) return null;
-    const ids = new Set<number>();
-    for (const label of selectedAnimals) {
-      const depIds = countLookups.deploymentsByLabel.get(label);
-      if (depIds) depIds.forEach(id => ids.add(id));
-    }
-    return ids;
-  }, [hasFilter, selectedAnimals, countLookups]);
+    if (!hasAnyFilter) return null;
 
-  /** Get filtered count for a specific deployment. Returns null if lookups not ready. */
+    // Species filter → deployments that have at least one selected species
+    let speciesMatch: Set<number> | null = null;
+    if (hasFilter && countLookups) {
+      speciesMatch = new Set<number>();
+      for (const label of selectedAnimals) {
+        const depIds = countLookups.deploymentsByLabel.get(label);
+        if (depIds) depIds.forEach(id => speciesMatch!.add(id));
+      }
+    }
+
+    // Camera filter → explicitly selected deployments
+    const cameraMatch = hasCameraFilter ? selectedCameras : null;
+
+    // Intersect when both active
+    if (speciesMatch && cameraMatch) {
+      const intersection = new Set<number>();
+      for (const id of cameraMatch) {
+        if (speciesMatch.has(id)) intersection.add(id);
+      }
+      return intersection;
+    }
+
+    return speciesMatch ?? cameraMatch ?? null;
+  }, [hasAnyFilter, hasFilter, hasCameraFilter, selectedAnimals, selectedCameras, countLookups]);
+
+  /** Filtered image count for one deployment. Reflects species filter. */
   const getFilteredCountForDeployment = useCallback(
     (deploymentId: number): number | null => {
       if (!countLookups) return null;
       if (!hasFilter) return countLookups.countsByDeployment.get(deploymentId) ?? 0;
 
-      // Sum counts for selected animals at this deployment
       let total = 0;
       for (const label of selectedAnimals) {
         const key = `${deploymentId}:${label}`;
@@ -146,6 +224,54 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
     },
     [countLookups, hasFilter, selectedAnimals],
   );
+
+  /** Filtered image count for one species label. Reflects camera filter. */
+  const getFilteredCountForSpecies = useCallback(
+    (label: string): number | null => {
+      if (!countLookups) return null;
+      if (!hasCameraFilter) return countLookups.countsByLabel.get(label) ?? 0;
+
+      let total = 0;
+      for (const depId of selectedCameras) {
+        total += countLookups.countsByDeploymentAndLabel.get(`${depId}:${label}`) ?? 0;
+      }
+      return total;
+    },
+    [countLookups, hasCameraFilter, selectedCameras],
+  );
+
+  /** Total images matching both filter dimensions. null if countLookups not ready. */
+  const filteredImageCount = useMemo((): number | null => {
+    if (!countLookups) return null;
+    if (!hasAnyFilter) return totalImageCount;
+
+    // Species only
+    if (hasFilter && !hasCameraFilter) {
+      let total = 0;
+      for (const label of selectedAnimals) {
+        total += countLookups.countsByLabel.get(label) ?? 0;
+      }
+      return total;
+    }
+
+    // Cameras only
+    if (!hasFilter && hasCameraFilter) {
+      let total = 0;
+      for (const depId of selectedCameras) {
+        total += countLookups.countsByDeployment.get(depId) ?? 0;
+      }
+      return total;
+    }
+
+    // Both — intersection
+    let total = 0;
+    for (const depId of selectedCameras) {
+      for (const label of selectedAnimals) {
+        total += countLookups.countsByDeploymentAndLabel.get(`${depId}:${label}`) ?? 0;
+      }
+    }
+    return total;
+  }, [countLookups, selectedAnimals, selectedCameras, hasFilter, hasCameraFilter, hasAnyFilter, totalImageCount]);
 
   // ── Fetch data when warmCache() is called ────────────────────────────────
 
@@ -222,9 +348,12 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
       value={{
         deployments, animalTags, groupedCounts, countLookups,
         loading, error, dataLoaded, totalImageCount,
-        selectedAnimals, hasFilter,
-        toggleAnimal, selectAll, clearAll,
-        getFilteredCountForDeployment, matchingDeploymentIds,
+        selectedAnimals, selectedCameras,
+        hasFilter, hasCameraFilter, hasAnyFilter,
+        toggleAnimal, selectAll, clearAll, selectAllAnimals,
+        toggleCamera, clearCameras, selectAllCameras, clearFilters,
+        getFilteredCountForDeployment, getFilteredCountForSpecies,
+        matchingDeploymentIds, filteredImageCount,
         warmCache,
       }}
     >

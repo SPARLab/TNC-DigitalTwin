@@ -1,70 +1,129 @@
 // ============================================================================
-// AnimlBrowseTab — Entry point for camera trap browsing
-// Two sequential flows (DFT-003c, DFT-042):
-//   Animal-first: animal list → click animal → AnimalDetailView (cameras + images)
-//   Camera-first: camera list → click camera → CameraDetailView (animals + images)
-// Mode preference stored in localStorage.
+// AnimlBrowseTab — Multi-dimensional camera trap filter + image browser
+// Iteration 2: Expandable filter sections (Species, Cameras) replace the
+// sequential drill-down. Researchers can select multiple species AND cameras
+// to build complex queries. Result count updates instantly from countLookups;
+// images load via debounced API call.
 // ============================================================================
 
-import { useState, useCallback, useMemo } from 'react';
-import { Camera, PawPrint, ArrowLeftRight, Loader2, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { PawPrint, Camera, Loader2, AlertCircle, X } from 'lucide-react';
 import { useAnimlFilter } from '../../../context/AnimlFilterContext';
-import { CameraListView } from './CameraListView';
-import { CameraDetailView } from './CameraDetailView';
-import { AnimalListView } from './AnimalListView';
-import { AnimalDetailView } from './AnimalDetailView';
+import { animlService, type AnimlImageLabel } from '../../../../services/animlService';
+import { FilterSection, type FilterSectionItem } from './FilterSection';
+import { ImageList } from './ImageList';
 
-type BrowseMode = 'camera-first' | 'animal-first';
-
-const STORAGE_KEY = 'animl-browse-mode';
-
-function getStoredMode(): BrowseMode | null {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'camera-first' || stored === 'animal-first') return stored;
-  } catch { /* localStorage unavailable */ }
-  return null;
-}
+const PAGE_SIZE = 20;
+const FETCH_DEBOUNCE_MS = 300;
 
 export function AnimlBrowseTab() {
   const {
     deployments, animalTags, loading, error, dataLoaded,
-    getFilteredCountForDeployment, matchingDeploymentIds,
-    hasFilter, selectAll,
+    selectedAnimals, selectedCameras,
+    toggleAnimal, toggleCamera,
+    selectAll, selectAllAnimals, clearCameras, selectAllCameras, clearFilters,
+    hasFilter, hasCameraFilter, hasAnyFilter,
+    getFilteredCountForSpecies, getFilteredCountForDeployment,
+    filteredImageCount,
   } = useAnimlFilter();
 
-  const [mode, setMode] = useState<BrowseMode | null>(getStoredMode);
-  const [selectedCameraId, setSelectedCameraId] = useState<number | null>(null);
-  const [selectedAnimalLabel, setSelectedAnimalLabel] = useState<string | null>(null);
+  // Image fetch state (local to browse tab)
+  const [images, setImages] = useState<AnimlImageLabel[]>([]);
+  const [imgLoading, setImgLoading] = useState(false);
+  const [imgError, setImgError] = useState<string | null>(null);
+  const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  // Mode selection handler
-  const handleSelectMode = useCallback((newMode: BrowseMode) => {
-    setMode(newMode);
-    try { localStorage.setItem(STORAGE_KEY, newMode); } catch { /* noop */ }
-  }, []);
+  // ── Build filter section items ──────────────────────────────────────────
 
-  // Mode switch (DFT-042)
-  const handleSwitchMode = useCallback(() => {
-    if (hasFilter) {
-      const confirmed = window.confirm(
-        'Switching modes will clear your current filters. Continue?',
-      );
-      if (!confirmed) return;
-      selectAll();
-    }
-    const newMode = mode === 'camera-first' ? 'animal-first' : 'camera-first';
-    handleSelectMode(newMode);
-    setSelectedCameraId(null);
-    setSelectedAnimalLabel(null);
-  }, [mode, hasFilter, selectAll, handleSelectMode]);
-
-  // Find selected deployment for camera detail view
-  const selectedDeployment = useMemo(
-    () => deployments.find(d => d.id === selectedCameraId) ?? null,
-    [deployments, selectedCameraId],
+  /** Species items: sorted by global count descending (stable order). */
+  const speciesItems: FilterSectionItem[] = useMemo(
+    () => [...animalTags]
+      .filter(t => t.totalObservations > 0)
+      .sort((a, b) => b.totalObservations - a.totalObservations)
+      .map(t => ({
+        key: t.label,
+        label: t.label,
+        count: getFilteredCountForSpecies(t.label) ?? t.totalObservations,
+      })),
+    [animalTags, getFilteredCountForSpecies],
   );
 
-  // ── Loading / Error ────────────────────────────────────────────────────
+  /** Camera items: sorted alphabetically by name (stable order). */
+  const cameraItems: FilterSectionItem[] = useMemo(
+    () => [...deployments]
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(d => ({
+        key: String(d.id),
+        label: d.name,
+        count: getFilteredCountForDeployment(d.id) ?? d.totalObservations ?? 0,
+      })),
+    [deployments, getFilteredCountForDeployment],
+  );
+
+  /** Adapt selectedCameras Set<number> → Set<string> for FilterSection. */
+  const selectedCameraKeys = useMemo(
+    () => new Set([...selectedCameras].map(String)),
+    [selectedCameras],
+  );
+
+  // ── Debounced image fetch ───────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!hasAnyFilter || !dataLoaded) {
+      setImages([]);
+      setImgLoading(false);
+      setImgError(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const timer = setTimeout(async () => {
+      setImgLoading(true);
+      setImgError(null);
+
+      try {
+        const labels = hasFilter ? [...selectedAnimals] : undefined;
+        const deploymentIds = hasCameraFilter ? [...selectedCameras] : undefined;
+
+        const imgs = await animlService.queryImageLabelsCached({
+          labels,
+          deploymentIds,
+          maxResults: 200,
+        });
+
+        if (cancelled) return;
+        setImages(imgs);
+        setDisplayCount(PAGE_SIZE);
+      } catch (err) {
+        if (cancelled) return;
+        setImgError(err instanceof Error ? err.message : 'Failed to load images');
+      } finally {
+        if (!cancelled) setImgLoading(false);
+      }
+    }, FETCH_DEBOUNCE_MS);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [selectedAnimals, selectedCameras, hasAnyFilter, hasFilter, hasCameraFilter, dataLoaded]);
+
+  // ── Pagination ──────────────────────────────────────────────────────────
+
+  const handleLoadMore = useCallback(() => {
+    setLoadingMore(true);
+    setTimeout(() => {
+      setDisplayCount(prev => Math.min(prev + PAGE_SIZE, images.length));
+      setLoadingMore(false);
+    }, 150);
+  }, [images.length]);
+
+  const visibleImages = images.slice(0, displayCount);
+  const hasMore = displayCount < images.length;
+
+  // ── Loading / Error ─────────────────────────────────────────────────────
 
   if (loading || !dataLoaded) {
     return (
@@ -84,111 +143,103 @@ export function AnimlBrowseTab() {
     );
   }
 
-  // ── Landing cards (no mode chosen yet) ────────────────────────────────
+  // ── Result count text ───────────────────────────────────────────────────
 
-  if (!mode) {
-    return (
-      <div id="animl-browse-landing" className="space-y-4">
-        <p className="text-sm text-gray-600">
-          Choose how you'd like to explore camera trap data:
-        </p>
+  const countText = filteredImageCount !== null
+    ? filteredImageCount.toLocaleString()
+    : '—';
 
-        <button
-          id="animl-mode-animal-first"
-          onClick={() => handleSelectMode('animal-first')}
-          className="w-full text-left p-4 bg-slate-50 rounded-lg border border-gray-200
-                     hover:border-emerald-300 hover:bg-emerald-50 transition-all group"
-        >
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-emerald-100 rounded-lg group-hover:bg-emerald-200 transition-colors">
-              <PawPrint className="w-5 h-5 text-emerald-700" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900">Browse by Animal</h3>
-              <p className="text-xs text-gray-500 mt-1">
-                Pick a species, then see which cameras detected it.
-              </p>
-            </div>
-          </div>
-        </button>
-
-        <button
-          id="animl-mode-camera-first"
-          onClick={() => handleSelectMode('camera-first')}
-          className="w-full text-left p-4 bg-slate-50 rounded-lg border border-gray-200
-                     hover:border-emerald-300 hover:bg-emerald-50 transition-all group"
-        >
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-emerald-100 rounded-lg group-hover:bg-emerald-200 transition-colors">
-              <Camera className="w-5 h-5 text-emerald-700" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900">Browse by Camera</h3>
-              <p className="text-xs text-gray-500 mt-1">
-                Pick a camera location, then filter by species.
-              </p>
-            </div>
-          </div>
-        </button>
-      </div>
-    );
-  }
-
-  // ── Detail views (item selected) ──────────────────────────────────────
-
-  // Camera-first → camera detail
-  if (mode === 'camera-first' && selectedDeployment) {
-    return (
-      <CameraDetailView
-        deployment={selectedDeployment}
-        onBack={() => setSelectedCameraId(null)}
-      />
-    );
-  }
-
-  // Animal-first → animal detail
-  if (mode === 'animal-first' && selectedAnimalLabel) {
-    return (
-      <AnimalDetailView
-        animalLabel={selectedAnimalLabel}
-        onBack={() => setSelectedAnimalLabel(null)}
-      />
-    );
-  }
-
-  // ── List views (mode chosen, no item selected) ────────────────────────
-
-  const otherModeLabel = mode === 'camera-first' ? 'Browse by Animal' : 'Browse by Camera';
+  // ── Render ──────────────────────────────────────────────────────────────
 
   return (
     <div id="animl-browse-tab" className="space-y-3">
-      {/* Mode switch link (DFT-042) */}
-      <button
-        id="animl-mode-switch"
-        onClick={handleSwitchMode}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-emerald-600 transition-colors"
-        aria-label={`Switch to ${otherModeLabel}`}
-      >
-        <ArrowLeftRight className="w-3.5 h-3.5" />
-        <span>Switch to {otherModeLabel}</span>
-      </button>
+      {/* Species filter section — expanded by default */}
+      <FilterSection
+        id="animl-filter-species"
+        label="Species"
+        icon={<PawPrint className="w-4 h-4" />}
+        items={speciesItems}
+        selectedKeys={selectedAnimals}
+        onToggle={toggleAnimal}
+        onSelectAll={selectAllAnimals}
+        onClear={selectAll}
+        defaultExpanded
+        searchPlaceholder="Search species..."
+      />
 
-      {/* Camera-first: show camera list */}
-      {mode === 'camera-first' && (
-        <CameraListView
-          deployments={deployments}
-          matchingDeploymentIds={matchingDeploymentIds}
-          getFilteredCount={getFilteredCountForDeployment}
-          hasFilter={hasFilter}
-          onSelectCamera={setSelectedCameraId}
-        />
+      {/* Camera filter section — collapsed by default */}
+      <FilterSection
+        id="animl-filter-cameras"
+        label="Cameras"
+        icon={<Camera className="w-4 h-4" />}
+        items={cameraItems}
+        selectedKeys={selectedCameraKeys}
+        onToggle={(key) => toggleCamera(Number(key))}
+        onSelectAll={selectAllCameras}
+        onClear={clearCameras}
+        searchPlaceholder="Search cameras..."
+      />
+
+      {/* Result count bar */}
+      <div id="animl-result-count" className="flex items-center justify-between py-2 px-1">
+        <span className="text-sm font-medium text-gray-700">
+          {hasAnyFilter ? (
+            <>
+              <span className="text-emerald-600 tabular-nums">{countText}</span>
+              {' '}matching images
+            </>
+          ) : (
+            <>
+              <span className="tabular-nums">{countText}</span>
+              {' '}total images
+            </>
+          )}
+        </span>
+
+        {hasAnyFilter && (
+          <button
+            id="animl-clear-all-filters"
+            onClick={clearFilters}
+            className="flex items-center gap-1 text-xs text-gray-500
+                       hover:text-red-600 transition-colors"
+          >
+            <X className="w-3 h-3" />
+            Clear All
+          </button>
+        )}
+      </div>
+
+      {/* Prompt when no filter */}
+      {!hasAnyFilter && (
+        <p id="animl-browse-prompt" className="text-sm text-gray-400 text-center py-6">
+          Select species or cameras above to browse images.
+        </p>
       )}
 
-      {/* Animal-first: show animal list */}
-      {mode === 'animal-first' && (
-        <AnimalListView
-          animalTags={animalTags}
-          onSelectAnimal={setSelectedAnimalLabel}
+      {/* Image loading spinner */}
+      {hasAnyFilter && imgLoading && (
+        <div id="animl-browse-img-loading" className="flex items-center justify-center py-8 text-gray-400">
+          <Loader2 className="w-5 h-5 animate-spin mr-2" />
+          <span className="text-sm">Loading images...</span>
+        </div>
+      )}
+
+      {/* Image fetch error */}
+      {hasAnyFilter && imgError && (
+        <div id="animl-browse-img-error" className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          {imgError}
+        </div>
+      )}
+
+      {/* Image list with pagination */}
+      {hasAnyFilter && !imgLoading && !imgError && (
+        <ImageList
+          images={visibleImages}
+          totalCount={images.length}
+          hasMore={hasMore}
+          onLoadMore={handleLoadMore}
+          loadingMore={loadingMore}
+          showCameraName
         />
       )}
     </div>

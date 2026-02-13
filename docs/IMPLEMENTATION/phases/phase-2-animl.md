@@ -89,13 +89,15 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 |----|------|--------|----------|-------|
 | 2.1 | Query ANiML service to understand attributes | 🟢 Complete | Will + Claude | Existing animlService.ts (1,512 lines) covers this |
 | 2.2 | Create ANiML adapter, context, map layer, and sidebar shell (WIP) | 🟢 Complete | Will + Claude | Foundation pipeline done; sidebar UI is placeholder |
-| 2.3 | Design decision: Browse tab interaction flow | 🟡 In Progress | Will + Claude | **WIP**: Iterating on UX. Sequential drill-down → multi-dimensional filter system. See Change Log for history. |
-| 2.4 | Implement Browse tab interaction flow | 🟡 In Progress | Will + Claude | **WIP**: Building expandable filter sections (Species, Cameras, Date, Spatial) with multi-select + image list. |
-| 2.5 | Implement camera list with filtered image counts | 🟡 In Progress | Will + Claude | **WIP**: Refactoring from single-select list to multi-select checkboxes within expandable section |
-| 2.6 | Implement camera detail drill-down | 🟡 In Progress | Will + Claude | **WIP**: May be replaced by unified filter + result view (no separate detail view needed) |
+| 2.3 | Design decision: Browse tab interaction flow | 🟢 Complete | Will + Claude | Iteration 2: Expandable filter sections (Species, Cameras) with multi-select. See Change Log Feb 13. |
+| 2.4 | Implement Browse tab interaction flow | 🟢 Complete | Will + Claude | FilterSection component, AnimlFilterContext (selectedCameras), live result count, ImageList. |
+| 2.5 | Implement camera list with filtered image counts | 🟢 Complete | Will + Claude | Cameras as multi-select checkboxes in expandable FilterSection; cross-dimensional counts. |
+| 2.6 | Implement camera detail drill-down | 🟢 Complete | Will + Claude | Replaced by unified filter + result view; no separate detail view needed for MVP. |
 | 2.7 | Investigate and decide on caching strategy | ⚪ Not Started | | Current load: 8-12s |
 | 2.8 | Use v1 SVG icons for map markers and animal tags | ⚪ Not Started | | Replace emoji markers with proper SVGs |
 | 2.9 | Map Layers widget sync with browse filters | ⚪ Not Started | | Widget reflects active query state |
+| 2.10 | Right sidebar scrollbar — prevent content shift | ⚪ Not Started | | Scrollbar should not move content when it appears (e.g., when selecting species + camera) |
+| 2.11 | Add date/time frame filter above Species and Cameras | ⚪ Not Started | | Time range query UI above filter sections in Browse tab |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -416,6 +418,51 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 
 ---
 
+### 2.10: Right Sidebar Scrollbar — Prevent Content Shift
+
+**Goal:** When the right sidebar content grows (e.g., selecting species + camera expands filter sections and shows image list), the vertical scrollbar appears. The scrollbar should NOT cause content to shift left — content width should remain stable.
+
+**Status:** ⚪ Not Started
+
+**Acceptance Criteria:**
+- [ ] Scrollbar overlays or reserves space so content width stays stable
+- [ ] No horizontal jump when scrollbar appears/disappears
+- [ ] Solution applies to right sidebar tab content area (flex-1 overflow-y-auto)
+
+**Implementation Notes:**
+- Consider `scrollbar-gutter: stable` (reserves space for scrollbar even when not visible)
+- Alternative: overlay scrollbar (browser support varies)
+- Reference: Phase 0 Task 5 — same pattern applied to Map Layers widget
+
+**Files to Modify:**
+- `src/v2/components/RightSidebar/RightSidebar.tsx` — tab content scroll container
+
+---
+
+### 2.11: Add Date/Time Frame Filter Above Species and Cameras
+
+**Goal:** Add a date/time range query UI above the Species and Cameras filter sections in the ANiML Browse tab. Enables queries like "mountain lions at cameras A,B,C in summer 2023."
+
+**Status:** ⚪ Not Started
+
+**Acceptance Criteria:**
+- [ ] Date range picker (start date, end date) or preset ranges (e.g., Last 30 days, Summer 2023)
+- [ ] Placed above Species and Cameras filter sections
+- [ ] Integrates with AnimlFilterContext (dateRange state)
+- [ ] Filters image results by timestamp
+- [ ] Auto-apply behavior (DFT-039) — no separate "Search" button
+
+**Design Questions:**
+- Preset ranges vs free-form date pickers vs both?
+- How does date filter interact with countLookups? (May require API support for date-filtered counts)
+
+**Files to Modify/Create:**
+- `src/v2/context/AnimlFilterContext.tsx` — add dateRange state, integrate with image query
+- `src/v2/components/RightSidebar/ANiML/AnimlBrowseTab.tsx` — add DateFilterSection above Species
+- `src/services/animlService.ts` — add date params to queryImageLabelsCached if not present
+
+---
+
 ## Service Analysis
 
 > Completed via existing `animlService.ts` (1,512 lines, Dec 2025)
@@ -502,6 +549,8 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | Feb 12, 2026 | 2.3–2.6 | **Convergent progressive disclosure design + implementation.** Animal-first: species filter at top → camera list → detail. Camera-first: camera list → detail with species filter inside. New: AnimalFilterSection (shared), ImageGrid (3-col + Load More), countLookups (2-phase cache warming). DFT-043 through DFT-047. 2 new files, 4 refactored files. | Will + Claude |
 | Feb 12, 2026 | 2.3–2.6 | **Iteration 1**: User feedback — lists too verbose, images need date visibility. Refactored to compact single-line lists, replaced ImageGrid with ImageList (vertical, date+time metadata). Created AnimalListView, AnimalDetailView. Sequential drill-down implementation. | Will + Claude |
 | Feb 12, 2026 | 2.3–2.6 | **Iteration 2 (WIP)**: User feedback — sequential drill-down too restrictive for research queries (need "mountain lions AND coyotes at cameras A,B,C in summer 2023"). Pivoting to multi-dimensional filter system. Design review via ui-ux-reviewer recommends **Option 2: Expandable filter sections** (Species/Cameras/Date/Spatial, all multi-select, collapsible). Next: implement expandable sections with multi-select checkboxes. | Will + Claude |
+| Feb 13, 2026 | 2.3–2.6 | **Iteration 2 Phase 1 MVP complete.** FilterSection.tsx (expandable, multi-select, Select All/Clear All). AnimlFilterContext: selectedCameras, toggleCamera, clearCameras, selectAllAnimals, selectAllCameras, filteredImageCount, getFilteredCountForSpecies. AnimlBrowseTab: Species + Cameras FilterSections, live result count, debounced image fetch, ImageList. Researchers can select multiple species AND cameras for complex queries. | Will + Claude |
+| Feb 13, 2026 | 2.10, 2.11 | **New tasks added.** 2.10: Right sidebar scrollbar — prevent content shift when scrollbar appears (e.g., selecting species + camera). 2.11: Add date/time frame filter above Species and Cameras in Browse tab. | Will + Claude |
 
 ---
 
