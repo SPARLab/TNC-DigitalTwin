@@ -52,7 +52,7 @@ export function RightSidebar() {
           <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
 
           {/* Tab content — delegated to data source adapter */}
-          <div className="flex-1 overflow-y-auto p-4" role="tabpanel">
+          <div className="flex-1 overflow-y-auto p-4 scroll-area-right-sidebar" role="tabpanel">
             {adapter ? (
               activeTab === 'overview' ? (
                 <adapter.OverviewTab onBrowseClick={() => setActiveTab('browse')} />
