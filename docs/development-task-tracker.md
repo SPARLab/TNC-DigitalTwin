@@ -38,7 +38,7 @@
 | 14 | 0 | **Fix Map Layers Widget Drag Animation** | ✅ | Medium | Fixed: disabled @dnd-kit auto layout animations to prevent jarring transforms |
 | 24 | 0 | **0.9 Dynamic Layer Registry from Data Catalog Service** | 🟡 | **Critical** | Replace static layerRegistry with dynamic fetch from Data Catalog FeatureServer (~90+ real datasets, 14 categories); "Not Yet Implemented" toast for layers without adapters. **BLOCKS all parallel branches.** |
 | 25 | 2 | **2.3–2.6** ANiML Browse tab — multi-dimensional filter system | ✅ | High | FilterSection (Species, Cameras), Select All/Clear All, live result count, ImageList. Iteration 2 Phase 1 MVP complete. |
-| 26 | 2 | **2.10** Right Sidebar Scrollbar — Prevent content shift | ⚪ | Medium | Scrollbar should not move content when it appears (e.g., selecting species + camera). Use scrollbar-gutter: stable or overlay. |
+| 26 | 2 | **2.10** Right Sidebar Scrollbar — Prevent content shift | ✅ | Medium | Scrollbar should not move content when it appears (e.g., selecting species + camera). Use scrollbar-gutter: stable or overlay. |
 | 27 | 2 | **2.11** ANiML Date/Time Frame Filter — Above Species and Cameras | ⚪ | Medium | Add date range query UI above filter sections in Browse tab. |
 
 **Active tasks remaining:** 10  
