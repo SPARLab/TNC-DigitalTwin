@@ -1,7 +1,7 @@
 # Phase 1: iNaturalist Right Sidebar
 
-**Status:** ⚪ Not Started  
-**Progress:** 0 / 5 tasks  
+**Status:** 🟡 In Progress  
+**Progress:** 4 / 5 tasks (1.2–1.4 largely complete; 1.3 filter UI partially complete — taxon dropdown done)  
 **Branch:** `v2/inaturalist`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -134,8 +134,8 @@ Implement the iNaturalist observations browse experience in the right sidebar. T
 - [x] Cards show photo thumbnail (if available)
 - [x] Clicking card opens detail view AND triggers map: pan + zoom to observation, highlight marker, open popup (Task 14, Feb 12)
 - [x] "View on Map" button also pans + zooms + highlights + opens popup
-- [x] "Bookmark" button adds to bookmarks (simple, no filter) — stubbed as TODO per DFT-046
-- [x] "Open in iNat" button links to iNaturalist.org
+- [x] ~~"Bookmark" button~~ — **Removed (Task 16, Feb 13)** per DFT-046 design decision (Save as View deferred)
+- [x] "iNaturalist" button links to iNaturalist.org (label changed from "iNat" for clarity, Feb 13)
 - [x] List is paginated or virtualized for performance
 
 **Reference:** Mockup `02b-browse-inaturalist.html` results section
@@ -151,7 +151,7 @@ Implement the iNaturalist observations browse experience in the right sidebar. T
 - [ ] Larger photo display
 - [ ] All metadata visible
 - [ ] "Back to list" navigation
-- [ ] Same actions available (Bookmark, Open in iNat)
+- [ ] Same actions available (View on Map, Open in iNaturalist) — Bookmark removed per Task 16
 
 ---
 
@@ -204,6 +204,7 @@ TBD - Document the actual URL
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 13, 2026 | 1.4 | Task 16: Removed Bookmark button from ObservationCard and DetailView (DFT-046 deferred). Task 17: Filter section converted to compact dropdown with Select All. Label "iNat" → "iNaturalist" on external link button. | Claude |
 | Feb 12, 2026 | 1.4 | Task 14 refinement: Removed custom cyan circle highlight; use only ArcGIS native highlight from view.openPopup. | Claude |
 | Feb 12, 2026 | 1.4 | Task 14 complete: Observation card click opens detail view + pans/zooms/highlights marker on map + opens popup. Updated acceptance criteria. | Claude |
 | Jan 23, 2026 | - | Created phase document | Will + Claude |

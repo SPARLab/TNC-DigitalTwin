@@ -10,7 +10,7 @@
 // ============================================================================
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
 import {
   useINaturalistObservations,
   TAXON_CATEGORIES,
@@ -40,6 +40,9 @@ export function INaturalistBrowseTab() {
   // Detail view state
   const [selectedObs, setSelectedObs] = useState<INatObservation | null>(null);
 
+  // Dropdown state for filter section
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
   // Auto-open detail view when map marker is clicked (activeLayer.featureId is set)
   useEffect(() => {
     if (activeLayer?.featureId && activeLayer.layerId === 'inaturalist-obs') {
@@ -51,7 +54,6 @@ export function INaturalistBrowseTab() {
   }, [activeLayer, allObservations]);
 
   // Actions
-  // TODO: Replace addBookmark with "Save as View" action (Feb 11 design decision)
   const { viewRef } = useMap();
 
   const handleViewOnMap = useCallback(async (obs: INatObservation) => {
@@ -75,12 +77,6 @@ export function INaturalistBrowseTab() {
     }
   }, [viewRef]);
 
-  // TODO: Replace with "Save as View" — pins iNaturalist layer with filter for this observation
-  const handleBookmark = useCallback((_obs: INatObservation) => {
-    // Placeholder — will create a filtered view in Map Layers widget
-    console.log('Save as View — not yet implemented (Feb 11 design decision)');
-  }, []);
-
   // If detail view is open, render it
   if (selectedObs) {
     return (
@@ -88,17 +84,17 @@ export function INaturalistBrowseTab() {
         observation={selectedObs}
         onBack={() => setSelectedObs(null)}
         onViewOnMap={() => handleViewOnMap(selectedObs)}
-        onBookmark={() => handleBookmark(selectedObs)}
       />
     );
   }
 
   const hasFilter = selectedTaxa.size > 0;
+  const filterCount = hasFilter ? selectedTaxa.size : TAXON_CATEGORIES.length;
 
   return (
     <div id="inat-browse-tab" className="space-y-3">
-      {/* Filter section (DFT-038) */}
-      <div id="inat-filter-section" className="bg-slate-50 rounded-lg p-3 space-y-3">
+      {/* Filter section (DFT-038) - Compact dropdown */}
+      <div id="inat-filter-section" className="bg-slate-50 rounded-lg p-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
             Filter Observations
@@ -108,39 +104,54 @@ export function INaturalistBrowseTab() {
               onClick={selectAll}
               className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
             >
-              Show All
+              Select All
             </button>
           )}
         </div>
 
-        {/* Multi-select checkboxes for taxa */}
-        <div className="space-y-1 max-h-48 overflow-y-auto">
-          {TAXON_CATEGORIES.map(taxon => {
-            const isSelected = !hasFilter || selectedTaxa.has(taxon.value);
-            return (
-              <label
-                key={taxon.value}
-                className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors ${
-                  isSelected ? 'bg-emerald-50 hover:bg-emerald-100' : 'bg-gray-50 hover:bg-gray-100 opacity-60'
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => toggleTaxon(taxon.value)}
-                  className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
-                />
-                <span className="text-[10px]">{taxon.emoji}</span>
-                <span className={`text-sm flex-1 ${isSelected ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
-                  {taxon.label}
-                </span>
-              </label>
-            );
-          })}
-        </div>
+        {/* Dropdown trigger */}
+        <button
+          id="inat-filter-dropdown-trigger"
+          onClick={() => setIsFilterOpen(!isFilterOpen)}
+          className="w-full mt-2 flex items-center justify-between px-3 py-2 bg-white border border-gray-200
+                     rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors"
+        >
+          <span className="text-sm text-gray-700">
+            {filterCount === TAXON_CATEGORIES.length ? 'All Taxa' : `${filterCount} ${filterCount === 1 ? 'Taxon' : 'Taxa'} Selected`}
+          </span>
+          <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} />
+        </button>
+
+        {/* Dropdown content */}
+        {isFilterOpen && (
+          <div id="inat-filter-dropdown-content" className="mt-2 space-y-1 max-h-64 overflow-y-auto">
+            {TAXON_CATEGORIES.map(taxon => {
+              const isSelected = !hasFilter || selectedTaxa.has(taxon.value);
+              return (
+                <label
+                  key={taxon.value}
+                  className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors ${
+                    isSelected ? 'bg-emerald-50 hover:bg-emerald-100' : 'bg-gray-50 hover:bg-gray-100 opacity-60'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => toggleTaxon(taxon.value)}
+                    className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                  />
+                  <span className="text-[10px]">{taxon.emoji}</span>
+                  <span className={`text-sm flex-1 ${isSelected ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
+                    {taxon.label}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        )}
 
         {/* Note about legend widget sync */}
-        <p className="text-xs text-gray-500 italic">
+        <p className="text-xs text-gray-500 italic mt-2">
           Tip: You can also filter using the legend widget on the map
         </p>
       </div>
@@ -170,7 +181,6 @@ export function INaturalistBrowseTab() {
               observation={obs}
               onViewDetail={() => { setSelectedObs(obs); handleViewOnMap(obs); }}
               onViewOnMap={() => handleViewOnMap(obs)}
-              onBookmark={() => handleBookmark(obs)}
             />
           ))}
 
