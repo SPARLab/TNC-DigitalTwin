@@ -109,6 +109,8 @@ export function DendraProvider({ children }: { children: ReactNode }) {
 
   // Chart state (floating time series panel)
   const [chart, setChart] = useState<DendraChartState>(CHART_INITIAL);
+  /** Monotonic counter — ensures only the latest openChart fetch writes state */
+  const chartRequestIdRef = useRef(0);
 
   // Derive service URL from active Dendra layer's catalog metadata
   const serviceInfo = useMemo(() => {
@@ -192,6 +194,10 @@ export function DendraProvider({ children }: { children: ReactNode }) {
   const openChart = useCallback((station: DendraStation, summary: DendraSummary) => {
     if (!serviceInfo) return;
 
+    // Bump request counter so any in-flight fetch for the *previous* datastream
+    // will be silently ignored when it resolves.
+    const requestId = ++chartRequestIdRef.current;
+
     setChart({
       open: true, minimized: false,
       station, summary,
@@ -200,9 +206,11 @@ export function DendraProvider({ children }: { children: ReactNode }) {
 
     fetchTimeSeries(serviceInfo.url, station.station_id, summary.datastream_name, summary.dendra_ds_id)
       .then(result => {
+        if (chartRequestIdRef.current !== requestId) return; // stale — discard
         setChart(prev => ({ ...prev, data: result.points, loading: false }));
       })
       .catch(err => {
+        if (chartRequestIdRef.current !== requestId) return; // stale — discard
         console.error('[Dendra Chart] ❌ Time series fetch failed:', err);
         setChart(prev => ({
           ...prev, loading: false,

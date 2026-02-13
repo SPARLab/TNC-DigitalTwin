@@ -124,6 +124,13 @@ function ExpandedPanel() {
   useEffect(() => {
     if (!chartRef.current || data.length === 0) return;
 
+    // If the container DOM changed (e.g., remounted during loading transition),
+    // dispose the stale instance so we create a fresh one below.
+    if (chartInstanceRef.current && chartInstanceRef.current.getDom() !== chartRef.current) {
+      chartInstanceRef.current.dispose();
+      chartInstanceRef.current = null;
+    }
+
     // Initialize if needed
     if (!chartInstanceRef.current) {
       chartInstanceRef.current = echarts.init(chartRef.current);
