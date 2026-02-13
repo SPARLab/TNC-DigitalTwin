@@ -52,35 +52,28 @@ export function INaturalistBrowseTab() {
 
   // Actions
   // TODO: Replace addBookmark with "Save as View" action (Feb 11 design decision)
-  const { highlightPoint, clearHighlight, viewRef } = useMap();
+  const { viewRef } = useMap();
 
   const handleViewOnMap = useCallback(async (obs: INatObservation) => {
     const [lon, lat] = obs.coordinates;
     const view = viewRef.current;
     if (!view) return;
 
-    // Highlight the point
-    highlightPoint(lon, lat);
-
     // Zoom to observation
     await view.goTo({ center: [lon, lat], zoom: 15 }, { duration: 800 });
 
-    // Find the graphic on the map to open its popup
+    // Find the graphic on the map to open its popup — ArcGIS natively highlights the feature
     const layer = view.map.findLayerById('v2-inaturalist-obs') as __esri.GraphicsLayer;
     if (layer) {
       const graphic = layer.graphics.find(g => g.attributes?.id === obs.id);
       if (graphic && graphic.geometry) {
-        // Open popup using the ArcGIS API method
         view.openPopup({
           features: [graphic],
           location: graphic.geometry as __esri.Point,
         });
       }
     }
-
-    // Clear highlight after 5 seconds
-    setTimeout(clearHighlight, 5000);
-  }, [highlightPoint, clearHighlight, viewRef]);
+  }, [viewRef]);
 
   // TODO: Replace with "Save as View" — pins iNaturalist layer with filter for this observation
   const handleBookmark = useCallback((_obs: INatObservation) => {

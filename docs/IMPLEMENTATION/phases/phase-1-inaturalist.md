@@ -204,6 +204,7 @@ TBD - Document the actual URL
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 12, 2026 | 1.4 | Task 14 refinement: Removed custom cyan circle highlight; use only ArcGIS native highlight from view.openPopup. | Claude |
 | Feb 12, 2026 | 1.4 | Task 14 complete: Observation card click opens detail view + pans/zooms/highlights marker on map + opens popup. Updated acceptance criteria. | Claude |
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 | Feb 2, 2026 | 1.2 | Resolved DFT-006: Overview tab opens first when layer is selected, with prominent "Browse Features →" button | Will + Claude |
