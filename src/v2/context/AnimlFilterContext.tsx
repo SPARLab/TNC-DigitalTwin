@@ -5,9 +5,10 @@
 // Provides: filter state, deployments, animal counts, countLookups, cache.
 // Shared between: floating legend widget, right sidebar, map layer.
 //
-// Iteration 2: Multi-dimensional filtering (species × cameras).
+// Iteration 2: Multi-dimensional filtering (species × cameras × date range).
 //   - selectedAnimals: species filter (empty = no restriction)
 //   - selectedCameras: camera/deployment filter (empty = no restriction)
+//   - startDate / endDate: date range filter (null = no restriction)
 //   - filteredImageCount: instant count from countLookups (no API call)
 //   - getFilteredCountForSpecies: per-species count reflecting camera filter
 // ============================================================================
@@ -40,9 +41,12 @@ export interface AnimlFilterContextValue {
   // Filters
   selectedAnimals: Set<string>;
   selectedCameras: Set<number>;
+  startDate: string | null;    // YYYY-MM-DD or null
+  endDate: string | null;      // YYYY-MM-DD or null
   hasFilter: boolean;          // species filter active (backward compat)
   hasCameraFilter: boolean;    // camera filter active
-  hasAnyFilter: boolean;       // either filter active
+  hasDateFilter: boolean;      // date range filter active
+  hasAnyFilter: boolean;       // any filter active
 
   // Filter actions — species
   toggleAnimal: (label: string) => void;
@@ -54,6 +58,10 @@ export interface AnimlFilterContextValue {
   toggleCamera: (deploymentId: number) => void;
   clearCameras: () => void;
   selectAllCameras: () => void;
+
+  // Filter actions — date range
+  setDateRange: (start: string | null, end: string | null) => void;
+  clearDateRange: () => void;
 
   // Filter actions — combined
   clearFilters: () => void;
@@ -81,6 +89,8 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
   // Filter state
   const [selectedAnimals, setSelectedAnimals] = useState<Set<string>>(new Set());
   const [selectedCameras, setSelectedCameras] = useState<Set<number>>(new Set());
+  const [startDate, setStartDate] = useState<string | null>(null);
+  const [endDate, setEndDate] = useState<string | null>(null);
 
   // Data state
   const [deployments, setDeployments] = useState<AnimlDeployment[]>([]);
@@ -146,18 +156,33 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
     [deployments],
   );
 
+  // ── Filter actions — date range ─────────────────────────────────────────
+
+  const setDateRange = useCallback((start: string | null, end: string | null) => {
+    setStartDate(start);
+    setEndDate(end);
+  }, []);
+
+  const clearDateRange = useCallback(() => {
+    setStartDate(null);
+    setEndDate(null);
+  }, []);
+
   // ── Filter actions — combined ───────────────────────────────────────────
 
   const clearFilters = useCallback(() => {
     setSelectedAnimals(prev => (prev.size === 0 ? prev : new Set()));
     setSelectedCameras(prev => (prev.size === 0 ? prev : new Set()));
+    setStartDate(null);
+    setEndDate(null);
   }, []);
 
   // ── Derived booleans ────────────────────────────────────────────────────
 
   const hasFilter = selectedAnimals.size > 0;
   const hasCameraFilter = selectedCameras.size > 0;
-  const hasAnyFilter = hasFilter || hasCameraFilter;
+  const hasDateFilter = startDate !== null && endDate !== null;
+  const hasAnyFilter = hasFilter || hasCameraFilter || hasDateFilter;
 
   // ── Cache warming ────────────────────────────────────────────────────────
 
@@ -348,10 +373,11 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
       value={{
         deployments, animalTags, groupedCounts, countLookups,
         loading, error, dataLoaded, totalImageCount,
-        selectedAnimals, selectedCameras,
-        hasFilter, hasCameraFilter, hasAnyFilter,
+        selectedAnimals, selectedCameras, startDate, endDate,
+        hasFilter, hasCameraFilter, hasDateFilter, hasAnyFilter,
         toggleAnimal, selectAll, clearAll, selectAllAnimals,
-        toggleCamera, clearCameras, selectAllCameras, clearFilters,
+        toggleCamera, clearCameras, selectAllCameras,
+        setDateRange, clearDateRange, clearFilters,
         getFilteredCountForDeployment, getFilteredCountForSpecies,
         matchingDeploymentIds, filteredImageCount,
         warmCache,

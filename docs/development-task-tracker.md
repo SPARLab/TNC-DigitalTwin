@@ -39,10 +39,10 @@
 | 24 | 0 | **0.9 Dynamic Layer Registry from Data Catalog Service** | 🟡 | **Critical** | Replace static layerRegistry with dynamic fetch from Data Catalog FeatureServer (~90+ real datasets, 14 categories); "Not Yet Implemented" toast for layers without adapters. **BLOCKS all parallel branches.** |
 | 25 | 2 | **2.3–2.6** ANiML Browse tab — multi-dimensional filter system | ✅ | High | FilterSection (Species, Cameras), Select All/Clear All, live result count, ImageList. Iteration 2 Phase 1 MVP complete. |
 | 26 | 2 | **2.10** Right Sidebar Scrollbar — Prevent content shift | ✅ | Medium | Scrollbar should not move content when it appears (e.g., selecting species + camera). Use scrollbar-gutter: stable or overlay. |
-| 27 | 2 | **2.11** ANiML Date/Time Frame Filter — Above Species and Cameras | ⚪ | Medium | Add date range query UI above filter sections in Browse tab. |
+| 27 | 2 | **2.11** ANiML Date/Time Frame Filter — Above Species and Cameras | ✅ | Medium | DateFilterSection with date pickers + presets (Last 30d, 6mo, This Year, Last Year). Passes startDate/endDate to queryImageLabelsCached. |
 
 **Active tasks remaining:** 10  
-**Recently completed:** **Task 26** (Right Sidebar Scrollbar Fix) ✅ (Feb 13), **Phase 2 Tasks 2.3–2.6** (ANiML multi-dimensional filter) ✅ (Feb 13), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
+**Recently completed:** **Task 27** (ANiML Date/Time Frame Filter) ✅ (Feb 13), **Task 26** (Right Sidebar Scrollbar Fix) ✅ (Feb 13), **Phase 2 Tasks 2.3–2.6** (ANiML multi-dimensional filter) ✅ (Feb 13), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
 
 ---
 
@@ -359,9 +359,9 @@
     - **Goal:** When right sidebar content grows (selecting species + camera), scrollbar appears. Content should NOT shift left. Use `scrollbar-gutter: stable` or overlay scrollbar.
     - **Files:** `src/v2/components/RightSidebar/RightSidebar.tsx`
 
-  - [ ] **Task 2.11: Date/Time Frame Filter — Above Species and Cameras**
-    - **Goal:** Add date range query UI above Species and Cameras in Browse tab. Enables "mountain lions at cameras A,B,C in summer 2023" queries.
-    - **Files:** `AnimlFilterContext.tsx`, `AnimlBrowseTab.tsx`, `animlService.ts`
+  - [x] **Task 2.11: Date/Time Frame Filter — Above Species and Cameras** ✅
+    - **Completed (Feb 13):** DateFilterSection component with collapsible date range picker + quick-select presets (Last 30 days, Last 6 months, This Year, Last Year). AnimlFilterContext: startDate/endDate state, setDateRange, clearDateRange, hasDateFilter. AnimlBrowseTab passes dates to queryImageLabelsCached. Auto-apply per DFT-039. Species/camera counts remain all-time (countLookups not date-aware); image results are date-filtered.
+    - **Files:** `DateFilterSection.tsx` (new), `AnimlFilterContext.tsx`, `AnimlBrowseTab.tsx`
 - **Phase 3:** Dendra data source (6 tasks)
 - **Phase 4:** DataOne data source (5 tasks)
 

@@ -1,8 +1,8 @@
 # Phase 2: ANiML Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 3 / 9 tasks  
-**In Progress:** Task 2.11 (Date/Time Frame Filter)  
+**Progress:** 5 / 9 tasks  
+**Last Completed:** Task 2.11 (Date/Time Frame Filter) ✅  
 **Branch:** `v2/animl`  
 **Depends On:** Phase 0 (Foundation) — Data Source Adapter Pattern ✅ Complete  
 **Owner:** TBD
@@ -96,8 +96,8 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | 2.7 | Investigate and decide on caching strategy | ⚪ Not Started | | Current load: 8-12s |
 | 2.8 | Use v1 SVG icons for map markers and animal tags | ⚪ Not Started | | Replace emoji markers with proper SVGs |
 | 2.9 | Map Layers widget sync with browse filters | ⚪ Not Started | | Widget reflects active query state |
-| 2.10 | Right sidebar scrollbar — prevent content shift | ⚪ Not Started | | Scrollbar should not move content when it appears (e.g., when selecting species + camera) |
-| 2.11 | Add date/time frame filter above Species and Cameras | ⚪ Not Started | | Time range query UI above filter sections in Browse tab |
+| 2.10 | Right sidebar scrollbar — prevent content shift | 🟢 Complete | Will + Claude | scrollbar-gutter: stable on right sidebar scroll area |
+| 2.11 | Add date/time frame filter above Species and Cameras | 🟢 Complete | Will + Claude | DateFilterSection with date pickers + presets. Passes startDate/endDate to queryImageLabelsCached. |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -443,23 +443,27 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 
 **Goal:** Add a date/time range query UI above the Species and Cameras filter sections in the ANiML Browse tab. Enables queries like "mountain lions at cameras A,B,C in summer 2023."
 
-**Status:** ⚪ Not Started
+**Status:** 🟢 Complete (Feb 13, 2026)
 
 **Acceptance Criteria:**
-- [ ] Date range picker (start date, end date) or preset ranges (e.g., Last 30 days, Summer 2023)
-- [ ] Placed above Species and Cameras filter sections
-- [ ] Integrates with AnimlFilterContext (dateRange state)
-- [ ] Filters image results by timestamp
-- [ ] Auto-apply behavior (DFT-039) — no separate "Search" button
+- [x] Date range picker (start date, end date) with free-form inputs + preset quick-select buttons
+- [x] Placed above Species and Cameras filter sections
+- [x] Integrates with AnimlFilterContext (startDate/endDate state, setDateRange, clearDateRange, hasDateFilter)
+- [x] Filters image results by timestamp (passes startDate/endDate to queryImageLabelsCached)
+- [x] Auto-apply behavior (DFT-039) — no separate "Search" button
 
-**Design Questions:**
-- Preset ranges vs free-form date pickers vs both?
-- How does date filter interact with countLookups? (May require API support for date-filtered counts)
+**Design Decisions:**
+- Both free-form date pickers AND preset quick-select buttons (Last 30 days, Last 6 months, This Year, Last Year)
+- Date filter does NOT affect countLookups (species/camera counts remain all-time). Only image results are date-filtered. This is acceptable for MVP — re-computing counts per date range would require re-fetching grouped counts (~8-12s).
+- Collapsible section matches FilterSection visual style (chevron, icon, badge, animated expand/collapse)
+- Badge shows formatted date range summary when active, "All Time" when inactive
+- Preset buttons highlight when active (emerald border/bg)
+- Date inputs have min/max constraints to prevent invalid ranges
 
-**Files to Modify/Create:**
-- `src/v2/context/AnimlFilterContext.tsx` — add dateRange state, integrate with image query
-- `src/v2/components/RightSidebar/ANiML/AnimlBrowseTab.tsx` — add DateFilterSection above Species
-- `src/services/animlService.ts` — add date params to queryImageLabelsCached if not present
+**Files Created/Modified:**
+- `src/v2/components/RightSidebar/ANiML/DateFilterSection.tsx` — new collapsible date range picker component
+- `src/v2/context/AnimlFilterContext.tsx` — added startDate/endDate state, setDateRange, clearDateRange, hasDateFilter, updated clearFilters
+- `src/v2/components/RightSidebar/ANiML/AnimlBrowseTab.tsx` — added DateFilterSection above Species, passes dates to image query
 
 ---
 
@@ -552,6 +556,7 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | Feb 13, 2026 | 2.3–2.6 | **Iteration 2 Phase 1 MVP complete.** FilterSection.tsx (expandable, multi-select, Select All/Clear All). AnimlFilterContext: selectedCameras, toggleCamera, clearCameras, selectAllAnimals, selectAllCameras, filteredImageCount, getFilteredCountForSpecies. AnimlBrowseTab: Species + Cameras FilterSections, live result count, debounced image fetch, ImageList. Researchers can select multiple species AND cameras for complex queries. | Will + Claude |
 | Feb 13, 2026 | 2.10, 2.11 | **New tasks added.** 2.10: Right sidebar scrollbar — prevent content shift when scrollbar appears (e.g., selecting species + camera). 2.11: Add date/time frame filter above Species and Cameras in Browse tab. | Will + Claude |
 | Feb 13, 2026 | 2.10 | **Complete.** Added `scrollbar-gutter: stable` to right sidebar scroll area in `RightSidebar.tsx` + `.scroll-area-right-sidebar` CSS class in `index.css`. Prevents horizontal content shift when overflow scrollbar appears (e.g., expanding filter sections). Thin hover-reveal scrollbar for visual consistency. | Will + Claude |
+| Feb 13, 2026 | 2.11 | **Complete.** DateFilterSection component: collapsible date range picker with start/end date inputs + quick-select presets (Last 30 days, Last 6 months, This Year, Last Year). AnimlFilterContext: added startDate/endDate state, setDateRange, clearDateRange, hasDateFilter. AnimlBrowseTab: DateFilterSection placed above Species, passes dates to queryImageLabelsCached. Auto-apply per DFT-039. Note: species/camera counts remain all-time (countLookups not date-aware); only image results are date-filtered. | Will + Claude |
 
 ---
 

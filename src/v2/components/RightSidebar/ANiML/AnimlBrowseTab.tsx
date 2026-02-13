@@ -1,9 +1,10 @@
 // ============================================================================
 // AnimlBrowseTab — Multi-dimensional camera trap filter + image browser
-// Iteration 2: Expandable filter sections (Species, Cameras) replace the
-// sequential drill-down. Researchers can select multiple species AND cameras
-// to build complex queries. Result count updates instantly from countLookups;
-// images load via debounced API call.
+// Iteration 2: Expandable filter sections (Date Range, Species, Cameras)
+// replace the sequential drill-down. Researchers can select date ranges,
+// multiple species, AND cameras to build complex queries like "mountain lions
+// at cameras A,B,C in summer 2023." Result count updates instantly from
+// countLookups; images load via debounced API call with date params.
 // ============================================================================
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -11,6 +12,7 @@ import { PawPrint, Camera, Loader2, AlertCircle, X } from 'lucide-react';
 import { useAnimlFilter } from '../../../context/AnimlFilterContext';
 import { animlService, type AnimlImageLabel } from '../../../../services/animlService';
 import { FilterSection, type FilterSectionItem } from './FilterSection';
+import { DateFilterSection } from './DateFilterSection';
 import { ImageList } from './ImageList';
 
 const PAGE_SIZE = 20;
@@ -19,10 +21,11 @@ const FETCH_DEBOUNCE_MS = 300;
 export function AnimlBrowseTab() {
   const {
     deployments, animalTags, loading, error, dataLoaded,
-    selectedAnimals, selectedCameras,
+    selectedAnimals, selectedCameras, startDate, endDate,
     toggleAnimal, toggleCamera,
-    selectAll, selectAllAnimals, clearCameras, selectAllCameras, clearFilters,
-    hasFilter, hasCameraFilter, hasAnyFilter,
+    selectAll, selectAllAnimals, clearCameras, selectAllCameras,
+    setDateRange, clearDateRange, clearFilters,
+    hasFilter, hasCameraFilter, hasDateFilter, hasAnyFilter,
     getFilteredCountForSpecies, getFilteredCountForDeployment,
     filteredImageCount,
   } = useAnimlFilter();
@@ -90,6 +93,8 @@ export function AnimlBrowseTab() {
         const imgs = await animlService.queryImageLabelsCached({
           labels,
           deploymentIds,
+          startDate: hasDateFilter ? startDate! : undefined,
+          endDate: hasDateFilter ? endDate! : undefined,
           maxResults: 200,
         });
 
@@ -108,7 +113,7 @@ export function AnimlBrowseTab() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [selectedAnimals, selectedCameras, hasAnyFilter, hasFilter, hasCameraFilter, dataLoaded]);
+  }, [selectedAnimals, selectedCameras, startDate, endDate, hasAnyFilter, hasFilter, hasCameraFilter, hasDateFilter, dataLoaded]);
 
   // ── Pagination ──────────────────────────────────────────────────────────
 
@@ -153,6 +158,15 @@ export function AnimlBrowseTab() {
 
   return (
     <div id="animl-browse-tab" className="space-y-3">
+      {/* Date range filter — above species and cameras */}
+      <DateFilterSection
+        id="animl-filter-date"
+        startDate={startDate}
+        endDate={endDate}
+        onDateChange={setDateRange}
+        onClear={clearDateRange}
+      />
+
       {/* Species filter section — expanded by default */}
       <FilterSection
         id="animl-filter-species"
@@ -212,7 +226,7 @@ export function AnimlBrowseTab() {
       {/* Prompt when no filter */}
       {!hasAnyFilter && (
         <p id="animl-browse-prompt" className="text-sm text-gray-400 text-center py-6">
-          Select species or cameras above to browse images.
+          Select a date range, species, or cameras above to browse images.
         </p>
       )}
 
