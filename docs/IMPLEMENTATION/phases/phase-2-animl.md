@@ -2,6 +2,7 @@
 
 **Status:** 🟡 In Progress  
 **Progress:** 2 / 9 tasks  
+**In Progress:** Tasks 2.3–2.6 (Browse tab UX iteration)  
 **Branch:** `v2/animl`  
 **Depends On:** Phase 0 (Foundation) — Data Source Adapter Pattern ✅ Complete  
 **Owner:** TBD
@@ -88,10 +89,10 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 |----|------|--------|----------|-------|
 | 2.1 | Query ANiML service to understand attributes | 🟢 Complete | Will + Claude | Existing animlService.ts (1,512 lines) covers this |
 | 2.2 | Create ANiML adapter, context, map layer, and sidebar shell (WIP) | 🟢 Complete | Will + Claude | Foundation pipeline done; sidebar UI is placeholder |
-| 2.3 | Design decision: Browse tab interaction flow | ⚪ Not Started | | **Part A**: Think through UX flows, make design decision |
-| 2.4 | Implement Browse tab interaction flow | ⚪ Not Started | | **Part B**: Build the flow decided in 2.3 |
-| 2.5 | Implement camera list with filtered image counts | ⚪ Not Started | | |
-| 2.6 | Implement camera detail drill-down | ⚪ Not Started | | |
+| 2.3 | Design decision: Browse tab interaction flow | 🟡 In Progress | Will + Claude | **WIP**: Iterating on UX. Sequential drill-down → multi-dimensional filter system. See Change Log for history. |
+| 2.4 | Implement Browse tab interaction flow | 🟡 In Progress | Will + Claude | **WIP**: Building expandable filter sections (Species, Cameras, Date, Spatial) with multi-select + image list. |
+| 2.5 | Implement camera list with filtered image counts | 🟡 In Progress | Will + Claude | **WIP**: Refactoring from single-select list to multi-select checkboxes within expandable section |
+| 2.6 | Implement camera detail drill-down | 🟡 In Progress | Will + Claude | **WIP**: May be replaced by unified filter + result view (no separate detail view needed) |
 | 2.7 | Investigate and decide on caching strategy | ⚪ Not Started | | Current load: 8-12s |
 | 2.8 | Use v1 SVG icons for map markers and animal tags | ⚪ Not Started | | Replace emoji markers with proper SVGs |
 | 2.9 | Map Layers widget sync with browse filters | ⚪ Not Started | | Widget reflects active query state |
@@ -452,7 +453,11 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 
 | Decision | Date | Rationale |
 |----------|------|-----------|
-| (none yet) | | |
+| DFT-043: Convergent progressive disclosure — species filter position depends on mode | Feb 12, 2026 | Animal-first shows species filter at top (primary), camera-first shows it inside CameraDetailView (secondary). Matches mental model: "Where is X?" starts from species; "What's at Y?" starts from camera. |
+| DFT-044: countLookups as 2-phase cache warming | Feb 12, 2026 | Phase 1 loads deployments + animalTags (fast, makes UI usable). Phase 2 loads grouped counts + builds countLookups (background, enables filtered counts). UI works without countLookups and upgrades when available. |
+| DFT-045: Shared AnimalFilterSection component | Feb 12, 2026 | Same checkbox filter used in both modes and synced with legend widget via AnimlFilterContext. Camera-first shows camera-specific counts via `deploymentId` prop. |
+| DFT-046: 3-column ImageGrid with Load More | Feb 12, 2026 | Grid layout for photo scanning (3 cols). Client-side "Load More" pagination (21 per batch = 3×7). Less jarring than page numbers; explicit user control. |
+| DFT-047: Map Layers widget filter summary format | Feb 12, 2026 | Animal-first: "Mountain Lion, Coyote • 8 cameras". Camera-first: "CAM-042 • Mountain Lion, Coyote". No filter: "No filter applied". |
 
 ### Styling Decisions
 
@@ -494,6 +499,9 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | Feb 12, 2026 | All | Added Readiness Assessment and Implementation Guide. Data Source Adapter Pattern complete (Phase 0 Task 23). Ready for parallel development on v2/animl branch. | Will + Claude |
 | Feb 12, 2026 | 2.1, 2.2 | WIP: Created AnimlFilterContext, adapter, map layer, map behavior hook, sidebar shell (Overview + Browse tabs), legend widget. Wired into registry, V2App, layer factory. 8 new files, 4 modified files. | Will + Claude |
 | Feb 12, 2026 | 2.3, 2.4, 2.8, 2.9 | Added new tasks: Browse tab interaction flow design decision (2.3), implementation (2.4), v1 SVG icons (2.8), Map Layers widget sync (2.9). Replaced old 2.3/2.4 (camera/image filter UI) with interaction-flow-first approach. | Will + Claude |
+| Feb 12, 2026 | 2.3–2.6 | **Convergent progressive disclosure design + implementation.** Animal-first: species filter at top → camera list → detail. Camera-first: camera list → detail with species filter inside. New: AnimalFilterSection (shared), ImageGrid (3-col + Load More), countLookups (2-phase cache warming). DFT-043 through DFT-047. 2 new files, 4 refactored files. | Will + Claude |
+| Feb 12, 2026 | 2.3–2.6 | **Iteration 1**: User feedback — lists too verbose, images need date visibility. Refactored to compact single-line lists, replaced ImageGrid with ImageList (vertical, date+time metadata). Created AnimalListView, AnimalDetailView. Sequential drill-down implementation. | Will + Claude |
+| Feb 12, 2026 | 2.3–2.6 | **Iteration 2 (WIP)**: User feedback — sequential drill-down too restrictive for research queries (need "mountain lions AND coyotes at cameras A,B,C in summer 2023"). Pivoting to multi-dimensional filter system. Design review via ui-ux-reviewer recommends **Option 2: Expandable filter sections** (Species/Cameras/Date/Spatial, all multi-select, collapsible). Next: implement expandable sections with multi-select checkboxes. | Will + Claude |
 
 ---
 

@@ -1,11 +1,11 @@
 // ============================================================================
-// CameraDetailView — Drill-down view for a single camera (camera-first mode)
-// Shows: camera header → compact species list → image list with dates.
-// Species filter uses AnimlFilterContext (syncs with legend widget + map).
+// AnimalDetailView — Drill-down view for a selected animal species
+// Shows: animal header → compact camera list (for that animal) → image list.
+// Optionally filter by camera. Images shown as vertical list with dates.
 // ============================================================================
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { ArrowLeft, Camera, Loader2, Bookmark, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Loader2, Bookmark, ChevronRight } from 'lucide-react';
 import {
   animlService,
   type AnimlDeployment,
@@ -16,13 +16,13 @@ import { ImageList } from './ImageList';
 
 const PAGE_SIZE = 20;
 
-interface CameraDetailViewProps {
-  deployment: AnimlDeployment;
+interface AnimalDetailViewProps {
+  animalLabel: string;
   onBack: () => void;
 }
 
-export function CameraDetailView({ deployment, onBack }: CameraDetailViewProps) {
-  const { animalTags, countLookups } = useAnimlFilter();
+export function AnimalDetailView({ animalLabel, onBack }: AnimalDetailViewProps) {
+  const { deployments, animalTags, countLookups } = useAnimlFilter();
 
   const [allImages, setAllImages] = useState<AnimlImageLabel[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -30,29 +30,32 @@ export function CameraDetailView({ deployment, onBack }: CameraDetailViewProps) 
   const [error, setError] = useState<string | null>(null);
   const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+  const [selectedCameraId, setSelectedCameraId] = useState<number | null>(null);
 
-  // Species at this camera, sorted by count descending
-  const speciesAtCamera = useMemo(() => {
+  // Find the animal tag for metadata
+  const tag = animalTags.find(t => t.label === animalLabel);
+
+  // Cameras that have this animal (from countLookups)
+  const camerasWithAnimal = useMemo((): (AnimlDeployment & { count: number })[] => {
     if (!countLookups) return [];
-    const labelsAtCamera = countLookups.labelsByDeployment.get(deployment.id);
-    if (!labelsAtCamera) return [];
-    return animalTags
-      .filter(t => labelsAtCamera.has(t.label))
-      .map(t => ({
-        label: t.label,
-        count: countLookups.countsByDeploymentAndLabel.get(`${deployment.id}:${t.label}`) ?? 0,
+    const depIds = countLookups.deploymentsByLabel.get(animalLabel);
+    if (!depIds) return [];
+    return deployments
+      .filter(d => depIds.has(d.id))
+      .map(d => ({
+        ...d,
+        count: countLookups.countsByDeploymentAndLabel.get(`${d.id}:${animalLabel}`) ?? 0,
       }))
       .sort((a, b) => b.count - a.count);
-  }, [animalTags, countLookups, deployment.id]);
+  }, [deployments, countLookups, animalLabel]);
 
-  // Build query labels
-  const queryLabels = useMemo(
-    () => selectedLabel ? [selectedLabel] : undefined,
-    [selectedLabel],
+  // Build query params
+  const queryDeploymentIds = useMemo(
+    () => selectedCameraId ? [selectedCameraId] : camerasWithAnimal.map(c => c.id),
+    [selectedCameraId, camerasWithAnimal],
   );
 
-  // Fetch images
+  // Fetch images for this animal (optionally filtered by camera)
   const fetchImages = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -60,13 +63,13 @@ export function CameraDetailView({ deployment, onBack }: CameraDetailViewProps) 
     try {
       const [labels, count] = await Promise.all([
         animlService.queryImageLabelsCached({
-          deploymentIds: [deployment.id],
-          labels: queryLabels,
+          labels: [animalLabel],
+          deploymentIds: queryDeploymentIds.length > 0 ? queryDeploymentIds : undefined,
           maxResults: 200,
         }),
         animlService.getImageLabelsCount({
-          deploymentIds: [deployment.id],
-          labels: queryLabels,
+          labels: [animalLabel],
+          deploymentIds: queryDeploymentIds.length > 0 ? queryDeploymentIds : undefined,
         }),
       ]);
       setAllImages(labels);
@@ -76,7 +79,7 @@ export function CameraDetailView({ deployment, onBack }: CameraDetailViewProps) 
     } finally {
       setLoading(false);
     }
-  }, [deployment.id, queryLabels]);
+  }, [animalLabel, queryDeploymentIds]);
 
   useEffect(() => { fetchImages(); }, [fetchImages]);
 
@@ -90,51 +93,44 @@ export function CameraDetailView({ deployment, onBack }: CameraDetailViewProps) 
 
   const visibleImages = allImages.slice(0, displayCount);
   const hasMore = displayCount < allImages.length;
-  const coords = deployment.geometry?.coordinates;
 
   return (
-    <div id="animl-camera-detail" className="space-y-4">
+    <div id="animl-animal-detail" className="space-y-4">
       {/* Back navigation */}
       <button
-        id="animl-camera-detail-back"
+        id="animl-animal-detail-back"
         onClick={onBack}
         className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
-        Back to Cameras
+        Back to Animals
       </button>
 
-      {/* Camera header */}
-      <div id="animl-camera-detail-header" className="bg-slate-50 rounded-lg p-4 space-y-1">
-        <div className="flex items-center gap-2">
-          <Camera className="w-5 h-5 text-emerald-600" />
-          <h3 className="text-base font-semibold text-gray-900">{deployment.name}</h3>
+      {/* Animal header */}
+      <div id="animl-animal-detail-header" className="bg-slate-50 rounded-lg p-4 space-y-1">
+        <h3 className="text-base font-semibold text-gray-900">{animalLabel}</h3>
+        <div className="flex items-center gap-2 text-xs text-gray-500">
+          {tag && (
+            <>
+              <span>{tag.totalObservations.toLocaleString()} total images</span>
+              <span className="text-gray-300">•</span>
+              <span>{tag.uniqueCameras} cameras</span>
+            </>
+          )}
         </div>
-        {coords && (
-          <p className="text-xs text-gray-500">
-            {coords[1].toFixed(5)}°N, {Math.abs(coords[0]).toFixed(5)}°W
-          </p>
-        )}
-        <p className="text-xs text-gray-500">
-          ID: {deployment.animl_dp_id}
-          <span className="text-gray-300 mx-1">•</span>
-          <span className="text-emerald-600 font-medium">
-            {totalCount.toLocaleString()} {selectedLabel ? 'matching' : 'total'} images
-          </span>
-        </p>
       </div>
 
-      {/* Species filter — compact list, click to filter */}
-      {speciesAtCamera.length > 0 && (
-        <div id="animl-camera-species" className="space-y-1.5">
+      {/* Compact camera filter — click to filter images by camera */}
+      {camerasWithAnimal.length > 0 && (
+        <div id="animl-animal-camera-filter" className="space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-              Species ({speciesAtCamera.length})
+              Cameras ({camerasWithAnimal.length})
             </span>
-            {selectedLabel && (
+            {selectedCameraId && (
               <button
-                id="animl-camera-species-clear"
-                onClick={() => setSelectedLabel(null)}
+                id="animl-animal-clear-camera"
+                onClick={() => setSelectedCameraId(null)}
                 className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
               >
                 Show All
@@ -143,22 +139,22 @@ export function CameraDetailView({ deployment, onBack }: CameraDetailViewProps) 
           </div>
 
           <div className="divide-y divide-gray-100 border border-gray-100 rounded-lg overflow-hidden">
-            {speciesAtCamera.map(sp => {
-              const isActive = selectedLabel === sp.label;
+            {camerasWithAnimal.map(cam => {
+              const isActive = selectedCameraId === cam.id;
               return (
                 <button
-                  key={sp.label}
-                  id={`animl-camera-sp-${sp.label.toLowerCase().replace(/\s+/g, '-')}`}
-                  onClick={() => setSelectedLabel(isActive ? null : sp.label)}
+                  key={cam.id}
+                  id={`animl-animal-cam-${cam.id}`}
+                  onClick={() => setSelectedCameraId(isActive ? null : cam.id)}
                   className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition-colors ${
                     isActive ? 'bg-emerald-50' : 'hover:bg-gray-50'
                   }`}
                 >
                   <span className={`text-sm flex-1 truncate ${isActive ? 'text-emerald-700 font-medium' : 'text-gray-700'}`}>
-                    {sp.label}
+                    {cam.name}
                   </span>
                   <span className="text-xs text-gray-400 tabular-nums flex-shrink-0">
-                    {sp.count.toLocaleString()}
+                    {cam.count.toLocaleString()}
                   </span>
                   <ChevronRight className={`w-3 h-3 flex-shrink-0 ${
                     isActive ? 'text-emerald-500' : 'text-gray-300'
@@ -172,16 +168,16 @@ export function CameraDetailView({ deployment, onBack }: CameraDetailViewProps) 
 
       {/* Bookmark button */}
       <button
-        id="animl-camera-bookmark"
+        id="animl-animal-bookmark"
         className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium
                    text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200
                    rounded-lg transition-colors"
       >
         <Bookmark className="w-4 h-4" />
-        {selectedLabel ? 'Bookmark Camera + Species' : 'Bookmark Camera'}
+        {selectedCameraId ? 'Bookmark Camera + Species' : 'Bookmark Species'}
       </button>
 
-      {/* Loading / Error / Images */}
+      {/* Loading / Error / Image list */}
       {loading && (
         <div className="flex items-center justify-center py-8 text-gray-400">
           <Loader2 className="w-5 h-5 animate-spin mr-2" />
@@ -202,6 +198,7 @@ export function CameraDetailView({ deployment, onBack }: CameraDetailViewProps) 
           hasMore={hasMore}
           onLoadMore={handleLoadMore}
           loadingMore={loadingMore}
+          showCameraName
         />
       )}
     </div>

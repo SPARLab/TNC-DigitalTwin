@@ -1,56 +1,58 @@
 // ============================================================================
-// CameraListView — Displays camera deployment cards with image counts
-// Each card shows camera name, coordinate summary, and species presence.
-// Clicking a card navigates to CameraDetailView.
+// CameraListView — Compact single-line camera rows
+// Each row: camera name + image count + chevron. One line per camera.
+// Animal-first: grayed-out cameras with 0 matches (DFT-028).
+// Camera-first: all cameras with total counts.
 // ============================================================================
 
-import { useMemo } from 'react';
-import { Camera, MapPin, ChevronRight } from 'lucide-react';
-import type { AnimlDeployment, AnimlAnimalTag } from '../../../../services/animlService';
+import { useMemo, useState } from 'react';
+import { ChevronRight, Search } from 'lucide-react';
+import type { AnimlDeployment } from '../../../../services/animlService';
 
 interface CameraListViewProps {
   deployments: AnimlDeployment[];
-  animalTags: AnimlAnimalTag[];
-  selectedAnimals: Set<string>;
+  /** Deployment IDs matching the current animal filter. null = all match. */
+  matchingDeploymentIds: Set<number> | null;
+  /** Get filtered count for a deployment. Returns null if lookups not ready. */
+  getFilteredCount: (deploymentId: number) => number | null;
+  hasFilter: boolean;
   onSelectCamera: (deploymentId: number) => void;
 }
 
 export function CameraListView({
   deployments,
-  animalTags,
-  selectedAnimals,
+  matchingDeploymentIds,
+  getFilteredCount,
+  hasFilter,
   onSelectCamera,
 }: CameraListViewProps) {
-  const hasFilter = selectedAnimals.size > 0;
+  const [searchText, setSearchText] = useState('');
 
-  // Build a set of deployment IDs that have observations for selected animals
-  const deploymentRelevance = useMemo(() => {
-    if (!hasFilter) return null; // no filter = all relevant
+  // Filter by search text
+  const filteredDeployments = useMemo(() => {
+    if (!searchText.trim()) return deployments;
+    const q = searchText.toLowerCase();
+    return deployments.filter(
+      d => d.name.toLowerCase().includes(q) || d.animl_dp_id.toLowerCase().includes(q),
+    );
+  }, [deployments, searchText]);
 
-    const relevantIds = new Set<number>();
-    for (const tag of animalTags) {
-      if (selectedAnimals.has(tag.label)) {
-        // Each tag has recentObservations with deployment_id
-        for (const obs of tag.recentObservations) {
-          relevantIds.add(obs.deployment_id);
-        }
-      }
-    }
-    return relevantIds;
-  }, [animalTags, selectedAnimals, hasFilter]);
-
-  // Sort deployments: relevant ones first, then by name
+  // Sort: relevant cameras first when filtered; alphabetical otherwise
   const sortedDeployments = useMemo(() => {
-    return [...deployments].sort((a, b) => {
-      if (deploymentRelevance) {
-        const aRelevant = deploymentRelevance.has(a.id);
-        const bRelevant = deploymentRelevance.has(b.id);
-        if (aRelevant && !bRelevant) return -1;
-        if (!aRelevant && bRelevant) return 1;
+    return [...filteredDeployments].sort((a, b) => {
+      if (matchingDeploymentIds) {
+        const aMatch = matchingDeploymentIds.has(a.id);
+        const bMatch = matchingDeploymentIds.has(b.id);
+        if (aMatch && !bMatch) return -1;
+        if (!aMatch && bMatch) return 1;
       }
       return a.name.localeCompare(b.name);
     });
-  }, [deployments, deploymentRelevance]);
+  }, [filteredDeployments, matchingDeploymentIds]);
+
+  const matchCount = matchingDeploymentIds
+    ? filteredDeployments.filter(d => matchingDeploymentIds.has(d.id)).length
+    : filteredDeployments.length;
 
   if (deployments.length === 0) {
     return (
@@ -62,57 +64,75 @@ export function CameraListView({
 
   return (
     <div id="animl-camera-list" className="space-y-2">
-      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-        {deployments.length} Camera{deployments.length !== 1 ? 's' : ''}
-      </span>
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          {hasFilter
+            ? `${matchCount} of ${filteredDeployments.length} Cameras`
+            : `${filteredDeployments.length} Camera${filteredDeployments.length !== 1 ? 's' : ''}`}
+        </span>
+      </div>
 
-      {sortedDeployments.map(dep => {
-        const isGreyed = hasFilter && deploymentRelevance && !deploymentRelevance.has(dep.id);
-        const coords = dep.geometry?.coordinates;
+      {/* Search — show when 10+ cameras */}
+      {deployments.length >= 10 && (
+        <div id="animl-camera-search" className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search cameras..."
+            value={searchText}
+            onChange={e => setSearchText(e.target.value)}
+            className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg
+                       bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400"
+          />
+        </div>
+      )}
 
-        return (
-          <button
-            key={dep.id}
-            id={`animl-camera-card-${dep.id}`}
-            onClick={() => onSelectCamera(dep.id)}
-            className={`w-full text-left p-3 rounded-lg border transition-all group ${
-              isGreyed
-                ? 'bg-gray-50 border-gray-200 opacity-50'
-                : 'bg-white border-gray-200 hover:border-emerald-300 hover:shadow-sm'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <div className={`p-1.5 rounded-md ${isGreyed ? 'bg-gray-100' : 'bg-emerald-50'}`}>
-                <Camera className={`w-4 h-4 ${isGreyed ? 'text-gray-400' : 'text-emerald-600'}`} />
-              </div>
+      {/* Compact camera rows */}
+      <div className="divide-y divide-gray-100">
+        {sortedDeployments.map(dep => {
+          const isGreyed = hasFilter && matchingDeploymentIds
+            ? !matchingDeploymentIds.has(dep.id)
+            : false;
+          const count = getFilteredCount(dep.id);
 
-              <div className="flex-1 min-w-0">
-                <h4 className={`text-sm font-medium truncate ${isGreyed ? 'text-gray-400' : 'text-gray-900'}`}>
-                  {dep.name}
-                </h4>
-                {coords && (
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <MapPin className="w-3 h-3 text-gray-400" />
-                    <span className="text-xs text-gray-400 truncate">
-                      {coords[1].toFixed(4)}, {coords[0].toFixed(4)}
-                    </span>
-                  </div>
-                )}
-              </div>
+          return (
+            <button
+              key={dep.id}
+              id={`animl-camera-row-${dep.id}`}
+              onClick={() => onSelectCamera(dep.id)}
+              className={`w-full flex items-center gap-2 px-2 py-2 text-left transition-colors ${
+                isGreyed
+                  ? 'opacity-40 hover:opacity-60'
+                  : 'hover:bg-emerald-50'
+              }`}
+            >
+              <span className={`text-sm flex-1 truncate ${
+                isGreyed ? 'text-gray-400' : 'text-gray-900'
+              }`}>
+                {dep.name}
+              </span>
 
-              <ChevronRight className={`w-4 h-4 flex-shrink-0 ${
-                isGreyed ? 'text-gray-300' : 'text-gray-400 group-hover:text-emerald-500'
+              {count !== null && (
+                <span className={`text-xs tabular-nums flex-shrink-0 ${
+                  isGreyed ? 'text-gray-300' : 'text-gray-400'
+                }`}>
+                  {count.toLocaleString()}
+                </span>
+              )}
+
+              <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${
+                isGreyed ? 'text-gray-300' : 'text-gray-300'
               }`} />
-            </div>
+            </button>
+          );
+        })}
+      </div>
 
-            {isGreyed && (
-              <p className="text-xs text-gray-400 mt-1.5 italic">
-                No matching images at this location
-              </p>
-            )}
-          </button>
-        );
-      })}
+      {filteredDeployments.length === 0 && searchText && (
+        <p className="text-sm text-gray-400 text-center py-4">
+          No cameras matching "{searchText}"
+        </p>
+      )}
     </div>
   );
 }
