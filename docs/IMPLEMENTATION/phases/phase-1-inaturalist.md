@@ -1,7 +1,7 @@
 # Phase 1: iNaturalist Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 7 / 10 tasks complete  
+**Progress:** 9 / 10 tasks complete  
 **Branch:** `v2/inaturalist`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD  
@@ -27,12 +27,12 @@
 | 17 | **iNaturalist: Compact Filter Section (Dropdown)** | ✅ | Medium | Filter Observations in Browse tab: tall list → dropdown; include Select All |
 | 18 | **iNaturalist: Rename Legend Widget Title** | ✅ | Low | Change "Filter Observations" → "iNaturalist Taxa" in floating legend widget |
 | 19 | **iNaturalist: Add Observation Search Bar** | ✅ | Medium | Search observations by common/scientific name in Browse tab |
-| 20 | **iNaturalist: Reduce Pagination to 10 per Page** | ⚪ | Low | Change PAGE_SIZE from 20 → 10 in useINaturalistObservations |
-| 21 | **iNaturalist: Add Date Range Filter** | ⚪ | Medium | Add start/end date pickers in Browse tab filter section |
+| 20 | **iNaturalist: Reduce Pagination to 10 per Page** | ✅ | Low | Change PAGE_SIZE from 20 → 10 in useINaturalistObservations |
+| 21 | **iNaturalist: Add Date Range Filter** | ✅ | Medium | Add start/end date pickers in Browse tab filter section |
 | 22 | **iNaturalist: Remember Last Active Tab** | ⚪ | Low | Persist Overview vs Browse tab per layer; restore on reactivation |
 
-**Active tasks remaining:** 3  
-**Recently completed:** Task 19 (Add Observation Search Bar) ✅ (Feb 13), Task 18 (Rename Legend Widget Title) ✅ (Feb 13), Task 16 (Remove Bookmark Button) ✅ (Feb 13), Task 17 (Compact Filter Section) ✅ (Feb 13), Task 14 (Observation Card Click → Map Highlight + Detail View) ✅ (Feb 12), Task 15 (Map Marker Click → Zoom + Detail View) ✅ (Feb 12), Task 13 (iNaturalist Layer Icons & Loading) ✅ (Feb 11)
+**Active tasks remaining:** 1  
+**Recently completed:** Task 21 (Add Date Range Filter) ✅ (Feb 13), Task 20 (Reduce Pagination to 10 per Page) ✅ (Feb 13), Task 19 (Add Observation Search Bar) ✅ (Feb 13), Task 18 (Rename Legend Widget Title) ✅ (Feb 13), Task 16 (Remove Bookmark Button) ✅ (Feb 13), Task 17 (Compact Filter Section) ✅ (Feb 13), Task 14 (Observation Card Click → Map Highlight + Detail View) ✅ (Feb 12), Task 15 (Map Marker Click → Zoom + Detail View) ✅ (Feb 12), Task 13 (iNaturalist Layer Icons & Loading) ✅ (Feb 11)
 
 ---
 
@@ -61,7 +61,7 @@ Implement the iNaturalist observations browse experience in the right sidebar. T
 |----|------|--------|----------|-------|
 | 1.1 | Query iNaturalist service to understand attributes | 🟢 Complete | | Completed during Task 13 implementation |
 | 1.2 | Create iNaturalist right sidebar shell | 🟢 Complete | | INaturalistBrowseTab, OverviewTab, DetailView created |
-| 1.3 | Implement filter UI (taxon, species, date, etc.) | 🟡 Partial | | Taxa filter complete (Task 17), date range pending (Task 21) |
+| 1.3 | Implement filter UI (taxon, species, date, etc.) | 🟢 Complete | | Taxa filter (Task 17), date range (Task 21), search bar (Task 19) |
 | 1.4 | Implement observation list with cards | 🟢 Complete | | Tasks 14-19 complete |
 | 1.5 | Implement observation detail view | 🟢 Complete | | Task 14 complete |
 

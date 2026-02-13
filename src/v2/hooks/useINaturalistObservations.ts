@@ -18,7 +18,7 @@ export interface INatFilters {
   skip?: boolean;
 }
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 export function useINaturalistObservations(filters: INatFilters) {
   const { allObservations, loading, error, totalServiceCount } = useINaturalistFilter();
@@ -56,14 +56,15 @@ export function useINaturalistObservations(filters: INatFilters) {
     [filters.selectedTaxa],
   );
   const searchTermKey = filters.searchTerm || '';
-  const prevKeyRef = useRef(taxaKey + '|' + searchTermKey);
+  const dateKey = `${filters.startDate || ''}~${filters.endDate || ''}`;
+  const prevKeyRef = useRef(taxaKey + '|' + searchTermKey + '|' + dateKey);
   useEffect(() => {
-    const currentKey = taxaKey + '|' + searchTermKey;
+    const currentKey = taxaKey + '|' + searchTermKey + '|' + dateKey;
     if (currentKey !== prevKeyRef.current) {
       setPage(1);
       prevKeyRef.current = currentKey;
     }
-  }, [taxaKey, searchTermKey]);
+  }, [taxaKey, searchTermKey, dateKey]);
 
   // Pagination
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);

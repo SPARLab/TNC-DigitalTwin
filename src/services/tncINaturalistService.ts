@@ -8,7 +8,7 @@ export interface TNCArcGISObservation {
   taxon_category_name: string;
   scientific_name: string;
   common_name: string | null;
-  observed_on: string;
+  observed_on: string | number; // ArcGIS returns epoch-ms for date fields
   observed_on_month: number;
   observed_on_year: number;
   // Full taxonomic hierarchy (actual field names from ArcGIS)

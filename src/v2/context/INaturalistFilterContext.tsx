@@ -52,6 +52,15 @@ const INaturalistFilterContext = createContext<INaturalistContextValue | null>(n
 
 const MAX_RESULTS = 5000; // Enough for the preserve area
 
+/** Convert ArcGIS epoch-ms (or string) date to YYYY-MM-DD for consistent comparisons */
+function normalizeDate(raw: string | number): string {
+  if (typeof raw === 'number' || /^\d{10,}$/.test(String(raw))) {
+    const d = new Date(Number(raw));
+    return d.toISOString().slice(0, 10); // YYYY-MM-DD
+  }
+  return String(raw);
+}
+
 /** Transform TNC ArcGIS response to our simplified format */
 function transformObservation(obs: TNCArcGISObservation): INatObservation {
   return {
@@ -60,7 +69,7 @@ function transformObservation(obs: TNCArcGISObservation): INatObservation {
     commonName: obs.common_name || null,
     scientificName: obs.scientific_name,
     taxonCategory: obs.taxon_category_name || 'Unknown',
-    observedOn: obs.observed_on,
+    observedOn: normalizeDate(obs.observed_on),
     observer: obs.user_name || 'Unknown',
     photoUrl: tncINaturalistService.getPrimaryImageUrl(obs),
     photoAttribution: tncINaturalistService.getPhotoAttribution(obs),

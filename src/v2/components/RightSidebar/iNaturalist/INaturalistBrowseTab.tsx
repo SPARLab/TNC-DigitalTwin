@@ -10,7 +10,7 @@
 // ============================================================================
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Loader2, AlertCircle, ChevronDown, Search, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, AlertCircle, ChevronDown, Search, X, Calendar } from 'lucide-react';
 import {
   useINaturalistObservations,
   TAXON_CATEGORIES,
@@ -31,6 +31,10 @@ export function INaturalistBrowseTab() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
+  // Date range state
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
   // Debounce search term (300ms)
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -42,7 +46,9 @@ export function INaturalistBrowseTab() {
   const filters: INatFilters = useMemo(() => ({
     selectedTaxa,
     searchTerm: debouncedSearchTerm,
-  }), [selectedTaxa, debouncedSearchTerm]);
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+  }), [selectedTaxa, debouncedSearchTerm, startDate, endDate]);
 
   // Data fetching
   const {
@@ -104,6 +110,7 @@ export function INaturalistBrowseTab() {
   const hasFilter = selectedTaxa.size > 0;
   const filterCount = hasFilter ? selectedTaxa.size : TAXON_CATEGORIES.length;
   const hasActiveSearch = debouncedSearchTerm.trim().length > 0;
+  const hasDateFilter = !!(startDate || endDate);
 
   return (
     <div id="inat-browse-tab" className="space-y-3">
@@ -197,6 +204,48 @@ export function INaturalistBrowseTab() {
         <p className="text-xs text-gray-500 italic mt-2">
           Tip: You can also filter using the legend widget on the map
         </p>
+      </div>
+
+      {/* Date range filter */}
+      <div id="inat-date-range-filter" className="bg-slate-50 rounded-lg p-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5" />
+            Date Range
+          </span>
+          {hasDateFilter && (
+            <button
+              id="inat-date-range-clear"
+              onClick={() => { setStartDate(''); setEndDate(''); }}
+              className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-2 mt-2">
+          <input
+            id="inat-date-start"
+            type="date"
+            value={startDate}
+            max={endDate || undefined}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="flex-1 px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg
+                       focus:outline-none focus:border-gray-300 focus:shadow-[0_0_0_1px_rgba(107,114,128,0.3)]
+                       text-gray-700"
+          />
+          <span className="text-xs text-gray-400">to</span>
+          <input
+            id="inat-date-end"
+            type="date"
+            value={endDate}
+            min={startDate || undefined}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="flex-1 px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg
+                       focus:outline-none focus:border-gray-300 focus:shadow-[0_0_0_1px_rgba(107,114,128,0.3)]
+                       text-gray-700"
+          />
+        </div>
       </div>
 
       {/* Loading state */}
