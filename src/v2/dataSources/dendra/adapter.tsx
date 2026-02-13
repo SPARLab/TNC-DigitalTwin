@@ -11,6 +11,7 @@ import { useEffect } from 'react';
 import { DendraProvider, useDendra } from '../../context/DendraContext';
 import { DendraOverviewTab } from '../../components/RightSidebar/Dendra/DendraOverviewTab';
 import { DendraBrowseTab } from '../../components/RightSidebar/Dendra/DendraBrowseTab';
+import { DendraTimeSeriesPanel } from '../../components/FloatingWidgets/DendraTimeSeriesPanel/DendraTimeSeriesPanel';
 import type { DataSourceAdapter, OverviewTabProps, CacheStatus } from '../types';
 
 // ── Overview tab wrapper (warms cache on activation) ─────────────────────────
@@ -45,5 +46,6 @@ export const dendraAdapter: DataSourceAdapter = {
   layerIds: [], // Dynamic — registered at runtime via registerDendraLayerId
   OverviewTab: DendraOverview,
   BrowseTab: DendraBrowseTab,
+  FloatingPanel: DendraTimeSeriesPanel,
   CacheProvider: DendraProvider,
 };

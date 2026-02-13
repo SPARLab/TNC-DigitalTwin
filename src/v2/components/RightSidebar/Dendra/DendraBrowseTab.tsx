@@ -10,12 +10,13 @@ import { useDendra, useSummariesByStation } from '../../../context/DendraContext
 import { useMap } from '../../../context/MapContext';
 import { StationCard } from './StationCard';
 import { StationDetailView } from './StationDetailView';
-import type { DendraStation } from '../../../services/dendraStationService';
+import type { DendraStation, DendraSummary } from '../../../services/dendraStationService';
 
 export function DendraBrowseTab() {
   const {
     filteredStations, loading, error, dataLoaded,
     showActiveOnly, toggleActiveOnly, stationCount,
+    openChart,
   } = useDendra();
   const summariesByStation = useSummariesByStation();
 
@@ -37,6 +38,22 @@ export function DendraBrowseTab() {
     setTimeout(clearHighlight, 5000);
   }, [highlightPoint, clearHighlight, viewRef]);
 
+  // Chart handler — opens the floating panel + pans/zooms to the station
+  const handleViewChart = useCallback((station: DendraStation, summary: DendraSummary) => {
+    openChart(station, summary);
+
+    // Pan/zoom to the station and highlight it
+    highlightPoint(station.longitude, station.latitude);
+    const view = viewRef.current;
+    if (view) {
+      view.goTo(
+        { center: [station.longitude, station.latitude], zoom: 14 },
+        { duration: 1000 },
+      );
+    }
+    setTimeout(clearHighlight, 8000);
+  }, [openChart, highlightPoint, clearHighlight, viewRef]);
+
   // Drill-down: station detail view
   if (selectedStation) {
     const stationSummaries = summariesByStation.get(selectedStation.station_id) ?? [];
@@ -46,6 +63,7 @@ export function DendraBrowseTab() {
         summaries={stationSummaries}
         onBack={() => setSelectedStation(null)}
         onViewOnMap={() => handleViewOnMap(selectedStation)}
+        onViewChart={(summary) => handleViewChart(selectedStation, summary)}
       />
     );
   }

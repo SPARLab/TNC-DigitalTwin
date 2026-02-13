@@ -1,7 +1,7 @@
 # Phase 3: Dendra Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 4 / 6 tasks  
+**Progress:** 4 / 10 tasks (3.5 in progress, split into 5 sub-tasks)  
 **Branch:** `v2/dendra`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -45,7 +45,11 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 | 3.2 | Create Dendra right sidebar shell | 🟢 Complete | | Overview/Browse tabs, drill-down |
 | 3.3 | Implement sensor filter UI | 🟢 Complete | | Active-only toggle |
 | 3.4 | Implement sensor list with cards | 🟢 Complete | | StationCard, StationDetailView |
-| 3.5 | Implement sensor detail with time series chart | ⚪ Not Started | | **NEXT:** Floating chart (ECharts) |
+| 3.5 | Implement sensor detail with time series chart | 🟡 In Progress | | **V1 WORKS:** Floating ECharts panel loads first datastream. **ISSUES:** Glassmorphism not visible, subsequent datastream clicks don't refresh chart, some sensors have 0 data despite showing record counts. **Sub-tasks created below.** |
+| 3.5a | Fix: Subsequent datastream clicks don't update chart | ⚪ Not Started | | Chart loads on first click, but clicking another datastream doesn't refresh the data |
+| 3.5b | Fix: Some sensors show 0 data despite record counts | ⚪ Not Started | | E.g., "197,000 points" shown but chart is empty — investigate v0 bridge |
+| 3.5c | Fix: Glassmorphism background not visible | ⚪ Not Started | | Tried bg-white/60 + backdrop-blur-md; user can't see the effect |
+| 3.5d | Polish: Improve right sidebar layout/styling | ⚪ Not Started | | User feedback: "something feels off" about sidebar appearance |
 | 3.6 | Implement time range filter (Level 3) | ⚪ Not Started | | Date range + aggregation |
 
 **Status Legend:**
@@ -275,7 +279,7 @@ bookmark: {
 
 ## Open Questions
 
-- [ ] Should we reuse any code from existing `DendraDetailsSidebar.tsx`? (ECharts setup likely reusable)
+- [ ] Should we reuse any code from existing `DendraDetailsSidebar.tsx`? (ECharts setup likely reusable) -> Yes but try to use similar style to the HTML mockup
 - [x] Which charting library to use? → ECharts (already a dependency, v0 uses it)
 - [ ] Floating panel vs. in-sidebar for time series? (mockups show both; **floating chart chosen for next task 3.5**)
 - [ ] How to handle sensors with very long data ranges? (Summary table has pre-computed stats; paginated Data table)
@@ -288,6 +292,7 @@ bookmark: {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 13, 2026 | 3.5 | **Task 3.5 V1 partial complete.** Built floating time series panel with ECharts: DendraTimeSeriesPanel component (glassmorphism styling, teal theme, stats sidebar, CSV export, minimize/close), bridged v2 dendra_ds_id → v0 legacy service for time series data (Table 1 on per-type services is empty), clickable DatastreamSummaryCards (entire card is button with inline stats), pan/zoom + highlight station when chart opens. **Known issues:** (1) Subsequent datastream clicks don't refresh chart, (2) Some sensors show 0 data despite record counts in summary, (3) Glassmorphism background not visible to user, (4) Sidebar layout needs polish. Sub-tasks created: 3.5a-d. | Claude |
 | Feb 12, 2026 | 3.1-3.4 | **Tasks complete.** Full Dendra station browse adapter. Service layer (`dendraStationService.ts`), DendraContext (per-service cache), adapter + useMapBehavior, dendraLayer.ts (green/gray station markers), Overview/Browse tabs, StationCard, StationDetailView with datastream summaries. Fixes: buildServiceUrl (no double path), elevation null/NaN, layer-switch graphics clearing (only active layer populated). **Next: 3.5 floating time series chart.** | Claude |
 | Feb 12, 2026 | 3.1 | **Service analysis complete.** Discovered 10 per-type Dendra sensor services via Dan's Data Catalog FeatureServer. Documented schemas, URLs, and architectural decisions. Added Task 0.9 (Dynamic Layer Registry) to Phase 0 as blocking prerequisite. | Claude |
 | Jan 23, 2026 | - | Created phase document | Will + Claude |

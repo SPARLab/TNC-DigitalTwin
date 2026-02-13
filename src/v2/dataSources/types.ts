@@ -46,6 +46,9 @@ export interface DataSourceAdapter {
   /** Floating legend widget — rendered only when this source is the active layer */
   LegendWidget?: ComponentType;
 
+  /** Floating panel overlaying the map — rendered only when this source is active */
+  FloatingPanel?: ComponentType;
+
   /** Context provider for caching + filter state. Mounted at app level in V2App. */
   CacheProvider?: ComponentType<{ children: ReactNode }>;
 }

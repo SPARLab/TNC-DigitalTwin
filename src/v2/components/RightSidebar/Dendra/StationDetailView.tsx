@@ -4,7 +4,7 @@
 // Time series chart deferred to task 3.5.
 // ============================================================================
 
-import { ChevronLeft, MapPin, Radio, Activity, Calendar, TrendingUp, TrendingDown } from 'lucide-react';
+import { ChevronLeft, MapPin, Radio, Activity, Calendar, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
 import type { DendraStation, DendraSummary } from '../../../services/dendraStationService';
 import { formatTimestamp, formatValue } from '../../../services/dendraStationService';
 
@@ -13,9 +13,10 @@ interface StationDetailViewProps {
   summaries: DendraSummary[];
   onBack: () => void;
   onViewOnMap: () => void;
+  onViewChart?: (summary: DendraSummary) => void;
 }
 
-export function StationDetailView({ station, summaries, onBack, onViewOnMap }: StationDetailViewProps) {
+export function StationDetailView({ station, summaries, onBack, onViewOnMap, onViewChart }: StationDetailViewProps) {
   const isActive = station.is_active === 1;
   const displayName = station.station_name?.replace(/^Dangermond_/, '').replace(/_/g, ' ') ?? 'Unknown';
 
@@ -60,8 +61,8 @@ export function StationDetailView({ station, summaries, onBack, onViewOnMap }: S
             label="Location"
             value={`${station.latitude.toFixed(4)}, ${station.longitude.toFixed(4)}`}
           />
-          {station.elevation != null && (
-            <DetailRow icon={<TrendingUp className="w-3 h-3" />} label="Elevation" value={`${station.elevation.toFixed(0)} m`} />
+          {station.elevation != null && !isNaN(Number(station.elevation)) && (
+            <DetailRow icon={<TrendingUp className="w-3 h-3" />} label="Elevation" value={`${Number(station.elevation).toFixed(0)} m`} />
           )}
           <DetailRow icon={<Activity className="w-3 h-3" />} label="Datastreams" value={String(summaries.length || station.datastream_count)} />
         </dl>
@@ -91,20 +92,25 @@ export function StationDetailView({ station, summaries, onBack, onViewOnMap }: S
         ) : (
           <div className="space-y-2">
             {summaries.map(summary => (
-              <DatastreamSummaryCard key={summary.datastream_id} summary={summary} />
+              <DatastreamSummaryCard
+                key={summary.datastream_id}
+                summary={summary}
+                onViewChart={onViewChart ? () => onViewChart(summary) : undefined}
+              />
             ))}
           </div>
         )}
       </div>
 
-      {/* Placeholder for future time series chart (task 3.5) */}
+      {/* Chart hint */}
       <div
-        id="dendra-chart-placeholder"
-        className="border border-dashed border-gray-200 rounded-lg p-4 text-center"
+        id="dendra-chart-hint"
+        className="bg-teal-50 border border-teal-100 rounded-lg p-3 text-center"
       >
-        <Activity className="w-6 h-6 text-gray-300 mx-auto mb-2" />
-        <p className="text-xs text-gray-400">
-          Time series chart — coming in task 3.5
+        <BarChart3 className="w-5 h-5 text-teal-400 mx-auto mb-1" />
+        <p className="text-xs text-teal-700">
+          Click <strong>View Chart</strong> on any datastream to see the interactive
+          time series on the map panel below.
         </p>
       </div>
     </div>
@@ -123,59 +129,60 @@ function DetailRow({ icon, label, value }: { icon: React.ReactNode; label: strin
   );
 }
 
-function DatastreamSummaryCard({ summary }: { summary: DendraSummary }) {
+function DatastreamSummaryCard({
+  summary, onViewChart,
+}: {
+  summary: DendraSummary; onViewChart?: () => void;
+}) {
+  const Wrapper = onViewChart ? 'button' : 'div';
   return (
-    <div
+    <Wrapper
       id={`dendra-ds-${summary.datastream_id}`}
-      className="bg-white border border-gray-100 rounded-md p-3 hover:border-gray-200 transition-colors"
+      {...(onViewChart ? { onClick: onViewChart, type: 'button' as const } : {})}
+      className={`w-full text-left bg-white border rounded-md p-3 transition-colors ${
+        onViewChart
+          ? 'border-gray-100 hover:border-teal-300 hover:bg-teal-50/30 cursor-pointer group'
+          : 'border-gray-100'
+      }`}
     >
-      {/* Datastream name + unit */}
-      <div className="flex items-center justify-between mb-2">
-        <h5 className="text-sm font-medium text-gray-900">{summary.datastream_name}</h5>
+      {/* Top row: name + unit + chart icon */}
+      <div className="flex items-center justify-between mb-1.5">
+        <h5 className="text-sm font-medium text-gray-900 flex items-center gap-1.5">
+          {onViewChart && <BarChart3 className="w-3.5 h-3.5 text-teal-400 group-hover:text-teal-600 transition-colors shrink-0" />}
+          {summary.datastream_name}
+        </h5>
         {summary.unit && (
-          <span className="text-xs text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">
+          <span className="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded shrink-0">
             {summary.unit}
           </span>
         )}
       </div>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-3 gap-2 text-xs">
-        <StatCell
-          icon={<TrendingDown className="w-3 h-3 text-blue-400" />}
-          label="Min"
-          value={formatValue(summary.min_value)}
-        />
-        <StatCell
-          icon={<Activity className="w-3 h-3 text-amber-500" />}
-          label="Avg"
-          value={formatValue(summary.avg_value)}
-        />
-        <StatCell
-          icon={<TrendingUp className="w-3 h-3 text-red-400" />}
-          label="Max"
-          value={formatValue(summary.max_value)}
-        />
-      </div>
-
-      {/* Date range + record count */}
-      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50 text-xs text-gray-400">
-        <span className="flex items-center gap-1">
-          <Calendar className="w-3 h-3" />
-          {formatTimestamp(summary.first_reading_time)} — {formatTimestamp(summary.last_reading_time)}
+      {/* Compact inline stats */}
+      <div className="flex items-center gap-3 text-xs text-gray-500 mb-1.5">
+        <span className="flex items-center gap-0.5">
+          <TrendingDown className="w-3 h-3 text-blue-400" />
+          {formatValue(summary.min_value)}
         </span>
-        <span>{summary.total_records?.toLocaleString() ?? '—'} records</span>
+        <span className="flex items-center gap-0.5">
+          <Activity className="w-3 h-3 text-amber-500" />
+          {formatValue(summary.avg_value)}
+        </span>
+        <span className="flex items-center gap-0.5">
+          <TrendingUp className="w-3 h-3 text-red-400" />
+          {formatValue(summary.max_value)}
+        </span>
+        <span className="ml-auto text-gray-400">
+          {summary.total_records?.toLocaleString() ?? '—'} pts
+        </span>
       </div>
-    </div>
+
+      {/* Date range */}
+      <div className="flex items-center gap-1 text-[10px] text-gray-400">
+        <Calendar className="w-3 h-3" />
+        {formatTimestamp(summary.first_reading_time)} — {formatTimestamp(summary.last_reading_time)}
+      </div>
+    </Wrapper>
   );
 }
 
-function StatCell({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="flex flex-col items-center gap-0.5 py-1 bg-gray-50 rounded">
-      {icon}
-      <span className="text-gray-400">{label}</span>
-      <span className="text-gray-800 font-medium">{value}</span>
-    </div>
-  );
-}

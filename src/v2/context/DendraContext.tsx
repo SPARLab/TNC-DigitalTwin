@@ -19,9 +19,35 @@ import {
 import { useLayers } from './LayerContext';
 import { useCatalog } from './CatalogContext';
 import {
-  fetchServiceData, buildServiceUrl,
+  fetchServiceData, fetchTimeSeries, buildServiceUrl,
   type DendraStation, type DendraSummary, type DendraServiceData,
+  type DendraTimeSeriesPoint,
 } from '../services/dendraStationService';
+
+// ── Chart state ──────────────────────────────────────────────────────────────
+
+export interface DendraChartState {
+  /** Whether the floating chart panel is visible */
+  open: boolean;
+  /** Whether the panel is minimized to a bar */
+  minimized: boolean;
+  /** Station being charted */
+  station: DendraStation | null;
+  /** Datastream summary being charted */
+  summary: DendraSummary | null;
+  /** Time series data points */
+  data: DendraTimeSeriesPoint[];
+  /** Loading state for time series fetch */
+  loading: boolean;
+  /** Error message if fetch failed */
+  error: string | null;
+}
+
+const CHART_INITIAL: DendraChartState = {
+  open: false, minimized: false,
+  station: null, summary: null,
+  data: [], loading: false, error: null,
+};
 
 // ── Context value ────────────────────────────────────────────────────────────
 
@@ -52,6 +78,12 @@ interface DendraContextValue {
 
   /** Filtered stations (respects showActiveOnly filter) */
   filteredStations: DendraStation[];
+
+  // Chart state (floating time series panel)
+  chart: DendraChartState;
+  openChart: (station: DendraStation, summary: DendraSummary) => void;
+  closeChart: () => void;
+  toggleMinimizeChart: () => void;
 }
 
 const DendraCtx = createContext<DendraContextValue | null>(null);
@@ -74,6 +106,9 @@ export function DendraProvider({ children }: { children: ReactNode }) {
 
   // Filter state
   const [showActiveOnly, setShowActiveOnly] = useState(false);
+
+  // Chart state (floating time series panel)
+  const [chart, setChart] = useState<DendraChartState>(CHART_INITIAL);
 
   // Derive service URL from active Dendra layer's catalog metadata
   const serviceInfo = useMemo(() => {
@@ -152,6 +187,43 @@ export function DendraProvider({ children }: { children: ReactNode }) {
     setShowActiveOnly(prev => !prev);
   }, []);
 
+  // ── Chart actions ────────────────────────────────────────────────────────
+
+  const openChart = useCallback((station: DendraStation, summary: DendraSummary) => {
+    if (!serviceInfo) return;
+
+    setChart({
+      open: true, minimized: false,
+      station, summary,
+      data: [], loading: true, error: null,
+    });
+
+    fetchTimeSeries(serviceInfo.url, station.station_id, summary.datastream_name, summary.dendra_ds_id)
+      .then(result => {
+        setChart(prev => ({ ...prev, data: result.points, loading: false }));
+      })
+      .catch(err => {
+        console.error('[Dendra Chart] ❌ Time series fetch failed:', err);
+        setChart(prev => ({
+          ...prev, loading: false,
+          error: err instanceof Error ? err.message : 'Failed to load time series',
+        }));
+      });
+  }, [serviceInfo]);
+
+  const closeChart = useCallback(() => {
+    setChart(CHART_INITIAL);
+  }, []);
+
+  const toggleMinimizeChart = useCallback(() => {
+    setChart(prev => ({ ...prev, minimized: !prev.minimized }));
+  }, []);
+
+  // Close chart when active layer changes
+  useEffect(() => {
+    setChart(CHART_INITIAL);
+  }, [serviceInfo]);
+
   // Filtered stations
   const filteredStations = useMemo(() => {
     if (!showActiveOnly) return currentData.stations;
@@ -171,9 +243,14 @@ export function DendraProvider({ children }: { children: ReactNode }) {
     showActiveOnly,
     toggleActiveOnly,
     filteredStations,
+    chart,
+    openChart,
+    closeChart,
+    toggleMinimizeChart,
   }), [
     currentData, serviceInfo, loading, error, dataLoaded,
     warmCache, showActiveOnly, toggleActiveOnly, filteredStations,
+    chart, openChart, closeChart, toggleMinimizeChart,
   ]);
 
   return <DendraCtx.Provider value={value}>{children}</DendraCtx.Provider>;

@@ -29,9 +29,10 @@ export function MapContainer() {
   const { viewRef, highlightLayerRef, setMapReady } = useMap();
   const { activeLayer } = useLayers();
 
-  // Data source adapter for the active layer (legend widget lookup)
+  // Data source adapter for the active layer (legend widget + floating panel lookup)
   const adapter = getAdapter(activeLayer?.dataSource);
   const LegendWidget = adapter?.LegendWidget;
+  const FloatingPanel = adapter?.FloatingPanel;
 
   // Cache/loading status for the active data source (generic loading overlay)
   const cacheStatus = useActiveCacheStatus(activeLayer?.dataSource);
@@ -87,6 +88,9 @@ export function MapContainer() {
 
       {/* Legend widget — only for the ACTIVE layer's data source */}
       {LegendWidget && <LegendWidget />}
+
+      {/* Floating panel — data source specific (e.g., Dendra time series chart) */}
+      {FloatingPanel && <FloatingPanel />}
 
       {/* Loading overlay — shown when active data source is fetching initial data */}
       {showLoading && (
