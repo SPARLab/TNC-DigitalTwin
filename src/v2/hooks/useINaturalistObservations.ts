@@ -13,6 +13,7 @@ export interface INatFilters {
   selectedTaxa?: Set<string>;
   startDate?: string;
   endDate?: string;
+  searchTerm?: string;
   /** When true, skip returning data (for conditional hook usage) */
   skip?: boolean;
 }
@@ -37,22 +38,32 @@ export function useINaturalistObservations(filters: INatFilters) {
     if (filters.endDate) {
       result = result.filter(o => o.observedOn <= filters.endDate!);
     }
+    if (filters.searchTerm && filters.searchTerm.trim()) {
+      const term = filters.searchTerm.toLowerCase().trim();
+      result = result.filter(o => {
+        const common = o.commonName?.toLowerCase() || '';
+        const scientific = o.scientificName.toLowerCase();
+        return common.includes(term) || scientific.includes(term);
+      });
+    }
 
     return result;
-  }, [allObservations, filters.skip, filters.selectedTaxa, filters.startDate, filters.endDate]);
+  }, [allObservations, filters.skip, filters.selectedTaxa, filters.startDate, filters.endDate, filters.searchTerm]);
 
   // Reset to page 1 when filters change
   const taxaKey = useMemo(
     () => (filters.selectedTaxa ? Array.from(filters.selectedTaxa).sort().join(',') : ''),
     [filters.selectedTaxa],
   );
-  const prevKeyRef = useRef(taxaKey);
+  const searchTermKey = filters.searchTerm || '';
+  const prevKeyRef = useRef(taxaKey + '|' + searchTermKey);
   useEffect(() => {
-    if (taxaKey !== prevKeyRef.current) {
+    const currentKey = taxaKey + '|' + searchTermKey;
+    if (currentKey !== prevKeyRef.current) {
       setPage(1);
-      prevKeyRef.current = taxaKey;
+      prevKeyRef.current = currentKey;
     }
-  }, [taxaKey]);
+  }, [taxaKey, searchTermKey]);
 
   // Pagination
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);

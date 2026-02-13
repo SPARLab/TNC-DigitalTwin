@@ -10,7 +10,7 @@
 // ============================================================================
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, AlertCircle, ChevronDown, Search, X } from 'lucide-react';
 import {
   useINaturalistObservations,
   TAXON_CATEGORIES,
@@ -27,9 +27,22 @@ export function INaturalistBrowseTab() {
   const { selectedTaxa, toggleTaxon, selectAll, allObservations } = useINaturalistFilter();
   const { activeLayer } = useLayers();
 
+  // Search state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // Debounce search term (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   const filters: INatFilters = useMemo(() => ({
     selectedTaxa,
-  }), [selectedTaxa]);
+    searchTerm: debouncedSearchTerm,
+  }), [selectedTaxa, debouncedSearchTerm]);
 
   // Data fetching
   const {
@@ -90,9 +103,39 @@ export function INaturalistBrowseTab() {
 
   const hasFilter = selectedTaxa.size > 0;
   const filterCount = hasFilter ? selectedTaxa.size : TAXON_CATEGORIES.length;
+  const hasActiveSearch = debouncedSearchTerm.trim().length > 0;
 
   return (
     <div id="inat-browse-tab" className="space-y-3">
+      {/* Search bar */}
+      <div id="inat-search-bar" className="relative">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by species name..."
+            className="w-full pl-9 pr-9 py-2.5 text-sm border border-gray-200 rounded-lg
+                       focus:outline-none focus:border-gray-300 focus:shadow-[0_0_0_1px_rgba(107,114,128,0.3)]
+                       placeholder:text-gray-400"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              aria-label="Clear search"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+        {hasActiveSearch && (
+          <p className="text-xs text-gray-500 mt-1.5">
+            Searching in {filterCount === TAXON_CATEGORIES.length ? 'all taxa' : `${filterCount} ${filterCount === 1 ? 'taxon' : 'taxa'}`}
+          </p>
+        )}
+      </div>
       {/* Filter section (DFT-038) - Compact dropdown */}
       <div id="inat-filter-section" className="bg-slate-50 rounded-lg p-3">
         <div className="flex items-center justify-between">
@@ -186,7 +229,7 @@ export function INaturalistBrowseTab() {
 
           {observations.length === 0 && !loading && (
             <p className="text-sm text-gray-400 text-center py-6">
-              No observations found{hasFilter ? ' for this filter' : ''}.
+              No observations found{hasActiveSearch ? ' matching your search' : hasFilter ? ' for this filter' : ''}.
             </p>
           )}
         </div>
