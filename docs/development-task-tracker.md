@@ -41,8 +41,8 @@
 | 26 | 2 | **2.10** Right Sidebar Scrollbar — Prevent content shift | ⚪ | Medium | Scrollbar should not move content when it appears (e.g., selecting species + camera). Use scrollbar-gutter: stable or overlay. |
 | 27 | 2 | **2.11** ANiML Date/Time Frame Filter — Above Species and Cameras | ⚪ | Medium | Add date range query UI above filter sections in Browse tab. |
 
-**Active tasks remaining:** 11  
-**Recently completed:** **Phase 2 Tasks 2.3–2.6** (ANiML multi-dimensional filter) ✅ (Feb 13), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
+**Active tasks remaining:** 10  
+**Recently completed:** **Task 26** (Right Sidebar Scrollbar Fix) ✅ (Feb 13), **Phase 2 Tasks 2.3–2.6** (ANiML multi-dimensional filter) ✅ (Feb 13), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
 
 ---
 

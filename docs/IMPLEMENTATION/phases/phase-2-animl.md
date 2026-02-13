@@ -1,8 +1,8 @@
 # Phase 2: ANiML Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 2 / 9 tasks  
-**In Progress:** Tasks 2.3–2.6 (Browse tab UX iteration)  
+**Progress:** 3 / 9 tasks  
+**In Progress:** Task 2.11 (Date/Time Frame Filter)  
 **Branch:** `v2/animl`  
 **Depends On:** Phase 0 (Foundation) — Data Source Adapter Pattern ✅ Complete  
 **Owner:** TBD
@@ -551,6 +551,7 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | Feb 12, 2026 | 2.3–2.6 | **Iteration 2 (WIP)**: User feedback — sequential drill-down too restrictive for research queries (need "mountain lions AND coyotes at cameras A,B,C in summer 2023"). Pivoting to multi-dimensional filter system. Design review via ui-ux-reviewer recommends **Option 2: Expandable filter sections** (Species/Cameras/Date/Spatial, all multi-select, collapsible). Next: implement expandable sections with multi-select checkboxes. | Will + Claude |
 | Feb 13, 2026 | 2.3–2.6 | **Iteration 2 Phase 1 MVP complete.** FilterSection.tsx (expandable, multi-select, Select All/Clear All). AnimlFilterContext: selectedCameras, toggleCamera, clearCameras, selectAllAnimals, selectAllCameras, filteredImageCount, getFilteredCountForSpecies. AnimlBrowseTab: Species + Cameras FilterSections, live result count, debounced image fetch, ImageList. Researchers can select multiple species AND cameras for complex queries. | Will + Claude |
 | Feb 13, 2026 | 2.10, 2.11 | **New tasks added.** 2.10: Right sidebar scrollbar — prevent content shift when scrollbar appears (e.g., selecting species + camera). 2.11: Add date/time frame filter above Species and Cameras in Browse tab. | Will + Claude |
+| Feb 13, 2026 | 2.10 | **Complete.** Added `scrollbar-gutter: stable` to right sidebar scroll area in `RightSidebar.tsx` + `.scroll-area-right-sidebar` CSS class in `index.css`. Prevents horizontal content shift when overflow scrollbar appears (e.g., expanding filter sections). Thin hover-reveal scrollbar for visual consistency. | Will + Claude |
 
 ---
 
