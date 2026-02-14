@@ -91,3 +91,13 @@ export function filterAnimlLayer(
     }
   }
 }
+
+/** Find camera graphic by deployment id (shared by highlight/badge features). */
+export function getAnimlCameraGraphicByDeploymentId(
+  layer: GraphicsLayer,
+  deploymentId: number,
+): Graphic | null {
+  return layer.graphics.toArray().find(
+    graphic => Number(graphic.attributes?.id) === deploymentId,
+  ) ?? null;
+}

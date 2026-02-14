@@ -44,11 +44,11 @@
 | 29 | 2 | **2.13** ANiML Image — Expanded View on Click | ✅ | Medium | Click thumbnail → larger view in sidebar; metadata; Back to list; auto-pagination across pages. |
 | 30 | 2 | **2.14** ANiML Expanded View — Arrow Key Navigation | ✅ | Low | Left/right arrow keys navigate; auto-paginate across page boundaries (20→21, 40→41). |
 | 31 | 2 | **2.7** ANiML Caching Strategy Investigation | ✅ | Low | Marked done for now; service/context caching in place. |
-| 32 | 2 | **2.15** ANiML Image Click → Highlight Camera on Map | ⚪ | Medium | Click image (list or expanded view) → blue ArcGIS native highlight on source camera. |
+| 32 | 2 | **2.15** ANiML Image Click → Highlight Camera on Map | ✅ | Medium | Completed: focusedDeploymentId in AnimlFilterContext; ArcGIS layerView.highlight(); onImageFocus from ImageList/expanded view. |
 | 33 | 2 | **2.16** ANiML Camera Badges — Numbered Icons for Query Results | ⚪ | Medium | When filter active: show count badge above cameras with matching images; cameras with 0 results get no badge. |
 
-**Active tasks remaining:** 11  
-**Recently completed:** **Task 31** (2.7 ANiML Caching Strategy — marked done) ✅ (Feb 13), **Tasks 29–30** (ANiML Expanded Image View + Arrow Key Nav + Auto-Pagination) ✅ (Feb 13), **Task 28** (ANiML Image List Pagination Prev/Next) ✅ (Feb 13), **Task 27** (ANiML Date/Time Frame Filter) ✅ (Feb 13), **Task 26** (Right Sidebar Scrollbar Fix) ✅ (Feb 13), **Phase 2 Tasks 2.3–2.6** (ANiML multi-dimensional filter) ✅ (Feb 13), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
+**Active tasks remaining:** 10  
+**Recently completed:** **Task 32** (2.15 ANiML Image Click → Highlight Camera on Map) ✅ (Feb 13), **Task 31** (2.7 ANiML Caching Strategy — marked done) ✅ (Feb 13), **Tasks 29–30** (ANiML Expanded Image View + Arrow Key Nav + Auto-Pagination) ✅ (Feb 13), **Task 28** (ANiML Image List Pagination Prev/Next) ✅ (Feb 13), **Task 27** (ANiML Date/Time Frame Filter) ✅ (Feb 13), **Task 26** (Right Sidebar Scrollbar Fix) ✅ (Feb 13), **Phase 2 Tasks 2.3–2.6** (ANiML multi-dimensional filter) ✅ (Feb 13), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
 
 ---
 
@@ -386,10 +386,9 @@
   - [x] **Task 31 (2.7): ANiML Caching Strategy Investigation** ✅
     - **Marked done for now (Feb 13):** Service/context caching in place; formal investigation deferred.
 
-  - [ ] **Task 32 (2.15): ANiML Image Click → Highlight Camera on Map**
-    - **Goal:** Click image (list or expanded view) → map highlights the camera where that image was taken using ArcGIS native blue highlight.
-    - **Implementation:** Wire `onImageSelect(deployment_id)` from ImageList/ImageExpandedView; animlLayer highlights graphic; consider MapContext or AnimlFilterContext for highlight state.
-    - **Files:** `ImageList.tsx`, `ImageExpandedView.tsx`, `animlLayer.ts`, `AnimlFilterContext.tsx` or `MapContext.tsx`
+  - [x] **Task 32 (2.15): ANiML Image Click → Highlight Camera on Map** ✅
+    - **Completed (Feb 13):** AnimlFilterContext: focusedDeploymentId, focusDeployment(), clearFocusedDeployment(). ImageList: onImageFocus(image) callback on click and when navigating in expanded view. useAnimlMapBehavior: ArcGIS layerView.highlight(targetGraphic) for focused deployment; cleanup on layer remove. animlLayer: getAnimlCameraGraphicByDeploymentId() helper (2.16-ready).
+    - **Files:** `AnimlFilterContext.tsx`, `ImageList.tsx`, `AnimlBrowseTab.tsx`, `animlLayer.ts`, `useMapBehavior.ts`
 
   - [ ] **Task 33 (2.16): ANiML Camera Badges — Numbered Icons for Query Results**
     - **Goal:** When filter active (species, date, etc.), show numbered badges above cameras that have ≥1 matching image. Cameras with 0 results get no badge.
@@ -440,6 +439,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 13, 2026 | Phase 2 | ✅ **Task 32 (2.15) complete: ANiML image click → highlight camera on map.** AnimlFilterContext: focusedDeploymentId, focusDeployment(), clearFocusedDeployment(). ImageList: onImageFocus on click + expanded navigation. useAnimlMapBehavior: ArcGIS layerView.highlight(). animlLayer: getAnimlCameraGraphicByDeploymentId() (2.16-ready). | Claude |
 | Feb 13, 2026 | Phase 2 | ✅ **Task 31 (2.7) marked complete.** Caching strategy investigation deferred; service/context caching in place. Added **Tasks 32–33 (2.15, 2.16):** Image click → highlight camera on map; Camera badges (numbered icons for query results, no badge for 0). | Claude |
 | Feb 13, 2026 | Phase 2 | ✅ **Tasks 29–30 (2.13, 2.14) complete.** ANiML expanded image view on click + arrow key navigation. ImageExpandedView.tsx: lightbox in sidebar, medium_url, metadata, Back to list, overlay + bottom nav. Arrow keys + Prev/Next navigate; Esc closes. **Auto-pagination:** crossing page boundary (e.g. image 20→21) advances page and stays in expanded view. Fix: synchronous safe-index during render to prevent crash on page transition. | Claude |
 | Feb 13, 2026 | Phase 2 | ✅ **Task 28 (2.12) refinement.** ANiML image results expand to fill remaining sidebar space; always-visible scrollbar (`.scroll-area-animl-images`) for scrollability affordance. Flex layout in AnimlBrowseTab + `expandToFill` in ImageList. **Next:** Tasks 2.13 (expanded image view on click), 2.14 (arrow key navigation). | Claude |

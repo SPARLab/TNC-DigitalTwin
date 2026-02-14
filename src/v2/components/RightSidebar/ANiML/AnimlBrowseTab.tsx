@@ -27,7 +27,7 @@ export function AnimlBrowseTab() {
     setDateRange, clearDateRange, clearFilters,
     hasFilter, hasCameraFilter, hasDateFilter, hasAnyFilter,
     getFilteredCountForSpecies, getFilteredCountForDeployment,
-    filteredImageCount,
+    filteredImageCount, focusDeployment, clearFocusedDeployment,
   } = useAnimlFilter();
 
   // Image fetch state (local to browse tab)
@@ -76,6 +76,7 @@ export function AnimlBrowseTab() {
       setImages([]);
       setImgLoading(false);
       setImgError(null);
+      clearFocusedDeployment();
       return;
     }
 
@@ -112,7 +113,7 @@ export function AnimlBrowseTab() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [selectedAnimals, selectedCameras, startDate, endDate, hasAnyFilter, hasFilter, hasCameraFilter, hasDateFilter, dataLoaded]);
+  }, [selectedAnimals, selectedCameras, startDate, endDate, hasAnyFilter, hasFilter, hasCameraFilter, hasDateFilter, dataLoaded, clearFocusedDeployment]);
 
   // ── Pagination ──────────────────────────────────────────────────────────
 
@@ -264,6 +265,7 @@ export function AnimlBrowseTab() {
               onNextPage={handleNextPage}
               expandToFill
               showCameraName
+              onImageFocus={(image) => focusDeployment(image.deployment_id)}
             />
           </div>
         )}

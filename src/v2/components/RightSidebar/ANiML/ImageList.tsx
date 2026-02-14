@@ -23,6 +23,8 @@ interface ImageListProps {
   expandToFill?: boolean;
   /** Show camera name column (useful in animal-first mode where images span cameras) */
   showCameraName?: boolean;
+  /** Called when an image becomes active (clicked or navigated in expanded view). */
+  onImageFocus?: (image: AnimlImageLabel) => void;
 }
 
 export function ImageList({
@@ -35,14 +37,17 @@ export function ImageList({
   onNextPage,
   expandToFill = false,
   showCameraName = false,
+  onImageFocus,
 }: ImageListProps) {
   // Expanded image state: null = list view, number = index into `images`
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [pendingPageJump, setPendingPageJump] = useState<'next' | 'prev' | null>(null);
 
   const handleImageClick = useCallback((index: number) => {
+    const image = images[index];
+    if (image) onImageFocus?.(image);
     setExpandedIndex(index);
-  }, []);
+  }, [images, onImageFocus]);
 
   const handleCloseExpanded = useCallback(() => {
     setExpandedIndex(null);
@@ -99,6 +104,13 @@ export function ImageList({
     }
     setPendingPageJump(null);
   }, [pendingPageJump, images]);
+
+  // Emit focus updates as users navigate within expanded view.
+  useEffect(() => {
+    if (expandedIndex === null || images.length === 0 || pendingPageJump !== null) return;
+    const focused = images[Math.min(expandedIndex, images.length - 1)];
+    if (focused) onImageFocus?.(focused);
+  }, [expandedIndex, images, pendingPageJump, onImageFocus]);
 
   if (images.length === 0) {
     return (

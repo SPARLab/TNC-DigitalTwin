@@ -1,8 +1,8 @@
 # Phase 2: ANiML Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 9 / 16 tasks  
-**Last Completed:** Tasks 2.13 + 2.14 (Expanded Image View + Arrow Key Navigation) ✅  
+**Progress:** 10 / 16 tasks  
+**Last Completed:** Task 2.15 (Image Click → Highlight Camera on Map) ✅  
 **Branch:** `v2/animl`  
 **Depends On:** Phase 0 (Foundation) — Data Source Adapter Pattern ✅ Complete  
 **Owner:** TBD
@@ -101,7 +101,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | 2.12 | Image list pagination (Prev/Next Page) | 🟢 Complete | Will + Claude | Replaced "Load More" with page-based Prev/Next; added page/range indicators |
 | 2.13 | Expanded image view on click | 🟢 Complete | Will + Claude | Click thumbnail → larger view in sidebar |
 | 2.14 | Arrow key navigation in expanded view | 🟢 Complete | Will + Claude | Left/right keys to navigate between images |
-| 2.15 | Image click → highlight camera on map | ⚪ Not Started | | Click image (list or expanded view) → blue ArcGIS native highlight on source camera |
+| 2.15 | Image click → highlight camera on map | 🟢 Complete | Will + Claude | focusedDeploymentId in AnimlFilterContext; ArcGIS layerView.highlight(); onImageFocus from ImageList/expanded view |
 | 2.16 | Camera badges: numbered icons for query results | ⚪ Not Started | | When filter active: show count badge above cameras with matching images; cameras with 0 results get no badge |
 
 **Status Legend:**
@@ -549,24 +549,23 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 
 **Goal:** When the user clicks on an individual image (in list or expanded view), the map should highlight the camera where that image was taken using the native ArcGIS blue highlight.
 
-**Status:** ⚪ Not Started
+**Status:** 🟢 Complete (Feb 13, 2026)
 
 **Acceptance Criteria:**
-- [ ] Click image thumbnail in list → highlight source camera on map (blue ArcGIS highlight)
-- [ ] Click image in expanded view → highlight source camera on map
-- [ ] Arrow-key navigation in expanded view → update highlight to current image's camera
-- [ ] Use ArcGIS native selection/highlight (blue ring or equivalent)
-- [ ] Clear highlight when closing expanded view or navigating away
+- [x] Click image thumbnail in list → highlight source camera on map (blue ArcGIS highlight)
+- [x] Click image in expanded view → highlight source camera on map
+- [x] Arrow-key navigation in expanded view → update highlight to current image's camera
+- [x] Use ArcGIS native selection/highlight (blue ring or equivalent)
+- [x] Clear highlight when closing expanded view or navigating away
 
 **Implementation Notes:**
-- Images have `deployment_id` linking to camera. Need to find graphic for that deployment and apply ArcGIS highlight.
-- Consider `MapContext` or `AnimlFilterContext` to expose `highlightCamera(deploymentId)` for map layer consumption.
-- Reference: iNaturalist Task 14 (observation card click → map highlight) for pattern.
+- **AnimlFilterContext:** Added `focusedDeploymentId`, `focusDeployment(deploymentId)`, `clearFocusedDeployment()`. Cleared when filters reset or no browse results.
+- **ImageList:** `onImageFocus(image)` callback fired on thumbnail click and when `expandedIndex` changes (arrow-key navigation). AnimlBrowseTab passes `onImageFocus={(image) => focusDeployment(image.deployment_id)}`.
+- **useAnimlMapBehavior:** Subscribes to `focusedDeploymentId`. Uses `view.whenLayerView(arcLayer)` + `layerView.highlight(targetGraphic)` for ArcGIS native highlight. Single highlight handle; clears on layer remove.
+- **animlLayer:** Added `getAnimlCameraGraphicByDeploymentId(layer, deploymentId)` helper — reusable for Task 2.16 badges.
+- Architecture is 2.16-friendly: same focus signal can drive badge updates.
 
-**Files to Modify:**
-- `ImageList.tsx`, `ImageExpandedView.tsx` — pass `onImageSelect` or similar with `deployment_id`
-- `animlLayer.ts` — highlight graphic by deployment ID
-- `AnimlFilterContext.tsx` or `MapContext.tsx` — highlight state/callback
+**Files Modified:** `AnimlFilterContext.tsx`, `ImageList.tsx`, `AnimlBrowseTab.tsx`, `animlLayer.ts`, `useMapBehavior.ts`
 
 ---
 

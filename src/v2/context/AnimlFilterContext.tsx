@@ -75,10 +75,16 @@ export interface AnimlFilterContextValue {
   matchingDeploymentIds: Set<number> | null;
   /** Total images matching both filters. null if countLookups not ready. */
   filteredImageCount: number | null;
+  /** Deployment id currently focused from browse image interactions. */
+  focusedDeploymentId: number | null;
 
   // Cache lifecycle
   /** Trigger data fetch. Idempotent — no-op if already fetched or in-flight. */
   warmCache: () => void;
+  /** Focus a deployment for map emphasis/highlight. */
+  focusDeployment: (deploymentId: number | null) => void;
+  /** Clear focused deployment. */
+  clearFocusedDeployment: () => void;
 }
 
 const AnimlFilterContext = createContext<AnimlFilterContextValue | null>(null);
@@ -91,6 +97,7 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
   const [selectedCameras, setSelectedCameras] = useState<Set<number>>(new Set());
   const [startDate, setStartDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
+  const [focusedDeploymentId, setFocusedDeploymentId] = useState<number | null>(null);
 
   // Data state
   const [deployments, setDeployments] = useState<AnimlDeployment[]>([]);
@@ -175,6 +182,15 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
     setSelectedCameras(prev => (prev.size === 0 ? prev : new Set()));
     setStartDate(null);
     setEndDate(null);
+    setFocusedDeploymentId(null);
+  }, []);
+
+  const focusDeployment = useCallback((deploymentId: number | null) => {
+    setFocusedDeploymentId(deploymentId);
+  }, []);
+
+  const clearFocusedDeployment = useCallback(() => {
+    setFocusedDeploymentId(null);
   }, []);
 
   // ── Derived booleans ────────────────────────────────────────────────────
@@ -379,8 +395,8 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
         toggleCamera, clearCameras, selectAllCameras,
         setDateRange, clearDateRange, clearFilters,
         getFilteredCountForDeployment, getFilteredCountForSpecies,
-        matchingDeploymentIds, filteredImageCount,
-        warmCache,
+        matchingDeploymentIds, filteredImageCount, focusedDeploymentId,
+        warmCache, focusDeployment, clearFocusedDeployment,
       }}
     >
       {children}
