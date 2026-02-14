@@ -102,7 +102,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | 2.13 | Expanded image view on click | 🟢 Complete | Will + Claude | Click thumbnail → larger view in sidebar |
 | 2.14 | Arrow key navigation in expanded view | 🟢 Complete | Will + Claude | Left/right keys to navigate between images |
 | 2.15 | Image click → highlight camera on map | 🟢 Complete | Will + Claude | focusedDeploymentId in AnimlFilterContext; ArcGIS layerView.highlight(); onImageFocus from ImageList/expanded view |
-| 2.16 | Camera badges: numbered icons for query results | ⚪ Not Started | | When filter active: show count badge above cameras with matching images; cameras with 0 results get no badge |
+| 2.16 | Camera badges: numbered icons for query results | 🟢 Complete | Will + Claude | Dynamic map badge symbols: show camera result counts only while filters are active; 0-result cameras show no badge |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -182,7 +182,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 **Goal:** Think through and decide on the UX for the two browse modes before implementing.
 
-**Status:** ⚪ Not Started
+**Status:** 🟢 Complete
 
 **Background (Feb 12, 2026):**
 The Browse tab has two modes — "Animal-Tag-First" and "Camera-First" — with different interaction flows. The v1 implementation handled this as two views in AnimlSidebar.tsx with a toggle. The v2 implementation needs to refine this into a progressive-disclosure pattern that integrates with the Map Layers widget.
@@ -576,11 +576,11 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 **Status:** ⚪ Not Started
 
 **Acceptance Criteria:**
-- [ ] When any filter is active (species, date, cameras): show count badge above cameras that have ≥1 matching image
-- [ ] Badge displays the number of images matching the current query for that camera
-- [ ] Cameras with 0 matching results: no badge (not even "0")
-- [ ] Badge positioned above camera icon on map (e.g., upper-right corner)
-- [ ] No filter active: no badges on any cameras
+- [x] When any filter is active (species, date, cameras): show count badge above cameras that have ≥1 matching image
+- [x] Badge displays the number of images matching the current query for that camera
+- [x] Cameras with 0 matching results: no badge (not even "0")
+- [x] Badge positioned above camera icon on map (e.g., upper-right corner)
+- [x] No filter active: no badges on any cameras
 
 **Implementation Notes:**
 - Uses `countLookups` or equivalent to get per-camera counts for current filter.
@@ -691,6 +691,7 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | Feb 13, 2026 | 2.13, 2.14 | **Refinement: Auto-pagination.** Arrow keys and Prev/Next cross page boundaries (e.g. image 20→21 advances to next page, stays in expanded view). DFT-049. Fix: synchronous `safeIndex` during render + null guard in ImageExpandedView to prevent crash when `images` array changes mid-transition. | Will + Claude |
 | Feb 13, 2026 | 2.7 | **Marked complete for now.** Caching strategy investigation deferred; service/context caching in place. | Will + Claude |
 | Feb 13, 2026 | 2.15, 2.16 | **New tasks added.** 2.15: Image click → highlight camera on map (blue ArcGIS native highlight). 2.16: Camera badges — numbered icons above cameras with matching images when filter active; cameras with 0 results get no badge. | Will + Claude |
+| Feb 13, 2026 | 2.16 | **Complete.** Implemented dynamic camera badge rendering in `animlLayer.ts` using SVG data-URI symbols (camera + numeric count). Added `updateAnimlCameraBadges()` and wired it in `useAnimlMapBehavior.ts` so badges update whenever ANiML filter state changes. No-filter state shows plain camera icons; 0-result cameras show no badge. | Will + Claude |
 
 ---
 

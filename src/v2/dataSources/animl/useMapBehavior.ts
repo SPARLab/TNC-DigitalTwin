@@ -15,6 +15,7 @@ import { useMap } from '../../context/MapContext';
 import {
   populateAnimlLayer,
   filterAnimlLayer,
+  updateAnimlCameraBadges,
   getAnimlCameraGraphicByDeploymentId,
 } from '../../components/Map/layers/animlLayer';
 import type { PinnedLayer, ActiveLayer } from '../../types';
@@ -27,7 +28,17 @@ export function useAnimlMapBehavior(
   activeLayer: ActiveLayer | null,
   mapReady: number,
 ) {
-  const { selectedAnimals, deployments, dataLoaded, warmCache, focusedDeploymentId } = useAnimlFilter();
+  const {
+    selectedAnimals,
+    selectedCameras,
+    hasCameraFilter,
+    hasAnyFilter,
+    getFilteredCountForDeployment,
+    deployments,
+    dataLoaded,
+    warmCache,
+    focusedDeploymentId,
+  } = useAnimlFilter();
   const { viewRef } = useMap();
   const populatedRef = useRef(false);
   const highlightHandleRef = useRef<__esri.Handle | null>(null);
@@ -58,8 +69,27 @@ export function useAnimlMapBehavior(
 
     populateAnimlLayer(arcLayer, deployments);
     filterAnimlLayer(arcLayer, selectedAnimals);
+    updateAnimlCameraBadges(arcLayer, {
+      hasActiveFilter: hasAnyFilter,
+      getCountForDeployment: (deploymentId) => {
+        // Camera filter narrows the query to selected cameras only.
+        if (hasCameraFilter && !selectedCameras.has(deploymentId)) return 0;
+        return getFilteredCountForDeployment(deploymentId);
+      },
+    });
     populatedRef.current = true;
-  }, [isOnMap, dataLoaded, deployments, selectedAnimals, getManagedLayer, mapReady]);
+  }, [
+    isOnMap,
+    dataLoaded,
+    deployments,
+    selectedAnimals,
+    hasAnyFilter,
+    hasCameraFilter,
+    selectedCameras,
+    getFilteredCountForDeployment,
+    getManagedLayer,
+    mapReady,
+  ]);
 
   // Update filter when selectedAnimals changes (instant local visibility toggle)
   useEffect(() => {
@@ -68,6 +98,27 @@ export function useAnimlMapBehavior(
     if (!arcLayer || !(arcLayer instanceof GraphicsLayer)) return;
     filterAnimlLayer(arcLayer, selectedAnimals);
   }, [selectedAnimals, getManagedLayer]);
+
+  // Update map badges whenever filter state changes.
+  useEffect(() => {
+    if (!populatedRef.current) return;
+    const arcLayer = getManagedLayer(LAYER_ID);
+    if (!arcLayer || !(arcLayer instanceof GraphicsLayer)) return;
+
+    updateAnimlCameraBadges(arcLayer, {
+      hasActiveFilter: hasAnyFilter,
+      getCountForDeployment: (deploymentId) => {
+        if (hasCameraFilter && !selectedCameras.has(deploymentId)) return 0;
+        return getFilteredCountForDeployment(deploymentId);
+      },
+    });
+  }, [
+    hasAnyFilter,
+    hasCameraFilter,
+    selectedCameras,
+    getFilteredCountForDeployment,
+    getManagedLayer,
+  ]);
 
   // Native ArcGIS highlight for camera selected from image interactions.
   useEffect(() => {
