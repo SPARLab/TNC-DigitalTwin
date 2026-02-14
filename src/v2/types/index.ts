@@ -53,6 +53,7 @@ export interface PinnedLayer {
   filterCount: number;
   filterSummary?: string;
   inaturalistFilters?: INaturalistViewFilters;
+  animlFilters?: AnimlViewFilters;
   distinguisher?: string;
   views?: PinnedLayerView[];
   order: number; // for drag-reorder z-order
@@ -69,12 +70,21 @@ export interface PinnedLayerView {
   filterCount: number;
   filterSummary?: string;
   inaturalistFilters?: INaturalistViewFilters;
+  animlFilters?: AnimlViewFilters;
   resultCount?: number; // Number of features matching filters (for count display testing)
 }
 
 /** iNaturalist filter state stored per pinned layer/view */
 export interface INaturalistViewFilters {
   selectedTaxa: string[];
+  startDate?: string;
+  endDate?: string;
+}
+
+/** ANiML filter state stored per pinned layer/view */
+export interface AnimlViewFilters {
+  selectedAnimals: string[];
+  selectedCameras: number[];
   startDate?: string;
   endDate?: string;
 }

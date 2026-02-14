@@ -53,6 +53,7 @@
 | 31 | 2 | **2.7** ANiML Caching Strategy Investigation | ✅ | Low | Marked done for now; service/context caching in place. |
 | 32 | 2 | **2.15** ANiML Image Click → Highlight Camera on Map | ✅ | Medium | Completed: focusedDeploymentId in AnimlFilterContext; ArcGIS layerView.highlight(); onImageFocus from ImageList/expanded view. |
 | 33 | 2 | **2.16** ANiML Camera Badges — Numbered Icons for Query Results | ⚪ | Medium | When filter active: show count badge above cameras with matching images; cameras with 0 results get no badge. |
+| 34 | 2 | **2.17** ANiML Species/Camera Counts Sync with Date Filter | ⚪ | Medium | Counts in filter sections and legend show all-time; when date filter applied, 0 results but counts still high — misleading UX. Sync counts or add qualifier. |
 
 **Active tasks remaining:** 12  
 **🔴 Next (critical):** Task 24 — Dynamic Layer Registry from Data Catalog Service  

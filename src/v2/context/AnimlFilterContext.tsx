@@ -50,12 +50,14 @@ export interface AnimlFilterContextValue {
 
   // Filter actions — species
   toggleAnimal: (label: string) => void;
+  setSelectedAnimals: (labels: Set<string>) => void;
   selectAll: () => void;
   clearAll: () => void;
   selectAllAnimals: () => void;
 
   // Filter actions — cameras
   toggleCamera: (deploymentId: number) => void;
+  setSelectedCameras: (deploymentIds: Set<number>) => void;
   clearCameras: () => void;
   selectAllCameras: () => void;
 
@@ -93,8 +95,8 @@ const AnimlFilterContext = createContext<AnimlFilterContextValue | null>(null);
 
 export function AnimlFilterProvider({ children }: { children: ReactNode }) {
   // Filter state
-  const [selectedAnimals, setSelectedAnimals] = useState<Set<string>>(new Set());
-  const [selectedCameras, setSelectedCameras] = useState<Set<number>>(new Set());
+  const [selectedAnimals, setSelectedAnimalsState] = useState<Set<string>>(new Set());
+  const [selectedCameras, setSelectedCamerasState] = useState<Set<number>>(new Set());
   const [startDate, setStartDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
   const [focusedDeploymentId, setFocusedDeploymentId] = useState<number | null>(null);
@@ -120,7 +122,7 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
   // ── Filter actions — species ────────────────────────────────────────────
 
   const toggleAnimal = useCallback((label: string) => {
-    setSelectedAnimals(prev => {
+    setSelectedAnimalsState(prev => {
       const next = new Set(prev);
       if (next.has(label)) next.delete(label);
       else next.add(label);
@@ -128,24 +130,28 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const setSelectedAnimals = useCallback((labels: Set<string>) => {
+    setSelectedAnimalsState(new Set(labels));
+  }, []);
+
   const selectAll = useCallback(
-    () => setSelectedAnimals(prev => (prev.size === 0 ? prev : new Set())),
+    () => setSelectedAnimalsState(prev => (prev.size === 0 ? prev : new Set())),
     [],
   );
   const clearAll = useCallback(
-    () => setSelectedAnimals(prev => (prev.size === 0 ? prev : new Set())),
+    () => setSelectedAnimalsState(prev => (prev.size === 0 ? prev : new Set())),
     [],
   );
 
   const selectAllAnimals = useCallback(
-    () => setSelectedAnimals(new Set(animalTags.map(t => t.label))),
+    () => setSelectedAnimalsState(new Set(animalTags.map(t => t.label))),
     [animalTags],
   );
 
   // ── Filter actions — cameras ────────────────────────────────────────────
 
   const toggleCamera = useCallback((deploymentId: number) => {
-    setSelectedCameras(prev => {
+    setSelectedCamerasState(prev => {
       const next = new Set(prev);
       if (next.has(deploymentId)) next.delete(deploymentId);
       else next.add(deploymentId);
@@ -153,13 +159,17 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const setSelectedCameras = useCallback((deploymentIds: Set<number>) => {
+    setSelectedCamerasState(new Set(deploymentIds));
+  }, []);
+
   const clearCameras = useCallback(
-    () => setSelectedCameras(prev => (prev.size === 0 ? prev : new Set())),
+    () => setSelectedCamerasState(prev => (prev.size === 0 ? prev : new Set())),
     [],
   );
 
   const selectAllCameras = useCallback(
-    () => setSelectedCameras(new Set(deployments.map(d => d.id))),
+    () => setSelectedCamerasState(new Set(deployments.map(d => d.id))),
     [deployments],
   );
 
@@ -178,8 +188,8 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
   // ── Filter actions — combined ───────────────────────────────────────────
 
   const clearFilters = useCallback(() => {
-    setSelectedAnimals(prev => (prev.size === 0 ? prev : new Set()));
-    setSelectedCameras(prev => (prev.size === 0 ? prev : new Set()));
+    setSelectedAnimalsState(prev => (prev.size === 0 ? prev : new Set()));
+    setSelectedCamerasState(prev => (prev.size === 0 ? prev : new Set()));
     setStartDate(null);
     setEndDate(null);
     setFocusedDeploymentId(null);
@@ -391,8 +401,8 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
         loading, error, dataLoaded, totalImageCount,
         selectedAnimals, selectedCameras, startDate, endDate,
         hasFilter, hasCameraFilter, hasDateFilter, hasAnyFilter,
-        toggleAnimal, selectAll, clearAll, selectAllAnimals,
-        toggleCamera, clearCameras, selectAllCameras,
+        toggleAnimal, setSelectedAnimals, selectAll, clearAll, selectAllAnimals,
+        toggleCamera, setSelectedCameras, clearCameras, selectAllCameras,
         setDateRange, clearDateRange, clearFilters,
         getFilteredCountForDeployment, getFilteredCountForSpecies,
         matchingDeploymentIds, filteredImageCount, focusedDeploymentId,
