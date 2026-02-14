@@ -4,7 +4,13 @@
 // ============================================================================
 
 import { createContext, useContext, useCallback, useState, type ReactNode } from 'react';
-import type { ActiveLayer, PinnedLayer, UndoAction, DataSource } from '../types';
+import type {
+  ActiveLayer,
+  PinnedLayer,
+  UndoAction,
+  DataSource,
+  INaturalistViewFilters,
+} from '../types';
 import { useCatalog } from './CatalogContext';
 
 interface LayerContextValue {
@@ -20,6 +26,12 @@ interface LayerContextValue {
   toggleVisibility: (pinnedId: string) => void;
   toggleChildVisibility: (pinnedId: string, viewId: string) => void;
   clearFilters: (pinnedId: string, viewId?: string) => void;
+  syncINaturalistFilters: (
+    layerId: string,
+    filters: INaturalistViewFilters,
+    resultCount: number,
+    viewId?: string,
+  ) => void;
   reorderLayers: (fromIndex: number, toIndex: number) => void;
   createNewView: (pinnedId: string) => void;
   removeView: (pinnedId: string, viewId: string) => void;
@@ -39,6 +51,37 @@ interface LayerContextValue {
 }
 
 const LayerContext = createContext<LayerContextValue | null>(null);
+
+function buildINaturalistFilterSummary(filters: INaturalistViewFilters): string | undefined {
+  const parts: string[] = [];
+  if (filters.selectedTaxa.length > 0) {
+    const taxonText = filters.selectedTaxa.length <= 2
+      ? filters.selectedTaxa.join(' + ')
+      : `${filters.selectedTaxa.length} taxa selected`;
+    parts.push(`Taxa: ${taxonText}`);
+  }
+  if (filters.startDate || filters.endDate) {
+    const rangeText = `${filters.startDate || 'Any'} to ${filters.endDate || 'Any'}`;
+    parts.push(`Date: ${rangeText}`);
+  }
+  return parts.length > 0 ? parts.join(', ') : undefined;
+}
+
+function getINaturalistFilterCount(filters: INaturalistViewFilters): number {
+  return filters.selectedTaxa.length + (filters.startDate || filters.endDate ? 1 : 0);
+}
+
+/** Shallow equality check for iNaturalist filter objects */
+function filtersEqual(
+  a: INaturalistViewFilters | undefined,
+  b: INaturalistViewFilters | undefined,
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (a.startDate !== b.startDate || a.endDate !== b.endDate) return false;
+  if (a.selectedTaxa.length !== b.selectedTaxa.length) return false;
+  return a.selectedTaxa.every((t, i) => t === b.selectedTaxa[i]);
+}
 
 export function LayerProvider({ children }: { children: ReactNode }) {
   const { layerMap } = useCatalog();
@@ -192,16 +235,95 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           return {
             ...p,
             views: p.views.map(v =>
-              v.id === viewId ? { ...v, filterCount: 0, filterSummary: undefined } : v
+              v.id === viewId
+                ? {
+                    ...v,
+                    filterCount: 0,
+                    filterSummary: undefined,
+                    inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+                  }
+                : v
             ),
           };
         }
-        return { ...p, filterCount: 0, filterSummary: undefined, distinguisher: undefined };
+        return {
+          ...p,
+          filterCount: 0,
+          filterSummary: undefined,
+          inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+          distinguisher: undefined,
+        };
       })
     );
 
     pushUndo('Filters cleared', () => setPinnedLayers(prevState));
   }, [pinnedLayers, pushUndo]);
+
+  const syncINaturalistFilters = useCallback(
+    (layerId: string, filters: INaturalistViewFilters, resultCount: number, viewId?: string) => {
+      setPinnedLayers(prev => {
+        const nextLayers = prev.map(p => {
+          if (p.layerId !== layerId) return p;
+
+          const normalizedFilters: INaturalistViewFilters = {
+            selectedTaxa: [...filters.selectedTaxa],
+            startDate: filters.startDate,
+            endDate: filters.endDate,
+          };
+          const nextFilterCount = getINaturalistFilterCount(normalizedFilters);
+          const nextFilterSummary = buildINaturalistFilterSummary(normalizedFilters);
+
+          if (viewId && p.views) {
+            const targetView = p.views.find(v => v.id === viewId);
+            // Bail out if nothing changed — avoids unnecessary re-renders
+            if (
+              targetView &&
+              targetView.filterCount === nextFilterCount &&
+              targetView.filterSummary === nextFilterSummary &&
+              targetView.resultCount === resultCount &&
+              filtersEqual(targetView.inaturalistFilters, normalizedFilters)
+            ) return p;
+
+            return {
+              ...p,
+              views: p.views.map(v =>
+                v.id === viewId
+                  ? {
+                      ...v,
+                      filterCount: nextFilterCount,
+                      filterSummary: nextFilterSummary,
+                      inaturalistFilters: normalizedFilters,
+                      resultCount,
+                    }
+                  : v
+              ),
+            };
+          }
+
+          // Bail out if nothing changed — avoids unnecessary re-renders
+          if (
+            p.filterCount === nextFilterCount &&
+            p.filterSummary === nextFilterSummary &&
+            p.resultCount === resultCount &&
+            filtersEqual(p.inaturalistFilters, normalizedFilters)
+          ) return p;
+
+          return {
+            ...p,
+            filterCount: nextFilterCount,
+            filterSummary: nextFilterSummary,
+            inaturalistFilters: normalizedFilters,
+            resultCount,
+          };
+        });
+
+        // If every layer returned the same reference, skip the state update entirely
+        const changed = nextLayers.some((l, i) => l !== prev[i]);
+        return changed ? nextLayers : prev;
+      });
+    },
+    []
+  );
 
   const reorderLayers = useCallback((fromIndex: number, toIndex: number) => {
     setPinnedLayers(prev => {
@@ -224,6 +346,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             name: 'Add Filters',
             isVisible: false,
             filterCount: 0,
+            inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
           };
           return { ...p, views: [...p.views, newView] };
         }
@@ -236,12 +359,15 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           isVisible: p.isVisible,
           filterCount: p.filterCount,
           filterSummary: p.filterSummary,
+          inaturalistFilters: p.inaturalistFilters,
+          resultCount: p.resultCount,
         };
         const view2 = {
           id: crypto.randomUUID(),
           name: 'Add Filters',
           isVisible: false,
           filterCount: 0,
+          inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
         };
         
         // Clear flat-level filter data (now in views)
@@ -250,7 +376,9 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           views: [view1, view2],
           filterCount: 0,
           filterSummary: undefined,
+          inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
           distinguisher: undefined,
+          resultCount: undefined,
         };
       })
     );
@@ -272,7 +400,9 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             isVisible: lastView.isVisible,
             filterCount: lastView.filterCount,
             filterSummary: lastView.filterSummary,
+            inaturalistFilters: lastView.inaturalistFilters,
             distinguisher: lastView.name !== 'View 1' ? lastView.name : undefined,
+            resultCount: lastView.resultCount,
           };
         }
         
@@ -325,6 +455,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         toggleVisibility,
         toggleChildVisibility,
         clearFilters,
+        syncINaturalistFilters,
         reorderLayers,
         createNewView,
         removeView,

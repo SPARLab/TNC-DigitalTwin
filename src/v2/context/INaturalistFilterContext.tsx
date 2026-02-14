@@ -30,7 +30,11 @@ export interface INatObservation {
 interface INaturalistContextValue {
   // Filter state
   selectedTaxa: Set<string>;
+  startDate: string;
+  endDate: string;
   toggleTaxon: (taxon: string) => void;
+  setSelectedTaxa: (taxa: Set<string>) => void;
+  setDateRange: (startDate: string, endDate: string) => void;
   selectAll: () => void;
   clearAll: () => void;
   hasFilter: boolean;
@@ -81,6 +85,8 @@ function transformObservation(obs: TNCArcGISObservation): INatObservation {
 export function INaturalistFilterProvider({ children }: { children: ReactNode }) {
   // Filter state
   const [selectedTaxa, setSelectedTaxa] = useState<Set<string>>(new Set());
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   // Data state
   const [allObservations, setAllObservations] = useState<INatObservation[]>([]);
@@ -102,6 +108,15 @@ export function INaturalistFilterProvider({ children }: { children: ReactNode })
       else next.add(taxon);
       return next;
     });
+  }, []);
+
+  const setSelectedTaxaFilter = useCallback((taxa: Set<string>) => {
+    setSelectedTaxa(new Set(taxa));
+  }, []);
+
+  const setDateRange = useCallback((nextStartDate: string, nextEndDate: string) => {
+    setStartDate(nextStartDate);
+    setEndDate(nextEndDate);
   }, []);
 
   // Idempotent: skip setState if already empty (avoids wasted re-renders)
@@ -169,7 +184,8 @@ export function INaturalistFilterProvider({ children }: { children: ReactNode })
   return (
     <INaturalistFilterContext.Provider
       value={{
-        selectedTaxa, toggleTaxon, selectAll, clearAll, hasFilter,
+        selectedTaxa, startDate, endDate,
+        toggleTaxon, setSelectedTaxa: setSelectedTaxaFilter, setDateRange, selectAll, clearAll, hasFilter,
         allObservations, loading, error, dataLoaded,
         totalServiceCount, taxonCounts,
         warmCache,

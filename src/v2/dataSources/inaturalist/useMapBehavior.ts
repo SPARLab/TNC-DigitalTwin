@@ -32,7 +32,7 @@ export function useINaturalistMapBehavior(
   activeLayer: ActiveLayer | null,
   mapReady: number,
 ) {
-  const { selectedTaxa, allObservations, dataLoaded, warmCache } = useINaturalistFilter();
+  const { selectedTaxa, startDate, endDate, allObservations, dataLoaded, warmCache } = useINaturalistFilter();
   const { activateLayer } = useLayers();
   const { viewRef } = useMap();
   const populatedRef = useRef(false);
@@ -60,17 +60,17 @@ export function useINaturalistMapBehavior(
     if (!arcLayer || !(arcLayer instanceof GraphicsLayer)) return;
 
     populateINaturalistLayer(arcLayer, allObservations);
-    filterINaturalistLayer(arcLayer, selectedTaxa);
+    filterINaturalistLayer(arcLayer, { selectedTaxa, startDate, endDate });
     populatedRef.current = true;
-  }, [isOnMap, dataLoaded, allObservations, selectedTaxa, getManagedLayer, mapReady]);
+  }, [isOnMap, dataLoaded, allObservations, selectedTaxa, startDate, endDate, getManagedLayer, mapReady]);
 
   // Update filter when selectedTaxa changes (instant local visibility toggle)
   useEffect(() => {
     if (!populatedRef.current) return;
     const arcLayer = getManagedLayer(LAYER_ID);
     if (!arcLayer || !(arcLayer instanceof GraphicsLayer)) return;
-    filterINaturalistLayer(arcLayer, selectedTaxa);
-  }, [selectedTaxa, getManagedLayer]);
+    filterINaturalistLayer(arcLayer, { selectedTaxa, startDate, endDate });
+  }, [selectedTaxa, startDate, endDate, getManagedLayer]);
 
   // Map click handler: when user clicks an iNaturalist marker, activate layer + show detail view
   useEffect(() => {

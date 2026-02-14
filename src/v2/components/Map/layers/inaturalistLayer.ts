@@ -70,11 +70,22 @@ export function populateINaturalistLayer(
 /** Toggle visibility of individual graphics based on taxon filter (instant) */
 export function filterINaturalistLayer(
   layer: GraphicsLayer,
-  selectedTaxa: Set<string>,
+  filters: {
+    selectedTaxa: Set<string>;
+    startDate?: string;
+    endDate?: string;
+  },
 ): void {
-  const showAll = selectedTaxa.size === 0;
+  const { selectedTaxa, startDate, endDate } = filters;
+  const showAllTaxa = selectedTaxa.size === 0;
+
   for (const graphic of layer.graphics.toArray()) {
-    graphic.visible = showAll || selectedTaxa.has(graphic.attributes?.taxonCategory);
+    const graphicTaxon = graphic.attributes?.taxonCategory as string | undefined;
+    const graphicDate = graphic.attributes?.observedOn as string | undefined;
+    const taxonMatches = showAllTaxa || (graphicTaxon ? selectedTaxa.has(graphicTaxon) : false);
+    const afterStart = !startDate || !graphicDate || graphicDate >= startDate;
+    const beforeEnd = !endDate || !graphicDate || graphicDate <= endDate;
+    graphic.visible = taxonMatches && afterStart && beforeEnd;
   }
 }
 

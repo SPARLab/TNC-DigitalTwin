@@ -9,7 +9,7 @@
 // marker click), automatically opens the detail view for that observation.
 // ============================================================================
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Loader2, AlertCircle, ChevronDown, Search, X, Calendar } from 'lucide-react';
 import {
   useINaturalistObservations,
@@ -24,16 +24,21 @@ import { ObservationCard } from './ObservationCard';
 import { INaturalistDetailView } from './INaturalistDetailView';
 
 export function INaturalistBrowseTab() {
-  const { selectedTaxa, toggleTaxon, selectAll, allObservations } = useINaturalistFilter();
-  const { activeLayer } = useLayers();
+  const {
+    selectedTaxa,
+    startDate,
+    endDate,
+    toggleTaxon,
+    setSelectedTaxa,
+    setDateRange,
+    selectAll,
+    allObservations,
+  } = useINaturalistFilter();
+  const { activeLayer, lastEditFiltersRequest, getPinnedByLayerId, syncINaturalistFilters } = useLayers();
 
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-
-  // Date range state
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
 
   // Debounce search term (300ms)
   useEffect(() => {
@@ -53,6 +58,7 @@ export function INaturalistBrowseTab() {
   // Data fetching
   const {
     observations, loading, error,
+    fetchedCount,
     page, totalPages, goToPage,
   } = useINaturalistObservations(filters);
 
@@ -84,7 +90,9 @@ export function INaturalistBrowseTab() {
     await view.goTo({ center: [lon, lat], zoom: 15 }, { duration: 800 });
 
     // Find the graphic on the map to open its popup — ArcGIS natively highlights the feature
-    const layer = view.map.findLayerById('v2-inaturalist-obs') as __esri.GraphicsLayer;
+    const map = view.map;
+    if (!map) return;
+    const layer = map.findLayerById('v2-inaturalist-obs') as __esri.GraphicsLayer;
     if (layer) {
       const graphic = layer.graphics.find(g => g.attributes?.id === obs.id);
       if (graphic && graphic.geometry) {
@@ -111,6 +119,66 @@ export function INaturalistBrowseTab() {
   const filterCount = hasFilter ? selectedTaxa.size : TAXON_CATEGORIES.length;
   const hasActiveSearch = debouncedSearchTerm.trim().length > 0;
   const hasDateFilter = !!(startDate || endDate);
+
+  // ── Hydrate Browse filters (ONE-SHOT, not continuous) ──────────────────────
+  // Runs ONLY when the user explicitly triggers it:
+  //   1. "Edit Filters" clicked in Map Layers widget (lastEditFiltersRequest)
+  //   2. Active view switches (activeLayer.viewId)
+  // NOT on every pinned-layer update — that would fight the sync effect below
+  // and cause an infinite read-write oscillation.
+  const lastConsumedHydrateRef = useRef(0);
+  const prevHydrateViewIdRef = useRef<string | undefined>(activeLayer?.viewId);
+
+  useEffect(() => {
+    if (activeLayer?.layerId !== 'inaturalist-obs') return;
+
+    const viewChanged = activeLayer.viewId !== prevHydrateViewIdRef.current;
+    const editRequested = lastEditFiltersRequest > lastConsumedHydrateRef.current;
+    prevHydrateViewIdRef.current = activeLayer.viewId;
+
+    // Only hydrate on explicit triggers — not on every dependency change
+    if (!viewChanged && !editRequested) return;
+    if (editRequested) lastConsumedHydrateRef.current = lastEditFiltersRequest;
+
+    const pinned = getPinnedByLayerId(activeLayer.layerId);
+    if (!pinned) return;
+
+    const sourceFilters = activeLayer.viewId && pinned.views
+      ? pinned.views.find(v => v.id === activeLayer.viewId)?.inaturalistFilters
+      : pinned.inaturalistFilters;
+    if (!sourceFilters) return;
+
+    setSelectedTaxa(new Set(sourceFilters.selectedTaxa));
+    setDateRange(sourceFilters.startDate || '', sourceFilters.endDate || '');
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally gated by ref guards
+  }, [activeLayer?.layerId, activeLayer?.viewId, lastEditFiltersRequest, getPinnedByLayerId, setSelectedTaxa, setDateRange]);
+
+  // Keep Map Layers widget metadata in sync with the active iNaturalist view.
+  // Depends on isPinned so the effect re-fires when the layer transitions from
+  // active-only → pinned (pinLayer creates with filterCount:0, this populates it).
+  useEffect(() => {
+    if (activeLayer?.layerId !== 'inaturalist-obs') return;
+
+    syncINaturalistFilters(
+      activeLayer.layerId,
+      {
+        selectedTaxa: Array.from(selectedTaxa).sort(),
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+      },
+      fetchedCount,
+      activeLayer.viewId
+    );
+  }, [
+    activeLayer?.layerId,
+    activeLayer?.viewId,
+    activeLayer?.isPinned,
+    fetchedCount,
+    selectedTaxa,
+    startDate,
+    endDate,
+    syncINaturalistFilters,
+  ]);
 
   return (
     <div id="inat-browse-tab" className="space-y-3">
@@ -216,7 +284,7 @@ export function INaturalistBrowseTab() {
           {hasDateFilter && (
             <button
               id="inat-date-range-clear"
-              onClick={() => { setStartDate(''); setEndDate(''); }}
+              onClick={() => setDateRange('', '')}
               className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
             >
               Clear
@@ -229,7 +297,7 @@ export function INaturalistBrowseTab() {
             type="date"
             value={startDate}
             max={endDate || undefined}
-            onChange={(e) => setStartDate(e.target.value)}
+            onChange={(e) => setDateRange(e.target.value, endDate)}
             className="flex-1 px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg
                        focus:outline-none focus:border-gray-300 focus:shadow-[0_0_0_1px_rgba(107,114,128,0.3)]
                        text-gray-700"
@@ -240,7 +308,7 @@ export function INaturalistBrowseTab() {
             type="date"
             value={endDate}
             min={startDate || undefined}
-            onChange={(e) => setEndDate(e.target.value)}
+            onChange={(e) => setDateRange(startDate, e.target.value)}
             className="flex-1 px-2 py-1.5 text-sm bg-white border border-gray-200 rounded-lg
                        focus:outline-none focus:border-gray-300 focus:shadow-[0_0_0_1px_rgba(107,114,128,0.3)]
                        text-gray-700"
