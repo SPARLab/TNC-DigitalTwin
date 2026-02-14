@@ -1,37 +1,46 @@
 // ============================================================================
-// INaturalistLegendWidget — Floating legend over map for taxon filtering
-// Uses locally-cached taxon counts from context (no separate API calls).
+// AnimlLegendWidget — Floating legend over map for animal species filtering.
+// Uses locally-cached animal tag counts from AnimlFilterContext.
 // Shows loading shimmer while data is being fetched.
 // ============================================================================
 
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
-import { TAXON_CONFIG, getTaxonEmoji, getTaxonColor } from '../../Map/layers/taxonConfig';
-import { useINaturalistFilter } from '../../../context/INaturalistFilterContext';
+import { useAnimlFilter } from '../../../context/AnimlFilterContext';
 
-export function INaturalistLegendWidget() {
+// Simple color palette for animal categories (distinct, colorblind-friendly)
+const ANIMAL_COLORS: string[] = [
+  '#2e7d32', '#1565c0', '#c62828', '#f57f17', '#6a1b9a',
+  '#00838f', '#d84315', '#4527a0', '#2e7d32', '#ad1457',
+  '#00695c', '#ef6c00', '#283593', '#558b2f', '#6d4c41',
+];
+
+function getAnimalColor(index: number): string {
+  return ANIMAL_COLORS[index % ANIMAL_COLORS.length];
+}
+
+export function AnimlLegendWidget() {
   const [isExpanded, setIsExpanded] = useState(true);
   const {
-    selectedTaxa, toggleTaxon, selectAll, hasFilter,
-    taxonCounts, loading, dataLoaded,
-  } = useINaturalistFilter();
+    selectedAnimals, toggleAnimal, selectAll, hasFilter,
+    animalTags, loading, dataLoaded,
+  } = useAnimlFilter();
 
-  // Build legend groups from local counts (sorted by count desc)
-  const groups = TAXON_CONFIG
-    .map(t => ({ ...t, count: taxonCounts.get(t.value) ?? 0 }))
-    .filter(t => t.count > 0)
-    .sort((a, b) => b.count - a.count);
+  // Sort by count descending, filter out zero-count
+  const groups = animalTags
+    .filter(t => t.totalObservations > 0)
+    .sort((a, b) => b.totalObservations - a.totalObservations);
 
   // Loading state — show shimmer while fetching
   if (loading || !dataLoaded) {
     return (
       <div
-        id="inat-legend-widget"
+        id="animl-legend-widget"
         className="absolute bottom-6 right-6 bg-white rounded-lg shadow-lg border border-gray-300 z-30 w-72"
       >
-        <div id="inat-legend-loading" className="flex items-center gap-2 px-4 py-3">
+        <div id="animl-legend-loading" className="flex items-center gap-2 px-4 py-3">
           <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-          <span className="text-sm text-gray-500">Loading observations...</span>
+          <span className="text-sm text-gray-500">Loading camera trap data...</span>
         </div>
       </div>
     );
@@ -43,17 +52,17 @@ export function INaturalistLegendWidget() {
 
   return (
     <div
-      id="inat-legend-widget"
+      id="animl-legend-widget"
       className="absolute bottom-6 right-6 bg-white rounded-lg shadow-lg border border-gray-300 z-30 w-72"
     >
       {/* Header */}
       <div
-        id="inat-legend-header"
+        id="animl-legend-header"
         className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg"
       >
         <div className="flex items-center gap-2">
           <button
-            id="inat-legend-expand-toggle"
+            id="animl-legend-expand-toggle"
             onClick={() => setIsExpanded(!isExpanded)}
             className="p-0.5 hover:bg-gray-200 rounded transition-colors"
             aria-label={isExpanded ? 'Collapse legend' : 'Expand legend'}
@@ -62,11 +71,11 @@ export function INaturalistLegendWidget() {
               ? <ChevronDown className="w-4 h-4 text-gray-600" />
               : <ChevronRight className="w-4 h-4 text-gray-600" />}
           </button>
-          <h3 className="text-sm font-semibold text-gray-900">iNaturalist Taxa</h3>
+          <h3 className="text-sm font-semibold text-gray-900">Filter Species</h3>
         </div>
         {!allVisible && (
           <button
-            id="inat-legend-show-all"
+            id="animl-legend-show-all"
             onClick={selectAll}
             className="text-xs text-blue-600 hover:text-blue-700 font-medium"
           >
@@ -75,34 +84,35 @@ export function INaturalistLegendWidget() {
         )}
       </div>
 
-      {/* Taxon filter list */}
+      {/* Species filter list */}
       {isExpanded && (
-        <div id="inat-legend-content" className="p-2 max-h-[32rem] overflow-y-auto space-y-1">
-          {groups.map(group => {
-            const isSelected = hasFilter ? selectedTaxa.has(group.value) : true;
+        <div id="animl-legend-content" className="p-2 max-h-[32rem] overflow-y-auto space-y-1">
+          {groups.map((tag, index) => {
+            const isSelected = hasFilter ? selectedAnimals.has(tag.label) : true;
             const bgColor = isSelected
-              ? 'bg-blue-50 hover:bg-blue-100 border-blue-200'
+              ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200'
               : 'bg-gray-100 hover:bg-gray-150 border-gray-200 opacity-60';
 
             return (
               <button
-                key={group.value}
-                id={`inat-legend-item-${group.value}`}
-                onClick={() => toggleTaxon(group.value)}
+                key={tag.label}
+                id={`animl-legend-item-${tag.label.replace(/\s+/g, '-').toLowerCase()}`}
+                onClick={() => toggleAnimal(tag.label)}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded border transition-all ${bgColor}`}
-                title={`${isSelected ? 'Hide' : 'Show'} ${group.label}`}
+                title={`${isSelected ? 'Hide' : 'Show'} ${tag.label}`}
               >
                 <div className="flex items-center gap-2">
                   <span
                     className="w-3 h-3 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: getTaxonColor(group.value) }}
+                    style={{ backgroundColor: getAnimalColor(index) }}
                   />
-                  <span className="text-base leading-none">{getTaxonEmoji(group.value)}</span>
                   <span className={`text-sm ${isSelected ? 'text-gray-800 font-medium' : 'text-gray-500'}`}>
-                    {group.label}
+                    {tag.label}
                   </span>
                 </div>
-                <span className="text-xs text-gray-600">{group.count.toLocaleString()}</span>
+                <span className="text-xs text-gray-600">
+                  {tag.totalObservations.toLocaleString()}
+                </span>
               </button>
             );
           })}

@@ -259,6 +259,12 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 > Add issues discovered during other phases that need fixing in polish.
 
+### Shared Sync Dependency (from iNaturalist)
+
+- **Reference:** After merging iNaturalist Task 25/26/27, use `docs/IMPLEMENTATION/phases/phase-1-inaturalist.md` ("Shared Sync Contract (Canonical)") as the canonical behavior for Map Layers <-> right-sidebar query sync.
+- **What this enables in Phase 6:** Cross-source polish and QA can validate one consistent interaction model for filter editing, child-view naming, and reactivation behavior.
+- **Phase 6 verification:** Add regression checks for loop prevention, "Edit Filters" hydration accuracy, and custom-name persistence across layer switching.
+
 | Issue | Discovered In | Priority | Notes |
 |-------|---------------|----------|-------|
 | (none yet) | | | |

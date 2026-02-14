@@ -8,10 +8,12 @@ import type Layer from '@arcgis/core/layers/Layer';
 import { createINaturalistLayer } from './inaturalistLayer';
 import { createPreserveBoundaryLayer } from './preserveBoundaryLayer';
 import { createDendraLayer } from './dendraLayer';
+import { createAnimlLayer } from './animlLayer';
 
 /** Set of catalog layer IDs that have real map layer implementations */
 export const IMPLEMENTED_LAYERS = new Set([
   'inaturalist-obs',
+  'animl-camera-traps',
   'preserve-boundary',
 ]);
 
@@ -40,6 +42,9 @@ export function createMapLayer(layerId: string, options: {
   switch (layerId) {
     case 'inaturalist-obs':
       return createINaturalistLayer({ id: `v2-${layerId}`, ...options });
+
+    case 'animl-camera-traps':
+      return createAnimlLayer({ id: `v2-${layerId}`, ...options });
 
     case 'preserve-boundary':
       return createPreserveBoundaryLayer({ id: `v2-${layerId}`, ...options });

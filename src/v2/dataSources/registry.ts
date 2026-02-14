@@ -18,10 +18,10 @@ import type { DataSourceAdapter, CacheStatus } from './types';
 
 import { inaturalistAdapter, useINaturalistCacheStatus } from './inaturalist/adapter';
 import { useINaturalistMapBehavior } from './inaturalist/useMapBehavior';
-// import { animlAdapter, useAnimlCacheStatus } from './animl/adapter';          // ← v2/animl
-// import { useAnimlMapBehavior } from './animl/useMapBehavior';                  // ← v2/animl
 import { dendraAdapter, useDendraCacheStatus } from './dendra/adapter';
 import { useDendraMapBehavior } from './dendra/useMapBehavior';
+import { animlAdapter, useAnimlCacheStatus } from './animl/adapter';
+import { useAnimlMapBehavior } from './animl/useMapBehavior';
 // import { dataoneAdapter, useDataOneCacheStatus } from './dataone/adapter';     // ← v2/dataone
 // import { useDataOneMapBehavior } from './dataone/useMapBehavior';              // ← v2/dataone
 
@@ -29,8 +29,8 @@ import { useDendraMapBehavior } from './dendra/useMapBehavior';
 
 const ADAPTER_MAP: Record<string, DataSourceAdapter> = {
   inaturalist: inaturalistAdapter,
-  // animl: animlAdapter,       // ← v2/animl
   dendra: dendraAdapter,
+  animl: animlAdapter,
   // dataone: dataoneAdapter,   // ← v2/dataone
 };
 
@@ -54,8 +54,8 @@ export function useAllMapBehaviors(
   mapReady: number,
 ): void {
   useINaturalistMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
-  // useAnimlMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);     // ← v2/animl
   useDendraMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
+  useAnimlMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
   // useDataOneMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);   // ← v2/dataone
 }
 
@@ -66,14 +66,14 @@ export function useAllMapBehaviors(
  */
 export function useActiveCacheStatus(dataSource: string | undefined): CacheStatus | null {
   const inat = useINaturalistCacheStatus();
-  // const animl = useAnimlCacheStatus();     // ← v2/animl
   const dendra = useDendraCacheStatus();
+  const animl = useAnimlCacheStatus();
   // const dataone = useDataOneCacheStatus(); // ← v2/dataone
 
   switch (dataSource) {
     case 'inaturalist': return inat;
-    // case 'animl': return animl;       // ← v2/animl
     case 'dendra': return dendra;
+    case 'animl': return animl;
     // case 'dataone': return dataone;   // ← v2/dataone
     default: return null;
   }

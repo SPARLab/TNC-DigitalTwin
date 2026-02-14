@@ -112,13 +112,13 @@ Implement the iNaturalist observations browse experience in the right sidebar. T
 **Goal:** Display filtered observations as browseable cards.
 
 **Acceptance Criteria:**
-- [ ] Cards show: species name, observer, date, location
-- [ ] Cards show photo thumbnail (if available)
-- [ ] "View on Map" button zooms to observation
-- [ ] "Bookmark" button adds to bookmarks (simple, no filter)
-- [ ] "Open in iNat" button links to iNaturalist.org
-- [ ] List is paginated or virtualized for performance
-- [ ] Clicking card selects it (for detail view)
+- [x] Cards show: species name, observer, date, location
+- [x] Cards show photo thumbnail (if available)
+- [x] Clicking card opens detail view AND pans/zooms/highlights marker on map + opens popup (Task 14, Feb 12)
+- [x] "View on Map" button also pans + zooms + highlights + opens popup
+- [x] "Bookmark" button stubbed (DFT-046: "Save as View" future)
+- [x] "Open in iNat" button links to iNaturalist.org
+- [x] List is paginated or virtualized for performance
 
 **Reference:** Mockup `02b-browse-inaturalist.html` results section
 

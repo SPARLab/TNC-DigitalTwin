@@ -1,7 +1,7 @@
 # Master Development Plan - V2 Digital Catalog
 
 **Created:** January 23, 2026  
-**Last Updated:** February 12, 2026  
+**Last Updated:** February 13, 2026  
 **Target Deadline:** February 20, 2026  
 **Status:** 🟡 Planning
 
@@ -29,9 +29,9 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 | Phase | Name | Status | Progress | Branch | Blocking? |
 |-------|------|--------|----------|--------|-----------|
-| 0 | Foundation | ⚪ Not Started | 0 / 7 tasks | `v2/foundation` | YES - blocks all |
-| 1 | iNaturalist | ⚪ Not Started | 0 / 5 tasks | `v2/inaturalist` | No |
-| 2 | ANiML | ⚪ Not Started | 0 / 7 tasks | `v2/animl` | No |
+| 0 | Foundation | 🟡 In Progress | ~98% | `v2/foundation` | YES - blocks all |
+| 1 | iNaturalist | 🟢 Complete | 5 / 5 tasks | `v2/inaturalist` | No |
+| 2 | ANiML | 🟡 In Progress | 9 / 14 tasks | `v2/animl` | No |
 | 3 | Dendra | 🟡 In Progress | 5 / 6 tasks | `v2/dendra` | No |
 | 4 | DataOne | ⚪ Not Started | 0 / 5 tasks | `v2/dataone` | No |
 | 5 | Export Builder | ⚪ Not Started | 0 / 4 tasks | `v2/export` | No |
@@ -40,6 +40,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 **Status Legend:**
 - ⚪ Not Started
 - 🟡 In Progress
+- 🟢 Ready to Start (adapter pattern complete, no blockers)
 - 🟢 Complete
 - 🔴 Blocked
 
@@ -82,6 +83,7 @@ Phase 0: Foundation
 | Data source adapter pattern | ✅ Decided | Will + Claude | Feb 12 | Plugin architecture for data sources. Each source implements `DataSourceAdapter` interface. Enables parallel branch development with minimal merge conflicts. See `src/v2/dataSources/` |
 | Caching strategy | ✅ Decided | Will + Claude | Feb 12 | Lazy per-source caching. Each data source context has `warmCache()` method (idempotent). Cache warms on first pin or activation. Data persists while provider mounted. Eliminates eager page-load fetches. |
 | Dynamic layer registry from Data Catalog Service | ✅ Decided | User + Claude | Feb 12 | Replace static `layerRegistry.ts` with dynamic fetch from Dan's Data Catalog FeatureServer (`Dangermond_Preserve_Data_Catalog`). ~90+ real datasets across 14 categories. Left sidebar populated from catalog. Layers without adapters show "Not Yet Implemented" toast. **Blocks all parallel branches until Task 0.9 complete.** See `docs/development-task-tracker.md` Task 24. |
+| Cross-layer filtered-view naming contract | ✅ Decided | User + Claude | Feb 13 | Manual rename behavior must persist across all layer types and custom right-sidebar views. Auto-naming is adapter-specific per data source. Shared widget/context rule: if `isNameCustom` is false, auto-name can update on filter sync; if true, never overwrite. Rollout can happen incrementally by branch (not required to block current merge). |
 
 ### Styling Decisions
 
@@ -237,6 +239,9 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 13, 2026 | Phase 1 | **Task 28 complete: iNaturalist detail view crash fixed.** Hook-order mismatch (early return before hooks) caused "Rendered fewer hooks than expected." Moved detail-view return after all hooks; hardened handleViewOnMap with try/catch and coordinate validation. RightSidebar auto-switches to Browse when map observation clicked. Phase 1 all tasks complete. | Claude |
+| Feb 13, 2026 | Phase 1 | **Phase 1 iNaturalist complete.** All 13 granular tasks done including Tasks 26–27 (dynamic view names, user-renamable filtered views). Cross-branch merge contract documented. | User + Claude |
+| Feb 13, 2026 | All | Added cross-layer filtered-view naming decision: universal manual rename in shared Map Layers logic with per-data-source auto-naming algorithms. Documented as an incremental branch rollout contract to avoid regressions during parallel merges. | User + Claude |
 | Feb 12, 2026 | Phase 0 | **Data Source Adapter Pattern** — Refactored architecture to enable parallel branch development. Created plugin system: each data source implements `DataSourceAdapter` interface. Core files (MapContainer, RightSidebar, useMapLayers) now data-source-agnostic — read from registry instead of hardcoding imports. **Lazy caching:** `warmCache()` pattern replaces eager on-mount fetch (iNaturalist: 2.18s initial, instant on revisit). Active-but-not-pinned layers now visible on map. Merge conflict surface reduced to ~4 one-liners in registry.ts per new source. Files: `src/v2/dataSources/{types.ts, registry.ts, inaturalist/{adapter.tsx, useMapBehavior.ts}}`. Ready for parallelization. | Will + Claude |
 | Feb 5, 2026 | All | Added Sidebar Template System — shared structural templates for all data sources (TabBar, OverviewTab, ResultCard, Pagination, LeftSidebar categories). Theme tokens centralized in `sidebarTheme`. Change once, changes everywhere. Resolved stale entries: bookmark widget (DFT-007), filter representation (DFT-024). Resolved styling TBDs: sidebar header, card component. See design-system.md | Will + Claude |
 | Feb 5, 2026 | All | Resolved DFT-038: Filter section anatomy — shared `FilterSection` component enforces consistent Browse tab filter UI across all 4 data sources. Structural skeleton: header with "Clear All", 2-col CSS grid, result count footer. Flat `slate-50` container (no gradients). Header convention: "Filter [Plural Noun]". Per-data-source control inventory. "Optional:" labels dropped. Analyzed via Gestalt, Norman, Nielsen, Hick, Miller, IA, Fitts, WCAG. See design-system.md | Will + Claude |
@@ -280,3 +285,7 @@ When working on any phase:
 || Feb 6, 2026 | Phase 1, 4 | Resolved DFT-044: Self-contained row detail view component — no shared detail view component. Extract shared sub-components (`DetailBackButton`, `DetailActionRow`, `DetailMetadataGrid`) + design tokens for consistency. Purpose-built detail views for iNaturalist (hero image + flat grid) and DataOne (multi-section hierarchical). Architectural principle: consistent structural template (tabs, scaffolding) with flexibility for custom content. Rationale: observations (atomic events) vs datasets (structured resources) are conceptually different types; forcing into shared component creates leaky abstraction. Analyzed via 11 design principles (Nielsen #4/#8, Norman Conceptual Model, Hick's Law, IA Mental Models). Updated right-sidebar-template.md with sub-component specs, design-system.md with Detail View Components section, master-plan.md Cross-Phase Decisions. See DFT-044 resolution | Will + Claude |
 || Feb 6, 2026 | Phase 3 | Resolved DFT-043: Dendra sidebar body at Level 3 — minimal sidebar (filter controls + bookmark only). Stats appear in pop-up footer with chart (not sidebar). Rationale: separation of concerns (sidebar = parametric control, pop-up = visualization + metadata), spatial/cognitive proximity (stats belong with chart), minimalism (Nielsen #8), reduced cognitive load (Miller's Law), reduced split attention, accessibility (logical Tab order), industry conventions (chart metadata lives with chart). Scored 17 green / 0 yellow / 0 red across 9 UI/UX frameworks. Updated Phase 3 Task 3.5, right-sidebar-template.md, master-plan.md UX Decisions | Will + Claude |
 || Feb 6, 2026 | Phase 0, 4 | Resolved DFT-045: Left sidebar DataOne taxonomy — hybrid model (standalone category + explicit shortcut rows). DataOne lives under "Research Datasets" category as canonical location. Special shortcut rows appear in expanded domain categories (Species, Fire, etc.) labeled "DataOne Datasets (count)" with books icon. Clicking shortcut activates DataOne with domain pre-filtered. Improves discoverability for domain-first users. Explicit "DataOne" label (not generic) supports future multi-repo expansion (Dryad, Zenodo). Analyzed via 9 design frameworks (Findability, Mental Models, Consistency, Recognition, Conceptual Model, Progressive Disclosure, Wayfinding, Implementation Complexity, Cognitive Load). Updated left-sidebar.md (State 9), phase-4-dataone.md (Task 4.2), master-plan.md. Created resolution summary | Will + Claude |
+| Feb 13, 2026 | Phase 2 | **Phase 2 Task 2.15 complete: ANiML image click → highlight camera on map.** AnimlFilterContext: focusedDeploymentId, focusDeployment(), clearFocusedDeployment(). ImageList: onImageFocus callback on click and arrow-key navigation. useAnimlMapBehavior: ArcGIS layerView.highlight() for focused camera. animlLayer: getAnimlCameraGraphicByDeploymentId() helper (2.16-ready). | Will + Claude |
+| Feb 13, 2026 | Phase 2 | **Phase 2 Tasks 2.13, 2.14 complete: ANiML expanded image view + arrow key navigation.** ImageExpandedView.tsx: click thumbnail → larger view in sidebar, metadata (species, date, camera), Back to list, overlay + bottom nav. Arrow keys (←/→) and Prev/Next navigate; Esc closes. Auto-pagination: crossing page boundary (e.g. image 20→21) advances page and stays in expanded view (DFT-049). | Will + Claude |
+| Feb 13, 2026 | Phase 2 | **Phase 2 Tasks 2.3–2.6 complete: ANiML Browse tab multi-dimensional filter system.** FilterSection (expandable, multi-select, Select All/Clear All), AnimlFilterContext (selectedCameras, filteredImageCount), live result count, ImageList. Researchers can select multiple species AND cameras. Added Tasks 2.10 (right sidebar scrollbar — prevent content shift) and 2.11 (date/time frame filter above Species and Cameras). | Will + Claude |
+| Feb 12, 2026 | Phase 2 | **Phase 2 (ANiML) marked Ready to Start.** Data Source Adapter Pattern (Phase 0 Task 23) complete. Merge conflict surface: ~11 lines across 3 shared files. Added comprehensive implementation guide to phase-2-animl.md with 8-step instructions, testing checklist, and common pitfalls. Reference implementations documented (iNaturalist adapter, context, map layer, legend). | Will + Claude |

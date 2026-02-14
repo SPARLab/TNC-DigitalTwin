@@ -3,14 +3,13 @@
 // Back button returns to the observation list preserving filter state.
 // ============================================================================
 
-import { ArrowLeft, MapPin, Bookmark, ExternalLink, Leaf, Calendar, User } from 'lucide-react';
+import { ArrowLeft, MapPin, ExternalLink, Leaf, Calendar, User } from 'lucide-react';
 import type { INatObservation } from '../../../hooks/useINaturalistObservations';
 
 interface DetailViewProps {
   observation: INatObservation;
   onBack: () => void;
   onViewOnMap: () => void;
-  onBookmark: () => void;
 }
 
 function formatFullDate(dateStr: string): string {
@@ -24,7 +23,7 @@ function formatFullDate(dateStr: string): string {
   }
 }
 
-export function INaturalistDetailView({ observation, onBack, onViewOnMap, onBookmark }: DetailViewProps) {
+export function INaturalistDetailView({ observation, onBack, onViewOnMap }: DetailViewProps) {
   const displayName = observation.commonName || observation.scientificName;
   const [lon, lat] = observation.coordinates;
 
@@ -88,24 +87,15 @@ export function INaturalistDetailView({ observation, onBack, onViewOnMap, onBook
         >
           <MapPin className="w-4 h-4" /> View on Map
         </button>
-        <div className="flex gap-2">
-          <button
-            onClick={onBookmark}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-gray-200
-                       text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <Bookmark className="w-4 h-4" /> Bookmark
-          </button>
-          <a
-            href={observation.iNatUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-gray-200
-                       text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <ExternalLink className="w-4 h-4" /> iNat
-          </a>
-        </div>
+        <a
+          href={observation.iNatUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full flex items-center justify-center gap-2 py-2.5 border border-gray-200
+                     text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          <ExternalLink className="w-4 h-4" /> Open on iNaturalist
+        </a>
       </div>
     </div>
   );

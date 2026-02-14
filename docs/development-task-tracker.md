@@ -12,6 +12,7 @@
 
 | # | Phase | Task | Status | Priority | Notes |
 |---|-------|------|--------|----------|-------|
+| **28** | **1** | **🐛 iNaturalist: Detail View Crash on Observation Click** | **✅** | **Critical** | **Fixed: hook-order mismatch + ArcGIS goTo hardening; map click auto-opens Browse tab for detail view** |
 | 1 | 0 | **0.4** Map Container — ArcGIS WebMap integration | ✅ | High | Completed: real ArcGIS map + GraphicsLayer for highlights |
 | 2 | 0 | **0.5** Drag-and-Drop Reorder — Pinned layers | ✅ | Medium | Completed within Map Layers widget |
 | 3 | 0 | **Enable Map Layers Drag Reordering** | ✅ | Medium | Related to Task 0.5, may consolidate |
@@ -26,23 +27,46 @@
 | 12 | 0 | **Fix DataOne Datasets Card Width in Left Sidebar** | ✅ | Low | DataOne shortcut row width matching; right padding; removed redundant left border |
 | 13 | 1 | **Fix iNaturalist Layer Icons & Loading** | ✅ | High | Replaced FeatureLayer with spatially-filtered GraphicsLayer; local filtering; removed dummy data |
 | 23 | 0 | **Data Source Adapter Pattern Refactor** | ✅ | Critical | Extract data-source logic into plugin architecture; enable parallel branch development |
-| 14 | 1 | **iNaturalist: Observation Card Click → Map Highlight + Detail View** | ⚪ | High | Click obs card: highlight map marker, show tooltip, navigate to detail page |
-| 15 | 1 | **iNaturalist: Map Marker Click → Zoom + Detail View** | ⚪ | High | Click map marker: zoom to observation, open detail view in right sidebar |
-| 16 | 1 | **iNaturalist: Remove Bookmark Button/Action** | ⚪ | Low | Already stubbed; clean up unused bookmark logic from observation cards |
-| 17 | 1 | **iNaturalist: Compact Filter Section (Dropdown)** | ⚪ | Medium | Filter Observations in Browse tab: tall list → dropdown; include Select All |
-| 18 | 1 | **iNaturalist: Rename Legend Widget Title** | ⚪ | Low | Change "Filter Observations" → "iNaturalist Taxa" in floating legend widget |
-| 19 | 1 | **iNaturalist: Add Observation Search Bar** | ⚪ | Medium | Search observations by common/scientific name in Browse tab |
-| 20 | 1 | **iNaturalist: Reduce Pagination to 10 per Page** | ⚪ | Low | Change PAGE_SIZE from 20 → 10 in useINaturalistObservations |
-| 21 | 1 | **iNaturalist: Add Date Range Filter** | ⚪ | Medium | Add start/end date pickers in Browse tab filter section |
-| 22 | 1 | **iNaturalist: Remember Last Active Tab** | ⚪ | Low | Persist Overview vs Browse tab per layer; restore on reactivation |
+| 14 | 1 | **iNaturalist: Observation Card Click → Map Highlight + Detail View** | ✅ | High | Click obs card: highlight map marker, show tooltip, navigate to detail page |
+| 15 | 1 | **iNaturalist: Map Marker Click → Zoom + Detail View** | ✅ | High | Click map marker: zoom to observation, open detail view in right sidebar |
+| 16 | 1 | **iNaturalist: Remove Bookmark Button/Action** | ✅ | Low | Already stubbed; clean up unused bookmark logic from observation cards |
+| 17 | 1 | **iNaturalist: Compact Filter Section (Dropdown)** | ✅ | Medium | Filter Observations in Browse tab: tall list → dropdown; include Select All |
+| 18 | 1 | **iNaturalist: Rename Legend Widget Title** | ✅ | Low | Change "Filter Observations" → "iNaturalist Taxa" in floating legend widget |
+| 19 | 1 | **iNaturalist: Add Observation Search Bar** | ✅ | Medium | Search observations by common/scientific name in Browse tab |
+| 20 | 1 | **iNaturalist: Reduce Pagination to 10 per Page** | ✅ | Low | Change PAGE_SIZE from 20 → 10 in useINaturalistObservations |
+| 21 | 1 | **iNaturalist: Add Date Range Filter** | ✅ | Medium | Add start/end date pickers in Browse tab filter section |
+| 22 | 1 | **iNaturalist: Remember Last Active Tab** | ✅ | Low | Completed: per-layer tab memory in RightSidebar; restores Overview/Browse on layer reactivation |
+| 25 | 1 | **iNaturalist: Sync Filters with Map Layers Widget** | ✅ | Medium | Completed: date + taxon filters sync to Map Layers widget; Edit Filters opens Browse with pre-applied filters; fixed infinite loop + pin-transition sync |
+| 26 | 1 | **iNaturalist: Dynamic View Names from Filters** | ✅ | Low | Completed: child view names now auto-generate from active filters (taxa/date) |
+| 27 | 1 | **iNaturalist: User-Renamable Filtered Views** | ✅ | Low | Completed: child views can be renamed inline in Map Layers widget; custom names persist |
 | 14 | 0 | **Fix Map Layers Widget Drag Animation** | ✅ | Medium | Fixed: disabled @dnd-kit auto layout animations to prevent jarring transforms |
 | 24 | 0 | **0.9 Dynamic Layer Registry from Data Catalog Service** | 🟡 | **Critical** | Replace static layerRegistry with dynamic fetch from Data Catalog FeatureServer (~90+ real datasets, 14 categories); "Not Yet Implemented" toast for layers without adapters. **BLOCKS all parallel branches.** |
 | 25 | 3 | **Dendra: Tasks 3.1-3.4 — Station browse adapter** | ✅ | High | Service, context, map layer, sidebar shell, filters, station cards, detail view with datastream summaries. Next: Floating time series chart (3.5). |
 | 26 | 3 | **Dendra: Task 3.5 — Floating time series chart** | 🟡 | High | In progress. 3.5a ✅ (datastream click refresh), 3.5b ✅ (0-data fix), 3.5c ✅ (glassmorphism). Remaining: 3.5d sidebar polish. Reference: mockup 02d-browse-dendra.html |
 | 27 | 0/1/3 | **Save View / Save With Filters — sync with Map Layers** | ⚪ | Medium | **Prereq:** Check `git log` — v2/iNaturalist must be merged first. Use iNaturalist filter-persistence logic as reference. Dendra may need explicit save (not auto-save) due to Level 3 complexity. See task details below. |
+| 25 | 2 | **2.3–2.6** ANiML Browse tab — multi-dimensional filter system | ✅ | High | FilterSection (Species, Cameras), Select All/Clear All, live result count, ImageList. Iteration 2 Phase 1 MVP complete. |
+| 26 | 2 | **2.10** Right Sidebar Scrollbar — Prevent content shift | ✅ | Medium | Scrollbar should not move content when it appears (e.g., selecting species + camera). Use scrollbar-gutter: stable or overlay. |
+| 27 | 2 | **2.11** ANiML Date/Time Frame Filter — Above Species and Cameras | ✅ | Medium | DateFilterSection with date pickers + presets (Last 30d, 6mo, This Year, Last Year). Passes startDate/endDate to queryImageLabelsCached. Count fix: use actual images.length when fetched (not countLookups) so date-filtered counts match. |
+| 28 | 2 | **2.12** ANiML Image List — Pagination (Prev/Next Page) | ✅ | Medium | Completed (Feb 13): Scrollable list + Prev/Next underneath, expand-to-fill, visible scrollbar. |
+| 29 | 2 | **2.13** ANiML Image — Expanded View on Click | ✅ | Medium | Click thumbnail → larger view in sidebar; metadata; Back to list; auto-pagination across pages. |
+| 30 | 2 | **2.14** ANiML Expanded View — Arrow Key Navigation | ✅ | Low | Left/right arrow keys navigate; auto-paginate across page boundaries (20→21, 40→41). |
+| 31 | 2 | **2.7** ANiML Caching Strategy Investigation | ✅ | Low | Marked done for now; service/context caching in place. |
+| 32 | 2 | **2.15** ANiML Image Click → Highlight Camera on Map | ✅ | Medium | Completed: focusedDeploymentId in AnimlFilterContext; ArcGIS layerView.highlight(); onImageFocus from ImageList/expanded view. |
+| 33 | 2 | **2.16** ANiML Camera Badges — Numbered Icons for Query Results | ⚪ | Medium | When filter active: show count badge above cameras with matching images; cameras with 0 results get no badge. |
 
-**Active tasks remaining:** 11  
-**Recently completed:** **Dendra 3.5b** ✅ (Feb 13 — 0-data chart fix), **Dendra 3.1-3.4** ✅ (Feb 12), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
+**Active tasks remaining:** 12  
+**🔴 Next (critical):** Task 24 — Dynamic Layer Registry from Data Catalog Service  
+**Recently completed:** **Task 32** (2.15 ANiML Image Click → Highlight Camera on Map) ✅ (Feb 13), **Task 31** (2.7 ANiML Caching Strategy — marked done) ✅ (Feb 13), **Tasks 29–30** (ANiML Expanded Image View + Arrow Key Nav + Auto-Pagination) ✅ (Feb 13), **Task 28** (ANiML Image List Pagination Prev/Next) ✅ (Feb 13), **Task 27** (ANiML Date/Time Frame Filter) ✅ (Feb 13), **Task 26** (Right Sidebar Scrollbar Fix) ✅ (Feb 13), **Phase 2 Tasks 2.3–2.6** (ANiML multi-dimensional filter) ✅ (Feb 13), **Dendra 3.5b** ✅ (Feb 13 — 0-data chart fix), **Dendra 3.1-3.4** ✅ (Feb 12), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
+
+---
+
+## Cross-Branch Merge Checklist (Filtered View Naming)
+
+- [ ] Keep shared Map Layers manual rename behavior in `LayerContext` (or equivalent shared state): custom name persists once user renames.
+- [ ] Preserve custom-name guard on sync: auto filter sync must not overwrite names when view is marked custom.
+- [ ] Implement per-data-source auto-name builder (iNaturalist/ANiML/Dendra/DataOne) so non-custom names update from each layer's filter model.
+- [ ] Verify Edit Filters navigation + filter sync still targets correct child view IDs after merge.
+- [ ] Integration QA for each data source: create view, auto-name updates from filters, manual rename sticks, clear custom name returns to auto naming.
 
 ---
 
@@ -52,10 +76,10 @@
 
 | Phase | Status | Progress | Branch | Blocking? |
 |-------|--------|----------|--------|-----------|
-| **0. Foundation** | 🟡 In Progress | ~95% | `v2/foundation` | YES — blocks all |
-| 1. iNaturalist | ⚪ Not Started | 0% | `v2/inaturalist` | 🔴 Paused — waiting for Task 0.9 |
-| 2. ANiML | ⚪ Not Started | 0% | `v2/animl` | 🔴 Paused — waiting for Task 0.9 |
-| 3. Dendra | 🟡 In Progress | 4 / 6 tasks | `v2/dendra` | No |
+| **0. Foundation** | 🟡 In Progress | ~98% | `v2/foundation` | YES — blocks all |
+| 1. iNaturalist | 🟢 Complete | 5 / 5 tasks | `v2/inaturalist` | No — Task 0.6 optional polish |
+| 2. ANiML | 🟡 In Progress | ~40% | `v2/animl` | No — Browse tab MVP done |
+| 3. Dendra | 🟡 In Progress | 5 / 6 tasks | `v2/dendra` | No |
 | 4. DataOne | ⚪ Not Started | 0% | `v2/dataone` | 🔴 Paused — waiting for Task 0.9 |
 | 5. Export Builder | ⚪ Not Started | 0% | `v2/export` | No |
 | 6. Polish & Consistency | ⚪ Not Started | 0% | `v2/polish` | No |
@@ -290,67 +314,57 @@
 
 ### After Phase 0 (Phase 1-4)
 
-- **Phase 1:** iNaturalist data source — 9 active tasks
+- **Phase 1:** iNaturalist data source — **🟢 Complete**
+  - **See detailed task breakdown:** `docs/IMPLEMENTATION/phases/phase-1-inaturalist.md`
+  - **Quick Summary:**
+    - 13 / 13 tasks complete
+    - Recently completed: Dynamic View Names (Task 26), User-Renamable Views (Task 27), Sync Filters with Map Layers (Task 25), Search Bar (Task 19), Date Range Filter (Task 21), Tab Memory (Task 22)
 
-  - [x] **Task 13: Fix iNaturalist Layer Icons & Loading** ✅
-    - **Completed:** Replaced FeatureLayer (no spatial filter, loaded all US data) with GraphicsLayer populated from locally-cached observations (expanded preserve bounding box). Legend counts computed locally (eliminated 11 API calls). Instant taxon filtering. Layer starts hidden.
-    - **Files:** `INaturalistFilterContext.tsx`, `inaturalistLayer.ts`, `useMapLayers.ts`, `INaturalistLegendWidget.tsx`, `useINaturalistObservations.ts`, `LayerContext.tsx`, `MapContainer.tsx`
+- **Phase 2:** ANiML data source
 
-  - [ ] **Task 14: Observation Card Click → Map Highlight + Detail View**
-    - **Goal:** Clicking an observation card in Browse tab should (1) highlight the corresponding map marker with cyan ring + tooltip, (2) zoom map to observation, (3) navigate to detail view in right sidebar.
-    - **Implementation:** Wire `onViewDetail` in `ObservationCard` to call `highlightPoint()` + `view.goTo()` from MapContext, then transition Browse tab to detail view state.
-    - **Files:** `INaturalistBrowseTab.tsx`, `ObservationCard.tsx`, `MapContext.tsx`
+  - [x] **Tasks 2.3–2.6: Multi-dimensional filter system** ✅
+    - **Completed (Feb 13):** FilterSection.tsx (expandable, multi-select, Select All/Clear All). AnimlFilterContext: selectedCameras, toggleCamera, clearCameras, selectAllAnimals, selectAllCameras, filteredImageCount, getFilteredCountForSpecies. AnimlBrowseTab: Species + Cameras FilterSections, live result count, debounced image fetch, ImageList. Researchers can select multiple species AND cameras.
+    - **Files:** `FilterSection.tsx`, `AnimlFilterContext.tsx`, `AnimlBrowseTab.tsx`
 
-  - [ ] **Task 15: Map Marker Click → Zoom + Detail View**
-    - **Goal:** Clicking an iNaturalist map marker (emoji icon) should zoom to the observation and open its detail view in the right sidebar.
-    - **Implementation:** Add popupTemplate click handler or graphic click event listener in `inaturalistLayer.ts`. Trigger `activateLayer()` with observation ID, pass to Browse tab to show detail view.
-    - **Files:** `inaturalistLayer.ts`, `LayerContext.tsx`, `INaturalistBrowseTab.tsx`
-    - **Note:** May require passing observation ID through active layer state or MapContext event bus.
+  - [x] **Task 2.10: Right Sidebar Scrollbar — Prevent content shift** ✅
+    - **Completed (Feb 13):** scrollbar-gutter: stable on right sidebar scroll area.
+    - **Files:** `RightSidebar.tsx`, `index.css`
 
-  - [ ] **Task 16: Remove Bookmark Button/Action**
-    - **Goal:** Clean up unused bookmark logic from observation cards and detail view (already stubbed as TODO).
-    - **Implementation:** Remove "Bookmark" button from `ObservationCard` and `INaturalistDetailView`. Remove `handleBookmark` stub functions.
-    - **Files:** `ObservationCard.tsx`, `INaturalistDetailView.tsx`, `INaturalistBrowseTab.tsx`
+  - [x] **Task 2.11: Date/Time Frame Filter — Above Species and Cameras** ✅
+    - **Completed (Feb 13):** DateFilterSection component with collapsible date range picker + quick-select presets (Last 30 days, Last 6 months, This Year, Last Year). AnimlFilterContext: startDate/endDate state, setDateRange, clearDateRange, hasDateFilter. AnimlBrowseTab passes dates to queryImageLabelsCached. Auto-apply per DFT-039. Count fix: use actual `images.length` when fetched (not countLookups) so date-filtered counts match displayed results.
+    - **Files:** `DateFilterSection.tsx` (new), `AnimlFilterContext.tsx`, `AnimlBrowseTab.tsx`
 
-  - [ ] **Task 17: Compact Filter Section (Dropdown)**
-    - **Goal:** Filter Observations section in Browse tab is too tall (12 checkboxes). Convert to a dropdown menu with multi-select checkboxes inside. Include "Select All" option.
-    - **Implementation:** Replace checkbox list with a `<select>` or custom dropdown component. Show selected count badge (e.g., "3 taxa selected"). Expand to show checkboxes on click.
-    - **Files:** `INaturalistBrowseTab.tsx`
-    - **Design:** Match filter dropdown pattern from other data sources (ANiML, Dendra).
+  - [x] **Task 2.12: ANiML Image List — Pagination (Prev/Next Page)** ✅
+    - **Completed (Feb 13):** Replaced "Load More" with page-based navigation. Scrollable image list with Prev/Next controls underneath, page indicator (`Page X of Y`), range text (`1-20 of N`).
+    - **Refinement:** Image results area expands to fill remaining sidebar space; always-visible scrollbar (`.scroll-area-animl-images`) so users can detect scrollability.
+    - **Implementation:** `currentPage` state + fixed `PAGE_SIZE` pagination in ANiML views; `ImageList` with `expandToFill` prop; flex layout in `AnimlBrowseTab` for dynamic height.
+    - **Files:** `AnimlBrowseTab.tsx`, `ImageList.tsx`, `CameraDetailView.tsx`, `AnimalDetailView.tsx`, `index.css`
 
-  - [ ] **Task 18: Rename Legend Widget Title**
-    - **Goal:** Change floating legend header from "Filter Observations" to "iNaturalist Taxa" (more descriptive, avoids confusion with Browse tab filter section).
-    - **Implementation:** Update `<h3>` text in `INaturalistLegendWidget.tsx`.
-    - **Files:** `INaturalistLegendWidget.tsx`
+  - [x] **Task 2.13: ANiML Image — Expanded View on Click** ✅
+    - **Completed (Feb 13):** Click thumbnail → larger view in sidebar. ImageExpandedView.tsx: medium_url, metadata (species, date, camera), Back to list, overlay + bottom nav buttons. Auto-pagination: arrow keys cross page boundaries (20→21, 40→41) without closing expanded view.
+    - **Files:** `ImageExpandedView.tsx` (new), `ImageList.tsx` (modified)
 
-  - [ ] **Task 19: Add Observation Search Bar**
-    - **Goal:** Add a search input in Browse tab to filter observations by common name or scientific name (client-side substring match).
-    - **Implementation:** Add text input above filter section. Filter `allObservations` in `useINaturalistObservations` by search term. Reset page to 1 on search change.
-    - **Files:** `INaturalistBrowseTab.tsx`, `useINaturalistObservations.ts`
+  - [x] **Task 2.14: ANiML Expanded View — Arrow Key Navigation** ✅
+    - **Completed (Feb 13):** Left/right arrow keys navigate; Prev/Next buttons; Esc to close. Auto-pagination across pages (no back-to-list required when crossing page boundaries).
+    - **Files:** `ImageExpandedView.tsx`, `ImageList.tsx`
 
-  - [ ] **Task 20: Reduce Pagination to 10 per Page**
-    - **Goal:** Show 10 observations per page instead of 20 in Browse tab (better vertical scrolling UX).
-    - **Implementation:** Change `PAGE_SIZE` from 20 → 10 in `useINaturalistObservations.ts`.
-    - **Files:** `useINaturalistObservations.ts`
+  - [x] **Task 31 (2.7): ANiML Caching Strategy Investigation** ✅
+    - **Marked done for now (Feb 13):** Service/context caching in place; formal investigation deferred.
 
-  - [ ] **Task 21: Add Date Range Filter**
-    - **Goal:** Add start/end date pickers in Browse tab filter section to filter observations by `observed_on` date.
-    - **Implementation:** Add two `<input type="date">` fields. Pass `startDate`/`endDate` to `useINaturalistObservations`. Filter observations client-side by date range.
-    - **Files:** `INaturalistBrowseTab.tsx`, `useINaturalistObservations.ts`
+  - [x] **Task 32 (2.15): ANiML Image Click → Highlight Camera on Map** ✅
+    - **Completed (Feb 13):** AnimlFilterContext: focusedDeploymentId, focusDeployment(), clearFocusedDeployment(). ImageList: onImageFocus(image) callback on click and when navigating in expanded view. useAnimlMapBehavior: ArcGIS layerView.highlight(targetGraphic) for focused deployment; cleanup on layer remove. animlLayer: getAnimlCameraGraphicByDeploymentId() helper (2.16-ready).
+    - **Files:** `AnimlFilterContext.tsx`, `ImageList.tsx`, `AnimlBrowseTab.tsx`, `animlLayer.ts`, `useMapBehavior.ts`
 
-  - [ ] **Task 22: Remember Last Active Tab**
-    - **Goal:** When user switches away from iNaturalist and returns, restore the last active tab (Overview or Browse) instead of always resetting to Overview.
-    - **Implementation:** Store `lastActiveTab` per layer ID in a ref or local state map. Restore on layer reactivation. Consider using `LayerContext` or a new `lastTabByLayer` map in `RightSidebar`.
-    - **Files:** `RightSidebar.tsx`, `LayerContext.tsx`
+  - [ ] **Task 33 (2.16): ANiML Camera Badges — Numbered Icons for Query Results**
+    - **Goal:** When filter active (species, date, etc.), show numbered badges above cameras that have ≥1 matching image. Cameras with 0 results get no badge.
+    - **Implementation:** Use countLookups; badge only when count > 0; positioned above camera icon on map.
+    - **Files:** `animlLayer.ts`, `AnimlFilterContext.tsx`
 
   - [ ] **Future/Low Priority: Save Observation → Create Filtered View**
     - **Goal:** Clicking "Save" on an observation creates a new child view in Map Layers widget filtered to that specific observation (by ID or name).
     - **Implementation:** Wire "Save" action to `createNewView(pinnedId)` in LayerContext. Set filter to `observation_id = {id}`. Complex — requires linking browse actions to Map Layers state.
     - **Priority:** Deferred — low user value, high complexity.
     - **Files:** `INaturalistBrowseTab.tsx`, `LayerContext.tsx`, `inaturalistLayer.ts`
-
-- **Phase 2:** ANiML data source (7 tasks)
-
 - **Phase 3:** Dendra data source (6 tasks)
   - [x] **Tasks 3.1-3.4 complete:** Dendra station browse adapter ✅ (Feb 12)
     - **Completed:** Full adapter for 10 per-type sensor services (Weather Stations, Barometers, Rain Gauges, etc.). Service layer, DendraContext, map behavior, sidebar (Overview/Browse), StationCard, StationDetailView with datastream summaries. Map markers now correctly show only active layer's stations. Fixed: buildServiceUrl (no double path), elevation null/NaN handling, layer-switch graphics clearing.
@@ -419,8 +433,26 @@ See `docs/master-plan.md` for full phase breakdown.
 | Feb 13, 2026 | Phase 3 | ✅ **Task 26 sub-task 3.5a complete.** Fixed subsequent datastream clicks not updating chart. Two bugs: (1) race condition — stale fetch could overwrite newer datastream's data (request-counter guard in openChart); (2) stale ECharts instance — chart div remounts during loading but old instance pointed to removed DOM (getDom() check before init). **Remaining:** 3.5b (0-data inconsistency), 3.5d (sidebar polish). | Claude |
 | Feb 13, 2026 | Phase 3 | 🟡 **Task 26 (Dendra 3.5) in progress; sub-task 3.5c complete.** Floating chart UI polish shipped: visible glassmorphism, bottom-right placement, half-height panel sizing, stronger contrast/readability, larger axis labels, larger/higher range slider, darker header, and measurement-first header text hierarchy. **Still open:** 3.5a (chart not refreshing on subsequent datastream clicks), 3.5b (0-data inconsistency). | Claude |
 | Feb 12, 2026 | Phase 3 | ✅ **Dendra Tasks 3.1-3.4 complete.** Full station browse adapter for 10 per-type sensor services. Service layer, DendraContext (per-service cache), map behavior (active-layer-only populate), Overview/Browse tabs, StationCard, StationDetailView with datastream summaries. Fixes: buildServiceUrl (no double path), elevation null/NaN, layer-switch graphics clearing. **Next: Task 3.5 floating time series chart.** | Claude |
+| Feb 13, 2026 | Phase 2 | ✅ **Task 32 (2.15) complete: ANiML image click → highlight camera on map.** AnimlFilterContext: focusedDeploymentId, focusDeployment(), clearFocusedDeployment(). ImageList: onImageFocus on click + expanded navigation. useAnimlMapBehavior: ArcGIS layerView.highlight(). animlLayer: getAnimlCameraGraphicByDeploymentId() (2.16-ready). | Claude |
+| Feb 13, 2026 | Phase 2 | ✅ **Task 31 (2.7) marked complete.** Caching strategy investigation deferred; service/context caching in place. Added **Tasks 32–33 (2.15, 2.16):** Image click → highlight camera on map; Camera badges (numbered icons for query results, no badge for 0). | Claude |
+| Feb 13, 2026 | Phase 2 | ✅ **Tasks 29–30 (2.13, 2.14) complete.** ANiML expanded image view on click + arrow key navigation. ImageExpandedView.tsx: lightbox in sidebar, medium_url, metadata, Back to list, overlay + bottom nav. Arrow keys + Prev/Next navigate; Esc closes. **Auto-pagination:** crossing page boundary (e.g. image 20→21) advances page and stays in expanded view. Fix: synchronous safe-index during render to prevent crash on page transition. | Claude |
+| Feb 13, 2026 | Phase 2 | ✅ **Task 28 (2.12) refinement.** ANiML image results expand to fill remaining sidebar space; always-visible scrollbar (`.scroll-area-animl-images`) for scrollability affordance. Flex layout in AnimlBrowseTab + `expandToFill` in ImageList. **Next:** Tasks 2.13 (expanded image view on click), 2.14 (arrow key navigation). | Claude |
+| Feb 13, 2026 | Phase 2 | ✅ **Task 28 (2.12) complete.** Replaced "Load More" with page-based pagination for ANiML images: scrollable list, Prev/Next controls underneath, page indicator (`Page X of Y`), range indicator (`1-20 of N`). Applied across Browse, Camera Detail, and Animal Detail image lists. | Claude |
+| Feb 13, 2026 | Phase 2 | ✅ **Task 27 (2.11) complete + count fix.** DateFilterSection, date filter state, pass dates to queryImageLabelsCached. Fix: use actual images.length when fetched (not countLookups) so date-filtered counts match. Added Tasks 2.12 (image list pagination Prev/Next), 2.13 (expanded image view on click), 2.14 (arrow key nav in expanded view). | Claude |
+| Feb 13, 2026 | Phase 2 | ✅ **Tasks 2.3–2.6 complete: ANiML Browse tab multi-dimensional filter system.** FilterSection.tsx (expandable, multi-select, Select All/Clear All). AnimlFilterContext: selectedCameras, toggleCamera, clearCameras, selectAllAnimals, selectAllCameras, filteredImageCount. AnimlBrowseTab: Species + Cameras FilterSections, live result count, debounced image fetch, ImageList. Researchers can select multiple species AND cameras. Added Tasks 2.10 (right sidebar scrollbar — prevent content shift) and 2.11 (date/time frame filter above Species and Cameras). | Claude |
+| Feb 13, 2026 | Phase 1 | ✅ **Task 28 complete: iNaturalist detail view crash fixed.** Root cause: early return in INaturalistBrowseTab caused "Rendered fewer hooks than expected." Moved detail-view return after all hooks. Hardened handleViewOnMap with try/catch and coordinate validation. RightSidebar now auto-switches to Browse tab when map observation clicked (featureId set). Files: INaturalistBrowseTab.tsx, RightSidebar.tsx. | Claude |
+| Feb 13, 2026 | Phase 1 | 🐛 **Task 28 added: iNaturalist detail view crash.** Page crashes when clicking observation card to open detail view. Filters sync correctly; crash occurs on detail view open. Marked as Critical, absolute next priority. | User |
+| Feb 13, 2026 | Phase 1 | ✅ **Tasks 26 + 27 complete: Dynamic View Names + User-Renamable Filtered Views.** Child views auto-name from active taxa/date filters; users can rename inline in Map Layers; custom names persist. Added cross-branch merge contract in master-plan.md and integration notes in phase docs (0–4). Cross-Branch Merge Checklist added to this tracker. Phase 1 complete. Files: LayerContext.tsx, PinnedLayerChildRow.tsx, types/index.ts, MapLayersWidget, PinnedLayersSection, PinnedLayerRow. | Claude |
+| Feb 13, 2026 | Phase 1 | ✅ **Task 25 complete: Sync Filters with Map Layers Widget.** Date + taxon filters sync bidirectionally between Browse tab and Map Layers widget. Edit Filters opens Browse with pre-applied filters. Map markers filter by date + taxa. Fixed infinite loop (hydrate/sync oscillation) and pin-transition sync. Added Tasks 26 (Dynamic View Names) and 27 (User-Renamable Views) for future refinement. Files: INaturalistBrowseTab.tsx, INaturalistFilterContext.tsx, LayerContext.tsx, inaturalistLayer.ts, useMapBehavior.ts, types/index.ts. | Claude |
+| Feb 13, 2026 | Phase 1 | ✅ **Task 22 complete: Remember Last Active Tab.** RightSidebar now persists Overview vs Browse tab per layer; restores on reactivation. First visit defaults to Overview (DFT-006). Edit Filters still opens Browse. Files: RightSidebar.tsx. | Claude |
+| Feb 13, 2026 | Phase 1 | ✅ **Tasks 20 & 21 complete: Pagination 10/page + Date Range Filter.** Task 20: Changed PAGE_SIZE from 20 → 10 in useINaturalistObservations. Task 21: Added start/end date pickers in Browse tab filter section (native date inputs, Clear button, min/max constraints). **Bug fix:** ArcGIS returns `observed_on` as epoch-ms; added `normalizeDate()` in INaturalistFilterContext to convert to YYYY-MM-DD so date comparisons work. Files: useINaturalistObservations.ts, INaturalistBrowseTab.tsx, INaturalistFilterContext.tsx, tncINaturalistService.ts. | Claude |
+| Feb 13, 2026 | Phase 1 | ✅ **Task 19 complete: Add Observation Search Bar.** Added search input above filter section in Browse tab. Searches both common name and scientific name (case-insensitive substring match). 300ms debounce for smooth typing. Clear button (X icon) appears when text entered. Resets to page 1 on search change. Focus state uses box-shadow (no layout shift). Contextual helper text shows which taxa are being searched. Files: INaturalistBrowseTab.tsx, useINaturalistObservations.ts. | Claude |
+| Feb 13, 2026 | Phase 1 | ✅ **Task 18 complete: Rename Legend Widget Title.** Changed floating legend header from "Filter Observations" to "iNaturalist Taxa". Files: INaturalistLegendWidget.tsx. | Claude |
+| Feb 12, 2026 | Phase 1 | **Task 14 refinement: Remove duplicate map highlight.** Removed custom cyan circle from highlightPoint; use only ArcGIS native highlight (from view.openPopup). Dropped highlightPoint/clearHighlight calls from handleViewOnMap. Files: INaturalistBrowseTab.tsx. | Claude |
+| Feb 12, 2026 | Phase 1 | ✅ **Task 14 complete: iNaturalist Observation Card Click → Map Highlight + Detail View.** Clicking an observation card in the right sidebar now: (1) opens detail view in sidebar, (2) pans + zooms map to the observation, (3) highlights the marker (ArcGIS native), (4) opens popup on map. Wired onViewDetail to call both setSelectedObs and handleViewOnMap. handleViewOnMap: await goTo(), find graphic in GraphicsLayer, view.openPopup(). Files: INaturalistBrowseTab.tsx. | Claude |
 | Feb 12, 2026 | Phase 0 | 🟡 **Task 24 (0.9): Dynamic Layer Registry from Data Catalog Service.** Discovered Dan's Data Catalog FeatureServer with ~90+ real datasets, 14 categories (with subcategories), and 10 per-type Dendra sensor services. All sensor services follow identical 3-part schema (Locations/Data/Summary). Replaces static layerRegistry.ts. **All parallel branches paused until complete.** | Claude |
 | Feb 12, 2026 | Phase 0 | ✅ **Task 23 complete: Data Source Adapter Pattern refactor.** Created plugin architecture: each data source implements `DataSourceAdapter` interface. Core files (MapContainer, RightSidebar, useMapLayers) made data-source-agnostic — read from registry. Lazy caching: `warmCache()` pattern (iNat: 2.18s initial, instant revisit). Active-but-not-pinned layers visible on map. Files: `dataSources/{types.ts, registry.ts, inaturalist/{adapter.tsx, useMapBehavior.ts}}`. Modified: INaturalistFilterContext (lazy), useMapLayers (generic), MapContainer/RightSidebar (generic), LayerContext (removed iNat from initial). Merge conflicts: ~4 lines/source. **Enables parallel branch development.** | Claude |
+| Feb 12, 2026 | Phase 1 | ✅ **Task 15 complete: iNaturalist Map Marker Click → Zoom + Detail View.** Clicking observation markers on the map now zooms to the observation and opens its detail view in right sidebar. Extended ActiveLayer type with featureId field. Added map click handler in useINaturalistMapBehavior using view.hitTest(). Auto-opens detail view when activeLayer.featureId is set. Files: types/index.ts, LayerContext.tsx, useMapBehavior.ts, INaturalistBrowseTab.tsx. | Claude |
 | Feb 12, 2026 | Phase 0 | ✅ **Task 1 complete: ArcGIS Map Integration (0.4).** Replaced placeholder with real ArcGIS WebMap. Layers added when pinned OR active. GraphicsLayer for highlights. | Claude |
 | Feb 11, 2026 | Phase 1 | Added **Tasks 14-22** for iNaturalist UX improvements: map marker interactions, compact filter dropdown, search bar, date filter, pagination (10/page), tab memory, legend rename. Future: save observation → filtered view (low priority). | Claude |
 | Feb 11, 2026 | Phase 1 | ✅ **Task 13 complete: Fix iNaturalist Layer Icons & Loading.** Replaced FeatureLayer with spatially-filtered GraphicsLayer; local counts; instant filtering; starts hidden. | Claude |

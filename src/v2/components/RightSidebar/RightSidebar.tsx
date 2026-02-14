@@ -4,7 +4,7 @@
 // Uses data source registry for tab content — no data-source-specific imports.
 // ============================================================================
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Layers } from 'lucide-react';
 import { useLayers } from '../../context/LayerContext';
 import type { SidebarTab } from '../../types';
@@ -15,31 +15,59 @@ import { getAdapter } from '../../dataSources/registry';
 export function RightSidebar() {
   const { activeLayer, deactivateLayer, lastEditFiltersRequest } = useLayers();
   const [activeTab, setActiveTab] = useState<SidebarTab>('overview');
+  const [lastTabByLayerId, setLastTabByLayerId] = useState<Record<string, SidebarTab>>({});
   const consumedRequestRef = useRef(0);
+  const prevLayerIdRef = useRef<string | null>(null);
 
   // Track layer changes for flash animation
-  const [prevLayerId, setPrevLayerId] = useState<string | null>(null);
   const [shouldFlash, setShouldFlash] = useState(false);
 
   // Look up the adapter for the active layer's data source
   const adapter = getAdapter(activeLayer?.dataSource);
 
-  // Reset to Overview and trigger flash when layer changes (DFT-006)
-  // NOTE: Own-state updates (setPrevLayerId, setActiveTab, setShouldFlash) are safe during render.
-  if (activeLayer && activeLayer.layerId !== prevLayerId) {
-    setPrevLayerId(activeLayer.layerId);
-    setActiveTab('overview');
+  const handleTabChange = useCallback((tab: SidebarTab) => {
+    setActiveTab(tab);
+  }, []);
+
+  // Task 22: Restore last active tab per layer on reactivation.
+  // First visit still defaults to Overview (DFT-006).
+  useEffect(() => {
+    const currentLayerId = activeLayer?.layerId ?? null;
+    if (currentLayerId === prevLayerIdRef.current) return;
+
+    prevLayerIdRef.current = currentLayerId;
+    if (!currentLayerId) return;
+
+    setActiveTab(lastTabByLayerId[currentLayerId] ?? 'overview');
     setShouldFlash(true);
-    setTimeout(() => setShouldFlash(false), 600);
-  }
+    const timer = window.setTimeout(() => setShouldFlash(false), 600);
+    return () => window.clearTimeout(timer);
+  }, [activeLayer?.layerId, lastTabByLayerId]);
+
+  // Persist current tab for the active layer.
+  useEffect(() => {
+    if (!activeLayer) return;
+    setLastTabByLayerId(prev => {
+      if (prev[activeLayer.layerId] === activeTab) return prev;
+      return { ...prev, [activeLayer.layerId]: activeTab };
+    });
+  }, [activeLayer, activeTab]);
 
   // DFT-019: Edit Filters → open Browse tab
   useEffect(() => {
     if (activeLayer && lastEditFiltersRequest > 0 && lastEditFiltersRequest !== consumedRequestRef.current) {
-      setActiveTab('browse');
+      handleTabChange('browse');
       consumedRequestRef.current = lastEditFiltersRequest;
     }
-  }, [activeLayer, lastEditFiltersRequest]);
+  }, [activeLayer, lastEditFiltersRequest, handleTabChange]);
+
+  // Map observation click should open iNaturalist detail flow immediately.
+  // The browse tab owns detail-view rendering for selected observations.
+  useEffect(() => {
+    if (activeLayer?.layerId === 'inaturalist-obs' && activeLayer.featureId != null) {
+      handleTabChange('browse');
+    }
+  }, [activeLayer?.layerId, activeLayer?.featureId, handleTabChange]);
 
   return (
     <aside
@@ -49,13 +77,13 @@ export function RightSidebar() {
       {activeLayer ? (
         <>
           <SidebarHeader activeLayer={activeLayer} onClose={deactivateLayer} shouldFlash={shouldFlash} />
-          <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+          <TabBar activeTab={activeTab} onTabChange={handleTabChange} />
 
           {/* Tab content — delegated to data source adapter */}
-          <div className="flex-1 overflow-y-auto p-4" role="tabpanel">
+          <div className="flex-1 overflow-y-auto p-4 scroll-area-right-sidebar" role="tabpanel">
             {adapter ? (
               activeTab === 'overview' ? (
-                <adapter.OverviewTab onBrowseClick={() => setActiveTab('browse')} />
+                <adapter.OverviewTab onBrowseClick={() => handleTabChange('browse')} />
               ) : (
                 <adapter.BrowseTab />
               )
@@ -69,7 +97,7 @@ export function RightSidebar() {
                   </p>
                   <button
                     id="generic-browse-cta"
-                    onClick={() => setActiveTab('browse')}
+                    onClick={() => handleTabChange('browse')}
                     className="w-full py-3 bg-[#2e7d32] text-white font-medium rounded-lg
                                hover:bg-[#256d29] transition-colors text-sm"
                   >
