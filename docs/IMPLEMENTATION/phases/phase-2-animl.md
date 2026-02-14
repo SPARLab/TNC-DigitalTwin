@@ -354,6 +354,9 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 
 ### Integration Note for Merge
 
+- **Shared Sync Dependency (from iNaturalist):** After merging iNaturalist Task 25/26/27, reference the canonical sync contract in `docs/IMPLEMENTATION/phases/phase-1-inaturalist.md` ("Shared Sync Contract (Canonical)").
+- **What this enables in Phase 2:** ANiML filters can participate in the same Map Layers child-view lifecycle (create/edit/rename/reactivate) without redefining sync behavior.
+- **Phase 2 verification:** Confirm "Edit Filters" hydrates ANiML filter controls, sidebar edits update active child query params, and custom child names are preserved after filter changes.
 - ANiML branch should adopt shared child-view rename semantics from Map Layers: manual rename persists and is never overwritten by filter sync.
 - Implement ANiML-specific auto-name generation for non-custom views (camera/species/date context), while keeping shared `viewId` sync behavior intact.
 

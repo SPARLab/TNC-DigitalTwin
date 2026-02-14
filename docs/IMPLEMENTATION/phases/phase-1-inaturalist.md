@@ -455,8 +455,34 @@ TBD - Document the actual URL
 
 ### Integration Note for Merge
 
+- Canonical implementation details for Map Layers <-> right-sidebar query synchronization live in this Phase 1 document and should be treated as the source of truth for downstream phases.
 - Child filtered-view naming in Map Layers now follows shared semantics: auto-name updates only when name is not custom; manual rename sets a persistent custom-name override.
 - When merging parallel branches, preserve `viewId`-based sync and manual rename logic in shared layer/widget state. Auto-name algorithm may vary by data source.
+
+### Shared Sync Contract (Canonical)
+
+Use this section as the authoritative contract when merging this logic into other data-source branches.
+
+- **Source of truth:** Shared filtered-view state (Map Layers + `viewId`-based query state) is canonical. Right-sidebar controls edit that state; widget rows reflect and route into it.
+- **Bidirectional behavior:** Edits in the right sidebar update the active child view query params; "Edit Filters" from Map Layers hydrates those params back into the right sidebar without changing intended user context.
+- **Custom-name rule:** Auto-name applies only to non-custom views; once manually renamed, filter-sync updates must not overwrite that name.
+- **Loop prevention:** Hydration and sync effects must be guarded to prevent ping-pong updates (sidebar->widget->sidebar loops), especially on layer pin/unpin transitions.
+- **Navigation continuity:** `viewId` and active tab restoration must survive layer reactivation so users return to the expected sidebar state.
+
+### Cherry-Pick / Merge Checklist
+
+When applying this logic into another branch, verify all items below:
+
+- Merge shared sync changes in state/context code before phase-specific sidebar UI wiring.
+- Preserve `viewId` routing semantics across Map Layers row actions (activate, edit filters, rename).
+- Keep rename persistence behavior intact (`isCustomName`/equivalent guard); do not reintroduce auto-rename override bugs.
+- Validate that map rendering respects synced query params for the active child view.
+- Confirm no infinite update loops when changing filters, switching tabs, pinning/unpinning, or moving between parent/child views.
+- Run manual smoke test:
+  - Apply filters in sidebar -> widget reflects active filtered view
+  - Click "Edit Filters" in widget -> sidebar opens with matching filter values
+  - Rename child view -> subsequent filter changes keep custom name
+  - Switch away and back -> active tab/view context restores correctly
 
 ---
 

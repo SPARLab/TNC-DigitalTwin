@@ -573,6 +573,9 @@ interface Bookmark {
 
 ### Integration Note for Merge
 
+- **Shared Sync Dependency (from iNaturalist):** After merging iNaturalist Task 25/26/27, use the canonical sync contract in `docs/IMPLEMENTATION/phases/phase-1-inaturalist.md` ("Shared Sync Contract (Canonical)").
+- **What this enables in Phase 0:** Confirms foundational shared state is sufficient for bidirectional Map Layers <-> right-sidebar query sync across all data sources.
+- **Phase 0 verification:** Validate that `viewId` activation, edit-filter hydration, and rename persistence are implemented as shared primitives (not source-specific forks).
 - Foundation/shared state should define the canonical child-view naming contract used by all data sources: manual rename persists and auto naming only applies to non-custom names.
 - Data-source branches may implement different auto-name algorithms, but must not fork shared rename persistence or `viewId` sync behavior.
 
