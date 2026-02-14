@@ -61,6 +61,14 @@ export function RightSidebar() {
     }
   }, [activeLayer, lastEditFiltersRequest, handleTabChange]);
 
+  // Map observation click should open iNaturalist detail flow immediately.
+  // The browse tab owns detail-view rendering for selected observations.
+  useEffect(() => {
+    if (activeLayer?.layerId === 'inaturalist-obs' && activeLayer.featureId != null) {
+      handleTabChange('browse');
+    }
+  }, [activeLayer?.layerId, activeLayer?.featureId, handleTabChange]);
+
   return (
     <aside
       id="right-sidebar"

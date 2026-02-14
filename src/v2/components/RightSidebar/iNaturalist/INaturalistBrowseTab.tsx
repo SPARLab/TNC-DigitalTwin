@@ -85,35 +85,30 @@ export function INaturalistBrowseTab() {
     const [lon, lat] = obs.coordinates;
     const view = viewRef.current;
     if (!view) return;
+    if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
 
-    // Zoom to observation
-    await view.goTo({ center: [lon, lat], zoom: 15 }, { duration: 800 });
+    try {
+      // Zoom to observation
+      await view.goTo({ center: [lon, lat], zoom: 15 }, { duration: 800 });
 
-    // Find the graphic on the map to open its popup — ArcGIS natively highlights the feature
-    const map = view.map;
-    if (!map) return;
-    const layer = map.findLayerById('v2-inaturalist-obs') as __esri.GraphicsLayer;
-    if (layer) {
-      const graphic = layer.graphics.find(g => g.attributes?.id === obs.id);
-      if (graphic && graphic.geometry) {
-        view.openPopup({
-          features: [graphic],
-          location: graphic.geometry as __esri.Point,
-        });
+      // Find the graphic on the map to open its popup — ArcGIS natively highlights the feature
+      const map = view.map;
+      if (!map) return;
+      const layer = map.findLayerById('v2-inaturalist-obs') as __esri.GraphicsLayer;
+      if (layer) {
+        const graphic = layer.graphics.find(g => g.attributes?.id === obs.id);
+        if (graphic && graphic.geometry) {
+          view.openPopup({
+            features: [graphic],
+            location: graphic.geometry as __esri.Point,
+          });
+        }
       }
+    } catch (error) {
+      // ArcGIS goTo can reject when view state changes; avoid crashing browse/detail flow.
+      console.warn('[iNat] Failed to focus observation on map', { observationId: obs.id, error });
     }
   }, [viewRef]);
-
-  // If detail view is open, render it
-  if (selectedObs) {
-    return (
-      <INaturalistDetailView
-        observation={selectedObs}
-        onBack={() => setSelectedObs(null)}
-        onViewOnMap={() => handleViewOnMap(selectedObs)}
-      />
-    );
-  }
 
   const hasFilter = selectedTaxa.size > 0;
   const filterCount = hasFilter ? selectedTaxa.size : TAXON_CATEGORIES.length;
@@ -179,6 +174,17 @@ export function INaturalistBrowseTab() {
     endDate,
     syncINaturalistFilters,
   ]);
+
+  // Keep this branch AFTER all hooks to preserve hook ordering.
+  if (selectedObs) {
+    return (
+      <INaturalistDetailView
+        observation={selectedObs}
+        onBack={() => setSelectedObs(null)}
+        onViewOnMap={() => { void handleViewOnMap(selectedObs); }}
+      />
+    );
+  }
 
   return (
     <div id="inat-browse-tab" className="space-y-3">
@@ -339,8 +345,11 @@ export function INaturalistBrowseTab() {
             <ObservationCard
               key={obs.id}
               observation={obs}
-              onViewDetail={() => { setSelectedObs(obs); handleViewOnMap(obs); }}
-              onViewOnMap={() => handleViewOnMap(obs)}
+              onViewDetail={() => {
+                setSelectedObs(obs);
+                void handleViewOnMap(obs);
+              }}
+              onViewOnMap={() => { void handleViewOnMap(obs); }}
             />
           ))}
 
