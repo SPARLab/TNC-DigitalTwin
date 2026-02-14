@@ -1,7 +1,7 @@
 # Phase 2: ANiML Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 8 / 14 tasks  
+**Progress:** 9 / 16 tasks  
 **Last Completed:** Tasks 2.13 + 2.14 (Expanded Image View + Arrow Key Navigation) ✅  
 **Branch:** `v2/animl`  
 **Depends On:** Phase 0 (Foundation) — Data Source Adapter Pattern ✅ Complete  
@@ -93,7 +93,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | 2.4 | Implement Browse tab interaction flow | 🟢 Complete | Will + Claude | FilterSection component, AnimlFilterContext (selectedCameras), live result count, ImageList. |
 | 2.5 | Implement camera list with filtered image counts | 🟢 Complete | Will + Claude | Cameras as multi-select checkboxes in expandable FilterSection; cross-dimensional counts. |
 | 2.6 | Implement camera detail drill-down | 🟢 Complete | Will + Claude | Replaced by unified filter + result view; no separate detail view needed for MVP. |
-| 2.7 | Investigate and decide on caching strategy | ⚪ Not Started | | Current load: 8-12s |
+| 2.7 | Investigate and decide on caching strategy | 🟢 Complete | Will + Claude | Marked done for now; service/context caching in place |
 | 2.8 | Use v1 SVG icons for map markers and animal tags | ⚪ Not Started | | Replace emoji markers with proper SVGs |
 | 2.9 | Map Layers widget sync with browse filters | ⚪ Not Started | | Widget reflects active query state |
 | 2.10 | Right sidebar scrollbar — prevent content shift | 🟢 Complete | Will + Claude | scrollbar-gutter: stable on right sidebar scroll area |
@@ -101,6 +101,8 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | 2.12 | Image list pagination (Prev/Next Page) | 🟢 Complete | Will + Claude | Replaced "Load More" with page-based Prev/Next; added page/range indicators |
 | 2.13 | Expanded image view on click | 🟢 Complete | Will + Claude | Click thumbnail → larger view in sidebar |
 | 2.14 | Arrow key navigation in expanded view | 🟢 Complete | Will + Claude | Left/right keys to navigate between images |
+| 2.15 | Image click → highlight camera on map | ⚪ Not Started | | Click image (list or expanded view) → blue ArcGIS native highlight on source camera |
+| 2.16 | Camera badges: numbered icons for query results | ⚪ Not Started | | When filter active: show count badge above cameras with matching images; cameras with 0 results get no badge |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -346,6 +348,8 @@ The Browse tab has two modes — "Animal-Tag-First" and "Camera-First" — with 
 
 **Goal:** Address the 8-12 second load time for ANiML data.
 
+**Status:** 🟢 Complete (marked done for now — Feb 13, 2026). Service/context caching in place; formal investigation deferred.
+
 **Background:**
 Current ANiML queries take 8-12 seconds because we're loading all data at once. This needs investigation and a decision on caching approach.
 
@@ -541,6 +545,55 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 
 ---
 
+### 2.15: Image Click → Highlight Camera on Map
+
+**Goal:** When the user clicks on an individual image (in list or expanded view), the map should highlight the camera where that image was taken using the native ArcGIS blue highlight.
+
+**Status:** ⚪ Not Started
+
+**Acceptance Criteria:**
+- [ ] Click image thumbnail in list → highlight source camera on map (blue ArcGIS highlight)
+- [ ] Click image in expanded view → highlight source camera on map
+- [ ] Arrow-key navigation in expanded view → update highlight to current image's camera
+- [ ] Use ArcGIS native selection/highlight (blue ring or equivalent)
+- [ ] Clear highlight when closing expanded view or navigating away
+
+**Implementation Notes:**
+- Images have `deployment_id` linking to camera. Need to find graphic for that deployment and apply ArcGIS highlight.
+- Consider `MapContext` or `AnimlFilterContext` to expose `highlightCamera(deploymentId)` for map layer consumption.
+- Reference: iNaturalist Task 14 (observation card click → map highlight) for pattern.
+
+**Files to Modify:**
+- `ImageList.tsx`, `ImageExpandedView.tsx` — pass `onImageSelect` or similar with `deployment_id`
+- `animlLayer.ts` — highlight graphic by deployment ID
+- `AnimlFilterContext.tsx` or `MapContext.tsx` — highlight state/callback
+
+---
+
+### 2.16: Camera Badges — Numbered Icons for Query Results
+
+**Goal:** When the user selects one or more animal tags (or other filters), show numbered badges above cameras that have matching images. Cameras with 0 results get no badge (avoid clutter from zeros).
+
+**Status:** ⚪ Not Started
+
+**Acceptance Criteria:**
+- [ ] When any filter is active (species, date, cameras): show count badge above cameras that have ≥1 matching image
+- [ ] Badge displays the number of images matching the current query for that camera
+- [ ] Cameras with 0 matching results: no badge (not even "0")
+- [ ] Badge positioned above camera icon on map (e.g., upper-right corner)
+- [ ] No filter active: no badges on any cameras
+
+**Implementation Notes:**
+- Uses `countLookups` or equivalent to get per-camera counts for current filter.
+- Badge only when `count > 0`. Aligns with DFT-029 (no badges when no filter) and DFT-028 (zero-result cameras grayed out, no badge).
+- May extend or refine existing badge logic in `animlLayer.ts` if partial implementation exists.
+
+**Files to Modify:**
+- `src/v2/components/Map/layers/animlLayer.ts` — badge rendering, conditional on count > 0
+- `AnimlFilterContext.tsx` — ensure `getFilteredCountForCamera` or similar is available for map layer
+
+---
+
 ## Service Analysis
 
 > Completed via existing `animlService.ts` (1,512 lines, Dec 2025)
@@ -637,6 +690,8 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | Feb 13, 2026 | 2.12 | **Refinement.** Image results expand to fill remaining sidebar space; always-visible scrollbar (`.scroll-area-animl-images`) for scrollability affordance. Flex layout + `expandToFill` in ImageList. **Next:** 2.13 (expanded view on click), 2.14 (arrow key nav). | Will + Claude |
 | Feb 13, 2026 | 2.13, 2.14 | **Complete.** Expanded image view + arrow key navigation. Created `ImageExpandedView.tsx`: in-sidebar lightbox with `medium_url`, overlay nav chevrons, metadata panel, keyboard nav (←/→/Esc). Modified `ImageList.tsx`: image rows now `<button>` elements with focus ring; internal `expandedIndex` state renders expanded view in place of list. Backward-compatible — all consumers gain feature with zero changes. | Will + Claude |
 | Feb 13, 2026 | 2.13, 2.14 | **Refinement: Auto-pagination.** Arrow keys and Prev/Next cross page boundaries (e.g. image 20→21 advances to next page, stays in expanded view). DFT-049. Fix: synchronous `safeIndex` during render + null guard in ImageExpandedView to prevent crash when `images` array changes mid-transition. | Will + Claude |
+| Feb 13, 2026 | 2.7 | **Marked complete for now.** Caching strategy investigation deferred; service/context caching in place. | Will + Claude |
+| Feb 13, 2026 | 2.15, 2.16 | **New tasks added.** 2.15: Image click → highlight camera on map (blue ArcGIS native highlight). 2.16: Camera badges — numbered icons above cameras with matching images when filter active; cameras with 0 results get no badge. | Will + Claude |
 
 ---
 
