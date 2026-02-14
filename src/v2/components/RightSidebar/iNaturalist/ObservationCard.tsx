@@ -3,7 +3,7 @@
 // Clicking the card opens the detail view. Action buttons in a row below.
 // ============================================================================
 
-import { Leaf, ExternalLink, MapPin, Bookmark } from 'lucide-react';
+import { Leaf, ExternalLink, MapPin } from 'lucide-react';
 import type { INatObservation } from '../../../hooks/useINaturalistObservations';
 import { getTaxonEmoji } from '../../Map/layers/taxonConfig';
 
@@ -11,7 +11,6 @@ interface ObservationCardProps {
   observation: INatObservation;
   onViewDetail: () => void;
   onViewOnMap: () => void;
-  onBookmark: () => void;
 }
 
 /** Format date string to short display: "Jan 15, 2024" */
@@ -25,7 +24,7 @@ function formatDate(dateStr: string): string {
   }
 }
 
-export function ObservationCard({ observation, onViewDetail, onViewOnMap, onBookmark }: ObservationCardProps) {
+export function ObservationCard({ observation, onViewDetail, onViewOnMap }: ObservationCardProps) {
   const displayName = observation.commonName || observation.scientificName;
   const hasPhoto = !!observation.photoUrl;
 
@@ -81,13 +80,8 @@ export function ObservationCard({ observation, onViewDetail, onViewOnMap, onBook
           onClick={e => { e.stopPropagation(); onViewOnMap(); }}
         />
         <ActionBtn
-          icon={<Bookmark className="w-3.5 h-3.5" />}
-          label="Bookmark"
-          onClick={e => { e.stopPropagation(); onBookmark(); }}
-        />
-        <ActionBtn
           icon={<ExternalLink className="w-3.5 h-3.5" />}
-          label="iNat"
+          label="iNaturalist"
           onClick={e => { e.stopPropagation(); window.open(observation.iNatUrl, '_blank'); }}
           isExternal
         />

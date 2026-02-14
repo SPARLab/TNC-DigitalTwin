@@ -169,6 +169,12 @@ Estimated total: ~52 MB
 |----------|------|-----------|---------------------------|
 | (none yet) | | | |
 
+### Shared Sync Dependency (from iNaturalist)
+
+- **Reference:** After merging iNaturalist Task 25/26/27, treat `docs/IMPLEMENTATION/phases/phase-1-inaturalist.md` ("Shared Sync Contract (Canonical)") as source of truth for widget-sidebar query synchronization.
+- **What this enables in Phase 5:** Export payload assembly can rely on stable active-child query params and persistent custom view naming for user-facing export labels.
+- **Phase 5 verification:** Confirm export summary reflects the currently active child view filters and displays manual child view names without auto-rename regressions.
+
 ---
 
 ## Open Questions

@@ -52,6 +52,7 @@ export interface PinnedLayer {
   isActive: boolean;
   filterCount: number;
   filterSummary?: string;
+  inaturalistFilters?: INaturalistViewFilters;
   distinguisher?: string;
   views?: PinnedLayerView[];
   order: number; // for drag-reorder z-order
@@ -62,10 +63,20 @@ export interface PinnedLayer {
 export interface PinnedLayerView {
   id: string;
   name: string;
+  /** True when user manually renamed this view (disables auto naming). */
+  isNameCustom?: boolean;
   isVisible: boolean;
   filterCount: number;
   filterSummary?: string;
+  inaturalistFilters?: INaturalistViewFilters;
   resultCount?: number; // Number of features matching filters (for count display testing)
+}
+
+/** iNaturalist filter state stored per pinned layer/view */
+export interface INaturalistViewFilters {
+  selectedTaxa: string[];
+  startDate?: string;
+  endDate?: string;
 }
 
 // =============================================================================
@@ -101,6 +112,8 @@ export interface ActiveLayer {
   isPinned: boolean;
   /** When editing filters for a nested child view */
   viewId?: string;
+  /** When opening a specific observation/feature detail (e.g., from map marker click) */
+  featureId?: string | number;
 }
 
 /** Undo action record */

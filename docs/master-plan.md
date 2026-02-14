@@ -30,7 +30,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | Phase | Name | Status | Progress | Branch | Blocking? |
 |-------|------|--------|----------|--------|-----------|
 | 0 | Foundation | 🟡 In Progress | ~98% | `v2/foundation` | YES - blocks all |
-| 1 | iNaturalist | ⚪ Not Started | 0 / 5 tasks | `v2/inaturalist` | No |
+| 1 | iNaturalist | 🟢 Complete | 5 / 5 tasks | `v2/inaturalist` | No |
 | 2 | ANiML | 🟡 In Progress | 9 / 14 tasks | `v2/animl` | No |
 | 3 | Dendra | ⚪ Not Started | 0 / 6 tasks | `v2/dendra` | No |
 | 4 | DataOne | ⚪ Not Started | 0 / 5 tasks | `v2/dataone` | No |
@@ -83,6 +83,7 @@ Phase 0: Foundation
 | Data source adapter pattern | ✅ Decided | Will + Claude | Feb 12 | Plugin architecture for data sources. Each source implements `DataSourceAdapter` interface. Enables parallel branch development with minimal merge conflicts. See `src/v2/dataSources/` |
 | Caching strategy | ✅ Decided | Will + Claude | Feb 12 | Lazy per-source caching. Each data source context has `warmCache()` method (idempotent). Cache warms on first pin or activation. Data persists while provider mounted. Eliminates eager page-load fetches. |
 | Dynamic layer registry from Data Catalog Service | ✅ Decided | User + Claude | Feb 12 | Replace static `layerRegistry.ts` with dynamic fetch from Dan's Data Catalog FeatureServer (`Dangermond_Preserve_Data_Catalog`). ~90+ real datasets across 14 categories. Left sidebar populated from catalog. Layers without adapters show "Not Yet Implemented" toast. **Blocks all parallel branches until Task 0.9 complete.** See `docs/development-task-tracker.md` Task 24. |
+| Cross-layer filtered-view naming contract | ✅ Decided | User + Claude | Feb 13 | Manual rename behavior must persist across all layer types and custom right-sidebar views. Auto-naming is adapter-specific per data source. Shared widget/context rule: if `isNameCustom` is false, auto-name can update on filter sync; if true, never overwrite. Rollout can happen incrementally by branch (not required to block current merge). |
 
 ### Styling Decisions
 
@@ -238,6 +239,9 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 13, 2026 | Phase 1 | **Task 28 complete: iNaturalist detail view crash fixed.** Hook-order mismatch (early return before hooks) caused "Rendered fewer hooks than expected." Moved detail-view return after all hooks; hardened handleViewOnMap with try/catch and coordinate validation. RightSidebar auto-switches to Browse when map observation clicked. Phase 1 all tasks complete. | Claude |
+| Feb 13, 2026 | Phase 1 | **Phase 1 iNaturalist complete.** All 13 granular tasks done including Tasks 26–27 (dynamic view names, user-renamable filtered views). Cross-branch merge contract documented. | User + Claude |
+| Feb 13, 2026 | All | Added cross-layer filtered-view naming decision: universal manual rename in shared Map Layers logic with per-data-source auto-naming algorithms. Documented as an incremental branch rollout contract to avoid regressions during parallel merges. | User + Claude |
 | Feb 12, 2026 | Phase 0 | **Data Source Adapter Pattern** — Refactored architecture to enable parallel branch development. Created plugin system: each data source implements `DataSourceAdapter` interface. Core files (MapContainer, RightSidebar, useMapLayers) now data-source-agnostic — read from registry instead of hardcoding imports. **Lazy caching:** `warmCache()` pattern replaces eager on-mount fetch (iNaturalist: 2.18s initial, instant on revisit). Active-but-not-pinned layers now visible on map. Merge conflict surface reduced to ~4 one-liners in registry.ts per new source. Files: `src/v2/dataSources/{types.ts, registry.ts, inaturalist/{adapter.tsx, useMapBehavior.ts}}`. Ready for parallelization. | Will + Claude |
 | Feb 5, 2026 | All | Added Sidebar Template System — shared structural templates for all data sources (TabBar, OverviewTab, ResultCard, Pagination, LeftSidebar categories). Theme tokens centralized in `sidebarTheme`. Change once, changes everywhere. Resolved stale entries: bookmark widget (DFT-007), filter representation (DFT-024). Resolved styling TBDs: sidebar header, card component. See design-system.md | Will + Claude |
 | Feb 5, 2026 | All | Resolved DFT-038: Filter section anatomy — shared `FilterSection` component enforces consistent Browse tab filter UI across all 4 data sources. Structural skeleton: header with "Clear All", 2-col CSS grid, result count footer. Flat `slate-50` container (no gradients). Header convention: "Filter [Plural Noun]". Per-data-source control inventory. "Optional:" labels dropped. Analyzed via Gestalt, Norman, Nielsen, Hick, Miller, IA, Fitts, WCAG. See design-system.md | Will + Claude |

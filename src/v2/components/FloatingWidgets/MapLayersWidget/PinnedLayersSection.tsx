@@ -37,6 +37,7 @@ interface PinnedLayersSectionProps {
   onToggleChildView?: (pinnedId: string, viewId: string) => void;
   onCreateNewView?: (pinnedId: string) => void;
   onRemoveView?: (pinnedId: string, viewId: string) => void;
+  onRenameView?: (pinnedId: string, viewId: string, name: string) => void;
 }
 
 export function PinnedLayersSection({
@@ -54,6 +55,7 @@ export function PinnedLayersSection({
   onToggleChildView,
   onCreateNewView,
   onRemoveView,
+  onRenameView,
 }: PinnedLayersSectionProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [justDroppedId, setJustDroppedId] = useState<string | null>(null);
@@ -195,6 +197,7 @@ export function PinnedLayersSection({
                     onActivateChildView={(viewId: string) => onActivateView?.(layer.layerId, viewId)}
                     onCreateNewView={() => onCreateNewView?.(layer.id)}
                     onRemoveChildView={(viewId: string) => onRemoveView?.(layer.id, viewId)}
+                    onRenameChildView={(viewId: string, name: string) => onRenameView?.(layer.id, viewId, name)}
                     activeViewId={activeLayerId === layer.layerId ? activeViewId : undefined}
                   />
                 );

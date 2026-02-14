@@ -4,13 +4,20 @@
 // ============================================================================
 
 import { createContext, useContext, useCallback, useState, type ReactNode } from 'react';
-import type { ActiveLayer, PinnedLayer, UndoAction, DataSource } from '../types';
+import type {
+  ActiveLayer,
+  PinnedLayer,
+  UndoAction,
+  DataSource,
+  INaturalistViewFilters,
+} from '../types';
 import { useCatalog } from './CatalogContext';
+import { TAXON_CONFIG } from '../components/Map/layers/taxonConfig';
 
 interface LayerContextValue {
   // Active layer (one at a time)
   activeLayer: ActiveLayer | null;
-  activateLayer: (layerId: string, viewId?: string) => void;
+  activateLayer: (layerId: string, viewId?: string, featureId?: string | number) => void;
   deactivateLayer: () => void;
 
   // Pinned layers (multiple)
@@ -20,9 +27,16 @@ interface LayerContextValue {
   toggleVisibility: (pinnedId: string) => void;
   toggleChildVisibility: (pinnedId: string, viewId: string) => void;
   clearFilters: (pinnedId: string, viewId?: string) => void;
+  syncINaturalistFilters: (
+    layerId: string,
+    filters: INaturalistViewFilters,
+    resultCount: number,
+    viewId?: string,
+  ) => void;
   reorderLayers: (fromIndex: number, toIndex: number) => void;
   createNewView: (pinnedId: string) => void;
   removeView: (pinnedId: string, viewId: string) => void;
+  renameView: (pinnedId: string, viewId: string, name: string) => void;
 
   // Edit Filters → open Browse tab (DFT-019)
   lastEditFiltersRequest: number;
@@ -40,6 +54,62 @@ interface LayerContextValue {
 
 const LayerContext = createContext<LayerContextValue | null>(null);
 
+function buildINaturalistFilterSummary(filters: INaturalistViewFilters): string | undefined {
+  const parts: string[] = [];
+  if (filters.selectedTaxa.length > 0) {
+    const taxonText = filters.selectedTaxa.length <= 2
+      ? filters.selectedTaxa.join(' + ')
+      : `${filters.selectedTaxa.length} taxa selected`;
+    parts.push(`Taxa: ${taxonText}`);
+  }
+  if (filters.startDate || filters.endDate) {
+    const rangeText = `${filters.startDate || 'Any'} to ${filters.endDate || 'Any'}`;
+    parts.push(`Date: ${rangeText}`);
+  }
+  return parts.length > 0 ? parts.join(', ') : undefined;
+}
+
+function getINaturalistFilterCount(filters: INaturalistViewFilters): number {
+  return filters.selectedTaxa.length + (filters.startDate || filters.endDate ? 1 : 0);
+}
+
+const TAXON_LABEL_BY_VALUE = new Map(TAXON_CONFIG.map(t => [t.value, t.label]));
+
+function buildINaturalistViewName(filters: INaturalistViewFilters): string {
+  const selectedTaxa = filters.selectedTaxa || [];
+  const taxaLabels = selectedTaxa
+    .map(taxon => TAXON_LABEL_BY_VALUE.get(taxon) || taxon)
+    .sort((a, b) => a.localeCompare(b));
+
+  const taxaPart = taxaLabels.length > 0
+    ? (taxaLabels.length <= 3
+      ? taxaLabels.join(', ')
+      : `${taxaLabels.slice(0, 2).join(', ')}, +${taxaLabels.length - 2} more`)
+    : '';
+
+  const hasDate = !!(filters.startDate || filters.endDate);
+  const datePart = hasDate
+    ? `${filters.startDate || 'Any start'} to ${filters.endDate || 'Any end'}`
+    : '';
+
+  if (taxaPart && datePart) return `${taxaPart} (${datePart})`;
+  if (taxaPart) return taxaPart;
+  if (datePart) return `Date: ${datePart}`;
+  return 'All Observations';
+}
+
+/** Shallow equality check for iNaturalist filter objects */
+function filtersEqual(
+  a: INaturalistViewFilters | undefined,
+  b: INaturalistViewFilters | undefined,
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (a.startDate !== b.startDate || a.endDate !== b.endDate) return false;
+  if (a.selectedTaxa.length !== b.selectedTaxa.length) return false;
+  return a.selectedTaxa.every((t, i) => t === b.selectedTaxa[i]);
+}
+
 export function LayerProvider({ children }: { children: ReactNode }) {
   const { layerMap } = useCatalog();
   const [activeLayer, setActiveLayer] = useState<ActiveLayer | null>(null);
@@ -53,7 +123,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     ].slice(0, 5)); // DFT-031: max 5 actions
   }, []);
 
-  const activateLayer = useCallback((layerId: string, viewId?: string) => {
+  const activateLayer = useCallback((layerId: string, viewId?: string, featureId?: string | number) => {
     const layer = layerMap.get(layerId);
     if (!layer) return;
 
@@ -65,6 +135,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
       dataSource: layer.dataSource as DataSource,
       isPinned: !!pinned,
       viewId,
+      featureId,
     });
 
     // DFT-001: clicking a pinned-but-hidden layer restores visibility
@@ -191,16 +262,100 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           return {
             ...p,
             views: p.views.map(v =>
-              v.id === viewId ? { ...v, filterCount: 0, filterSummary: undefined } : v
+              v.id === viewId
+                ? {
+                    ...v,
+                    filterCount: 0,
+                    filterSummary: undefined,
+                    inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+                  }
+                : v
             ),
           };
         }
-        return { ...p, filterCount: 0, filterSummary: undefined, distinguisher: undefined };
+        return {
+          ...p,
+          filterCount: 0,
+          filterSummary: undefined,
+          inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+          distinguisher: undefined,
+        };
       })
     );
 
     pushUndo('Filters cleared', () => setPinnedLayers(prevState));
   }, [pinnedLayers, pushUndo]);
+
+  const syncINaturalistFilters = useCallback(
+    (layerId: string, filters: INaturalistViewFilters, resultCount: number, viewId?: string) => {
+      setPinnedLayers(prev => {
+        const nextLayers = prev.map(p => {
+          if (p.layerId !== layerId) return p;
+
+          const normalizedFilters: INaturalistViewFilters = {
+            selectedTaxa: [...filters.selectedTaxa],
+            startDate: filters.startDate,
+            endDate: filters.endDate,
+          };
+          const nextFilterCount = getINaturalistFilterCount(normalizedFilters);
+          const nextFilterSummary = buildINaturalistFilterSummary(normalizedFilters);
+
+          if (viewId && p.views) {
+            const targetView = p.views.find(v => v.id === viewId);
+            const nextViewName = targetView?.isNameCustom
+              ? targetView.name
+              : buildINaturalistViewName(normalizedFilters);
+            // Bail out if nothing changed — avoids unnecessary re-renders
+            if (
+              targetView &&
+              targetView.name === nextViewName &&
+              targetView.filterCount === nextFilterCount &&
+              targetView.filterSummary === nextFilterSummary &&
+              targetView.resultCount === resultCount &&
+              filtersEqual(targetView.inaturalistFilters, normalizedFilters)
+            ) return p;
+
+            return {
+              ...p,
+              views: p.views.map(v =>
+                v.id === viewId
+                  ? {
+                      ...v,
+                      name: nextViewName,
+                      filterCount: nextFilterCount,
+                      filterSummary: nextFilterSummary,
+                      inaturalistFilters: normalizedFilters,
+                      resultCount,
+                    }
+                  : v
+              ),
+            };
+          }
+
+          // Bail out if nothing changed — avoids unnecessary re-renders
+          if (
+            p.filterCount === nextFilterCount &&
+            p.filterSummary === nextFilterSummary &&
+            p.resultCount === resultCount &&
+            filtersEqual(p.inaturalistFilters, normalizedFilters)
+          ) return p;
+
+          return {
+            ...p,
+            filterCount: nextFilterCount,
+            filterSummary: nextFilterSummary,
+            inaturalistFilters: normalizedFilters,
+            resultCount,
+          };
+        });
+
+        // If every layer returned the same reference, skip the state update entirely
+        const changed = nextLayers.some((l, i) => l !== prev[i]);
+        return changed ? nextLayers : prev;
+      });
+    },
+    []
+  );
 
   const reorderLayers = useCallback((fromIndex: number, toIndex: number) => {
     setPinnedLayers(prev => {
@@ -221,26 +376,35 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           const newView = {
             id: crypto.randomUUID(),
             name: 'Add Filters',
+            isNameCustom: false,
             isVisible: false,
             filterCount: 0,
+            inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
           };
           return { ...p, views: [...p.views, newView] };
         }
         
         // Convert flat → nested: current state becomes View 1, add empty View 2
-        const view1Name = p.distinguisher || (p.filterCount > 0 ? 'Filtered View' : 'Default View');
+        const view1Name = p.distinguisher || buildINaturalistViewName(
+          p.inaturalistFilters || { selectedTaxa: [], startDate: undefined, endDate: undefined }
+        );
         const view1 = {
           id: crypto.randomUUID(),
           name: view1Name,
+          isNameCustom: !!p.distinguisher,
           isVisible: p.isVisible,
           filterCount: p.filterCount,
           filterSummary: p.filterSummary,
+          inaturalistFilters: p.inaturalistFilters,
+          resultCount: p.resultCount,
         };
         const view2 = {
           id: crypto.randomUUID(),
           name: 'Add Filters',
+          isNameCustom: false,
           isVisible: false,
           filterCount: 0,
+          inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
         };
         
         // Clear flat-level filter data (now in views)
@@ -249,7 +413,9 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           views: [view1, view2],
           filterCount: 0,
           filterSummary: undefined,
+          inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
           distinguisher: undefined,
+          resultCount: undefined,
         };
       })
     );
@@ -271,12 +437,45 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             isVisible: lastView.isVisible,
             filterCount: lastView.filterCount,
             filterSummary: lastView.filterSummary,
-            distinguisher: lastView.name !== 'View 1' ? lastView.name : undefined,
+            inaturalistFilters: lastView.inaturalistFilters,
+            distinguisher: lastView.isNameCustom ? lastView.name : undefined,
+            resultCount: lastView.resultCount,
           };
         }
         
         // Keep as nested with remaining views
         return { ...p, views: remainingViews };
+      })
+    );
+  }, []);
+
+  const renameView = useCallback((pinnedId: string, viewId: string, name: string) => {
+    const trimmedName = name.trim();
+    setPinnedLayers(prev =>
+      prev.map(p => {
+        if (p.id !== pinnedId || !p.views) return p;
+
+        const targetView = p.views.find(v => v.id === viewId);
+        if (!targetView) return p;
+
+        const autoName = buildINaturalistViewName(
+          targetView.inaturalistFilters || { selectedTaxa: [], startDate: undefined, endDate: undefined }
+        );
+        const nextName = trimmedName || autoName;
+        const nextIsCustom = trimmedName.length > 0;
+
+        if (targetView.name === nextName && !!targetView.isNameCustom === nextIsCustom) {
+          return p;
+        }
+
+        return {
+          ...p,
+          views: p.views.map(v =>
+            v.id === viewId
+              ? { ...v, name: nextName, isNameCustom: nextIsCustom }
+              : v
+          ),
+        };
       })
     );
   }, []);
@@ -324,9 +523,11 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         toggleVisibility,
         toggleChildVisibility,
         clearFilters,
+        syncINaturalistFilters,
         reorderLayers,
         createNewView,
         removeView,
+        renameView,
         lastEditFiltersRequest,
         requestEditFilters,
         isLayerPinned,

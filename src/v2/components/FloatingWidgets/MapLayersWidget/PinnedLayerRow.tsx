@@ -9,7 +9,7 @@ import { useState, useEffect } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent, CSSProperties } from 'react';
 import { Eye, EyeOff, GripVertical, X, ChevronRight, Plus } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { CSS as DndCss } from '@dnd-kit/utilities';
 import type { PinnedLayer, CountDisplayMode } from '../../../types';
 import { FilterIndicator } from './FilterIndicator';
 import { PinnedLayerChildRow } from './PinnedLayerChildRow';
@@ -35,6 +35,7 @@ interface PinnedLayerRowProps {
   onClearFiltersForChild?: (viewId: string) => void;
   onCreateNewView?: () => void;
   onRemoveChildView?: (viewId: string) => void;
+  onRenameChildView?: (viewId: string, name: string) => void;
   onActivateChildView?: (viewId: string) => void; // NEW: activate a specific child view
 }
 
@@ -58,6 +59,7 @@ export function PinnedLayerRow({
   onClearFiltersForChild,
   onCreateNewView,
   onRemoveChildView,
+  onRenameChildView,
   onActivateChildView,
 }: PinnedLayerRowProps) {
   const isNested = layer.views && layer.views.length > 0;
@@ -127,7 +129,7 @@ export function PinnedLayerRow({
 
   // Build drag styles (DFT-034) — Translate only (no scale/rotate)
   const style: CSSProperties = {
-    transform: CSS.Translate.toString(transform),
+    transform: DndCss.Translate.toString(transform),
     transition,
   };
 
@@ -354,6 +356,7 @@ export function PinnedLayerRow({
                   onToggleVisibility={() => onToggleChildView?.(view.id)}
                   onActivate={() => onActivateChildView?.(view.id)}
                   onRemove={() => onRemoveChildView?.(view.id)}
+                  onRename={(name: string) => onRenameChildView?.(view.id, name)}
                   onEditFilters={() => onEditFiltersForChild?.(view.id)}
                   onClearFilters={() => onClearFiltersForChild?.(view.id)}
                 />
