@@ -63,6 +63,8 @@ export interface PinnedLayer {
 export interface PinnedLayerView {
   id: string;
   name: string;
+  /** True when user manually renamed this view (disables auto naming). */
+  isNameCustom?: boolean;
   isVisible: boolean;
   filterCount: number;
   filterSummary?: string;

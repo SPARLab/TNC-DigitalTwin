@@ -4,7 +4,8 @@
 // Expansion state managed by parent (accordion pattern: only one child expanded).
 // ============================================================================
 
-import { Eye, EyeOff, X, ChevronRight } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Eye, EyeOff, X, ChevronRight, Pencil, Check } from 'lucide-react';
 import type { PinnedLayerView, CountDisplayMode } from '../../../types';
 import { FilterIndicator } from './FilterIndicator';
 
@@ -18,6 +19,7 @@ interface PinnedLayerChildRowProps {
   onToggleVisibility: () => void;
   onActivate?: () => void;
   onRemove?: () => void;
+  onRename?: (name: string) => void;
   onEditFilters?: () => void;
   onClearFilters?: () => void;
 }
@@ -32,10 +34,22 @@ export function PinnedLayerChildRow({
   onToggleVisibility,
   onActivate,
   onRemove,
+  onRename,
   onEditFilters,
   onClearFilters,
 }: PinnedLayerChildRowProps) {
   const isPlaceholder = view.name === 'Add Filters';
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [draftName, setDraftName] = useState(view.name);
+
+  useEffect(() => {
+    setDraftName(view.name);
+  }, [view.name]);
+
+  const commitRename = () => {
+    onRename?.(draftName);
+    setIsRenaming(false);
+  };
 
   // Determine what to show based on count display mode
   const shouldShowFilterCount = 
@@ -124,9 +138,36 @@ export function PinnedLayerChildRow({
           </button>
 
           {/* View name (distinguisher) */}
-          <span className="text-sm flex-1 truncate text-gray-800">
-            {view.name}
-          </span>
+          <div className="flex-1 min-w-0">
+            {isRenaming ? (
+              <input
+                id={`pinned-child-rename-input-${view.id}`}
+                type="text"
+                value={draftName}
+                onChange={(e) => setDraftName(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    commitRename();
+                  }
+                  if (e.key === 'Escape') {
+                    e.preventDefault();
+                    setDraftName(view.name);
+                    setIsRenaming(false);
+                  }
+                }}
+                onBlur={commitRename}
+                className="w-full text-sm px-2 py-1 border border-emerald-300 rounded-md focus:outline-none
+                           focus:ring-1 focus:ring-emerald-500"
+                autoFocus
+              />
+            ) : (
+              <span className="text-sm block truncate text-gray-800">
+                {view.name}
+              </span>
+            )}
+          </div>
 
           {/* Count indicators based on display mode */}
           {countDisplayMode !== 'none' && (
@@ -147,6 +188,36 @@ export function PinnedLayerChildRow({
                 </span>
               )}
             </div>
+          )}
+
+          {/* Rename button */}
+          {!isRenaming && (
+            <button
+              id={`pinned-child-rename-btn-${view.id}`}
+              onClick={e => {
+                e.stopPropagation();
+                setDraftName(view.name);
+                setIsRenaming(true);
+              }}
+              className="text-gray-300 hover:text-emerald-600 transition-colors flex-shrink-0 p-0.5"
+              title="Rename view"
+              aria-label="Rename view"
+            >
+              <Pencil className="w-3 h-3" />
+            </button>
+          )}
+
+          {/* Save rename button */}
+          {isRenaming && (
+            <button
+              id={`pinned-child-rename-save-btn-${view.id}`}
+              onClick={e => { e.stopPropagation(); commitRename(); }}
+              className="text-gray-300 hover:text-emerald-600 transition-colors flex-shrink-0 p-0.5"
+              title="Save view name"
+              aria-label="Save view name"
+            >
+              <Check className="w-3 h-3" />
+            </button>
           )}
 
           {/* Remove button */}
@@ -203,8 +274,20 @@ export function PinnedLayerChildRow({
                 </div>
               )}
 
-              {/* Bottom row: Edit Filters (right-aligned) */}
-              <div className="flex items-center justify-end">
+              {/* Bottom row: Rename (left) + Edit Filters (right) */}
+              <div className="flex items-center justify-between">
+                <button
+                  id={`pinned-child-rename-link-${view.id}`}
+                  onClick={e => {
+                    e.stopPropagation();
+                    setDraftName(view.name);
+                    setIsRenaming(true);
+                  }}
+                  className="text-[11px] font-medium text-emerald-600 hover:text-emerald-700 cursor-pointer flex items-center gap-0.5"
+                >
+                  Rename
+                  <Pencil className="w-3 h-3" />
+                </button>
                 <button
                   onClick={e => { e.stopPropagation(); onEditFilters?.(); }}
                   className="text-[11px] font-medium text-emerald-600 hover:text-emerald-700 cursor-pointer flex items-center gap-0.5"

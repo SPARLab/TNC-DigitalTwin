@@ -352,6 +352,11 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 |----------|------|-----------|
 | (pending investigation) | | |
 
+### Integration Note for Merge
+
+- ANiML branch should adopt shared child-view rename semantics from Map Layers: manual rename persists and is never overwritten by filter sync.
+- Implement ANiML-specific auto-name generation for non-custom views (camera/species/date context), while keeping shared `viewId` sync behavior intact.
+
 ---
 
 ## Open Questions

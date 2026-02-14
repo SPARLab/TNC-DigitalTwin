@@ -571,6 +571,11 @@ interface Bookmark {
 |----------|------|-----------|---------------------------|
 | (none yet) | | | |
 
+### Integration Note for Merge
+
+- Foundation/shared state should define the canonical child-view naming contract used by all data sources: manual rename persists and auto naming only applies to non-custom names.
+- Data-source branches may implement different auto-name algorithms, but must not fork shared rename persistence or `viewId` sync behavior.
+
 ---
 
 ## Open Questions

@@ -224,6 +224,11 @@ TBD - Document the actual URL
 |----------|------|-----------|---------------------------|
 | (none yet) | | | |
 
+### Integration Note for Merge
+
+- DataOne branch should adopt shared Map Layers child-view rename semantics: manual rename persists as custom and is not overwritten by sync.
+- Provide DataOne-specific auto naming for non-custom views (query/category/year driven labels), while preserving shared child `viewId` navigation/edit flows.
+
 ---
 
 ## Open Questions

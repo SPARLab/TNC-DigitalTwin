@@ -1,7 +1,7 @@
 # Phase 1: iNaturalist Right Sidebar
 
-**Status:** 🟡 In Progress  
-**Progress:** 11 / 13 tasks complete  
+**Status:** 🟢 Complete  
+**Progress:** 13 / 13 tasks complete  
 **Branch:** `v2/inaturalist`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD  
@@ -31,11 +31,11 @@
 | 21 | **iNaturalist: Add Date Range Filter** | ✅ | Medium | Add start/end date pickers in Browse tab filter section |
 | 22 | **iNaturalist: Remember Last Active Tab** | ✅ | Low | Completed: per-layer tab memory in RightSidebar; restores Overview/Browse on layer reactivation |
 | 25 | **iNaturalist: Sync Filters with Map Layers Widget** | ✅ | Medium | Completed: date + taxon filters sync to Map Layers; Edit Filters pre-applies; map filters by date + taxa; fixed infinite loop + pin-transition sync |
-| 26 | **iNaturalist: Dynamic View Names from Filters** | ⚪ | Low | Name child views from applied filters (e.g., "Birds, Mammals, Reptiles") |
-| 27 | **iNaturalist: User-Renamable Filtered Views** | ⚪ | Low | Allow user to edit/customize the name of saved filtered views in Map Layers widget |
+| 26 | **iNaturalist: Dynamic View Names from Filters** | ✅ | Low | Completed: child views auto-name from active taxa/date filters (e.g., "Birds, Mammals, Reptiles") |
+| 27 | **iNaturalist: User-Renamable Filtered Views** | ✅ | Low | Completed: child views support inline rename; custom names persist and override auto naming |
 
-**Active tasks remaining:** 2  
-**Recently completed:** Task 25 (Sync Filters with Map Layers Widget) ✅ (Feb 13), Task 22 (Remember Last Active Tab) ✅ (Feb 13), Task 21 (Add Date Range Filter) ✅ (Feb 13), Task 20 (Reduce Pagination to 10 per Page) ✅ (Feb 13), Task 19 (Add Observation Search Bar) ✅ (Feb 13), Task 18 (Rename Legend Widget Title) ✅ (Feb 13), Task 16 (Remove Bookmark Button) ✅ (Feb 13), Task 17 (Compact Filter Section) ✅ (Feb 13), Task 14 (Observation Card Click → Map Highlight + Detail View) ✅ (Feb 12), Task 15 (Map Marker Click → Zoom + Detail View) ✅ (Feb 12), Task 13 (iNaturalist Layer Icons & Loading) ✅ (Feb 11)
+**Active tasks remaining:** 0  
+**Recently completed:** Task 27 (User-Renamable Filtered Views) ✅ (Feb 13), Task 26 (Dynamic View Names from Filters) ✅ (Feb 13), Task 25 (Sync Filters with Map Layers Widget) ✅ (Feb 13), Task 22 (Remember Last Active Tab) ✅ (Feb 13), Task 21 (Add Date Range Filter) ✅ (Feb 13), Task 20 (Reduce Pagination to 10 per Page) ✅ (Feb 13), Task 19 (Add Observation Search Bar) ✅ (Feb 13), Task 18 (Rename Legend Widget Title) ✅ (Feb 13), Task 16 (Remove Bookmark Button) ✅ (Feb 13), Task 17 (Compact Filter Section) ✅ (Feb 13), Task 14 (Observation Card Click → Map Highlight + Detail View) ✅ (Feb 12), Task 15 (Map Marker Click → Zoom + Detail View) ✅ (Feb 12), Task 13 (iNaturalist Layer Icons & Loading) ✅ (Feb 11)
 
 ---
 
@@ -433,6 +433,11 @@ TBD - Document the actual URL
 |----------|------|-----------|---------------------------|
 | (none yet) | | | |
 
+### Integration Note for Merge
+
+- Child filtered-view naming in Map Layers now follows shared semantics: auto-name updates only when name is not custom; manual rename sets a persistent custom-name override.
+- When merging parallel branches, preserve `viewId`-based sync and manual rename logic in shared layer/widget state. Auto-name algorithm may vary by data source.
+
 ---
 
 ## Open Questions
@@ -447,6 +452,7 @@ TBD - Document the actual URL
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 13, 2026 | 1.4 | Tasks 26 + 27 complete: child view names now auto-generate from active iNaturalist filters (taxa/date), and users can rename any saved child view inline in Map Layers. Manual names persist and stop auto-overwrite for that view. | Claude |
 | Feb 13, 2026 | 1.4 | Task 25 complete: Sync Filters with Map Layers Widget. Date + taxon filters sync bidirectionally; Edit Filters opens Browse with pre-applied filters; map markers filter by date + taxa. Fixed infinite loop (hydrate/sync oscillation) and pin-transition sync. Added Tasks 26 (Dynamic View Names from Filters) and 27 (User-Renamable Filtered Views) for future refinement. | Claude |
 | Feb 13, 2026 | 1.2 | Task 22 complete: remember last active right-sidebar tab per layer. `RightSidebar` now stores `lastTabByLayerId`, restores tab on reactivation, defaults to Overview on first open, and still honors Edit Filters → Browse behavior. | Claude |
 | Feb 13, 2026 | 1.4 | Task 19: Added observation search bar in Browse tab. Searches common/scientific names with 300ms debounce, clear button (X icon), instant client-side filtering. Focus state uses box-shadow to avoid layout shift. Placed above filter section. | Claude |

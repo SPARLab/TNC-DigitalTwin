@@ -18,7 +18,7 @@ export function MapLayersWidget() {
   const [countDisplayMode, setCountDisplayMode] = useState<CountDisplayMode>('results-expanded');
   const [displayedActiveLayer, setDisplayedActiveLayer] = useState<ActiveLayer | null>(null);
   const [isExiting, setIsExiting] = useState(false);
-  const exitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const exitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const {
     activeLayer,
     pinnedLayers,
@@ -30,6 +30,7 @@ export function MapLayersWidget() {
     reorderLayers,
     createNewView,
     removeView,
+    renameView,
     activateLayer,
     requestEditFilters,
     undoStack,
@@ -161,6 +162,7 @@ export function MapLayersWidget() {
               onToggleChildView={toggleChildVisibility}
               onCreateNewView={createNewView}
               onRemoveView={removeView}
+              onRenameView={renameView}
             />
               </>
             )}

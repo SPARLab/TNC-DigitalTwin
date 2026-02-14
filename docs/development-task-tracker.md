@@ -36,13 +36,23 @@
 | 21 | 1 | **iNaturalist: Add Date Range Filter** | ✅ | Medium | Add start/end date pickers in Browse tab filter section |
 | 22 | 1 | **iNaturalist: Remember Last Active Tab** | ✅ | Low | Completed: per-layer tab memory in RightSidebar; restores Overview/Browse on layer reactivation |
 | 25 | 1 | **iNaturalist: Sync Filters with Map Layers Widget** | ✅ | Medium | Completed: date + taxon filters sync to Map Layers widget; Edit Filters opens Browse with pre-applied filters; fixed infinite loop + pin-transition sync |
-| 26 | 1 | **iNaturalist: Dynamic View Names from Filters** | ⚪ | Low | Name child views from applied filters (e.g., "Birds, Mammals, Reptiles" when those taxa selected) |
-| 27 | 1 | **iNaturalist: User-Renamable Filtered Views** | ⚪ | Low | Allow user to edit/customize the name of saved filtered views in Map Layers widget |
+| 26 | 1 | **iNaturalist: Dynamic View Names from Filters** | ✅ | Low | Completed: child view names now auto-generate from active filters (taxa/date) |
+| 27 | 1 | **iNaturalist: User-Renamable Filtered Views** | ✅ | Low | Completed: child views can be renamed inline in Map Layers widget; custom names persist |
 | 14 | 0 | **Fix Map Layers Widget Drag Animation** | ✅ | Medium | Fixed: disabled @dnd-kit auto layout animations to prevent jarring transforms |
 | 24 | 0 | **0.9 Dynamic Layer Registry from Data Catalog Service** | 🟡 | **Critical** | Replace static layerRegistry with dynamic fetch from Data Catalog FeatureServer (~90+ real datasets, 14 categories); "Not Yet Implemented" toast for layers without adapters. **BLOCKS all parallel branches.** |
 
 **Active tasks remaining:** 2  
-**Recently completed:** Task 25 (Sync Filters with Map Layers Widget) ✅ (Feb 13), Task 22 (Remember Last Active Tab) ✅ (Feb 13), Task 21 (Add Date Range Filter) ✅ (Feb 13), Task 20 (Reduce Pagination to 10 per Page) ✅ (Feb 13), Task 19 (Add Observation Search Bar) ✅ (Feb 13), Task 18 (Rename Legend Widget Title) ✅ (Feb 13), Task 16 (Remove Bookmark Button) ✅ (Feb 13), Task 17 (Compact Filter Section) ✅ (Feb 13), iNaturalist label fix (iNat → iNaturalist) ✅ (Feb 13), Task 14 (Observation Card Click → Map Highlight + Detail View) ✅ (Feb 12), Task 15 (Map Marker Click → Zoom + Detail View) ✅ (Feb 12), Task 24 (Dynamic Layer Registry) 🟡 (Feb 12), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
+**Recently completed:** Task 27 (User-Renamable Filtered Views) ✅ (Feb 13), Task 26 (Dynamic View Names from Filters) ✅ (Feb 13), Task 25 (Sync Filters with Map Layers Widget) ✅ (Feb 13), Task 22 (Remember Last Active Tab) ✅ (Feb 13), Task 21 (Add Date Range Filter) ✅ (Feb 13), Task 20 (Reduce Pagination to 10 per Page) ✅ (Feb 13), Task 19 (Add Observation Search Bar) ✅ (Feb 13), Task 18 (Rename Legend Widget Title) ✅ (Feb 13), Task 16 (Remove Bookmark Button) ✅ (Feb 13), Task 17 (Compact Filter Section) ✅ (Feb 13), iNaturalist label fix (iNat → iNaturalist) ✅ (Feb 13), Task 14 (Observation Card Click → Map Highlight + Detail View) ✅ (Feb 12), Task 15 (Map Marker Click → Zoom + Detail View) ✅ (Feb 12), Task 24 (Dynamic Layer Registry) 🟡 (Feb 12), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
+
+---
+
+## Cross-Branch Merge Checklist (Filtered View Naming)
+
+- [ ] Keep shared Map Layers manual rename behavior in `LayerContext` (or equivalent shared state): custom name persists once user renames.
+- [ ] Preserve custom-name guard on sync: auto filter sync must not overwrite names when view is marked custom.
+- [ ] Implement per-data-source auto-name builder (iNaturalist/ANiML/Dendra/DataOne) so non-custom names update from each layer's filter model.
+- [ ] Verify Edit Filters navigation + filter sync still targets correct child view IDs after merge.
+- [ ] Integration QA for each data source: create view, auto-name updates from filters, manual rename sticks, clear custom name returns to auto naming.
 
 ---
 
@@ -290,12 +300,11 @@
 
 ### After Phase 0 (Phase 1-4)
 
-- **Phase 1:** iNaturalist data source
+- **Phase 1:** iNaturalist data source — **🟢 Complete**
   - **See detailed task breakdown:** `docs/IMPLEMENTATION/phases/phase-1-inaturalist.md`
   - **Quick Summary:**
-    - 11 / 13 tasks complete
-    - Remaining: Dynamic View Names (Task 26), User-Renamable Views (Task 27)
-    - Recently completed: Search Bar (Feb 13), Legend Widget Title (Feb 13), Compact Filter Dropdown (Feb 13), Remove Bookmark Button (Feb 13), Map Marker Click (Feb 12), Observation Card Click (Feb 12), Layer Icons & Loading (Feb 11)
+    - 13 / 13 tasks complete
+    - Recently completed: Dynamic View Names (Task 26), User-Renamable Views (Task 27), Sync Filters with Map Layers (Task 25), Search Bar (Task 19), Date Range Filter (Task 21), Tab Memory (Task 22)
 
 - **Phase 2:** ANiML data source (7 tasks)
 - **Phase 3:** Dendra data source (6 tasks)
@@ -342,6 +351,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 13, 2026 | Phase 1 | ✅ **Tasks 26 + 27 complete: Dynamic View Names + User-Renamable Filtered Views.** Child views auto-name from active taxa/date filters; users can rename inline in Map Layers; custom names persist. Added cross-branch merge contract in master-plan.md and integration notes in phase docs (0–4). Cross-Branch Merge Checklist added to this tracker. Phase 1 complete. Files: LayerContext.tsx, PinnedLayerChildRow.tsx, types/index.ts, MapLayersWidget, PinnedLayersSection, PinnedLayerRow. | Claude |
 | Feb 13, 2026 | Phase 1 | ✅ **Task 25 complete: Sync Filters with Map Layers Widget.** Date + taxon filters sync bidirectionally between Browse tab and Map Layers widget. Edit Filters opens Browse with pre-applied filters. Map markers filter by date + taxa. Fixed infinite loop (hydrate/sync oscillation) and pin-transition sync. Added Tasks 26 (Dynamic View Names) and 27 (User-Renamable Views) for future refinement. Files: INaturalistBrowseTab.tsx, INaturalistFilterContext.tsx, LayerContext.tsx, inaturalistLayer.ts, useMapBehavior.ts, types/index.ts. | Claude |
 | Feb 13, 2026 | Phase 1 | ✅ **Task 22 complete: Remember Last Active Tab.** RightSidebar now persists Overview vs Browse tab per layer; restores on reactivation. First visit defaults to Overview (DFT-006). Edit Filters still opens Browse. Files: RightSidebar.tsx. | Claude |
 | Feb 13, 2026 | Phase 1 | ✅ **Tasks 20 & 21 complete: Pagination 10/page + Date Range Filter.** Task 20: Changed PAGE_SIZE from 20 → 10 in useINaturalistObservations. Task 21: Added start/end date pickers in Browse tab filter section (native date inputs, Clear button, min/max constraints). **Bug fix:** ArcGIS returns `observed_on` as epoch-ms; added `normalizeDate()` in INaturalistFilterContext to convert to YYYY-MM-DD so date comparisons work. Files: useINaturalistObservations.ts, INaturalistBrowseTab.tsx, INaturalistFilterContext.tsx, tncINaturalistService.ts. | Claude |

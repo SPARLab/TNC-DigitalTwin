@@ -344,6 +344,11 @@ bookmark: {
 |----------|------|-----------|---------------------------|
 | (none yet) | | | |
 
+### Integration Note for Merge
+
+- Dendra branch should keep shared filtered-view rename behavior in Map Layers: custom names persist and block auto-overwrite during filter updates.
+- Add Dendra-specific auto-naming for non-custom views (sensor/date-window oriented labels) using the same shared sync contract.
+
 ---
 
 ## Open Questions
