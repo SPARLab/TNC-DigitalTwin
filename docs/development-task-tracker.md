@@ -41,11 +41,11 @@
 | 26 | 2 | **2.10** Right Sidebar Scrollbar — Prevent content shift | ✅ | Medium | Scrollbar should not move content when it appears (e.g., selecting species + camera). Use scrollbar-gutter: stable or overlay. |
 | 27 | 2 | **2.11** ANiML Date/Time Frame Filter — Above Species and Cameras | ✅ | Medium | DateFilterSection with date pickers + presets (Last 30d, 6mo, This Year, Last Year). Passes startDate/endDate to queryImageLabelsCached. Count fix: use actual images.length when fetched (not countLookups) so date-filtered counts match. |
 | 28 | 2 | **2.12** ANiML Image List — Pagination (Prev/Next Page) | ✅ | Medium | Completed (Feb 13): Scrollable list + Prev/Next underneath, expand-to-fill, visible scrollbar. |
-| 29 | 2 | **2.13** ANiML Image — Expanded View on Click | ⚪ | Medium | Click image thumbnail → show larger version in right sidebar. Lightbox-style expanded view within sidebar. |
-| 30 | 2 | **2.14** ANiML Expanded View — Arrow Key Navigation | ⚪ | Low | In expanded image view, left/right arrow keys navigate between images. |
+| 29 | 2 | **2.13** ANiML Image — Expanded View on Click | ✅ | Medium | Click thumbnail → larger view in sidebar; metadata; Back to list; auto-pagination across pages. |
+| 30 | 2 | **2.14** ANiML Expanded View — Arrow Key Navigation | ✅ | Low | Left/right arrow keys navigate; auto-paginate across page boundaries (20→21, 40→41). |
 
-**Active tasks remaining:** 12  
-**Recently completed:** **Task 28** (ANiML Image List Pagination Prev/Next) ✅ (Feb 13), **Task 27** (ANiML Date/Time Frame Filter) ✅ (Feb 13), **Task 26** (Right Sidebar Scrollbar Fix) ✅ (Feb 13), **Phase 2 Tasks 2.3–2.6** (ANiML multi-dimensional filter) ✅ (Feb 13), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
+**Active tasks remaining:** 10  
+**Recently completed:** **Tasks 29–30** (ANiML Expanded Image View + Arrow Key Nav + Auto-Pagination) ✅ (Feb 13), **Task 28** (ANiML Image List Pagination Prev/Next) ✅ (Feb 13), **Task 27** (ANiML Date/Time Frame Filter) ✅ (Feb 13), **Task 26** (Right Sidebar Scrollbar Fix) ✅ (Feb 13), **Phase 2 Tasks 2.3–2.6** (ANiML multi-dimensional filter) ✅ (Feb 13), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
 
 ---
 
@@ -372,13 +372,13 @@
     - **Implementation:** `currentPage` state + fixed `PAGE_SIZE` pagination in ANiML views; `ImageList` with `expandToFill` prop; flex layout in `AnimlBrowseTab` for dynamic height.
     - **Files:** `AnimlBrowseTab.tsx`, `ImageList.tsx`, `CameraDetailView.tsx`, `AnimalDetailView.tsx`, `index.css`
 
-  - [ ] **Task 2.13: ANiML Image — Expanded View on Click**
-    - **Goal:** Click image thumbnail → show larger version in right sidebar. Lightbox-style expanded view within sidebar (not modal overlay).
-    - **Files:** `ImageList.tsx`, new `ImageExpandedView.tsx` or similar
+  - [x] **Task 2.13: ANiML Image — Expanded View on Click** ✅
+    - **Completed (Feb 13):** Click thumbnail → larger view in sidebar. ImageExpandedView.tsx: medium_url, metadata (species, date, camera), Back to list, overlay + bottom nav buttons. Auto-pagination: arrow keys cross page boundaries (20→21, 40→41) without closing expanded view.
+    - **Files:** `ImageExpandedView.tsx` (new), `ImageList.tsx` (modified)
 
-  - [ ] **Task 2.14: ANiML Expanded View — Arrow Key Navigation**
-    - **Goal:** In expanded image view, left/right arrow keys navigate between images. Depends on Task 2.13.
-    - **Files:** `ImageExpandedView.tsx` (or equivalent)
+  - [x] **Task 2.14: ANiML Expanded View — Arrow Key Navigation** ✅
+    - **Completed (Feb 13):** Left/right arrow keys navigate; Prev/Next buttons; Esc to close. Auto-pagination across pages (no back-to-list required when crossing page boundaries).
+    - **Files:** `ImageExpandedView.tsx`, `ImageList.tsx`
 - **Phase 3:** Dendra data source (6 tasks)
 - **Phase 4:** DataOne data source (5 tasks)
 
@@ -423,6 +423,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 13, 2026 | Phase 2 | ✅ **Tasks 29–30 (2.13, 2.14) complete.** ANiML expanded image view on click + arrow key navigation. ImageExpandedView.tsx: lightbox in sidebar, medium_url, metadata, Back to list, overlay + bottom nav. Arrow keys + Prev/Next navigate; Esc closes. **Auto-pagination:** crossing page boundary (e.g. image 20→21) advances page and stays in expanded view. Fix: synchronous safe-index during render to prevent crash on page transition. | Claude |
 | Feb 13, 2026 | Phase 2 | ✅ **Task 28 (2.12) refinement.** ANiML image results expand to fill remaining sidebar space; always-visible scrollbar (`.scroll-area-animl-images`) for scrollability affordance. Flex layout in AnimlBrowseTab + `expandToFill` in ImageList. **Next:** Tasks 2.13 (expanded image view on click), 2.14 (arrow key navigation). | Claude |
 | Feb 13, 2026 | Phase 2 | ✅ **Task 28 (2.12) complete.** Replaced "Load More" with page-based pagination for ANiML images: scrollable list, Prev/Next controls underneath, page indicator (`Page X of Y`), range indicator (`1-20 of N`). Applied across Browse, Camera Detail, and Animal Detail image lists. | Claude |
 | Feb 13, 2026 | Phase 2 | ✅ **Task 27 (2.11) complete + count fix.** DateFilterSection, date filter state, pass dates to queryImageLabelsCached. Fix: use actual images.length when fetched (not countLookups) so date-filtered counts match. Added Tasks 2.12 (image list pagination Prev/Next), 2.13 (expanded image view on click), 2.14 (arrow key nav in expanded view). | Claude |

@@ -1,8 +1,8 @@
 # Phase 2: ANiML Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 6 / 12 tasks  
-**Last Completed:** Task 2.12 (Image List Pagination) ✅  
+**Progress:** 8 / 14 tasks  
+**Last Completed:** Tasks 2.13 + 2.14 (Expanded Image View + Arrow Key Navigation) ✅  
 **Branch:** `v2/animl`  
 **Depends On:** Phase 0 (Foundation) — Data Source Adapter Pattern ✅ Complete  
 **Owner:** TBD
@@ -99,8 +99,8 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | 2.10 | Right sidebar scrollbar — prevent content shift | 🟢 Complete | Will + Claude | scrollbar-gutter: stable on right sidebar scroll area |
 | 2.11 | Add date/time frame filter above Species and Cameras | 🟢 Complete | Will + Claude | DateFilterSection with date pickers + presets. Passes startDate/endDate to queryImageLabelsCached. Count fix: use images.length when fetched. |
 | 2.12 | Image list pagination (Prev/Next Page) | 🟢 Complete | Will + Claude | Replaced "Load More" with page-based Prev/Next; added page/range indicators |
-| 2.13 | Expanded image view on click | ⚪ Not Started | | Click thumbnail → larger view in sidebar |
-| 2.14 | Arrow key navigation in expanded view | ⚪ Not Started | | Left/right keys to navigate between images |
+| 2.13 | Expanded image view on click | 🟢 Complete | Will + Claude | Click thumbnail → larger view in sidebar |
+| 2.14 | Arrow key navigation in expanded view | 🟢 Complete | Will + Claude | Left/right keys to navigate between images |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -497,15 +497,22 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 
 **Goal:** Click image thumbnail → show larger version in right sidebar. Lightbox-style expanded view within the sidebar (not modal overlay).
 
-**Status:** ⚪ Not Started
+**Status:** 🟢 Complete (Feb 13, 2026)
 
 **Acceptance Criteria:**
-- [ ] Click thumbnail opens expanded view
-- [ ] Larger image displayed within right sidebar
-- [ ] Close button or click-outside to dismiss
-- [ ] Metadata visible (species, timestamp, camera)
+- [x] Click thumbnail opens expanded view
+- [x] Larger image displayed within right sidebar (uses `medium_url`, falls back to `small_url`)
+- [x] Close button ("Back to list") or Escape key to dismiss
+- [x] Metadata visible (species label, full date + time, camera name when applicable)
 
-**Files to Create/Modify:** `ImageList.tsx`, new `ImageExpandedView.tsx` or equivalent
+**Implementation Notes:**
+- Created `ImageExpandedView.tsx`: self-contained lightbox within sidebar. Dark image container (`bg-gray-950`), overlay prev/next chevron buttons, metadata panel below, bottom nav bar with keyboard hint.
+- Image rows in `ImageList.tsx` changed from `<div>` to `<button>` for keyboard accessibility. Hover border color changed to `emerald-300` for click affordance. Focus ring added.
+- `ImageList` manages `expandedIndex` state internally. When set, renders `ImageExpandedView` in place of the list. Fully backward-compatible — no changes to `ImageListProps` interface, so all consumers (`AnimlBrowseTab`, `CameraDetailView`, `AnimalDetailView`) gain the feature automatically.
+- Global position counter: "23 of 200" (page offset + local index) so users see their position in the full result set.
+- **Auto-pagination (refinement):** Arrow keys and Prev/Next cross page boundaries. At image 20, pressing right advances to page 2 and shows image 21 without closing expanded view. Uses `pendingPageJump` state + synchronous `safeIndex` during render to avoid crash when `images` array changes mid-transition.
+
+**Files Created/Modified:** `ImageExpandedView.tsx` (new), `ImageList.tsx` (modified)
 
 ---
 
@@ -513,17 +520,24 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 
 **Goal:** In expanded image view, left/right arrow keys navigate between images.
 
-**Status:** ⚪ Not Started
+**Status:** 🟢 Complete (Feb 13, 2026)
 
-**Dependencies:** Task 2.13 (expanded view must exist)
+**Dependencies:** Task 2.13 (expanded view must exist) ✅
 
 **Acceptance Criteria:**
-- [ ] Left arrow → previous image
-- [ ] Right arrow → next image
-- [ ] Wrap at ends (optional) or disable at first/last
-- [ ] Focus/keyboard trap when expanded view is open
+- [x] Left arrow → previous image
+- [x] Right arrow → next image
+- [x] Disable at first/last (prev disabled on first image, next disabled on last)
+- [x] Focus/keyboard trap when expanded view is open (auto-focus + `tabIndex={-1}` + window keydown listener)
 
-**Files to Modify:** `ImageExpandedView.tsx` (or equivalent)
+**Implementation Notes:**
+- `useEffect` keydown listener on `window` for ArrowLeft, ArrowRight, Escape.
+- Container auto-focuses on mount via `containerRef.current?.focus()`.
+- Overlay prev/next chevron buttons on the image itself (semi-transparent `bg-black/40`) for mouse users. Bottom nav bar also has Prev/Next buttons + keyboard hint text.
+- Buttons disable with `opacity-0` at boundaries (overlay) and `opacity-40` (bottom bar) for clean visual.
+- **Auto-pagination:** Navigation crosses page boundaries. At last image of page, Next triggers `onNextPage()`; `ImageList` keeps expanded mode open and snaps to first image of new page. Same in reverse for Prev at first image.
+
+**Files Modified:** `ImageExpandedView.tsx`, `ImageList.tsx`
 
 ---
 
@@ -570,6 +584,7 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | DFT-046: 3-column ImageGrid with Load More | Feb 12, 2026 | Grid layout for photo scanning (3 cols). Client-side "Load More" pagination (21 per batch = 3×7). Less jarring than page numbers; explicit user control. |
 | DFT-047: Map Layers widget filter summary format | Feb 12, 2026 | Animal-first: "Mountain Lion, Coyote • 8 cameras". Camera-first: "CAM-042 • Mountain Lion, Coyote". No filter: "No filter applied". |
 | DFT-048: ANiML image pagination uses Prev/Next pages | Feb 13, 2026 | Replaced "Load More" with explicit page navigation to improve wayfinding and positional awareness in large image result sets. Uses scrollable list + controls beneath (`Page X of Y`, `A-B of N`). |
+| DFT-049: Expanded image view auto-paginates across pages | Feb 13, 2026 | When navigating images in expanded view, arrow keys and Prev/Next cross page boundaries (e.g. image 20→21 advances to next page, stays in expanded view). No need to close and manually change page. |
 
 ### Styling Decisions
 
@@ -620,6 +635,8 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | Feb 13, 2026 | 2.11 | **Complete.** DateFilterSection component: collapsible date range picker with start/end date inputs + quick-select presets (Last 30 days, Last 6 months, This Year, Last Year). AnimlFilterContext: added startDate/endDate state, setDateRange, clearDateRange, hasDateFilter. AnimlBrowseTab: DateFilterSection placed above Species, passes dates to queryImageLabelsCached. Auto-apply per DFT-039. **Count fix:** use actual images.length when fetched (not countLookups) so date-filtered counts match displayed results. Added Tasks 2.12 (image list pagination), 2.13 (expanded image view), 2.14 (arrow key nav). | Will + Claude |
 | Feb 13, 2026 | 2.12 | **Complete.** Replaced "Load More" with page-based pagination across ANiML image views. Added scrollable image list containers, Prev/Next controls under list, page indicator (`Page X of Y`), and range indicator (`A-B of N`). Implemented in `AnimlBrowseTab`, `CameraDetailView`, `AnimalDetailView`, and shared `ImageList`. | Will + Claude |
 | Feb 13, 2026 | 2.12 | **Refinement.** Image results expand to fill remaining sidebar space; always-visible scrollbar (`.scroll-area-animl-images`) for scrollability affordance. Flex layout + `expandToFill` in ImageList. **Next:** 2.13 (expanded view on click), 2.14 (arrow key nav). | Will + Claude |
+| Feb 13, 2026 | 2.13, 2.14 | **Complete.** Expanded image view + arrow key navigation. Created `ImageExpandedView.tsx`: in-sidebar lightbox with `medium_url`, overlay nav chevrons, metadata panel, keyboard nav (←/→/Esc). Modified `ImageList.tsx`: image rows now `<button>` elements with focus ring; internal `expandedIndex` state renders expanded view in place of list. Backward-compatible — all consumers gain feature with zero changes. | Will + Claude |
+| Feb 13, 2026 | 2.13, 2.14 | **Refinement: Auto-pagination.** Arrow keys and Prev/Next cross page boundaries (e.g. image 20→21 advances to next page, stays in expanded view). DFT-049. Fix: synchronous `safeIndex` during render + null guard in ImageExpandedView to prevent crash when `images` array changes mid-transition. | Will + Claude |
 
 ---
 

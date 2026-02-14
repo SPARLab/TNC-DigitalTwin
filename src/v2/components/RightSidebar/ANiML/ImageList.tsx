@@ -2,10 +2,14 @@
 // ImageList — Vertical image list with prominent date metadata.
 // Each row: thumbnail + label + date + time + camera name.
 // Uses page-based navigation (Prev/Next) with indicator.
+// Click any image to open an expanded lightbox view (ImageExpandedView)
+// with arrow key navigation.
 // ============================================================================
 
+import { useState, useEffect, useCallback } from 'react';
 import { Camera, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { AnimlImageLabel } from '../../../../services/animlService';
+import { ImageExpandedView } from './ImageExpandedView';
 
 interface ImageListProps {
   images: AnimlImageLabel[];
@@ -32,6 +36,70 @@ export function ImageList({
   expandToFill = false,
   showCameraName = false,
 }: ImageListProps) {
+  // Expanded image state: null = list view, number = index into `images`
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const [pendingPageJump, setPendingPageJump] = useState<'next' | 'prev' | null>(null);
+
+  const handleImageClick = useCallback((index: number) => {
+    setExpandedIndex(index);
+  }, []);
+
+  const handleCloseExpanded = useCallback(() => {
+    setExpandedIndex(null);
+    setPendingPageJump(null);
+  }, []);
+
+  const handleExpandedPrev = useCallback(() => {
+    if (expandedIndex === null) return;
+
+    // Resolve pending jump index first (in case we're mid-transition)
+    const effectiveIdx = pendingPageJump === 'next' ? 0
+      : pendingPageJump === 'prev' ? images.length - 1
+      : expandedIndex;
+
+    if (effectiveIdx > 0) {
+      setExpandedIndex(effectiveIdx - 1);
+      setPendingPageJump(null);
+      return;
+    }
+
+    if (currentPage > 1) {
+      setPendingPageJump('prev');
+      onPrevPage();
+    }
+  }, [expandedIndex, pendingPageJump, images.length, currentPage, onPrevPage]);
+
+  const handleExpandedNext = useCallback(() => {
+    if (expandedIndex === null) return;
+
+    const effectiveIdx = pendingPageJump === 'next' ? 0
+      : pendingPageJump === 'prev' ? images.length - 1
+      : expandedIndex;
+
+    if (effectiveIdx < images.length - 1) {
+      setExpandedIndex(effectiveIdx + 1);
+      setPendingPageJump(null);
+      return;
+    }
+
+    if (currentPage < totalPages) {
+      setPendingPageJump('next');
+      onNextPage();
+    }
+  }, [expandedIndex, pendingPageJump, images.length, currentPage, totalPages, onNextPage]);
+
+  // After a page jump, commit the resolved index to state
+  useEffect(() => {
+    if (pendingPageJump === null || images.length === 0) return;
+
+    if (pendingPageJump === 'next') {
+      setExpandedIndex(0);
+    } else {
+      setExpandedIndex(images.length - 1);
+    }
+    setPendingPageJump(null);
+  }, [pendingPageJump, images]);
+
   if (images.length === 0) {
     return (
       <p id="animl-image-list-empty" className="text-sm text-gray-400 text-center py-6">
@@ -39,6 +107,37 @@ export function ImageList({
       </p>
     );
   }
+
+  // ── Expanded view ───────────────────────────────────────────────────────
+
+  if (expandedIndex !== null) {
+    // Compute safe index synchronously — prevents crash during page transitions
+    // where expandedIndex (e.g. 19) may exceed new page's length (e.g. 13).
+    const safeIndex = pendingPageJump === 'next' ? 0
+      : pendingPageJump === 'prev' ? images.length - 1
+      : Math.min(expandedIndex, images.length - 1);
+
+    const pageOffset = (currentPage - 1) * pageSize;
+    const canGoPrev = currentPage > 1 || safeIndex > 0;
+    const canGoNext = currentPage < totalPages || safeIndex < images.length - 1;
+
+    return (
+      <ImageExpandedView
+        images={images}
+        currentIndex={safeIndex}
+        onPrev={handleExpandedPrev}
+        onNext={handleExpandedNext}
+        canGoPrev={canGoPrev}
+        canGoNext={canGoNext}
+        onClose={handleCloseExpanded}
+        showCameraName={showCameraName}
+        pageOffset={pageOffset}
+        totalCount={totalCount}
+      />
+    );
+  }
+
+  // ── List view ─────────────────────────────────────────────────────────
 
   return (
     <div
@@ -64,11 +163,15 @@ export function ImageList({
           const date = parseDate(img.timestamp);
 
           return (
-            <div
+            <button
               key={`${img.animl_image_id}-${idx}`}
               id={`animl-img-${img.animl_image_id}`}
-              className="flex gap-3 p-2 bg-white border border-gray-100 rounded-lg
-                         hover:border-gray-200 hover:shadow-sm transition-all cursor-pointer"
+              type="button"
+              onClick={() => handleImageClick(idx)}
+              className="w-full flex gap-3 p-2 bg-white border border-gray-100 rounded-lg
+                         hover:border-emerald-300 hover:shadow-sm transition-all cursor-pointer
+                         text-left focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-1"
+              aria-label={`View ${img.label}, ${date.dateStr} ${date.timeStr}`}
             >
               {/* Thumbnail */}
               {img.small_url ? (
@@ -97,7 +200,7 @@ export function ImageList({
                   </p>
                 )}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
