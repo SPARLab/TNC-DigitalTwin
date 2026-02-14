@@ -33,8 +33,10 @@
 | 25 | **iNaturalist: Sync Filters with Map Layers Widget** | ✅ | Medium | Completed: date + taxon filters sync to Map Layers; Edit Filters pre-applies; map filters by date + taxa; fixed infinite loop + pin-transition sync |
 | 26 | **iNaturalist: Dynamic View Names from Filters** | ✅ | Low | Completed: child views auto-name from active taxa/date filters (e.g., "Birds, Mammals, Reptiles") |
 | 27 | **iNaturalist: User-Renamable Filtered Views** | ✅ | Low | Completed: child views support inline rename; custom names persist and override auto naming |
+| 28 | **🐛 iNaturalist: Detail View Crash on Observation Click** | 🔴 | Critical | Page crashes when clicking observation card to open detail view; filters sync correctly; fix before other work |
 
-**Active tasks remaining:** 0  
+**Active tasks remaining:** 1  
+**🔴 Next (critical):** Task 28 — Fix detail view crash  
 **Recently completed:** Task 27 (User-Renamable Filtered Views) ✅ (Feb 13), Task 26 (Dynamic View Names from Filters) ✅ (Feb 13), Task 25 (Sync Filters with Map Layers Widget) ✅ (Feb 13), Task 22 (Remember Last Active Tab) ✅ (Feb 13), Task 21 (Add Date Range Filter) ✅ (Feb 13), Task 20 (Reduce Pagination to 10 per Page) ✅ (Feb 13), Task 19 (Add Observation Search Bar) ✅ (Feb 13), Task 18 (Rename Legend Widget Title) ✅ (Feb 13), Task 16 (Remove Bookmark Button) ✅ (Feb 13), Task 17 (Compact Filter Section) ✅ (Feb 13), Task 14 (Observation Card Click → Map Highlight + Detail View) ✅ (Feb 12), Task 15 (Map Marker Click → Zoom + Detail View) ✅ (Feb 12), Task 13 (iNaturalist Layer Icons & Loading) ✅ (Feb 11)
 
 ---
@@ -452,6 +454,7 @@ TBD - Document the actual URL
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 13, 2026 | 1.4 | 🐛 Task 28 added: Detail view crash on observation click. Page crashes when opening detail view; filters sync correctly. Marked Critical, next priority. | User |
 | Feb 13, 2026 | 1.4 | Tasks 26 + 27 complete: child view names now auto-generate from active iNaturalist filters (taxa/date), and users can rename any saved child view inline in Map Layers. Manual names persist and stop auto-overwrite for that view. | Claude |
 | Feb 13, 2026 | 1.4 | Task 25 complete: Sync Filters with Map Layers Widget. Date + taxon filters sync bidirectionally; Edit Filters opens Browse with pre-applied filters; map markers filter by date + taxa. Fixed infinite loop (hydrate/sync oscillation) and pin-transition sync. Added Tasks 26 (Dynamic View Names from Filters) and 27 (User-Renamable Filtered Views) for future refinement. | Claude |
 | Feb 13, 2026 | 1.2 | Task 22 complete: remember last active right-sidebar tab per layer. `RightSidebar` now stores `lastTabByLayerId`, restores tab on reactivation, defaults to Overview on first open, and still honors Edit Filters → Browse behavior. | Claude |
