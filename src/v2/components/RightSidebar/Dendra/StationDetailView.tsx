@@ -4,9 +4,42 @@
 // Time series chart deferred to task 3.5.
 // ============================================================================
 
-import { ChevronLeft, MapPin, Radio, Activity, Calendar, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
+import { useMemo, useState, type ReactNode } from 'react';
+import { ChevronLeft, MapPin, Radio, Activity, Calendar, TrendingUp, TrendingDown, BarChart3, Bookmark } from 'lucide-react';
 import type { DendraStation, DendraSummary } from '../../../services/dendraStationService';
 import { formatTimestamp, formatValue } from '../../../services/dendraStationService';
+import { useDendra } from '../../../context/DendraContext';
+import { useLayers } from '../../../context/LayerContext';
+
+const DENDRA_LOCAL_BOOKMARKS_KEY = 'v2-dendra-bookmarks';
+
+interface DendraLocalBookmark {
+  id: string;
+  itemId: string;
+  itemName: string;
+  layerId: string;
+  layerName: string;
+  type: 'pointer-unfiltered' | 'pointer-filtered';
+  filterDescription?: string;
+  resultCount?: number;
+  geometry: { type: 'Point'; coordinates: [number, number] };
+  createdAt: number;
+}
+
+function saveDendraBookmark(bookmark: Omit<DendraLocalBookmark, 'id' | 'createdAt'>): void {
+  const nextBookmark: DendraLocalBookmark = {
+    ...bookmark,
+    id: crypto.randomUUID(),
+    createdAt: Date.now(),
+  };
+  try {
+    const raw = localStorage.getItem(DENDRA_LOCAL_BOOKMARKS_KEY);
+    const current: DendraLocalBookmark[] = raw ? JSON.parse(raw) : [];
+    localStorage.setItem(DENDRA_LOCAL_BOOKMARKS_KEY, JSON.stringify([...current, nextBookmark]));
+  } catch (error) {
+    console.error('[Dendra] Failed to save bookmark:', error);
+  }
+}
 
 interface StationDetailViewProps {
   station: DendraStation;
@@ -19,6 +52,65 @@ interface StationDetailViewProps {
 export function StationDetailView({ station, summaries, onBack, onViewOnMap, onViewChart }: StationDetailViewProps) {
   const isActive = station.is_active === 1;
   const displayName = station.station_name?.replace(/^Dangermond_/, '').replace(/_/g, ' ') ?? 'Unknown';
+  const [selectedDatastreamId, setSelectedDatastreamId] = useState<number | null>(null);
+  const [bookmarkMessage, setBookmarkMessage] = useState<string | null>(null);
+  const { chart, setChartFilter } = useDendra();
+  const { activeLayer } = useLayers();
+
+  const selectedSummary = useMemo(
+    () => summaries.find(summary => summary.datastream_id === selectedDatastreamId) ?? null,
+    [summaries, selectedDatastreamId],
+  );
+
+  const chartMatchesSelectedDatastream = Boolean(
+    selectedSummary && chart.summary?.datastream_id === selectedSummary.datastream_id,
+  );
+
+  const chartMinDate = chart.rawData.length > 0
+    ? new Date(chart.rawData[0].timestamp).toISOString().slice(0, 10)
+    : undefined;
+  const chartMaxDate = chart.rawData.length > 0
+    ? new Date(chart.rawData[chart.rawData.length - 1].timestamp).toISOString().slice(0, 10)
+    : undefined;
+
+  const handleSelectDatastream = (summary: DendraSummary) => {
+    setSelectedDatastreamId(summary.datastream_id);
+    setBookmarkMessage(null);
+    onViewChart?.(summary);
+  };
+
+  const handleBookmarkSensor = () => {
+    saveDendraBookmark({
+      itemId: String(station.station_id),
+      itemName: displayName,
+      layerId: activeLayer?.layerId ?? 'dendra',
+      layerName: activeLayer?.name ?? 'Dendra',
+      type: 'pointer-unfiltered',
+      geometry: {
+        type: 'Point',
+        coordinates: [station.longitude, station.latitude],
+      },
+    });
+    setBookmarkMessage('Saved sensor bookmark.');
+  };
+
+  const handleBookmarkWithTimeRange = () => {
+    if (!selectedSummary) return;
+    saveDendraBookmark({
+      itemId: `${station.station_id}-${selectedSummary.datastream_id}`,
+      itemName: `${displayName} - ${selectedSummary.datastream_name}`,
+      layerId: activeLayer?.layerId ?? 'dendra',
+      layerName: activeLayer?.name ?? 'Dendra',
+      type: 'pointer-filtered',
+      filterDescription: `${chart.filter.startDate} to ${chart.filter.endDate} (${chart.filter.aggregation})`,
+      resultCount: chart.data.length,
+      geometry: {
+        type: 'Point',
+        coordinates: [station.longitude, station.latitude],
+      },
+    });
+    setBookmarkMessage('Saved bookmark with time range.');
+  };
 
   return (
     <div id="dendra-station-detail" className="space-y-4">
@@ -95,12 +187,127 @@ export function StationDetailView({ station, summaries, onBack, onViewOnMap, onV
               <DatastreamSummaryCard
                 key={summary.datastream_id}
                 summary={summary}
-                onViewChart={onViewChart ? () => onViewChart(summary) : undefined}
+                isSelected={selectedDatastreamId === summary.datastream_id}
+                onViewChart={() => handleSelectDatastream(summary)}
               />
             ))}
           </div>
         )}
       </div>
+
+      {/* Level 3 datastream filter controls */}
+      {selectedSummary && (
+        <div id="dendra-datastream-filter-section" className="bg-slate-50 rounded-lg p-3 space-y-3">
+          <div id="dendra-datastream-filter-header" className="flex items-center justify-between gap-2">
+            <h4 id="dendra-datastream-filter-title" className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              Filter Datastream
+            </h4>
+            <span id="dendra-datastream-filter-name" className="text-xs text-gray-500 truncate">
+              {selectedSummary.datastream_name}
+            </span>
+          </div>
+
+          <div id="dendra-datastream-filter-grid" className="grid grid-cols-2 gap-2">
+            <label id="dendra-filter-start-label" className="text-xs text-gray-600">
+              From
+              <input
+                id="dendra-filter-start-date"
+                type="date"
+                value={chart.filter.startDate}
+                min={chartMinDate}
+                max={chartMaxDate}
+                disabled={!chartMatchesSelectedDatastream || chart.loading}
+                onChange={(event) => {
+                  setChartFilter({ startDate: event.target.value });
+                  setBookmarkMessage(null);
+                }}
+                className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm
+                           focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500
+                           disabled:bg-gray-100 disabled:text-gray-400"
+              />
+            </label>
+
+            <label id="dendra-filter-end-label" className="text-xs text-gray-600">
+              To
+              <input
+                id="dendra-filter-end-date"
+                type="date"
+                value={chart.filter.endDate}
+                min={chartMinDate}
+                max={chartMaxDate}
+                disabled={!chartMatchesSelectedDatastream || chart.loading}
+                onChange={(event) => {
+                  setChartFilter({ endDate: event.target.value });
+                  setBookmarkMessage(null);
+                }}
+                className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm
+                           focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500
+                           disabled:bg-gray-100 disabled:text-gray-400"
+              />
+            </label>
+
+            <label id="dendra-filter-aggregation-label" className="text-xs text-gray-600 col-span-2">
+              Aggregation
+              <select
+                id="dendra-filter-aggregation-select"
+                value={chart.filter.aggregation}
+                disabled={!chartMatchesSelectedDatastream || chart.loading}
+                onChange={(event) => {
+                  setChartFilter({ aggregation: event.target.value as 'hourly' | 'daily' | 'weekly' });
+                  setBookmarkMessage(null);
+                }}
+                className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm bg-white
+                           focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500
+                           disabled:bg-gray-100 disabled:text-gray-400"
+              >
+                <option id="dendra-filter-aggregation-hourly" value="hourly">Hourly</option>
+                <option id="dendra-filter-aggregation-daily" value="daily">Daily</option>
+                <option id="dendra-filter-aggregation-weekly" value="weekly">Weekly</option>
+              </select>
+            </label>
+          </div>
+
+          <div id="dendra-filter-summary-row" className="flex items-center justify-between text-xs">
+            <span id="dendra-filter-point-count" className="text-gray-600">
+              {chartMatchesSelectedDatastream ? `${chart.data.length.toLocaleString()} data points` : 'Open chart to load points'}
+            </span>
+            {chart.loading && (
+              <span id="dendra-filter-loading-indicator" className="text-gray-400">Updating...</span>
+            )}
+          </div>
+
+          <div id="dendra-bookmark-actions" className="grid grid-cols-2 gap-2">
+            <button
+              id="dendra-bookmark-sensor"
+              type="button"
+              onClick={handleBookmarkSensor}
+              className="rounded-md border border-gray-300 bg-white text-gray-700 text-sm font-medium py-2
+                         hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5"
+            >
+              <Bookmark className="w-3.5 h-3.5" />
+              Bookmark Sensor
+            </button>
+            <button
+              id="dendra-bookmark-time-range"
+              type="button"
+              onClick={handleBookmarkWithTimeRange}
+              disabled={!chartMatchesSelectedDatastream || chart.loading}
+              className="rounded-md bg-emerald-600 text-white text-sm font-medium py-2
+                         hover:bg-emerald-700 transition-colors disabled:bg-emerald-300
+                         flex items-center justify-center gap-1.5"
+            >
+              <Bookmark className="w-3.5 h-3.5" />
+              Bookmark With Time Range
+            </button>
+          </div>
+
+          {bookmarkMessage && (
+            <p id="dendra-bookmark-feedback" className="text-xs text-emerald-700">
+              {bookmarkMessage}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Chart hint */}
       <div
@@ -119,7 +326,7 @@ export function StationDetailView({ station, summaries, onBack, onViewOnMap, onV
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 
-function DetailRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function DetailRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
     <div className="flex items-center gap-1.5">
       <span className="text-gray-400">{icon}</span>
@@ -130,25 +337,27 @@ function DetailRow({ icon, label, value }: { icon: React.ReactNode; label: strin
 }
 
 function DatastreamSummaryCard({
-  summary, onViewChart,
+  summary, onViewChart, isSelected,
 }: {
-  summary: DendraSummary; onViewChart?: () => void;
+  summary: DendraSummary;
+  onViewChart: () => void;
+  isSelected: boolean;
 }) {
-  const Wrapper = onViewChart ? 'button' : 'div';
   return (
-    <Wrapper
+    <button
       id={`dendra-ds-${summary.datastream_id}`}
-      {...(onViewChart ? { onClick: onViewChart, type: 'button' as const } : {})}
-      className={`w-full text-left bg-white border rounded-md p-3 transition-colors ${
-        onViewChart
-          ? 'border-gray-100 hover:border-teal-300 hover:bg-teal-50/30 cursor-pointer group'
-          : 'border-gray-100'
+      onClick={onViewChart}
+      type="button"
+      className={`w-full text-left bg-white border rounded-md p-3 transition-colors cursor-pointer group ${
+        isSelected
+          ? 'border-teal-400 bg-teal-50/40'
+          : 'border-gray-100 hover:border-teal-300 hover:bg-teal-50/30'
       }`}
     >
       {/* Top row: name + unit + chart icon */}
       <div className="flex items-center justify-between mb-1.5">
         <h5 className="text-sm font-medium text-gray-900 flex items-center gap-1.5">
-          {onViewChart && <BarChart3 className="w-3.5 h-3.5 text-teal-400 group-hover:text-teal-600 transition-colors shrink-0" />}
+          <BarChart3 className="w-3.5 h-3.5 text-teal-400 group-hover:text-teal-600 transition-colors shrink-0" />
           {summary.datastream_name}
         </h5>
         {summary.unit && (
@@ -182,7 +391,7 @@ function DatastreamSummaryCard({
         <Calendar className="w-3 h-3" />
         {formatTimestamp(summary.first_reading_time)} — {formatTimestamp(summary.last_reading_time)}
       </div>
-    </Wrapper>
+    </button>
   );
 }
 

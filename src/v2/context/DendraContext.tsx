@@ -26,6 +26,14 @@ import {
 
 // ── Chart state ──────────────────────────────────────────────────────────────
 
+export type DendraAggregation = 'hourly' | 'daily' | 'weekly';
+
+export interface DendraChartFilter {
+  startDate: string; // YYYY-MM-DD
+  endDate: string;   // YYYY-MM-DD
+  aggregation: DendraAggregation;
+}
+
 export interface DendraChartState {
   /** Whether the floating chart panel is visible */
   open: boolean;
@@ -35,19 +43,105 @@ export interface DendraChartState {
   station: DendraStation | null;
   /** Datastream summary being charted */
   summary: DendraSummary | null;
+  /** Full fetched time series before Level 3 filters */
+  rawData: DendraTimeSeriesPoint[];
   /** Time series data points */
   data: DendraTimeSeriesPoint[];
+  /** Active Level 3 filter for chart rendering */
+  filter: DendraChartFilter;
   /** Loading state for time series fetch */
   loading: boolean;
   /** Error message if fetch failed */
   error: string | null;
 }
 
+const DEFAULT_CHART_FILTER: DendraChartFilter = {
+  startDate: '',
+  endDate: '',
+  aggregation: 'hourly',
+};
+
 const CHART_INITIAL: DendraChartState = {
   open: false, minimized: false,
   station: null, summary: null,
-  data: [], loading: false, error: null,
+  rawData: [],
+  data: [],
+  filter: DEFAULT_CHART_FILTER,
+  loading: false,
+  error: null,
 };
+
+function toDateInputValue(epochMs: number): string {
+  return new Date(epochMs).toISOString().slice(0, 10);
+}
+
+function startOfUtcDay(date: string): number {
+  return Date.parse(`${date}T00:00:00.000Z`);
+}
+
+function endOfUtcDay(date: string): number {
+  return Date.parse(`${date}T23:59:59.999Z`);
+}
+
+function startOfUtcHour(epochMs: number): number {
+  const d = new Date(epochMs);
+  d.setUTCMinutes(0, 0, 0);
+  return d.getTime();
+}
+
+function startOfUtcWeek(epochMs: number): number {
+  const d = new Date(epochMs);
+  const dayOffset = (d.getUTCDay() + 6) % 7; // Monday = 0
+  d.setUTCHours(0, 0, 0, 0);
+  d.setUTCDate(d.getUTCDate() - dayOffset);
+  return d.getTime();
+}
+
+function aggregatePoints(
+  points: DendraTimeSeriesPoint[],
+  aggregation: DendraAggregation,
+): DendraTimeSeriesPoint[] {
+  if (points.length === 0) return [];
+
+  const buckets = new Map<number, { sum: number; count: number }>();
+
+  for (const point of points) {
+    const bucketTs =
+      aggregation === 'weekly'
+        ? startOfUtcWeek(point.timestamp)
+        : aggregation === 'daily'
+          ? startOfUtcDay(toDateInputValue(point.timestamp))
+          : startOfUtcHour(point.timestamp);
+
+    const current = buckets.get(bucketTs);
+    if (current) {
+      current.sum += point.value;
+      current.count += 1;
+    } else {
+      buckets.set(bucketTs, { sum: point.value, count: 1 });
+    }
+  }
+
+  return Array.from(buckets.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([timestamp, acc]) => ({
+      timestamp,
+      value: acc.sum / acc.count,
+    }));
+}
+
+function applyChartFilter(
+  rawData: DendraTimeSeriesPoint[],
+  filter: DendraChartFilter,
+): DendraTimeSeriesPoint[] {
+  if (rawData.length === 0) return [];
+
+  const startTs = filter.startDate ? startOfUtcDay(filter.startDate) : Number.NEGATIVE_INFINITY;
+  const endTs = filter.endDate ? endOfUtcDay(filter.endDate) : Number.POSITIVE_INFINITY;
+
+  const inRange = rawData.filter(point => point.timestamp >= startTs && point.timestamp <= endTs);
+  return aggregatePoints(inRange, filter.aggregation);
+}
 
 // ── Context value ────────────────────────────────────────────────────────────
 
@@ -82,6 +176,7 @@ interface DendraContextValue {
   // Chart state (floating time series panel)
   chart: DendraChartState;
   openChart: (station: DendraStation, summary: DendraSummary) => void;
+  setChartFilter: (partial: Partial<DendraChartFilter>) => void;
   closeChart: () => void;
   toggleMinimizeChart: () => void;
 }
@@ -201,13 +296,31 @@ export function DendraProvider({ children }: { children: ReactNode }) {
     setChart({
       open: true, minimized: false,
       station, summary,
-      data: [], loading: true, error: null,
+      rawData: [],
+      data: [],
+      filter: DEFAULT_CHART_FILTER,
+      loading: true,
+      error: null,
     });
 
     fetchTimeSeries(serviceInfo.url, station.station_id, summary.datastream_name, summary.dendra_ds_id)
       .then(result => {
         if (chartRequestIdRef.current !== requestId) return; // stale — discard
-        setChart(prev => ({ ...prev, data: result.points, loading: false }));
+        const startDate = result.points.length > 0 ? toDateInputValue(result.points[0].timestamp) : '';
+        const endDate = result.points.length > 0 ? toDateInputValue(result.points[result.points.length - 1].timestamp) : '';
+        const filter: DendraChartFilter = {
+          startDate,
+          endDate,
+          aggregation: 'hourly',
+        };
+        const filteredPoints = applyChartFilter(result.points, filter);
+        setChart(prev => ({
+          ...prev,
+          rawData: result.points,
+          data: filteredPoints,
+          filter,
+          loading: false,
+        }));
       })
       .catch(err => {
         if (chartRequestIdRef.current !== requestId) return; // stale — discard
@@ -218,6 +331,17 @@ export function DendraProvider({ children }: { children: ReactNode }) {
         }));
       });
   }, [serviceInfo]);
+
+  const setChartFilter = useCallback((partial: Partial<DendraChartFilter>) => {
+    setChart(prev => {
+      const nextFilter: DendraChartFilter = { ...prev.filter, ...partial };
+      return {
+        ...prev,
+        filter: nextFilter,
+        data: applyChartFilter(prev.rawData, nextFilter),
+      };
+    });
+  }, []);
 
   const closeChart = useCallback(() => {
     setChart(CHART_INITIAL);
@@ -253,12 +377,13 @@ export function DendraProvider({ children }: { children: ReactNode }) {
     filteredStations,
     chart,
     openChart,
+    setChartFilter,
     closeChart,
     toggleMinimizeChart,
   }), [
     currentData, serviceInfo, loading, error, dataLoaded,
     warmCache, showActiveOnly, toggleActiveOnly, filteredStations,
-    chart, openChart, closeChart, toggleMinimizeChart,
+    chart, openChart, setChartFilter, closeChart, toggleMinimizeChart,
   ]);
 
   return <DendraCtx.Provider value={value}>{children}</DendraCtx.Provider>;

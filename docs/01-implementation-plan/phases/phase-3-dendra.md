@@ -1,7 +1,7 @@
 # Phase 3: Dendra Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 5 / 10 tasks (3.5 in progress, split into 5 sub-tasks)  
+**Progress:** 6 / 10 tasks (3.5 in progress, split into 5 sub-tasks)  
 **Branch:** `v2/dendra`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -50,7 +50,9 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 | 3.5b | Fix: Some sensors show 0 data despite record counts | 🟢 Complete | | Feb 13: v0 bridge IDs/counts validated; issue was null-heavy datapoint windows. Updated query to fetch most recent non-null points (`value IS NOT NULL`, DESC + reverse to ASC). |
 | 3.5c | Fix: Glassmorphism background not visible | 🟢 Complete | | Feb 13: Implemented visible glassmorphism, bottom-right placement, half-height panel, stronger contrast/readability, larger slider and tick labels, darker header. |
 | 3.5d | Polish: Improve right sidebar layout/styling | ⚪ Not Started | | User feedback: "something feels off" about sidebar appearance |
-| 3.6 | Implement time range filter (Level 3) | ⚪ Not Started | | Date range + aggregation |
+| 3.6 | Implement time range filter (Level 3) | 🟢 Complete | | Feb 13: Added Level 3 datastream filter controls in Station Detail (from/to date + aggregation), auto-applied chart updates, live data-point count, and both bookmark actions ("Bookmark Sensor" + "Bookmark With Time Range"). |
+
+**Follow-up:** Task 27 in `docs/development-task-tracker.md` — "Save View / Save With Filters" sync with Map Layers. Replace bookmark terminology; persist right-sidebar filter state into Map Layers. **Prerequisite:** Merge v2/iNaturalist first (check `git log`). Dendra may use explicit save vs iNaturalist auto-save due to Level 3 complexity.
 
 **Status Legend:**
 - ⚪ Not Started
@@ -156,12 +158,12 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 **Goal:** Allow user to filter datastream by time range.
 
 **Acceptance Criteria:**
-- [ ] Date range picker (from/to)
-- [ ] Aggregation dropdown (hourly, daily, weekly)
-- [ ] Filter updates chart display
-- [ ] "Bookmark Sensor" saves sensor only
-- [ ] "Bookmark with Time Range" saves sensor + time filter
-- [ ] Count shows "X data points"
+- [x] Date range picker (from/to)
+- [x] Aggregation dropdown (hourly, daily, weekly)
+- [x] Filter updates chart display
+- [x] "Bookmark Sensor" saves sensor only
+- [x] "Bookmark with Time Range" saves sensor + time filter
+- [x] Count shows "X data points"
 
 **Reference:** Mockup `02d-browse-dendra.html` "Filter Datastream" section
 
@@ -292,6 +294,7 @@ bookmark: {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 13, 2026 | 3.6 | ✅ **Task 3.6 complete.** Added Level 3 datastream filtering controls in `StationDetailView` (from/to date + hourly/daily/weekly aggregation) with auto-apply behavior. Extended `DendraContext` chart state to store raw points + active filter and compute filtered/aggregated chart data reactively. Added live "X data points" count and both bookmark actions: sensor-only and sensor+time-range. | Claude |
 | Feb 13, 2026 | 3.5b | ✅ **Sub-task 3.5b complete.** Investigated v0 bridge mismatch hypothesis by sampling across all 10 Dendra sensor services and confirming `dendra_ds_id -> v0 datastream_id` resolves correctly with matching record counts. Root cause was query windowing with null-heavy datapoint segments; chart request updated to fetch latest non-null values (`value IS NOT NULL`, `ORDER BY timestamp_utc DESC`) and reverse client-side for chronological rendering. | Claude |
 | Feb 13, 2026 | 3.5a | ✅ **Sub-task 3.5a complete.** Fixed subsequent datastream clicks not updating chart. Two bugs: (1) race condition in openChart — stale fetch could overwrite newer datastream's data (added request-counter guard); (2) stale ECharts instance — chart div remounts during loading transition but old instance pointed to removed DOM (added getDom() check before init). | Claude |
 | Feb 13, 2026 | 3.5c | ✅ **Sub-task 3.5c complete.** Floating chart glassmorphism now visibly renders (including Safari/WebKit-safe backdrop styles), panel moved to bottom-right, expanded panel set to ~50% map height, chart/readability pass applied (higher contrast surfaces/text, larger axis tick labels, larger/higher range slider), and header hierarchy updated to prioritize measurement title with darker header background. **Remaining blockers for 3.5:** 3.5b (0-data inconsistency). | Claude |
