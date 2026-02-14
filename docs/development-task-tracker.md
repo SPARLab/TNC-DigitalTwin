@@ -38,10 +38,10 @@
 | 14 | 0 | **Fix Map Layers Widget Drag Animation** | ✅ | Medium | Fixed: disabled @dnd-kit auto layout animations to prevent jarring transforms |
 | 24 | 0 | **0.9 Dynamic Layer Registry from Data Catalog Service** | 🟡 | **Critical** | Replace static layerRegistry with dynamic fetch from Data Catalog FeatureServer (~90+ real datasets, 14 categories); "Not Yet Implemented" toast for layers without adapters. **BLOCKS all parallel branches.** |
 | 25 | 3 | **Dendra: Tasks 3.1-3.4 — Station browse adapter** | ✅ | High | Service, context, map layer, sidebar shell, filters, station cards, detail view with datastream summaries. Next: Floating time series chart (3.5). |
-| 26 | 3 | **Dendra: Task 3.5 — Floating time series chart** | 🟡 | High | In progress. 3.5a ✅ (datastream click refresh), 3.5c ✅ (glassmorphism). Remaining: 3.5b 0-data inconsistency, 3.5d sidebar polish. Reference: mockup 02d-browse-dendra.html |
+| 26 | 3 | **Dendra: Task 3.5 — Floating time series chart** | 🟡 | High | In progress. 3.5a ✅ (datastream click refresh), 3.5b ✅ (0-data fix), 3.5c ✅ (glassmorphism). Remaining: 3.5d sidebar polish. Reference: mockup 02d-browse-dendra.html |
 
 **Active tasks remaining:** 10  
-**Recently completed:** **Dendra 3.1-3.4** ✅ (Feb 12), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
+**Recently completed:** **Dendra 3.5b** ✅ (Feb 13 — 0-data chart fix), **Dendra 3.1-3.4** ✅ (Feb 12), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
 
 ---
 
@@ -354,7 +354,7 @@
   - [x] **Tasks 3.1-3.4 complete:** Dendra station browse adapter ✅ (Feb 12)
     - **Completed:** Full adapter for 10 per-type sensor services (Weather Stations, Barometers, Rain Gauges, etc.). Service layer, DendraContext, map behavior, sidebar (Overview/Browse), StationCard, StationDetailView with datastream summaries. Map markers now correctly show only active layer's stations. Fixed: buildServiceUrl (no double path), elevation null/NaN handling, layer-switch graphics clearing.
     - **Files:** `src/v2/services/dendraStationService.ts`, `src/v2/context/DendraContext.tsx`, `src/v2/dataSources/dendra/`, `src/v2/components/RightSidebar/Dendra/`, `src/v2/components/Map/layers/dendraLayer.ts`
-  - [ ] **Task 3.5 (NEXT):** Floating time series chart — sensor detail view with ECharts, interactive hover, stats panel
+  - [ ] **Task 3.5 (NEXT):** Floating time series chart — sensor detail view with ECharts, interactive hover, stats panel. 3.5a ✅ 3.5b ✅ 3.5c ✅. Remaining: 3.5d sidebar polish.
   - [ ] **Task 3.6:** Time range filter (Level 3) — date picker, aggregation dropdown
 
 - **Phase 4:** DataOne data source (5 tasks)
@@ -400,6 +400,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 13, 2026 | Phase 3 | ✅ **Task 26 sub-task 3.5b complete.** Fixed sensors showing 0 data despite record counts. Root cause: null-heavy datapoint windows when querying oldest-first. Updated v0 bridge query to fetch latest non-null points (`value IS NOT NULL`, `ORDER BY timestamp_utc DESC`), reverse client-side for chronological chart. **Remaining:** 3.5d (sidebar polish). | Claude |
 | Feb 13, 2026 | Phase 3 | ✅ **Task 26 sub-task 3.5a complete.** Fixed subsequent datastream clicks not updating chart. Two bugs: (1) race condition — stale fetch could overwrite newer datastream's data (request-counter guard in openChart); (2) stale ECharts instance — chart div remounts during loading but old instance pointed to removed DOM (getDom() check before init). **Remaining:** 3.5b (0-data inconsistency), 3.5d (sidebar polish). | Claude |
 | Feb 13, 2026 | Phase 3 | 🟡 **Task 26 (Dendra 3.5) in progress; sub-task 3.5c complete.** Floating chart UI polish shipped: visible glassmorphism, bottom-right placement, half-height panel sizing, stronger contrast/readability, larger axis labels, larger/higher range slider, darker header, and measurement-first header text hierarchy. **Still open:** 3.5a (chart not refreshing on subsequent datastream clicks), 3.5b (0-data inconsistency). | Claude |
 | Feb 12, 2026 | Phase 3 | ✅ **Dendra Tasks 3.1-3.4 complete.** Full station browse adapter for 10 per-type sensor services. Service layer, DendraContext (per-service cache), map behavior (active-layer-only populate), Overview/Browse tabs, StationCard, StationDetailView with datastream summaries. Fixes: buildServiceUrl (no double path), elevation null/NaN, layer-switch graphics clearing. **Next: Task 3.5 floating time series chart.** | Claude |

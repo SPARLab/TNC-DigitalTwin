@@ -181,7 +181,7 @@ export interface TimeSeriesResult {
  * Bridges from the v2 per-type Summary (dendra_ds_id) to the v0 legacy
  * service (datapoints table) to get actual readings.
  *
- * ArcGIS maxRecordCount is 2000 — we fetch the most recent 2000 points.
+ * ArcGIS maxRecordCount is 2000 — we fetch the most recent non-null points.
  */
 export async function fetchTimeSeries(
   _serviceUrl: string,
@@ -194,11 +194,14 @@ export async function fetchTimeSeries(
   const v0DsId = await resolveV0DatastreamId(dendraDsId);
   console.log(`[Dendra TimeSeries] Resolved to v0 datastream id=${v0DsId}, fetching points...`);
 
-  const where = `datastream_id=${v0DsId}`;
+  // Some legacy datastreams have long stretches of null values. If we query
+  // oldest-first without a value filter, ArcGIS can return a 2000-row window
+  // containing only nulls, which renders as an empty chart despite counts.
+  const where = `datastream_id=${v0DsId} AND value IS NOT NULL`;
   const url =
     `${V0_BASE}/4/query?where=${encodeURIComponent(where)}` +
     `&outFields=timestamp_utc,value` +
-    `&orderByFields=timestamp_utc ASC` +
+    `&orderByFields=timestamp_utc DESC` +
     `&resultRecordCount=2000` +
     `&f=json`;
 
@@ -212,9 +215,10 @@ export async function fetchTimeSeries(
   const points = features
     .map(f => ({
       timestamp: f.attributes.timestamp_utc,
-      value: f.attributes.value,
+      value: Number(f.attributes.value),
     }))
-    .filter(p => p.timestamp != null && p.value != null && !isNaN(p.value));
+    .filter(p => p.timestamp != null && Number.isFinite(p.value))
+    .reverse(); // Keep chart timeline left→right (oldest→newest)
 
   console.log(`[Dendra TimeSeries] Got ${points.length} points for "${datastreamName}"`);
   return { points, datastreamName };
