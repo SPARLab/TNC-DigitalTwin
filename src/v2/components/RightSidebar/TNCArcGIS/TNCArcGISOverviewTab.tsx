@@ -35,7 +35,7 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
           </dd>
           <dt id="tnc-arcgis-overview-type-label" className="text-gray-500">Status</dt>
           <dd id="tnc-arcgis-overview-type-value" className="text-gray-900 font-medium text-right">
-            {loading ? 'Loading schema...' : 'Schema cached'}
+            {loading ? 'Loading metadata...' : 'Ready'}
           </dd>
         </dl>
       </div>

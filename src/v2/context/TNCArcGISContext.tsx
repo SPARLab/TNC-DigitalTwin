@@ -36,6 +36,7 @@ export function TNCArcGISProvider({ children }: { children: ReactNode }) {
   const { activeLayer } = useLayers();
   const [schemas, setSchemas] = useState<Map<string, LayerSchema>>(new Map());
   const [loadingByLayerId, setLoadingByLayerId] = useState<Set<string>>(new Set());
+  const [failedByLayerId, setFailedByLayerId] = useState<Set<string>>(new Set());
 
   const activeLayerId = activeLayer?.dataSource === 'tnc-arcgis' ? activeLayer.layerId : null;
   const targetLayer = useMemo(
@@ -62,9 +63,25 @@ export function TNCArcGISProvider({ children }: { children: ReactNode }) {
         next.set(layer.id, schema);
         return next;
       });
+      setFailedByLayerId(prev => {
+        if (!prev.has(layer.id)) return prev;
+        const next = new Set(prev);
+        next.delete(layer.id);
+        return next;
+      });
       return schema;
     } catch (error) {
-      console.error('[TNCArcGIS] Failed to warm schema cache:', error);
+      setFailedByLayerId(prev => {
+        const next = new Set(prev);
+        next.add(layer.id);
+        return next;
+      });
+      const message = error instanceof Error ? error.message : String(error);
+      if (/token required/i.test(message)) {
+        console.warn('[TNCArcGIS] Schema warm skipped: ArcGIS token required for this layer.');
+      } else {
+        console.warn('[TNCArcGIS] Failed to warm schema cache:', error);
+      }
       return null;
     } finally {
       setLoadingByLayerId(prev => {
@@ -77,18 +94,19 @@ export function TNCArcGISProvider({ children }: { children: ReactNode }) {
 
   const warmCache = useCallback(() => {
     if (!targetLayer || targetLayer.dataSource !== 'tnc-arcgis') return;
+    if (failedByLayerId.has(targetLayer.id)) return;
     if (schemas.has(targetLayer.id) || loadingByLayerId.has(targetLayer.id)) return;
     void loadSchema(targetLayer);
-  }, [targetLayer, schemas, loadingByLayerId, loadSchema]);
+  }, [targetLayer, schemas, loadingByLayerId, failedByLayerId, loadSchema]);
 
   const value = useMemo<TNCArcGISContextValue>(() => ({
     schemas,
     loading: !!targetLayerId && loadingByLayerId.has(targetLayerId),
-    dataLoaded: !!targetLayerId && schemas.has(targetLayerId),
+    dataLoaded: !!targetLayerId && (schemas.has(targetLayerId) || failedByLayerId.has(targetLayerId)),
     warmCache,
     loadSchema,
     getSchema: (layerId: string) => schemas.get(layerId),
-  }), [schemas, loadingByLayerId, targetLayerId, warmCache, loadSchema]);
+  }), [schemas, loadingByLayerId, targetLayerId, failedByLayerId, warmCache, loadSchema]);
 
   return (
     <TNCArcGISContext.Provider value={value}>

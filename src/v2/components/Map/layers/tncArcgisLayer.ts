@@ -1,5 +1,6 @@
 import type Layer from '@arcgis/core/layers/Layer';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
+import ImageryLayer from '@arcgis/core/layers/ImageryLayer';
 import MapImageLayer from '@arcgis/core/layers/MapImageLayer';
 import type { CatalogLayer } from '../../../types';
 import { buildServiceUrl } from '../../../services/tncArcgisService';
@@ -13,6 +14,12 @@ function buildMapServerServiceUrl(meta: NonNullable<CatalogLayer['catalogMeta']>
   const base = sanitizeArcGisBaseUrl(meta.serverBaseUrl);
   const path = meta.servicePath.trim().replace(/^\/+/, '').replace(/\/+$/, '');
   return `${base}/${path}/MapServer`;
+}
+
+function buildImageServerServiceUrl(meta: NonNullable<CatalogLayer['catalogMeta']>): string {
+  const base = sanitizeArcGisBaseUrl(meta.serverBaseUrl);
+  const path = meta.servicePath.trim().replace(/^\/+/, '').replace(/\/+$/, '');
+  return `${base}/${path}/ImageServer`;
 }
 
 /** Build a map-ready ArcGIS layer for TNC catalog layers. */
@@ -50,6 +57,15 @@ export function createTNCArcGISLayer(options: {
         visible: true,
         definitionExpression,
       }],
+    });
+  }
+
+  // ImageServer layers render through ImageryLayer.
+  if (meta.hasImageServer) {
+    return new ImageryLayer({
+      id,
+      url: buildImageServerServiceUrl(meta),
+      visible,
     });
   }
 

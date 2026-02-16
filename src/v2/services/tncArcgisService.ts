@@ -101,8 +101,13 @@ export function buildServiceUrl(meta: CatalogLayer['catalogMeta']): string {
     throw new Error('Invalid service URL: no ArcGIS service type configured');
   }
 
+  const serviceUrl = `${base}/${path}/${type}`;
+  if (type === 'ImageServer') {
+    return serviceUrl;
+  }
+
   const layerId = Number.isInteger(meta.layerIdInService) ? meta.layerIdInService : 0;
-  return `${base}/${path}/${type}/${layerId}`;
+  return `${serviceUrl}/${layerId}`;
 }
 
 /** Fetch layer schema (fields, extent, geometry type) */
