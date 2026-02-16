@@ -1,8 +1,8 @@
 # Phase 2: ANiML Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 14 / 17 tasks  
-**Last Completed:** Task 2.16 (Camera Badges) ✅  
+**Progress:** 15 / 17 tasks  
+**Last Completed:** Task 2.17 (Loading Indicators) ✅  
 **Branch:** `v2/animl`  
 **Depends On:** Phase 0 (Foundation) — Data Source Adapter Pattern ✅ Complete  
 **Owner:** TBD
@@ -103,7 +103,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | 2.14 | Arrow key navigation in expanded view | 🟢 Complete | Will + Claude | Left/right keys to navigate between images |
 | 2.15 | Image click → highlight camera on map | 🟢 Complete | Will + Claude | focusedDeploymentId in AnimlFilterContext; ArcGIS layerView.highlight(); onImageFocus from ImageList/expanded view |
 | 2.16 | Camera badges: numbered icons for query results | 🟢 Complete | Will + Claude | Dynamic map badge symbols: show camera result counts only while filters are active; 0-result cameras show no badge |
-| 2.17 | iNaturalist-style loading indicators for ANiML | ⚪ Not Started | | Map, Map Layers widget, and legend show loading when camera traps are loading; use shared LoadingPrimitives (EyeSlotLoadingSpinner, MapCenterLoadingOverlay, InlineLoadingRow) |
+| 2.17 | iNaturalist-style loading indicators for ANiML | 🟢 Complete | Will + Claude | Map, Map Layers widget, and legend show loading when camera traps are loading; uses shared LoadingPrimitives (EyeSlotLoadingSpinner, MapCenterLoadingOverlay, InlineLoadingRow) |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -115,7 +115,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 ## Task Details
 
-**Archived:** Completed tasks 2.1–2.7, 2.10–2.16 have been archived. See [Archived Task Details](#archived-task-details-completed) below for full acceptance criteria and implementation notes.
+**Archived:** Completed tasks 2.1–2.7, 2.10–2.17 have been archived. See [Archived Task Details](#archived-task-details-completed) below for full acceptance criteria and implementation notes.
 
 ---
 
@@ -165,7 +165,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 **Goal:** When camera traps (ANiML) are loading, show loading indicators in the map, Map Layers widget, and legend — using the same reusable components as iNaturalist.
 
-**Status:** ⚪ Not Started
+**Status:** 🟢 Complete
 
 **Acceptance Criteria:**
 - [ ] **Map:** When ANiML layer is active and data is loading (`cacheStatus.loading`), show `MapCenterLoadingOverlay` with message "Loading camera trap data..."
@@ -187,7 +187,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 ## Archived Task Details (Completed)
 
-Full details for tasks 2.1–2.7, 2.10–2.16. Key decisions and implementation notes are in the Change Log and Discoveries/Decisions sections.
+Full details for tasks 2.1–2.7, 2.10–2.17. Key decisions and implementation notes are in the Change Log and Discoveries/Decisions sections.
 
 | ID | Task | Key Deliverables |
 |----|------|------------------|
@@ -205,6 +205,7 @@ Full details for tasks 2.1–2.7, 2.10–2.16. Key decisions and implementation 
 | 2.14 | Arrow key navigation | ←/→ in expanded view, auto-pagination (DFT-049) |
 | 2.15 | Image click → map highlight | focusedDeploymentId, layerView.highlight() |
 | 2.16 | Camera badges | Dynamic badges when filter active; 0-result = no badge |
+| 2.17 | Loading indicators | MapCenterLoadingOverlay (ANiML message), EyeSlotLoadingSpinner, InlineLoadingRow; loadingTheme tokens |
 
 ---
 
@@ -753,6 +754,7 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | Feb 13, 2026 | 2.15, 2.16 | **New tasks added.** 2.15: Image click → highlight camera on map (blue ArcGIS native highlight). 2.16: Camera badges — numbered icons above cameras with matching images when filter active; cameras with 0 results get no badge. | Will + Claude |
 | Feb 13, 2026 | 2.16 | **Complete.** Implemented dynamic camera badge rendering in `animlLayer.ts` using SVG data-URI symbols (camera + numeric count). Added `updateAnimlCameraBadges()` and wired it in `useAnimlMapBehavior.ts` so badges update whenever ANiML filter state changes. No-filter state shows plain camera icons; 0-result cameras show no badge. | Will + Claude |
 | Feb 16, 2026 | All | **Archived completed tasks.** Moved 2.1–2.7, 2.10–2.16 to Archived Task Details section; active tasks (2.8, 2.9, 2.17) now at top. Added Task 2.17: iNaturalist-style loading indicators for ANiML (map, Map Layers widget, legend) using shared LoadingPrimitives. | Will + Claude |
+| Feb 16, 2026 | 2.17 | **Complete.** ANiML loading indicators aligned with iNaturalist: MapContainer shows "Loading camera trap data..." overlay when animl active; Map Layers (ActiveLayerSection, PinnedLayerRow) and AnimlLegendWidget already used shared primitives; standardized legend spinner to loadingTheme.inlineSpinner. | Will + Claude |
 
 ---
 

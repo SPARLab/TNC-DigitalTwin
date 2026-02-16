@@ -19,13 +19,14 @@
 | 3.7 | 3 | Dendra: Weather Stations layer investigation | 🟢 | Medium |
 | 3.9 | 3 | Dendra: Save With Filters button — behavior or removal | 🟢 | Medium |
 | 9 | 0 | 0.6 Map Feature Highlight | 🟡 | Low |
-| 33 | 2 | 2.16 ANiML Camera Badges | ⚪ | Medium |
+| 33 | 2 | 2.16 ANiML Camera Badges | 🟢 | Medium |
+| 34 | 2 | 2.17 ANiML Loading Indicators | 🟢 | Medium |
 
 **Phase 3 details:** [phase-3-dendra.md](01-implementation-plan/phases/phase-3-dendra.md)
 
 **Active tasks remaining:** 5  
 **🔴 Next (critical):** Task 24 — Dynamic Layer Registry from Data Catalog Service
-**Recently completed:** Task 34 (Unified Loading Indicator Strategy) ✅ (Feb 16), Task 3.9 ✅, Task 3.8 ✅, Task 3.7 ✅
+**Recently completed:** Task 2.17 (ANiML Loading Indicators) ✅ (Feb 16), Task 34 (Unified Loading Indicator Strategy) ✅, Task 3.9 ✅, Task 3.8 ✅, Task 3.7 ✅
 
 ---
 
@@ -355,10 +356,13 @@
     - **Completed (Feb 13):** AnimlFilterContext: focusedDeploymentId, focusDeployment(), clearFocusedDeployment(). ImageList: onImageFocus(image) callback on click and when navigating in expanded view. useAnimlMapBehavior: ArcGIS layerView.highlight(targetGraphic) for focused deployment; cleanup on layer remove. animlLayer: getAnimlCameraGraphicByDeploymentId() helper (2.16-ready).
     - **Files:** `AnimlFilterContext.tsx`, `ImageList.tsx`, `AnimlBrowseTab.tsx`, `animlLayer.ts`, `useMapBehavior.ts`
 
-  - [ ] **Task 33 (2.16): ANiML Camera Badges — Numbered Icons for Query Results**
-    - **Goal:** When filter active (species, date, etc.), show numbered badges above cameras that have ≥1 matching image. Cameras with 0 results get no badge.
-    - **Implementation:** Use countLookups; badge only when count > 0; positioned above camera icon on map.
-    - **Files:** `animlLayer.ts`, `AnimlFilterContext.tsx`
+  - [x] **Task 33 (2.16): ANiML Camera Badges — Numbered Icons for Query Results** ✅
+    - **Completed (Feb 13):** Dynamic map badge symbols when filter active; 0-result cameras show no badge.
+    - **Files:** `animlLayer.ts`, `useAnimlMapBehavior.ts`
+
+  - [x] **Task 2.17: iNaturalist-style loading indicators for ANiML** ✅
+    - **Completed (Feb 16):** MapCenterLoadingOverlay with "Loading camera trap data..." when animl active; Map Layers (ActiveLayerSection, PinnedLayerRow) and AnimlLegendWidget use shared LoadingPrimitives; loadingTheme tokens.
+    - **Files:** `MapContainer.tsx`, `AnimlLegendWidget.tsx`
 
   - [ ] **Future/Low Priority: Save Observation → Create Filtered View**
     - **Goal:** Clicking "Save" on an observation creates a new child view in Map Layers widget filtered to that specific observation (by ID or name).
@@ -462,6 +466,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 16, 2026 | Phase 2 | ✅ **Task 2.17 complete: iNaturalist-style loading indicators for ANiML.** MapContainer shows "Loading camera trap data..." overlay when animl active; Map Layers and AnimlLegendWidget use shared LoadingPrimitives; loadingTheme.inlineSpinner for legend. | Claude |
 | Feb 16, 2026 | Phase 3 | ✅ **Task 3.9 complete: Dendra Save With Filters — distinct behavior.** Renamed to "Update Current View" (station-level sync) and "Save as New View" (creates filtered child view, activates it). Added `createDendraFilteredView()` in LayerContext. Files: StationDetailView.tsx, LayerContext.tsx. | Claude |
 | Feb 16, 2026 | Phase 3 | ✅ **Task 3.7 complete: Weather Stations layer investigation.** Root cause: Two Weather Stations layers in catalog — dataset-183 (Dendra sensor, working) and dataset-190 (legacy v0, not implemented). Backend fix: Dan set `is_visible: 0` for dataset-190 in Data Catalog FeatureServer. No frontend changes. | Claude |
 | Feb 16, 2026 | Phase 3 | 🐛 **Task 3.8 complete: Barometer datastream crash.** `formatValue` in dendraStationService.ts threw `value.toFixed is not a function` when ArcGIS returned min/max/avg as strings. Now coerces to number and handles NaN. | Claude |
