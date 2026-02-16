@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
-**Status:** ⚪ Not Started  
-**Progress:** 0 / 10 tasks  
+**Status:** 🟡 In Progress  
+**Progress:** 1 / 10 tasks  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry)  
 **Owner:** TBD
@@ -29,7 +29,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|--------------------------|-------------------|-------|
-| **6.1** | ⚪ | — | Extend Data Model for Multi-Layer Services | Update `CatalogLayer`, `ActiveLayer` types; detect multi-layer services in catalog hook |
+| **6.1** | 🟢 | 2026-02-16 13:01 PST | Extend Data Model for Multi-Layer Services | Added multi-layer metadata fields/types and service-group detection in `useCatalogRegistry`; single-layer behavior preserved |
 | **6.2** | ⚪ | — | Left Sidebar: Collapsible Service Groups | Render multi-layer services as expandable rows; layer rows show pin/eye only |
 | **6.3** | ⚪ | — | TNC ArcGIS Service Module | Service URL builder, schema fetch, field list query |
 | **6.4** | ⚪ | — | TNC ArcGIS Adapter Shell | Create adapter skeleton with warmCache, RightSidebarContent, createMapLayer |
@@ -199,11 +199,11 @@ if (serviceLayers.length > 1) {
 ```
 
 **Acceptance Criteria:**
-- [ ] `CatalogLayer` type extended with multi-layer fields
-- [ ] `ActiveLayer` type extended with service activation fields
-- [ ] `TNCArcGISViewFilters` type added
-- [ ] `useCatalogRegistry` detects multi-layer services and creates nested structure
-- [ ] Single-layer services remain flat (no nesting)
+- [x] `CatalogLayer` type extended with multi-layer fields
+- [x] `ActiveLayer` type extended with service activation fields
+- [x] `TNCArcGISViewFilters` type added
+- [x] `useCatalogRegistry` detects multi-layer services and creates nested structure
+- [x] Single-layer services remain flat (no nesting)
 
 **Estimated Time:** 2-3 hours
 

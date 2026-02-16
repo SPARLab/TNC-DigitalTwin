@@ -81,6 +81,30 @@ function toLayerId(datasetId: number): string {
   return `dataset-${datasetId}`;
 }
 
+/** Convert a service key to a stable service layer ID string. */
+function toServiceLayerId(serviceDatasetId: number): string {
+  return `service-${serviceDatasetId}`;
+}
+
+/** Build stable key used to group datasets by underlying service endpoint. */
+function serviceKeyForDataset(d: RawDataset): string | null {
+  if (!d.server_base_url || !d.service_path) return null;
+  return `${d.server_base_url}/${d.service_path}`;
+}
+
+/** Group datasets by service endpoint for multi-layer service detection. */
+function detectMultiLayerServices(datasets: RawDataset[]): Map<string, RawDataset[]> {
+  const serviceGroups = new Map<string, RawDataset[]>();
+  for (const d of datasets) {
+    const serviceKey = serviceKeyForDataset(d);
+    if (!serviceKey) continue;
+    const group = serviceGroups.get(serviceKey) ?? [];
+    group.push(d);
+    serviceGroups.set(serviceKey, group);
+  }
+  return serviceGroups;
+}
+
 /** Detect the data source adapter key from service URL patterns. */
 function detectDataSource(d: RawDataset): DataSource {
   const path = d.service_path ?? '';
@@ -145,12 +169,13 @@ export function useCatalogRegistry(): CatalogRegistryState {
         // ── Build dataset lookup ─────────────────────────────────────────
         const datasetById = new Map<number, RawDataset>();
         for (const d of rawDatasets) datasetById.set(d.id, d);
+        const serviceGroups = detectMultiLayerServices(rawDatasets);
 
         // ── Create CatalogLayer for every visible dataset ────────────────
         const allLayers = new Map<string, CatalogLayer>();
 
         // Helper: create a CatalogLayer from a raw dataset + category
-        function layerFromDataset(d: RawDataset, categoryId: string): CatalogLayer {
+        const layerFromDataset = (d: RawDataset, categoryId: string): CatalogLayer => {
           const id = toLayerId(d.id);
           const ds = detectDataSource(d);
           return {
@@ -170,7 +195,104 @@ export function useCatalogRegistry(): CatalogRegistryState {
               layerIdInService: d.layer_id ?? undefined,
             },
           };
-        }
+        };
+
+        /** Build category layer rows and synthesize service parents for multi-layer TNC services. */
+        const buildLayersForCategory = (datasetIds: number[], categoryId: string): CatalogLayer[] => {
+          const layers: CatalogLayer[] = [];
+          const visibleDatasets = datasetIds
+            .map(dsId => datasetById.get(dsId))
+            .filter((d): d is RawDataset => !!d && d.is_visible !== 0);
+          const seenServiceKeys = new Set<string>();
+
+          for (const d of visibleDatasets) {
+            const ds = detectDataSource(d);
+            const serviceKey = serviceKeyForDataset(d);
+
+            // Only group TNC ArcGIS layers with a valid service key.
+            if (ds !== 'tnc-arcgis' || !serviceKey) {
+              const layer = layerFromDataset(d, categoryId);
+              layers.push(layer);
+              allLayers.set(layer.id, layer);
+              continue;
+            }
+
+            if (seenServiceKeys.has(serviceKey)) continue;
+            seenServiceKeys.add(serviceKey);
+
+            const serviceRows = (serviceGroups.get(serviceKey) ?? [])
+              .filter(row => row.is_visible !== 0 && detectDataSource(row) === 'tnc-arcgis')
+              .sort((a, b) => a.display_order - b.display_order);
+
+            if (serviceRows.length <= 1) {
+              const layer = layerFromDataset(d, categoryId);
+              layers.push(layer);
+              allLayers.set(layer.id, layer);
+              continue;
+            }
+
+            const serviceDatasetId = serviceRows[0].id;
+            const serviceId = toServiceLayerId(serviceDatasetId);
+
+            const children = serviceRows.map((row): CatalogLayer => ({
+              id: toLayerId(row.id),
+              name: row.display_title || row.service_name || `Dataset ${row.id}`,
+              categoryId,
+              dataSource: 'tnc-arcgis',
+              icon: datasetIcon('tnc-arcgis'),
+              catalogMeta: {
+                datasetId: row.id,
+                serverBaseUrl: row.server_base_url ?? '',
+                servicePath: row.service_path ?? '',
+                hasFeatureServer: row.has_feature_server === 1,
+                hasMapServer: row.has_map_server === 1,
+                hasImageServer: row.has_image_server === 1,
+                description: row.description ?? undefined,
+                layerIdInService: row.layer_id ?? undefined,
+                isMultiLayerService: true,
+                parentServiceId: serviceId,
+              },
+            }));
+
+            // Attach sibling references after all children exist.
+            for (const child of children) {
+              if (!child.catalogMeta) continue;
+              child.catalogMeta.siblingLayers = children.filter(sibling => sibling.id !== child.id);
+            }
+
+            const parent: CatalogLayer = {
+              id: serviceId,
+              name: serviceRows[0].service_name || serviceRows[0].display_title || `Service ${serviceDatasetId}`,
+              categoryId,
+              dataSource: 'tnc-arcgis',
+              icon: datasetIcon('tnc-arcgis'),
+              catalogMeta: {
+                datasetId: serviceDatasetId,
+                serverBaseUrl: serviceRows[0].server_base_url ?? '',
+                servicePath: serviceRows[0].service_path ?? '',
+                hasFeatureServer: serviceRows[0].has_feature_server === 1,
+                hasMapServer: serviceRows[0].has_map_server === 1,
+                hasImageServer: serviceRows[0].has_image_server === 1,
+                description: serviceRows[0].description ?? undefined,
+                isMultiLayerService: true,
+                siblingLayers: children,
+              },
+            };
+
+            layers.push(parent, ...children);
+            allLayers.set(parent.id, parent);
+            for (const child of children) allLayers.set(child.id, child);
+          }
+
+          // Keep sorting consistent with catalog display_order. Parent + children
+          // are grouped by their first child's dataset display order.
+          layers.sort((a, b) => {
+            const da = datasetById.get(a.catalogMeta!.datasetId)!;
+            const db = datasetById.get(b.catalogMeta!.datasetId)!;
+            return da.display_order - db.display_order;
+          });
+          return layers;
+        };
 
         // ── Build category tree ──────────────────────────────────────────
         // Sort raw categories by display_order
@@ -195,14 +317,7 @@ export function useCatalogRegistry(): CatalogRegistryState {
 
           // Layers directly in this top-level category
           const directDatasetIds = catToDatasets.get(raw.id) ?? [];
-          const directLayers: CatalogLayer[] = [];
-          for (const dsId of directDatasetIds) {
-            const d = datasetById.get(dsId);
-            if (!d || d.is_visible === 0) continue;
-            const layer = layerFromDataset(d, catId);
-            directLayers.push(layer);
-            allLayers.set(layer.id, layer);
-          }
+          const directLayers = buildLayersForCategory(directDatasetIds, catId);
 
           // Subcategories
           const subs = childrenByParent.get(raw.id) ?? [];
@@ -210,20 +325,7 @@ export function useCatalogRegistry(): CatalogRegistryState {
             const subCatId = String(sub.id);
             const subIcon = CATEGORY_ICON_MAP[sub.name] ?? sub.icon ?? icon;
             const subDatasetIds = catToDatasets.get(sub.id) ?? [];
-            const subLayers: CatalogLayer[] = [];
-            for (const dsId of subDatasetIds) {
-              const d = datasetById.get(dsId);
-              if (!d || d.is_visible === 0) continue;
-              const layer = layerFromDataset(d, subCatId);
-              subLayers.push(layer);
-              allLayers.set(layer.id, layer);
-            }
-            // Sort by display_order within catalog
-            subLayers.sort((a, b) => {
-              const da = datasetById.get(a.catalogMeta!.datasetId)!;
-              const db = datasetById.get(b.catalogMeta!.datasetId)!;
-              return da.display_order - db.display_order;
-            });
+            const subLayers = buildLayersForCategory(subDatasetIds, subCatId);
             return {
               id: subCatId,
               name: sub.name,
@@ -231,13 +333,6 @@ export function useCatalogRegistry(): CatalogRegistryState {
               layers: subLayers,
               parentId: catId,
             };
-          });
-
-          // Sort direct layers by display_order
-          directLayers.sort((a, b) => {
-            const da = datasetById.get(a.catalogMeta!.datasetId)!;
-            const db = datasetById.get(b.catalogMeta!.datasetId)!;
-            return da.display_order - db.display_order;
           });
 
           return {

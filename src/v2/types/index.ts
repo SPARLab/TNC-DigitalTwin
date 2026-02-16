@@ -19,6 +19,9 @@ export interface CatalogLayer {
     hasImageServer: boolean;
     description?: string;
     layerIdInService?: number;
+    isMultiLayerService?: boolean;
+    parentServiceId?: string;
+    siblingLayers?: CatalogLayer[];
   };
 }
 
@@ -55,6 +58,7 @@ export interface PinnedLayer {
   inaturalistFilters?: INaturalistViewFilters;
   animlFilters?: AnimlViewFilters;
   dendraFilters?: DendraViewFilters;
+  tncArcgisFilters?: TNCArcGISViewFilters;
   distinguisher?: string;
   views?: PinnedLayerView[];
   order: number; // for drag-reorder z-order
@@ -73,6 +77,7 @@ export interface PinnedLayerView {
   inaturalistFilters?: INaturalistViewFilters;
   animlFilters?: AnimlViewFilters;
   dendraFilters?: DendraViewFilters;
+  tncArcgisFilters?: TNCArcGISViewFilters;
   resultCount?: number; // Number of features matching filters (for count display testing)
 }
 
@@ -101,6 +106,16 @@ export interface DendraViewFilters {
   startDate?: string;
   endDate?: string;
   aggregation?: 'hourly' | 'daily' | 'weekly';
+}
+
+/** TNC ArcGIS filter state stored per pinned layer/view */
+export interface TNCArcGISViewFilters {
+  whereClause: string;
+  fields?: Array<{
+    field: string;
+    operator: string;
+    value: string;
+  }>;
 }
 
 // =============================================================================
@@ -138,6 +153,10 @@ export interface ActiveLayer {
   viewId?: string;
   /** When opening a specific observation/feature detail (e.g., from map marker click) */
   featureId?: string | number;
+  /** True when active row is a multi-layer service container */
+  isService?: boolean;
+  /** Selected sub-layer for service-level activation */
+  selectedSubLayerId?: string;
 }
 
 /** Undo action record */
