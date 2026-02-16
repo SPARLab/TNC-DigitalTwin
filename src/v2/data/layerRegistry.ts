@@ -67,7 +67,13 @@ export const EXTERNAL_LAYERS: CatalogLayer[] = [
     dataSource: 'animl',
     icon: 'Camera',
   },
+  {
+    id: 'dataone-datasets',
+    name: 'DataOne Datasets',
+    categoryId: '39',
+    dataSource: 'dataone',
+    icon: 'BookOpen',
+  },
   // Future external layers (uncomment when adapters are ready):
-  // { id: 'dataone-datasets', name: 'DataOne Datasets', categoryId: '39', dataSource: 'dataone', icon: 'BookOpen' },
   // { id: 'ebird-sightings', name: 'eBird Sightings', categoryId: '38', dataSource: 'ebird', icon: 'Bird' },
 ];

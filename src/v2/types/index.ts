@@ -55,6 +55,7 @@ export interface PinnedLayer {
   inaturalistFilters?: INaturalistViewFilters;
   animlFilters?: AnimlViewFilters;
   dendraFilters?: DendraViewFilters;
+  dataoneFilters?: DataOneViewFilters;
   distinguisher?: string;
   views?: PinnedLayerView[];
   order: number; // for drag-reorder z-order
@@ -73,6 +74,7 @@ export interface PinnedLayerView {
   inaturalistFilters?: INaturalistViewFilters;
   animlFilters?: AnimlViewFilters;
   dendraFilters?: DendraViewFilters;
+  dataoneFilters?: DataOneViewFilters;
   resultCount?: number; // Number of features matching filters (for count display testing)
 }
 
@@ -101,6 +103,17 @@ export interface DendraViewFilters {
   startDate?: string;
   endDate?: string;
   aggregation?: 'hourly' | 'daily' | 'weekly';
+}
+
+/** DataONE filter + detail state stored per pinned layer/view */
+export interface DataOneViewFilters {
+  searchText?: string;
+  tncCategory?: string;
+  startDate?: string;
+  endDate?: string;
+  author?: string;
+  selectedDatasetId?: string;
+  selectedDatasetTitle?: string;
 }
 
 // =============================================================================
