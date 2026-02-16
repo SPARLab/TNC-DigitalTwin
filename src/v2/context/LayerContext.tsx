@@ -7,6 +7,7 @@ import { createContext, useContext, useCallback, useState, type ReactNode } from
 import type {
   ActiveLayer,
   PinnedLayer,
+  CatalogLayer,
   UndoAction,
   DataSource,
   INaturalistViewFilters,
@@ -83,6 +84,16 @@ interface LayerContextValue {
 }
 
 const LayerContext = createContext<LayerContextValue | null>(null);
+
+function isServiceContainerLayer(layer: CatalogLayer | undefined): boolean {
+  if (!layer) return false;
+  return !!(
+    layer.catalogMeta?.isMultiLayerService
+    && !layer.catalogMeta?.parentServiceId
+    && layer.catalogMeta?.siblingLayers
+    && layer.catalogMeta.siblingLayers.length > 0
+  );
+}
 
 function buildINaturalistFilterSummary(filters: INaturalistViewFilters): string | undefined {
   const parts: string[] = [];
@@ -323,12 +334,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     if (!layer) return;
 
     const pinned = pinnedLayers.find(p => p.layerId === layerId);
-    const isService = !!(
-      layer.catalogMeta?.isMultiLayerService &&
-      !layer.catalogMeta?.parentServiceId &&
-      layer.catalogMeta?.siblingLayers &&
-      layer.catalogMeta.siblingLayers.length > 0
-    );
+    const isService = isServiceContainerLayer(layer);
     const selectedSubLayerId = isService ? layer.catalogMeta?.siblingLayers?.[0]?.id : undefined;
 
     setActiveLayer({
@@ -375,6 +381,10 @@ export function LayerProvider({ children }: { children: ReactNode }) {
   const pinLayer = useCallback((layerId: string) => {
     const layer = layerMap.get(layerId);
     if (!layer) return;
+    if (isServiceContainerLayer(layer)) {
+      console.warn(`[LayerContext] Skipping pin for service container: ${layerId}`);
+      return;
+    }
     if (pinnedLayers.some(p => p.layerId === layerId)) return; // already pinned
 
     const newPinned: PinnedLayer = {

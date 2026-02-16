@@ -6,6 +6,7 @@
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { Eye, EyeOff, Pin } from 'lucide-react';
 import { useLayers } from '../../context/LayerContext';
+import { useCatalog } from '../../context/CatalogContext';
 
 interface LayerRowProps {
   layerId: string;
@@ -32,6 +33,14 @@ export function LayerRow({
     toggleVisibility,
     getPinnedByLayerId,
   } = useLayers();
+  const { layerMap } = useCatalog();
+  const catalogLayer = layerMap.get(layerId);
+  const isServiceContainer = !!(
+    catalogLayer?.catalogMeta?.isMultiLayerService
+    && !catalogLayer.catalogMeta?.parentServiceId
+    && catalogLayer.catalogMeta?.siblingLayers
+    && catalogLayer.catalogMeta.siblingLayers.length > 0
+  );
 
   const isActive = !controlsOnly && activeLayer?.layerId === layerId;
   const isPinned = isLayerPinned(layerId);
@@ -104,8 +113,8 @@ export function LayerRow({
         {name}
       </span>
 
-      {/* Pin icon — blue when pinned (matching Pinned Layers section), gray on hover when not */}
-      {isPinned ? (
+      {/* Pin icon — service containers are not pinnable */}
+      {!isServiceContainer && isPinned ? (
         <button
           id={`layer-unpin-${layerId}`}
           onClick={handlePinClick}
@@ -114,7 +123,7 @@ export function LayerRow({
         >
           <Pin className="w-4 h-4 text-blue-500 fill-blue-500 hover:text-blue-600 hover:fill-blue-600" />
         </button>
-      ) : (
+      ) : !isServiceContainer ? (
         <button
           id={`layer-pin-${layerId}`}
           onClick={handlePinClick}
@@ -123,6 +132,15 @@ export function LayerRow({
         >
           <Pin className="w-4 h-4 text-gray-300 hover:text-gray-500" />
         </button>
+      ) : null}
+      {isServiceContainer && (
+        <span
+          id={`layer-service-container-hint-${layerId}`}
+          className="text-[10px] text-gray-500 uppercase tracking-wide"
+          title="Service container; select a child layer to pin"
+        >
+          Service
+        </span>
       )}
     </div>
   );

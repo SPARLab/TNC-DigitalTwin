@@ -22,6 +22,11 @@ export function ServiceGroup({
   onToggleExpand,
   onActivateService,
 }: ServiceGroupProps) {
+  const handleHeaderClick = () => {
+    onActivateService();
+    if (!isExpanded) onToggleExpand();
+  };
+
   const handleHeaderKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
     if (event.key === 'ArrowRight' && !isExpanded) {
       event.preventDefault();
@@ -35,7 +40,7 @@ export function ServiceGroup({
     }
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      onActivateService();
+      handleHeaderClick();
     }
   };
 
@@ -55,7 +60,7 @@ export function ServiceGroup({
           role="treeitem"
           aria-expanded={isExpanded}
           aria-level={ariaLevel}
-          onClick={onActivateService}
+          onClick={handleHeaderClick}
           onKeyDown={handleHeaderKeyDown}
           className="flex items-center gap-2 flex-1 py-1 px-2 text-sm text-gray-800 font-medium rounded-md"
         >
@@ -100,7 +105,6 @@ export function ServiceGroup({
               key={layer.id}
               layerId={layer.id}
               name={layer.name}
-              controlsOnly
               indented
               ariaLevel={ariaLevel + 1}
             />

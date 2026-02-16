@@ -159,6 +159,7 @@ export function MapLayersWidget() {
                         <ActiveLayerSection
                           activeLayer={displayedActiveLayer}
                           isLoading={activeLayerIsLoading}
+                          canPin={!displayedActiveLayer.isService}
                           onPin={() => pinLayer(displayedActiveLayer.layerId)}
                         />
                       </div>

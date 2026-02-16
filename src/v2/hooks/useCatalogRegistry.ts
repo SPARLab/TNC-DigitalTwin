@@ -55,6 +55,14 @@ interface RawJunction {
   category_id: number;
 }
 
+interface ArcGISServiceLayer {
+  id: number;
+  name: string;
+}
+
+const SERVICE_DISCOVERY_TIMEOUT_MS = 1200;
+const MAX_SERVICE_DISCOVERY_CANDIDATES = 12;
+
 // ── Hook return type ─────────────────────────────────────────────────────────
 
 export interface CatalogRegistryState {
@@ -103,6 +111,72 @@ function detectMultiLayerServices(datasets: RawDataset[]): Map<string, RawDatase
     serviceGroups.set(serviceKey, group);
   }
   return serviceGroups;
+}
+
+function sanitizeArcGisBaseUrl(serverBaseUrl: string): string {
+  const trimmed = serverBaseUrl.trim().replace(/\/+$/, '');
+  if (!trimmed) return '';
+  return /\/rest\/services$/i.test(trimmed) ? trimmed : `${trimmed}/rest/services`;
+}
+
+function buildFeatureServiceMetadataUrl(d: RawDataset): string | null {
+  if (!d.server_base_url || !d.service_path) return null;
+  const base = sanitizeArcGisBaseUrl(d.server_base_url);
+  const path = d.service_path.trim().replace(/^\/+/, '').replace(/\/+$/, '');
+  if (!base || !path) return null;
+  return `${base}/${path}/FeatureServer?f=json`;
+}
+
+async function fetchFeatureServiceLayers(d: RawDataset): Promise<ArcGISServiceLayer[]> {
+  const metadataUrl = buildFeatureServiceMetadataUrl(d);
+  if (!metadataUrl) return [];
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), SERVICE_DISCOVERY_TIMEOUT_MS);
+
+  let res: Response;
+  try {
+    res = await fetch(metadataUrl, { signal: controller.signal });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return [];
+    }
+    console.warn('[CatalogRegistry] Feature service discovery failed (network):', error);
+    return [];
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  if (!res.ok) {
+    console.warn(`[CatalogRegistry] Feature service discovery failed: HTTP ${res.status}`);
+    return [];
+  }
+
+  let json: unknown;
+  try {
+    json = await res.json();
+  } catch (error) {
+    console.warn('[CatalogRegistry] Feature service discovery failed (malformed JSON):', error);
+    return [];
+  }
+
+  if (!json || typeof json !== 'object') return [];
+  const layers = (json as { layers?: unknown }).layers;
+  if (!Array.isArray(layers)) return [];
+
+  return layers
+    .map((layer): ArcGISServiceLayer | null => {
+      if (!layer || typeof layer !== 'object') return null;
+      const id = (layer as { id?: unknown }).id;
+      const name = (layer as { name?: unknown }).name;
+      if (typeof id !== 'number' || !Number.isFinite(id)) return null;
+      return {
+        id,
+        name: typeof name === 'string' && name.trim() ? name.trim() : `Layer ${id}`,
+      };
+    })
+    .filter((layer): layer is ArcGISServiceLayer => !!layer)
+    .sort((a, b) => a.id - b.id);
 }
 
 /** Detect the data source adapter key from service URL patterns. */
@@ -171,6 +245,41 @@ export function useCatalogRegistry(): CatalogRegistryState {
         for (const d of rawDatasets) datasetById.set(d.id, d);
         const serviceGroups = detectMultiLayerServices(rawDatasets);
 
+        // Discover ArcGIS sublayers when catalog rows represent only a service
+        // container (single row + missing layer_id). This keeps large services
+        // like Coastal_and_Marine usable without requiring immediate catalog backfill.
+        const serviceDiscoveryCandidates = rawDatasets.filter((d) => {
+          if (d.is_visible === 0) return false;
+          if (detectDataSource(d) !== 'tnc-arcgis') return false;
+          if (d.has_feature_server !== 1) return false;
+          if (d.layer_id !== null) return false;
+          const serviceKey = serviceKeyForDataset(d);
+          if (!serviceKey) return false;
+          const grouped = serviceGroups.get(serviceKey) ?? [];
+          return grouped.length === 1;
+        });
+
+        const prioritizedDiscoveryCandidates = serviceDiscoveryCandidates
+          .sort((a, b) => {
+            const aText = `${a.service_name ?? ''} ${a.service_path ?? ''}`.toLowerCase();
+            const bText = `${b.service_name ?? ''} ${b.service_path ?? ''}`.toLowerCase();
+            const aPriority = /(coastal|marine)/.test(aText) ? 0 : /data/.test(aText) ? 1 : 2;
+            const bPriority = /(coastal|marine)/.test(bText) ? 0 : /data/.test(bText) ? 1 : 2;
+            if (aPriority !== bPriority) return aPriority - bPriority;
+            return a.display_order - b.display_order;
+          })
+          .slice(0, MAX_SERVICE_DISCOVERY_CANDIDATES);
+
+        const discoveredLayersByServiceKey = new Map<string, ArcGISServiceLayer[]>();
+        await Promise.all(
+          prioritizedDiscoveryCandidates.map(async (d) => {
+            const serviceKey = serviceKeyForDataset(d);
+            if (!serviceKey || discoveredLayersByServiceKey.has(serviceKey)) return;
+            const layers = await fetchFeatureServiceLayers(d);
+            discoveredLayersByServiceKey.set(serviceKey, layers);
+          }),
+        );
+
         // ── Create CatalogLayer for every visible dataset ────────────────
         const allLayers = new Map<string, CatalogLayer>();
 
@@ -225,6 +334,76 @@ export function useCatalogRegistry(): CatalogRegistryState {
               .sort((a, b) => a.display_order - b.display_order);
 
             if (serviceRows.length <= 1) {
+              const discoveredLayers = discoveredLayersByServiceKey.get(serviceKey) ?? [];
+              if (discoveredLayers.length > 1) {
+                const serviceDatasetId = d.id;
+                const serviceId = toServiceLayerId(serviceDatasetId);
+
+                const children = discoveredLayers.map((discoveredLayer): CatalogLayer => ({
+                  id: `${serviceId}-layer-${discoveredLayer.id}`,
+                  name: discoveredLayer.name,
+                  categoryId,
+                  dataSource: 'tnc-arcgis',
+                  icon: datasetIcon('tnc-arcgis'),
+                  catalogMeta: {
+                    datasetId: d.id,
+                    serverBaseUrl: d.server_base_url ?? '',
+                    servicePath: d.service_path ?? '',
+                    hasFeatureServer: d.has_feature_server === 1,
+                    hasMapServer: d.has_map_server === 1,
+                    hasImageServer: d.has_image_server === 1,
+                    description: d.description ?? undefined,
+                    layerIdInService: discoveredLayer.id,
+                    isMultiLayerService: true,
+                    parentServiceId: serviceId,
+                  },
+                }));
+
+                for (const child of children) {
+                  if (!child.catalogMeta) continue;
+                  child.catalogMeta.siblingLayers = children.filter(sibling => sibling.id !== child.id);
+                }
+
+                const parent: CatalogLayer = {
+                  id: serviceId,
+                  name: d.service_name || d.display_title || `Service ${serviceDatasetId}`,
+                  categoryId,
+                  dataSource: 'tnc-arcgis',
+                  icon: datasetIcon('tnc-arcgis'),
+                  catalogMeta: {
+                    datasetId: serviceDatasetId,
+                    serverBaseUrl: d.server_base_url ?? '',
+                    servicePath: d.service_path ?? '',
+                    hasFeatureServer: d.has_feature_server === 1,
+                    hasMapServer: d.has_map_server === 1,
+                    hasImageServer: d.has_image_server === 1,
+                    description: d.description ?? undefined,
+                    isMultiLayerService: true,
+                    siblingLayers: children,
+                  },
+                };
+
+                layers.push(parent, ...children);
+                allLayers.set(parent.id, parent);
+                for (const child of children) allLayers.set(child.id, child);
+                continue;
+              }
+
+              if (discoveredLayers.length === 1) {
+                const discovered = discoveredLayers[0];
+                const layer = layerFromDataset(
+                  {
+                    ...d,
+                    layer_id: discovered.id,
+                    display_title: d.display_title || discovered.name,
+                  },
+                  categoryId,
+                );
+                layers.push(layer);
+                allLayers.set(layer.id, layer);
+                continue;
+              }
+
               const layer = layerFromDataset(d, categoryId);
               layers.push(layer);
               allLayers.set(layer.id, layer);

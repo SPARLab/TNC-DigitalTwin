@@ -7,6 +7,10 @@ interface TNCArcGISOverviewTabProps {
   onBrowseClick: () => void;
 }
 
+function normalizeDescription(value: string | undefined): string {
+  return (value ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
 export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOverviewTabProps) {
   const {
     activeLayer,
@@ -27,12 +31,14 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
   const selectedLayer = siblingLayers.find(layer => layer.id === selectedLayerId) ?? siblingLayers[0];
 
   const description = activeCatalogLayer?.catalogMeta?.description || 'No description available yet.';
+  const normalizedServiceDescription = normalizeDescription(activeCatalogLayer?.catalogMeta?.description);
   const servicePath = activeCatalogLayer?.catalogMeta?.servicePath || 'Unknown service path';
   const serverBaseUrl = activeCatalogLayer?.catalogMeta?.serverBaseUrl || 'Unknown host';
   const sourceLabel = `${serverBaseUrl}/${servicePath}`;
   const selectedLayerName = selectedLayer?.name ?? activeCatalogLayer?.name ?? 'Layer';
   const selectedLayerPinned = selectedLayer ? isLayerPinned(selectedLayer.id) : false;
   const activeLayerPinned = activeLayer ? isLayerPinned(activeLayer.layerId) : false;
+  const activeLayerCanPin = !!activeLayer && !activeLayer.isService;
 
   const formatLayerLabel = (layerName: string, layerIdInService?: number) => (
     typeof layerIdInService === 'number'
@@ -99,23 +105,36 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
             <h4 id="tnc-arcgis-service-overview-layer-list-title" className="text-xs font-semibold uppercase tracking-wide text-gray-500">
               Available Layers
             </h4>
+            <p id="tnc-arcgis-service-overview-layer-list-help" className="text-xs text-gray-600">
+              Tip: select a child layer in the left sidebar to activate or pin it directly.
+            </p>
             <ul id="tnc-arcgis-service-overview-layer-list" className="space-y-2">
-              {siblingLayers.map(layer => (
-                <li id={`tnc-arcgis-service-overview-layer-${layer.id}`} key={layer.id} className="rounded-lg border border-gray-200 bg-white p-3">
-                  <p
-                    id={`tnc-arcgis-service-overview-layer-name-${layer.id}`}
-                    className="text-sm font-medium text-gray-900"
-                  >
-                    {formatLayerLabel(layer.name, layer.catalogMeta?.layerIdInService)}
-                  </p>
-                  <p
-                    id={`tnc-arcgis-service-overview-layer-description-${layer.id}`}
-                    className="mt-1 text-xs text-gray-600 leading-relaxed"
-                  >
-                    {layer.catalogMeta?.description || 'No layer description available yet.'}
-                  </p>
-                </li>
-              ))}
+              {siblingLayers.map(layer => {
+                const layerDescription = layer.catalogMeta?.description;
+                const hasDistinctLayerDescription = !!(
+                  normalizeDescription(layerDescription)
+                  && normalizeDescription(layerDescription) !== normalizedServiceDescription
+                );
+
+                return (
+                  <li id={`tnc-arcgis-service-overview-layer-${layer.id}`} key={layer.id} className="rounded-lg border border-gray-200 bg-white p-3">
+                    <p
+                      id={`tnc-arcgis-service-overview-layer-name-${layer.id}`}
+                      className="text-sm font-medium text-gray-900"
+                    >
+                      {formatLayerLabel(layer.name, layer.catalogMeta?.layerIdInService)}
+                    </p>
+                    {hasDistinctLayerDescription && (
+                      <p
+                        id={`tnc-arcgis-service-overview-layer-description-${layer.id}`}
+                        className="mt-1 text-xs text-gray-600 leading-relaxed"
+                      >
+                        {layerDescription}
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </div>
 
@@ -199,6 +218,13 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
                 className="w-full py-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-medium text-center min-h-[44px] flex items-center justify-center"
               >
                 Pinned ✓
+              </div>
+            ) : !activeLayerCanPin ? (
+              <div
+                id="tnc-arcgis-overview-service-badge"
+                className="w-full py-3 rounded-lg border border-gray-300 bg-gray-50 text-gray-700 text-sm font-medium text-center min-h-[44px] flex items-center justify-center"
+              >
+                Service selected
               </div>
             ) : (
               <button

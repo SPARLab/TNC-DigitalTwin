@@ -15,9 +15,15 @@ interface ActiveLayerSectionProps {
   activeLayer: ActiveLayer;
   isLoading?: boolean;
   onPin: () => void;
+  canPin?: boolean;
 }
 
-export function ActiveLayerSection({ activeLayer, isLoading = false, onPin }: ActiveLayerSectionProps) {
+export function ActiveLayerSection({
+  activeLayer,
+  isLoading = false,
+  onPin,
+  canPin = true,
+}: ActiveLayerSectionProps) {
   // Don't show if already pinned — it'll appear in the Pinned section instead
   if (activeLayer.isPinned) return null;
 
@@ -90,16 +96,27 @@ export function ActiveLayerSection({ activeLayer, isLoading = false, onPin }: Ac
           <span className="text-sm text-gray-800 font-medium flex-1 truncate">
             {activeLayer.name}
           </span>
-          <button
-            onClick={onPin}
-            className="flex items-center gap-1 px-2 py-1 bg-white border border-amber-300 rounded-md
-                       text-amber-700 hover:bg-amber-100 hover:border-amber-400 transition-colors
-                       text-[11px] font-medium"
-            title="Pin this layer"
-          >
-            <Pin className="w-3.5 h-3.5" />
-            Pin
-          </button>
+          {canPin ? (
+            <button
+              id="active-layer-pin-button"
+              onClick={onPin}
+              className="flex items-center gap-1 px-2 py-1 bg-white border border-amber-300 rounded-md
+                         text-amber-700 hover:bg-amber-100 hover:border-amber-400 transition-colors
+                         text-[11px] font-medium"
+              title="Pin this layer"
+            >
+              <Pin className="w-3.5 h-3.5" />
+              Pin
+            </button>
+          ) : (
+            <span
+              id="active-layer-service-hint"
+              className="px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-gray-600 bg-white border border-gray-300 rounded-md"
+              title="Service selected; choose a child layer to pin"
+            >
+              Service
+            </span>
+          )}
         </div>
 
         {/* Live filter display */}
