@@ -4,8 +4,13 @@
 // ============================================================================
 
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Copy, ExternalLink, FileText, MapPin, Quote, Save } from 'lucide-react';
-import { dataOneService, type DataOneDataset, type DataOneDatasetDetail } from '../../../../services/dataOneService';
+import { ArrowLeft, ChevronDown, ChevronUp, Copy, ExternalLink, FileText, History, Loader2, MapPin, Quote, Save } from 'lucide-react';
+import {
+  dataOneService,
+  type DataOneDataset,
+  type DataOneDatasetDetail,
+  type DataOneVersionEntry,
+} from '../../../../services/dataOneService';
 import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { useMap } from '../../../context/MapContext';
 
@@ -15,6 +20,7 @@ interface DatasetDetailViewProps {
   onSaveDatasetView?: (dataset: DataOneDataset) => string | void;
   // eslint-disable-next-line no-unused-vars
   onKeywordClick?: (...args: [string]) => void;
+  onVersionSelect?: (dataset: DataOneDataset) => void;
 }
 
 function formatDate(value: Date | null | undefined): string {
@@ -89,7 +95,17 @@ function describeFileType(ext: string): string {
   return 'Research dataset files included in this package.';
 }
 
-export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onKeywordClick }: DatasetDetailViewProps) {
+function formatVersionSummary(summary: DataOneVersionEntry['filesSummary']): string | null {
+  if (!summary || summary.total <= 0) return null;
+  const extList = Object.entries(summary.byExtension)
+    .sort(([, left], [, right]) => right - left)
+    .slice(0, 3)
+    .map(([ext, count]) => `${count} ${ext.toUpperCase()}`);
+  if (extList.length === 0) return `${summary.total} files`;
+  return extList.join(', ');
+}
+
+export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onKeywordClick, onVersionSelect }: DatasetDetailViewProps) {
   const [details, setDetails] = useState<DataOneDatasetDetail | null>(null);
   const [fileInfoError, setFileInfoError] = useState<string | null>(null);
   const [remoteFileTypes, setRemoteFileTypes] = useState<string[]>([]);
@@ -100,6 +116,11 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onKeywor
   const [copiedState, setCopiedState] = useState<'idle' | 'doi' | 'cite'>('idle');
   const [viewSaved, setViewSaved] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
+  const [versionHistoryLoading, setVersionHistoryLoading] = useState(false);
+  const [versionHistoryError, setVersionHistoryError] = useState<string | null>(null);
+  const [versionEntries, setVersionEntries] = useState<DataOneVersionEntry[]>([]);
+  const [loadingVersionId, setLoadingVersionId] = useState<string | null>(null);
   const { viewRef, highlightPoint, showToast, openDataOnePreview } = useMap();
 
   useEffect(() => {
@@ -144,6 +165,14 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onKeywor
       });
 
     return () => { cancelled = true; };
+  }, [dataset.dataoneId]);
+
+  useEffect(() => {
+    setVersionHistoryOpen(false);
+    setVersionHistoryLoading(false);
+    setVersionHistoryError(null);
+    setVersionEntries([]);
+    setLoadingVersionId(null);
   }, [dataset.dataoneId]);
 
   useEffect(() => {
@@ -252,6 +281,40 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onKeywor
     showToast('No spatial coordinates available for this dataset', 'warning');
   };
 
+  const toggleVersionHistory = async () => {
+    if (versionHistoryOpen) {
+      setVersionHistoryOpen(false);
+      return;
+    }
+
+    setVersionHistoryOpen(true);
+    if (versionEntries.length > 0 || versionHistoryLoading) return;
+
+    try {
+      setVersionHistoryLoading(true);
+      setVersionHistoryError(null);
+      const versions = await dataOneService.queryVersionHistory(dataset.seriesId);
+      setVersionEntries(versions);
+    } catch (err) {
+      setVersionHistoryError(err instanceof Error ? err.message : 'Failed to load version history');
+    } finally {
+      setVersionHistoryLoading(false);
+    }
+  };
+
+  const handleSelectVersion = async (version: DataOneVersionEntry) => {
+    if (version.dataoneId === dataset.dataoneId) return;
+    try {
+      setLoadingVersionId(version.dataoneId);
+      const nextVersion = await dataOneService.getVersionDetails(version.dataoneId);
+      if (nextVersion) {
+        if (onVersionSelect) onVersionSelect(nextVersion);
+      }
+    } finally {
+      setLoadingVersionId(null);
+    }
+  };
+
   return (
     <div id="dataone-dataset-detail-view" className="space-y-4">
       <button
@@ -348,6 +411,123 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onKeywor
             <section id="dataone-detail-abstract-section">
               <h4 id="dataone-detail-abstract-label" className="mb-1 font-semibold text-gray-900">Abstract</h4>
               <p id="dataone-detail-abstract-text" className="leading-relaxed">{details.abstract}</p>
+            </section>
+          )}
+
+          {dataset.versionCount > 1 && (
+            <section id="dataone-detail-version-history-section" className="rounded-lg border border-gray-200 overflow-hidden">
+              <button
+                id="dataone-detail-version-history-toggle"
+                type="button"
+                onClick={() => { void toggleVersionHistory(); }}
+                className="flex w-full items-center justify-between bg-gray-50 p-3 text-left hover:bg-gray-100 transition-colors"
+              >
+                <span id="dataone-detail-version-history-toggle-label" className="inline-flex items-center gap-2">
+                  <History className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-gray-700">Version History ({dataset.versionCount} versions)</span>
+                </span>
+                {versionHistoryOpen ? (
+                  <ChevronUp id="dataone-detail-version-history-toggle-up" className="h-4 w-4 text-gray-400" />
+                ) : (
+                  <ChevronDown id="dataone-detail-version-history-toggle-down" className="h-4 w-4 text-gray-400" />
+                )}
+              </button>
+
+              {versionHistoryOpen && (
+                <div id="dataone-detail-version-history-panel" className="border-t border-gray-200 bg-white p-3">
+                  {versionHistoryLoading ? (
+                    <div id="dataone-detail-version-history-loading" className="flex items-center gap-2 text-sm text-gray-500">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading versions...
+                    </div>
+                  ) : versionHistoryError ? (
+                    <p id="dataone-detail-version-history-error" className="text-sm text-red-700">
+                      {versionHistoryError}
+                    </p>
+                  ) : versionEntries.length > 0 ? (
+                    <div id="dataone-detail-version-history-list" className="space-y-2">
+                      {versionEntries.map((entry, index) => {
+                        const isLatest = index === 0;
+                        const isCurrent = entry.dataoneId === dataset.dataoneId;
+                        const versionNumber = versionEntries.length - index;
+                        const summary = formatVersionSummary(entry.filesSummary);
+                        const hasDifferentFiles = Boolean(
+                          dataset.filesSummary &&
+                          entry.filesSummary &&
+                          (dataset.filesSummary.total !== entry.filesSummary.total ||
+                           dataset.filesSummary.sizeBytes !== entry.filesSummary.sizeBytes)
+                        );
+                        const selectingThisEntry = loadingVersionId === entry.dataoneId;
+
+                        return (
+                          <div
+                            id={`dataone-detail-version-entry-${entry.dataoneId}`}
+                            key={entry.dataoneId}
+                            className={`rounded-lg border p-2 ${
+                              isCurrent
+                                ? 'bg-emerald-50 border-emerald-200'
+                                : 'bg-white border-gray-100 hover:border-gray-200'
+                            }`}
+                          >
+                            <div id={`dataone-detail-version-entry-header-${entry.dataoneId}`} className="mb-1 flex items-center justify-between">
+                              <div id={`dataone-detail-version-entry-labels-${entry.dataoneId}`} className="flex items-center gap-2">
+                                <span className={`text-sm font-medium ${isCurrent ? 'text-emerald-700' : 'text-gray-700'}`}>
+                                  v{versionNumber}
+                                </span>
+                                {isLatest && (
+                                  <span
+                                    id={`dataone-detail-version-entry-latest-${entry.dataoneId}`}
+                                    className="rounded bg-emerald-100 px-1.5 py-0.5 text-xs text-emerald-700"
+                                  >
+                                    latest
+                                  </span>
+                                )}
+                                {isCurrent && (
+                                  <span
+                                    id={`dataone-detail-version-entry-current-${entry.dataoneId}`}
+                                    className="rounded bg-blue-100 px-1.5 py-0.5 text-xs text-blue-700"
+                                  >
+                                    current
+                                  </span>
+                                )}
+                              </div>
+                              <span id={`dataone-detail-version-entry-date-${entry.dataoneId}`} className="text-xs text-gray-500">
+                                {formatDate(entry.dateUploaded)}
+                              </span>
+                            </div>
+
+                            {summary && (
+                              <p
+                                id={`dataone-detail-version-entry-summary-${entry.dataoneId}`}
+                                className={`text-xs ${hasDifferentFiles ? 'text-amber-600 font-medium' : 'text-gray-500'}`}
+                              >
+                                {summary}
+                                {hasDifferentFiles ? ' ←' : ''}
+                              </p>
+                            )}
+
+                            {!isCurrent && (
+                              <button
+                                id={`dataone-detail-version-entry-view-button-${entry.dataoneId}`}
+                                type="button"
+                                disabled={selectingThisEntry}
+                                onClick={() => { void handleSelectVersion(entry); }}
+                                className="mt-2 text-xs text-emerald-700 hover:underline disabled:opacity-60"
+                              >
+                                {selectingThisEntry ? 'Loading version...' : 'View this version →'}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p id="dataone-detail-version-history-empty" className="text-sm text-gray-500">
+                      No version history available.
+                    </p>
+                  )}
+                </div>
+              )}
             </section>
           )}
 

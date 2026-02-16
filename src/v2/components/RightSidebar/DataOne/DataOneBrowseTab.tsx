@@ -305,6 +305,13 @@ export function DataOneBrowseTab() {
       <DatasetDetailView
         dataset={selectedDataset}
         onSaveDatasetView={handleSaveDatasetView}
+        onVersionSelect={(versionDataset) => {
+          lastHandledFeatureIdRef.current = versionDataset.dataoneId;
+          setSelectedDataset(versionDataset);
+          if (activeLayer?.layerId === 'dataone-datasets') {
+            activateLayer('dataone-datasets', activeLayer.viewId, versionDataset.dataoneId);
+          }
+        }}
         onBack={() => {
           setSelectedDataset(null);
           if (activeLayer?.layerId === 'dataone-datasets') {
