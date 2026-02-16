@@ -25,20 +25,20 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 
 ---
 
-## Task Status
+## Task Status Summary
 
-| ID | Task | Status | Priority | Notes |
-|----|------|--------|----------|-------|
-| **6.1** | **Extend Data Model for Multi-Layer Services** | ⚪ | Critical | Update `CatalogLayer`, `ActiveLayer` types; detect multi-layer services in catalog hook |
-| **6.2** | **Left Sidebar: Collapsible Service Groups** | ⚪ | Critical | Render multi-layer services as expandable rows; layer rows show pin/eye only |
-| **6.3** | **TNC ArcGIS Service Module** | ⚪ | Critical | Service URL builder, schema fetch, field list query |
-| **6.4** | **TNC ArcGIS Adapter Shell** | ⚪ | Critical | Create adapter skeleton with warmCache, RightSidebarContent, createMapLayer |
-| **6.5** | **Right Sidebar: Service Overview (Multi-Layer)** | ⚪ | High | Show service description, layer dropdown, "Browse {Layer}" and "Pin {Layer}" buttons |
-| **6.6** | **Right Sidebar: Generic Filter UI (MVP)** | ⚪ | High | Field/Operator/Value rows, "Add Filter", "Preview Results", WHERE clause builder |
-| **6.7** | **Map Layer Rendering** | ⚪ | High | Add FeatureLayer/MapImageLayer to map with definition expression from filters |
-| **6.8** | **Search Enhancement** | ⚪ | Medium | Match service + layer names; expand parent service when layer matches |
-| **6.9** | **Keyboard Navigation & ARIA** | ⚪ | Medium | Arrow keys for expand/collapse, ARIA tree structure, focus management |
-| **6.10** | **QA & Edge Cases** | ⚪ | Medium | Single-layer services, empty results, malformed queries, schema fetch errors |
+| ID | Status | Last Updated (Timestamp) | Task Description | Notes |
+|----|--------|--------------------------|-------------------|-------|
+| **6.1** | ⚪ | — | Extend Data Model for Multi-Layer Services | Update `CatalogLayer`, `ActiveLayer` types; detect multi-layer services in catalog hook |
+| **6.2** | ⚪ | — | Left Sidebar: Collapsible Service Groups | Render multi-layer services as expandable rows; layer rows show pin/eye only |
+| **6.3** | ⚪ | — | TNC ArcGIS Service Module | Service URL builder, schema fetch, field list query |
+| **6.4** | ⚪ | — | TNC ArcGIS Adapter Shell | Create adapter skeleton with warmCache, RightSidebarContent, createMapLayer |
+| **6.5** | ⚪ | — | Right Sidebar: Service Overview (Multi-Layer) | Show service description, layer dropdown, "Browse {Layer}" and "Pin {Layer}" buttons |
+| **6.6** | ⚪ | — | Right Sidebar: Generic Filter UI (MVP) | Field/Operator/Value rows, "Add Filter", "Preview Results", WHERE clause builder |
+| **6.7** | ⚪ | — | Map Layer Rendering | Add FeatureLayer/MapImageLayer to map with definition expression from filters |
+| **6.8** | ⚪ | — | Search Enhancement | Match service + layer names; expand parent service when layer matches |
+| **6.9** | ⚪ | — | Keyboard Navigation & ARIA | Arrow keys for expand/collapse, ARIA tree structure, focus management |
+| **6.10** | ⚪ | — | QA & Edge Cases | Single-layer services, empty results, malformed queries, schema fetch errors |
 
 **Status Legend:**  
 ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
