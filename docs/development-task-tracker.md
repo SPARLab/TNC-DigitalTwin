@@ -17,7 +17,7 @@
 | 24 | 0 | 0.9 Dynamic Layer Registry from Data Catalog Service | 🟡 | Critical |
 | 3.5 | 3 | Dendra: Floating time series (3.5d remaining) | 🟡 | High |
 | 3.7 | 3 | Dendra: Weather Stations layer investigation | 🟢 | Medium |
-| 3.9 | 3 | Dendra: Save With Filters button — behavior or removal | ⚪ | Medium |
+| 3.9 | 3 | Dendra: Save With Filters button — behavior or removal | 🟢 | Medium |
 | 9 | 0 | 0.6 Map Feature Highlight | 🟡 | Low |
 | 33 | 2 | 2.16 ANiML Camera Badges | ⚪ | Medium |
 
@@ -393,6 +393,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 16, 2026 | Phase 3 | ✅ **Task 3.9 complete: Dendra Save With Filters — distinct behavior.** Renamed to "Update Current View" (station-level sync) and "Save as New View" (creates filtered child view, activates it). Added `createDendraFilteredView()` in LayerContext. Files: StationDetailView.tsx, LayerContext.tsx. | Claude |
 | Feb 16, 2026 | Phase 3 | ✅ **Task 3.7 complete: Weather Stations layer investigation.** Root cause: Two Weather Stations layers in catalog — dataset-183 (Dendra sensor, working) and dataset-190 (legacy v0, not implemented). Backend fix: Dan set `is_visible: 0` for dataset-190 in Data Catalog FeatureServer. No frontend changes. | Claude |
 | Feb 16, 2026 | Phase 3 | 🐛 **Task 3.8 complete: Barometer datastream crash.** `formatValue` in dendraStationService.ts threw `value.toFixed is not a function` when ArcGIS returned min/max/avg as strings. Now coerces to number and handles NaN. | Claude |
 | Feb 16, 2026 | Docs | **Archive + phase consolidation.** Moved completed tasks to `docs/archive/completed-tasks-phase-0-3.md` with manual testing checklist. Dendra tasks moved to phase-3-dendra.md (3.7 Weather Stations, 3.8 barometer fix, 3.9 Save With Filters). Development-task-tracker slimmed to quick reference only. | Claude |

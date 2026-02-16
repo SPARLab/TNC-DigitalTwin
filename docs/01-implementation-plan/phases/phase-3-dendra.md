@@ -31,7 +31,7 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 ## Key Paradigm Notes
 
 - **Row Type:** Pointer (sensor points to datastream)
-- **Save Options:** "Save View" OR "Save With Filters"
+- **Save Options:** "Update Current View" (station-level) OR "Save as New View" (creates filtered child view)
 - **Has Level 3:** Yes - time range + aggregation filter on datastream
 - **NOT dual-level:** Unlike ANiML, Dendra doesn't have global time filtering at layer level (V1)
 
@@ -53,7 +53,7 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 | 3.6 | 🟢 Complete | Implement time range filter (Level 3) | | Feb 13: Added Level 3 datastream filter controls in Station Detail (from/to date + aggregation), auto-applied chart updates, live data-point count, and explicit save actions ("Save View" + "Save With Filters") synced to Map Layers state. |
 | 3.7 | 🟢 Complete | Weather Stations layer — Investigation | | Feb 16: Issue was **dataset-190** (Dangermond Preserve Weather Stations, legacy v0 service in Freshwater category) showing "not implemented" toast. The proper Dendra Weather Stations layer (dataset-183, Research & Sensor Equipment) was working correctly. **Resolution:** Backend fix — Dan set `is_visible: 0` for dataset-190 in Data Catalog FeatureServer. Legacy layer no longer appears in sidebar. |
 | 3.8 | 🟢 Complete | Barometer datastream formatValue crash | | Feb 16: ArcGIS returned min/max/avg as strings; `formatValue` threw `value.toFixed is not a function`. Fixed: coerce to number, handle NaN. Files: dendraStationService.ts. |
-| 3.9 | ⚪ Not Started | Save With Filters button — behavior or removal | | User reports Save With Filters doesn't appear to do anything. Options: (1) implement distinct behavior vs Save View, (2) remove if redundant. |
+| 3.9 | 🟢 Complete | Save With Filters button — behavior or removal | | Feb 16: Implemented distinct behavior + clearer labels. "Update Current View" updates current row; "Save as New View" creates a new filtered child view in Map Layers and activates it. Files: StationDetailView.tsx, LayerContext.tsx. |
 
 **Follow-up:** Task 27 in `docs/development-task-tracker.md` — "Save View / Save With Filters" sync with Map Layers. Replace bookmark terminology; persist right-sidebar filter state into Map Layers. **Prerequisite met:** `v2/iNaturalist` has been merged into this branch lineage (`v2/iNaturalist` -> `v2/animl` -> `v2/dendra`). Dendra uses explicit save (not continuous auto-save) due to Level 3 complexity.
 
@@ -233,9 +233,9 @@ savedView: {
 2. **Remove:** If Save View already covers the use case, remove Save With Filters to avoid dead UI.
 
 **Acceptance Criteria:**
-- [ ] Decide: implement distinct behavior or remove
-- [ ] If implement: wire Save With Filters to sync Dendra filters to Map Layers child view
-- [ ] If remove: remove button and clean up related code
+- [x] Decide: implement distinct behavior or remove
+- [x] If implement: wire Save With Filters to sync Dendra filters to Map Layers child view
+- [x] Implemented: "Update Current View" + "Save as New View" with distinct behavior (Feb 16)
 
 ---
 
@@ -353,6 +353,7 @@ savedView: {
 | Date | Task | Change | By |
 |------|------|--------|-----|
 | Feb 16, 2026 | 3.7 | ✅ **Task 3.7 complete.** Investigated "Weather Stations layer not implemented yet" toast. Root cause: Two Weather Stations layers exist in catalog — dataset-183 (Dendra sensor service, working) and dataset-190 (legacy v0 service in Freshwater category, not implemented). Backend fix: Dan set `is_visible: 0` for dataset-190 in Data Catalog FeatureServer. | Claude |
+| Feb 16, 2026 | 3.9 | ✅ **Task 3.9 complete.** Implemented distinct save actions: **Update Current View** saves station-level state to current view; **Save as New View** creates and activates a new filtered child view (station + datastream + date range + aggregation) in Map Layers. Added `createDendraFilteredView()` in LayerContext. Files: `StationDetailView.tsx`, `LayerContext.tsx`. | Claude |
 | Feb 16, 2026 | 3.7, 3.8, 3.9 | **Added tasks 3.7 (Weather Stations investigation), 3.8 (barometer formatValue fix — complete), 3.9 (Save With Filters behavior or removal).** Reordered Task Status table (ID, Status, Task) for quick scanning. | Claude |
 | Feb 13, 2026 | Task 27 follow-up | ✅ Replaced Dendra bookmark terminology with explicit save actions (`Save View`, `Save With Filters`) and synced Dendra right-sidebar state to Map Layers (`LayerContext.syncDendraFilters`). Added one-shot Dendra filter hydration when switching child views or triggering **Edit Filters** from Map Layers. | Claude |
 | Feb 13, 2026 | 3.6 | ✅ **Task 3.6 complete.** Added Level 3 datastream filtering controls in `StationDetailView` (from/to date + hourly/daily/weekly aggregation) with auto-apply behavior. Extended `DendraContext` chart state to store raw points + active filter and compute filtered/aggregated chart data reactively. Added live "X data points" count and explicit save actions for Dendra views. | Claude |

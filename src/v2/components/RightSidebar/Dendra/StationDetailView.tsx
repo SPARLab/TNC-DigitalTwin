@@ -25,7 +25,7 @@ export function StationDetailView({ station, summaries, onBack, onViewOnMap, onV
   const [selectedDatastreamId, setSelectedDatastreamId] = useState<number | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const { chart, setChartFilter, showActiveOnly, filteredStations } = useDendra();
-  const { activeLayer, pinLayer, getPinnedByLayerId, syncDendraFilters } = useLayers();
+  const { activeLayer, pinLayer, getPinnedByLayerId, syncDendraFilters, createDendraFilteredView } = useLayers();
 
   const selectedSummary = useMemo(
     () => summaries.find(summary => summary.datastream_id === selectedDatastreamId) ?? null,
@@ -57,36 +57,60 @@ export function StationDetailView({ station, summaries, onBack, onViewOnMap, onV
     return true;
   };
 
-  const persistDendraView = (includeDatastreamFilters: boolean) => {
+  const saveCurrentView = () => {
     if (!activeLayer) {
       setSaveMessage('Unable to save: no active layer.');
       return;
     }
-    if (includeDatastreamFilters && !selectedSummary) {
-      setSaveMessage('Select a datastream before saving with filters.');
-      return;
-    }
     ensurePinnedLayer();
+
     const filters = {
       showActiveOnly,
       selectedStationId: station.station_id,
       selectedStationName: displayName,
-      selectedDatastreamId: includeDatastreamFilters ? selectedSummary?.datastream_id : undefined,
-      selectedDatastreamName: includeDatastreamFilters ? selectedSummary?.datastream_name : undefined,
-      startDate: includeDatastreamFilters ? chart.filter.startDate : undefined,
-      endDate: includeDatastreamFilters ? chart.filter.endDate : undefined,
-      aggregation: includeDatastreamFilters ? chart.filter.aggregation : undefined,
+      selectedDatastreamId: undefined,
+      selectedDatastreamName: undefined,
+      startDate: undefined,
+      endDate: undefined,
+      aggregation: undefined,
     };
-    const resultCount = includeDatastreamFilters ? chart.data.length : filteredStations.length;
+    syncDendraFilters(activeLayer.layerId, filters, filteredStations.length, activeLayer.viewId);
+    setSaveMessage('Updated current view in Map Layers.');
+  };
 
-    window.setTimeout(() => {
-      syncDendraFilters(activeLayer.layerId, filters, resultCount, activeLayer.viewId);
-      setSaveMessage(
-        includeDatastreamFilters
-          ? 'Saved view with datastream filters to Map Layers.'
-          : 'Saved view to Map Layers.'
-      );
-    }, 0);
+  const saveAsNewView = () => {
+    if (!activeLayer) {
+      setSaveMessage('Unable to save: no active layer.');
+      return;
+    }
+    if (!selectedSummary) {
+      setSaveMessage('Select a datastream before saving a new filtered view.');
+      return;
+    }
+    if (!chartMatchesSelectedDatastream || chart.loading) {
+      setSaveMessage('Open chart data for this datastream before saving a new filtered view.');
+      return;
+    }
+
+    ensurePinnedLayer();
+
+    const filters = {
+      showActiveOnly,
+      selectedStationId: station.station_id,
+      selectedStationName: displayName,
+      selectedDatastreamId: selectedSummary.datastream_id,
+      selectedDatastreamName: selectedSummary.datastream_name,
+      startDate: chart.filter.startDate,
+      endDate: chart.filter.endDate,
+      aggregation: chart.filter.aggregation,
+    };
+
+    const newViewId = createDendraFilteredView(activeLayer.layerId, filters, chart.data.length);
+    if (!newViewId) {
+      setSaveMessage('Unable to create a new filtered view. Pin this layer and try again.');
+      return;
+    }
+    setSaveMessage('Created a new filtered child view in Map Layers.');
   };
 
   return (
@@ -257,24 +281,24 @@ export function StationDetailView({ station, summaries, onBack, onViewOnMap, onV
             <button
               id="dendra-save-view"
               type="button"
-              onClick={() => persistDendraView(false)}
+              onClick={saveCurrentView}
               className="rounded-md border border-gray-300 bg-white text-gray-700 text-sm font-medium py-2
                          hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5"
             >
               <Save className="w-3.5 h-3.5" />
-              Save View
+              Update View
             </button>
             <button
               id="dendra-save-with-filters"
               type="button"
-              onClick={() => persistDendraView(true)}
+              onClick={saveAsNewView}
               disabled={!chartMatchesSelectedDatastream || chart.loading}
               className="rounded-md bg-emerald-600 text-white text-sm font-medium py-2
                          hover:bg-emerald-700 transition-colors disabled:bg-emerald-300
                          flex items-center justify-center gap-1.5"
             >
               <Save className="w-3.5 h-3.5" />
-              Save With Filters
+              Save as New View
             </button>
           </div>
 
