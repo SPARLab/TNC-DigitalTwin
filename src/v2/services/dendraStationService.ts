@@ -241,9 +241,11 @@ export function formatTimestamp(epochMs: number | null): string {
   });
 }
 
-/** Format a number with appropriate precision */
-export function formatValue(value: number | null, unit?: string): string {
+/** Format a number with appropriate precision. Handles string values from ArcGIS JSON. */
+export function formatValue(value: number | string | null | undefined, unit?: string): string {
   if (value === null || value === undefined) return '—';
-  const formatted = Number.isInteger(value) ? value.toString() : value.toFixed(2);
+  const num = typeof value === 'number' ? value : Number(value);
+  if (Number.isNaN(num)) return '—';
+  const formatted = Number.isInteger(num) ? num.toString() : num.toFixed(2);
   return unit ? `${formatted} ${unit}` : formatted;
 }

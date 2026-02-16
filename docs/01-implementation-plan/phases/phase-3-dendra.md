@@ -39,18 +39,21 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 ## Task Status
 
-| ID | Task | Status | Assignee | Notes |
-|----|------|--------|----------|-------|
-| 3.1 | Query Dendra service to understand attributes | 🟢 Complete | | Feb 12: Service analysis in doc |
-| 3.2 | Create Dendra right sidebar shell | 🟢 Complete | | Overview/Browse tabs, drill-down |
-| 3.3 | Implement sensor filter UI | 🟢 Complete | | Active-only toggle |
-| 3.4 | Implement sensor list with cards | 🟢 Complete | | StationCard, StationDetailView |
-| 3.5 | Implement sensor detail with time series chart | 🟡 In Progress | | **V1 WORKS:** Floating ECharts panel loads and refreshes on datastream click. **REMAINING ISSUE:** Sidebar layout/styling polish (3.5d). **UPDATES:** 3.5a, 3.5b, and 3.5c complete. |
-| 3.5a | Fix: Subsequent datastream clicks don't update chart | 🟢 Complete | | Feb 13: Two bugs — (1) race condition: stale fetch could overwrite newer datastream's data (added request-counter guard in openChart), (2) stale ECharts instance: chart div remounts during loading transition but old instance pointed to removed DOM (added getDom() check before init). |
-| 3.5b | Fix: Some sensors show 0 data despite record counts | 🟢 Complete | | Feb 13: v0 bridge IDs/counts validated; issue was null-heavy datapoint windows. Updated query to fetch most recent non-null points (`value IS NOT NULL`, DESC + reverse to ASC). |
-| 3.5c | Fix: Glassmorphism background not visible | 🟢 Complete | | Feb 13: Implemented visible glassmorphism, bottom-right placement, half-height panel, stronger contrast/readability, larger slider and tick labels, darker header. |
-| 3.5d | Polish: Improve right sidebar layout/styling | ⚪ Not Started | | User feedback: "something feels off" about sidebar appearance |
-| 3.6 | Implement time range filter (Level 3) | 🟢 Complete | | Feb 13: Added Level 3 datastream filter controls in Station Detail (from/to date + aggregation), auto-applied chart updates, live data-point count, and explicit save actions ("Save View" + "Save With Filters") synced to Map Layers state. |
+| ID | Status | Task | Assignee | Notes |
+|----|--------|------|----------|-------|
+| 3.1 | 🟢 Complete | Query Dendra service to understand attributes | | Feb 12: Service analysis in doc |
+| 3.2 | 🟢 Complete | Create Dendra right sidebar shell | | Overview/Browse tabs, drill-down |
+| 3.3 | 🟢 Complete | Implement sensor filter UI | | Active-only toggle |
+| 3.4 | 🟢 Complete | Implement sensor list with cards | | StationCard, StationDetailView |
+| 3.5 | 🟡 In Progress | Implement sensor detail with time series chart | | **V1 WORKS:** Floating ECharts panel loads and refreshes on datastream click. **REMAINING ISSUE:** Sidebar layout/styling polish (3.5d). **UPDATES:** 3.5a, 3.5b, and 3.5c complete. |
+| 3.5a | 🟢 Complete | Fix: Subsequent datastream clicks don't update chart | | Feb 13: Two bugs — (1) race condition: stale fetch could overwrite newer datastream's data (added request-counter guard in openChart), (2) stale ECharts instance: chart div remounts during loading transition but old instance pointed to removed DOM (added getDom() check before init). |
+| 3.5b | 🟢 Complete | Fix: Some sensors show 0 data despite record counts | | Feb 13: v0 bridge IDs/counts validated; issue was null-heavy datapoint windows. Updated query to fetch most recent non-null points (`value IS NOT NULL`, DESC + reverse to ASC). |
+| 3.5c | 🟢 Complete | Fix: Glassmorphism background not visible | | Feb 13: Implemented visible glassmorphism, bottom-right placement, half-height panel, stronger contrast/readability, larger slider and tick labels, darker header. |
+| 3.5d | ⚪ Not Started | Polish: Improve right sidebar layout/styling | | User feedback: "something feels off" about sidebar appearance |
+| 3.6 | 🟢 Complete | Implement time range filter (Level 3) | | Feb 13: Added Level 3 datastream filter controls in Station Detail (from/to date + aggregation), auto-applied chart updates, live data-point count, and explicit save actions ("Save View" + "Save With Filters") synced to Map Layers state. |
+| 3.7 | ⚪ Not Started | Weather Stations layer — Investigation | | User reports "weather stations layer not implemented yet." Phase-3 doc lists Weather Stations as Dendra service (`Dangermond_Weather_Stations_Sensor`). Investigate: Is it Dendra? Timing/registration issue? Different catalog entry? Add fix task if needed. |
+| 3.8 | 🟢 Complete | Barometer datastream formatValue crash | | Feb 16: ArcGIS returned min/max/avg as strings; `formatValue` threw `value.toFixed is not a function`. Fixed: coerce to number, handle NaN. Files: dendraStationService.ts. |
+| 3.9 | ⚪ Not Started | Save With Filters button — behavior or removal | | User reports Save With Filters doesn't appear to do anything. Options: (1) implement distinct behavior vs Save View, (2) remove if redundant. |
 
 **Follow-up:** Task 27 in `docs/development-task-tracker.md` — "Save View / Save With Filters" sync with Map Layers. Replace bookmark terminology; persist right-sidebar filter state into Map Layers. **Prerequisite met:** `v2/iNaturalist` has been merged into this branch lineage (`v2/iNaturalist` -> `v2/animl` -> `v2/dendra`). Dendra uses explicit save (not continuous auto-save) due to Level 3 complexity.
 
@@ -178,6 +181,34 @@ savedView: {
   }
 }
 ```
+
+---
+
+### 3.7: Weather Stations Layer — Investigation
+
+**Goal:** Determine why "Weather Stations" layer shows "layer not implemented yet" toast.
+
+**Context:** Phase-3 Service Analysis lists Weather Stations as a Dendra service (`Dangermond_Weather_Stations_Sensor`, dataset ID 183). The Dendra adapter should handle all 10 per-type sensor services. Possible causes: catalog detection (path pattern), registration timing vs. `createMapLayer`, or a different catalog entry with similar name.
+
+**Acceptance Criteria:**
+- [ ] Identify root cause (catalog, registration, or other)
+- [ ] Add fix task to this phase if code change needed
+- [ ] Document findings in Notes column
+
+---
+
+### 3.9: Save With Filters Button — Behavior or Removal
+
+**Goal:** Resolve confusion around Save With Filters. It currently does not appear to have distinct behavior from Save View.
+
+**Options:**
+1. **Implement distinct behavior:** Save With Filters should persist station + datastream + date range + aggregation to Map Layers as a child view; Save View persists current view state without filters. Clarify UX and wire correctly.
+2. **Remove:** If Save View already covers the use case, remove Save With Filters to avoid dead UI.
+
+**Acceptance Criteria:**
+- [ ] Decide: implement distinct behavior or remove
+- [ ] If implement: wire Save With Filters to sync Dendra filters to Map Layers child view
+- [ ] If remove: remove button and clean up related code
 
 ---
 
