@@ -51,7 +51,7 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 | 3.5c | 🟢 Complete | Fix: Glassmorphism background not visible | | Feb 13: Implemented visible glassmorphism, bottom-right placement, half-height panel, stronger contrast/readability, larger slider and tick labels, darker header. |
 | 3.5d | ⚪ Not Started | Polish: Improve right sidebar layout/styling | | User feedback: "something feels off" about sidebar appearance |
 | 3.6 | 🟢 Complete | Implement time range filter (Level 3) | | Feb 13: Added Level 3 datastream filter controls in Station Detail (from/to date + aggregation), auto-applied chart updates, live data-point count, and explicit save actions ("Save View" + "Save With Filters") synced to Map Layers state. |
-| 3.7 | ⚪ Not Started | Weather Stations layer — Investigation | | User reports "weather stations layer not implemented yet." Phase-3 doc lists Weather Stations as Dendra service (`Dangermond_Weather_Stations_Sensor`). Investigate: Is it Dendra? Timing/registration issue? Different catalog entry? Add fix task if needed. |
+| 3.7 | 🟢 Complete | Weather Stations layer — Investigation | | Feb 16: Issue was **dataset-190** (Dangermond Preserve Weather Stations, legacy v0 service in Freshwater category) showing "not implemented" toast. The proper Dendra Weather Stations layer (dataset-183, Research & Sensor Equipment) was working correctly. **Resolution:** Backend fix — Dan set `is_visible: 0` for dataset-190 in Data Catalog FeatureServer. Legacy layer no longer appears in sidebar. |
 | 3.8 | 🟢 Complete | Barometer datastream formatValue crash | | Feb 16: ArcGIS returned min/max/avg as strings; `formatValue` threw `value.toFixed is not a function`. Fixed: coerce to number, handle NaN. Files: dendraStationService.ts. |
 | 3.9 | ⚪ Not Started | Save With Filters button — behavior or removal | | User reports Save With Filters doesn't appear to do anything. Options: (1) implement distinct behavior vs Save View, (2) remove if redundant. |
 
@@ -191,9 +191,36 @@ savedView: {
 **Context:** Phase-3 Service Analysis lists Weather Stations as a Dendra service (`Dangermond_Weather_Stations_Sensor`, dataset ID 183). The Dendra adapter should handle all 10 per-type sensor services. Possible causes: catalog detection (path pattern), registration timing vs. `createMapLayer`, or a different catalog entry with similar name.
 
 **Acceptance Criteria:**
-- [ ] Identify root cause (catalog, registration, or other)
-- [ ] Add fix task to this phase if code change needed
-- [ ] Document findings in Notes column
+- [x] Identify root cause (catalog, registration, or other)
+- [x] Add fix task to this phase if code change needed
+- [x] Document findings in Notes column
+
+**Resolution (Feb 16, 2026):**
+
+**Root Cause:** Two Weather Stations layers exist in the Data Catalog:
+
+1. **Dataset 183** - `Dangermond_Weather_Stations_Sensor` (Dendra sensor service ✅)
+   - Display title: "Weather Stations"
+   - Category: Research and Sensor Equipment (36)
+   - Service structure: Standard Dendra schema (Layer 0: Locations, Table 1: Data, Table 2: Summary)
+   - Detection: Correctly identified as `dataSource: 'dendra'`
+   - **Status: Working correctly**
+
+2. **Dataset 190** - `Dangermond_Preserve_Weather_Stations` (Legacy v0 service ❌)
+   - Display title: "Dangermond Preserve Weather Stations"
+   - Category: Freshwater (32)
+   - Service structure: v0 monolithic schema (Layer 0: Stations, Tables 1-3: Sensors/Datastreams/Datapoints)
+   - Detection: Identified as `dataSource: 'tnc-arcgis'` (no adapter implemented)
+   - **Status: Showing "not implemented yet" toast** ← This was the issue
+
+**Fix Applied:**
+- Backend fix: Dan set `is_visible: 0` for dataset-190 in the Data Catalog FeatureServer
+- Dataset-190 no longer appears in the catalog query results
+- Users will only see dataset-183 (proper Dendra Weather Stations) in "Research and Sensor Equipment" category
+- No client-side filtering needed - handled at the source
+
+**Files Changed:**
+- None (backend-only fix via Data Catalog FeatureServer configuration)
 
 ---
 
@@ -325,6 +352,8 @@ savedView: {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 16, 2026 | 3.7 | ✅ **Task 3.7 complete.** Investigated "Weather Stations layer not implemented yet" toast. Root cause: Two Weather Stations layers exist in catalog — dataset-183 (Dendra sensor service, working) and dataset-190 (legacy v0 service in Freshwater category, not implemented). Backend fix: Dan set `is_visible: 0` for dataset-190 in Data Catalog FeatureServer. | Claude |
+| Feb 16, 2026 | 3.7, 3.8, 3.9 | **Added tasks 3.7 (Weather Stations investigation), 3.8 (barometer formatValue fix — complete), 3.9 (Save With Filters behavior or removal).** Reordered Task Status table (ID, Status, Task) for quick scanning. | Claude |
 | Feb 13, 2026 | Task 27 follow-up | ✅ Replaced Dendra bookmark terminology with explicit save actions (`Save View`, `Save With Filters`) and synced Dendra right-sidebar state to Map Layers (`LayerContext.syncDendraFilters`). Added one-shot Dendra filter hydration when switching child views or triggering **Edit Filters** from Map Layers. | Claude |
 | Feb 13, 2026 | 3.6 | ✅ **Task 3.6 complete.** Added Level 3 datastream filtering controls in `StationDetailView` (from/to date + hourly/daily/weekly aggregation) with auto-apply behavior. Extended `DendraContext` chart state to store raw points + active filter and compute filtered/aggregated chart data reactively. Added live "X data points" count and explicit save actions for Dendra views. | Claude |
 | Feb 13, 2026 | 3.5b | ✅ **Sub-task 3.5b complete.** Investigated v0 bridge mismatch hypothesis by sampling across all 10 Dendra sensor services and confirming `dendra_ds_id -> v0 datastream_id` resolves correctly with matching record counts. Root cause was query windowing with null-heavy datapoint segments; chart request updated to fetch latest non-null values (`value IS NOT NULL`, `ORDER BY timestamp_utc DESC`) and reverse client-side for chronological rendering. | Claude |

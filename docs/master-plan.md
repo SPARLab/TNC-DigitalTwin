@@ -1,7 +1,7 @@
 # Master Development Plan - V2 Digital Catalog
 
 **Created:** January 23, 2026  
-**Last Updated:** February 13, 2026  
+**Last Updated:** February 16, 2026  
 **Target Deadline:** February 20, 2026  
 **Status:** 🟡 Planning
 
@@ -32,7 +32,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 0 | Foundation | 🟡 In Progress | ~98% | `v2/foundation` | YES - blocks all |
 | 1 | iNaturalist | 🟢 Complete | 5 / 5 tasks | `v2/inaturalist` | No |
 | 2 | ANiML | 🟡 In Progress | 9 / 14 tasks | `v2/animl` | No |
-| 3 | Dendra | 🟡 In Progress | 5 / 6 tasks | `v2/dendra` | No |
+| 3 | Dendra | 🟡 In Progress | 6 / 6 tasks | `v2/dendra` | No |
 | 4 | DataOne | ⚪ Not Started | 0 / 5 tasks | `v2/dataone` | No |
 | 5 | Export Builder | ⚪ Not Started | 0 / 4 tasks | `v2/export` | No |
 | 6 | Polish & Consistency | ⚪ Not Started | 0 / 7+ tasks | `v2/polish` | No |

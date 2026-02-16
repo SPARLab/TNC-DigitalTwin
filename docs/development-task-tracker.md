@@ -16,14 +16,14 @@
 |---|-------|------|--------|----------|
 | 24 | 0 | 0.9 Dynamic Layer Registry from Data Catalog Service | 🟡 | Critical |
 | 3.5 | 3 | Dendra: Floating time series (3.5d remaining) | 🟡 | High |
-| 3.7 | 3 | Dendra: Weather Stations layer investigation | ⚪ | Medium |
+| 3.7 | 3 | Dendra: Weather Stations layer investigation | 🟢 | Medium |
 | 3.9 | 3 | Dendra: Save With Filters button — behavior or removal | ⚪ | Medium |
 | 9 | 0 | 0.6 Map Feature Highlight | 🟡 | Low |
 | 33 | 2 | 2.16 ANiML Camera Badges | ⚪ | Medium |
 
 **Phase 3 details:** [phase-3-dendra.md](01-implementation-plan/phases/phase-3-dendra.md)
 
-**Active tasks remaining:** 6  
+**Active tasks remaining:** 5  
 **🔴 Next (critical):** Task 24 — Dynamic Layer Registry from Data Catalog Service
 
 ---
@@ -47,7 +47,7 @@
 | **0. Foundation** | 🟡 In Progress | ~98% | `v2/foundation` | YES — blocks all |
 | 1. iNaturalist | 🟢 Complete | 5 / 5 tasks | `v2/inaturalist` | No — Task 0.6 optional polish |
 | 2. ANiML | 🟡 In Progress | ~40% | `v2/animl` | No — Browse tab MVP done |
-| 3. Dendra | 🟡 In Progress | 5 / 6 tasks | `v2/dendra` | No |
+| 3. Dendra | 🟡 In Progress | 6 / 6 tasks | `v2/dendra` | No |
 | 4. DataOne | ⚪ Not Started | 0% | `v2/dataone` | 🔴 Paused — waiting for Task 0.9 |
 | 5. Export Builder | ⚪ Not Started | 0% | `v2/export` | No |
 | 6. Polish & Consistency | ⚪ Not Started | 0% | `v2/polish` | No |
@@ -393,8 +393,9 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
-| Feb 16, 2026 | Phase 3 | 🐛 **Fix: Barometer datastream crash.** `formatValue` in dendraStationService.ts threw `value.toFixed is not a function` when ArcGIS returned min/max/avg as strings. Now coerces to number and handles NaN. Files: dendraStationService.ts. | Claude |
-| Feb 16, 2026 | Docs | **Archive completed tasks.** Moved completed tasks to `docs/archive/completed-tasks-phase-0-3.md`. Main tracker now shows only active tasks. Added manual testing checklist per layer (iNaturalist, ANiML, Dendra). Added Task 34: Weather Stations layer investigation. | Claude |
+| Feb 16, 2026 | Phase 3 | ✅ **Task 3.7 complete: Weather Stations layer investigation.** Root cause: Two Weather Stations layers in catalog — dataset-183 (Dendra sensor, working) and dataset-190 (legacy v0, not implemented). Backend fix: Dan set `is_visible: 0` for dataset-190 in Data Catalog FeatureServer. No frontend changes. | Claude |
+| Feb 16, 2026 | Phase 3 | 🐛 **Task 3.8 complete: Barometer datastream crash.** `formatValue` in dendraStationService.ts threw `value.toFixed is not a function` when ArcGIS returned min/max/avg as strings. Now coerces to number and handles NaN. | Claude |
+| Feb 16, 2026 | Docs | **Archive + phase consolidation.** Moved completed tasks to `docs/archive/completed-tasks-phase-0-3.md` with manual testing checklist. Dendra tasks moved to phase-3-dendra.md (3.7 Weather Stations, 3.8 barometer fix, 3.9 Save With Filters). Development-task-tracker slimmed to quick reference only. | Claude |
 | Feb 13, 2026 | Phase 0/1/3 | ✅ **Task 27 complete: Save View / Save With Filters — sync with Map Layers.** Replaced Dendra bookmark terminology with explicit "Save View" and "Save With Filters" actions. Added `DendraViewFilters` type, `syncDendraFilters()` in LayerContext, one-shot filter hydration in DendraBrowseTab. Right-sidebar filter state (showActiveOnly, station, datastream, date range, aggregation) persists to Map Layers pinned layer/child views. Edit Filters and child-view switching rehydrate Dendra Browse. Files: LayerContext.tsx, DendraContext.tsx, types/index.ts, DendraBrowseTab.tsx, StationDetailView.tsx, phase-3-dendra.md. | Claude |
 | Feb 13, 2026 | Phase 3 | ✅ **Task 26 sub-task 3.5b complete.** Fixed sensors showing 0 data despite record counts. Root cause: null-heavy datapoint windows when querying oldest-first. Updated v0 bridge query to fetch latest non-null points (`value IS NOT NULL`, `ORDER BY timestamp_utc DESC`), reverse client-side for chronological chart. **Remaining:** 3.5d (sidebar polish). | Claude |
 | Feb 13, 2026 | Phase 3 | ✅ **Task 26 sub-task 3.5a complete.** Fixed subsequent datastream clicks not updating chart. Two bugs: (1) race condition — stale fetch could overwrite newer datastream's data (request-counter guard in openChart); (2) stale ECharts instance — chart div remounts during loading but old instance pointed to removed DOM (getDom() check before init). **Remaining:** 3.5b (0-data inconsistency), 3.5d (sidebar polish). | Claude |
