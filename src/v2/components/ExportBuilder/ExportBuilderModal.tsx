@@ -1,21 +1,25 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Info } from 'lucide-react';
 import { useLayers } from '../../context/LayerContext';
 import { useCatalog } from '../../context/CatalogContext';
-import type { DataSource } from '../../types';
+import type { DataSource, PinnedLayer, PinnedLayerView } from '../../types';
 import { ExportBuilderHeader } from './ExportBuilderHeader';
 import { ExportBuilderFooter } from './ExportBuilderFooter';
-import {
-  LayerExportSection,
-  type ExportFormatOption,
-} from './LayerExportSection';
+import { LayerExportSection } from './LayerExportSection';
 import { ExportSummary } from './ExportSummary';
 import {
   createAndDownloadExportZip,
   downloadLinksTextFile,
   generateShareableLinks,
-  type ExportActionLayer,
 } from './exportActions';
+import type {
+  ExportActionLayer,
+  ExportFormatOption,
+  ExportQueryDefinition,
+} from './types';
+import {
+  LARGE_EXPORT_WARNING_THRESHOLD_BYTES,
+  estimateBytesForSelection,
+} from './utils/sizeEstimator';
 
 interface ExportBuilderModalProps {
   isOpen: boolean;
@@ -24,6 +28,8 @@ interface ExportBuilderModalProps {
 
 interface LayerExportState {
   selectedFormatIds: string[];
+  selectedViewIds: string[];
+  includeQueryDefinition: boolean;
 }
 
 interface ExportFeedback {
@@ -75,20 +81,90 @@ function getDefaultSelectedFormatIds(dataSource: DataSource): string[] {
   }
 }
 
-function getLayerQuerySummary(layer: {
-  filterSummary?: string;
-  views?: Array<{ isVisible: boolean; filterSummary?: string }>;
-}): string | undefined {
-  const visibleView = layer.views?.find(view => view.isVisible);
-  return visibleView?.filterSummary || layer.filterSummary;
+interface LayerViewExportModel {
+  viewId: string;
+  viewName: string;
+  isActive: boolean;
+  querySummary?: string;
+  filteredResultCount?: number;
+  queryDefinition?: ExportQueryDefinition;
 }
 
-function getLayerResultCount(layer: {
-  resultCount?: number;
-  views?: Array<{ isVisible: boolean; resultCount?: number }>;
-}): number | undefined {
-  const visibleView = layer.views?.find(view => view.isVisible);
-  return visibleView?.resultCount ?? layer.resultCount;
+function getViewDisplayName(view: PinnedLayerView, index: number): string {
+  const nextName = view.name?.trim();
+  if (nextName) {
+    return nextName;
+  }
+  return `Filtered View ${index + 1}`;
+}
+
+function buildQueryDefinition(
+  dataSource: DataSource,
+  source: {
+    filterSummary?: string;
+    inaturalistFilters?: PinnedLayer['inaturalistFilters'];
+    animlFilters?: PinnedLayer['animlFilters'];
+    dendraFilters?: PinnedLayer['dendraFilters'];
+  },
+): ExportQueryDefinition | undefined {
+  const queryDefinition: ExportQueryDefinition = {
+    dataSource,
+    filterSummary: source.filterSummary,
+  };
+
+  if (source.inaturalistFilters) {
+    queryDefinition.inaturalistFilters = source.inaturalistFilters;
+  }
+  if (source.animlFilters) {
+    queryDefinition.animlFilters = source.animlFilters;
+  }
+  if (source.dendraFilters) {
+    queryDefinition.dendraFilters = source.dendraFilters;
+  }
+
+  if (
+    !queryDefinition.filterSummary &&
+    !queryDefinition.inaturalistFilters &&
+    !queryDefinition.animlFilters &&
+    !queryDefinition.dendraFilters
+  ) {
+    return undefined;
+  }
+
+  return queryDefinition;
+}
+
+function getLayerViewModels(layer: PinnedLayer, dataSource: DataSource): LayerViewExportModel[] {
+  if (layer.views && layer.views.length > 0) {
+    const hasVisibleView = layer.views.some((view) => view.isVisible);
+    return layer.views.map((view, index) => ({
+      viewId: view.id,
+      viewName: getViewDisplayName(view, index),
+      isActive: view.isVisible || (!hasVisibleView && index === 0),
+      querySummary: view.filterSummary,
+      filteredResultCount: view.resultCount,
+      queryDefinition: buildQueryDefinition(dataSource, {
+        filterSummary: view.filterSummary,
+        inaturalistFilters: view.inaturalistFilters,
+        animlFilters: view.animlFilters,
+        dendraFilters: view.dendraFilters,
+      }),
+    }));
+  }
+
+  return [{
+    viewId: `layer-${layer.id}`,
+    viewName: 'Active View',
+    isActive: true,
+    querySummary: layer.filterSummary,
+    filteredResultCount: layer.resultCount,
+    queryDefinition: buildQueryDefinition(dataSource, {
+      filterSummary: layer.filterSummary,
+      inaturalistFilters: layer.inaturalistFilters,
+      animlFilters: layer.animlFilters,
+      dendraFilters: layer.dendraFilters,
+    }),
+  }];
 }
 
 export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps) {
@@ -116,10 +192,20 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
 
       for (const layer of pinnedLayers) {
         const dataSource = layerDataSourceById[layer.id] || 'tnc-arcgis';
+        const views = getLayerViewModels(layer, dataSource);
+        const validViewIds = new Set(views.map((view) => view.viewId));
+        const activeViewId = views.find((view) => view.isActive)?.viewId ?? views[0]?.viewId;
         const existing = previous[layer.id];
+
+        const existingViewIds = existing?.selectedViewIds?.filter((viewId) => validViewIds.has(viewId)) || [];
+        const selectedViewIds = existingViewIds.length > 0
+          ? existingViewIds
+          : (activeViewId ? [activeViewId] : []);
 
         next[layer.id] = {
           selectedFormatIds: existing?.selectedFormatIds || getDefaultSelectedFormatIds(dataSource),
+          selectedViewIds,
+          includeQueryDefinition: existing?.includeQueryDefinition ?? false,
         };
       }
 
@@ -159,43 +245,57 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
       pinnedLayers.map((layer) => {
         const dataSource = layerDataSourceById[layer.id] || 'tnc-arcgis';
         const formatOptions = getFormatOptionsByDataSource(dataSource);
-        const selectedFormatIds = layerExportState[layer.id]?.selectedFormatIds || [];
+        const state = layerExportState[layer.id];
+        const selectedFormatIds = state?.selectedFormatIds || [];
         const selectedFormatLabels = formatOptions
           .filter((format) => selectedFormatIds.includes(format.id))
           .map((format) => format.label);
+        const views = getLayerViewModels(layer, dataSource);
+        const selectedViewIds = state?.selectedViewIds || [];
+        const selectedViews = views.filter((view) => selectedViewIds.includes(view.viewId)).map((view) => ({
+          viewId: view.viewId,
+          viewName: view.viewName,
+          isActive: view.isActive,
+          querySummary: view.querySummary,
+          filteredResultCount: view.filteredResultCount,
+          queryDefinition: state?.includeQueryDefinition ? view.queryDefinition : undefined,
+        }));
+        const viewEstimates = selectedViews.map((view) => estimateBytesForSelection(
+          dataSource,
+          selectedFormatIds,
+          view.filteredResultCount,
+        ));
+        const hasUnavailableEstimate = viewEstimates.some((estimate) => estimate.isUnavailable);
+        const estimatedBytes = hasUnavailableEstimate
+          ? undefined
+          : viewEstimates.reduce((sum, estimate) => sum + (estimate.bytes || 0), 0);
 
         return {
           pinnedLayerId: layer.id,
           layerId: layer.layerId,
           layerName: layer.name,
           dataSource,
-          querySummary: getLayerQuerySummary(layer),
           selectedFormatIds,
           selectedFormatLabels,
-          filteredResultCount: getLayerResultCount(layer),
+          includeQueryDefinition: state?.includeQueryDefinition ?? false,
+          selectedViews,
+          estimatedBytes,
         };
       }),
     [layerDataSourceById, layerExportState, pinnedLayers],
   );
 
   const hasSelections = useMemo(
-    () => exportActionLayers.some((layer) => layer.selectedFormatIds.length > 0),
-    [exportActionLayers],
-  );
-
-  const exportSummaryLayers = useMemo(
-    () => exportActionLayers.map((layer) => ({
-      layerId: layer.pinnedLayerId,
-      layerName: layer.layerName,
-      dataSource: layer.dataSource,
-      selectedFormatLabels: layer.selectedFormatLabels,
-      filteredResultCount: layer.filteredResultCount,
-    })),
+    () => exportActionLayers.some((layer) => (
+      layer.selectedFormatIds.length > 0 && layer.selectedViews.length > 0
+    )),
     [exportActionLayers],
   );
 
   const selectedLayers = useMemo(
-    () => exportActionLayers.filter((layer) => layer.selectedFormatIds.length > 0),
+    () => exportActionLayers.filter((layer) => (
+      layer.selectedFormatIds.length > 0 && layer.selectedViews.length > 0
+    )),
     [exportActionLayers],
   );
 
@@ -226,8 +326,8 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
       setFeedback({
         type: 'success',
         message: clipboardCopied
-          ? `Generated ${manifest.totalLayers} export link set(s). Links copied and text file downloaded.`
-          : `Generated ${manifest.totalLayers} export link set(s). Links text file downloaded.`,
+          ? `Generated ${manifest.totalLayers} layer link set(s). Links copied and text file downloaded.`
+          : `Generated ${manifest.totalLayers} layer link set(s). Links text file downloaded.`,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
@@ -252,7 +352,7 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
       const generatedAt = await createAndDownloadExportZip(selectedLayers);
       setFeedback({
         type: 'success',
-        message: `ZIP package created successfully (${selectedLayers.length} layer sections, ${generatedAt}).`,
+        message: `ZIP package created (${selectedLayers.length} layers, ${generatedAt}).`,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
@@ -305,67 +405,173 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
             </div>
           ) : null}
 
-          <div
-            id="export-builder-layer-intro-card"
-            className="rounded-xl border border-slate-200 bg-slate-50 p-4"
-          >
-            <div id="export-builder-layer-intro-header" className="flex items-start gap-3">
-              <Info id="export-builder-layer-intro-icon" className="mt-0.5 h-4 w-4 text-slate-500" />
-              <div id="export-builder-layer-intro-copy" className="space-y-2">
-                <p id="export-builder-layer-intro-title" className="text-sm font-semibold text-slate-700">
-                  Per-layer export options
-                </p>
-                <p id="export-builder-layer-intro-description" className="text-sm text-slate-600">
-                  Each pinned layer exports using its active filter state. Review the query summary,
-                  result count, and choose which formats to include.
-                </p>
-              </div>
+          <div id="export-builder-context-strip" className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div id="export-builder-context-strip-row" className="flex flex-wrap items-center gap-2">
+              <span
+                id="export-builder-context-strip-chip-views"
+                className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700"
+              >
+                1. Select filtered views
+              </span>
+              <span
+                id="export-builder-context-strip-arrow-1"
+                className="text-base font-bold text-slate-500"
+                aria-hidden="true"
+              >
+                &gt;
+              </span>
+              <span
+                id="export-builder-context-strip-chip-outputs"
+                className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700"
+              >
+                2. Choose outputs
+              </span>
+              <span
+                id="export-builder-context-strip-arrow-2"
+                className="text-base font-bold text-slate-500"
+                aria-hidden="true"
+              >
+                &gt;
+              </span>
+              <span
+                id="export-builder-context-strip-chip-export"
+                className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700"
+              >
+                3. Generate links or ZIP
+              </span>
             </div>
+          </div>
+
+          <div id="export-builder-layer-list-heading-wrap" className="mt-4">
+            <h3 id="export-builder-layer-list-heading" className="text-sm font-semibold text-slate-800">
+              Layer exports
+            </h3>
           </div>
 
           <div id="export-builder-layer-sections" className="mt-4 space-y-4">
             {pinnedLayers.length === 0 ? (
-              <p id="export-builder-empty-layer-sections" className="text-sm text-slate-500">
-                No pinned layers yet. Pin a layer in the left sidebar to include it in exports.
-              </p>
+              <div id="export-builder-empty-layer-sections" className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4">
+                <p id="export-builder-empty-layer-sections-copy" className="text-sm text-slate-600">
+                  No pinned layers yet. Pin a layer to start building an export package.
+                </p>
+              </div>
             ) : (
               <div id="export-builder-layer-sections-list" className="space-y-4">
-                {pinnedLayers.map((layer) => (
-                  <LayerExportSection
-                    key={layer.id}
-                    layerId={layer.id}
-                    layerName={layer.name}
-                    dataSource={layerDataSourceById[layer.id] || 'tnc-arcgis'}
-                    querySummary={getLayerQuerySummary(layer)}
-                    filteredResultCount={getLayerResultCount(layer)}
-                    formatOptions={getFormatOptionsByDataSource(layerDataSourceById[layer.id] || 'tnc-arcgis')}
-                    selectedFormatIds={layerExportState[layer.id]?.selectedFormatIds || []}
-                    onToggleFormat={(formatId) => {
-                      setLayerExportState((previous) => {
-                        const current = previous[layer.id] || {
-                          selectedFormatIds: getDefaultSelectedFormatIds(layerDataSourceById[layer.id] || 'tnc-arcgis'),
-                        };
+                {pinnedLayers.map((layer) => {
+                  const dataSource = layerDataSourceById[layer.id] || 'tnc-arcgis';
+                  const formatOptions = getFormatOptionsByDataSource(dataSource);
+                  const current = layerExportState[layer.id];
+                  const selectedFormatIds = current?.selectedFormatIds || [];
+                  const views = getLayerViewModels(layer, dataSource);
+                  const selectedViewIds = current?.selectedViewIds || [];
+                  const viewItems = views.map((view) => {
+                    const estimate = estimateBytesForSelection(dataSource, selectedFormatIds, view.filteredResultCount);
+                    return {
+                      viewId: view.viewId,
+                      viewName: view.viewName,
+                      isActive: view.isActive,
+                      isSelected: selectedViewIds.includes(view.viewId),
+                      querySummary: view.querySummary,
+                      filteredResultCount: view.filteredResultCount,
+                      estimatedBytes: estimate.bytes,
+                      isEstimateUnavailable: estimate.isUnavailable,
+                    };
+                  });
+                  const selectedViewItems = viewItems.filter((view) => view.isSelected);
+                  const isLayerEstimateUnavailable = selectedViewItems.some((view) => view.isEstimateUnavailable);
+                  const layerEstimatedBytes = isLayerEstimateUnavailable
+                    ? undefined
+                    : selectedViewItems.reduce((sum, view) => sum + (view.estimatedBytes || 0), 0);
+                  const showLargeExportWarning = selectedViewItems.length > 1
+                    && !isLayerEstimateUnavailable
+                    && (layerEstimatedBytes || 0) >= LARGE_EXPORT_WARNING_THRESHOLD_BYTES;
 
-                        const isSelected = current.selectedFormatIds.includes(formatId);
-                        return {
-                          ...previous,
-                          [layer.id]: {
-                            ...current,
-                            selectedFormatIds: isSelected
-                              ? current.selectedFormatIds.filter((id) => id !== formatId)
-                              : [...current.selectedFormatIds, formatId],
-                          },
-                        };
-                      });
-                    }}
-                  />
-                ))}
+                  return (
+                    <LayerExportSection
+                      key={layer.id}
+                      layerId={layer.id}
+                      layerName={layer.name}
+                      dataSource={dataSource}
+                      views={viewItems}
+                      formatOptions={formatOptions}
+                      selectedFormatIds={selectedFormatIds}
+                      includeQueryDefinition={current?.includeQueryDefinition ?? false}
+                      layerEstimatedBytes={layerEstimatedBytes}
+                      isLayerEstimateUnavailable={isLayerEstimateUnavailable}
+                      showLargeExportWarning={showLargeExportWarning}
+                      onToggleView={(viewId) => {
+                        setLayerExportState((previous) => {
+                          const fallbackViews = getLayerViewModels(layer, dataSource);
+                          const fallbackActiveViewId = fallbackViews.find((view) => view.isActive)?.viewId
+                            ?? fallbackViews[0]?.viewId;
+                          const existing = previous[layer.id] || {
+                            selectedFormatIds: getDefaultSelectedFormatIds(dataSource),
+                            selectedViewIds: fallbackActiveViewId ? [fallbackActiveViewId] : [],
+                            includeQueryDefinition: false,
+                          };
+                          const isSelected = existing.selectedViewIds.includes(viewId);
+
+                          return {
+                            ...previous,
+                            [layer.id]: {
+                              ...existing,
+                              selectedViewIds: isSelected
+                                ? existing.selectedViewIds.filter((id) => id !== viewId)
+                                : [...existing.selectedViewIds, viewId],
+                            },
+                          };
+                        });
+                      }}
+                      onToggleFormat={(formatId) => {
+                        setLayerExportState((previous) => {
+                          const fallbackViews = getLayerViewModels(layer, dataSource);
+                          const fallbackActiveViewId = fallbackViews.find((view) => view.isActive)?.viewId
+                            ?? fallbackViews[0]?.viewId;
+                          const existing = previous[layer.id] || {
+                            selectedFormatIds: getDefaultSelectedFormatIds(dataSource),
+                            selectedViewIds: fallbackActiveViewId ? [fallbackActiveViewId] : [],
+                            includeQueryDefinition: false,
+                          };
+                          const isSelected = existing.selectedFormatIds.includes(formatId);
+                          return {
+                            ...previous,
+                            [layer.id]: {
+                              ...existing,
+                              selectedFormatIds: isSelected
+                                ? existing.selectedFormatIds.filter((id) => id !== formatId)
+                                : [...existing.selectedFormatIds, formatId],
+                            },
+                          };
+                        });
+                      }}
+                      onToggleIncludeQueryDefinition={() => {
+                        setLayerExportState((previous) => {
+                          const fallbackViews = getLayerViewModels(layer, dataSource);
+                          const fallbackActiveViewId = fallbackViews.find((view) => view.isActive)?.viewId
+                            ?? fallbackViews[0]?.viewId;
+                          const existing = previous[layer.id] || {
+                            selectedFormatIds: getDefaultSelectedFormatIds(dataSource),
+                            selectedViewIds: fallbackActiveViewId ? [fallbackActiveViewId] : [],
+                            includeQueryDefinition: false,
+                          };
+                          return {
+                            ...previous,
+                            [layer.id]: {
+                              ...existing,
+                              includeQueryDefinition: !existing.includeQueryDefinition,
+                            },
+                          };
+                        });
+                      }}
+                    />
+                  );
+                })}
               </div>
             )}
           </div>
 
           <div id="export-builder-summary-container" className="mt-4">
-            <ExportSummary layers={exportSummaryLayers} />
+            <ExportSummary layers={exportActionLayers} />
           </div>
         </div>
 

@@ -1,109 +1,19 @@
-import type { DataSource } from '../../types';
-
-interface ExportSummaryLayerItem {
-  layerId: string;
-  layerName: string;
-  dataSource: DataSource;
-  selectedFormatLabels: string[];
-  filteredResultCount?: number;
-}
+import type { ExportActionLayer } from './types';
+import { formatEstimatedSize } from './utils/sizeEstimator';
 
 interface ExportSummaryProps {
-  layers: ExportSummaryLayerItem[];
-}
-
-const SIZE_ESTIMATE_BYTES_PER_ITEM: Record<DataSource, Record<string, number>> = {
-  inaturalist: {
-    CSV: 250,
-    GeoJSON: 1200,
-  },
-  animl: {
-    Metadata: 600,
-    Images: 400_000,
-    'Thumbnails only': 80_000,
-  },
-  dendra: {
-    Metadata: 450,
-    'Datastream CSV': 180,
-  },
-  dataone: {
-    Metadata: 15_000,
-    'File links': 1200,
-    'Download files': 5_000_000,
-  },
-  'tnc-arcgis': {
-    Metadata: 800,
-  },
-  ebird: {
-    Metadata: 700,
-  },
-  drone: {
-    Metadata: 2000,
-  },
-  lidar: {
-    Metadata: 2500,
-  },
-};
-
-function getCountNoun(dataSource: DataSource): string {
-  switch (dataSource) {
-    case 'inaturalist':
-      return 'observations';
-    case 'animl':
-      return 'camera trap records';
-    case 'dendra':
-      return 'data points';
-    case 'dataone':
-      return 'datasets';
-    default:
-      return 'records';
-  }
-}
-
-function formatEstimatedSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-  if (bytes < 1024 * 1024 * 1024) {
-    const mb = bytes / (1024 * 1024);
-    return `${mb >= 100 ? Math.round(mb) : mb.toFixed(1)} MB`;
-  }
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-}
-
-function estimateLayerBytes(layer: ExportSummaryLayerItem): number {
-  const count = layer.filteredResultCount;
-  if (typeof count !== 'number' || count <= 0) {
-    return 0;
-  }
-
-  const bytesPerItemByFormat = SIZE_ESTIMATE_BYTES_PER_ITEM[layer.dataSource] || {};
-  return layer.selectedFormatLabels.reduce((total, formatLabel) => {
-    const bytesPerItem = bytesPerItemByFormat[formatLabel] ?? 0;
-    return total + bytesPerItem * count;
-  }, 0);
-}
-
-function formatLayerSummaryLine(layer: ExportSummaryLayerItem, estimatedBytes: number): string {
-  const countNoun = getCountNoun(layer.dataSource);
-  const countLabel = typeof layer.filteredResultCount === 'number'
-    ? `${layer.filteredResultCount.toLocaleString()} ${countNoun}`
-    : `Count pending ${countNoun}`;
-  const formatsLabel = layer.selectedFormatLabels.join(' + ');
-
-  if (estimatedBytes > 0) {
-    return `${countLabel} (${formatsLabel}, ~${formatEstimatedSize(estimatedBytes)})`;
-  }
-
-  return `${countLabel} (${formatsLabel})`;
+  layers: ExportActionLayer[];
 }
 
 export function ExportSummary({ layers }: ExportSummaryProps) {
-  const includedLayers = layers.filter((layer) => layer.selectedFormatLabels.length > 0);
-  const layerEstimates = includedLayers.map((layer) => ({
-    layer,
-    estimatedBytes: estimateLayerBytes(layer),
-  }));
-  const totalEstimatedBytes = layerEstimates.reduce((sum, item) => sum + item.estimatedBytes, 0);
+  const includedLayers = layers.filter((layer) => (
+    layer.selectedFormatIds.length > 0 && layer.selectedViews.length > 0
+  ));
+  const knownLayerEstimates = includedLayers
+    .map((layer) => layer.estimatedBytes)
+    .filter((bytes): bytes is number => typeof bytes === 'number');
+  const hasUnavailableEstimates = includedLayers.some((layer) => typeof layer.estimatedBytes !== 'number');
+  const totalEstimatedBytes = knownLayerEstimates.reduce((sum, bytes) => sum + bytes, 0);
 
   return (
     <section
@@ -122,17 +32,25 @@ export function ExportSummary({ layers }: ExportSummaryProps) {
       ) : (
         <>
           <ul id="export-builder-summary-list" className="mt-3 space-y-2">
-            {layerEstimates.map(({ layer, estimatedBytes }) => (
+            {includedLayers.map((layer) => (
               <li
                 id={`export-builder-summary-item-${layer.layerId}`}
                 key={layer.layerId}
                 className="text-sm text-slate-700"
               >
-                <span id={`export-builder-summary-item-layer-${layer.layerId}`} className="font-semibold text-slate-800">
+                <span
+                  id={`export-builder-summary-item-layer-${layer.layerId}`}
+                  className="font-semibold text-slate-800"
+                >
                   {layer.layerName}:
                 </span>{' '}
                 <span id={`export-builder-summary-item-copy-${layer.layerId}`}>
-                  {formatLayerSummaryLine(layer, estimatedBytes)}
+                  {layer.selectedViews.length} {layer.selectedViews.length === 1 ? 'view' : 'views'} •{' '}
+                  {layer.selectedFormatLabels.join(' + ')} •{' '}
+                  {typeof layer.estimatedBytes === 'number'
+                    ? `~${formatEstimatedSize(layer.estimatedBytes)}`
+                    : 'Size unavailable'}
+                  {layer.includeQueryDefinition ? ' • Query JSON' : ''}
                 </span>
               </li>
             ))}
@@ -146,7 +64,9 @@ export function ExportSummary({ layers }: ExportSummaryProps) {
               Estimated total size
             </span>
             <span id="export-builder-summary-total-value" className="text-sm font-bold text-emerald-800">
-              ~{formatEstimatedSize(totalEstimatedBytes)}
+              {hasUnavailableEstimates
+                ? `~${formatEstimatedSize(totalEstimatedBytes)} + unknown`
+                : `~${formatEstimatedSize(totalEstimatedBytes)}`}
             </span>
           </div>
         </>

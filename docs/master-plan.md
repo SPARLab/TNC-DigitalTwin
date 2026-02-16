@@ -34,7 +34,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 2 | ANiML | 🟡 In Progress | 10 / 14 tasks | `v2/animl` | No |
 | 3 | Dendra | 🟡 In Progress | 10 / 11 tasks | `v2/dendra` | No |
 | 4 | DataOne | ⚪ Not Started | 0 / 5 tasks | `v2/dataone` | No |
-| 5 | Export Builder | 🟢 Complete | 4 / 4 tasks | `v2/export` | No |
+| 5 | Export Builder | 🟢 Complete | 10 / 10 tasks | `v2/export-builder` | No |
 | 6 | TNC ArcGIS Services | ⚪ Not Started | 0 / 10 tasks | `v2/tnc-arcgis` | No |
 | 7 | Polish & Consistency | ⚪ Not Started | 0 / 7+ tasks | `v2/polish` | No |
 
@@ -246,6 +246,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 16, 2026 | Phase 5 | **Tasks 5.5-5.10 complete: Export Builder hierarchy and scannability pass.** Implemented Layer -> Filtered Views export structure, multi-view selection, per-view/per-layer size estimates, large-selection warnings, query-definition export toggle, and ZIP/link payload updates preserving layer/view hierarchy. | Claude |
 | Feb 16, 2026 | Phase 5 | **Task 5.4 complete: export actions (ZIP + links).** Wired Export Builder footer actions to generate client-side ZIP package and share links. Added processing states, disabled buttons, and success/error feedback in modal. Included manifest + per-layer export metadata in ZIP for v1 implementation path while backend exports are pending. | Claude |
 | Feb 16, 2026 | Phase 5 | **Task 5.3 complete: export summary and size estimation.** Added `ExportSummary` and wired dynamic summary rows + total estimated size in `ExportBuilderModal`, based on selected formats and per-layer filtered counts. | Claude |
 | Feb 16, 2026 | Phase 5 | **Task 5.2 complete: per-layer export sections (filtered-only).** Added `LayerExportSection`; `ExportBuilderModal` now renders a section per pinned layer with active query summary, matching result count, and source-specific include formats. Bookmark export controls were removed to align with the current no-bookmarks paradigm. | Claude |

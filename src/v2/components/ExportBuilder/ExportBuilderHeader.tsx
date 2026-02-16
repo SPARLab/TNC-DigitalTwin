@@ -27,15 +27,16 @@ export function ExportBuilderHeader({
             Export Builder
           </h2>
           <p id="export-builder-subtitle" className="text-xs text-slate-600">
-            Configure what to include in your export.
+            Select views and outputs, then generate links or download a ZIP package.
           </p>
-          <p id="export-builder-counts" className="text-xs text-slate-600">
-            Exporting{' '}
-            <span id="export-builder-pinned-count" className="font-semibold text-blue-700">
+          <div id="export-builder-counts-row" className="flex items-center gap-2">
+            <span
+              id="export-builder-pinned-count-chip"
+              className="rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700"
+            >
               {pinnedLayerCount} pinned {pinnedLayerCount === 1 ? 'layer' : 'layers'}
-            </span>{' '}
-            using active filter state.
-          </p>
+            </span>
+          </div>
         </div>
       </div>
 
