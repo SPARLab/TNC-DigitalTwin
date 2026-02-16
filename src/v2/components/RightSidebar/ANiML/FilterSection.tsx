@@ -19,6 +19,7 @@ interface FilterSectionProps {
   id: string;
   label: string;
   icon: React.ReactNode;
+  itemIcon?: React.ReactNode;
   items: FilterSectionItem[];
   selectedKeys: Set<string>;
   onToggle: (key: string) => void;
@@ -32,6 +33,7 @@ export function FilterSection({
   id,
   label,
   icon,
+  itemIcon,
   items,
   selectedKeys,
   onToggle,
@@ -151,6 +153,14 @@ export function FilterSection({
                       className="w-3.5 h-3.5 text-emerald-600 border-gray-300 rounded
                                  focus:ring-emerald-500"
                     />
+                    {itemIcon && (
+                      <span
+                        id={`${id}-item-icon-${item.key}`}
+                        className={`flex-shrink-0 ${isChecked ? 'text-emerald-600' : 'text-gray-400'}`}
+                      >
+                        {itemIcon}
+                      </span>
+                    )}
                     <span
                       className={`text-sm flex-1 truncate ${
                         isChecked ? 'text-gray-900 font-medium' : 'text-gray-600'

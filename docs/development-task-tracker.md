@@ -83,7 +83,8 @@
 | 3. Dendra | 🟡 In Progress | 6 / 6 tasks | `v2/dendra` | No |
 | 4. DataOne | ⚪ Not Started | 0% | `v2/dataone` | 🔴 Paused — waiting for Task 0.9 |
 | 5. Export Builder | ⚪ Not Started | 0% | `v2/export` | No |
-| 6. Polish & Consistency | ⚪ Not Started | 0% | `v2/polish` | No |
+| 6. TNC ArcGIS Services | ⚪ Not Started | 0 / 10 tasks | `v2/tnc-arcgis` | No |
+| 7. Polish & Consistency | ⚪ Not Started | 0% | `v2/polish` | No |
 
 **Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
 
@@ -357,11 +358,16 @@
     - **Files:** `AnimlFilterContext.tsx`, `ImageList.tsx`, `AnimlBrowseTab.tsx`, `animlLayer.ts`, `useMapBehavior.ts`
 
   - [x] **Task 33 (2.16): ANiML Camera Badges — Numbered Icons for Query Results** ✅
-    - **Completed (Feb 13):** Dynamic map badge symbols when filter active; 0-result cameras show no badge.
-    - **Files:** `animlLayer.ts`, `useAnimlMapBehavior.ts`
+    - **Completed (Feb 16 doc sync):** Dynamic map badge symbols are active while filters are applied; no-filter state returns to plain camera icon; 0-result cameras render muted/no badge.
+    - **Implementation:** Uses count lookups via `updateAnimlCameraBadges()` in map behavior lifecycle.
+    - **Files:** `animlLayer.ts`, `useMapBehavior.ts`, `AnimlFilterContext.tsx`
+
+  - [x] **Task 35 (2.8): ANiML SVG Icons for Map Markers + Tag Rows** ✅
+    - **Completed (Feb 16):** Replaced emoji camera symbols with SVG camera glyphs in map layer rendering (base, badge, muted states). Added icon rows in ANiML legend and browse filter lists for species/camera scanability.
+    - **Files:** `animlLayer.ts`, `AnimlLegendWidget.tsx`, `FilterSection.tsx`, `AnimlBrowseTab.tsx`, `phase-2-animl.md`
 
   - [x] **Task 2.17: iNaturalist-style loading indicators for ANiML** ✅
-    - **Completed (Feb 16):** MapCenterLoadingOverlay with "Loading camera trap data..." when animl active; Map Layers (ActiveLayerSection, PinnedLayerRow) and AnimlLegendWidget use shared LoadingPrimitives; loadingTheme tokens.
+    - **Completed (Feb 16):** MapCenterLoadingOverlay with "Loading camera trap data..." when ANiML is active; Map Layers (ActiveLayerSection, PinnedLayerRow) and AnimlLegendWidget use shared LoadingPrimitives.
     - **Files:** `MapContainer.tsx`, `AnimlLegendWidget.tsx`
 
   - [ ] **Future/Low Priority: Save Observation → Create Filtered View**
@@ -467,6 +473,8 @@ See `docs/master-plan.md` for full phase breakdown.
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
 | Feb 16, 2026 | Phase 2 | ✅ **Task 2.17 complete: iNaturalist-style loading indicators for ANiML.** MapContainer shows "Loading camera trap data..." overlay when animl active; Map Layers and AnimlLegendWidget use shared LoadingPrimitives; loadingTheme.inlineSpinner for legend. | Claude |
+| Feb 16, 2026 | All | **Phase restructure:** Inserted new Phase 6 (TNC ArcGIS Feature Services) with 10 tasks. Renumbered old Phase 6 (Polish) to Phase 7. Service-level activation pattern for multi-layer TNC services with layer switcher in right sidebar. Generic filter UI (field/operator/value) for MVP. See `docs/IMPLEMENTATION/phases/phase-6-tnc-arcgis.md` | Claude |
+| Feb 16, 2026 | Phase 2 | ✅ **Task 35 (2.8) complete: ANiML SVG icons for map markers + tag rows.** Replaced emoji map markers with SVG camera symbols in `animlLayer.ts` (base, badge, muted). Added icon rows in ANiML legend and browse filter lists. Updated phase-2 task status + acceptance criteria. | Claude |
 | Feb 16, 2026 | Phase 3 | ✅ **Task 3.9 complete: Dendra Save With Filters — distinct behavior.** Renamed to "Update Current View" (station-level sync) and "Save as New View" (creates filtered child view, activates it). Added `createDendraFilteredView()` in LayerContext. Files: StationDetailView.tsx, LayerContext.tsx. | Claude |
 | Feb 16, 2026 | Phase 3 | ✅ **Task 3.7 complete: Weather Stations layer investigation.** Root cause: Two Weather Stations layers in catalog — dataset-183 (Dendra sensor, working) and dataset-190 (legacy v0, not implemented). Backend fix: Dan set `is_visible: 0` for dataset-190 in Data Catalog FeatureServer. No frontend changes. | Claude |
 | Feb 16, 2026 | Phase 3 | 🐛 **Task 3.8 complete: Barometer datastream crash.** `formatValue` in dendraStationService.ts threw `value.toFixed is not a function` when ArcGIS returned min/max/avg as strings. Now coerces to number and handles NaN. | Claude |

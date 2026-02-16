@@ -31,11 +31,12 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 |-------|------|--------|----------|--------|-----------|
 | 0 | Foundation | 🟡 In Progress | ~98% | `v2/foundation` | YES - blocks all |
 | 1 | iNaturalist | 🟢 Complete | 5 / 5 tasks | `v2/inaturalist` | No |
-| 2 | ANiML | 🟡 In Progress | 9 / 14 tasks | `v2/animl` | No |
+| 2 | ANiML | 🟡 In Progress | 10 / 14 tasks | `v2/animl` | No |
 | 3 | Dendra | 🟡 In Progress | 6 / 6 tasks | `v2/dendra` | No |
 | 4 | DataOne | ⚪ Not Started | 0 / 5 tasks | `v2/dataone` | No |
 | 5 | Export Builder | ⚪ Not Started | 0 / 4 tasks | `v2/export` | No |
-| 6 | Polish & Consistency | ⚪ Not Started | 0 / 7+ tasks | `v2/polish` | No |
+| 6 | TNC ArcGIS Services | ⚪ Not Started | 0 / 10 tasks | `v2/tnc-arcgis` | No |
+| 7 | Polish & Consistency | ⚪ Not Started | 0 / 7+ tasks | `v2/polish` | No |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -55,17 +56,21 @@ Phase 0: Foundation
     │                                                    │
     ├──► Phase 2: ANiML ────────────────────────────────┤
     │                                                    │
-    ├──► Phase 3: Dendra ───────────────────────────────┼──► Phase 5: Export Builder ──► Phase 6: Polish
-    │                                                    │
-    └──► Phase 4: DataOne ──────────────────────────────┘
+    ├──► Phase 3: Dendra ───────────────────────────────┼──► Phase 5: Export Builder ──┐
+    │                                                    │                              │
+    ├──► Phase 4: DataOne ──────────────────────────────┤                              │
+    │                                                    │                              │
+    └──► Phase 6: TNC ArcGIS ───────────────────────────┘                              │
+                                                                                        │
+                                                                                        └──► Phase 7: Polish
 ```
 
 **Parallelization:**
-- Phases 1-4 can be worked on simultaneously (different Cursor windows, different branches) — **PAUSED until Task 0.9 complete**
+- Phases 1-6 can be worked on simultaneously (different Cursor windows, different branches) — **PAUSED until Task 0.9 complete**
 - Task 0.9 (Dynamic Layer Registry from Data Catalog Service) is foundational; must merge to main before parallel branches continue
 - Each phase has its own branch, merged to `v2/main` when complete
 - Phase 5 requires all data sources to be functional
-- Phase 6 is the final consistency pass
+- Phase 7 is the final consistency pass
 
 ---
 
@@ -232,7 +237,8 @@ When working on any phase:
 - **Phase 3:** `docs/IMPLEMENTATION/phases/phase-3-dendra.md`
 - **Phase 4:** `docs/IMPLEMENTATION/phases/phase-4-dataone.md`
 - **Phase 5:** `docs/IMPLEMENTATION/phases/phase-5-export-builder.md`
-- **Phase 6:** `docs/IMPLEMENTATION/phases/phase-6-polish.md`
+- **Phase 6:** `docs/IMPLEMENTATION/phases/phase-6-tnc-arcgis.md`
+- **Phase 7:** `docs/IMPLEMENTATION/phases/phase-7-polish.md`
 
 ---
 
@@ -240,6 +246,8 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 16, 2026 | All | **Phase restructure:** Inserted new Phase 6 (TNC ArcGIS Feature Services), renumbered old Phase 6 (Polish) to Phase 7. Added architectural design for service-level activation + layer switcher pattern for multi-layer TNC services. Generic filter UI (field/operator/value) for MVP. | Will + Claude |
+| Feb 16, 2026 | Phase 2 | **Phase 2 Task 2.8 complete: ANiML SVG marker/icon pass.** Replaced emoji camera markers with SVG camera symbols in `animlLayer.ts` (base, badged, muted states). Added row-level icons in ANiML legend and browse filter lists; aligned with no-emoji icon policy. | Will + Claude |
 | Feb 16, 2026 | All | **Unified loading indicator strategy (Task 34) design spec complete.** Canonical contract in design-system.md DFT-018: eye-slot spinner, first-load-only map overlay, legend/sidebar region-specific. Added UX Decision to master-plan. Implementation pending per branch prereqs. | Will + Claude |
 | Feb 16, 2026 | Phase 3 | **Task 3.9 complete: Dendra Save With Filters — distinct behavior.** Renamed buttons to "Update Current View" (station-level sync) and "Save as New View" (creates filtered child view in Map Layers, activates it). Added `createDendraFilteredView()` in LayerContext. Files: StationDetailView.tsx, LayerContext.tsx. | Claude |
 | Feb 13, 2026 | Phase 0/1/3 | **Task 27 complete: Save View / Save With Filters — sync with Map Layers.** Dendra now uses explicit "Save View" and "Save With Filters" actions (replacing bookmark terminology). Right-sidebar filter state persists to Map Layers via `syncDendraFilters`. One-shot hydration when switching child views or Edit Filters. Extends cross-layer filtered-view contract to Dendra. | Claude |

@@ -10,6 +10,7 @@ import type {
   UndoAction,
   DataSource,
   INaturalistViewFilters,
+  AnimlViewFilters,
   DendraViewFilters,
 } from '../types';
 import { useCatalog } from './CatalogContext';
@@ -31,6 +32,12 @@ interface LayerContextValue {
   syncINaturalistFilters: (
     layerId: string,
     filters: INaturalistViewFilters,
+    resultCount: number,
+    viewId?: string,
+  ) => void;
+  syncAnimlFilters: (
+    layerId: string,
+    filters: AnimlViewFilters,
     resultCount: number,
     viewId?: string,
   ) => void;
@@ -172,6 +179,69 @@ function filtersEqual(
   if (a.startDate !== b.startDate || a.endDate !== b.endDate) return false;
   if (a.selectedTaxa.length !== b.selectedTaxa.length) return false;
   return a.selectedTaxa.every((t, i) => t === b.selectedTaxa[i]);
+}
+
+function buildAnimlFilterSummary(filters: AnimlViewFilters): string | undefined {
+  const parts: string[] = [];
+  if (filters.selectedAnimals.length > 0) {
+    const speciesText = filters.selectedAnimals.length <= 2
+      ? filters.selectedAnimals.join(' + ')
+      : `${filters.selectedAnimals.length} species selected`;
+    parts.push(`Species: ${speciesText}`);
+  }
+  if (filters.selectedCameras.length > 0) {
+    const cameraText = filters.selectedCameras.length === 1
+      ? '1 camera'
+      : `${filters.selectedCameras.length} cameras`;
+    parts.push(`Cameras: ${cameraText}`);
+  }
+  if (filters.startDate || filters.endDate) {
+    const rangeText = `${filters.startDate || 'Any'} to ${filters.endDate || 'Any'}`;
+    parts.push(`Date: ${rangeText}`);
+  }
+  return parts.length > 0 ? parts.join(', ') : undefined;
+}
+
+function getAnimlFilterCount(filters: AnimlViewFilters): number {
+  return filters.selectedAnimals.length + filters.selectedCameras.length + (filters.startDate || filters.endDate ? 1 : 0);
+}
+
+function buildAnimlViewName(filters: AnimlViewFilters): string {
+  const speciesPart = filters.selectedAnimals.length > 0
+    ? (filters.selectedAnimals.length <= 2
+      ? filters.selectedAnimals.join(', ')
+      : `${filters.selectedAnimals.slice(0, 2).join(', ')}, +${filters.selectedAnimals.length - 2} more`)
+    : '';
+
+  const cameraPart = filters.selectedCameras.length > 0
+    ? (filters.selectedCameras.length === 1
+      ? '1 camera'
+      : `${filters.selectedCameras.length} cameras`)
+    : '';
+
+  const hasDate = !!(filters.startDate || filters.endDate);
+  const datePart = hasDate
+    ? `${filters.startDate || 'Any start'} to ${filters.endDate || 'Any end'}`
+    : '';
+
+  const nonDateParts = [speciesPart, cameraPart].filter(Boolean).join(' • ');
+  if (nonDateParts && datePart) return `${nonDateParts} (${datePart})`;
+  if (nonDateParts) return nonDateParts;
+  if (datePart) return `Date: ${datePart}`;
+  return 'All Camera Traps';
+}
+
+function animlFiltersEqual(
+  a: AnimlViewFilters | undefined,
+  b: AnimlViewFilters | undefined,
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (a.startDate !== b.startDate || a.endDate !== b.endDate) return false;
+  if (a.selectedAnimals.length !== b.selectedAnimals.length) return false;
+  if (a.selectedCameras.length !== b.selectedCameras.length) return false;
+  return a.selectedAnimals.every((s, i) => s === b.selectedAnimals[i])
+    && a.selectedCameras.every((c, i) => c === b.selectedCameras[i]);
 }
 
 function dendraFiltersEqual(
@@ -352,6 +422,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                     filterCount: 0,
                     filterSummary: undefined,
                     inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+                    animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
                     dendraFilters: {
                       showActiveOnly: false,
                       selectedStationId: undefined,
@@ -372,6 +443,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           filterCount: 0,
           filterSummary: undefined,
           inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+          animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
+          animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
           dendraFilters: {
             showActiveOnly: false,
             selectedStationId: undefined,
@@ -455,6 +528,76 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         });
 
         // If every layer returned the same reference, skip the state update entirely
+        const changed = nextLayers.some((l, i) => l !== prev[i]);
+        return changed ? nextLayers : prev;
+      });
+    },
+    []
+  );
+
+  const syncAnimlFilters = useCallback(
+    (layerId: string, filters: AnimlViewFilters, resultCount: number, viewId?: string) => {
+      setPinnedLayers(prev => {
+        const nextLayers = prev.map(p => {
+          if (p.layerId !== layerId) return p;
+
+          const normalizedFilters: AnimlViewFilters = {
+            selectedAnimals: [...filters.selectedAnimals],
+            selectedCameras: [...filters.selectedCameras],
+            startDate: filters.startDate,
+            endDate: filters.endDate,
+          };
+          const nextFilterCount = getAnimlFilterCount(normalizedFilters);
+          const nextFilterSummary = buildAnimlFilterSummary(normalizedFilters);
+
+          if (viewId && p.views) {
+            const targetView = p.views.find(v => v.id === viewId);
+            const nextViewName = targetView?.isNameCustom
+              ? targetView.name
+              : buildAnimlViewName(normalizedFilters);
+
+            if (
+              targetView &&
+              targetView.name === nextViewName &&
+              targetView.filterCount === nextFilterCount &&
+              targetView.filterSummary === nextFilterSummary &&
+              targetView.resultCount === resultCount &&
+              animlFiltersEqual(targetView.animlFilters, normalizedFilters)
+            ) return p;
+
+            return {
+              ...p,
+              views: p.views.map(v =>
+                v.id === viewId
+                  ? {
+                      ...v,
+                      name: nextViewName,
+                      filterCount: nextFilterCount,
+                      filterSummary: nextFilterSummary,
+                      animlFilters: normalizedFilters,
+                      resultCount,
+                    }
+                  : v
+              ),
+            };
+          }
+
+          if (
+            p.filterCount === nextFilterCount &&
+            p.filterSummary === nextFilterSummary &&
+            p.resultCount === resultCount &&
+            animlFiltersEqual(p.animlFilters, normalizedFilters)
+          ) return p;
+
+          return {
+            ...p,
+            filterCount: nextFilterCount,
+            filterSummary: nextFilterSummary,
+            animlFilters: normalizedFilters,
+            resultCount,
+          };
+        });
+
         const changed = nextLayers.some((l, i) => l !== prev[i]);
         return changed ? nextLayers : prev;
       });
@@ -654,7 +797,6 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     },
     [activeLayer, layerMap]
   );
-
   const reorderLayers = useCallback((fromIndex: number, toIndex: number) => {
     setPinnedLayers(prev => {
       const next = [...prev];
@@ -669,6 +811,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
       prev.map(p => {
         if (p.id !== pinnedId) return p;
         const isDendraLayer = layerMap.get(p.layerId)?.dataSource === 'dendra';
+        const isAnimlLayer = layerMap.get(p.layerId)?.dataSource === 'animl';
         
         // If already nested, add a new view
         if (p.views && p.views.length > 0) {
@@ -679,6 +822,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             isVisible: false,
             filterCount: 0,
             inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+            animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
             dendraFilters: isDendraLayer
               ? {
                   showActiveOnly: false,
@@ -710,9 +854,13 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                   aggregation: undefined,
                 }
               )
+            : isAnimlLayer
+            ? buildAnimlViewName(
+              p.animlFilters || { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined }
+            )
             : buildINaturalistViewName(
-                p.inaturalistFilters || { selectedTaxa: [], startDate: undefined, endDate: undefined }
-              )
+              p.inaturalistFilters || { selectedTaxa: [], startDate: undefined, endDate: undefined }
+            )
         );
         const view1 = {
           id: crypto.randomUUID(),
@@ -722,6 +870,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           filterCount: p.filterCount,
           filterSummary: p.filterSummary,
           inaturalistFilters: p.inaturalistFilters,
+          animlFilters: p.animlFilters,
           dendraFilters: p.dendraFilters,
           resultCount: p.resultCount,
         };
@@ -732,6 +881,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           isVisible: false,
           filterCount: 0,
           inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+          animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
+          animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
           dendraFilters: isDendraLayer
             ? {
                 showActiveOnly: false,
@@ -753,6 +904,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           filterCount: 0,
           filterSummary: undefined,
           inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+          animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
+          animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
           dendraFilters: isDendraLayer
             ? {
                 showActiveOnly: false,
@@ -789,6 +942,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             filterCount: lastView.filterCount,
             filterSummary: lastView.filterSummary,
             inaturalistFilters: lastView.inaturalistFilters,
+            animlFilters: lastView.animlFilters,
+            animlFilters: lastView.animlFilters,
             dendraFilters: lastView.dendraFilters,
             distinguisher: lastView.isNameCustom ? lastView.name : undefined,
             resultCount: lastView.resultCount,
@@ -810,6 +965,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         const targetView = p.views.find(v => v.id === viewId);
         if (!targetView) return p;
         const isDendraLayer = layerMap.get(p.layerId)?.dataSource === 'dendra';
+        const isAnimlLayer = layerMap.get(p.layerId)?.dataSource === 'animl';
 
         const autoName = isDendraLayer
           ? buildDendraViewName(
@@ -824,9 +980,13 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                 aggregation: undefined,
               }
             )
+          : isAnimlLayer
+          ? buildAnimlViewName(
+            targetView.animlFilters || { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined }
+          )
           : buildINaturalistViewName(
-              targetView.inaturalistFilters || { selectedTaxa: [], startDate: undefined, endDate: undefined }
-            );
+            targetView.inaturalistFilters || { selectedTaxa: [], startDate: undefined, endDate: undefined }
+          );
         const nextName = trimmedName || autoName;
         const nextIsCustom = trimmedName.length > 0;
 
@@ -890,6 +1050,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         toggleChildVisibility,
         clearFilters,
         syncINaturalistFilters,
+        syncAnimlFilters,
         syncDendraFilters,
         createDendraFilteredView,
         reorderLayers,

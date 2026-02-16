@@ -53,6 +53,7 @@ export interface PinnedLayer {
   filterCount: number;
   filterSummary?: string;
   inaturalistFilters?: INaturalistViewFilters;
+  animlFilters?: AnimlViewFilters;
   dendraFilters?: DendraViewFilters;
   distinguisher?: string;
   views?: PinnedLayerView[];
@@ -70,6 +71,7 @@ export interface PinnedLayerView {
   filterCount: number;
   filterSummary?: string;
   inaturalistFilters?: INaturalistViewFilters;
+  animlFilters?: AnimlViewFilters;
   dendraFilters?: DendraViewFilters;
   resultCount?: number; // Number of features matching filters (for count display testing)
 }
@@ -77,6 +79,14 @@ export interface PinnedLayerView {
 /** iNaturalist filter state stored per pinned layer/view */
 export interface INaturalistViewFilters {
   selectedTaxa: string[];
+  startDate?: string;
+  endDate?: string;
+}
+
+/** ANiML filter state stored per pinned layer/view */
+export interface AnimlViewFilters {
+  selectedAnimals: string[];
+  selectedCameras: number[];
   startDate?: string;
   endDate?: string;
 }

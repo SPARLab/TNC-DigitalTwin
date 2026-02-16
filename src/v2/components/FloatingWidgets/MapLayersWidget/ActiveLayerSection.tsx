@@ -7,6 +7,7 @@
 import { Eye, Pin } from 'lucide-react';
 import type { ActiveLayer } from '../../../types';
 import { useINaturalistFilter } from '../../../context/INaturalistFilterContext';
+import { useAnimlFilter } from '../../../context/AnimlFilterContext';
 import { TAXON_CONFIG } from '../../Map/layers/taxonConfig';
 import { EyeSlotLoadingSpinner } from '../../shared/loading/LoadingPrimitives';
 
@@ -21,7 +22,16 @@ export function ActiveLayerSection({ activeLayer, isLoading = false, onPin }: Ac
   if (activeLayer.isPinned) return null;
 
   const isINat = activeLayer.layerId === 'inaturalist-obs';
+  const isAniml = activeLayer.layerId === 'animl-camera-traps';
   const { selectedTaxa, hasFilter } = useINaturalistFilter();
+  const {
+    selectedAnimals,
+    selectedCameras,
+    startDate,
+    endDate,
+    deployments,
+    hasAnyFilter,
+  } = useAnimlFilter();
 
   // Build filter display for iNaturalist
   const filterDisplay = isINat && hasFilter
@@ -29,6 +39,33 @@ export function ActiveLayerSection({ activeLayer, isLoading = false, onPin }: Ac
         .map(taxon => TAXON_CONFIG.find(t => t.value === taxon)?.label ?? taxon)
         .join(', ')
     : null;
+
+  const animlFilterDisplay = (() => {
+    if (!isAniml || !hasAnyFilter) return null;
+
+    const parts: string[] = [];
+    if (selectedAnimals.size > 0) {
+      const labels = Array.from(selectedAnimals);
+      const speciesText = labels.length <= 2 ? labels.join(', ') : `${labels.length} species`;
+      parts.push(speciesText);
+    }
+    if (selectedCameras.size > 0) {
+      const names = Array.from(selectedCameras)
+        .map(id => deployments.find(d => d.id === id)?.name || `CAM-${id}`)
+        .filter(Boolean);
+      const cameraText = names.length <= 2
+        ? names.join(', ')
+        : `${names.length} cameras`;
+      parts.push(cameraText);
+    }
+    if (startDate || endDate) {
+      parts.push(`${startDate || 'Any start'} to ${endDate || 'Any end'}`);
+    }
+
+    return parts.join(' • ');
+  })();
+
+  const activeFilterDisplay = filterDisplay || animlFilterDisplay;
 
   return (
     <div 
@@ -66,13 +103,13 @@ export function ActiveLayerSection({ activeLayer, isLoading = false, onPin }: Ac
         </div>
 
         {/* Live filter display */}
-        {filterDisplay && (
+        {activeFilterDisplay && (
           <div className="mt-2 pt-2 border-t border-amber-200">
             <span className="text-[10px] font-semibold text-amber-700 uppercase tracking-wide">
               Active Filters
             </span>
             <p className="text-xs text-gray-700 mt-1 leading-relaxed">
-              {filterDisplay}
+              {activeFilterDisplay}
             </p>
           </div>
         )}

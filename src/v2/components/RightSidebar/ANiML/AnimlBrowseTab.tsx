@@ -7,9 +7,10 @@
 // countLookups; images load via debounced API call with date params.
 // ============================================================================
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { PawPrint, Camera, AlertCircle, X } from 'lucide-react';
 import { useAnimlFilter } from '../../../context/AnimlFilterContext';
+import { useLayers } from '../../../context/LayerContext';
 import { animlService, type AnimlImageLabel } from '../../../../services/animlService';
 import { FilterSection, type FilterSectionItem } from './FilterSection';
 import { DateFilterSection } from './DateFilterSection';
@@ -23,19 +24,47 @@ export function AnimlBrowseTab() {
   const {
     deployments, animalTags, loading, error, dataLoaded,
     selectedAnimals, selectedCameras, startDate, endDate,
-    toggleAnimal, toggleCamera,
+    toggleAnimal, setSelectedAnimals, toggleCamera, setSelectedCameras,
     selectAll, selectAllAnimals, clearCameras, selectAllCameras,
     setDateRange, clearDateRange, clearFilters,
     hasFilter, hasCameraFilter, hasDateFilter, hasAnyFilter,
-    getFilteredCountForSpecies, getFilteredCountForDeployment,
-    filteredImageCount, focusDeployment, clearFocusedDeployment,
+    getFilteredCountForSpecies, getFilteredCountForDeployment, totalImageCount,
+    filteredImageCount, focusDeployment, clearFocusedDeployment, countLookups,
   } = useAnimlFilter();
+  const { activeLayer, lastEditFiltersRequest, getPinnedByLayerId, syncAnimlFilters } = useLayers();
 
   // Image fetch state (local to browse tab)
   const [images, setImages] = useState<AnimlImageLabel[]>([]);
   const [imgLoading, setImgLoading] = useState(false);
   const [imgError, setImgError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+
+  // ── Hydrate Browse filters (ONE-SHOT, not continuous) ───────────────────
+  const lastConsumedHydrateRef = useRef(0);
+  const prevHydrateViewIdRef = useRef<string | undefined>(activeLayer?.viewId);
+
+  useEffect(() => {
+    if (activeLayer?.layerId !== 'animl-camera-traps') return;
+
+    const viewChanged = activeLayer.viewId !== prevHydrateViewIdRef.current;
+    const editRequested = lastEditFiltersRequest > lastConsumedHydrateRef.current;
+    prevHydrateViewIdRef.current = activeLayer.viewId;
+
+    if (!viewChanged && !editRequested) return;
+    if (editRequested) lastConsumedHydrateRef.current = lastEditFiltersRequest;
+
+    const pinned = getPinnedByLayerId(activeLayer.layerId);
+    if (!pinned) return;
+
+    const sourceFilters = activeLayer.viewId && pinned.views
+      ? pinned.views.find(v => v.id === activeLayer.viewId)?.animlFilters
+      : pinned.animlFilters;
+    if (!sourceFilters) return;
+
+    setSelectedAnimals(new Set(sourceFilters.selectedAnimals));
+    setSelectedCameras(new Set(sourceFilters.selectedCameras));
+    setDateRange(sourceFilters.startDate || null, sourceFilters.endDate || null);
+  }, [activeLayer?.layerId, activeLayer?.viewId, lastEditFiltersRequest, getPinnedByLayerId, setSelectedAnimals, setSelectedCameras, setDateRange]);
 
   // ── Build filter section items ──────────────────────────────────────────
 
@@ -47,9 +76,9 @@ export function AnimlBrowseTab() {
       .map(t => ({
         key: t.label,
         label: t.label,
-        count: getFilteredCountForSpecies(t.label) ?? t.totalObservations,
+        count: getFilteredCountForSpecies(t.label) ?? (hasDateFilter ? null : t.totalObservations),
       })),
-    [animalTags, getFilteredCountForSpecies],
+    [animalTags, getFilteredCountForSpecies, hasDateFilter],
   );
 
   /** Camera items: sorted alphabetically by name (stable order). */
@@ -59,9 +88,9 @@ export function AnimlBrowseTab() {
       .map(d => ({
         key: String(d.id),
         label: d.name,
-        count: getFilteredCountForDeployment(d.id) ?? d.totalObservations ?? 0,
+        count: getFilteredCountForDeployment(d.id) ?? (hasDateFilter ? null : d.totalObservations ?? 0),
       })),
-    [deployments, getFilteredCountForDeployment],
+    [deployments, getFilteredCountForDeployment, hasDateFilter],
   );
 
   /** Adapt selectedCameras Set<number> → Set<string> for FilterSection. */
@@ -132,6 +161,40 @@ export function AnimlBrowseTab() {
     setCurrentPage(prev => Math.min(totalPages, prev + 1));
   }, [totalPages]);
 
+  // Keep Map Layers widget metadata in sync with the active ANiML view.
+  useEffect(() => {
+    if (activeLayer?.layerId !== 'animl-camera-traps') return;
+
+    const resultCount = hasAnyFilter
+      ? images.length
+      : totalImageCount;
+
+    syncAnimlFilters(
+      activeLayer.layerId,
+      {
+        selectedAnimals: Array.from(selectedAnimals).sort((a, b) => a.localeCompare(b)),
+        selectedCameras: Array.from(selectedCameras).sort((a, b) => a - b),
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+      },
+      resultCount,
+      activeLayer.viewId
+    );
+  }, [
+    activeLayer?.layerId,
+    activeLayer?.viewId,
+    activeLayer?.isPinned,
+    images.length,
+    totalImageCount,
+    selectedAnimals,
+    selectedCameras,
+    startDate,
+    endDate,
+    hasAnyFilter,
+    countLookups,
+    syncAnimlFilters,
+  ]);
+
   // ── Loading / Error ─────────────────────────────────────────────────────
 
   if (loading || !dataLoaded) {
@@ -180,6 +243,7 @@ export function AnimlBrowseTab() {
         id="animl-filter-species"
         label="Species"
         icon={<PawPrint className="w-4 h-4" />}
+        itemIcon={<PawPrint className="w-3.5 h-3.5" />}
         items={speciesItems}
         selectedKeys={selectedAnimals}
         onToggle={toggleAnimal}
@@ -194,6 +258,7 @@ export function AnimlBrowseTab() {
         id="animl-filter-cameras"
         label="Cameras"
         icon={<Camera className="w-4 h-4" />}
+        itemIcon={<Camera className="w-3.5 h-3.5" />}
         items={cameraItems}
         selectedKeys={selectedCameraKeys}
         onToggle={(key) => toggleCamera(Number(key))}

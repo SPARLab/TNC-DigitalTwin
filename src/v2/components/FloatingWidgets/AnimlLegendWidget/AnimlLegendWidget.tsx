@@ -5,7 +5,7 @@
 // ============================================================================
 
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Loader2, PawPrint } from 'lucide-react';
 import { useAnimlFilter } from '../../../context/AnimlFilterContext';
 import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { loadingTheme } from '../../shared/loading/loadingTheme';
@@ -25,13 +25,20 @@ export function AnimlLegendWidget() {
   const [isExpanded, setIsExpanded] = useState(true);
   const {
     selectedAnimals, toggleAnimal, selectAll, hasFilter,
-    animalTags, loading, dataLoaded,
+    animalTags, loading, dataLoaded, getFilteredCountForSpecies, hasDateFilter,
   } = useAnimlFilter();
 
-  // Sort by count descending, filter out zero-count
+  // Sort by count descending, filter out zero-count.
+  // When date filter is active and scoped counts are not ready yet,
+  // fall back to hiding counts rather than showing misleading all-time totals.
   const groups = animalTags
-    .filter(t => t.totalObservations > 0)
-    .sort((a, b) => b.totalObservations - a.totalObservations);
+    .map(tag => {
+      const resolvedCount = getFilteredCountForSpecies(tag.label);
+      const displayCount = resolvedCount ?? (hasDateFilter ? null : tag.totalObservations);
+      return { ...tag, displayCount };
+    })
+    .filter(t => (t.displayCount ?? 0) > 0)
+    .sort((a, b) => (b.displayCount ?? 0) - (a.displayCount ?? 0));
 
   // Loading state — show shimmer while fetching
   if (!dataLoaded) {
@@ -111,8 +118,12 @@ export function AnimlLegendWidget() {
                 className={`w-full flex items-center justify-between px-3 py-2 rounded border transition-all ${bgColor}`}
                 title={`${isSelected ? 'Hide' : 'Show'} ${tag.label}`}
               >
-                <div className="flex items-center gap-2">
+                <div id={`animl-legend-item-left-${tag.label.replace(/\s+/g, '-').toLowerCase()}`} className="flex items-center gap-2">
+                  <span id={`animl-legend-item-icon-${tag.label.replace(/\s+/g, '-').toLowerCase()}`} className="text-gray-500 flex-shrink-0">
+                    <PawPrint className="w-3.5 h-3.5" />
+                  </span>
                   <span
+                    id={`animl-legend-item-dot-${tag.label.replace(/\s+/g, '-').toLowerCase()}`}
                     className="w-3 h-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: getAnimalColor(index) }}
                   />
@@ -121,7 +132,7 @@ export function AnimlLegendWidget() {
                   </span>
                 </div>
                 <span className="text-xs text-gray-600">
-                  {tag.totalObservations.toLocaleString()}
+                  {tag.displayCount !== null ? tag.displayCount.toLocaleString() : '—'}
                 </span>
               </button>
             );

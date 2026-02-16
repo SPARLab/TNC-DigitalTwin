@@ -94,8 +94,8 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | 2.5 | Implement camera list with filtered image counts | 🟢 Complete | Will + Claude | Cameras as multi-select checkboxes in expandable FilterSection; cross-dimensional counts. |
 | 2.6 | Implement camera detail drill-down | 🟢 Complete | Will + Claude | Replaced by unified filter + result view; no separate detail view needed for MVP. |
 | 2.7 | Investigate and decide on caching strategy | 🟢 Complete | Will + Claude | Marked done for now; service/context caching in place |
-| 2.8 | Use v1 SVG icons for map markers and animal tags | ⚪ Not Started | | Replace emoji markers with proper SVGs |
-| 2.9 | Map Layers widget sync with browse filters | ⚪ Not Started | | Widget reflects active query state |
+| 2.8 | Use v1 SVG icons for map markers and animal tags | 🟢 Complete | Will + Claude | Replaced emoji map markers with SVG camera symbols; added row-level icons in ANiML legend and browse filters |
+| 2.9 | Map Layers widget sync with browse filters | 🟢 Complete | Will + Claude | Synced ANiML filters to Map Layers saved views + Edit Filters hydration |
 | 2.10 | Right sidebar scrollbar — prevent content shift | 🟢 Complete | Will + Claude | scrollbar-gutter: stable on right sidebar scroll area |
 | 2.11 | Add date/time frame filter above Species and Cameras | 🟢 Complete | Will + Claude | DateFilterSection with date pickers + presets. Passes startDate/endDate to queryImageLabelsCached. Count fix: use images.length when fetched. |
 | 2.12 | Image list pagination (Prev/Next Page) | 🟢 Complete | Will + Claude | Replaced "Load More" with page-based Prev/Next; added page/range indicators |
@@ -478,6 +478,48 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 
 ---
 
+### 2.8: Use v1 SVG Icons for Map Markers and Animal Tags
+
+**Goal:** Replace emoji-based map markers (`📷`) with the SVG icons used in the v1 implementation for a more polished look.
+
+**Status:** 🟢 Complete (Feb 16, 2026)
+
+**Acceptance Criteria:**
+- [x] Camera markers on map use SVG icon instead of emoji
+- [x] Animal tag rows in legend widget and browse tab use appropriate icons
+- [x] SVG icons sourced from v1 components (Lucide `Camera`, `Tag`, etc.) or custom SVGs
+- [x] Icons render correctly at map marker sizes (24-28px)
+
+**Files to Modify:**
+- `src/v2/components/Map/layers/animlLayer.ts` — replace `emojiToDataUri(CAMERA_EMOJI)` with SVG
+- `src/v2/components/FloatingWidgets/AnimlLegendWidget/AnimlLegendWidget.tsx` — add icons to rows
+- `src/v2/components/RightSidebar/ANiML/AnimlBrowseTab.tsx` — add icons to tag rows
+
+**Reference:** v1 `AnimlSidebar.tsx` uses Lucide `Camera`, `Tag` icons. Map markers in v1 used the MapView loaders.
+
+---
+
+### 2.9: Map Layers Widget Sync with Browse Filters
+
+**Goal:** When the user builds a query in the ANiML Browse tab (selecting tags, cameras), the Map Layers widget row for "Camera Traps (ANiML)" should reflect the active query state.
+
+**Status:** ⚪ Not Started
+
+**Acceptance Criteria:**
+- [x] Widget row shows filter summary (e.g., "Mountain Lion, Coyote • 3 cameras")
+- [x] Filter count updates as user adds/removes filters
+- [x] Widget row highlights/animates when filter changes (visual feedback)
+- [x] Clearing filters in Browse tab resets widget row to default
+- [x] Filter summary format defined in Task 2.3 design decision
+
+**Dependencies:** Task 2.3 (design decision defines widget text format), Task 2.4 (implementation)
+
+**Files to Modify:**
+- `src/v2/components/FloatingWidgets/MapLayersWidget/` — active layer row rendering
+- `src/v2/context/AnimlFilterContext.tsx` — expose filter summary for widget consumption
+
+---
+
 ### 2.10: Right Sidebar Scrollbar — Prevent Content Shift
 
 **Goal:** When the right sidebar content grows (e.g., selecting species + camera expands filter sections and shows image list), the vertical scrollbar appears. The scrollbar should NOT cause content to shift left — content width should remain stable.
@@ -646,6 +688,39 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 
 ---
 
+### 2.17: Species/Camera Counts Sync with Date Filter
+
+**Goal:** Synchronize the counts shown in Species and Cameras filter sections (and legend widget) with the active date filter. Currently counts are all-time; when a date filter is applied, users see high numbers (e.g., "vehicle 911") but "0 matching images" — misleading UX.
+
+**Status:** 🟢 Complete (Feb 13, 2026)
+
+**Implementation:** Option D (Lazy date-filtered counts). When `startDate` and `endDate` are set, `AnimlFilterContext` fetches grouped counts for that range via `getObservationCountsGroupedCached({ startDate, endDate })`, builds `dateScopedCountLookups`, and routes `getFilteredCountForSpecies`, `getFilteredCountForDeployment`, `filteredImageCount`, and legend/sidebar counts through `activeCountLookups` (date-scoped when date filter active, all-time otherwise). Species/Cameras filter rows and legend no longer fall back to all-time counts while date-scoped counts load.
+
+**Problem (resolved):**
+- Species filter rows and legend widget show counts from `countLookups` (all-time).
+- Camera filter rows show per-camera counts from `countLookups` (all-time).
+- Date filter correctly restricts image results, but counts do not update.
+- Result: User selects "vehicle" (911), 47 cameras, "Last 30 days" → 0 matching images. Counts suggest data exists; results contradict.
+
+**Acceptance Criteria:**
+- [x] When date filter is active, counts in Species/Cameras sections and legend reflect date-filtered totals (or clearly indicate they are all-time).
+- [x] Avoid misleading UX: either sync counts to date range or show explicit qualifier (e.g., "All time" vs "In date range").
+- [ ] Map badges (Task 2.16) should also respect date filter when showing per-camera counts. *(Deferred — badge logic uses getFilteredCountForDeployment which is now date-aware; verify in QA.)*
+
+**Options to Evaluate:**
+- **A. Re-fetch grouped counts per date range** — Accurate but ~8–12s per date change (Task 2.11 design note).
+- **B. Client-side filter of existing data** — If we have image-level data cached, derive counts; may not scale.
+- **C. Visual qualifier** — When date filter active, show "(all time)" next to counts or gray out counts and add tooltip explaining they are not date-filtered.
+- **D. Lazy date-filtered counts** — Background fetch grouped counts for active date range; show loading state for counts until ready.
+
+**Files to Modify:**
+- `src/v2/context/AnimlFilterContext.tsx` — count derivation when date filter active
+- `src/v2/components/RightSidebar/ANiML/AnimlBrowseTab.tsx` — FilterSection item counts
+- `src/v2/components/FloatingWidgets/AnimlLegendWidget/AnimlLegendWidget.tsx` — legend counts
+- `src/v2/components/Map/layers/animlLayer.ts` — map badge counts (Task 2.16)
+
+---
+
 ## Service Analysis
 
 > Completed via existing `animlService.ts` (1,512 lines, Dec 2025)
@@ -755,6 +830,10 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | Feb 13, 2026 | 2.16 | **Complete.** Implemented dynamic camera badge rendering in `animlLayer.ts` using SVG data-URI symbols (camera + numeric count). Added `updateAnimlCameraBadges()` and wired it in `useAnimlMapBehavior.ts` so badges update whenever ANiML filter state changes. No-filter state shows plain camera icons; 0-result cameras show no badge. | Will + Claude |
 | Feb 16, 2026 | All | **Archived completed tasks.** Moved 2.1–2.7, 2.10–2.16 to Archived Task Details section; active tasks (2.8, 2.9, 2.17) now at top. Added Task 2.17: iNaturalist-style loading indicators for ANiML (map, Map Layers widget, legend) using shared LoadingPrimitives. | Will + Claude |
 | Feb 16, 2026 | 2.17 | **Complete.** ANiML loading indicators aligned with iNaturalist: MapContainer shows "Loading camera trap data..." overlay when animl active; Map Layers (ActiveLayerSection, PinnedLayerRow) and AnimlLegendWidget already used shared primitives; standardized legend spinner to loadingTheme.inlineSpinner. | Will + Claude |
+| Feb 13, 2026 | 2.9 | **Complete.** Added ANiML filter sync contract with Map Layers widget (mirrors iNaturalist): `AnimlBrowseTab` now hydrates filters from pinned layer/view on "Edit Filters" and syncs active species/cameras/date + result count back to Map Layers metadata. Added `syncAnimlFilters` in `LayerContext` with child-view support and custom-name preservation; added ANiML filter payload to pinned layer/view state. | Will + Claude |
+| Feb 13, 2026 | 2.17 | **New task added.** Species/camera counts in filter sections and legend show all-time totals; when date filter is applied, image results correctly show 0 but counts remain high — misleading UX. Task 2.17: sync counts with date filter or add clear qualifier. | Will + Claude |
+| Feb 13, 2026 | 2.17 | **Complete.** Implemented Option D (lazy date-filtered counts). AnimlFilterContext fetches `getObservationCountsGroupedCached({ startDate, endDate })` when date filter active, builds `dateScopedCountLookups`, routes all count helpers through `activeCountLookups`. Species/Cameras filter sections and AnimlLegendWidget now show date-scoped counts; no all-time fallback during load. Files: AnimlFilterContext.tsx, AnimlBrowseTab.tsx, AnimlLegendWidget.tsx. | Will + Claude |
+| Feb 16, 2026 | 2.8 | **Complete.** Replaced emoji camera map markers with SVG camera symbols in `animlLayer.ts` for base, badged, and muted states. Added row-level icons in ANiML legend and browse filters (`AnimlLegendWidget`, `FilterSection`, `AnimlBrowseTab`). Final refinement removed circular marker backplates based on visual QA feedback. | Will + Claude |
 
 ---
 
