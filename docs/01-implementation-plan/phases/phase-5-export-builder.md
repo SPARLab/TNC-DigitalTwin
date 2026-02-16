@@ -1,7 +1,7 @@
 # Phase 5: Export Builder
 
-**Status:** 🟡 In Progress  
-**Progress:** 3 / 4 tasks  
+**Status:** 🟢 Complete  
+**Progress:** 4 / 4 tasks  
 **Branch:** `v2/export`  
 **Depends On:** Phases 1-4 (all data sources)  
 **Owner:** TBD
@@ -41,7 +41,7 @@ Implement the Export Builder that brings together all pinned layers and their ac
 | 5.1 | Create Export Builder modal shell | 🟢 Complete | Claude | Modal shell wired to global header cart button with scrollable body + fixed footer |
 | 5.2 | Implement per-layer export sections | 🟢 Complete | Claude | Added `LayerExportSection`; wired per-layer filter summary, result count, and source-specific format options into `ExportBuilderModal` (filtered-only model) |
 | 5.3 | Implement export summary and size estimation | 🟢 Complete | Claude | Added `ExportSummary`; wired dynamic per-layer selection summary + heuristic total size estimate into `ExportBuilderModal` |
-| 5.4 | Implement export actions (ZIP / Links) | ⚪ Not Started | | |
+| 5.4 | Implement export actions (ZIP / Links) | 🟢 Complete | Claude | Added client-side ZIP package generation, shareable link generation, loading states, and success/error feedback in Export Builder modal |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -131,11 +131,11 @@ Estimated total: ~52 MB
 **Goal:** Allow user to export their selections.
 
 **Acceptance Criteria:**
-- [ ] "Export ZIP" button creates downloadable archive
-- [ ] "Generate Links" button creates shareable links (if supported)
-- [ ] "Cancel" button closes modal
-- [ ] Loading state while export is processing
-- [ ] Success/error feedback
+- [x] "Export ZIP" button creates downloadable archive
+- [x] "Generate Links" button creates shareable links (if supported)
+- [x] "Cancel" button closes modal
+- [x] Loading state while export is processing
+- [x] Success/error feedback
 
 **Technical Notes:**
 - ZIP generation may require server-side processing
@@ -175,6 +175,7 @@ Estimated total: ~52 MB
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 16, 2026 | 5.4 | Implemented export actions end-to-end: wired "Export ZIP" and "Generate Links" in `ExportBuilderModal`; added loading/disabled states in `ExportBuilderFooter`; added `exportActions.ts` for ZIP packaging (manifest + per-layer JSON + links file) and share-link text generation with clipboard + download fallback | Claude |
 | Feb 16, 2026 | 5.3 | Implemented export summary + size estimation: added `ExportSummary` component and wired dynamic per-layer summary rows with estimated total size based on selected formats and current filtered result counts | Claude |
 | Feb 16, 2026 | 5.2 | Revised 5.2 to filtered-only model: removed bookmark export mode and bookmark item controls from `ExportBuilderModal`; sections now focus on active query summary, result count, and format options | Claude |
 | Feb 16, 2026 | 5.1 | Implemented Export Builder modal shell (`ExportBuilderModal`, `ExportBuilderHeader`, `ExportBuilderFooter`) and wired shopping cart button in `V2Header` to open/close modal in `V2App` | Claude |

@@ -10,6 +10,12 @@ import {
   type ExportFormatOption,
 } from './LayerExportSection';
 import { ExportSummary } from './ExportSummary';
+import {
+  createAndDownloadExportZip,
+  downloadLinksTextFile,
+  generateShareableLinks,
+  type ExportActionLayer,
+} from './exportActions';
 
 interface ExportBuilderModalProps {
   isOpen: boolean;
@@ -18,6 +24,11 @@ interface ExportBuilderModalProps {
 
 interface LayerExportState {
   selectedFormatIds: string[];
+}
+
+interface ExportFeedback {
+  type: 'success' | 'error';
+  message: string;
 }
 
 function getFormatOptionsByDataSource(dataSource: DataSource): ExportFormatOption[] {
@@ -84,6 +95,9 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
   const { pinnedLayers } = useLayers();
   const { layerMap } = useCatalog();
   const [layerExportState, setLayerExportState] = useState<Record<string, LayerExportState>>({});
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingAction, setProcessingAction] = useState<'zip' | 'links' | null>(null);
+  const [feedback, setFeedback] = useState<ExportFeedback | null>(null);
 
   const pinnedLayerCount = pinnedLayers.length;
   const layerDataSourceById = useMemo<Record<string, DataSource>>(
@@ -132,7 +146,15 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
     };
   }, [isOpen, onClose]);
 
-  const exportSummaryLayers = useMemo(
+  useEffect(() => {
+    if (isOpen) {
+      setFeedback(null);
+      setIsProcessing(false);
+      setProcessingAction(null);
+    }
+  }, [isOpen]);
+
+  const exportActionLayers = useMemo<ExportActionLayer[]>(
     () =>
       pinnedLayers.map((layer) => {
         const dataSource = layerDataSourceById[layer.id] || 'tnc-arcgis';
@@ -143,15 +165,103 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
           .map((format) => format.label);
 
         return {
-          layerId: layer.id,
+          pinnedLayerId: layer.id,
+          layerId: layer.layerId,
           layerName: layer.name,
           dataSource,
+          querySummary: getLayerQuerySummary(layer),
+          selectedFormatIds,
           selectedFormatLabels,
           filteredResultCount: getLayerResultCount(layer),
         };
       }),
     [layerDataSourceById, layerExportState, pinnedLayers],
   );
+
+  const hasSelections = useMemo(
+    () => exportActionLayers.some((layer) => layer.selectedFormatIds.length > 0),
+    [exportActionLayers],
+  );
+
+  const exportSummaryLayers = useMemo(
+    () => exportActionLayers.map((layer) => ({
+      layerId: layer.pinnedLayerId,
+      layerName: layer.layerName,
+      dataSource: layer.dataSource,
+      selectedFormatLabels: layer.selectedFormatLabels,
+      filteredResultCount: layer.filteredResultCount,
+    })),
+    [exportActionLayers],
+  );
+
+  const selectedLayers = useMemo(
+    () => exportActionLayers.filter((layer) => layer.selectedFormatIds.length > 0),
+    [exportActionLayers],
+  );
+
+  const handleGenerateLinks = async () => {
+    if (selectedLayers.length === 0) {
+      setFeedback({ type: 'error', message: 'Select at least one export format before generating links.' });
+      return;
+    }
+
+    setIsProcessing(true);
+    setProcessingAction('links');
+    setFeedback(null);
+
+    try {
+      const { linksText, manifest } = generateShareableLinks(selectedLayers);
+      let clipboardCopied = false;
+
+      if (navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(linksText);
+          clipboardCopied = true;
+        } catch {
+          clipboardCopied = false;
+        }
+      }
+
+      downloadLinksTextFile(linksText);
+      setFeedback({
+        type: 'success',
+        message: clipboardCopied
+          ? `Generated ${manifest.totalLayers} export link set(s). Links copied and text file downloaded.`
+          : `Generated ${manifest.totalLayers} export link set(s). Links text file downloaded.`,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      setFeedback({ type: 'error', message: `Could not generate links: ${message}` });
+    } finally {
+      setIsProcessing(false);
+      setProcessingAction(null);
+    }
+  };
+
+  const handleExportZip = async () => {
+    if (selectedLayers.length === 0) {
+      setFeedback({ type: 'error', message: 'Select at least one export format before exporting ZIP.' });
+      return;
+    }
+
+    setIsProcessing(true);
+    setProcessingAction('zip');
+    setFeedback(null);
+
+    try {
+      const generatedAt = await createAndDownloadExportZip(selectedLayers);
+      setFeedback({
+        type: 'success',
+        message: `ZIP package created successfully (${selectedLayers.length} layer sections, ${generatedAt}).`,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      setFeedback({ type: 'error', message: `Could not create ZIP export: ${message}` });
+    } finally {
+      setIsProcessing(false);
+      setProcessingAction(null);
+    }
+  };
 
   if (!isOpen) {
     return null;
@@ -180,6 +290,21 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
         />
 
         <div id="export-builder-content-scroll-area" className="flex-1 overflow-y-auto px-6 py-5">
+          {feedback ? (
+            <div
+              id="export-builder-feedback-banner"
+              className={`mb-4 rounded-lg border px-4 py-3 text-sm ${
+                feedback.type === 'success'
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                  : 'border-red-200 bg-red-50 text-red-700'
+              }`}
+              role="status"
+              aria-live="polite"
+            >
+              {feedback.message}
+            </div>
+          ) : null}
+
           <div
             id="export-builder-layer-intro-card"
             className="rounded-xl border border-slate-200 bg-slate-50 p-4"
@@ -247,13 +372,14 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
         <ExportBuilderFooter
           onCancel={onClose}
           onGenerateLinks={() => {
-            // Action wiring is implemented in task 5.4.
-            console.info('Export Builder: Generate Links clicked');
+            void handleGenerateLinks();
           }}
           onExportZip={() => {
-            // Action wiring is implemented in task 5.4.
-            console.info('Export Builder: Export ZIP clicked');
+            void handleExportZip();
           }}
+          isProcessing={isProcessing}
+          processingAction={processingAction}
+          hasSelections={hasSelections}
         />
       </div>
     </div>
