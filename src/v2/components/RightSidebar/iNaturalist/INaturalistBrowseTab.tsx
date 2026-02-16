@@ -35,7 +35,7 @@ export function INaturalistBrowseTab() {
     clearAll,
     allObservations,
   } = useINaturalistFilter();
-  const { activeLayer, lastEditFiltersRequest, getPinnedByLayerId, syncINaturalistFilters } = useLayers();
+  const { activeLayer, lastEditFiltersRequest, lastFiltersClearedTimestamp, getPinnedByLayerId, syncINaturalistFilters } = useLayers();
 
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
@@ -120,9 +120,11 @@ export function INaturalistBrowseTab() {
   // Runs ONLY when the user explicitly triggers it:
   //   1. "Edit Filters" clicked in Map Layers widget (lastEditFiltersRequest)
   //   2. Active view switches (activeLayer.viewId)
+  //   3. "Clear" clicked in Map Layers widget (lastFiltersClearedTimestamp)
   // NOT on every pinned-layer update — that would fight the sync effect below
   // and cause an infinite read-write oscillation.
   const lastConsumedHydrateRef = useRef(0);
+  const lastConsumedClearRef = useRef(0);
   const prevHydrateViewIdRef = useRef<string | undefined>(activeLayer?.viewId);
 
   useEffect(() => {
@@ -130,11 +132,13 @@ export function INaturalistBrowseTab() {
 
     const viewChanged = activeLayer.viewId !== prevHydrateViewIdRef.current;
     const editRequested = lastEditFiltersRequest > lastConsumedHydrateRef.current;
+    const clearRequested = lastFiltersClearedTimestamp > lastConsumedClearRef.current;
     prevHydrateViewIdRef.current = activeLayer.viewId;
 
     // Only hydrate on explicit triggers — not on every dependency change
-    if (!viewChanged && !editRequested) return;
+    if (!viewChanged && !editRequested && !clearRequested) return;
     if (editRequested) lastConsumedHydrateRef.current = lastEditFiltersRequest;
+    if (clearRequested) lastConsumedClearRef.current = lastFiltersClearedTimestamp;
 
     const pinned = getPinnedByLayerId(activeLayer.layerId);
     if (!pinned) return;
@@ -147,7 +151,7 @@ export function INaturalistBrowseTab() {
     setSelectedTaxa(new Set(sourceFilters.selectedTaxa));
     setDateRange(sourceFilters.startDate || '', sourceFilters.endDate || '');
   // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally gated by ref guards
-  }, [activeLayer?.layerId, activeLayer?.viewId, lastEditFiltersRequest, getPinnedByLayerId, setSelectedTaxa, setDateRange]);
+  }, [activeLayer?.layerId, activeLayer?.viewId, lastEditFiltersRequest, lastFiltersClearedTimestamp, getPinnedByLayerId, setSelectedTaxa, setDateRange]);
 
   // Keep Map Layers widget metadata in sync with the active iNaturalist view.
   // Depends on isPinned so the effect re-fires when the layer transitions from
