@@ -605,8 +605,16 @@ class DataOneService {
   async getFileInfo(dataoneId: string): Promise<DataOneFileInfo> {
     try {
       // Query DataONE Solr for objects in this resource map
-      const encodedId = encodeURIComponent(dataoneId);
-      const url = `https://cn.dataone.org/cn/v2/query/solr/?q=resourceMap:*${encodedId}*&fl=formatId,size&rows=1000&wt=json`;
+      const escapedId = dataoneId
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"');
+      const params = new URLSearchParams({
+        q: `resourceMap:"${escapedId}"`,
+        fl: 'formatId,size',
+        rows: '1000',
+        wt: 'json',
+      });
+      const url = `https://cn.dataone.org/cn/v2/query/solr/?${params.toString()}`;
 
       const response = await fetch(url);
 

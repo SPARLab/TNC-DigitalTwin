@@ -535,6 +535,10 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onKeywor
             <dl id="dataone-detail-metadata-grid" className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
               <dt id="dataone-detail-uploaded-label" className="text-gray-500">Uploaded</dt>
               <dd id="dataone-detail-uploaded-value" className="text-right text-gray-800">{formatDate(dataset.dateUploaded)}</dd>
+              <dt id="dataone-detail-version-count-label" className="text-gray-500">Versions</dt>
+              <dd id="dataone-detail-version-count-value" className="text-right text-gray-800">
+                {dataset.versionCount} version{dataset.versionCount === 1 ? '' : 's'}
+              </dd>
               <dt id="dataone-detail-temporal-label" className="text-gray-500">Temporal coverage</dt>
               <dd id="dataone-detail-temporal-value" className="text-right text-gray-800">
                 {formatDateRange(dataset.temporalCoverage.beginDate, dataset.temporalCoverage.endDate)}
