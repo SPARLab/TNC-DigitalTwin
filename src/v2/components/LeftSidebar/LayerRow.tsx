@@ -10,9 +10,18 @@ import { useLayers } from '../../context/LayerContext';
 interface LayerRowProps {
   layerId: string;
   name: string;
+  ariaLevel?: number;
+  controlsOnly?: boolean;
+  indented?: boolean;
 }
 
-export function LayerRow({ layerId, name }: LayerRowProps) {
+export function LayerRow({
+  layerId,
+  name,
+  ariaLevel = 2,
+  controlsOnly = false,
+  indented = false,
+}: LayerRowProps) {
   const {
     activeLayer,
     activateLayer,
@@ -24,12 +33,15 @@ export function LayerRow({ layerId, name }: LayerRowProps) {
     getPinnedByLayerId,
   } = useLayers();
 
-  const isActive = activeLayer?.layerId === layerId;
+  const isActive = !controlsOnly && activeLayer?.layerId === layerId;
   const isPinned = isLayerPinned(layerId);
   const isVisible = isLayerVisible(layerId);
   const pinned = getPinnedByLayerId(layerId);
 
-  const handleClick = () => activateLayer(layerId);
+  const handleClick = () => {
+    if (controlsOnly) return;
+    activateLayer(layerId);
+  };
 
   const handlePinClick = (e: ReactMouseEvent) => {
     e.stopPropagation();
@@ -46,9 +58,11 @@ export function LayerRow({ layerId, name }: LayerRowProps) {
   };
 
   // Active styling: yellow/amber background to match Map Layers widget
-  const activeClasses = isActive
-    ? 'bg-amber-50 border border-amber-300 font-semibold text-gray-900 shadow-sm'
-    : 'bg-white border border-gray-200 hover:border-gray-300 hover:shadow-sm';
+  const activeClasses = controlsOnly
+    ? 'bg-white border border-gray-200 hover:border-gray-300 hover:shadow-sm'
+    : isActive
+      ? 'bg-amber-50 border border-amber-300 font-semibold text-gray-900 shadow-sm'
+      : 'bg-white border border-gray-200 hover:border-gray-300 hover:shadow-sm';
 
   // Text color based on visibility and active state
   const textColor = isPinned && !isVisible && !isActive 
@@ -61,15 +75,18 @@ export function LayerRow({ layerId, name }: LayerRowProps) {
     <div
       id={`layer-row-${layerId}`}
       role="treeitem"
-      tabIndex={0}
+      aria-level={ariaLevel}
+      tabIndex={controlsOnly ? -1 : 0}
       onClick={handleClick}
       onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && handleClick()}
       className={`w-full group flex items-center gap-1.5 py-2 px-3 ml-1 mr-1 cursor-pointer
-                  text-sm rounded-lg transition-all duration-200 ${activeClasses}`}
+                  text-sm rounded-lg transition-all duration-200 ${indented ? 'ml-4' : 'ml-1'} ${activeClasses}
+                  ${controlsOnly ? 'cursor-default' : 'cursor-pointer'}`}
     >
       {/* Eye icon — only for pinned layers */}
       {isPinned && (
         <button
+          id={`layer-eye-${layerId}`}
           onClick={handleEyeClick}
           title={isVisible ? 'Hide on map' : 'Show on map'}
           className="flex-shrink-0 p-0.5 rounded hover:bg-gray-100 transition-colors"
@@ -90,6 +107,7 @@ export function LayerRow({ layerId, name }: LayerRowProps) {
       {/* Pin icon — blue when pinned (matching Pinned Layers section), gray on hover when not */}
       {isPinned ? (
         <button
+          id={`layer-unpin-${layerId}`}
           onClick={handlePinClick}
           title="Unpin layer"
           className="flex-shrink-0 p-0.5 rounded transition-colors"
@@ -98,6 +116,7 @@ export function LayerRow({ layerId, name }: LayerRowProps) {
         </button>
       ) : (
         <button
+          id={`layer-pin-${layerId}`}
           onClick={handlePinClick}
           title="Pin layer"
           className="flex-shrink-0 p-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity"

@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 1 / 10 tasks  
+**Progress:** 2 / 10 tasks  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry)  
 **Owner:** TBD
@@ -30,7 +30,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|--------------------------|-------------------|-------|
 | **6.1** | 🟢 | 2026-02-16 13:01 PST | Extend Data Model for Multi-Layer Services | Added multi-layer metadata fields/types and service-group detection in `useCatalogRegistry`; single-layer behavior preserved |
-| **6.2** | ⚪ | — | Left Sidebar: Collapsible Service Groups | Render multi-layer services as expandable rows; layer rows show pin/eye only |
+| **6.2** | 🟢 | 2026-02-16 13:07 PST | Left Sidebar: Collapsible Service Groups | Added `ServiceGroup` + controls-only child rows, service activation, 300ms expand/collapse, Arrow Left/Right + ARIA attributes |
 | **6.3** | ⚪ | — | TNC ArcGIS Service Module | Service URL builder, schema fetch, field list query |
 | **6.4** | ⚪ | — | TNC ArcGIS Adapter Shell | Create adapter skeleton with warmCache, RightSidebarContent, createMapLayer |
 | **6.5** | ⚪ | — | Right Sidebar: Service Overview (Multi-Layer) | Show service description, layer dropdown, "Browse {Layer}" and "Pin {Layer}" buttons |
@@ -262,13 +262,13 @@ interface ServiceGroupProps {
 ```
 
 **Acceptance Criteria:**
-- [ ] Multi-layer services render as collapsible groups
-- [ ] Single-layer services remain flat (unchanged)
-- [ ] Expand/collapse animation smooth (300ms)
-- [ ] Clicking service row activates service (shows overview in right sidebar)
-- [ ] Layer pin/eye icons functional (do NOT activate service)
-- [ ] Keyboard navigation: Arrow Right = expand, Arrow Left = collapse
-- [ ] ARIA: `role="tree"`, `aria-expanded`, `aria-level` attributes
+- [x] Multi-layer services render as collapsible groups
+- [x] Single-layer services remain flat (unchanged)
+- [x] Expand/collapse animation smooth (300ms)
+- [x] Clicking service row activates service (shows overview in right sidebar)
+- [x] Layer pin/eye icons functional (do NOT activate service)
+- [x] Keyboard navigation: Arrow Right = expand, Arrow Left = collapse
+- [x] ARIA: `role="tree"`, `aria-expanded`, `aria-level` attributes
 
 **Estimated Time:** 4-6 hours
 

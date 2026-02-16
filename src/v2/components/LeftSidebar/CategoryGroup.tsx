@@ -4,11 +4,13 @@
 // Dynamically populated from the Data Catalog via CatalogContext.
 // ============================================================================
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 import type { Category, CatalogLayer } from '../../types';
 import { LayerRow } from './LayerRow';
 import { LucideIcon } from '../shared/LucideIcon';
+import { ServiceGroup } from './ServiceGroup';
+import { useLayers } from '../../context/LayerContext';
 
 interface CategoryGroupProps {
   category: Category;
@@ -37,6 +39,8 @@ function visibleLayers(layers: CatalogLayer[], filter?: Set<string>): CatalogLay
 
 export function CategoryGroup({ category, filteredLayerIds, isSubcategory }: CategoryGroupProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [expandedServiceIds, setExpandedServiceIds] = useState<Set<string>>(new Set());
+  const { activeLayer, activateLayer } = useLayers();
 
   const totalVisible = countMatchingLayers(category, filteredLayerIds);
 
@@ -45,6 +49,38 @@ export function CategoryGroup({ category, filteredLayerIds, isSubcategory }: Cat
 
   const toggle = useCallback(() => setIsExpanded(prev => !prev), []);
   const directLayers = visibleLayers(category.layers, filteredLayerIds);
+  const toggleServiceExpand = useCallback((serviceId: string) => {
+    setExpandedServiceIds(prev => {
+      const next = new Set(prev);
+      if (next.has(serviceId)) {
+        next.delete(serviceId);
+      } else {
+        next.add(serviceId);
+      }
+      return next;
+    });
+  }, []);
+
+  const isServiceParent = useCallback((layer: CatalogLayer) => {
+    return !!(
+      layer.catalogMeta?.isMultiLayerService &&
+      !layer.catalogMeta.parentServiceId &&
+      layer.catalogMeta.siblingLayers &&
+      layer.catalogMeta.siblingLayers.length > 0
+    );
+  }, []);
+
+  const childrenByServiceId = useMemo(() => {
+    const map = new Map<string, CatalogLayer[]>();
+    for (const layer of directLayers) {
+      const parentServiceId = layer.catalogMeta?.parentServiceId;
+      if (!parentServiceId) continue;
+      const children = map.get(parentServiceId) ?? [];
+      children.push(layer);
+      map.set(parentServiceId, children);
+    }
+    return map;
+  }, [directLayers]);
 
   // Styling varies by depth
   const headerBgClasses = isSubcategory
@@ -87,9 +123,33 @@ export function CategoryGroup({ category, filteredLayerIds, isSubcategory }: Cat
           {/* Direct layers in this category */}
           {directLayers.length > 0 && (
             <div role="group" className={`bg-gray-50/50 py-1.5 space-y-1 ${isSubcategory ? 'ml-4 mr-2' : 'ml-2 mr-3'}`}>
-              {directLayers.map(layer => (
-                <LayerRow key={layer.id} layerId={layer.id} name={layer.name} />
-              ))}
+              {directLayers.map(layer => {
+                if (layer.catalogMeta?.parentServiceId) return null;
+
+                if (isServiceParent(layer)) {
+                  const serviceLayers = childrenByServiceId.get(layer.id) ?? [];
+                  if (serviceLayers.length === 0) {
+                    return (
+                      <LayerRow key={layer.id} layerId={layer.id} name={layer.name} />
+                    );
+                  }
+                  return (
+                    <ServiceGroup
+                      key={layer.id}
+                      service={layer}
+                      layers={serviceLayers}
+                      isExpanded={expandedServiceIds.has(layer.id)}
+                      isActiveService={activeLayer?.layerId === layer.id}
+                      onToggleExpand={() => toggleServiceExpand(layer.id)}
+                      onActivateService={() => activateLayer(layer.id)}
+                    />
+                  );
+                }
+
+                return (
+                  <LayerRow key={layer.id} layerId={layer.id} name={layer.name} />
+                );
+              })}
             </div>
           )}
 

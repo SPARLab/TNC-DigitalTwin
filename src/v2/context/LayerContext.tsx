@@ -280,6 +280,14 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     if (!layer) return;
 
     const pinned = pinnedLayers.find(p => p.layerId === layerId);
+    const isService = !!(
+      layer.catalogMeta?.isMultiLayerService &&
+      !layer.catalogMeta?.parentServiceId &&
+      layer.catalogMeta?.siblingLayers &&
+      layer.catalogMeta.siblingLayers.length > 0
+    );
+    const selectedSubLayerId = isService ? layer.catalogMeta?.siblingLayers?.[0]?.id : undefined;
+
     setActiveLayer({
       id: layerId,
       layerId,
@@ -288,6 +296,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
       isPinned: !!pinned,
       viewId,
       featureId,
+      isService,
+      selectedSubLayerId,
     });
 
     // DFT-001: clicking a pinned-but-hidden layer restores visibility
