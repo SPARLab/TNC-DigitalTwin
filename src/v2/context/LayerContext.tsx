@@ -563,7 +563,6 @@ export function LayerProvider({ children }: { children: ReactNode }) {
               targetView.filterSummary === nextFilterSummary &&
               targetView.resultCount === resultCount &&
               animlFiltersEqual(targetView.animlFilters, normalizedFilters)
-              animlFiltersEqual(targetView.animlFilters, normalizedFilters)
             ) return p;
 
             return {
@@ -588,14 +587,12 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             p.filterSummary === nextFilterSummary &&
             p.resultCount === resultCount &&
             animlFiltersEqual(p.animlFilters, normalizedFilters)
-            animlFiltersEqual(p.animlFilters, normalizedFilters)
           ) return p;
 
           return {
             ...p,
             filterCount: nextFilterCount,
             filterSummary: nextFilterSummary,
-            animlFilters: normalizedFilters,
             animlFilters: normalizedFilters,
             resultCount,
           };
