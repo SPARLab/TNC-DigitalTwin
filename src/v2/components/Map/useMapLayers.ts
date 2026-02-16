@@ -14,12 +14,34 @@ import { useEffect, useRef, useCallback } from 'react';
 import type Layer from '@arcgis/core/layers/Layer';
 import { useLayers } from '../../context/LayerContext';
 import { useMap } from '../../context/MapContext';
+import { useCatalog } from '../../context/CatalogContext';
 import { createMapLayer, IMPLEMENTED_LAYERS } from './layers';
 import { useAllMapBehaviors } from '../../dataSources/registry';
+
+type DefinitionExpressionLayer = Layer & { definitionExpression?: string };
+type MapImageSublayerLike = { definitionExpression?: string };
+type MapImageLayerLike = Layer & {
+  sublayers?: { getItemAt?: (index: number) => MapImageSublayerLike | undefined } | MapImageSublayerLike[];
+};
+
+function normalizeWhereClause(whereClause?: string): string {
+  const normalized = whereClause?.trim();
+  return normalized ? normalized : '1=1';
+}
+
+function getFirstMapImageSublayer(layer: Layer): MapImageSublayerLike | undefined {
+  const mapImageLayer = layer as MapImageLayerLike;
+  const sublayers = mapImageLayer.sublayers;
+  if (!sublayers) return undefined;
+  if (Array.isArray(sublayers)) return sublayers[0];
+  if (typeof sublayers.getItemAt === 'function') return sublayers.getItemAt(0);
+  return undefined;
+}
 
 export function useMapLayers() {
   const { pinnedLayers, activeLayer } = useLayers();
   const { viewRef, mapReady, showToast } = useMap();
+  const { layerMap } = useCatalog();
   const managedLayersRef = useRef<Map<string, Layer>>(new Map());
   const warnedLayersRef = useRef<Set<string>>(new Set());
 
@@ -98,6 +120,53 @@ export function useMapLayers() {
       }
     }
   }, [pinnedLayers, activeLayer]);
+
+  // Sync TNC ArcGIS filter updates to map layer definitionExpression.
+  useEffect(() => {
+    const managed = managedLayersRef.current;
+    for (const pinned of pinnedLayers) {
+      const catalogLayer = layerMap.get(pinned.layerId);
+      if (catalogLayer?.dataSource !== 'tnc-arcgis') continue;
+
+      const arcLayer = managed.get(pinned.layerId);
+      if (!arcLayer) continue;
+
+      const whereClause = normalizeWhereClause(pinned.tncArcgisFilters?.whereClause);
+      const featureLayer = arcLayer as DefinitionExpressionLayer;
+      if (typeof featureLayer.definitionExpression === 'string') {
+        if (featureLayer.definitionExpression !== whereClause) {
+          featureLayer.definitionExpression = whereClause;
+        }
+        continue;
+      }
+
+      const firstSublayer = getFirstMapImageSublayer(arcLayer);
+      if (
+        firstSublayer &&
+        typeof firstSublayer.definitionExpression === 'string' &&
+        firstSublayer.definitionExpression !== whereClause
+      ) {
+        firstSublayer.definitionExpression = whereClause;
+      }
+    }
+  }, [pinnedLayers, layerMap]);
+
+  // Keep ArcGIS map draw order in sync with Map Layers widget order.
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view?.map) return;
+
+    const map = view.map;
+    const managed = managedLayersRef.current;
+    const pinnedArcLayers = pinnedLayers
+      .map((pinned) => managed.get(pinned.layerId))
+      .filter((layer): layer is Layer => !!layer);
+
+    // Move from bottom-most pinned row to top-most so row[0] ends up on top.
+    for (let i = pinnedArcLayers.length - 1; i >= 0; i -= 1) {
+      map.reorder(pinnedArcLayers[i], map.layers.length - 1);
+    }
+  }, [pinnedLayers, viewRef, mapReady]);
 
   // Toast for activating unimplemented layers (browsing, not yet pinned)
   useEffect(() => {

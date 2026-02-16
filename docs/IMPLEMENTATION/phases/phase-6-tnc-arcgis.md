@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 6 / 10 tasks  
+**Progress:** 7 / 14 tasks  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry)  
 **Owner:** TBD
@@ -35,10 +35,14 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **6.4** | 🟢 | 2026-02-16 13:15 PST | TNC ArcGIS Adapter Shell | Added `tnc-arcgis` adapter + context warm-cache hook, dynamic registry wiring, and map-layer factory support for FeatureServer/MapServer |
 | **6.5** | 🟢 | 2026-02-16 13:29 PST | Right Sidebar: Service Overview (Multi-Layer) | Added service-level overview in `TNCArcGISOverviewTab` with sub-layer dropdown, layer list, dynamic Browse/Pin actions, pinned badge state, and service sub-layer selection state in `LayerContext` |
 | **6.6** | 🟢 | 2026-02-16 14:22 PST | Right Sidebar: Generic Filter UI (MVP) | Added `GenericFilterUI` + `TNCArcGISBrowseTab` schema-driven filters, SQL WHERE builder, preview validation, and LayerContext sync for TNC filter metadata |
-| **6.7** | ⚪ | — | Map Layer Rendering | Add FeatureLayer/MapImageLayer to map with definition expression from filters |
+| **6.7** | 🟢 | 2026-02-16 13:42 PST | Map Layer Rendering | Synced TNC `definitionExpression` updates from filter changes and added map z-order sync from Map Layers drag-reorder in `useMapLayers` |
 | **6.8** | ⚪ | — | Search Enhancement | Match service + layer names; expand parent service when layer matches |
 | **6.9** | ⚪ | — | Keyboard Navigation & ARIA | Arrow keys for expand/collapse, ARIA tree structure, focus management |
 | **6.10** | ⚪ | — | QA & Edge Cases | Single-layer services, empty results, malformed queries, schema fetch errors |
+| **6.11** | 🟡 | 2026-02-16 14:01 PST | Capability-Aware Browse UX | Decision locked: FeatureServer defaults to records/table-first browse; MapServer/ImageServer use map-first + legend/metadata |
+| **6.12** | 🟡 | 2026-02-16 14:01 PST | Terminology + CTA Realignment | Decision locked: remove right-sidebar pin actions for now; keep pinning in left sidebar + Map Layers widget only |
+| **6.13** | ⚪ | — | Multi-Layer Service Discoverability | Ensure known services (e.g., Coastal and Marine Data) are easy to find and visibly grouped with expandable child layers |
+| **6.14** | ⚪ | — | Service Reference + External Viewer | Add service webpage/embed panel + "Open in new tab" action to mirror original app workflow |
 
 **Status Legend:**  
 ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
@@ -597,7 +601,7 @@ function buildWhereClause(filters: FilterRow[]): string {
 
 **Goal:** Render TNC layers on map with filters applied.
 
-**Implementation:** Already in adapter (Task 6.4), but needs integration testing.
+**Implementation:** Completed integration in `useMapLayers` (reactive WHERE sync + pinned-layer reorder sync).
 
 **Map Behavior:**
 
@@ -614,11 +618,11 @@ function buildWhereClause(filters: FilterRow[]): string {
 - Future (Phase 7): Smart symbology based on field values (e.g., color by fire year)
 
 **Acceptance Criteria:**
-- [ ] FeatureLayer added to map when layer pinned
-- [ ] `definitionExpression` updates when filters change
-- [ ] Layer visibility controlled by eye toggle in Map Layers widget
-- [ ] Multiple TNC layers can be pinned simultaneously
-- [ ] Z-order controlled by Map Layers widget drag-reorder
+- [x] FeatureLayer added to map when layer pinned
+- [x] `definitionExpression` updates when filters change
+- [x] Layer visibility controlled by eye toggle in Map Layers widget
+- [x] Multiple TNC layers can be pinned simultaneously
+- [x] Z-order controlled by Map Layers widget drag-reorder
 
 **Estimated Time:** 2-3 hours
 
@@ -774,6 +778,108 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 
 ---
 
+### 6.11: Capability-Aware Browse UX (Feedback Pivot)
+
+**Goal:** Avoid showing SQL-style filtering UI for layer types where it does not match user mental models.
+
+**Problem (User Feedback):**
+- Image-focused layers currently show field/operator/value query builder, which feels incorrect and confusing.
+- Users expect immediate visual exploration first, not query authoring first.
+
+**New Behavior:**
+- **FeatureServer (queryable):** Default to records/table-first exploration. Filters move behind optional "Advanced Filter".
+- **MapServer/ImageServer (non-feature-first):** Hide SQL builder; show legend, symbology/source metadata, and view controls.
+- Always show a concise capability chip in Overview/Browse: `Feature`, `Map Image`, or `Imagery`.
+- For narrow right-sidebar constraints, records view may render as a map-overlay panel/drawer instead of in-sidebar table.
+
+**Decision Notes (Feb 16, 2026):**
+- User confirmed table-first records browsing for FeatureServer layers.
+- User explicitly called out right-sidebar width constraints; evaluate map-overlay records panel pattern.
+
+**Acceptance Criteria:**
+- [ ] Query builder renders only for layers that are feature-query capable
+- [ ] Non-feature layers show no field/operator/value controls
+- [ ] Capability label is visible and consistent in right sidebar
+- [ ] Empty/confusing "Browse" states replaced with clear, layer-type-specific guidance
+
+**Estimated Time:** 4-6 hours
+
+---
+
+### 6.12: Terminology + CTA Realignment (Feedback Pivot)
+
+**Goal:** Align language and actions with established user mental model ("discover in left sidebar, persist in Map Layers").
+
+**Problem (User Feedback):**
+- "Browse Features" is ambiguous for non-feature layers.
+- Pinning from right sidebar feels inconsistent with learned workflow.
+
+**New Behavior:**
+- Replace vague labels (`Browse Features`) with capability-aware labels (e.g., `Explore Layer`, `View Records`, `View Raster Info`).
+- Remove right-sidebar pin actions for now; reinforce pinning from left sidebar / Map Layers only.
+- Add short helper copy at top of TNC views: "Select and pin layers in the left sidebar. Use this panel to inspect details."
+
+**Decision Notes (Feb 16, 2026):**
+- User requested removing right-sidebar pin entirely for this phase and revisiting later.
+
+**Acceptance Criteria:**
+- [ ] Right sidebar CTA text is capability-aware and non-ambiguous
+- [ ] Primary pinning affordance remains consistent with existing app patterns
+- [ ] No duplicate high-emphasis CTAs that compete for the same action
+- [ ] First-time users can identify where to pin within 5 seconds (heuristic walkthrough)
+
+**Estimated Time:** 3-5 hours
+
+---
+
+### 6.13: Multi-Layer Service Discoverability (Feedback Pivot)
+
+**Goal:** Make known service groups easy to find and inspect in the left sidebar.
+
+**Problem (User Feedback):**
+- Expected services like "Coastal and Marine Data" are hard to locate.
+- Search currently feels broken when matching child layers under collapsed parents.
+
+**New Behavior:**
+- Search must match service names and child layer names.
+- If child layer matches, parent service auto-expands and remains visible.
+- Add lightweight path context under search result rows (Category > Service > Layer).
+- Ensure service-parent rows are never hidden when any child matches.
+
+**Acceptance Criteria:**
+- [ ] Search works for both service and child-layer names
+- [ ] Parent service auto-expands for child match
+- [ ] No blank category blocks during service/child filtered states
+- [ ] "Coastal and Marine Data" (and peers) are discoverable via category OR search
+
+**Estimated Time:** 4-6 hours
+
+---
+
+### 6.14: Service Reference + External Viewer (Feedback Pivot)
+
+**Goal:** Restore trusted source navigation from the original workflow.
+
+**Problem (User Feedback):**
+- Users expect a service-level website/viewer reference and direct handoff to external map pages.
+
+**New Behavior:**
+- Show service reference card in Overview with:
+  - source URL label
+  - optional embedded iframe preview (if allowed by target)
+  - `Open in new tab` action
+- If iframe blocked, show graceful fallback with explanatory message.
+
+**Acceptance Criteria:**
+- [ ] Service reference card visible for TNC services
+- [ ] `Open in new tab` action present and functional
+- [ ] iframe fallback handles CSP/X-Frame-Options failures without breaking layout
+- [ ] Behavior mirrors legacy app expectations where possible
+
+**Estimated Time:** 3-5 hours
+
+---
+
 ## Design Decisions Summary
 
 ### Why Service-Level Activation?
@@ -808,6 +914,10 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - Scalable to any TNC layer without custom code
 - Target audience is researchers (DFT-011) — comfortable with SQL-like filters
 - Phase 7 can add smart widgets (date pickers, sliders) via field type introspection
+
+**Status Update (Feb 16, 2026 feedback):**
+- Revisit this assumption for non-feature layers.
+- New direction: capability-aware Browse UX (Task 6.11) so Image/Map layers are exploration-first, not SQL-first.
 
 ### Why Collapsible Service Groups?
 
@@ -859,5 +969,10 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - Is service-level activation intuitive, or should layer rows also activate?
 - Is the layer dropdown in Overview useful, or should we skip straight to Browse?
 - Are generic filters sufficient, or do we need smart widgets sooner?
+
+**Current Rendering Clarification (Feb 16, 2026):**
+- Multi-layer services are not rendered as "all child layers at once" by default.
+- The service row is organizational (activation target for overview), while concrete child layers render when individually pinned/activated.
+- If a service has 10 child layers, the system does **not** automatically draw all 10 unless the user explicitly pins/enables those child layers.
 
 **Branch Strategy:** Develop on `v2/tnc-arcgis` branch. Merge to `v2/main` after all 10 tasks complete and QA passes.
