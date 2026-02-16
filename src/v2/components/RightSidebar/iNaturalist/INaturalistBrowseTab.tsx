@@ -32,6 +32,7 @@ export function INaturalistBrowseTab() {
     setSelectedTaxa,
     setDateRange,
     selectAll,
+    clearAll,
     allObservations,
   } = useINaturalistFilter();
   const { activeLayer, lastEditFiltersRequest, getPinnedByLayerId, syncINaturalistFilters } = useLayers();
@@ -224,12 +225,22 @@ export function INaturalistBrowseTab() {
             Filter Observations
           </span>
           {hasFilter && (
-            <button
-              onClick={selectAll}
-              className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
-            >
-              Select All
-            </button>
+            <div id="inat-filter-actions" className="flex items-center gap-2">
+              <button
+                id="inat-filter-select-all"
+                onClick={selectAll}
+                className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+              >
+                Select All
+              </button>
+              <button
+                id="inat-filter-clear-all"
+                onClick={clearAll}
+                className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+              >
+                Clear All
+              </button>
+            </div>
           )}
         </div>
 
@@ -262,7 +273,7 @@ export function INaturalistBrowseTab() {
                     type="checkbox"
                     checked={isSelected}
                     onChange={() => toggleTaxon(taxon.value)}
-                    className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                    className="w-4 h-4 accent-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                   />
                   <span className="text-[10px]">{taxon.emoji}</span>
                   <span className={`text-sm flex-1 ${isSelected ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>

@@ -25,6 +25,7 @@
 | 15 | **iNaturalist: Map Marker Click → Zoom + Detail View** | ✅ | High | Click map marker: zoom to observation, open detail view in right sidebar |
 | 16 | **iNaturalist: Remove Bookmark Button/Action** | ✅ | Low | Already stubbed; clean up unused bookmark logic from observation cards |
 | 17 | **iNaturalist: Compact Filter Section (Dropdown)** | ✅ | Medium | Filter Observations in Browse tab: tall list → dropdown; include Select All |
+| 17b | **iNaturalist: Add Clear All to Legend Widget** | 🟡 | Low | Optional polish in progress: added legend action + emerald styling pass; behavior parity follow-up if needed |
 | 18 | **iNaturalist: Rename Legend Widget Title** | ✅ | Low | Change "Filter Observations" → "iNaturalist Taxa" in floating legend widget |
 | 19 | **iNaturalist: Add Observation Search Bar** | ✅ | Medium | Search observations by common/scientific name in Browse tab |
 | 20 | **iNaturalist: Reduce Pagination to 10 per Page** | ✅ | Low | Change PAGE_SIZE from 20 → 10 in useINaturalistObservations |
@@ -286,6 +287,24 @@ Implement the iNaturalist observations browse experience in the right sidebar. T
 
 **Files:**
 - `INaturalistBrowseTab.tsx`
+
+---
+
+### Task 17b: Add Clear All to Legend Widget (Optional)
+
+**Status:** 🟡 In Progress  
+**Priority:** Low (optional)
+
+**Goal:** Add "Clear All" alongside "Show All" in the floating iNaturalist legend widget. When filters are active, users can "Show All" to select all taxa; "Clear All" would deselect all taxa in one click.
+
+**Implementation:**
+- Updated `INaturalistLegendWidget` header actions to show both `Select All` and `Clear All` when filters are active
+- Aligned selected legend row styling from blue to emerald for iNaturalist theme consistency
+- Follow-up (optional): confirm whether `Clear All` should strictly mean "deselect every taxon" vs "reset to default all-visible"
+
+**Files:**
+- `INaturalistLegendWidget.tsx`
+- `INaturalistFilterContext.tsx` (if clearAll needed)
 
 ---
 

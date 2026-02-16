@@ -12,7 +12,7 @@ import { useINaturalistFilter } from '../../../context/INaturalistFilterContext'
 export function INaturalistLegendWidget() {
   const [isExpanded, setIsExpanded] = useState(true);
   const {
-    selectedTaxa, toggleTaxon, selectAll, hasFilter,
+    selectedTaxa, toggleTaxon, selectAll, clearAll, hasFilter,
     taxonCounts, loading, dataLoaded,
   } = useINaturalistFilter();
 
@@ -39,8 +39,6 @@ export function INaturalistLegendWidget() {
 
   if (groups.length === 0) return null;
 
-  const allVisible = !hasFilter;
-
   return (
     <div
       id="inat-legend-widget"
@@ -64,14 +62,23 @@ export function INaturalistLegendWidget() {
           </button>
           <h3 className="text-sm font-semibold text-gray-900">iNaturalist Taxa</h3>
         </div>
-        {!allVisible && (
-          <button
-            id="inat-legend-show-all"
-            onClick={selectAll}
-            className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-          >
-            Show All
-          </button>
+        {hasFilter && (
+          <div id="inat-legend-actions" className="flex items-center gap-2">
+            <button
+              id="inat-legend-select-all"
+              onClick={selectAll}
+              className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+            >
+              Select All
+            </button>
+            <button
+              id="inat-legend-clear-all"
+              onClick={clearAll}
+              className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+            >
+              Clear All
+            </button>
+          </div>
         )}
       </div>
 
@@ -81,7 +88,7 @@ export function INaturalistLegendWidget() {
           {groups.map(group => {
             const isSelected = hasFilter ? selectedTaxa.has(group.value) : true;
             const bgColor = isSelected
-              ? 'bg-blue-50 hover:bg-blue-100 border-blue-200'
+              ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200'
               : 'bg-gray-100 hover:bg-gray-150 border-gray-200 opacity-60';
 
             return (
