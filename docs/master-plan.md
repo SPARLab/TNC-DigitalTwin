@@ -239,6 +239,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 13, 2026 | Phase 0/1/3 | **Task 27 complete: Save View / Save With Filters — sync with Map Layers.** Dendra now uses explicit "Save View" and "Save With Filters" actions (replacing bookmark terminology). Right-sidebar filter state persists to Map Layers via `syncDendraFilters`. One-shot hydration when switching child views or Edit Filters. Extends cross-layer filtered-view contract to Dendra. | Claude |
 | Feb 13, 2026 | Phase 1 | **Task 28 complete: iNaturalist detail view crash fixed.** Hook-order mismatch (early return before hooks) caused "Rendered fewer hooks than expected." Moved detail-view return after all hooks; hardened handleViewOnMap with try/catch and coordinate validation. RightSidebar auto-switches to Browse when map observation clicked. Phase 1 all tasks complete. | Claude |
 | Feb 13, 2026 | Phase 1 | **Phase 1 iNaturalist complete.** All 13 granular tasks done including Tasks 26–27 (dynamic view names, user-renamable filtered views). Cross-branch merge contract documented. | User + Claude |
 | Feb 13, 2026 | All | Added cross-layer filtered-view naming decision: universal manual rename in shared Map Layers logic with per-data-source auto-naming algorithms. Documented as an incremental branch rollout contract to avoid regressions during parallel merges. | User + Claude |

@@ -10,6 +10,7 @@ import type {
   UndoAction,
   DataSource,
   INaturalistViewFilters,
+  DendraViewFilters,
 } from '../types';
 import { useCatalog } from './CatalogContext';
 import { TAXON_CONFIG } from '../components/Map/layers/taxonConfig';
@@ -30,6 +31,12 @@ interface LayerContextValue {
   syncINaturalistFilters: (
     layerId: string,
     filters: INaturalistViewFilters,
+    resultCount: number,
+    viewId?: string,
+  ) => void;
+  syncDendraFilters: (
+    layerId: string,
+    filters: DendraViewFilters,
     resultCount: number,
     viewId?: string,
   ) => void;
@@ -73,6 +80,55 @@ function getINaturalistFilterCount(filters: INaturalistViewFilters): number {
   return filters.selectedTaxa.length + (filters.startDate || filters.endDate ? 1 : 0);
 }
 
+function buildDendraFilterSummary(filters: DendraViewFilters): string | undefined {
+  const parts: string[] = [];
+  if (filters.showActiveOnly) {
+    parts.push('Stations: Active only');
+  }
+  if (filters.selectedStationName) {
+    parts.push(`Station: ${filters.selectedStationName}`);
+  }
+  if (filters.selectedDatastreamName) {
+    parts.push(`Datastream: ${filters.selectedDatastreamName}`);
+  }
+  if (filters.startDate || filters.endDate) {
+    const rangeText = `${filters.startDate || 'Any'} to ${filters.endDate || 'Any'}`;
+    parts.push(`Date: ${rangeText}`);
+  }
+  if (filters.aggregation) {
+    parts.push(`Aggregation: ${filters.aggregation}`);
+  }
+  return parts.length > 0 ? parts.join(', ') : undefined;
+}
+
+function getDendraFilterCount(filters: DendraViewFilters): number {
+  let count = 0;
+  if (filters.showActiveOnly) count += 1;
+  if (filters.selectedStationId != null) count += 1;
+  if (filters.selectedDatastreamId != null) count += 1;
+  if (filters.startDate || filters.endDate) count += 1;
+  if (filters.aggregation && filters.aggregation !== 'hourly') count += 1;
+  return count;
+}
+
+function buildDendraViewName(filters: DendraViewFilters): string {
+  const stationPart = filters.selectedStationName?.trim();
+  const datastreamPart = filters.selectedDatastreamName?.trim();
+  const datePart = (filters.startDate || filters.endDate)
+    ? `${filters.startDate || 'Any start'} to ${filters.endDate || 'Any end'}`
+    : '';
+
+  if (stationPart && datastreamPart && datePart) {
+    return `${stationPart}: ${datastreamPart} (${datePart})`;
+  }
+  if (stationPart && datastreamPart) return `${stationPart}: ${datastreamPart}`;
+  if (datastreamPart && datePart) return `${datastreamPart} (${datePart})`;
+  if (datastreamPart) return datastreamPart;
+  if (stationPart) return stationPart;
+  if (filters.showActiveOnly) return 'Active Stations';
+  return 'All Stations';
+}
+
 const TAXON_LABEL_BY_VALUE = new Map(TAXON_CONFIG.map(t => [t.value, t.label]));
 
 function buildINaturalistViewName(filters: INaturalistViewFilters): string {
@@ -108,6 +164,24 @@ function filtersEqual(
   if (a.startDate !== b.startDate || a.endDate !== b.endDate) return false;
   if (a.selectedTaxa.length !== b.selectedTaxa.length) return false;
   return a.selectedTaxa.every((t, i) => t === b.selectedTaxa[i]);
+}
+
+function dendraFiltersEqual(
+  a: DendraViewFilters | undefined,
+  b: DendraViewFilters | undefined,
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    a.showActiveOnly === b.showActiveOnly &&
+    a.selectedStationId === b.selectedStationId &&
+    a.selectedStationName === b.selectedStationName &&
+    a.selectedDatastreamId === b.selectedDatastreamId &&
+    a.selectedDatastreamName === b.selectedDatastreamName &&
+    a.startDate === b.startDate &&
+    a.endDate === b.endDate &&
+    a.aggregation === b.aggregation
+  );
 }
 
 export function LayerProvider({ children }: { children: ReactNode }) {
@@ -268,6 +342,16 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                     filterCount: 0,
                     filterSummary: undefined,
                     inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+                    dendraFilters: {
+                      showActiveOnly: false,
+                      selectedStationId: undefined,
+                      selectedStationName: undefined,
+                      selectedDatastreamId: undefined,
+                      selectedDatastreamName: undefined,
+                      startDate: undefined,
+                      endDate: undefined,
+                      aggregation: undefined,
+                    },
                   }
                 : v
             ),
@@ -278,6 +362,16 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           filterCount: 0,
           filterSummary: undefined,
           inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+          dendraFilters: {
+            showActiveOnly: false,
+            selectedStationId: undefined,
+            selectedStationName: undefined,
+            selectedDatastreamId: undefined,
+            selectedDatastreamName: undefined,
+            startDate: undefined,
+            endDate: undefined,
+            aggregation: undefined,
+          },
           distinguisher: undefined,
         };
       })
@@ -357,6 +451,80 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const syncDendraFilters = useCallback(
+    (layerId: string, filters: DendraViewFilters, resultCount: number, viewId?: string) => {
+      setPinnedLayers(prev => {
+        const nextLayers = prev.map(p => {
+          if (p.layerId !== layerId) return p;
+
+          const normalizedFilters: DendraViewFilters = {
+            showActiveOnly: !!filters.showActiveOnly,
+            selectedStationId: filters.selectedStationId,
+            selectedStationName: filters.selectedStationName,
+            selectedDatastreamId: filters.selectedDatastreamId,
+            selectedDatastreamName: filters.selectedDatastreamName,
+            startDate: filters.startDate,
+            endDate: filters.endDate,
+            aggregation: filters.aggregation,
+          };
+          const nextFilterCount = getDendraFilterCount(normalizedFilters);
+          const nextFilterSummary = buildDendraFilterSummary(normalizedFilters);
+
+          if (viewId && p.views) {
+            const targetView = p.views.find(v => v.id === viewId);
+            const nextViewName = targetView?.isNameCustom
+              ? targetView.name
+              : buildDendraViewName(normalizedFilters);
+
+            if (
+              targetView &&
+              targetView.name === nextViewName &&
+              targetView.filterCount === nextFilterCount &&
+              targetView.filterSummary === nextFilterSummary &&
+              targetView.resultCount === resultCount &&
+              dendraFiltersEqual(targetView.dendraFilters, normalizedFilters)
+            ) return p;
+
+            return {
+              ...p,
+              views: p.views.map(v =>
+                v.id === viewId
+                  ? {
+                      ...v,
+                      name: nextViewName,
+                      filterCount: nextFilterCount,
+                      filterSummary: nextFilterSummary,
+                      dendraFilters: normalizedFilters,
+                      resultCount,
+                    }
+                  : v
+              ),
+            };
+          }
+
+          if (
+            p.filterCount === nextFilterCount &&
+            p.filterSummary === nextFilterSummary &&
+            p.resultCount === resultCount &&
+            dendraFiltersEqual(p.dendraFilters, normalizedFilters)
+          ) return p;
+
+          return {
+            ...p,
+            filterCount: nextFilterCount,
+            filterSummary: nextFilterSummary,
+            dendraFilters: normalizedFilters,
+            resultCount,
+          };
+        });
+
+        const changed = nextLayers.some((l, i) => l !== prev[i]);
+        return changed ? nextLayers : prev;
+      });
+    },
+    []
+  );
+
   const reorderLayers = useCallback((fromIndex: number, toIndex: number) => {
     setPinnedLayers(prev => {
       const next = [...prev];
@@ -370,6 +538,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     setPinnedLayers(prev =>
       prev.map(p => {
         if (p.id !== pinnedId) return p;
+        const isDendraLayer = layerMap.get(p.layerId)?.dataSource === 'dendra';
         
         // If already nested, add a new view
         if (p.views && p.views.length > 0) {
@@ -380,13 +549,40 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             isVisible: false,
             filterCount: 0,
             inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+            dendraFilters: isDendraLayer
+              ? {
+                  showActiveOnly: false,
+                  selectedStationId: undefined,
+                  selectedStationName: undefined,
+                  selectedDatastreamId: undefined,
+                  selectedDatastreamName: undefined,
+                  startDate: undefined,
+                  endDate: undefined,
+                  aggregation: undefined,
+                }
+              : undefined,
           };
           return { ...p, views: [...p.views, newView] };
         }
         
         // Convert flat → nested: current state becomes View 1, add empty View 2
-        const view1Name = p.distinguisher || buildINaturalistViewName(
-          p.inaturalistFilters || { selectedTaxa: [], startDate: undefined, endDate: undefined }
+        const view1Name = p.distinguisher || (
+          isDendraLayer
+            ? buildDendraViewName(
+                p.dendraFilters || {
+                  showActiveOnly: false,
+                  selectedStationId: undefined,
+                  selectedStationName: undefined,
+                  selectedDatastreamId: undefined,
+                  selectedDatastreamName: undefined,
+                  startDate: undefined,
+                  endDate: undefined,
+                  aggregation: undefined,
+                }
+              )
+            : buildINaturalistViewName(
+                p.inaturalistFilters || { selectedTaxa: [], startDate: undefined, endDate: undefined }
+              )
         );
         const view1 = {
           id: crypto.randomUUID(),
@@ -396,6 +592,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           filterCount: p.filterCount,
           filterSummary: p.filterSummary,
           inaturalistFilters: p.inaturalistFilters,
+          dendraFilters: p.dendraFilters,
           resultCount: p.resultCount,
         };
         const view2 = {
@@ -405,6 +602,18 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           isVisible: false,
           filterCount: 0,
           inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+          dendraFilters: isDendraLayer
+            ? {
+                showActiveOnly: false,
+                selectedStationId: undefined,
+                selectedStationName: undefined,
+                selectedDatastreamId: undefined,
+                selectedDatastreamName: undefined,
+                startDate: undefined,
+                endDate: undefined,
+                aggregation: undefined,
+              }
+            : undefined,
         };
         
         // Clear flat-level filter data (now in views)
@@ -414,12 +623,24 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           filterCount: 0,
           filterSummary: undefined,
           inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+          dendraFilters: isDendraLayer
+            ? {
+                showActiveOnly: false,
+                selectedStationId: undefined,
+                selectedStationName: undefined,
+                selectedDatastreamId: undefined,
+                selectedDatastreamName: undefined,
+                startDate: undefined,
+                endDate: undefined,
+                aggregation: undefined,
+              }
+            : undefined,
           distinguisher: undefined,
           resultCount: undefined,
         };
       })
     );
-  }, []);
+  }, [layerMap]);
 
   const removeView = useCallback((pinnedId: string, viewId: string) => {
     setPinnedLayers(prev =>
@@ -438,6 +659,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             filterCount: lastView.filterCount,
             filterSummary: lastView.filterSummary,
             inaturalistFilters: lastView.inaturalistFilters,
+            dendraFilters: lastView.dendraFilters,
             distinguisher: lastView.isNameCustom ? lastView.name : undefined,
             resultCount: lastView.resultCount,
           };
@@ -457,10 +679,24 @@ export function LayerProvider({ children }: { children: ReactNode }) {
 
         const targetView = p.views.find(v => v.id === viewId);
         if (!targetView) return p;
+        const isDendraLayer = layerMap.get(p.layerId)?.dataSource === 'dendra';
 
-        const autoName = buildINaturalistViewName(
-          targetView.inaturalistFilters || { selectedTaxa: [], startDate: undefined, endDate: undefined }
-        );
+        const autoName = isDendraLayer
+          ? buildDendraViewName(
+              targetView.dendraFilters || {
+                showActiveOnly: false,
+                selectedStationId: undefined,
+                selectedStationName: undefined,
+                selectedDatastreamId: undefined,
+                selectedDatastreamName: undefined,
+                startDate: undefined,
+                endDate: undefined,
+                aggregation: undefined,
+              }
+            )
+          : buildINaturalistViewName(
+              targetView.inaturalistFilters || { selectedTaxa: [], startDate: undefined, endDate: undefined }
+            );
         const nextName = trimmedName || autoName;
         const nextIsCustom = trimmedName.length > 0;
 
@@ -478,7 +714,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         };
       })
     );
-  }, []);
+  }, [layerMap]);
 
   const isLayerPinned = useCallback(
     (layerId: string) => pinnedLayers.some(p => p.layerId === layerId),
@@ -524,6 +760,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         toggleChildVisibility,
         clearFilters,
         syncINaturalistFilters,
+        syncDendraFilters,
         reorderLayers,
         createNewView,
         removeView,
