@@ -10,7 +10,7 @@
 // ============================================================================
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Loader2, AlertCircle, ChevronDown, Search, X, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertCircle, ChevronDown, Search, X, Calendar } from 'lucide-react';
 import {
   useINaturalistObservations,
   TAXON_CATEGORIES,
@@ -22,6 +22,7 @@ import { useINaturalistFilter } from '../../../context/INaturalistFilterContext'
 import { useLayers } from '../../../context/LayerContext';
 import { ObservationCard } from './ObservationCard';
 import { INaturalistDetailView } from './INaturalistDetailView';
+import { InlineLoadingRow, RefreshLoadingRow } from '../../shared/loading/LoadingPrimitives';
 
 export function INaturalistBrowseTab() {
   const {
@@ -32,9 +33,10 @@ export function INaturalistBrowseTab() {
     setSelectedTaxa,
     setDateRange,
     selectAll,
+    clearAll,
     allObservations,
   } = useINaturalistFilter();
-  const { activeLayer, lastEditFiltersRequest, getPinnedByLayerId, syncINaturalistFilters } = useLayers();
+  const { activeLayer, lastEditFiltersRequest, lastFiltersClearedTimestamp, getPinnedByLayerId, syncINaturalistFilters } = useLayers();
 
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
@@ -114,14 +116,19 @@ export function INaturalistBrowseTab() {
   const filterCount = hasFilter ? selectedTaxa.size : TAXON_CATEGORIES.length;
   const hasActiveSearch = debouncedSearchTerm.trim().length > 0;
   const hasDateFilter = !!(startDate || endDate);
+  const hasStaleResults = allObservations.length > 0;
+  const showInitialLoading = loading && !hasStaleResults;
+  const showRefreshLoading = loading && hasStaleResults;
 
   // ── Hydrate Browse filters (ONE-SHOT, not continuous) ──────────────────────
   // Runs ONLY when the user explicitly triggers it:
   //   1. "Edit Filters" clicked in Map Layers widget (lastEditFiltersRequest)
   //   2. Active view switches (activeLayer.viewId)
+  //   3. "Clear" clicked in Map Layers widget (lastFiltersClearedTimestamp)
   // NOT on every pinned-layer update — that would fight the sync effect below
   // and cause an infinite read-write oscillation.
   const lastConsumedHydrateRef = useRef(0);
+  const lastConsumedClearRef = useRef(0);
   const prevHydrateViewIdRef = useRef<string | undefined>(activeLayer?.viewId);
 
   useEffect(() => {
@@ -129,11 +136,13 @@ export function INaturalistBrowseTab() {
 
     const viewChanged = activeLayer.viewId !== prevHydrateViewIdRef.current;
     const editRequested = lastEditFiltersRequest > lastConsumedHydrateRef.current;
+    const clearRequested = lastFiltersClearedTimestamp > lastConsumedClearRef.current;
     prevHydrateViewIdRef.current = activeLayer.viewId;
 
     // Only hydrate on explicit triggers — not on every dependency change
-    if (!viewChanged && !editRequested) return;
+    if (!viewChanged && !editRequested && !clearRequested) return;
     if (editRequested) lastConsumedHydrateRef.current = lastEditFiltersRequest;
+    if (clearRequested) lastConsumedClearRef.current = lastFiltersClearedTimestamp;
 
     const pinned = getPinnedByLayerId(activeLayer.layerId);
     if (!pinned) return;
@@ -146,7 +155,7 @@ export function INaturalistBrowseTab() {
     setSelectedTaxa(new Set(sourceFilters.selectedTaxa));
     setDateRange(sourceFilters.startDate || '', sourceFilters.endDate || '');
   // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally gated by ref guards
-  }, [activeLayer?.layerId, activeLayer?.viewId, lastEditFiltersRequest, getPinnedByLayerId, setSelectedTaxa, setDateRange]);
+  }, [activeLayer?.layerId, activeLayer?.viewId, lastEditFiltersRequest, lastFiltersClearedTimestamp, getPinnedByLayerId, setSelectedTaxa, setDateRange]);
 
   // Keep Map Layers widget metadata in sync with the active iNaturalist view.
   // Depends on isPinned so the effect re-fires when the layer transitions from
@@ -224,12 +233,22 @@ export function INaturalistBrowseTab() {
             Filter Observations
           </span>
           {hasFilter && (
-            <button
-              onClick={selectAll}
-              className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
-            >
-              Select All
-            </button>
+            <div id="inat-filter-actions" className="flex items-center gap-2">
+              <button
+                id="inat-filter-select-all"
+                onClick={selectAll}
+                className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+              >
+                Select All
+              </button>
+              <button
+                id="inat-filter-clear-all"
+                onClick={clearAll}
+                className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+              >
+                Clear All
+              </button>
+            </div>
           )}
         </div>
 
@@ -262,7 +281,7 @@ export function INaturalistBrowseTab() {
                     type="checkbox"
                     checked={isSelected}
                     onChange={() => toggleTaxon(taxon.value)}
-                    className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                    className="w-4 h-4 accent-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                   />
                   <span className="text-[10px]">{taxon.emoji}</span>
                   <span className={`text-sm flex-1 ${isSelected ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
@@ -323,11 +342,15 @@ export function INaturalistBrowseTab() {
       </div>
 
       {/* Loading state */}
-      {loading && (
-        <div className="flex items-center justify-center py-8 text-gray-400">
-          <Loader2 className="w-5 h-5 animate-spin mr-2" />
-          <span className="text-sm">Loading observations...</span>
-        </div>
+      {showInitialLoading && (
+        <InlineLoadingRow id="inat-browse-initial-loading" message="Loading observations..." />
+      )}
+
+      {showRefreshLoading && (
+        <RefreshLoadingRow
+          id="inat-browse-refresh-loading"
+          message="Refreshing observations..."
+        />
       )}
 
       {/* Error state */}
@@ -339,8 +362,8 @@ export function INaturalistBrowseTab() {
       )}
 
       {/* Observation cards */}
-      {!loading && !error && (
-        <div className={`space-y-2 ${loading ? 'opacity-50' : ''}`}>
+      {!error && !showInitialLoading && (
+        <div id="inat-observation-cards" className={`space-y-2 ${showRefreshLoading ? 'opacity-60' : ''}`}>
           {observations.map(obs => (
             <ObservationCard
               key={obs.id}
@@ -353,7 +376,7 @@ export function INaturalistBrowseTab() {
             />
           ))}
 
-          {observations.length === 0 && !loading && (
+          {observations.length === 0 && !showRefreshLoading && (
             <p className="text-sm text-gray-400 text-center py-6">
               No observations found{hasActiveSearch ? ' matching your search' : hasFilter ? ' for this filter' : ''}.
             </p>
@@ -362,7 +385,7 @@ export function INaturalistBrowseTab() {
       )}
 
       {/* Pagination */}
-      {totalPages > 1 && !loading && (
+      {totalPages > 1 && !showInitialLoading && (
         <div id="inat-pagination" className="flex items-center justify-between pt-2 border-t border-gray-100">
           <button
             onClick={() => goToPage(page - 1)}

@@ -169,6 +169,7 @@ interface DendraContextValue {
   // Filter state
   showActiveOnly: boolean;
   toggleActiveOnly: () => void;
+  setShowActiveOnly: (next: boolean) => void;
 
   /** Filtered stations (respects showActiveOnly filter) */
   filteredStations: DendraStation[];
@@ -284,6 +285,10 @@ export function DendraProvider({ children }: { children: ReactNode }) {
     setShowActiveOnly(prev => !prev);
   }, []);
 
+  const setShowActiveOnlyFilter = useCallback((next: boolean) => {
+    setShowActiveOnly(next);
+  }, []);
+
   // ── Chart actions ────────────────────────────────────────────────────────
 
   const openChart = useCallback((station: DendraStation, summary: DendraSummary) => {
@@ -374,6 +379,7 @@ export function DendraProvider({ children }: { children: ReactNode }) {
     warmCache,
     showActiveOnly,
     toggleActiveOnly,
+    setShowActiveOnly: setShowActiveOnlyFilter,
     filteredStations,
     chart,
     openChart,
@@ -382,7 +388,7 @@ export function DendraProvider({ children }: { children: ReactNode }) {
     toggleMinimizeChart,
   }), [
     currentData, serviceInfo, loading, error, dataLoaded,
-    warmCache, showActiveOnly, toggleActiveOnly, filteredStations,
+    warmCache, showActiveOnly, toggleActiveOnly, setShowActiveOnlyFilter, filteredStations,
     chart, openChart, setChartFilter, closeChart, toggleMinimizeChart,
   ]);
 

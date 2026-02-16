@@ -9,13 +9,15 @@ import type { ActiveLayer } from '../../../types';
 import { useINaturalistFilter } from '../../../context/INaturalistFilterContext';
 import { useAnimlFilter } from '../../../context/AnimlFilterContext';
 import { TAXON_CONFIG } from '../../Map/layers/taxonConfig';
+import { EyeSlotLoadingSpinner } from '../../shared/loading/LoadingPrimitives';
 
 interface ActiveLayerSectionProps {
   activeLayer: ActiveLayer;
+  isLoading?: boolean;
   onPin: () => void;
 }
 
-export function ActiveLayerSection({ activeLayer, onPin }: ActiveLayerSectionProps) {
+export function ActiveLayerSection({ activeLayer, isLoading = false, onPin }: ActiveLayerSectionProps) {
   // Don't show if already pinned — it'll appear in the Pinned section instead
   if (activeLayer.isPinned) return null;
 
@@ -80,7 +82,11 @@ export function ActiveLayerSection({ activeLayer, onPin }: ActiveLayerSectionPro
       {/* Active layer row */}
       <div className="px-3 py-2.5 bg-amber-50/50">
         <div className="flex items-center gap-2 mb-1">
-          <Eye className="w-4 h-4 text-amber-600 flex-shrink-0" />
+          {isLoading ? (
+            <EyeSlotLoadingSpinner id="active-layer-loading-spinner" className="flex-shrink-0" />
+          ) : (
+            <Eye className="w-4 h-4 text-amber-600 flex-shrink-0" />
+          )}
           <span className="text-sm text-gray-800 font-medium flex-1 truncate">
             {activeLayer.name}
           </span>

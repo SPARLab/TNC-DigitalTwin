@@ -1,7 +1,7 @@
 # Master Development Plan - V2 Digital Catalog
 
 **Created:** January 23, 2026  
-**Last Updated:** February 13, 2026  
+**Last Updated:** February 16, 2026  
 **Target Deadline:** February 20, 2026  
 **Status:** 🟡 Planning
 
@@ -32,7 +32,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 0 | Foundation | 🟡 In Progress | ~98% | `v2/foundation` | YES - blocks all |
 | 1 | iNaturalist | 🟢 Complete | 5 / 5 tasks | `v2/inaturalist` | No |
 | 2 | ANiML | 🟡 In Progress | 10 / 14 tasks | `v2/animl` | No |
-| 3 | Dendra | 🟡 In Progress | 5 / 6 tasks | `v2/dendra` | No |
+| 3 | Dendra | 🟡 In Progress | 6 / 6 tasks | `v2/dendra` | No |
 | 4 | DataOne | ⚪ Not Started | 0 / 5 tasks | `v2/dataone` | No |
 | 5 | Export Builder | ⚪ Not Started | 0 / 4 tasks | `v2/export` | No |
 | 6 | TNC ArcGIS Services | ⚪ Not Started | 0 / 10 tasks | `v2/tnc-arcgis` | No |
@@ -143,6 +143,7 @@ Phase 0: Foundation
 | Right sidebar Export tab (DFT-041) | ✅ Decided | Will | Feb 6 | **Removed Export tab entirely.** TabBar reduced from 3 tabs to 2 (Overview \| Browse). Export status promoted to Overview tab with actionable shortcuts: "Pin Now" button (unpinned) or "Open Export Builder" link (pinned). Rationale: Export tab was dead-end signpost to modal (Nielsen #8 Minimalism, Fitts's Law), shopping cart badge in header is always visible (better discoverability), 2 tabs reduce cognitive load (Hick's Law), Overview export section visible on default landing screen (DFT-006). Export paradigm is global (modal), not per-layer — tab removal reinforces correct mental model. Analyzed via 12 design principles. See DFT-041 resolution |
 | Detail view architecture (DFT-044) | ✅ Decided | Will | Feb 6 | **No shared detail view component. Use shared sub-components + design tokens for consistency.** Purpose-built views: iNaturalist (`ObservationDetailView` — hero image + flat grid), DataOne (`DatasetDetailView` — multi-section hierarchical). Shared scaffolding: `DetailBackButton`, `DetailActionRow`, `DetailMetadataGrid`. Architectural principle: consistent structural template (tabs, back button, action row) with flexibility for custom content (hero images, progressive disclosure). Rationale: observations (atomic events) vs datasets (structured resources) are conceptually different types; forcing into shared component creates leaky abstraction (Nielsen #8, Hick's Law); sub-components enforce consistency without sacrificing conceptual clarity (Norman Conceptual Model, IA Mental Models). Analyzed via 11 design principles. See DFT-044 resolution, `design-system.md` Detail View Components |
 | Confirmation dialog strategy (DFT-031) | ✅ Decided | Will | Feb 4 | **Hybrid approach: undo for single-item, confirmation for bulk.** Single-item actions (unpin layer, remove bookmark, clear filters, remove cart item) execute immediately with 5-10s undo toast. Bulk actions (clear cart, clear all filters) require custom modal confirmation. Visual hierarchy: small × icons (gray → red hover) for single items, bordered buttons with warning colors for bulk actions. Rationale: frequent actions should be friction-free (Hick's Law, Peak-End Rule), undo superior to confirmation (Norman), bulk operations warrant explicit consent (Loss Aversion), confirmation fatigue avoided. Pattern documented in design-system.md Undo Button section. Replace `window.confirm()` with custom modal component. See DFT-031 resolution |
+| Unified loading indicator strategy (Task 34) | ✅ Decided | Will + Claude | Feb 16 | **Local-first loading:** Map Layers eye-slot spinner (w-4 h-4), map overlay only on first load (`!dataLoaded`), legend/sidebar region-specific. Same anatomy across iNaturalist, Dendra, ANiML, future adapters. Canonical spec in `design-system.md` DFT-018. Implementation pending per branch prereqs. See `docs/development-task-tracker.md` Task 34 + Cross-Branch Merge Checklist. |
 
 ---
 
@@ -247,6 +248,9 @@ When working on any phase:
 |------|-------|--------|-----|
 | Feb 16, 2026 | All | **Phase restructure:** Inserted new Phase 6 (TNC ArcGIS Feature Services), renumbered old Phase 6 (Polish) to Phase 7. Added architectural design for service-level activation + layer switcher pattern for multi-layer TNC services. Generic filter UI (field/operator/value) for MVP. | Will + Claude |
 | Feb 16, 2026 | Phase 2 | **Phase 2 Task 2.8 complete: ANiML SVG marker/icon pass.** Replaced emoji camera markers with SVG camera symbols in `animlLayer.ts` (base, badged, muted states). Added row-level icons in ANiML legend and browse filter lists; aligned with no-emoji icon policy. | Will + Claude |
+| Feb 16, 2026 | All | **Unified loading indicator strategy (Task 34) design spec complete.** Canonical contract in design-system.md DFT-018: eye-slot spinner, first-load-only map overlay, legend/sidebar region-specific. Added UX Decision to master-plan. Implementation pending per branch prereqs. | Will + Claude |
+| Feb 16, 2026 | Phase 3 | **Task 3.9 complete: Dendra Save With Filters — distinct behavior.** Renamed buttons to "Update Current View" (station-level sync) and "Save as New View" (creates filtered child view in Map Layers, activates it). Added `createDendraFilteredView()` in LayerContext. Files: StationDetailView.tsx, LayerContext.tsx. | Claude |
+| Feb 13, 2026 | Phase 0/1/3 | **Task 27 complete: Save View / Save With Filters — sync with Map Layers.** Dendra now uses explicit "Save View" and "Save With Filters" actions (replacing bookmark terminology). Right-sidebar filter state persists to Map Layers via `syncDendraFilters`. One-shot hydration when switching child views or Edit Filters. Extends cross-layer filtered-view contract to Dendra. | Claude |
 | Feb 13, 2026 | Phase 1 | **Task 28 complete: iNaturalist detail view crash fixed.** Hook-order mismatch (early return before hooks) caused "Rendered fewer hooks than expected." Moved detail-view return after all hooks; hardened handleViewOnMap with try/catch and coordinate validation. RightSidebar auto-switches to Browse when map observation clicked. Phase 1 all tasks complete. | Claude |
 | Feb 13, 2026 | Phase 1 | **Phase 1 iNaturalist complete.** All 13 granular tasks done including Tasks 26–27 (dynamic view names, user-renamable filtered views). Cross-branch merge contract documented. | User + Claude |
 | Feb 13, 2026 | All | Added cross-layer filtered-view naming decision: universal manual rename in shared Map Layers logic with per-data-source auto-naming algorithms. Documented as an incremental branch rollout contract to avoid regressions during parallel merges. | User + Claude |

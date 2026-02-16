@@ -5,41 +5,11 @@
 // ============================================================================
 
 import { useMemo, useState, type ReactNode } from 'react';
-import { ChevronLeft, MapPin, Radio, Activity, Calendar, TrendingUp, TrendingDown, BarChart3, Bookmark } from 'lucide-react';
+import { ChevronLeft, MapPin, Radio, Activity, Calendar, TrendingUp, TrendingDown, BarChart3, Save } from 'lucide-react';
 import type { DendraStation, DendraSummary } from '../../../services/dendraStationService';
 import { formatTimestamp, formatValue } from '../../../services/dendraStationService';
 import { useDendra } from '../../../context/DendraContext';
 import { useLayers } from '../../../context/LayerContext';
-
-const DENDRA_LOCAL_BOOKMARKS_KEY = 'v2-dendra-bookmarks';
-
-interface DendraLocalBookmark {
-  id: string;
-  itemId: string;
-  itemName: string;
-  layerId: string;
-  layerName: string;
-  type: 'pointer-unfiltered' | 'pointer-filtered';
-  filterDescription?: string;
-  resultCount?: number;
-  geometry: { type: 'Point'; coordinates: [number, number] };
-  createdAt: number;
-}
-
-function saveDendraBookmark(bookmark: Omit<DendraLocalBookmark, 'id' | 'createdAt'>): void {
-  const nextBookmark: DendraLocalBookmark = {
-    ...bookmark,
-    id: crypto.randomUUID(),
-    createdAt: Date.now(),
-  };
-  try {
-    const raw = localStorage.getItem(DENDRA_LOCAL_BOOKMARKS_KEY);
-    const current: DendraLocalBookmark[] = raw ? JSON.parse(raw) : [];
-    localStorage.setItem(DENDRA_LOCAL_BOOKMARKS_KEY, JSON.stringify([...current, nextBookmark]));
-  } catch (error) {
-    console.error('[Dendra] Failed to save bookmark:', error);
-  }
-}
 
 interface StationDetailViewProps {
   station: DendraStation;
@@ -53,9 +23,9 @@ export function StationDetailView({ station, summaries, onBack, onViewOnMap, onV
   const isActive = station.is_active === 1;
   const displayName = station.station_name?.replace(/^Dangermond_/, '').replace(/_/g, ' ') ?? 'Unknown';
   const [selectedDatastreamId, setSelectedDatastreamId] = useState<number | null>(null);
-  const [bookmarkMessage, setBookmarkMessage] = useState<string | null>(null);
-  const { chart, setChartFilter } = useDendra();
-  const { activeLayer } = useLayers();
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const { chart, setChartFilter, showActiveOnly, filteredStations } = useDendra();
+  const { activeLayer, pinLayer, getPinnedByLayerId, syncDendraFilters, createDendraFilteredView } = useLayers();
 
   const selectedSummary = useMemo(
     () => summaries.find(summary => summary.datastream_id === selectedDatastreamId) ?? null,
@@ -75,41 +45,72 @@ export function StationDetailView({ station, summaries, onBack, onViewOnMap, onV
 
   const handleSelectDatastream = (summary: DendraSummary) => {
     setSelectedDatastreamId(summary.datastream_id);
-    setBookmarkMessage(null);
+    setSaveMessage(null);
     onViewChart?.(summary);
   };
 
-  const handleBookmarkSensor = () => {
-    saveDendraBookmark({
-      itemId: String(station.station_id),
-      itemName: displayName,
-      layerId: activeLayer?.layerId ?? 'dendra',
-      layerName: activeLayer?.name ?? 'Dendra',
-      type: 'pointer-unfiltered',
-      geometry: {
-        type: 'Point',
-        coordinates: [station.longitude, station.latitude],
-      },
-    });
-    setBookmarkMessage('Saved sensor bookmark.');
+  const ensurePinnedLayer = () => {
+    if (!activeLayer) return false;
+    const existing = getPinnedByLayerId(activeLayer.layerId);
+    if (existing) return true;
+    pinLayer(activeLayer.layerId);
+    return true;
   };
 
-  const handleBookmarkWithTimeRange = () => {
-    if (!selectedSummary) return;
-    saveDendraBookmark({
-      itemId: `${station.station_id}-${selectedSummary.datastream_id}`,
-      itemName: `${displayName} - ${selectedSummary.datastream_name}`,
-      layerId: activeLayer?.layerId ?? 'dendra',
-      layerName: activeLayer?.name ?? 'Dendra',
-      type: 'pointer-filtered',
-      filterDescription: `${chart.filter.startDate} to ${chart.filter.endDate} (${chart.filter.aggregation})`,
-      resultCount: chart.data.length,
-      geometry: {
-        type: 'Point',
-        coordinates: [station.longitude, station.latitude],
-      },
-    });
-    setBookmarkMessage('Saved bookmark with time range.');
+  const saveCurrentView = () => {
+    if (!activeLayer) {
+      setSaveMessage('Unable to save: no active layer.');
+      return;
+    }
+    ensurePinnedLayer();
+
+    const filters = {
+      showActiveOnly,
+      selectedStationId: station.station_id,
+      selectedStationName: displayName,
+      selectedDatastreamId: undefined,
+      selectedDatastreamName: undefined,
+      startDate: undefined,
+      endDate: undefined,
+      aggregation: undefined,
+    };
+    syncDendraFilters(activeLayer.layerId, filters, filteredStations.length, activeLayer.viewId);
+    setSaveMessage('Updated current view in Map Layers.');
+  };
+
+  const saveAsNewView = () => {
+    if (!activeLayer) {
+      setSaveMessage('Unable to save: no active layer.');
+      return;
+    }
+    if (!selectedSummary) {
+      setSaveMessage('Select a datastream before saving a new filtered view.');
+      return;
+    }
+    if (!chartMatchesSelectedDatastream || chart.loading) {
+      setSaveMessage('Open chart data for this datastream before saving a new filtered view.');
+      return;
+    }
+
+    ensurePinnedLayer();
+
+    const filters = {
+      showActiveOnly,
+      selectedStationId: station.station_id,
+      selectedStationName: displayName,
+      selectedDatastreamId: selectedSummary.datastream_id,
+      selectedDatastreamName: selectedSummary.datastream_name,
+      startDate: chart.filter.startDate,
+      endDate: chart.filter.endDate,
+      aggregation: chart.filter.aggregation,
+    };
+
+    const newViewId = createDendraFilteredView(activeLayer.layerId, filters, chart.data.length);
+    if (!newViewId) {
+      setSaveMessage('Unable to create a new filtered view. Pin this layer and try again.');
+      return;
+    }
+    setSaveMessage('Created a new filtered child view in Map Layers.');
   };
 
   return (
@@ -219,7 +220,7 @@ export function StationDetailView({ station, summaries, onBack, onViewOnMap, onV
                 disabled={!chartMatchesSelectedDatastream || chart.loading}
                 onChange={(event) => {
                   setChartFilter({ startDate: event.target.value });
-                  setBookmarkMessage(null);
+                  setSaveMessage(null);
                 }}
                 className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm
                            focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500
@@ -238,7 +239,7 @@ export function StationDetailView({ station, summaries, onBack, onViewOnMap, onV
                 disabled={!chartMatchesSelectedDatastream || chart.loading}
                 onChange={(event) => {
                   setChartFilter({ endDate: event.target.value });
-                  setBookmarkMessage(null);
+                  setSaveMessage(null);
                 }}
                 className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm
                            focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500
@@ -254,7 +255,7 @@ export function StationDetailView({ station, summaries, onBack, onViewOnMap, onV
                 disabled={!chartMatchesSelectedDatastream || chart.loading}
                 onChange={(event) => {
                   setChartFilter({ aggregation: event.target.value as 'hourly' | 'daily' | 'weekly' });
-                  setBookmarkMessage(null);
+                  setSaveMessage(null);
                 }}
                 className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm bg-white
                            focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500
@@ -276,34 +277,34 @@ export function StationDetailView({ station, summaries, onBack, onViewOnMap, onV
             )}
           </div>
 
-          <div id="dendra-bookmark-actions" className="grid grid-cols-2 gap-2">
+          <div id="dendra-save-view-actions" className="grid grid-cols-2 gap-2">
             <button
-              id="dendra-bookmark-sensor"
+              id="dendra-save-view"
               type="button"
-              onClick={handleBookmarkSensor}
+              onClick={saveCurrentView}
               className="rounded-md border border-gray-300 bg-white text-gray-700 text-sm font-medium py-2
                          hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5"
             >
-              <Bookmark className="w-3.5 h-3.5" />
-              Bookmark Sensor
+              <Save className="w-3.5 h-3.5" />
+              Update View
             </button>
             <button
-              id="dendra-bookmark-time-range"
+              id="dendra-save-with-filters"
               type="button"
-              onClick={handleBookmarkWithTimeRange}
+              onClick={saveAsNewView}
               disabled={!chartMatchesSelectedDatastream || chart.loading}
               className="rounded-md bg-emerald-600 text-white text-sm font-medium py-2
                          hover:bg-emerald-700 transition-colors disabled:bg-emerald-300
                          flex items-center justify-center gap-1.5"
             >
-              <Bookmark className="w-3.5 h-3.5" />
-              Bookmark With Time Range
+              <Save className="w-3.5 h-3.5" />
+              Save as New View
             </button>
           </div>
 
-          {bookmarkMessage && (
-            <p id="dendra-bookmark-feedback" className="text-xs text-emerald-700">
-              {bookmarkMessage}
+          {saveMessage && (
+            <p id="dendra-save-view-feedback" className="text-xs text-emerald-700">
+              {saveMessage}
             </p>
           )}
         </div>

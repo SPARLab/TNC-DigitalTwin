@@ -9,7 +9,6 @@ import { useEffect, useRef } from 'react';
 import Map from '@arcgis/core/Map';
 import MapView from '@arcgis/core/views/MapView';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
-import { Loader2 } from 'lucide-react';
 import { MapLayersWidget } from '../FloatingWidgets/MapLayersWidget/MapLayersWidget';
 // NOTE: BookmarkedItemsWidget disabled per Feb 11 design decision.
 // Saved Items merged into Map Layers. Code preserved for CSS/animation reuse.
@@ -19,6 +18,7 @@ import { useLayers } from '../../context/LayerContext';
 import { useMapLayers } from './useMapLayers';
 import { getAdapter, useActiveCacheStatus } from '../../dataSources/registry';
 import { MapToasts } from './MapToasts';
+import { MapCenterLoadingOverlay } from '../shared/loading/LoadingPrimitives';
 
 /** Dangermond Preserve center coordinates */
 const PRESERVE_CENTER: [number, number] = [-120.47, 34.47];
@@ -36,7 +36,7 @@ export function MapContainer() {
 
   // Cache/loading status for the active data source (generic loading overlay)
   const cacheStatus = useActiveCacheStatus(activeLayer?.dataSource);
-  const showLoading = !!activeLayer && (cacheStatus?.loading ?? false);
+  const showLoadingOverlay = !!activeLayer && (cacheStatus?.loading ?? false);
 
   // Sync pinned/active layers with ArcGIS layers
   useMapLayers();
@@ -92,19 +92,12 @@ export function MapContainer() {
       {/* Floating panel — data source specific (e.g., Dendra time series chart) */}
       {FloatingPanel && <FloatingPanel />}
 
-      {/* Loading overlay — shown when active data source is fetching initial data */}
-      {showLoading && (
-        <div
+      {/* Loading overlay — shown when active data source is fetching */}
+      {showLoadingOverlay && (
+        <MapCenterLoadingOverlay
           id="map-loading-overlay"
-          className="absolute inset-0 flex items-center justify-center bg-white/30 z-20 pointer-events-none"
-        >
-          <div className="bg-white px-4 py-3 rounded-lg shadow-md flex items-center gap-2">
-            <Loader2 className="w-5 h-5 animate-spin text-green-600" />
-            <span className="text-sm text-gray-700 font-medium">
-              Loading {activeLayer?.name ?? 'data'}...
-            </span>
-          </div>
-        </div>
+          message={`Loading ${activeLayer?.name ?? 'data'}...`}
+        />
       )}
 
       {/* Toast notifications (layer not implemented, etc.) */}

@@ -54,6 +54,7 @@ export interface PinnedLayer {
   filterSummary?: string;
   inaturalistFilters?: INaturalistViewFilters;
   animlFilters?: AnimlViewFilters;
+  dendraFilters?: DendraViewFilters;
   distinguisher?: string;
   views?: PinnedLayerView[];
   order: number; // for drag-reorder z-order
@@ -71,6 +72,7 @@ export interface PinnedLayerView {
   filterSummary?: string;
   inaturalistFilters?: INaturalistViewFilters;
   animlFilters?: AnimlViewFilters;
+  dendraFilters?: DendraViewFilters;
   resultCount?: number; // Number of features matching filters (for count display testing)
 }
 
@@ -87,6 +89,18 @@ export interface AnimlViewFilters {
   selectedCameras: number[];
   startDate?: string;
   endDate?: string;
+}
+
+/** Dendra filter state stored per pinned layer/view */
+export interface DendraViewFilters {
+  showActiveOnly: boolean;
+  selectedStationId?: number;
+  selectedStationName?: string;
+  selectedDatastreamId?: number;
+  selectedDatastreamName?: string;
+  startDate?: string;
+  endDate?: string;
+  aggregation?: 'hourly' | 'daily' | 'weekly';
 }
 
 // =============================================================================

@@ -4,20 +4,23 @@
 // Station card click → StationDetailView with datastream summaries.
 // ============================================================================
 
-import { useState, useCallback } from 'react';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { AlertCircle } from 'lucide-react';
 import { useDendra, useSummariesByStation } from '../../../context/DendraContext';
 import { useMap } from '../../../context/MapContext';
+import { useLayers } from '../../../context/LayerContext';
 import { StationCard } from './StationCard';
 import { StationDetailView } from './StationDetailView';
 import type { DendraStation, DendraSummary } from '../../../services/dendraStationService';
+import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
 
 export function DendraBrowseTab() {
   const {
     filteredStations, loading, error, dataLoaded,
-    showActiveOnly, toggleActiveOnly, stationCount,
+    showActiveOnly, toggleActiveOnly, setShowActiveOnly, stationCount,
     openChart,
   } = useDendra();
+  const { activeLayer, lastEditFiltersRequest, getPinnedByLayerId } = useLayers();
   const summariesByStation = useSummariesByStation();
 
   // Detail view state
@@ -25,6 +28,37 @@ export function DendraBrowseTab() {
 
   // Map interactions
   const { highlightPoint, clearHighlight, viewRef } = useMap();
+
+  const lastConsumedHydrateRef = useRef(0);
+  const prevHydrateViewIdRef = useRef<string | undefined>(activeLayer?.viewId);
+
+  useEffect(() => {
+    if (activeLayer?.dataSource !== 'dendra') return;
+
+    const viewChanged = activeLayer.viewId !== prevHydrateViewIdRef.current;
+    const editRequested = lastEditFiltersRequest > lastConsumedHydrateRef.current;
+    prevHydrateViewIdRef.current = activeLayer.viewId;
+
+    if (!viewChanged && !editRequested) return;
+    if (editRequested) lastConsumedHydrateRef.current = lastEditFiltersRequest;
+
+    const pinned = getPinnedByLayerId(activeLayer.layerId);
+    if (!pinned) return;
+
+    const sourceFilters = activeLayer.viewId && pinned.views
+      ? pinned.views.find(v => v.id === activeLayer.viewId)?.dendraFilters
+      : pinned.dendraFilters;
+    if (!sourceFilters) return;
+
+    setShowActiveOnly(!!sourceFilters.showActiveOnly);
+  }, [
+    activeLayer?.dataSource,
+    activeLayer?.layerId,
+    activeLayer?.viewId,
+    lastEditFiltersRequest,
+    getPinnedByLayerId,
+    setShowActiveOnly,
+  ]);
 
   const handleViewOnMap = useCallback((station: DendraStation) => {
     highlightPoint(station.longitude, station.latitude);
@@ -112,10 +146,7 @@ export function DendraBrowseTab() {
 
       {/* Loading state */}
       {loading && !dataLoaded && (
-        <div className="flex items-center justify-center py-8 text-gray-400">
-          <Loader2 className="w-5 h-5 animate-spin mr-2" />
-          <span className="text-sm">Loading stations...</span>
-        </div>
+        <InlineLoadingRow id="dendra-browse-loading" message="Loading stations..." />
       )}
 
       {/* Error state */}

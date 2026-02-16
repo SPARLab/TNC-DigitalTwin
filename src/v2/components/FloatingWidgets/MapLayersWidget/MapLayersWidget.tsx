@@ -6,6 +6,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Layers, Pin } from 'lucide-react';
 import { useLayers } from '../../../context/LayerContext';
+import { useCatalog } from '../../../context/CatalogContext';
+import { useCacheStatusByDataSource } from '../../../dataSources/registry';
 import { WidgetShell } from '../shared/WidgetShell';
 import { WidgetHeader } from '../shared/WidgetHeader';
 import { CountDisplayDropdown } from '../shared/CountDisplayDropdown';
@@ -36,6 +38,21 @@ export function MapLayersWidget() {
     undoStack,
     undo,
   } = useLayers();
+  const { layerMap } = useCatalog();
+  const cacheStatusByDataSource = useCacheStatusByDataSource();
+
+  const loadingByLayerId = new Map<string, boolean>(
+    pinnedLayers.map((pinnedLayer) => {
+      const catalogLayer = layerMap.get(pinnedLayer.layerId);
+      const isSourceLoading = catalogLayer
+        ? !!cacheStatusByDataSource[catalogLayer.dataSource]?.loading
+        : false;
+      return [pinnedLayer.layerId, isSourceLoading];
+    }),
+  );
+  const activeLayerIsLoading = activeLayer
+    ? !!cacheStatusByDataSource[activeLayer.dataSource]?.loading
+    : false;
 
   const handleEditFilters = (layerId: string, viewId?: string) => {
     activateLayer(layerId, viewId);
@@ -139,6 +156,7 @@ export function MapLayersWidget() {
                       >
                         <ActiveLayerSection
                           activeLayer={displayedActiveLayer}
+                          isLoading={activeLayerIsLoading}
                           onPin={() => pinLayer(displayedActiveLayer.layerId)}
                         />
                       </div>
@@ -149,6 +167,7 @@ export function MapLayersWidget() {
             {/* Pinned Layers section */}
             <PinnedLayersSection
               layers={pinnedLayers}
+              loadingByLayerId={loadingByLayerId}
               activeLayerId={activeLayer?.layerId}
               activeViewId={activeLayer?.viewId}
               countDisplayMode={countDisplayMode}

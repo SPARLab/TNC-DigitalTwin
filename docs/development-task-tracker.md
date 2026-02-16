@@ -1,14 +1,16 @@
 # Development Task Tracker — V2 Digital Catalog
 
-**Last Updated:** February 13, 2026  
+**Last Updated:** February 16, 2026  
 **Current Phase:** Phase 0 (Foundation) — 🟡 In Progress  
 **Target Deadline:** February 20, 2026 (8 days remaining)
+
+**📁 Completed tasks archived:** See [docs/archive/completed-tasks-phase-0-3.md](archive/completed-tasks-phase-0-3.md) for full list + manual testing checklist.
 
 ---
 
 ## Quick Tasks Summary
 
-**Active development tasks (ordered by priority).** Phase column indicates which phase the task belongs to; tasks may be deferred to a later phase.
+**Active development tasks (ordered by priority).** Details live in phase docs; this is a quick reference.
 
 | # | Phase | Task | Status | Priority | Notes |
 |---|-------|------|--------|----------|-------|
@@ -72,6 +74,37 @@
 
 ---
 
+## Cross-Branch Merge Checklist (Loading Indicators)
+
+**Task 34: Unified Loading Indicator Strategy.** Affects v2/inaturalist, v2/dendra, v2/animl and future branches. Other branches may have different loading implementations and documentation — use this checklist when implementing and merging.
+
+**Prerequisites (start only after):**
+- [x] Finish current layer work in iNaturalist, Dendra, ANiML branches (per user) ✅ Feb 16
+- [x] Decide merge order: v2/iNaturalist has Task 34; propagate via merge into v2/animl and v2/dendra ✅ Feb 16
+
+**Propagation (for future merge requests):**
+- **Source branch:** `v2/iNaturalist` (commits: 722151b, 4d29673, 99a6343 = Task 34 + design spec + checklist)
+- **Target branches:** `v2/animl`, `v2/dendra` — both are 5 commits behind v2/iNaturalist as of Feb 16
+- **How:** `git checkout v2/animl && git merge v2/iNaturalist` (repeat for v2/dendra)
+- **Expected files:** `src/v2/components/shared/loading/*`, MapLayersWidget, MapContainer, PinnedLayerRow, ActiveLayerSection, legend widgets, sidebar Browse tabs, design-system.md
+- **On conflict:** Prefer v2/iNaturalist's shared loading primitives; remove any bespoke per-layer spinners in target branch
+
+**Merge strategy (branches have different docs):**
+- [x] **Design doc as source of truth:** Add loading strategy spec to `docs/DESIGN-SYSTEM/design-system.md` (DFT-018 section) as the default canonical source; only add a new planning doc if explicitly approved ✅ Feb 16
+- [x] **Implementation order:** Shared components implemented (MapLayersWidget, MapContainer, PinnedLayerRow, ActiveLayerSection) ✅
+- [x] **Per-branch changes:** Legend widgets and sidebars use shared `LoadingPrimitives`; no bespoke per-layer spinners ✅
+
+**Implementation checklist:**
+- [x] Map Layers: blue spinner (w-4 h-4) in eye slot when layer’s data source is loading; Active + Pinned sections (**complete**)
+- [x] Map center overlay: shown when active data source is loading (**complete**)
+- [x] Legend: loading when `!dataLoaded`; optional header spinner during refresh (**iNaturalist + ANiML complete**)
+- [x] Right sidebar: region-specific loading via shared `InlineLoadingRow` / `RefreshLoadingRow` (**iNaturalist, Dendra, ANiML complete**)
+- [x] **Shared loading primitives:** `src/v2/components/shared/loading/` — `loadingTheme.ts`, `LoadingPrimitives.tsx`. Change tokens once to propagate styling app-wide.
+
+**Design reference:** See design discussion in phase-1-inaturalist.md (or this tracker’s task 34 notes). Design principles: Nielsen #1, #4; Norman Feedback; DFT-018 region-specific; Gestalt proximity/similarity.
+
+---
+
 ## Status by Phase
 
 **High-level status across all phases.** Use this to see which phases are in progress, blocked, or not started.
@@ -81,7 +114,7 @@
 | **0. Foundation** | 🟡 In Progress | ~98% | `v2/foundation` | YES — blocks all |
 | 1. iNaturalist | 🟢 Complete | 5 / 5 tasks | `v2/inaturalist` | No — Task 0.6 optional polish |
 | 2. ANiML | 🟡 In Progress | ~40% | `v2/animl` | No — Browse tab MVP done |
-| 3. Dendra | 🟡 In Progress | 5 / 6 tasks | `v2/dendra` | No |
+| 3. Dendra | 🟡 In Progress | 6 / 6 tasks | `v2/dendra` | No |
 | 4. DataOne | ⚪ Not Started | 0% | `v2/dataone` | 🔴 Paused — waiting for Task 0.9 |
 | 5. Export Builder | ⚪ Not Started | 0% | `v2/export` | No |
 | 6. TNC ArcGIS Services | ⚪ Not Started | 0 / 10 tasks | `v2/tnc-arcgis` | No |
@@ -379,19 +412,52 @@
   - [ ] **Task 3.5 (NEXT):** Floating time series chart — sensor detail view with ECharts, interactive hover, stats panel. 3.5a ✅ 3.5b ✅ 3.5c ✅. Remaining: 3.5d sidebar polish.
   - [x] **Task 3.6:** Time range filter (Level 3) — date picker, aggregation dropdown ✅ (Feb 13)
 
-- **Task 27: Save View / Save With Filters — sync with Map Layers** (Cross-phase: 0, 1, 3)
+- [x] **Task 27: Save View / Save With Filters — sync with Map Layers** (Cross-phase: 0, 1, 3) ✅ (Feb 13)
   - **Goal:** Replace bookmark terminology with "Save View" or "Save With Filters." Persist right-sidebar filter state into Map Layers widget (pinned layer + child filtered views). Eventually supports multiple saved filtered views per layer.
-  - **Prerequisite — CHECK BEFORE STARTING:**
-    1. Run `git log` (or `git branch -a`) and confirm that **v2/iNaturalist has been merged** into the current branch.
-    2. If v2/iNaturalist is not merged, do not implement. The agent should note this and recommend merging/stabilizing that branch first.
-  - **Reference implementation:** iNaturalist branch implements an "auto-save" style behavior: the Map Layers widget reflects whatever the last query filters were in the right sidebar (sidebar filter state drives the pinned layer's filter summary and child views). Use that logic as the reference when implementing for other data sources.
-  - **Dendra consideration:** Dendra is more complex — Level 3 has date range + aggregation + selected datastream. Auto-save may be too noisy; consider **explicit "Save View"** (or "Save With Filters") instead of auto-save. Revisit after iNaturalist logic is merged and stable.
-  - **Acceptance criteria (to be refined post-merge):**
-    - [ ] Bookmark terminology removed; replaced with "Save View" or "Save With Filters" where applicable
-    - [ ] Right sidebar filter state syncs to Map Layers pinned layer / child views
-    - [ ] iNaturalist-style persistence works for iNaturalist layer
-    - [ ] Dendra: explicit save vs auto-save decision documented and implemented
-  - **Files (likely):** `LayerContext.tsx`, `MapLayersWidget/`, data source Browse tabs, `StationDetailView.tsx` (Dendra)
+  - **Completed:** Dendra uses explicit "Save View" and "Save With Filters" actions in StationDetailView. Added `DendraViewFilters` type, `syncDendraFilters()` in LayerContext, one-shot hydration in DendraBrowseTab when switching child views or Edit Filters. iNaturalist already had auto-save; Dendra uses explicit save per Level 3 complexity.
+  - **Acceptance criteria:**
+    - [x] Bookmark terminology removed; replaced with "Save View" or "Save With Filters" where applicable
+    - [x] Right sidebar filter state syncs to Map Layers pinned layer / child views
+    - [x] iNaturalist-style persistence works for iNaturalist layer (pre-existing)
+    - [x] Dendra: explicit save implemented; syncs to Map Layers on Save View / Save With Filters
+  - **Files:** `LayerContext.tsx`, `DendraContext.tsx`, `types/index.ts`, `DendraBrowseTab.tsx`, `StationDetailView.tsx`, `phase-3-dendra.md`
+
+- **Task 34: Unified Loading Indicator Strategy** (Cross-phase: 0, 1, 2, 3, 6)
+  - **Goal:** Consistent loading indicators across all data sources (iNaturalist, Dendra, ANiML, future). No bespoke per-layer spinners.
+  - **Prerequisite — START ONLY AFTER:**
+    - [ ] Finish current layer work in iNaturalist, Dendra, ANiML branches (user to confirm)
+    - [ ] Decide merge order; loading strategy implemented in branch that lands first
+  - **Strategy (from design discussion):**
+    1. **Map Layers widget:** Spinner (w-4 h-4) in eye slot when layer’s data source is loading; same for all layers
+    2. **Map center overlay:** Only when `!dataLoaded` (initial load); not during refresh
+    3. **Legend widget:** Loading when `!dataLoaded`; optional header spinner during refresh
+    4. **Right sidebar:** Keep region-specific loading; same spinner + text pattern across data sources
+  - **Design decision (UI/UX):** Use "local-first loading" by default and reserve global overlays for first-load only.
+    - **Why:** Supports Nielsen #1 (Visibility of system status) without violating #3 (User control and freedom). Users keep interacting with other regions during refreshes.
+    - **Core tension:** A single global spinner is consistent, but it hides where work is happening and increases cognitive load during background refresh.
+    - **Resolution:** Keep loading indicators near the affected region (Map Layers row, legend body, sidebar body), with map-level overlay only for empty/first paint.
+  - **Edge cases to standardize:**
+    - If first load exceeds 3s: keep region skeleton/spinner + show utilitarian loading text.
+    - If first load exceeds 15s: show "Taking longer than usual" + cancel/retry action per DFT-018.
+    - During refresh with stale data present: do not blank content; use subtle in-place spinner state.
+    - If one source fails while others load: isolate error to that region; do not block unrelated sources.
+  - **Principle fit (recommended strategy):**
+    - ✅ = strong fit, 🟡 = partial fit/tradeoff, ❌ = weak fit
+    - | Principle | Fit | How the strategy addresses it |
+      |---|---|---|
+      | Nielsen #1: Visibility of system status | ✅ | Spinner/skeleton appears exactly where load occurs; first-load overlay clarifies "map not ready yet." |
+      | Nielsen #4: Consistency and standards | ✅ | Same loading anatomy across iNaturalist, Dendra, ANiML, and future adapters. |
+      | Norman: Feedback | ✅ | Immediate, context-local feedback reduces ambiguity after user actions (pin, activate, filter). |
+      | Gestalt: Proximity/Similarity | ✅ | Indicator is colocated with affected component and uses repeatable visual pattern. |
+      | Hick's Law (cognitive load) | ✅ | Avoids multiple competing global indicators; users read one local status at a time. |
+      | Shneiderman: User control | 🟡 | Strong in sidebars/legends, but first-load map overlay remains temporarily blocking by design. |
+      | WCAG/Accessibility | 🟡 | Pattern is compatible, but requires explicit ARIA status text + contrast checks during implementation. |
+      | Peak-End Rule | 🟡 | Better continuity during refresh, but completion moments still need explicit "loaded" state polish. |
+      | Behavioral trust (predictability) | ✅ | Same semantics per region increases confidence across data sources and branches. |
+  - **Merge strategy:** Other branches have different documentation. Create canonical spec in `design-system.md` (DFT-018) or `docs/PLANNING/resolved-decisions/loading-indicator-strategy.md`. Implement in shared components; each branch’s legend/sidebar adopts same pattern.
+    - **Default documentation path:** `docs/DESIGN-SYSTEM/design-system.md` (DFT-018). Only add new planning docs with explicit approval.
+  - **Files:** `PinnedLayerRow.tsx`, `PinnedLayerChildRow.tsx`, `MapLayersWidget.tsx`, `PinnedLayersSection.tsx`, `MapContainer.tsx`, `registry.ts` (loadingByDataSource), legend widgets, sidebar Browse tabs
+  - **See:** Cross-Branch Merge Checklist (Loading Indicators) above
 
 - **Phase 4:** DataOne data source (5 tasks)
 
@@ -438,6 +504,13 @@ See `docs/master-plan.md` for full phase breakdown.
 |------|-------|--------|-----|
 | Feb 16, 2026 | All | **Phase restructure:** Inserted new Phase 6 (TNC ArcGIS Feature Services) with 10 tasks. Renumbered old Phase 6 (Polish) to Phase 7. Service-level activation pattern for multi-layer TNC services with layer switcher in right sidebar. Generic filter UI (field/operator/value) for MVP. See `docs/IMPLEMENTATION/phases/phase-6-tnc-arcgis.md` | Claude |
 | Feb 16, 2026 | Phase 2 | ✅ **Task 35 (2.8) complete: ANiML SVG icons for map markers + tag rows.** Replaced emoji map markers with SVG camera symbols in `animlLayer.ts` (base, badge, muted). Added icon rows in ANiML legend and browse filter lists. Updated phase-2 task status + acceptance criteria. | Claude |
+| Feb 16, 2026 | Phase 3 | ✅ **Task 3.9 complete: Dendra Save With Filters — distinct behavior.** Renamed to "Update Current View" (station-level sync) and "Save as New View" (creates filtered child view, activates it). Added `createDendraFilteredView()` in LayerContext. Files: StationDetailView.tsx, LayerContext.tsx. | Claude |
+| Feb 16, 2026 | Phase 3 | ✅ **Task 3.7 complete: Weather Stations layer investigation.** Root cause: Two Weather Stations layers in catalog — dataset-183 (Dendra sensor, working) and dataset-190 (legacy v0, not implemented). Backend fix: Dan set `is_visible: 0` for dataset-190 in Data Catalog FeatureServer. No frontend changes. | Claude |
+| Feb 16, 2026 | Phase 3 | 🐛 **Task 3.8 complete: Barometer datastream crash.** `formatValue` in dendraStationService.ts threw `value.toFixed is not a function` when ArcGIS returned min/max/avg as strings. Now coerces to number and handles NaN. | Claude |
+| Feb 16, 2026 | Docs | **Archive + phase consolidation.** Moved completed tasks to `docs/archive/completed-tasks-phase-0-3.md` with manual testing checklist. Dendra tasks moved to phase-3-dendra.md (3.7 Weather Stations, 3.8 barometer fix, 3.9 Save With Filters). Development-task-tracker slimmed to quick reference only. | Claude |
+| Feb 13, 2026 | Phase 0/1/3 | ✅ **Task 27 complete: Save View / Save With Filters — sync with Map Layers.** Replaced Dendra bookmark terminology with explicit "Save View" and "Save With Filters" actions. Added `DendraViewFilters` type, `syncDendraFilters()` in LayerContext, one-shot filter hydration in DendraBrowseTab. Right-sidebar filter state (showActiveOnly, station, datastream, date range, aggregation) persists to Map Layers pinned layer/child views. Edit Filters and child-view switching rehydrate Dendra Browse. Files: LayerContext.tsx, DendraContext.tsx, types/index.ts, DendraBrowseTab.tsx, StationDetailView.tsx, phase-3-dendra.md. | Claude |
+| Feb 16, 2026 | 0/1/2/3/6 | ✅ **Task 34 complete: Unified Loading Indicator Strategy.** Shared loading primitives (`loadingTheme.ts`, `LoadingPrimitives.tsx`), eye-slot spinner (Active + Pinned), map overlay, legend/sidebar loading wired for iNaturalist, Dendra, ANiML. Styling centralized for single-point propagation. | Claude |
+| Feb 16, 2026 | 0/1/2/3/6 | **Task 34 design spec complete.** Canonical loading strategy documented in design-system.md (DFT-018): eye-slot spinner, first-load-only map overlay, legend/sidebar region-specific. Design doc checklist item done. Implementation pending per prereqs. | Claude |
 | Feb 13, 2026 | Phase 3 | ✅ **Task 26 sub-task 3.5b complete.** Fixed sensors showing 0 data despite record counts. Root cause: null-heavy datapoint windows when querying oldest-first. Updated v0 bridge query to fetch latest non-null points (`value IS NOT NULL`, `ORDER BY timestamp_utc DESC`), reverse client-side for chronological chart. **Remaining:** 3.5d (sidebar polish). | Claude |
 | Feb 13, 2026 | Phase 3 | ✅ **Task 26 sub-task 3.5a complete.** Fixed subsequent datastream clicks not updating chart. Two bugs: (1) race condition — stale fetch could overwrite newer datastream's data (request-counter guard in openChart); (2) stale ECharts instance — chart div remounts during loading but old instance pointed to removed DOM (getDom() check before init). **Remaining:** 3.5b (0-data inconsistency), 3.5d (sidebar polish). | Claude |
 | Feb 13, 2026 | Phase 3 | 🟡 **Task 26 (Dendra 3.5) in progress; sub-task 3.5c complete.** Floating chart UI polish shipped: visible glassmorphism, bottom-right placement, half-height panel sizing, stronger contrast/readability, larger axis labels, larger/higher range slider, darker header, and measurement-first header text hierarchy. **Still open:** 3.5a (chart not refreshing on subsequent datastream clicks), 3.5b (0-data inconsistency). | Claude |

@@ -8,11 +8,13 @@ import { useState } from 'react';
 import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
 import { TAXON_CONFIG, getTaxonEmoji, getTaxonColor } from '../../Map/layers/taxonConfig';
 import { useINaturalistFilter } from '../../../context/INaturalistFilterContext';
+import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
+import { loadingTheme } from '../../shared/loading/loadingTheme';
 
 export function INaturalistLegendWidget() {
   const [isExpanded, setIsExpanded] = useState(true);
   const {
-    selectedTaxa, toggleTaxon, selectAll, hasFilter,
+    selectedTaxa, toggleTaxon, selectAll, clearAll, hasFilter,
     taxonCounts, loading, dataLoaded,
   } = useINaturalistFilter();
 
@@ -23,23 +25,24 @@ export function INaturalistLegendWidget() {
     .sort((a, b) => b.count - a.count);
 
   // Loading state — show shimmer while fetching
-  if (loading || !dataLoaded) {
+  if (!dataLoaded) {
     return (
       <div
         id="inat-legend-widget"
         className="absolute bottom-6 right-6 bg-white rounded-lg shadow-lg border border-gray-300 z-30 w-72"
       >
-        <div id="inat-legend-loading" className="flex items-center gap-2 px-4 py-3">
-          <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-          <span className="text-sm text-gray-500">Loading observations...</span>
-        </div>
+        <InlineLoadingRow
+          id="inat-legend-loading"
+          message="Loading observations..."
+          containerClassName={loadingTheme.legendRow}
+          spinnerClassName="w-4 h-4 animate-spin text-gray-400"
+          textClassName={loadingTheme.inlineText}
+        />
       </div>
     );
   }
 
   if (groups.length === 0) return null;
-
-  const allVisible = !hasFilter;
 
   return (
     <div
@@ -63,15 +66,27 @@ export function INaturalistLegendWidget() {
               : <ChevronRight className="w-4 h-4 text-gray-600" />}
           </button>
           <h3 className="text-sm font-semibold text-gray-900">iNaturalist Taxa</h3>
+          {loading && dataLoaded && (
+            <Loader2 id="inat-legend-refresh-spinner" className={loadingTheme.legendRefreshSpinner} />
+          )}
         </div>
-        {!allVisible && (
-          <button
-            id="inat-legend-show-all"
-            onClick={selectAll}
-            className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-          >
-            Show All
-          </button>
+        {hasFilter && (
+          <div id="inat-legend-actions" className="flex items-center gap-2">
+            <button
+              id="inat-legend-select-all"
+              onClick={selectAll}
+              className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+            >
+              Select All
+            </button>
+            <button
+              id="inat-legend-clear-all"
+              onClick={clearAll}
+              className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+            >
+              Clear All
+            </button>
+          </div>
         )}
       </div>
 
@@ -81,7 +96,7 @@ export function INaturalistLegendWidget() {
           {groups.map(group => {
             const isSelected = hasFilter ? selectedTaxa.has(group.value) : true;
             const bgColor = isSelected
-              ? 'bg-blue-50 hover:bg-blue-100 border-blue-200'
+              ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200'
               : 'bg-gray-100 hover:bg-gray-150 border-gray-200 opacity-60';
 
             return (

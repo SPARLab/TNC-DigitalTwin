@@ -14,9 +14,11 @@ import type { PinnedLayer, CountDisplayMode } from '../../../types';
 import { FilterIndicator } from './FilterIndicator';
 import { PinnedLayerChildRow } from './PinnedLayerChildRow';
 import { NewViewButton } from './NewViewButton';
+import { EyeSlotLoadingSpinner } from '../../shared/loading/LoadingPrimitives';
 
 interface PinnedLayerRowProps {
   layer: PinnedLayer;
+  isDataSourceLoading: boolean;
   isExpanded: boolean;
   showDragHandle: boolean;
   justDropped?: boolean;
@@ -41,6 +43,7 @@ interface PinnedLayerRowProps {
 
 export function PinnedLayerRow({
   layer,
+  isDataSourceLoading,
   isExpanded,
   showDragHandle,
   justDropped = false,
@@ -204,15 +207,18 @@ export function PinnedLayerRow({
           <button
             onClick={e => { e.stopPropagation(); onToggleVisibility(); }}
             className="flex-shrink-0 p-0.5 rounded hover:bg-gray-100 transition-colors"
-            title={layer.isVisible ? 'Hide on map' : 'Show on map'}
-            aria-label={`${layer.name} is ${layer.isVisible ? 'visible' : 'hidden'} on map`}
+            title={isDataSourceLoading ? `${layer.name} is loading` : (layer.isVisible ? 'Hide on map' : 'Show on map')}
+            aria-label={isDataSourceLoading ? `${layer.name} is loading` : `${layer.name} is ${layer.isVisible ? 'visible' : 'hidden'} on map`}
             aria-pressed={layer.isVisible}
+            disabled={isDataSourceLoading}
           >
-            {(isNested ? parentEyeOn : layer.isVisible) ? (
+            {isDataSourceLoading ? (
+              <EyeSlotLoadingSpinner id={`pinned-row-loading-icon-${layer.id}`} />
+            ) : ((isNested ? parentEyeOn : layer.isVisible) ? (
               <Eye className="w-4 h-4 text-gray-700" />
             ) : (
               <EyeOff className="w-4 h-4 text-gray-300" />
-            )}
+            ))}
           </button>
 
           {/* Layer name */}
