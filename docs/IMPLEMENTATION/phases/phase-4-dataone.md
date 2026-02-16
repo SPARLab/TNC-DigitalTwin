@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
-**Status:** ⚪ Not Started  
-**Progress:** 0 / 6 tasks  
+**Status:** 🟡 In Progress  
+**Progress:** 1 / 6 tasks  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -12,7 +12,7 @@
 
 | ID | Status | Task | Last Updated | Assignee | Notes |
 |----|--------|------|--------------|----------|-------|
-| 4.1 | ⚪ Not Started | Query DataOne service to understand attributes | — | | |
+| 4.1 | 🟢 Complete | Query DataOne service to understand attributes | Feb 16, 2026 | Claude | Service schema analyzed (layers 0/1/2), key UI fields selected, category mapping + file-detail strategy documented below. |
 | 4.2 | ⚪ Not Started | Create DataOne right sidebar shell | — | | |
 | 4.3 | ⚪ Not Started | Implement search and filter UI | — | | |
 | 4.4 | ⚪ Not Started | Implement dataset list with cards | — | | |
@@ -220,22 +220,62 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 ### Dataset Attributes
 | Attribute | Type | Useful For | Notes |
 |-----------|------|------------|-------|
-| title | string | Display, search | |
-| authors | array/string | Display, filter | |
-| abstract | string | Display | |
-| doi | string | Display, link | |
-| year | number | Filter | |
-| tnc_category | string | Filter | AI-enriched |
-| keywords | array | Display, search | |
-| bounding_box | geometry | Map display | |
-| files | array | Display | May be separate query |
+| `dataone_id` | string | Unique ID, display, links | DOI-like identifier used as canonical dataset identity (example: `doi:10...`). |
+| `title` | string | Card + detail display, text search | Primary search/display field in layer 0/1/2. |
+| `authors` | semicolon-delimited string | Card + detail display, optional filter | Needs parsing to array in UI (`;` delimiter). |
+| `abstract` | string | Detail display, text search (optional) | Available in layers 1/2 only (not layer 0). |
+| `keywords` | delimiter-separated string | Detail display, optional search expansion | Available in layers 1/2 only; can be long. |
+| `tnc_category` | string | Primary category filter | AI-enriched primary category. |
+| `tnc_categories` | semicolon-delimited string | Multi-category chips/filter matching | Supports cross-category tagging; includes secondary categories. |
+| `tnc_confidence` | number | QA/debug info | AI category confidence score (0-1). |
+| `date_uploaded` | epoch ms | Sort, recency display | Good default sort: `date_uploaded DESC`. |
+| `begin_date`, `end_date` | epoch ms | Year/temporal filters | Supports temporal range filtering. |
+| `files_summary` | JSON string | Card file counts/types | Contains `total`, `by_ext`, `size_bytes`; parse in client. |
+| `dataset_url` | string | "Open in DataONE" action | DataONE landing page URL. |
+| `data_url` | string | Advanced/download action | Data resolver URL (layers 1/2). |
+| `external_url` | string nullable | External source link fallback | Used for metadata-only datasets. |
+| `center_lat`, `center_lon` | number | Map point geometry | Reliable map plotting fallback if feature geometry omitted. |
+| `north_bound`, `south_bound`, `east_bound`, `west_bound` | number | Spatial coverage in detail | Bounding box fields available in layers 1/2. |
+| `series_id`, `version_count`, `is_latest_version` | string/int/bool-ish | Version history UX | Supports "latest vs all versions" views. |
 
 ### Query Performance
 | Query Type | Avg Response Time | Notes |
 |------------|-------------------|-------|
-| All datasets | | |
-| Filtered by category | | |
-| Search by keyword | | |
+| All datasets (`Layer 0`, `returnCountOnly`) | ~216 ms | Count observed: 1231 latest datasets. |
+| Filtered by category (`tnc_category='Species'`) | ~177 ms | Count observed: 124. |
+| Search by keyword (`Layer 1`, `keywords LIKE '%kelp%'`) | ~173 ms | Count observed: 4. |
+
+### Layer Usage Recommendation
+
+- **Layer 0 (`Lite`) for browse list + count queries:** fastest payload, includes core fields needed for cards/filtering.
+- **Layer 1 (`Latest`) for detail view:** includes abstract, keywords, authors, bbox fields, `data_url`, and richer metadata.
+- **Layer 2 (`AllVersions`) for version history only:** use when user explicitly requests historical versions.
+
+### Category Mapping (AI-Enriched)
+
+Observed distinct primary `tnc_category` values from Layer 0:
+
+- Earth Observations
+- Elevation and Bathymetry
+- Freshwater
+- Land Cover
+- Oceans and Coasts
+- Soils and Geology
+- Species
+- Threats and Hazards
+- Weather and Climate
+
+Notes:
+- `tnc_category` is the primary AI-enriched category for dropdown filtering.
+- `tnc_categories` is a multi-label string (semicolon-delimited) and may include additional values beyond the primary category.
+- Example includes `Research and Sensor Equipment` as a secondary category in `tnc_categories`.
+
+### Answers to Task 4.1 Questions
+
+- **What metadata fields exist?** Yes: title, authors, abstract, keywords, dates, categories, links, rights holder, spatial bounds, and versioning metadata are available (layer-dependent).
+- **How are TNC categories assigned?** AI-enriched fields are present as `tnc_category` (primary), `tnc_categories` (multi-label), and `tnc_confidence` (confidence score).
+- **Are file lists included in the feature service?** Not as full per-file rows. Feature service provides `files_summary` aggregate JSON; detailed file-level info should be fetched separately (DataONE API / resolver flow).
+- **What's the bounding box / spatial coverage format?** Numeric scalar fields (`north_bound`, `south_bound`, `east_bound`, `west_bound`) plus center point (`center_lat`, `center_lon`).
 
 ---
 
@@ -278,6 +318,7 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 16, 2026 | 4.1 | Completed service analysis against live DataONE FeatureServer. Documented layer schemas (Lite/Latest/AllVersions), UI-relevant attributes, AI-enriched category mapping (`tnc_category` / `tnc_categories` / `tnc_confidence`), file-detail strategy (`files_summary` vs DataONE API), and baseline query timings. | Claude |
 | Feb 5, 2026 | 4.3 | Resolved DFT-035: DataOne search behavior — debounced instant search (500ms, 2+ chars) with immediate dropdown filters. Enter key bypass for power users. Initial state loads all datasets, eliminating "pre-search" state. `AbortController` for race condition prevention. See planning-task-tracker.md | Will + Claude |
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 | Feb 2, 2026 | 4.2 | Resolved DFT-006: Overview tab opens first when layer is selected, with prominent "Browse Features →" button | Will + Claude |
