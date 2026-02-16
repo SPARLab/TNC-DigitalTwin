@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 9 / 11 tasks  
+**Progress:** 10 / 11 tasks  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -21,7 +21,7 @@
 | 4.7 | 🟢 Complete | Feb 16, 2026 | Render DataONE datasets as map markers (dots or clusters) | Added DataONE map layer + map behavior with filter-synced marker population from `center_lat`/`center_lon`, wired registry/layer factory (`dataone-datasets`), and map-click-to-detail flow (marker click activates DataONE + opens dataset detail in Browse). |
 | 4.8 | 🟢 Complete | Feb 16, 2026 | Make full dataset card clickable to open detail | Browse cards now open detail on card click + Enter/Space with card-level hover/focus states; inner action controls stop propagation so card navigation does not depend on the Details button. |
 | 4.9 | 🟢 Complete | Feb 16, 2026 | Simplify browse card actions and visual hierarchy | Removed browse card CTA row (`Save View`, `Details`, `Open in DataONE`) and shifted metadata to low-contrast, secondary inline chips/text for cleaner scanning. |
-| 4.10 | ⚪ Not Started | Feb 16, 2026 | Add DataONE open modes in detail view (new tab + iframe) | Keep "Open in DataONE" actions only in detail view with two options: open external in new tab and open embedded DataONE page in iframe within app context. |
+| 4.10 | 🟢 Complete | Feb 16, 2026 | Add DataONE open modes in detail view (new tab + iframe) | Added detail-only dual open actions: secure new-tab open and in-app embedded iframe panel with close control, loading state, and blocked/error fallback that routes users to new-tab open. |
 | 4.11 | ⚪ Not Started | Feb 16, 2026 | Move and wire Save Dataset View in detail flow | Save action should live in detail view only; wire it to create/update a filtered child view in Map Layers with consistent naming + visibility behavior. |
 
 **Status Legend:**
@@ -421,6 +421,7 @@ Notes:
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 16, 2026 | 4.10 | **Task 4.10 complete:** Added two detail-only DataONE open modes in `DatasetDetailView`: `Open in DataONE (New Tab)` using secure `window.open` (`noopener,noreferrer`) and `Open in DataONE (In App)` using a bounded embedded iframe panel. Added loading indicator, blocked/embed-failure fallback messaging, and direct fallback action to open in new tab. | Codex |
 | Feb 16, 2026 | 4.9 | **Task 4.9 complete:** Simplified DataONE browse cards by removing the full CTA action row (`Save View`, `Details`, `Open in DataONE`) and de-emphasizing metadata treatment (subtle category pill + low-contrast file/DOI text) to improve scanability and reduce visual noise. | Codex |
 | Feb 16, 2026 | 4.8-4.11 | Added follow-up task set based on UI feedback: full-card click-to-detail behavior, browse action-row removal + visual hierarchy cleanup, detail-only DataONE open modes (new tab + iframe), and detail-only Save Dataset View wiring to Map Layers child views. Updated phase status to In Progress (7/11). | Codex |
 | Feb 16, 2026 | 4.7 | **Task 4.7 complete:** Implemented `dataoneLayer.ts` and `useDataOneMapBehavior` to render DataONE dataset markers on the v2 map from `center_lat`/`center_lon`. Wired `dataone-datasets` into `IMPLEMENTED_LAYERS` + `createMapLayer`, enabled DataONE map behavior in registry, synced marker queries to active sidebar filters (search/category/year/author), and added map marker click behavior to activate DataONE + open dataset detail in the right sidebar. | Codex |

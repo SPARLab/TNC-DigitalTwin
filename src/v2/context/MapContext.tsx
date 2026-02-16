@@ -15,6 +15,11 @@ interface Toast {
   type: 'info' | 'warning';
 }
 
+interface DataOnePreviewState {
+  url: string;
+  title: string;
+}
+
 interface MapContextValue {
   /** Ref to the ArcGIS MapView (null until map initializes) */
   viewRef: React.MutableRefObject<MapView | null>;
@@ -34,6 +39,12 @@ interface MapContextValue {
   toasts: Toast[];
   /** Dismiss a toast */
   dismissToast: (id: string) => void;
+  /** Current DataONE preview modal payload */
+  dataOnePreview: DataOnePreviewState | null;
+  /** Open DataONE preview modal over map */
+  openDataOnePreview: (url: string, title: string) => void;
+  /** Close DataONE preview modal */
+  closeDataOnePreview: () => void;
 }
 
 const MapContext = createContext<MapContextValue | null>(null);
@@ -51,6 +62,7 @@ export function MapProvider({ children }: { children: ReactNode }) {
   const viewRef = useRef<MapView | null>(null);
   const highlightLayerRef = useRef<GraphicsLayer | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [dataOnePreview, setDataOnePreview] = useState<DataOnePreviewState | null>(null);
   const [mapReady, setMapReadyState] = useState(0);
   const setMapReady = useCallback(() => setMapReadyState(n => n + 1), []);
 
@@ -80,6 +92,14 @@ export function MapProvider({ children }: { children: ReactNode }) {
     setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
 
+  const openDataOnePreview = useCallback((url: string, title: string) => {
+    setDataOnePreview({ url, title });
+  }, []);
+
+  const closeDataOnePreview = useCallback(() => {
+    setDataOnePreview(null);
+  }, []);
+
   return (
     <MapContext.Provider
       value={{
@@ -87,6 +107,7 @@ export function MapProvider({ children }: { children: ReactNode }) {
         mapReady, setMapReady,
         highlightPoint, clearHighlight,
         showToast, toasts, dismissToast,
+        dataOnePreview, openDataOnePreview, closeDataOnePreview,
       }}
     >
       {children}

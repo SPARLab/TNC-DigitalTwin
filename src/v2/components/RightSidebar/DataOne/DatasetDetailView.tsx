@@ -98,7 +98,7 @@ export function DatasetDetailView({ dataset, onBack, onKeywordClick }: DatasetDe
   const [error, setError] = useState<string | null>(null);
   const [copiedState, setCopiedState] = useState<'idle' | 'doi' | 'cite'>('idle');
   const [viewSaved, setViewSaved] = useState(false);
-  const { viewRef, highlightPoint, showToast } = useMap();
+  const { viewRef, highlightPoint, showToast, openDataOnePreview } = useMap();
 
   useEffect(() => {
     let cancelled = false;
@@ -198,6 +198,16 @@ export function DatasetDetailView({ dataset, onBack, onKeywordClick }: DatasetDe
     }
   };
 
+  const handleOpenInNewTab = () => {
+    if (!openDataOneUrl) return;
+    window.open(openDataOneUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleOpenInApp = () => {
+    if (!openDataOneUrl) return;
+    openDataOnePreview(openDataOneUrl, dataset.title);
+  };
+
   const handleViewOnMap = async () => {
     const view = viewRef.current;
     if (!view) return;
@@ -273,16 +283,25 @@ export function DatasetDetailView({ dataset, onBack, onKeywordClick }: DatasetDe
           {(openDataOneUrl || doi) && (
             <section id="dataone-detail-primary-actions-section" className="space-y-2">
               {openDataOneUrl && (
-                <a
-                  id="dataone-detail-primary-external-link"
-                  href={openDataOneUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-800"
-                >
-                  Open in DataONE
-                  <ExternalLink className="h-4 w-4" />
-                </a>
+                <div id="dataone-detail-open-mode-button-row" className="flex flex-col gap-2">
+                  <button
+                    id="dataone-detail-open-new-tab-button"
+                    type="button"
+                    onClick={handleOpenInNewTab}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-800"
+                  >
+                    Open in DataONE (New Tab)
+                    <ExternalLink className="h-4 w-4" />
+                  </button>
+                  <button
+                    id="dataone-detail-open-in-app-button"
+                    type="button"
+                    onClick={handleOpenInApp}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100"
+                  >
+                    Open in DataONE (In App)
+                  </button>
+                </div>
               )}
               <div id="dataone-detail-secondary-actions-row" className="grid grid-cols-2 gap-2">
                 <button
