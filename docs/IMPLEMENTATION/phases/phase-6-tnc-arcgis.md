@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 5 / 10 tasks  
+**Progress:** 6 / 10 tasks  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry)  
 **Owner:** TBD
@@ -34,7 +34,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **6.3** | 🟢 | 2026-02-16 13:11 PST | TNC ArcGIS Service Module | Added `src/v2/services/tncArcgisService.ts` with service URL builder, schema fetch, feature query, and WHERE validation helpers with malformed/network/ArcGIS error handling |
 | **6.4** | 🟢 | 2026-02-16 13:15 PST | TNC ArcGIS Adapter Shell | Added `tnc-arcgis` adapter + context warm-cache hook, dynamic registry wiring, and map-layer factory support for FeatureServer/MapServer |
 | **6.5** | 🟢 | 2026-02-16 13:29 PST | Right Sidebar: Service Overview (Multi-Layer) | Added service-level overview in `TNCArcGISOverviewTab` with sub-layer dropdown, layer list, dynamic Browse/Pin actions, pinned badge state, and service sub-layer selection state in `LayerContext` |
-| **6.6** | ⚪ | — | Right Sidebar: Generic Filter UI (MVP) | Field/Operator/Value rows, "Add Filter", "Preview Results", WHERE clause builder | USER NOTES: Defer this for later.
+| **6.6** | 🟢 | 2026-02-16 14:22 PST | Right Sidebar: Generic Filter UI (MVP) | Added `GenericFilterUI` + `TNCArcGISBrowseTab` schema-driven filters, SQL WHERE builder, preview validation, and LayerContext sync for TNC filter metadata |
 | **6.7** | ⚪ | — | Map Layer Rendering | Add FeatureLayer/MapImageLayer to map with definition expression from filters |
 | **6.8** | ⚪ | — | Search Enhancement | Match service + layer names; expand parent service when layer matches |
 | **6.9** | ⚪ | — | Keyboard Navigation & ARIA | Arrow keys for expand/collapse, ARIA tree structure, focus management |
@@ -581,13 +581,13 @@ function buildWhereClause(filters: FilterRow[]): string {
 - Shows red error if invalid: "⚠ SQL error: invalid field name 'fire_yeaar'"
 
 **Acceptance Criteria:**
-- [ ] Filter rows support field/operator/value selection
-- [ ] Field dropdown populated from layer schema
-- [ ] Operators cover common query patterns (=, >, LIKE, IN, NULL)
-- [ ] WHERE clause builder generates correct SQL
-- [ ] "Preview Results" validates query and shows count
-- [ ] "Clear All" removes all filters
-- [ ] Error feedback for malformed queries
+- [x] Filter rows support field/operator/value selection
+- [x] Field dropdown populated from layer schema
+- [x] Operators cover common query patterns (=, >, LIKE, IN, NULL)
+- [x] WHERE clause builder generates correct SQL
+- [x] "Preview Results" validates query and shows count
+- [x] "Clear All" removes all filters
+- [x] Error feedback for malformed queries
 
 **Estimated Time:** 6-8 hours
 

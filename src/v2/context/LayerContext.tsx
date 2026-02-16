@@ -12,6 +12,7 @@ import type {
   INaturalistViewFilters,
   AnimlViewFilters,
   DendraViewFilters,
+  TNCArcGISViewFilters,
 } from '../types';
 import { useCatalog } from './CatalogContext';
 import { TAXON_CONFIG } from '../components/Map/layers/taxonConfig';
@@ -46,6 +47,12 @@ interface LayerContextValue {
     layerId: string,
     filters: DendraViewFilters,
     resultCount: number,
+    viewId?: string,
+  ) => void;
+  syncTNCArcGISFilters: (
+    layerId: string,
+    filters: TNCArcGISViewFilters,
+    resultCount?: number,
     viewId?: string,
   ) => void;
   createDendraFilteredView: (
@@ -263,6 +270,41 @@ function dendraFiltersEqual(
   );
 }
 
+function buildTNCArcGISFilterSummary(filters: TNCArcGISViewFilters): string | undefined {
+  const clause = filters.whereClause.trim();
+  if (!clause || clause === '1=1') return undefined;
+  return clause.length > 110 ? `${clause.slice(0, 107)}...` : clause;
+}
+
+function getTNCArcGISFilterCount(filters: TNCArcGISViewFilters): number {
+  return (filters.fields ?? []).filter(filter => {
+    const hasField = filter.field.trim().length > 0;
+    const hasOperator = filter.operator.trim().length > 0;
+    if (!hasField || !hasOperator) return false;
+    if (filter.operator === 'is null' || filter.operator === 'is not null') return true;
+    return filter.value.trim().length > 0;
+  }).length;
+}
+
+function tncArcgisFiltersEqual(
+  a: TNCArcGISViewFilters | undefined,
+  b: TNCArcGISViewFilters | undefined,
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (a.whereClause !== b.whereClause) return false;
+  const aFields = a.fields ?? [];
+  const bFields = b.fields ?? [];
+  if (aFields.length !== bFields.length) return false;
+  return aFields.every((field, index) => {
+    const target = bFields[index];
+    return !!target
+      && field.field === target.field
+      && field.operator === target.operator
+      && field.value === target.value;
+  });
+}
+
 export function LayerProvider({ children }: { children: ReactNode }) {
   const { layerMap } = useCatalog();
   const [activeLayer, setActiveLayer] = useState<ActiveLayer | null>(null);
@@ -448,6 +490,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                     filterSummary: undefined,
                     inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
                     animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
+                    tncArcgisFilters: { whereClause: '1=1', fields: [] },
                     dendraFilters: {
                       showActiveOnly: false,
                       selectedStationId: undefined,
@@ -470,6 +513,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
           animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
           animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
+          tncArcgisFilters: { whereClause: '1=1', fields: [] },
           dendraFilters: {
             showActiveOnly: false,
             selectedStationId: undefined,
@@ -693,6 +737,72 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             filterCount: nextFilterCount,
             filterSummary: nextFilterSummary,
             dendraFilters: normalizedFilters,
+            resultCount,
+          };
+        });
+
+        const changed = nextLayers.some((l, i) => l !== prev[i]);
+        return changed ? nextLayers : prev;
+      });
+    },
+    []
+  );
+
+  const syncTNCArcGISFilters = useCallback(
+    (layerId: string, filters: TNCArcGISViewFilters, resultCount?: number, viewId?: string) => {
+      setPinnedLayers(prev => {
+        const nextLayers = prev.map(p => {
+          if (p.layerId !== layerId) return p;
+
+          const normalizedFilters: TNCArcGISViewFilters = {
+            whereClause: filters.whereClause.trim() || '1=1',
+            fields: (filters.fields ?? []).map(filter => ({
+              field: filter.field,
+              operator: filter.operator,
+              value: filter.value,
+            })),
+          };
+          const nextFilterCount = getTNCArcGISFilterCount(normalizedFilters);
+          const nextFilterSummary = buildTNCArcGISFilterSummary(normalizedFilters);
+
+          if (viewId && p.views) {
+            const targetView = p.views.find(v => v.id === viewId);
+            if (
+              targetView &&
+              targetView.filterCount === nextFilterCount &&
+              targetView.filterSummary === nextFilterSummary &&
+              targetView.resultCount === resultCount &&
+              tncArcgisFiltersEqual(targetView.tncArcgisFilters, normalizedFilters)
+            ) return p;
+
+            return {
+              ...p,
+              views: p.views.map(v =>
+                v.id === viewId
+                  ? {
+                      ...v,
+                      filterCount: nextFilterCount,
+                      filterSummary: nextFilterSummary,
+                      tncArcgisFilters: normalizedFilters,
+                      resultCount,
+                    }
+                  : v
+              ),
+            };
+          }
+
+          if (
+            p.filterCount === nextFilterCount &&
+            p.filterSummary === nextFilterSummary &&
+            p.resultCount === resultCount &&
+            tncArcgisFiltersEqual(p.tncArcgisFilters, normalizedFilters)
+          ) return p;
+
+          return {
+            ...p,
+            filterCount: nextFilterCount,
+            filterSummary: nextFilterSummary,
+            tncArcgisFilters: normalizedFilters,
             resultCount,
           };
         });
@@ -1078,6 +1188,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         syncINaturalistFilters,
         syncAnimlFilters,
         syncDendraFilters,
+        syncTNCArcGISFilters,
         createDendraFilteredView,
         reorderLayers,
         createNewView,
