@@ -23,7 +23,7 @@ import { useDendraMapBehavior } from './dendra/useMapBehavior';
 import { animlAdapter, useAnimlCacheStatus } from './animl/adapter';
 import { useAnimlMapBehavior } from './animl/useMapBehavior';
 import { dataoneAdapter, useDataOneCacheStatus } from './dataone/adapter';
-// import { useDataOneMapBehavior } from './dataone/useMapBehavior';              // ← v2/dataone
+import { useDataOneMapBehavior } from './dataone/useMapBehavior';
 
 // ── Adapter registry ─────────────────────────────────────────────────────────
 
@@ -56,7 +56,7 @@ export function useAllMapBehaviors(
   useINaturalistMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
   useDendraMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
   useAnimlMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
-  // useDataOneMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);   // ← v2/dataone
+  useDataOneMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
 }
 
 /**

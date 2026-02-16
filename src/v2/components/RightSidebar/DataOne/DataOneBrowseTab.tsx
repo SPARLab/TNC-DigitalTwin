@@ -3,10 +3,11 @@
 // Implements DFT-035 behavior for debounced text search and immediate filters.
 // ============================================================================
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, X, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { dataOneService, type DataOneDataset } from '../../../../services/dataOneService';
 import { useDataOneFilter } from '../../../context/DataOneFilterContext';
+import { useLayers } from '../../../context/LayerContext';
 import { InlineLoadingRow, RefreshLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { DatasetListView } from './DatasetListView';
 import { DatasetDetailView } from './DatasetDetailView';
@@ -40,14 +41,19 @@ function toEndDate(year: string): string | undefined {
 }
 
 export function DataOneBrowseTab() {
-  const { warmCache, createBrowseLoadingScope } = useDataOneFilter();
-  const [searchInput, setSearchInput] = useState('');
-  const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [startYear, setStartYear] = useState('');
-  const [endYear, setEndYear] = useState('');
-  const [authorFilter, setAuthorFilter] = useState('');
-  const [selectedDataset, setSelectedDataset] = useState<DataOneDataset | null>(null);
+  const {
+    warmCache,
+    createBrowseLoadingScope,
+    browseFilters,
+    setBrowseFilters,
+  } = useDataOneFilter();
+  const { activeLayer, activateLayer } = useLayers();
+  const [searchInput, setSearchInput] = useState(browseFilters.searchText);
+  const [appliedSearchTerm, setAppliedSearchTerm] = useState(browseFilters.searchText);
+  const [selectedCategory, setSelectedCategory] = useState<string>(browseFilters.tncCategory || 'all');
+  const [startYear, setStartYear] = useState(browseFilters.startDate.slice(0, 4));
+  const [endYear, setEndYear] = useState(browseFilters.endDate.slice(0, 4));
+  const [authorFilter, setAuthorFilter] = useState(browseFilters.author);
 
   const [datasets, setDatasets] = useState<DataOneDataset[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -55,6 +61,8 @@ export function DataOneBrowseTab() {
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDataset, setSelectedDataset] = useState<DataOneDataset | null>(null);
+  const lastHandledFeatureIdRef = useRef<string | null>(null);
 
   const currentYear = new Date().getFullYear();
   const yearOptions = useMemo(
@@ -65,6 +73,17 @@ export function DataOneBrowseTab() {
   useEffect(() => {
     warmCache();
   }, [warmCache]);
+
+  // Keep map-query filters synchronized with browse controls.
+  useEffect(() => {
+    setBrowseFilters({
+      searchText: appliedSearchTerm,
+      tncCategory: selectedCategory === 'all' ? '' : selectedCategory,
+      startDate: toStartDate(startYear) || '',
+      endDate: toEndDate(endYear) || '',
+      author: authorFilter.trim(),
+    });
+  }, [appliedSearchTerm, selectedCategory, startYear, endYear, authorFilter, setBrowseFilters]);
 
   // Debounced text search (DFT-035)
   useEffect(() => {
@@ -130,11 +149,38 @@ export function DataOneBrowseTab() {
     };
   }, [appliedSearchTerm, selectedCategory, startYear, endYear, authorFilter, page, createBrowseLoadingScope]);
 
+  // Map marker clicks set activeLayer.featureId. Ensure detail opens even when
+  // the clicked dataset is not in the current paginated result set.
+  useEffect(() => {
+    if (activeLayer?.layerId !== 'dataone-datasets' || !activeLayer.featureId) return;
+    const featureId = String(activeLayer.featureId);
+    if (lastHandledFeatureIdRef.current === featureId) return;
+    if (selectedDataset?.dataoneId === featureId) return;
+    lastHandledFeatureIdRef.current = featureId;
+
+    let cancelled = false;
+    void dataOneService.getDatasetByDataoneId(featureId)
+      .then((dataset) => {
+        if (!cancelled && dataset) setSelectedDataset(dataset);
+      })
+      .catch(() => {
+        // Map behavior already logs marker click issues; no duplicate UI noise here.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeLayer, selectedDataset?.dataoneId]);
+
   if (selectedDataset) {
     return (
       <DatasetDetailView
         dataset={selectedDataset}
-        onBack={() => setSelectedDataset(null)}
+        onBack={() => {
+          setSelectedDataset(null);
+          if (activeLayer?.layerId === 'dataone-datasets') {
+            activateLayer('dataone-datasets', activeLayer.viewId, undefined);
+          }
+        }}
         onKeywordClick={(keyword) => {
           setSelectedDataset(null);
           setSearchInput(keyword);
@@ -299,7 +345,10 @@ export function DataOneBrowseTab() {
         <DatasetListView
           datasets={datasets}
           loading={showRefreshLoading}
-          onViewDetail={(dataset) => setSelectedDataset(dataset)}
+          onViewDetail={(dataset) => {
+            lastHandledFeatureIdRef.current = dataset.dataoneId;
+            setSelectedDataset(dataset);
+          }}
         />
       )}
 

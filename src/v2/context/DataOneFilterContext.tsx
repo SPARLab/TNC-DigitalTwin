@@ -6,12 +6,22 @@
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
 import { dataOneService } from '../../services/dataOneService';
 
+export interface DataOneBrowseFilters {
+  searchText: string;
+  tncCategory: string;
+  startDate: string;
+  endDate: string;
+  author: string;
+}
+
 interface DataOneFilterContextValue {
   loading: boolean;
   dataLoaded: boolean;
   error: string | null;
   totalDatasetCount: number;
+  browseFilters: DataOneBrowseFilters;
   warmCache: () => void;
+  setBrowseFilters: (next: DataOneBrowseFilters) => void;
   createBrowseLoadingScope: () => () => void;
 }
 
@@ -23,6 +33,13 @@ export function DataOneFilterProvider({ children }: { children: ReactNode }) {
   const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [totalDatasetCount, setTotalDatasetCount] = useState(0);
+  const [browseFilters, setBrowseFilters] = useState<DataOneBrowseFilters>({
+    searchText: '',
+    tncCategory: '',
+    startDate: '',
+    endDate: '',
+    author: '',
+  });
   const inFlightRef = useRef(false);
   const loading = isWarmLoading || browseLoadCount > 0;
 
@@ -58,6 +75,10 @@ export function DataOneFilterProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const handleSetBrowseFilters = useCallback((next: DataOneBrowseFilters) => {
+    setBrowseFilters(next);
+  }, []);
+
   return (
     <DataOneFilterContext.Provider
       value={{
@@ -65,7 +86,9 @@ export function DataOneFilterProvider({ children }: { children: ReactNode }) {
         dataLoaded,
         error,
         totalDatasetCount,
+        browseFilters,
         warmCache,
+        setBrowseFilters: handleSetBrowseFilters,
         createBrowseLoadingScope,
       }}
     >

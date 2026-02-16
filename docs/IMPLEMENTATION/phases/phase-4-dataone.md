@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
-**Status:** 🟡 In Progress  
-**Progress:** 6 / 7 tasks  
+**Status:** 🟢 Complete  
+**Progress:** 7 / 7 tasks  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -18,7 +18,7 @@
 | 4.4 | 🟢 Complete | Feb 16, 2026 | Implement dataset list with cards | Dataset cards now include title, authors, year, description snippet fallback, DOI badge (when `dataone_id` is DOI), file count/types summary, save-view action button, details navigation, and "Open in DataONE ↗" external action. |
 | 4.5 | 🟢 Complete | Feb 16, 2026 | Implement dataset detail view | Added full dataset detail drill-down with back navigation, full abstract/authors/temporal metadata, file list + type descriptions + size summary, spatial coverage with "View on Map", clickable keywords (apply browse search), save-view action, primary "Open in DataONE", and copy DOI/citation actions. |
 | 4.6 | 🟢 Complete | Feb 16, 2026 | Sync loading indicators (Map Layers widget ↔ map center ↔ right sidebar) | DataOne loading now propagates from shared context to adapter/registry, so Map Layers eye-slot spinner, map-center first-load overlay, and right-sidebar loading rows stay synchronized. |
-| 4.7 | ⚪ Not Started | — | Render DataONE datasets as map markers (dots or clusters) | — |
+| 4.7 | 🟢 Complete | Feb 16, 2026 | Render DataONE datasets as map markers (dots or clusters) | Added DataONE map layer + map behavior with filter-synced marker population from `center_lat`/`center_lon`, wired registry/layer factory (`dataone-datasets`), and map-click-to-detail flow (marker click activates DataONE + opens dataset detail in Browse). |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -343,6 +343,7 @@ Notes:
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 16, 2026 | 4.7 | **Task 4.7 complete:** Implemented `dataoneLayer.ts` and `useDataOneMapBehavior` to render DataONE dataset markers on the v2 map from `center_lat`/`center_lon`. Wired `dataone-datasets` into `IMPLEMENTED_LAYERS` + `createMapLayer`, enabled DataONE map behavior in registry, synced marker queries to active sidebar filters (search/category/year/author), and added map marker click behavior to activate DataONE + open dataset detail in the right sidebar. | Codex |
 | Feb 16, 2026 | 4.6 | **Task 4.6 complete:** Synced DataOne loading state across right-sidebar browse requests and shared cache status so Map Layers eye-slot loading, map-center first-load overlay, and sidebar loading rows are coordinated from one source of truth. Updated map overlay to only show on first-load (`!dataLoaded`). | Claude |
 | Feb 16, 2026 | 4.4 | **Task 4.4 complete:** Implemented `DatasetListView` card anatomy for browse results. Added author + year row, description snippet fallback, DOI badge display (from `dataone_id`), file count/type summary, visible save-view action button, details CTA, and "Open in DataONE ↗" external link treatment. | Claude |
 | Feb 16, 2026 | 4.7 | **Added Task 4.7:** Render DataONE datasets as map markers (dots or clusters). No map markers currently appear for DataONE; task covers `dataoneLayer.ts`, `useDataOneMapBehavior`, filter sync, optional clustering, and map-click-to-detail. | Claude |

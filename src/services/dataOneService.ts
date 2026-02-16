@@ -429,7 +429,7 @@ class DataOneService {
     });
 
     const url = `${LITE_LAYER_URL}/query?${params}`;
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: options.signal });
 
     if (!response.ok) {
       throw new Error(`Failed to get DataONE map data: ${response.statusText}`);
@@ -455,6 +455,62 @@ class DataOneService {
         };
       })
       .filter((d) => d.geometry !== undefined);
+  }
+
+  /**
+   * Get DataONE datasets for v2 map layer rendering.
+   * Returns Lite-layer records with center coordinates and filter metadata.
+   */
+  async getDatasetsForMapLayer(options: DataOneQueryOptions = {}): Promise<DataOneDataset[]> {
+    const whereClause = buildWhereClause(options);
+
+    const params = new URLSearchParams({
+      where: whereClause,
+      outFields: '*',
+      returnGeometry: 'false',
+      orderByFields: 'date_uploaded DESC',
+      resultRecordCount: '5000',
+      f: 'json',
+    });
+
+    const url = `${LITE_LAYER_URL}/query?${params}`;
+    const response = await fetch(url, { signal: options.signal });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get DataONE map layer datasets: ${response.statusText}`);
+    }
+
+    const data: DataOneArcGISResponse = await response.json();
+    if (data.error || !data.features) return [];
+
+    return data.features
+      .map((feature) => liteRecordToDataset(feature.attributes as DataOneLiteRecord))
+      .filter((dataset) => dataset.centerLat != null && dataset.centerLon != null);
+  }
+
+  /**
+   * Fetch one dataset from the Lite layer by DataONE identifier.
+   * Used when opening detail view from map-marker clicks.
+   */
+  async getDatasetByDataoneId(dataoneId: string): Promise<DataOneDataset | null> {
+    const escapedId = dataoneId.replace(/'/g, "''");
+    const params = new URLSearchParams({
+      where: `dataone_id = '${escapedId}'`,
+      outFields: '*',
+      returnGeometry: 'false',
+      resultRecordCount: '1',
+      f: 'json',
+    });
+
+    const url = `${LITE_LAYER_URL}/query?${params}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch DataONE dataset by id: ${response.statusText}`);
+    }
+
+    const data: DataOneArcGISResponse = await response.json();
+    if (data.error || !data.features || data.features.length === 0) return null;
+    return liteRecordToDataset(data.features[0].attributes as DataOneLiteRecord);
   }
 
   /**
