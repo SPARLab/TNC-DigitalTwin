@@ -44,15 +44,17 @@ export function MapLayersWidget() {
   const loadingByLayerId = new Map<string, boolean>(
     pinnedLayers.map((pinnedLayer) => {
       const catalogLayer = layerMap.get(pinnedLayer.layerId);
-      const isSourceLoading = catalogLayer
-        ? !!cacheStatusByDataSource[catalogLayer.dataSource]?.loading
-        : false;
+      const cacheStatus = catalogLayer
+        ? cacheStatusByDataSource[catalogLayer.dataSource]
+        : null;
+      const isSourceLoading = !!cacheStatus?.loading && !cacheStatus?.dataLoaded;
       return [pinnedLayer.layerId, isSourceLoading];
     }),
   );
-  const activeLayerIsLoading = activeLayer
-    ? !!cacheStatusByDataSource[activeLayer.dataSource]?.loading
-    : false;
+  const activeLayerCacheStatus = activeLayer
+    ? cacheStatusByDataSource[activeLayer.dataSource]
+    : null;
+  const activeLayerIsLoading = !!activeLayerCacheStatus?.loading && !activeLayerCacheStatus?.dataLoaded;
 
   const handleEditFilters = (layerId: string, viewId?: string) => {
     activateLayer(layerId, viewId);

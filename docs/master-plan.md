@@ -32,7 +32,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 0 | Foundation | 🟡 In Progress | ~98% | `v2/foundation` | YES - blocks all |
 | 1 | iNaturalist | 🟢 Complete | 5 / 5 tasks | `v2/inaturalist` | No |
 | 2 | ANiML | 🟡 In Progress | 10 / 14 tasks | `v2/animl` | No |
-| 3 | Dendra | 🟡 In Progress | 6 / 6 tasks | `v2/dendra` | No |
+| 3 | Dendra | 🟡 In Progress | 10 / 11 tasks | `v2/dendra` | No |
 | 4 | DataOne | ⚪ Not Started | 0 / 5 tasks | `v2/dataone` | No |
 | 5 | Export Builder | ⚪ Not Started | 0 / 4 tasks | `v2/export` | No |
 | 6 | TNC ArcGIS Services | ⚪ Not Started | 0 / 10 tasks | `v2/tnc-arcgis` | No |
@@ -247,6 +247,7 @@ When working on any phase:
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
 | Feb 16, 2026 | All | **Phase restructure:** Inserted new Phase 6 (TNC ArcGIS Feature Services), renumbered old Phase 6 (Polish) to Phase 7. Added architectural design for service-level activation + layer switcher pattern for multi-layer TNC services. Generic filter UI (field/operator/value) for MVP. | Will + Claude |
+| Feb 16, 2026 | Phase 3 | **Task 3.10 complete: Dendra loading indicators — sync with Map Layers.** Map Layers eye-slot spinner and map overlay now gate on `loading && !dataLoaded` (initial load only), matching DFT-018. Files: MapLayersWidget.tsx, MapContainer.tsx. | Claude |
 | Feb 16, 2026 | Phase 2 | **Phase 2 Task 2.8 complete: ANiML SVG marker/icon pass.** Replaced emoji camera markers with SVG camera symbols in `animlLayer.ts` (base, badged, muted states). Added row-level icons in ANiML legend and browse filter lists; aligned with no-emoji icon policy. | Will + Claude |
 | Feb 16, 2026 | All | **Unified loading indicator strategy (Task 34) design spec complete.** Canonical contract in design-system.md DFT-018: eye-slot spinner, first-load-only map overlay, legend/sidebar region-specific. Added UX Decision to master-plan. Implementation pending per branch prereqs. | Will + Claude |
 | Feb 16, 2026 | Phase 3 | **Task 3.9 complete: Dendra Save With Filters — distinct behavior.** Renamed buttons to "Update Current View" (station-level sync) and "Save as New View" (creates filtered child view in Map Layers, activates it). Added `createDendraFilteredView()` in LayerContext. Files: StationDetailView.tsx, LayerContext.tsx. | Claude |

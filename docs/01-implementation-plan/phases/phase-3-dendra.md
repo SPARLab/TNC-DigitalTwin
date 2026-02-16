@@ -1,7 +1,7 @@
 # Phase 3: Dendra Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 9 / 11 tasks (3.5d, 3.10 remaining)  
+**Progress:** 10 / 11 tasks (3.5d remaining)  
 **Branch:** `v2/dendra`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -54,7 +54,7 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 | 3.7 | 🟢 Complete | Weather Stations layer — Investigation | | Feb 16: Issue was **dataset-190** (Dangermond Preserve Weather Stations, legacy v0 service in Freshwater category) showing "not implemented" toast. The proper Dendra Weather Stations layer (dataset-183, Research & Sensor Equipment) was working correctly. **Resolution:** Backend fix — Dan set `is_visible: 0` for dataset-190 in Data Catalog FeatureServer. Legacy layer no longer appears in sidebar. |
 | 3.8 | 🟢 Complete | Barometer datastream formatValue crash | | Feb 16: ArcGIS returned min/max/avg as strings; `formatValue` threw `value.toFixed is not a function`. Fixed: coerce to number, handle NaN. Files: dendraStationService.ts. |
 | 3.9 | 🟢 Complete | Save With Filters button — behavior or removal | | Feb 16: Implemented distinct behavior + clearer labels. "Update Current View" updates current row; "Save as New View" creates a new filtered child view in Map Layers and activates it. Files: StationDetailView.tsx, LayerContext.tsx. |
-| 3.10 | ⚪ Not Started | Loading indicators — sync with Map Layers widget | | Propagate iNaturalist Task 34 loading indicator pattern: eye-slot spinner + map overlay when loading initial Dendra layer. See design-system.md DFT-018. |
+| 3.10 | 🟢 Complete | Loading indicators — sync with Map Layers widget | | Feb 16: Synced Dendra to Task 34 contract. Map Layers eye-slot spinner and map overlay now gate on `loading && !dataLoaded` (initial load only), matching DFT-018. |
 
 **Archived:** Completed task details (3.1–3.9) → `docs/archive/phase-3-dendra-completed-tasks.md`
 
@@ -102,10 +102,10 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 **Context:** When loading the initial Dendra layer, the Map Layers widget eye-slot spinner and map center overlay should stay synchronized with the layer load — same behavior as iNaturalist implementation.
 
 **Acceptance Criteria:**
-- [ ] Map Layers widget: blue spinner (w-4 h-4) in eye-slot position when Dendra layer's data source is loading
-- [ ] Map center overlay: shown when active Dendra layer is loading initial data (`!dataLoaded`), not during refresh
-- [ ] Legend: loading when `!dataLoaded`; optional header spinner during refresh
-- [ ] Right sidebar: region-specific loading via shared `InlineLoadingRow` / `RefreshLoadingRow` (already consistent)
+- [x] Map Layers widget: blue spinner (w-4 h-4) in eye-slot position when Dendra layer's data source is loading initial data (`loading && !dataLoaded`)
+- [x] Map center overlay: shown when active Dendra layer is loading initial data (`!dataLoaded`), not during refresh
+- [x] Legend: N/A for Dendra (no Dendra legend widget in adapter; iNaturalist/ANiML legends already follow this contract)
+- [x] Right sidebar: region-specific loading via shared `InlineLoadingRow` / `RefreshLoadingRow` (already consistent)
 
 **Reference:**
 - `docs/development-task-tracker.md` — Cross-Branch Merge Checklist (Loading Indicators)
@@ -232,6 +232,7 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 16, 2026 | 3.10 | ✅ **Task 3.10 complete.** Synced loading indicators with Task 34/DFT-018 contract: Map Layers eye-slot spinner and map-center overlay now use initial-load gating (`loading && !dataLoaded`) for Dendra parity with iNaturalist behavior. Files: `MapLayersWidget.tsx`, `MapContainer.tsx`. | Claude |
 | Feb 16, 2026 | 3.7 | ✅ **Task 3.7 complete.**
 | Feb 16, 2026 | Docs | **Archived completed tasks (3.1–3.9)** to `docs/archive/phase-3-dendra-completed-tasks.md`. Added Task 3.10: Loading indicators — sync with Map Layers widget (propagate iNaturalist Task 34 pattern). | Claude | Investigated "Weather Stations layer not implemented yet" toast. Root cause: Two Weather Stations layers exist in catalog — dataset-183 (Dendra sensor service, working) and dataset-190 (legacy v0 service in Freshwater category, not implemented). Backend fix: Dan set `is_visible: 0` for dataset-190 in Data Catalog FeatureServer. | Claude |
 | Feb 16, 2026 | 3.9 | ✅ **Task 3.9 complete.** Implemented distinct save actions: **Update Current View** saves station-level state to current view; **Save as New View** creates and activates a new filtered child view (station + datastream + date range + aggregation) in Map Layers. Added `createDendraFilteredView()` in LayerContext. Files: `StationDetailView.tsx`, `LayerContext.tsx`. | Claude |
