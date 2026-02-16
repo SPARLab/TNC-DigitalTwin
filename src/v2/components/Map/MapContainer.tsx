@@ -36,7 +36,9 @@ export function MapContainer() {
 
   // Cache/loading status for the active data source (generic loading overlay)
   const cacheStatus = useActiveCacheStatus(activeLayer?.dataSource);
-  const showLoadingOverlay = !!activeLayer && (cacheStatus?.loading ?? false);
+  const showLoadingOverlay = !!activeLayer
+    && (cacheStatus?.loading ?? false)
+    && !(cacheStatus?.dataLoaded ?? false);
 
   // Sync pinned/active layers with ArcGIS layers
   useMapLayers();

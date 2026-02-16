@@ -4,12 +4,10 @@
 // ============================================================================
 
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Bookmark, Copy, ExternalLink, FileText, MapPin, Quote } from 'lucide-react';
+import { ArrowLeft, Copy, ExternalLink, FileText, MapPin, Quote, Save } from 'lucide-react';
 import { dataOneService, type DataOneDataset, type DataOneDatasetDetail } from '../../../../services/dataOneService';
 import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { useMap } from '../../../context/MapContext';
-import { useBookmarks } from '../../../context/BookmarkContext';
-import { useLayers } from '../../../context/LayerContext';
 
 interface DatasetDetailViewProps {
   dataset: DataOneDataset;
@@ -99,10 +97,8 @@ export function DatasetDetailView({ dataset, onBack, onKeywordClick }: DatasetDe
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copiedState, setCopiedState] = useState<'idle' | 'doi' | 'cite'>('idle');
-  const [bookmarkSaved, setBookmarkSaved] = useState(false);
+  const [viewSaved, setViewSaved] = useState(false);
   const { viewRef, highlightPoint, showToast } = useMap();
-  const { addBookmark } = useBookmarks();
-  const { activeLayer } = useLayers();
 
   useEffect(() => {
     let cancelled = false;
@@ -112,7 +108,7 @@ export function DatasetDetailView({ dataset, onBack, onKeywordClick }: DatasetDe
     setRemoteFileTypes([]);
     setRemoteFileCount(null);
     setRemoteTotalSize(null);
-    setBookmarkSaved(false);
+    setViewSaved(false);
 
     void dataOneService.getDatasetDetails(dataset.dataoneId)
       .then((value) => {
@@ -178,21 +174,9 @@ export function DatasetDetailView({ dataset, onBack, onKeywordClick }: DatasetDe
   const totalFileCount = (details?.filesSummary || dataset.filesSummary)?.total ?? remoteFileCount ?? 0;
   const totalFileSize = (details?.filesSummary || dataset.filesSummary)?.sizeBytes ?? remoteTotalSize ?? details?.sizeBytes ?? null;
 
-  const handleBookmarkDataset = () => {
-    addBookmark({
-      itemId: dataset.dataoneId,
-      itemName: dataset.title,
-      layerId: activeLayer?.layerId || 'dataone-datasets',
-      layerName: activeLayer?.name || 'DataOne Datasets',
-      type: 'pointer-unfiltered',
-      allNoun: 'datasets',
-      resultNoun: 'files',
-      resultCount: totalFileCount > 0 ? totalFileCount : undefined,
-      filterDescription: undefined,
-      geometry: dataset.geometry,
-    });
-    setBookmarkSaved(true);
-    showToast('Bookmarked dataset', 'info');
+  const handleSaveDatasetView = () => {
+    setViewSaved(true);
+    showToast('Saved dataset view metadata (session-only).', 'info');
   };
 
   const handleCopyDoi = async () => {
@@ -429,19 +413,19 @@ export function DatasetDetailView({ dataset, onBack, onKeywordClick }: DatasetDe
             </section>
           )}
 
-          <section id="dataone-detail-bookmark-section">
+          <section id="dataone-detail-save-view-section">
             <button
-              id="dataone-detail-bookmark-button"
+              id="dataone-detail-save-view-button"
               type="button"
-              onClick={handleBookmarkDataset}
+              onClick={handleSaveDatasetView}
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100"
             >
-              <Bookmark className="h-4 w-4" />
-              {bookmarkSaved ? 'Bookmarked Dataset' : 'Bookmark Dataset'}
+              <Save className="h-4 w-4" />
+              {viewSaved ? 'Dataset View Saved' : 'Save Dataset View'}
             </button>
-            {bookmarkSaved && (
-              <p id="dataone-detail-bookmark-feedback" className="mt-1 text-xs text-emerald-700">
-                Added to saved items.
+            {viewSaved && (
+              <p id="dataone-detail-save-view-feedback" className="mt-1 text-xs text-emerald-700">
+                Saved for this session.
               </p>
             )}
           </section>

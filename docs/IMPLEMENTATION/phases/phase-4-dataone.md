@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 5 / 7 tasks  
+**Progress:** 6 / 7 tasks  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -15,9 +15,9 @@
 | 4.1 | 🟢 Complete | Feb 16, 2026 | Query DataOne service to understand attributes | Service schema analyzed (layers 0/1/2), key UI fields selected, category mapping + file-detail strategy documented below. |
 | 4.2 | 🟢 Complete | Feb 16, 2026 | Create DataOne right sidebar shell | DataOne adapter + right sidebar tabs scaffolded in v2 (`DataOneOverviewTab`, `DataOneBrowseTab`, `DatasetListView`, `DatasetDetailView`, provider wiring, external layer registration). Left-sidebar shortcut rows (DFT-045) deferred to future task. |
 | 4.3 | 🟢 Complete | Feb 16, 2026 | Implement search and filter UI | Debounced search (500ms, 2+ chars), Enter bypass, category/year/author filters, result count + ARIA live region, empty state clear-all, pagination, stale-results refresh, `AbortController` cancellation. Service extended with `author` filter and `signal` support. |
-| 4.4 | 🟢 Complete | Feb 16, 2026 | Implement dataset list with cards | Dataset cards now include title, authors, year, description snippet fallback, DOI badge (when `dataone_id` is DOI), file count/types summary, bookmark action button, details navigation, and "Open in DataONE ↗" external action. |
-| 4.5 | 🟢 Complete | Feb 16, 2026 | Implement dataset detail view | Added full dataset detail drill-down with back navigation, full abstract/authors/temporal metadata, file list + type descriptions + size summary, spatial coverage with "View on Map", clickable keywords (apply browse search), bookmark action, primary "Open in DataONE", and copy DOI/citation actions. |
-| 4.6 | ⚪ Not Started | — | Sync loading indicators (Map Layers widget ↔ map center ↔ right sidebar) | — |
+| 4.4 | 🟢 Complete | Feb 16, 2026 | Implement dataset list with cards | Dataset cards now include title, authors, year, description snippet fallback, DOI badge (when `dataone_id` is DOI), file count/types summary, save-view action button, details navigation, and "Open in DataONE ↗" external action. |
+| 4.5 | 🟢 Complete | Feb 16, 2026 | Implement dataset detail view | Added full dataset detail drill-down with back navigation, full abstract/authors/temporal metadata, file list + type descriptions + size summary, spatial coverage with "View on Map", clickable keywords (apply browse search), save-view action, primary "Open in DataONE", and copy DOI/citation actions. |
+| 4.6 | 🟢 Complete | Feb 16, 2026 | Sync loading indicators (Map Layers widget ↔ map center ↔ right sidebar) | DataOne loading now propagates from shared context to adapter/registry, so Map Layers eye-slot spinner, map-center first-load overlay, and right-sidebar loading rows stay synchronized. |
 | 4.7 | ⚪ Not Started | — | Render DataONE datasets as map markers (dots or clusters) | — |
 
 **Status Legend:**
@@ -37,8 +37,9 @@
 
 Implement the DataOne dataset browse experience in the right sidebar. This data source has:
 - **Pointer rows** (datasets point to files)
-- **No Level 3 filtering** (datasets are bookmarked whole, not filtered)
+- **No Level 3 filtering** (datasets are saved as whole views, not filtered)
 - **Cross-category nature** (datasets span all TNC categories)
+- **No bookmarking workflow** moving forward (use save/view language and behavior)
 
 ## Feature Service (Inspect DataONE Layer)
 
@@ -65,8 +66,8 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 ## Key Paradigm Notes
 
 - **Row Type:** Pointer (dataset points to files)
-- **Bookmark Options:** Only "Bookmark Dataset" (no "Bookmark with Filter")
-- **No Level 3:** Datasets are bookmarked whole, not filtered by individual files
+- **Save/View Options:** Only "Save Dataset View" (no filter-specific save path)
+- **No Level 3:** Datasets are saved as whole views, not filtered by individual files
 - **Cross-Category:** DataOne appears under "Research Datasets (All Categories)" with category filter in right sidebar
 - **Left Sidebar Shortcuts (DFT-045):** Special shortcut rows appear in domain categories (Species, Fire, etc.) labeled "DataOne Datasets (count)". Clicking activates DataOne with that domain pre-filtered. Improves discoverability for domain-first users.
 
@@ -164,7 +165,7 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 - [ ] Cards show: title, authors, year, description snippet
 - [ ] DOI badge (if available)
 - [ ] File count/types shown (e.g., "3 files: CSV, PDF, XML")
-- [ ] "Bookmark" button (simple, no filter option)
+- [ ] "Save View" button (simple, no filter option)
 - [ ] "Details →" button navigates to detail view
 - [ ] "Open in DataOne ↗" external link
 
@@ -184,7 +185,7 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 - [x] Spatial coverage (bounding box, "View on Map" button)
 - [x] Keywords as clickable tags
 - [x] Temporal coverage
-- [x] "Bookmark Dataset" button
+- [x] "Save Dataset View" button
 - [x] "Open in DataOne ↗" primary action
 - [x] "Copy DOI" and "Cite" buttons
 
@@ -196,15 +197,15 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 
 ### 4.6: Sync Loading Indicators (Map Layers Widget ↔ Map Center ↔ Right Sidebar)
 
-**Goal:** Synchronize loading indicators across Map Layers widget, map center overlay, and right sidebar while DataONE dataset icons (map points) are loading. Use the same components and synchronization logic as iNaturalist.
+**Goal:** Synchronize loading indicators across Map Layers widget, map center overlay, and right sidebar while DataONE datasets are loading. Use the same shared primitives/synchronization contract as iNaturalist.
 
 **Acceptance Criteria:**
-- [ ] DataOne adapter exposes `loading` via registry (same pattern as iNaturalist adapter)
-- [ ] Map Layers widget shows loading spinner for DataOne layer when datasets are loading (via `cacheStatusByDataSource`)
-- [ ] Map center shows `MapCenterLoadingOverlay` when DataOne is active and loading
-- [ ] Right sidebar Browse tab shows `InlineLoadingRow` / `RefreshLoadingRow` when loading (initial vs. filter refresh)
-- [ ] Use shared components from `src/v2/components/shared/loading/LoadingPrimitives.tsx` (e.g., `EyeSlotLoadingSpinner`, `InlineLoadingRow`, `RefreshLoadingRow`, `MapCenterLoadingOverlay`)
-- [ ] Same synchronization logic as iNaturalist: single source of truth (DataOne context/adapter) → registry → MapLayersWidget, MapContainer, RightSidebar
+- [x] DataOne adapter exposes `loading` via registry (same pattern as iNaturalist adapter)
+- [x] Map Layers widget shows loading spinner for DataOne layer when datasets are loading (via `cacheStatusByDataSource`)
+- [x] Map center shows `MapCenterLoadingOverlay` when DataOne is active and loading on first load only (`!dataLoaded`)
+- [x] Right sidebar Browse tab shows `InlineLoadingRow` / `RefreshLoadingRow` when loading (initial vs. filter refresh)
+- [x] Use shared components from `src/v2/components/shared/loading/LoadingPrimitives.tsx` (e.g., `EyeSlotLoadingSpinner`, `InlineLoadingRow`, `RefreshLoadingRow`, `MapCenterLoadingOverlay`)
+- [x] Same synchronization logic as iNaturalist: single source of truth (DataOne context/adapter) → registry → MapLayersWidget, MapContainer, RightSidebar
 
 **Reference:** 
 - iNaturalist pattern: `src/v2/dataSources/inaturalist/adapter.tsx`, `INaturalistFilterContext.tsx`, `MapLayersWidget.tsx` (loadingByLayerId), `MapContainer.tsx` (MapCenterLoadingOverlay), `INaturalistBrowseTab.tsx` (InlineLoadingRow, RefreshLoadingRow)
@@ -342,7 +343,8 @@ Notes:
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
-| Feb 16, 2026 | 4.4 | **Task 4.4 complete:** Implemented `DatasetListView` card anatomy for browse results. Added author + year row, description snippet fallback, DOI badge display (from `dataone_id`), file count/type summary, visible bookmark action button, details CTA, and "Open in DataONE ↗" external link treatment. | Claude |
+| Feb 16, 2026 | 4.6 | **Task 4.6 complete:** Synced DataOne loading state across right-sidebar browse requests and shared cache status so Map Layers eye-slot loading, map-center first-load overlay, and sidebar loading rows are coordinated from one source of truth. Updated map overlay to only show on first-load (`!dataLoaded`). | Claude |
+| Feb 16, 2026 | 4.4 | **Task 4.4 complete:** Implemented `DatasetListView` card anatomy for browse results. Added author + year row, description snippet fallback, DOI badge display (from `dataone_id`), file count/type summary, visible save-view action button, details CTA, and "Open in DataONE ↗" external link treatment. | Claude |
 | Feb 16, 2026 | 4.7 | **Added Task 4.7:** Render DataONE datasets as map markers (dots or clusters). No map markers currently appear for DataONE; task covers `dataoneLayer.ts`, `useDataOneMapBehavior`, filter sync, optional clustering, and map-click-to-detail. | Claude |
 | Feb 16, 2026 | 4.2, 4.3 | **Tasks 4.2 and 4.3 complete.** DataOne adapter wired into v2 registry; right-sidebar shell (Overview/Browse) with `DataOneOverviewTab`, `DataOneBrowseTab`, `DatasetListView`, `DatasetDetailView`; DataOne external layer enabled in left sidebar; browse search/filter UX per DFT-035 (debounced text, immediate dropdowns, result count, ARIA live region, pagination, empty-state clear-all, `AbortController`). DFT-045 shortcut rows deferred. | Claude |
 | Feb 16, 2026 | 4.1 | Completed service analysis against live DataONE FeatureServer. Documented layer schemas (Lite/Latest/AllVersions), UI-relevant attributes, AI-enriched category mapping (`tnc_category` / `tnc_categories` / `tnc_confidence`), file-detail strategy (`files_summary` vs DataONE API), and baseline query timings. | Claude |

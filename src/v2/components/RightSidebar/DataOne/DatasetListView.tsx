@@ -2,7 +2,7 @@
 // DatasetListView — DataOne dataset list cards for browse results.
 // ============================================================================
 
-import { Bookmark, ExternalLink, Link as LinkIcon } from 'lucide-react';
+import { ExternalLink, Link as LinkIcon, Save } from 'lucide-react';
 import type { DataOneDataset } from '../../../../services/dataOneService';
 
 interface DatasetListViewProps {
@@ -102,12 +102,12 @@ export function DatasetListView({ datasets, loading, onViewDetail }: DatasetList
 
           <div id={`dataone-dataset-actions-${dataset.id}`} className="mt-3 grid grid-cols-3 gap-1.5 border-t border-gray-100 pt-2.5">
             <button
-              id={`dataone-dataset-bookmark-button-${dataset.id}`}
+              id={`dataone-dataset-save-view-button-${dataset.id}`}
               className="inline-flex items-center justify-center gap-1 rounded bg-amber-50 px-2 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100"
               type="button"
             >
-              <Bookmark className="h-3.5 w-3.5" />
-              Bookmark
+              <Save className="h-3.5 w-3.5" />
+              Save View
             </button>
             <button
               id={`dataone-dataset-details-button-${dataset.id}`}

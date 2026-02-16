@@ -12,22 +12,25 @@ interface DataOneFilterContextValue {
   error: string | null;
   totalDatasetCount: number;
   warmCache: () => void;
+  createBrowseLoadingScope: () => () => void;
 }
 
 const DataOneFilterContext = createContext<DataOneFilterContextValue | null>(null);
 
 export function DataOneFilterProvider({ children }: { children: ReactNode }) {
-  const [loading, setLoading] = useState(false);
+  const [isWarmLoading, setIsWarmLoading] = useState(false);
+  const [browseLoadCount, setBrowseLoadCount] = useState(0);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [totalDatasetCount, setTotalDatasetCount] = useState(0);
   const inFlightRef = useRef(false);
+  const loading = isWarmLoading || browseLoadCount > 0;
 
   const warmCache = useCallback(() => {
     if (inFlightRef.current || dataLoaded) return;
 
     inFlightRef.current = true;
-    setLoading(true);
+    setIsWarmLoading(true);
     setError(null);
 
     void dataOneService.countDatasets({ usePreserveRadius: true })
@@ -40,9 +43,20 @@ export function DataOneFilterProvider({ children }: { children: ReactNode }) {
       })
       .finally(() => {
         inFlightRef.current = false;
-        setLoading(false);
+        setIsWarmLoading(false);
       });
   }, [dataLoaded]);
+
+  const createBrowseLoadingScope = useCallback(() => {
+    let closed = false;
+    setBrowseLoadCount((prev) => prev + 1);
+
+    return () => {
+      if (closed) return;
+      closed = true;
+      setBrowseLoadCount((prev) => Math.max(0, prev - 1));
+    };
+  }, []);
 
   return (
     <DataOneFilterContext.Provider
@@ -52,6 +66,7 @@ export function DataOneFilterProvider({ children }: { children: ReactNode }) {
         error,
         totalDatasetCount,
         warmCache,
+        createBrowseLoadingScope,
       }}
     >
       {children}

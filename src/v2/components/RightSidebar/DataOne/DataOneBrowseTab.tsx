@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Search, X, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { dataOneService, type DataOneDataset } from '../../../../services/dataOneService';
+import { useDataOneFilter } from '../../../context/DataOneFilterContext';
 import { InlineLoadingRow, RefreshLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { DatasetListView } from './DatasetListView';
 import { DatasetDetailView } from './DatasetDetailView';
@@ -39,6 +40,7 @@ function toEndDate(year: string): string | undefined {
 }
 
 export function DataOneBrowseTab() {
+  const { warmCache, createBrowseLoadingScope } = useDataOneFilter();
   const [searchInput, setSearchInput] = useState('');
   const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -59,6 +61,10 @@ export function DataOneBrowseTab() {
     () => Array.from({ length: 75 }, (_, i) => String(currentYear - i)),
     [currentYear]
   );
+
+  useEffect(() => {
+    warmCache();
+  }, [warmCache]);
 
   // Debounced text search (DFT-035)
   useEffect(() => {
@@ -84,6 +90,8 @@ export function DataOneBrowseTab() {
   // Abort in-flight requests when filters/pagination change.
   useEffect(() => {
     const abortController = new AbortController();
+    const closeLoadingScope = createBrowseLoadingScope();
+
     const run = async () => {
       setLoading(true);
       setError(null);
@@ -110,13 +118,17 @@ export function DataOneBrowseTab() {
       } finally {
         if (!abortController.signal.aborted) {
           setLoading(false);
+          closeLoadingScope();
         }
       }
     };
 
     void run();
-    return () => abortController.abort();
-  }, [appliedSearchTerm, selectedCategory, startYear, endYear, authorFilter, page]);
+    return () => {
+      abortController.abort();
+      closeLoadingScope();
+    };
+  }, [appliedSearchTerm, selectedCategory, startYear, endYear, authorFilter, page, createBrowseLoadingScope]);
 
   if (selectedDataset) {
     return (
