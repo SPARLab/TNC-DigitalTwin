@@ -1,10 +1,29 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** ⚪ Not Started  
-**Progress:** 0 / 5 tasks  
+**Progress:** 0 / 6 tasks  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
+
+---
+
+## Task Status
+
+| ID | Status | Task | Last Updated | Assignee | Notes |
+|----|--------|------|--------------|----------|-------|
+| 4.1 | ⚪ Not Started | Query DataOne service to understand attributes | — | | |
+| 4.2 | ⚪ Not Started | Create DataOne right sidebar shell | — | | |
+| 4.3 | ⚪ Not Started | Implement search and filter UI | — | | |
+| 4.4 | ⚪ Not Started | Implement dataset list with cards | — | | |
+| 4.5 | ⚪ Not Started | Implement dataset detail view | — | | |
+| 4.6 | ⚪ Not Started | Sync loading indicators (Map Layers widget ↔ map center ↔ right sidebar) | — | | |
+
+**Status Legend:**
+- ⚪ Not Started
+- 🟡 In Progress
+- 🟢 Complete
+- 🔴 Blocked
 
 ---
 
@@ -20,6 +39,21 @@ Implement the DataOne dataset browse experience in the right sidebar. This data 
 - **No Level 3 filtering** (datasets are bookmarked whole, not filtered)
 - **Cross-category nature** (datasets span all TNC categories)
 
+## Feature Service (Inspect DataONE Layer)
+
+The DataONE datasets are served from an ArcGIS Feature Service. Use these URLs to inspect metadata and layer schemas:
+
+| Resource | URL |
+|----------|-----|
+| **Service metadata** (list layers) | `https://dangermondpreserve-spatial.com/server/rest/services/Hosted/DataONE_Datasets/FeatureServer?f=json` |
+| **Layer 0 (Lite)** — lightweight fields, fast list load (~12k records) | `https://dangermondpreserve-spatial.com/server/rest/services/Hosted/DataONE_Datasets/FeatureServer/0?f=json` |
+| **Layer 1 (Latest)** — full metadata including abstracts | `https://dangermondpreserve-spatial.com/server/rest/services/Hosted/DataONE_Datasets/FeatureServer/1?f=json` |
+| **Layer 2 (AllVersions)** — all versions for history lookup (~22k records) | `https://dangermondpreserve-spatial.com/server/rest/services/Hosted/DataONE_Datasets/FeatureServer/2?f=json` |
+
+Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types). Used by `src/services/dataOneService.ts` and `src/types/dataone.ts`.
+
+---
+
 ## Reference Documents
 
 - Master Plan: `docs/master-plan.md`
@@ -34,26 +68,6 @@ Implement the DataOne dataset browse experience in the right sidebar. This data 
 - **No Level 3:** Datasets are bookmarked whole, not filtered by individual files
 - **Cross-Category:** DataOne appears under "Research Datasets (All Categories)" with category filter in right sidebar
 - **Left Sidebar Shortcuts (DFT-045):** Special shortcut rows appear in domain categories (Species, Fire, etc.) labeled "DataOne Datasets (count)". Clicking activates DataOne with that domain pre-filtered. Improves discoverability for domain-first users.
-
----
-
-## Task Status
-
-| ID | Task | Status | Assignee | Notes |
-|----|------|--------|----------|-------|
-| 4.1 | Query DataOne service to understand attributes | ⚪ Not Started | | |
-| 4.2 | Create DataOne right sidebar shell | ⚪ Not Started | | |
-| 4.3 | Implement search and filter UI | ⚪ Not Started | | |
-| 4.4 | Implement dataset list with cards | ⚪ Not Started | | |
-| 4.5 | Implement dataset detail view | ⚪ Not Started | | |
-
-**Status Legend:**
-- ⚪ Not Started
-- 🟡 In Progress
-- 🟢 Complete
-- 🔴 Blocked
-
----
 
 ## Task Details
 
@@ -179,12 +193,29 @@ Implement the DataOne dataset browse experience in the right sidebar. This data 
 
 ---
 
+### 4.6: Sync Loading Indicators (Map Layers Widget ↔ Map Center ↔ Right Sidebar)
+
+**Goal:** Synchronize loading indicators across Map Layers widget, map center overlay, and right sidebar while DataONE dataset icons (map points) are loading. Use the same components and synchronization logic as iNaturalist.
+
+**Acceptance Criteria:**
+- [ ] DataOne adapter exposes `loading` via registry (same pattern as iNaturalist adapter)
+- [ ] Map Layers widget shows loading spinner for DataOne layer when datasets are loading (via `cacheStatusByDataSource`)
+- [ ] Map center shows `MapCenterLoadingOverlay` when DataOne is active and loading
+- [ ] Right sidebar Browse tab shows `InlineLoadingRow` / `RefreshLoadingRow` when loading (initial vs. filter refresh)
+- [ ] Use shared components from `src/v2/components/shared/loading/LoadingPrimitives.tsx` (e.g., `EyeSlotLoadingSpinner`, `InlineLoadingRow`, `RefreshLoadingRow`, `MapCenterLoadingOverlay`)
+- [ ] Same synchronization logic as iNaturalist: single source of truth (DataOne context/adapter) → registry → MapLayersWidget, MapContainer, RightSidebar
+
+**Reference:** 
+- iNaturalist pattern: `src/v2/dataSources/inaturalist/adapter.tsx`, `INaturalistFilterContext.tsx`, `MapLayersWidget.tsx` (loadingByLayerId), `MapContainer.tsx` (MapCenterLoadingOverlay), `INaturalistBrowseTab.tsx` (InlineLoadingRow, RefreshLoadingRow)
+
+---
+
 ## Service Analysis
 
 > Fill this out during Task 4.1
 
 ### Feature Service URL
-TBD - Document the actual URL
+`https://dangermondpreserve-spatial.com/server/rest/services/Hosted/DataONE_Datasets/FeatureServer` — see "Feature Service (Inspect DataONE Layer)" above for layer URLs.
 
 ### Dataset Attributes
 | Attribute | Type | Useful For | Notes |
