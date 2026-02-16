@@ -11,6 +11,12 @@ interface DatasetListViewProps {
   onViewDetail: (dataset: DataOneDataset) => void;
 }
 
+function shouldOpenDetailFromClick(target: EventTarget | null, currentTarget: HTMLElement): boolean {
+  if (!(target instanceof HTMLElement)) return true;
+  const interactiveAncestor = target.closest('a, button, input, select, textarea, [role="button"]');
+  return !interactiveAncestor || interactiveAncestor === currentTarget;
+}
+
 function formatYearRange(dataset: DataOneDataset): string {
   const beginYear = dataset.temporalCoverage.beginDate?.getFullYear();
   const endYear = dataset.temporalCoverage.endDate?.getFullYear();
@@ -65,7 +71,20 @@ export function DatasetListView({ datasets, loading, onViewDetail }: DatasetList
         <article
           id={`dataone-dataset-card-${dataset.id}`}
           key={dataset.id}
-          className="rounded-lg border border-gray-200 bg-white p-3"
+          role="button"
+          tabIndex={0}
+          aria-label={`Open details for ${dataset.title}`}
+          onClick={(event) => {
+            if (!shouldOpenDetailFromClick(event.target, event.currentTarget)) return;
+            onViewDetail(dataset);
+          }}
+          onKeyDown={(event) => {
+            if (event.target !== event.currentTarget) return;
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            onViewDetail(dataset);
+          }}
+          className="cursor-pointer rounded-lg border border-gray-200 bg-white p-3 transition-colors duration-150 hover:border-emerald-300 hover:bg-emerald-50/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1"
         >
           <h3 id={`dataone-dataset-title-${dataset.id}`} className="text-sm font-semibold text-gray-900 line-clamp-2">
             {dataset.title}
@@ -103,6 +122,7 @@ export function DatasetListView({ datasets, loading, onViewDetail }: DatasetList
           <div id={`dataone-dataset-actions-${dataset.id}`} className="mt-3 grid grid-cols-3 gap-1.5 border-t border-gray-100 pt-2.5">
             <button
               id={`dataone-dataset-save-view-button-${dataset.id}`}
+              onClick={(event) => event.stopPropagation()}
               className="inline-flex items-center justify-center gap-1 rounded bg-amber-50 px-2 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100"
               type="button"
             >
@@ -111,7 +131,10 @@ export function DatasetListView({ datasets, loading, onViewDetail }: DatasetList
             </button>
             <button
               id={`dataone-dataset-details-button-${dataset.id}`}
-              onClick={() => onViewDetail(dataset)}
+              onClick={(event) => {
+                event.stopPropagation();
+                onViewDetail(dataset);
+              }}
               className="rounded bg-gray-100 px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
               type="button"
             >
@@ -124,6 +147,7 @@ export function DatasetListView({ datasets, loading, onViewDetail }: DatasetList
                 href={dataset.datasetUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(event) => event.stopPropagation()}
                 className="inline-flex items-center justify-center gap-1 rounded bg-indigo-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-indigo-700"
               >
                 Open in DataONE ↗
