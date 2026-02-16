@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 10 / 11 tasks  
+**Progress:** 11 / 12 tasks  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -22,7 +22,8 @@
 | 4.8 | 🟢 Complete | Feb 16, 2026 | Make full dataset card clickable to open detail | Browse cards now open detail on card click + Enter/Space with card-level hover/focus states; inner action controls stop propagation so card navigation does not depend on the Details button. |
 | 4.9 | 🟢 Complete | Feb 16, 2026 | Simplify browse card actions and visual hierarchy | Removed browse card CTA row (`Save View`, `Details`, `Open in DataONE`) and shifted metadata to low-contrast, secondary inline chips/text for cleaner scanning. |
 | 4.10 | 🟢 Complete | Feb 16, 2026 | Add DataONE open modes in detail view (new tab + iframe) | Added detail-only dual open actions: secure new-tab open and in-app embedded iframe panel with close control, loading state, and blocked/error fallback that routes users to new-tab open. |
-| 4.11 | ⚪ Not Started | Feb 16, 2026 | Move and wire Save Dataset View in detail flow | Save action should live in detail view only; wire it to create/update a filtered child view in Map Layers with consistent naming + visibility behavior. |
+| 4.11 | 🟢 Complete | Feb 16, 2026 | Move and wire Save Dataset View in detail flow | Save action now lives in detail view only and creates/updates DataONE child views in Map Layers with filter-based auto naming, single-visible-child behavior, and restored detail context when selecting saved views. |
+| 4.12 | ⚪ Not Started | Feb 16, 2026 | Reimplement dataset version history exploration (v1 parity) | Add version history widget to browse cards and detail view; preserve v1 styling (inline expandable in browse, collapsible panel in detail). See v1: `DataONEView.tsx`, `DataONEDetailsSidebar.tsx`. |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -301,15 +302,56 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 **Goal:** Make save behavior detail-contextual and ensure it creates a meaningful child view in Map Layers.
 
 **Acceptance Criteria:**
-- [ ] Remove browse-card `Save View` button
-- [ ] Keep `Save Dataset View` action in `DatasetDetailView` only
-- [ ] Save action creates/updates a DataONE child view in Map Layers (filtered view model)
-- [ ] Saved child view is visible in widget hierarchy with consistent naming contract
-- [ ] Selecting saved child view restores associated DataONE query/filter/detail context
-- [ ] Include implementation notes for follow-up test coverage in DataONE right-sidebar and Map Layers integration tests
+- [x] Remove browse-card `Save View` button
+- [x] Keep `Save Dataset View` action in `DatasetDetailView` only
+- [x] Save action creates/updates a DataONE child view in Map Layers (filtered view model)
+- [x] Saved child view is visible in widget hierarchy with consistent naming contract
+- [x] Selecting saved child view restores associated DataONE query/filter/detail context
+- [x] Include implementation notes for follow-up test coverage in DataONE right-sidebar and Map Layers integration tests
 
 **Notes:**
 - Use existing cross-layer child-view conventions from `LayerContext` (manual rename persistence + non-destructive sync).
+- Follow-up test coverage should include: (1) `DataOneBrowseTab` hydrate from saved child view (`activeLayer.viewId`), (2) detail-save flow creates new child when no active child exists, (3) detail-save flow updates active child without overriding custom renamed child label, (4) selecting saved child restores both browse filters and selected dataset detail.
+
+---
+
+### 4.12: Reimplement Dataset Version History Exploration (v1 Parity)
+
+**Goal:** DataONE datasets can have multiple versions (same `series_id`). The v1 app lets users explore old versions with a version-history widget. Reimplement this in v2, preserving the v1 styling that the user prefers.
+
+**Reference (v1 implementation):**
+- **Browse list:** `src/components/dataviews/DataONEView.tsx` — inline expandable version history under each dataset row
+- **Detail view:** `src/components/DataONEDetailsSidebar.tsx` — collapsible "Version History" section
+
+**Browse list (DataONEView pattern):**
+- Version count badge: `bg-blue-50 text-blue-700` with History icon; clickable when `versionCount > 1` to expand; shows "X versions" or "1 version" (non-clickable when single)
+- Expanded section: `bg-gray-50 border-t border-gray-100 px-4 py-3` below the dataset row
+- Version list: each version shows `v{versionNumber}`, `(latest)` for index 0, date, file summary
+- Selected version: `bg-emerald-100 text-emerald-800`; others: `hover:bg-gray-100 text-gray-600`
+- "Show all X versions" / "Show less" toggle when `versions.length > 3`
+- Uses `dataOneService.queryVersionHistory(seriesId)` and `getVersionDetails(dataoneId)`; on version click, call `onVersionSelect` / equivalent to switch to that version
+
+**Detail view (DataONEDetailsSidebar pattern):**
+- Collapsible panel: `border border-gray-200 rounded-lg overflow-hidden`
+- Header button: `bg-gray-50 hover:bg-gray-100`, History icon (`text-blue-600`), "Version History (X versions)", ChevronUp/ChevronDown
+- Version cards: `p-2 rounded-lg border`; current = `bg-emerald-50 border-emerald-200`; others = `bg-white border-gray-100 hover:border-gray-200`
+- Each card: `v{versionNumber}`, "latest" badge (emerald), "current" badge (blue), date, file summary; amber highlight when file info differs from current
+- "View this version →" button for non-current versions
+
+**Acceptance Criteria:**
+- [ ] Browse cards: version count badge (blue styling) when `versionCount > 1`; click expands inline version history
+- [ ] Browse: expanded section matches v1 styling (`bg-gray-50`, version list with emerald selected state, show-all toggle)
+- [ ] Browse: clicking a version loads that version's details and updates the selected dataset (or opens detail for that version)
+- [ ] Detail view: collapsible "Version History" section when `versionCount > 1`
+- [ ] Detail: version cards with current/latest badges, file diff highlight, "View this version →" for non-current
+- [ ] Detail: selecting a version updates the detail view to that version (no full navigation away)
+- [ ] Use existing `dataOneService.queryVersionHistory(seriesId)` and `getVersionDetails(dataoneId)`
+- [ ] `DataOneDataset` already has `seriesId` and `versionCount` from feature service
+
+**Files to modify:**
+- `src/v2/components/RightSidebar/DataOne/DatasetListView.tsx` — add version badge + inline expandable version history to cards
+- `src/v2/components/RightSidebar/DataOne/DatasetDetailView.tsx` — add collapsible Version History section
+- `src/v2/components/RightSidebar/DataOne/DataOneBrowseTab.tsx` — wire version-select callback so selecting a version updates `selectedDatasetId` and/or opens detail
 
 ---
 
@@ -421,6 +463,8 @@ Notes:
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 16, 2026 | 4.12 | **Added Task 4.12:** Reimplement dataset version history exploration (v1 parity). User requested reimplementation of v1 version-history widget in browse and detail views, preserving v1 styling. Reference: `DataONEView.tsx`, `DataONEDetailsSidebar.tsx`. | Codex |
+| Feb 16, 2026 | 4.11 | **Task 4.11 complete:** Wired `Save Dataset View` in `DatasetDetailView` to create or update DataONE filtered child views in Map Layers via `LayerContext`, including DataONE-specific filter model (`search/category/year/author + selectedDatasetId`), auto naming for non-custom views, and parent/child visibility synchronization. Added one-shot hydrate + continuous sync in `DataOneBrowseTab` so selecting a saved child view restores DataONE query filters and opens the saved dataset detail context. | Codex |
 | Feb 16, 2026 | 4.10 | **Task 4.10 complete:** Added two detail-only DataONE open modes in `DatasetDetailView`: `Open in DataONE (New Tab)` using secure `window.open` (`noopener,noreferrer`) and `Open in DataONE (In App)` using a bounded embedded iframe panel. Added loading indicator, blocked/embed-failure fallback messaging, and direct fallback action to open in new tab. | Codex |
 | Feb 16, 2026 | 4.9 | **Task 4.9 complete:** Simplified DataONE browse cards by removing the full CTA action row (`Save View`, `Details`, `Open in DataONE`) and de-emphasizing metadata treatment (subtle category pill + low-contrast file/DOI text) to improve scanability and reduce visual noise. | Codex |
 | Feb 16, 2026 | 4.8-4.11 | Added follow-up task set based on UI feedback: full-card click-to-detail behavior, browse action-row removal + visual hierarchy cleanup, detail-only DataONE open modes (new tab + iframe), and detail-only Save Dataset View wiring to Map Layers child views. Updated phase status to In Progress (7/11). | Codex |
