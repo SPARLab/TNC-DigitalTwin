@@ -20,6 +20,7 @@ interface LayerContextValue {
   // Active layer (one at a time)
   activeLayer: ActiveLayer | null;
   activateLayer: (layerId: string, viewId?: string, featureId?: string | number) => void;
+  setActiveServiceSubLayer: (layerId: string) => void;
   deactivateLayer: () => void;
 
   // Pinned layers (multiple)
@@ -312,6 +313,20 @@ export function LayerProvider({ children }: { children: ReactNode }) {
   const requestEditFilters = useCallback(() => setLastEditFiltersRequest(Date.now()), []);
 
   const [lastFiltersClearedTimestamp, setLastFiltersClearedTimestamp] = useState(0);
+
+  const setActiveServiceSubLayer = useCallback((layerId: string) => {
+    setActiveLayer(prev => {
+      if (!prev?.isService) return prev;
+      if (prev.selectedSubLayerId === layerId) return prev;
+
+      const serviceLayer = layerMap.get(prev.layerId);
+      const availableLayers = serviceLayer?.catalogMeta?.siblingLayers ?? [];
+      const existsInService = availableLayers.some(layer => layer.id === layerId);
+      if (!existsInService) return prev;
+
+      return { ...prev, selectedSubLayerId: layerId };
+    });
+  }, [layerMap]);
 
   const deactivateLayer = useCallback(() => setActiveLayer(null), []);
 
@@ -1052,6 +1067,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
       value={{
         activeLayer,
         activateLayer,
+        setActiveServiceSubLayer,
         deactivateLayer,
         pinnedLayers: syncedPinned,
         pinLayer,

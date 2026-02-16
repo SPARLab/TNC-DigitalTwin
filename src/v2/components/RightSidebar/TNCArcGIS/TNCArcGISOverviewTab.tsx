@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useCatalog } from '../../../context/CatalogContext';
 import { useLayers } from '../../../context/LayerContext';
 
@@ -7,17 +8,159 @@ interface TNCArcGISOverviewTabProps {
 }
 
 export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOverviewTabProps) {
-  const { activeLayer } = useLayers();
+  const {
+    activeLayer,
+    activateLayer,
+    pinLayer,
+    isLayerPinned,
+    setActiveServiceSubLayer,
+  } = useLayers();
   const { layerMap } = useCatalog();
   const activeCatalogLayer = activeLayer ? layerMap.get(activeLayer.layerId) : undefined;
+
+  const siblingLayers = useMemo(
+    () => activeCatalogLayer?.catalogMeta?.siblingLayers ?? [],
+    [activeCatalogLayer],
+  );
+  const isServiceOverview = !!(activeLayer?.isService && siblingLayers.length > 0);
+  const selectedLayerId = activeLayer?.selectedSubLayerId ?? siblingLayers[0]?.id;
+  const selectedLayer = siblingLayers.find(layer => layer.id === selectedLayerId) ?? siblingLayers[0];
 
   const description = activeCatalogLayer?.catalogMeta?.description || 'No description available yet.';
   const servicePath = activeCatalogLayer?.catalogMeta?.servicePath || 'Unknown service path';
   const serverBaseUrl = activeCatalogLayer?.catalogMeta?.serverBaseUrl || 'Unknown host';
   const sourceLabel = `${serverBaseUrl}/${servicePath}`;
+  const selectedLayerName = selectedLayer?.name ?? activeCatalogLayer?.name ?? 'Layer';
+  const selectedLayerPinned = selectedLayer ? isLayerPinned(selectedLayer.id) : false;
+  const activeLayerPinned = activeLayer ? isLayerPinned(activeLayer.layerId) : false;
+
+  const formatLayerLabel = (layerName: string, layerIdInService?: number) => (
+    typeof layerIdInService === 'number'
+      ? `${layerName} (Layer ${layerIdInService})`
+      : layerName
+  );
+
+  const handleBrowseSelectedLayer = () => {
+    if (!selectedLayer) return;
+    activateLayer(selectedLayer.id);
+    onBrowseClick();
+  };
+
+  const handlePinSelectedLayer = () => {
+    if (!selectedLayer) return;
+    pinLayer(selectedLayer.id);
+  };
+
+  const handlePinActiveLayer = () => {
+    if (!activeLayer) return;
+    pinLayer(activeLayer.layerId);
+  };
 
   return (
     <div id="tnc-arcgis-overview-tab" className="space-y-5">
+      {isServiceOverview && selectedLayer ? (
+        <>
+          <div id="tnc-arcgis-service-overview-selector-block" className="space-y-2">
+            <label
+              id="tnc-arcgis-service-overview-selector-label"
+              htmlFor="tnc-arcgis-service-overview-selector"
+              className="block text-xs font-semibold uppercase tracking-wide text-gray-500"
+            >
+              Layer
+            </label>
+            <select
+              id="tnc-arcgis-service-overview-selector"
+              value={selectedLayer.id}
+              onChange={event => setActiveServiceSubLayer(event.target.value)}
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2e7d32]/30 focus:border-[#2e7d32]"
+            >
+              {siblingLayers.map(layer => (
+                <option
+                  id={`tnc-arcgis-service-overview-selector-option-${layer.id}`}
+                  key={layer.id}
+                  value={layer.id}
+                >
+                  {formatLayerLabel(layer.name, layer.catalogMeta?.layerIdInService)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div id="tnc-arcgis-overview-description-block" className="space-y-2">
+            <h3 id="tnc-arcgis-overview-title" className="text-sm font-semibold text-gray-900">
+              TNC ArcGIS Service
+            </h3>
+            <p id="tnc-arcgis-overview-description" className="text-sm text-gray-600 leading-relaxed">
+              {description}
+            </p>
+          </div>
+
+          <div id="tnc-arcgis-service-overview-layer-list-block" className="space-y-2">
+            <h4 id="tnc-arcgis-service-overview-layer-list-title" className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+              Available Layers
+            </h4>
+            <ul id="tnc-arcgis-service-overview-layer-list" className="space-y-2">
+              {siblingLayers.map(layer => (
+                <li id={`tnc-arcgis-service-overview-layer-${layer.id}`} key={layer.id} className="rounded-lg border border-gray-200 bg-white p-3">
+                  <p
+                    id={`tnc-arcgis-service-overview-layer-name-${layer.id}`}
+                    className="text-sm font-medium text-gray-900"
+                  >
+                    {formatLayerLabel(layer.name, layer.catalogMeta?.layerIdInService)}
+                  </p>
+                  <p
+                    id={`tnc-arcgis-service-overview-layer-description-${layer.id}`}
+                    className="mt-1 text-xs text-gray-600 leading-relaxed"
+                  >
+                    {layer.catalogMeta?.description || 'No layer description available yet.'}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div id="tnc-arcgis-overview-metadata" className="bg-slate-50 rounded-lg p-4">
+            <dl id="tnc-arcgis-overview-metadata-list" className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
+              <dt id="tnc-arcgis-overview-source-label" className="text-gray-500">Source</dt>
+              <dd id="tnc-arcgis-overview-source-value" className="text-gray-900 font-medium text-right truncate" title={sourceLabel}>
+                {sourceLabel}
+              </dd>
+              <dt id="tnc-arcgis-overview-type-label" className="text-gray-500">Status</dt>
+              <dd id="tnc-arcgis-overview-type-value" className="text-gray-900 font-medium text-right">
+                {loading ? 'Loading metadata...' : 'Ready'}
+              </dd>
+            </dl>
+          </div>
+
+          <div id="tnc-arcgis-service-overview-actions" className="grid grid-cols-2 gap-3">
+            <button
+              id="tnc-arcgis-service-overview-browse-cta"
+              onClick={handleBrowseSelectedLayer}
+              className="w-full py-3 bg-[#2e7d32] text-white font-medium rounded-lg hover:bg-[#256d29] transition-colors text-sm min-h-[44px]"
+            >
+              Browse {selectedLayerName} &rarr;
+            </button>
+
+            {selectedLayerPinned ? (
+              <div
+                id="tnc-arcgis-service-overview-pinned-badge"
+                className="w-full py-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-medium text-center min-h-[44px] flex items-center justify-center"
+              >
+                Pinned ✓
+              </div>
+            ) : (
+              <button
+                id="tnc-arcgis-service-overview-pin-cta"
+                onClick={handlePinSelectedLayer}
+                className="w-full py-3 border border-blue-200 text-blue-700 font-medium rounded-lg hover:bg-blue-50 transition-colors text-sm min-h-[44px]"
+              >
+                Pin {selectedLayerName}
+              </button>
+            )}
+          </div>
+        </>
+      ) : (
+        <>
       <div id="tnc-arcgis-overview-description-block" className="space-y-2">
         <h3 id="tnc-arcgis-overview-title" className="text-sm font-semibold text-gray-900">
           TNC ArcGIS Service
@@ -40,14 +183,35 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
         </dl>
       </div>
 
-      <button
-        id="tnc-arcgis-overview-browse-cta"
-        onClick={onBrowseClick}
-        className="w-full py-3 bg-[#2e7d32] text-white font-medium rounded-lg
-                   hover:bg-[#256d29] transition-colors text-sm min-h-[44px]"
-      >
-        Browse Features &rarr;
-      </button>
+          <div id="tnc-arcgis-overview-actions" className="grid grid-cols-2 gap-3">
+            <button
+              id="tnc-arcgis-overview-browse-cta"
+              onClick={onBrowseClick}
+              className="w-full py-3 bg-[#2e7d32] text-white font-medium rounded-lg
+                         hover:bg-[#256d29] transition-colors text-sm min-h-[44px]"
+            >
+              Browse Features &rarr;
+            </button>
+
+            {activeLayerPinned ? (
+              <div
+                id="tnc-arcgis-overview-pinned-badge"
+                className="w-full py-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-medium text-center min-h-[44px] flex items-center justify-center"
+              >
+                Pinned ✓
+              </div>
+            ) : (
+              <button
+                id="tnc-arcgis-overview-pin-cta"
+                onClick={handlePinActiveLayer}
+                className="w-full py-3 border border-blue-200 text-blue-700 font-medium rounded-lg hover:bg-blue-50 transition-colors text-sm min-h-[44px]"
+              >
+                Pin Layer
+              </button>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

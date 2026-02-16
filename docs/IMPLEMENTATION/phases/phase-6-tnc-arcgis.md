@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 4 / 10 tasks  
+**Progress:** 5 / 10 tasks  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry)  
 **Owner:** TBD
@@ -33,7 +33,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **6.2** | 🟢 | 2026-02-16 13:07 PST | Left Sidebar: Collapsible Service Groups | Added `ServiceGroup` + controls-only child rows, service activation, 300ms expand/collapse, Arrow Left/Right + ARIA attributes |
 | **6.3** | 🟢 | 2026-02-16 13:11 PST | TNC ArcGIS Service Module | Added `src/v2/services/tncArcgisService.ts` with service URL builder, schema fetch, feature query, and WHERE validation helpers with malformed/network/ArcGIS error handling |
 | **6.4** | 🟢 | 2026-02-16 13:15 PST | TNC ArcGIS Adapter Shell | Added `tnc-arcgis` adapter + context warm-cache hook, dynamic registry wiring, and map-layer factory support for FeatureServer/MapServer |
-| **6.5** | ⚪ | — | Right Sidebar: Service Overview (Multi-Layer) | Show service description, layer dropdown, "Browse {Layer}" and "Pin {Layer}" buttons |
+| **6.5** | 🟢 | 2026-02-16 13:29 PST | Right Sidebar: Service Overview (Multi-Layer) | Added service-level overview in `TNCArcGISOverviewTab` with sub-layer dropdown, layer list, dynamic Browse/Pin actions, pinned badge state, and service sub-layer selection state in `LayerContext` |
 | **6.6** | ⚪ | — | Right Sidebar: Generic Filter UI (MVP) | Field/Operator/Value rows, "Add Filter", "Preview Results", WHERE clause builder | USER NOTES: Defer this for later.
 | **6.7** | ⚪ | — | Map Layer Rendering | Add FeatureLayer/MapImageLayer to map with definition expression from filters |
 | **6.8** | ⚪ | — | Search Enhancement | Match service + layer names; expand parent service when layer matches |
@@ -482,12 +482,12 @@ If TNC service has only 1 layer, skip the service overview pattern entirely:
 - [Browse Features →] and [📌 Pin Layer] buttons
 
 **Acceptance Criteria:**
-- [ ] Service overview displays service description from Data Catalog
-- [ ] Layer dropdown populated from sibling layers
-- [ ] Changing dropdown updates button labels
-- [ ] "Browse" button switches to Browse tab with layer pre-selected
-- [ ] "Pin" button adds selected layer to Map Layers widget
-- [ ] Single-layer services skip this pattern (use standard overview)
+- [x] Service overview displays service description from Data Catalog
+- [x] Layer dropdown populated from sibling layers
+- [x] Changing dropdown updates button labels
+- [x] "Browse" button switches to Browse tab with layer pre-selected
+- [x] "Pin" button adds selected layer to Map Layers widget
+- [x] Single-layer services skip this pattern (use standard overview)
 
 **Estimated Time:** 4-5 hours
 
