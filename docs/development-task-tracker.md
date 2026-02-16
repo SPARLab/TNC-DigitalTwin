@@ -77,8 +77,15 @@
 **Task 34: Unified Loading Indicator Strategy.** Affects v2/inaturalist, v2/dendra, v2/animl and future branches. Other branches may have different loading implementations and documentation — use this checklist when implementing and merging.
 
 **Prerequisites (start only after):**
-- [ ] Finish current layer work in iNaturalist, Dendra, ANiML branches (per user)
-- [ ] Decide merge order: which branch lands first? Loading strategy should be implemented in that branch, then propagated via merge or cherry-pick
+- [x] Finish current layer work in iNaturalist, Dendra, ANiML branches (per user) ✅ Feb 16
+- [x] Decide merge order: v2/iNaturalist has Task 34; propagate via merge into v2/animl and v2/dendra ✅ Feb 16
+
+**Propagation (for future merge requests):**
+- **Source branch:** `v2/iNaturalist` (commits: 722151b, 4d29673, 99a6343 = Task 34 + design spec + checklist)
+- **Target branches:** `v2/animl`, `v2/dendra` — both are 5 commits behind v2/iNaturalist as of Feb 16
+- **How:** `git checkout v2/animl && git merge v2/iNaturalist` (repeat for v2/dendra)
+- **Expected files:** `src/v2/components/shared/loading/*`, MapLayersWidget, MapContainer, PinnedLayerRow, ActiveLayerSection, legend widgets, sidebar Browse tabs, design-system.md
+- **On conflict:** Prefer v2/iNaturalist's shared loading primitives; remove any bespoke per-layer spinners in target branch
 
 **Merge strategy (branches have different docs):**
 - [x] **Design doc as source of truth:** Add loading strategy spec to `docs/DESIGN-SYSTEM/design-system.md` (DFT-018 section) as the default canonical source; only add a new planning doc if explicitly approved ✅ Feb 16
