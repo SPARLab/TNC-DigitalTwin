@@ -24,6 +24,7 @@ import { PinnedLayerRow } from './PinnedLayerRow';
 
 interface PinnedLayersSectionProps {
   layers: PinnedLayer[];
+  loadingByLayerId: Map<string, boolean>;
   activeLayerId?: string; // NEW: which layer is currently active
   activeViewId?: string; // NEW: which child view is currently active (for nested layers)
   countDisplayMode: CountDisplayMode; // NEW: how to display counts
@@ -42,6 +43,7 @@ interface PinnedLayersSectionProps {
 
 export function PinnedLayersSection({
   layers,
+  loadingByLayerId,
   activeLayerId,
   activeViewId,
   countDisplayMode,
@@ -179,6 +181,7 @@ export function PinnedLayersSection({
                   <PinnedLayerRow
                     key={layer.id}
                     layer={layer}
+                    isDataSourceLoading={loadingByLayerId.get(layer.layerId) ?? false}
                     isExpanded={expandedId === layer.id}
                     showDragHandle={showDragHandles}
                     justDropped={justDroppedId === layer.id}

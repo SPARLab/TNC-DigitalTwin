@@ -7,6 +7,8 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
 import { useAnimlFilter } from '../../../context/AnimlFilterContext';
+import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
+import { loadingTheme } from '../../shared/loading/loadingTheme';
 
 // Simple color palette for animal categories (distinct, colorblind-friendly)
 const ANIMAL_COLORS: string[] = [
@@ -32,19 +34,24 @@ export function AnimlLegendWidget() {
     .sort((a, b) => b.totalObservations - a.totalObservations);
 
   // Loading state — show shimmer while fetching
-  if (loading || !dataLoaded) {
+  if (!dataLoaded) {
     return (
       <div
         id="animl-legend-widget"
         className="absolute bottom-6 right-6 bg-white rounded-lg shadow-lg border border-gray-300 z-30 w-72"
       >
-        <div id="animl-legend-loading" className="flex items-center gap-2 px-4 py-3">
-          <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-          <span className="text-sm text-gray-500">Loading camera trap data...</span>
-        </div>
+        <InlineLoadingRow
+          id="animl-legend-loading"
+          message="Loading camera trap data..."
+          containerClassName={loadingTheme.legendRow}
+          spinnerClassName="w-4 h-4 animate-spin text-gray-400"
+          textClassName={loadingTheme.inlineText}
+        />
       </div>
     );
   }
+
+  const showRefreshSpinner = loading && dataLoaded;
 
   if (groups.length === 0) return null;
 
@@ -72,6 +79,9 @@ export function AnimlLegendWidget() {
               : <ChevronRight className="w-4 h-4 text-gray-600" />}
           </button>
           <h3 className="text-sm font-semibold text-gray-900">Filter Species</h3>
+          {showRefreshSpinner && (
+            <Loader2 id="animl-legend-refresh-spinner" className={loadingTheme.legendRefreshSpinner} />
+          )}
         </div>
         {!allVisible && (
           <button

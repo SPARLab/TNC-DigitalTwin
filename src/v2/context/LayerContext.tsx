@@ -54,6 +54,9 @@ interface LayerContextValue {
   lastEditFiltersRequest: number;
   requestEditFilters: () => void;
 
+  // Filters cleared → hydrate Browse tab with empty state
+  lastFiltersClearedTimestamp: number;
+
   // Helpers
   isLayerPinned: (layerId: string) => boolean;
   isLayerVisible: (layerId: string) => boolean;
@@ -228,6 +231,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
   const [lastEditFiltersRequest, setLastEditFiltersRequest] = useState(0);
   const requestEditFilters = useCallback(() => setLastEditFiltersRequest(Date.now()), []);
 
+  const [lastFiltersClearedTimestamp, setLastFiltersClearedTimestamp] = useState(0);
+
   const deactivateLayer = useCallback(() => setActiveLayer(null), []);
 
   const pinLayer = useCallback((layerId: string) => {
@@ -383,6 +388,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     );
 
     pushUndo('Filters cleared', () => setPinnedLayers(prevState));
+    setLastFiltersClearedTimestamp(Date.now());
   }, [pinnedLayers, pushUndo]);
 
   const syncINaturalistFilters = useCallback(
@@ -892,6 +898,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         renameView,
         lastEditFiltersRequest,
         requestEditFilters,
+        lastFiltersClearedTimestamp,
         isLayerPinned,
         isLayerVisible,
         getPinnedByLayerId,

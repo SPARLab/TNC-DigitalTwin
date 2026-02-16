@@ -8,12 +8,13 @@
 // ============================================================================
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { PawPrint, Camera, Loader2, AlertCircle, X } from 'lucide-react';
+import { PawPrint, Camera, AlertCircle, X } from 'lucide-react';
 import { useAnimlFilter } from '../../../context/AnimlFilterContext';
 import { animlService, type AnimlImageLabel } from '../../../../services/animlService';
 import { FilterSection, type FilterSectionItem } from './FilterSection';
 import { DateFilterSection } from './DateFilterSection';
 import { ImageList } from './ImageList';
+import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
 
 const PAGE_SIZE = 20;
 const FETCH_DEBOUNCE_MS = 300;
@@ -135,10 +136,11 @@ export function AnimlBrowseTab() {
 
   if (loading || !dataLoaded) {
     return (
-      <div id="animl-browse-loading" className="flex items-center justify-center py-12 text-gray-400">
-        <Loader2 className="w-5 h-5 animate-spin mr-2" />
-        <span className="text-sm">Loading camera trap data...</span>
-      </div>
+      <InlineLoadingRow
+        id="animl-browse-loading"
+        message="Loading camera trap data..."
+        containerClassName="flex items-center justify-center py-12 text-gray-400"
+      />
     );
   }
 
@@ -239,10 +241,7 @@ export function AnimlBrowseTab() {
 
         {/* Image loading spinner */}
         {hasAnyFilter && imgLoading && (
-          <div id="animl-browse-img-loading" className="flex items-center justify-center py-8 text-gray-400">
-            <Loader2 className="w-5 h-5 animate-spin mr-2" />
-            <span className="text-sm">Loading images...</span>
-          </div>
+          <InlineLoadingRow id="animl-browse-img-loading" message="Loading images..." />
         )}
 
         {/* Image fetch error */}

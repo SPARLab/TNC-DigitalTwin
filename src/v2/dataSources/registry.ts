@@ -78,3 +78,20 @@ export function useActiveCacheStatus(dataSource: string | undefined): CacheStatu
     default: return null;
   }
 }
+
+/**
+ * Returns cache/loading status for all implemented data sources.
+ * Used by shared UI (for example, Map Layers row-level loading indicators).
+ */
+export function useCacheStatusByDataSource(): Record<string, CacheStatus> {
+  const inat = useINaturalistCacheStatus();
+  const dendra = useDendraCacheStatus();
+  const animl = useAnimlCacheStatus();
+
+  return {
+    inaturalist: inat,
+    dendra,
+    animl,
+    // dataone,   // ← v2/dataone
+  };
+}
