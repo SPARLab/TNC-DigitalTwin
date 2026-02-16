@@ -8,8 +8,9 @@ import { useState, useCallback, useMemo } from 'react';
 import { useCatalog } from '../../context/CatalogContext';
 import { SearchBar } from './SearchBar';
 import { CategoryGroup } from './CategoryGroup';
-import { Search, Loader2 } from 'lucide-react';
+import { Search } from 'lucide-react';
 import type { Category, CatalogLayer } from '../../types';
+import { InlineLoadingRow } from '../shared/loading/LoadingPrimitives';
 
 /** Recursively collect all layers from a category and its subcategories. */
 function allLayersInCategory(cat: Category): CatalogLayer[] {
@@ -57,10 +58,11 @@ export function LeftSidebar() {
       <div className="flex-1 overflow-y-auto">
         {/* Loading skeleton */}
         {loading && (
-          <div id="catalog-loading" className="flex flex-col items-center justify-center py-16 gap-3">
-            <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
-            <p className="text-sm text-gray-500">Loading data catalog…</p>
-          </div>
+          <InlineLoadingRow
+            id="catalog-loading"
+            message="Loading data catalog..."
+            containerClassName="flex items-center justify-center py-16 text-gray-400"
+          />
         )}
 
         {/* Error state */}

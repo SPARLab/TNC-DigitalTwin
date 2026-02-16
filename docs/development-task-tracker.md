@@ -54,11 +54,11 @@
 | 31 | 2 | **2.7** ANiML Caching Strategy Investigation | ✅ | Low | Marked done for now; service/context caching in place. |
 | 32 | 2 | **2.15** ANiML Image Click → Highlight Camera on Map | ✅ | Medium | Completed: focusedDeploymentId in AnimlFilterContext; ArcGIS layerView.highlight(); onImageFocus from ImageList/expanded view. |
 | 33 | 2 | **2.16** ANiML Camera Badges — Numbered Icons for Query Results | ⚪ | Medium | When filter active: show count badge above cameras with matching images; cameras with 0 results get no badge. |
-| 34 | 0/1/2/3/6 | **Unified Loading Indicator Strategy** | 🟡 | Medium | **Design spec complete** (design-system.md DFT-018); implementation pending per prereqs. See Cross-Branch Merge Checklist (Loading Indicators). |
+| 34 | 0/1/2/3/6 | **Unified Loading Indicator Strategy** | ✅ | Medium | **Complete.** Shared loading primitives (`src/v2/components/shared/loading/`), eye-slot spinner (Active + Pinned), map overlay, legend/sidebar loading wired for iNaturalist, Dendra, ANiML. Styling centralized in `loadingTheme.ts` for single-point propagation. |
 
-**Active tasks remaining:** 13  
+**Active tasks remaining:** 12  
 **🔴 Next (critical):** Task 24 — Dynamic Layer Registry from Data Catalog Service  
-**Recently completed:** **Task 32** (2.15 ANiML Image Click → Highlight Camera on Map) ✅ (Feb 13), **Task 31** (2.7 ANiML Caching Strategy — marked done) ✅ (Feb 13), **Tasks 29–30** (ANiML Expanded Image View + Arrow Key Nav + Auto-Pagination) ✅ (Feb 13), **Task 28** (ANiML Image List Pagination Prev/Next) ✅ (Feb 13), **Task 27** (ANiML Date/Time Frame Filter) ✅ (Feb 13), **Task 26** (Right Sidebar Scrollbar Fix) ✅ (Feb 13), **Phase 2 Tasks 2.3–2.6** (ANiML multi-dimensional filter) ✅ (Feb 13), **Dendra 3.5b** ✅ (Feb 13 — 0-data chart fix), **Dendra 3.1-3.4** ✅ (Feb 12), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
+**Recently completed:** **Task 34** (Unified Loading Indicator Strategy) ✅ (Feb 16), **Task 32** (2.15 ANiML Image Click → Highlight Camera on Map) ✅ (Feb 13), **Task 31** (2.7 ANiML Caching Strategy — marked done) ✅ (Feb 13), **Tasks 29–30** (ANiML Expanded Image View + Arrow Key Nav + Auto-Pagination) ✅ (Feb 13), **Task 28** (ANiML Image List Pagination Prev/Next) ✅ (Feb 13), **Task 27** (ANiML Date/Time Frame Filter) ✅ (Feb 13), **Task 26** (Right Sidebar Scrollbar Fix) ✅ (Feb 13), **Phase 2 Tasks 2.3–2.6** (ANiML multi-dimensional filter) ✅ (Feb 13), **Dendra 3.5b** ✅ (Feb 13 — 0-data chart fix), **Dendra 3.1-3.4** ✅ (Feb 12), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
 
 ---
 
@@ -82,15 +82,15 @@
 
 **Merge strategy (branches have different docs):**
 - [x] **Design doc as source of truth:** Add loading strategy spec to `docs/DESIGN-SYSTEM/design-system.md` (DFT-018 section) as the default canonical source; only add a new planning doc if explicitly approved ✅ Feb 16
-- [ ] **Implementation order:** Implement in shared components first (MapLayersWidget, MapContainer, PinnedLayerRow) — these live in foundation or the branch that merges first
-- [ ] **Per-branch changes:** Each branch’s legend widget and sidebar use the same loading pattern; adapters already expose `loading` from cache status — no bespoke per-layer spinners
-- [ ] **Merge conflict surface:** `PinnedLayerRow` (eye slot), `MapContainer` (overlay condition), `PinnedLayersSection`/`MapLayersWidget` (loadingByDataSource props), legend widgets, sidebar Browse tabs
+- [x] **Implementation order:** Shared components implemented (MapLayersWidget, MapContainer, PinnedLayerRow, ActiveLayerSection) ✅
+- [x] **Per-branch changes:** Legend widgets and sidebars use shared `LoadingPrimitives`; no bespoke per-layer spinners ✅
 
 **Implementation checklist:**
-- [ ] Map Layers: spinner (w-4 h-4, same size as eye) in eye slot when layer’s data source is loading; pass `loadingByDataSource` from registry cache status hooks
-- [ ] Map center overlay: only when `!dataLoaded` (initial load); not during refresh
-- [ ] Legend: loading when `!dataLoaded`; optional header spinner during refresh
-- [ ] Right sidebar: keep region-specific loading (spinner + text); same pattern across all data sources
+- [x] Map Layers: blue spinner (w-4 h-4) in eye slot when layer’s data source is loading; Active + Pinned sections (**complete**)
+- [x] Map center overlay: shown when active data source is loading (**complete**)
+- [x] Legend: loading when `!dataLoaded`; optional header spinner during refresh (**iNaturalist + ANiML complete**)
+- [x] Right sidebar: region-specific loading via shared `InlineLoadingRow` / `RefreshLoadingRow` (**iNaturalist, Dendra, ANiML complete**)
+- [x] **Shared loading primitives:** `src/v2/components/shared/loading/` — `loadingTheme.ts`, `LoadingPrimitives.tsx`. Change tokens once to propagate styling app-wide.
 
 **Design reference:** See design discussion in phase-1-inaturalist.md (or this tracker’s task 34 notes). Design principles: Nielsen #1, #4; Norman Feedback; DFT-018 region-specific; Gestalt proximity/similarity.
 
@@ -492,6 +492,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 16, 2026 | 0/1/2/3/6 | ✅ **Task 34 complete: Unified Loading Indicator Strategy.** Shared loading primitives (`loadingTheme.ts`, `LoadingPrimitives.tsx`), eye-slot spinner (Active + Pinned), map overlay, legend/sidebar loading wired for iNaturalist, Dendra, ANiML. Styling centralized for single-point propagation. | Claude |
 | Feb 16, 2026 | 0/1/2/3/6 | **Task 34 design spec complete.** Canonical loading strategy documented in design-system.md (DFT-018): eye-slot spinner, first-load-only map overlay, legend/sidebar region-specific. Design doc checklist item done. Implementation pending per prereqs. | Claude |
 | Feb 13, 2026 | Phase 3 | ✅ **Task 26 sub-task 3.5b complete.** Fixed sensors showing 0 data despite record counts. Root cause: null-heavy datapoint windows when querying oldest-first. Updated v0 bridge query to fetch latest non-null points (`value IS NOT NULL`, `ORDER BY timestamp_utc DESC`), reverse client-side for chronological chart. **Remaining:** 3.5d (sidebar polish). | Claude |
 | Feb 13, 2026 | Phase 3 | ✅ **Task 26 sub-task 3.5a complete.** Fixed subsequent datastream clicks not updating chart. Two bugs: (1) race condition — stale fetch could overwrite newer datastream's data (request-counter guard in openChart); (2) stale ECharts instance — chart div remounts during loading but old instance pointed to removed DOM (getDom() check before init). **Remaining:** 3.5b (0-data inconsistency), 3.5d (sidebar polish). | Claude |

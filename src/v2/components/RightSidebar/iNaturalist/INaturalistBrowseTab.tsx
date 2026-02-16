@@ -10,7 +10,7 @@
 // ============================================================================
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Loader2, AlertCircle, ChevronDown, Search, X, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertCircle, ChevronDown, Search, X, Calendar } from 'lucide-react';
 import {
   useINaturalistObservations,
   TAXON_CATEGORIES,
@@ -22,6 +22,7 @@ import { useINaturalistFilter } from '../../../context/INaturalistFilterContext'
 import { useLayers } from '../../../context/LayerContext';
 import { ObservationCard } from './ObservationCard';
 import { INaturalistDetailView } from './INaturalistDetailView';
+import { InlineLoadingRow, RefreshLoadingRow } from '../../shared/loading/LoadingPrimitives';
 
 export function INaturalistBrowseTab() {
   const {
@@ -115,6 +116,9 @@ export function INaturalistBrowseTab() {
   const filterCount = hasFilter ? selectedTaxa.size : TAXON_CATEGORIES.length;
   const hasActiveSearch = debouncedSearchTerm.trim().length > 0;
   const hasDateFilter = !!(startDate || endDate);
+  const hasStaleResults = allObservations.length > 0;
+  const showInitialLoading = loading && !hasStaleResults;
+  const showRefreshLoading = loading && hasStaleResults;
 
   // ── Hydrate Browse filters (ONE-SHOT, not continuous) ──────────────────────
   // Runs ONLY when the user explicitly triggers it:
@@ -338,11 +342,15 @@ export function INaturalistBrowseTab() {
       </div>
 
       {/* Loading state */}
-      {loading && (
-        <div className="flex items-center justify-center py-8 text-gray-400">
-          <Loader2 className="w-5 h-5 animate-spin mr-2" />
-          <span className="text-sm">Loading observations...</span>
-        </div>
+      {showInitialLoading && (
+        <InlineLoadingRow id="inat-browse-initial-loading" message="Loading observations..." />
+      )}
+
+      {showRefreshLoading && (
+        <RefreshLoadingRow
+          id="inat-browse-refresh-loading"
+          message="Refreshing observations..."
+        />
       )}
 
       {/* Error state */}
@@ -354,8 +362,8 @@ export function INaturalistBrowseTab() {
       )}
 
       {/* Observation cards */}
-      {!loading && !error && (
-        <div className={`space-y-2 ${loading ? 'opacity-50' : ''}`}>
+      {!error && !showInitialLoading && (
+        <div id="inat-observation-cards" className={`space-y-2 ${showRefreshLoading ? 'opacity-60' : ''}`}>
           {observations.map(obs => (
             <ObservationCard
               key={obs.id}
@@ -368,7 +376,7 @@ export function INaturalistBrowseTab() {
             />
           ))}
 
-          {observations.length === 0 && !loading && (
+          {observations.length === 0 && !showRefreshLoading && (
             <p className="text-sm text-gray-400 text-center py-6">
               No observations found{hasActiveSearch ? ' matching your search' : hasFilter ? ' for this filter' : ''}.
             </p>
@@ -377,7 +385,7 @@ export function INaturalistBrowseTab() {
       )}
 
       {/* Pagination */}
-      {totalPages > 1 && !loading && (
+      {totalPages > 1 && !showInitialLoading && (
         <div id="inat-pagination" className="flex items-center justify-between pt-2 border-t border-gray-100">
           <button
             onClick={() => goToPage(page - 1)}

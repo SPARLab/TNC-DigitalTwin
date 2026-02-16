@@ -5,12 +5,13 @@
 // ============================================================================
 
 import { useState, useCallback } from 'react';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { useDendra, useSummariesByStation } from '../../../context/DendraContext';
 import { useMap } from '../../../context/MapContext';
 import { StationCard } from './StationCard';
 import { StationDetailView } from './StationDetailView';
 import type { DendraStation, DendraSummary } from '../../../services/dendraStationService';
+import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
 
 export function DendraBrowseTab() {
   const {
@@ -112,10 +113,7 @@ export function DendraBrowseTab() {
 
       {/* Loading state */}
       {loading && !dataLoaded && (
-        <div className="flex items-center justify-center py-8 text-gray-400">
-          <Loader2 className="w-5 h-5 animate-spin mr-2" />
-          <span className="text-sm">Loading stations...</span>
-        </div>
+        <InlineLoadingRow id="dendra-browse-loading" message="Loading stations..." />
       )}
 
       {/* Error state */}

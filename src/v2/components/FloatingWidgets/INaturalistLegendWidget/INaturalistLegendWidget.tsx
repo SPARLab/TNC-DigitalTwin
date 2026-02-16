@@ -8,6 +8,8 @@ import { useState } from 'react';
 import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
 import { TAXON_CONFIG, getTaxonEmoji, getTaxonColor } from '../../Map/layers/taxonConfig';
 import { useINaturalistFilter } from '../../../context/INaturalistFilterContext';
+import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
+import { loadingTheme } from '../../shared/loading/loadingTheme';
 
 export function INaturalistLegendWidget() {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -23,16 +25,19 @@ export function INaturalistLegendWidget() {
     .sort((a, b) => b.count - a.count);
 
   // Loading state — show shimmer while fetching
-  if (loading || !dataLoaded) {
+  if (!dataLoaded) {
     return (
       <div
         id="inat-legend-widget"
         className="absolute bottom-6 right-6 bg-white rounded-lg shadow-lg border border-gray-300 z-30 w-72"
       >
-        <div id="inat-legend-loading" className="flex items-center gap-2 px-4 py-3">
-          <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-          <span className="text-sm text-gray-500">Loading observations...</span>
-        </div>
+        <InlineLoadingRow
+          id="inat-legend-loading"
+          message="Loading observations..."
+          containerClassName={loadingTheme.legendRow}
+          spinnerClassName="w-4 h-4 animate-spin text-gray-400"
+          textClassName={loadingTheme.inlineText}
+        />
       </div>
     );
   }
@@ -61,6 +66,9 @@ export function INaturalistLegendWidget() {
               : <ChevronRight className="w-4 h-4 text-gray-600" />}
           </button>
           <h3 className="text-sm font-semibold text-gray-900">iNaturalist Taxa</h3>
+          {loading && dataLoaded && (
+            <Loader2 id="inat-legend-refresh-spinner" className={loadingTheme.legendRefreshSpinner} />
+          )}
         </div>
         {hasFilter && (
           <div id="inat-legend-actions" className="flex items-center gap-2">

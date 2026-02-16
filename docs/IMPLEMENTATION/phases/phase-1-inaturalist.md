@@ -480,6 +480,7 @@ TBD - Document the actual URL
 - Canonical implementation details for Map Layers <-> right-sidebar query synchronization live in this Phase 1 document and should be treated as the source of truth for downstream phases.
 - Child filtered-view naming in Map Layers now follows shared semantics: auto-name updates only when name is not custom; manual rename sets a persistent custom-name override.
 - When merging parallel branches, preserve `viewId`-based sync and manual rename logic in shared layer/widget state. Auto-name algorithm may vary by data source.
+- Loading indicators follow the shared Task 34 contract: Map Layers eye-slot spinner (blue), map overlay when loading, legend initial-load + refresh spinner, right-sidebar loading via shared `InlineLoadingRow`/`RefreshLoadingRow`. Shared primitives in `src/v2/components/shared/loading/` — change `loadingTheme.ts` to propagate styling app-wide.
 
 ### Shared Sync Contract (Canonical)
 
@@ -520,6 +521,7 @@ When applying this logic into another branch, verify all items below:
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 16, 2026 | Cross-phase Task 34 | ✅ **Task 34 complete.** Shared loading primitives (`loadingTheme.ts`, `LoadingPrimitives.tsx`), eye-slot spinner (Active + Pinned), map overlay, legend/sidebar loading wired for iNaturalist, Dendra, ANiML. Styling centralized for single-point propagation. | Claude |
 | Feb 13, 2026 | 1.4 | ✅ Task 28 complete: Detail view crash fixed. Root cause: early return before hooks caused "Rendered fewer hooks than expected." Moved detail-view return after all hooks. Hardened handleViewOnMap (try/catch, coordinate validation). RightSidebar auto-switches to Browse when map observation clicked. Files: INaturalistBrowseTab.tsx, RightSidebar.tsx. | Claude |
 | Feb 13, 2026 | 1.4 | 🐛 Task 28 added: Detail view crash on observation click. Page crashes when opening detail view; filters sync correctly. Marked Critical, next priority. | User |
 | Feb 13, 2026 | 1.4 | Tasks 26 + 27 complete: child view names now auto-generate from active iNaturalist filters (taxa/date), and users can rename any saved child view inline in Map Layers. Manual names persist and stop auto-overwrite for that view. | Claude |

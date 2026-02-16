@@ -283,6 +283,8 @@ This is the canonical loading strategy for `v2/inaturalist`, `v2/dendra`, `v2/an
 
 **Design rationale:** This pattern balances Nielsen #1 (status visibility) with Nielsen #3 (user freedom) by showing where loading occurs without blocking unrelated work.
 
+**Implementation (Feb 16, 2026):** Shared loading primitives live in `src/v2/components/shared/loading/` — `loadingTheme.ts` (tokens) and `LoadingPrimitives.tsx` (EyeSlotLoadingSpinner, InlineLoadingRow, RefreshLoadingRow, MapCenterLoadingOverlay). Change tokens once to propagate styling app-wide.
+
 ### Indicator Selection Rules
 
 | Context | Indicator | Notes |
@@ -1985,7 +1987,8 @@ February 5, 2026
 
 | Date | Change | By |
 |------|--------|-----|
-| Feb 16, 2026 | Updated DFT-018 Loading State Patterns with Task 34 unified cross-branch contract: eye-slot spinner in Map Layers, first-load-only map overlay, legend/sidebar region-specific loading, first-load vs refresh rules, and principle-fit table for implementation consistency across iNaturalist, Dendra, ANiML, and future adapters | Claude |
+| Feb 16, 2026 | **Task 34 complete.** Added shared loading primitives (`src/v2/components/shared/loading/`): `loadingTheme.ts`, `LoadingPrimitives.tsx` (EyeSlotLoadingSpinner, InlineLoadingRow, RefreshLoadingRow, MapCenterLoadingOverlay). Wired for iNaturalist, Dendra, ANiML. Single-point styling propagation. | Claude |
+| Feb 16, 2026 | Updated DFT-018 Loading State Patterns with Task 34 unified cross-branch contract: eye-slot spinner in Map Layers, map overlay, legend/sidebar region-specific loading, first-load vs refresh rules | Claude |
 | Feb 6, 2026 | Added Detail View Components (DFT-044) — shared sub-components for self-contained row detail views: `DetailBackButton`, `DetailActionRow`, `DetailMetadataGrid`. Purpose-built views: iNaturalist (hero image + flat grid), DataOne (multi-section hierarchical). Architectural principle: consistent structural template with flexibility for custom content. Design tokens added for back button, action row, metadata grid, and full detail view styling. Analyzed via Nielsen #4/#8, Norman, Hick's Law, IA Mental Models | Will + Claude |
 | Feb 5, 2026 | Audit gap resolution — added 12 missing DFT specs: Viewport Requirements (DFT-016), Accessibility Baseline (DFT-017), Bookmark Hover-to-Highlight (DFT-036), Filter Indicator (DFT-024), Multiple Filtered Views (DFT-013), Widget Animation Patterns (DFT-025), Map Badge Behavior (DFT-029), Widget Auto-Collapse (DFT-005), TabBar default tab + Edit Filters transition (DFT-006/DFT-019), ResultCard grayed animation detail (DFT-028), TNC brand color/font reference (DFT-008/DFT-009) | Will + Claude |
 | Feb 5, 2026 | Added Sidebar Template System — shared structural templates (TabBar, OverviewTab, ResultCard, Pagination, LeftSidebar category pattern) enforced via components. Theme tokens centralized in `sidebarTheme`. All data sources use identical layout; only content varies. Exceptions documented (ANiML landing cards, Dendra chart, Level 3 FeatureDetailCard). Decisions: underline tabs (emerald accent), Previous/Next pagination (20/page), standard result card with icon/title/subtitle/actions slots, left sidebar with collapsible categories and emerald active state | Will + Claude |
