@@ -239,6 +239,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 16, 2026 | Phase 2 | **Phase 2 Task 2.8 complete: ANiML SVG marker/icon pass.** Replaced emoji camera markers with SVG camera symbols in `animlLayer.ts` (base, badged, muted states). Added row-level icons in ANiML legend and browse filter lists; aligned with no-emoji icon policy. | Will + Claude |
 | Feb 13, 2026 | Phase 1 | **Task 28 complete: iNaturalist detail view crash fixed.** Hook-order mismatch (early return before hooks) caused "Rendered fewer hooks than expected." Moved detail-view return after all hooks; hardened handleViewOnMap with try/catch and coordinate validation. RightSidebar auto-switches to Browse when map observation clicked. Phase 1 all tasks complete. | Claude |
 | Feb 13, 2026 | Phase 1 | **Phase 1 iNaturalist complete.** All 13 granular tasks done including Tasks 26–27 (dynamic view names, user-renamable filtered views). Cross-branch merge contract documented. | User + Claude |
 | Feb 13, 2026 | All | Added cross-layer filtered-view naming decision: universal manual rename in shared Map Layers logic with per-data-source auto-naming algorithms. Documented as an incremental branch rollout contract to avoid regressions during parallel merges. | User + Claude |

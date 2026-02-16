@@ -241,6 +241,7 @@ export function AnimlBrowseTab() {
         id="animl-filter-species"
         label="Species"
         icon={<PawPrint className="w-4 h-4" />}
+        itemIcon={<PawPrint className="w-3.5 h-3.5" />}
         items={speciesItems}
         selectedKeys={selectedAnimals}
         onToggle={toggleAnimal}
@@ -255,6 +256,7 @@ export function AnimlBrowseTab() {
         id="animl-filter-cameras"
         label="Cameras"
         icon={<Camera className="w-4 h-4" />}
+        itemIcon={<Camera className="w-3.5 h-3.5" />}
         items={cameraItems}
         selectedKeys={selectedCameraKeys}
         onToggle={(key) => toggleCamera(Number(key))}

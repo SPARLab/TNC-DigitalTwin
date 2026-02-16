@@ -52,12 +52,13 @@
 | 30 | 2 | **2.14** ANiML Expanded View — Arrow Key Navigation | ✅ | Low | Left/right arrow keys navigate; auto-paginate across page boundaries (20→21, 40→41). |
 | 31 | 2 | **2.7** ANiML Caching Strategy Investigation | ✅ | Low | Marked done for now; service/context caching in place. |
 | 32 | 2 | **2.15** ANiML Image Click → Highlight Camera on Map | ✅ | Medium | Completed: focusedDeploymentId in AnimlFilterContext; ArcGIS layerView.highlight(); onImageFocus from ImageList/expanded view. |
-| 33 | 2 | **2.16** ANiML Camera Badges — Numbered Icons for Query Results | ⚪ | Medium | When filter active: show count badge above cameras with matching images; cameras with 0 results get no badge. |
+| 33 | 2 | **2.16** ANiML Camera Badges — Numbered Icons for Query Results | ✅ | Medium | Completed: dynamic camera badge symbols on map; no-filter state shows plain icon; 0-result cameras show muted icon/no badge. |
 | 34 | 2 | **2.17** ANiML Species/Camera Counts Sync with Date Filter | ✅ | Medium | Completed: date-scoped count lookups in AnimlFilterContext; Species/Cameras/Legend counts now reflect active date range; no all-time fallback when date filter active. |
+| 35 | 2 | **2.8** ANiML SVG Icons for Map Markers + Tag Rows | ✅ | Medium | Replaced emoji camera markers with SVG camera symbols; added icon rows in ANiML legend and browse filters. |
 
-**Active tasks remaining:** 11  
+**Active tasks remaining:** 9  
 **🔴 Next (critical):** Task 24 — Dynamic Layer Registry from Data Catalog Service  
-**Recently completed:** **Task 34** (2.17 ANiML Species/Camera Counts Sync with Date Filter) ✅ (Feb 13), **Task 32** (2.15 ANiML Image Click → Highlight Camera on Map) ✅ (Feb 13), **Task 31** (2.7 ANiML Caching Strategy — marked done) ✅ (Feb 13), **Tasks 29–30** (ANiML Expanded Image View + Arrow Key Nav + Auto-Pagination) ✅ (Feb 13), **Task 28** (ANiML Image List Pagination Prev/Next) ✅ (Feb 13), **Task 27** (ANiML Date/Time Frame Filter) ✅ (Feb 13), **Task 26** (Right Sidebar Scrollbar Fix) ✅ (Feb 13), **Phase 2 Tasks 2.3–2.6** (ANiML multi-dimensional filter) ✅ (Feb 13), **Dendra 3.5b** ✅ (Feb 13 — 0-data chart fix), **Dendra 3.1-3.4** ✅ (Feb 12), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
+**Recently completed:** **Task 35** (2.8 ANiML SVG Icons for Map Markers + Tag Rows) ✅ (Feb 16), **Task 33** (2.16 ANiML Camera Badges) ✅ (doc sync Feb 16), **Task 34** (2.17 ANiML Species/Camera Counts Sync with Date Filter) ✅ (Feb 13), **Task 32** (2.15 ANiML Image Click → Highlight Camera on Map) ✅ (Feb 13), **Task 31** (2.7 ANiML Caching Strategy — marked done) ✅ (Feb 13), **Tasks 29–30** (ANiML Expanded Image View + Arrow Key Nav + Auto-Pagination) ✅ (Feb 13), **Task 28** (ANiML Image List Pagination Prev/Next) ✅ (Feb 13), **Task 27** (ANiML Date/Time Frame Filter) ✅ (Feb 13), **Task 26** (Right Sidebar Scrollbar Fix) ✅ (Feb 13), **Phase 2 Tasks 2.3–2.6** (ANiML multi-dimensional filter) ✅ (Feb 13), **Dendra 3.5b** ✅ (Feb 13 — 0-data chart fix), **Dendra 3.1-3.4** ✅ (Feb 12), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
 
 ---
 
@@ -356,10 +357,14 @@
     - **Completed (Feb 13):** AnimlFilterContext: focusedDeploymentId, focusDeployment(), clearFocusedDeployment(). ImageList: onImageFocus(image) callback on click and when navigating in expanded view. useAnimlMapBehavior: ArcGIS layerView.highlight(targetGraphic) for focused deployment; cleanup on layer remove. animlLayer: getAnimlCameraGraphicByDeploymentId() helper (2.16-ready).
     - **Files:** `AnimlFilterContext.tsx`, `ImageList.tsx`, `AnimlBrowseTab.tsx`, `animlLayer.ts`, `useMapBehavior.ts`
 
-  - [ ] **Task 33 (2.16): ANiML Camera Badges — Numbered Icons for Query Results**
-    - **Goal:** When filter active (species, date, etc.), show numbered badges above cameras that have ≥1 matching image. Cameras with 0 results get no badge.
-    - **Implementation:** Use countLookups; badge only when count > 0; positioned above camera icon on map.
-    - **Files:** `animlLayer.ts`, `AnimlFilterContext.tsx`
+  - [x] **Task 33 (2.16): ANiML Camera Badges — Numbered Icons for Query Results** ✅
+    - **Completed (Feb 16 doc sync):** Dynamic map badge symbols are active while filters are applied; no-filter state returns to plain camera icon; 0-result cameras render muted/no badge.
+    - **Implementation:** Uses count lookups via `updateAnimlCameraBadges()` in map behavior lifecycle.
+    - **Files:** `animlLayer.ts`, `useMapBehavior.ts`, `AnimlFilterContext.tsx`
+
+  - [x] **Task 35 (2.8): ANiML SVG Icons for Map Markers + Tag Rows** ✅
+    - **Completed (Feb 16):** Replaced emoji camera symbols with SVG camera glyphs in map layer rendering (base, badge, muted states). Added icon rows in ANiML legend and browse filter lists for species/camera scanability.
+    - **Files:** `animlLayer.ts`, `AnimlLegendWidget.tsx`, `FilterSection.tsx`, `AnimlBrowseTab.tsx`, `phase-2-animl.md`
 
   - [ ] **Future/Low Priority: Save Observation → Create Filtered View**
     - **Goal:** Clicking "Save" on an observation creates a new child view in Map Layers widget filtered to that specific observation (by ID or name).
@@ -430,6 +435,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 16, 2026 | Phase 2 | ✅ **Task 35 (2.8) complete: ANiML SVG icons for map markers + tag rows.** Replaced emoji map markers with SVG camera symbols in `animlLayer.ts` (base, badge, muted). Added icon rows in ANiML legend and browse filter lists. Updated phase-2 task status + acceptance criteria. | Claude |
 | Feb 13, 2026 | Phase 3 | ✅ **Task 26 sub-task 3.5b complete.** Fixed sensors showing 0 data despite record counts. Root cause: null-heavy datapoint windows when querying oldest-first. Updated v0 bridge query to fetch latest non-null points (`value IS NOT NULL`, `ORDER BY timestamp_utc DESC`), reverse client-side for chronological chart. **Remaining:** 3.5d (sidebar polish). | Claude |
 | Feb 13, 2026 | Phase 3 | ✅ **Task 26 sub-task 3.5a complete.** Fixed subsequent datastream clicks not updating chart. Two bugs: (1) race condition — stale fetch could overwrite newer datastream's data (request-counter guard in openChart); (2) stale ECharts instance — chart div remounts during loading but old instance pointed to removed DOM (getDom() check before init). **Remaining:** 3.5b (0-data inconsistency), 3.5d (sidebar polish). | Claude |
 | Feb 13, 2026 | Phase 3 | 🟡 **Task 26 (Dendra 3.5) in progress; sub-task 3.5c complete.** Floating chart UI polish shipped: visible glassmorphism, bottom-right placement, half-height panel sizing, stronger contrast/readability, larger axis labels, larger/higher range slider, darker header, and measurement-first header text hierarchy. **Still open:** 3.5a (chart not refreshing on subsequent datastream clicks), 3.5b (0-data inconsistency). | Claude |

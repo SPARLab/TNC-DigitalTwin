@@ -10,17 +10,17 @@ import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
 import PictureMarkerSymbol from '@arcgis/core/symbols/PictureMarkerSymbol';
 import type { AnimlDeployment } from '../../../../services/animlService';
-import { emojiToDataUri } from './taxonConfig';
 
-const CAMERA_EMOJI = '📷';
+const CAMERA_STROKE = '#1f2937';
+const CAMERA_MUTED_STROKE = '#64748b';
 const BADGE_FILL = '#10b981';
 const BADGE_TEXT = '#ffffff';
-const CAMERA_BASE_SYMBOL_URL = emojiToDataUri(CAMERA_EMOJI);
 const CAMERA_BASE_SYMBOL_SIZE = '28px';
 const CAMERA_BADGED_SYMBOL_SIZE = '64px';
 const CAMERA_MUTED_SYMBOL_SIZE = '40px';
 const MAX_BADGE_DISPLAY = 999;
 const cameraBadgeSymbolCache = new Map<number, PictureMarkerSymbol>();
+let baseCameraSymbol: PictureMarkerSymbol | null = null;
 let mutedCameraSymbol: PictureMarkerSymbol | null = null;
 
 function getBadgeText(count: number): string {
@@ -28,11 +28,56 @@ function getBadgeText(count: number): string {
   return String(count);
 }
 
+function toSvgDataUri(svg: string): string {
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+function buildCameraGlyph(options: {
+  x: number;
+  y: number;
+  size: number;
+  stroke: string;
+  opacity?: number;
+}): string {
+  const { x, y, size, stroke, opacity = 1 } = options;
+  const scale = size / 24;
+  return `
+    <g transform="translate(${x} ${y}) scale(${scale})" fill="none" stroke="${stroke}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="${opacity}">
+      <rect x="4" y="6" width="16" height="12" rx="2" ry="2" />
+      <circle cx="12" cy="12" r="3" />
+      <line x1="8" y1="18" x2="6" y2="22" />
+      <line x1="12" y1="18" x2="12" y2="22" />
+      <line x1="16" y1="18" x2="18" y2="22" />
+      <rect x="15" y="7" width="3" height="2" rx="0.5" />
+    </g>
+  `.trim();
+}
+
+function buildBaseCameraSvg(): string {
+  const cameraGlyph = buildCameraGlyph({
+    x: 2,
+    y: 1,
+    size: 24,
+    stroke: CAMERA_STROKE,
+  });
+  return `
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">
+      ${cameraGlyph}
+    </svg>
+  `.trim();
+}
+
 function buildCameraBadgeSvg(count: number): string {
   const badgeText = getBadgeText(count);
+  const cameraGlyph = buildCameraGlyph({
+    x: 21,
+    y: 18,
+    size: 42,
+    stroke: CAMERA_STROKE,
+  });
   return `
     <svg xmlns="http://www.w3.org/2000/svg" width="84" height="84" viewBox="0 0 84 84">
-      <text x="42" y="52" text-anchor="middle" font-size="44">📷</text>
+      ${cameraGlyph}
       <circle cx="66" cy="18" r="18" fill="${BADGE_FILL}" />
       <text
         x="66"
@@ -50,11 +95,14 @@ function buildCameraBadgeSvg(count: number): string {
 }
 
 function getBaseCameraSymbol(): PictureMarkerSymbol {
-  return new PictureMarkerSymbol({
-    url: CAMERA_BASE_SYMBOL_URL,
-    width: CAMERA_BASE_SYMBOL_SIZE,
-    height: CAMERA_BASE_SYMBOL_SIZE,
-  });
+  if (!baseCameraSymbol) {
+    baseCameraSymbol = new PictureMarkerSymbol({
+      url: toSvgDataUri(buildBaseCameraSvg()),
+      width: CAMERA_BASE_SYMBOL_SIZE,
+      height: CAMERA_BASE_SYMBOL_SIZE,
+    });
+  }
+  return baseCameraSymbol.clone();
 }
 
 function getBadgedCameraSymbol(count: number): PictureMarkerSymbol {
@@ -63,7 +111,7 @@ function getBadgedCameraSymbol(count: number): PictureMarkerSymbol {
 
   const svg = buildCameraBadgeSvg(count);
   const symbol = new PictureMarkerSymbol({
-    url: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
+    url: toSvgDataUri(svg),
     width: CAMERA_BADGED_SYMBOL_SIZE,
     height: CAMERA_BADGED_SYMBOL_SIZE,
   });
@@ -72,10 +120,16 @@ function getBadgedCameraSymbol(count: number): PictureMarkerSymbol {
 }
 
 function buildMutedCameraSvg(): string {
+  const cameraGlyph = buildCameraGlyph({
+    x: 24,
+    y: 21,
+    size: 36,
+    stroke: CAMERA_MUTED_STROKE,
+    opacity: 0.7,
+  });
   return `
     <svg xmlns="http://www.w3.org/2000/svg" width="84" height="84" viewBox="0 0 84 84">
-      <circle cx="42" cy="42" r="24" fill="#94a3b8" fill-opacity="0.25" />
-      <text x="42" y="52" text-anchor="middle" font-size="40" opacity="0.4">📷</text>
+      ${cameraGlyph}
     </svg>
   `.trim();
 }
@@ -84,7 +138,7 @@ function getMutedCameraSymbol(): PictureMarkerSymbol {
   if (!mutedCameraSymbol) {
     const svg = buildMutedCameraSvg();
     mutedCameraSymbol = new PictureMarkerSymbol({
-      url: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
+      url: toSvgDataUri(svg),
       width: CAMERA_MUTED_SYMBOL_SIZE,
       height: CAMERA_MUTED_SYMBOL_SIZE,
     });

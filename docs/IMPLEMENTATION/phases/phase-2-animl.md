@@ -94,7 +94,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | 2.5 | Implement camera list with filtered image counts | 🟢 Complete | Will + Claude | Cameras as multi-select checkboxes in expandable FilterSection; cross-dimensional counts. |
 | 2.6 | Implement camera detail drill-down | 🟢 Complete | Will + Claude | Replaced by unified filter + result view; no separate detail view needed for MVP. |
 | 2.7 | Investigate and decide on caching strategy | 🟢 Complete | Will + Claude | Marked done for now; service/context caching in place |
-| 2.8 | Use v1 SVG icons for map markers and animal tags | ⚪ Not Started | | Replace emoji markers with proper SVGs |
+| 2.8 | Use v1 SVG icons for map markers and animal tags | 🟢 Complete | Will + Claude | Replaced emoji map markers with SVG camera symbols; added row-level icons in ANiML legend and browse filters |
 | 2.9 | Map Layers widget sync with browse filters | 🟢 Complete | Will + Claude | Synced ANiML filters to Map Layers saved views + Edit Filters hydration |
 | 2.10 | Right sidebar scrollbar — prevent content shift | 🟢 Complete | Will + Claude | scrollbar-gutter: stable on right sidebar scroll area |
 | 2.11 | Add date/time frame filter above Species and Cameras | 🟢 Complete | Will + Claude | DateFilterSection with date pickers + presets. Passes startDate/endDate to queryImageLabelsCached. Count fix: use images.length when fetched. |
@@ -388,13 +388,13 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 
 **Goal:** Replace emoji-based map markers (`📷`) with the SVG icons used in the v1 implementation for a more polished look.
 
-**Status:** 🟢 Complete (Feb 13, 2026)
+**Status:** 🟢 Complete (Feb 16, 2026)
 
 **Acceptance Criteria:**
-- [ ] Camera markers on map use SVG icon instead of emoji
-- [ ] Animal tag rows in legend widget and browse tab use appropriate icons
-- [ ] SVG icons sourced from v1 components (Lucide `Camera`, `Tag`, etc.) or custom SVGs
-- [ ] Icons render correctly at map marker sizes (24-28px)
+- [x] Camera markers on map use SVG icon instead of emoji
+- [x] Animal tag rows in legend widget and browse tab use appropriate icons
+- [x] SVG icons sourced from v1 components (Lucide `Camera`, `Tag`, etc.) or custom SVGs
+- [x] Icons render correctly at map marker sizes (24-28px)
 
 **Files to Modify:**
 - `src/v2/components/Map/layers/animlLayer.ts` — replace `emojiToDataUri(CAMERA_EMOJI)` with SVG
@@ -737,6 +737,7 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | Feb 13, 2026 | 2.9 | **Complete.** Added ANiML filter sync contract with Map Layers widget (mirrors iNaturalist): `AnimlBrowseTab` now hydrates filters from pinned layer/view on "Edit Filters" and syncs active species/cameras/date + result count back to Map Layers metadata. Added `syncAnimlFilters` in `LayerContext` with child-view support and custom-name preservation; added ANiML filter payload to pinned layer/view state. | Will + Claude |
 | Feb 13, 2026 | 2.17 | **New task added.** Species/camera counts in filter sections and legend show all-time totals; when date filter is applied, image results correctly show 0 but counts remain high — misleading UX. Task 2.17: sync counts with date filter or add clear qualifier. | Will + Claude |
 | Feb 13, 2026 | 2.17 | **Complete.** Implemented Option D (lazy date-filtered counts). AnimlFilterContext fetches `getObservationCountsGroupedCached({ startDate, endDate })` when date filter active, builds `dateScopedCountLookups`, routes all count helpers through `activeCountLookups`. Species/Cameras filter sections and AnimlLegendWidget now show date-scoped counts; no all-time fallback during load. Files: AnimlFilterContext.tsx, AnimlBrowseTab.tsx, AnimlLegendWidget.tsx. | Will + Claude |
+| Feb 16, 2026 | 2.8 | **Complete.** Replaced emoji camera map markers with SVG camera symbols in `animlLayer.ts` for base, badged, and muted states. Added row-level icons in ANiML legend and browse filters (`AnimlLegendWidget`, `FilterSection`, `AnimlBrowseTab`). Final refinement removed circular marker backplates based on visual QA feedback. | Will + Claude |
 
 ---
 

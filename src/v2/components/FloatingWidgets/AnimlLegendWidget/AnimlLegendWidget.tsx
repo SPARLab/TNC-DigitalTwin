@@ -5,7 +5,7 @@
 // ============================================================================
 
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Loader2, PawPrint } from 'lucide-react';
 import { useAnimlFilter } from '../../../context/AnimlFilterContext';
 
 // Simple color palette for animal categories (distinct, colorblind-friendly)
@@ -108,8 +108,12 @@ export function AnimlLegendWidget() {
                 className={`w-full flex items-center justify-between px-3 py-2 rounded border transition-all ${bgColor}`}
                 title={`${isSelected ? 'Hide' : 'Show'} ${tag.label}`}
               >
-                <div className="flex items-center gap-2">
+                <div id={`animl-legend-item-left-${tag.label.replace(/\s+/g, '-').toLowerCase()}`} className="flex items-center gap-2">
+                  <span id={`animl-legend-item-icon-${tag.label.replace(/\s+/g, '-').toLowerCase()}`} className="text-gray-500 flex-shrink-0">
+                    <PawPrint className="w-3.5 h-3.5" />
+                  </span>
                   <span
+                    id={`animl-legend-item-dot-${tag.label.replace(/\s+/g, '-').toLowerCase()}`}
                     className="w-3 h-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: getAnimalColor(index) }}
                   />
