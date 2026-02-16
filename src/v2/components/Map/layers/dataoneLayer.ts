@@ -34,14 +34,15 @@ export function createDataOneLayer(options: {
   id?: string;
   visible?: boolean;
 } = {}): FeatureLayer {
-  return new FeatureLayer({
+  return new (FeatureLayer as any)({
     id: options.id ?? 'v2-dataone-datasets',
+    title: 'DataONE Research Datasets',
     visible: options.visible ?? true,
     source: [],
-    objectIdField: 'objectid',
+    objectIdField: 'ObjectID',
     fields: [
-      { name: 'objectid', type: 'oid' },
-      { name: 'id', type: 'integer' },
+      { name: 'ObjectID', type: 'oid' },
+      { name: 'datasetId', type: 'integer' },
       { name: 'dataoneId', type: 'string' },
       { name: 'title', type: 'string' },
       { name: 'category', type: 'string' },
@@ -68,17 +69,19 @@ export function createDataOneLayer(options: {
       clusterRadius: '64px',
       clusterMinSize: '24px',
       clusterMaxSize: '52px',
-      renderer: new SimpleRenderer({ symbol: CLUSTER_SYMBOL }),
+      // Use symbol (not renderer) to match prior working DataONE clustering setup.
+      symbol: CLUSTER_SYMBOL,
       labelingInfo: [
         {
           deconflictionStrategy: 'none',
+          labelPlacement: 'center-center',
           labelExpressionInfo: { expression: "Text($feature.cluster_count, '#,###')" },
           symbol: {
             type: 'text',
             color: 'white',
             font: {
               family: 'Inter, system-ui, sans-serif',
-              size: 11,
+              size: '11px',
               weight: 'bold',
             },
             haloColor: [0, 0, 0, 0.15],
@@ -94,11 +97,11 @@ export function createDataOneLayer(options: {
   });
 }
 
-/** Populate DataONE dataset points into the FeatureLayer source. */
-export function populateDataOneLayer(layer: FeatureLayer, datasets: DataOneDataset[]): void {
-  const source = layer.source as __esri.Collection<__esri.Graphic>;
-  source.removeAll();
-
+/** Populate DataONE dataset points using applyEdits (required post-load). */
+export async function populateDataOneLayer(
+  layer: FeatureLayer,
+  datasets: DataOneDataset[],
+): Promise<void> {
   const graphics = datasets
     .filter((dataset) => Number.isFinite(dataset.centerLon) && Number.isFinite(dataset.centerLat))
     .map((dataset) => new Graphic({
@@ -108,13 +111,26 @@ export function populateDataOneLayer(layer: FeatureLayer, datasets: DataOneDatas
       }),
       symbol: DEFAULT_MARKER_SYMBOL.clone(),
       attributes: {
-        objectid: dataset.id,
-        id: dataset.id,
+        ObjectID: dataset.id,
+        datasetId: dataset.id,
         dataoneId: dataset.dataoneId,
         title: dataset.title,
         category: dataset.tncCategory,
       },
     }));
 
-  source.addMany(graphics);
+  await layer.when();
+
+  const source = (layer as any).source as __esri.Collection<__esri.Graphic> | undefined;
+  const existingGraphics = source?.toArray?.() ?? [];
+
+  if (existingGraphics.length === 0) {
+    await layer.applyEdits({ addFeatures: graphics });
+    return;
+  }
+
+  await layer.applyEdits({
+    deleteFeatures: existingGraphics,
+    addFeatures: graphics,
+  });
 }

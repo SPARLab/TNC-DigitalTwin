@@ -4,9 +4,9 @@
 // ============================================================================
 
 import { useEffect, useRef } from 'react';
-import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import Point from '@arcgis/core/geometry/Point';
 import type Layer from '@arcgis/core/layers/Layer';
+import type FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import type { DataOneDataset } from '../../../types/dataone';
 import { dataOneService } from '../../../services/dataOneService';
 import { useDataOneFilter } from '../../context/DataOneFilterContext';
@@ -45,7 +45,8 @@ export function useDataOneMapBehavior(
   useEffect(() => {
     if (!isOnMap) return;
     const arcLayer = getManagedLayer(LAYER_ID);
-    if (!arcLayer || !(arcLayer instanceof FeatureLayer)) return;
+    if (!arcLayer) return;
+    const dataOneLayer = arcLayer as FeatureLayer;
 
     const abortController = new AbortController();
 
@@ -67,7 +68,7 @@ export function useDataOneMapBehavior(
           byId.set(dataset.dataoneId, dataset);
         }
         mapDatasetsByIdRef.current = byId;
-        populateDataOneLayer(arcLayer, mapData);
+        await populateDataOneLayer(dataOneLayer, mapData);
       } catch (error) {
         if (!abortController.signal.aborted) {
           console.error('[DataONE Map] Failed to refresh map markers', error);
@@ -93,6 +94,15 @@ export function useDataOneMapBehavior(
             result.type === 'graphic' && result.graphic.layer?.id === MAP_LAYER_ID,
         );
         if (!graphicHit) return;
+
+        const clusterCount = graphicHit.graphic.attributes?.cluster_count as number | undefined;
+        if (clusterCount && clusterCount > 1) {
+          void view.goTo({
+            target: graphicHit.graphic.geometry,
+            zoom: (view.zoom ?? 8) + 2,
+          }, { duration: 450 });
+          return;
+        }
 
         const dataoneId = graphicHit.graphic.attributes?.dataoneId as string | undefined;
         if (!dataoneId) return;
