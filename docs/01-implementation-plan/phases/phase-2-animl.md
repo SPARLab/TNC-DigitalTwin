@@ -234,6 +234,21 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 
 ---
 
+### 2.18: Synchronize Matching Images Results with Map/Layer Counts
+
+**Goal:** Ensure the map, map layer badge, and matching images section all display the same result count for a given filter selection.
+
+**Problem:** When selecting species (e.g. Coyote) and camera (e.g. Big Kojo), the map may show 605 results while the matching images section and map layer badge show only 200. These three sources of truth are out of sync.
+
+**Acceptance Criteria:**
+- [ ] Map result count matches matching images count
+- [ ] Map layer badge count matches matching images count
+- [ ] All three use the same underlying query/aggregation logic (or explicitly document why counts may differ, e.g. pagination cap)
+
+**Notes:** Likely root cause: different code paths for count aggregation vs. image fetch (e.g. count from one query, images from another with different limits or filters). Fix by unifying the data source or ensuring count and image fetch share the same query parameters and result set.
+
+---
+
 ## Service Analysis
 
 > Fill this out during Task 2.1
@@ -299,6 +314,7 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 16, 2026 | 2.18 | Added task: Synchronize matching images results with map/layer counts. Map shows 605, matching images/layer show 200 — counts out of sync for species+camera filter. | Claude |
 | Feb 16, 2026 | All | Synced with development-task-tracker: 2.1–2.7 complete; added 2.8, 2.10–2.17. Browse tab MVP done (~40%). | Claude |
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 
