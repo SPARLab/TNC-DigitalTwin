@@ -56,6 +56,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | 2.15 | Image click → highlight camera on map | 🟢 Complete | | focusDeployment, layerView.highlight |
 | 2.16 | Camera badges (numbered icons for query results) | 🟢 Complete | | Dynamic map badge symbols |
 | 2.17 | iNaturalist-style loading indicators | 🟢 Complete | | MapCenterLoadingOverlay, LoadingPrimitives |
+| 2.18 | Synchronize matching images results with map/layer counts | ⚪ Not Started | | Map, layer badge, and matching images must show same count |
 
 **Status Legend:**
 - ⚪ Not Started
