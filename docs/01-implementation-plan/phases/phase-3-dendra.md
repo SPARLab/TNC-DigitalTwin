@@ -1,7 +1,7 @@
 # Phase 3: Dendra Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 6 / 10 tasks (3.5 in progress, split into 5 sub-tasks)  
+**Progress:** 9 / 11 tasks (3.5d, 3.10 remaining)  
 **Branch:** `v2/dendra`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -54,6 +54,9 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 | 3.7 | 🟢 Complete | Weather Stations layer — Investigation | | Feb 16: Issue was **dataset-190** (Dangermond Preserve Weather Stations, legacy v0 service in Freshwater category) showing "not implemented" toast. The proper Dendra Weather Stations layer (dataset-183, Research & Sensor Equipment) was working correctly. **Resolution:** Backend fix — Dan set `is_visible: 0` for dataset-190 in Data Catalog FeatureServer. Legacy layer no longer appears in sidebar. |
 | 3.8 | 🟢 Complete | Barometer datastream formatValue crash | | Feb 16: ArcGIS returned min/max/avg as strings; `formatValue` threw `value.toFixed is not a function`. Fixed: coerce to number, handle NaN. Files: dendraStationService.ts. |
 | 3.9 | 🟢 Complete | Save With Filters button — behavior or removal | | Feb 16: Implemented distinct behavior + clearer labels. "Update Current View" updates current row; "Save as New View" creates a new filtered child view in Map Layers and activates it. Files: StationDetailView.tsx, LayerContext.tsx. |
+| 3.10 | ⚪ Not Started | Loading indicators — sync with Map Layers widget | | Propagate iNaturalist Task 34 loading indicator pattern: eye-slot spinner + map overlay when loading initial Dendra layer. See design-system.md DFT-018. |
+
+**Archived:** Completed task details (3.1–3.9) → `docs/archive/phase-3-dendra-completed-tasks.md`
 
 **Follow-up:** Task 27 in `docs/development-task-tracker.md` — "Save View / Save With Filters" sync with Map Layers. Replace bookmark terminology; persist right-sidebar filter state into Map Layers. **Prerequisite met:** `v2/iNaturalist` has been merged into this branch lineage (`v2/iNaturalist` -> `v2/animl` -> `v2/dendra`). Dendra uses explicit save (not continuous auto-save) due to Level 3 complexity.
 
@@ -67,73 +70,9 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 ## Task Details
 
-### 3.1: Query Dendra Service to Understand Attributes
+> **Archived:** Completed task details (3.1–3.9) → `docs/archive/phase-3-dendra-completed-tasks.md`
 
-**Goal:** Before building UI, understand what data is available from the Dendra services.
-
-**Acceptance Criteria:**
-- [ ] Document station/sensor feature service attributes
-- [ ] Document datastream API structure
-- [ ] Identify available sensor types (rain, temp, wind, etc.)
-- [ ] Note current query performance
-
-**Questions to Answer:**
-- What attributes exist on sensors? (type, location, status, last reading)
-- How do we fetch time series data? (API endpoint, parameters)
-- What aggregation options exist? (hourly, daily, weekly)
-- What's the data range available per sensor?
-
-**Output:** Add findings to "Service Analysis" section below.
-
----
-
-### 3.2: Create Dendra Right Sidebar Shell
-
-**Goal:** Set up the component structure for the Dendra browse experience.
-
-**Acceptance Criteria:**
-- [ ] Component renders when Dendra layer is selected
-- [ ] Tabs exist: Overview | Browse | Export
-- [ ] Browse tab is the default/active tab
-- [ ] Component can show sensor list OR sensor detail (drill-down pattern)
-
-**Files to Create:**
-- `src/v2/components/RightSidebar/Dendra/DendraSidebar.tsx`
-- `src/v2/components/RightSidebar/Dendra/DendraBrowseTab.tsx`
-- `src/v2/components/RightSidebar/Dendra/DendraOverviewTab.tsx`
-- `src/v2/components/RightSidebar/Dendra/DendraExportTab.tsx`
-- `src/v2/components/RightSidebar/Dendra/SensorListView.tsx`
-- `src/v2/components/RightSidebar/Dendra/SensorDetailView.tsx`
-
----
-
-### 3.3: Implement Sensor Filter UI
-
-**Goal:** Create filters for the sensors.
-
-**Acceptance Criteria:**
-- [ ] Region dropdown
-- [ ] Status dropdown (Active, Maintenance, Inactive)
-- [ ] Sensor type filter (if multiple types in same layer)
-- [ ] Filter updates sensor list below
-
-**Reference:** Mockup `02d-browse-dendra.html` "Filter Sensors" section
-
----
-
-### 3.4: Implement Sensor List with Cards
-
-**Goal:** Display sensors as browseable cards.
-
-**Acceptance Criteria:**
-- [ ] Cards show: sensor name/ID, location, status
-- [ ] Cards show last reading (if available)
-- [ ] Status indicator (active = pulsing dot, maintenance = badge)
-- [ ] "View Sensor Details →" button navigates to detail view
-
-**Reference:** Mockup `02d-browse-dendra.html` sensor cards
-
----
+**Active tasks only:**
 
 ### 3.5: Implement Sensor Detail with Time Series Chart
 
@@ -156,86 +95,27 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 ---
 
-### 3.6: Implement Time Range Filter (Level 3)
+### 3.10: Loading Indicators — Sync with Map Layers Widget
 
-**Goal:** Allow user to filter datastream by time range.
+**Goal:** Propagate the iNaturalist Task 34 loading indicator pattern to Dendra for consistency across all data sources.
 
-**Acceptance Criteria:**
-- [x] Date range picker (from/to)
-- [x] Aggregation dropdown (hourly, daily, weekly)
-- [x] Filter updates chart display
-- [x] "Save View" persists current right-sidebar state to Map Layers
-- [x] "Save With Filters" persists sensor + datastream time filters to Map Layers
-- [x] Count shows "X data points"
-
-**Reference:** Mockup `02d-browse-dendra.html` "Filter Datastream" section
-
-**State Shape (for Level 3 query):**
-```typescript
-savedView: {
-  featureId: "RS-042",
-  relatedDataQuery: {
-    startDate: "2023-01-01",
-    endDate: "2023-03-31",
-    aggregation: "daily"
-  }
-}
-```
-
----
-
-### 3.7: Weather Stations Layer — Investigation
-
-**Goal:** Determine why "Weather Stations" layer shows "layer not implemented yet" toast.
-
-**Context:** Phase-3 Service Analysis lists Weather Stations as a Dendra service (`Dangermond_Weather_Stations_Sensor`, dataset ID 183). The Dendra adapter should handle all 10 per-type sensor services. Possible causes: catalog detection (path pattern), registration timing vs. `createMapLayer`, or a different catalog entry with similar name.
+**Context:** When loading the initial Dendra layer, the Map Layers widget eye-slot spinner and map center overlay should stay synchronized with the layer load — same behavior as iNaturalist implementation.
 
 **Acceptance Criteria:**
-- [x] Identify root cause (catalog, registration, or other)
-- [x] Add fix task to this phase if code change needed
-- [x] Document findings in Notes column
+- [ ] Map Layers widget: blue spinner (w-4 h-4) in eye-slot position when Dendra layer's data source is loading
+- [ ] Map center overlay: shown when active Dendra layer is loading initial data (`!dataLoaded`), not during refresh
+- [ ] Legend: loading when `!dataLoaded`; optional header spinner during refresh
+- [ ] Right sidebar: region-specific loading via shared `InlineLoadingRow` / `RefreshLoadingRow` (already consistent)
 
-**Resolution (Feb 16, 2026):**
+**Reference:**
+- `docs/development-task-tracker.md` — Cross-Branch Merge Checklist (Loading Indicators)
+- `docs/DESIGN-SYSTEM/design-system.md` — DFT-018 Loading State Patterns
+- `docs/IMPLEMENTATION/phases/phase-1-inaturalist.md` — Task 13, Task 34 implementation
 
-**Root Cause:** Two Weather Stations layers exist in the Data Catalog:
-
-1. **Dataset 183** - `Dangermond_Weather_Stations_Sensor` (Dendra sensor service ✅)
-   - Display title: "Weather Stations"
-   - Category: Research and Sensor Equipment (36)
-   - Service structure: Standard Dendra schema (Layer 0: Locations, Table 1: Data, Table 2: Summary)
-   - Detection: Correctly identified as `dataSource: 'dendra'`
-   - **Status: Working correctly**
-
-2. **Dataset 190** - `Dangermond_Preserve_Weather_Stations` (Legacy v0 service ❌)
-   - Display title: "Dangermond Preserve Weather Stations"
-   - Category: Freshwater (32)
-   - Service structure: v0 monolithic schema (Layer 0: Stations, Tables 1-3: Sensors/Datastreams/Datapoints)
-   - Detection: Identified as `dataSource: 'tnc-arcgis'` (no adapter implemented)
-   - **Status: Showing "not implemented yet" toast** ← This was the issue
-
-**Fix Applied:**
-- Backend fix: Dan set `is_visible: 0` for dataset-190 in the Data Catalog FeatureServer
-- Dataset-190 no longer appears in the catalog query results
-- Users will only see dataset-183 (proper Dendra Weather Stations) in "Research and Sensor Equipment" category
-- No client-side filtering needed - handled at the source
-
-**Files Changed:**
-- None (backend-only fix via Data Catalog FeatureServer configuration)
-
----
-
-### 3.9: Save With Filters Button — Behavior or Removal
-
-**Goal:** Resolve confusion around Save With Filters. It currently does not appear to have distinct behavior from Save View.
-
-**Options:**
-1. **Implement distinct behavior:** Save With Filters should persist station + datastream + date range + aggregation to Map Layers as a child view; Save View persists current view state without filters. Clarify UX and wire correctly.
-2. **Remove:** If Save View already covers the use case, remove Save With Filters to avoid dead UI.
-
-**Acceptance Criteria:**
-- [x] Decide: implement distinct behavior or remove
-- [x] If implement: wire Save With Filters to sync Dendra filters to Map Layers child view
-- [x] Implemented: "Update Current View" + "Save as New View" with distinct behavior (Feb 16)
+**Files:**
+- `src/v2/components/shared/loading/*` (shared primitives)
+- `MapLayersWidget`, `MapContainer`, `PinnedLayerRow`, `ActiveLayerSection`
+- Dendra adapter / `useMapBehavior`, legend widget
 
 ---
 
@@ -352,7 +232,8 @@ savedView: {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
-| Feb 16, 2026 | 3.7 | ✅ **Task 3.7 complete.** Investigated "Weather Stations layer not implemented yet" toast. Root cause: Two Weather Stations layers exist in catalog — dataset-183 (Dendra sensor service, working) and dataset-190 (legacy v0 service in Freshwater category, not implemented). Backend fix: Dan set `is_visible: 0` for dataset-190 in Data Catalog FeatureServer. | Claude |
+| Feb 16, 2026 | 3.7 | ✅ **Task 3.7 complete.**
+| Feb 16, 2026 | Docs | **Archived completed tasks (3.1–3.9)** to `docs/archive/phase-3-dendra-completed-tasks.md`. Added Task 3.10: Loading indicators — sync with Map Layers widget (propagate iNaturalist Task 34 pattern). | Claude | Investigated "Weather Stations layer not implemented yet" toast. Root cause: Two Weather Stations layers exist in catalog — dataset-183 (Dendra sensor service, working) and dataset-190 (legacy v0 service in Freshwater category, not implemented). Backend fix: Dan set `is_visible: 0` for dataset-190 in Data Catalog FeatureServer. | Claude |
 | Feb 16, 2026 | 3.9 | ✅ **Task 3.9 complete.** Implemented distinct save actions: **Update Current View** saves station-level state to current view; **Save as New View** creates and activates a new filtered child view (station + datastream + date range + aggregation) in Map Layers. Added `createDendraFilteredView()` in LayerContext. Files: `StationDetailView.tsx`, `LayerContext.tsx`. | Claude |
 | Feb 16, 2026 | 3.7, 3.8, 3.9 | **Added tasks 3.7 (Weather Stations investigation), 3.8 (barometer formatValue fix — complete), 3.9 (Save With Filters behavior or removal).** Reordered Task Status table (ID, Status, Task) for quick scanning. | Claude |
 | Feb 13, 2026 | Task 27 follow-up | ✅ Replaced Dendra bookmark terminology with explicit save actions (`Save View`, `Save With Filters`) and synced Dendra right-sidebar state to Map Layers (`LayerContext.syncDendraFilters`). Added one-shot Dendra filter hydration when switching child views or triggering **Edit Filters** from Map Layers. | Claude |

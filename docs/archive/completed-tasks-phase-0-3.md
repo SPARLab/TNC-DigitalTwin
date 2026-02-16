@@ -72,6 +72,9 @@ Tasks below are **done**. Use the Manual Testing Checklist to verify behavior be
 | 3.5b | Fix: Some sensors show 0 data despite record counts |
 | 3.5c | Fix: Glassmorphism background not visible |
 | 3.6 | Time range filter (Level 3) |
+| 3.7 | Weather Stations layer — Investigation (backend fix) |
+| 3.8 | Barometer datastream formatValue crash |
+| 3.9 | Save With Filters — distinct behavior (Update Current View / Save as New View) |
 | Task 27 | Save View / Save With Filters — sync with Map Layers |
 
 ---
