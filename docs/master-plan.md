@@ -35,7 +35,8 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 3 | Dendra | 🟡 In Progress | 5 / 6 tasks | `v2/dendra` | No |
 | 4 | DataOne | ⚪ Not Started | 0 / 5 tasks | `v2/dataone` | No |
 | 5 | Export Builder | ⚪ Not Started | 0 / 4 tasks | `v2/export` | No |
-| 6 | Polish & Consistency | ⚪ Not Started | 0 / 7+ tasks | `v2/polish` | No |
+| 6 | TNC ArcGIS Services | ⚪ Not Started | 0 / 10 tasks | `v2/tnc-arcgis` | No |
+| 7 | Polish & Consistency | ⚪ Not Started | 0 / 7+ tasks | `v2/polish` | No |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -55,17 +56,21 @@ Phase 0: Foundation
     │                                                    │
     ├──► Phase 2: ANiML ────────────────────────────────┤
     │                                                    │
-    ├──► Phase 3: Dendra ───────────────────────────────┼──► Phase 5: Export Builder ──► Phase 6: Polish
-    │                                                    │
-    └──► Phase 4: DataOne ──────────────────────────────┘
+    ├──► Phase 3: Dendra ───────────────────────────────┼──► Phase 5: Export Builder ──┐
+    │                                                    │                              │
+    ├──► Phase 4: DataOne ──────────────────────────────┤                              │
+    │                                                    │                              │
+    └──► Phase 6: TNC ArcGIS ───────────────────────────┘                              │
+                                                                                        │
+                                                                                        └──► Phase 7: Polish
 ```
 
 **Parallelization:**
-- Phases 1-4 can be worked on simultaneously (different Cursor windows, different branches) — **PAUSED until Task 0.9 complete**
+- Phases 1-6 can be worked on simultaneously (different Cursor windows, different branches) — **PAUSED until Task 0.9 complete**
 - Task 0.9 (Dynamic Layer Registry from Data Catalog Service) is foundational; must merge to main before parallel branches continue
 - Each phase has its own branch, merged to `v2/main` when complete
 - Phase 5 requires all data sources to be functional
-- Phase 6 is the final consistency pass
+- Phase 7 is the final consistency pass
 
 ---
 
@@ -231,7 +236,8 @@ When working on any phase:
 - **Phase 3:** `docs/IMPLEMENTATION/phases/phase-3-dendra.md`
 - **Phase 4:** `docs/IMPLEMENTATION/phases/phase-4-dataone.md`
 - **Phase 5:** `docs/IMPLEMENTATION/phases/phase-5-export-builder.md`
-- **Phase 6:** `docs/IMPLEMENTATION/phases/phase-6-polish.md`
+- **Phase 6:** `docs/IMPLEMENTATION/phases/phase-6-tnc-arcgis.md`
+- **Phase 7:** `docs/IMPLEMENTATION/phases/phase-7-polish.md`
 
 ---
 
@@ -239,6 +245,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 16, 2026 | All | **Phase restructure:** Inserted new Phase 6 (TNC ArcGIS Feature Services), renumbered old Phase 6 (Polish) to Phase 7. Added architectural design for service-level activation + layer switcher pattern for multi-layer TNC services. Generic filter UI (field/operator/value) for MVP. | Will + Claude |
 | Feb 16, 2026 | Phase 2 | **Phase 2 Task 2.8 complete: ANiML SVG marker/icon pass.** Replaced emoji camera markers with SVG camera symbols in `animlLayer.ts` (base, badged, muted states). Added row-level icons in ANiML legend and browse filter lists; aligned with no-emoji icon policy. | Will + Claude |
 | Feb 13, 2026 | Phase 1 | **Task 28 complete: iNaturalist detail view crash fixed.** Hook-order mismatch (early return before hooks) caused "Rendered fewer hooks than expected." Moved detail-view return after all hooks; hardened handleViewOnMap with try/catch and coordinate validation. RightSidebar auto-switches to Browse when map observation clicked. Phase 1 all tasks complete. | Claude |
 | Feb 13, 2026 | Phase 1 | **Phase 1 iNaturalist complete.** All 13 granular tasks done including Tasks 26–27 (dynamic view names, user-renamable filtered views). Cross-branch merge contract documented. | User + Claude |

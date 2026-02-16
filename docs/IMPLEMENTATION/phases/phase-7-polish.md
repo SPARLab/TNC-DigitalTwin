@@ -1,9 +1,9 @@
-# Phase 6: Polish & Consistency
+# Phase 7: Polish & Consistency
 
 **Status:** ⚪ Not Started  
 **Progress:** 0 / ? tasks (TBD after other phases)  
 **Branch:** `v2/polish`  
-**Depends On:** Phases 0-5 (all complete)  
+**Depends On:** Phases 0-6 (all complete)  
 **Owner:** TBD
 
 ---
@@ -31,14 +31,14 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
-| 6.1 | Integrate TNC brand fonts (Barlow, Chronicle) | ⚪ Not Started | | DFT-008, DFT-009 |
-| 6.2 | Add TNC theme variants (Official, Soft) | ⚪ Not Started | | DFT-008, DFT-009 |
-| 6.3 | Design system audit | ⚪ Not Started | | |
-| 6.4 | Cross-component consistency check | ⚪ Not Started | | |
-| 6.5 | Responsive design check | ⚪ Not Started | | |
-| 6.6 | Performance audit | ⚪ Not Started | | |
-| 6.7 | Accessibility check | ⚪ Not Started | | |
-| 6.8 | Enhance map tooltips (post-v2.0) | ⚪ Not Started | | DFT-032 future enhancement |
+| 7.1 | Integrate TNC brand fonts (Barlow, Chronicle) | ⚪ Not Started | | DFT-008, DFT-009 |
+| 7.2 | Add TNC theme variants (Official, Soft) | ⚪ Not Started | | DFT-008, DFT-009 |
+| 7.3 | Design system audit | ⚪ Not Started | | |
+| 7.4 | Cross-component consistency check | ⚪ Not Started | | |
+| 7.5 | Responsive design check | ⚪ Not Started | | |
+| 7.6 | Performance audit | ⚪ Not Started | | |
+| 7.7 | Accessibility check | ⚪ Not Started | | |
+| 7.8 | Enhance map tooltips (post-v2.0) | ⚪ Not Started | | DFT-032 future enhancement |
 | (more TBD) | | | | |
 
 **Status Legend:**
@@ -51,7 +51,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 ## Task Details
 
-### 6.1: Integrate TNC Brand Fonts
+### 7.1: Integrate TNC Brand Fonts
 
 **Goal:** Add TNC's brand fonts (Barlow, Chronicle) to the design system.
 
@@ -71,7 +71,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 ---
 
-### 6.2: Add TNC Theme Variants
+### 7.2: Add TNC Theme Variants
 
 **Goal:** Create 2-3 new theme options using TNC brand colors.
 
@@ -106,7 +106,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 ---
 
-### 6.3: Design System Audit
+### 7.3: Design System Audit
 
 **Goal:** Ensure all components follow the design system.
 
@@ -118,7 +118,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 ---
 
-### 6.4: Cross-Component Consistency Check
+### 7.4: Cross-Component Consistency Check
 
 **Goal:** Ensure similar patterns look the same across data sources.
 
@@ -132,7 +132,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 ---
 
-### 6.5: Responsive Design Check
+### 7.5: Responsive Design Check
 
 **Goal:** Ensure layout works at different screen sizes.
 
@@ -144,7 +144,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 ---
 
-### 6.6: Performance Audit
+### 7.6: Performance Audit
 
 **Goal:** Ensure acceptable load times and smooth interactions.
 
@@ -157,7 +157,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 ---
 
-### 6.7: Accessibility Check
+### 7.7: Accessibility Check
 
 **Decision (Feb 3):** Resolved DFT-017 — Baseline accessibility principles established. This task focuses on auditing and refining the implementation.
 
@@ -190,7 +190,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 ---
 
-### 6.8: Enhance Map Tooltips (Post-v2.0)
+### 7.8: Enhance Map Tooltips (Post-v2.0)
 
 **Decision (Feb 4):** Resolved DFT-032 — v2.0 ships with minimal tooltips (ID + Type only). This task enhances tooltips based on teammate feedback.
 
@@ -276,7 +276,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | Date | Task | Change | By |
 |------|------|--------|-----|
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
-| Feb 3, 2026 | 6.1, 6.2 | Added TNC brand integration tasks (fonts + theme variants). Resolved DFT-008, DFT-009 | Will + Claude |
-| Feb 3, 2026 | 6.7 | Updated accessibility check with DFT-017 baseline principles. Added specific testing checklist and tools | Will + Claude |
-| Feb 4, 2026 | 6.8 | Added map tooltip enhancement task for post-v2.0 (DFT-032 future enhancement). v2.0 ships with minimal tooltips, enhancements based on teammate feedback | Will + Claude |
+| Feb 3, 2026 | 7.1, 7.2 | Added TNC brand integration tasks (fonts + theme variants). Resolved DFT-008, DFT-009 | Will + Claude |
+| Feb 3, 2026 | 7.7 | Updated accessibility check with DFT-017 baseline principles. Added specific testing checklist and tools | Will + Claude |
+| Feb 4, 2026 | 7.8 | Added map tooltip enhancement task for post-v2.0 (DFT-032 future enhancement). v2.0 ships with minimal tooltips, enhancements based on teammate feedback | Will + Claude |
 
