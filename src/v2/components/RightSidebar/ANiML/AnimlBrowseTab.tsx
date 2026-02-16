@@ -75,9 +75,9 @@ export function AnimlBrowseTab() {
       .map(t => ({
         key: t.label,
         label: t.label,
-        count: getFilteredCountForSpecies(t.label) ?? t.totalObservations,
+        count: getFilteredCountForSpecies(t.label) ?? (hasDateFilter ? null : t.totalObservations),
       })),
-    [animalTags, getFilteredCountForSpecies],
+    [animalTags, getFilteredCountForSpecies, hasDateFilter],
   );
 
   /** Camera items: sorted alphabetically by name (stable order). */
@@ -87,9 +87,9 @@ export function AnimlBrowseTab() {
       .map(d => ({
         key: String(d.id),
         label: d.name,
-        count: getFilteredCountForDeployment(d.id) ?? d.totalObservations ?? 0,
+        count: getFilteredCountForDeployment(d.id) ?? (hasDateFilter ? null : d.totalObservations ?? 0),
       })),
-    [deployments, getFilteredCountForDeployment],
+    [deployments, getFilteredCountForDeployment, hasDateFilter],
   );
 
   /** Adapt selectedCameras Set<number> → Set<string> for FilterSection. */

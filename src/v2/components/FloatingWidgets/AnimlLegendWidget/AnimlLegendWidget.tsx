@@ -23,13 +23,20 @@ export function AnimlLegendWidget() {
   const [isExpanded, setIsExpanded] = useState(true);
   const {
     selectedAnimals, toggleAnimal, selectAll, hasFilter,
-    animalTags, loading, dataLoaded,
+    animalTags, loading, dataLoaded, getFilteredCountForSpecies, hasDateFilter,
   } = useAnimlFilter();
 
-  // Sort by count descending, filter out zero-count
+  // Sort by count descending, filter out zero-count.
+  // When date filter is active and scoped counts are not ready yet,
+  // fall back to hiding counts rather than showing misleading all-time totals.
   const groups = animalTags
-    .filter(t => t.totalObservations > 0)
-    .sort((a, b) => b.totalObservations - a.totalObservations);
+    .map(tag => {
+      const resolvedCount = getFilteredCountForSpecies(tag.label);
+      const displayCount = resolvedCount ?? (hasDateFilter ? null : tag.totalObservations);
+      return { ...tag, displayCount };
+    })
+    .filter(t => (t.displayCount ?? 0) > 0)
+    .sort((a, b) => (b.displayCount ?? 0) - (a.displayCount ?? 0));
 
   // Loading state — show shimmer while fetching
   if (loading || !dataLoaded) {
@@ -111,7 +118,7 @@ export function AnimlLegendWidget() {
                   </span>
                 </div>
                 <span className="text-xs text-gray-600">
-                  {tag.totalObservations.toLocaleString()}
+                  {tag.displayCount !== null ? tag.displayCount.toLocaleString() : '—'}
                 </span>
               </button>
             );

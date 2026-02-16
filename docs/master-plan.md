@@ -31,7 +31,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 |-------|------|--------|----------|--------|-----------|
 | 0 | Foundation | 🟡 In Progress | ~98% | `v2/foundation` | YES - blocks all |
 | 1 | iNaturalist | 🟢 Complete | 5 / 5 tasks | `v2/inaturalist` | No |
-| 2 | ANiML | 🟡 In Progress | 9 / 14 tasks | `v2/animl` | No |
+| 2 | ANiML | 🟡 In Progress | 10 / 14 tasks | `v2/animl` | No |
 | 3 | Dendra | 🟡 In Progress | 5 / 6 tasks | `v2/dendra` | No |
 | 4 | DataOne | ⚪ Not Started | 0 / 5 tasks | `v2/dataone` | No |
 | 5 | Export Builder | ⚪ Not Started | 0 / 4 tasks | `v2/export` | No |

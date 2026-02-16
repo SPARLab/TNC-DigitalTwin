@@ -103,7 +103,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | 2.14 | Arrow key navigation in expanded view | 🟢 Complete | Will + Claude | Left/right keys to navigate between images |
 | 2.15 | Image click → highlight camera on map | 🟢 Complete | Will + Claude | focusedDeploymentId in AnimlFilterContext; ArcGIS layerView.highlight(); onImageFocus from ImageList/expanded view |
 | 2.16 | Camera badges: numbered icons for query results | 🟢 Complete | Will + Claude | Dynamic map badge symbols: show camera result counts only while filters are active; 0-result cameras show no badge |
-| 2.17 | Species/camera counts sync with date filter | ⚪ Not Started | | Counts in filter sections and legend show all-time; when date filter applied, 0 results but counts still high — misleading UX |
+| 2.17 | Species/camera counts sync with date filter | 🟢 Complete | Will + Claude | Date-scoped count lookups when date filter active; Species/Cameras/Legend use date-aware counts; no misleading all-time fallback |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -598,18 +598,20 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 
 **Goal:** Synchronize the counts shown in Species and Cameras filter sections (and legend widget) with the active date filter. Currently counts are all-time; when a date filter is applied, users see high numbers (e.g., "vehicle 911") but "0 matching images" — misleading UX.
 
-**Status:** ⚪ Not Started
+**Status:** 🟢 Complete (Feb 13, 2026)
 
-**Problem:**
+**Implementation:** Option D (Lazy date-filtered counts). When `startDate` and `endDate` are set, `AnimlFilterContext` fetches grouped counts for that range via `getObservationCountsGroupedCached({ startDate, endDate })`, builds `dateScopedCountLookups`, and routes `getFilteredCountForSpecies`, `getFilteredCountForDeployment`, `filteredImageCount`, and legend/sidebar counts through `activeCountLookups` (date-scoped when date filter active, all-time otherwise). Species/Cameras filter rows and legend no longer fall back to all-time counts while date-scoped counts load.
+
+**Problem (resolved):**
 - Species filter rows and legend widget show counts from `countLookups` (all-time).
 - Camera filter rows show per-camera counts from `countLookups` (all-time).
 - Date filter correctly restricts image results, but counts do not update.
 - Result: User selects "vehicle" (911), 47 cameras, "Last 30 days" → 0 matching images. Counts suggest data exists; results contradict.
 
 **Acceptance Criteria:**
-- [ ] When date filter is active, counts in Species/Cameras sections and legend reflect date-filtered totals (or clearly indicate they are all-time).
-- [ ] Avoid misleading UX: either sync counts to date range or show explicit qualifier (e.g., "All time" vs "In date range").
-- [ ] Map badges (Task 2.16) should also respect date filter when showing per-camera counts.
+- [x] When date filter is active, counts in Species/Cameras sections and legend reflect date-filtered totals (or clearly indicate they are all-time).
+- [x] Avoid misleading UX: either sync counts to date range or show explicit qualifier (e.g., "All time" vs "In date range").
+- [ ] Map badges (Task 2.16) should also respect date filter when showing per-camera counts. *(Deferred — badge logic uses getFilteredCountForDeployment which is now date-aware; verify in QA.)*
 
 **Options to Evaluate:**
 - **A. Re-fetch grouped counts per date range** — Accurate but ~8–12s per date change (Task 2.11 design note).
@@ -734,6 +736,7 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | Feb 13, 2026 | 2.16 | **Complete.** Implemented dynamic camera badge rendering in `animlLayer.ts` using SVG data-URI symbols (camera + numeric count). Added `updateAnimlCameraBadges()` and wired it in `useAnimlMapBehavior.ts` so badges update whenever ANiML filter state changes. No-filter state shows plain camera icons; 0-result cameras show no badge. | Will + Claude |
 | Feb 13, 2026 | 2.9 | **Complete.** Added ANiML filter sync contract with Map Layers widget (mirrors iNaturalist): `AnimlBrowseTab` now hydrates filters from pinned layer/view on "Edit Filters" and syncs active species/cameras/date + result count back to Map Layers metadata. Added `syncAnimlFilters` in `LayerContext` with child-view support and custom-name preservation; added ANiML filter payload to pinned layer/view state. | Will + Claude |
 | Feb 13, 2026 | 2.17 | **New task added.** Species/camera counts in filter sections and legend show all-time totals; when date filter is applied, image results correctly show 0 but counts remain high — misleading UX. Task 2.17: sync counts with date filter or add clear qualifier. | Will + Claude |
+| Feb 13, 2026 | 2.17 | **Complete.** Implemented Option D (lazy date-filtered counts). AnimlFilterContext fetches `getObservationCountsGroupedCached({ startDate, endDate })` when date filter active, builds `dateScopedCountLookups`, routes all count helpers through `activeCountLookups`. Species/Cameras filter sections and AnimlLegendWidget now show date-scoped counts; no all-time fallback during load. Files: AnimlFilterContext.tsx, AnimlBrowseTab.tsx, AnimlLegendWidget.tsx. | Will + Claude |
 
 ---
 

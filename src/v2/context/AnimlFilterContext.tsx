@@ -106,6 +106,7 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
   const [animalTags, setAnimalTags] = useState<AnimlAnimalTag[]>([]);
   const [groupedCounts, setGroupedCounts] = useState<AnimlGroupedCount[]>([]);
   const [countLookups, setCountLookups] = useState<AnimlCountLookups | null>(null);
+  const [dateScopedCountLookups, setDateScopedCountLookups] = useState<AnimlCountLookups | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -209,6 +210,7 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
   const hasCameraFilter = selectedCameras.size > 0;
   const hasDateFilter = startDate !== null && endDate !== null;
   const hasAnyFilter = hasFilter || hasCameraFilter || hasDateFilter;
+  const activeCountLookups = hasDateFilter ? dateScopedCountLookups : countLookups;
 
   // ── Cache warming ────────────────────────────────────────────────────────
 
@@ -229,6 +231,38 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
     [groupedCounts],
   );
 
+  // Date-scoped counts for filter/legend correctness when date range is active.
+  useEffect(() => {
+    if (!hasDateFilter || !startDate || !endDate) {
+      setDateScopedCountLookups(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function fetchDateScopedLookups() {
+      try {
+        const scoped = await animlService.getObservationCountsGroupedCached({
+          startDate,
+          endDate,
+        });
+        if (cancelled) return;
+        const lookups = animlService.buildCountLookups(
+          scoped.groupedCounts,
+          scoped.uniqueImageCountsByDeployment,
+        );
+        setDateScopedCountLookups(lookups);
+      } catch (err) {
+        if (cancelled) return;
+        console.error('[Animl Cache] ❌ Date-scoped count lookup fetch failed:', err);
+        setDateScopedCountLookups(null);
+      }
+    }
+
+    fetchDateScopedLookups();
+    return () => { cancelled = true; };
+  }, [hasDateFilter, startDate, endDate]);
+
   // ── Derived filter helpers ──────────────────────────────────────────────
 
   /** Deployments matching all active filters. null = all match. */
@@ -237,10 +271,10 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
 
     // Species filter → deployments that have at least one selected species
     let speciesMatch: Set<number> | null = null;
-    if (hasFilter && countLookups) {
+    if (hasFilter && activeCountLookups) {
       speciesMatch = new Set<number>();
       for (const label of selectedAnimals) {
-        const depIds = countLookups.deploymentsByLabel.get(label);
+        const depIds = activeCountLookups.deploymentsByLabel.get(label);
         if (depIds) depIds.forEach(id => speciesMatch!.add(id));
       }
     }
@@ -258,49 +292,52 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
     }
 
     return speciesMatch ?? cameraMatch ?? null;
-  }, [hasAnyFilter, hasFilter, hasCameraFilter, selectedAnimals, selectedCameras, countLookups]);
+  }, [hasAnyFilter, hasFilter, hasCameraFilter, selectedAnimals, selectedCameras, activeCountLookups]);
 
   /** Filtered image count for one deployment. Reflects species filter. */
   const getFilteredCountForDeployment = useCallback(
     (deploymentId: number): number | null => {
-      if (!countLookups) return null;
-      if (!hasFilter) return countLookups.countsByDeployment.get(deploymentId) ?? 0;
+      if (!activeCountLookups) return null;
+      if (!hasFilter) return activeCountLookups.countsByDeployment.get(deploymentId) ?? 0;
 
       let total = 0;
       for (const label of selectedAnimals) {
         const key = `${deploymentId}:${label}`;
-        total += countLookups.countsByDeploymentAndLabel.get(key) ?? 0;
+        total += activeCountLookups.countsByDeploymentAndLabel.get(key) ?? 0;
       }
       return total;
     },
-    [countLookups, hasFilter, selectedAnimals],
+    [activeCountLookups, hasFilter, selectedAnimals],
   );
 
   /** Filtered image count for one species label. Reflects camera filter. */
   const getFilteredCountForSpecies = useCallback(
     (label: string): number | null => {
-      if (!countLookups) return null;
-      if (!hasCameraFilter) return countLookups.countsByLabel.get(label) ?? 0;
+      if (!activeCountLookups) return null;
+      if (!hasCameraFilter) return activeCountLookups.countsByLabel.get(label) ?? 0;
 
       let total = 0;
       for (const depId of selectedCameras) {
-        total += countLookups.countsByDeploymentAndLabel.get(`${depId}:${label}`) ?? 0;
+        total += activeCountLookups.countsByDeploymentAndLabel.get(`${depId}:${label}`) ?? 0;
       }
       return total;
     },
-    [countLookups, hasCameraFilter, selectedCameras],
+    [activeCountLookups, hasCameraFilter, selectedCameras],
   );
 
   /** Total images matching both filter dimensions. null if countLookups not ready. */
   const filteredImageCount = useMemo((): number | null => {
-    if (!countLookups) return null;
+    if (!activeCountLookups) return null;
     if (!hasAnyFilter) return totalImageCount;
+
+    const totalForActiveLookups = Array.from(activeCountLookups.countsByDeployment.values())
+      .reduce((sum, count) => sum + count, 0);
 
     // Species only
     if (hasFilter && !hasCameraFilter) {
       let total = 0;
       for (const label of selectedAnimals) {
-        total += countLookups.countsByLabel.get(label) ?? 0;
+        total += activeCountLookups.countsByLabel.get(label) ?? 0;
       }
       return total;
     }
@@ -309,20 +346,25 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
     if (!hasFilter && hasCameraFilter) {
       let total = 0;
       for (const depId of selectedCameras) {
-        total += countLookups.countsByDeployment.get(depId) ?? 0;
+        total += activeCountLookups.countsByDeployment.get(depId) ?? 0;
       }
       return total;
+    }
+
+    // Date-only
+    if (!hasFilter && !hasCameraFilter) {
+      return totalForActiveLookups;
     }
 
     // Both — intersection
     let total = 0;
     for (const depId of selectedCameras) {
       for (const label of selectedAnimals) {
-        total += countLookups.countsByDeploymentAndLabel.get(`${depId}:${label}`) ?? 0;
+        total += activeCountLookups.countsByDeploymentAndLabel.get(`${depId}:${label}`) ?? 0;
       }
     }
     return total;
-  }, [countLookups, selectedAnimals, selectedCameras, hasFilter, hasCameraFilter, hasAnyFilter, totalImageCount]);
+  }, [activeCountLookups, selectedAnimals, selectedCameras, hasFilter, hasCameraFilter, hasAnyFilter, totalImageCount]);
 
   // ── Fetch data when warmCache() is called ────────────────────────────────
 
