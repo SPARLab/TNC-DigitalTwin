@@ -56,7 +56,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | 2.15 | Image click → highlight camera on map | 🟢 Complete | | focusDeployment, layerView.highlight |
 | 2.16 | Camera badges (numbered icons for query results) | 🟢 Complete | | Dynamic map badge symbols |
 | 2.17 | iNaturalist-style loading indicators | 🟢 Complete | | MapCenterLoadingOverlay, LoadingPrimitives |
-| 2.18 | Synchronize matching images results with map/layer counts | ⚪ Not Started | | Map, layer badge, and matching images must show same count |
+| 2.18 | Synchronize matching images results with map/layer counts | 🟢 Complete | | Browse count + layer badge now use `filteredImageCount` (single source of truth) |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -241,9 +241,9 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 **Problem:** When selecting species (e.g. Coyote) and camera (e.g. Big Kojo), the map may show 605 results while the matching images section and map layer badge show only 200. These three sources of truth are out of sync.
 
 **Acceptance Criteria:**
-- [ ] Map result count matches matching images count
-- [ ] Map layer badge count matches matching images count
-- [ ] All three use the same underlying query/aggregation logic (or explicitly document why counts may differ, e.g. pagination cap)
+- [x] Map result count matches matching images count
+- [x] Map layer badge count matches matching images count
+- [x] All three use the same underlying query/aggregation logic (or explicitly document why counts may differ, e.g. pagination cap)
 
 **Notes:** Likely root cause: different code paths for count aggregation vs. image fetch (e.g. count from one query, images from another with different limits or filters). Fix by unifying the data source or ensuring count and image fetch share the same query parameters and result set.
 
@@ -314,6 +314,7 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 16, 2026 | 2.18 | Synced ANiML browse count + map layer resultCount to `filteredImageCount` from `AnimlFilterContext`; removed `images.length`-based count drift caused by 200-image fetch cap. | Cursor |
 | Feb 16, 2026 | 2.18 | Added task: Synchronize matching images results with map/layer counts. Map shows 605, matching images/layer show 200 — counts out of sync for species+camera filter. | Claude |
 | Feb 16, 2026 | All | Synced with development-task-tracker: 2.1–2.7 complete; added 2.8, 2.10–2.17. Browse tab MVP done (~40%). | Claude |
 | Jan 23, 2026 | - | Created phase document | Will + Claude |

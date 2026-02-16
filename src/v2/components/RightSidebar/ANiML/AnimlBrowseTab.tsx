@@ -28,8 +28,8 @@ export function AnimlBrowseTab() {
     selectAll, selectAllAnimals, clearCameras, selectAllCameras,
     setDateRange, clearDateRange, clearFilters,
     hasFilter, hasCameraFilter, hasDateFilter, hasAnyFilter,
-    getFilteredCountForSpecies, getFilteredCountForDeployment, totalImageCount,
-    filteredImageCount, focusDeployment, clearFocusedDeployment, countLookups,
+    getFilteredCountForSpecies, getFilteredCountForDeployment,
+    filteredImageCount, focusDeployment, clearFocusedDeployment,
   } = useAnimlFilter();
   const { activeLayer, lastEditFiltersRequest, getPinnedByLayerId, syncAnimlFilters } = useLayers();
 
@@ -161,13 +161,11 @@ export function AnimlBrowseTab() {
     setCurrentPage(prev => Math.min(totalPages, prev + 1));
   }, [totalPages]);
 
+  const resolvedResultCount = filteredImageCount ?? 0;
+
   // Keep Map Layers widget metadata in sync with the active ANiML view.
   useEffect(() => {
     if (activeLayer?.layerId !== 'animl-camera-traps') return;
-
-    const resultCount = hasAnyFilter
-      ? images.length
-      : totalImageCount;
 
     syncAnimlFilters(
       activeLayer.layerId,
@@ -177,21 +175,18 @@ export function AnimlBrowseTab() {
         startDate: startDate || undefined,
         endDate: endDate || undefined,
       },
-      resultCount,
+      resolvedResultCount,
       activeLayer.viewId
     );
   }, [
     activeLayer?.layerId,
     activeLayer?.viewId,
     activeLayer?.isPinned,
-    images.length,
-    totalImageCount,
     selectedAnimals,
     selectedCameras,
     startDate,
     endDate,
-    hasAnyFilter,
-    countLookups,
+    resolvedResultCount,
     syncAnimlFilters,
   ]);
 
@@ -217,13 +212,9 @@ export function AnimlBrowseTab() {
   }
 
   // ── Result count text ───────────────────────────────────────────────────
-  // Once images are fetched, use actual count (accurate for date-filtered queries).
-  // Fall back to countLookups estimate while loading or before fetch.
-
-  const imagesFetched = hasAnyFilter && !imgLoading && !imgError;
-  const countText = imagesFetched
-    ? images.length.toLocaleString()
-    : (filteredImageCount !== null ? filteredImageCount.toLocaleString() : '—');
+  // Use the shared lookup-based count so map badges, layer badges, and browse
+  // count stay in sync even when image fetches are capped for rendering.
+  const countText = filteredImageCount !== null ? filteredImageCount.toLocaleString() : '—';
 
   // ── Render ──────────────────────────────────────────────────────────────
 
