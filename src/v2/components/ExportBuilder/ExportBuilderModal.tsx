@@ -409,7 +409,7 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
             <div id="export-builder-context-strip-row" className="flex flex-wrap items-center gap-2">
               <span
                 id="export-builder-context-strip-chip-views"
-                className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700"
+                className="text-base font-semibold text-slate-800"
               >
                 1. Select filtered views
               </span>
@@ -422,7 +422,7 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
               </span>
               <span
                 id="export-builder-context-strip-chip-outputs"
-                className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700"
+                className="text-base font-medium text-slate-700"
               >
                 2. Choose outputs
               </span>
@@ -435,7 +435,7 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
               </span>
               <span
                 id="export-builder-context-strip-chip-export"
-                className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700"
+                className="text-base font-medium text-slate-700"
               >
                 3. Generate links or ZIP
               </span>

@@ -160,10 +160,7 @@ export function LayerExportSection({
         </ul>
       </div>
 
-      <div
-        id={`export-builder-layer-format-section-${layerId}`}
-        className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3"
-      >
+      <div id={`export-builder-layer-format-section-${layerId}`} className="mt-3">
         <p id={`export-builder-layer-format-title-${layerId}`} className="mb-2 text-xs font-semibold text-slate-700">
           Export outputs
         </p>
@@ -192,7 +189,7 @@ export function LayerExportSection({
           })}
         </div>
 
-        <div id={`export-builder-layer-query-definition-toggle-wrap-${layerId}`} className="mt-3">
+        <div id={`export-builder-layer-query-definition-toggle-wrap-${layerId}`} className="mt-2">
           <label
             id={`export-builder-layer-query-definition-label-${layerId}`}
             className="flex cursor-pointer items-center gap-2"
@@ -213,12 +210,12 @@ export function LayerExportSection({
 
       <div
         id={`export-builder-layer-subtotal-row-${layerId}`}
-        className="mt-3 flex items-center justify-between rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2"
+        className="mt-3 flex items-center justify-between  pr-3 py-2"
       >
-        <span id={`export-builder-layer-subtotal-label-${layerId}`} className="text-xs font-semibold text-emerald-900">
+        <span id={`export-builder-layer-subtotal-label-${layerId}`} className="text-sm font-semibold text-emerald-900">
           Layer estimate
         </span>
-        <span id={`export-builder-layer-subtotal-value-${layerId}`} className="text-xs font-bold text-emerald-800">
+        <span id={`export-builder-layer-subtotal-value-${layerId}`} className="text-sm font-bold text-slate-700">
           {isLayerEstimateUnavailable ? 'Size unavailable' : `~${formatEstimatedSize(layerEstimatedBytes || 0)}`}
         </span>
       </div>
