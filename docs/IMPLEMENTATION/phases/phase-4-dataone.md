@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 8 / 11 tasks  
+**Progress:** 9 / 11 tasks  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -20,7 +20,7 @@
 | 4.6 | 🟢 Complete | Feb 16, 2026 | Sync loading indicators (Map Layers widget ↔ map center ↔ right sidebar) | DataOne loading now propagates from shared context to adapter/registry, so Map Layers eye-slot spinner, map-center first-load overlay, and right-sidebar loading rows stay synchronized. |
 | 4.7 | 🟢 Complete | Feb 16, 2026 | Render DataONE datasets as map markers (dots or clusters) | Added DataONE map layer + map behavior with filter-synced marker population from `center_lat`/`center_lon`, wired registry/layer factory (`dataone-datasets`), and map-click-to-detail flow (marker click activates DataONE + opens dataset detail in Browse). |
 | 4.8 | 🟢 Complete | Feb 16, 2026 | Make full dataset card clickable to open detail | Browse cards now open detail on card click + Enter/Space with card-level hover/focus states; inner action controls stop propagation so card navigation does not depend on the Details button. |
-| 4.9 | ⚪ Not Started | Feb 16, 2026 | Simplify browse card actions and visual hierarchy | Remove large card-level CTA row (`Save View`, `Details`, `Open in DataONE`) and de-emphasize/remap high-contrast metadata chips that currently create visual noise in browse. |
+| 4.9 | 🟢 Complete | Feb 16, 2026 | Simplify browse card actions and visual hierarchy | Removed browse card CTA row (`Save View`, `Details`, `Open in DataONE`) and shifted metadata to low-contrast, secondary inline chips/text for cleaner scanning. |
 | 4.10 | ⚪ Not Started | Feb 16, 2026 | Add DataONE open modes in detail view (new tab + iframe) | Keep "Open in DataONE" actions only in detail view with two options: open external in new tab and open embedded DataONE page in iframe within app context. |
 | 4.11 | ⚪ Not Started | Feb 16, 2026 | Move and wire Save Dataset View in detail flow | Save action should live in detail view only; wire it to create/update a filtered child view in Map Layers with consistent naming + visibility behavior. |
 
@@ -265,6 +265,13 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 - [ ] Move `Open in DataONE` affordance out of browse cards (detail view only)
 - [ ] Re-style or relocate high-contrast identifier/link chips so they no longer dominate browse scanning
 - [ ] Card layout remains readable and scannable after action-row removal
+ 
+**Completed (Feb 16, 2026):**
+- [x] Remove card-level action row with `Save View`, `Details`, and `Open in DataONE`
+- [x] Remove explicit `Details` button from card (covered by full-card click behavior)
+- [x] Move `Open in DataONE` affordance out of browse cards (detail view only)
+- [x] Re-style or relocate high-contrast identifier/link chips so they no longer dominate browse scanning
+- [x] Card layout remains readable and scannable after action-row removal
 
 **Notes:**
 - This task is browse-only simplification. Functional actions are preserved in detail view (Task 4.10/4.11).
@@ -414,6 +421,7 @@ Notes:
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 16, 2026 | 4.9 | **Task 4.9 complete:** Simplified DataONE browse cards by removing the full CTA action row (`Save View`, `Details`, `Open in DataONE`) and de-emphasizing metadata treatment (subtle category pill + low-contrast file/DOI text) to improve scanability and reduce visual noise. | Codex |
 | Feb 16, 2026 | 4.8-4.11 | Added follow-up task set based on UI feedback: full-card click-to-detail behavior, browse action-row removal + visual hierarchy cleanup, detail-only DataONE open modes (new tab + iframe), and detail-only Save Dataset View wiring to Map Layers child views. Updated phase status to In Progress (7/11). | Codex |
 | Feb 16, 2026 | 4.7 | **Task 4.7 complete:** Implemented `dataoneLayer.ts` and `useDataOneMapBehavior` to render DataONE dataset markers on the v2 map from `center_lat`/`center_lon`. Wired `dataone-datasets` into `IMPLEMENTED_LAYERS` + `createMapLayer`, enabled DataONE map behavior in registry, synced marker queries to active sidebar filters (search/category/year/author), and added map marker click behavior to activate DataONE + open dataset detail in the right sidebar. | Codex |
 | Feb 16, 2026 | 4.6 | **Task 4.6 complete:** Synced DataOne loading state across right-sidebar browse requests and shared cache status so Map Layers eye-slot loading, map-center first-load overlay, and sidebar loading rows are coordinated from one source of truth. Updated map overlay to only show on first-load (`!dataLoaded`). | Claude |
