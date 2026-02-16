@@ -1,7 +1,7 @@
 # Phase 5: Export Builder
 
 **Status:** 🟡 In Progress  
-**Progress:** 2 / 4 tasks  
+**Progress:** 3 / 4 tasks  
 **Branch:** `v2/export`  
 **Depends On:** Phases 1-4 (all data sources)  
 **Owner:** TBD
@@ -40,7 +40,7 @@ Implement the Export Builder that brings together all pinned layers and their ac
 |----|------|--------|----------|-------|
 | 5.1 | Create Export Builder modal shell | 🟢 Complete | Claude | Modal shell wired to global header cart button with scrollable body + fixed footer |
 | 5.2 | Implement per-layer export sections | 🟢 Complete | Claude | Added `LayerExportSection`; wired per-layer filter summary, result count, and source-specific format options into `ExportBuilderModal` (filtered-only model) |
-| 5.3 | Implement export summary and size estimation | ⚪ Not Started | | |
+| 5.3 | Implement export summary and size estimation | 🟢 Complete | Claude | Added `ExportSummary`; wired dynamic per-layer selection summary + heuristic total size estimate into `ExportBuilderModal` |
 | 5.4 | Implement export actions (ZIP / Links) | ⚪ Not Started | | |
 
 **Status Legend:**
@@ -106,10 +106,10 @@ Implement the Export Builder that brings together all pinned layers and their ac
 **Goal:** Show aggregated summary of what will be exported.
 
 **Acceptance Criteria:**
-- [ ] Summary section at bottom of content area
-- [ ] Lists all selected features with counts
-- [ ] Estimated total size calculated and displayed
-- [ ] Updates dynamically as user changes selections
+- [x] Summary section at bottom of content area
+- [x] Lists all selected features with counts
+- [x] Estimated total size calculated and displayed
+- [x] Updates dynamically as user changes selections
 
 **Example Summary:**
 ```
@@ -175,6 +175,7 @@ Estimated total: ~52 MB
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 16, 2026 | 5.3 | Implemented export summary + size estimation: added `ExportSummary` component and wired dynamic per-layer summary rows with estimated total size based on selected formats and current filtered result counts | Claude |
 | Feb 16, 2026 | 5.2 | Revised 5.2 to filtered-only model: removed bookmark export mode and bookmark item controls from `ExportBuilderModal`; sections now focus on active query summary, result count, and format options | Claude |
 | Feb 16, 2026 | 5.1 | Implemented Export Builder modal shell (`ExportBuilderModal`, `ExportBuilderHeader`, `ExportBuilderFooter`) and wired shopping cart button in `V2Header` to open/close modal in `V2App` | Claude |
 | Jan 23, 2026 | - | Created phase document | Will + Claude |

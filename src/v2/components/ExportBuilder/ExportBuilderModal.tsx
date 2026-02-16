@@ -9,6 +9,7 @@ import {
   LayerExportSection,
   type ExportFormatOption,
 } from './LayerExportSection';
+import { ExportSummary } from './ExportSummary';
 
 interface ExportBuilderModalProps {
   isOpen: boolean;
@@ -71,6 +72,14 @@ function getLayerQuerySummary(layer: {
   return visibleView?.filterSummary || layer.filterSummary;
 }
 
+function getLayerResultCount(layer: {
+  resultCount?: number;
+  views?: Array<{ isVisible: boolean; resultCount?: number }>;
+}): number | undefined {
+  const visibleView = layer.views?.find(view => view.isVisible);
+  return visibleView?.resultCount ?? layer.resultCount;
+}
+
 export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps) {
   const { pinnedLayers } = useLayers();
   const { layerMap } = useCatalog();
@@ -122,6 +131,27 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
       window.removeEventListener('keydown', onKeyDown);
     };
   }, [isOpen, onClose]);
+
+  const exportSummaryLayers = useMemo(
+    () =>
+      pinnedLayers.map((layer) => {
+        const dataSource = layerDataSourceById[layer.id] || 'tnc-arcgis';
+        const formatOptions = getFormatOptionsByDataSource(dataSource);
+        const selectedFormatIds = layerExportState[layer.id]?.selectedFormatIds || [];
+        const selectedFormatLabels = formatOptions
+          .filter((format) => selectedFormatIds.includes(format.id))
+          .map((format) => format.label);
+
+        return {
+          layerId: layer.id,
+          layerName: layer.name,
+          dataSource,
+          selectedFormatLabels,
+          filteredResultCount: getLayerResultCount(layer),
+        };
+      }),
+    [layerDataSourceById, layerExportState, pinnedLayers],
+  );
 
   if (!isOpen) {
     return null;
@@ -182,7 +212,7 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
                     layerName={layer.name}
                     dataSource={layerDataSourceById[layer.id] || 'tnc-arcgis'}
                     querySummary={getLayerQuerySummary(layer)}
-                    filteredResultCount={layer.resultCount}
+                    filteredResultCount={getLayerResultCount(layer)}
                     formatOptions={getFormatOptionsByDataSource(layerDataSourceById[layer.id] || 'tnc-arcgis')}
                     selectedFormatIds={layerExportState[layer.id]?.selectedFormatIds || []}
                     onToggleFormat={(formatId) => {
@@ -207,6 +237,10 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
                 ))}
               </div>
             )}
+          </div>
+
+          <div id="export-builder-summary-container" className="mt-4">
+            <ExportSummary layers={exportSummaryLayers} />
           </div>
         </div>
 
