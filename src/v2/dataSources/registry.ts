@@ -22,7 +22,7 @@ import { dendraAdapter, useDendraCacheStatus } from './dendra/adapter';
 import { useDendraMapBehavior } from './dendra/useMapBehavior';
 import { animlAdapter, useAnimlCacheStatus } from './animl/adapter';
 import { useAnimlMapBehavior } from './animl/useMapBehavior';
-// import { dataoneAdapter, useDataOneCacheStatus } from './dataone/adapter';     // ← v2/dataone
+import { dataoneAdapter, useDataOneCacheStatus } from './dataone/adapter';
 // import { useDataOneMapBehavior } from './dataone/useMapBehavior';              // ← v2/dataone
 
 // ── Adapter registry ─────────────────────────────────────────────────────────
@@ -31,7 +31,7 @@ const ADAPTER_MAP: Record<string, DataSourceAdapter> = {
   inaturalist: inaturalistAdapter,
   dendra: dendraAdapter,
   animl: animlAdapter,
-  // dataone: dataoneAdapter,   // ← v2/dataone
+  dataone: dataoneAdapter,
 };
 
 /** Look up a data source adapter by its dataSource key */
@@ -68,13 +68,13 @@ export function useActiveCacheStatus(dataSource: string | undefined): CacheStatu
   const inat = useINaturalistCacheStatus();
   const dendra = useDendraCacheStatus();
   const animl = useAnimlCacheStatus();
-  // const dataone = useDataOneCacheStatus(); // ← v2/dataone
+  const dataone = useDataOneCacheStatus();
 
   switch (dataSource) {
     case 'inaturalist': return inat;
     case 'dendra': return dendra;
     case 'animl': return animl;
-    // case 'dataone': return dataone;   // ← v2/dataone
+    case 'dataone': return dataone;
     default: return null;
   }
 }
@@ -87,11 +87,12 @@ export function useCacheStatusByDataSource(): Record<string, CacheStatus> {
   const inat = useINaturalistCacheStatus();
   const dendra = useDendraCacheStatus();
   const animl = useAnimlCacheStatus();
+  const dataone = useDataOneCacheStatus();
 
   return {
     inaturalist: inat,
     dendra,
     animl,
-    // dataone,   // ← v2/dataone
+    dataone,
   };
 }

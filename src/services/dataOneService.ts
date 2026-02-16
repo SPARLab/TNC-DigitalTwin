@@ -51,11 +51,11 @@ const PRESERVE_CENTER = {
 const RADIUS_DEGREES = 0.29;
 
 /**
- * Parse comma-separated string into array
+ * Parse comma/semicolon-delimited string into array
  */
-function parseCommaList(str: string | null): string[] {
+function parseDelimitedList(str: string | null | undefined): string[] {
   if (!str) return [];
-  return str.split(',').map((s) => s.trim()).filter(Boolean);
+  return str.split(/[;,]/).map((s) => s.trim()).filter(Boolean);
 }
 
 /**
@@ -100,7 +100,7 @@ function liteRecordToDataset(record: DataOneLiteRecord): DataOneDataset {
     title: record.title,
     datasetUrl: record.dataset_url,
     tncCategory: record.tnc_category,
-    tncCategories: parseCommaList(record.tnc_categories),
+    tncCategories: parseDelimitedList(record.tnc_categories),
     tncConfidence: record.tnc_confidence,
     dateUploaded: parseTimestamp(record.date_uploaded),
     temporalCoverage: {
@@ -122,6 +122,7 @@ function liteRecordToDataset(record: DataOneLiteRecord): DataOneDataset {
     isLatestVersion: record.is_latest_version === 1,
     versionCount: record.version_count,
     filesSummary,
+    authors: parseDelimitedList(record.authors),
     // External URL for metadata-only datasets
     externalUrl: record.external_url,
     isMetadataOnly,
@@ -136,8 +137,8 @@ function fullRecordToDatasetDetail(record: DataOneFullRecord): DataOneDatasetDet
   return {
     ...base,
     abstract: record.abstract,
-    keywords: parseCommaList(record.keywords),
-    authors: parseCommaList(record.authors),
+    keywords: parseDelimitedList(record.keywords),
+    authors: parseDelimitedList(record.authors),
     site: record.site,
     project: record.project,
     funding: record.funding,
@@ -194,6 +195,12 @@ function buildWhereClause(options: DataOneQueryOptions): string {
     conditions.push(`datasource = '${options.repository}'`);
   }
 
+  // Optional author filter (field is present in current service schema)
+  if (options.author) {
+    const author = options.author.replace(/'/g, "''");
+    conditions.push(`authors LIKE '%${author}%'`);
+  }
+
   // TNC category filter
   if (options.tncCategory) {
     const category = options.tncCategory.replace(/'/g, "''");
@@ -225,7 +232,7 @@ class DataOneService {
     });
 
     const url = `${LITE_LAYER_URL}/query?${params}`;
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: options.signal });
 
     if (!response.ok) {
       throw new Error(`Failed to count DataONE datasets: ${response.statusText}`);
@@ -267,7 +274,7 @@ class DataOneService {
     });
 
     const url = `${LITE_LAYER_URL}/query?${params}`;
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: options.signal });
 
     if (!response.ok) {
       throw new Error(`Failed to query DataONE datasets: ${response.statusText}`);
