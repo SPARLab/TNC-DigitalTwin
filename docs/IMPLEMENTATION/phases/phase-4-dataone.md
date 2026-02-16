@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 3 / 7 tasks  
+**Progress:** 4 / 7 tasks  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -10,15 +10,15 @@
 
 ## Task Status
 
-| ID | Status | Task | Last Updated | Assignee | Notes |
-|----|--------|------|--------------|----------|-------|
-| 4.1 | 🟢 Complete | Query DataOne service to understand attributes | Feb 16, 2026 | Claude | Service schema analyzed (layers 0/1/2), key UI fields selected, category mapping + file-detail strategy documented below. |
-| 4.2 | 🟢 Complete | Create DataOne right sidebar shell | Feb 16, 2026 | Claude | DataOne adapter + right sidebar tabs scaffolded in v2 (`DataOneOverviewTab`, `DataOneBrowseTab`, `DatasetListView`, `DatasetDetailView`, provider wiring, external layer registration). Left-sidebar shortcut rows (DFT-045) deferred to future task. |
-| 4.3 | 🟢 Complete | Implement search and filter UI | Feb 16, 2026 | Claude | Debounced search (500ms, 2+ chars), Enter bypass, category/year/author filters, result count + ARIA live region, empty state clear-all, pagination, stale-results refresh, `AbortController` cancellation. Service extended with `author` filter and `signal` support. |
-| 4.4 | ⚪ Not Started | Implement dataset list with cards | — | | |
-| 4.5 | ⚪ Not Started | Implement dataset detail view | — | | |
-| 4.6 | ⚪ Not Started | Sync loading indicators (Map Layers widget ↔ map center ↔ right sidebar) | — | | |
-| 4.7 | ⚪ Not Started | Render DataONE datasets as map markers (dots or clusters) | — | | |
+| ID | Status | Last Updated (Timestamp) | Task Description | Notes |
+|----|--------|---------------------------|------------------|-------|
+| 4.1 | 🟢 Complete | Feb 16, 2026 | Query DataOne service to understand attributes | Service schema analyzed (layers 0/1/2), key UI fields selected, category mapping + file-detail strategy documented below. |
+| 4.2 | 🟢 Complete | Feb 16, 2026 | Create DataOne right sidebar shell | DataOne adapter + right sidebar tabs scaffolded in v2 (`DataOneOverviewTab`, `DataOneBrowseTab`, `DatasetListView`, `DatasetDetailView`, provider wiring, external layer registration). Left-sidebar shortcut rows (DFT-045) deferred to future task. |
+| 4.3 | 🟢 Complete | Feb 16, 2026 | Implement search and filter UI | Debounced search (500ms, 2+ chars), Enter bypass, category/year/author filters, result count + ARIA live region, empty state clear-all, pagination, stale-results refresh, `AbortController` cancellation. Service extended with `author` filter and `signal` support. |
+| 4.4 | 🟢 Complete | Feb 16, 2026 | Implement dataset list with cards | Dataset cards now include title, authors, year, description snippet fallback, DOI badge (when `dataone_id` is DOI), file count/types summary, bookmark action button, details navigation, and "Open in DataONE ↗" external action. |
+| 4.5 | ⚪ Not Started | — | Implement dataset detail view | — |
+| 4.6 | ⚪ Not Started | — | Sync loading indicators (Map Layers widget ↔ map center ↔ right sidebar) | — |
+| 4.7 | ⚪ Not Started | — | Render DataONE datasets as map markers (dots or clusters) | — |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -342,6 +342,7 @@ Notes:
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 16, 2026 | 4.4 | **Task 4.4 complete:** Implemented `DatasetListView` card anatomy for browse results. Added author + year row, description snippet fallback, DOI badge display (from `dataone_id`), file count/type summary, visible bookmark action button, details CTA, and "Open in DataONE ↗" external link treatment. | Claude |
 | Feb 16, 2026 | 4.7 | **Added Task 4.7:** Render DataONE datasets as map markers (dots or clusters). No map markers currently appear for DataONE; task covers `dataoneLayer.ts`, `useDataOneMapBehavior`, filter sync, optional clustering, and map-click-to-detail. | Claude |
 | Feb 16, 2026 | 4.2, 4.3 | **Tasks 4.2 and 4.3 complete.** DataOne adapter wired into v2 registry; right-sidebar shell (Overview/Browse) with `DataOneOverviewTab`, `DataOneBrowseTab`, `DatasetListView`, `DatasetDetailView`; DataOne external layer enabled in left sidebar; browse search/filter UX per DFT-035 (debounced text, immediate dropdowns, result count, ARIA live region, pagination, empty-state clear-all, `AbortController`). DFT-045 shortcut rows deferred. | Claude |
 | Feb 16, 2026 | 4.1 | Completed service analysis against live DataONE FeatureServer. Documented layer schemas (Lite/Latest/AllVersions), UI-relevant attributes, AI-enriched category mapping (`tnc_category` / `tnc_categories` / `tnc_confidence`), file-detail strategy (`files_summary` vs DataONE API), and baseline query timings. | Claude |

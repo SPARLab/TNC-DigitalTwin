@@ -33,7 +33,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 1 | iNaturalist | 🟢 Complete | 5 / 5 tasks | `v2/inaturalist` | No |
 | 2 | ANiML | 🟡 In Progress | 10 / 14 tasks | `v2/animl` | No |
 | 3 | Dendra | 🟡 In Progress | 6 / 6 tasks | `v2/dendra` | No |
-| 4 | DataOne | 🟡 In Progress | 3 / 6 tasks | `v2/dataone` | No |
+| 4 | DataOne | 🟡 In Progress | 4 / 7 tasks | `v2/dataone` | No |
 | 5 | Export Builder | ⚪ Not Started | 0 / 4 tasks | `v2/export` | No |
 | 6 | TNC ArcGIS Services | ⚪ Not Started | 0 / 10 tasks | `v2/tnc-arcgis` | No |
 | 7 | Polish & Consistency | ⚪ Not Started | 0 / 7+ tasks | `v2/polish` | No |
@@ -246,6 +246,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 16, 2026 | Phase 4 | **Phase 4 Task 4.4 complete: DataOne dataset list cards.** Updated `DatasetListView` to include authors/year line, description snippet fallback, DOI badge (when DOI-form `dataone_id` exists), file count/type summary, bookmark action button, details CTA, and explicit "Open in DataONE ↗" external action. Progress: 4/7. | Claude |
 | Feb 16, 2026 | Phase 4 | **Phase 4 Tasks 4.2 and 4.3 complete: DataOne right sidebar shell + search/filter UI.** Wired DataOne adapter into v2 registry; added Overview/Browse tabs, DatasetListView, DatasetDetailView; enabled DataOne external layer in left sidebar; implemented DFT-035 search behavior (debounced text, immediate filters, pagination, ARIA live region, AbortController). Progress: 3/6. | Claude |
 | Feb 16, 2026 | Phase 4 | **Phase 4 Task 4.1 complete: DataOne service analysis.** Queried live DataONE FeatureServer layers (Lite/Latest/AllVersions), documented attribute schema and filter/card/detail field mapping, confirmed AI-enriched category fields (`tnc_category`, `tnc_categories`, `tnc_confidence`), and captured baseline query timings in `phase-4-dataone.md`. Updated Phase 4 status to In Progress (1/6). | Claude |
 | Feb 16, 2026 | All | **Phase restructure:** Inserted new Phase 6 (TNC ArcGIS Feature Services), renumbered old Phase 6 (Polish) to Phase 7. Added architectural design for service-level activation + layer switcher pattern for multi-layer TNC services. Generic filter UI (field/operator/value) for MVP. | Will + Claude |
