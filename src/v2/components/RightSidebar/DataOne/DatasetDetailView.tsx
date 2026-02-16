@@ -12,6 +12,7 @@ import { useMap } from '../../../context/MapContext';
 interface DatasetDetailViewProps {
   dataset: DataOneDataset;
   onBack: () => void;
+  onSaveDatasetView?: (dataset: DataOneDataset) => string | void;
   // eslint-disable-next-line no-unused-vars
   onKeywordClick?: (...args: [string]) => void;
 }
@@ -88,7 +89,7 @@ function describeFileType(ext: string): string {
   return 'Research dataset files included in this package.';
 }
 
-export function DatasetDetailView({ dataset, onBack, onKeywordClick }: DatasetDetailViewProps) {
+export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onKeywordClick }: DatasetDetailViewProps) {
   const [details, setDetails] = useState<DataOneDatasetDetail | null>(null);
   const [fileInfoError, setFileInfoError] = useState<string | null>(null);
   const [remoteFileTypes, setRemoteFileTypes] = useState<string[]>([]);
@@ -98,6 +99,7 @@ export function DatasetDetailView({ dataset, onBack, onKeywordClick }: DatasetDe
   const [error, setError] = useState<string | null>(null);
   const [copiedState, setCopiedState] = useState<'idle' | 'doi' | 'cite'>('idle');
   const [viewSaved, setViewSaved] = useState(false);
+  const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
   const { viewRef, highlightPoint, showToast, openDataOnePreview } = useMap();
 
   useEffect(() => {
@@ -109,6 +111,7 @@ export function DatasetDetailView({ dataset, onBack, onKeywordClick }: DatasetDe
     setRemoteFileCount(null);
     setRemoteTotalSize(null);
     setViewSaved(false);
+    setSaveFeedback(null);
 
     void dataOneService.getDatasetDetails(dataset.dataoneId)
       .then((value) => {
@@ -175,8 +178,9 @@ export function DatasetDetailView({ dataset, onBack, onKeywordClick }: DatasetDe
   const totalFileSize = (details?.filesSummary || dataset.filesSummary)?.sizeBytes ?? remoteTotalSize ?? details?.sizeBytes ?? null;
 
   const handleSaveDatasetView = () => {
+    const feedback = onSaveDatasetView?.(dataset);
     setViewSaved(true);
-    showToast('Saved dataset view metadata (session-only).', 'info');
+    setSaveFeedback(feedback || 'Saved view in Map Layers.');
   };
 
   const handleCopyDoi = async () => {
@@ -302,6 +306,20 @@ export function DatasetDetailView({ dataset, onBack, onKeywordClick }: DatasetDe
                     Open in DataONE (In App)
                   </button>
                 </div>
+              )}
+              <button
+                id="dataone-detail-save-view-button"
+                type="button"
+                onClick={handleSaveDatasetView}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100"
+              >
+                <Save className="h-4 w-4" />
+                {viewSaved ? 'Dataset View Saved' : 'Save Dataset View'}
+              </button>
+              {viewSaved && (
+                <p id="dataone-detail-save-view-feedback" className="text-xs text-emerald-700">
+                  {saveFeedback}
+                </p>
               )}
               <div id="dataone-detail-secondary-actions-row" className="grid grid-cols-2 gap-2">
                 <button
@@ -431,23 +449,6 @@ export function DatasetDetailView({ dataset, onBack, onKeywordClick }: DatasetDe
               </div>
             </section>
           )}
-
-          <section id="dataone-detail-save-view-section">
-            <button
-              id="dataone-detail-save-view-button"
-              type="button"
-              onClick={handleSaveDatasetView}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100"
-            >
-              <Save className="h-4 w-4" />
-              {viewSaved ? 'Dataset View Saved' : 'Save Dataset View'}
-            </button>
-            {viewSaved && (
-              <p id="dataone-detail-save-view-feedback" className="mt-1 text-xs text-emerald-700">
-                Saved for this session.
-              </p>
-            )}
-          </section>
 
           <section id="dataone-detail-citation-section" className="rounded bg-slate-50 p-3">
             <h4 id="dataone-detail-citation-label" className="mb-1 font-semibold text-gray-900">Citation</h4>

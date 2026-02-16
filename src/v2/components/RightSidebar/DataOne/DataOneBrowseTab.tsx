@@ -47,7 +47,15 @@ export function DataOneBrowseTab() {
     browseFilters,
     setBrowseFilters,
   } = useDataOneFilter();
-  const { activeLayer, activateLayer } = useLayers();
+  const {
+    activeLayer,
+    activateLayer,
+    lastEditFiltersRequest,
+    lastFiltersClearedTimestamp,
+    getPinnedByLayerId,
+    syncDataOneFilters,
+    createOrUpdateDataOneFilteredView,
+  } = useLayers();
   const [searchInput, setSearchInput] = useState(browseFilters.searchText);
   const [appliedSearchTerm, setAppliedSearchTerm] = useState(browseFilters.searchText);
   const [selectedCategory, setSelectedCategory] = useState<string>(browseFilters.tncCategory || 'all');
@@ -63,6 +71,9 @@ export function DataOneBrowseTab() {
   const [error, setError] = useState<string | null>(null);
   const [selectedDataset, setSelectedDataset] = useState<DataOneDataset | null>(null);
   const lastHandledFeatureIdRef = useRef<string | null>(null);
+  const lastConsumedHydrateRef = useRef(0);
+  const lastConsumedClearRef = useRef(0);
+  const prevHydrateViewIdRef = useRef<string | undefined>(activeLayer?.viewId);
 
   const currentYear = new Date().getFullYear();
   const yearOptions = useMemo(
@@ -171,10 +182,129 @@ export function DataOneBrowseTab() {
     };
   }, [activeLayer, selectedDataset?.dataoneId]);
 
+  // Hydrate DataONE browse controls from the selected pinned child view.
+  useEffect(() => {
+    if (activeLayer?.layerId !== 'dataone-datasets') return;
+
+    const viewChanged = activeLayer.viewId !== prevHydrateViewIdRef.current;
+    const editRequested = lastEditFiltersRequest > lastConsumedHydrateRef.current;
+    const clearRequested = lastFiltersClearedTimestamp > lastConsumedClearRef.current;
+    prevHydrateViewIdRef.current = activeLayer.viewId;
+
+    if (!viewChanged && !editRequested && !clearRequested) return;
+    if (editRequested) lastConsumedHydrateRef.current = lastEditFiltersRequest;
+    if (clearRequested) lastConsumedClearRef.current = lastFiltersClearedTimestamp;
+
+    const pinned = getPinnedByLayerId(activeLayer.layerId);
+    if (!pinned) return;
+
+    const sourceFilters = activeLayer.viewId && pinned.views
+      ? pinned.views.find(v => v.id === activeLayer.viewId)?.dataoneFilters
+      : pinned.dataoneFilters;
+    if (!sourceFilters) return;
+
+    const nextSearch = sourceFilters.searchText || '';
+    setSearchInput(nextSearch);
+    setAppliedSearchTerm(nextSearch);
+    setSelectedCategory(sourceFilters.tncCategory || 'all');
+    setStartYear(sourceFilters.startDate?.slice(0, 4) || '');
+    setEndYear(sourceFilters.endDate?.slice(0, 4) || '');
+    setAuthorFilter(sourceFilters.author || '');
+    setPage(0);
+
+    if (sourceFilters.selectedDatasetId) {
+      void dataOneService.getDatasetByDataoneId(sourceFilters.selectedDatasetId)
+        .then((dataset) => {
+          if (dataset) {
+            lastHandledFeatureIdRef.current = dataset.dataoneId;
+            setSelectedDataset(dataset);
+          }
+        })
+        .catch(() => {
+          // No UI noise here; this is best-effort context restore.
+        });
+    } else if (activeLayer.featureId == null) {
+      setSelectedDataset(null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally gated by ref guards
+  }, [
+    activeLayer?.layerId,
+    activeLayer?.viewId,
+    activeLayer?.featureId,
+    lastEditFiltersRequest,
+    lastFiltersClearedTimestamp,
+    getPinnedByLayerId,
+  ]);
+
+  // Keep Map Layers metadata synced to current DataONE filters/detail selection.
+  useEffect(() => {
+    if (activeLayer?.layerId !== 'dataone-datasets') return;
+    const pinned = getPinnedByLayerId(activeLayer.layerId);
+    const activeView = activeLayer.viewId && pinned?.views
+      ? pinned.views.find((view) => view.id === activeLayer.viewId)
+      : undefined;
+
+    // Saved dataset child views are snapshots and should not be overwritten
+    // while users keep browsing other datasets in detail/list flow.
+    if (activeView?.dataoneFilters?.selectedDatasetId) return;
+
+    syncDataOneFilters(
+      activeLayer.layerId,
+      {
+        searchText: appliedSearchTerm || undefined,
+        tncCategory: selectedCategory === 'all' ? undefined : selectedCategory,
+        startDate: toStartDate(startYear),
+        endDate: toEndDate(endYear),
+        author: authorFilter.trim() || undefined,
+        selectedDatasetId: selectedDataset?.dataoneId,
+        selectedDatasetTitle: selectedDataset?.title,
+      },
+      totalCount,
+      activeLayer.viewId
+    );
+  }, [
+    activeLayer?.layerId,
+    activeLayer?.viewId,
+    activeLayer?.isPinned,
+    appliedSearchTerm,
+    selectedCategory,
+    startYear,
+    endYear,
+    authorFilter,
+    selectedDataset?.dataoneId,
+    selectedDataset?.title,
+    totalCount,
+    getPinnedByLayerId,
+    syncDataOneFilters,
+  ]);
+
+  const handleSaveDatasetView = (dataset: DataOneDataset): string => {
+    if (activeLayer?.layerId !== 'dataone-datasets') {
+      return 'Unable to save view: DataONE layer is not active.';
+    }
+
+    const savedViewId = createOrUpdateDataOneFilteredView(
+      activeLayer.layerId,
+      {
+        selectedDatasetId: dataset.dataoneId,
+        selectedDatasetTitle: dataset.title,
+      },
+      1
+    );
+
+    if (!savedViewId) {
+      return 'Unable to save view in Map Layers.';
+    }
+
+    activateLayer(activeLayer.layerId, savedViewId, dataset.dataoneId);
+    return 'Saved as a new dataset child view in Map Layers.';
+  };
+
   if (selectedDataset) {
     return (
       <DatasetDetailView
         dataset={selectedDataset}
+        onSaveDatasetView={handleSaveDatasetView}
         onBack={() => {
           setSelectedDataset(null);
           if (activeLayer?.layerId === 'dataone-datasets') {
