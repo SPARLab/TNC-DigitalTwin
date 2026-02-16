@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 4 / 7 tasks  
+**Progress:** 5 / 7 tasks  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -16,7 +16,7 @@
 | 4.2 | 🟢 Complete | Feb 16, 2026 | Create DataOne right sidebar shell | DataOne adapter + right sidebar tabs scaffolded in v2 (`DataOneOverviewTab`, `DataOneBrowseTab`, `DatasetListView`, `DatasetDetailView`, provider wiring, external layer registration). Left-sidebar shortcut rows (DFT-045) deferred to future task. |
 | 4.3 | 🟢 Complete | Feb 16, 2026 | Implement search and filter UI | Debounced search (500ms, 2+ chars), Enter bypass, category/year/author filters, result count + ARIA live region, empty state clear-all, pagination, stale-results refresh, `AbortController` cancellation. Service extended with `author` filter and `signal` support. |
 | 4.4 | 🟢 Complete | Feb 16, 2026 | Implement dataset list with cards | Dataset cards now include title, authors, year, description snippet fallback, DOI badge (when `dataone_id` is DOI), file count/types summary, bookmark action button, details navigation, and "Open in DataONE ↗" external action. |
-| 4.5 | ⚪ Not Started | — | Implement dataset detail view | — |
+| 4.5 | 🟢 Complete | Feb 16, 2026 | Implement dataset detail view | Added full dataset detail drill-down with back navigation, full abstract/authors/temporal metadata, file list + type descriptions + size summary, spatial coverage with "View on Map", clickable keywords (apply browse search), bookmark action, primary "Open in DataONE", and copy DOI/citation actions. |
 | 4.6 | ⚪ Not Started | — | Sync loading indicators (Map Layers widget ↔ map center ↔ right sidebar) | — |
 | 4.7 | ⚪ Not Started | — | Render DataONE datasets as map markers (dots or clusters) | — |
 
@@ -177,16 +177,16 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 **Goal:** When user clicks a dataset, show its full details.
 
 **Acceptance Criteria:**
-- [ ] "← Back to Datasets" navigation
-- [ ] Full title and author list
-- [ ] Complete abstract (not truncated)
-- [ ] Files list with sizes and descriptions
-- [ ] Spatial coverage (bounding box, "View on Map" button)
-- [ ] Keywords as clickable tags
-- [ ] Temporal coverage
-- [ ] "Bookmark Dataset" button
-- [ ] "Open in DataOne ↗" primary action
-- [ ] "Copy DOI" and "Cite" buttons
+- [x] "← Back to Datasets" navigation
+- [x] Full title and author list
+- [x] Complete abstract (not truncated)
+- [x] Files list with sizes and descriptions
+- [x] Spatial coverage (bounding box, "View on Map" button)
+- [x] Keywords as clickable tags
+- [x] Temporal coverage
+- [x] "Bookmark Dataset" button
+- [x] "Open in DataOne ↗" primary action
+- [x] "Copy DOI" and "Cite" buttons
 
 **Reference:** 
 - Mockup `02e-browse-dataone.html` detail section

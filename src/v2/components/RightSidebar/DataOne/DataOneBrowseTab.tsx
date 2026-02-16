@@ -123,6 +123,12 @@ export function DataOneBrowseTab() {
       <DatasetDetailView
         dataset={selectedDataset}
         onBack={() => setSelectedDataset(null)}
+        onKeywordClick={(keyword) => {
+          setSelectedDataset(null);
+          setSearchInput(keyword);
+          setAppliedSearchTerm(keyword.trim().length >= MIN_SEARCH_CHARS ? keyword.trim() : '');
+          setPage(0);
+        }}
       />
     );
   }
