@@ -210,7 +210,7 @@ export function LayerExportSection({
 
       <div
         id={`export-builder-layer-subtotal-row-${layerId}`}
-        className="mt-3 flex items-center justify-between  pr-3 py-2"
+        className="mt-3 flex items-center justify-between  pr-3 pt-2"
       >
         <span id={`export-builder-layer-subtotal-label-${layerId}`} className="text-sm font-semibold text-emerald-900">
           Layer estimate
