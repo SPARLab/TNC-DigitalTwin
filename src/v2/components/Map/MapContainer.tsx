@@ -37,6 +37,9 @@ export function MapContainer() {
   // Cache/loading status for the active data source (generic loading overlay)
   const cacheStatus = useActiveCacheStatus(activeLayer?.dataSource);
   const showLoadingOverlay = !!activeLayer && !!cacheStatus?.loading && !cacheStatus?.dataLoaded;
+  const loadingOverlayMessage = activeLayer?.dataSource === 'animl'
+    ? 'Loading camera trap data...'
+    : `Loading ${activeLayer?.name ?? 'data'}...`;
 
   // Sync pinned/active layers with ArcGIS layers
   useMapLayers();
@@ -96,7 +99,7 @@ export function MapContainer() {
       {showLoadingOverlay && (
         <MapCenterLoadingOverlay
           id="map-loading-overlay"
-          message={`Loading ${activeLayer?.name ?? 'data'}...`}
+          message={loadingOverlayMessage}
         />
       )}
 

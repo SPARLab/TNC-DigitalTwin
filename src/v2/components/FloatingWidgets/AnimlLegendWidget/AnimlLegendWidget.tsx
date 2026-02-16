@@ -51,7 +51,7 @@ export function AnimlLegendWidget() {
           id="animl-legend-loading"
           message="Loading camera trap data..."
           containerClassName={loadingTheme.legendRow}
-          spinnerClassName="w-4 h-4 animate-spin text-gray-400"
+          spinnerClassName={loadingTheme.inlineSpinner}
           textClassName={loadingTheme.inlineText}
         />
       </div>

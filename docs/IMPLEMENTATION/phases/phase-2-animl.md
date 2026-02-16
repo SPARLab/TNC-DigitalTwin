@@ -1,8 +1,8 @@
 # Phase 2: ANiML Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 11 / 16 tasks  
-**Last Completed:** Task 2.9 (Map Layers widget sync with browse filters) ✅  
+**Progress:** 15 / 17 tasks  
+**Last Completed:** Task 2.17 (Loading Indicators) ✅  
 **Branch:** `v2/animl`  
 **Depends On:** Phase 0 (Foundation) — Data Source Adapter Pattern ✅ Complete  
 **Owner:** TBD
@@ -103,7 +103,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | 2.14 | Arrow key navigation in expanded view | 🟢 Complete | Will + Claude | Left/right keys to navigate between images |
 | 2.15 | Image click → highlight camera on map | 🟢 Complete | Will + Claude | focusedDeploymentId in AnimlFilterContext; ArcGIS layerView.highlight(); onImageFocus from ImageList/expanded view |
 | 2.16 | Camera badges: numbered icons for query results | 🟢 Complete | Will + Claude | Dynamic map badge symbols: show camera result counts only while filters are active; 0-result cameras show no badge |
-| 2.17 | Species/camera counts sync with date filter | 🟢 Complete | Will + Claude | Date-scoped count lookups when date filter active; Species/Cameras/Legend use date-aware counts; no misleading all-time fallback |
+| 2.17 | iNaturalist-style loading indicators for ANiML | 🟢 Complete | Will + Claude | Map, Map Layers widget, and legend show loading when camera traps are loading; uses shared LoadingPrimitives (EyeSlotLoadingSpinner, MapCenterLoadingOverlay, InlineLoadingRow) |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -115,7 +115,101 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 ## Task Details
 
-### 2.1: Query ANiML Service to Understand Attributes
+**Archived:** Completed tasks 2.1–2.7, 2.10–2.17 have been archived. See [Archived Task Details](#archived-task-details-completed) below for full acceptance criteria and implementation notes.
+
+---
+
+### 2.8: Use v1 SVG Icons for Map Markers and Animal Tags
+
+**Goal:** Replace emoji-based map markers (`📷`) with the SVG icons used in the v1 implementation for a more polished look.
+
+**Status:** ⚪ Not Started
+
+**Acceptance Criteria:**
+- [ ] Camera markers on map use SVG icon instead of emoji
+- [ ] Animal tag rows in legend widget and browse tab use appropriate icons
+- [ ] SVG icons sourced from v1 components (Lucide `Camera`, `Tag`, etc.) or custom SVGs
+- [ ] Icons render correctly at map marker sizes (24-28px)
+
+**Files to Modify:**
+- `src/v2/components/Map/layers/animlLayer.ts` — replace `emojiToDataUri(CAMERA_EMOJI)` with SVG
+- `src/v2/components/FloatingWidgets/AnimlLegendWidget/AnimlLegendWidget.tsx` — add icons to rows
+- `src/v2/components/RightSidebar/ANiML/AnimlBrowseTab.tsx` — add icons to tag rows
+
+**Reference:** v1 `AnimlSidebar.tsx` uses Lucide `Camera`, `Tag` icons. Map markers in v1 used the MapView loaders.
+
+---
+
+### 2.9: Map Layers Widget Sync with Browse Filters
+
+**Goal:** When the user builds a query in the ANiML Browse tab (selecting tags, cameras), the Map Layers widget row for "Camera Traps (ANiML)" should reflect the active query state.
+
+**Status:** ⚪ Not Started
+
+**Acceptance Criteria:**
+- [ ] Widget row shows filter summary (e.g., "Mountain Lion, Coyote • 3 cameras")
+- [ ] Filter count updates as user adds/removes filters
+- [ ] Widget row highlights/animates when filter changes (visual feedback)
+- [ ] Clearing filters in Browse tab resets widget row to default
+- [ ] Filter summary format defined in Task 2.3 design decision
+
+**Dependencies:** Task 2.3 (design decision defines widget text format), Task 2.4 (implementation)
+
+**Files to Modify:**
+- `src/v2/components/FloatingWidgets/MapLayersWidget/` — active layer row rendering
+- `src/v2/context/AnimlFilterContext.tsx` — expose filter summary for widget consumption
+
+---
+
+### 2.17: iNaturalist-Style Loading Indicators for ANiML
+
+**Goal:** When camera traps (ANiML) are loading, show loading indicators in the map, Map Layers widget, and legend — using the same reusable components as iNaturalist.
+
+**Status:** 🟢 Complete
+
+**Acceptance Criteria:**
+- [ ] **Map:** When ANiML layer is active and data is loading (`cacheStatus.loading`), show `MapCenterLoadingOverlay` with message "Loading camera trap data..."
+- [ ] **Map Layers widget:** When ANiML is active or pinned and loading, show `EyeSlotLoadingSpinner` in the eye slot (same as iNaturalist)
+- [ ] **Legend widget:** When ANiML legend is visible and `!dataLoaded`, show `InlineLoadingRow` with "Loading camera trap data..." (AnimlLegendWidget already uses this; verify consistency)
+- [ ] All indicators use shared components from `src/v2/components/shared/loading/LoadingPrimitives.tsx`
+- [ ] Loading theme tokens from `loadingTheme.ts` applied consistently (no bespoke spinners)
+
+**Reference Implementation:**
+- iNaturalist: MapContainer uses `MapCenterLoadingOverlay`; MapLayersWidget uses `EyeSlotLoadingSpinner`; INaturalistLegendWidget uses `InlineLoadingRow`
+- Design system: `docs/DESIGN-SYSTEM/design-system.md` — "Indicator Selection Rules" and "First-Load vs Refresh Rules"
+
+**Files to Verify/Modify:**
+- `src/v2/components/Map/MapContainer.tsx` — ensure ANiML triggers overlay via `useActiveCacheStatus('animl')`
+- `src/v2/components/FloatingWidgets/MapLayersWidget/` — ensure `useCacheStatusByDataSource` includes animl and passes `loading` to ActiveLayerSection/PinnedLayerRow
+- `src/v2/components/FloatingWidgets/AnimlLegendWidget/AnimlLegendWidget.tsx` — ensure uses `InlineLoadingRow` from LoadingPrimitives when `!dataLoaded`
+
+---
+
+## Archived Task Details (Completed)
+
+Full details for tasks 2.1–2.7, 2.10–2.17. Key decisions and implementation notes are in the Change Log and Discoveries/Decisions sections.
+
+| ID | Task | Key Deliverables |
+|----|------|------------------|
+| 2.1 | Query ANiML service | animlService.ts (1,512 lines) documents attributes |
+| 2.2 | Create ANiML shell | AnimlFilterContext, adapter, map layer, sidebar tabs, legend widget |
+| 2.3 | Design Browse tab flow | DFT-043–047; expandable filter sections, multi-select |
+| 2.4 | Implement Browse flow | FilterSection, selectedCameras, ImageList, live counts |
+| 2.5 | Camera list + counts | Cameras in FilterSection; map badges (DFT-012, 028, 029) |
+| 2.6 | Camera detail drill-down | Unified filter+result view; no separate detail for MVP |
+| 2.7 | Caching strategy | Deferred; service/context caching in place |
+| 2.10 | Right sidebar scrollbar | scrollbar-gutter: stable |
+| 2.11 | Date/time filter | DateFilterSection, startDate/endDate in context |
+| 2.12 | Image pagination | Prev/Next pages, page/range indicators |
+| 2.13 | Expanded image view | ImageExpandedView, lightbox in sidebar |
+| 2.14 | Arrow key navigation | ←/→ in expanded view, auto-pagination (DFT-049) |
+| 2.15 | Image click → map highlight | focusedDeploymentId, layerView.highlight() |
+| 2.16 | Camera badges | Dynamic badges when filter active; 0-result = no badge |
+| 2.17 | Loading indicators | MapCenterLoadingOverlay (ANiML message), EyeSlotLoadingSpinner, InlineLoadingRow; loadingTheme tokens |
+
+---
+
+### 2.1: Query ANiML Service to Understand Attributes *(archived)*
 
 **Goal:** Before building UI, understand what data is available from the ANiML feature services.
 
@@ -734,6 +828,8 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 | Feb 13, 2026 | 2.7 | **Marked complete for now.** Caching strategy investigation deferred; service/context caching in place. | Will + Claude |
 | Feb 13, 2026 | 2.15, 2.16 | **New tasks added.** 2.15: Image click → highlight camera on map (blue ArcGIS native highlight). 2.16: Camera badges — numbered icons above cameras with matching images when filter active; cameras with 0 results get no badge. | Will + Claude |
 | Feb 13, 2026 | 2.16 | **Complete.** Implemented dynamic camera badge rendering in `animlLayer.ts` using SVG data-URI symbols (camera + numeric count). Added `updateAnimlCameraBadges()` and wired it in `useAnimlMapBehavior.ts` so badges update whenever ANiML filter state changes. No-filter state shows plain camera icons; 0-result cameras show no badge. | Will + Claude |
+| Feb 16, 2026 | All | **Archived completed tasks.** Moved 2.1–2.7, 2.10–2.16 to Archived Task Details section; active tasks (2.8, 2.9, 2.17) now at top. Added Task 2.17: iNaturalist-style loading indicators for ANiML (map, Map Layers widget, legend) using shared LoadingPrimitives. | Will + Claude |
+| Feb 16, 2026 | 2.17 | **Complete.** ANiML loading indicators aligned with iNaturalist: MapContainer shows "Loading camera trap data..." overlay when animl active; Map Layers (ActiveLayerSection, PinnedLayerRow) and AnimlLegendWidget already used shared primitives; standardized legend spinner to loadingTheme.inlineSpinner. | Will + Claude |
 | Feb 13, 2026 | 2.9 | **Complete.** Added ANiML filter sync contract with Map Layers widget (mirrors iNaturalist): `AnimlBrowseTab` now hydrates filters from pinned layer/view on "Edit Filters" and syncs active species/cameras/date + result count back to Map Layers metadata. Added `syncAnimlFilters` in `LayerContext` with child-view support and custom-name preservation; added ANiML filter payload to pinned layer/view state. | Will + Claude |
 | Feb 13, 2026 | 2.17 | **New task added.** Species/camera counts in filter sections and legend show all-time totals; when date filter is applied, image results correctly show 0 but counts remain high — misleading UX. Task 2.17: sync counts with date filter or add clear qualifier. | Will + Claude |
 | Feb 13, 2026 | 2.17 | **Complete.** Implemented Option D (lazy date-filtered counts). AnimlFilterContext fetches `getObservationCountsGroupedCached({ startDate, endDate })` when date filter active, builds `dateScopedCountLookups`, routes all count helpers through `activeCountLookups`. Species/Cameras filter sections and AnimlLegendWidget now show date-scoped counts; no all-time fallback during load. Files: AnimlFilterContext.tsx, AnimlBrowseTab.tsx, AnimlLegendWidget.tsx. | Will + Claude |

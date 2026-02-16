@@ -12,55 +12,21 @@
 
 **Active development tasks (ordered by priority).** Details live in phase docs; this is a quick reference.
 
-| # | Phase | Task | Status | Priority | Notes |
-|---|-------|------|--------|----------|-------|
-| **28** | **1** | **🐛 iNaturalist: Detail View Crash on Observation Click** | **✅** | **Critical** | **Fixed: hook-order mismatch + ArcGIS goTo hardening; map click auto-opens Browse tab for detail view** |
-| 1 | 0 | **0.4** Map Container — ArcGIS WebMap integration | ✅ | High | Completed: real ArcGIS map + GraphicsLayer for highlights |
-| 2 | 0 | **0.5** Drag-and-Drop Reorder — Pinned layers | ✅ | Medium | Completed within Map Layers widget |
-| 3 | 0 | **Enable Map Layers Drag Reordering** | ✅ | Medium | Related to Task 0.5, may consolidate |
-| 4 | 0 | **Unify Map Layers Expansion Affordances** | ✅ | Medium | Filter icon as primary control; child accordion pattern; auto-expand on sidebar activation |
-| 5 | 0 | **Prevent Map Layers Widget Scrollbar from Pushing Content** | ✅ | Medium | Scrollbar overlays or reserves space; content width stays stable |
-| 6 | 0 | **Fix Tree Connector Lines Between Parent and Child Rows** | ✅ | Medium | Completed: moved connectors to outer wrapper, consistent #d1d5db |
-| 7 | 0 | **Remove Gray Divider in Left Sidebar** | ✅ | Low | Simple CSS removal |
-| 8 | 0 | **Refine Active Layer → Pinned Layer Transition** | ✅ | Low | Newly pinned row slides down from under header; section expands; no flash |
-| 9 | 0 | **0.6** Map Feature Highlight — View-on-map hover | 🟡 | Low | Requires map integration first |
-| 10 | 0 | **Left Sidebar: Visual Distinction Between Categories and Layers** | ✅ | Medium | Category banners (slate-100), Research Datasets at bottom with darker gray bg, no bottom border; layer cards with amber active state, blue pins |
-| 11 | 0 | **Right Sidebar: Active Layer Color Coordination & Flash** | ✅ | Medium | Yellow header (amber-50); flash animation on layer change (white→amber-100→amber-50, 600ms); coordinated with left sidebar and Map Layers widget |
-| 12 | 0 | **Fix DataOne Datasets Card Width in Left Sidebar** | ✅ | Low | DataOne shortcut row width matching; right padding; removed redundant left border |
-| 13 | 1 | **Fix iNaturalist Layer Icons & Loading** | ✅ | High | Replaced FeatureLayer with spatially-filtered GraphicsLayer; local filtering; removed dummy data |
-| 23 | 0 | **Data Source Adapter Pattern Refactor** | ✅ | Critical | Extract data-source logic into plugin architecture; enable parallel branch development |
-| 14 | 1 | **iNaturalist: Observation Card Click → Map Highlight + Detail View** | ✅ | High | Click obs card: highlight map marker, show tooltip, navigate to detail page |
-| 15 | 1 | **iNaturalist: Map Marker Click → Zoom + Detail View** | ✅ | High | Click map marker: zoom to observation, open detail view in right sidebar |
-| 16 | 1 | **iNaturalist: Remove Bookmark Button/Action** | ✅ | Low | Already stubbed; clean up unused bookmark logic from observation cards |
-| 17 | 1 | **iNaturalist: Compact Filter Section (Dropdown)** | ✅ | Medium | Filter Observations in Browse tab: tall list → dropdown; include Select All |
-| 18 | 1 | **iNaturalist: Rename Legend Widget Title** | ✅ | Low | Change "Filter Observations" → "iNaturalist Taxa" in floating legend widget |
-| 19 | 1 | **iNaturalist: Add Observation Search Bar** | ✅ | Medium | Search observations by common/scientific name in Browse tab |
-| 20 | 1 | **iNaturalist: Reduce Pagination to 10 per Page** | ✅ | Low | Change PAGE_SIZE from 20 → 10 in useINaturalistObservations |
-| 21 | 1 | **iNaturalist: Add Date Range Filter** | ✅ | Medium | Add start/end date pickers in Browse tab filter section |
-| 22 | 1 | **iNaturalist: Remember Last Active Tab** | ✅ | Low | Completed: per-layer tab memory in RightSidebar; restores Overview/Browse on layer reactivation |
-| 25 | 1 | **iNaturalist: Sync Filters with Map Layers Widget** | ✅ | Medium | Completed: date + taxon filters sync to Map Layers widget; Edit Filters opens Browse with pre-applied filters; fixed infinite loop + pin-transition sync |
-| 26 | 1 | **iNaturalist: Dynamic View Names from Filters** | ✅ | Low | Completed: child view names now auto-generate from active filters (taxa/date) |
-| 27 | 1 | **iNaturalist: User-Renamable Filtered Views** | ✅ | Low | Completed: child views can be renamed inline in Map Layers widget; custom names persist |
-| 14 | 0 | **Fix Map Layers Widget Drag Animation** | ✅ | Medium | Fixed: disabled @dnd-kit auto layout animations to prevent jarring transforms |
-| 24 | 0 | **0.9 Dynamic Layer Registry from Data Catalog Service** | 🟡 | **Critical** | Replace static layerRegistry with dynamic fetch from Data Catalog FeatureServer (~90+ real datasets, 14 categories); "Not Yet Implemented" toast for layers without adapters. **BLOCKS all parallel branches.** |
-| 25 | 3 | **Dendra: Tasks 3.1-3.4 — Station browse adapter** | ✅ | High | Service, context, map layer, sidebar shell, filters, station cards, detail view with datastream summaries. Next: Floating time series chart (3.5). |
-| 26 | 3 | **Dendra: Task 3.5 — Floating time series chart** | 🟡 | High | In progress. 3.5a ✅ (datastream click refresh), 3.5b ✅ (0-data fix), 3.5c ✅ (glassmorphism). Remaining: 3.5d sidebar polish. Reference: mockup 02d-browse-dendra.html |
-| 27 | 0/1/3 | **Save View / Save With Filters — sync with Map Layers** | ⚪ | Medium | **Prereq:** Check `git log` — v2/iNaturalist must be merged first. Use iNaturalist filter-persistence logic as reference. Dendra may need explicit save (not auto-save) due to Level 3 complexity. See task details below. |
-| 25 | 2 | **2.3–2.6** ANiML Browse tab — multi-dimensional filter system | ✅ | High | FilterSection (Species, Cameras), Select All/Clear All, live result count, ImageList. Iteration 2 Phase 1 MVP complete. |
-| 26 | 2 | **2.10** Right Sidebar Scrollbar — Prevent content shift | ✅ | Medium | Scrollbar should not move content when it appears (e.g., selecting species + camera). Use scrollbar-gutter: stable or overlay. |
-| 27 | 2 | **2.11** ANiML Date/Time Frame Filter — Above Species and Cameras | ✅ | Medium | DateFilterSection with date pickers + presets (Last 30d, 6mo, This Year, Last Year). Passes startDate/endDate to queryImageLabelsCached. Count fix: use actual images.length when fetched (not countLookups) so date-filtered counts match. |
-| 28 | 2 | **2.12** ANiML Image List — Pagination (Prev/Next Page) | ✅ | Medium | Completed (Feb 13): Scrollable list + Prev/Next underneath, expand-to-fill, visible scrollbar. |
-| 29 | 2 | **2.13** ANiML Image — Expanded View on Click | ✅ | Medium | Click thumbnail → larger view in sidebar; metadata; Back to list; auto-pagination across pages. |
-| 30 | 2 | **2.14** ANiML Expanded View — Arrow Key Navigation | ✅ | Low | Left/right arrow keys navigate; auto-paginate across page boundaries (20→21, 40→41). |
-| 31 | 2 | **2.7** ANiML Caching Strategy Investigation | ✅ | Low | Marked done for now; service/context caching in place. |
-| 32 | 2 | **2.15** ANiML Image Click → Highlight Camera on Map | ✅ | Medium | Completed: focusedDeploymentId in AnimlFilterContext; ArcGIS layerView.highlight(); onImageFocus from ImageList/expanded view. |
-| 33 | 2 | **2.16** ANiML Camera Badges — Numbered Icons for Query Results | ✅ | Medium | Completed: dynamic camera badge symbols on map; no-filter state shows plain icon; 0-result cameras show muted icon/no badge. |
-| 34 | 2 | **2.17** ANiML Species/Camera Counts Sync with Date Filter | ✅ | Medium | Completed: date-scoped count lookups in AnimlFilterContext; Species/Cameras/Legend counts now reflect active date range; no all-time fallback when date filter active. |
-| 35 | 2 | **2.8** ANiML SVG Icons for Map Markers + Tag Rows | ✅ | Medium | Replaced emoji camera markers with SVG camera symbols; added icon rows in ANiML legend and browse filters. |
+| # | Phase | Task | Status | Priority |
+|---|-------|------|--------|----------|
+| 24 | 0 | 0.9 Dynamic Layer Registry from Data Catalog Service | 🟡 | Critical |
+| 3.5 | 3 | Dendra: Floating time series (3.5d remaining) | 🟡 | High |
+| 3.7 | 3 | Dendra: Weather Stations layer investigation | 🟢 | Medium |
+| 3.9 | 3 | Dendra: Save With Filters button — behavior or removal | 🟢 | Medium |
+| 9 | 0 | 0.6 Map Feature Highlight | 🟡 | Low |
+| 33 | 2 | 2.16 ANiML Camera Badges | 🟢 | Medium |
+| 34 | 2 | 2.17 ANiML Loading Indicators | 🟢 | Medium |
 
-**Active tasks remaining:** 9  
-**🔴 Next (critical):** Task 24 — Dynamic Layer Registry from Data Catalog Service  
-**Recently completed:** **Task 35** (2.8 ANiML SVG Icons for Map Markers + Tag Rows) ✅ (Feb 16), **Task 33** (2.16 ANiML Camera Badges) ✅ (doc sync Feb 16), **Task 34** (2.17 ANiML Species/Camera Counts Sync with Date Filter) ✅ (Feb 13), **Task 32** (2.15 ANiML Image Click → Highlight Camera on Map) ✅ (Feb 13), **Task 31** (2.7 ANiML Caching Strategy — marked done) ✅ (Feb 13), **Tasks 29–30** (ANiML Expanded Image View + Arrow Key Nav + Auto-Pagination) ✅ (Feb 13), **Task 28** (ANiML Image List Pagination Prev/Next) ✅ (Feb 13), **Task 27** (ANiML Date/Time Frame Filter) ✅ (Feb 13), **Task 26** (Right Sidebar Scrollbar Fix) ✅ (Feb 13), **Phase 2 Tasks 2.3–2.6** (ANiML multi-dimensional filter) ✅ (Feb 13), **Dendra 3.5b** ✅ (Feb 13 — 0-data chart fix), **Dendra 3.1-3.4** ✅ (Feb 12), **Data Source Adapter Pattern** ✅ (Feb 12), Task 1 (ArcGIS Map Integration) ✅, Task 13 (iNaturalist Layer Icons & Loading) ✅, DFT-046 (Saved Items widget dropped, unified into Map Layers) ✅, "Mapped Item Layers" renamed to "Map Layers" ✅, Task 10 (Left Sidebar Visual Distinction) ✅, Task 11 (Right Sidebar Color & Flash) ✅, Task 12 (DataOne Card Width) ✅, Tree Connectors (Saved Items) ✅, Refine Active Layer → Pinned Layer Transition ✅, Remove Gray Divider ✅, Drag-and-Drop Reorder ✅, Scrollbar Fix ✅, Unify Expansion Affordances ✅, Multi-View Management ✅, Filter Panel Layout ✅, Tree Connectors (Map Layers) ✅
+**Phase 3 details:** [phase-3-dendra.md](01-implementation-plan/phases/phase-3-dendra.md)
+
+**Active tasks remaining:** 5  
+**🔴 Next (critical):** Task 24 — Dynamic Layer Registry from Data Catalog Service
+**Recently completed:** Task 2.17 (ANiML Loading Indicators) ✅ (Feb 16), Task 34 (Unified Loading Indicator Strategy) ✅, Task 3.9 ✅, Task 3.8 ✅, Task 3.7 ✅
 
 ---
 
@@ -400,6 +366,10 @@
     - **Completed (Feb 16):** Replaced emoji camera symbols with SVG camera glyphs in map layer rendering (base, badge, muted states). Added icon rows in ANiML legend and browse filter lists for species/camera scanability.
     - **Files:** `animlLayer.ts`, `AnimlLegendWidget.tsx`, `FilterSection.tsx`, `AnimlBrowseTab.tsx`, `phase-2-animl.md`
 
+  - [x] **Task 2.17: iNaturalist-style loading indicators for ANiML** ✅
+    - **Completed (Feb 16):** MapCenterLoadingOverlay with "Loading camera trap data..." when ANiML is active; Map Layers (ActiveLayerSection, PinnedLayerRow) and AnimlLegendWidget use shared LoadingPrimitives.
+    - **Files:** `MapContainer.tsx`, `AnimlLegendWidget.tsx`
+
   - [ ] **Future/Low Priority: Save Observation → Create Filtered View**
     - **Goal:** Clicking "Save" on an observation creates a new child view in Map Layers widget filtered to that specific observation (by ID or name).
     - **Implementation:** Wire "Save" action to `createNewView(pinnedId)` in LayerContext. Set filter to `observation_id = {id}`. Complex — requires linking browse actions to Map Layers state.
@@ -502,6 +472,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 16, 2026 | Phase 2 | ✅ **Task 2.17 complete: iNaturalist-style loading indicators for ANiML.** MapContainer shows "Loading camera trap data..." overlay when animl active; Map Layers and AnimlLegendWidget use shared LoadingPrimitives; loadingTheme.inlineSpinner for legend. | Claude |
 | Feb 16, 2026 | All | **Phase restructure:** Inserted new Phase 6 (TNC ArcGIS Feature Services) with 10 tasks. Renumbered old Phase 6 (Polish) to Phase 7. Service-level activation pattern for multi-layer TNC services with layer switcher in right sidebar. Generic filter UI (field/operator/value) for MVP. See `docs/IMPLEMENTATION/phases/phase-6-tnc-arcgis.md` | Claude |
 | Feb 16, 2026 | Phase 2 | ✅ **Task 35 (2.8) complete: ANiML SVG icons for map markers + tag rows.** Replaced emoji map markers with SVG camera symbols in `animlLayer.ts` (base, badge, muted). Added icon rows in ANiML legend and browse filter lists. Updated phase-2 task status + acceptance criteria. | Claude |
 | Feb 16, 2026 | Phase 3 | ✅ **Task 3.9 complete: Dendra Save With Filters — distinct behavior.** Renamed to "Update Current View" (station-level sync) and "Save as New View" (creates filtered child view, activates it). Added `createDendraFilteredView()` in LayerContext. Files: StationDetailView.tsx, LayerContext.tsx. | Claude |
