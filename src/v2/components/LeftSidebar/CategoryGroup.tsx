@@ -43,9 +43,7 @@ export function CategoryGroup({ category, filteredLayerIds, isSubcategory }: Cat
   const { activeLayer, activateLayer } = useLayers();
 
   const totalVisible = countMatchingLayers(category, filteredLayerIds);
-
-  // Don't render if search is active and no layers match in this tree
-  if (filteredLayerIds && totalVisible === 0) return null;
+  const shouldHideForSearch = !!filteredLayerIds && totalVisible === 0;
 
   const toggle = useCallback(() => setIsExpanded(prev => !prev), []);
   const directLayers = visibleLayers(category.layers, filteredLayerIds);
@@ -87,6 +85,9 @@ export function CategoryGroup({ category, filteredLayerIds, isSubcategory }: Cat
     ? 'bg-gray-100 hover:bg-gray-200'
     : 'bg-slate-100 hover:bg-slate-200';
   const borderClasses = isSubcategory ? '' : 'border-b border-gray-300';
+
+  // Keep hook call order stable; conditionally render only after hooks run.
+  if (shouldHideForSearch) return null;
 
   return (
     <div id={`category-${category.id}`} role="group" className={borderClasses}>
