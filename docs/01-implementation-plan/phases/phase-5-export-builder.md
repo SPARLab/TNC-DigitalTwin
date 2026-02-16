@@ -1,7 +1,7 @@
 # Phase 5: Export Builder
 
 **Status:** 🟡 In Progress  
-**Progress:** 1 / 4 tasks  
+**Progress:** 2 / 4 tasks  
 **Branch:** `v2/export`  
 **Depends On:** Phases 1-4 (all data sources)  
 **Owner:** TBD
@@ -15,7 +15,7 @@
 
 ## Phase Goal
 
-Implement the Export Builder that brings together all pinned layers and bookmarked features into a unified export workflow.
+Implement the Export Builder that brings together all pinned layers and their active filter state into a unified export workflow.
 
 ## Reference Documents
 
@@ -27,8 +27,8 @@ Implement the Export Builder that brings together all pinned layers and bookmark
 ## Key Paradigm Notes
 
 - Export Builder shows ALL pinned layers with their active queries
-- Each layer offers: export filtered results, export bookmarked only, or skip
-- Bookmarks with Level 3 filters show their filters (editable)
+- Each layer exports filtered results only (no bookmark export mode)
+- Per-layer section shows active filter summary, matching result count, and format options
 - Export summary aggregates all selections with estimated size
 - Two export actions: "Export ZIP" and "Generate Links"
 
@@ -39,7 +39,7 @@ Implement the Export Builder that brings together all pinned layers and bookmark
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
 | 5.1 | Create Export Builder modal shell | 🟢 Complete | Claude | Modal shell wired to global header cart button with scrollable body + fixed footer |
-| 5.2 | Implement per-layer export sections | ⚪ Not Started | | |
+| 5.2 | Implement per-layer export sections | 🟢 Complete | Claude | Added `LayerExportSection`; wired per-layer filter summary, result count, and source-specific format options into `ExportBuilderModal` (filtered-only model) |
 | 5.3 | Implement export summary and size estimation | ⚪ Not Started | | |
 | 5.4 | Implement export actions (ZIP / Links) | ⚪ Not Started | | |
 
@@ -62,7 +62,7 @@ Implement the Export Builder that brings together all pinned layers and bookmark
 **Acceptance Criteria:**
 - [x] Modal opens from "Export All" shopping cart button in global header
 - [x] Modal is full-screen or large overlay
-- [x] Header shows count: "You have X pinned layers and Y bookmarked features"
+- [x] Header shows export context count for pinned layers
 - [x] Close button works
 - [x] Scrollable content area for many layers
 - [x] Fixed footer with action buttons
@@ -76,15 +76,15 @@ Implement the Export Builder that brings together all pinned layers and bookmark
 
 ### 5.2: Implement Per-Layer Export Sections
 
-**Goal:** For each pinned layer, show export options.
+**Goal:** For each pinned layer, show filtered export context and format options.
 
 **Acceptance Criteria:**
-- [ ] Each layer gets its own section/card
-- [ ] Section shows: layer name, current query summary
-- [ ] Radio options: "Export filtered results" / "Export bookmarked only" / "Skip"
-- [ ] If bookmarks exist for this layer, show them with checkboxes
-- [ ] Bookmarks with Level 3 filters show "Change Filter" button
-- [ ] Data-type-specific format options (CSV, GeoJSON, images, etc.)
+- [x] Each layer gets its own section/card
+- [x] Section shows: layer name, current query summary
+- [x] Show filtered-results-only export mode (no bookmarked-only / skip options)
+- [x] Show matching result count for current filter state
+- [x] Remove bookmark-specific controls from export sections
+- [x] Data-type-specific format options (CSV, GeoJSON, images, etc.)
 
 **Per-Layer Content:**
 | Data Source | Format Options | Special Considerations |
@@ -98,7 +98,6 @@ Implement the Export Builder that brings together all pinned layers and bookmark
 
 **Files to Create:**
 - `src/v2/components/ExportBuilder/LayerExportSection.tsx`
-- `src/v2/components/ExportBuilder/BookmarkExportItem.tsx`
 
 ---
 
@@ -140,7 +139,7 @@ Estimated total: ~52 MB
 
 **Technical Notes:**
 - ZIP generation may require server-side processing
-- For V1, "Generate Links" might just copy bookmark URLs
+- For V1, "Generate Links" can encode active query/filter state per pinned layer
 - Consider progressive download for large exports
 
 ---
@@ -176,6 +175,7 @@ Estimated total: ~52 MB
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 16, 2026 | 5.2 | Revised 5.2 to filtered-only model: removed bookmark export mode and bookmark item controls from `ExportBuilderModal`; sections now focus on active query summary, result count, and format options | Claude |
 | Feb 16, 2026 | 5.1 | Implemented Export Builder modal shell (`ExportBuilderModal`, `ExportBuilderHeader`, `ExportBuilderFooter`) and wired shopping cart button in `V2Header` to open/close modal in `V2App` | Claude |
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 | Jan 29, 2026 | 5.1 | Updated with DFT-002 resolution (modal opens from global header button) | Will + Claude |

@@ -2,13 +2,11 @@ import { Package, X } from 'lucide-react';
 
 interface ExportBuilderHeaderProps {
   pinnedLayerCount: number;
-  bookmarkedFeatureCount: number;
   onClose: () => void;
 }
 
 export function ExportBuilderHeader({
   pinnedLayerCount,
-  bookmarkedFeatureCount,
   onClose,
 }: ExportBuilderHeaderProps) {
   return (
@@ -32,15 +30,11 @@ export function ExportBuilderHeader({
             Configure what to include in your export.
           </p>
           <p id="export-builder-counts" className="text-xs text-slate-600">
-            You have{' '}
+            Exporting{' '}
             <span id="export-builder-pinned-count" className="font-semibold text-blue-700">
               {pinnedLayerCount} pinned {pinnedLayerCount === 1 ? 'layer' : 'layers'}
             </span>{' '}
-            and{' '}
-            <span id="export-builder-bookmarked-count" className="font-semibold text-amber-700">
-              {bookmarkedFeatureCount} bookmarked {bookmarkedFeatureCount === 1 ? 'feature' : 'features'}
-            </span>
-            .
+            using active filter state.
           </p>
         </div>
       </div>

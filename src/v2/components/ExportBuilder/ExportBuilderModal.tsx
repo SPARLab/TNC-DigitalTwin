@@ -1,26 +1,108 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Info } from 'lucide-react';
 import { useLayers } from '../../context/LayerContext';
+import { useCatalog } from '../../context/CatalogContext';
+import type { DataSource } from '../../types';
 import { ExportBuilderHeader } from './ExportBuilderHeader';
 import { ExportBuilderFooter } from './ExportBuilderFooter';
+import {
+  LayerExportSection,
+  type ExportFormatOption,
+} from './LayerExportSection';
 
 interface ExportBuilderModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-function estimateBookmarkedFeatureCount(): number {
-  return 0;
+interface LayerExportState {
+  selectedFormatIds: string[];
+}
+
+function getFormatOptionsByDataSource(dataSource: DataSource): ExportFormatOption[] {
+  switch (dataSource) {
+    case 'inaturalist':
+      return [
+        { id: 'csv', label: 'CSV' },
+        { id: 'geojson', label: 'GeoJSON' },
+      ];
+    case 'animl':
+      return [
+        { id: 'metadata', label: 'Metadata' },
+        { id: 'images', label: 'Images' },
+        { id: 'thumbnails', label: 'Thumbnails only' },
+      ];
+    case 'dendra':
+      return [
+        { id: 'metadata', label: 'Metadata' },
+        { id: 'datastream-csv', label: 'Datastream CSV' },
+      ];
+    case 'dataone':
+      return [
+        { id: 'metadata', label: 'Metadata' },
+        { id: 'links', label: 'File links' },
+        { id: 'files', label: 'Download files' },
+      ];
+    default:
+      return [{ id: 'metadata', label: 'Metadata' }];
+  }
+}
+
+function getDefaultSelectedFormatIds(dataSource: DataSource): string[] {
+  switch (dataSource) {
+    case 'inaturalist':
+      return ['csv'];
+    case 'animl':
+      return ['metadata', 'images'];
+    case 'dendra':
+      return ['metadata', 'datastream-csv'];
+    case 'dataone':
+      return ['metadata', 'links'];
+    default:
+      return ['metadata'];
+  }
+}
+
+function getLayerQuerySummary(layer: {
+  filterSummary?: string;
+  views?: Array<{ isVisible: boolean; filterSummary?: string }>;
+}): string | undefined {
+  const visibleView = layer.views?.find(view => view.isVisible);
+  return visibleView?.filterSummary || layer.filterSummary;
 }
 
 export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps) {
   const { pinnedLayers } = useLayers();
+  const { layerMap } = useCatalog();
+  const [layerExportState, setLayerExportState] = useState<Record<string, LayerExportState>>({});
 
   const pinnedLayerCount = pinnedLayers.length;
-  const bookmarkedFeatureCount = useMemo(
-    () => estimateBookmarkedFeatureCount(),
-    [],
+  const layerDataSourceById = useMemo<Record<string, DataSource>>(
+    () =>
+      pinnedLayers.reduce<Record<string, DataSource>>((acc, layer) => {
+        const layerMetadata = layerMap.get(layer.layerId);
+        acc[layer.id] = layerMetadata?.dataSource || 'tnc-arcgis';
+        return acc;
+      }, {}),
+    [layerMap, pinnedLayers],
   );
+
+  useEffect(() => {
+    setLayerExportState((previous) => {
+      const next: Record<string, LayerExportState> = {};
+
+      for (const layer of pinnedLayers) {
+        const dataSource = layerDataSourceById[layer.id] || 'tnc-arcgis';
+        const existing = previous[layer.id];
+
+        next[layer.id] = {
+          selectedFormatIds: existing?.selectedFormatIds || getDefaultSelectedFormatIds(dataSource),
+        };
+      }
+
+      return next;
+    });
+  }, [layerDataSourceById, pinnedLayers]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -64,48 +146,66 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
       >
         <ExportBuilderHeader
           pinnedLayerCount={pinnedLayerCount}
-          bookmarkedFeatureCount={bookmarkedFeatureCount}
           onClose={onClose}
         />
 
         <div id="export-builder-content-scroll-area" className="flex-1 overflow-y-auto px-6 py-5">
           <div
-            id="export-builder-shell-ready-card"
+            id="export-builder-layer-intro-card"
             className="rounded-xl border border-slate-200 bg-slate-50 p-4"
           >
-            <div id="export-builder-shell-ready-header" className="flex items-start gap-3">
-              <Info id="export-builder-shell-ready-icon" className="mt-0.5 h-4 w-4 text-slate-500" />
-              <div id="export-builder-shell-ready-copy" className="space-y-2">
-                <p id="export-builder-shell-ready-title" className="text-sm font-semibold text-slate-700">
-                  Export Builder shell is ready.
+            <div id="export-builder-layer-intro-header" className="flex items-start gap-3">
+              <Info id="export-builder-layer-intro-icon" className="mt-0.5 h-4 w-4 text-slate-500" />
+              <div id="export-builder-layer-intro-copy" className="space-y-2">
+                <p id="export-builder-layer-intro-title" className="text-sm font-semibold text-slate-700">
+                  Per-layer export options
                 </p>
-                <p id="export-builder-shell-ready-description" className="text-sm text-slate-600">
-                  The modal scaffolding is wired to the global header cart button with a scrollable body and a fixed action footer. Next steps will add per-layer export cards, summary calculations, and real export handlers.
+                <p id="export-builder-layer-intro-description" className="text-sm text-slate-600">
+                  Each pinned layer exports using its active filter state. Review the query summary,
+                  result count, and choose which formats to include.
                 </p>
               </div>
             </div>
           </div>
 
-          <div id="export-builder-pinned-layer-preview-section" className="mt-4 space-y-2">
-            <h3 id="export-builder-pinned-layer-preview-title" className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Pinned layers currently in session
-            </h3>
+          <div id="export-builder-layer-sections" className="mt-4 space-y-4">
             {pinnedLayers.length === 0 ? (
-              <p id="export-builder-empty-pinned-state" className="text-sm text-slate-500">
+              <p id="export-builder-empty-layer-sections" className="text-sm text-slate-500">
                 No pinned layers yet. Pin a layer in the left sidebar to include it in exports.
               </p>
             ) : (
-              <ul id="export-builder-pinned-layer-list" className="space-y-2">
+              <div id="export-builder-layer-sections-list" className="space-y-4">
                 {pinnedLayers.map((layer) => (
-                  <li
-                    id={`export-builder-pinned-layer-item-${layer.id}`}
+                  <LayerExportSection
                     key={layer.id}
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
-                  >
-                    {layer.name}
-                  </li>
+                    layerId={layer.id}
+                    layerName={layer.name}
+                    dataSource={layerDataSourceById[layer.id] || 'tnc-arcgis'}
+                    querySummary={getLayerQuerySummary(layer)}
+                    filteredResultCount={layer.resultCount}
+                    formatOptions={getFormatOptionsByDataSource(layerDataSourceById[layer.id] || 'tnc-arcgis')}
+                    selectedFormatIds={layerExportState[layer.id]?.selectedFormatIds || []}
+                    onToggleFormat={(formatId) => {
+                      setLayerExportState((previous) => {
+                        const current = previous[layer.id] || {
+                          selectedFormatIds: getDefaultSelectedFormatIds(layerDataSourceById[layer.id] || 'tnc-arcgis'),
+                        };
+
+                        const isSelected = current.selectedFormatIds.includes(formatId);
+                        return {
+                          ...previous,
+                          [layer.id]: {
+                            ...current,
+                            selectedFormatIds: isSelected
+                              ? current.selectedFormatIds.filter((id) => id !== formatId)
+                              : [...current.selectedFormatIds, formatId],
+                          },
+                        };
+                      });
+                    }}
+                  />
                 ))}
-              </ul>
+              </div>
             )}
           </div>
         </div>
