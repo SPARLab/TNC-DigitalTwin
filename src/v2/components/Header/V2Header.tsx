@@ -6,7 +6,11 @@ import { ShoppingCart } from 'lucide-react';
 import { useLayers } from '../../context/LayerContext';
 // NOTE: useBookmarks removed — Saved Items widget merged into Map Layers (Feb 11 decision)
 
-export function V2Header() {
+interface V2HeaderProps {
+  onOpenExportBuilder?: () => void;
+}
+
+export function V2Header({ onOpenExportBuilder }: V2HeaderProps) {
   const { pinnedLayers } = useLayers();
   const cartCount = pinnedLayers.length;
 
@@ -36,6 +40,8 @@ export function V2Header() {
         {/* Shopping cart (DFT-002) */}
         <button
           id="export-cart-button"
+          type="button"
+          onClick={onOpenExportBuilder}
           className="relative p-2 rounded-md hover:bg-white/10 transition-colors"
           title={`Export cart: ${cartCount} items`}
           aria-label={`Export cart with ${cartCount} items`}

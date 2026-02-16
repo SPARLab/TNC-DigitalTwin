@@ -1,7 +1,7 @@
 # Phase 5: Export Builder
 
-**Status:** ⚪ Not Started  
-**Progress:** 0 / 4 tasks  
+**Status:** 🟡 In Progress  
+**Progress:** 1 / 4 tasks  
 **Branch:** `v2/export`  
 **Depends On:** Phases 1-4 (all data sources)  
 **Owner:** TBD
@@ -38,7 +38,7 @@ Implement the Export Builder that brings together all pinned layers and bookmark
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
-| 5.1 | Create Export Builder modal shell | ⚪ Not Started | | |
+| 5.1 | Create Export Builder modal shell | 🟢 Complete | Claude | Modal shell wired to global header cart button with scrollable body + fixed footer |
 | 5.2 | Implement per-layer export sections | ⚪ Not Started | | |
 | 5.3 | Implement export summary and size estimation | ⚪ Not Started | | |
 | 5.4 | Implement export actions (ZIP / Links) | ⚪ Not Started | | |
@@ -60,12 +60,12 @@ Implement the Export Builder that brings together all pinned layers and bookmark
 **Design Decision (Jan 29, 2026):** Resolved DFT-002 — Modal opens from shopping cart button in global header (top-right), not from bookmark widget.
 
 **Acceptance Criteria:**
-- [ ] Modal opens from "Export All" shopping cart button in global header
-- [ ] Modal is full-screen or large overlay
-- [ ] Header shows count: "You have X pinned layers and Y bookmarked features"
-- [ ] Close button works
-- [ ] Scrollable content area for many layers
-- [ ] Fixed footer with action buttons
+- [x] Modal opens from "Export All" shopping cart button in global header
+- [x] Modal is full-screen or large overlay
+- [x] Header shows count: "You have X pinned layers and Y bookmarked features"
+- [x] Close button works
+- [x] Scrollable content area for many layers
+- [x] Fixed footer with action buttons
 
 **Files to Create:**
 - `src/v2/components/ExportBuilder/ExportBuilderModal.tsx`
@@ -176,6 +176,7 @@ Estimated total: ~52 MB
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 16, 2026 | 5.1 | Implemented Export Builder modal shell (`ExportBuilderModal`, `ExportBuilderHeader`, `ExportBuilderFooter`) and wired shopping cart button in `V2Header` to open/close modal in `V2App` | Claude |
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 | Jan 29, 2026 | 5.1 | Updated with DFT-002 resolution (modal opens from global header button) | Will + Claude |
 
