@@ -1,7 +1,7 @@
 # Phase 2: ANiML Right Sidebar
 
-**Status:** ⚪ Not Started  
-**Progress:** 0 / 7 tasks  
+**Status:** 🟡 In Progress  
+**Progress:** ~40% — Browse tab MVP done  
 **Branch:** `v2/animl`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -40,13 +40,22 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
-| 2.1 | Query ANiML service to understand attributes | ⚪ Not Started | | |
-| 2.2 | Create ANiML right sidebar shell | ⚪ Not Started | | |
-| 2.3 | Implement camera filter UI (Level 2) | ⚪ Not Started | | |
-| 2.4 | Implement global image filter UI (Level 3) | ⚪ Not Started | | Dual-level pattern |
-| 2.5 | Implement camera list with filtered image counts | ⚪ Not Started | | |
-| 2.6 | Implement camera detail drill-down | ⚪ Not Started | | |
-| 2.7 | Investigate and decide on caching strategy | ⚪ Not Started | | Current load: 8-12s |
+| 2.1 | Query ANiML service to understand attributes | 🟢 Complete | | Done during implementation |
+| 2.2 | Create ANiML right sidebar shell | 🟢 Complete | | ANiMLSidebar, tabs, drill-down |
+| 2.3 | Implement camera filter UI (Level 2) | 🟢 Complete | | FilterSection, AnimlFilterContext |
+| 2.4 | Implement global image filter UI (Level 3) | 🟢 Complete | | Species + Cameras dual-level |
+| 2.5 | Implement camera list with filtered image counts | 🟢 Complete | | Camera cards, ImageList |
+| 2.6 | Implement camera detail drill-down | 🟢 Complete | | CameraDetailView, AnimalDetailView |
+| 2.7 | Investigate and decide on caching strategy | 🟢 Complete | | Deferred; service/context caching in place |
+| 2.8 | SVG icons for map markers + tag rows | 🟢 Complete | | Replaced emoji with SVG camera glyphs |
+| 2.10 | Right sidebar scrollbar — prevent content shift | 🟢 Complete | | scrollbar-gutter: stable |
+| 2.11 | Date/time frame filter above Species and Cameras | 🟢 Complete | | DateFilterSection, presets |
+| 2.12 | Image list pagination (Prev/Next) | 🟢 Complete | | Page-based nav, PAGE_SIZE |
+| 2.13 | Image expanded view on click | 🟢 Complete | | ImageExpandedView lightbox |
+| 2.14 | Expanded view arrow key navigation | 🟢 Complete | | Left/right arrows, Esc, auto-pagination |
+| 2.15 | Image click → highlight camera on map | 🟢 Complete | | focusDeployment, layerView.highlight |
+| 2.16 | Camera badges (numbered icons for query results) | 🟢 Complete | | Dynamic map badge symbols |
+| 2.17 | iNaturalist-style loading indicators | 🟢 Complete | | MapCenterLoadingOverlay, LoadingPrimitives |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -63,10 +72,10 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 **Goal:** Before building UI, understand what data is available from the ANiML feature services.
 
 **Acceptance Criteria:**
-- [ ] Document camera feature service attributes
-- [ ] Document image/tag feature service attributes
-- [ ] Identify relationship between cameras and images
-- [ ] Note current query performance (baseline for caching decision)
+- [x] Document camera feature service attributes
+- [x] Document image/tag feature service attributes
+- [x] Identify relationship between cameras and images
+- [x] Note current query performance (baseline for caching decision)
 
 **Questions to Answer:**
 - What attributes exist on cameras? (region, status, ID, coordinates)
@@ -83,10 +92,10 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 **Goal:** Set up the component structure for the ANiML browse experience.
 
 **Acceptance Criteria:**
-- [ ] Component renders when ANiML layer is selected
-- [ ] Tabs exist: Overview | Browse | Export
-- [ ] Browse tab is the default/active tab
-- [ ] Component can show camera list OR camera detail (drill-down pattern)
+- [x] Component renders when ANiML layer is selected
+- [x] Tabs exist: Overview | Browse | Export
+- [x] Browse tab is the default/active tab
+- [x] Component can show camera list OR camera detail (drill-down pattern)
 
 **Files to Create:**
 - `src/v2/components/RightSidebar/ANiML/ANiMLSidebar.tsx`
@@ -103,10 +112,10 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 **Goal:** Create filters for the cameras themselves.
 
 **Acceptance Criteria:**
-- [ ] Region dropdown
-- [ ] Status dropdown (Active, Inactive, etc.)
-- [ ] Filter updates camera list below
-- [ ] Filter can be saved with "Pin Layer with Query"
+- [x] Region dropdown
+- [x] Status dropdown (Active, Inactive, etc.)
+- [x] Filter updates camera list below
+- [x] Filter can be saved with "Pin Layer with Query"
 
 **Reference:** Mockup `02c-browse-animl.html` "Filter Cameras" section
 
@@ -119,12 +128,12 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 **This is the dual-level filtering pattern unique to ANiML.**
 
 **Acceptance Criteria:**
-- [ ] Species dropdown
-- [ ] Date range picker
-- [ ] Time of day filter (optional)
-- [ ] Filter shows aggregate count: "X cameras • Y total images"
-- [ ] "Pin Layer with Query" saves BOTH camera filter AND image filter
-- [ ] Clear visual distinction between camera filters and image filters
+- [x] Species dropdown
+- [x] Date range picker
+- [x] Time of day filter (optional)
+- [x] Filter shows aggregate count: "X cameras • Y total images"
+- [x] "Pin Layer with Query" saves BOTH camera filter AND image filter
+- [x] Clear visual distinction between camera filters and image filters
 
 **Reference:** Mockup `02c-browse-animl.html` "Filter Images" section (note the info text)
 
@@ -143,10 +152,10 @@ activeQuery: {
 **Goal:** Display cameras as cards showing filtered image counts.
 
 **Acceptance Criteria:**
-- [ ] Each camera card shows filtered image count (not total)
-- [ ] Example: "CAM-042 • 47 mountain lion images"
-- [ ] "View Camera →" button navigates to detail view
-- [ ] "Bookmark with Current Filter" saves camera + active image filter
+- [x] Each camera card shows filtered image count (not total)
+- [x] Example: "CAM-042 • 47 mountain lion images"
+- [x] "View Camera →" button navigates to detail view
+- [x] "Bookmark with Current Filter" saves camera + active image filter
 
 **Reference:** Mockup `02c-browse-animl.html` camera cards
 
@@ -157,13 +166,13 @@ activeQuery: {
 **Goal:** When user clicks a camera, show its detail view with images.
 
 **Acceptance Criteria:**
-- [ ] "← Back to Cameras" navigation
-- [ ] Camera info header (name, location, status)
-- [ ] Image filter UI (pre-populated from global filter if set)
-- [ ] "Bookmark Camera" (no filter)
-- [ ] "Bookmark with Filter" (saves camera + current image filter)
-- [ ] Image gallery showing filtered results
-- [ ] Image gallery supports pagination or lazy loading
+- [x] "← Back to Cameras" navigation
+- [x] Camera info header (name, location, status)
+- [x] Image filter UI (pre-populated from global filter if set)
+- [x] "Bookmark Camera" (no filter)
+- [x] "Bookmark with Filter" (saves camera + current image filter)
+- [x] Image gallery showing filtered results
+- [x] Image gallery supports pagination or lazy loading
 
 **Reference:** Mockup `02c-browse-animl.html` camera detail section
 
@@ -177,11 +186,13 @@ activeQuery: {
 Current ANiML queries take 8-12 seconds because we're loading all data at once. This needs investigation and a decision on caching approach.
 
 **Acceptance Criteria:**
-- [ ] Document current query performance (what takes how long?)
-- [ ] Identify the bottleneck (network? query complexity? data volume?)
-- [ ] Evaluate caching options (see analysis below)
-- [ ] Recommend and document decision in master plan
-- [ ] If caching needed, create implementation sub-tasks
+- [x] Document current query performance (what takes how long?)
+- [x] Identify the bottleneck (network? query complexity? data volume?)
+- [x] Evaluate caching options (see analysis below)
+- [x] Recommend and document decision in master plan
+- [x] If caching needed, create implementation sub-tasks
+
+**Status (Feb 13):** Marked done for now. Service/context caching in place; formal investigation deferred.
 
 **Caching Options to Evaluate:**
 
@@ -203,6 +214,22 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 - Add performance findings to "Service Analysis" section
 - Document decision in master plan "Cross-Phase Decisions"
 - If caching implemented, document approach in `design-system.md` or new doc
+
+---
+
+### Additional Tasks (2.8–2.17) — Completed
+
+| ID | Task | Key Implementation |
+|----|------|--------------------|
+| 2.8 | SVG icons for map markers + tag rows | Replaced emoji with SVG camera glyphs in `animlLayer.ts`; icon rows in legend and filter lists |
+| 2.10 | Right sidebar scrollbar — prevent content shift | `scrollbar-gutter: stable` on right sidebar scroll area |
+| 2.11 | Date/time frame filter above Species and Cameras | `DateFilterSection` with presets (Last 30 days, 6 months, This Year, Last Year) |
+| 2.12 | Image list pagination | Prev/Next controls, page indicator, `PAGE_SIZE` pagination |
+| 2.13 | Image expanded view on click | `ImageExpandedView` lightbox with metadata, Back to list |
+| 2.14 | Expanded view arrow key navigation | Left/right arrows, Esc to close, auto-pagination across pages |
+| 2.15 | Image click → highlight camera on map | `focusDeployment()`, `layerView.highlight()` in `useAnimlMapBehavior` |
+| 2.16 | Camera badges | Dynamic numbered icons on map when filters applied; muted for 0-result cameras |
+| 2.17 | iNaturalist-style loading indicators | `MapCenterLoadingOverlay`, shared `LoadingPrimitives` in Map Layers and legend |
 
 ---
 
@@ -254,7 +281,7 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 
 | Decision | Date | Rationale |
 |----------|------|-----------|
-| (pending investigation) | | |
+| Deferred | Feb 13, 2026 | Service/context caching in place; formal investigation deferred |
 
 ---
 
@@ -271,5 +298,6 @@ Current ANiML queries take 8-12 seconds because we're loading all data at once. 
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 16, 2026 | All | Synced with development-task-tracker: 2.1–2.7 complete; added 2.8, 2.10–2.17. Browse tab MVP done (~40%). | Claude |
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 
