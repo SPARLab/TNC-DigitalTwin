@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 2 / 10 tasks  
+**Progress:** 3 / 10 tasks  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry)  
 **Owner:** TBD
@@ -31,7 +31,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 |----|--------|--------------------------|-------------------|-------|
 | **6.1** | 🟢 | 2026-02-16 13:01 PST | Extend Data Model for Multi-Layer Services | Added multi-layer metadata fields/types and service-group detection in `useCatalogRegistry`; single-layer behavior preserved |
 | **6.2** | 🟢 | 2026-02-16 13:07 PST | Left Sidebar: Collapsible Service Groups | Added `ServiceGroup` + controls-only child rows, service activation, 300ms expand/collapse, Arrow Left/Right + ARIA attributes |
-| **6.3** | ⚪ | — | TNC ArcGIS Service Module | Service URL builder, schema fetch, field list query |
+| **6.3** | 🟢 | 2026-02-16 13:11 PST | TNC ArcGIS Service Module | Added `src/v2/services/tncArcgisService.ts` with service URL builder, schema fetch, feature query, and WHERE validation helpers with malformed/network/ArcGIS error handling |
 | **6.4** | ⚪ | — | TNC ArcGIS Adapter Shell | Create adapter skeleton with warmCache, RightSidebarContent, createMapLayer |
 | **6.5** | ⚪ | — | Right Sidebar: Service Overview (Multi-Layer) | Show service description, layer dropdown, "Browse {Layer}" and "Pin {Layer}" buttons |
 | **6.6** | ⚪ | — | Right Sidebar: Generic Filter UI (MVP) | Field/Operator/Value rows, "Add Filter", "Preview Results", WHERE clause builder |
@@ -352,11 +352,11 @@ export async function validateWhereClause(url: string, where: string): Promise<{
 ```
 
 **Acceptance Criteria:**
-- [ ] `buildServiceUrl` constructs correct URLs for FeatureServer/MapServer/ImageServer
-- [ ] `fetchLayerSchema` returns field list, geometry type, extent
-- [ ] `queryFeatures` executes queries with WHERE clause
-- [ ] `validateWhereClause` detects syntax errors before pin
-- [ ] Error handling for network failures, malformed responses
+- [x] `buildServiceUrl` constructs correct URLs for FeatureServer/MapServer/ImageServer
+- [x] `fetchLayerSchema` returns field list, geometry type, extent
+- [x] `queryFeatures` executes queries with WHERE clause
+- [x] `validateWhereClause` detects syntax errors before pin
+- [x] Error handling for network failures, malformed responses
 
 **Estimated Time:** 3-4 hours
 
@@ -849,6 +849,7 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 | Date | Task | Change | By |
 |------|------|--------|-----|
 | Feb 16, 2026 | - | Created Phase 6 document for TNC ArcGIS Feature Services. Renumbered old Phase 6 (Polish) to Phase 7. | Claude |
+| Feb 16, 2026 | 6.3 | Added `src/v2/services/tncArcgisService.ts` with `buildServiceUrl`, `fetchLayerSchema`, `queryFeatures`, and `validateWhereClause`; updated task status and checklist. | Codex |
 
 ---
 
