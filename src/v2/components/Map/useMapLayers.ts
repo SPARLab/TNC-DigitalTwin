@@ -68,7 +68,7 @@ export function useMapLayers() {
       shouldBeOnMap.set(p.layerId, { name: p.name, visible: p.isVisible });
     }
     // Active but not pinned → always visible (DFT-021: clicking makes active AND visible)
-    if (activeLayer && !shouldBeOnMap.has(activeLayer.layerId)) {
+    if (activeLayer && !activeLayer.isService && !shouldBeOnMap.has(activeLayer.layerId)) {
       shouldBeOnMap.set(activeLayer.layerId, { name: activeLayer.name, visible: true });
     }
 
@@ -112,7 +112,7 @@ export function useMapLayers() {
       if (arcLayer) arcLayer.visible = pinned.isVisible;
     }
     // Active but not pinned: ensure visible
-    if (activeLayer) {
+    if (activeLayer && !activeLayer.isService) {
       const isPinned = pinnedLayers.some(p => p.layerId === activeLayer.layerId);
       if (!isPinned) {
         const arcLayer = managed.get(activeLayer.layerId);
@@ -171,6 +171,7 @@ export function useMapLayers() {
   // Toast for activating unimplemented layers (browsing, not yet pinned)
   useEffect(() => {
     if (!activeLayer) return;
+    if (activeLayer.isService) return;
     if (IMPLEMENTED_LAYERS.has(activeLayer.layerId)) return;
     // Only toast if not pinned (pinned layers toast in the add-layer effect)
     if (pinnedLayers.some(p => p.layerId === activeLayer.layerId)) return;

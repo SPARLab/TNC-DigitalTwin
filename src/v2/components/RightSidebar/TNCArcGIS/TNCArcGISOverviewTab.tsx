@@ -14,10 +14,8 @@ function normalizeDescription(value: string | undefined): string {
 export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOverviewTabProps) {
   const {
     activeLayer,
-    activateLayer,
-    pinLayer,
     isLayerPinned,
-    setActiveServiceSubLayer,
+    pinLayer,
   } = useLayers();
   const { layerMap } = useCatalog();
   const activeCatalogLayer = activeLayer ? layerMap.get(activeLayer.layerId) : undefined;
@@ -27,16 +25,12 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
     [activeCatalogLayer],
   );
   const isServiceOverview = !!(activeLayer?.isService && siblingLayers.length > 0);
-  const selectedLayerId = activeLayer?.selectedSubLayerId ?? siblingLayers[0]?.id;
-  const selectedLayer = siblingLayers.find(layer => layer.id === selectedLayerId) ?? siblingLayers[0];
 
   const description = activeCatalogLayer?.catalogMeta?.description || 'No description available yet.';
   const normalizedServiceDescription = normalizeDescription(activeCatalogLayer?.catalogMeta?.description);
   const servicePath = activeCatalogLayer?.catalogMeta?.servicePath || 'Unknown service path';
   const serverBaseUrl = activeCatalogLayer?.catalogMeta?.serverBaseUrl || 'Unknown host';
   const sourceLabel = `${serverBaseUrl}/${servicePath}`;
-  const selectedLayerName = selectedLayer?.name ?? activeCatalogLayer?.name ?? 'Layer';
-  const selectedLayerPinned = selectedLayer ? isLayerPinned(selectedLayer.id) : false;
   const activeLayerPinned = activeLayer ? isLayerPinned(activeLayer.layerId) : false;
   const activeLayerCanPin = !!activeLayer && !activeLayer.isService;
 
@@ -46,17 +40,6 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
       : layerName
   );
 
-  const handleBrowseSelectedLayer = () => {
-    if (!selectedLayer) return;
-    activateLayer(selectedLayer.id);
-    onBrowseClick();
-  };
-
-  const handlePinSelectedLayer = () => {
-    if (!selectedLayer) return;
-    pinLayer(selectedLayer.id);
-  };
-
   const handlePinActiveLayer = () => {
     if (!activeLayer) return;
     pinLayer(activeLayer.layerId);
@@ -64,34 +47,8 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
 
   return (
     <div id="tnc-arcgis-overview-tab" className="space-y-5">
-      {isServiceOverview && selectedLayer ? (
+      {isServiceOverview ? (
         <>
-          <div id="tnc-arcgis-service-overview-selector-block" className="space-y-2">
-            <label
-              id="tnc-arcgis-service-overview-selector-label"
-              htmlFor="tnc-arcgis-service-overview-selector"
-              className="block text-xs font-semibold uppercase tracking-wide text-gray-500"
-            >
-              Layer
-            </label>
-            <select
-              id="tnc-arcgis-service-overview-selector"
-              value={selectedLayer.id}
-              onChange={event => setActiveServiceSubLayer(event.target.value)}
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2e7d32]/30 focus:border-[#2e7d32]"
-            >
-              {siblingLayers.map(layer => (
-                <option
-                  id={`tnc-arcgis-service-overview-selector-option-${layer.id}`}
-                  key={layer.id}
-                  value={layer.id}
-                >
-                  {formatLayerLabel(layer.name, layer.catalogMeta?.layerIdInService)}
-                </option>
-              ))}
-            </select>
-          </div>
-
           <div id="tnc-arcgis-overview-description-block" className="space-y-2">
             <h3 id="tnc-arcgis-overview-title" className="text-sm font-semibold text-gray-900">
               TNC ArcGIS Service
@@ -106,7 +63,7 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
               Available Layers
             </h4>
             <p id="tnc-arcgis-service-overview-layer-list-help" className="text-xs text-gray-600">
-              Tip: select a child layer in the left sidebar to activate or pin it directly.
+              Select a child layer in the left sidebar to activate, browse, and pin.
             </p>
             <ul id="tnc-arcgis-service-overview-layer-list" className="space-y-2">
               {siblingLayers.map(layer => {
@@ -152,30 +109,12 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
           </div>
 
           <div id="tnc-arcgis-service-overview-actions" className="grid grid-cols-2 gap-3">
-            <button
-              id="tnc-arcgis-service-overview-browse-cta"
-              onClick={handleBrowseSelectedLayer}
-              className="w-full py-3 bg-[#2e7d32] text-white font-medium rounded-lg hover:bg-[#256d29] transition-colors text-sm min-h-[44px]"
+            <div
+              id="tnc-arcgis-service-overview-select-layer-cta"
+              className="col-span-2 w-full py-3 rounded-lg border border-gray-300 bg-gray-50 text-gray-700 text-sm font-medium text-center min-h-[44px] flex items-center justify-center"
             >
-              Browse {selectedLayerName} &rarr;
-            </button>
-
-            {selectedLayerPinned ? (
-              <div
-                id="tnc-arcgis-service-overview-pinned-badge"
-                className="w-full py-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-medium text-center min-h-[44px] flex items-center justify-center"
-              >
-                Pinned ✓
-              </div>
-            ) : (
-              <button
-                id="tnc-arcgis-service-overview-pin-cta"
-                onClick={handlePinSelectedLayer}
-                className="w-full py-3 border border-blue-200 text-blue-700 font-medium rounded-lg hover:bg-blue-50 transition-colors text-sm min-h-[44px]"
-              >
-                Pin {selectedLayerName}
-              </button>
-            )}
+              Select a layer from the left sidebar
+            </div>
           </div>
         </>
       ) : (

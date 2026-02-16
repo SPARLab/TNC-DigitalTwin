@@ -41,7 +41,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **6.10** | ⚪ | — | QA & Edge Cases | Single-layer services, empty results, malformed queries, schema fetch errors |
 | **6.11** | 🟡 | 2026-02-16 14:01 PST | Capability-Aware Browse UX | Decision locked: FeatureServer defaults to records/table-first browse; MapServer/ImageServer use map-first + legend/metadata |
 | **6.12** | 🟡 | 2026-02-16 14:01 PST | Terminology + CTA Realignment | Decision locked: remove right-sidebar pin actions for now; keep pinning in left sidebar + Map Layers widget only |
-| **6.13** | ⚪ | — | Multi-Layer Service Discoverability | Ensure known services (e.g., Coastal and Marine Data) are easy to find and visibly grouped with expandable child layers |
+| **6.13** | 🟡 | 2026-02-16 15:28 PST | Multi-Layer Service Discoverability | In progress: service rows are tagged/non-pinnable, but `Coastal and Marine Data` still does **not** reliably expand into child layer rows in the left sidebar; currently visible in right sidebar only |
 | **6.14** | ⚪ | — | Service Reference + External Viewer | Add service webpage/embed panel + "Open in new tab" action to mirror original app workflow |
 
 **Status Legend:**  
@@ -851,6 +851,13 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - [ ] Parent service auto-expands for child match
 - [ ] No blank category blocks during service/child filtered states
 - [ ] "Coastal and Marine Data" (and peers) are discoverable via category OR search
+
+**Status Update (Feb 16, 2026 15:28 PST):**
+- ✅ Service containers are now visually identified (`Service`) and treated as non-pinnable.
+- ✅ Service containers no longer follow normal Active/Pin map-layer behavior.
+- ⚠️ **Not complete yet:** clicking `Coastal and Marine Data` does not consistently render discovered child layer rows in the left sidebar.
+- ⚠️ Current behavior still relies on right-sidebar "Available Layers" list for visibility of discovered children in this case.
+- 🎯 Remaining requirement: service click in left sidebar must reveal concrete child layer rows there; selecting child rows should drive normal Active -> Pin -> Pinned flow.
 
 **Estimated Time:** 4-6 hours
 

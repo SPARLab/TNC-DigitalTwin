@@ -10,7 +10,6 @@ import type { Category, CatalogLayer } from '../../types';
 import { LayerRow } from './LayerRow';
 import { LucideIcon } from '../shared/LucideIcon';
 import { ServiceGroup } from './ServiceGroup';
-import { useLayers } from '../../context/LayerContext';
 
 interface CategoryGroupProps {
   category: Category;
@@ -40,7 +39,6 @@ function visibleLayers(layers: CatalogLayer[], filter?: Set<string>): CatalogLay
 export function CategoryGroup({ category, filteredLayerIds, isSubcategory }: CategoryGroupProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [expandedServiceIds, setExpandedServiceIds] = useState<Set<string>>(new Set());
-  const { activeLayer, activateLayer } = useLayers();
 
   const totalVisible = countMatchingLayers(category, filteredLayerIds);
   const shouldHideForSearch = !!filteredLayerIds && totalVisible === 0;
@@ -140,9 +138,7 @@ export function CategoryGroup({ category, filteredLayerIds, isSubcategory }: Cat
                       service={layer}
                       layers={serviceLayers}
                       isExpanded={expandedServiceIds.has(layer.id)}
-                      isActiveService={activeLayer?.layerId === layer.id}
                       onToggleExpand={() => toggleServiceExpand(layer.id)}
-                      onActivateService={() => activateLayer(layer.id)}
                     />
                   );
                 }

@@ -7,23 +7,18 @@ interface ServiceGroupProps {
   service: CatalogLayer;
   layers: CatalogLayer[];
   isExpanded: boolean;
-  isActiveService?: boolean;
   ariaLevel?: number;
   onToggleExpand: () => void;
-  onActivateService: () => void;
 }
 
 export function ServiceGroup({
   service,
   layers,
   isExpanded,
-  isActiveService = false,
   ariaLevel = 2,
   onToggleExpand,
-  onActivateService,
 }: ServiceGroupProps) {
   const handleHeaderClick = () => {
-    onActivateService();
     if (!isExpanded) onToggleExpand();
   };
 
@@ -50,7 +45,7 @@ export function ServiceGroup({
         id={`service-group-row-${service.id}`}
         className={`w-full flex items-center gap-2 py-1.5 px-1 rounded-lg border transition-colors
           ${
-            isActiveService
+            isExpanded
               ? 'border-amber-300 bg-amber-50'
               : 'border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-gray-300'
           }`}

@@ -40,6 +40,7 @@ export function MapLayersWidget() {
   } = useLayers();
   const { layerMap } = useCatalog();
   const cacheStatusByDataSource = useCacheStatusByDataSource();
+  const concreteActiveLayer = activeLayer && !activeLayer.isService ? activeLayer : null;
 
   const loadingByLayerId = new Map<string, boolean>(
     pinnedLayers.map((pinnedLayer) => {
@@ -51,8 +52,8 @@ export function MapLayersWidget() {
       return [pinnedLayer.layerId, isSourceLoading];
     }),
   );
-  const activeLayerCacheStatus = activeLayer
-    ? cacheStatusByDataSource[activeLayer.dataSource]
+  const activeLayerCacheStatus = concreteActiveLayer
+    ? cacheStatusByDataSource[concreteActiveLayer.dataSource]
     : null;
   const activeLayerIsLoading = !!activeLayerCacheStatus?.loading && !activeLayerCacheStatus?.dataLoaded;
 
@@ -67,7 +68,7 @@ export function MapLayersWidget() {
 
   // Track active layer changes for smooth exit transitions
   useEffect(() => {
-    const shouldShow = activeLayer && !activeLayer.isPinned;
+    const shouldShow = concreteActiveLayer && !concreteActiveLayer.isPinned;
     
     if (shouldShow) {
       // New active layer appeared or changed
@@ -76,7 +77,7 @@ export function MapLayersWidget() {
         exitTimeoutRef.current = null;
       }
       setIsExiting(false);
-      setDisplayedActiveLayer(activeLayer);
+      setDisplayedActiveLayer(concreteActiveLayer);
     } else if (displayedActiveLayer && !shouldShow) {
       // Active layer should disappear (was pinned or cleared)
       setIsExiting(true);
@@ -94,13 +95,13 @@ export function MapLayersWidget() {
         clearTimeout(exitTimeoutRef.current);
       }
     };
-  }, [activeLayer, displayedActiveLayer]);
+  }, [concreteActiveLayer, displayedActiveLayer]);
 
   const showActiveSection = !isExiting && displayedActiveLayer && !displayedActiveLayer.isPinned;
 
-  const totalCount = pinnedLayers.length + (activeLayer && !activeLayer.isPinned ? 1 : 0);
+  const totalCount = pinnedLayers.length + (concreteActiveLayer && !concreteActiveLayer.isPinned ? 1 : 0);
   const canUndo = undoStack.length > 0;
-  const isEmpty = !activeLayer && pinnedLayers.length === 0;
+  const isEmpty = !concreteActiveLayer && pinnedLayers.length === 0;
 
   return (
     <WidgetShell id="map-layers-widget" position="top-left">
@@ -171,8 +172,8 @@ export function MapLayersWidget() {
             <PinnedLayersSection
               layers={pinnedLayers}
               loadingByLayerId={loadingByLayerId}
-              activeLayerId={activeLayer?.layerId}
-              activeViewId={activeLayer?.viewId}
+              activeLayerId={concreteActiveLayer?.layerId}
+              activeViewId={concreteActiveLayer?.viewId}
               countDisplayMode={countDisplayMode}
               onToggleVisibility={toggleVisibility}
               onRemove={unpinLayer}
