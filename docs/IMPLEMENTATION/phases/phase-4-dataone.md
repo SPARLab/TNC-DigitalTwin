@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 3 / 6 tasks  
+**Progress:** 3 / 7 tasks  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -18,6 +18,7 @@
 | 4.4 | ⚪ Not Started | Implement dataset list with cards | — | | |
 | 4.5 | ⚪ Not Started | Implement dataset detail view | — | | |
 | 4.6 | ⚪ Not Started | Sync loading indicators (Map Layers widget ↔ map center ↔ right sidebar) | — | | |
+| 4.7 | ⚪ Not Started | Render DataONE datasets as map markers (dots or clusters) | — | | |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -210,6 +211,29 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 
 ---
 
+### 4.7: Render DataONE Datasets as Map Markers (Dots or Clusters)
+
+**Goal:** When the DataOne layer is active or pinned, show dataset locations on the map as dots (or clustered dots when many overlap). Currently no map markers appear for DataONE datasets.
+
+**Acceptance Criteria:**
+- [ ] Create `dataoneLayer.ts` (or equivalent) with GraphicsLayer populated from DataOne datasets
+- [ ] Use `center_lat` / `center_lon` from the feature service for point geometry (see Service Analysis)
+- [ ] Add `dataone-datasets` to `IMPLEMENTED_LAYERS` in `layers/index.ts`
+- [ ] Implement `createDataOneLayer` and wire into `createMapLayer` switch
+- [ ] Create `useDataOneMapBehavior` hook (pattern: `useINaturalistMapBehavior`)
+- [ ] Populate layer from datasets when layer is on map (pinned or active). Data source: extend DataOneFilterContext to expose datasets with geometry, or consume same filtered query as Browse tab.
+- [ ] Respect sidebar filters (category, year, search) — only show datasets matching current filter
+- [ ] **Clustering (optional but recommended):** When many points overlap at same zoom, show grouped/clustered symbols; expand on zoom or click
+- [ ] Map click on marker: activate DataOne layer and open dataset detail view (same pattern as iNaturalist observation click)
+- [ ] Uncomment and wire `useDataOneMapBehavior` in `src/v2/dataSources/registry.ts`
+
+**Reference:**
+- iNaturalist pattern: `src/v2/dataSources/inaturalist/useMapBehavior.ts`, `src/v2/components/Map/layers/inaturalistLayer.ts`
+- Service Analysis: `center_lat`, `center_lon` fields for map point geometry
+- ArcGIS clustering: `@arcgis/core/layers/support/FeatureReductionCluster` (if using FeatureLayer) or client-side clustering for GraphicsLayer
+
+---
+
 ## Service Analysis
 
 > Fill this out during Task 4.1
@@ -318,6 +342,7 @@ Notes:
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 16, 2026 | 4.7 | **Added Task 4.7:** Render DataONE datasets as map markers (dots or clusters). No map markers currently appear for DataONE; task covers `dataoneLayer.ts`, `useDataOneMapBehavior`, filter sync, optional clustering, and map-click-to-detail. | Claude |
 | Feb 16, 2026 | 4.2, 4.3 | **Tasks 4.2 and 4.3 complete.** DataOne adapter wired into v2 registry; right-sidebar shell (Overview/Browse) with `DataOneOverviewTab`, `DataOneBrowseTab`, `DatasetListView`, `DatasetDetailView`; DataOne external layer enabled in left sidebar; browse search/filter UX per DFT-035 (debounced text, immediate dropdowns, result count, ARIA live region, pagination, empty-state clear-all, `AbortController`). DFT-045 shortcut rows deferred. | Claude |
 | Feb 16, 2026 | 4.1 | Completed service analysis against live DataONE FeatureServer. Documented layer schemas (Lite/Latest/AllVersions), UI-relevant attributes, AI-enriched category mapping (`tnc_category` / `tnc_categories` / `tnc_confidence`), file-detail strategy (`files_summary` vs DataONE API), and baseline query timings. | Claude |
 | Feb 5, 2026 | 4.3 | Resolved DFT-035: DataOne search behavior — debounced instant search (500ms, 2+ chars) with immediate dropdown filters. Enter key bypass for power users. Initial state loads all datasets, eliminating "pre-search" state. `AbortController` for race condition prevention. See planning-task-tracker.md | Will + Claude |
