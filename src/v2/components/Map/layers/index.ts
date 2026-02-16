@@ -5,10 +5,12 @@
 // ============================================================================
 
 import type Layer from '@arcgis/core/layers/Layer';
+import type { CatalogLayer } from '../../../types';
 import { createINaturalistLayer } from './inaturalistLayer';
 import { createPreserveBoundaryLayer } from './preserveBoundaryLayer';
 import { createDendraLayer } from './dendraLayer';
 import { createAnimlLayer } from './animlLayer';
+import { createTNCArcGISLayer } from './tncArcgisLayer';
 
 /** Set of catalog layer IDs that have real map layer implementations */
 export const IMPLEMENTED_LAYERS = new Set([
@@ -19,6 +21,10 @@ export const IMPLEMENTED_LAYERS = new Set([
 
 /** Layer IDs known to be Dendra sensor services (detected dynamically) */
 const dendraLayerIds = new Set<string>();
+/** Layer IDs known to be TNC ArcGIS catalog layers (detected dynamically) */
+const tncArcgisLayerIds = new Set<string>();
+/** Catalog metadata for each registered TNC ArcGIS layer */
+const tncArcgisLayerById = new Map<string, CatalogLayer>();
 
 /** Register a layer ID as a Dendra sensor layer (called by DendraContext/adapter) */
 export function registerDendraLayerId(layerId: string): void {
@@ -31,6 +37,13 @@ export function isDendraLayer(layerId: string): boolean {
   return dendraLayerIds.has(layerId);
 }
 
+/** Register a layer ID as a concrete TNC ArcGIS layer. */
+export function registerTNCArcGISLayer(layerId: string, layer: CatalogLayer): void {
+  tncArcgisLayerIds.add(layerId);
+  tncArcgisLayerById.set(layerId, layer);
+  IMPLEMENTED_LAYERS.add(layerId);
+}
+
 /**
  * Create an ArcGIS layer for a given catalog layer ID.
  * Returns null if the layer has no implementation yet.
@@ -38,6 +51,7 @@ export function isDendraLayer(layerId: string): boolean {
  */
 export function createMapLayer(layerId: string, options: {
   visible?: boolean;
+  whereClause?: string;
 }): Layer | null {
   switch (layerId) {
     case 'inaturalist-obs':
@@ -53,6 +67,17 @@ export function createMapLayer(layerId: string, options: {
       // Dynamically registered Dendra layers
       if (dendraLayerIds.has(layerId)) {
         return createDendraLayer({ id: `v2-${layerId}`, ...options });
+      }
+      // Dynamically registered TNC ArcGIS catalog layers
+      if (tncArcgisLayerIds.has(layerId)) {
+        const layer = tncArcgisLayerById.get(layerId);
+        if (!layer) return null;
+        return createTNCArcGISLayer({
+          id: `v2-${layerId}`,
+          layer,
+          visible: options.visible,
+          whereClause: options.whereClause,
+        });
       }
       return null;
   }

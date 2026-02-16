@@ -22,6 +22,8 @@ import { dendraAdapter, useDendraCacheStatus } from './dendra/adapter';
 import { useDendraMapBehavior } from './dendra/useMapBehavior';
 import { animlAdapter, useAnimlCacheStatus } from './animl/adapter';
 import { useAnimlMapBehavior } from './animl/useMapBehavior';
+import { tncArcgisAdapter, useTNCArcGISCacheStatus } from './tnc-arcgis/adapter';
+import { useTNCArcGISMapBehavior } from './tnc-arcgis/useMapBehavior';
 // import { dataoneAdapter, useDataOneCacheStatus } from './dataone/adapter';     // ← v2/dataone
 // import { useDataOneMapBehavior } from './dataone/useMapBehavior';              // ← v2/dataone
 
@@ -31,6 +33,7 @@ const ADAPTER_MAP: Record<string, DataSourceAdapter> = {
   inaturalist: inaturalistAdapter,
   dendra: dendraAdapter,
   animl: animlAdapter,
+  'tnc-arcgis': tncArcgisAdapter,
   // dataone: dataoneAdapter,   // ← v2/dataone
 };
 
@@ -56,6 +59,7 @@ export function useAllMapBehaviors(
   useINaturalistMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
   useDendraMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
   useAnimlMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
+  useTNCArcGISMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
   // useDataOneMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);   // ← v2/dataone
 }
 
@@ -68,12 +72,14 @@ export function useActiveCacheStatus(dataSource: string | undefined): CacheStatu
   const inat = useINaturalistCacheStatus();
   const dendra = useDendraCacheStatus();
   const animl = useAnimlCacheStatus();
+  const tncArcgis = useTNCArcGISCacheStatus();
   // const dataone = useDataOneCacheStatus(); // ← v2/dataone
 
   switch (dataSource) {
     case 'inaturalist': return inat;
     case 'dendra': return dendra;
     case 'animl': return animl;
+    case 'tnc-arcgis': return tncArcgis;
     // case 'dataone': return dataone;   // ← v2/dataone
     default: return null;
   }
@@ -87,11 +93,13 @@ export function useCacheStatusByDataSource(): Record<string, CacheStatus> {
   const inat = useINaturalistCacheStatus();
   const dendra = useDendraCacheStatus();
   const animl = useAnimlCacheStatus();
+  const tncArcgis = useTNCArcGISCacheStatus();
 
   return {
     inaturalist: inat,
     dendra,
     animl,
+    'tnc-arcgis': tncArcgis,
     // dataone,   // ← v2/dataone
   };
 }

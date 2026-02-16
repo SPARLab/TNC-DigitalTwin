@@ -38,6 +38,7 @@ export function useMapLayers() {
 
     const map = view.map;
     const managed = managedLayersRef.current;
+    const pinnedByLayerId = new Map(pinnedLayers.map(p => [p.layerId, p]));
 
     // Build map of layerIds that should currently be on the ArcGIS map
     const shouldBeOnMap = new Map<string, { name: string; visible: boolean }>();
@@ -62,7 +63,11 @@ export function useMapLayers() {
     for (const [layerId, { name, visible }] of shouldBeOnMap) {
       if (managed.has(layerId)) continue;
 
-      const arcLayer = createMapLayer(layerId, { visible });
+      const tncWhereClause = pinnedByLayerId.get(layerId)?.tncArcgisFilters?.whereClause;
+      const arcLayer = createMapLayer(layerId, {
+        visible,
+        whereClause: tncWhereClause,
+      });
 
       if (!arcLayer) {
         if (!warnedLayersRef.current.has(layerId)) {

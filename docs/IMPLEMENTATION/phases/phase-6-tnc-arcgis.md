@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 3 / 10 tasks  
+**Progress:** 4 / 10 tasks  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry)  
 **Owner:** TBD
@@ -32,7 +32,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **6.1** | 🟢 | 2026-02-16 13:01 PST | Extend Data Model for Multi-Layer Services | Added multi-layer metadata fields/types and service-group detection in `useCatalogRegistry`; single-layer behavior preserved |
 | **6.2** | 🟢 | 2026-02-16 13:07 PST | Left Sidebar: Collapsible Service Groups | Added `ServiceGroup` + controls-only child rows, service activation, 300ms expand/collapse, Arrow Left/Right + ARIA attributes |
 | **6.3** | 🟢 | 2026-02-16 13:11 PST | TNC ArcGIS Service Module | Added `src/v2/services/tncArcgisService.ts` with service URL builder, schema fetch, feature query, and WHERE validation helpers with malformed/network/ArcGIS error handling |
-| **6.4** | ⚪ | — | TNC ArcGIS Adapter Shell | Create adapter skeleton with warmCache, RightSidebarContent, createMapLayer |
+| **6.4** | 🟢 | 2026-02-16 13:15 PST | TNC ArcGIS Adapter Shell | Added `tnc-arcgis` adapter + context warm-cache hook, dynamic registry wiring, and map-layer factory support for FeatureServer/MapServer |
 | **6.5** | ⚪ | — | Right Sidebar: Service Overview (Multi-Layer) | Show service description, layer dropdown, "Browse {Layer}" and "Pin {Layer}" buttons |
 | **6.6** | ⚪ | — | Right Sidebar: Generic Filter UI (MVP) | Field/Operator/Value rows, "Add Filter", "Preview Results", WHERE clause builder |
 | **6.7** | ⚪ | — | Map Layer Rendering | Add FeatureLayer/MapImageLayer to map with definition expression from filters |
@@ -416,11 +416,11 @@ interface TNCArcGISContextValue {
 ```
 
 **Acceptance Criteria:**
-- [ ] Adapter registered in `src/v2/dataSources/registry.ts`
-- [ ] `warmCache` fetches and caches layer schema
-- [ ] `createMapLayer` renders FeatureLayer with WHERE clause
-- [ ] Context provider caches schemas to avoid redundant fetches
-- [ ] Adapter works for both FeatureServer and MapServer layers
+- [x] Adapter registered in `src/v2/dataSources/registry.ts`
+- [x] `warmCache` fetches and caches layer schema
+- [x] `createMapLayer` renders FeatureLayer with WHERE clause
+- [x] Context provider caches schemas to avoid redundant fetches
+- [x] Adapter works for both FeatureServer and MapServer layers
 
 **Estimated Time:** 3-4 hours
 
