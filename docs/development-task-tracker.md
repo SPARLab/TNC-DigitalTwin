@@ -54,7 +54,7 @@
 | 31 | 2 | **2.7** ANiML Caching Strategy Investigation | ✅ | Low | Marked done for now; service/context caching in place. |
 | 32 | 2 | **2.15** ANiML Image Click → Highlight Camera on Map | ✅ | Medium | Completed: focusedDeploymentId in AnimlFilterContext; ArcGIS layerView.highlight(); onImageFocus from ImageList/expanded view. |
 | 33 | 2 | **2.16** ANiML Camera Badges — Numbered Icons for Query Results | ⚪ | Medium | When filter active: show count badge above cameras with matching images; cameras with 0 results get no badge. |
-| 34 | 0/1/2/3/6 | **Unified Loading Indicator Strategy** | ⚪ | Medium | **Prereq:** Finish current layer work in iNaturalist, Dendra, ANiML branches. **Scope:** Propagates across v2/inaturalist, v2/dendra, v2/animl + future branches. See Cross-Branch Merge Checklist (Loading Indicators). Map Layers: spinner in eye slot; map overlay only on first load; legend/sidebar region-specific. |
+| 34 | 0/1/2/3/6 | **Unified Loading Indicator Strategy** | 🟡 | Medium | **Design spec complete** (design-system.md DFT-018); implementation pending per prereqs. See Cross-Branch Merge Checklist (Loading Indicators). |
 
 **Active tasks remaining:** 13  
 **🔴 Next (critical):** Task 24 — Dynamic Layer Registry from Data Catalog Service  
@@ -81,7 +81,7 @@
 - [ ] Decide merge order: which branch lands first? Loading strategy should be implemented in that branch, then propagated via merge or cherry-pick
 
 **Merge strategy (branches have different docs):**
-- [ ] **Design doc as source of truth:** Add loading strategy spec to `docs/DESIGN-SYSTEM/design-system.md` (DFT-018 section) or create `docs/PLANNING/resolved-decisions/loading-indicator-strategy.md` — single canonical spec that all branches can reference
+- [x] **Design doc as source of truth:** Add loading strategy spec to `docs/DESIGN-SYSTEM/design-system.md` (DFT-018 section) as the default canonical source; only add a new planning doc if explicitly approved ✅ Feb 16
 - [ ] **Implementation order:** Implement in shared components first (MapLayersWidget, MapContainer, PinnedLayerRow) — these live in foundation or the branch that merges first
 - [ ] **Per-branch changes:** Each branch’s legend widget and sidebar use the same loading pattern; adapters already expose `loading` from cache status — no bespoke per-layer spinners
 - [ ] **Merge conflict surface:** `PinnedLayerRow` (eye slot), `MapContainer` (overlay condition), `PinnedLayersSection`/`MapLayersWidget` (loadingByDataSource props), legend widgets, sidebar Browse tabs
@@ -422,7 +422,30 @@
     2. **Map center overlay:** Only when `!dataLoaded` (initial load); not during refresh
     3. **Legend widget:** Loading when `!dataLoaded`; optional header spinner during refresh
     4. **Right sidebar:** Keep region-specific loading; same spinner + text pattern across data sources
+  - **Design decision (UI/UX):** Use "local-first loading" by default and reserve global overlays for first-load only.
+    - **Why:** Supports Nielsen #1 (Visibility of system status) without violating #3 (User control and freedom). Users keep interacting with other regions during refreshes.
+    - **Core tension:** A single global spinner is consistent, but it hides where work is happening and increases cognitive load during background refresh.
+    - **Resolution:** Keep loading indicators near the affected region (Map Layers row, legend body, sidebar body), with map-level overlay only for empty/first paint.
+  - **Edge cases to standardize:**
+    - If first load exceeds 3s: keep region skeleton/spinner + show utilitarian loading text.
+    - If first load exceeds 15s: show "Taking longer than usual" + cancel/retry action per DFT-018.
+    - During refresh with stale data present: do not blank content; use subtle in-place spinner state.
+    - If one source fails while others load: isolate error to that region; do not block unrelated sources.
+  - **Principle fit (recommended strategy):**
+    - ✅ = strong fit, 🟡 = partial fit/tradeoff, ❌ = weak fit
+    - | Principle | Fit | How the strategy addresses it |
+      |---|---|---|
+      | Nielsen #1: Visibility of system status | ✅ | Spinner/skeleton appears exactly where load occurs; first-load overlay clarifies "map not ready yet." |
+      | Nielsen #4: Consistency and standards | ✅ | Same loading anatomy across iNaturalist, Dendra, ANiML, and future adapters. |
+      | Norman: Feedback | ✅ | Immediate, context-local feedback reduces ambiguity after user actions (pin, activate, filter). |
+      | Gestalt: Proximity/Similarity | ✅ | Indicator is colocated with affected component and uses repeatable visual pattern. |
+      | Hick's Law (cognitive load) | ✅ | Avoids multiple competing global indicators; users read one local status at a time. |
+      | Shneiderman: User control | 🟡 | Strong in sidebars/legends, but first-load map overlay remains temporarily blocking by design. |
+      | WCAG/Accessibility | 🟡 | Pattern is compatible, but requires explicit ARIA status text + contrast checks during implementation. |
+      | Peak-End Rule | 🟡 | Better continuity during refresh, but completion moments still need explicit "loaded" state polish. |
+      | Behavioral trust (predictability) | ✅ | Same semantics per region increases confidence across data sources and branches. |
   - **Merge strategy:** Other branches have different documentation. Create canonical spec in `design-system.md` (DFT-018) or `docs/PLANNING/resolved-decisions/loading-indicator-strategy.md`. Implement in shared components; each branch’s legend/sidebar adopts same pattern.
+    - **Default documentation path:** `docs/DESIGN-SYSTEM/design-system.md` (DFT-018). Only add new planning docs with explicit approval.
   - **Files:** `PinnedLayerRow.tsx`, `PinnedLayerChildRow.tsx`, `MapLayersWidget.tsx`, `PinnedLayersSection.tsx`, `MapContainer.tsx`, `registry.ts` (loadingByDataSource), legend widgets, sidebar Browse tabs
   - **See:** Cross-Branch Merge Checklist (Loading Indicators) above
 
@@ -469,7 +492,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
-| Feb 16, 2026 | 0/1/2/3/6 | **Task 34 added: Unified Loading Indicator Strategy.** Prereq: finish current layer work in iNaturalist, Dendra, ANiML. Propagates across v2/inaturalist, v2/dendra, v2/animl + future branches. Added Cross-Branch Merge Checklist (Loading Indicators) with merge strategy for branches that have different documentation. Strategy: Map Layers spinner in eye slot, map overlay only on first load, legend/sidebar region-specific. | Claude |
+| Feb 16, 2026 | 0/1/2/3/6 | **Task 34 design spec complete.** Canonical loading strategy documented in design-system.md (DFT-018): eye-slot spinner, first-load-only map overlay, legend/sidebar region-specific. Design doc checklist item done. Implementation pending per prereqs. | Claude |
 | Feb 13, 2026 | Phase 3 | ✅ **Task 26 sub-task 3.5b complete.** Fixed sensors showing 0 data despite record counts. Root cause: null-heavy datapoint windows when querying oldest-first. Updated v0 bridge query to fetch latest non-null points (`value IS NOT NULL`, `ORDER BY timestamp_utc DESC`), reverse client-side for chronological chart. **Remaining:** 3.5d (sidebar polish). | Claude |
 | Feb 13, 2026 | Phase 3 | ✅ **Task 26 sub-task 3.5a complete.** Fixed subsequent datastream clicks not updating chart. Two bugs: (1) race condition — stale fetch could overwrite newer datastream's data (request-counter guard in openChart); (2) stale ECharts instance — chart div remounts during loading but old instance pointed to removed DOM (getDom() check before init). **Remaining:** 3.5b (0-data inconsistency), 3.5d (sidebar polish). | Claude |
 | Feb 13, 2026 | Phase 3 | 🟡 **Task 26 (Dendra 3.5) in progress; sub-task 3.5c complete.** Floating chart UI polish shipped: visible glassmorphism, bottom-right placement, half-height panel sizing, stronger contrast/readability, larger axis labels, larger/higher range slider, darker header, and measurement-first header text hierarchy. **Still open:** 3.5a (chart not refreshing on subsequent datastream clicks), 3.5b (0-data inconsistency). | Claude |

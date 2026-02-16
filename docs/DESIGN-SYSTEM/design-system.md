@@ -263,7 +263,7 @@ Do NOT announce: hover states, intermediate loading states, cursor position chan
 
 ## Loading State Patterns
 
-**Policy (DFT-018):** Loading states use a hybrid approach — skeletons for content regions, spinners for actions, progress bars for deterministic multi-step operations.
+**Policy (DFT-018):** Loading states use a hybrid approach — skeletons for content regions, spinners for actions, progress bars for deterministic multi-step operations, and local-first indicators across all data sources.
 
 ### Key Principles
 
@@ -272,16 +272,38 @@ Do NOT announce: hover states, intermediate loading states, cursor position chan
 3. **Dynamic ETA for long loads:** Show estimated time for multi-query operations (e.g., ANiML camera queries).
 4. **Progressive loading:** Show available data immediately, load more via infinite scroll + background pre-fetch.
 
+### Unified Cross-Branch Contract (Task 34)
+
+This is the canonical loading strategy for `v2/inaturalist`, `v2/dendra`, `v2/animl`, and future adapters.
+
+1. **Map Layers widget:** Show a `w-4 h-4` spinner in the eye-slot position when that layer's data source is loading.
+2. **Map center overlay:** Show only on first load (`!dataLoaded`), not on refresh when stale data already exists.
+3. **Legend widgets:** Show region loading state when `!dataLoaded`; optional subtle header spinner during refresh.
+4. **Right sidebar:** Keep loading region-specific (spinner + utilitarian text), with the same anatomy across data sources.
+
+**Design rationale:** This pattern balances Nielsen #1 (status visibility) with Nielsen #3 (user freedom) by showing where loading occurs without blocking unrelated work.
+
 ### Indicator Selection Rules
 
 | Context | Indicator | Notes |
 |---------|-----------|-------|
 | Sidebar content loading | Skeleton UI | Shows expected structure |
+| Map Layers row loading | Eye-slot spinner (`w-4 h-4`) | Reuses eye-column footprint; prevents row layout shift |
+| Map center initial load | Center overlay spinner/skeleton | First load only (`!dataLoaded`) |
+| Legend region loading | Region skeleton/spinner | Body loads when `!dataLoaded`; header spinner optional during refresh |
 | ANiML camera queries | Progress bar | "Querying cameras: 12/47" |
 | Image grid loading | Skeleton → waterfall | First 10 images, then infinite scroll |
-| Map markers loading | Subtle spinner overlay | Only if >300ms delay |
 | Search/filter in progress | Inline spinner | Inside search box or filter control |
 | Save/bookmark action | Button spinner | Replaces button content |
+
+### First-Load vs Refresh Rules
+
+| Scenario | Pattern | Why |
+|----------|---------|-----|
+| First load, no existing data | Use loading skeleton/overlay in target region | User has no baseline content yet |
+| Refresh with stale data available | Keep content visible; show subtle in-place spinner | Preserves context and reduces cognitive load |
+| One source fails while others load | Isolate error to affected region only | Avoids cascading failures and unnecessary blocking |
+| Load exceeds 15s | Show "Taking longer than usual" + cancel/retry | Preserves trust and control |
 
 ### Timeout Thresholds
 
@@ -338,6 +360,17 @@ Update ETA dynamically as queries complete.
 - **Nielsen #4 (Consistency):** Same patterns across all data sources
 - **Norman (Feedback):** Continuous feedback throughout loading process
 - **Gestalt (Continuity):** Skeleton shapes match final content layout
+
+### Principle Fit (Task 34)
+
+| Principle | Fit | Notes |
+|-----------|-----|-------|
+| Nielsen #1: Visibility of system status | ✅ | Local indicators show exactly where work is happening |
+| Nielsen #4: Consistency and standards | ✅ | Same loading anatomy across all data-source branches |
+| Norman: Feedback | ✅ | Immediate response in each affected region |
+| Gestalt: Proximity/Similarity | ✅ | Indicator colocates with the component being updated |
+| Shneiderman: User control and freedom | 🟡 | Strong for refresh; first-load map overlay is intentionally blocking |
+| WCAG (Perceivable/Operable) | 🟡 | Requires ARIA status text and contrast checks during implementation |
 
 ---
 
@@ -1952,6 +1985,7 @@ February 5, 2026
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 16, 2026 | Updated DFT-018 Loading State Patterns with Task 34 unified cross-branch contract: eye-slot spinner in Map Layers, first-load-only map overlay, legend/sidebar region-specific loading, first-load vs refresh rules, and principle-fit table for implementation consistency across iNaturalist, Dendra, ANiML, and future adapters | Claude |
 | Feb 6, 2026 | Added Detail View Components (DFT-044) — shared sub-components for self-contained row detail views: `DetailBackButton`, `DetailActionRow`, `DetailMetadataGrid`. Purpose-built views: iNaturalist (hero image + flat grid), DataOne (multi-section hierarchical). Architectural principle: consistent structural template with flexibility for custom content. Design tokens added for back button, action row, metadata grid, and full detail view styling. Analyzed via Nielsen #4/#8, Norman, Hick's Law, IA Mental Models | Will + Claude |
 | Feb 5, 2026 | Audit gap resolution — added 12 missing DFT specs: Viewport Requirements (DFT-016), Accessibility Baseline (DFT-017), Bookmark Hover-to-Highlight (DFT-036), Filter Indicator (DFT-024), Multiple Filtered Views (DFT-013), Widget Animation Patterns (DFT-025), Map Badge Behavior (DFT-029), Widget Auto-Collapse (DFT-005), TabBar default tab + Edit Filters transition (DFT-006/DFT-019), ResultCard grayed animation detail (DFT-028), TNC brand color/font reference (DFT-008/DFT-009) | Will + Claude |
 | Feb 5, 2026 | Added Sidebar Template System — shared structural templates (TabBar, OverviewTab, ResultCard, Pagination, LeftSidebar category pattern) enforced via components. Theme tokens centralized in `sidebarTheme`. All data sources use identical layout; only content varies. Exceptions documented (ANiML landing cards, Dendra chart, Level 3 FeatureDetailCard). Decisions: underline tabs (emerald accent), Previous/Next pagination (20/page), standard result card with icon/title/subtitle/actions slots, left sidebar with collapsible categories and emerald active state | Will + Claude |
