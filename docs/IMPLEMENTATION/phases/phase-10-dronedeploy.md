@@ -1,7 +1,7 @@
 # Phase 10: DroneDeploy Imagery
 
 **Status:** 🟡 In Progress  
-**Progress:** 9 / 11 tasks  
+**Progress:** 10 / 11 tasks  
 **Branch:** `v2/dronedeploy`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -19,7 +19,7 @@
 | 10.5 | 🟢 Complete | Feb 16, 2026 20:12 PST | Implement flight detail view | Added full metadata panel, load/remove and fly-to actions, image collection + portal links, TIF link, and opacity slider for loaded layers |
 | 10.6 | 🟢 Complete | Feb 16, 2026 20:12 PST | Load WMTS imagery layers on map | Added WMTS loading via `wmts_item_id` into DroneDeploy group layer with multi-flight support, default 80% opacity, fly-to handling, and registry wiring |
 | 10.7 | ⚪ Not Started | — | Render flight footprints as map polygons | Show `plan_geometry` / `project_bounds` as clickable map polygons |
-| 10.8 | ⚪ Not Started | — | Implement layer opacity and visibility controls | Slider opacity, toggle visibility, layer ordering for overlapping imagery |
+| 10.8 | 🟢 Complete | Feb 16, 2026 19:05 PST | Implement layer opacity and visibility controls | Added per-flight visibility toggles, draw-order up/down controls for overlapping WMTS imagery, and compact one-row action buttons in project detail card |
 | 10.9 | 🟢 Complete | Feb 16, 2026 22:15 PST | Implement temporal comparison UI | Implemented on-map temporal carousel visibility via active-layer adapter override (`dataset-193`), reused v1 DroneDeploy carousel button/dot styling, synced carousel selection to right-sidebar flight detail, and preserved auto fly-to on selection |
 | 10.10 | 🟢 Complete | Feb 16, 2026 23:40 PST | Sync loading indicators | Drone loading now covers metadata + WMTS tile lifecycle with shared loading primitives and Map Layers eye-slot spinners |
 | 10.11 | 🟢 Complete | Feb 16, 2026 23:40 PST | Wire Save View flow | Save View now creates/reuses DroneDeploy child views in Map Layers and child activation rehydrates the correct WMTS flight |
@@ -257,11 +257,11 @@ Implement the DroneDeploy drone imagery browse experience in the right sidebar. 
 **Goal:** Since multiple drone imagery layers can overlap, provide fine-grained control over visibility and opacity.
 
 **Acceptance Criteria:**
-- [ ] Opacity slider per loaded drone layer (0%–100%)
-- [ ] Toggle visibility per loaded layer
-- [ ] Layer ordering control (which layer renders on top) — drag reorder or up/down buttons
-- [ ] Controls accessible from both flight detail view and Map Layers widget
-- [ ] Opacity state persists during session
+- [x] Opacity slider per loaded drone layer (0%–100%)
+- [x] Toggle visibility per loaded layer
+- [x] Layer ordering control (which layer renders on top) — drag reorder or up/down buttons
+- [x] Visibility/order controls remain available in Map Layers widget; detail view now exposes the same controls in-context for DroneDeploy flights
+- [x] Opacity state persists during session
 
 ---
 
@@ -401,6 +401,7 @@ Validated with sample `wmts_item_id` values from live records.
 | Date | Task | Change | By |
 |------|------|--------|-----|
 | Feb 16, 2026 | — | Created phase document | Will + Claude |
+| Feb 16, 2026 | 10.8 | Completed right-sidebar project detail imagery controls: per-flight visibility toggles now drive loaded WMTS state, overlapping imagery can be reordered with up/down controls (mapped to ArcGIS group-layer z-order), and project action buttons (Pin Flight/Fly to Extent/Save View) were compacted into a single row to reduce vertical space. Updated phase progress to 10/11. | Codex |
 | Feb 16, 2026 | 10.10, 10.11 | Completed DroneDeploy loading/save-view integration: merged metadata + WMTS loading into adapter-exposed state, added right-sidebar metadata loading row, set WMTS loading lifecycle from `WMTSLayer.when()` events, and wired Save View to create/reuse DroneDeploy child views in Map Layers (`droneView.flightId`) so child activation restores the correct flight layer. Updated phase progress to 9/11. | Codex |
 | Feb 16, 2026 | 10.1 | Completed live metadata service audit for `DroneDeploy_Metadata_v2`; documented schema drift (new fields), record count update (16), WMTS loading/auth pattern, WKT parse validation, and `azure_blob_url` accessibility caveat. Updated phase status to In Progress (1/11). | Codex |
 | Feb 16, 2026 | 10.3 | Renumbered orthomosaic detection task from 10.11 to 10.3; shifted 10.3→10.4 through 10.10→10.11 for logical flow (detect/expand before browse/detail/WMTS). | Codex |

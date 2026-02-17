@@ -34,6 +34,7 @@ interface DroneDeployContextValue {
   setFlightLoaded: (_flightId: number, _loaded: boolean) => void;
   setFlightLoading: (_flightId: number, _loading: boolean) => void;
   setFlightOpacity: (_flightId: number, _opacity: number) => void;
+  reorderLoadedFlights: (_flightId: number, _direction: 'up' | 'down') => void;
   setSelectedFlightId: (_flightId: number | null) => void;
   requestFlyToFlight: (_flightId: number) => void;
   clearFlyToRequest: () => void;
@@ -141,6 +142,19 @@ export function DroneDeployProvider({ children }: { children: ReactNode }) {
     setOpacityByFlightId((prev) => ({ ...prev, [flightId]: normalized }));
   }, []);
 
+  const reorderLoadedFlights = useCallback((flightId: number, direction: 'up' | 'down') => {
+    setLoadedFlightIds((prev) => {
+      const fromIndex = prev.indexOf(flightId);
+      if (fromIndex === -1) return prev;
+      const toIndex = direction === 'up' ? fromIndex - 1 : fromIndex + 1;
+      if (toIndex < 0 || toIndex >= prev.length) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+  }, []);
+
   const requestFlyToFlight = useCallback((flightId: number) => {
     setFlyToFlightId(flightId);
   }, []);
@@ -177,6 +191,7 @@ export function DroneDeployProvider({ children }: { children: ReactNode }) {
         setFlightLoaded,
         setFlightLoading,
         setFlightOpacity,
+        reorderLoadedFlights,
         setSelectedFlightId,
         requestFlyToFlight,
         clearFlyToRequest,

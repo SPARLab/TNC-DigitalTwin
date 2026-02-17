@@ -1,4 +1,4 @@
-import { ArrowLeft, Calendar, ExternalLink, Layers, Loader2, MapPinned, Package, SlidersHorizontal } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowUp, Calendar, ExternalLink, Eye, EyeOff, Layers, Loader2, MapPinned, Package, SlidersHorizontal } from 'lucide-react';
 import type { DroneImageryMetadata, DroneImageryProject } from '../../../../types/droneImagery';
 
 interface FlightDetailViewProps {
@@ -7,13 +7,16 @@ interface FlightDetailViewProps {
   isLoaded: boolean;
   isLoading: boolean;
   opacity: number;
+  loadedFlightIds: number[];
   selectedFlightId: number;
   onBack: () => void;
-  onSelectFlight: (_flight: DroneImageryMetadata) => void;
+  onSelectFlight: (flight: DroneImageryMetadata) => void;
   onTogglePinned: () => void;
   onSaveView: () => void;
   onFlyTo: () => void;
-  onOpacityChange: (_value: number) => void;
+  onOpacityChange: (value: number) => void;
+  onToggleFlightVisibility: (flightId: number) => void;
+  onReorderFlight: (flightId: number, direction: 'up' | 'down') => void;
 }
 
 function formatDate(date: Date): string {
@@ -26,6 +29,7 @@ export function FlightDetailView({
   isLoaded,
   isLoading,
   opacity,
+  loadedFlightIds,
   selectedFlightId,
   onBack,
   onSelectFlight,
@@ -33,6 +37,8 @@ export function FlightDetailView({
   onSaveView,
   onFlyTo,
   onOpacityChange,
+  onToggleFlightVisibility,
+  onReorderFlight,
 }: FlightDetailViewProps) {
   const wmtsPortalLink = `https://dangermondpreserve-spatial.com/portal/home/item.html?id=${flight.wmts.itemId}`;
 
@@ -66,31 +72,31 @@ export function FlightDetailView({
           </div>
         </div>
 
-        <div id="drone-flight-action-row" className="grid grid-cols-1 gap-2">
+        <div id="drone-flight-action-row" className="grid grid-cols-3 gap-2">
           <button
             id={`drone-flight-toggle-map-detail-${flight.id}`}
             onClick={onTogglePinned}
-            className={`w-full px-3 py-2 rounded text-sm font-medium border transition-colors ${
+            className={`w-full px-2 py-2 rounded text-xs font-semibold border transition-colors ${
               isLoaded
                 ? 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
                 : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
             }`}
           >
-            {isLoaded ? 'Unpin Flight' : 'Pin Flight'}
+            {isLoaded ? 'Unpin' : 'Pin Flight'}
           </button>
           <button
             id={`drone-flight-fly-to-${flight.id}`}
             onClick={onFlyTo}
-            className="w-full px-3 py-2 rounded text-sm font-medium border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+            className="w-full px-2 py-2 rounded text-xs font-semibold border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
           >
             Fly to Extent
           </button>
           <button
             id={`drone-flight-save-view-${flight.id}`}
             onClick={onSaveView}
-            className="w-full px-3 py-2 rounded text-sm font-medium border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+            className="w-full px-2 py-2 rounded text-xs font-semibold border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
           >
-            Save View to Map Layers
+            Save View
           </button>
         </div>
       </section>
@@ -104,34 +110,43 @@ export function FlightDetailView({
             const isCurrent = projectFlight.id === selectedFlightId;
             const hasCollection = !!projectFlight.imageCollection;
             const hasTif = !!projectFlight.tifUrl;
+            const loadedIndex = loadedFlightIds.indexOf(projectFlight.id);
+            const isVisible = loadedIndex !== -1;
+            const canMoveUp = loadedIndex > 0;
+            const canMoveDown = loadedIndex !== -1 && loadedIndex < loadedFlightIds.length - 1;
             return (
-              <button
+              <div
                 key={projectFlight.id}
                 id={`drone-flight-project-flight-${projectFlight.id}`}
-                type="button"
-                onClick={() => onSelectFlight(projectFlight)}
                 className={`w-full rounded-md border px-2.5 py-2 text-left transition-colors ${
                   isCurrent
                     ? 'border-blue-300 bg-blue-50'
                     : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
                 }`}
               >
-                <div id={`drone-flight-project-flight-header-${projectFlight.id}`} className="flex items-center justify-between gap-2">
-                  <p
-                    id={`drone-flight-project-flight-title-${projectFlight.id}`}
-                    className={`truncate text-sm font-medium ${isCurrent ? 'text-blue-800' : 'text-gray-900'}`}
-                  >
-                    Flight {index + 1}: {projectFlight.planName}
-                  </p>
-                  <span
-                    id={`drone-flight-project-flight-current-badge-${projectFlight.id}`}
-                    className={`text-[10px] font-semibold uppercase tracking-wide ${
-                      isCurrent ? 'text-blue-700' : 'text-gray-400'
-                    }`}
-                  >
-                    {isCurrent ? 'Selected' : ''}
-                  </span>
-                </div>
+                <button
+                  id={`drone-flight-project-flight-select-${projectFlight.id}`}
+                  type="button"
+                  onClick={() => onSelectFlight(projectFlight)}
+                  className="w-full text-left"
+                >
+                  <div id={`drone-flight-project-flight-header-${projectFlight.id}`} className="flex items-center justify-between gap-2">
+                    <p
+                      id={`drone-flight-project-flight-title-${projectFlight.id}`}
+                      className={`truncate text-sm font-medium ${isCurrent ? 'text-blue-800' : 'text-gray-900'}`}
+                    >
+                      Flight {index + 1}: {projectFlight.planName}
+                    </p>
+                    <span
+                      id={`drone-flight-project-flight-current-badge-${projectFlight.id}`}
+                      className={`text-[10px] font-semibold uppercase tracking-wide ${
+                        isCurrent ? 'text-blue-700' : 'text-gray-400'
+                      }`}
+                    >
+                      {isCurrent ? 'Selected' : ''}
+                    </span>
+                  </div>
+                </button>
                 <p
                   id={`drone-flight-project-flight-date-${projectFlight.id}`}
                   className={`mt-0.5 text-xs ${isCurrent ? 'text-blue-700' : 'text-gray-600'}`}
@@ -162,7 +177,47 @@ export function FlightDetailView({
                     </span>
                   )}
                 </div>
-              </button>
+                <div
+                  id={`drone-flight-project-flight-controls-${projectFlight.id}`}
+                  className="mt-2 flex items-center justify-between gap-2 border-t border-gray-200 pt-2"
+                >
+                  <button
+                    id={`drone-flight-visibility-toggle-${projectFlight.id}`}
+                    type="button"
+                    onClick={() => onToggleFlightVisibility(projectFlight.id)}
+                    className={`inline-flex items-center gap-1.5 rounded border px-2 py-1 text-[11px] font-medium transition-colors ${
+                      isVisible
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                        : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {isVisible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                    {isVisible ? 'Visible' : 'Hidden'}
+                  </button>
+                  <div id={`drone-flight-order-controls-${projectFlight.id}`} className="inline-flex items-center gap-1">
+                    <button
+                      id={`drone-flight-order-up-${projectFlight.id}`}
+                      type="button"
+                      disabled={!canMoveUp}
+                      onClick={() => onReorderFlight(projectFlight.id, 'up')}
+                      className="inline-flex h-6 w-6 items-center justify-center rounded border border-gray-200 text-gray-600 transition-colors enabled:hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                      title="Move up in draw order"
+                    >
+                      <ArrowUp className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      id={`drone-flight-order-down-${projectFlight.id}`}
+                      type="button"
+                      disabled={!canMoveDown}
+                      onClick={() => onReorderFlight(projectFlight.id, 'down')}
+                      className="inline-flex h-6 w-6 items-center justify-center rounded border border-gray-200 text-gray-600 transition-colors enabled:hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
+                      title="Move down in draw order"
+                    >
+                      <ArrowDown className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
             );
           })}
         </div>

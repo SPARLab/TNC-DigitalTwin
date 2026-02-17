@@ -23,6 +23,7 @@ export function DroneDeploySidebar() {
     setSortMode,
     setFlightLoaded,
     setFlightOpacity,
+    reorderLoadedFlights,
     setSelectedFlightId,
     requestFlyToFlight,
   } = useDroneDeploy();
@@ -64,6 +65,12 @@ export function DroneDeploySidebar() {
     ) ?? null;
   }, [projects, currentFlight]);
 
+  const currentProjectLoadedFlightIds = useMemo(() => {
+    if (!currentProject) return [];
+    const projectFlightIds = new Set(currentProject.imageryLayers.map((flight) => flight.id));
+    return loadedFlightIds.filter((flightId) => projectFlightIds.has(flightId));
+  }, [currentProject, loadedFlightIds]);
+
   useEffect(() => {
     if (activeLayer?.layerId !== 'dataset-193') return;
     if (activeFlightId != null) {
@@ -78,6 +85,7 @@ export function DroneDeploySidebar() {
     if (!nextFlight) return;
     setShowDetailView(true);
     setSelectedFlightId(nextFlight.id);
+    setFlightLoaded(nextFlight.id, true);
     activateLayer('dataset-193', undefined, nextFlight.id);
   };
 
@@ -128,6 +136,7 @@ export function DroneDeploySidebar() {
       toggleChildVisibility(pinned.id, matchingView.id);
     }
     setSelectedFlightId(flight.id);
+    setFlightLoaded(flight.id, true);
     requestFlyToFlight(flight.id);
     activateLayer('dataset-193', matchingView?.id, flight.id);
   };
@@ -156,7 +165,8 @@ export function DroneDeploySidebar() {
           isLoaded={loadedFlightIds.includes(currentFlight.id)}
           isLoading={isFlightLoading(currentFlight.id)}
           opacity={opacityByFlightId[currentFlight.id] ?? 0.8}
-          selectedFlightId={currentFlight.id}
+          loadedFlightIds={currentProjectLoadedFlightIds}
+          selectedFlightId={selectedFlightId ?? currentFlight.id}
           onBack={() => {
             setShowDetailView(false);
             activateLayer('dataset-193');
@@ -166,6 +176,8 @@ export function DroneDeploySidebar() {
           onSaveView={() => handleSaveAsView(currentFlight)}
           onFlyTo={() => requestFlyToFlight(currentFlight.id)}
           onOpacityChange={(next) => setFlightOpacity(currentFlight.id, next)}
+          onToggleFlightVisibility={(flightId) => setFlightLoaded(flightId, !loadedFlightIds.includes(flightId))}
+          onReorderFlight={(flightId, direction) => reorderLoadedFlights(flightId, direction)}
         />
       ) : (
         <ProjectListView

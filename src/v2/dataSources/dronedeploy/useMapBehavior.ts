@@ -143,10 +143,8 @@ export function useDroneDeployMapBehavior(
     if (!parent || !(parent instanceof GroupLayer)) return;
 
     const byFlightId = loadedArcLayersRef.current;
-    const desired = new Set<number>([...visiblePinnedFlightIds]);
-    if (selectedFlightId != null) {
-      desired.add(selectedFlightId);
-    }
+    const desiredFlightIds = loadedFlightIds;
+    const desired = new Set<number>(desiredFlightIds);
 
     for (const [flightId, wmtsLayer] of byFlightId) {
       if (desired.has(flightId)) continue;
@@ -195,9 +193,20 @@ export function useDroneDeployMapBehavior(
         showToast(`Failed to load "${flight.planName}"`, 'warning');
       });
     }
+
+    // Keep drawing order stable for overlapping imagery.
+    // `loadedFlightIds` is treated as top -> bottom in UI, so reverse for ArcGIS index order.
+    for (let uiIndex = desiredFlightIds.length - 1; uiIndex >= 0; uiIndex -= 1) {
+      const flightId = desiredFlightIds[uiIndex];
+      const layer = byFlightId.get(flightId);
+      if (!layer) continue;
+      const arcgisIndex = desiredFlightIds.length - 1 - uiIndex;
+      parent.reorder(layer, arcgisIndex);
+    }
   }, [
     isOnMap,
     selectedFlightId,
+    loadedFlightIds,
     opacityByFlightId,
     getFlightById,
     getManagedLayer,
