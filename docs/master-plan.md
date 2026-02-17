@@ -20,7 +20,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 **Key Reference Documents:**
 - Paradigm: `docs/feedback/data-catalog-ux-paradigm-jan-21-2026.md`
 - Mockups: `mockups/02a-02f` (unified layout, data source browse views, export builder)
-- Previous mockup plan: `docs/01-implementation-plan/archive/v2-pin-bookmark-export-mockup-plan.md`
+- Previous mockup plan: `docs/IMPLEMENTATION/archive/v2-pin-bookmark-export-mockup-plan-jan-22-2026.md`
 - Future enhancements: `docs/PLANNING/future-enhancements.md` (v2.1+ feature backlog)
 
 ---
