@@ -1,7 +1,7 @@
 # Phase 10: DroneDeploy Imagery
 
 **Status:** 🟡 In Progress  
-**Progress:** 7 / 11 tasks  
+**Progress:** 9 / 11 tasks  
 **Branch:** `v2/dronedeploy`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -21,8 +21,8 @@
 | 10.7 | ⚪ Not Started | — | Render flight footprints as map polygons | Show `plan_geometry` / `project_bounds` as clickable map polygons |
 | 10.8 | ⚪ Not Started | — | Implement layer opacity and visibility controls | Slider opacity, toggle visibility, layer ordering for overlapping imagery |
 | 10.9 | 🟢 Complete | Feb 16, 2026 22:15 PST | Implement temporal comparison UI | Implemented on-map temporal carousel visibility via active-layer adapter override (`dataset-193`), reused v1 DroneDeploy carousel button/dot styling, synced carousel selection to right-sidebar flight detail, and preserved auto fly-to on selection |
-| 10.10 | ⚪ Not Started | — | Sync loading indicators | Same shared loading pattern as other data sources |
-| 10.11 | ⚪ Not Started | — | Wire Save View flow | Pin imagery layers, save project/flight views to Map Layers |
+| 10.10 | 🟢 Complete | Feb 16, 2026 23:40 PST | Sync loading indicators | Drone loading now covers metadata + WMTS tile lifecycle with shared loading primitives and Map Layers eye-slot spinners |
+| 10.11 | 🟢 Complete | Feb 16, 2026 23:40 PST | Wire Save View flow | Save View now creates/reuses DroneDeploy child views in Map Layers and child activation rehydrates the correct WMTS flight |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -292,11 +292,11 @@ Implement the DroneDeploy drone imagery browse experience in the right sidebar. 
 **Goal:** Loading indicators for WMTS layer loading (which can be slow for large tile sets).
 
 **Acceptance Criteria:**
-- [ ] DroneDeploy adapter exposes `loading` via registry
-- [ ] Map Layers widget shows spinner while WMTS tiles are loading
-- [ ] Right sidebar shows loading state during metadata fetch
-- [ ] WMTS layer "loaded" event clears loading state
-- [ ] Uses shared loading primitives
+- [x] DroneDeploy adapter exposes `loading` via registry
+- [x] Map Layers widget shows spinner while WMTS tiles are loading
+- [x] Right sidebar shows loading state during metadata fetch
+- [x] WMTS layer "loaded" event clears loading state
+- [x] Uses shared loading primitives
 
 ---
 
@@ -305,11 +305,11 @@ Implement the DroneDeploy drone imagery browse experience in the right sidebar. 
 **Goal:** Save drone imagery configurations to Map Layers widget.
 
 **Acceptance Criteria:**
-- [ ] Pin creates a DroneDeploy parent layer in Map Layers
-- [ ] Individual loaded flights appear as child views
-- [ ] Selecting a saved child view re-loads that specific WMTS layer
-- [ ] Comparison mode state optionally saveable
-- [ ] Follows shared child-view conventions from `LayerContext`
+- [x] Pin creates a DroneDeploy parent layer in Map Layers
+- [x] Individual loaded flights appear as child views
+- [x] Selecting a saved child view re-loads that specific WMTS layer
+- [x] Comparison mode state optionally saveable
+- [x] Follows shared child-view conventions from `LayerContext`
 
 ---
 
@@ -401,6 +401,7 @@ Validated with sample `wmts_item_id` values from live records.
 | Date | Task | Change | By |
 |------|------|--------|-----|
 | Feb 16, 2026 | — | Created phase document | Will + Claude |
+| Feb 16, 2026 | 10.10, 10.11 | Completed DroneDeploy loading/save-view integration: merged metadata + WMTS loading into adapter-exposed state, added right-sidebar metadata loading row, set WMTS loading lifecycle from `WMTSLayer.when()` events, and wired Save View to create/reuse DroneDeploy child views in Map Layers (`droneView.flightId`) so child activation restores the correct flight layer. Updated phase progress to 9/11. | Codex |
 | Feb 16, 2026 | 10.1 | Completed live metadata service audit for `DroneDeploy_Metadata_v2`; documented schema drift (new fields), record count update (16), WMTS loading/auth pattern, WKT parse validation, and `azure_blob_url` accessibility caveat. Updated phase status to In Progress (1/11). | Codex |
 | Feb 16, 2026 | 10.3 | Renumbered orthomosaic detection task from 10.11 to 10.3; shifted 10.3→10.4 through 10.10→10.11 for logical flow (detect/expand before browse/detail/WMTS). | Codex |
 | Feb 16, 2026 | 10.3 | Implemented left-sidebar DroneDeploy orthomosaic expansion behavior for `dataset-193`: fetch project groups, show parent/project counts, expand project flight rows, set selected flight as active `featureId` context, and render explicit loading/error/empty states. Updated phase progress to 2/11. | Codex |

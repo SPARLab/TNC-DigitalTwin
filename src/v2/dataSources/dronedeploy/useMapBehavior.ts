@@ -50,6 +50,7 @@ export function useDroneDeployMapBehavior(
     flyToFlightId,
     clearFlyToRequest,
     setFlightLoaded,
+    setFlightLoading,
     requestFlyToFlight,
   } = useDroneDeploy();
   const { activateLayer } = useLayers();
@@ -64,6 +65,12 @@ export function useDroneDeployMapBehavior(
   const activeFlightId = isActive && typeof activeLayer?.featureId === 'number'
     ? activeLayer.featureId
     : null;
+  const pinnedDroneLayer = pinnedLayers.find((layer) => layer.layerId === LAYER_ID);
+  const pinnedViews = pinnedDroneLayer?.views ?? [];
+  const visiblePinnedFlightIds = pinnedViews
+    .filter((view) => view.isVisible)
+    .map((view) => view.droneView?.flightId)
+    .filter((flightId): flightId is number => typeof flightId === 'number');
 
   useEffect(() => {
     if (isOnMap) warmCache();
@@ -84,10 +91,22 @@ export function useDroneDeployMapBehavior(
       return;
     }
     if (selectedFlightId != null) return;
+    if (visiblePinnedFlightIds.length > 0) {
+      const pinnedFlightId = visiblePinnedFlightIds[0];
+      const pinnedViewId = pinnedViews.find((view) => view.droneView?.flightId === pinnedFlightId)?.id;
+      setSelectedFlightId(pinnedFlightId);
+      activateLayer(LAYER_ID, pinnedViewId ?? activeLayer?.viewId, pinnedFlightId);
+      if (lastRequestedFlyToFlightIdRef.current !== pinnedFlightId) {
+        requestFlyToFlight(pinnedFlightId);
+        lastRequestedFlyToFlightIdRef.current = pinnedFlightId;
+      }
+      return;
+    }
     if (projects.length > 0 && projects[0].imageryLayers.length > 0) {
       const firstFlightId = projects[0].imageryLayers[0].id;
+      const firstPinnedViewId = pinnedViews.find((view) => view.droneView?.flightId === firstFlightId)?.id;
       setSelectedFlightId(firstFlightId);
-      activateLayer(LAYER_ID, undefined, firstFlightId);
+      activateLayer(LAYER_ID, firstPinnedViewId, firstFlightId);
       requestFlyToFlight(firstFlightId);
       lastRequestedFlyToFlightIdRef.current = firstFlightId;
       return;
@@ -106,12 +125,17 @@ export function useDroneDeployMapBehavior(
     setSelectedFlightId,
     loadedFlightIds,
     projects,
+    visiblePinnedFlightIds,
+    activeLayer?.viewId,
     activateLayer,
     requestFlyToFlight,
   ]);
 
   useEffect(() => {
     if (!isOnMap) {
+      for (const flightId of loadedArcLayersRef.current.keys()) {
+        setFlightLoading(flightId, false);
+      }
       loadedArcLayersRef.current.clear();
       return;
     }
@@ -119,7 +143,7 @@ export function useDroneDeployMapBehavior(
     if (!parent || !(parent instanceof GroupLayer)) return;
 
     const byFlightId = loadedArcLayersRef.current;
-    const desired = new Set<number>(loadedFlightIds);
+    const desired = new Set<number>([...visiblePinnedFlightIds]);
     if (selectedFlightId != null) {
       desired.add(selectedFlightId);
     }
@@ -128,6 +152,7 @@ export function useDroneDeployMapBehavior(
       if (desired.has(flightId)) continue;
       parent.remove(wmtsLayer);
       byFlightId.delete(flightId);
+      setFlightLoading(flightId, false);
     }
 
     for (const flightId of desired) {
@@ -152,8 +177,10 @@ export function useDroneDeployMapBehavior(
 
       parent.add(wmtsLayer);
       byFlightId.set(flight.id, wmtsLayer);
+      setFlightLoading(flight.id, true);
 
       void wmtsLayer.when().then(() => {
+        setFlightLoading(flight.id, false);
         if (isHandlingMapReadyRef.current) return;
         if (flyToFlightId === flight.id && viewRef.current) {
           void flyToFlightExtent(viewRef.current, flight.planGeometry ?? undefined);
@@ -162,6 +189,7 @@ export function useDroneDeployMapBehavior(
       }).catch((error) => {
         parent.remove(wmtsLayer);
         byFlightId.delete(flight.id);
+        setFlightLoading(flight.id, false);
         setFlightLoaded(flight.id, false);
         console.error('[DroneDeploy Map] Failed to load WMTS layer', error);
         showToast(`Failed to load "${flight.planName}"`, 'warning');
@@ -169,7 +197,6 @@ export function useDroneDeployMapBehavior(
     }
   }, [
     isOnMap,
-    loadedFlightIds,
     selectedFlightId,
     opacityByFlightId,
     getFlightById,
@@ -178,9 +205,11 @@ export function useDroneDeployMapBehavior(
     flyToFlightId,
     clearFlyToRequest,
     setFlightLoaded,
+    setFlightLoading,
     viewRef,
     mapReady,
     dataLoaded,
+    visiblePinnedFlightIds,
   ]);
 
   useEffect(() => {
@@ -188,12 +217,13 @@ export function useDroneDeployMapBehavior(
     if (!view || flyToFlightId == null) return;
     const flight = getFlightById(flyToFlightId);
     if (!flight) return;
-    activateLayer(LAYER_ID, undefined, flight.id);
+    const matchingViewId = pinnedViews.find((savedView) => savedView.droneView?.flightId === flight.id)?.id;
+    activateLayer(LAYER_ID, matchingViewId, flight.id);
     isHandlingMapReadyRef.current = true;
     void flyToFlightExtent(view, flight.planGeometry ?? undefined)
       .finally(() => {
         isHandlingMapReadyRef.current = false;
         clearFlyToRequest();
       });
-  }, [flyToFlightId, getFlightById, viewRef, activateLayer, clearFlyToRequest]);
+  }, [flyToFlightId, getFlightById, viewRef, activateLayer, clearFlyToRequest, pinnedViews]);
 }

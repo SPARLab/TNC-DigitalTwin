@@ -37,13 +37,13 @@ export function MapContainer() {
   const FloatingPanel = adapter?.FloatingPanel;
 
   // Cache/loading status for the active data source (generic loading overlay)
-  const cacheStatus = useActiveCacheStatus(activeLayer?.dataSource);
+  const cacheStatus = useActiveCacheStatus(adapter?.id ?? activeLayer?.dataSource);
   const showLoadingOverlay = !!activeLayer
     && (cacheStatus?.loading ?? false)
-    && !(cacheStatus?.dataLoaded ?? false);
-  const loadingOverlayMessage = activeLayer?.dataSource === 'animl'
+    && ((adapter?.id === 'drone') || !(cacheStatus?.dataLoaded ?? false));
+  const loadingOverlayMessage = (adapter?.id ?? activeLayer?.dataSource) === 'animl'
     ? 'Loading camera trap data...'
-    : `Loading ${activeLayer?.name ?? 'data'}...`;
+    : (adapter?.id === 'drone' ? 'Loading drone imagery...' : `Loading ${activeLayer?.name ?? 'data'}...`);
 
   // Sync pinned/active layers with ArcGIS layers
   useMapLayers();

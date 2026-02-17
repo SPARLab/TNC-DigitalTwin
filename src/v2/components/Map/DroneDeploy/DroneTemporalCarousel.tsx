@@ -1,12 +1,11 @@
-import { ChevronLeft, ChevronRight, MapPinned } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLayers } from '../../../context/LayerContext';
 import { useDroneDeploy } from '../../../context/DroneDeployContext';
 
 export function DroneTemporalCarousel() {
-  const { activeLayer, activateLayer } = useLayers();
+  const { activeLayer, activateLayer, getPinnedByLayerId } = useLayers();
   const {
     selectedFlightId,
-    loadedFlightIds,
     projects,
     getFlightById,
     getProjectByFlightId,
@@ -34,9 +33,13 @@ export function DroneTemporalCarousel() {
   const handleSelectIndex = (index: number) => {
     const nextFlight = selectedProject.imageryLayers[index];
     if (!nextFlight) return;
+    const dronePinned = getPinnedByLayerId('dataset-193');
+    const matchingViewId = dronePinned?.views?.find(
+      (view) => view.droneView?.flightId === nextFlight.id
+    )?.id;
     setSelectedFlightId(nextFlight.id);
     requestFlyToFlight(nextFlight.id);
-    activateLayer('dataset-193', undefined, nextFlight.id);
+    activateLayer('dataset-193', matchingViewId, nextFlight.id);
   };
 
   return (
@@ -87,7 +90,6 @@ export function DroneTemporalCarousel() {
         >
           {selectedProject.imageryLayers.map((flight, index) => {
             const dotActive = index === currentIndex;
-            const dotPinned = loadedFlightIds.includes(flight.id);
             return (
               <button
                 key={flight.id}
@@ -95,15 +97,11 @@ export function DroneTemporalCarousel() {
                 type="button"
                 onClick={() => handleSelectIndex(index)}
                 className={`relative h-2.5 w-2.5 rounded-full transition-colors ${
-                  dotActive ? 'bg-blue-600' : dotPinned ? 'bg-emerald-500' : 'bg-gray-300 hover:bg-gray-400'
+                  dotActive ? 'bg-blue-600' : 'bg-gray-300 hover:bg-gray-400'
                 }`}
                 title={`${selectedProject.projectName} (${index + 1}/${selectedProject.imageryLayers.length})`}
                 aria-label={`Select flight ${index + 1}`}
-              >
-                {dotPinned && (
-                  <MapPinned id={`drone-temporal-carousel-dot-pin-${flight.id}`} className="absolute -right-1.5 -top-2 h-3 w-3 text-emerald-700" />
-                )}
-              </button>
+              />
             );
           })}
         </div>

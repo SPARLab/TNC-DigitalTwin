@@ -39,7 +39,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 7 | Polish & Consistency | ⚪ Not Started | 0 / 7+ tasks | `v2/polish` | No |
 | 8 | Calflora | ⚪ Not Started | 0 / 9 tasks | `v2/calflora` | No |
 | 9 | GBIF | ⚪ Not Started | 0 / 9 tasks | `v2/gbif` | No |
-| 10 | DroneDeploy | 🟡 In Progress | 7 / 11 tasks | `v2/dronedeploy` | No |
+| 10 | DroneDeploy | 🟡 In Progress | 9 / 11 tasks | `v2/dronedeploy` | No |
 | 11 | MODIS | ⚪ Not Started | 0 / 9 tasks | `v2/modis` | No |
 
 **Status Legend:**
@@ -270,6 +270,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 16, 2026 | Phase 10 | **Tasks 10.10 and 10.11 complete: DroneDeploy loading + Save View sync.** Unified DroneDeploy loading state now includes metadata fetch and WMTS tile lifecycle (`WMTSLayer.when()`), enabling shared eye-slot spinner behavior in Map Layers and metadata loading feedback in right sidebar. Save View now creates/reuses DroneDeploy child views in Map Layers (`droneView.flightId`) and activating a saved child rehydrates the specific flight WMTS layer. Progress: 9/11. | Codex |
 | Feb 16, 2026 | Phase 10 | **Renumbered DroneDeploy tasks:** Orthomosaic detection/expansion moved from 10.11 to 10.3; 10.3→10.4 through 10.10→10.11 shifted for logical flow (detect before browse/detail/WMTS). | Codex |
 | Feb 16, 2026 | Phase 10 | **Task 10.1 complete: DroneDeploy metadata service audit.** Validated live v2 endpoint (`DroneDeploy_Metadata_v2`), confirmed record count is 16 (not 11), documented schema drift (new fields: summary/description/project_lat/project_lon/plan_lat/plan_lon), validated WMTS loading pattern via `wmts_item_id` (public portal items, item-data-provided `api_key`), and noted `azure_blob_url` direct-link 404 caveat. Progress: 1/11. | Codex |
 | Feb 16, 2026 | Phases 8-11 | **Added 4 new data source phases:** Phase 8 (Calflora), Phase 9 (GBIF), Phase 10 (DroneDeploy), Phase 11 (MODIS). Updated dependency graph and phase documents list. LiDAR noted as future phase (deferred — 3D implications). | Will + Claude |

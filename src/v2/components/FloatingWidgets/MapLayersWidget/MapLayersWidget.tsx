@@ -44,17 +44,24 @@ export function MapLayersWidget() {
   const loadingByLayerId = new Map<string, boolean>(
     pinnedLayers.map((pinnedLayer) => {
       const catalogLayer = layerMap.get(pinnedLayer.layerId);
-      const cacheStatus = catalogLayer
-        ? cacheStatusByDataSource[catalogLayer.dataSource]
-        : null;
-      const isSourceLoading = !!cacheStatus?.loading && !cacheStatus?.dataLoaded;
+      const isDroneDeployLayer = pinnedLayer.layerId === 'dataset-193';
+      const cacheStatus = isDroneDeployLayer
+        ? cacheStatusByDataSource.drone
+        : (catalogLayer ? cacheStatusByDataSource[catalogLayer.dataSource] : null);
+      const isDroneDeploySource = isDroneDeployLayer || catalogLayer?.dataSource === 'drone';
+      const isSourceLoading = isDroneDeploySource
+        ? !!cacheStatus?.loading
+        : (!!cacheStatus?.loading && !cacheStatus?.dataLoaded);
       return [pinnedLayer.layerId, isSourceLoading];
     }),
   );
+  const activeLayerIsDroneDeploy = activeLayer?.layerId === 'dataset-193' || activeLayer?.dataSource === 'drone';
   const activeLayerCacheStatus = activeLayer
-    ? cacheStatusByDataSource[activeLayer.dataSource]
+    ? (activeLayerIsDroneDeploy ? cacheStatusByDataSource.drone : cacheStatusByDataSource[activeLayer.dataSource])
     : null;
-  const activeLayerIsLoading = !!activeLayerCacheStatus?.loading && !activeLayerCacheStatus?.dataLoaded;
+  const activeLayerIsLoading = activeLayerIsDroneDeploy
+    ? !!activeLayerCacheStatus?.loading
+    : (!!activeLayerCacheStatus?.loading && !activeLayerCacheStatus?.dataLoaded);
 
   const handleEditFilters = (layerId: string, viewId?: string) => {
     activateLayer(layerId, viewId);

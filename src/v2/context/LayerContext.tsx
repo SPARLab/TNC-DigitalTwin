@@ -14,6 +14,7 @@ import type {
   DendraViewFilters,
   DataOneViewFilters,
 } from '../types';
+import type { DroneImageryMetadata } from '../../types/droneImagery';
 import { useCatalog } from './CatalogContext';
 import { TAXON_CONFIG } from '../components/Map/layers/taxonConfig';
 
@@ -64,6 +65,11 @@ interface LayerContextValue {
     filters: DataOneViewFilters,
     resultCount: number,
     targetViewId?: string,
+  ) => string | undefined;
+  createOrUpdateDroneView: (
+    layerId: string,
+    flight: DroneImageryMetadata,
+    comparisonMode?: 'single' | 'temporal',
   ) => string | undefined;
   reorderLayers: (fromIndex: number, toIndex: number) => void;
   createNewView: (pinnedId: string) => void;
@@ -293,6 +299,15 @@ function buildAnimlViewName(filters: AnimlViewFilters): string {
   return 'All Camera Traps';
 }
 
+function formatDroneCapturedDate(date: Date): string {
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function buildDroneViewName(flight: DroneImageryMetadata): string {
+  const safePlanName = flight.planName?.trim() || `Flight ${flight.id}`;
+  return `${safePlanName} (${formatDroneCapturedDate(flight.dateCaptured)})`;
+}
+
 function animlFiltersEqual(
   a: AnimlViewFilters | undefined,
   b: AnimlViewFilters | undefined,
@@ -359,6 +374,12 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     if (!layer) return;
 
     const pinned = pinnedLayers.find(p => p.layerId === layerId);
+    const resolvedFeatureId = (() => {
+      if (featureId != null) return featureId;
+      if (!viewId || layerId !== 'dataset-193' || !pinned?.views) return undefined;
+      const selectedView = pinned.views.find((view) => view.id === viewId);
+      return selectedView?.droneView?.flightId;
+    })();
     setActiveLayer({
       id: layerId,
       layerId,
@@ -366,7 +387,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
       dataSource: layer.dataSource as DataSource,
       isPinned: !!pinned,
       viewId,
-      featureId,
+      featureId: resolvedFeatureId,
     });
 
     // DFT-001: clicking a pinned-but-hidden layer restores visibility
@@ -1114,6 +1135,110 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     },
     [activeLayer, layerMap]
   );
+
+  const createOrUpdateDroneView = useCallback(
+    (layerId: string, flight: DroneImageryMetadata, comparisonMode: 'single' | 'temporal' = 'single') => {
+      const layer = layerMap.get(layerId);
+      if (!layer) return undefined;
+
+      const baseView = {
+        name: buildDroneViewName(flight),
+        isNameCustom: false,
+        isVisible: true,
+        filterCount: 0,
+        filterSummary: undefined,
+        droneView: {
+          flightId: flight.id,
+          projectName: flight.projectName,
+          planName: flight.planName,
+          capturedAt: flight.dateCaptured.toISOString(),
+          comparisonMode,
+        },
+      };
+
+      let resolvedViewId: string | undefined;
+
+      setPinnedLayers((prev) => {
+        const target = prev.find((p) => p.layerId === layerId);
+
+        if (!target) {
+          const newViewId = crypto.randomUUID();
+          resolvedViewId = newViewId;
+          const newPinned: PinnedLayer = {
+            id: crypto.randomUUID(),
+            layerId,
+            name: layer.name,
+            isVisible: true,
+            isActive: activeLayer?.layerId === layerId,
+            filterCount: 0,
+            filterSummary: undefined,
+            views: [{ id: newViewId, ...baseView }],
+            order: 0,
+          };
+          return [newPinned, ...prev.map((p, i) => ({ ...p, order: i + 1 }))];
+        }
+
+        return prev.map((p) => {
+          if (p.layerId !== layerId) return p;
+
+          const existingByFlight = p.views?.find(
+            (view) => view.droneView?.flightId === flight.id
+          );
+          const targetViewId = existingByFlight?.id ?? crypto.randomUUID();
+          resolvedViewId = targetViewId;
+
+          if (p.views && p.views.length > 0) {
+            return {
+              ...p,
+              isVisible: true,
+              views: p.views.some((view) => view.id === targetViewId)
+                ? p.views.map((view) => {
+                    if (view.id !== targetViewId) return { ...view, isVisible: false };
+                    const nextName = view.isNameCustom ? view.name : baseView.name;
+                    return {
+                      ...view,
+                      name: nextName,
+                      isVisible: true,
+                      filterCount: 0,
+                      filterSummary: undefined,
+                      droneView: baseView.droneView,
+                    };
+                  })
+                : [
+                    ...p.views.map((view) => ({ ...view, isVisible: false })),
+                    { id: targetViewId, ...baseView },
+                  ],
+            };
+          }
+
+          return {
+            ...p,
+            isVisible: true,
+            views: [{ id: targetViewId, ...baseView }],
+            filterCount: 0,
+            filterSummary: undefined,
+            inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+            animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
+            dendraFilters: undefined,
+            dataoneFilters: undefined,
+            droneView: undefined,
+            distinguisher: undefined,
+            resultCount: undefined,
+          };
+        });
+      });
+
+      if (!resolvedViewId) return undefined;
+      setActiveLayer((prev) =>
+        prev && prev.layerId === layerId
+          ? { ...prev, isPinned: true, viewId: resolvedViewId, featureId: flight.id }
+          : prev
+      );
+      return resolvedViewId;
+    },
+    [activeLayer, layerMap]
+  );
+
   const reorderLayers = useCallback((fromIndex: number, toIndex: number) => {
     setPinnedLayers(prev => {
       const next = [...prev];
@@ -1130,6 +1255,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         const isDendraLayer = layerMap.get(p.layerId)?.dataSource === 'dendra';
         const isAnimlLayer = layerMap.get(p.layerId)?.dataSource === 'animl';
         const isDataOneLayer = layerMap.get(p.layerId)?.dataSource === 'dataone';
+        const isDroneLayer = p.layerId === 'dataset-193';
+        if (isDroneLayer) return p;
         
         // If already nested, add a new view
         if (p.views && p.views.length > 0) {
@@ -1163,6 +1290,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                   selectedDatasetId: undefined,
                 }
               : undefined,
+            droneView: undefined,
           };
           return { ...p, views: [...p.views, newView] };
         }
@@ -1212,6 +1340,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           animlFilters: p.animlFilters,
           dendraFilters: p.dendraFilters,
           dataoneFilters: p.dataoneFilters,
+          droneView: p.droneView,
           resultCount: p.resultCount,
         };
         const view2 = {
@@ -1244,6 +1373,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                 selectedDatasetId: undefined,
               }
             : undefined,
+          droneView: undefined,
         };
         
         // Clear flat-level filter data (now in views)
@@ -1276,6 +1406,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                 selectedDatasetId: undefined,
               }
             : undefined,
+          droneView: undefined,
           distinguisher: undefined,
           resultCount: undefined,
         };
@@ -1289,6 +1420,13 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         if (p.id !== pinnedId || !p.views) return p;
         
         const remainingViews = p.views.filter(v => v.id !== viewId);
+        if (p.layerId === 'dataset-193') {
+          return {
+            ...p,
+            views: remainingViews,
+            isVisible: remainingViews.some((view) => view.isVisible),
+          };
+        }
         
         // If only one view left, convert back to flat
         if (remainingViews.length === 1) {
@@ -1303,6 +1441,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             animlFilters: lastView.animlFilters,
             dendraFilters: lastView.dendraFilters,
             dataoneFilters: lastView.dataoneFilters,
+            droneView: lastView.droneView,
             distinguisher: lastView.isNameCustom ? lastView.name : undefined,
             resultCount: lastView.resultCount,
           };
@@ -1325,6 +1464,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         const isDendraLayer = layerMap.get(p.layerId)?.dataSource === 'dendra';
         const isAnimlLayer = layerMap.get(p.layerId)?.dataSource === 'animl';
         const isDataOneLayer = layerMap.get(p.layerId)?.dataSource === 'dataone';
+        const isDroneLayer = p.layerId === 'dataset-193';
 
         const autoName = isDendraLayer
           ? buildDendraViewName(
@@ -1354,6 +1494,17 @@ export function LayerProvider({ children }: { children: ReactNode }) {
               selectedDatasetId: undefined,
             }
           )
+          : isDroneLayer && targetView.droneView
+          ? buildDroneViewName({
+              id: targetView.droneView.flightId,
+              projectName: targetView.droneView.projectName,
+              planId: '',
+              planName: targetView.droneView.planName,
+              dateCaptured: new Date(targetView.droneView.capturedAt),
+              lastUpdated: new Date(targetView.droneView.capturedAt),
+              wmts: { link: '', itemId: '' },
+              recordType: 'plan',
+            })
           : buildINaturalistViewName(
             targetView.inaturalistFilters || { selectedTaxa: [], startDate: undefined, endDate: undefined }
           );
@@ -1425,6 +1576,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         syncDataOneFilters,
         createDendraFilteredView,
         createOrUpdateDataOneFilteredView,
+        createOrUpdateDroneView,
         reorderLayers,
         createNewView,
         removeView,

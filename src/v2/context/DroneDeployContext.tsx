@@ -10,6 +10,8 @@ interface DroneDateFilter {
 
 interface DroneDeployContextValue {
   loading: boolean;
+  metadataLoading: boolean;
+  loadingFlightIds: number[];
   dataLoaded: boolean;
   error: string | null;
   projects: DroneImageryProject[];
@@ -28,7 +30,9 @@ interface DroneDeployContextValue {
   getFlightById: (_flightId: number) => DroneImageryMetadata | null;
   getProjectByFlightId: (_flightId: number) => DroneImageryProject | null;
   isFlightLoaded: (_flightId: number) => boolean;
+  isFlightLoading: (_flightId: number) => boolean;
   setFlightLoaded: (_flightId: number, _loaded: boolean) => void;
+  setFlightLoading: (_flightId: number, _loading: boolean) => void;
   setFlightOpacity: (_flightId: number, _opacity: number) => void;
   setSelectedFlightId: (_flightId: number | null) => void;
   requestFlyToFlight: (_flightId: number) => void;
@@ -38,13 +42,14 @@ interface DroneDeployContextValue {
 const DroneDeployContext = createContext<DroneDeployContextValue | null>(null);
 
 export function DroneDeployProvider({ children }: { children: ReactNode }) {
-  const [loading, setLoading] = useState(false);
+  const [metadataLoading, setMetadataLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [projects, setProjects] = useState<DroneImageryProject[]>([]);
   const [dateFilter, setDateFilterState] = useState<DroneDateFilter>({ startDate: '', endDate: '' });
   const [sortMode, setSortModeState] = useState<DroneSortMode>('newest');
   const [loadedFlightIds, setLoadedFlightIds] = useState<number[]>([]);
+  const [loadingFlightIds, setLoadingFlightIds] = useState<number[]>([]);
   const [opacityByFlightId, setOpacityByFlightId] = useState<Record<number, number>>({});
   const [flyToFlightId, setFlyToFlightId] = useState<number | null>(null);
   const [selectedFlightId, setSelectedFlightId] = useState<number | null>(null);
@@ -53,7 +58,7 @@ export function DroneDeployProvider({ children }: { children: ReactNode }) {
   const warmCache = useCallback(() => {
     if (inFlightRef.current || dataLoaded) return;
     inFlightRef.current = true;
-    setLoading(true);
+    setMetadataLoading(true);
     setError(null);
 
     void fetchDroneImageryByProject()
@@ -66,9 +71,20 @@ export function DroneDeployProvider({ children }: { children: ReactNode }) {
       })
       .finally(() => {
         inFlightRef.current = false;
-        setLoading(false);
+        setMetadataLoading(false);
       });
   }, [dataLoaded]);
+
+  const setFlightLoading = useCallback((flightId: number, loading: boolean) => {
+    setLoadingFlightIds((prev) => {
+      const hasFlight = prev.includes(flightId);
+      if (loading && !hasFlight) return [...prev, flightId];
+      if (!loading && hasFlight) return prev.filter((id) => id !== flightId);
+      return prev;
+    });
+  }, []);
+
+  const loading = metadataLoading || loadingFlightIds.length > 0;
 
   const totalFlightCount = useMemo(
     () => projects.reduce((sum, project) => sum + project.imageryLayers.length, 0),
@@ -106,6 +122,10 @@ export function DroneDeployProvider({ children }: { children: ReactNode }) {
     (flightId: number) => loadedFlightIds.includes(flightId),
     [loadedFlightIds]
   );
+  const isFlightLoading = useCallback(
+    (flightId: number) => loadingFlightIds.includes(flightId),
+    [loadingFlightIds]
+  );
 
   const setFlightLoaded = useCallback((flightId: number, loaded: boolean) => {
     setLoadedFlightIds((prev) => {
@@ -133,6 +153,8 @@ export function DroneDeployProvider({ children }: { children: ReactNode }) {
     <DroneDeployContext.Provider
       value={{
         loading,
+        metadataLoading,
+        loadingFlightIds,
         dataLoaded,
         error,
         projects,
@@ -151,7 +173,9 @@ export function DroneDeployProvider({ children }: { children: ReactNode }) {
         getFlightById,
         getProjectByFlightId,
         isFlightLoaded,
+        isFlightLoading,
         setFlightLoaded,
+        setFlightLoading,
         setFlightOpacity,
         setSelectedFlightId,
         requestFlyToFlight,

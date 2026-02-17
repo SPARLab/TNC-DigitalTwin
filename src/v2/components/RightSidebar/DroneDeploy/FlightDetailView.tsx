@@ -1,15 +1,17 @@
-import { ArrowLeft, Calendar, ExternalLink, Layers, MapPinned, Package, SlidersHorizontal } from 'lucide-react';
+import { ArrowLeft, Calendar, ExternalLink, Layers, Loader2, MapPinned, Package, SlidersHorizontal } from 'lucide-react';
 import type { DroneImageryMetadata, DroneImageryProject } from '../../../../types/droneImagery';
 
 interface FlightDetailViewProps {
   project: DroneImageryProject;
   flight: DroneImageryMetadata;
   isLoaded: boolean;
+  isLoading: boolean;
   opacity: number;
   selectedFlightId: number;
   onBack: () => void;
   onSelectFlight: (_flight: DroneImageryMetadata) => void;
   onTogglePinned: () => void;
+  onSaveView: () => void;
   onFlyTo: () => void;
   onOpacityChange: (_value: number) => void;
 }
@@ -22,11 +24,13 @@ export function FlightDetailView({
   project,
   flight,
   isLoaded,
+  isLoading,
   opacity,
   selectedFlightId,
   onBack,
   onSelectFlight,
   onTogglePinned,
+  onSaveView,
   onFlyTo,
   onOpacityChange,
 }: FlightDetailViewProps) {
@@ -57,7 +61,8 @@ export function FlightDetailView({
           </div>
           <div id="drone-flight-layer-status" className="flex items-center gap-2 text-gray-700">
             <Layers className="w-4 h-4 text-gray-500" />
-            <span>{isLoaded ? 'WMTS loaded on map' : 'WMTS not loaded'}</span>
+            <span>{isLoading ? 'Loading WMTS tiles...' : (isLoaded ? 'WMTS loaded on map' : 'WMTS not loaded')}</span>
+            {isLoading && <Loader2 id={`drone-flight-loading-spinner-${flight.id}`} className="h-3.5 w-3.5 animate-spin text-blue-600" />}
           </div>
         </div>
 
@@ -79,6 +84,13 @@ export function FlightDetailView({
             className="w-full px-3 py-2 rounded text-sm font-medium border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
           >
             Fly to Extent
+          </button>
+          <button
+            id={`drone-flight-save-view-${flight.id}`}
+            onClick={onSaveView}
+            className="w-full px-3 py-2 rounded text-sm font-medium border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+          >
+            Save View to Map Layers
           </button>
         </div>
       </section>
