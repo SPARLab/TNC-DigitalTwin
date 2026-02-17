@@ -226,11 +226,11 @@ export function TNCArcGISLegendWidget() {
                   id={`tnc-arcgis-legend-widget-item-${index}`}
                   key={`${legendData?.layerId ?? 'layer'}-legend-${index}`}
                   onClick={() => canFilterByLegend && toggleLegendValue(item.value)}
-                  className={`flex items-center gap-2 rounded-md px-2 py-1.5 ${
+                  className={`flex items-center gap-2 rounded-md px-2 py-1.5 border border-transparent ${
                     canFilterByLegend ? 'cursor-pointer hover:bg-blue-50' : 'hover:bg-gray-50'
                   } ${
                     item.value !== undefined && selectedLegendValues.includes(item.value)
-                      ? 'bg-blue-100 border border-blue-200'
+                      ? 'bg-blue-100 border-blue-200'
                       : ''
                   }`}
                 >
@@ -247,14 +247,6 @@ export function TNCArcGISLegendWidget() {
                   >
                     {item.label || `Legend item ${index + 1}`}
                   </span>
-                  {item.value !== undefined && selectedLegendValues.includes(item.value) && (
-                    <span
-                      id={`tnc-arcgis-legend-widget-selected-indicator-${index}`}
-                      className="ml-auto text-xs font-semibold text-blue-700"
-                    >
-                      Selected
-                    </span>
-                  )}
                 </div>
               ))}
             </div>
