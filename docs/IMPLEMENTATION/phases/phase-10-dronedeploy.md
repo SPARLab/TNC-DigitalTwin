@@ -1,7 +1,7 @@
 # Phase 10: DroneDeploy Imagery
 
 **Status:** 🟡 In Progress  
-**Progress:** 1 / 11 tasks  
+**Progress:** 2 / 11 tasks  
 **Branch:** `v2/dronedeploy`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -14,7 +14,7 @@
 |----|--------|---------------------------|------------------|-------|
 | 10.1 | 🟢 Complete | Feb 16, 2026 16:26 PST | Audit DroneDeploy metadata service for v2 | Completed against `DroneDeploy_Metadata_v2`; schema drift documented; WMTS access pattern validated |
 | 10.2 | ⚪ Not Started | — | Create DroneDeploy right sidebar shell | Adapter, Overview/Browse tabs; project-grouped layout |
-| 10.3 | ⚪ Not Started | — | Detect and expand DroneDeploy orthomosaic child layers | For `DroneDeploy Orthomosaics` parent layer, detect associated flights/projects count and enable expandable project selection UI |
+| 10.3 | 🟢 Complete | Feb 16, 2026 16:41 PST | Detect and expand DroneDeploy orthomosaic child layers | Implemented in left sidebar for `dataset-193`: parent expansion, live project/flight counts, per-project expand/collapse, selectable flights, and explicit loading/error/empty states |
 | 10.4 | ⚪ Not Started | — | Implement project/flight browse UI | Group by project, filter by date range, show flight cards |
 | 10.5 | ⚪ Not Started | — | Implement flight detail view | Full metadata, WMTS preview, Image Collection info, download links |
 | 10.6 | ⚪ Not Started | — | Load WMTS imagery layers on map | Load drone orthomosaics as WMTS overlay layers from `wmts_item_id` |
@@ -170,12 +170,12 @@ Implement the DroneDeploy drone imagery browse experience in the right sidebar. 
 **Goal:** For the catalog-discovered `DroneDeploy Orthomosaics` parent layer, detect associated orthomosaic flights/projects and present an expandable selection pattern.
 
 **Acceptance Criteria:**
-- [ ] Detect that active layer `dataset-193` (`DroneDeploy Orthomosaics`) should use DroneDeploy project/flight expansion behavior
-- [ ] Query DroneDeploy metadata service and compute orthomosaic counts by project
-- [ ] Show expandable project rows with per-project orthomosaic counts
-- [ ] Expanding a project reveals selectable flight rows (plan/date)
-- [ ] Selecting a flight sets active detail context for WMTS load actions (used by Tasks 10.5/10.6)
-- [ ] Empty/error states are explicit (no projects, failed metadata fetch)
+- [x] Detect that active layer `dataset-193` (`DroneDeploy Orthomosaics`) should use DroneDeploy project/flight expansion behavior
+- [x] Query DroneDeploy metadata service and compute orthomosaic counts by project
+- [x] Show expandable project rows with per-project orthomosaic counts
+- [x] Expanding a project reveals selectable flight rows (plan/date)
+- [x] Selecting a flight sets active detail context for WMTS load actions (used by Tasks 10.5/10.6)
+- [x] Empty/error states are explicit (no projects, failed metadata fetch)
 
 **Notes:**
 - This task formalizes the "one parent catalog layer → many orthomosaic children" behavior for v2 dynamic catalog discovery.
@@ -399,3 +399,4 @@ Validated with sample `wmts_item_id` values from live records.
 | Feb 16, 2026 | — | Created phase document | Will + Claude |
 | Feb 16, 2026 | 10.1 | Completed live metadata service audit for `DroneDeploy_Metadata_v2`; documented schema drift (new fields), record count update (16), WMTS loading/auth pattern, WKT parse validation, and `azure_blob_url` accessibility caveat. Updated phase status to In Progress (1/11). | Codex |
 | Feb 16, 2026 | 10.3 | Renumbered orthomosaic detection task from 10.11 to 10.3; shifted 10.3→10.4 through 10.10→10.11 for logical flow (detect/expand before browse/detail/WMTS). | Codex |
+| Feb 16, 2026 | 10.3 | Implemented left-sidebar DroneDeploy orthomosaic expansion behavior for `dataset-193`: fetch project groups, show parent/project counts, expand project flight rows, set selected flight as active `featureId` context, and render explicit loading/error/empty states. Updated phase progress to 2/11. | Codex |
