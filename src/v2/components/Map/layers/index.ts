@@ -10,6 +10,7 @@ import { createPreserveBoundaryLayer } from './preserveBoundaryLayer';
 import { createDendraLayer } from './dendraLayer';
 import { createAnimlLayer } from './animlLayer';
 import { createDataOneLayer } from './dataoneLayer';
+import { createDroneDeployLayer } from './droneDeployLayer';
 
 /** Set of catalog layer IDs that have real map layer implementations */
 export const IMPLEMENTED_LAYERS = new Set([
@@ -17,6 +18,7 @@ export const IMPLEMENTED_LAYERS = new Set([
   'animl-camera-traps',
   'preserve-boundary',
   'dataone-datasets',
+  'dataset-193',
 ]);
 
 /** Layer IDs known to be Dendra sensor services (detected dynamically) */
@@ -53,6 +55,9 @@ export function createMapLayer(layerId: string, options: {
 
     case 'dataone-datasets':
       return createDataOneLayer({ id: `v2-${layerId}`, ...options });
+
+    case 'dataset-193':
+      return createDroneDeployLayer({ id: `v2-${layerId}`, ...options });
 
     default:
       // Dynamically registered Dendra layers

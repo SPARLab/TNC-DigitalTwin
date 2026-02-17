@@ -66,6 +66,7 @@ export function PinnedLayerRow({
   onActivateChildView,
 }: PinnedLayerRowProps) {
   const isNested = layer.views && layer.views.length > 0;
+  const isDroneViewGroup = isNested && layer.views!.every((view) => typeof view.droneView?.flightId === 'number');
   const displayName = !isNested && layer.distinguisher
     ? `${layer.name} (${layer.distinguisher})`
     : layer.name;
@@ -367,7 +368,7 @@ export function PinnedLayerRow({
                   onClearFilters={() => onClearFiltersForChild?.(view.id)}
                 />
               ))}
-              <NewViewButton onClick={() => onCreateNewView?.()} />
+              {!isDroneViewGroup && <NewViewButton onClick={() => onCreateNewView?.()} />}
             </div>
           </div>
         </div>

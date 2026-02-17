@@ -56,6 +56,7 @@ export interface PinnedLayer {
   animlFilters?: AnimlViewFilters;
   dendraFilters?: DendraViewFilters;
   dataoneFilters?: DataOneViewFilters;
+  droneView?: DroneViewState;
   distinguisher?: string;
   views?: PinnedLayerView[];
   order: number; // for drag-reorder z-order
@@ -75,7 +76,17 @@ export interface PinnedLayerView {
   animlFilters?: AnimlViewFilters;
   dendraFilters?: DendraViewFilters;
   dataoneFilters?: DataOneViewFilters;
+  droneView?: DroneViewState;
   resultCount?: number; // Number of features matching filters (for count display testing)
+}
+
+/** DroneDeploy saved-view state stored per pinned layer/view */
+export interface DroneViewState {
+  flightId: number;
+  projectName: string;
+  planName: string;
+  capturedAt: string;
+  comparisonMode?: 'single' | 'temporal';
 }
 
 /** iNaturalist filter state stored per pinned layer/view */

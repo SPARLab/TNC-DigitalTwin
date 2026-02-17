@@ -17,7 +17,7 @@ import { MapLayersWidget } from '../FloatingWidgets/MapLayersWidget/MapLayersWid
 import { useMap } from '../../context/MapContext';
 import { useLayers } from '../../context/LayerContext';
 import { useMapLayers } from './useMapLayers';
-import { getAdapter, useActiveCacheStatus } from '../../dataSources/registry';
+import { getAdapterForActiveLayer, useActiveCacheStatus } from '../../dataSources/registry';
 import { MapToasts } from './MapToasts';
 import { MapCenterLoadingOverlay } from '../shared/loading/LoadingPrimitives';
 
@@ -31,19 +31,19 @@ export function MapContainer() {
   const { activeLayer } = useLayers();
   const [previewStatus, setPreviewStatus] = useState<'loading' | 'loaded' | 'error' | 'blocked'>('loading');
 
-  // Data source adapter for the active layer (legend widget + floating panel lookup)
-  const adapter = getAdapter(activeLayer?.dataSource);
+  // Adapter lookup supports layer-specific overrides (for example, DroneDeploy dataset-193).
+  const adapter = getAdapterForActiveLayer(activeLayer ?? null);
   const LegendWidget = adapter?.LegendWidget;
   const FloatingPanel = adapter?.FloatingPanel;
 
   // Cache/loading status for the active data source (generic loading overlay)
-  const cacheStatus = useActiveCacheStatus(activeLayer?.dataSource);
+  const cacheStatus = useActiveCacheStatus(adapter?.id ?? activeLayer?.dataSource);
   const showLoadingOverlay = !!activeLayer
     && (cacheStatus?.loading ?? false)
-    && !(cacheStatus?.dataLoaded ?? false);
-  const loadingOverlayMessage = activeLayer?.dataSource === 'animl'
+    && ((adapter?.id === 'drone') || !(cacheStatus?.dataLoaded ?? false));
+  const loadingOverlayMessage = (adapter?.id ?? activeLayer?.dataSource) === 'animl'
     ? 'Loading camera trap data...'
-    : `Loading ${activeLayer?.name ?? 'data'}...`;
+    : (adapter?.id === 'drone' ? 'Loading drone imagery...' : `Loading ${activeLayer?.name ?? 'data'}...`);
 
   // Sync pinned/active layers with ArcGIS layers
   useMapLayers();
