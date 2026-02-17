@@ -41,6 +41,7 @@ export interface DataOneLiteRecord {
   is_latest_version: number; // 1 = latest, 0 = older
   version_count: number;
   files_summary: string | null; // JSON string
+  authors?: string | null; // Optional on layer 0 depending service schema rollout
   // External URL - for metadata-only datasets that link to another repository (e.g., PANGAEA)
   external_url: string | null;
 }
@@ -108,6 +109,7 @@ export interface DataOneDataset {
   isLatestVersion: boolean;
   versionCount: number;
   filesSummary: FilesSummary | null;
+  authors?: string[];
   // External URL for metadata-only datasets (e.g., PANGAEA links)
   externalUrl: string | null;
   // Whether this is a metadata-only record (no files, just a pointer to external source)
@@ -168,6 +170,8 @@ export interface DataOneQueryOptions {
   searchText?: string;
   /** Filter by repository source (PISCO, LTER, etc.) */
   repository?: string;
+  /** Optional author text filter */
+  author?: string;
   /** Spatial filter - point radius around Dangermond Preserve */
   spatialExtent?: {
     xmin: number;
@@ -187,6 +191,8 @@ export interface DataOneQueryOptions {
   usePreserveRadius?: boolean;
   /** Filter by TNC category */
   tncCategory?: string;
+  /** Optional request cancellation support */
+  signal?: AbortSignal;
 }
 
 /**

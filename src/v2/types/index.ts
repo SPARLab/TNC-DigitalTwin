@@ -59,6 +59,8 @@ export interface PinnedLayer {
   animlFilters?: AnimlViewFilters;
   dendraFilters?: DendraViewFilters;
   tncArcgisFilters?: TNCArcGISViewFilters;
+  dataoneFilters?: DataOneViewFilters;
+  droneView?: DroneViewState;
   distinguisher?: string;
   views?: PinnedLayerView[];
   order: number; // for drag-reorder z-order
@@ -78,7 +80,18 @@ export interface PinnedLayerView {
   animlFilters?: AnimlViewFilters;
   dendraFilters?: DendraViewFilters;
   tncArcgisFilters?: TNCArcGISViewFilters;
+  dataoneFilters?: DataOneViewFilters;
+  droneView?: DroneViewState;
   resultCount?: number; // Number of features matching filters (for count display testing)
+}
+
+/** DroneDeploy saved-view state stored per pinned layer/view */
+export interface DroneViewState {
+  flightId: number;
+  projectName: string;
+  planName: string;
+  capturedAt: string;
+  comparisonMode?: 'single' | 'temporal';
 }
 
 /** iNaturalist filter state stored per pinned layer/view */
@@ -116,6 +129,17 @@ export interface TNCArcGISViewFilters {
     operator: string;
     value: string;
   }>;
+}
+
+/** DataONE filter + detail state stored per pinned layer/view */
+export interface DataOneViewFilters {
+  searchText?: string;
+  tncCategory?: string;
+  startDate?: string;
+  endDate?: string;
+  author?: string;
+  selectedDatasetId?: string;
+  selectedDatasetTitle?: string;
 }
 
 // =============================================================================

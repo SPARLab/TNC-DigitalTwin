@@ -10,10 +10,10 @@ import { useLayers } from '../../context/LayerContext';
 import type { SidebarTab } from '../../types';
 import { SidebarHeader } from './SidebarHeader';
 import { TabBar } from './TabBar';
-import { getAdapter } from '../../dataSources/registry';
+import { getAdapterForActiveLayer } from '../../dataSources/registry';
 
 export function RightSidebar() {
-  const { activeLayer, deactivateLayer, lastEditFiltersRequest } = useLayers();
+  const { activeLayer, deactivateLayer, activateLayer, lastEditFiltersRequest } = useLayers();
   const [activeTab, setActiveTab] = useState<SidebarTab>('overview');
   const [lastTabByLayerId, setLastTabByLayerId] = useState<Record<string, SidebarTab>>({});
   const consumedRequestRef = useRef(0);
@@ -23,11 +23,24 @@ export function RightSidebar() {
   const [shouldFlash, setShouldFlash] = useState(false);
 
   // Look up the adapter for the active layer's data source
-  const adapter = getAdapter(activeLayer?.dataSource);
+  const adapter = getAdapterForActiveLayer(activeLayer);
 
-  const handleTabChange = useCallback((tab: SidebarTab) => {
+  const handleSystemTabChange = useCallback((tab: SidebarTab) => {
     setActiveTab(tab);
   }, []);
+
+  const handleUserTabChange = useCallback((tab: SidebarTab) => {
+    // DataONE map clicks set featureId to open detail. If the user manually
+    // re-opens Browse, clear featureId so Browse starts at the dataset list.
+    if (
+      tab === 'browse' &&
+      activeLayer?.layerId === 'dataone-datasets' &&
+      activeLayer.featureId != null
+    ) {
+      activateLayer(activeLayer.layerId, activeLayer.viewId, undefined);
+    }
+    setActiveTab(tab);
+  }, [activeLayer, activateLayer]);
 
   // Task 22: Restore last active tab per layer on reactivation.
   // First visit still defaults to Overview (DFT-006).
@@ -56,18 +69,25 @@ export function RightSidebar() {
   // DFT-019: Edit Filters → open Browse tab
   useEffect(() => {
     if (activeLayer && lastEditFiltersRequest > 0 && lastEditFiltersRequest !== consumedRequestRef.current) {
-      handleTabChange('browse');
+      handleSystemTabChange('browse');
       consumedRequestRef.current = lastEditFiltersRequest;
     }
-  }, [activeLayer, lastEditFiltersRequest, handleTabChange]);
+  }, [activeLayer, lastEditFiltersRequest, handleSystemTabChange]);
 
-  // Map observation click should open iNaturalist detail flow immediately.
-  // The browse tab owns detail-view rendering for selected observations.
+  // Map feature clicks should open Browse detail flow immediately.
+  // Browse tab owns detail-view rendering for marker-driven selections.
   useEffect(() => {
-    if (activeLayer?.layerId === 'inaturalist-obs' && activeLayer.featureId != null) {
-      handleTabChange('browse');
+    if (
+      (
+        activeLayer?.layerId === 'inaturalist-obs' ||
+        activeLayer?.layerId === 'dataone-datasets' ||
+        activeLayer?.layerId === 'dataset-193'
+      ) &&
+      activeLayer.featureId != null
+    ) {
+      handleSystemTabChange('browse');
     }
-  }, [activeLayer?.layerId, activeLayer?.featureId, handleTabChange]);
+  }, [activeLayer?.layerId, activeLayer?.featureId, handleSystemTabChange]);
 
   return (
     <aside
@@ -77,13 +97,13 @@ export function RightSidebar() {
       {activeLayer ? (
         <>
           <SidebarHeader activeLayer={activeLayer} onClose={deactivateLayer} shouldFlash={shouldFlash} />
-          <TabBar activeTab={activeTab} onTabChange={handleTabChange} />
+          <TabBar activeTab={activeTab} onTabChange={handleUserTabChange} />
 
           {/* Tab content — delegated to data source adapter */}
           <div className="flex-1 overflow-y-auto p-4 scroll-area-right-sidebar" role="tabpanel">
             {adapter ? (
               activeTab === 'overview' ? (
-                <adapter.OverviewTab onBrowseClick={() => handleTabChange('browse')} />
+                <adapter.OverviewTab onBrowseClick={() => handleUserTabChange('browse')} />
               ) : (
                 <adapter.BrowseTab />
               )
@@ -97,7 +117,7 @@ export function RightSidebar() {
                   </p>
                   <button
                     id="generic-browse-cta"
-                    onClick={() => handleTabChange('browse')}
+                    onClick={() => handleUserTabChange('browse')}
                     className="w-full py-3 bg-[#2e7d32] text-white font-medium rounded-lg
                                hover:bg-[#256d29] transition-colors text-sm"
                   >

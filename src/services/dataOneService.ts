@@ -51,11 +51,11 @@ const PRESERVE_CENTER = {
 const RADIUS_DEGREES = 0.29;
 
 /**
- * Parse comma-separated string into array
+ * Parse comma/semicolon-delimited string into array
  */
-function parseCommaList(str: string | null): string[] {
+function parseDelimitedList(str: string | null | undefined): string[] {
   if (!str) return [];
-  return str.split(',').map((s) => s.trim()).filter(Boolean);
+  return str.split(/[;,]/).map((s) => s.trim()).filter(Boolean);
 }
 
 /**
@@ -87,6 +87,57 @@ function parseFilesSummary(jsonStr: string | null): FilesSummary | null {
 }
 
 /**
+ * De-duplicate datasets by dataone_id.
+ * Keeps the first seen record, but upgrades to a better candidate when found.
+ */
+function dedupeDatasetsByDataoneId(datasets: DataOneDataset[]): DataOneDataset[] {
+  const byId = new Map<string, DataOneDataset>();
+
+  for (const dataset of datasets) {
+    const existing = byId.get(dataset.dataoneId);
+    if (!existing) {
+      byId.set(dataset.dataoneId, dataset);
+      continue;
+    }
+
+    const existingTime = existing.dateUploaded?.getTime() ?? 0;
+    const nextTime = dataset.dateUploaded?.getTime() ?? 0;
+    const preferIncoming =
+      (!existing.isLatestVersion && dataset.isLatestVersion) ||
+      (nextTime > existingTime) ||
+      (nextTime === existingTime && dataset.id > existing.id);
+
+    if (preferIncoming) {
+      byId.set(dataset.dataoneId, dataset);
+    }
+  }
+
+  return Array.from(byId.values());
+}
+
+/**
+ * De-duplicate version history entries by dataone_id.
+ */
+function dedupeVersionEntries(entries: DataOneVersionEntry[]): DataOneVersionEntry[] {
+  const byId = new Map<string, DataOneVersionEntry>();
+  for (const entry of entries) {
+    const existing = byId.get(entry.dataoneId);
+    if (!existing) {
+      byId.set(entry.dataoneId, entry);
+      continue;
+    }
+    const existingTime = existing.dateUploaded?.getTime() ?? 0;
+    const nextTime = entry.dateUploaded?.getTime() ?? 0;
+    if (nextTime >= existingTime) {
+      byId.set(entry.dataoneId, entry);
+    }
+  }
+  return Array.from(byId.values()).sort(
+    (left, right) => (right.dateUploaded?.getTime() ?? 0) - (left.dateUploaded?.getTime() ?? 0)
+  );
+}
+
+/**
  * Convert lite record to processed dataset for list display
  */
 function liteRecordToDataset(record: DataOneLiteRecord): DataOneDataset {
@@ -100,7 +151,7 @@ function liteRecordToDataset(record: DataOneLiteRecord): DataOneDataset {
     title: record.title,
     datasetUrl: record.dataset_url,
     tncCategory: record.tnc_category,
-    tncCategories: parseCommaList(record.tnc_categories),
+    tncCategories: parseDelimitedList(record.tnc_categories),
     tncConfidence: record.tnc_confidence,
     dateUploaded: parseTimestamp(record.date_uploaded),
     temporalCoverage: {
@@ -122,6 +173,7 @@ function liteRecordToDataset(record: DataOneLiteRecord): DataOneDataset {
     isLatestVersion: record.is_latest_version === 1,
     versionCount: record.version_count,
     filesSummary,
+    authors: parseDelimitedList(record.authors),
     // External URL for metadata-only datasets
     externalUrl: record.external_url,
     isMetadataOnly,
@@ -136,8 +188,8 @@ function fullRecordToDatasetDetail(record: DataOneFullRecord): DataOneDatasetDet
   return {
     ...base,
     abstract: record.abstract,
-    keywords: parseCommaList(record.keywords),
-    authors: parseCommaList(record.authors),
+    keywords: parseDelimitedList(record.keywords),
+    authors: parseDelimitedList(record.authors),
     site: record.site,
     project: record.project,
     funding: record.funding,
@@ -194,6 +246,12 @@ function buildWhereClause(options: DataOneQueryOptions): string {
     conditions.push(`datasource = '${options.repository}'`);
   }
 
+  // Optional author filter (field is present in current service schema)
+  if (options.author) {
+    const author = options.author.replace(/'/g, "''");
+    conditions.push(`authors LIKE '%${author}%'`);
+  }
+
   // TNC category filter
   if (options.tncCategory) {
     const category = options.tncCategory.replace(/'/g, "''");
@@ -225,7 +283,7 @@ class DataOneService {
     });
 
     const url = `${LITE_LAYER_URL}/query?${params}`;
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: options.signal });
 
     if (!response.ok) {
       throw new Error(`Failed to count DataONE datasets: ${response.statusText}`);
@@ -267,7 +325,7 @@ class DataOneService {
     });
 
     const url = `${LITE_LAYER_URL}/query?${params}`;
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: options.signal });
 
     if (!response.ok) {
       throw new Error(`Failed to query DataONE datasets: ${response.statusText}`);
@@ -283,8 +341,8 @@ class DataOneService {
       throw new Error('DataONE API error: No features returned');
     }
 
-    const datasets = data.features.map((feature) =>
-      liteRecordToDataset(feature.attributes as DataOneLiteRecord)
+    const datasets = dedupeDatasetsByDataoneId(
+      data.features.map((feature) => liteRecordToDataset(feature.attributes as DataOneLiteRecord))
     );
 
     return {
@@ -390,14 +448,16 @@ class DataOneService {
       return [];
     }
 
-    return data.features.map((feature) => {
-      const attrs = feature.attributes as DataOneLiteRecord;
-      return {
-        dataoneId: attrs.dataone_id,
-        dateUploaded: parseTimestamp(attrs.date_uploaded),
-        filesSummary: parseFilesSummary(attrs.files_summary),
-      };
-    });
+    return dedupeVersionEntries(
+      data.features.map((feature) => {
+        const attrs = feature.attributes as DataOneLiteRecord;
+        return {
+          dataoneId: attrs.dataone_id,
+          dateUploaded: parseTimestamp(attrs.date_uploaded),
+          filesSummary: parseFilesSummary(attrs.files_summary),
+        };
+      })
+    );
   }
 
   /**
@@ -422,7 +482,7 @@ class DataOneService {
     });
 
     const url = `${LITE_LAYER_URL}/query?${params}`;
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: options.signal });
 
     if (!response.ok) {
       throw new Error(`Failed to get DataONE map data: ${response.statusText}`);
@@ -434,20 +494,77 @@ class DataOneService {
       return [];
     }
 
-    return data.features
-      .map((feature) => {
-        const attrs = feature.attributes as DataOneLiteRecord;
-        return {
-          id: attrs.objectid,
-          dataoneId: attrs.dataone_id,
-          title: attrs.title,
-          repository: attrs.datasource,
-          geometry: attrs.center_lat !== null && attrs.center_lon !== null
-            ? { type: 'Point' as const, coordinates: [attrs.center_lon, attrs.center_lat] as [number, number] }
-            : undefined,
-        };
-      })
-      .filter((d) => d.geometry !== undefined);
+    const deduped = dedupeDatasetsByDataoneId(
+      data.features.map((feature) => liteRecordToDataset(feature.attributes as DataOneLiteRecord))
+    );
+
+    return deduped
+      .map((dataset) => ({
+        id: dataset.id,
+        dataoneId: dataset.dataoneId,
+        title: dataset.title,
+        repository: dataset.repository,
+        geometry: dataset.geometry,
+      }))
+      .filter((dataset) => dataset.geometry !== undefined);
+  }
+
+  /**
+   * Get DataONE datasets for v2 map layer rendering.
+   * Returns Lite-layer records with center coordinates and filter metadata.
+   */
+  async getDatasetsForMapLayer(options: DataOneQueryOptions = {}): Promise<DataOneDataset[]> {
+    const whereClause = buildWhereClause(options);
+
+    const params = new URLSearchParams({
+      where: whereClause,
+      outFields: '*',
+      returnGeometry: 'false',
+      orderByFields: 'date_uploaded DESC',
+      resultRecordCount: '5000',
+      f: 'json',
+    });
+
+    const url = `${LITE_LAYER_URL}/query?${params}`;
+    const response = await fetch(url, { signal: options.signal });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get DataONE map layer datasets: ${response.statusText}`);
+    }
+
+    const data: DataOneArcGISResponse = await response.json();
+    if (data.error || !data.features) return [];
+
+    return dedupeDatasetsByDataoneId(
+      data.features
+        .map((feature) => liteRecordToDataset(feature.attributes as DataOneLiteRecord))
+        .filter((dataset) => dataset.centerLat != null && dataset.centerLon != null)
+    );
+  }
+
+  /**
+   * Fetch one dataset from the Lite layer by DataONE identifier.
+   * Used when opening detail view from map-marker clicks.
+   */
+  async getDatasetByDataoneId(dataoneId: string): Promise<DataOneDataset | null> {
+    const escapedId = dataoneId.replace(/'/g, "''");
+    const params = new URLSearchParams({
+      where: `dataone_id = '${escapedId}'`,
+      outFields: '*',
+      returnGeometry: 'false',
+      resultRecordCount: '1',
+      f: 'json',
+    });
+
+    const url = `${LITE_LAYER_URL}/query?${params}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch DataONE dataset by id: ${response.statusText}`);
+    }
+
+    const data: DataOneArcGISResponse = await response.json();
+    if (data.error || !data.features || data.features.length === 0) return null;
+    return liteRecordToDataset(data.features[0].attributes as DataOneLiteRecord);
   }
 
   /**
@@ -488,8 +605,16 @@ class DataOneService {
   async getFileInfo(dataoneId: string): Promise<DataOneFileInfo> {
     try {
       // Query DataONE Solr for objects in this resource map
-      const encodedId = encodeURIComponent(dataoneId);
-      const url = `https://cn.dataone.org/cn/v2/query/solr/?q=resourceMap:*${encodedId}*&fl=formatId,size&rows=1000&wt=json`;
+      const escapedId = dataoneId
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"');
+      const params = new URLSearchParams({
+        q: `resourceMap:"${escapedId}"`,
+        fl: 'formatId,size',
+        rows: '1000',
+        wt: 'json',
+      });
+      const url = `https://cn.dataone.org/cn/v2/query/solr/?${params.toString()}`;
 
       const response = await fetch(url);
 
