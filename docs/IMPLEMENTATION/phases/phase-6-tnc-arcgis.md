@@ -42,8 +42,8 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **6.11** | 🟡 | 2026-02-16 16:37 PST | Capability-Aware Browse UX | Legend display moved out of right-sidebar Browse and into a floating map widget (bottom-right) for active TNC layers, while preserving V1-style `/legend` → renderer fallback and unique-value selection behavior |
 | **6.12** | 🟡 | 2026-02-16 14:01 PST | Terminology + CTA Realignment | Decision locked: remove right-sidebar pin actions for now; keep pinning in left sidebar + Map Layers widget only |
 | **6.13** | 🟡 | 2026-02-16 16:15 PST | Multi-Layer Service Discoverability | In progress: added stable left-sidebar scrollbar gutter (`scroll-area-left-sidebar`) to prevent content width shifting when scrollbar appears/disappears; service-group spacing refinements retained |
-| **6.14** | 🟡 | 2026-02-16 16:40 PST | Service Reference + External Viewer | In progress: right-sidebar Browse now focuses on source actions (overlay iframe + new tab), while legend interaction controls live in the floating map widget as requested |
-| **6.15** | 🟡 | 2026-02-16 16:40 PST | Legend Iconography Parity + Symbol-Aware Filtering | New in-progress task: port remaining V1 legend symbol-introspection logic so floating legend matches rendered ArcGIS iconography (picture markers, multi-symbol renderers, class/unique variants), then support robust select-all/clear-all/category filtering against detected legend semantics |
+| **6.14** | 🟡 | 2026-02-16 17:05 PST | Service Reference + External Viewer | WIP: right-sidebar Browse focuses on source actions (overlay iframe + new tab); legend controls live in floating map widget. Legend icon sync (6.15) partially addressed but not fully resolved — see handoff below |
+| **6.15** | 🟡 | 2026-02-16 17:05 PST | Legend Iconography Parity + Symbol-Aware Filtering | WIP: legend icons must match map symbology. See **Handoff for 6.15** below for current state and next steps |
 | **6.16** | ⚪ | — | Pinned Layer Opacity Control | Add opacity slider for pinned TNC ArcGIS layers (V1 had this for MAP_LAYER items); user can adjust layer transparency on map |
 | **6.17** | ⚪ | — | Generic Layer Table View (Feature Layers) | Add table view for feature layers: button in Browse tab to view layer table (ArcGIS-style feature table); for inspecting columns/schema; generic across all feature layers, not TNC-only |
 | **6.18** | ⚪ | — | TNC Data Catalog Source URL | Use TNC user-friendly data catalog URL when available instead of raw FeatureServer URL; research V1 discovery service; current source shows incorrect/technical URL |
@@ -52,6 +52,26 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 
 **Status Legend:**  
 ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
+
+---
+
+### Handoff for 6.15 (Legend Iconography Parity)
+
+**Goal:** The floating legend widget’s icons must visually match the symbols drawn on the map (e.g., Oil Seeps red diamond/pin markers).
+
+**Current state:**
+- **Files touched:** `src/v2/services/tncArcgisService.ts`, `src/v2/components/FloatingWidgets/TNCArcGISLegendWidget/TNCArcGISLegendWidget.tsx`
+- **What was tried:**
+  1. Symbol-aware fallback: when `/legend` returns no image swatches, derive visuals from renderer metadata (simple-marker SVG, picture-marker URL, etc.).
+  2. URL resolution: resolve relative ArcGIS `symbol.url` and `entry.url` against the layer/legend base URL so picture-marker images load.
+- **Result:** User reports “swing and a miss” — legend icons still not reliably synced with map symbology.
+- **Likely gaps:** (a) ArcGIS REST symbol format may differ from assumed structure (e.g., `type`, `url`, `style`); (b) `/legend` vs renderer fallback ordering may favor wrong source; (c) picture-marker URLs may need different resolution (e.g., service root vs layer); (d) Oil Seeps may use a symbol type not yet handled (e.g., `esriPMS` with different structure).
+
+**Suggested next steps for new chat:**
+1. Inspect the live ArcGIS layer metadata for Oil Seeps (USGS 2009): hit the FeatureServer layer URL `?f=json` and log `drawingInfo.renderer` (and any `uniqueValueInfos[].symbol`) to see exact symbol structure.
+2. Compare that to what `parseRendererLegend` / `deriveSymbolLegendVisual` expect; add logging or a small debug route if needed.
+3. If the map uses a different symbology source (e.g., client-side override, different sublayer), trace where the map layer gets its renderer and align legend logic to that source.
+4. Consider using the ArcGIS JS API’s `symbolUtils.getDisplayedSymbol` or similar to render a swatch from the live layer instance instead of parsing REST JSON, if the layer is available in React context.
 
 ---
 

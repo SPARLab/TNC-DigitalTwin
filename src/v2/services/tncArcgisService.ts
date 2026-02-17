@@ -17,6 +17,7 @@ export interface ArcGISLegendItem {
   label: string;
   value?: string | number;
   imageData?: string;
+  imageUrl?: string;
   contentType?: string;
   width?: number;
   height?: number;
@@ -63,6 +64,149 @@ function getSymbolSwatchColor(symbol: unknown): string | undefined {
     if (outlineColor) return outlineColor;
   }
   return undefined;
+}
+
+function encodeSvgToBase64(svg: string): string {
+  if (typeof btoa !== 'function') return '';
+  const bytes = new TextEncoder().encode(svg);
+  let binary = '';
+  bytes.forEach(byte => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary);
+}
+
+function parseNumber(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function parseSvgColor(color: unknown, fallback: string): string {
+  if (typeof color === 'string' && color.trim()) return color.trim();
+  if (!Array.isArray(color) || color.length < 3) return fallback;
+  const [r, g, b, a] = color;
+  if (typeof r !== 'number' || typeof g !== 'number' || typeof b !== 'number') return fallback;
+  const alpha = typeof a === 'number' ? Math.max(0, Math.min(1, a / 255)) : 1;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function mapSimpleMarkerStyle(style: string | undefined): string {
+  const normalized = (style || '').toLowerCase();
+  if (normalized.includes('cross')) return 'cross';
+  if (normalized.includes('x')) return 'x';
+  if (normalized.includes('diamond')) return 'diamond';
+  if (normalized.includes('triangle')) return 'triangle';
+  if (normalized.includes('square')) return 'square';
+  return 'circle';
+}
+
+function buildSimpleMarkerSvg(symbol: Record<string, unknown>): ArcGISLegendItem | null {
+  const size = parseNumber(symbol.size, 12);
+  const strokeWidth = parseNumber(isObject(symbol.outline) ? symbol.outline.width : undefined, 1.5);
+  const pad = Math.max(2, strokeWidth + 1);
+  const box = Math.max(18, Math.round(size + pad * 2));
+  const center = box / 2;
+  const half = size / 2;
+  const fill = parseSvgColor(symbol.color, 'rgba(156, 163, 175, 0.8)');
+  const outlineColor = parseSvgColor(isObject(symbol.outline) ? symbol.outline.color : undefined, '#4b5563');
+  const style = mapSimpleMarkerStyle(typeof symbol.style === 'string' ? symbol.style : undefined);
+
+  let shape = '';
+  if (style === 'cross') {
+    shape = `<line x1="${center}" y1="${center - half}" x2="${center}" y2="${center + half}" stroke="${outlineColor}" stroke-width="${strokeWidth}" stroke-linecap="round"/><line x1="${center - half}" y1="${center}" x2="${center + half}" y2="${center}" stroke="${outlineColor}" stroke-width="${strokeWidth}" stroke-linecap="round"/>`;
+  } else if (style === 'x') {
+    shape = `<line x1="${center - half}" y1="${center - half}" x2="${center + half}" y2="${center + half}" stroke="${outlineColor}" stroke-width="${strokeWidth}" stroke-linecap="round"/><line x1="${center + half}" y1="${center - half}" x2="${center - half}" y2="${center + half}" stroke="${outlineColor}" stroke-width="${strokeWidth}" stroke-linecap="round"/>`;
+  } else if (style === 'square') {
+    shape = `<rect x="${center - half}" y="${center - half}" width="${size}" height="${size}" fill="${fill}" stroke="${outlineColor}" stroke-width="${strokeWidth}"/>`;
+  } else if (style === 'diamond') {
+    shape = `<polygon points="${center},${center - half} ${center + half},${center} ${center},${center + half} ${center - half},${center}" fill="${fill}" stroke="${outlineColor}" stroke-width="${strokeWidth}"/>`;
+  } else if (style === 'triangle') {
+    shape = `<polygon points="${center},${center - half} ${center + half},${center + half} ${center - half},${center + half}" fill="${fill}" stroke="${outlineColor}" stroke-width="${strokeWidth}"/>`;
+  } else {
+    shape = `<circle cx="${center}" cy="${center}" r="${half}" fill="${fill}" stroke="${outlineColor}" stroke-width="${strokeWidth}"/>`;
+  }
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${box}" height="${box}" viewBox="0 0 ${box} ${box}">${shape}</svg>`;
+  const imageData = encodeSvgToBase64(svg);
+  if (!imageData) return null;
+  return {
+    imageData,
+    contentType: 'image/svg+xml',
+    width: box,
+    height: box,
+    swatchColor: fill,
+  };
+}
+
+function buildSimpleLineSvg(symbol: Record<string, unknown>): ArcGISLegendItem | null {
+  const width = 26;
+  const height = 18;
+  const strokeWidth = parseNumber(symbol.width, 2);
+  const stroke = parseSvgColor(symbol.color, '#4b5563');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><line x1="3" y1="${height / 2}" x2="${width - 3}" y2="${height / 2}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round"/></svg>`;
+  const imageData = encodeSvgToBase64(svg);
+  if (!imageData) return null;
+  return {
+    imageData,
+    contentType: 'image/svg+xml',
+    width,
+    height,
+    swatchColor: stroke,
+  };
+}
+
+function buildSimpleFillSvg(symbol: Record<string, unknown>): ArcGISLegendItem | null {
+  const width = 22;
+  const height = 18;
+  const fill = parseSvgColor(symbol.color, 'rgba(156, 163, 175, 0.7)');
+  const outlineColor = parseSvgColor(isObject(symbol.outline) ? symbol.outline.color : undefined, '#4b5563');
+  const outlineWidth = parseNumber(isObject(symbol.outline) ? symbol.outline.width : undefined, 1.2);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect x="2" y="2" width="${width - 4}" height="${height - 4}" fill="${fill}" stroke="${outlineColor}" stroke-width="${outlineWidth}"/></svg>`;
+  const imageData = encodeSvgToBase64(svg);
+  if (!imageData) return null;
+  return {
+    imageData,
+    contentType: 'image/svg+xml',
+    width,
+    height,
+    swatchColor: fill,
+  };
+}
+
+function deriveSymbolLegendVisual(symbol: unknown): Partial<ArcGISLegendItem> {
+  if (!isObject(symbol)) return {};
+  const rawType = typeof symbol.type === 'string' ? symbol.type.toLowerCase() : '';
+  const swatchColor = getSymbolSwatchColor(symbol);
+
+  if (rawType === 'esripms' || rawType === 'picture-marker') {
+    const url = typeof symbol.url === 'string' && symbol.url.trim() ? symbol.url : undefined;
+    const width = typeof symbol.width === 'number' ? symbol.width : undefined;
+    const height = typeof symbol.height === 'number' ? symbol.height : undefined;
+    return { imageUrl: url, width, height, swatchColor };
+  }
+  if (rawType === 'esrisms' || rawType === 'simple-marker') {
+    const markerVisual = buildSimpleMarkerSvg(symbol);
+    return markerVisual ? { ...markerVisual, swatchColor } : { swatchColor };
+  }
+  if (rawType === 'esrisls' || rawType === 'simple-line') {
+    const lineVisual = buildSimpleLineSvg(symbol);
+    return lineVisual ? { ...lineVisual, swatchColor } : { swatchColor };
+  }
+  if (rawType === 'esrisfs' || rawType === 'simple-fill') {
+    const fillVisual = buildSimpleFillSvg(symbol);
+    return fillVisual ? { ...fillVisual, swatchColor } : { swatchColor };
+  }
+  return { swatchColor };
+}
+
+function resolveArcGisAssetUrl(assetUrl: string | undefined, baseUrl: string): string | undefined {
+  if (!assetUrl) return undefined;
+  const trimmed = assetUrl.trim();
+  if (!trimmed) return undefined;
+  try {
+    return new URL(trimmed, `${baseUrl.replace(/\/+$/, '')}/`).toString();
+  } catch {
+    return trimmed;
+  }
 }
 
 function sanitizeArcGisBaseUrl(serverBaseUrl: string): string {
@@ -173,7 +317,10 @@ export function buildServiceRootUrl(meta: CatalogLayer['catalogMeta']): string {
   return `${base}/${path}/${type}`;
 }
 
-function parseLegendEndpointLayers(payload: Record<string, unknown>): ArcGISLayerLegend[] {
+function parseLegendEndpointLayers(
+  payload: Record<string, unknown>,
+  legendBaseUrl: string,
+): ArcGISLayerLegend[] {
   const rawLayers = payload.layers;
   if (!Array.isArray(rawLayers)) return [];
 
@@ -195,12 +342,15 @@ function parseLegendEndpointLayers(payload: Record<string, unknown>): ArcGISLaye
           const imageData = typeof entry.imageData === 'string' && entry.imageData.trim()
             ? entry.imageData
             : undefined;
+          const rawImageUrl = typeof entry.url === 'string' ? entry.url : undefined;
+          const imageUrl = resolveArcGisAssetUrl(rawImageUrl, legendBaseUrl);
           const contentType = typeof entry.contentType === 'string' ? entry.contentType : undefined;
           const width = typeof entry.width === 'number' && Number.isFinite(entry.width) ? entry.width : undefined;
           const height = typeof entry.height === 'number' && Number.isFinite(entry.height) ? entry.height : undefined;
           return {
             label: label || 'Legend item',
             imageData,
+            imageUrl,
             contentType,
             width,
             height,
@@ -221,6 +371,7 @@ function parseLegendEndpointLayers(payload: Record<string, unknown>): ArcGISLaye
 function parseRendererLegend(
   payload: Record<string, unknown>,
   fallbackLayerId: number,
+  layerBaseUrl: string,
 ): ArcGISLayerLegend | null {
   const layerName = typeof payload.name === 'string' && payload.name.trim()
     ? payload.name.trim()
@@ -243,11 +394,13 @@ function parseRendererLegend(
         const value = typeof entry.value === 'string' || typeof entry.value === 'number'
           ? entry.value
           : undefined;
-        const swatchColor = getSymbolSwatchColor(entry.symbol);
+        const symbolVisual = deriveSymbolLegendVisual(entry.symbol);
+        const imageUrl = resolveArcGisAssetUrl(symbolVisual.imageUrl, layerBaseUrl);
         return {
           label: label || (value !== undefined ? String(value) : 'Legend item'),
           value,
-          swatchColor,
+          ...symbolVisual,
+          imageUrl,
         };
       })
       .filter((entry): entry is ArcGISLegendItem => !!entry);
@@ -269,12 +422,14 @@ function parseRendererLegend(
         const label = typeof entry.label === 'string' ? entry.label.trim() : '';
         const minValue = typeof entry.classMinValue === 'number' ? entry.classMinValue : undefined;
         const maxValue = typeof entry.classMaxValue === 'number' ? entry.classMaxValue : undefined;
-        const swatchColor = getSymbolSwatchColor(entry.symbol);
+        const symbolVisual = deriveSymbolLegendVisual(entry.symbol);
+        const imageUrl = resolveArcGisAssetUrl(symbolVisual.imageUrl, layerBaseUrl);
         return {
           label: label || 'Range',
           minValue,
           maxValue,
-          swatchColor,
+          ...symbolVisual,
+          imageUrl,
         };
       })
       .filter((entry): entry is ArcGISLegendItem => !!entry);
@@ -290,13 +445,16 @@ function parseRendererLegend(
   const simpleLabel = typeof renderer.label === 'string' && renderer.label.trim()
     ? renderer.label.trim()
     : layerName;
+  const simpleSymbolVisual = deriveSymbolLegendVisual(renderer.symbol);
+  const imageUrl = resolveArcGisAssetUrl(simpleSymbolVisual.imageUrl, layerBaseUrl);
   return {
     layerId: fallbackLayerId,
     layerName,
     rendererType: 'simple',
     items: [{
       label: simpleLabel,
-      swatchColor: getSymbolSwatchColor(renderer.symbol),
+      ...simpleSymbolVisual,
+      imageUrl,
     }],
   };
 }
@@ -311,7 +469,7 @@ export async function fetchLayerLegend(meta: CatalogLayer['catalogMeta']): Promi
   try {
     const legendUrl = `${serviceRootUrl}/legend?f=json`;
     const legendJson = await fetchArcGisJson(legendUrl, 'Legend fetch failed');
-    const parsedLayers = parseLegendEndpointLayers(legendJson);
+    const parsedLayers = parseLegendEndpointLayers(legendJson, `${serviceRootUrl}/legend`);
     if (parsedLayers.length > 0) {
       return parsedLayers.find(layer => layer.layerId === targetLayerId) ?? parsedLayers[0];
     }
@@ -320,9 +478,10 @@ export async function fetchLayerLegend(meta: CatalogLayer['catalogMeta']): Promi
   }
 
   // Strategy 2: Fallback to layer metadata renderer (V1 behavior).
-  const layerUrl = `${buildServiceUrl(meta).replace(/\/+$/, '')}?f=json`;
+  const layerResourceUrl = buildServiceUrl(meta).replace(/\/+$/, '');
+  const layerUrl = `${layerResourceUrl}?f=json`;
   const layerJson = await fetchArcGisJson(layerUrl, 'Layer metadata fetch failed');
-  return parseRendererLegend(layerJson, targetLayerId);
+  return parseRendererLegend(layerJson, targetLayerId, layerResourceUrl);
 }
 
 /** Fetch layer schema (fields, extent, geometry type) */

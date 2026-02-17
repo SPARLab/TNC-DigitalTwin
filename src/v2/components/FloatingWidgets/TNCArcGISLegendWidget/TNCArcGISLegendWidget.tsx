@@ -210,10 +210,14 @@ export function TNCArcGISLegendWidget() {
                     id={`tnc-arcgis-legend-widget-swatch-${index}`}
                     className="w-7 h-7 border border-gray-200 rounded bg-white flex items-center justify-center flex-shrink-0 overflow-hidden"
                   >
-                    {item.imageData ? (
+                    {item.imageData || item.imageUrl ? (
                       <img
                         id={`tnc-arcgis-legend-widget-swatch-image-${index}`}
-                        src={`data:${item.contentType || 'image/png'};base64,${item.imageData}`}
+                        src={
+                          item.imageData
+                            ? `data:${item.contentType || 'image/png'};base64,${item.imageData}`
+                            : item.imageUrl
+                        }
                         alt={item.label || `Legend ${index + 1}`}
                         className="max-w-full max-h-full object-contain"
                       />
