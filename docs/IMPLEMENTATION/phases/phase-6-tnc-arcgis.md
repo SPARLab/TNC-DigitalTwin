@@ -42,7 +42,8 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **6.11** | 🟡 | 2026-02-16 16:37 PST | Capability-Aware Browse UX | Legend display moved out of right-sidebar Browse and into a floating map widget (bottom-right) for active TNC layers, while preserving V1-style `/legend` → renderer fallback and unique-value selection behavior |
 | **6.12** | 🟡 | 2026-02-16 14:01 PST | Terminology + CTA Realignment | Decision locked: remove right-sidebar pin actions for now; keep pinning in left sidebar + Map Layers widget only |
 | **6.13** | 🟡 | 2026-02-16 16:15 PST | Multi-Layer Service Discoverability | In progress: added stable left-sidebar scrollbar gutter (`scroll-area-left-sidebar`) to prevent content width shifting when scrollbar appears/disappears; service-group spacing refinements retained |
-| **6.14** | 🟡 | 2026-02-16 16:37 PST | Service Reference + External Viewer | In progress: right-sidebar Browse now focuses on source actions (overlay iframe + new tab), while legend interaction controls live in the floating map widget as requested |
+| **6.14** | 🟡 | 2026-02-16 16:40 PST | Service Reference + External Viewer | In progress: right-sidebar Browse now focuses on source actions (overlay iframe + new tab), while legend interaction controls live in the floating map widget as requested |
+| **6.15** | 🟡 | 2026-02-16 16:40 PST | Legend Iconography Parity + Symbol-Aware Filtering | New in-progress task: port remaining V1 legend symbol-introspection logic so floating legend matches rendered ArcGIS iconography (picture markers, multi-symbol renderers, class/unique variants), then support robust select-all/clear-all/category filtering against detected legend semantics |
 
 **Status Legend:**  
 ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
