@@ -60,7 +60,12 @@ export function LayerRow({ layerId, name }: LayerRowProps) {
     return activeProject?.projectName;
   }, [projects, activeDroneFlightId]);
 
-  const handleClick = () => activateLayer(layerId);
+  const handleClick = () => {
+    activateLayer(layerId);
+    if (isDroneDeployOrthomosaicsLayer) {
+      setIsProjectsExpanded(true);
+    }
+  };
 
   const handlePinClick = (e: ReactMouseEvent) => {
     e.stopPropagation();
@@ -209,10 +214,14 @@ export function LayerRow({ layerId, name }: LayerRowProps) {
         )}
       </div>
 
-      {isDroneDeployOrthomosaicsLayer && isProjectsExpanded && (
+      {isDroneDeployOrthomosaicsLayer && (
         <div
           id={`drone-projects-panel-${layerId}`}
-          className="ml-2 mr-0 mb-2 border border-slate-200 rounded-lg bg-slate-50/50"
+          className={`ml-2 mr-0 border border-slate-200 rounded-lg bg-slate-50/50 overflow-hidden transition-all duration-300 ease-in-out ${
+            isProjectsExpanded 
+              ? 'max-h-[600px] opacity-100 mb-2' 
+              : 'max-h-0 opacity-0 mb-0 border-transparent'
+          }`}
         >
           {projectsLoading && (
             <div
