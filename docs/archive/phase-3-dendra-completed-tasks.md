@@ -3,7 +3,7 @@
 **Archived:** February 16, 2026  
 **Purpose:** Reduce phase-3-dendra.md size. Full details preserved here for reference.
 
-**Source:** `docs/01-implementation-plan/phases/phase-3-dendra.md`
+**Source:** `docs/IMPLEMENTATION/phases/phase-3-dendra.md`
 
 ---
 

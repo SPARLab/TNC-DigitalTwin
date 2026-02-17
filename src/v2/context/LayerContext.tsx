@@ -14,7 +14,9 @@ import type {
   AnimlViewFilters,
   DendraViewFilters,
   TNCArcGISViewFilters,
+  DataOneViewFilters,
 } from '../types';
+import type { DroneImageryMetadata } from '../../types/droneImagery';
 import { useCatalog } from './CatalogContext';
 import { TAXON_CONFIG } from '../components/Map/layers/taxonConfig';
 
@@ -58,10 +60,27 @@ interface LayerContextValue {
     resultCount?: number,
     viewId?: string,
   ) => void;
+  syncDataOneFilters: (
+    layerId: string,
+    filters: DataOneViewFilters,
+    resultCount: number,
+    viewId?: string,
+  ) => void;
   createDendraFilteredView: (
     layerId: string,
     filters: DendraViewFilters,
     resultCount: number,
+  ) => string | undefined;
+  createOrUpdateDataOneFilteredView: (
+    layerId: string,
+    filters: DataOneViewFilters,
+    resultCount: number,
+    targetViewId?: string,
+  ) => string | undefined;
+  createOrUpdateDroneView: (
+    layerId: string,
+    flight: DroneImageryMetadata,
+    comparisonMode?: 'single' | 'temporal',
   ) => string | undefined;
   reorderLayers: (fromIndex: number, toIndex: number) => void;
   createNewView: (pinnedId: string) => void;
@@ -145,6 +164,55 @@ function getDendraFilterCount(filters: DendraViewFilters): number {
   if (filters.startDate || filters.endDate) count += 1;
   if (filters.aggregation && filters.aggregation !== 'hourly') count += 1;
   return count;
+}
+
+function buildDataOneFilterSummary(filters: DataOneViewFilters): string | undefined {
+  if (filters.selectedDatasetId) {
+    return `Dataset: ${filters.selectedDatasetTitle || filters.selectedDatasetId}`;
+  }
+  const parts: string[] = [];
+  if (filters.searchText?.trim()) {
+    parts.push(`Search: "${filters.searchText.trim()}"`);
+  }
+  if (filters.tncCategory?.trim()) {
+    parts.push(`Category: ${filters.tncCategory.trim()}`);
+  }
+  if (filters.author?.trim()) {
+    parts.push(`Author: ${filters.author.trim()}`);
+  }
+  if (filters.startDate || filters.endDate) {
+    parts.push(`Date: ${filters.startDate || 'Any'} to ${filters.endDate || 'Any'}`);
+  }
+  return parts.length > 0 ? parts.join(', ') : undefined;
+}
+
+function getDataOneFilterCount(filters: DataOneViewFilters): number {
+  if (filters.selectedDatasetId) return 1;
+  let count = 0;
+  if (filters.searchText?.trim()) count += 1;
+  if (filters.tncCategory?.trim()) count += 1;
+  if (filters.author?.trim()) count += 1;
+  if (filters.startDate || filters.endDate) count += 1;
+  return count;
+}
+
+function buildDataOneViewName(filters: DataOneViewFilters): string {
+  if (filters.selectedDatasetId) {
+    return filters.selectedDatasetTitle || filters.selectedDatasetId;
+  }
+  const searchPart = filters.searchText?.trim()
+    ? `"${filters.searchText.trim()}"`
+    : '';
+  const categoryPart = filters.tncCategory?.trim() || '';
+  const authorPart = filters.author?.trim() ? `Author: ${filters.author.trim()}` : '';
+  const datePart = (filters.startDate || filters.endDate)
+    ? `${filters.startDate || 'Any start'} to ${filters.endDate || 'Any end'}`
+    : '';
+  const nonDate = [searchPart, categoryPart, authorPart].filter(Boolean).join(' • ');
+  if (nonDate && datePart) return `${nonDate} (${datePart})`;
+  if (nonDate) return nonDate;
+  if (datePart) return `Date: ${datePart}`;
+  return 'All Datasets';
 }
 
 function buildDendraViewName(filters: DendraViewFilters): string {
@@ -252,6 +320,15 @@ function buildAnimlViewName(filters: AnimlViewFilters): string {
   return 'All Camera Traps';
 }
 
+function formatDroneCapturedDate(date: Date): string {
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function buildDroneViewName(flight: DroneImageryMetadata): string {
+  const safePlanName = flight.planName?.trim() || `Flight ${flight.id}`;
+  return `${safePlanName} (${formatDroneCapturedDate(flight.dateCaptured)})`;
+}
+
 function animlFiltersEqual(
   a: AnimlViewFilters | undefined,
   b: AnimlViewFilters | undefined,
@@ -318,6 +395,23 @@ function tncArcgisFiltersEqual(
   });
 }
 
+function dataOneFiltersEqual(
+  a: DataOneViewFilters | undefined,
+  b: DataOneViewFilters | undefined,
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    (a.searchText || '') === (b.searchText || '') &&
+    (a.tncCategory || '') === (b.tncCategory || '') &&
+    (a.startDate || '') === (b.startDate || '') &&
+    (a.endDate || '') === (b.endDate || '') &&
+    (a.author || '') === (b.author || '') &&
+    (a.selectedDatasetId || '') === (b.selectedDatasetId || '') &&
+    (a.selectedDatasetTitle || '') === (b.selectedDatasetTitle || '')
+  );
+}
+
 export function LayerProvider({ children }: { children: ReactNode }) {
   const { layerMap } = useCatalog();
   const [activeLayer, setActiveLayer] = useState<ActiveLayer | null>(null);
@@ -339,7 +433,12 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     const pinned = pinnedLayers.find(p => p.layerId === layerId);
     const isService = isServiceContainerLayer(layer);
     const selectedSubLayerId = isService ? layer.catalogMeta?.siblingLayers?.[0]?.id : undefined;
-
+    const resolvedFeatureId = (() => {
+      if (featureId != null) return featureId;
+      if (!viewId || layerId !== 'dataset-193' || !pinned?.views) return undefined;
+      const selectedView = pinned.views.find((view) => view.id === viewId);
+      return selectedView?.droneView?.flightId;
+    })();
     setActiveLayer({
       id: layerId,
       layerId,
@@ -347,7 +446,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
       dataSource: layer.dataSource as DataSource,
       isPinned: !!pinned,
       viewId,
-      featureId,
+      featureId: resolvedFeatureId,
       isService,
       selectedSubLayerId,
     });
@@ -529,6 +628,14 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                       endDate: undefined,
                       aggregation: undefined,
                     },
+                    dataoneFilters: {
+                      searchText: undefined,
+                      tncCategory: undefined,
+                      startDate: undefined,
+                      endDate: undefined,
+                      author: undefined,
+                      selectedDatasetId: undefined,
+                    },
                   }
                 : v
             ),
@@ -540,7 +647,6 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           filterSummary: undefined,
           inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
           animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
-          animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
           tncArcgisFilters: { whereClause: '1=1', fields: [] },
           dendraFilters: {
             showActiveOnly: false,
@@ -551,6 +657,14 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             startDate: undefined,
             endDate: undefined,
             aggregation: undefined,
+          },
+          dataoneFilters: {
+            searchText: undefined,
+            tncCategory: undefined,
+            startDate: undefined,
+            endDate: undefined,
+            author: undefined,
+            selectedDatasetId: undefined,
           },
           distinguisher: undefined,
         };
@@ -842,6 +956,79 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const syncDataOneFilters = useCallback(
+    (layerId: string, filters: DataOneViewFilters, resultCount: number, viewId?: string) => {
+      setPinnedLayers(prev => {
+        const nextLayers = prev.map(p => {
+          if (p.layerId !== layerId) return p;
+
+          const normalizedFilters: DataOneViewFilters = {
+            searchText: filters.searchText?.trim() || undefined,
+            tncCategory: filters.tncCategory?.trim() || undefined,
+            startDate: filters.startDate || undefined,
+            endDate: filters.endDate || undefined,
+            author: filters.author?.trim() || undefined,
+            selectedDatasetId: filters.selectedDatasetId || undefined,
+            selectedDatasetTitle: filters.selectedDatasetTitle?.trim() || undefined,
+          };
+          const nextFilterCount = getDataOneFilterCount(normalizedFilters);
+          const nextFilterSummary = buildDataOneFilterSummary(normalizedFilters);
+
+          if (viewId && p.views) {
+            const targetView = p.views.find(v => v.id === viewId);
+            const nextViewName = targetView?.isNameCustom
+              ? targetView.name
+              : buildDataOneViewName(normalizedFilters);
+
+            if (
+              targetView &&
+              targetView.name === nextViewName &&
+              targetView.filterCount === nextFilterCount &&
+              targetView.filterSummary === nextFilterSummary &&
+              targetView.resultCount === resultCount &&
+              dataOneFiltersEqual(targetView.dataoneFilters, normalizedFilters)
+            ) return p;
+
+            return {
+              ...p,
+              views: p.views.map(v =>
+                v.id === viewId
+                  ? {
+                      ...v,
+                      name: nextViewName,
+                      filterCount: nextFilterCount,
+                      filterSummary: nextFilterSummary,
+                      dataoneFilters: normalizedFilters,
+                      resultCount,
+                    }
+                  : v
+              ),
+            };
+          }
+
+          if (
+            p.filterCount === nextFilterCount &&
+            p.filterSummary === nextFilterSummary &&
+            p.resultCount === resultCount &&
+            dataOneFiltersEqual(p.dataoneFilters, normalizedFilters)
+          ) return p;
+
+          return {
+            ...p,
+            filterCount: nextFilterCount,
+            filterSummary: nextFilterSummary,
+            dataoneFilters: normalizedFilters,
+            resultCount,
+          };
+        });
+
+        const changed = nextLayers.some((l, i) => l !== prev[i]);
+        return changed ? nextLayers : prev;
+      });
+    },
+    []
+  );
+
   const createDendraFilteredView = useCallback(
     (layerId: string, filters: DendraViewFilters, resultCount: number) => {
       const layer = layerMap.get(layerId);
@@ -961,6 +1148,260 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     },
     [activeLayer, layerMap, layerOpacityById]
   );
+
+  const createOrUpdateDataOneFilteredView = useCallback(
+    (layerId: string, filters: DataOneViewFilters, resultCount: number, targetViewId?: string) => {
+      const layer = layerMap.get(layerId);
+      if (!layer) return undefined;
+
+      const normalizedFilters: DataOneViewFilters = {
+        searchText: filters.searchText?.trim() || undefined,
+        tncCategory: filters.tncCategory?.trim() || undefined,
+        startDate: filters.startDate || undefined,
+        endDate: filters.endDate || undefined,
+        author: filters.author?.trim() || undefined,
+        selectedDatasetId: filters.selectedDatasetId || undefined,
+        selectedDatasetTitle: filters.selectedDatasetTitle?.trim() || undefined,
+      };
+      const nextFilterCount = getDataOneFilterCount(normalizedFilters);
+      const nextFilterSummary = buildDataOneFilterSummary(normalizedFilters);
+      const newViewName = buildDataOneViewName(normalizedFilters);
+      const newViewId = targetViewId || crypto.randomUUID();
+
+      const newView = {
+        id: newViewId,
+        name: newViewName,
+        isNameCustom: false,
+        isVisible: true,
+        filterCount: nextFilterCount,
+        filterSummary: nextFilterSummary,
+        dataoneFilters: normalizedFilters,
+        resultCount,
+      };
+
+      setPinnedLayers(prev => {
+        const target = prev.find(p => p.layerId === layerId);
+        if (!target) {
+          const newPinned: PinnedLayer = {
+            id: crypto.randomUUID(),
+            layerId,
+            name: layer.name,
+            isVisible: true,
+            isActive: activeLayer?.layerId === layerId,
+            filterCount: 0,
+            views: [newView],
+            order: 0,
+          };
+          return [newPinned, ...prev.map((p, i) => ({ ...p, order: i + 1 }))];
+        }
+
+        return prev.map(p => {
+          if (p.layerId !== layerId) return p;
+
+          if (p.views && p.views.length > 0) {
+            const hasTarget = !!targetViewId && p.views.some(v => v.id === targetViewId);
+            if (hasTarget) {
+              return {
+                ...p,
+                isVisible: true,
+                views: p.views.map(v => {
+                  if (v.id === targetViewId) {
+                    const nextName = v.isNameCustom ? v.name : newViewName;
+                    return {
+                      ...v,
+                      name: nextName,
+                      isVisible: true,
+                      filterCount: nextFilterCount,
+                      filterSummary: nextFilterSummary,
+                      dataoneFilters: normalizedFilters,
+                      resultCount,
+                    };
+                  }
+                  return { ...v, isVisible: false };
+                }),
+              };
+            }
+
+            return {
+              ...p,
+              isVisible: true,
+              views: [
+                ...p.views.map(v => ({ ...v, isVisible: false })),
+                newView,
+              ],
+            };
+          }
+
+          const existingFlatViewName = p.distinguisher || buildDataOneViewName(
+            p.dataoneFilters || {
+              searchText: undefined,
+              tncCategory: undefined,
+              startDate: undefined,
+              endDate: undefined,
+              author: undefined,
+              selectedDatasetId: undefined,
+            }
+          );
+
+          const existingFlatView = {
+            id: crypto.randomUUID(),
+            name: existingFlatViewName,
+            isNameCustom: !!p.distinguisher,
+            isVisible: false,
+            filterCount: p.filterCount,
+            filterSummary: p.filterSummary,
+            inaturalistFilters: p.inaturalistFilters,
+            animlFilters: p.animlFilters,
+            dendraFilters: p.dendraFilters,
+            dataoneFilters: p.dataoneFilters,
+            resultCount: p.resultCount,
+          };
+
+          return {
+            ...p,
+            isVisible: true,
+            views: [existingFlatView, newView],
+            filterCount: 0,
+            filterSummary: undefined,
+            inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+            animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
+            dendraFilters: {
+              showActiveOnly: false,
+              selectedStationId: undefined,
+              selectedStationName: undefined,
+              selectedDatastreamId: undefined,
+              selectedDatastreamName: undefined,
+              startDate: undefined,
+              endDate: undefined,
+              aggregation: undefined,
+            },
+            dataoneFilters: {
+              searchText: undefined,
+              tncCategory: undefined,
+              startDate: undefined,
+              endDate: undefined,
+              author: undefined,
+              selectedDatasetId: undefined,
+            },
+            distinguisher: undefined,
+            resultCount: undefined,
+          };
+        });
+      });
+
+      setActiveLayer(prev =>
+        prev && prev.layerId === layerId
+          ? { ...prev, isPinned: true, viewId: newViewId, featureId: normalizedFilters.selectedDatasetId }
+          : prev
+      );
+      return newViewId;
+    },
+    [activeLayer, layerMap]
+  );
+
+  const createOrUpdateDroneView = useCallback(
+    (layerId: string, flight: DroneImageryMetadata, comparisonMode: 'single' | 'temporal' = 'single') => {
+      const layer = layerMap.get(layerId);
+      if (!layer) return undefined;
+
+      const baseView = {
+        name: buildDroneViewName(flight),
+        isNameCustom: false,
+        isVisible: true,
+        filterCount: 0,
+        filterSummary: undefined,
+        droneView: {
+          flightId: flight.id,
+          projectName: flight.projectName,
+          planName: flight.planName,
+          capturedAt: flight.dateCaptured.toISOString(),
+          comparisonMode,
+        },
+      };
+
+      let resolvedViewId: string | undefined;
+
+      setPinnedLayers((prev) => {
+        const target = prev.find((p) => p.layerId === layerId);
+
+        if (!target) {
+          const newViewId = crypto.randomUUID();
+          resolvedViewId = newViewId;
+          const newPinned: PinnedLayer = {
+            id: crypto.randomUUID(),
+            layerId,
+            name: layer.name,
+            isVisible: true,
+            isActive: activeLayer?.layerId === layerId,
+            filterCount: 0,
+            filterSummary: undefined,
+            views: [{ id: newViewId, ...baseView }],
+            order: 0,
+          };
+          return [newPinned, ...prev.map((p, i) => ({ ...p, order: i + 1 }))];
+        }
+
+        return prev.map((p) => {
+          if (p.layerId !== layerId) return p;
+
+          const existingByFlight = p.views?.find(
+            (view) => view.droneView?.flightId === flight.id
+          );
+          const targetViewId = existingByFlight?.id ?? crypto.randomUUID();
+          resolvedViewId = targetViewId;
+
+          if (p.views && p.views.length > 0) {
+            return {
+              ...p,
+              isVisible: true,
+              views: p.views.some((view) => view.id === targetViewId)
+                ? p.views.map((view) => {
+                    if (view.id !== targetViewId) return { ...view, isVisible: false };
+                    const nextName = view.isNameCustom ? view.name : baseView.name;
+                    return {
+                      ...view,
+                      name: nextName,
+                      isVisible: true,
+                      filterCount: 0,
+                      filterSummary: undefined,
+                      droneView: baseView.droneView,
+                    };
+                  })
+                : [
+                    ...p.views.map((view) => ({ ...view, isVisible: false })),
+                    { id: targetViewId, ...baseView },
+                  ],
+            };
+          }
+
+          return {
+            ...p,
+            isVisible: true,
+            views: [{ id: targetViewId, ...baseView }],
+            filterCount: 0,
+            filterSummary: undefined,
+            inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+            animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
+            dendraFilters: undefined,
+            dataoneFilters: undefined,
+            droneView: undefined,
+            distinguisher: undefined,
+            resultCount: undefined,
+          };
+        });
+      });
+
+      if (!resolvedViewId) return undefined;
+      setActiveLayer((prev) =>
+        prev && prev.layerId === layerId
+          ? { ...prev, isPinned: true, viewId: resolvedViewId, featureId: flight.id }
+          : prev
+      );
+      return resolvedViewId;
+    },
+    [activeLayer, layerMap]
+  );
+
   const reorderLayers = useCallback((fromIndex: number, toIndex: number) => {
     setPinnedLayers(prev => {
       const next = [...prev];
@@ -976,6 +1417,9 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         if (p.id !== pinnedId) return p;
         const isDendraLayer = layerMap.get(p.layerId)?.dataSource === 'dendra';
         const isAnimlLayer = layerMap.get(p.layerId)?.dataSource === 'animl';
+        const isDataOneLayer = layerMap.get(p.layerId)?.dataSource === 'dataone';
+        const isDroneLayer = p.layerId === 'dataset-193';
+        if (isDroneLayer) return p;
         
         // If already nested, add a new view
         if (p.views && p.views.length > 0) {
@@ -999,6 +1443,17 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                   aggregation: undefined,
                 }
               : undefined,
+            dataoneFilters: isDataOneLayer
+              ? {
+                  searchText: undefined,
+                  tncCategory: undefined,
+                  startDate: undefined,
+                  endDate: undefined,
+                  author: undefined,
+                  selectedDatasetId: undefined,
+                }
+              : undefined,
+            droneView: undefined,
           };
           return { ...p, views: [...p.views, newView] };
         }
@@ -1022,6 +1477,17 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             ? buildAnimlViewName(
               p.animlFilters || { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined }
             )
+            : isDataOneLayer
+            ? buildDataOneViewName(
+              p.dataoneFilters || {
+                searchText: undefined,
+                tncCategory: undefined,
+                startDate: undefined,
+                endDate: undefined,
+                author: undefined,
+                selectedDatasetId: undefined,
+              }
+            )
             : buildINaturalistViewName(
               p.inaturalistFilters || { selectedTaxa: [], startDate: undefined, endDate: undefined }
             )
@@ -1036,6 +1502,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           inaturalistFilters: p.inaturalistFilters,
           animlFilters: p.animlFilters,
           dendraFilters: p.dendraFilters,
+          dataoneFilters: p.dataoneFilters,
+          droneView: p.droneView,
           resultCount: p.resultCount,
         };
         const view2 = {
@@ -1046,7 +1514,6 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           filterCount: 0,
           inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
           animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
-          animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
           dendraFilters: isDendraLayer
             ? {
                 showActiveOnly: false,
@@ -1059,6 +1526,17 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                 aggregation: undefined,
               }
             : undefined,
+          dataoneFilters: isDataOneLayer
+            ? {
+                searchText: undefined,
+                tncCategory: undefined,
+                startDate: undefined,
+                endDate: undefined,
+                author: undefined,
+                selectedDatasetId: undefined,
+              }
+            : undefined,
+          droneView: undefined,
         };
         
         // Clear flat-level filter data (now in views)
@@ -1069,7 +1547,6 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           filterSummary: undefined,
           inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
           animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
-          animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
           dendraFilters: isDendraLayer
             ? {
                 showActiveOnly: false,
@@ -1082,6 +1559,17 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                 aggregation: undefined,
               }
             : undefined,
+          dataoneFilters: isDataOneLayer
+            ? {
+                searchText: undefined,
+                tncCategory: undefined,
+                startDate: undefined,
+                endDate: undefined,
+                author: undefined,
+                selectedDatasetId: undefined,
+              }
+            : undefined,
+          droneView: undefined,
           distinguisher: undefined,
           resultCount: undefined,
         };
@@ -1095,6 +1583,13 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         if (p.id !== pinnedId || !p.views) return p;
         
         const remainingViews = p.views.filter(v => v.id !== viewId);
+        if (p.layerId === 'dataset-193') {
+          return {
+            ...p,
+            views: remainingViews,
+            isVisible: remainingViews.some((view) => view.isVisible),
+          };
+        }
         
         // If only one view left, convert back to flat
         if (remainingViews.length === 1) {
@@ -1107,8 +1602,9 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             filterSummary: lastView.filterSummary,
             inaturalistFilters: lastView.inaturalistFilters,
             animlFilters: lastView.animlFilters,
-            animlFilters: lastView.animlFilters,
             dendraFilters: lastView.dendraFilters,
+            dataoneFilters: lastView.dataoneFilters,
+            droneView: lastView.droneView,
             distinguisher: lastView.isNameCustom ? lastView.name : undefined,
             resultCount: lastView.resultCount,
           };
@@ -1130,6 +1626,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         if (!targetView) return p;
         const isDendraLayer = layerMap.get(p.layerId)?.dataSource === 'dendra';
         const isAnimlLayer = layerMap.get(p.layerId)?.dataSource === 'animl';
+        const isDataOneLayer = layerMap.get(p.layerId)?.dataSource === 'dataone';
+        const isDroneLayer = p.layerId === 'dataset-193';
 
         const autoName = isDendraLayer
           ? buildDendraViewName(
@@ -1148,6 +1646,28 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           ? buildAnimlViewName(
             targetView.animlFilters || { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined }
           )
+          : isDataOneLayer
+          ? buildDataOneViewName(
+            targetView.dataoneFilters || {
+              searchText: undefined,
+              tncCategory: undefined,
+              startDate: undefined,
+              endDate: undefined,
+              author: undefined,
+              selectedDatasetId: undefined,
+            }
+          )
+          : isDroneLayer && targetView.droneView
+          ? buildDroneViewName({
+              id: targetView.droneView.flightId,
+              projectName: targetView.droneView.projectName,
+              planId: '',
+              planName: targetView.droneView.planName,
+              dateCaptured: new Date(targetView.droneView.capturedAt),
+              lastUpdated: new Date(targetView.droneView.capturedAt),
+              wmts: { link: '', itemId: '' },
+              recordType: 'plan',
+            })
           : buildINaturalistViewName(
             targetView.inaturalistFilters || { selectedTaxa: [], startDate: undefined, endDate: undefined }
           );
@@ -1220,7 +1740,10 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         syncAnimlFilters,
         syncDendraFilters,
         syncTNCArcGISFilters,
+        syncDataOneFilters,
         createDendraFilteredView,
+        createOrUpdateDataOneFilteredView,
+        createOrUpdateDroneView,
         reorderLayers,
         createNewView,
         removeView,

@@ -119,4 +119,4 @@ Run these checks before releases or when verifying a layer after changes.
 ## Reference
 
 - **Main tracker:** `docs/development-task-tracker.md`
-- **Phase specs:** `docs/01-implementation-plan/phases/`
+- **Phase specs:** `docs/IMPLEMENTATION/phases/`

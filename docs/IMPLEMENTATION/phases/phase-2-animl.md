@@ -104,6 +104,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | 2.15 | Image click → highlight camera on map | 🟢 Complete | Will + Claude | focusedDeploymentId in AnimlFilterContext; ArcGIS layerView.highlight(); onImageFocus from ImageList/expanded view |
 | 2.16 | Camera badges: numbered icons for query results | 🟢 Complete | Will + Claude | Dynamic map badge symbols: show camera result counts only while filters are active; 0-result cameras show no badge |
 | 2.17 | iNaturalist-style loading indicators for ANiML | 🟢 Complete | Will + Claude | Map, Map Layers widget, and legend show loading when camera traps are loading; uses shared LoadingPrimitives (EyeSlotLoadingSpinner, MapCenterLoadingOverlay, InlineLoadingRow) |
+| 2.18 | Synchronize matching images results with map/layer counts | ⚪ Not Started | | Map shows 605, matching images/layer show 200 — counts out of sync for species+camera filter |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -182,6 +183,21 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 - `src/v2/components/Map/MapContainer.tsx` — ensure ANiML triggers overlay via `useActiveCacheStatus('animl')`
 - `src/v2/components/FloatingWidgets/MapLayersWidget/` — ensure `useCacheStatusByDataSource` includes animl and passes `loading` to ActiveLayerSection/PinnedLayerRow
 - `src/v2/components/FloatingWidgets/AnimlLegendWidget/AnimlLegendWidget.tsx` — ensure uses `InlineLoadingRow` from LoadingPrimitives when `!dataLoaded`
+
+---
+
+### 2.18: Synchronize Matching Images Results with Map/Layer Counts
+
+**Goal:** Ensure the map, map layer badge, and matching images section all display the same result count for a given filter selection.
+
+**Problem:** When selecting species (e.g. Coyote) and camera (e.g. Big Kojo), the map may show 605 results while the matching images section and map layer badge show only 200. These three sources of truth are out of sync.
+
+**Acceptance Criteria:**
+- [ ] Map result count matches matching images count
+- [ ] Map layer badge count matches matching images count
+- [ ] All three use the same underlying query/aggregation logic (or explicitly document why counts may differ, e.g. pagination cap)
+
+**Notes:** Likely root cause: different code paths for count aggregation vs. image fetch (e.g. count from one query, images from another with different limits or filters). Fix by unifying the data source or ensuring count and image fetch share the same query parameters and result set.
 
 ---
 
