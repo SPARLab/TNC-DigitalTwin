@@ -37,6 +37,10 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 5 | Export Builder | 🟢 Complete | 10 / 10 tasks | `v2/export-builder` | No |
 | 6 | TNC ArcGIS Services | ⚪ Not Started | 0 / 10 tasks | `v2/tnc-arcgis` | No |
 | 7 | Polish & Consistency | ⚪ Not Started | 0 / 7+ tasks | `v2/polish` | No |
+| 8 | Calflora | ⚪ Not Started | 0 / 9 tasks | `v2/calflora` | No |
+| 9 | GBIF | ⚪ Not Started | 0 / 9 tasks | `v2/gbif` | No |
+| 10 | DroneDeploy | ⚪ Not Started | 0 / 10 tasks | `v2/dronedeploy` | No |
+| 11 | MODIS | ⚪ Not Started | 0 / 9 tasks | `v2/modis` | No |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -56,17 +60,29 @@ Phase 0: Foundation
     │                                                    │
     ├──► Phase 2: ANiML ────────────────────────────────┤
     │                                                    │
-    ├──► Phase 3: Dendra ───────────────────────────────┼──► Phase 5: Export Builder ──┐
+    ├──► Phase 3: Dendra ───────────────────────────────┤
+    │                                                    │
+    ├──► Phase 4: DataOne ──────────────────────────────┼──► Phase 5: Export Builder ──┐
     │                                                    │                              │
-    ├──► Phase 4: DataOne ──────────────────────────────┤                              │
+    ├──► Phase 6: TNC ArcGIS ───────────────────────────┤                              │
     │                                                    │                              │
-    └──► Phase 6: TNC ArcGIS ───────────────────────────┘                              │
+    ├──► Phase 8: Calflora ─────────────────────────────┤                              │
+    │                                                    │                              │
+    ├──► Phase 9: GBIF ─────────────────────────────────┤                              │
+    │                                                    │                              │
+    ├──► Phase 10: DroneDeploy ─────────────────────────┤                              │
+    │                                                    │                              │
+    └──► Phase 11: MODIS (after Phase 10 recommended) ──┘                              │
                                                                                         │
                                                                                         └──► Phase 7: Polish
 ```
 
+**Future Phase (not yet scoped):**
+- **LiDAR** — deferred to last; may require 3D world projection for all 2D layers
+
 **Parallelization:**
-- Phases 1-6 can be worked on simultaneously (different Cursor windows, different branches) — **PAUSED until Task 0.9 complete**
+- Phases 1-6, 8-9 can be worked on simultaneously (different Cursor windows, different branches) — **PAUSED until Task 0.9 complete**
+- Phase 10 (DroneDeploy) and Phase 11 (MODIS) share raster imagery patterns; DroneDeploy first is recommended so shared components can be reused
 - Task 0.9 (Dynamic Layer Registry from Data Catalog Service) is foundational; must merge to main before parallel branches continue
 - Each phase has its own branch, merged to `v2/main` when complete
 - Phase 5 requires all data sources to be functional
@@ -164,7 +180,11 @@ src/
 │   │   │   ├── iNaturalist/
 │   │   │   ├── ANiML/
 │   │   │   ├── Dendra/
-│   │   │   └── DataOne/
+│   │   │   ├── DataOne/
+│   │   │   ├── CalFlora/
+│   │   │   ├── GBIF/
+│   │   │   ├── DroneDeploy/
+│   │   │   └── MODIS/
 │   │   ├── FloatingWidgets/
 │   │   │   ├── PinnedLayersWidget/
 │   │   │   └── BookmarkedItemsWidget/
@@ -239,6 +259,10 @@ When working on any phase:
 - **Phase 5:** `docs/IMPLEMENTATION/phases/phase-5-export-builder.md`
 - **Phase 6:** `docs/IMPLEMENTATION/phases/phase-6-tnc-arcgis.md`
 - **Phase 7:** `docs/IMPLEMENTATION/phases/phase-7-polish.md`
+- **Phase 8:** `docs/IMPLEMENTATION/phases/phase-8-calflora.md`
+- **Phase 9:** `docs/IMPLEMENTATION/phases/phase-9-gbif.md`
+- **Phase 10:** `docs/IMPLEMENTATION/phases/phase-10-dronedeploy.md`
+- **Phase 11:** `docs/IMPLEMENTATION/phases/phase-11-modis.md`
 
 ---
 
@@ -246,6 +270,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 16, 2026 | Phases 8-11 | **Added 4 new data source phases:** Phase 8 (Calflora), Phase 9 (GBIF), Phase 10 (DroneDeploy), Phase 11 (MODIS). Updated dependency graph and phase documents list. LiDAR noted as future phase (deferred — 3D implications). | Will + Claude |
 | Feb 16, 2026 | Phase 5 | **Tasks 5.5-5.10 complete: Export Builder hierarchy and scannability pass.** Implemented Layer -> Filtered Views export structure, multi-view selection, per-view/per-layer size estimates, large-selection warnings, query-definition export toggle, and ZIP/link payload updates preserving layer/view hierarchy. | Claude |
 | Feb 16, 2026 | Phase 5 | **Task 5.4 complete: export actions (ZIP + links).** Wired Export Builder footer actions to generate client-side ZIP package and share links. Added processing states, disabled buttons, and success/error feedback in modal. Included manifest + per-layer export metadata in ZIP for v1 implementation path while backend exports are pending. | Claude |
 | Feb 16, 2026 | Phase 5 | **Task 5.3 complete: export summary and size estimation.** Added `ExportSummary` and wired dynamic summary rows + total estimated size in `ExportBuilderModal`, based on selected formats and per-layer filtered counts. | Claude |
