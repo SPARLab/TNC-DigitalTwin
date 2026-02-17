@@ -1,6 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { ExternalLink, X } from 'lucide-react';
 import { useCatalog } from '../../../context/CatalogContext';
 import { useLayers } from '../../../context/LayerContext';
+import { buildServiceUrl } from '../../../services/tncArcgisService';
+import type { CatalogLayer } from '../../../types';
 
 interface TNCArcGISOverviewTabProps {
   loading: boolean;
@@ -11,16 +14,37 @@ function normalizeDescription(value: string | undefined): string {
   return (value ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
+function getTargetLayer(activeLayer: CatalogLayer | undefined, selectedSubLayerId: string | undefined): CatalogLayer | null {
+  if (!activeLayer) return null;
+  const isServiceParent = !!(
+    activeLayer.catalogMeta?.isMultiLayerService
+    && !activeLayer.catalogMeta?.parentServiceId
+    && activeLayer.catalogMeta?.siblingLayers
+    && activeLayer.catalogMeta.siblingLayers.length > 0
+  );
+
+  if (!isServiceParent) return activeLayer;
+  const siblings = activeLayer.catalogMeta?.siblingLayers ?? [];
+  return siblings.find(layer => layer.id === selectedSubLayerId) ?? siblings[0] ?? null;
+}
+
 export function TNCArcGISOverviewTab({ loading }: TNCArcGISOverviewTabProps) {
   const {
     activeLayer,
     isLayerPinned,
     pinLayer,
+    unpinLayer,
+    getPinnedByLayerId,
     getLayerOpacity,
     setLayerOpacity,
   } = useLayers();
   const { layerMap } = useCatalog();
+  const [isSourceOverlayOpen, setIsSourceOverlayOpen] = useState(false);
   const activeCatalogLayer = activeLayer ? layerMap.get(activeLayer.layerId) : undefined;
+  const targetLayer = useMemo(
+    () => getTargetLayer(activeCatalogLayer, activeLayer?.selectedSubLayerId),
+    [activeCatalogLayer, activeLayer?.selectedSubLayerId],
+  );
 
   const siblingLayers = useMemo(
     () => activeCatalogLayer?.catalogMeta?.siblingLayers ?? [],
@@ -34,8 +58,17 @@ export function TNCArcGISOverviewTab({ loading }: TNCArcGISOverviewTabProps) {
   const serverBaseUrl = activeCatalogLayer?.catalogMeta?.serverBaseUrl || 'Unknown host';
   const sourceLabel = `${serverBaseUrl}/${servicePath}`;
   const activeLayerPinned = activeLayer ? isLayerPinned(activeLayer.layerId) : false;
+  const activeLayerPinnedEntry = activeLayer ? getPinnedByLayerId(activeLayer.layerId) : undefined;
   const activeLayerCanPin = !!activeLayer && !activeLayer.isService;
   const sliderOpacityPercent = activeLayer ? Math.round(getLayerOpacity(activeLayer.layerId) * 100) : 100;
+  const sourceUrl = useMemo(() => {
+    if (!targetLayer?.catalogMeta) return '';
+    try {
+      return buildServiceUrl(targetLayer.catalogMeta);
+    } catch {
+      return '';
+    }
+  }, [targetLayer?.catalogMeta]);
 
   const formatLayerLabel = (layerName: string, layerIdInService?: number) => (
     typeof layerIdInService === 'number'
@@ -46,6 +79,10 @@ export function TNCArcGISOverviewTab({ loading }: TNCArcGISOverviewTabProps) {
   const handlePinActiveLayer = () => {
     if (!activeLayer) return;
     pinLayer(activeLayer.layerId);
+  };
+  const handleUnpinActiveLayer = () => {
+    if (!activeLayerPinnedEntry) return;
+    unpinLayer(activeLayerPinnedEntry.id);
   };
 
   return (
@@ -119,6 +156,43 @@ export function TNCArcGISOverviewTab({ loading }: TNCArcGISOverviewTabProps) {
               Select a layer from the left sidebar
             </div>
           </div>
+
+          <div id="tnc-arcgis-overview-source-card" className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
+            <h4 id="tnc-arcgis-overview-source-title" className="text-xs font-semibold uppercase tracking-wide text-gray-600">
+              Source
+            </h4>
+            <div id="tnc-arcgis-overview-source-url" className="text-xs text-gray-700 break-all">
+              {sourceUrl || 'Select a specific layer to view source URL.'}
+            </div>
+            <div id="tnc-arcgis-overview-source-actions" className="grid grid-cols-2 gap-2">
+              <button
+                id="tnc-arcgis-overview-open-overlay-button"
+                type="button"
+                onClick={() => setIsSourceOverlayOpen(true)}
+                disabled={!sourceUrl}
+                className="rounded-md border border-gray-300 bg-white px-2 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Open Overlay
+              </button>
+              <a
+                id="tnc-arcgis-overview-open-new-tab-link"
+                href={sourceUrl || '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`rounded-md border px-2 py-2 text-xs font-medium flex items-center justify-center gap-1 ${
+                  sourceUrl
+                    ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
+                    : 'border-gray-200 bg-gray-100 text-gray-400 pointer-events-none'
+                }`}
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                New Tab
+              </a>
+            </div>
+            <p id="tnc-arcgis-overview-source-help" className="text-[11px] text-gray-500">
+              If ArcGIS blocks iframe embedding, use New Tab.
+            </p>
+          </div>
         </>
       ) : (
         <>
@@ -178,12 +252,14 @@ export function TNCArcGISOverviewTab({ loading }: TNCArcGISOverviewTabProps) {
 
           <div id="tnc-arcgis-overview-actions" className="grid grid-cols-1 gap-3">
             {activeLayerPinned ? (
-              <div
-                id="tnc-arcgis-overview-pinned-badge"
-                className="w-full py-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-medium text-center min-h-[44px] flex items-center justify-center"
+              <button
+                id="tnc-arcgis-overview-unpin-cta"
+                type="button"
+                onClick={handleUnpinActiveLayer}
+                className="w-full py-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-medium text-center min-h-[44px] hover:bg-emerald-100 transition-colors"
               >
-                Pinned ✓
-              </div>
+                Unpin Layer
+              </button>
             ) : !activeLayerCanPin ? (
               <div
                 id="tnc-arcgis-overview-service-badge"
@@ -194,6 +270,7 @@ export function TNCArcGISOverviewTab({ loading }: TNCArcGISOverviewTabProps) {
             ) : (
               <button
                 id="tnc-arcgis-overview-pin-cta"
+                type="button"
                 onClick={handlePinActiveLayer}
                 className="w-full py-3 border border-blue-200 text-blue-700 font-medium rounded-lg hover:bg-blue-50 transition-colors text-sm min-h-[44px]"
               >
@@ -201,7 +278,79 @@ export function TNCArcGISOverviewTab({ loading }: TNCArcGISOverviewTabProps) {
               </button>
             )}
           </div>
+
+          <div id="tnc-arcgis-overview-source-card" className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
+            <h4 id="tnc-arcgis-overview-source-title" className="text-xs font-semibold uppercase tracking-wide text-gray-600">
+              Source
+            </h4>
+            <div id="tnc-arcgis-overview-source-url" className="text-xs text-gray-700 break-all">
+              {sourceUrl || 'No source URL available.'}
+            </div>
+            <div id="tnc-arcgis-overview-source-actions" className="grid grid-cols-2 gap-2">
+              <button
+                id="tnc-arcgis-overview-open-overlay-button"
+                type="button"
+                onClick={() => setIsSourceOverlayOpen(true)}
+                disabled={!sourceUrl}
+                className="rounded-md border border-gray-300 bg-white px-2 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Open Overlay
+              </button>
+              <a
+                id="tnc-arcgis-overview-open-new-tab-link"
+                href={sourceUrl || '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`rounded-md border px-2 py-2 text-xs font-medium flex items-center justify-center gap-1 ${
+                  sourceUrl
+                    ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
+                    : 'border-gray-200 bg-gray-100 text-gray-400 pointer-events-none'
+                }`}
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                New Tab
+              </a>
+            </div>
+            <p id="tnc-arcgis-overview-source-help" className="text-[11px] text-gray-500">
+              If ArcGIS blocks iframe embedding, use New Tab.
+            </p>
+          </div>
         </>
+      )}
+
+      {isSourceOverlayOpen && sourceUrl && (
+        <div
+          id="tnc-arcgis-overview-source-overlay-backdrop"
+          className="fixed inset-0 z-[100] bg-black/45 flex items-center justify-center p-4"
+          onClick={() => setIsSourceOverlayOpen(false)}
+        >
+          <div
+            id="tnc-arcgis-overview-source-overlay-panel"
+            className="w-full max-w-5xl h-[80vh] rounded-xl bg-white shadow-2xl border border-gray-200 flex flex-col overflow-hidden"
+            onClick={event => event.stopPropagation()}
+          >
+            <div id="tnc-arcgis-overview-source-overlay-header" className="flex items-center justify-between border-b border-gray-200 px-3 py-2">
+              <h3 id="tnc-arcgis-overview-source-overlay-title" className="text-sm font-semibold text-gray-900">
+                ArcGIS Source Viewer
+              </h3>
+              <button
+                id="tnc-arcgis-overview-source-overlay-close-button"
+                type="button"
+                onClick={() => setIsSourceOverlayOpen(false)}
+                className="p-1 rounded-md hover:bg-gray-100"
+                aria-label="Close source overlay"
+              >
+                <X className="w-4 h-4 text-gray-600" />
+              </button>
+            </div>
+            <iframe
+              id="tnc-arcgis-overview-source-overlay-iframe"
+              src={sourceUrl}
+              title="ArcGIS Service Source"
+              className="w-full h-full border-0"
+            />
+          </div>
+        </div>
       )}
     </div>
   );

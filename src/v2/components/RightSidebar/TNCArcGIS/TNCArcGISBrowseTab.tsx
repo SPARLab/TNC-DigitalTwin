@@ -1,8 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useCatalog } from '../../../context/CatalogContext';
 import { useLayers } from '../../../context/LayerContext';
-import { ExternalLink, X } from 'lucide-react';
-import { buildServiceUrl } from '../../../services/tncArcgisService';
 import type { CatalogLayer } from '../../../types';
 
 function getTargetLayer(activeLayer: CatalogLayer | undefined, selectedSubLayerId: string | undefined): CatalogLayer | null {
@@ -28,16 +26,6 @@ export function TNCArcGISBrowseTab() {
     () => getTargetLayer(activeCatalogLayer, activeLayer?.selectedSubLayerId),
     [activeCatalogLayer, activeLayer?.selectedSubLayerId],
   );
-  const [isSourceOverlayOpen, setIsSourceOverlayOpen] = useState(false);
-
-  const sourceUrl = useMemo(() => {
-    if (!targetLayer?.catalogMeta) return '';
-    try {
-      return buildServiceUrl(targetLayer.catalogMeta);
-    } catch {
-      return '';
-    }
-  }, [targetLayer?.catalogMeta]);
 
   if (!activeLayer || activeLayer.dataSource !== 'tnc-arcgis') {
     return (
@@ -69,78 +57,6 @@ export function TNCArcGISBrowseTab() {
           The legend appears as a floating widget in the map area (bottom-right).
         </p>
       </div>
-
-      <div id="tnc-arcgis-browse-source-card" className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
-        <h4 id="tnc-arcgis-browse-source-title" className="text-xs font-semibold uppercase tracking-wide text-gray-600">
-          Source
-        </h4>
-        <div id="tnc-arcgis-browse-source-url" className="text-xs text-gray-700 break-all">
-          {sourceUrl || 'No source URL available.'}
-        </div>
-        <div id="tnc-arcgis-browse-source-actions" className="grid grid-cols-2 gap-2">
-          <button
-            id="tnc-arcgis-browse-open-overlay-button"
-            type="button"
-            onClick={() => setIsSourceOverlayOpen(true)}
-            disabled={!sourceUrl}
-            className="rounded-md border border-gray-300 bg-white px-2 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Open Overlay
-          </button>
-          <a
-            id="tnc-arcgis-browse-open-new-tab-link"
-            href={sourceUrl || '#'}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`rounded-md border px-2 py-2 text-xs font-medium flex items-center justify-center gap-1 ${
-              sourceUrl
-                ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
-                : 'border-gray-200 bg-gray-100 text-gray-400 pointer-events-none'
-            }`}
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            New Tab
-          </a>
-        </div>
-        <p id="tnc-arcgis-browse-source-help" className="text-[11px] text-gray-500">
-          If ArcGIS blocks iframe embedding, use New Tab.
-        </p>
-      </div>
-
-      {isSourceOverlayOpen && sourceUrl && (
-        <div
-          id="tnc-arcgis-browse-source-overlay-backdrop"
-          className="fixed inset-0 z-[100] bg-black/45 flex items-center justify-center p-4"
-          onClick={() => setIsSourceOverlayOpen(false)}
-        >
-          <div
-            id="tnc-arcgis-browse-source-overlay-panel"
-            className="w-full max-w-5xl h-[80vh] rounded-xl bg-white shadow-2xl border border-gray-200 flex flex-col overflow-hidden"
-            onClick={event => event.stopPropagation()}
-          >
-            <div id="tnc-arcgis-browse-source-overlay-header" className="flex items-center justify-between border-b border-gray-200 px-3 py-2">
-              <h3 id="tnc-arcgis-browse-source-overlay-title" className="text-sm font-semibold text-gray-900">
-                ArcGIS Source Viewer
-              </h3>
-              <button
-                id="tnc-arcgis-browse-source-overlay-close-button"
-                type="button"
-                onClick={() => setIsSourceOverlayOpen(false)}
-                className="p-1 rounded-md hover:bg-gray-100"
-                aria-label="Close source overlay"
-              >
-                <X className="w-4 h-4 text-gray-600" />
-              </button>
-            </div>
-            <iframe
-              id="tnc-arcgis-browse-source-overlay-iframe"
-              src={sourceUrl}
-              title="ArcGIS Service Source"
-              className="w-full h-full border-0"
-            />
-          </div>
-        </div>
-        )}
     </div>
   );
 }

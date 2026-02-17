@@ -47,7 +47,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **6.16** | 🟢 | 2026-02-16 19:20 PST | Pinned Layer Opacity Control | Complete: added right-sidebar opacity slider (0-100%) for pinned TNC ArcGIS layers and synced ArcGIS layer `opacity` in map behavior; TNC Browse tab hidden so controls stay in right sidebar overview |
 | **6.17** | ⚪ | — | Generic Layer Table View (Feature Layers) | Add table view for feature layers: button in Browse tab to view layer table (ArcGIS-style feature table); for inspecting columns/schema; generic across all feature layers, not TNC-only |
 | **6.18** | ⚪ | — | TNC Data Catalog Source URL | Use TNC user-friendly data catalog URL when available instead of raw FeatureServer URL; research V1 discovery service; current source shows incorrect/technical URL |
-| **6.19** | ⚪ | — | Overview: Source Actions (Overlay + New Tab) | Move overlay iframe and open-in-new-tab buttons from Browse tab into Overview tab; both actions live in right-sidebar Overview when layer selected |
+| **6.19** | 🟢 | 2026-02-16 20:05 PST | Overview: Source Actions (Overlay + New Tab) | Complete: moved source URL/actions + overlay iframe from Browse into Overview for both service and layer contexts, removed duplicate Browse source block, and made Overview pin control sync bidirectionally with Map Layers widget (Pin/Unpin toggle via shared LayerContext state) |
 | **6.20** | ⚪ | — | Right Sidebar: Layer + Service Hierarchy Communication | Visually communicate: selected layer (e.g., Oil Seeps) is from feature service (e.g., Coastal Marine Data), which is part of TNC ArcGIS catalog; show both layer context and feature service overview |
 
 **Status Legend:**  
