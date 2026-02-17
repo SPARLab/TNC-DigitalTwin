@@ -154,7 +154,6 @@ export function useDroneDeployMapBehavior(
       byFlightId.set(flight.id, wmtsLayer);
 
       void wmtsLayer.when().then(() => {
-        showToast(`Loaded "${flight.planName}"`, 'info');
         if (isHandlingMapReadyRef.current) return;
         if (flyToFlightId === flight.id && viewRef.current) {
           void flyToFlightExtent(viewRef.current, flight.planGeometry ?? undefined);

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { DroneImageryMetadata } from '../../../../types/droneImagery';
 import { useLayers } from '../../../context/LayerContext';
 import { useDroneDeploy } from '../../../context/DroneDeployContext';
@@ -50,6 +50,15 @@ export function DroneDeploySidebar() {
     ) ?? null;
   }, [projects, currentFlight]);
 
+  useEffect(() => {
+    if (activeLayer?.layerId !== 'dataset-193') return;
+    if (activeFlightId != null) {
+      setShowDetailView(true);
+      return;
+    }
+    setShowDetailView(false);
+  }, [activeLayer?.layerId, activeFlightId]);
+
   const handleOpenDetail = (flight: DroneImageryMetadata) => {
     setShowDetailView(true);
     setSelectedFlightId(flight.id);
@@ -80,10 +89,12 @@ export function DroneDeploySidebar() {
           flight={currentFlight}
           isLoaded={loadedFlightIds.includes(currentFlight.id)}
           opacity={opacityByFlightId[currentFlight.id] ?? 0.8}
+          selectedFlightId={currentFlight.id}
           onBack={() => {
             setShowDetailView(false);
             activateLayer('dataset-193');
           }}
+          onSelectFlight={handleSelectFlight}
           onTogglePinned={() => handleTogglePinned(currentFlight)}
           onFlyTo={() => requestFlyToFlight(currentFlight.id)}
           onOpacityChange={(next) => setFlightOpacity(currentFlight.id, next)}

@@ -1,7 +1,7 @@
 # Phase 10: DroneDeploy Imagery
 
 **Status:** 🟡 In Progress  
-**Progress:** 6 / 11 tasks  
+**Progress:** 7 / 11 tasks  
 **Branch:** `v2/dronedeploy`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -20,7 +20,7 @@
 | 10.6 | 🟢 Complete | Feb 16, 2026 20:12 PST | Load WMTS imagery layers on map | Added WMTS loading via `wmts_item_id` into DroneDeploy group layer with multi-flight support, default 80% opacity, fly-to handling, and registry wiring |
 | 10.7 | ⚪ Not Started | — | Render flight footprints as map polygons | Show `plan_geometry` / `project_bounds` as clickable map polygons |
 | 10.8 | ⚪ Not Started | — | Implement layer opacity and visibility controls | Slider opacity, toggle visibility, layer ordering for overlapping imagery |
-| 10.9 | 🟡 In Progress | Feb 16, 2026 | Implement temporal comparison UI | WIP: Context/sidebar sync and single-active-flight logic in place. **Still needed:** Apple-style on-map carousel with left/right buttons and dot indicators; right sidebar flight detail sync; auto fly-to on selection |
+| 10.9 | 🟢 Complete | Feb 16, 2026 22:15 PST | Implement temporal comparison UI | Implemented on-map temporal carousel visibility via active-layer adapter override (`dataset-193`), reused v1 DroneDeploy carousel button/dot styling, synced carousel selection to right-sidebar flight detail, and preserved auto fly-to on selection |
 | 10.10 | ⚪ Not Started | — | Sync loading indicators | Same shared loading pattern as other data sources |
 | 10.11 | ⚪ Not Started | — | Wire Save View flow | Pin imagery layers, save project/flight views to Map Layers |
 
@@ -271,15 +271,15 @@ Implement the DroneDeploy drone imagery browse experience in the right sidebar. 
 
 **Acceptance Criteria:**
 - [x] Temporal comparison available when a project has 2+ flights
-- [ ] On-map temporal carousel rendered for active DroneDeploy projects with multiple flights
-- [ ] Apple-style carousel: left/right navigation buttons + dot indicators (like v1 `DroneImageryCarousel.tsx`)
-- [ ] Right-sidebar flight selection stays synchronized with carousel selection
+- [x] On-map temporal carousel rendered for active DroneDeploy projects with multiple flights
+- [x] Apple-style carousel: left/right navigation buttons + dot indicators (like v1 `DroneImageryCarousel.tsx`)
+- [x] Right-sidebar flight selection stays synchronized with carousel selection
 - [x] Switching flights de-renders the prior unpinned flight (single-active-flight default)
 - [x] Pinned flights remain visible while carousel toggles the active comparison flight
-- [ ] Right sidebar shows flight details when flights are selected
-- [ ] Auto fly-to extent when selecting a flight
+- [x] Right sidebar shows flight details when flights are selected
+- [x] Auto fly-to extent when selecting a flight
 
-**WIP Notes:** Context and map behavior logic in place. Carousel UI (left/right buttons + dots) not yet visible on map. Sidebar detail sync and auto zoom need verification.
+**Implementation Notes:** Temporal comparison now uses the on-map carousel for multi-flight projects with v1-style navigation controls; selecting flights from carousel drives active flight detail in the right sidebar and fly-to extent behavior.
 
 **Reference:** v1 `DroneImageryCarousel.tsx`, ArcGIS Swipe widget
 
@@ -405,3 +405,4 @@ Validated with sample `wmts_item_id` values from live records.
 | Feb 16, 2026 | 10.3 | Renumbered orthomosaic detection task from 10.11 to 10.3; shifted 10.3→10.4 through 10.10→10.11 for logical flow (detect/expand before browse/detail/WMTS). | Codex |
 | Feb 16, 2026 | 10.3 | Implemented left-sidebar DroneDeploy orthomosaic expansion behavior for `dataset-193`: fetch project groups, show parent/project counts, expand project flight rows, set selected flight as active `featureId` context, and render explicit loading/error/empty states. Updated phase progress to 2/11. | Codex |
 | Feb 16, 2026 | 10.2, 10.4, 10.5, 10.6 | Implemented v2 DroneDeploy adapter and right-sidebar shell (Overview/Browse), project/flight browse with date filters and sort, flight detail drill-down with metadata/actions, and WMTS map loading from `wmts_item_id` with multi-flight overlays, fly-to extent, and per-flight opacity control via a DroneDeploy group layer. Updated phase progress to 6/11. | Codex |
+| Feb 16, 2026 | 10.9 | Completed temporal comparison UI: fixed on-map carousel rendering path by using layer-aware adapter lookup for floating panels (`dataset-193`), aligned carousel left/right button and dot styling to v1 `DroneImageryCarousel.tsx`, auto-opened right-sidebar flight detail when a flight is map-selected, and verified fly-to request flow on selection. Updated phase progress to 7/11. | Codex |
