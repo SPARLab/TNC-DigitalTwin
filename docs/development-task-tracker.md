@@ -83,7 +83,7 @@
 | 3. Dendra | 🟡 In Progress | 6 / 6 tasks | `v2/dendra` | No |
 | 4. DataOne | ⚪ Not Started | 0% | `v2/dataone` | 🔴 Paused — waiting for Task 0.9 |
 | 5. Export Builder | ⚪ Not Started | 0% | `v2/export` | No |
-| 6. TNC ArcGIS Services | ⚪ Not Started | 0 / 10 tasks | `v2/tnc-arcgis` | No |
+| 6. TNC ArcGIS Services | 🟡 In Progress | 8 / 20 tasks | `v2/tnc-arcgis` | No |
 | 7. Polish & Consistency | ⚪ Not Started | 0% | `v2/polish` | No |
 
 **Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
@@ -472,6 +472,7 @@ See `docs/master-plan.md` for full phase breakdown.
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 16, 2026 | Phase 6 | ✅ **Task 6.15 complete: TNC ArcGIS Legend Iconography Parity + Symbol-Aware Filtering.** esriPMS picture-marker symbols render via imageData/contentType extraction. UX refinements: Select All/Clear All in header next to Legend; layer name above items; stable selection box (no layout shift); removed redundant "Selected" text. | Claude |
 | Feb 16, 2026 | Phase 2 | ✅ **Task 2.17 complete: iNaturalist-style loading indicators for ANiML.** MapContainer shows "Loading camera trap data..." overlay when animl active; Map Layers and AnimlLegendWidget use shared LoadingPrimitives; loadingTheme.inlineSpinner for legend. | Claude |
 | Feb 16, 2026 | All | **Phase restructure:** Inserted new Phase 6 (TNC ArcGIS Feature Services) with 10 tasks. Renumbered old Phase 6 (Polish) to Phase 7. Service-level activation pattern for multi-layer TNC services with layer switcher in right sidebar. Generic filter UI (field/operator/value) for MVP. See `docs/IMPLEMENTATION/phases/phase-6-tnc-arcgis.md` | Claude |
 | Feb 16, 2026 | Phase 2 | ✅ **Task 35 (2.8) complete: ANiML SVG icons for map markers + tag rows.** Replaced emoji map markers with SVG camera symbols in `animlLayer.ts` (base, badge, muted). Added icon rows in ANiML legend and browse filter lists. Updated phase-2 task status + acceptance criteria. | Claude |
