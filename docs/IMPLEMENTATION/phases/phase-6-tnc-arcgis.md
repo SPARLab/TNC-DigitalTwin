@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 9 / 20 tasks  
+**Progress:** 11 / 20 tasks  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry)  
 **Owner:** TBD
@@ -46,7 +46,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **6.15** | 🟢 | 2026-02-16 18:45 PST | Legend Iconography Parity + Symbol-Aware Filtering | Complete: esriPMS (picture marker) symbols extract `imageData` + `contentType` from renderer JSON — resolves broken legend icons for Oil Seeps and PMS layers. LegendSwatch with `onError` fallback. UX refinements: Select All/Clear All in header next to Legend; layer name above items; stable selection box (no layout shift); removed redundant "Selected" text. Broader parity audit for other layer types deferred. |
 | **6.16** | 🟢 | 2026-02-16 19:20 PST | Pinned Layer Opacity Control | Complete: added right-sidebar opacity slider (0-100%) for pinned TNC ArcGIS layers and synced ArcGIS layer `opacity` in map behavior; TNC Browse tab hidden so controls stay in right sidebar overview |
 | **6.17** | ⚪ | — | Generic Layer Table View (Feature Layers) | Add table view for feature layers: button in Browse tab to view layer table (ArcGIS-style feature table); for inspecting columns/schema; generic across all feature layers, not TNC-only |
-| **6.18** | ⚪ | — | TNC Data Catalog Source URL | Use TNC user-friendly data catalog URL when available instead of raw FeatureServer URL; research V1 discovery service; current source shows incorrect/technical URL |
+| **6.18** | 🟢 | 2026-02-16 21:10 PST | TNC Data Catalog Source URL | Complete: V2 now resolves friendly TNC Hub catalog URLs by reading ArcGIS `serviceItemId`, querying Hub dataset item metadata, preferring `/datasets/...` (and `/explore?layer=` for layer-aware links), and falling back to raw service URLs when needed |
 | **6.19** | 🟢 | 2026-02-16 20:05 PST | Overview: Source Actions (Overlay + New Tab) | Complete: moved source URL/actions + overlay iframe from Browse into Overview for both service and layer contexts, removed duplicate Browse source block, and made Overview pin control sync bidirectionally with Map Layers widget (Pin/Unpin toggle via shared LayerContext state) |
 | **6.20** | ⚪ | — | Right Sidebar: Layer + Service Hierarchy Communication | Visually communicate: selected layer (e.g., Oil Seeps) is from feature service (e.g., Coastal Marine Data), which is part of TNC ArcGIS catalog; show both layer context and feature service overview |
 

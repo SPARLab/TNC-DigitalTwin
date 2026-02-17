@@ -83,7 +83,7 @@
 | 3. Dendra | 🟡 In Progress | 6 / 6 tasks | `v2/dendra` | No |
 | 4. DataOne | ⚪ Not Started | 0% | `v2/dataone` | 🔴 Paused — waiting for Task 0.9 |
 | 5. Export Builder | ⚪ Not Started | 0% | `v2/export` | No |
-| 6. TNC ArcGIS Services | 🟡 In Progress | 8 / 20 tasks | `v2/tnc-arcgis` | No |
+| 6. TNC ArcGIS Services | 🟡 In Progress | 11 / 20 tasks | `v2/tnc-arcgis` | No |
 | 7. Polish & Consistency | ⚪ Not Started | 0% | `v2/polish` | No |
 
 **Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
