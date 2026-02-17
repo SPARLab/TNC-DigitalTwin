@@ -1,7 +1,7 @@
 # Phase 10: DroneDeploy Imagery
 
 **Status:** 🟡 In Progress  
-**Progress:** 7 / 11 tasks  
+**Progress:** 6 / 11 tasks  
 **Branch:** `v2/dronedeploy`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -15,7 +15,7 @@
 | 10.1 | 🟢 Complete | Feb 16, 2026 16:26 PST | Audit DroneDeploy metadata service for v2 | Completed against `DroneDeploy_Metadata_v2`; schema drift documented; WMTS access pattern validated |
 | 10.2 | 🟢 Complete | Feb 16, 2026 20:12 PST | Create DroneDeploy right sidebar shell | Added DroneDeploy adapter + Overview/Browse tab shell with project-grouped browse/detail drill-down in v2 right sidebar |
 | 10.3 | 🟢 Complete | Feb 16, 2026 16:41 PST | Detect and expand DroneDeploy orthomosaic child layers | Implemented in left sidebar for `dataset-193`: parent expansion, live project/flight counts, per-project expand/collapse, selectable flights, and explicit loading/error/empty states |
-| 10.4 | 🟢 Complete | Feb 16, 2026 20:12 PST | Implement project/flight browse UI | Added collapsible project cards, date-range filter, sort modes, flight cards, detail open, and load/remove map action |
+| 10.4 | 🟡 In Progress | Feb 16, 2026 23:05 PST | Implement project browse UI (compact project cards) | Reopened based on UX feedback: projects view should show only project card metadata (name, date range, flight count) and click-through to project details |
 | 10.5 | 🟢 Complete | Feb 16, 2026 20:12 PST | Implement flight detail view | Added full metadata panel, load/remove and fly-to actions, image collection + portal links, TIF link, and opacity slider for loaded layers |
 | 10.6 | 🟢 Complete | Feb 16, 2026 20:12 PST | Load WMTS imagery layers on map | Added WMTS loading via `wmts_item_id` into DroneDeploy group layer with multi-flight support, default 80% opacity, fly-to handling, and registry wiring |
 | 10.7 | ⚪ Not Started | — | Render flight footprints as map polygons | Show `plan_geometry` / `project_bounds` as clickable map polygons |
@@ -122,7 +122,7 @@ Implement the DroneDeploy drone imagery browse experience in the right sidebar. 
 - **Save/View Options:** Save project/flight configuration as view
 - **Category Placement:** Earth Observations (primary)
 - **Temporal Comparison:** Key differentiator — Ramajal Field has 4 dates, enabling before/after comparison
-- **Different Browse Pattern:** Browse by project → expand flights → load imagery, not search by keyword
+- **Different Browse Pattern:** Browse by compact project cards first, then click into project details for flight-level actions
 
 ---
 
@@ -183,29 +183,29 @@ Implement the DroneDeploy drone imagery browse experience in the right sidebar. 
 
 ---
 
-### 10.4: Implement Project/Flight Browse UI
+### 10.4: Implement Compact Project Browse UI
 
-**Goal:** Browse drone imagery organized by project with expandable flight lists.
+**Goal:** Keep Browse tab at the project level only: compact project cards with minimal metadata and click-through to project details.
 
 **Acceptance Criteria:**
-- [x] Projects displayed as collapsible cards (project name, flight count, date range)
-- [x] Expand project → see individual flights (date, plan name, image collection badge)
-- [x] Date range filter across all projects
-- [x] Sort: by date (newest first) or by project name
-- [x] Flight cards show: capture date, plan name, WMTS availability, Image Collection badge
-- [x] Click flight card → open flight detail view
-- [x] Click "Load on Map" button → load WMTS overlay directly from browse
+- [ ] Projects displayed as compact cards with only: project name, flight count, and date range
+- [ ] Date and WMTS summary displayed on a single metadata row where possible (avoid vertical stacking)
+- [ ] No per-flight rows in the projects list view
+- [ ] No "View Details" / "Pin Flight" style secondary actions in the projects list view
+- [ ] Clicking a project card opens the project details view
+- [ ] Project details view contains the flight list and all flight-level actions/metadata
 
 **Reference:** Integration guide "Grouping Options" section, v1 `DroneImageryView.tsx`
 
 ---
 
-### 10.5: Implement Flight Detail View
+### 10.5: Implement Project Detail + Flight Detail View
 
-**Goal:** Show full metadata and actions for a specific drone flight.
+**Goal:** After selecting a project card, show project-specific flights; selecting a flight shows full flight metadata/actions.
 
 **Acceptance Criteria:**
 - [x] "← Back to Projects" navigation
+- [x] Project detail context includes flights for the selected project
 - [x] Project name and plan name
 - [x] Capture date (formatted)
 - [x] WMTS layer status (loaded / not loaded on map)
@@ -379,7 +379,7 @@ Validated with sample `wmts_item_id` values from live records.
 
 | Decision | Date | Rationale | Added to design-system.md? |
 |----------|------|-----------|---------------------------|
-| (none yet) | | | |
+| Projects browse uses compact card-only layout (project name + date range + flight count) and defers all flight details/actions to project detail view | Feb 16, 2026 | Reduces cognitive load, improves scanability, and aligns with progressive disclosure mental model | No |
 
 ---
 
@@ -406,3 +406,4 @@ Validated with sample `wmts_item_id` values from live records.
 | Feb 16, 2026 | 10.3 | Implemented left-sidebar DroneDeploy orthomosaic expansion behavior for `dataset-193`: fetch project groups, show parent/project counts, expand project flight rows, set selected flight as active `featureId` context, and render explicit loading/error/empty states. Updated phase progress to 2/11. | Codex |
 | Feb 16, 2026 | 10.2, 10.4, 10.5, 10.6 | Implemented v2 DroneDeploy adapter and right-sidebar shell (Overview/Browse), project/flight browse with date filters and sort, flight detail drill-down with metadata/actions, and WMTS map loading from `wmts_item_id` with multi-flight overlays, fly-to extent, and per-flight opacity control via a DroneDeploy group layer. Updated phase progress to 6/11. | Codex |
 | Feb 16, 2026 | 10.9 | Completed temporal comparison UI: fixed on-map carousel rendering path by using layer-aware adapter lookup for floating panels (`dataset-193`), aligned carousel left/right button and dot styling to v1 `DroneImageryCarousel.tsx`, auto-opened right-sidebar flight detail when a flight is map-selected, and verified fly-to request flow on selection. Updated phase progress to 7/11. | Codex |
+| Feb 16, 2026 | 10.4, 10.5 | Incorporated UX feedback for Browse tab information density: reopened Task 10.4 to require compact project-only cards, removed project-list-level flight actions, and clarified that flight data/actions belong in project detail drill-down. Updated phase progress to 6/11. | Codex |
