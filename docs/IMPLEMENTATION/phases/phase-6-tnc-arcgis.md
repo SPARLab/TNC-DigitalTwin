@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 7 / 14 tasks  
+**Progress:** 7 / 20 tasks  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry)  
 **Owner:** TBD
@@ -44,6 +44,11 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **6.13** | 🟡 | 2026-02-16 16:15 PST | Multi-Layer Service Discoverability | In progress: added stable left-sidebar scrollbar gutter (`scroll-area-left-sidebar`) to prevent content width shifting when scrollbar appears/disappears; service-group spacing refinements retained |
 | **6.14** | 🟡 | 2026-02-16 16:40 PST | Service Reference + External Viewer | In progress: right-sidebar Browse now focuses on source actions (overlay iframe + new tab), while legend interaction controls live in the floating map widget as requested |
 | **6.15** | 🟡 | 2026-02-16 16:40 PST | Legend Iconography Parity + Symbol-Aware Filtering | New in-progress task: port remaining V1 legend symbol-introspection logic so floating legend matches rendered ArcGIS iconography (picture markers, multi-symbol renderers, class/unique variants), then support robust select-all/clear-all/category filtering against detected legend semantics |
+| **6.16** | ⚪ | — | Pinned Layer Opacity Control | Add opacity slider for pinned TNC ArcGIS layers (V1 had this for MAP_LAYER items); user can adjust layer transparency on map |
+| **6.17** | ⚪ | — | Generic Layer Table View (Feature Layers) | Add table view for feature layers: button in Browse tab to view layer table (ArcGIS-style feature table); for inspecting columns/schema; generic across all feature layers, not TNC-only |
+| **6.18** | ⚪ | — | TNC Data Catalog Source URL | Use TNC user-friendly data catalog URL when available instead of raw FeatureServer URL; research V1 discovery service; current source shows incorrect/technical URL |
+| **6.19** | ⚪ | — | Overview: Source Actions (Overlay + New Tab) | Move overlay iframe and open-in-new-tab buttons from Browse tab into Overview tab; both actions live in right-sidebar Overview when layer selected |
+| **6.20** | ⚪ | — | Right Sidebar: Layer + Service Hierarchy Communication | Visually communicate: selected layer (e.g., Oil Seeps) is from feature service (e.g., Coastal Marine Data), which is part of TNC ArcGIS catalog; show both layer context and feature service overview |
 
 **Status Legend:**  
 ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
@@ -86,13 +91,17 @@ TNC FeatureService (e.g., "Wetlands")
 - List of available layers with descriptions
 - "Browse {Layer} →" button (switches to Browse tab)
 - "Pin {Layer}" button (adds selected layer to Map Layers widget)
+- Source actions: Open Overlay, Open in New Tab (Task 6.19)
+- Layer → Service → TNC catalog hierarchy display (Task 6.20)
 
 **Browse Tab (Any TNC Layer):**
 - Generic filter UI: field/operator/value rows
 - "Add Filter" button (adds new row)
 - "Preview Results" button (validates query, shows count)
+- "View Layer Table" button (Task 6.17) — opens table view for schema/column inspection
 - "Pin Layer" button (appears when layer not pinned)
 - Result count display
+- *Note:* Source actions (Overlay, New Tab) move to Overview tab (Task 6.19)
 
 ---
 
@@ -888,6 +897,129 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 
 ---
 
+### 6.16: Pinned Layer Opacity Control
+
+**Goal:** Allow users to change the opacity of pinned TNC ArcGIS layers on the map.
+
+**Context:** V1 provided an opacity slider when a TNC MAP_LAYER was active. V2 currently lacks this; pinned layers render at full opacity.
+
+**Implementation:**
+- Add opacity control to Map Layers widget for pinned TNC ArcGIS layers (and other ArcGIS-backed layers where applicable)
+- Slider range: 0–100% (or 0–1)
+- Persist opacity in pinned layer state (or session) if desired
+- Apply via `FeatureLayer.opacity` / `MapImageLayer.opacity` / `ImageryLayer.opacity` as appropriate
+
+**Acceptance Criteria:**
+- [ ] Opacity slider visible for pinned TNC ArcGIS layers in Map Layers widget
+- [ ] Slider adjusts layer transparency on map in real time
+- [ ] Default opacity is 100%
+- [ ] Works for FeatureServer, MapServer, and ImageServer layer types
+
+**Estimated Time:** 2–3 hours
+
+---
+
+### 6.17: Generic Layer Table View (Feature Layers)
+
+**Goal:** Add a table view for feature layers so users (especially backend/data folks) can inspect the layer table—columns, schema, sample rows—similar to ArcGIS websites.
+
+**Context:** TNC Browse tab is not about browsing observations like iNaturalist. Instead, users need a way to inspect the layer’s attribute table. This table view should be **generic** and reusable for all feature layers (TNC, Dendra, etc.), not TNC-only.
+
+**Implementation:**
+- Add a "View Layer Table" (or similar) button in the Browse tab for feature layers
+- On click, show a table view (inline or overlay) with:
+  - Column headers from layer schema
+  - Paginated or virtualized rows (query features with `outFields`, `returnGeometry: false`)
+  - Optional: export or copy for inspection
+- Consider map-overlay panel/drawer pattern if right-sidebar width is too narrow
+- Reuse or extend `tncArcgisService.queryFeatures` for data fetch
+
+**Acceptance Criteria:**
+- [ ] Button to view layer table present in Browse tab for TNC feature layers
+- [ ] Table displays column headers and sample rows from the feature service
+- [ ] Table view is usable for schema/column inspection (backend audience)
+- [ ] Design allows reuse for other feature-layer data sources (Dendra, etc.)
+- [ ] Handles large result sets (pagination or virtualization)
+
+**Estimated Time:** 6–8 hours
+
+---
+
+### 6.18: TNC Data Catalog Source URL
+
+**Goal:** Use TNC’s user-friendly data catalog URL when available, instead of the raw FeatureServer REST URL.
+
+**Context:** TNC has its own website layout for describing feature services (e.g., `https://dangermondpreserve-tnc.hub.arcgis.com/datasets/{itemId}`). The current implementation shows the raw ArcGIS REST URL (e.g., `.../FeatureServer/0`), which is technical and not user-friendly. V1 used the Hub API and had access to item IDs; the new Data Catalog discovery service may not expose this. Research V1’s approach and the Data Catalog schema.
+
+**Implementation:**
+- Investigate V1: how it obtained TNC Hub/datasets URLs (e.g., `itemId` from Hub API)
+- Check Data Catalog FeatureServer schema for any `hub_url`, `item_id`, `catalog_url`, or equivalent fields
+- If available: prefer TNC data catalog URL for "Source" display and for overlay/new-tab actions
+- If not available: document as backend enhancement (add field to Data Catalog) and keep raw URL as fallback
+- Update `TNCArcGISBrowseTab` and Overview source display to use preferred URL when present
+
+**Acceptance Criteria:**
+- [ ] Research completed: V1 source-URL approach documented
+- [ ] Data Catalog schema checked for TNC catalog URL fields
+- [ ] When TNC catalog URL is available, it is used for Source display and overlay/new-tab links
+- [ ] Fallback to raw FeatureServer URL when catalog URL is not available
+- [ ] User-facing copy clarifies "TNC Data Catalog" vs "ArcGIS Service" when both are shown
+
+**Estimated Time:** 3–5 hours
+
+---
+
+### 6.19: Overview: Source Actions (Overlay + New Tab)
+
+**Goal:** Move the overlay iframe and open-in-new-tab buttons from the Browse tab into the Overview tab.
+
+**Context:** Source actions (Open Overlay, Open in New Tab) currently live in the Browse tab. The user wants these in the Overview tab so that when a layer is selected, the Overview shows layer info, feature service overview, and source actions together.
+
+**Implementation:**
+- Move the Source card (URL display, Open Overlay, New Tab) from `TNCArcGISBrowseTab` to `TNCArcGISOverviewTab`
+- Keep overlay iframe behavior (modal/backdrop, close button)
+- Ensure both actions work when user is viewing Overview (single-layer or multi-layer with layer selected)
+- Remove or simplify duplicate source UI in Browse tab; Browse can focus on filters and table view
+
+**Acceptance Criteria:**
+- [ ] Open Overlay and Open in New Tab buttons appear in Overview tab
+- [ ] Overlay iframe opens correctly from Overview
+- [ ] New Tab link opens correct URL (TNC catalog or raw service, per 6.18)
+- [ ] No duplicate source action blocks (Browse tab does not redundantly show same actions)
+- [ ] Works for both single-layer and multi-layer services when a layer is selected
+
+**Estimated Time:** 2–3 hours
+
+---
+
+### 6.20: Right Sidebar: Layer + Service Hierarchy Communication
+
+**Goal:** Visually communicate the hierarchy: selected layer → feature service → TNC ArcGIS catalog.
+
+**Context:** Right sidebar currently shows the feature service overview but does not clearly indicate that the user has selected a **layer** from that service. Example: "Oil Seeps" is a layer from the "Coastal Marine Data" feature service, which is part of TNC’s ArcGIS catalog. The UI should make this hierarchy explicit.
+
+**Implementation:**
+- In Overview, add a hierarchy breadcrumb or context block, e.g.:
+  - "Layer: Oil Seeps"
+  - "Service: Coastal Marine Data"
+  - "Source: TNC ArcGIS Feature Services"
+- Use visual hierarchy (typography, indentation, or chips) to distinguish layer vs service vs catalog
+- When a layer is selected (not the service container), show both:
+  - The selected layer’s context (name, description if distinct)
+  - The parent feature service overview (description, available layers)
+- Consider a future task: dedicated view when user clicks the service row (no layer selected); for now, we bypass that and require layer selection first
+
+**Acceptance Criteria:**
+- [ ] Overview clearly indicates the selected layer name (e.g., "Oil Seeps")
+- [ ] Overview indicates the parent feature service (e.g., "Coastal Marine Data")
+- [ ] Overview indicates the catalog source (e.g., "TNC ArcGIS Feature Services")
+- [ ] Visual hierarchy is scannable (layer → service → catalog)
+- [ ] Single-layer services also show appropriate context (layer = service in that case)
+
+**Estimated Time:** 3–4 hours
+
+---
+
 ## Design Decisions Summary
 
 ### Why Service-Level Activation?
@@ -968,6 +1100,7 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 |------|------|--------|-----|
 | Feb 16, 2026 | - | Created Phase 6 document for TNC ArcGIS Feature Services. Renumbered old Phase 6 (Polish) to Phase 7. | Claude |
 | Feb 16, 2026 | 6.3 | Added `src/v2/services/tncArcgisService.ts` with `buildServiceUrl`, `fetchLayerSchema`, `queryFeatures`, and `validateWhereClause`; updated task status and checklist. | Codex |
+| Feb 16, 2026 | 6.16–6.20 | Added five broad-change tasks: Pinned Layer Opacity Control, Generic Layer Table View, TNC Data Catalog Source URL, Overview Source Actions (Overlay + New Tab), Right Sidebar Layer+Service Hierarchy Communication. | Claude |
 
 ---
 
