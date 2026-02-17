@@ -11,11 +11,13 @@ function normalizeDescription(value: string | undefined): string {
   return (value ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
-export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOverviewTabProps) {
+export function TNCArcGISOverviewTab({ loading }: TNCArcGISOverviewTabProps) {
   const {
     activeLayer,
     isLayerPinned,
     pinLayer,
+    getLayerOpacity,
+    setLayerOpacity,
   } = useLayers();
   const { layerMap } = useCatalog();
   const activeCatalogLayer = activeLayer ? layerMap.get(activeLayer.layerId) : undefined;
@@ -33,6 +35,7 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
   const sourceLabel = `${serverBaseUrl}/${servicePath}`;
   const activeLayerPinned = activeLayer ? isLayerPinned(activeLayer.layerId) : false;
   const activeLayerCanPin = !!activeLayer && !activeLayer.isService;
+  const sliderOpacityPercent = activeLayer ? Math.round(getLayerOpacity(activeLayer.layerId) * 100) : 100;
 
   const formatLayerLabel = (layerName: string, layerIdInService?: number) => (
     typeof layerIdInService === 'number'
@@ -141,16 +144,39 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
         </dl>
       </div>
 
-          <div id="tnc-arcgis-overview-actions" className="grid grid-cols-2 gap-3">
-            <button
-              id="tnc-arcgis-overview-browse-cta"
-              onClick={onBrowseClick}
-              className="w-full py-3 bg-[#2e7d32] text-white font-medium rounded-lg
-                         hover:bg-[#256d29] transition-colors text-sm min-h-[44px]"
-            >
-              Browse Features &rarr;
-            </button>
+          {activeLayerCanPin && (
+            <div id="tnc-arcgis-overview-opacity-control-container" className="rounded-lg border border-gray-200 bg-white p-3">
+              <div id="tnc-arcgis-overview-opacity-control-header" className="flex items-center justify-between gap-3">
+                <label
+                  id="tnc-arcgis-overview-opacity-control-label"
+                  htmlFor="tnc-arcgis-overview-opacity-control-slider"
+                  className="text-xs font-semibold uppercase tracking-wide text-gray-600"
+                >
+                  Layer Opacity
+                </label>
+                <span id="tnc-arcgis-overview-opacity-control-value" className="text-xs text-gray-700 font-medium">
+                  {sliderOpacityPercent}%
+                </span>
+              </div>
+              <input
+                id="tnc-arcgis-overview-opacity-control-slider"
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={sliderOpacityPercent}
+                onChange={event => {
+                  if (!activeLayer) return;
+                  const nextPercent = Number(event.target.value);
+                  setLayerOpacity(activeLayer.layerId, nextPercent / 100);
+                }}
+                className="mt-2 w-full accent-emerald-600 cursor-pointer"
+                aria-label="Adjust layer opacity"
+              />
+            </div>
+          )}
 
+          <div id="tnc-arcgis-overview-actions" className="grid grid-cols-1 gap-3">
             {activeLayerPinned ? (
               <div
                 id="tnc-arcgis-overview-pinned-badge"

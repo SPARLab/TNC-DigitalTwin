@@ -13,7 +13,11 @@ import { TabBar } from './TabBar';
 import { getAdapter } from '../../dataSources/registry';
 
 export function RightSidebar() {
-  const { activeLayer, deactivateLayer, lastEditFiltersRequest } = useLayers();
+  const {
+    activeLayer,
+    deactivateLayer,
+    lastEditFiltersRequest,
+  } = useLayers();
   const [activeTab, setActiveTab] = useState<SidebarTab>('overview');
   const [lastTabByLayerId, setLastTabByLayerId] = useState<Record<string, SidebarTab>>({});
   const consumedRequestRef = useRef(0);
@@ -24,6 +28,8 @@ export function RightSidebar() {
 
   // Look up the adapter for the active layer's data source
   const adapter = getAdapter(activeLayer?.dataSource);
+  const isTncArcgisLayer = activeLayer?.dataSource === 'tnc-arcgis';
+  const showBrowseTab = !isTncArcgisLayer;
 
   const handleTabChange = useCallback((tab: SidebarTab) => {
     setActiveTab(tab);
@@ -38,28 +44,31 @@ export function RightSidebar() {
     prevLayerIdRef.current = currentLayerId;
     if (!currentLayerId) return;
 
-    setActiveTab(lastTabByLayerId[currentLayerId] ?? 'overview');
+    const restoredTab = lastTabByLayerId[currentLayerId] ?? 'overview';
+    setActiveTab(isTncArcgisLayer ? 'overview' : restoredTab);
     setShouldFlash(true);
     const timer = window.setTimeout(() => setShouldFlash(false), 600);
     return () => window.clearTimeout(timer);
-  }, [activeLayer?.layerId, lastTabByLayerId]);
+  }, [activeLayer?.layerId, isTncArcgisLayer, lastTabByLayerId]);
 
   // Persist current tab for the active layer.
   useEffect(() => {
     if (!activeLayer) return;
+    if (isTncArcgisLayer && activeTab === 'browse') return;
     setLastTabByLayerId(prev => {
       if (prev[activeLayer.layerId] === activeTab) return prev;
       return { ...prev, [activeLayer.layerId]: activeTab };
     });
-  }, [activeLayer, activeTab]);
+  }, [activeLayer, activeTab, isTncArcgisLayer]);
 
   // DFT-019: Edit Filters → open Browse tab
   useEffect(() => {
+    if (isTncArcgisLayer) return;
     if (activeLayer && lastEditFiltersRequest > 0 && lastEditFiltersRequest !== consumedRequestRef.current) {
       handleTabChange('browse');
       consumedRequestRef.current = lastEditFiltersRequest;
     }
-  }, [activeLayer, lastEditFiltersRequest, handleTabChange]);
+  }, [activeLayer, isTncArcgisLayer, lastEditFiltersRequest, handleTabChange]);
 
   // Map observation click should open iNaturalist detail flow immediately.
   // The browse tab owns detail-view rendering for selected observations.
@@ -77,12 +86,12 @@ export function RightSidebar() {
       {activeLayer ? (
         <>
           <SidebarHeader activeLayer={activeLayer} onClose={deactivateLayer} shouldFlash={shouldFlash} />
-          <TabBar activeTab={activeTab} onTabChange={handleTabChange} />
+          <TabBar activeTab={activeTab} onTabChange={handleTabChange} showBrowseTab={showBrowseTab} />
 
           {/* Tab content — delegated to data source adapter */}
           <div className="flex-1 overflow-y-auto p-4 scroll-area-right-sidebar" role="tabpanel">
             {adapter ? (
-              activeTab === 'overview' ? (
+              !showBrowseTab || activeTab === 'overview' ? (
                 <adapter.OverviewTab onBrowseClick={() => handleTabChange('browse')} />
               ) : (
                 <adapter.BrowseTab />

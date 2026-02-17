@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 8 / 20 tasks  
+**Progress:** 9 / 20 tasks  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry)  
 **Owner:** TBD
@@ -44,7 +44,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **6.13** | 🟡 | 2026-02-16 16:15 PST | Multi-Layer Service Discoverability | In progress: added stable left-sidebar scrollbar gutter (`scroll-area-left-sidebar`) to prevent content width shifting when scrollbar appears/disappears; service-group spacing refinements retained |
 | **6.14** | 🟡 | 2026-02-16 17:05 PST | Service Reference + External Viewer | WIP: right-sidebar Browse focuses on source actions (overlay iframe + new tab); legend controls live in floating map widget. Legend icon sync (6.15) partially addressed but not fully resolved — see handoff below |
 | **6.15** | 🟢 | 2026-02-16 18:45 PST | Legend Iconography Parity + Symbol-Aware Filtering | Complete: esriPMS (picture marker) symbols extract `imageData` + `contentType` from renderer JSON — resolves broken legend icons for Oil Seeps and PMS layers. LegendSwatch with `onError` fallback. UX refinements: Select All/Clear All in header next to Legend; layer name above items; stable selection box (no layout shift); removed redundant "Selected" text. Broader parity audit for other layer types deferred. |
-| **6.16** | ⚪ | — | Pinned Layer Opacity Control | Add opacity slider for pinned TNC ArcGIS layers (V1 had this for MAP_LAYER items); user can adjust layer transparency on map |
+| **6.16** | 🟢 | 2026-02-16 19:20 PST | Pinned Layer Opacity Control | Complete: added right-sidebar opacity slider (0-100%) for pinned TNC ArcGIS layers and synced ArcGIS layer `opacity` in map behavior; TNC Browse tab hidden so controls stay in right sidebar overview |
 | **6.17** | ⚪ | — | Generic Layer Table View (Feature Layers) | Add table view for feature layers: button in Browse tab to view layer table (ArcGIS-style feature table); for inspecting columns/schema; generic across all feature layers, not TNC-only |
 | **6.18** | ⚪ | — | TNC Data Catalog Source URL | Use TNC user-friendly data catalog URL when available instead of raw FeatureServer URL; research V1 discovery service; current source shows incorrect/technical URL |
 | **6.19** | ⚪ | — | Overview: Source Actions (Overlay + New Tab) | Move overlay iframe and open-in-new-tab buttons from Browse tab into Overview tab; both actions live in right-sidebar Overview when layer selected |

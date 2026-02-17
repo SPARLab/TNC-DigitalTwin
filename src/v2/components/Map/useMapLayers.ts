@@ -39,7 +39,7 @@ function getFirstMapImageSublayer(layer: Layer): MapImageSublayerLike | undefine
 }
 
 export function useMapLayers() {
-  const { pinnedLayers, activeLayer } = useLayers();
+  const { pinnedLayers, activeLayer, getLayerOpacity } = useLayers();
   const { viewRef, mapReady, showToast } = useMap();
   const { layerMap } = useCatalog();
   const managedLayersRef = useRef<Map<string, Layer>>(new Map());
@@ -86,6 +86,8 @@ export function useMapLayers() {
       if (managed.has(layerId)) continue;
 
       const tncWhereClause = pinnedByLayerId.get(layerId)?.tncArcgisFilters?.whereClause;
+      const pinnedOpacity = pinnedByLayerId.get(layerId)?.opacity;
+      const layerOpacity = typeof pinnedOpacity === 'number' ? pinnedOpacity : getLayerOpacity(layerId);
       const arcLayer = createMapLayer(layerId, {
         visible,
         whereClause: tncWhereClause,
@@ -99,27 +101,34 @@ export function useMapLayers() {
         continue;
       }
 
+      arcLayer.opacity = Math.min(1, Math.max(0, layerOpacity));
       map.add(arcLayer);
       managed.set(layerId, arcLayer);
     }
-  }, [pinnedLayers, activeLayer, viewRef, mapReady, showToast]);
+  }, [pinnedLayers, activeLayer, getLayerOpacity, viewRef, mapReady, showToast]);
 
   // Sync visibility: pinned layers use eye toggle; active-only always visible
   useEffect(() => {
     const managed = managedLayersRef.current;
     for (const pinned of pinnedLayers) {
       const arcLayer = managed.get(pinned.layerId);
-      if (arcLayer) arcLayer.visible = pinned.isVisible;
+      if (arcLayer) {
+        arcLayer.visible = pinned.isVisible;
+        arcLayer.opacity = Math.min(1, Math.max(0, pinned.opacity ?? 1));
+      }
     }
     // Active but not pinned: ensure visible
     if (activeLayer && !activeLayer.isService) {
       const isPinned = pinnedLayers.some(p => p.layerId === activeLayer.layerId);
       if (!isPinned) {
         const arcLayer = managed.get(activeLayer.layerId);
-        if (arcLayer) arcLayer.visible = true;
+        if (arcLayer) {
+          arcLayer.visible = true;
+          arcLayer.opacity = Math.min(1, Math.max(0, getLayerOpacity(activeLayer.layerId)));
+        }
       }
     }
-  }, [pinnedLayers, activeLayer]);
+  }, [pinnedLayers, activeLayer, getLayerOpacity]);
 
   // Sync TNC ArcGIS filter updates to map layer definitionExpression.
   useEffect(() => {

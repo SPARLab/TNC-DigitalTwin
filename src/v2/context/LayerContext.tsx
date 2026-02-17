@@ -30,6 +30,8 @@ interface LayerContextValue {
   pinLayer: (layerId: string) => void;
   unpinLayer: (pinnedId: string) => void;
   toggleVisibility: (pinnedId: string) => void;
+  setLayerOpacity: (layerId: string, opacity: number) => void;
+  getLayerOpacity: (layerId: string) => number;
   toggleChildVisibility: (pinnedId: string, viewId: string) => void;
   clearFilters: (pinnedId: string, viewId?: string) => void;
   syncINaturalistFilters: (
@@ -320,6 +322,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
   const { layerMap } = useCatalog();
   const [activeLayer, setActiveLayer] = useState<ActiveLayer | null>(null);
   const [pinnedLayers, setPinnedLayers] = useState<PinnedLayer[]>([]);
+  const [layerOpacityById, setLayerOpacityById] = useState<Record<string, number>>({});
   const [undoStack, setUndoStack] = useState<UndoAction[]>([]);
 
   const pushUndo = useCallback((description: string, undoFn: () => void) => {
@@ -392,6 +395,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
       layerId,
       name: layer.name,
       isVisible: true,
+      opacity: layerOpacityById[layerId] ?? 1,
       isActive: activeLayer?.layerId === layerId,
       filterCount: 0,
       order: 0, // new layers go to the top
@@ -403,7 +407,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     if (activeLayer?.layerId === layerId) {
       setActiveLayer(prev => prev ? { ...prev, isPinned: true } : null);
     }
-  }, [pinnedLayers, activeLayer, layerMap]);
+  }, [pinnedLayers, activeLayer, layerMap, layerOpacityById]);
 
   const unpinLayer = useCallback((pinnedId: string) => {
     const target = pinnedLayers.find(p => p.id === pinnedId);
@@ -462,6 +466,20 @@ export function LayerProvider({ children }: { children: ReactNode }) {
       })
     );
   }, []);
+
+  const setLayerOpacity = useCallback((layerId: string, opacity: number) => {
+    const clampedOpacity = Math.min(1, Math.max(0, opacity));
+    setLayerOpacityById(prev => ({ ...prev, [layerId]: clampedOpacity }));
+    setPinnedLayers(prev =>
+      prev.map(p => (p.layerId === layerId ? { ...p, opacity: clampedOpacity } : p))
+    );
+  }, []);
+
+  const getLayerOpacity = useCallback((layerId: string) => {
+    const pinnedLayer = pinnedLayers.find(p => p.layerId === layerId);
+    if (typeof pinnedLayer?.opacity === 'number') return pinnedLayer.opacity;
+    return layerOpacityById[layerId] ?? 1;
+  }, [pinnedLayers, layerOpacityById]);
 
   const toggleChildVisibility = useCallback((pinnedId: string, viewId: string) => {
     setPinnedLayers(prev =>
@@ -863,6 +881,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             layerId,
             name: layer.name,
             isVisible: true,
+            opacity: layerOpacityById[layerId] ?? 1,
             isActive: activeLayer?.layerId === layerId,
             filterCount: 0,
             views: [newView],
@@ -940,7 +959,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
       );
       return newViewId;
     },
-    [activeLayer, layerMap]
+    [activeLayer, layerMap, layerOpacityById]
   );
   const reorderLayers = useCallback((fromIndex: number, toIndex: number) => {
     setPinnedLayers(prev => {
@@ -1193,6 +1212,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         pinLayer,
         unpinLayer,
         toggleVisibility,
+        setLayerOpacity,
+        getLayerOpacity,
         toggleChildVisibility,
         clearFilters,
         syncINaturalistFilters,

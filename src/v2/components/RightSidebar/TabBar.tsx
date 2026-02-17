@@ -7,6 +7,7 @@ import type { SidebarTab } from '../../types';
 interface TabBarProps {
   activeTab: SidebarTab;
   onTabChange: (tab: SidebarTab) => void;
+  showBrowseTab?: boolean;
 }
 
 const TABS: { id: SidebarTab; label: string }[] = [
@@ -14,11 +15,14 @@ const TABS: { id: SidebarTab; label: string }[] = [
   { id: 'browse', label: 'Browse' },
 ];
 
-export function TabBar({ activeTab, onTabChange }: TabBarProps) {
+export function TabBar({ activeTab, onTabChange, showBrowseTab = true }: TabBarProps) {
+  const tabs = showBrowseTab ? TABS : TABS.filter(tab => tab.id !== 'browse');
+
   return (
     <div id="sidebar-tab-bar" role="tablist" className="flex border-b border-gray-200">
-      {TABS.map(tab => (
+      {tabs.map(tab => (
         <button
+          id={`right-sidebar-tab-${tab.id}`}
           key={tab.id}
           role="tab"
           aria-selected={activeTab === tab.id}

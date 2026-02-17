@@ -52,6 +52,8 @@ export interface PinnedLayer {
   layerId: string;
   name: string;
   isVisible: boolean;
+  /** 0-1 map opacity for this pinned layer (1 = fully opaque) */
+  opacity?: number;
   isActive: boolean;
   filterCount: number;
   filterSummary?: string;
