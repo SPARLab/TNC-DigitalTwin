@@ -7,7 +7,7 @@ interface FlightDetailViewProps {
   isLoaded: boolean;
   opacity: number;
   onBack: () => void;
-  onToggleLoaded: () => void;
+  onTogglePinned: () => void;
   onFlyTo: () => void;
   onOpacityChange: (_value: number) => void;
 }
@@ -22,7 +22,7 @@ export function FlightDetailView({
   isLoaded,
   opacity,
   onBack,
-  onToggleLoaded,
+  onTogglePinned,
   onFlyTo,
   onOpacityChange,
 }: FlightDetailViewProps) {
@@ -60,14 +60,14 @@ export function FlightDetailView({
         <div id="drone-flight-action-row" className="grid grid-cols-1 gap-2">
           <button
             id={`drone-flight-toggle-map-detail-${flight.id}`}
-            onClick={onToggleLoaded}
+            onClick={onTogglePinned}
             className={`w-full px-3 py-2 rounded text-sm font-medium border transition-colors ${
               isLoaded
                 ? 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
                 : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
             }`}
           >
-            {isLoaded ? 'Remove from Map' : 'Load on Map'}
+            {isLoaded ? 'Unpin Flight' : 'Pin Flight'}
           </button>
           <button
             id={`drone-flight-fly-to-${flight.id}`}

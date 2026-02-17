@@ -12,15 +12,17 @@ export function DroneDeploySidebar() {
     sortMode,
     loadedFlightIds,
     opacityByFlightId,
+    selectedFlightId,
     setDateFilter,
     setSortMode,
     setFlightLoaded,
     setFlightOpacity,
+    setSelectedFlightId,
     requestFlyToFlight,
   } = useDroneDeploy();
   const { activeLayer, activateLayer } = useLayers();
   const activeFlightId = typeof activeLayer?.featureId === 'number' ? activeLayer.featureId : undefined;
-  const [detailFlight, setDetailFlight] = useState<DroneImageryMetadata | null>(null);
+  const [showDetailView, setShowDetailView] = useState(false);
 
   const activeFlightFromContext = useMemo(() => {
     if (activeFlightId == null) return null;
@@ -31,7 +33,16 @@ export function DroneDeploySidebar() {
     return null;
   }, [projects, activeFlightId]);
 
-  const currentFlight = detailFlight ?? activeFlightFromContext;
+  const selectedFlightFromContext = useMemo(() => {
+    if (selectedFlightId == null) return null;
+    for (const project of projects) {
+      const match = project.imageryLayers.find((flight) => flight.id === selectedFlightId);
+      if (match) return match;
+    }
+    return null;
+  }, [projects, selectedFlightId]);
+
+  const currentFlight = activeFlightFromContext ?? selectedFlightFromContext;
   const currentProject = useMemo(() => {
     if (!currentFlight) return null;
     return projects.find((project) =>
@@ -40,32 +51,40 @@ export function DroneDeploySidebar() {
   }, [projects, currentFlight]);
 
   const handleOpenDetail = (flight: DroneImageryMetadata) => {
-    setDetailFlight(flight);
+    setShowDetailView(true);
+    setSelectedFlightId(flight.id);
+    requestFlyToFlight(flight.id);
     activateLayer('dataset-193', undefined, flight.id);
   };
 
-  const handleToggleLoaded = (flight: DroneImageryMetadata) => {
+  const handleTogglePinned = (flight: DroneImageryMetadata) => {
     const isLoaded = loadedFlightIds.includes(flight.id);
     setFlightLoaded(flight.id, !isLoaded);
-    if (!isLoaded) {
-      requestFlyToFlight(flight.id);
-      activateLayer('dataset-193', undefined, flight.id);
-    }
+    if (isLoaded) return;
+    setSelectedFlightId(flight.id);
+    requestFlyToFlight(flight.id);
+    activateLayer('dataset-193', undefined, flight.id);
+  };
+
+  const handleSelectFlight = (flight: DroneImageryMetadata) => {
+    setSelectedFlightId(flight.id);
+    requestFlyToFlight(flight.id);
+    activateLayer('dataset-193', undefined, flight.id);
   };
 
   return (
     <div id="drone-deploy-sidebar-shell">
-      {currentFlight && currentProject ? (
+      {showDetailView && currentFlight && currentProject ? (
         <FlightDetailView
           project={currentProject}
           flight={currentFlight}
           isLoaded={loadedFlightIds.includes(currentFlight.id)}
           opacity={opacityByFlightId[currentFlight.id] ?? 0.8}
           onBack={() => {
-            setDetailFlight(null);
+            setShowDetailView(false);
             activateLayer('dataset-193');
           }}
-          onToggleLoaded={() => handleToggleLoaded(currentFlight)}
+          onTogglePinned={() => handleTogglePinned(currentFlight)}
           onFlyTo={() => requestFlyToFlight(currentFlight.id)}
           onOpacityChange={(next) => setFlightOpacity(currentFlight.id, next)}
         />
@@ -79,7 +98,8 @@ export function DroneDeploySidebar() {
           onDateFilterChange={setDateFilter}
           onSortModeChange={setSortMode}
           onOpenDetail={handleOpenDetail}
-          onToggleLoaded={handleToggleLoaded}
+          onTogglePinned={handleTogglePinned}
+          onSelectFlight={handleSelectFlight}
         />
       )}
     </div>

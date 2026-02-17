@@ -41,8 +41,11 @@ export function useDroneDeployMapBehavior(
   const {
     warmCache,
     dataLoaded,
+    projects,
     loadedFlightIds,
     opacityByFlightId,
+    selectedFlightId,
+    setSelectedFlightId,
     getFlightById,
     flyToFlightId,
     clearFlyToRequest,
@@ -53,7 +56,7 @@ export function useDroneDeployMapBehavior(
   const { viewRef, showToast } = useMap();
   const loadedArcLayersRef = useRef<Map<number, WMTSLayer>>(new Map());
   const isHandlingMapReadyRef = useRef(false);
-  const lastAutoLoadedFlightIdRef = useRef<number | null>(null);
+  const lastRequestedFlyToFlightIdRef = useRef<number | null>(null);
 
   const isPinned = pinnedLayers.some((layer) => layer.layerId === LAYER_ID);
   const isActive = activeLayer?.layerId === LAYER_ID;
@@ -66,22 +69,46 @@ export function useDroneDeployMapBehavior(
     if (isOnMap) warmCache();
   }, [isOnMap, warmCache]);
 
-  // Left-sidebar project selection sets active featureId to that project's first flight.
-  // Auto-load that flight onto the map and fly to it once so selection feels immediate.
+  // Keep the context's selected flight synchronized with active layer selection
+  // so sidebar and map carousel remain in lockstep.
   useEffect(() => {
-    if (!isOnMap || activeFlightId == null) {
-      lastAutoLoadedFlightIdRef.current = null;
+    if (!isOnMap) {
       return;
     }
-    if (lastAutoLoadedFlightIdRef.current === activeFlightId) return;
-
-    const selectedFlight = getFlightById(activeFlightId);
-    if (!selectedFlight) return;
-
-    lastAutoLoadedFlightIdRef.current = activeFlightId;
-    setFlightLoaded(activeFlightId, true);
-    requestFlyToFlight(activeFlightId);
-  }, [isOnMap, activeFlightId, getFlightById, setFlightLoaded, requestFlyToFlight]);
+    if (activeFlightId != null) {
+      setSelectedFlightId(activeFlightId);
+      if (lastRequestedFlyToFlightIdRef.current !== activeFlightId) {
+        requestFlyToFlight(activeFlightId);
+        lastRequestedFlyToFlightIdRef.current = activeFlightId;
+      }
+      return;
+    }
+    if (selectedFlightId != null) return;
+    if (projects.length > 0 && projects[0].imageryLayers.length > 0) {
+      const firstFlightId = projects[0].imageryLayers[0].id;
+      setSelectedFlightId(firstFlightId);
+      activateLayer(LAYER_ID, undefined, firstFlightId);
+      requestFlyToFlight(firstFlightId);
+      lastRequestedFlyToFlightIdRef.current = firstFlightId;
+      return;
+    }
+    if (loadedFlightIds.length > 0) {
+      setSelectedFlightId(loadedFlightIds[0]);
+      if (lastRequestedFlyToFlightIdRef.current !== loadedFlightIds[0]) {
+        requestFlyToFlight(loadedFlightIds[0]);
+        lastRequestedFlyToFlightIdRef.current = loadedFlightIds[0];
+      }
+    }
+  }, [
+    isOnMap,
+    activeFlightId,
+    selectedFlightId,
+    setSelectedFlightId,
+    loadedFlightIds,
+    projects,
+    activateLayer,
+    requestFlyToFlight,
+  ]);
 
   useEffect(() => {
     if (!isOnMap) {
@@ -92,7 +119,10 @@ export function useDroneDeployMapBehavior(
     if (!parent || !(parent instanceof GroupLayer)) return;
 
     const byFlightId = loadedArcLayersRef.current;
-    const desired = new Set(loadedFlightIds);
+    const desired = new Set<number>(loadedFlightIds);
+    if (selectedFlightId != null) {
+      desired.add(selectedFlightId);
+    }
 
     for (const [flightId, wmtsLayer] of byFlightId) {
       if (desired.has(flightId)) continue;
@@ -100,7 +130,7 @@ export function useDroneDeployMapBehavior(
       byFlightId.delete(flightId);
     }
 
-    for (const flightId of loadedFlightIds) {
+    for (const flightId of desired) {
       if (byFlightId.has(flightId)) {
         const layer = byFlightId.get(flightId);
         if (layer) layer.opacity = opacityByFlightId[flightId] ?? 0.8;
@@ -141,6 +171,7 @@ export function useDroneDeployMapBehavior(
   }, [
     isOnMap,
     loadedFlightIds,
+    selectedFlightId,
     opacityByFlightId,
     getFlightById,
     getManagedLayer,

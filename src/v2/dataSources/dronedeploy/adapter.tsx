@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { DroneDeployProvider, useDroneDeploy } from '../../context/DroneDeployContext';
 import { DroneBrowseTab } from '../../components/RightSidebar/DroneDeploy/DroneBrowseTab';
 import { DroneOverviewTab } from '../../components/RightSidebar/DroneDeploy/DroneOverviewTab';
+import { DroneTemporalCarousel } from '../../components/Map/DroneDeploy/DroneTemporalCarousel';
 import type { CacheStatus, DataSourceAdapter, OverviewTabProps } from '../types';
 
 function formatDate(date: Date): string {
@@ -40,5 +41,6 @@ export const dronedeployAdapter: DataSourceAdapter = {
   layerIds: ['dataset-193'],
   OverviewTab: DroneOverviewTabWithCache,
   BrowseTab: DroneBrowseTab,
+  FloatingPanel: DroneTemporalCarousel,
   CacheProvider: DroneDeployProvider,
 };

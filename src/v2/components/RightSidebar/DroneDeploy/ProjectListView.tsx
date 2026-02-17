@@ -12,7 +12,8 @@ interface ProjectListViewProps {
   onDateFilterChange: (_next: { startDate: string; endDate: string }) => void;
   onSortModeChange: (_next: DroneSortMode) => void;
   onOpenDetail: (_flight: DroneImageryMetadata) => void;
-  onToggleLoaded: (_flight: DroneImageryMetadata) => void;
+  onTogglePinned: (_flight: DroneImageryMetadata) => void;
+  onSelectFlight: (_flight: DroneImageryMetadata) => void;
 }
 
 function formatDate(date: Date): string {
@@ -46,7 +47,8 @@ export function ProjectListView({
   onDateFilterChange,
   onSortModeChange,
   onOpenDetail,
-  onToggleLoaded,
+  onTogglePinned,
+  onSelectFlight,
 }: ProjectListViewProps) {
   const [expandedProjects, setExpandedProjects] = useState<Record<string, boolean>>({});
 
@@ -179,7 +181,14 @@ export function ProjectListView({
                         >
                           <div id={`drone-flight-card-top-${flight.id}`} className="flex items-start justify-between gap-2">
                             <div id={`drone-flight-card-text-${flight.id}`} className="min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">{flight.planName}</p>
+                              <button
+                                id={`drone-flight-select-${flight.id}`}
+                                type="button"
+                                onClick={() => onSelectFlight(flight)}
+                                className="max-w-full truncate text-left text-sm font-medium text-gray-900 hover:text-blue-700"
+                              >
+                                {flight.planName}
+                              </button>
                               <p className="text-xs text-gray-600 mt-0.5 flex items-center gap-1">
                                 <Calendar className="w-3 h-3" />
                                 <span>{formatDate(flight.dateCaptured)}</span>
@@ -214,15 +223,15 @@ export function ProjectListView({
                               View Details
                             </button>
                             <button
-                              id={`drone-flight-toggle-map-${flight.id}`}
-                              onClick={() => onToggleLoaded(flight)}
+                              id={`drone-flight-toggle-pin-${flight.id}`}
+                              onClick={() => onTogglePinned(flight)}
                               className={`flex-1 px-2.5 py-1.5 text-xs rounded border transition-colors ${
                                 isLoaded
                                   ? 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
                                   : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                               }`}
                             >
-                              {isLoaded ? 'Remove from Map' : 'Load on Map'}
+                              {isLoaded ? 'Unpin Flight' : 'Pin Flight'}
                             </button>
                           </div>
                         </article>

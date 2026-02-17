@@ -21,13 +21,16 @@ interface DroneDeployContextValue {
   loadedFlightIds: number[];
   opacityByFlightId: Record<number, number>;
   flyToFlightId: number | null;
+  selectedFlightId: number | null;
   warmCache: () => void;
   setDateFilter: (_next: DroneDateFilter) => void;
   setSortMode: (_next: DroneSortMode) => void;
   getFlightById: (_flightId: number) => DroneImageryMetadata | null;
+  getProjectByFlightId: (_flightId: number) => DroneImageryProject | null;
   isFlightLoaded: (_flightId: number) => boolean;
   setFlightLoaded: (_flightId: number, _loaded: boolean) => void;
   setFlightOpacity: (_flightId: number, _opacity: number) => void;
+  setSelectedFlightId: (_flightId: number | null) => void;
   requestFlyToFlight: (_flightId: number) => void;
   clearFlyToRequest: () => void;
 }
@@ -44,6 +47,7 @@ export function DroneDeployProvider({ children }: { children: ReactNode }) {
   const [loadedFlightIds, setLoadedFlightIds] = useState<number[]>([]);
   const [opacityByFlightId, setOpacityByFlightId] = useState<Record<number, number>>({});
   const [flyToFlightId, setFlyToFlightId] = useState<number | null>(null);
+  const [selectedFlightId, setSelectedFlightId] = useState<number | null>(null);
   const inFlightRef = useRef(false);
 
   const warmCache = useCallback(() => {
@@ -85,6 +89,15 @@ export function DroneDeployProvider({ children }: { children: ReactNode }) {
     for (const project of projects) {
       const match = project.imageryLayers.find((flight) => flight.id === flightId);
       if (match) return match;
+    }
+    return null;
+  }, [projects]);
+
+  const getProjectByFlightId = useCallback((flightId: number): DroneImageryProject | null => {
+    for (const project of projects) {
+      if (project.imageryLayers.some((flight) => flight.id === flightId)) {
+        return project;
+      }
     }
     return null;
   }, [projects]);
@@ -131,13 +144,16 @@ export function DroneDeployProvider({ children }: { children: ReactNode }) {
         loadedFlightIds,
         opacityByFlightId,
         flyToFlightId,
+        selectedFlightId,
         warmCache,
         setDateFilter: setDateFilterState,
         setSortMode: setSortModeState,
         getFlightById,
+        getProjectByFlightId,
         isFlightLoaded,
         setFlightLoaded,
         setFlightOpacity,
+        setSelectedFlightId,
         requestFlyToFlight,
         clearFlyToRequest,
       }}

@@ -20,7 +20,7 @@
 | 10.6 | 🟢 Complete | Feb 16, 2026 20:12 PST | Load WMTS imagery layers on map | Added WMTS loading via `wmts_item_id` into DroneDeploy group layer with multi-flight support, default 80% opacity, fly-to handling, and registry wiring |
 | 10.7 | ⚪ Not Started | — | Render flight footprints as map polygons | Show `plan_geometry` / `project_bounds` as clickable map polygons |
 | 10.8 | ⚪ Not Started | — | Implement layer opacity and visibility controls | Slider opacity, toggle visibility, layer ordering for overlapping imagery |
-| 10.9 | ⚪ Not Started | — | Implement temporal comparison UI | Swipe/slider for projects with multiple dates (e.g., Ramajal Field) |
+| 10.9 | 🟡 In Progress | Feb 16, 2026 | Implement temporal comparison UI | WIP: Context/sidebar sync and single-active-flight logic in place. **Still needed:** Apple-style on-map carousel with left/right buttons and dot indicators; right sidebar flight detail sync; auto fly-to on selection |
 | 10.10 | ⚪ Not Started | — | Sync loading indicators | Same shared loading pattern as other data sources |
 | 10.11 | ⚪ Not Started | — | Wire Save View flow | Pin imagery layers, save project/flight views to Map Layers |
 
@@ -267,15 +267,19 @@ Implement the DroneDeploy drone imagery browse experience in the right sidebar. 
 
 ### 10.9: Implement Temporal Comparison UI
 
-**Goal:** For projects with multiple flights (e.g., Ramajal Field with 4 dates), enable before/after comparison.
+**Goal:** For projects with multiple flights (e.g., Ramajal Field with 4 dates), enable rapid temporal comparison by toggling one active flight at a time, with optional pinning to keep specific flights visible.
 
 **Acceptance Criteria:**
-- [ ] Temporal comparison available when a project has 2+ flights
-- [ ] Mode 1: **Swipe** — split-screen slider dividing two layers (left = earlier, right = later)
-- [ ] Mode 2: **Toggle** — rapid switch between two dates with animation
-- [ ] Date selector shows all available dates for the project
-- [ ] Clear entry/exit from comparison mode
-- [ ] Works with opacity controls (comparison layers at 100%)
+- [x] Temporal comparison available when a project has 2+ flights
+- [ ] On-map temporal carousel rendered for active DroneDeploy projects with multiple flights
+- [ ] Apple-style carousel: left/right navigation buttons + dot indicators (like v1 `DroneImageryCarousel.tsx`)
+- [ ] Right-sidebar flight selection stays synchronized with carousel selection
+- [x] Switching flights de-renders the prior unpinned flight (single-active-flight default)
+- [x] Pinned flights remain visible while carousel toggles the active comparison flight
+- [ ] Right sidebar shows flight details when flights are selected
+- [ ] Auto fly-to extent when selecting a flight
+
+**WIP Notes:** Context and map behavior logic in place. Carousel UI (left/right buttons + dots) not yet visible on map. Sidebar detail sync and auto zoom need verification.
 
 **Reference:** v1 `DroneImageryCarousel.tsx`, ArcGIS Swipe widget
 
