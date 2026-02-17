@@ -1,7 +1,7 @@
 # Master Development Plan - V2 Digital Catalog
 
 **Created:** January 23, 2026  
-**Last Updated:** February 16, 2026  
+**Last Updated:** February 17, 2026  
 **Target Deadline:** February 20, 2026  
 **Status:** 🟡 Planning
 
@@ -32,7 +32,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 0 | Foundation | 🟡 In Progress | ~98% | `v2/foundation` | YES - blocks all |
 | 1 | iNaturalist | 🟢 Complete | 5 / 5 tasks | `v2/inaturalist` | No |
 | 2 | ANiML | 🟡 In Progress | 10 / 14 tasks | `v2/animl` | No |
-| 3 | Dendra | 🟡 In Progress | 10 / 11 tasks | `v2/dendra` | No |
+| 3 | Dendra | 🟢 Complete | 12 / 12 tasks | `v2/dendra` | No |
 | 4 | DataOne | 🟢 Complete | 12 / 12 tasks | `v2/dataone` | No |
 | 5 | Export Builder | 🟢 Complete | 10 / 10 tasks | `v2/export-builder` | No |
 | 6 | TNC ArcGIS Services | 🟡 In Progress | 11 / 20 tasks | `v2/tnc-arcgis` | No |
@@ -270,6 +270,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 17, 2026 | Phase 3 | **Phase 3 Dendra status corrected.** Phase doc showed "Not Started" but Dendra was fully implemented. Updated to 🟢 Complete (12/12 tasks). See phase-3-dendra.md and docs/archive/phase-3-dendra-completed-tasks.md. | Claude |
 | Feb 16, 2026 | Phase 10 | **DroneDeploy left-sidebar project click loads imagery.** Left-sidebar project select now calls DroneDeploy context (setFlightLoaded, setSelectedFlightId, requestFlyToFlight) so WMTS tiles load on map; previously only right-sidebar project/flight clicks triggered load. Also: Browse tab gating uses adapter.id; default flight prefers valid WMTS; merge conflicts resolved. | Claude |
 | Feb 16, 2026 | Phase 6 | **Task 6.15 complete: TNC ArcGIS Legend Iconography Parity + Symbol-Aware Filtering.** esriPMS picture-marker symbols render via imageData/contentType extraction. UX refinements: Select All/Clear All in header, layer name above items, stable selection box (no layout shift), removed redundant "Selected" text. | Claude |
 | Feb 16, 2026 | Phase 10 | **Tasks 10.10 and 10.11 complete: DroneDeploy loading + Save View sync.** Unified DroneDeploy loading state now includes metadata fetch and WMTS tile lifecycle (`WMTSLayer.when()`), enabling shared eye-slot spinner behavior in Map Layers and metadata loading feedback in right sidebar. Save View now creates/reuses DroneDeploy child views in Map Layers (`droneView.flightId`) and activating a saved child rehydrates the specific flight WMTS layer. Progress: 9/11. | Codex |

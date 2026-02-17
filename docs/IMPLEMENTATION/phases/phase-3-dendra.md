@@ -1,15 +1,32 @@
 # Phase 3: Dendra Right Sidebar
 
-**Status:** ⚪ Not Started  
-**Progress:** 0 / 6 tasks  
+**Status:** 🟢 Complete  
+**Progress:** 9 / 9 tasks (including fixes 3.5a–3.9)  
 **Branch:** `v2/dendra`  
 **Depends On:** Phase 0 (Foundation)  
-**Owner:** TBD
+**Owner:** TBD  
+**Last Updated:** February 16, 2026
 
 ---
 
-> **⚠️ NOTE: PLEASE REVIEW THIS AND PROVIDE FEEDBACK**  
-> This phase document is a draft. Before starting implementation, please review the tasks, acceptance criteria, and approach to ensure we're moving in the right direction.
+## Quick Task Summary
+
+| ID | Status | Last Updated (Timestamp) | Task Description | Notes |
+|----|--------|---------------------------|------------------|-------|
+| 3.1 | 🟢 Complete | Feb 16, 2026 | Query Dendra service to understand attributes | Service schema documented; v2 per-type services + v0 bridge for time series |
+| 3.2 | 🟢 Complete | Feb 16, 2026 | Create Dendra right sidebar shell | DendraBrowseTab, DendraOverviewTab, StationDetailView, StationCard; adapter + registry wired |
+| 3.3 | 🟢 Complete | Feb 16, 2026 | Implement sensor filter UI | Region, status, sensor-type filters; showActiveOnly; Map Layers sync |
+| 3.4 | 🟢 Complete | Feb 16, 2026 | Implement sensor list with cards | StationCard with name/ID, location, status, last reading; drill-down to detail |
+| 3.5 | 🟢 Complete | Feb 16, 2026 | Implement sensor detail with time series chart | DendraTimeSeriesPanel (floating on map), ECharts, date/aggregation filters |
+| 3.6 | 🟢 Complete | Feb 16, 2026 | Implement time range filter (Level 3) | Date range + aggregation; Save View / Save as New View; LayerContext sync |
+| 3.5a | 🟢 Complete | Feb 13, 2026 | Fix: Subsequent datastream clicks don't update chart | Race condition + stale ECharts instance fixes |
+| 3.5b | 🟢 Complete | Feb 13, 2026 | Fix: Some sensors show 0 data despite record counts | v0 bridge + null-heavy datapoint query fix |
+| 3.5c | 🟢 Complete | Feb 13, 2026 | Fix: Glassmorphism background not visible | Visible panel, bottom-right, stronger contrast |
+| 3.7 | 🟢 Complete | Feb 16, 2026 | Weather Stations layer investigation | Dataset 190 hidden via backend; dataset 183 working |
+| 3.8 | 🟢 Complete | Feb 16, 2026 | Barometer datastream formatValue crash | Coerce min/max/avg to number; handle NaN |
+| 3.9 | 🟢 Complete | Feb 16, 2026 | Save With Filters button behavior | "Update Current View" vs "Save as New View" distinct actions |
+
+**Archived task details:** `docs/archive/phase-3-dendra-completed-tasks.md`
 
 ---
 
@@ -49,12 +66,18 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
-| 3.1 | Query Dendra service to understand attributes | ⚪ Not Started | | |
-| 3.2 | Create Dendra right sidebar shell | ⚪ Not Started | | |
-| 3.3 | Implement sensor filter UI | ⚪ Not Started | | |
-| 3.4 | Implement sensor list with cards | ⚪ Not Started | | |
-| 3.5 | Implement sensor detail with time series chart | ⚪ Not Started | | |
-| 3.6 | Implement time range filter (Level 3) | ⚪ Not Started | | |
+| 3.1 | Query Dendra service to understand attributes | 🟢 Complete | | dendraStationService.ts; v2 per-type + v0 bridge |
+| 3.2 | Create Dendra right sidebar shell | 🟢 Complete | | DendraBrowseTab, DendraOverviewTab, StationDetailView, StationCard |
+| 3.3 | Implement sensor filter UI | 🟢 Complete | | Region, status, showActiveOnly; Map Layers sync |
+| 3.4 | Implement sensor list with cards | 🟢 Complete | | StationCard; drill-down to StationDetailView |
+| 3.5 | Implement sensor detail with time series chart | 🟢 Complete | | DendraTimeSeriesPanel (floating), ECharts |
+| 3.6 | Implement time range filter (Level 3) | 🟢 Complete | | Date range + aggregation; Save View / Save as New View |
+| 3.5a | Fix: Datastream clicks don't update chart | 🟢 Complete | | Race condition + ECharts DOM guard |
+| 3.5b | Fix: Some sensors show 0 data | 🟢 Complete | | v0 bridge + non-null query |
+| 3.5c | Fix: Glassmorphism not visible | 🟢 Complete | | Panel styling |
+| 3.7 | Weather Stations layer investigation | 🟢 Complete | | Dataset 190 hidden |
+| 3.8 | Barometer formatValue crash | 🟢 Complete | | Coerce to number |
+| 3.9 | Save With Filters behavior | 🟢 Complete | | Update vs Save as New View |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -301,30 +324,33 @@ bookmark: {
 
 ## Service Analysis
 
-> Fill this out during Task 3.1
+> Completed during Task 3.1. Implementation in `src/v2/services/dendraStationService.ts`.
 
 ### Feature Service / API URLs
-- Stations/Sensors: TBD
-- Datastream API: TBD
+- **v2 per-type services:** Data Catalog exposes 10 Dendra sensor services (e.g., Rain Gauges, Weather Stations). Each has Layer 0 (stations), Layer 2 (datastream summaries).
+- **v0 legacy bridge:** Time series data fetched via `Dendra_Stations` FeatureServer Table 3/4; `dendra_ds_id` from v2 Summary maps to v0 datastream id.
 
-### Sensor Attributes
+### Sensor Attributes (DendraStation)
 | Attribute | Type | Useful For | Notes |
 |-----------|------|------------|-------|
-| | | | |
+| `station_id` | number | Unique ID | |
+| `dendra_st_id` | string | Dendra identifier | |
+| `station_name` | string | Display | |
+| `geometry` | point | Map marker | |
+| (see dendraStationService.ts) | | | |
 
 ### Datastream API
 | Parameter | Values | Notes |
 |-----------|--------|-------|
-| start_time | ISO date | |
-| end_time | ISO date | |
-| aggregation | hourly, daily, etc. | |
+| start_time / end_time | Epoch ms | Via v0 Table 4 query |
+| aggregation | hourly, daily, weekly | Client-side from raw points |
+| value IS NOT NULL | — | Required for valid datapoints |
 
 ### Query Performance
 | Query Type | Avg Response Time | Notes |
 |------------|-------------------|-------|
-| All sensors | | |
-| Datastream for 1 sensor (1 month) | | |
-| Datastream for 1 sensor (1 year) | | |
+| Stations + summaries (v2) | ~200–500 ms | Per service |
+| Time series (v0 bridge) | ~500 ms–2 s | Depends on date range |
 
 ---
 
@@ -368,6 +394,7 @@ bookmark: {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 17, 2026 | All | **Phase status corrected:** Dendra was implemented but phase doc showed "Not Started". Updated to 🟢 Complete (9/9 core + 3.5a–3.9 fixes). Added Quick Task Summary; task table now reflects completion. See `docs/archive/phase-3-dendra-completed-tasks.md` for archived details. | Claude |
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 | Feb 2, 2026 | 3.3, 3.5, 3.6 | Resolved DFT-004: Progressive disclosure + direct/parametric separation. Sidebar edits filters (context-aware State A/B), pop-up has slider only (exploration). Layer and feature filters are independent after bookmark creation. | Will + Claude |
 | Feb 4, 2026 | 3.2 | Resolved DFT-027: "Browse Features →" button design specification (full-width primary, TNC green, inline arrow, hover/focus states, 150-200ms transition) | Will + Claude |
