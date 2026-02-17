@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { DroneImageryMetadata } from '../../../../types/droneImagery';
+import type { DroneImageryMetadata, DroneImageryProject } from '../../../../types/droneImagery';
 import { useLayers } from '../../../context/LayerContext';
 import { useDroneDeploy } from '../../../context/DroneDeployContext';
 import { FlightDetailView } from './FlightDetailView';
@@ -59,11 +59,12 @@ export function DroneDeploySidebar() {
     setShowDetailView(false);
   }, [activeLayer?.layerId, activeFlightId]);
 
-  const handleOpenDetail = (flight: DroneImageryMetadata) => {
+  const handleOpenProjectDetail = (project: DroneImageryProject) => {
+    const nextFlight = project.imageryLayers[0];
+    if (!nextFlight) return;
     setShowDetailView(true);
-    setSelectedFlightId(flight.id);
-    requestFlyToFlight(flight.id);
-    activateLayer('dataset-193', undefined, flight.id);
+    setSelectedFlightId(nextFlight.id);
+    activateLayer('dataset-193', undefined, nextFlight.id);
   };
 
   const handleTogglePinned = (flight: DroneImageryMetadata) => {
@@ -104,13 +105,9 @@ export function DroneDeploySidebar() {
           projects={projects}
           dateFilter={dateFilter}
           sortMode={sortMode}
-          loadedFlightIds={loadedFlightIds}
-          selectedFlightId={activeFlightId}
           onDateFilterChange={setDateFilter}
           onSortModeChange={setSortMode}
-          onOpenDetail={handleOpenDetail}
-          onTogglePinned={handleTogglePinned}
-          onSelectFlight={handleSelectFlight}
+          onOpenProjectDetail={handleOpenProjectDetail}
         />
       )}
     </div>

@@ -39,7 +39,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 7 | Polish & Consistency | ⚪ Not Started | 0 / 7+ tasks | `v2/polish` | No |
 | 8 | Calflora | ⚪ Not Started | 0 / 9 tasks | `v2/calflora` | No |
 | 9 | GBIF | ⚪ Not Started | 0 / 9 tasks | `v2/gbif` | No |
-| 10 | DroneDeploy | 🟡 In Progress | 1 / 11 tasks | `v2/dronedeploy` | No |
+| 10 | DroneDeploy | 🟡 In Progress | 7 / 11 tasks | `v2/dronedeploy` | No |
 | 11 | MODIS | ⚪ Not Started | 0 / 9 tasks | `v2/modis` | No |
 
 **Status Legend:**
