@@ -121,12 +121,28 @@ export function CategoryGroup({ category, filteredLayerIds, isSubcategory }: Cat
         <div className="overflow-hidden">
           {/* Direct layers in this category */}
           {directLayers.length > 0 && (
-            <div role="group" className={`bg-gray-50/50 py-1.5 space-y-1 ${isSubcategory ? 'ml-4 mr-2' : 'ml-2 mr-3'}`}>
+            <div role="group" className={`bg-gray-50/50 py-1.5 space-y-1 ${isSubcategory ? 'ml-3 mr-1' : 'ml-1 mr-1'}`}>
               {directLayers.map(layer => {
                 if (layer.catalogMeta?.parentServiceId) return null;
 
                 if (isServiceParent(layer)) {
-                  const serviceLayers = childrenByServiceId.get(layer.id) ?? [];
+                  const childRows = childrenByServiceId.get(layer.id) ?? [];
+                  const metaChildren = layer.catalogMeta?.siblingLayers ?? [];
+                  const mergedChildren = new Map<string, CatalogLayer>();
+
+                  for (const child of [...childRows, ...metaChildren]) {
+                    if (child.id === layer.id) continue;
+                    if (child.catalogMeta?.parentServiceId !== layer.id) continue;
+                    mergedChildren.set(child.id, child);
+                  }
+
+                  const serviceLayers = Array.from(mergedChildren.values()).sort((a, b) => {
+                    const aLayerId = a.catalogMeta?.layerIdInService ?? Number.MAX_SAFE_INTEGER;
+                    const bLayerId = b.catalogMeta?.layerIdInService ?? Number.MAX_SAFE_INTEGER;
+                    if (aLayerId !== bLayerId) return aLayerId - bLayerId;
+                    return a.name.localeCompare(b.name);
+                  });
+
                   if (serviceLayers.length === 0) {
                     return (
                       <LayerRow key={layer.id} layerId={layer.id} name={layer.name} />

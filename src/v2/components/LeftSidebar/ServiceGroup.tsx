@@ -19,7 +19,7 @@ export function ServiceGroup({
   onToggleExpand,
 }: ServiceGroupProps) {
   const handleHeaderClick = () => {
-    if (!isExpanded) onToggleExpand();
+    onToggleExpand();
   };
 
   const handleHeaderKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
@@ -52,58 +52,50 @@ export function ServiceGroup({
       >
         <button
           id={`service-group-header-${service.id}`}
+          type="button"
           role="treeitem"
           aria-expanded={isExpanded}
           aria-level={ariaLevel}
           onClick={handleHeaderClick}
           onKeyDown={handleHeaderKeyDown}
-          className="flex items-center gap-2 flex-1 py-1 px-2 text-sm text-gray-800 font-medium rounded-md"
-        >
-          <span className="truncate flex-1 text-left">{service.name}</span>
-          <span
-            id={`service-group-count-${service.id}`}
-            className="text-xs text-gray-600 bg-white border border-gray-200 rounded-full px-1.5 py-0.5"
-          >
-            ({layers.length})
-          </span>
-        </button>
-        <button
-          id={`service-group-toggle-${service.id}`}
-          type="button"
-          onClick={event => {
-            event.stopPropagation();
-            onToggleExpand();
-          }}
-          className="p-1 rounded-md hover:bg-white transition-colors"
-          aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${service.name}`}
+          className="w-full min-w-0 flex items-center gap-2 py-1 px-2 text-sm text-gray-800 font-medium rounded-md"
         >
           {isExpanded ? (
-            <ChevronDown className="w-4 h-4 text-gray-600" />
+            <ChevronDown id={`service-group-caret-${service.id}`} className="w-4 h-4 text-gray-600 flex-shrink-0" />
           ) : (
-            <ChevronRight className="w-4 h-4 text-gray-600" />
+            <ChevronRight id={`service-group-caret-${service.id}`} className="w-4 h-4 text-gray-600 flex-shrink-0" />
           )}
+          <span className="truncate flex-1 min-w-0 text-left">{service.name}</span>
+          <span
+            id={`service-group-count-${service.id}`}
+            className="text-xs text-gray-600 bg-white border border-gray-200 rounded-full px-1.5 py-0.5 flex-shrink-0"
+          >
+            {layers.length}
+          </span>
         </button>
       </div>
 
       <div
         id={`service-group-children-${service.id}`}
         role="group"
-        className="overflow-hidden transition-all duration-300 ease-out"
+        className="grid transition-all duration-300 ease-out"
         style={{
-          maxHeight: isExpanded ? `${layers.length * 56}px` : '0px',
+          gridTemplateRows: isExpanded ? '1fr' : '0fr',
           opacity: isExpanded ? 1 : 0,
         }}
       >
-        <div id={`service-group-children-inner-${service.id}`} className="pl-4 space-y-1 pt-1">
-          {layers.map(layer => (
-            <LayerRow
-              key={layer.id}
-              layerId={layer.id}
-              name={layer.name}
-              indented
-              ariaLevel={ariaLevel + 1}
-            />
-          ))}
+        <div className="overflow-hidden">
+          <div id={`service-group-children-inner-${service.id}`} className="pl-2 pr-0.5 space-y-1 pt-1">
+            {layers.map(layer => (
+              <LayerRow
+                key={layer.id}
+                layerId={layer.id}
+                name={layer.name}
+                indented
+                ariaLevel={ariaLevel + 1}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>

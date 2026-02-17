@@ -88,8 +88,8 @@ export function LayerRow({
       tabIndex={controlsOnly ? -1 : 0}
       onClick={handleClick}
       onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && handleClick()}
-      className={`w-full group flex items-center gap-1.5 py-2 px-3 ml-1 mr-1 cursor-pointer
-                  text-sm rounded-lg transition-all duration-200 ${indented ? 'ml-4' : 'ml-1'} ${activeClasses}
+      className={`w-full min-w-0 group flex items-center gap-1.5 py-2 pr-3 cursor-pointer
+                  text-sm rounded-lg transition-all duration-200 ${indented ? 'pl-7' : 'pl-3'} ${activeClasses}
                   ${controlsOnly ? 'cursor-default' : 'cursor-pointer'}`}
     >
       {/* Eye icon — only for pinned layers */}
@@ -109,7 +109,7 @@ export function LayerRow({
       )}
 
       {/* Layer name */}
-      <span className={`truncate flex-1 ${textColor} ${isActive ? 'font-semibold' : ''}`}>
+      <span className={`truncate flex-1 min-w-0 ${textColor} ${isActive ? 'font-semibold' : ''}`}>
         {name}
       </span>
 

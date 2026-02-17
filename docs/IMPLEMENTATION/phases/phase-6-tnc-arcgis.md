@@ -41,7 +41,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **6.10** | ⚪ | — | QA & Edge Cases | Single-layer services, empty results, malformed queries, schema fetch errors |
 | **6.11** | 🟡 | 2026-02-16 14:01 PST | Capability-Aware Browse UX | Decision locked: FeatureServer defaults to records/table-first browse; MapServer/ImageServer use map-first + legend/metadata |
 | **6.12** | 🟡 | 2026-02-16 14:01 PST | Terminology + CTA Realignment | Decision locked: remove right-sidebar pin actions for now; keep pinning in left sidebar + Map Layers widget only |
-| **6.13** | 🟡 | 2026-02-16 15:28 PST | Multi-Layer Service Discoverability | In progress: service rows are tagged/non-pinnable, but `Coastal and Marine Data` still does **not** reliably expand into child layer rows in the left sidebar; currently visible in right sidebar only |
+| **6.13** | 🟡 | 2026-02-16 15:40 PST | Multi-Layer Service Discoverability | In progress: reduced left-sidebar service-group horizontal inset (`CategoryGroup` wrapper + `ServiceGroup` child container) so expanded child rows sit within sidebar border without right-edge crowding/cutoff |
 | **6.14** | ⚪ | — | Service Reference + External Viewer | Add service webpage/embed panel + "Open in new tab" action to mirror original app workflow |
 
 **Status Legend:**  
