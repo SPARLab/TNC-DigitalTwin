@@ -24,6 +24,8 @@ import { animlAdapter, useAnimlCacheStatus } from './animl/adapter';
 import { useAnimlMapBehavior } from './animl/useMapBehavior';
 import { dataoneAdapter, useDataOneCacheStatus } from './dataone/adapter';
 import { useDataOneMapBehavior } from './dataone/useMapBehavior';
+import { dronedeployAdapter, useDroneDeployCacheStatus } from './dronedeploy/adapter';
+import { useDroneDeployMapBehavior } from './dronedeploy/useMapBehavior';
 
 // ── Adapter registry ─────────────────────────────────────────────────────────
 
@@ -32,12 +34,20 @@ const ADAPTER_MAP: Record<string, DataSourceAdapter> = {
   dendra: dendraAdapter,
   animl: animlAdapter,
   dataone: dataoneAdapter,
+  drone: dronedeployAdapter,
 };
 
 /** Look up a data source adapter by its dataSource key */
 export function getAdapter(dataSource: string | undefined): DataSourceAdapter | null {
   if (!dataSource) return null;
   return ADAPTER_MAP[dataSource] ?? null;
+}
+
+/** Layer-specific adapter overrides for catalog datasets that map to custom UIs */
+export function getAdapterForActiveLayer(activeLayer: ActiveLayer | null): DataSourceAdapter | null {
+  if (!activeLayer) return null;
+  if (activeLayer.layerId === 'dataset-193') return dronedeployAdapter;
+  return getAdapter(activeLayer.dataSource);
 }
 
 // ── Composite hooks (always called unconditionally — React rules) ────────────
@@ -48,7 +58,7 @@ export function getAdapter(dataSource: string | undefined): DataSourceAdapter | 
  * managed layers added in the same render cycle (declaration order = run order).
  */
 export function useAllMapBehaviors(
-  getManagedLayer: (layerId: string) => Layer | undefined,
+  getManagedLayer: (_layerId: string) => Layer | undefined,
   pinnedLayers: PinnedLayer[],
   activeLayer: ActiveLayer | null,
   mapReady: number,
@@ -57,6 +67,7 @@ export function useAllMapBehaviors(
   useDendraMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
   useAnimlMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
   useDataOneMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
+  useDroneDeployMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
 }
 
 /**
@@ -69,12 +80,14 @@ export function useActiveCacheStatus(dataSource: string | undefined): CacheStatu
   const dendra = useDendraCacheStatus();
   const animl = useAnimlCacheStatus();
   const dataone = useDataOneCacheStatus();
+  const dronedeploy = useDroneDeployCacheStatus();
 
   switch (dataSource) {
     case 'inaturalist': return inat;
     case 'dendra': return dendra;
     case 'animl': return animl;
     case 'dataone': return dataone;
+    case 'drone': return dronedeploy;
     default: return null;
   }
 }
@@ -88,11 +101,13 @@ export function useCacheStatusByDataSource(): Record<string, CacheStatus> {
   const dendra = useDendraCacheStatus();
   const animl = useAnimlCacheStatus();
   const dataone = useDataOneCacheStatus();
+  const dronedeploy = useDroneDeployCacheStatus();
 
   return {
     inaturalist: inat,
     dendra,
     animl,
     dataone,
+    drone: dronedeploy,
   };
 }

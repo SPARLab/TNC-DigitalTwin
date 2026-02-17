@@ -10,7 +10,7 @@ import { useLayers } from '../../context/LayerContext';
 import type { SidebarTab } from '../../types';
 import { SidebarHeader } from './SidebarHeader';
 import { TabBar } from './TabBar';
-import { getAdapter } from '../../dataSources/registry';
+import { getAdapterForActiveLayer } from '../../dataSources/registry';
 
 export function RightSidebar() {
   const { activeLayer, deactivateLayer, activateLayer, lastEditFiltersRequest } = useLayers();
@@ -23,7 +23,7 @@ export function RightSidebar() {
   const [shouldFlash, setShouldFlash] = useState(false);
 
   // Look up the adapter for the active layer's data source
-  const adapter = getAdapter(activeLayer?.dataSource);
+  const adapter = getAdapterForActiveLayer(activeLayer);
 
   const handleSystemTabChange = useCallback((tab: SidebarTab) => {
     setActiveTab(tab);
@@ -78,7 +78,11 @@ export function RightSidebar() {
   // Browse tab owns detail-view rendering for marker-driven selections.
   useEffect(() => {
     if (
-      (activeLayer?.layerId === 'inaturalist-obs' || activeLayer?.layerId === 'dataone-datasets') &&
+      (
+        activeLayer?.layerId === 'inaturalist-obs' ||
+        activeLayer?.layerId === 'dataone-datasets' ||
+        activeLayer?.layerId === 'dataset-193'
+      ) &&
       activeLayer.featureId != null
     ) {
       handleSystemTabChange('browse');

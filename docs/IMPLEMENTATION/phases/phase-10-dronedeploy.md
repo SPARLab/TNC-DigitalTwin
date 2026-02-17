@@ -1,7 +1,7 @@
 # Phase 10: DroneDeploy Imagery
 
 **Status:** 🟡 In Progress  
-**Progress:** 2 / 11 tasks  
+**Progress:** 6 / 11 tasks  
 **Branch:** `v2/dronedeploy`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -13,11 +13,11 @@
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
 | 10.1 | 🟢 Complete | Feb 16, 2026 16:26 PST | Audit DroneDeploy metadata service for v2 | Completed against `DroneDeploy_Metadata_v2`; schema drift documented; WMTS access pattern validated |
-| 10.2 | ⚪ Not Started | — | Create DroneDeploy right sidebar shell | Adapter, Overview/Browse tabs; project-grouped layout |
+| 10.2 | 🟢 Complete | Feb 16, 2026 20:12 PST | Create DroneDeploy right sidebar shell | Added DroneDeploy adapter + Overview/Browse tab shell with project-grouped browse/detail drill-down in v2 right sidebar |
 | 10.3 | 🟢 Complete | Feb 16, 2026 16:41 PST | Detect and expand DroneDeploy orthomosaic child layers | Implemented in left sidebar for `dataset-193`: parent expansion, live project/flight counts, per-project expand/collapse, selectable flights, and explicit loading/error/empty states |
-| 10.4 | ⚪ Not Started | — | Implement project/flight browse UI | Group by project, filter by date range, show flight cards |
-| 10.5 | ⚪ Not Started | — | Implement flight detail view | Full metadata, WMTS preview, Image Collection info, download links |
-| 10.6 | ⚪ Not Started | — | Load WMTS imagery layers on map | Load drone orthomosaics as WMTS overlay layers from `wmts_item_id` |
+| 10.4 | 🟢 Complete | Feb 16, 2026 20:12 PST | Implement project/flight browse UI | Added collapsible project cards, date-range filter, sort modes, flight cards, detail open, and load/remove map action |
+| 10.5 | 🟢 Complete | Feb 16, 2026 20:12 PST | Implement flight detail view | Added full metadata panel, load/remove and fly-to actions, image collection + portal links, TIF link, and opacity slider for loaded layers |
+| 10.6 | 🟢 Complete | Feb 16, 2026 20:12 PST | Load WMTS imagery layers on map | Added WMTS loading via `wmts_item_id` into DroneDeploy group layer with multi-flight support, default 80% opacity, fly-to handling, and registry wiring |
 | 10.7 | ⚪ Not Started | — | Render flight footprints as map polygons | Show `plan_geometry` / `project_bounds` as clickable map polygons |
 | 10.8 | ⚪ Not Started | — | Implement layer opacity and visibility controls | Slider opacity, toggle visibility, layer ordering for overlapping imagery |
 | 10.9 | ⚪ Not Started | — | Implement temporal comparison UI | Swipe/slider for projects with multiple dates (e.g., Ramajal Field) |
@@ -149,11 +149,11 @@ Implement the DroneDeploy drone imagery browse experience in the right sidebar. 
 **Goal:** Set up the component structure. Note that DroneDeploy follows a different pattern than point-observation data sources — it's project-grouped and raster-oriented.
 
 **Acceptance Criteria:**
-- [ ] DroneDeploy adapter registered in v2 data source registry
-- [ ] Component renders when DroneDeploy layer is selected
-- [ ] Tabs: Overview | Browse (no Export tab — export is download links per flight)
-- [ ] Overview tab: project summary, total flights, date range, "Browse Imagery →" button
-- [ ] Component can show project list OR flight detail (drill-down pattern)
+- [x] DroneDeploy adapter registered in v2 data source registry
+- [x] Component renders when DroneDeploy layer is selected
+- [x] Tabs: Overview | Browse (no Export tab — export is download links per flight)
+- [x] Overview tab: project summary, total flights, date range, "Browse Imagery →" button
+- [x] Component can show project list OR flight detail (drill-down pattern)
 
 **Files to Create:**
 - `src/v2/dataSources/dronedeploy/adapter.tsx`
@@ -188,13 +188,13 @@ Implement the DroneDeploy drone imagery browse experience in the right sidebar. 
 **Goal:** Browse drone imagery organized by project with expandable flight lists.
 
 **Acceptance Criteria:**
-- [ ] Projects displayed as collapsible cards (project name, flight count, date range)
-- [ ] Expand project → see individual flights (date, plan name, image collection badge)
-- [ ] Date range filter across all projects
-- [ ] Sort: by date (newest first) or by project name
-- [ ] Flight cards show: capture date, plan name, WMTS availability, Image Collection badge
-- [ ] Click flight card → open flight detail view
-- [ ] Click "Load on Map" button → load WMTS overlay directly from browse
+- [x] Projects displayed as collapsible cards (project name, flight count, date range)
+- [x] Expand project → see individual flights (date, plan name, image collection badge)
+- [x] Date range filter across all projects
+- [x] Sort: by date (newest first) or by project name
+- [x] Flight cards show: capture date, plan name, WMTS availability, Image Collection badge
+- [x] Click flight card → open flight detail view
+- [x] Click "Load on Map" button → load WMTS overlay directly from browse
 
 **Reference:** Integration guide "Grouping Options" section, v1 `DroneImageryView.tsx`
 
@@ -205,16 +205,16 @@ Implement the DroneDeploy drone imagery browse experience in the right sidebar. 
 **Goal:** Show full metadata and actions for a specific drone flight.
 
 **Acceptance Criteria:**
-- [ ] "← Back to Projects" navigation
-- [ ] Project name and plan name
-- [ ] Capture date (formatted)
-- [ ] WMTS layer status (loaded / not loaded on map)
-- [ ] "Load on Map" / "Remove from Map" toggle button
-- [ ] "Fly to Extent" button (uses `plan_geometry` or `project_bounds`)
-- [ ] Image Collection info (if available) with portal link
-- [ ] Azure Blob download link (if `azure_blob_url` available)
-- [ ] "Open in Portal" external link (`wmts_link`)
-- [ ] Layer opacity slider (if currently loaded on map)
+- [x] "← Back to Projects" navigation
+- [x] Project name and plan name
+- [x] Capture date (formatted)
+- [x] WMTS layer status (loaded / not loaded on map)
+- [x] "Load on Map" / "Remove from Map" toggle button
+- [x] "Fly to Extent" button (uses `plan_geometry` or `project_bounds`)
+- [x] Image Collection info (if available) with portal link
+- [x] Azure Blob download link (if `azure_blob_url` available)
+- [x] "Open in Portal" external link (`wmts_link`)
+- [x] Layer opacity slider (if currently loaded on map)
 
 ---
 
@@ -223,13 +223,13 @@ Implement the DroneDeploy drone imagery browse experience in the right sidebar. 
 **Goal:** Load drone orthomosaics as WMTS overlay layers on the ArcGIS map.
 
 **Acceptance Criteria:**
-- [ ] Create `droneDeployLayer.ts` that loads WMTSLayer from `wmts_item_id`
-- [ ] Handle portal authentication if required
-- [ ] Support loading multiple drone layers simultaneously (different flights)
-- [ ] "Fly to" centers map on imagery extent when loaded
-- [ ] Layer renders as semi-transparent overlay on basemap
-- [ ] Default opacity: 80% (adjustable via slider)
-- [ ] Add to `IMPLEMENTED_LAYERS` registry
+- [x] Create `droneDeployLayer.ts` that loads WMTSLayer from `wmts_item_id`
+- [x] Handle portal authentication if required
+- [x] Support loading multiple drone layers simultaneously (different flights)
+- [x] "Fly to" centers map on imagery extent when loaded
+- [x] Layer renders as semi-transparent overlay on basemap
+- [x] Default opacity: 80% (adjustable via slider)
+- [x] Add to `IMPLEMENTED_LAYERS` registry
 
 **Technical Notes:**
 - Use `@arcgis/core/layers/WMTSLayer` with `portalItem.id`
@@ -400,3 +400,4 @@ Validated with sample `wmts_item_id` values from live records.
 | Feb 16, 2026 | 10.1 | Completed live metadata service audit for `DroneDeploy_Metadata_v2`; documented schema drift (new fields), record count update (16), WMTS loading/auth pattern, WKT parse validation, and `azure_blob_url` accessibility caveat. Updated phase status to In Progress (1/11). | Codex |
 | Feb 16, 2026 | 10.3 | Renumbered orthomosaic detection task from 10.11 to 10.3; shifted 10.3→10.4 through 10.10→10.11 for logical flow (detect/expand before browse/detail/WMTS). | Codex |
 | Feb 16, 2026 | 10.3 | Implemented left-sidebar DroneDeploy orthomosaic expansion behavior for `dataset-193`: fetch project groups, show parent/project counts, expand project flight rows, set selected flight as active `featureId` context, and render explicit loading/error/empty states. Updated phase progress to 2/11. | Codex |
+| Feb 16, 2026 | 10.2, 10.4, 10.5, 10.6 | Implemented v2 DroneDeploy adapter and right-sidebar shell (Overview/Browse), project/flight browse with date filters and sort, flight detail drill-down with metadata/actions, and WMTS map loading from `wmts_item_id` with multi-flight overlays, fly-to extent, and per-flight opacity control via a DroneDeploy group layer. Updated phase progress to 6/11. | Codex |
