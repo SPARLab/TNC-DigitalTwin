@@ -270,6 +270,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 16, 2026 | Phase 10 | **DroneDeploy left-sidebar project click loads imagery.** Left-sidebar project select now calls DroneDeploy context (setFlightLoaded, setSelectedFlightId, requestFlyToFlight) so WMTS tiles load on map; previously only right-sidebar project/flight clicks triggered load. Also: Browse tab gating uses adapter.id; default flight prefers valid WMTS; merge conflicts resolved. | Claude |
 | Feb 16, 2026 | Phase 6 | **Task 6.15 complete: TNC ArcGIS Legend Iconography Parity + Symbol-Aware Filtering.** esriPMS picture-marker symbols render via imageData/contentType extraction. UX refinements: Select All/Clear All in header, layer name above items, stable selection box (no layout shift), removed redundant "Selected" text. | Claude |
 | Feb 16, 2026 | Phase 10 | **Tasks 10.10 and 10.11 complete: DroneDeploy loading + Save View sync.** Unified DroneDeploy loading state now includes metadata fetch and WMTS tile lifecycle (`WMTSLayer.when()`), enabling shared eye-slot spinner behavior in Map Layers and metadata loading feedback in right sidebar. Save View now creates/reuses DroneDeploy child views in Map Layers (`droneView.flightId`) and activating a saved child rehydrates the specific flight WMTS layer. Progress: 9/11. | Codex |
 | Feb 16, 2026 | Phase 10 | **Renumbered DroneDeploy tasks:** Orthomosaic detection/expansion moved from 10.11 to 10.3; 10.3→10.4 through 10.10→10.11 shifted for logical flow (detect before browse/detail/WMTS). | Codex |

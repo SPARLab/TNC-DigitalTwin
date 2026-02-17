@@ -6,6 +6,14 @@ import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { FlightDetailView } from './FlightDetailView';
 import { ProjectListView } from './ProjectListView';
 
+function pickProjectDefaultFlight(project: DroneImageryProject): DroneImageryMetadata | undefined {
+  for (let i = project.imageryLayers.length - 1; i >= 0; i -= 1) {
+    const flight = project.imageryLayers[i];
+    if (flight.wmts.itemId.trim().length > 0) return flight;
+  }
+  return project.imageryLayers[project.imageryLayers.length - 1] ?? project.imageryLayers[0];
+}
+
 export function DroneDeploySidebar() {
   const {
     projects,
@@ -81,11 +89,12 @@ export function DroneDeploySidebar() {
   }, [activeLayer?.layerId, activeFlightId]);
 
   const handleOpenProjectDetail = (project: DroneImageryProject) => {
-    const nextFlight = project.imageryLayers[0];
+    const nextFlight = pickProjectDefaultFlight(project);
     if (!nextFlight) return;
     setShowDetailView(true);
     setSelectedFlightId(nextFlight.id);
     setFlightLoaded(nextFlight.id, true);
+    requestFlyToFlight(nextFlight.id);
     activateLayer('dataset-193', undefined, nextFlight.id);
   };
 

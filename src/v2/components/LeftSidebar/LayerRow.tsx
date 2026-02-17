@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from
 import { ChevronDown, ChevronRight, Eye, EyeOff, Pin } from 'lucide-react';
 import { useLayers } from '../../context/LayerContext';
 import { useCatalog } from '../../context/CatalogContext';
+import { useDroneDeploy } from '../../context/DroneDeployContext';
 import { fetchDroneImageryByProject, type DroneImageryProject } from '../../../services/droneImageryService';
 
 interface LayerRowProps {
@@ -53,6 +54,7 @@ export function LayerRow({
     getPinnedByLayerId,
   } = useLayers();
   const { layerMap } = useCatalog();
+  const { setFlightLoaded, setSelectedFlightId, requestFlyToFlight } = useDroneDeploy();
 
   const catalogLayer = layerMap.get(layerId);
   const isServiceContainer = !!(
@@ -114,6 +116,9 @@ export function LayerRow({
     e.stopPropagation();
     const defaultFlight = pickProjectDefaultFlight(project);
     if (defaultFlight) {
+      setSelectedFlightId(defaultFlight.id);
+      setFlightLoaded(defaultFlight.id, true);
+      requestFlyToFlight(defaultFlight.id);
       activateLayer(layerId, undefined, defaultFlight.id);
       return;
     }

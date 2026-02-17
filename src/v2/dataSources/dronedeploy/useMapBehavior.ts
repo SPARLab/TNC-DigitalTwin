@@ -26,6 +26,17 @@ function extentFromRings(rings?: number[][][]): Extent | null {
   });
 }
 
+function pickDefaultFlightIdForProject(projects: ReturnType<typeof useDroneDeploy>['projects']): number | null {
+  for (const project of projects) {
+    for (let i = project.imageryLayers.length - 1; i >= 0; i -= 1) {
+      const flight = project.imageryLayers[i];
+      if (flight.wmts.itemId.trim().length > 0) return flight.id;
+    }
+  }
+  const fallback = projects[0]?.imageryLayers[projects[0].imageryLayers.length - 1] ?? projects[0]?.imageryLayers[0];
+  return fallback?.id ?? null;
+}
+
 async function flyToFlightExtent(view: MapView, rings?: number[][][]): Promise<void> {
   const extent = extentFromRings(rings);
   if (!extent) return;
@@ -102,13 +113,13 @@ export function useDroneDeployMapBehavior(
       }
       return;
     }
-    if (projects.length > 0 && projects[0].imageryLayers.length > 0) {
-      const firstFlightId = projects[0].imageryLayers[0].id;
-      const firstPinnedViewId = pinnedViews.find((view) => view.droneView?.flightId === firstFlightId)?.id;
-      setSelectedFlightId(firstFlightId);
-      activateLayer(LAYER_ID, firstPinnedViewId, firstFlightId);
-      requestFlyToFlight(firstFlightId);
-      lastRequestedFlyToFlightIdRef.current = firstFlightId;
+    const defaultFlightId = pickDefaultFlightIdForProject(projects);
+    if (defaultFlightId != null) {
+      const firstPinnedViewId = pinnedViews.find((view) => view.droneView?.flightId === defaultFlightId)?.id;
+      setSelectedFlightId(defaultFlightId);
+      activateLayer(LAYER_ID, firstPinnedViewId, defaultFlightId);
+      requestFlyToFlight(defaultFlightId);
+      lastRequestedFlyToFlightIdRef.current = defaultFlightId;
       return;
     }
     if (loadedFlightIds.length > 0) {
