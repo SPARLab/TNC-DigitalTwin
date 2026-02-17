@@ -39,10 +39,10 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **6.8** | ⚪ | — | Search Enhancement | Match service + layer names; expand parent service when layer matches |
 | **6.9** | ⚪ | — | Keyboard Navigation & ARIA | Arrow keys for expand/collapse, ARIA tree structure, focus management |
 | **6.10** | ⚪ | — | QA & Edge Cases | Single-layer services, empty results, malformed queries, schema fetch errors |
-| **6.11** | 🟡 | 2026-02-16 14:01 PST | Capability-Aware Browse UX | Decision locked: FeatureServer defaults to records/table-first browse; MapServer/ImageServer use map-first + legend/metadata |
+| **6.11** | 🟡 | 2026-02-16 16:37 PST | Capability-Aware Browse UX | Legend display moved out of right-sidebar Browse and into a floating map widget (bottom-right) for active TNC layers, while preserving V1-style `/legend` → renderer fallback and unique-value selection behavior |
 | **6.12** | 🟡 | 2026-02-16 14:01 PST | Terminology + CTA Realignment | Decision locked: remove right-sidebar pin actions for now; keep pinning in left sidebar + Map Layers widget only |
-| **6.13** | 🟡 | 2026-02-16 15:40 PST | Multi-Layer Service Discoverability | In progress: reduced left-sidebar service-group horizontal inset (`CategoryGroup` wrapper + `ServiceGroup` child container) so expanded child rows sit within sidebar border without right-edge crowding/cutoff |
-| **6.14** | ⚪ | — | Service Reference + External Viewer | Add service webpage/embed panel + "Open in new tab" action to mirror original app workflow |
+| **6.13** | 🟡 | 2026-02-16 16:15 PST | Multi-Layer Service Discoverability | In progress: added stable left-sidebar scrollbar gutter (`scroll-area-left-sidebar`) to prevent content width shifting when scrollbar appears/disappears; service-group spacing refinements retained |
+| **6.14** | 🟡 | 2026-02-16 16:37 PST | Service Reference + External Viewer | In progress: right-sidebar Browse now focuses on source actions (overlay iframe + new tab), while legend interaction controls live in the floating map widget as requested |
 
 **Status Legend:**  
 ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked

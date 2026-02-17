@@ -199,6 +199,43 @@ body {
 }
 
 /* -----------------------------------------------------------------------------
+   Left Sidebar scroll area
+   - Stable scrollbar gutter prevents horizontal content shift.
+   - Keep scrollbar subtle (visible on hover/focus) for cleaner UI.
+   ----------------------------------------------------------------------------- */
+.scroll-area-left-sidebar {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.scroll-area-left-sidebar:hover,
+.scroll-area-left-sidebar:focus-within {
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.scroll-area-left-sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scroll-area-left-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scroll-area-left-sidebar::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 4px;
+}
+
+.scroll-area-left-sidebar:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+}
+
+.scroll-area-left-sidebar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(107, 114, 128, 0.7);
+}
+
+/* -----------------------------------------------------------------------------
    ANiML image results scroll area
    - Always-visible subtle scrollbar so users can detect scrollability quickly.
    - Uses stable gutter to prevent content shift.

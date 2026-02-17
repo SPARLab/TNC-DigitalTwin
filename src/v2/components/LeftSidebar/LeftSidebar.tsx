@@ -55,7 +55,7 @@ export function LeftSidebar() {
     >
       <SearchBar onSearch={handleSearch} />
 
-      <div className="flex-1 overflow-y-auto">
+      <div id="left-sidebar-scroll-area" className="flex-1 overflow-y-auto scroll-area-left-sidebar">
         {/* Loading skeleton */}
         {loading && (
           <InlineLoadingRow
