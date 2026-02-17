@@ -179,9 +179,13 @@ function deriveSymbolLegendVisual(symbol: unknown): Partial<ArcGISLegendItem> {
 
   if (rawType === 'esripms' || rawType === 'picture-marker') {
     const url = typeof symbol.url === 'string' && symbol.url.trim() ? symbol.url : undefined;
+    const imageData = typeof symbol.imageData === 'string' && symbol.imageData.trim()
+      ? symbol.imageData : undefined;
+    const contentType = typeof symbol.contentType === 'string' && symbol.contentType.trim()
+      ? symbol.contentType : undefined;
     const width = typeof symbol.width === 'number' ? symbol.width : undefined;
     const height = typeof symbol.height === 'number' ? symbol.height : undefined;
-    return { imageUrl: url, width, height, swatchColor };
+    return { imageUrl: url, imageData, contentType, width, height, swatchColor };
   }
   if (rawType === 'esrisms' || rawType === 'simple-marker') {
     const markerVisual = buildSimpleMarkerSvg(symbol);

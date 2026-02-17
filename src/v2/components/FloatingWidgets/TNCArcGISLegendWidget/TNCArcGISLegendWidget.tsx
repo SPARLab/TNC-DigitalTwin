@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
 import { useCatalog } from '../../../context/CatalogContext';
 import { useLayers } from '../../../context/LayerContext';
-import { fetchLayerLegend, type ArcGISLayerLegend } from '../../../services/tncArcgisService';
+import { fetchLayerLegend, type ArcGISLegendItem, type ArcGISLayerLegend } from '../../../services/tncArcgisService';
 import type { CatalogLayer } from '../../../types';
 
 function getTargetLayer(activeLayer: CatalogLayer | undefined, selectedSubLayerId: string | undefined): CatalogLayer | null {
@@ -16,6 +16,35 @@ function getTargetLayer(activeLayer: CatalogLayer | undefined, selectedSubLayerI
   if (!isServiceParent) return activeLayer;
   const siblings = activeLayer.catalogMeta?.siblingLayers ?? [];
   return siblings.find(layer => layer.id === selectedSubLayerId) ?? siblings[0] ?? null;
+}
+
+function LegendSwatch({ item, index }: { item: ArcGISLegendItem; index: number }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const handleError = useCallback(() => setImgFailed(true), []);
+
+  const hasSrc = !imgFailed && (item.imageData || item.imageUrl);
+  if (hasSrc) {
+    return (
+      <img
+        id={`tnc-arcgis-legend-widget-swatch-image-${index}`}
+        src={
+          item.imageData
+            ? `data:${item.contentType || 'image/png'};base64,${item.imageData}`
+            : item.imageUrl
+        }
+        alt={item.label || `Legend ${index + 1}`}
+        className="max-w-full max-h-full object-contain"
+        onError={handleError}
+      />
+    );
+  }
+  return (
+    <span
+      id={`tnc-arcgis-legend-widget-swatch-fallback-${index}`}
+      className="w-3 h-3 rounded-full"
+      style={{ backgroundColor: item.swatchColor || '#9ca3af' }}
+    />
+  );
 }
 
 function buildLegendWhereClause(field: string, selectedValues: Array<string | number>): string {
@@ -210,24 +239,7 @@ export function TNCArcGISLegendWidget() {
                     id={`tnc-arcgis-legend-widget-swatch-${index}`}
                     className="w-7 h-7 border border-gray-200 rounded bg-white flex items-center justify-center flex-shrink-0 overflow-hidden"
                   >
-                    {item.imageData || item.imageUrl ? (
-                      <img
-                        id={`tnc-arcgis-legend-widget-swatch-image-${index}`}
-                        src={
-                          item.imageData
-                            ? `data:${item.contentType || 'image/png'};base64,${item.imageData}`
-                            : item.imageUrl
-                        }
-                        alt={item.label || `Legend ${index + 1}`}
-                        className="max-w-full max-h-full object-contain"
-                      />
-                    ) : (
-                      <span
-                        id={`tnc-arcgis-legend-widget-swatch-fallback-${index}`}
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: item.swatchColor || '#9ca3af' }}
-                      />
-                    )}
+                    <LegendSwatch item={item} index={index} />
                   </div>
                   <span
                     id={`tnc-arcgis-legend-widget-label-${index}`}
