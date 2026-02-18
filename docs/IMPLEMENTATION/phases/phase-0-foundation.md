@@ -30,8 +30,8 @@ Set up the V2 application shell, routing, state management, and shared component
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| CON-GL-01 | ⚪ Not Started | Feb 18, 2026 | Implement spatial queries (custom polygon draw) across all layers | High priority |
-| CON-GL-02 | ⚪ Not Started | Feb 18, 2026 | Spatial filter UI in right sidebar under date range | Cross-cutting UI |
+| CON-GL-01 | ⚪ Not Started | Feb 18, 2026 | Implement spatial queries (custom polygon draw) across all layers | High priority; implement with shared right-sidebar spatial query pattern |
+| CON-GL-02 | ⚪ Not Started | Feb 18, 2026 | Spatial filter UI in right sidebar under date range | Cross-cutting UI; recommended placement confirmed |
 | CON-GL-03 | ⚪ Not Started | Feb 18, 2026 | Spatial filter: select polygon from pinned layer | Extra credit / v2 |
 | CON-GL-04 | ⚪ Not Started | Feb 18, 2026 | Allow multiple expanded layers in Map Layers widget | High priority |
 | CON-GL-05 | ⚪ Not Started | Feb 18, 2026 | Edit Filters visual feedback linking widget to right sidebar | High priority |
@@ -45,8 +45,8 @@ Set up the V2 application shell, routing, state management, and shared component
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
-| CON-GL-01 | Spatial queries across all layers | ⚪ Not Started | | Intake from consolidated feedback |
-| CON-GL-02 | Spatial filter controls in right sidebar | ⚪ Not Started | | Intake from consolidated feedback |
+| CON-GL-01 | Spatial queries across all layers | ⚪ Not Started | | Recommended UX: right-sidebar Spatial Query section drives map draw mode |
+| CON-GL-02 | Spatial filter controls in right sidebar | ⚪ Not Started | | Place directly below Date Range; include Draw/Redraw, status, and Clear |
 | CON-GL-03 | Select polygon from pinned layer | ⚪ Not Started | | Extra credit / v2 |
 | CON-GL-04 | Multiple expanded map layers | ⚪ Not Started | | High priority |
 | CON-GL-05 | Edit Filters visual link feedback | ⚪ Not Started | | High priority |
@@ -579,7 +579,8 @@ interface Bookmark {
 
 | Decision | Date | Rationale |
 |----------|------|-----------|
-| (none yet) | | |
+| Spatial query controls are canonical in the right sidebar Browse tab, directly below Date Range. Draw interaction happens on-map but is triggered and managed from sidebar controls. | Feb 18, 2026 | Improves conceptual consistency ("all filters edited in sidebar"), reduces split attention, and aligns with CON-GL-02 stakeholder feedback. |
+| "Current View" spatial mode is snapshot-based (captured extent at selection time), not live-follow while panning. | Feb 18, 2026 | Predictable saved-view behavior, stable exports, and less surprising filter drift during map navigation. |
 
 ### Styling Decisions
 
