@@ -28,15 +28,15 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 
 ## Task Status Summary
 
-| ID | Status | Last Updated (Timestamp) | Task Description | Notes |
-|----|--------|--------------------------|-------------------|-------|
+| ID | Status | Last Updated | Task Description | Notes |
+|----|--------|--------------|------------------|-------|
 | **6.8** | ⚪ | — | Search Enhancement | Match service + layer names; expand parent service when layer matches |
 | **6.9** | ⚪ | — | Keyboard Navigation & ARIA | Arrow keys for expand/collapse, ARIA tree structure, focus management |
 | **6.10** | ⚪ | — | QA & Edge Cases | Single-layer services, empty results, malformed queries, schema fetch errors |
-| **6.11** | 🟡 | 2026-02-16 16:37 PST | Capability-Aware Browse UX | Legend display moved out of right-sidebar Browse and into a floating map widget (bottom-right) for active TNC layers |
-| **6.12** | 🟡 | 2026-02-16 14:01 PST | Terminology + CTA Realignment | Decision locked: remove right-sidebar pin actions for now; keep pinning in left sidebar + Map Layers widget only |
-| **6.13** | 🟡 | 2026-02-16 16:15 PST | Multi-Layer Service Discoverability | In progress: stable left-sidebar scrollbar gutter; service-group spacing refinements retained |
-| **6.14** | 🟡 | 2026-02-16 17:05 PST | Service Reference + External Viewer | WIP: right-sidebar Browse focuses on source actions; legend controls live in floating map widget |
+| **6.11** | 🟡 | Feb 16, 2026 | Capability-Aware Browse UX | Legend display moved out of right-sidebar Browse and into a floating map widget (bottom-right) for active TNC layers |
+| **6.12** | 🟡 | Feb 16, 2026 | Terminology + CTA Realignment | Decision locked: remove right-sidebar pin actions for now; keep pinning in left sidebar + Map Layers widget only |
+| **6.13** | 🟡 | Feb 16, 2026 | Multi-Layer Service Discoverability | In progress: stable left-sidebar scrollbar gutter; service-group spacing refinements retained |
+| **6.14** | 🟡 | Feb 16, 2026 | Service Reference + External Viewer | WIP: right-sidebar Browse focuses on source actions; legend controls live in floating map widget |
 | **6.17** | ⚪ | — | Generic Layer Table View (Feature Layers) | Add table view for feature layers: button in Browse tab to view layer table; generic across all feature layers |
 | **6.20** | ⚪ | — | Right Sidebar: Layer + Service Hierarchy Communication | Visually communicate: selected layer → feature service → TNC ArcGIS catalog hierarchy |
 
