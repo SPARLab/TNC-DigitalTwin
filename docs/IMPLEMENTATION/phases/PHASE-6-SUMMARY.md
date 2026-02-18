@@ -190,7 +190,7 @@ This architecture is a **starting point**. After implementing:
 - ✅ Created: `docs/IMPLEMENTATION/phases/phase-6-tnc-arcgis.md` (new phase document)
 - ✅ Renamed: `phase-6-polish.md` → `phase-7-polish.md`
 - ✅ Updated: `docs/master-plan.md` (phase status table, dependencies, phase documents list, change log)
-- ✅ Updated: `docs/development-task-tracker.md` (status by phase, change log)
+- ✅ Updated: `docs/master-plan.md` (status by phase, change log)
 
 ---
 

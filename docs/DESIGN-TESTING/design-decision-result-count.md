@@ -180,7 +180,7 @@ Result count grouped with filter details (both describe layer state)
 - `docs/DESIGN-TESTING/count-display-testing.md` — Full testing documentation
 - `docs/DESIGN-TESTING/count-display-visual-reference.md` — Visual mockups
 - `docs/DESIGN-TESTING/implementation-summary.md` — Technical details
-- `docs/development-task-tracker.md` — Task tracker (add this decision?)
+- `docs/master-plan.md` — Master plan (add this decision?)
 
 ---
 

@@ -65,7 +65,7 @@ The distinction was: layers manage collections (many items on the map), while sa
 - Bookmark CSS animations in `index.css` (preserved for reuse)
 
 **Documentation updated:**
-- `development-task-tracker.md` — updated to reflect decision
+- `master-plan.md` — updated to reflect decision
 - `future-enhancements.md` — Widget Terminology Refinement updated with resolution
 - Meeting notes — resolution appended
 

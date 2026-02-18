@@ -1,15 +1,17 @@
-# Master Development Plan - V2 Digital Catalog
+# Master Development Plan — V2 Digital Catalog
 
 **Created:** January 23, 2026  
-**Last Updated:** February 17, 2026  
+**Last Updated:** February 18, 2026  
 **Target Deadline:** February 20, 2026  
-**Status:** 🟡 Planning
+**Status:** 🟡 In Progress
+
+**📁 Completed tasks archived:** Per-phase archives in [docs/archive/phases/](archive/phases/) — one file per phase with task descriptions + completion timestamps.
 
 ---
 
 ## Overview
 
-This document is the single source of truth for the V2 Digital Catalog paradigm shift. It tracks phase status, cross-phase decisions, and blocking issues.
+This document is the single source of truth for the V2 Digital Catalog paradigm shift. It tracks phase status (remaining task counts), cross-phase decisions, and blocking issues. **Individual task details live in phase docs** — each branch focuses on its phase doc; each new chat window gets a task from that phase. Task descriptions should be self-contained so a chat can get relevant context without reading unnecessary tokens.
 
 **The Paradigm Shift:**
 - **Left sidebar:** Persistent layer browser (find and pin layers)
@@ -27,27 +29,31 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ## Phase Status
 
-| Phase | Name | Status | Progress | Branch | Blocking? |
-|-------|------|--------|----------|--------|-----------|
-| 0 | Foundation | 🟡 In Progress | ~98% | `v2/foundation` | YES - blocks all |
-| 1 | iNaturalist | 🟢 Complete | 5 / 5 tasks | `v2/inaturalist` | No |
-| 2 | ANiML | 🟡 In Progress | 10 / 14 tasks | `v2/animl` | No |
-| 3 | Dendra | 🟢 Complete | 12 / 12 tasks | `v2/dendra` | No |
-| 4 | DataOne | 🟢 Complete | 12 / 12 tasks | `v2/dataone` | No |
-| 5 | Export Builder | 🟢 Complete | 10 / 10 tasks | `v2/export-builder` | No |
-| 6 | TNC ArcGIS Services | 🟡 In Progress | 11 / 20 tasks | `v2/tnc-arcgis` | No |
-| 7 | Polish & Consistency | ⚪ Not Started | 0 / 7+ tasks | `v2/polish` | No |
-| 8 | Calflora | ⚪ Not Started | 0 / 9 tasks | `v2/calflora` | No |
-| 9 | GBIF | ⚪ Not Started | 0 / 9 tasks | `v2/gbif` | No |
-| 10 | DroneDeploy | 🟡 In Progress | 9 / 11 tasks | `v2/dronedeploy` | No |
-| 11 | MODIS | ⚪ Not Started | 0 / 9 tasks | `v2/modis` | No |
+| Phase | Name | Status | Remaining | Branch | Blocking? |
+|-------|------|--------|-----------|--------|-----------|
+| 0 | Foundation | 🟡 In Progress | 2 tasks | `v2/foundation` | YES — blocks all |
+| 1 | iNaturalist | 🟢 Complete | 0 | `v2/inaturalist` | No |
+| 2 | ANiML | 🟡 In Progress | ~4 tasks | `v2/animl` | No |
+| 3 | Dendra | 🟢 Complete | 0 | `v2/dendra` | No |
+| 4 | DataOne | 🟢 Complete | 0 | `v2/dataone` | No |
+| 5 | Export Builder | 🟢 Complete | 0 | `v2/export-builder` | No |
+| 6 | TNC ArcGIS Services | 🟡 In Progress | 9 tasks | `v2/tnc-arcgis` | No |
+| 7 | Polish & Consistency | ⚪ Not Started | 7+ tasks | `v2/polish` | No |
+| 8 | Calflora | ⚪ Not Started | 9 tasks | `v2/calflora` | No |
+| 9 | GBIF | ⚪ Not Started | 9 tasks | `v2/gbif` | No |
+| 10 | DroneDeploy | 🟡 In Progress | 1 task | `v2/dronedeploy` | No |
+| 11 | MODIS | ⚪ Not Started | 9 tasks | `v2/modis` | No |
 
-**Status Legend:**
-- ⚪ Not Started
-- 🟡 In Progress
-- 🟢 Ready to Start (adapter pattern complete, no blockers)
-- 🟢 Complete
-- 🔴 Blocked
+**Status Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
+
+**Remaining tasks by phase:** See phase docs for task details. This tracker shows counts only to minimize context load.
+
+| Phase | Doc | Remaining |
+|-------|-----|-----------|
+| 0 | [phase-0-foundation.md](IMPLEMENTATION/phases/phase-0-foundation.md) | 0.6 Map Feature Highlight, 0.9 Dynamic Layer Registry (critical) |
+| 2 | [phase-2-animl.md](IMPLEMENTATION/phases/phase-2-animl.md) | ~4 tasks |
+| 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 9 tasks |
+| 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) | 1 task (10.7) |
 
 ---
 
@@ -90,6 +96,29 @@ Phase 0: Foundation
 
 ---
 
+## Cross-Branch Merge Checklists
+
+Use these when merging branches that touch shared components.
+
+### Filtered View Naming
+
+- [ ] Keep shared Map Layers manual rename behavior in `LayerContext`: custom name persists once user renames.
+- [ ] Preserve custom-name guard on sync: auto filter sync must not overwrite names when view is marked custom.
+- [ ] Implement per-data-source auto-name builder (iNaturalist/ANiML/Dendra/DataOne) so non-custom names update from each layer's filter model.
+- [ ] Verify Edit Filters navigation + filter sync still targets correct child view IDs after merge.
+- [ ] Integration QA for each data source: create view, auto-name updates from filters, manual rename sticks, clear custom name returns to auto naming.
+
+### Loading Indicators (Task 34)
+
+**Source branch:** `v2/iNaturalist`. **Target branches:** `v2/animl`, `v2/dendra`.
+
+- [x] Design doc in `design-system.md` DFT-018 ✅
+- [x] Shared components: MapLayersWidget, MapContainer, PinnedLayerRow, ActiveLayerSection ✅
+- [x] Per-branch: Legend widgets and sidebars use shared `LoadingPrimitives` ✅
+- **On conflict:** Prefer v2/iNaturalist's shared loading primitives; remove bespoke per-layer spinners.
+
+---
+
 ## Cross-Phase Decisions
 
 > **IMPORTANT:** When any Cursor agent makes a styling or architectural decision that affects other phases, they MUST document it here AND in `design-system.md`.
@@ -103,7 +132,7 @@ Phase 0: Foundation
 | State management for bookmarks | ✅ Decided | Will | Feb 11 | DFT-046: Saved Items widget merged into Map Layers. `BookmarkContext` disabled. |
 | Data source adapter pattern | ✅ Decided | Will + Claude | Feb 12 | Plugin architecture for data sources. Each source implements `DataSourceAdapter` interface. Enables parallel branch development with minimal merge conflicts. See `src/v2/dataSources/` |
 | Caching strategy | ✅ Decided | Will + Claude | Feb 12 | Lazy per-source caching. Each data source context has `warmCache()` method (idempotent). Cache warms on first pin or activation. Data persists while provider mounted. Eliminates eager page-load fetches. |
-| Dynamic layer registry from Data Catalog Service | ✅ Decided | User + Claude | Feb 12 | Replace static `layerRegistry.ts` with dynamic fetch from Dan's Data Catalog FeatureServer (`Dangermond_Preserve_Data_Catalog`). ~90+ real datasets across 14 categories. Left sidebar populated from catalog. Layers without adapters show "Not Yet Implemented" toast. **Blocks all parallel branches until Task 0.9 complete.** See `docs/development-task-tracker.md` Task 24. |
+| Dynamic layer registry from Data Catalog Service | ✅ Decided | User + Claude | Feb 12 | Replace static `layerRegistry.ts` with dynamic fetch from Dan's Data Catalog FeatureServer (`Dangermond_Preserve_Data_Catalog`). ~90+ real datasets across 14 categories. Left sidebar populated from catalog. Layers without adapters show "Not Yet Implemented" toast. **Blocks all parallel branches until Task 0.9 complete.** See phase-0-foundation.md Task 0.9. |
 | Cross-layer filtered-view naming contract | ✅ Decided | User + Claude | Feb 13 | Manual rename behavior must persist across all layer types and custom right-sidebar views. Auto-naming is adapter-specific per data source. Shared widget/context rule: if `isNameCustom` is false, auto-name can update on filter sync; if true, never overwrite. Rollout can happen incrementally by branch (not required to block current merge). |
 
 ### Styling Decisions
@@ -159,7 +188,7 @@ Phase 0: Foundation
 | Right sidebar Export tab (DFT-041) | ✅ Decided | Will | Feb 6 | **Removed Export tab entirely.** TabBar reduced from 3 tabs to 2 (Overview \| Browse). Export status promoted to Overview tab with actionable shortcuts: "Pin Now" button (unpinned) or "Open Export Builder" link (pinned). Rationale: Export tab was dead-end signpost to modal (Nielsen #8 Minimalism, Fitts's Law), shopping cart badge in header is always visible (better discoverability), 2 tabs reduce cognitive load (Hick's Law), Overview export section visible on default landing screen (DFT-006). Export paradigm is global (modal), not per-layer — tab removal reinforces correct mental model. Analyzed via 12 design principles. See DFT-041 resolution |
 | Detail view architecture (DFT-044) | ✅ Decided | Will | Feb 6 | **No shared detail view component. Use shared sub-components + design tokens for consistency.** Purpose-built views: iNaturalist (`ObservationDetailView` — hero image + flat grid), DataOne (`DatasetDetailView` — multi-section hierarchical). Shared scaffolding: `DetailBackButton`, `DetailActionRow`, `DetailMetadataGrid`. Architectural principle: consistent structural template (tabs, back button, action row) with flexibility for custom content (hero images, progressive disclosure). Rationale: observations (atomic events) vs datasets (structured resources) are conceptually different types; forcing into shared component creates leaky abstraction (Nielsen #8, Hick's Law); sub-components enforce consistency without sacrificing conceptual clarity (Norman Conceptual Model, IA Mental Models). Analyzed via 11 design principles. See DFT-044 resolution, `design-system.md` Detail View Components |
 | Confirmation dialog strategy (DFT-031) | ✅ Decided | Will | Feb 4 | **Hybrid approach: undo for single-item, confirmation for bulk.** Single-item actions (unpin layer, remove bookmark, clear filters, remove cart item) execute immediately with 5-10s undo toast. Bulk actions (clear cart, clear all filters) require custom modal confirmation. Visual hierarchy: small × icons (gray → red hover) for single items, bordered buttons with warning colors for bulk actions. Rationale: frequent actions should be friction-free (Hick's Law, Peak-End Rule), undo superior to confirmation (Norman), bulk operations warrant explicit consent (Loss Aversion), confirmation fatigue avoided. Pattern documented in design-system.md Undo Button section. Replace `window.confirm()` with custom modal component. See DFT-031 resolution |
-| Unified loading indicator strategy (Task 34) | ✅ Decided | Will + Claude | Feb 16 | **Local-first loading:** Map Layers eye-slot spinner (w-4 h-4), map overlay only on first load (`!dataLoaded`), legend/sidebar region-specific. Same anatomy across iNaturalist, Dendra, ANiML, future adapters. Canonical spec in `design-system.md` DFT-018. Implementation pending per branch prereqs. See `docs/development-task-tracker.md` Task 34 + Cross-Branch Merge Checklist. |
+| Unified loading indicator strategy (Task 34) | ✅ Decided | Will + Claude | Feb 16 | **Local-first loading:** Map Layers eye-slot spinner (w-4 h-4), map overlay only on first load (`!dataLoaded`), legend/sidebar region-specific. Same anatomy across iNaturalist, Dendra, ANiML, future adapters. Canonical spec in `design-system.md` DFT-018. See Cross-Branch Merge Checklist (Loading Indicators) below. |
 
 ---
 
@@ -234,7 +263,7 @@ When working on any phase:
 
 2. **After completing a task:**
    - Update the task status in the phase document
-   - Update the phase progress in this master plan
+   - Update the remaining task count in this master plan (Phase Status table)
    - If you made a decision that affects other phases, document it in both:
      - The "Cross-Phase Decisions" section above
      - The `design-system.md` file
@@ -268,78 +297,13 @@ When working on any phase:
 
 ## Change Log
 
+*Recent entries only. Older entries archived in `docs/archive/phases/` (per-phase) and phase docs.*
+
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
-| Feb 17, 2026 | Phase 3 | **Phase 3 Dendra status corrected.** Phase doc showed "Not Started" but Dendra was fully implemented. Updated to 🟢 Complete (12/12 tasks). See phase-3-dendra.md and docs/archive/phase-3-dendra-completed-tasks.md. | Claude |
-| Feb 16, 2026 | Phase 10 | **DroneDeploy left-sidebar project click loads imagery.** Left-sidebar project select now calls DroneDeploy context (setFlightLoaded, setSelectedFlightId, requestFlyToFlight) so WMTS tiles load on map; previously only right-sidebar project/flight clicks triggered load. Also: Browse tab gating uses adapter.id; default flight prefers valid WMTS; merge conflicts resolved. | Claude |
-| Feb 16, 2026 | Phase 6 | **Task 6.15 complete: TNC ArcGIS Legend Iconography Parity + Symbol-Aware Filtering.** esriPMS picture-marker symbols render via imageData/contentType extraction. UX refinements: Select All/Clear All in header, layer name above items, stable selection box (no layout shift), removed redundant "Selected" text. | Claude |
-| Feb 16, 2026 | Phase 10 | **Tasks 10.10 and 10.11 complete: DroneDeploy loading + Save View sync.** Unified DroneDeploy loading state now includes metadata fetch and WMTS tile lifecycle (`WMTSLayer.when()`), enabling shared eye-slot spinner behavior in Map Layers and metadata loading feedback in right sidebar. Save View now creates/reuses DroneDeploy child views in Map Layers (`droneView.flightId`) and activating a saved child rehydrates the specific flight WMTS layer. Progress: 9/11. | Codex |
-| Feb 16, 2026 | Phase 10 | **Renumbered DroneDeploy tasks:** Orthomosaic detection/expansion moved from 10.11 to 10.3; 10.3→10.4 through 10.10→10.11 shifted for logical flow (detect before browse/detail/WMTS). | Codex |
-| Feb 16, 2026 | Phase 10 | **Task 10.1 complete: DroneDeploy metadata service audit.** Validated live v2 endpoint (`DroneDeploy_Metadata_v2`), confirmed record count is 16 (not 11), documented schema drift (new fields: summary/description/project_lat/project_lon/plan_lat/plan_lon), validated WMTS loading pattern via `wmts_item_id` (public portal items, item-data-provided `api_key`), and noted `azure_blob_url` direct-link 404 caveat. Progress: 1/11. | Codex |
-| Feb 16, 2026 | Phases 8-11 | **Added 4 new data source phases:** Phase 8 (Calflora), Phase 9 (GBIF), Phase 10 (DroneDeploy), Phase 11 (MODIS). Updated dependency graph and phase documents list. LiDAR noted as future phase (deferred — 3D implications). | Will + Claude |
-| Feb 16, 2026 | Phase 5 | **Tasks 5.5-5.10 complete: Export Builder hierarchy and scannability pass.** Implemented Layer -> Filtered Views export structure, multi-view selection, per-view/per-layer size estimates, large-selection warnings, query-definition export toggle, and ZIP/link payload updates preserving layer/view hierarchy. | Claude |
-| Feb 16, 2026 | Phase 5 | **Task 5.4 complete: export actions (ZIP + links).** Wired Export Builder footer actions to generate client-side ZIP package and share links. Added processing states, disabled buttons, and success/error feedback in modal. Included manifest + per-layer export metadata in ZIP for v1 implementation path while backend exports are pending. | Claude |
-| Feb 16, 2026 | Phase 5 | **Task 5.3 complete: export summary and size estimation.** Added `ExportSummary` and wired dynamic summary rows + total estimated size in `ExportBuilderModal`, based on selected formats and per-layer filtered counts. | Claude |
-| Feb 16, 2026 | Phase 5 | **Task 5.2 complete: per-layer export sections (filtered-only).** Added `LayerExportSection`; `ExportBuilderModal` now renders a section per pinned layer with active query summary, matching result count, and source-specific include formats. Bookmark export controls were removed to align with the current no-bookmarks paradigm. | Claude |
-| Feb 16, 2026 | Phase 5 | **Task 5.1 complete: Export Builder modal shell.** Added `ExportBuilderModal`, `ExportBuilderHeader`, and `ExportBuilderFooter`; wired global header shopping cart button to open/close the modal. Scrollable body + fixed action footer in place for upcoming per-layer sections. | Claude |
-| Feb 16, 2026 | Phase 4 | **Phase 4 Task 4.12 complete: DataONE version history + de-duplication.** Reimplemented v1-parity version history in v2 DataONE browse and detail views (inline browse expansion + collapsible detail panel with latest/current badges and version switching). Added DataONE service de-duplication by `dataone_id` for browse/map/version-history query paths to prevent duplicate entries in the UI. Progress: 12/12 (Phase 4 complete). | Codex |
-| Feb 16, 2026 | Phase 4 | **Phase 4 Task 4.7 complete: DataONE map markers + marker click detail flow.** Added `dataoneLayer.ts` and `useDataOneMapBehavior`; wired `dataone-datasets` into layer factory + registry map behavior hook; synced map markers to DataONE sidebar filters (search/category/year/author) and enabled marker click to activate DataONE + open dataset detail in Browse tab. Progress: 7/7 (Phase 4 complete). | Codex |
-| Feb 16, 2026 | Phase 4 | **Phase 4 Task 4.4 complete: DataOne dataset list cards.** Updated `DatasetListView` to include authors/year line, description snippet fallback, DOI badge (when DOI-form `dataone_id` exists), file count/type summary, bookmark action button, details CTA, and explicit "Open in DataONE ↗" external action. Progress: 4/7. | Claude |
-| Feb 16, 2026 | Phase 4 | **Phase 4 Tasks 4.2 and 4.3 complete: DataOne right sidebar shell + search/filter UI.** Wired DataOne adapter into v2 registry; added Overview/Browse tabs, DatasetListView, DatasetDetailView; enabled DataOne external layer in left sidebar; implemented DFT-035 search behavior (debounced text, immediate filters, pagination, ARIA live region, AbortController). Progress: 3/6. | Claude |
-| Feb 16, 2026 | Phase 4 | **Phase 4 Task 4.1 complete: DataOne service analysis.** Queried live DataONE FeatureServer layers (Lite/Latest/AllVersions), documented attribute schema and filter/card/detail field mapping, confirmed AI-enriched category fields (`tnc_category`, `tnc_categories`, `tnc_confidence`), and captured baseline query timings in `phase-4-dataone.md`. Updated Phase 4 status to In Progress (1/6). | Claude |
-| Feb 16, 2026 | All | **Phase restructure:** Inserted new Phase 6 (TNC ArcGIS Feature Services), renumbered old Phase 6 (Polish) to Phase 7. Added architectural design for service-level activation + layer switcher pattern for multi-layer TNC services. Generic filter UI (field/operator/value) for MVP. | Will + Claude |
-| Feb 16, 2026 | Phase 3 | **Task 3.10 complete: Dendra loading indicators — sync with Map Layers.** Map Layers eye-slot spinner and map overlay now gate on `loading && !dataLoaded` (initial load only), matching DFT-018. Files: MapLayersWidget.tsx, MapContainer.tsx. | Claude |
-| Feb 16, 2026 | Phase 2 | **Phase 2 Task 2.8 complete: ANiML SVG marker/icon pass.** Replaced emoji camera markers with SVG camera symbols in `animlLayer.ts` (base, badged, muted states). Added row-level icons in ANiML legend and browse filter lists; aligned with no-emoji icon policy. | Will + Claude |
-| Feb 16, 2026 | All | **Unified loading indicator strategy (Task 34) design spec complete.** Canonical contract in design-system.md DFT-018: eye-slot spinner, first-load-only map overlay, legend/sidebar region-specific. Added UX Decision to master-plan. Implementation pending per branch prereqs. | Will + Claude |
-| Feb 16, 2026 | Phase 3 | **Task 3.9 complete: Dendra Save With Filters — distinct behavior.** Renamed buttons to "Update Current View" (station-level sync) and "Save as New View" (creates filtered child view in Map Layers, activates it). Added `createDendraFilteredView()` in LayerContext. Files: StationDetailView.tsx, LayerContext.tsx. | Claude |
-| Feb 13, 2026 | Phase 0/1/3 | **Task 27 complete: Save View / Save With Filters — sync with Map Layers.** Dendra now uses explicit "Save View" and "Save With Filters" actions (replacing bookmark terminology). Right-sidebar filter state persists to Map Layers via `syncDendraFilters`. One-shot hydration when switching child views or Edit Filters. Extends cross-layer filtered-view contract to Dendra. | Claude |
-| Feb 13, 2026 | Phase 1 | **Task 28 complete: iNaturalist detail view crash fixed.** Hook-order mismatch (early return before hooks) caused "Rendered fewer hooks than expected." Moved detail-view return after all hooks; hardened handleViewOnMap with try/catch and coordinate validation. RightSidebar auto-switches to Browse when map observation clicked. Phase 1 all tasks complete. | Claude |
-| Feb 13, 2026 | Phase 1 | **Phase 1 iNaturalist complete.** All 13 granular tasks done including Tasks 26–27 (dynamic view names, user-renamable filtered views). Cross-branch merge contract documented. | User + Claude |
-| Feb 13, 2026 | All | Added cross-layer filtered-view naming decision: universal manual rename in shared Map Layers logic with per-data-source auto-naming algorithms. Documented as an incremental branch rollout contract to avoid regressions during parallel merges. | User + Claude |
-| Feb 12, 2026 | Phase 0 | **Data Source Adapter Pattern** — Refactored architecture to enable parallel branch development. Created plugin system: each data source implements `DataSourceAdapter` interface. Core files (MapContainer, RightSidebar, useMapLayers) now data-source-agnostic — read from registry instead of hardcoding imports. **Lazy caching:** `warmCache()` pattern replaces eager on-mount fetch (iNaturalist: 2.18s initial, instant on revisit). Active-but-not-pinned layers now visible on map. Merge conflict surface reduced to ~4 one-liners in registry.ts per new source. Files: `src/v2/dataSources/{types.ts, registry.ts, inaturalist/{adapter.tsx, useMapBehavior.ts}}`. Ready for parallelization. | Will + Claude |
-| Feb 5, 2026 | All | Added Sidebar Template System — shared structural templates for all data sources (TabBar, OverviewTab, ResultCard, Pagination, LeftSidebar categories). Theme tokens centralized in `sidebarTheme`. Change once, changes everywhere. Resolved stale entries: bookmark widget (DFT-007), filter representation (DFT-024). Resolved styling TBDs: sidebar header, card component. See design-system.md | Will + Claude |
-| Feb 5, 2026 | All | Resolved DFT-038: Filter section anatomy — shared `FilterSection` component enforces consistent Browse tab filter UI across all 4 data sources. Structural skeleton: header with "Clear All", 2-col CSS grid, result count footer. Flat `slate-50` container (no gradients). Header convention: "Filter [Plural Noun]". Per-data-source control inventory. "Optional:" labels dropped. Analyzed via Gestalt, Norman, Nielsen, Hick, Miller, IA, Fitts, WCAG. See design-system.md | Will + Claude |
-| Feb 5, 2026 | Phase 4 | Resolved DFT-035: DataOne search behavior — debounced instant search (500ms, 2+ chars) with immediate dropdown filters. Enter key bypass. Initial state loads all datasets, eliminating "pre-search" state. `AbortController` cancels in-flight requests. Analyzed via Norman, Nielsen, Shneiderman, Hick, Fitts, Mental Models, Wayfinding, Accessibility | Will + Claude |
-| Feb 5, 2026 | Phase 0 | Resolved DFT-034: Drag-and-drop reorder feedback — enhanced visual treatment (60% opacity, 95% scale, 2deg rotation, dashed border), 4px drop line, 400ms settle animation, toast for map z-order updates, keyboard support (arrow keys, Shift+Home/End), ARIA announcements. Keyboard support essential for v2.0 WCAG compliance (not deferred) | Will + Claude |
-| Feb 5, 2026 | - | Resolved DFT-033: Right sidebar width — fixed 400px (not resizable). Analyzed through 9 UI/UX frameworks. Simplicity serves task, matches GIS conventions, reduces cognitive load | Will + Claude |
-| Feb 4, 2026 | - | Resolved DFT-031: Confirmation dialog strategy — hybrid approach (undo for single-item, confirmation for bulk). Documented in design-system.md Undo Button Pattern section | Will + Claude |
-| Jan 23, 2026 | - | Created master plan and phase documents | Will + Claude |
-| Jan 27, 2026 | Phase 0 | Resolved DFT-001: Pin vs visibility behavior (Model C adopted) | Will + Claude |
-| Jan 27, 2026 | Phase 0 | Added A/B testing for filter representation (text vs funnel emoji) | Will + Claude |
-| Jan 29, 2026 | Phase 0, 5 | Resolved DFT-002: Export button placement (global header with shopping cart) | Will + Claude |
-| Jan 29, 2026 | Phase 0 | Resolved DFT-005: Auto-collapse widgets when viewing time-series data | Will + Claude |
-| Feb 2, 2026 | Phase 0 | Resolved DFT-003b: "Create New View" lives in expanded panel when layer is active | Will + Claude |
-| Feb 2, 2026 | Phase 0 | Removed swatch from widget row spec; active state indicated by expansion + visual treatment | Will + Claude |
-| Feb 2, 2026 | Phase 0, 3 | Resolved DFT-004: Progressive disclosure in sidebar + pop-up slider for exploration only. Sidebar edits filters, widget shows status | Will + Claude |
-| Feb 2, 2026 | Phase 0 | Resolved DFT-007: Bookmarked Features widget groups features by parent layer; layer headers are non-interactive context labels | Will + Claude |
-| Feb 3, 2026 | Phase 2 | Resolved DFT-012: Camera trap clustering with numbered badges on camera icons showing filtered image counts. Layer-level filter drives badge display | Will + Claude |
-| Feb 3, 2026 | Phase 0 | Resolved DFT-013: Multiple filtered views — "Multiple Saved, Single Visible" model with nested widget structure. Mutual exclusivity prevents map badge stacking complexity | Will + Claude |
-| Feb 3, 2026 | - | Created future-enhancements.md backlog for v2.1+ features. Moved DFT-014 (biodiversity aggregation) to backlog | Will + Claude |
-| Feb 3, 2026 | Phase 6 | Resolved DFT-008, DFT-009: TNC brand integration via theme variants approach. Add fonts + create swappable theme options for experimentation | Will + Claude |
-| Feb 3, 2026 | Phase 2 | Resolved DFT-003: Context-dependent button visibility. "Pin Layer" only shows when not pinned; "Bookmark" only shows when feature selected | Will + Claude |
-| Feb 3, 2026 | - | Documentation sync: Added missing UX Decisions (DFT-003, DFT-003c, DFT-011) to master plan; updated phase changelogs | Will + Claude |
-| Feb 3, 2026 | - | Established No Emojis Policy: Use SVG icons instead of emojis for consistent cross-browser rendering. Resolved DFT-026. Created design-system.md and Cursor rule | Will + Claude |
-| Feb 3, 2026 | Phase 0 | Resolved DFT-015: Empty state design — show with placeholder, differentiate first-visit (educational) vs returning (laconic). Configurable terminology via config file ("Feature" vs "Item"). Drone/LiDAR are pin-only | Will + Claude |
-| Feb 3, 2026 | - | Resolved DFT-016: Desktop-only scope — minimum 1280px viewport width. Mobile/tablet responsiveness deferred to v2.1+. Mockups designed at 1440px. Based on Nielsen, Gestalt, Norman analysis | Will + Claude |
-| Feb 3, 2026 | Phase 6 | Resolved DFT-017: Keyboard navigation & accessibility — baseline accessibility principles established. Natural DOM order for tab navigation, Escape closes most recent element, focus moves to first interactive element on expand. Full WCAG audit deferred to Phase 6 | Will + Claude |
-
-| Feb 4, 2026 | Phase 0 | Resolved DFT-020: Pointer-row bookmark UI — single "Bookmark" button pattern. Auto-captures filter if active. Multiple bookmarks = multiple views of same feature. "Edit Filter" action on bookmark widget for post-save correction | Will + Claude |
-| Feb 4, 2026 | All | Resolved DFT-021: Terminology consistency — Use "Active" (not "Selected") for layer working state. Active ≠ Visible: layer can be active (right sidebar) but hidden (eye OFF). Clicking layer makes it active AND visible. Expanded eye icon hit targets (40px) to prevent accidental activation | Will + Claude |
-| Feb 4, 2026 | Phase 0 | Resolved DFT-024: Filter indicator design — icon-based approach adopted (Lucide Filter icon + count). Single-line rows improve scannability; tooltip bridges learnability gap. Removed A/B testing toggle from implementation plans | Will + Claude |
-| Feb 4, 2026 | Phase 0 | Resolved DFT-025: Create New View transition animation — inline transformation with sequential staging (250-300ms). Row expands → children appear → new child highlights. Respects `prefers-reduced-motion`. Focus moves to new child. Establishes animation timing standard for structural widget changes | Will + Claude |
-| Feb 4, 2026 | Phase 2 | Resolved DFT-028: Zero-result camera behavior — cameras with 0 matching images are grayed out (not hidden). 40-50% opacity, desaturated, no badge. Remain clickable/keyboard-accessible. 300ms ease-out transition. Preserves spatial context for negative evidence discovery. Analyzed via 9 Pillars framework | Will + Claude |
-| Feb 4, 2026 | Phase 2 | Resolved DFT-029: Unfiltered layer badge behavior — no badges when layer has no filter. Badges only appear when layer-level filter is applied, making them semantic indicators. Optional hover tooltip shows total counts. Follows Gestalt figure/ground and Shneiderman's overview-first principles | Will + Claude |
-| Feb 4, 2026 | All | Resolved DFT-030: Error state design — severity-based hierarchy (critical modal, regional inline, partial banner, action toast). Toast placement at top of right sidebar avoids map legend conflict. Utilitarian tone, always actionable (Retry/Go Back/Dismiss). Analyzed via Nielsen #9, Norman feedback, Gestalt proximity, WCAG accessibility | Will + Claude |
-
-| Feb 4, 2026 | All | Resolved DFT-031: Confirmation dialogs pattern — no confirmation dialogs. Context-specific undo buttons instead. Each widget/region has persistent undo button in header (always visible, grayed when inactive). Stack size: 5 actions per region (single-level for v2.0). Cmd+Z / Ctrl+Z support in Phase 6. Analyzed via Norman, Nielsen, Gestalt, behavioral science | Will + Claude |
-| Feb 5, 2026 | All | Resolved DFT-033: Right sidebar width — fixed at 400px (not resizable). No drag handles. Affects all right sidebar implementations (Phases 1-4). Rationale: simplicity serves task, matches GIS conventions, reduces cognitive load, enables optimized content layout, accessibility-friendly. Edge cases handled via modal/popout. Analyzed through 9 UI/UX frameworks | Will + Claude |
-| Feb 5, 2026 | Phase 0 | Resolved DFT-036: Feature highlight on bookmark hover — hover-to-highlight for in-viewport features. Cyan ring (4px, 8px offset), subtle pulse. Off-screen features show text indicator. Keyboard support, ARIA announcements. Strong cross-framework convergence. Matches GIS conventions. Deferred: edge indicators, bidirectional highlighting | Will + Claude |
-|| Feb 5, 2026 | Phase 2, 3 | Resolved DFT-040: Dual-level filter visual distinction — condensed `FeatureDetailCard` at Level 3. Dropped Level 2 summary bar (irrelevant). Merged feature header + filter controls. Back button is only Level 2 reference. Updated Phase 2 Task 2.4 and Phase 3 Tasks 3.5/3.6 ASCII diagrams. Added Dual-Level Filter Pattern to design-system.md | Will + Claude |
-|| Feb 6, 2026 | All | Resolved DFT-041: Right sidebar Export tab — removed Export tab entirely. TabBar reduced from 3 tabs to 2 (Overview \| Browse). Export status promoted to Overview tab with actionable shortcuts ("Pin Now" button / "Open Export Builder" link). Rationale: Export tab was dead-end signpost to modal; shopping cart badge provides always-visible export awareness; 2-tab layout reduces cognitive load. Analyzed via 12 design principles (Nielsen #8, Hick's Law, Norman, IA Redundancy, Fitts's Law). Updated right-sidebar-template.md, right-sidebar-inaturalist.md, master-plan.md. Created resolution summary | Will + Claude |
-|| Feb 6, 2026 | Phase 1, 4 | Resolved DFT-044: Self-contained row detail view component — no shared detail view component. Extract shared sub-components (`DetailBackButton`, `DetailActionRow`, `DetailMetadataGrid`) + design tokens for consistency. Purpose-built detail views for iNaturalist (hero image + flat grid) and DataOne (multi-section hierarchical). Architectural principle: consistent structural template (tabs, scaffolding) with flexibility for custom content. Rationale: observations (atomic events) vs datasets (structured resources) are conceptually different types; forcing into shared component creates leaky abstraction. Analyzed via 11 design principles (Nielsen #4/#8, Norman Conceptual Model, Hick's Law, IA Mental Models). Updated right-sidebar-template.md with sub-component specs, design-system.md with Detail View Components section, master-plan.md Cross-Phase Decisions. See DFT-044 resolution | Will + Claude |
-|| Feb 6, 2026 | Phase 3 | Resolved DFT-043: Dendra sidebar body at Level 3 — minimal sidebar (filter controls + bookmark only). Stats appear in pop-up footer with chart (not sidebar). Rationale: separation of concerns (sidebar = parametric control, pop-up = visualization + metadata), spatial/cognitive proximity (stats belong with chart), minimalism (Nielsen #8), reduced cognitive load (Miller's Law), reduced split attention, accessibility (logical Tab order), industry conventions (chart metadata lives with chart). Scored 17 green / 0 yellow / 0 red across 9 UI/UX frameworks. Updated Phase 3 Task 3.5, right-sidebar-template.md, master-plan.md UX Decisions | Will + Claude |
-|| Feb 6, 2026 | Phase 0, 4 | Resolved DFT-045: Left sidebar DataOne taxonomy — hybrid model (standalone category + explicit shortcut rows). DataOne lives under "Research Datasets" category as canonical location. Special shortcut rows appear in expanded domain categories (Species, Fire, etc.) labeled "DataOne Datasets (count)" with books icon. Clicking shortcut activates DataOne with domain pre-filtered. Improves discoverability for domain-first users. Explicit "DataOne" label (not generic) supports future multi-repo expansion (Dryad, Zenodo). Analyzed via 9 design frameworks (Findability, Mental Models, Consistency, Recognition, Conceptual Model, Progressive Disclosure, Wayfinding, Implementation Complexity, Cognitive Load). Updated left-sidebar.md (State 9), phase-4-dataone.md (Task 4.2), master-plan.md. Created resolution summary | Will + Claude |
-| Feb 13, 2026 | Phase 2 | **Phase 2 Task 2.15 complete: ANiML image click → highlight camera on map.** AnimlFilterContext: focusedDeploymentId, focusDeployment(), clearFocusedDeployment(). ImageList: onImageFocus callback on click and arrow-key navigation. useAnimlMapBehavior: ArcGIS layerView.highlight() for focused camera. animlLayer: getAnimlCameraGraphicByDeploymentId() helper (2.16-ready). | Will + Claude |
-| Feb 13, 2026 | Phase 2 | **Phase 2 Tasks 2.13, 2.14 complete: ANiML expanded image view + arrow key navigation.** ImageExpandedView.tsx: click thumbnail → larger view in sidebar, metadata (species, date, camera), Back to list, overlay + bottom nav. Arrow keys (←/→) and Prev/Next navigate; Esc closes. Auto-pagination: crossing page boundary (e.g. image 20→21) advances page and stays in expanded view (DFT-049). | Will + Claude |
-| Feb 13, 2026 | Phase 2 | **Phase 2 Tasks 2.3–2.6 complete: ANiML Browse tab multi-dimensional filter system.** FilterSection (expandable, multi-select, Select All/Clear All), AnimlFilterContext (selectedCameras, filteredImageCount), live result count, ImageList. Researchers can select multiple species AND cameras. Added Tasks 2.10 (right sidebar scrollbar — prevent content shift) and 2.11 (date/time frame filter above Species and Cameras). | Will + Claude |
-| Feb 12, 2026 | Phase 2 | **Phase 2 (ANiML) marked Ready to Start.** Data Source Adapter Pattern (Phase 0 Task 23) complete. Merge conflict surface: ~11 lines across 3 shared files. Added comprehensive implementation guide to phase-2-animl.md with 8-step instructions, testing checklist, and common pitfalls. Reference implementations documented (iNaturalist adapter, context, map layer, legend). | Will + Claude |
+| Feb 18, 2026 | Docs | **Archive + consolidation.** Merged development-task-tracker into master-plan. Master-plan now high-level only (phase counts, no task lists). Completed tasks archived. development-task-tracker.md removed. | Claude |
+| Feb 17, 2026 | Phase 3 | **Phase 3 Dendra status corrected.** Phase doc showed "Not Started" but Dendra was fully implemented. Updated to 🟢 Complete. | Claude |
+| Feb 16, 2026 | Phase 10 | **DroneDeploy left-sidebar project click loads imagery.** Left-sidebar project select now calls DroneDeploy context so WMTS tiles load on map. | Claude |
+| Feb 16, 2026 | Phase 6 | **Task 6.15 complete: TNC ArcGIS Legend Iconography Parity + Symbol-Aware Filtering.** | Claude |
+| Feb 13, 2026 | Phase 2 | **Phase 2 Tasks 2.3–2.6, 2.13–2.15 complete: ANiML multi-dimensional filter, expanded image view, arrow key nav, image→map highlight.** | Will + Claude |
+| Feb 12, 2026 | Phase 0 | **Data Source Adapter Pattern** — Plugin architecture for parallel branch development. | Will + Claude |

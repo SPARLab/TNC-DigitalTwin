@@ -17,13 +17,9 @@ The Data Source Adapter Pattern (Phase 0 Task 23) is complete. ANiML can now be 
    - Common pitfalls
    - Reference implementations
 
-2. **Task Tracker:** `docs/development-task-tracker.md`
-   - Phase 2 marked "Ready to Start"
-   - 7 tasks defined (2.1 - 2.7)
-
-3. **Master Plan:** `docs/master-plan.md`
-   - Phase status updated
-   - Cross-phase decisions documented
+2. **Master Plan:** `docs/master-plan.md`
+   - Phase status and remaining task counts
+   - Cross-phase decisions
 
 ---
 

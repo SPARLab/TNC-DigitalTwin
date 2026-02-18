@@ -2,9 +2,9 @@
 
 Please create a commit message, and if you haven't already, document your progress
 by modifying whatever development tracker markdown file we're working with.
-You're probably going to need to mark the current task off in the development-task-tracker.md 
-and for the current task, you're going to need to edit the master-design.md and also any relevant
-phase documents.
+You're probably going to need to mark the current task off in the relevant phase document
+(docs/IMPLEMENTATION/phases/phase-*.md) and update the remaining task count in master-plan.md.
+Update any relevant phase documents and, if necessary, write any needed documentation.
 And, if necessary, write any needed documentation.
 
 Write your command content here.
