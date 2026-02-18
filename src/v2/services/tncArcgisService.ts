@@ -99,7 +99,7 @@ function mapSimpleMarkerStyle(style: string | undefined): string {
   return 'circle';
 }
 
-function buildSimpleMarkerSvg(symbol: Record<string, unknown>): ArcGISLegendItem | null {
+function buildSimpleMarkerSvg(symbol: Record<string, unknown>): Partial<ArcGISLegendItem> | null {
   const size = parseNumber(symbol.size, 12);
   const strokeWidth = parseNumber(isObject(symbol.outline) ? symbol.outline.width : undefined, 1.5);
   const pad = Math.max(2, strokeWidth + 1);
@@ -137,7 +137,7 @@ function buildSimpleMarkerSvg(symbol: Record<string, unknown>): ArcGISLegendItem
   };
 }
 
-function buildSimpleLineSvg(symbol: Record<string, unknown>): ArcGISLegendItem | null {
+function buildSimpleLineSvg(symbol: Record<string, unknown>): Partial<ArcGISLegendItem> | null {
   const width = 26;
   const height = 18;
   const strokeWidth = parseNumber(symbol.width, 2);
@@ -154,7 +154,7 @@ function buildSimpleLineSvg(symbol: Record<string, unknown>): ArcGISLegendItem |
   };
 }
 
-function buildSimpleFillSvg(symbol: Record<string, unknown>): ArcGISLegendItem | null {
+function buildSimpleFillSvg(symbol: Record<string, unknown>): Partial<ArcGISLegendItem> | null {
   const width = 22;
   const height = 18;
   const fill = parseSvgColor(symbol.color, 'rgba(156, 163, 175, 0.7)');
@@ -466,7 +466,9 @@ function parseRendererLegend(
 /** Fetch legend entries for the selected ArcGIS layer. */
 export async function fetchLayerLegend(meta: CatalogLayer['catalogMeta']): Promise<ArcGISLayerLegend | null> {
   if (!meta) return null;
-  const targetLayerId = Number.isInteger(meta.layerIdInService) ? meta.layerIdInService : 0;
+  const targetLayerId = typeof meta.layerIdInService === 'number' && Number.isFinite(meta.layerIdInService)
+    ? meta.layerIdInService
+    : 0;
   const serviceRootUrl = buildServiceRootUrl(meta);
 
   // Strategy 1: Try /legend endpoint at the service root.

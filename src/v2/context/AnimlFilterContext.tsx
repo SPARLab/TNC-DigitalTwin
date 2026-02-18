@@ -243,8 +243,8 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
     async function fetchDateScopedLookups() {
       try {
         const scoped = await animlService.getObservationCountsGroupedCached({
-          startDate,
-          endDate,
+          startDate: startDate ?? undefined,
+          endDate: endDate ?? undefined,
         });
         if (cancelled) return;
         const lookups = animlService.buildCountLookups(

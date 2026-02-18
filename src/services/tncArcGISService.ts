@@ -1,5 +1,4 @@
-// Category mappings no longer needed - using raw ArcGIS categories directly
-// import categoryMappings from '../data-sources/tnc-arcgis/category_mappings.json';
+import categoryMappings from '../data-sources/tnc-arcgis/category_mappings.json';
 
 export interface ServiceLayerInfo {
   id: number;

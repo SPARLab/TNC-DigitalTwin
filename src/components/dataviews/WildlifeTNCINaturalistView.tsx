@@ -67,7 +67,7 @@ const WildlifeTNCINaturalistView: React.FC<WildlifeTNCINaturalistViewProps> = ({
   const unifiedObservations = useMemo((): INaturalistUnifiedObservation[] => {
     return observations.map(obs => ({
       id: obs.observation_id,
-      observedOn: obs.observed_on,
+      observedOn: String(obs.observed_on ?? ''),
       observerName: obs.user_name || 'Unknown',
       commonName: obs.common_name || null,
       scientificName: obs.scientific_name || 'Unknown',

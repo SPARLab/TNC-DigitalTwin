@@ -2770,7 +2770,7 @@ function App() {
                   if (obs) {
                     const unifiedObs: INaturalistUnifiedObservation = {
                       id: obs.observation_id,
-                      observedOn: obs.observed_on,
+                      observedOn: String(obs.observed_on ?? ''),
                       observerName: obs.user_name,
                       commonName: obs.common_name,
                       scientificName: obs.scientific_name,
@@ -2803,7 +2803,7 @@ function App() {
                     
                     const unifiedObs: INaturalistUnifiedObservation = {
                       id: obs.id,
-                      observedOn: obs.observed_on,
+                      observedOn: String(obs.observed_on ?? ''),
                       observerName: obs.user.login,
                       commonName: obs.taxon?.preferred_common_name || null,
                       scientificName: obs.taxon?.name || 'Unknown',
@@ -3037,7 +3037,7 @@ function App() {
                   };
                   return {
                     id: obs.observation_id,
-                    observedOn: obs.observed_on,
+                    observedOn: String(obs.observed_on ?? ''),
                     observerName: obs.user_name || 'Unknown',
                     commonName: obs.common_name || null,
                     scientificName: obs.scientific_name || 'Unknown',
@@ -3052,7 +3052,7 @@ function App() {
                 })
               : observations.map(obs => ({
                   id: obs.id,
-                  observedOn: obs.observed_on,
+                  observedOn: String(obs.observed_on ?? ''),
                   observerName: obs.user?.login || 'Unknown',
                   commonName: obs.taxon?.preferred_common_name || null,
                   scientificName: obs.taxon?.name || 'Unknown',
