@@ -14,7 +14,7 @@
 | ID | Status | Last Updated | Task Description | Notes |
 |----|--------|--------------|------------------|-------|
 | **— Cross-Cutting / Map Layers —** | | | | |
-| CON-GL-01 | 🔴 CONFLICT | Feb 18, 2026 | Implement spatial queries (custom polygon draw) across all layers | Priority conflict: Amy=Medium, Dan=Super High |
+| CON-GL-01 | ⚪ Not Started | Feb 18, 2026 | Implement spatial queries (custom polygon draw) across all layers | Resolved Feb 18, 2026: priority set to High (Amy=Medium, Dan=Super High) |
 | CON-GL-02 | ⚪ Not Started | Feb 18, 2026 | Spatial filter UI: place controls in right sidebar under date range | Dan Pt1 DP1-10 |
 | CON-GL-03 | ⚪ Not Started | Feb 18, 2026 | Spatial filter: select polygon from a pinned map layer (extra credit / V2) | Dan Pt1 DP1-04 |
 | CON-GL-04 | ⚪ Not Started | Feb 18, 2026 | Allow multiple expanded layers in Map Layers widget (user-controlled) | Dan Pt1 DP1-09; High priority |
@@ -46,7 +46,7 @@
 | CON-DRONE-01 | ⚪ Not Started | Feb 18, 2026 | Bug: fix drone imagery not changing when toggling between flights | Trisalyn T9; High |
 | CON-DRONE-02 | ⚪ Not Started | Feb 18, 2026 | Simplify project flights UI: name + date default, expand for metadata | Trisalyn T8; Medium-High |
 | **— TNC ArcGIS —** | | | | |
-| CON-ARCGIS-01 | 🔴 CONFLICT | Feb 18, 2026 | Right sidebar: show feature service overview AND layer-specific info | Scope conflict: Dan wants service-level, Trisalyn wants layer-level |
+| CON-ARCGIS-01 | ⚪ Not Started | Feb 18, 2026 | Right sidebar: show feature service overview AND layer-specific info | Resolved Feb 18, 2026: Option A + Feature Service container model (service overview w/ no active layer) |
 | CON-ARCGIS-02 | ⚪ Not Started | Feb 18, 2026 | Clarify feature service vs category hierarchy in left sidebar | Dan Pt2 DP2-13; High |
 | CON-ARCGIS-03 | ⚪ Not Started | Feb 18, 2026 | "See table" button: pop-up table view for layers/non-spatial tables | Dan Pt2 DP2-14; Medium |
 | CON-ARCGIS-04 | ⚪ Not Started | Feb 18, 2026 | Bidirectional sync: right sidebar layer selection ↔ left sidebar | Dan Pt2 DP2-15; Medium |
@@ -55,7 +55,7 @@
 | CON-ARCGIS-07 | ⚪ Not Started | Feb 18, 2026 | Design multi-layer feature service UX (pin for follow-up with Dan) | Dan Pt2 DP2-16; Low |
 | **— DataONE —** | | | | |
 | CON-DONE-01 | ⚪ Not Started | Feb 18, 2026 | Map cluster click → populate right sidebar with datasets at that location | Merged: DP2-01, T12; High |
-| CON-DONE-02 | 🔴 CONFLICT | Feb 18, 2026 | Auto-zoom/sync map when selecting dataset (sidebar click vs "View on Map") | Scope conflict: T13 (saved datasets only) vs T14 (all datasets); also overlaps DP1-11 |
+| CON-DONE-02 | ⚪ Not Started | Feb 18, 2026 | Auto-zoom/sync map when selecting dataset (sidebar click vs "View on Map") | Resolved Feb 18, 2026: click-to-open detail view auto-zooms; repurpose "View on Map" to Recenter/Zoom |
 | CON-DONE-03 | ⚪ Not Started | Feb 18, 2026 | Pop-up/tooltip on cluster for scrolling through individual datasets | Dan Pt2 DP2-02; Medium |
 | CON-DONE-04 | ⚪ Not Started | Feb 18, 2026 | Improve point dispersion as user zooms into clusters | Dan Pt2 DP2-03; Medium |
 | CON-DONE-05 | ⚪ Not Started | Feb 18, 2026 | Bug: investigate + fix map vs sidebar count discrepancy (dedupe versions) | Dan Pt2 DP2-04; High |
@@ -86,10 +86,8 @@ These are tasks where two or more stakeholders touched the **same feature area**
 | **Approach** | Custom polygon drawing | Custom polygon drawing (ArcGIS tool) |
 | **Other notes** | Mentioned alongside other enhancements | Dan rated this the highest-priority item in Pt 1 |
 
-**What you need to decide:**  
-These are the same feature — the only disagreement is priority. Amy listed it as medium; Dan called it Super High. Given Dan's explicit priority rating and the fact that this was originally in the plan, **lean toward Super High** unless there's a reason to deprioritize.
-
-**Suggested resolution:** Accept Dan's Super High priority. Implement as CON-GL-01 (high priority) before lower-priority iNaturalist enhancements.
+**Resolution (Decided Feb 18, 2026):**  
+Treat this as the same feature with a **priority compromise of High**. This keeps it above medium/low enhancements while leaving space for critical bug fixes.
 
 ---
 
@@ -101,13 +99,12 @@ These are the same feature — the only disagreement is priority. Amy listed it 
 | **Mental model** | "Show me the whole feature service first, then I pick a layer" — modeled after ArcGIS item page | "When I click a specific layer, tell me about that layer specifically" |
 | **Conflict type** | Information hierarchy (top-down vs layer-first) | |
 
-**What you need to decide:**  
-These wants are potentially **complementary** but need a single unified UX design:  
-- Option A: Show service overview by default; when a specific layer is selected, the description updates to show layer-specific info.  
-- Option B: Service overview is always visible; add an (i) button per layer for layer-specific info.  
-- Option C: Two-panel or tabs: one tab for "Service info" (Dan's ask), one tab for "Layer info" (Trisalyn's ask).
-
-**Suggested resolution:** Option A feels most natural — service overview sets context, then layer click updates the info. Confirm with Dan and Trisalyn.
+**Resolution (Decided Feb 18, 2026):**  
+Adopt **Option A (progressive disclosure)** with a left-sidebar **Feature Service container** mental model:
+- Feature Service rows in the left sidebar are **visually distinct** from categories and layers
+- Clicking a Feature Service expands/collapses its contents and opens a **service overview** in the right sidebar **without selecting an active layer**
+- Clicking a **Layer** is what activates map content / Map Layers widget state and updates the right sidebar to **layer-specific** info, with a compact service header for context
+- Service overview should list sibling layers/tables for discovery
 
 ---
 
@@ -119,12 +116,8 @@ These wants are potentially **complementary** but need a single unified UX desig
 | **What happens** | Map auto-zooms to dataset location | Map zooms + ArcGIS tooltip appears | Map auto-syncs; no manual "View on Map" needed |
 | **Scope** | Any dataset click | Saved datasets only | All datasets |
 
-**What you need to decide:**  
-- T13 and T14 are from the same person (Trisalyn) and likely describe the same intention from two angles — she probably means "clicking any dataset (including saved ones) should auto-sync the map."  
-- Dan's DP1-11 is consistent with this.  
-- **The real question:** Does clicking a dataset in the browse tab (before saving) also auto-zoom? Or only after saving?  
-
-**Suggested resolution:** Implement auto-zoom for all dataset selections (browse + saved), eliminating the need for a separate "View on Map" button click. Reconcile T13 and T14 into one implementation. Confirm behavior for the browse tab specifically.
+**Resolution (Decided Feb 18, 2026):**  
+Auto-pan/auto-zoom happens on **click** (not hover), specifically when the user opens the **DataONE dataset detail view** in the right sidebar. Repurpose “View on Map” to a conditional **Recenter/Zoom to dataset** action for recoverability when the user has panned away.
 
 ---
 
@@ -134,7 +127,7 @@ These wants are potentially **complementary** but need a single unified UX desig
 
 ### Cross-Cutting / Map Layers
 
-#### CON-GL-01 — Spatial Queries: Custom Polygon Draw (🔴 CONFLICT on priority — see above)
+#### CON-GL-01 — Spatial Queries: Custom Polygon Draw
 
 **Sources:** AF-07 (Amy, Medium), DP1-03 (Dan, Super High)  
 **Recommended Priority:** High  
@@ -431,7 +424,7 @@ Flight cards are visually noisy with too many buttons. Simplify to:
 
 ### TNC ArcGIS
 
-#### CON-ARCGIS-01 — Right Sidebar: Feature Service Overview + Layer-Specific Info (🔴 CONFLICT — see above)
+#### CON-ARCGIS-01 — Right Sidebar: Feature Service Overview + Layer-Specific Info
 
 **Sources:** DP2-12 (Dan), T10 (Trisalyn)  
 **Priority:** High  
@@ -440,7 +433,11 @@ Flight cards are visually noisy with too many buttons. Simplify to:
 **Dan's ask (DP2-12):** Show the feature service name, description, and a list of all sub-layers/tables in the right sidebar — modeled after the ArcGIS item page.  
 **Trisalyn's ask (T10):** When clicking individual layers (e.g., Bathymetric Contours), show layer-specific info. Add an info (i) button for more detail about the specific layer.  
 
-**Conflict:** Dan wants service-level context first; Trisalyn wants layer-level detail on click. These may be complementary but need a single unified UX decision (see Conflicts section above).
+**Resolved interaction model (Decided Feb 18, 2026):**
+- Left sidebar must visually differentiate **Feature Services** (containers) from **Layers** (map-drawable/selectable)
+- Clicking a Feature Service expands/collapses and opens a **service overview** in the right sidebar **without selecting an active layer**
+- Clicking a Layer is what activates map content / Map Layers widget state and updates the right sidebar to **layer-specific** info, with a compact service header for context
+- Service overview should list sibling layers/tables for discovery
 
 ---
 
@@ -516,13 +513,15 @@ Clicking a clustered group on the map (e.g., "108" or "4") should populate the r
 
 ---
 
-#### CON-DONE-02 — Auto-Zoom/Sync Map When Selecting Dataset (🔴 CONFLICT — see above)
+#### CON-DONE-02 — Auto-Zoom/Sync Map When Selecting Dataset
 
 **Sources:** DP1-11 (Dan), T13 (Trisalyn), T14 (Trisalyn)  
 **Priority:** High  
 **Data Source:** DataONE
 
-Map should auto-zoom to a dataset's location when selected — no manual "View on Map" click required. Scope question: does this apply to browse-tab selections only, saved dataset selections only, or all dataset selections? See Conflicts section for full analysis.
+Auto-pan/auto-zoom happens on **click** (not hover), specifically when the user opens the **DataONE dataset detail view** in the right sidebar.
+
+Repurpose “View on Map” to a conditional **Recenter/Zoom to dataset** action for recoverability when the user has panned away.
 
 ---
 
@@ -652,16 +651,16 @@ The following source task IDs were merged into consolidated tasks. Use this tabl
 
 | Consolidated ID | Merged Source IDs | Merge Rationale |
 |----------------|-------------------|-----------------|
-| CON-GL-01 | AF-07, DP1-03 | Same task (spatial polygon query); only priority differed → CONFLICT flagged |
+| CON-GL-01 | AF-07, DP1-03 | Same task (spatial polygon query); only priority differed → conflict resolved Feb 18, 2026 (priority=High) |
 | CON-GL-05 | AF-04, DP1-02, DP1-08 | All request visual feedback on Edit Filters click; DP1-08 adds the "already in edit mode" edge case |
 | CON-GL-06 | AF-05, DP1-07 | Same request: "Edit Filters" label/header in right sidebar |
 | CON-GL-07 | AF-06, DP1-06 | Same bug: map ↔ sidebar sync |
-| CON-ARCGIS-01 | DP2-12, T10 | Same area (right sidebar info for ArcGIS layers) but different focus levels → CONFLICT flagged |
+| CON-ARCGIS-01 | DP2-12, T10 | Same area (right sidebar info for ArcGIS layers) but different focus levels → conflict resolved Feb 18, 2026 (Option A + container model) |
 | CON-DENDRA-01 | AF-14, T3 | Identical: map station click → sidebar sync |
 | CON-DENDRA-02 | AF-11, T4 | Identical: multiple time series charts, draggable/resizable |
 | CON-DENDRA-03 | AF-12, AF-13, T5 | All about multi-stream selection / removing friction from pinning multiple streams |
 | CON-DONE-01 | DP2-01, T12 | Identical: map cluster click → right sidebar population |
-| CON-DONE-02 | DP1-11, T13, T14 | Same intent (auto-zoom on dataset select); scope of T13 vs T14 creates ambiguity → CONFLICT flagged |
+| CON-DONE-02 | DP1-11, T13, T14 | Same intent (auto-zoom on dataset detail open); scope ambiguity resolved Feb 18, 2026 (click-to-open detail view) |
 
 ---
 
