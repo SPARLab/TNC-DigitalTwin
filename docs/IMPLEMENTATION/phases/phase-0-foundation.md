@@ -1,7 +1,7 @@
 # Phase 0: Foundation
 
 **Status:** ⚪ Not Started  
-**Progress:** 0 / 7 tasks  
+**Progress:** 0 / 8 tasks  
 **Branch:** `v2/foundation`  
 **Blocking:** YES - All other phases depend on this  
 **Owner:** TBD
@@ -26,17 +26,33 @@ Set up the V2 application shell, routing, state management, and shared component
 
 ---
 
+## Quick Task Summary
+
+| ID | Status | Last Updated (Timestamp) | Task Description | Notes |
+|----|--------|---------------------------|------------------|-------|
+| CON-GL-01 | ⚪ Not Started | Feb 18, 2026 | Implement spatial queries (custom polygon draw) across all layers | High priority |
+| CON-GL-02 | ⚪ Not Started | Feb 18, 2026 | Spatial filter UI in right sidebar under date range | Cross-cutting UI |
+| CON-GL-03 | ⚪ Not Started | Feb 18, 2026 | Spatial filter: select polygon from pinned layer | Extra credit / v2 |
+| CON-GL-04 | ⚪ Not Started | Feb 18, 2026 | Allow multiple expanded layers in Map Layers widget | High priority |
+| CON-GL-05 | ⚪ Not Started | Feb 18, 2026 | Edit Filters visual feedback linking widget to right sidebar | High priority |
+| CON-GL-06 | ⚪ Not Started | Feb 18, 2026 | Add "Edit Filters" section header in right sidebar | Medium priority |
+| CON-GL-07 | ⚪ Not Started | Feb 18, 2026 | Fix map and sidebar filter sync drift bug | High priority bug |
+| CON-GL-08 | ⚪ Not Started | Feb 18, 2026 | Guide user to filter panel when "New View" is clicked | Medium priority |
+
+**Note:** Tasks `0.1` through `0.7` appear to be already implemented and are intentionally removed from active tracking.
+
 ## Task Status
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
-| 0.1 | Create v2/ folder structure and routing | ⚪ Not Started | | |
-| 0.2 | Implement Left Sidebar shell component | ⚪ Not Started | | |
-| 0.3 | Implement Pinned Layers state management | ⚪ Not Started | | |
-| 0.4 | Implement Bookmarks state management | ⚪ Not Started | | Awaiting team feedback |
-| 0.5 | Implement Pinned Layers floating widget | ⚪ Not Started | | |
-| 0.6 | Implement Bookmarked Features floating widget | ⚪ Not Started | | Awaiting team feedback |
-| 0.7 | Implement Error Handling components | ⚪ Not Started | | DFT-030 resolved |
+| CON-GL-01 | Spatial queries across all layers | ⚪ Not Started | | Intake from consolidated feedback |
+| CON-GL-02 | Spatial filter controls in right sidebar | ⚪ Not Started | | Intake from consolidated feedback |
+| CON-GL-03 | Select polygon from pinned layer | ⚪ Not Started | | Extra credit / v2 |
+| CON-GL-04 | Multiple expanded map layers | ⚪ Not Started | | High priority |
+| CON-GL-05 | Edit Filters visual link feedback | ⚪ Not Started | | High priority |
+| CON-GL-06 | "Edit Filters" section header | ⚪ Not Started | | |
+| CON-GL-07 | Map/sidebar filter sync bug fix | ⚪ Not Started | | Bug |
+| CON-GL-08 | Auto-open or guide to filters on New View | ⚪ Not Started | | |
 
 **Status Legend:**
 - ⚪ Not Started

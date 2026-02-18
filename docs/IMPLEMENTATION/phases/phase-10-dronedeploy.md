@@ -1,7 +1,7 @@
 # Phase 10: DroneDeploy Imagery
 
 **Status:** 🟡 In Progress  
-**Progress:** 0 / 1 tasks (completed tasks 10.1–10.6, 10.8–10.11 archived)  
+**Progress:** 0 / 3 tasks (completed tasks 10.1–10.6, 10.8–10.11 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-10-dronedeploy-completed.md`  
 **Branch:** `v2/dronedeploy`  
 **Depends On:** Phase 0 (Foundation)  
@@ -9,10 +9,12 @@
 
 ---
 
-## Task Status
+## Quick Task Summary
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
+| CON-DRONE-01 | ⚪ Not Started | Feb 18, 2026 | Bug: drone imagery does not change when toggling between flights | High priority bug |
+| CON-DRONE-02 | ⚪ Not Started | Feb 18, 2026 | Simplify project flights UI: default name/date, expand for metadata | Medium-high priority |
 | 10.7 | ⚪ Not Started | — | Render flight footprints as map polygons | Show `plan_geometry` / `project_bounds` as clickable map polygons |
 
 **Status Legend:**

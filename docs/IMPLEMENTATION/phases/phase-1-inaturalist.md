@@ -1,7 +1,7 @@
 # Phase 1: iNaturalist Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 0 / 0 tasks  
+**Progress:** 0 / 5 tasks  
 **Branch:** `v2/inaturalist`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD  
@@ -15,14 +15,18 @@
 
 ## Quick Task Summary
 
-**Active iNaturalist development tasks (ordered by priority).**
+| ID | Status | Last Updated (Timestamp) | Task Description | Notes |
+|----|--------|---------------------------|------------------|-------|
+| CON-INAT-01 | ⚪ Not Started | Feb 18, 2026 | Add species-level filtering (currently taxa only) | High priority; source: AF-01 |
+| CON-INAT-02 | ⚪ Not Started | Feb 18, 2026 | Species hierarchy flow: taxa -> species list -> observations per species | High priority; source: AF-02 |
+| CON-INAT-03 | ⚪ Not Started | Feb 18, 2026 | Show result count in right sidebar (for example, "92 observations") | High priority; source: AF-03 |
+| CON-INAT-04 | ⚪ Not Started | Feb 18, 2026 | Investigate reptile observations appearing in ocean (scrambling vs bug) | Medium priority; source: AF-08 |
+| CON-INAT-06 | ⚪ Not Started | Feb 18, 2026 | Species/taxa ordering: common species higher, with editable sort order | Medium priority; source: T15 |
 
-| # | Task | Status | Priority | Notes |
-|---|------|--------|----------|-------|
-| | | | | |
+**Phase-5 handoff:** `CON-INAT-05` (Export Builder cart inversion) is tracked in `docs/IMPLEMENTATION/phases/phase-5-export-builder.md` to avoid cross-branch conflicts.
 
-**Active tasks remaining:** 0  
-**Recently completed:** —
+**Active tasks remaining:** 5  
+**Recently completed:** Archived to `docs/archive/phases/phase-1-inaturalist-completed.md`
 
 ---
 

@@ -1,7 +1,7 @@
 # Phase 2: ANiML Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 0 / 1 tasks (completed tasks 2.1–2.17 archived)  
+**Progress:** 0 / 4 tasks (completed tasks 2.1–2.17 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-2-animl-completed.md`  
 **Branch:** `v2/animl`  
 **Depends On:** Phase 0 (Foundation) — Data Source Adapter Pattern ✅ Complete  
@@ -83,10 +83,22 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 ---
 
+## Quick Task Summary
+
+| ID | Status | Last Updated (Timestamp) | Task Description | Notes |
+|----|--------|---------------------------|------------------|-------|
+| CON-ANIML-01 | ⚪ Not Started | Feb 18, 2026 | Map click on camera trap auto-selects sidebar camera and shows images | High priority; map-first interaction |
+| CON-ANIML-02 | ⚪ Not Started | Feb 18, 2026 | Rename "Mountain lion" to "Puma" | Medium priority |
+| CON-ANIML-03 | ⚪ Not Started | Feb 18, 2026 | Sort cameras by result count (data-rich first, zero-data last) | Medium priority |
+| 2.18 | ⚪ Not Started | Feb 18, 2026 | Synchronize matching images results with map/layer counts | Existing open ANiML bug |
+
 ## Task Status
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
+| CON-ANIML-01 | Map click camera -> sidebar sync + images | ⚪ Not Started | | Intake from consolidated feedback |
+| CON-ANIML-02 | Rename Mountain lion label to Puma | ⚪ Not Started | | Intake from consolidated feedback |
+| CON-ANIML-03 | Sort cameras by result count descending | ⚪ Not Started | | Intake from consolidated feedback |
 | 2.18 | Synchronize matching images results with map/layer counts | ⚪ Not Started | | Map shows 605, matching images/layer show 200 — counts out of sync for species+camera filter |
 
 *Completed tasks 2.1–2.17 have been archived. See `docs/archive/phases/phase-2-animl-completed.md`.*

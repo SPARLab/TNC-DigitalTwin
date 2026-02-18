@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** 🟡 Ready for New Tasks  
-**Progress:** 0 / 0 tasks  
+**Progress:** 0 / 12 tasks  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-4-dataone-completed.md`  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
@@ -9,11 +9,24 @@
 
 ---
 
-## Task Status
+## Quick Task Summary
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| *(add new tasks below)* | | | | |
+| CON-DONE-01 | ⚪ Not Started | Feb 18, 2026 | Cluster click on map populates right sidebar with datasets at that location | High priority |
+| CON-DONE-02 | ⚪ Not Started | Feb 18, 2026 | Auto-pan/zoom when opening dataset detail; repurpose View on Map as Recenter | High priority; resolution applied |
+| CON-DONE-03 | ⚪ Not Started | Feb 18, 2026 | Cluster popup for scrolling individual datasets | Medium priority |
+| CON-DONE-04 | ⚪ Not Started | Feb 18, 2026 | Improve point dispersion as user zooms into clusters | Medium priority |
+| CON-DONE-05 | ⚪ Not Started | Feb 18, 2026 | Fix map vs sidebar count discrepancy (dedupe dataset versions) | High priority bug |
+| CON-DONE-06 | ⚪ Not Started | Feb 18, 2026 | Save button: clearly distinguish saved vs unsaved state | High priority |
+| CON-DONE-07 | ⚪ Not Started | Feb 18, 2026 | Persist saved state when returning to already-saved dataset | High priority |
+| CON-DONE-08 | ⚪ Not Started | Feb 18, 2026 | Multi-select categories filter checklist | Medium priority |
+| CON-DONE-09 | ⚪ Not Started | Feb 18, 2026 | Search by title and abstract/keywords | High priority |
+| CON-DONE-10 | ⚪ Not Started | Feb 18, 2026 | Filter by file type (CSV, TIF, imagery, and others) | Medium priority |
+| CON-DONE-11 | ⚪ Not Started | Feb 18, 2026 | Saved indicator on browse cards (icon plus subtle highlight) | Medium priority |
+| CON-DONE-14 | ⚪ Not Started | Feb 18, 2026 | Search highlight: show matching keyword inside abstract snippet | Low / nice-to-have |
+
+**Phase-5 handoff:** `CON-DONE-12` and `CON-DONE-13` (export behavior tasks) are tracked in `docs/IMPLEMENTATION/phases/phase-5-export-builder.md`.
 
 *Completed tasks 4.1–4.12 have been archived. See `docs/archive/phases/phase-4-dataone-completed.md`.*
 

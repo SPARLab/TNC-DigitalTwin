@@ -1,7 +1,7 @@
 # Phase 5: Export Builder
 
 **Status:** 🟡 In Progress  
-**Progress:** 0 / 0 tasks (completed tasks 5.1–5.10 archived)  
+**Progress:** 0 / 4 tasks (completed tasks 5.1–5.10 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-5-export-builder-completed.md`  
 **Branch:** `v2/export-builder`  
 **Depends On:** Phases 1-4 (all data sources)  
@@ -37,7 +37,10 @@ Implement the Export Builder that brings together all pinned layers and their ac
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| *(add new tasks below)* | | | | |
+| CON-EXP-01 | ⚪ Not Started | Feb 18, 2026 | iNaturalist export behavior: invert to cart metaphor (everything exports unless removed) | Source: CON-INAT-05; high priority |
+| CON-EXP-02 | ⚪ Not Started | Feb 18, 2026 | Dendra export builder UX refinement | Source: CON-DENDRA-05; medium priority |
+| CON-EXP-03 | ⚪ Not Started | Feb 18, 2026 | DataONE export: metadata CSV plus source download link (no data proxy) | Source: CON-DONE-12; medium priority |
+| CON-EXP-04 | ⚪ Not Started | Feb 18, 2026 | Confirm DataONE export behavior with Amy and Trisalyn (small vs large file flow) | Source: CON-DONE-13; medium priority |
 
 *Completed tasks 5.1–5.10 have been archived. See `docs/archive/phases/phase-5-export-builder-completed.md`.*
 
@@ -47,7 +50,10 @@ Implement the Export Builder that brings together all pinned layers and their ac
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
-| *(add new tasks below)* | | | | |
+| CON-EXP-01 | Invert iNaturalist export to cart-removal model | ⚪ Not Started | | Imported from consolidated task CON-INAT-05 |
+| CON-EXP-02 | Refine Dendra export builder UX | ⚪ Not Started | | Imported from consolidated task CON-DENDRA-05 |
+| CON-EXP-03 | DataONE metadata CSV + source links export | ⚪ Not Started | | Imported from consolidated task CON-DONE-12 |
+| CON-EXP-04 | Collect Amy/Trisalyn input on export behavior | ⚪ Not Started | | Imported from consolidated task CON-DONE-13 |
 
 *Completed tasks 5.1–5.10 have been archived. See `docs/archive/phases/phase-5-export-builder-completed.md`.*
 

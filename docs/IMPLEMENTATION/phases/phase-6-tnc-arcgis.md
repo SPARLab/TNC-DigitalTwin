@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 0 / 9 tasks (completed tasks 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
+**Progress:** 0 / 16 tasks (completed tasks 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry)  
@@ -26,10 +26,17 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 
 ---
 
-## Task Status Summary
+## Quick Task Summary
 
-| ID | Status | Last Updated | Task Description | Notes |
-|----|--------|--------------|------------------|-------|
+| ID | Status | Last Updated (Timestamp) | Task Description | Notes |
+|----|--------|---------------------------|------------------|-------|
+| CON-ARCGIS-01 | ⚪ Not Started | Feb 18, 2026 | Right sidebar shows service overview and layer-specific info with progressive disclosure | High priority; resolved interaction model |
+| CON-ARCGIS-02 | ⚪ Not Started | Feb 18, 2026 | Clarify feature service vs category hierarchy in left sidebar | High priority |
+| CON-ARCGIS-03 | ⚪ Not Started | Feb 18, 2026 | Add "See table" button to open tabular layer/table view | Medium priority |
+| CON-ARCGIS-04 | ⚪ Not Started | Feb 18, 2026 | Bidirectional sync between right sidebar layer selection and left sidebar | Medium priority |
+| CON-ARCGIS-05 | ⚪ Not Started | Feb 18, 2026 | Fix iframe to show user-friendly TNC Hub page instead of raw service page | Medium priority |
+| CON-ARCGIS-06 | ⚪ Not Started | Feb 18, 2026 | Bug: fix Union Pacific Railroad layer (layer ID 0 not found) | Medium priority bug |
+| CON-ARCGIS-07 | ⚪ Not Started | Feb 18, 2026 | Design multi-layer feature service UX follow-up | Low priority / follow-up |
 | **6.8** | ⚪ | — | Search Enhancement | Match service + layer names; expand parent service when layer matches |
 | **6.9** | ⚪ | — | Keyboard Navigation & ARIA | Arrow keys for expand/collapse, ARIA tree structure, focus management |
 | **6.10** | ⚪ | — | QA & Edge Cases | Single-layer services, empty results, malformed queries, schema fetch errors |

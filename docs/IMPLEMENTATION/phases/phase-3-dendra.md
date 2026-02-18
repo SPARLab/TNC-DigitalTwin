@@ -1,7 +1,7 @@
 # Phase 3: Dendra Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 0 / 0 tasks (completed tasks 3.1–3.9 archived Feb 18, 2026)  
+**Progress:** 0 / 7 tasks (completed tasks 3.1–3.9 archived Feb 18, 2026)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-3-dendra-completed.md`  
 **Branch:** `v2/dendra`  
 **Depends On:** Phase 0 (Foundation)  
@@ -14,7 +14,15 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| *Add new tasks below* | | | | |
+| CON-DENDRA-01 | ⚪ Not Started | Feb 18, 2026 | Map click on station syncs to right sidebar and opens station | High priority; map-first |
+| CON-DENDRA-02 | ⚪ Not Started | Feb 18, 2026 | Multiple time series charts side-by-side, draggable and resizable | High priority |
+| CON-DENDRA-03 | ⚪ Not Started | Feb 18, 2026 | Multi-stream selection across stations with stream-name filtering and no reset requirement | High priority |
+| CON-DENDRA-04 | ⚪ Not Started | Feb 18, 2026 | Auto-expand Map Layers widget when a child view is added | Medium priority |
+| CON-DENDRA-06 | ⚪ Not Started | Feb 18, 2026 | Review "Update View" versus "Save as New View" language and sync behavior | Low priority |
+| CON-DENDRA-07 | ⚪ Not Started | Feb 18, 2026 | Add icon diagram for station to data stream hierarchy onboarding | Low priority |
+| CON-DENDRA-08 | ⚪ Not Started | Feb 18, 2026 | Gather feedback from active Dendra data users | Medium priority |
+
+**Phase-5 handoff:** `CON-DENDRA-05` (Export Builder UX refinement) is tracked in `docs/IMPLEMENTATION/phases/phase-5-export-builder.md`.
 
 ---
 
@@ -54,7 +62,13 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
-| *Add new tasks below* | | | | |
+| CON-DENDRA-01 | Map click station -> sidebar station sync | ⚪ Not Started | | Intake from consolidated feedback |
+| CON-DENDRA-02 | Multi-chart compare (draggable/resizable) | ⚪ Not Started | | Intake from consolidated feedback |
+| CON-DENDRA-03 | Multi-stream cross-station selection UX | ⚪ Not Started | | Intake from consolidated feedback |
+| CON-DENDRA-04 | Auto-expand Map Layers widget on child add | ⚪ Not Started | | Intake from consolidated feedback |
+| CON-DENDRA-06 | Review update/save language | ⚪ Not Started | | Intake from consolidated feedback |
+| CON-DENDRA-07 | Station->stream hierarchy onboarding diagram | ⚪ Not Started | | Intake from consolidated feedback |
+| CON-DENDRA-08 | Collect feedback from Dendra power users | ⚪ Not Started | | Intake from consolidated feedback |
 
 **Status Legend:**
 - ⚪ Not Started
