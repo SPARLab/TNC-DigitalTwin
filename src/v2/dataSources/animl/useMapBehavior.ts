@@ -39,7 +39,8 @@ export function useAnimlMapBehavior(
     warmCache,
     focusedDeploymentId,
   } = useAnimlFilter();
-  const { viewRef, spatialPolygon } = useMap();
+  const { viewRef, getSpatialPolygonForLayer } = useMap();
+  const spatialPolygon = getSpatialPolygonForLayer(LAYER_ID);
   const populatedRef = useRef(false);
   const highlightHandleRef = useRef<__esri.Handle | null>(null);
 

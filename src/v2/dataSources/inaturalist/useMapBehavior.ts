@@ -34,7 +34,8 @@ export function useINaturalistMapBehavior(
 ) {
   const { selectedTaxa, startDate, endDate, allObservations, dataLoaded, warmCache } = useINaturalistFilter();
   const { activateLayer } = useLayers();
-  const { viewRef, spatialPolygon } = useMap();
+  const { viewRef, getSpatialPolygonForLayer } = useMap();
+  const spatialPolygon = getSpatialPolygonForLayer(LAYER_ID);
   const populatedRef = useRef(false);
 
   const isPinned = pinnedLayers.some(p => p.layerId === LAYER_ID);

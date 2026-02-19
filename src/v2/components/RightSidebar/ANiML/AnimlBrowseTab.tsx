@@ -230,7 +230,7 @@ export function AnimlBrowseTab() {
         onClear={clearDateRange}
       />
 
-      <SpatialQuerySection id="animl-spatial-query-section" />
+      <SpatialQuerySection id="animl-spatial-query-section" layerId="animl-camera-traps" />
 
       {/* Species filter section — expanded by default */}
       <FilterSection

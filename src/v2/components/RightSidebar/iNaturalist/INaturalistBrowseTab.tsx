@@ -342,7 +342,7 @@ export function INaturalistBrowseTab() {
         </div>
       </div>
 
-      <SpatialQuerySection id="inat-spatial-query-section" />
+      <SpatialQuerySection id="inat-spatial-query-section" layerId="inaturalist-obs" />
 
       {/* Loading state */}
       {showInitialLoading && (

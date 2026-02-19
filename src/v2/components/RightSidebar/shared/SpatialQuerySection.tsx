@@ -3,15 +3,17 @@ import { useMap } from '../../../context/MapContext';
 
 interface SpatialQuerySectionProps {
   id: string;
+  layerId: string;
 }
 
-export function SpatialQuerySection({ id }: SpatialQuerySectionProps) {
+export function SpatialQuerySection({ id, layerId }: SpatialQuerySectionProps) {
   const {
-    spatialPolygon,
+    getSpatialPolygonForLayer,
     isSpatialQueryDrawing,
     startSpatialQueryDraw,
     clearSpatialQuery,
   } = useMap();
+  const spatialPolygon = getSpatialPolygonForLayer(layerId);
 
   const hasSpatialFilter = !!spatialPolygon;
 
@@ -57,7 +59,7 @@ export function SpatialQuerySection({ id }: SpatialQuerySectionProps) {
       {hasSpatialFilter && (
         <p id={`${id}-hint`} className="text-[11px] text-gray-500 flex items-start gap-1">
           <X className="w-3 h-3 mt-[1px] shrink-0" />
-          Clearing removes the filter for all active/pinned map layers.
+          Clearing removes the polygon for this layer only.
         </p>
       )}
     </div>

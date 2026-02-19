@@ -3,7 +3,7 @@
 // Used by: MapContainer (provider), useMapLayers (sync), iNaturalist (highlight)
 // ============================================================================
 
-import { createContext, useContext, useRef, useCallback, useState, type ReactNode } from 'react';
+import { createContext, useContext, useRef, useCallback, useEffect, useState, type ReactNode } from 'react';
 import Point from '@arcgis/core/geometry/Point';
 import Polygon from '@arcgis/core/geometry/Polygon';
 import Graphic from '@arcgis/core/Graphic';
@@ -16,6 +16,7 @@ import {
   type LonLat,
   type SpatialPolygon,
 } from '../utils/spatialQuery';
+import { useLayers } from './LayerContext';
 
 interface Toast {
   id: string;
@@ -53,8 +54,10 @@ interface MapContextValue {
   openDataOnePreview: (url: string, title: string) => void;
   /** Close DataONE preview modal */
   closeDataOnePreview: () => void;
-  /** Shared spatial query polygon (null when inactive) */
+  /** Spatial query polygon for the active layer (null when inactive) */
   spatialPolygon: SpatialPolygon | null;
+  /** Lookup spatial polygon by layer ID (used for per-layer map filtering) */
+  getSpatialPolygonForLayer: (layerId: string) => SpatialPolygon | null;
   /** True while map is in polygon draw mode */
   isSpatialQueryDrawing: boolean;
   /** Trigger map polygon draw interaction */
@@ -77,7 +80,17 @@ const HIGHLIGHT_SYMBOL = {
   outline: { color: [6, 182, 212, 0.9], width: 3 }, // cyan-500
 };
 
+const SPATIAL_QUERY_POLYGON_SYMBOL = {
+  type: 'simple-fill' as const,
+  color: [46, 125, 50, 0.14],
+  outline: {
+    color: [46, 125, 50, 0.95],
+    width: 2,
+  },
+};
+
 export function MapProvider({ children }: { children: ReactNode }) {
+  const { activeLayer } = useLayers();
   const viewRef = useRef<MapView | null>(null);
   const highlightLayerRef = useRef<GraphicsLayer | null>(null);
   const spatialQueryLayerRef = useRef<GraphicsLayer | null>(null);
@@ -85,9 +98,15 @@ export function MapProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [dataOnePreview, setDataOnePreview] = useState<DataOnePreviewState | null>(null);
   const [mapReady, setMapReadyState] = useState(0);
-  const [spatialPolygon, setSpatialPolygon] = useState<SpatialPolygon | null>(null);
+  const [spatialPolygonsByLayerId, setSpatialPolygonsByLayerId] = useState<Record<string, SpatialPolygon>>({});
+  const spatialPolygonsByLayerIdRef = useRef<Record<string, SpatialPolygon>>({});
   const [isSpatialQueryDrawing, setIsSpatialQueryDrawing] = useState(false);
   const setMapReady = useCallback(() => setMapReadyState(n => n + 1), []);
+  const spatialPolygon = activeLayer?.layerId ? (spatialPolygonsByLayerId[activeLayer.layerId] ?? null) : null;
+
+  const getSpatialPolygonForLayer = useCallback((layerId: string) => {
+    return spatialPolygonsByLayerIdRef.current[layerId] ?? null;
+  }, []);
 
   const highlightPoint = useCallback((longitude: number, latitude: number) => {
     const layer = highlightLayerRef.current;
@@ -123,14 +142,38 @@ export function MapProvider({ children }: { children: ReactNode }) {
     setDataOnePreview(null);
   }, []);
 
-  const clearSpatialQuery = useCallback(() => {
-    spatialSketchViewModelRef.current?.cancel();
-    spatialQueryLayerRef.current?.removeAll();
-    setSpatialPolygon(null);
-    setIsSpatialQueryDrawing(false);
+  const setSpatialPolygonForLayer = useCallback((layerId: string, polygon: SpatialPolygon | null) => {
+    setSpatialPolygonsByLayerId((prev) => {
+      if (!polygon) {
+        if (!(layerId in prev)) return prev;
+        const { [layerId]: _, ...rest } = prev;
+        spatialPolygonsByLayerIdRef.current = rest;
+        return rest;
+      }
+      const next = { ...prev, [layerId]: polygon };
+      spatialPolygonsByLayerIdRef.current = next;
+      return next;
+    });
   }, []);
 
+  const clearSpatialQuery = useCallback(() => {
+    const activeLayerId = activeLayer?.layerId;
+    if (!activeLayerId) {
+      showToast('Select a layer before clearing a spatial query.', 'warning');
+      return;
+    }
+    spatialSketchViewModelRef.current?.cancel();
+    setSpatialPolygonForLayer(activeLayerId, null);
+    setIsSpatialQueryDrawing(false);
+  }, [activeLayer?.layerId, setSpatialPolygonForLayer, showToast]);
+
   const startSpatialQueryDraw = useCallback(() => {
+    const activeLayerId = activeLayer?.layerId;
+    if (!activeLayerId) {
+      showToast('Select a layer before drawing a spatial query polygon.', 'warning');
+      return;
+    }
+
     const sketchViewModel = spatialSketchViewModelRef.current;
     const spatialLayer = spatialQueryLayerRef.current;
     if (!sketchViewModel || !spatialLayer) {
@@ -163,8 +206,7 @@ export function MapProvider({ children }: { children: ReactNode }) {
       const ring = polygon.rings?.[0] ?? [];
       if (ring.length < 3) {
         showToast('Draw at least 3 points to create a polygon.', 'warning');
-        setSpatialPolygon(null);
-        spatialLayer.removeAll();
+        setSpatialPolygonForLayer(activeLayerId, null);
         return;
       }
 
@@ -180,17 +222,46 @@ export function MapProvider({ children }: { children: ReactNode }) {
       const nextSpatialPolygon = createSpatialPolygon(lonLatRing);
       if (!nextSpatialPolygon) {
         showToast('Polygon is not valid. Please redraw.', 'warning');
-        setSpatialPolygon(null);
-        spatialLayer.removeAll();
+        setSpatialPolygonForLayer(activeLayerId, null);
         return;
       }
 
-      setSpatialPolygon(nextSpatialPolygon);
-      showToast('Spatial query applied to active map layers.', 'info');
+      setSpatialPolygonForLayer(activeLayerId, nextSpatialPolygon);
+      showToast('Spatial query applied to the active layer.', 'info');
     });
 
     sketchViewModel.create('polygon');
-  }, [showToast]);
+  }, [activeLayer?.layerId, setSpatialPolygonForLayer, showToast]);
+
+  const activeLayerId = activeLayer?.layerId;
+  useEffect(() => {
+    spatialPolygonsByLayerIdRef.current = spatialPolygonsByLayerId;
+  }, [spatialPolygonsByLayerId]);
+
+  // Keep draw layer synced with active layer's polygon.
+  // Inactive layer polygons remain stored and continue filtering, but are hidden on map.
+  const syncActiveSpatialPolygonGraphic = useCallback(() => {
+    const spatialLayer = spatialQueryLayerRef.current;
+    if (!spatialLayer) return;
+    spatialLayer.removeAll();
+
+    if (!activeLayerId) return;
+    const activePolygon = spatialPolygonsByLayerId[activeLayerId];
+    if (!activePolygon) return;
+
+    const graphic = new Graphic({
+      geometry: new Polygon({
+        rings: [activePolygon.ring],
+        spatialReference: { wkid: 4326 },
+      }),
+      symbol: SPATIAL_QUERY_POLYGON_SYMBOL,
+    });
+    spatialLayer.add(graphic);
+  }, [activeLayerId, spatialPolygonsByLayerId]);
+
+  useEffect(() => {
+    syncActiveSpatialPolygonGraphic();
+  }, [syncActiveSpatialPolygonGraphic]);
 
   return (
     <MapContext.Provider
@@ -201,6 +272,7 @@ export function MapProvider({ children }: { children: ReactNode }) {
         showToast, toasts, dismissToast,
         dataOnePreview, openDataOnePreview, closeDataOnePreview,
         spatialPolygon,
+        getSpatialPolygonForLayer,
         isSpatialQueryDrawing,
         startSpatialQueryDraw,
         clearSpatialQuery,

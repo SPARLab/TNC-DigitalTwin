@@ -145,7 +145,10 @@ export function DendraBrowseTab() {
         </label>
       </div>
 
-      <SpatialQuerySection id="dendra-spatial-query-section" />
+      <SpatialQuerySection
+        id="dendra-spatial-query-section"
+        layerId={activeLayer?.layerId ?? 'dendra-micromet-weather'}
+      />
 
       {/* Loading state */}
       {loading && !dataLoaded && (

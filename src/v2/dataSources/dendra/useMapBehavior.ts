@@ -23,7 +23,7 @@ export function useDendraMapBehavior(
   mapReady: number,
 ) {
   const { stations, dataLoaded, warmCache, showActiveOnly } = useDendra();
-  const { spatialPolygon } = useMap();
+  const { getSpatialPolygonForLayer } = useMap();
   const { layerMap } = useCatalog();
   const populatedRef = useRef<Set<string>>(new Set());
 
@@ -42,6 +42,9 @@ export function useDendraMapBehavior(
   if (activeLayer && isDendraLayer(activeLayer.layerId)) {
     dendraLayerIds.add(activeLayer.layerId);
   }
+  const activeLayerSpatialPolygon = activeLayer?.layerId
+    ? getSpatialPolygonForLayer(activeLayer.layerId)
+    : null;
 
   const hasAnyDendraOnMap = dendraLayerIds.size > 0;
 
@@ -62,17 +65,19 @@ export function useDendraMapBehavior(
     if (!arcLayer || !(arcLayer instanceof GraphicsLayer)) return;
 
     // Always repopulate when data changes (handles layer switching)
+    const spatialPolygon = getSpatialPolygonForLayer(activeLayerId);
     populateDendraLayer(arcLayer, stations);
     filterDendraLayer(arcLayer, showActiveOnly, spatialPolygon);
     populatedRef.current.add(activeLayerId);
-  }, [dataLoaded, stations, showActiveOnly, spatialPolygon, getManagedLayer, mapReady, activeLayer]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dataLoaded, stations, showActiveOnly, getSpatialPolygonForLayer, getManagedLayer, mapReady, activeLayer, activeLayerSpatialPolygon]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Update filter when showActiveOnly changes
   useEffect(() => {
     for (const layerId of populatedRef.current) {
       const arcLayer = getManagedLayer(layerId);
       if (!arcLayer || !(arcLayer instanceof GraphicsLayer)) continue;
+      const spatialPolygon = getSpatialPolygonForLayer(layerId);
       filterDendraLayer(arcLayer, showActiveOnly, spatialPolygon);
     }
-  }, [showActiveOnly, spatialPolygon, getManagedLayer]);
+  }, [showActiveOnly, getSpatialPolygonForLayer, getManagedLayer, activeLayer?.layerId, activeLayerSpatialPolygon]);
 }

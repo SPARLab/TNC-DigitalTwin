@@ -445,7 +445,7 @@ export function DataOneBrowseTab() {
           </select>
         </div>
 
-        <SpatialQuerySection id="dataone-spatial-query-section" />
+        <SpatialQuerySection id="dataone-spatial-query-section" layerId="dataone-datasets" />
 
         <div id="dataone-result-summary-row" className="flex items-center justify-between text-xs">
           <p id="dataone-result-summary" className="text-gray-600">

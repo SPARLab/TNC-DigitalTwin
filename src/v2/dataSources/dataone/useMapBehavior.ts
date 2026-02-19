@@ -31,7 +31,8 @@ export function useDataOneMapBehavior(
     browseFilters,
   } = useDataOneFilter();
   const { activateLayer } = useLayers();
-  const { viewRef, spatialPolygon } = useMap();
+  const { viewRef, getSpatialPolygonForLayer } = useMap();
+  const spatialPolygon = getSpatialPolygonForLayer(LAYER_ID);
   const mapDatasetsByIdRef = useRef<Map<string, DataOneDataset>>(new Map());
 
   const isPinned = pinnedLayers.some((p) => p.layerId === LAYER_ID);
