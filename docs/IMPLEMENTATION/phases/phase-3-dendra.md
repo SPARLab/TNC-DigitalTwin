@@ -1,7 +1,7 @@
 # Phase 3: Dendra Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 4 / 7 tasks (completed tasks 3.1–3.9 archived Feb 18, 2026)  
+**Progress:** 4 / 5 tasks (completed tasks 3.1–3.9 archived Feb 18, 2026)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-3-dendra-completed.md`  
 **Branch:** `v2/dendra`  
 **Depends On:** Phase 0 (Foundation)  
@@ -18,8 +18,6 @@
 | CON-DENDRA-02 | 🟢 Complete | Feb 19, 2026 | Multiple time series charts side-by-side; draggable/resizable/minimizable within map area bounds | High priority |
 | CON-DENDRA-03 | 🟢 Complete | Feb 19, 2026 | Multi-stream selection across stations with stream-name filtering and no reset requirement | High priority |
 | CON-DENDRA-04 | 🟢 Complete | Feb 19, 2026 | Surface pinned-stream counts/icons across Map Layers, stream rows, and station cards | Dynamic labels, chart close fix, sync across views |
-| CON-DENDRA-06 | ⚪ Not Started | Feb 18, 2026 | Review "Update View" versus "Save as New View" language and sync behavior | Low priority |
-| CON-DENDRA-07 | ⚪ Not Started | Feb 18, 2026 | Add icon diagram for station to data stream hierarchy onboarding | Low priority |
 
 **Phase-5 handoff:** `CON-DENDRA-05` (Export Builder UX refinement) is tracked in `docs/IMPLEMENTATION/phases/phase-5-export-builder.md`.
 
@@ -65,8 +63,6 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 | CON-DENDRA-02 | Multi-chart compare (draggable/resizable/minimizable, map-constrained) | 🟢 Complete | | See Task Details |
 | CON-DENDRA-03 | Multi-stream cross-station selection UX | 🟢 Complete | | Stream-name filtering, in-detail station switcher, no reset requirement |
 | CON-DENDRA-04 | Pinned-stream visibility and count cues across map/sidebar | 🟢 Complete | | See Task Details |
-| CON-DENDRA-06 | Review update/save language | ⚪ Not Started | | Intake from consolidated feedback |
-| CON-DENDRA-07 | Station->stream hierarchy onboarding diagram | ⚪ Not Started | | Intake from consolidated feedback |
 | CON-DENDRA-08 | Collect feedback from Dendra power users | ⚪ Not Started | | Intake from consolidated feedback |
 
 **Status Legend:**
