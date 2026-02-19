@@ -1,7 +1,7 @@
 # Phase 0: Foundation
 
-**Status:** ⚪ Not Started  
-**Progress:** 0 / 7 tasks  
+**Status:** 🟢 Foundation complete — parallel branches ready  
+**Progress:** CON-GL-01 through 08 + 0.9 complete  
 **Branch:** `v2/foundation`  
 **Blocking:** YES - All other phases depend on this  
 **Owner:** TBD
@@ -39,6 +39,7 @@ Set up the V2 application shell, routing, state management, and shared component
 | CON-GL-06 | 🟢 Complete | Feb 18, 2026 (implemented) | Add "Edit Filters" section header in right sidebar | Added shared green "Edit Filters" card wrapper around filter controls across Browse tabs (iNaturalist, ANiML, Dendra, DataONE) |
 | CON-GL-07 | 🟢 Complete | Feb 18, 2026 (implemented) | Fix map and sidebar filter sync drift bug | Added active-view reconciliation in `LayerContext` to keep sidebar filters bound to the currently visible/valid child view |
 | CON-GL-08 | 🟢 Complete | Feb 18, 2026 (implemented) | Guide user to filter panel when "New View" is clicked | New View now auto-activates the created child view and triggers Edit Filters guidance to open/hydrate Browse filters |
+| 0.9 | 🟢 Complete | Feb 19, 2026 | Dynamic Layer Registry from Data Catalog Service | `useCatalogRegistry` fetches from Dangermond_Preserve_Data_Catalog FeatureServer; left sidebar populated dynamically; layers without adapters show generic placeholder in right sidebar |
 
 **Note:** Tasks `0.1` through `0.7` appear to be already implemented and are intentionally removed from active tracking.
 
@@ -59,6 +60,7 @@ Set up the V2 application shell, routing, state management, and shared component
 | CON-GL-06 | "Edit Filters" section header | 🟢 Complete | Claude | Browse filter controls now live inside a shared green "Edit Filters" card wrapper across implemented data sources |
 | CON-GL-07 | Map/sidebar filter sync bug fix | 🟢 Complete | Codex | Added central active-view reconciliation in `LayerContext` so child-view visibility/removal cannot leave sidebar bound to a stale view ID |
 | CON-GL-08 | Auto-open or guide to filters on New View | 🟢 Complete | Codex | New view creation now activates the created view and fires `requestEditFilters()` so users are guided to filters immediately |
+| 0.9 | Dynamic Layer Registry from Data Catalog Service | 🟢 Complete | — | `useCatalogRegistry.ts` fetches categories/datasets from Dangermond_Preserve_Data_Catalog; CatalogContext exposes to LeftSidebar; layerRegistry.ts provides icon mapping + external layers only |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -612,10 +614,23 @@ interface Bookmark {
 
 ---
 
+### 0.9: Dynamic Layer Registry from Data Catalog Service
+
+**Status:** 🟢 Complete (implemented; documented Feb 19, 2026)
+
+**Goal:** Replace static layer registry with dynamic fetch from the Data Catalog FeatureServer so the left sidebar is populated from the live catalog (~90+ datasets across 14 categories).
+
+**Implementation:** `src/v2/hooks/useCatalogRegistry.ts` fetches categories (Table 0), datasets (Table 1), and junction data (Table 2) from `Dangermond_Preserve_Data_Catalog` FeatureServer. `CatalogContext` wraps the hook and exposes `categories`, `layerMap`, loading, and error state. Left sidebar uses `CatalogContext` for its layer tree. `layerRegistry.ts` provides only icon mapping and external/synthetic layers (iNaturalist, ANiML, DataOne) that aren't in the ArcGIS catalog. Layers without adapters show a generic placeholder in the right sidebar instead of a toast.
+
+**Files:** `src/v2/hooks/useCatalogRegistry.ts`, `src/v2/context/CatalogContext.tsx`, `src/v2/data/layerRegistry.ts`, `src/v2/components/LeftSidebar/LeftSidebar.tsx`
+
+---
+
 ## Change Log
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 19, 2026 | 0.9 | Documented Task 0.9 (Dynamic Layer Registry) as complete. Implementation in `useCatalogRegistry.ts` + `CatalogContext.tsx`; left sidebar populated from Data Catalog FeatureServer. Parallel branches unblocked. | Claude |
 | Feb 18, 2026 | CON-GL-07 | Fixed intermittent Map Layers ↔ right-sidebar filter drift by reconciling `activeLayer.viewId` against pinned child views after visibility/view changes, ensuring filter sync/name updates always target the visible/valid child view. | Codex |
 | Feb 18, 2026 | CON-GL-05, CON-GL-06 | Refined Edit Filters navigation feedback to flash only the Browse "Edit Filters" card (darker green), and implemented a shared green "Edit Filters" card wrapper in Browse tabs across iNaturalist/ANiML/Dendra/DataONE. | Claude |
 | Feb 18, 2026 | CON-GL-04 | Implemented multi-expand behavior for Map Layers pinned rows. Expanded state now tracks multiple rows simultaneously (Set-based), preserves active-layer auto-expand, and no longer collapses other expanded rows on activation. | Claude |

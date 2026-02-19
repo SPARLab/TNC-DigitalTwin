@@ -4,7 +4,7 @@
 **Progress:** 0 / 16 tasks (completed tasks 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
-**Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry)  
+**Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry) ✅ complete  
 **Owner:** TBD
 
 ---
