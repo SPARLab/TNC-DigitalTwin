@@ -21,6 +21,7 @@ import { useMapLayers } from './useMapLayers';
 import { getAdapterForActiveLayer, useActiveCacheStatus } from '../../dataSources/registry';
 import { MapToasts } from './MapToasts';
 import { MapCenterLoadingOverlay } from '../shared/loading/LoadingPrimitives';
+import { DendraTimeSeriesPanel } from '../FloatingWidgets/DendraTimeSeriesPanel/DendraTimeSeriesPanel';
 
 /** Dangermond Preserve center coordinates */
 const PRESERVE_CENTER: [number, number] = [-120.47, 34.47];
@@ -226,6 +227,9 @@ export function MapContainer() {
 
       {/* Floating panel — data source specific (e.g., Dendra time series chart) */}
       {FloatingPanel && <FloatingPanel />}
+
+      {/* Dendra charts persist independently of active layer adapter */}
+      <DendraTimeSeriesPanel />
 
       {/* Loading overlay — shown when active data source is fetching */}
       {showLoadingOverlay && (

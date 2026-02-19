@@ -1,7 +1,7 @@
 # Phase 3: Dendra Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 1 / 7 tasks (completed tasks 3.1–3.9 archived Feb 18, 2026)  
+**Progress:** 2 / 7 tasks (completed tasks 3.1–3.9 archived Feb 18, 2026)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-3-dendra-completed.md`  
 **Branch:** `v2/dendra`  
 **Depends On:** Phase 0 (Foundation)  
@@ -15,7 +15,7 @@
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
 | CON-DENDRA-01 | 🟢 Complete | Feb 19, 2026 | Map click on station syncs to right sidebar and opens station | High priority; map-first |
-| CON-DENDRA-02 | ⚪ Not Started | Feb 18, 2026 | Multiple time series charts side-by-side, draggable and resizable | High priority |
+| CON-DENDRA-02 | 🟢 Complete | Feb 19, 2026 | Multiple time series charts side-by-side; draggable/resizable/minimizable within map area bounds | High priority |
 | CON-DENDRA-03 | ⚪ Not Started | Feb 18, 2026 | Multi-stream selection across stations with stream-name filtering and no reset requirement | High priority |
 | CON-DENDRA-04 | ⚪ Not Started | Feb 18, 2026 | Auto-expand Map Layers widget when a child view is added | Medium priority |
 | CON-DENDRA-06 | ⚪ Not Started | Feb 18, 2026 | Review "Update View" versus "Save as New View" language and sync behavior | Low priority |
@@ -63,7 +63,7 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
 | CON-DENDRA-01 | Map click station -> sidebar station sync | 🟢 Complete | | Two-way sync, flash, Edit Filters fix, Stations header |
-| CON-DENDRA-02 | Multi-chart compare (draggable/resizable) | ⚪ Not Started | | Intake from consolidated feedback |
+| CON-DENDRA-02 | Multi-chart compare (draggable/resizable/minimizable, map-constrained) | 🟢 Complete | | See Task Details |
 | CON-DENDRA-03 | Multi-stream cross-station selection UX | ⚪ Not Started | | Intake from consolidated feedback |
 | CON-DENDRA-04 | Auto-expand Map Layers widget on child add | ⚪ Not Started | | Intake from consolidated feedback |
 | CON-DENDRA-06 | Review update/save language | ⚪ Not Started | | Intake from consolidated feedback |
@@ -100,6 +100,42 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 - Explicit "Stations" header with count above station cards to clarify result set vs filter section.
 
 *Add new task details below as you define them.*
+
+### CON-DENDRA-02 Scope Notes (Feb 19, 2026)
+
+**Core behavior (required):**
+- Support multiple time series chart panels visible side-by-side on the map area for comparison.
+- Each chart panel is draggable, but must remain constrained to the map container bounds (no dragging outside map area).
+- Each chart panel is resizable by the user (maintain minimum readable size).
+- Each chart panel supports minimize/collapse so users can temporarily reduce visual clutter without closing the panel.
+
+**Interaction expectations:**
+- Dragging and resizing should feel direct and predictable (no jump on drag start, no loss of panel while interacting).
+- If a resize action would exceed map bounds, clamp panel size/position so the panel stays inside the map container.
+- Minimized panels remain associated with their chart context and can be restored in place.
+
+**Acceptance criteria draft:**
+- Open 2+ chart panels and place them side-by-side inside map area.
+- Drag each panel to all map edges; panel never exits map bounds.
+- Resize from supported handles; panel remains visible and usable.
+- Minimize and restore any panel; chart state persists through minimize/restore.
+
+### CON-DENDRA-02 Implementation Notes (Feb 19, 2026)
+
+**Multi-panel architecture:**
+- DendraContext refactored from single `chart` to `chartPanels[]` with per-panel state (id, x, y, width, height, zIndex, sourceLayerId, sourceViewId, sourceLayerName).
+- Each panel is draggable (header drag handle), resizable (bottom-right grip), and minimizable; all constrained to `#map-container` bounds.
+- First chart opens bottom-right; subsequent charts stack leftward/upward in a grid to support side-by-side comparison.
+
+**Persistence and visibility:**
+- Chart panels persist across layer switches and pin transitions. DendraTimeSeriesPanel is rendered globally in MapContainer (not adapter-scoped) so it stays mounted.
+- Visibility tied to pinned layer/view: charts show only when their source Dendra layer is pinned and visible, and (if nested) when their source child view is visible.
+- Orphaned unpinned charts are cleared when their source layer is no longer the active Dendra layer.
+
+**Chart labeling:**
+- Header shows datastream name; subtitle shows Station + Category (source layer name) for multi-chart disambiguation.
+
+**Files touched:** DendraContext.tsx, DendraTimeSeriesPanel.tsx, StationDetailView.tsx, MapContainer.tsx, dendra adapter (FloatingPanel removed from adapter).
 
 ---
 
@@ -143,7 +179,7 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 | Decision | Date | Rationale |
 |----------|------|-----------|
-| (none yet) | | |
+| Dendra chart panels rendered globally in MapContainer | Feb 19, 2026 | Charts must persist across layer switches; adapter-scoped FloatingPanel unmounted when active layer changed. Global render + visibility filtering by pinned layer/view achieves persistence. |
 
 ### Styling Decisions
 
@@ -175,6 +211,7 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 19, 2026 | CON-DENDRA-02 | **Complete.** Multi-panel time series charts: draggable/resizable/minimizable, map-constrained, bottom-right initial placement, persistence across layer/pin transitions, visibility tied to pinned layer/view. See Task Details. | Cursor |
 | Feb 19, 2026 | CON-DENDRA-01 | **Complete.** Two-way map↔sidebar station sync, dark-gray station header flash, Edit Filters exits station detail, Stations section header, sidebar→map highlight/popup/zoom, map click activates sidebar immediately (parallel with goTo). See Task Details. | Cursor |
 | Feb 18, 2026 | All | **Archived completed tasks:** Moved tasks 3.1–3.9 (including 3.5a–3.9 fixes) to `docs/archive/phases/phase-3-dendra-completed.md`. Phase doc cleared for new tasks. Status → In Progress. | Claude |
 | Feb 17, 2026 | All | **Phase status corrected:** Dendra was implemented but phase doc showed "Not Started". Updated to 🟢 Complete (9/9 core + 3.5a–3.9 fixes). Added Quick Task Summary; task table now reflects completion. See `docs/archive/phases/phase-3-dendra-completed.md` for archived details. | Claude |

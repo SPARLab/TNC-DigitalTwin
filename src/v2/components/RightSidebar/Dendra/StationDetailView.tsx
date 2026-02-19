@@ -35,7 +35,7 @@ export function StationDetailView({
   const [isHeaderFlashing, setIsHeaderFlashing] = useState(false);
   const flashStartTimeoutRef = useRef<number | null>(null);
   const flashEndTimeoutRef = useRef<number | null>(null);
-  const { chart, setChartFilter, showActiveOnly, filteredStations } = useDendra();
+  const { getChartPanel, setChartFilter, showActiveOnly, filteredStations } = useDendra();
   const { activeLayer, pinLayer, getPinnedByLayerId, syncDendraFilters, createDendraFilteredView } = useLayers();
 
   const selectedSummary = useMemo(
@@ -43,15 +43,23 @@ export function StationDetailView({
     [summaries, selectedDatastreamId],
   );
 
-  const chartMatchesSelectedDatastream = Boolean(
-    selectedSummary && chart.summary?.datastream_id === selectedSummary.datastream_id,
-  );
+  const selectedChartPanel = useMemo(() => {
+    if (!selectedSummary) return null;
+    return getChartPanel(
+      station.station_id,
+      selectedSummary.datastream_id,
+      activeLayer?.layerId,
+      activeLayer?.viewId,
+    );
+  }, [getChartPanel, station.station_id, selectedSummary, activeLayer?.layerId, activeLayer?.viewId]);
 
-  const chartMinDate = chart.rawData.length > 0
-    ? new Date(chart.rawData[0].timestamp).toISOString().slice(0, 10)
+  const chartMatchesSelectedDatastream = Boolean(selectedChartPanel);
+
+  const chartMinDate = selectedChartPanel && selectedChartPanel.rawData.length > 0
+    ? new Date(selectedChartPanel.rawData[0].timestamp).toISOString().slice(0, 10)
     : undefined;
-  const chartMaxDate = chart.rawData.length > 0
-    ? new Date(chart.rawData[chart.rawData.length - 1].timestamp).toISOString().slice(0, 10)
+  const chartMaxDate = selectedChartPanel && selectedChartPanel.rawData.length > 0
+    ? new Date(selectedChartPanel.rawData[selectedChartPanel.rawData.length - 1].timestamp).toISOString().slice(0, 10)
     : undefined;
 
   const handleSelectDatastream = (summary: DendraSummary) => {
@@ -98,7 +106,7 @@ export function StationDetailView({
       setSaveMessage('Select a datastream before saving a new filtered view.');
       return;
     }
-    if (!chartMatchesSelectedDatastream || chart.loading) {
+    if (!selectedChartPanel || selectedChartPanel.loading) {
       setSaveMessage('Open chart data for this datastream before saving a new filtered view.');
       return;
     }
@@ -111,12 +119,12 @@ export function StationDetailView({
       selectedStationName: displayName,
       selectedDatastreamId: selectedSummary.datastream_id,
       selectedDatastreamName: selectedSummary.datastream_name,
-      startDate: chart.filter.startDate,
-      endDate: chart.filter.endDate,
-      aggregation: chart.filter.aggregation,
+      startDate: selectedChartPanel.filter.startDate,
+      endDate: selectedChartPanel.filter.endDate,
+      aggregation: selectedChartPanel.filter.aggregation,
     };
 
-    const newViewId = createDendraFilteredView(activeLayer.layerId, filters, chart.data.length);
+    const newViewId = createDendraFilteredView(activeLayer.layerId, filters, selectedChartPanel.data.length);
     if (!newViewId) {
       setSaveMessage('Unable to create a new filtered view. Pin this layer and try again.');
       return;
@@ -257,12 +265,13 @@ export function StationDetailView({
               <input
                 id="dendra-filter-start-date"
                 type="date"
-                value={chart.filter.startDate}
+                value={selectedChartPanel?.filter.startDate ?? ''}
                 min={chartMinDate}
                 max={chartMaxDate}
-                disabled={!chartMatchesSelectedDatastream || chart.loading}
+                disabled={!chartMatchesSelectedDatastream || Boolean(selectedChartPanel?.loading)}
                 onChange={(event) => {
-                  setChartFilter({ startDate: event.target.value });
+                  if (!selectedChartPanel) return;
+                  setChartFilter(selectedChartPanel.id, { startDate: event.target.value });
                   setSaveMessage(null);
                 }}
                 className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm
@@ -276,12 +285,13 @@ export function StationDetailView({
               <input
                 id="dendra-filter-end-date"
                 type="date"
-                value={chart.filter.endDate}
+                value={selectedChartPanel?.filter.endDate ?? ''}
                 min={chartMinDate}
                 max={chartMaxDate}
-                disabled={!chartMatchesSelectedDatastream || chart.loading}
+                disabled={!chartMatchesSelectedDatastream || Boolean(selectedChartPanel?.loading)}
                 onChange={(event) => {
-                  setChartFilter({ endDate: event.target.value });
+                  if (!selectedChartPanel) return;
+                  setChartFilter(selectedChartPanel.id, { endDate: event.target.value });
                   setSaveMessage(null);
                 }}
                 className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm
@@ -294,10 +304,11 @@ export function StationDetailView({
               Aggregation
               <select
                 id="dendra-filter-aggregation-select"
-                value={chart.filter.aggregation}
-                disabled={!chartMatchesSelectedDatastream || chart.loading}
+                value={selectedChartPanel?.filter.aggregation ?? 'hourly'}
+                disabled={!chartMatchesSelectedDatastream || Boolean(selectedChartPanel?.loading)}
                 onChange={(event) => {
-                  setChartFilter({ aggregation: event.target.value as 'hourly' | 'daily' | 'weekly' });
+                  if (!selectedChartPanel) return;
+                  setChartFilter(selectedChartPanel.id, { aggregation: event.target.value as 'hourly' | 'daily' | 'weekly' });
                   setSaveMessage(null);
                 }}
                 className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm bg-white
@@ -313,9 +324,11 @@ export function StationDetailView({
 
           <div id="dendra-filter-summary-row" className="flex items-center justify-between text-xs">
             <span id="dendra-filter-point-count" className="text-gray-600">
-              {chartMatchesSelectedDatastream ? `${chart.data.length.toLocaleString()} data points` : 'Open chart to load points'}
+              {chartMatchesSelectedDatastream && selectedChartPanel
+                ? `${selectedChartPanel.data.length.toLocaleString()} data points`
+                : 'Open chart to load points'}
             </span>
-            {chart.loading && (
+            {selectedChartPanel?.loading && (
               <span id="dendra-filter-loading-indicator" className="text-gray-400">Updating...</span>
             )}
           </div>
@@ -335,7 +348,7 @@ export function StationDetailView({
               id="dendra-save-with-filters"
               type="button"
               onClick={saveAsNewView}
-              disabled={!chartMatchesSelectedDatastream || chart.loading}
+              disabled={!chartMatchesSelectedDatastream || Boolean(selectedChartPanel?.loading)}
               className="rounded-md bg-emerald-600 text-white text-sm font-medium py-2
                          hover:bg-emerald-700 transition-colors disabled:bg-emerald-300
                          flex items-center justify-center gap-1.5"

@@ -34,9 +34,23 @@ export interface DendraChartFilter {
   aggregation: DendraAggregation;
 }
 
-export interface DendraChartState {
-  /** Whether the floating chart panel is visible */
-  open: boolean;
+export interface DendraChartPanelState {
+  /** Stable panel id */
+  id: string;
+  /** Panel placement in map container coordinates */
+  x: number;
+  y: number;
+  /** Panel dimensions in px */
+  width: number;
+  height: number;
+  /** z-index stacking order */
+  zIndex: number;
+  /** Source Dendra layer id */
+  sourceLayerId: string;
+  /** Source child view id, if any */
+  sourceViewId?: string;
+  /** Source layer label shown in panel copy */
+  sourceLayerName: string;
   /** Whether the panel is minimized to a bar */
   minimized: boolean;
   /** Station being charted */
@@ -59,16 +73,6 @@ const DEFAULT_CHART_FILTER: DendraChartFilter = {
   startDate: '',
   endDate: '',
   aggregation: 'hourly',
-};
-
-const CHART_INITIAL: DendraChartState = {
-  open: false, minimized: false,
-  station: null, summary: null,
-  rawData: [],
-  data: [],
-  filter: DEFAULT_CHART_FILTER,
-  loading: false,
-  error: null,
 };
 
 function toDateInputValue(epochMs: number): string {
@@ -143,6 +147,33 @@ function applyChartFilter(
   return aggregatePoints(inRange, filter.aggregation);
 }
 
+function getMapBounds() {
+  if (typeof document === 'undefined') {
+    return { width: 1280, height: 720 };
+  }
+  const mapContainer = document.getElementById('map-container');
+  const width = mapContainer?.clientWidth ?? window.innerWidth;
+  const height = mapContainer?.clientHeight ?? window.innerHeight;
+  return {
+    width: Math.max(640, width),
+    height: Math.max(480, height),
+  };
+}
+
+function buildInitialPanelRect(index: number): Pick<DendraChartPanelState, 'x' | 'y' | 'width' | 'height'> {
+  const bounds = getMapBounds();
+  const margin = 12;
+  const gap = 12;
+  const width = Math.max(480, Math.min(620, bounds.width - margin * 2));
+  const height = Math.max(320, Math.min(380, bounds.height - margin * 2));
+  const columns = Math.max(1, Math.floor((bounds.width - margin * 2 + gap) / (width + gap)));
+  const col = index % columns;
+  const row = Math.floor(index / columns);
+  const x = Math.max(margin, bounds.width - width - margin - col * (width + gap));
+  const y = Math.max(margin, bounds.height - height - margin - row * (height + gap));
+  return { x, y, width, height };
+}
+
 // ── Context value ────────────────────────────────────────────────────────────
 
 interface DendraContextValue {
@@ -175,11 +206,22 @@ interface DendraContextValue {
   filteredStations: DendraStation[];
 
   // Chart state (floating time series panel)
-  chart: DendraChartState;
+  chartPanels: DendraChartPanelState[];
+  getChartPanel: (
+    stationId: number,
+    datastreamId: number,
+    sourceLayerId?: string,
+    sourceViewId?: string,
+  ) => DendraChartPanelState | null;
   openChart: (station: DendraStation, summary: DendraSummary) => void;
-  setChartFilter: (partial: Partial<DendraChartFilter>) => void;
-  closeChart: () => void;
-  toggleMinimizeChart: () => void;
+  setChartFilter: (panelId: string, partial: Partial<DendraChartFilter>) => void;
+  closeChart: (panelId: string) => void;
+  toggleMinimizeChart: (panelId: string) => void;
+  setChartPanelRect: (
+    panelId: string,
+    rect: Partial<Pick<DendraChartPanelState, 'x' | 'y' | 'width' | 'height'>>,
+  ) => void;
+  bringChartToFront: (panelId: string) => void;
 }
 
 const DendraCtx = createContext<DendraContextValue | null>(null);
@@ -187,7 +229,7 @@ const DendraCtx = createContext<DendraContextValue | null>(null);
 // ── Provider ─────────────────────────────────────────────────────────────────
 
 export function DendraProvider({ children }: { children: ReactNode }) {
-  const { activeLayer } = useLayers();
+  const { activeLayer, pinnedLayers } = useLayers();
   const { layerMap } = useCatalog();
 
   // Per-service cache: serviceUrl → { stations, summaries }
@@ -204,9 +246,8 @@ export function DendraProvider({ children }: { children: ReactNode }) {
   const [showActiveOnly, setShowActiveOnly] = useState(false);
 
   // Chart state (floating time series panel)
-  const [chart, setChart] = useState<DendraChartState>(CHART_INITIAL);
-  /** Monotonic counter — ensures only the latest openChart fetch writes state */
-  const chartRequestIdRef = useRef(0);
+  const [chartPanels, setChartPanels] = useState<DendraChartPanelState[]>([]);
+  const nextChartZIndexRef = useRef(20);
 
   // Derive service URL from active Dendra layer's catalog metadata
   const serviceInfo = useMemo(() => {
@@ -301,24 +342,51 @@ export function DendraProvider({ children }: { children: ReactNode }) {
 
   const openChart = useCallback((station: DendraStation, summary: DendraSummary) => {
     if (!serviceInfo) return;
+    if (!activeLayer || activeLayer.dataSource !== 'dendra') return;
 
-    // Bump request counter so any in-flight fetch for the *previous* datastream
-    // will be silently ignored when it resolves.
-    const requestId = ++chartRequestIdRef.current;
+    const existingPanel = chartPanels.find(panel =>
+      panel.station?.station_id === station.station_id
+      && panel.summary?.datastream_id === summary.datastream_id
+      && panel.sourceLayerId === activeLayer.layerId
+      && panel.sourceViewId === activeLayer.viewId
+    );
+    if (existingPanel) {
+      const nextZ = ++nextChartZIndexRef.current;
+      setChartPanels(prev => prev.map(panel => (
+        panel.id === existingPanel.id
+          ? { ...panel, minimized: false, zIndex: nextZ }
+          : panel
+      )));
+      return;
+    }
 
-    setChart({
-      open: true, minimized: false,
-      station, summary,
+    const panelId = `${station.station_id}-${summary.datastream_id}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const panelRect = buildInitialPanelRect(chartPanels.length);
+    const nextZ = ++nextChartZIndexRef.current;
+    const newPanel: DendraChartPanelState = {
+      id: panelId,
+      x: panelRect.x,
+      y: panelRect.y,
+      width: panelRect.width,
+      height: panelRect.height,
+      zIndex: nextZ,
+      sourceLayerId: activeLayer.layerId,
+      sourceViewId: activeLayer.viewId,
+      sourceLayerName: activeLayer.name,
+      minimized: false,
+      station,
+      summary,
       rawData: [],
       data: [],
       filter: DEFAULT_CHART_FILTER,
       loading: true,
       error: null,
-    });
+    };
+
+    setChartPanels(prev => [...prev, newPanel]);
 
     fetchTimeSeries(serviceInfo.url, station.station_id, summary.datastream_name, summary.dendra_ds_id)
       .then(result => {
-        if (chartRequestIdRef.current !== requestId) return; // stale — discard
         const startDate = result.points.length > 0 ? toDateInputValue(result.points[0].timestamp) : '';
         const endDate = result.points.length > 0 ? toDateInputValue(result.points[result.points.length - 1].timestamp) : '';
         const filter: DendraChartFilter = {
@@ -327,47 +395,106 @@ export function DendraProvider({ children }: { children: ReactNode }) {
           aggregation: 'hourly',
         };
         const filteredPoints = applyChartFilter(result.points, filter);
-        setChart(prev => ({
-          ...prev,
-          rawData: result.points,
-          data: filteredPoints,
-          filter,
-          loading: false,
-        }));
+        setChartPanels(prev => prev.map(panel => (
+          panel.id === panelId
+            ? {
+              ...panel,
+              rawData: result.points,
+              data: filteredPoints,
+              filter,
+              loading: false,
+            }
+            : panel
+        )));
       })
       .catch(err => {
-        if (chartRequestIdRef.current !== requestId) return; // stale — discard
         console.error('[Dendra Chart] ❌ Time series fetch failed:', err);
-        setChart(prev => ({
-          ...prev, loading: false,
-          error: err instanceof Error ? err.message : 'Failed to load time series',
-        }));
+        setChartPanels(prev => prev.map(panel => (
+          panel.id === panelId
+            ? {
+              ...panel,
+              loading: false,
+              error: err instanceof Error ? err.message : 'Failed to load time series',
+            }
+            : panel
+        )));
       });
-  }, [serviceInfo]);
+  }, [serviceInfo, chartPanels, activeLayer]);
 
-  const setChartFilter = useCallback((partial: Partial<DendraChartFilter>) => {
-    setChart(prev => {
-      const nextFilter: DendraChartFilter = { ...prev.filter, ...partial };
+  const setChartFilter = useCallback((panelId: string, partial: Partial<DendraChartFilter>) => {
+    setChartPanels(prev => prev.map(panel => {
+      if (panel.id !== panelId) return panel;
+      const nextFilter: DendraChartFilter = { ...panel.filter, ...partial };
       return {
-        ...prev,
+        ...panel,
         filter: nextFilter,
-        data: applyChartFilter(prev.rawData, nextFilter),
+        data: applyChartFilter(panel.rawData, nextFilter),
       };
-    });
+    }));
   }, []);
 
-  const closeChart = useCallback(() => {
-    setChart(CHART_INITIAL);
+  const closeChart = useCallback((panelId: string) => {
+    setChartPanels(prev => prev.filter(panel => panel.id !== panelId));
   }, []);
 
-  const toggleMinimizeChart = useCallback(() => {
-    setChart(prev => ({ ...prev, minimized: !prev.minimized }));
+  const toggleMinimizeChart = useCallback((panelId: string) => {
+    const nextZ = ++nextChartZIndexRef.current;
+    setChartPanels(prev => prev.map(panel => (
+      panel.id === panelId
+        ? { ...panel, minimized: !panel.minimized, zIndex: nextZ }
+        : panel
+    )));
   }, []);
 
-  // Close chart when active layer changes
+  const setChartPanelRect = useCallback((
+    panelId: string,
+    rect: Partial<Pick<DendraChartPanelState, 'x' | 'y' | 'width' | 'height'>>,
+  ) => {
+    setChartPanels(prev => prev.map(panel => (
+      panel.id === panelId
+        ? { ...panel, ...rect }
+        : panel
+    )));
+  }, []);
+
+  const bringChartToFront = useCallback((panelId: string) => {
+    const nextZ = ++nextChartZIndexRef.current;
+    setChartPanels(prev => prev.map(panel => (
+      panel.id === panelId
+        ? { ...panel, zIndex: nextZ }
+        : panel
+    )));
+  }, []);
+
+  const getChartPanel = useCallback((
+    stationId: number,
+    datastreamId: number,
+    sourceLayerId?: string,
+    sourceViewId?: string,
+  ) => {
+    const matches = chartPanels.filter(panel =>
+      panel.station?.station_id === stationId
+      && panel.summary?.datastream_id === datastreamId
+    );
+    const sourceMatches = sourceLayerId
+      ? matches.filter(panel =>
+        panel.sourceLayerId === sourceLayerId
+        && (sourceViewId == null || panel.sourceViewId === sourceViewId)
+      )
+      : matches;
+    if (sourceMatches.length === 0) return null;
+    return sourceMatches.reduce((top, panel) => (panel.zIndex > top.zIndex ? panel : top), sourceMatches[0]);
+  }, [chartPanels]);
+
+  // Persist charts for pinned layers, but clear orphaned unpinned charts when
+  // their source layer is no longer the active Dendra layer.
   useEffect(() => {
-    setChart(CHART_INITIAL);
-  }, [serviceInfo]);
+    setChartPanels(prev => prev.filter((panel) => {
+      const pinned = pinnedLayers.find(p => p.layerId === panel.sourceLayerId);
+      if (pinned) return true;
+      return activeLayer?.dataSource === 'dendra' && activeLayer.layerId === panel.sourceLayerId;
+    }));
+  }, [pinnedLayers, activeLayer?.dataSource, activeLayer?.layerId]);
 
   // Filtered stations
   const filteredStations = useMemo(() => {
@@ -389,15 +516,19 @@ export function DendraProvider({ children }: { children: ReactNode }) {
     toggleActiveOnly,
     setShowActiveOnly: setShowActiveOnlyFilter,
     filteredStations,
-    chart,
+    chartPanels,
+    getChartPanel,
     openChart,
     setChartFilter,
     closeChart,
     toggleMinimizeChart,
+    setChartPanelRect,
+    bringChartToFront,
   }), [
     currentData, serviceInfo, loading, error, dataLoaded,
     warmCache, showActiveOnly, toggleActiveOnly, setShowActiveOnlyFilter, filteredStations,
-    chart, openChart, setChartFilter, closeChart, toggleMinimizeChart,
+    chartPanels, getChartPanel, openChart, setChartFilter, closeChart, toggleMinimizeChart,
+    setChartPanelRect, bringChartToFront,
   ]);
 
   return <DendraCtx.Provider value={value}>{children}</DendraCtx.Provider>;
