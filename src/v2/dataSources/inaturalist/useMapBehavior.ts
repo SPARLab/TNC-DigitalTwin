@@ -32,7 +32,7 @@ export function useINaturalistMapBehavior(
   activeLayer: ActiveLayer | null,
   mapReady: number,
 ) {
-  const { selectedTaxa, startDate, endDate, allObservations, dataLoaded, warmCache } = useINaturalistFilter();
+  const { selectedTaxa, selectedSpecies, excludeAllSpecies, startDate, endDate, allObservations, dataLoaded, warmCache } = useINaturalistFilter();
   const { activateLayer } = useLayers();
   const { viewRef, getSpatialPolygonForLayer } = useMap();
   const spatialPolygon = getSpatialPolygonForLayer(LAYER_ID);
@@ -61,17 +61,17 @@ export function useINaturalistMapBehavior(
     if (!arcLayer || !(arcLayer instanceof GraphicsLayer)) return;
 
     populateINaturalistLayer(arcLayer, allObservations);
-    filterINaturalistLayer(arcLayer, { selectedTaxa, startDate, endDate, spatialPolygon });
+    filterINaturalistLayer(arcLayer, { selectedTaxa, selectedSpecies, excludeAllSpecies, startDate, endDate, spatialPolygon });
     populatedRef.current = true;
-  }, [isOnMap, dataLoaded, allObservations, selectedTaxa, startDate, endDate, spatialPolygon, getManagedLayer, mapReady]);
+  }, [isOnMap, dataLoaded, allObservations, selectedTaxa, selectedSpecies, excludeAllSpecies, startDate, endDate, spatialPolygon, getManagedLayer, mapReady]);
 
   // Update filter when selectedTaxa changes (instant local visibility toggle)
   useEffect(() => {
     if (!populatedRef.current) return;
     const arcLayer = getManagedLayer(LAYER_ID);
     if (!arcLayer || !(arcLayer instanceof GraphicsLayer)) return;
-    filterINaturalistLayer(arcLayer, { selectedTaxa, startDate, endDate, spatialPolygon });
-  }, [selectedTaxa, startDate, endDate, spatialPolygon, getManagedLayer]);
+    filterINaturalistLayer(arcLayer, { selectedTaxa, selectedSpecies, excludeAllSpecies, startDate, endDate, spatialPolygon });
+  }, [selectedTaxa, selectedSpecies, excludeAllSpecies, startDate, endDate, spatialPolygon, getManagedLayer]);
 
   // Map click handler: when user clicks an iNaturalist marker, activate layer + show detail view
   useEffect(() => {

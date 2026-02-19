@@ -17,7 +17,7 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| CON-INAT-01 | ⚪ Not Started | Feb 18, 2026 | Add species-level filtering (currently taxa only) | High priority; source: AF-01 |
+| CON-INAT-01 | 🟡 In Progress | Feb 19, 2026 9:56 AM | Add species-level filtering (currently taxa only) | In progress: full scientific names, common/Latin toggle, species search, count/alphabetical sort, map/pinned-view sync |
 | CON-INAT-02 | ⚪ Not Started | Feb 18, 2026 | Species hierarchy flow: taxa -> species list -> observations per species | High priority; source: AF-02 |
 | CON-INAT-03 | ⚪ Not Started | Feb 18, 2026 | Show result count in right sidebar (for example, "92 observations") | High priority; source: AF-03 |
 | CON-INAT-04 | ⚪ Not Started | Feb 18, 2026 | Investigate reptile observations appearing in ocean (scrambling vs bug) | Medium priority; source: AF-08 |

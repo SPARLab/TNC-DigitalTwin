@@ -18,6 +18,7 @@ export interface INatObservation {
   uuid: string;
   commonName: string | null;
   scientificName: string;
+  speciesName: string;
   taxonCategory: string;
   observedOn: string;
   observer: string;
@@ -27,13 +28,26 @@ export interface INatObservation {
   iNatUrl: string;
 }
 
+export interface INatSpeciesOption {
+  scientificName: string;
+  commonName: string | null;
+  taxonCategory: string | null;
+  count: number;
+}
+
 interface INaturalistContextValue {
   // Filter state
   selectedTaxa: Set<string>;
+  selectedSpecies: Set<string>;
+  excludeAllSpecies: boolean;
   startDate: string;
   endDate: string;
   toggleTaxon: (taxon: string) => void;
+  toggleSpecies: (species: string) => void;
   setSelectedTaxa: (taxa: Set<string>) => void;
+  setSelectedSpecies: (species: Set<string>) => void;
+  selectAllSpecies: () => void;
+  clearAllSpecies: () => void;
   setDateRange: (startDate: string, endDate: string) => void;
   selectAll: () => void;
   clearAll: () => void;
@@ -46,6 +60,8 @@ interface INaturalistContextValue {
   dataLoaded: boolean;
   totalServiceCount: number;
   taxonCounts: Map<string, number>;
+  speciesCounts: Map<string, number>;
+  speciesOptions: INatSpeciesOption[];
 
   // Cache lifecycle
   /** Trigger data fetch. Idempotent — no-op if already fetched or in-flight. */
@@ -67,11 +83,14 @@ function normalizeDate(raw: string | number): string {
 
 /** Transform TNC ArcGIS response to our simplified format */
 function transformObservation(obs: TNCArcGISObservation): INatObservation {
+  // Use full scientific name (typically binomial: Genus + species epithet).
+  const speciesName = obs.scientific_name?.trim() || obs.taxon_species_name?.trim() || 'Unknown species';
   return {
     id: obs.observation_id,
     uuid: obs.observation_uuid,
     commonName: obs.common_name || null,
     scientificName: obs.scientific_name,
+    speciesName,
     taxonCategory: obs.taxon_category_name || 'Unknown',
     observedOn: normalizeDate(obs.observed_on),
     observer: obs.user_name || 'Unknown',
@@ -85,6 +104,8 @@ function transformObservation(obs: TNCArcGISObservation): INatObservation {
 export function INaturalistFilterProvider({ children }: { children: ReactNode }) {
   // Filter state
   const [selectedTaxa, setSelectedTaxa] = useState<Set<string>>(new Set());
+  const [selectedSpecies, setSelectedSpecies] = useState<Set<string>>(new Set());
+  const [excludeAllSpecies, setExcludeAllSpecies] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
@@ -110,8 +131,33 @@ export function INaturalistFilterProvider({ children }: { children: ReactNode })
     });
   }, []);
 
+  const toggleSpecies = useCallback((species: string) => {
+    setExcludeAllSpecies(false);
+    setSelectedSpecies(prev => {
+      const next = new Set(prev);
+      if (next.has(species)) next.delete(species);
+      else next.add(species);
+      return next;
+    });
+  }, []);
+
   const setSelectedTaxaFilter = useCallback((taxa: Set<string>) => {
     setSelectedTaxa(new Set(taxa));
+  }, []);
+
+  const setSelectedSpeciesFilter = useCallback((species: Set<string>) => {
+    setExcludeAllSpecies(false);
+    setSelectedSpecies(new Set(species));
+  }, []);
+
+  const selectAllSpecies = useCallback(() => {
+    setExcludeAllSpecies(false);
+    setSelectedSpecies(prev => (prev.size === 0 ? prev : new Set()));
+  }, []);
+
+  const clearAllSpecies = useCallback(() => {
+    setExcludeAllSpecies(true);
+    setSelectedSpecies(prev => (prev.size === 0 ? prev : new Set()));
   }, []);
 
   const setDateRange = useCallback((nextStartDate: string, nextEndDate: string) => {
@@ -120,9 +166,17 @@ export function INaturalistFilterProvider({ children }: { children: ReactNode })
   }, []);
 
   // Idempotent: skip setState if already empty (avoids wasted re-renders)
-  const selectAll = useCallback(() => setSelectedTaxa(prev => prev.size === 0 ? prev : new Set()), []);
-  const clearAll = useCallback(() => setSelectedTaxa(prev => prev.size === 0 ? prev : new Set()), []);
-  const hasFilter = selectedTaxa.size > 0;
+  const selectAll = useCallback(() => {
+    setSelectedTaxa(prev => (prev.size === 0 ? prev : new Set()));
+    setExcludeAllSpecies(false);
+    setSelectedSpecies(prev => (prev.size === 0 ? prev : new Set()));
+  }, []);
+  const clearAll = useCallback(() => {
+    setSelectedTaxa(prev => (prev.size === 0 ? prev : new Set()));
+    setExcludeAllSpecies(false);
+    setSelectedSpecies(prev => (prev.size === 0 ? prev : new Set()));
+  }, []);
+  const hasFilter = selectedTaxa.size > 0 || selectedSpecies.size > 0 || excludeAllSpecies;
 
   /** Idempotent fetch trigger — safe to call multiple times */
   const warmCache = useCallback(() => {
@@ -142,6 +196,76 @@ export function INaturalistFilterProvider({ children }: { children: ReactNode })
     }
     return counts;
   }, [allObservations]);
+
+  // Compute species counts from locally-cached data
+  const speciesCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const obs of allObservations) {
+      if (!obs.speciesName) continue;
+      counts.set(obs.speciesName, (counts.get(obs.speciesName) ?? 0) + 1);
+    }
+    return counts;
+  }, [allObservations]);
+
+  // Species dropdown options respect selected taxa (if any) and are sorted by frequency.
+  const speciesOptions = useMemo(() => {
+    const counts = new Map<string, {
+      count: number;
+      commonNameCounts: Map<string, number>;
+      taxonCategoryCounts: Map<string, number>;
+    }>();
+    for (const obs of allObservations) {
+      if (selectedTaxa.size > 0 && !selectedTaxa.has(obs.taxonCategory)) continue;
+      if (!obs.speciesName) continue;
+      const key = obs.speciesName;
+      const next = counts.get(key) ?? {
+        count: 0,
+        commonNameCounts: new Map<string, number>(),
+        taxonCategoryCounts: new Map<string, number>(),
+      };
+      next.count += 1;
+      const commonName = obs.commonName?.trim();
+      if (commonName) {
+        next.commonNameCounts.set(commonName, (next.commonNameCounts.get(commonName) ?? 0) + 1);
+      }
+      const taxonCategory = obs.taxonCategory?.trim();
+      if (taxonCategory) {
+        next.taxonCategoryCounts.set(taxonCategory, (next.taxonCategoryCounts.get(taxonCategory) ?? 0) + 1);
+      }
+      counts.set(key, next);
+    }
+
+    return Array.from(counts.entries())
+      .sort((a, b) => {
+        if (b[1].count !== a[1].count) return b[1].count - a[1].count;
+        return a[0].localeCompare(b[0]);
+      })
+      .map(([scientificName, info]) => {
+        let commonName: string | null = null;
+        let maxCount = 0;
+        for (const [name, count] of info.commonNameCounts.entries()) {
+          if (count > maxCount) {
+            commonName = name;
+            maxCount = count;
+          }
+        }
+        let taxonCategory: string | null = null;
+        let maxTaxonCount = 0;
+        for (const [name, count] of info.taxonCategoryCounts.entries()) {
+          if (count > maxTaxonCount) {
+            taxonCategory = name;
+            maxTaxonCount = count;
+          }
+        }
+
+        return {
+          scientificName,
+          commonName,
+          taxonCategory,
+          count: info.count,
+        };
+      });
+  }, [allObservations, selectedTaxa]);
 
   // Fetch observations when warmCache() is called — spatially filtered to preserve area.
   // Lazy: does NOT run on mount. First call to warmCache() sets fetchRequested = true.
@@ -185,9 +309,23 @@ export function INaturalistFilterProvider({ children }: { children: ReactNode })
     <INaturalistFilterContext.Provider
       value={{
         selectedTaxa, startDate, endDate,
-        toggleTaxon, setSelectedTaxa: setSelectedTaxaFilter, setDateRange, selectAll, clearAll, hasFilter,
+        selectedSpecies,
+        excludeAllSpecies,
+        toggleTaxon,
+        toggleSpecies,
+        setSelectedTaxa: setSelectedTaxaFilter,
+        setSelectedSpecies: setSelectedSpeciesFilter,
+        selectAllSpecies,
+        clearAllSpecies,
+        setDateRange,
+        selectAll,
+        clearAll,
+        hasFilter,
         allObservations, loading, error, dataLoaded,
-        totalServiceCount, taxonCounts,
+        totalServiceCount,
+        taxonCounts,
+        speciesCounts,
+        speciesOptions,
         warmCache,
       }}
     >

@@ -118,11 +118,20 @@ function isServiceContainerLayer(layer: CatalogLayer | undefined): boolean {
 
 function buildINaturalistFilterSummary(filters: INaturalistViewFilters): string | undefined {
   const parts: string[] = [];
+  if (filters.excludeAllSpecies) {
+    parts.push('Species: none selected');
+  }
   if (filters.selectedTaxa.length > 0) {
     const taxonText = filters.selectedTaxa.length <= 2
       ? filters.selectedTaxa.join(' + ')
       : `${filters.selectedTaxa.length} taxa selected`;
     parts.push(`Taxa: ${taxonText}`);
+  }
+  if (filters.selectedSpecies.length > 0) {
+    const speciesText = filters.selectedSpecies.length <= 2
+      ? filters.selectedSpecies.join(' + ')
+      : `${filters.selectedSpecies.length} species selected`;
+    parts.push(`Species: ${speciesText}`);
   }
   if (filters.startDate || filters.endDate) {
     const rangeText = `${filters.startDate || 'Any'} to ${filters.endDate || 'Any'}`;
@@ -132,7 +141,7 @@ function buildINaturalistFilterSummary(filters: INaturalistViewFilters): string 
 }
 
 function getINaturalistFilterCount(filters: INaturalistViewFilters): number {
-  return filters.selectedTaxa.length + (filters.startDate || filters.endDate ? 1 : 0);
+  return filters.selectedTaxa.length + filters.selectedSpecies.length + (filters.excludeAllSpecies ? 1 : 0) + (filters.startDate || filters.endDate ? 1 : 0);
 }
 
 function buildDendraFilterSummary(filters: DendraViewFilters): string | undefined {
@@ -237,14 +246,23 @@ const TAXON_LABEL_BY_VALUE = new Map(TAXON_CONFIG.map(t => [t.value, t.label]));
 
 function buildINaturalistViewName(filters: INaturalistViewFilters): string {
   const selectedTaxa = filters.selectedTaxa || [];
+  const selectedSpecies = filters.selectedSpecies || [];
   const taxaLabels = selectedTaxa
     .map(taxon => TAXON_LABEL_BY_VALUE.get(taxon) || taxon)
     .sort((a, b) => a.localeCompare(b));
+  const speciesLabels = [...selectedSpecies].sort((a, b) => a.localeCompare(b));
 
   const taxaPart = taxaLabels.length > 0
     ? (taxaLabels.length <= 3
       ? taxaLabels.join(', ')
       : `${taxaLabels.slice(0, 2).join(', ')}, +${taxaLabels.length - 2} more`)
+    : '';
+  const speciesPart = filters.excludeAllSpecies
+    ? 'No species'
+    : speciesLabels.length > 0
+    ? (speciesLabels.length <= 2
+      ? speciesLabels.join(', ')
+      : `${speciesLabels.slice(0, 1).join(', ')}, +${speciesLabels.length - 1} more`)
     : '';
 
   const hasDate = !!(filters.startDate || filters.endDate);
@@ -252,8 +270,9 @@ function buildINaturalistViewName(filters: INaturalistViewFilters): string {
     ? `${filters.startDate || 'Any start'} to ${filters.endDate || 'Any end'}`
     : '';
 
-  if (taxaPart && datePart) return `${taxaPart} (${datePart})`;
-  if (taxaPart) return taxaPart;
+  const nonDatePart = [taxaPart, speciesPart].filter(Boolean).join(' • ');
+  if (nonDatePart && datePart) return `${nonDatePart} (${datePart})`;
+  if (nonDatePart) return nonDatePart;
   if (datePart) return `Date: ${datePart}`;
   return 'All Observations';
 }
@@ -266,8 +285,11 @@ function filtersEqual(
   if (a === b) return true;
   if (!a || !b) return false;
   if (a.startDate !== b.startDate || a.endDate !== b.endDate) return false;
+  if (!!a.excludeAllSpecies !== !!b.excludeAllSpecies) return false;
   if (a.selectedTaxa.length !== b.selectedTaxa.length) return false;
-  return a.selectedTaxa.every((t, i) => t === b.selectedTaxa[i]);
+  if (a.selectedSpecies.length !== b.selectedSpecies.length) return false;
+  return a.selectedTaxa.every((t, i) => t === b.selectedTaxa[i])
+    && a.selectedSpecies.every((s, i) => s === b.selectedSpecies[i]);
 }
 
 function buildAnimlFilterSummary(filters: AnimlViewFilters): string | undefined {
@@ -615,7 +637,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                     ...v,
                     filterCount: 0,
                     filterSummary: undefined,
-                    inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+                    inaturalistFilters: { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined },
                     animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
                     tncArcgisFilters: { whereClause: '1=1', fields: [] },
                     dendraFilters: {
@@ -645,7 +667,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           ...p,
           filterCount: 0,
           filterSummary: undefined,
-          inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+          inaturalistFilters: { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined },
           animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
           tncArcgisFilters: { whereClause: '1=1', fields: [] },
           dendraFilters: {
@@ -683,6 +705,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
 
           const normalizedFilters: INaturalistViewFilters = {
             selectedTaxa: [...filters.selectedTaxa],
+            selectedSpecies: [...filters.selectedSpecies],
+            excludeAllSpecies: !!filters.excludeAllSpecies,
             startDate: filters.startDate,
             endDate: filters.endDate,
           };
@@ -1122,7 +1146,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             views: [existingFlatView, newView],
             filterCount: 0,
             filterSummary: undefined,
-            inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+            inaturalistFilters: { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined },
             dendraFilters: {
               showActiveOnly: false,
               selectedStationId: undefined,
@@ -1263,7 +1287,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             views: [existingFlatView, newView],
             filterCount: 0,
             filterSummary: undefined,
-            inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+            inaturalistFilters: { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined },
             animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
             dendraFilters: {
               showActiveOnly: false,
@@ -1380,7 +1404,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             views: [{ id: targetViewId, ...baseView }],
             filterCount: 0,
             filterSummary: undefined,
-            inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+            inaturalistFilters: { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined },
             animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
             dendraFilters: undefined,
             dataoneFilters: undefined,
@@ -1432,7 +1456,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             isNameCustom: false,
             isVisible: false,
             filterCount: 0,
-            inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+            inaturalistFilters: { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined },
             animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
             dendraFilters: isDendraLayer
               ? {
@@ -1493,7 +1517,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
               }
             )
             : buildINaturalistViewName(
-              p.inaturalistFilters || { selectedTaxa: [], startDate: undefined, endDate: undefined }
+              p.inaturalistFilters || { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined }
             )
         );
         const view1 = {
@@ -1516,7 +1540,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           isNameCustom: false,
           isVisible: false,
           filterCount: 0,
-          inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+          inaturalistFilters: { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined },
           animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
           dendraFilters: isDendraLayer
             ? {
@@ -1550,7 +1574,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           views: [view1, view2],
           filterCount: 0,
           filterSummary: undefined,
-          inaturalistFilters: { selectedTaxa: [], startDate: undefined, endDate: undefined },
+          inaturalistFilters: { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined },
           animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
           dendraFilters: isDendraLayer
             ? {
@@ -1720,7 +1744,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
               recordType: 'plan',
             })
           : buildINaturalistViewName(
-            targetView.inaturalistFilters || { selectedTaxa: [], startDate: undefined, endDate: undefined }
+            targetView.inaturalistFilters || { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined }
           );
         const nextName = trimmedName || autoName;
         const nextIsCustom = trimmedName.length > 0;

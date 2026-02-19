@@ -29,14 +29,21 @@ import { EditFiltersCard } from '../shared/EditFiltersCard';
 export function INaturalistBrowseTab() {
   const {
     selectedTaxa,
+    selectedSpecies,
+    excludeAllSpecies,
     startDate,
     endDate,
     toggleTaxon,
+    toggleSpecies,
     setSelectedTaxa,
+    setSelectedSpecies,
+    selectAllSpecies,
+    clearAllSpecies,
     setDateRange,
     selectAll,
     clearAll,
     allObservations,
+    speciesOptions,
   } = useINaturalistFilter();
   const { activeLayer, lastEditFiltersRequest, lastFiltersClearedTimestamp, getPinnedByLayerId, syncINaturalistFilters } = useLayers();
 
@@ -54,10 +61,12 @@ export function INaturalistBrowseTab() {
 
   const filters: INatFilters = useMemo(() => ({
     selectedTaxa,
+    selectedSpecies,
+    excludeAllSpecies,
     searchTerm: debouncedSearchTerm,
     startDate: startDate || undefined,
     endDate: endDate || undefined,
-  }), [selectedTaxa, debouncedSearchTerm, startDate, endDate]);
+  }), [selectedTaxa, selectedSpecies, excludeAllSpecies, debouncedSearchTerm, startDate, endDate]);
 
   // Data fetching
   const {
@@ -71,6 +80,9 @@ export function INaturalistBrowseTab() {
 
   // Dropdown state for filter section
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isSpeciesFilterOpen, setIsSpeciesFilterOpen] = useState(false);
+  const [speciesSearchTerm, setSpeciesSearchTerm] = useState('');
+  const [speciesSortMode, setSpeciesSortMode] = useState<'count' | 'alphabetical'>('count');
 
   // Auto-open detail view when map marker is clicked (activeLayer.featureId is set)
   useEffect(() => {
@@ -114,13 +126,42 @@ export function INaturalistBrowseTab() {
     }
   }, [viewRef]);
 
-  const hasFilter = selectedTaxa.size > 0;
-  const filterCount = hasFilter ? selectedTaxa.size : TAXON_CATEGORIES.length;
+  const hasTaxaFilter = selectedTaxa.size > 0;
+  const hasSpeciesFilter = selectedSpecies.size > 0 || excludeAllSpecies;
+  const hasFilter = hasTaxaFilter || hasSpeciesFilter;
+  const filterCount = hasTaxaFilter ? selectedTaxa.size : TAXON_CATEGORIES.length;
+  const speciesFilterCount = hasSpeciesFilter ? selectedSpecies.size : speciesOptions.length;
   const hasActiveSearch = debouncedSearchTerm.trim().length > 0;
   const hasDateFilter = !!(startDate || endDate);
   const hasStaleResults = allObservations.length > 0;
   const showInitialLoading = loading && !hasStaleResults;
   const showRefreshLoading = loading && hasStaleResults;
+  const normalizedSpeciesSearch = speciesSearchTerm.trim().toLowerCase();
+
+  const displayedSpeciesOptions = useMemo(() => {
+    const filtered = speciesOptions.filter((option) => {
+      if (!normalizedSpeciesSearch) return true;
+      const scientific = option.scientificName.toLowerCase();
+      const common = option.commonName?.toLowerCase() || '';
+      return scientific.includes(normalizedSpeciesSearch) || common.includes(normalizedSpeciesSearch);
+    });
+
+    const sorted = [...filtered];
+    if (speciesSortMode === 'alphabetical') {
+      sorted.sort((a, b) => a.scientificName.localeCompare(b.scientificName));
+      return sorted;
+    }
+    sorted.sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count;
+      return a.scientificName.localeCompare(b.scientificName);
+    });
+    return sorted;
+  }, [speciesOptions, normalizedSpeciesSearch, speciesSortMode]);
+
+  const taxonLabelByValue = useMemo(
+    () => new Map(TAXON_CATEGORIES.map(t => [t.value, t.label])),
+    []
+  );
 
   // ── Hydrate Browse filters (ONE-SHOT, not continuous) ──────────────────────
   // Runs ONLY when the user explicitly triggers it:
@@ -155,9 +196,14 @@ export function INaturalistBrowseTab() {
     if (!sourceFilters) return;
 
     setSelectedTaxa(new Set(sourceFilters.selectedTaxa));
+    if (sourceFilters.excludeAllSpecies) {
+      clearAllSpecies();
+    } else {
+      setSelectedSpecies(new Set(sourceFilters.selectedSpecies || []));
+    }
     setDateRange(sourceFilters.startDate || '', sourceFilters.endDate || '');
   // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally gated by ref guards
-  }, [activeLayer?.layerId, activeLayer?.viewId, lastEditFiltersRequest, lastFiltersClearedTimestamp, getPinnedByLayerId, setSelectedTaxa, setDateRange]);
+  }, [activeLayer?.layerId, activeLayer?.viewId, lastEditFiltersRequest, lastFiltersClearedTimestamp, getPinnedByLayerId, setSelectedTaxa, setSelectedSpecies, clearAllSpecies, setDateRange]);
 
   // Keep Map Layers widget metadata in sync with the active iNaturalist view.
   // Depends on isPinned so the effect re-fires when the layer transitions from
@@ -169,6 +215,8 @@ export function INaturalistBrowseTab() {
       activeLayer.layerId,
       {
         selectedTaxa: Array.from(selectedTaxa).sort(),
+        selectedSpecies: Array.from(selectedSpecies).sort(),
+        excludeAllSpecies,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
       },
@@ -181,6 +229,8 @@ export function INaturalistBrowseTab() {
     activeLayer?.isPinned,
     fetchedCount,
     selectedTaxa,
+    selectedSpecies,
+    excludeAllSpecies,
     startDate,
     endDate,
     syncINaturalistFilters,
@@ -274,22 +324,22 @@ export function INaturalistBrowseTab() {
           {isFilterOpen && (
             <div id="inat-filter-dropdown-content" className="mt-2 space-y-1 max-h-64 overflow-y-auto">
               {TAXON_CATEGORIES.map(taxon => {
-                const isSelected = !hasFilter || selectedTaxa.has(taxon.value);
+                const isTaxonSelected = !hasTaxaFilter || selectedTaxa.has(taxon.value);
                 return (
                   <label
                     key={taxon.value}
                     className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors ${
-                      isSelected ? 'bg-emerald-50 hover:bg-emerald-100' : 'bg-gray-50 hover:bg-gray-100 opacity-60'
+                      isTaxonSelected ? 'bg-emerald-50 hover:bg-emerald-100' : 'bg-gray-50 hover:bg-gray-100 opacity-60'
                     }`}
                   >
                     <input
                       type="checkbox"
-                      checked={isSelected}
+                      checked={isTaxonSelected}
                       onChange={() => toggleTaxon(taxon.value)}
                       className="w-4 h-4 accent-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                     />
                     <span className="text-[10px]">{taxon.emoji}</span>
-                    <span className={`text-sm flex-1 ${isSelected ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
+                    <span className={`text-sm flex-1 ${isTaxonSelected ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
                       {taxon.label}
                     </span>
                   </label>
@@ -302,6 +352,155 @@ export function INaturalistBrowseTab() {
           <p className="text-xs text-gray-500 italic mt-2">
             Tip: You can also filter using the legend widget on the map
           </p>
+        </div>
+
+        {/* Species filter section */}
+        <div id="inat-species-filter-section" className="rounded-lg border border-emerald-100 bg-white p-3">
+          <div id="inat-species-filter-header" className="flex items-center justify-between">
+            <span id="inat-species-filter-title" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              Filter Species
+            </span>
+          </div>
+          <button
+            id="inat-species-filter-dropdown-trigger"
+            onClick={() => setIsSpeciesFilterOpen(!isSpeciesFilterOpen)}
+            className="w-full mt-2 flex items-center justify-between px-3 py-2 bg-white border border-gray-200
+                       rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors"
+          >
+            <span id="inat-species-filter-dropdown-label" className="text-sm text-gray-700">
+              {speciesOptions.length === 0
+                ? 'No species available'
+                : hasSpeciesFilter
+                  ? `${speciesFilterCount} species selected`
+                  : `All species (${speciesFilterCount})`}
+            </span>
+            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isSpeciesFilterOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {isSpeciesFilterOpen && speciesOptions.length > 0 && (
+            <div id="inat-species-filter-dropdown-content" className="mt-2 space-y-2">
+              <div id="inat-species-controls" className="space-y-2">
+                <div id="inat-species-toolbar" className="flex items-center justify-between gap-2">
+                  <div id="inat-species-sort-toggle-group" className="inline-flex items-center rounded-md border border-gray-200 overflow-hidden bg-white">
+                    <button
+                      id="inat-species-sort-count-button"
+                      onClick={() => setSpeciesSortMode('count')}
+                      className={`px-2.5 py-1 text-xs font-medium transition-colors ${
+                        speciesSortMode === 'count'
+                          ? 'bg-emerald-50 text-emerald-700'
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      By Count
+                    </button>
+                    <button
+                      id="inat-species-sort-az-button"
+                      onClick={() => setSpeciesSortMode('alphabetical')}
+                      className={`px-2.5 py-1 text-xs font-medium border-l border-gray-200 transition-colors ${
+                        speciesSortMode === 'alphabetical'
+                          ? 'bg-emerald-50 text-emerald-700'
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      A-Z
+                    </button>
+                  </div>
+                  <div id="inat-species-bulk-actions" className="flex items-center justify-start gap-2 px-0.5">
+                    <button
+                      id="inat-species-select-all"
+                      onClick={selectAllSpecies}
+                      className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+                    >
+                      Select All
+                    </button>
+                    <span id="inat-species-actions-divider" className="text-gray-300 text-xs select-none">|</span>
+                    <button
+                      id="inat-species-clear-all"
+                      onClick={clearAllSpecies}
+                      className="text-xs text-gray-500 hover:text-gray-700 font-medium"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                </div>
+
+                <div id="inat-species-search-wrapper" className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                  <input
+                    id="inat-species-search-input"
+                    type="text"
+                    value={speciesSearchTerm}
+                    onChange={(e) => setSpeciesSearchTerm(e.target.value)}
+                    placeholder="Search species..."
+                    className="w-full pl-8 pr-8 py-1.5 text-sm border border-gray-200 rounded-md bg-white
+                               focus:outline-none focus:border-gray-300 focus:shadow-[0_0_0_1px_rgba(107,114,128,0.2)]"
+                  />
+                  {speciesSearchTerm && (
+                    <button
+                      id="inat-species-search-clear-button"
+                      onClick={() => setSpeciesSearchTerm('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      aria-label="Clear species search"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div id="inat-species-results-scroll-region" className="max-h-64 overflow-y-auto space-y-1 pr-1">
+                {displayedSpeciesOptions.length === 0 && (
+                  <p id="inat-species-empty-message" className="text-xs text-gray-500 py-2 px-1">
+                    No species match your search.
+                  </p>
+                )}
+
+                {displayedSpeciesOptions.map((speciesOption, speciesIndex) => {
+                  const scientificName = speciesOption.scientificName;
+                  const commonName = speciesOption.commonName;
+                  const taxonLabel = speciesOption.taxonCategory
+                    ? (taxonLabelByValue.get(speciesOption.taxonCategory) || speciesOption.taxonCategory)
+                    : null;
+                  const primaryLabel = commonName || scientificName;
+                  const secondaryBase = commonName ? scientificName : 'No common name';
+                  const secondaryLabel = taxonLabel ? `${secondaryBase} (${taxonLabel})` : secondaryBase;
+                  const speciesSlug = scientificName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'item';
+                  const speciesId = `species-${speciesIndex}-${speciesSlug}`;
+                  const isSpeciesSelected = !hasSpeciesFilter || selectedSpecies.has(scientificName);
+                  return (
+                    <label
+                      id={`inat-species-row-${speciesId}`}
+                      key={scientificName}
+                      className={`flex items-center justify-between gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors ${
+                        isSpeciesSelected ? 'bg-emerald-50 hover:bg-emerald-100' : 'bg-gray-50 hover:bg-gray-100 opacity-60'
+                      }`}
+                    >
+                      <div id={`inat-species-row-main-${speciesId}`} className="flex items-center gap-2 min-w-0">
+                        <input
+                          id={`inat-species-checkbox-${speciesId}`}
+                          type="checkbox"
+                          checked={isSpeciesSelected}
+                          onChange={() => toggleSpecies(scientificName)}
+                          className="w-4 h-4 accent-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                        />
+                        <div id={`inat-species-row-label-group-${speciesId}`} className="min-w-0">
+                          <p id={`inat-species-row-label-${speciesId}`} className={`text-sm truncate ${isSpeciesSelected ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
+                            {primaryLabel}
+                          </p>
+                          <p id={`inat-species-row-secondary-${speciesId}`} className="text-[11px] text-gray-500 truncate">
+                            {secondaryLabel}
+                          </p>
+                        </div>
+                      </div>
+                      <span id={`inat-species-row-count-${speciesId}`} className="text-xs text-gray-500">
+                        {speciesOption.count.toLocaleString()}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Date range filter */}
