@@ -34,7 +34,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 0 | Foundation | 🟢 Complete | 0 blocking | `v2/foundation` | No — parallel branches ready |
 | 1 | iNaturalist | 🟢 Complete | 0 | `v2/inaturalist` | No |
 | 2 | ANiML | 🟡 In Progress | ~4 tasks | `v2/animl` | No |
-| 3 | Dendra | 🟡 In Progress | 4 | `v2/dendra` | No |
+| 3 | Dendra | 🟡 In Progress | 3 | `v2/dendra` | No |
 | 4 | DataOne | 🟢 Complete | 0 | `v2/dataone` | No |
 | 5 | Export Builder | 🟢 Complete | 0 | `v2/export-builder` | No |
 | 6 | TNC ArcGIS Services | 🟡 In Progress | 9 tasks | `v2/tnc-arcgis` | No |
@@ -52,7 +52,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 |-------|-----|-----------|
 | 0 | [phase-0-foundation.md](IMPLEMENTATION/phases/phase-0-foundation.md) | 0.6 Map Feature Highlight (if pending); 0.9 ✅ complete |
 | 2 | [phase-2-animl.md](IMPLEMENTATION/phases/phase-2-animl.md) | ~4 tasks |
-| 3 | [phase-3-dendra.md](IMPLEMENTATION/phases/phase-3-dendra.md) | 4 tasks (CON-DENDRA-03, 06–08) |
+| 3 | [phase-3-dendra.md](IMPLEMENTATION/phases/phase-3-dendra.md) | 3 tasks (CON-DENDRA-06–08) |
 | 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 9 tasks |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) | 1 task (10.7) |
 
@@ -302,6 +302,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 19, 2026 | Phase 3 | **CON-DENDRA-03 complete.** Multi-stream selection across stations: stream-name filtering, in-detail station switcher, no reset requirement. | Cursor |
 | Feb 19, 2026 | Phase 3 | **CON-DENDRA-02 complete.** Multi-panel Dendra time series charts: draggable/resizable/minimizable, map-constrained, bottom-right placement, persistence across layer/pin transitions, visibility tied to pinned layer/view. | Cursor |
 | Feb 19, 2026 | Phase 3 | **CON-DENDRA-01 complete.** Map↔sidebar two-way station sync, station header flash, Edit Filters fix, Stations header, parallel sidebar activation on map click. | Cursor |
 | Feb 18, 2026 | Docs | **Archive + consolidation.** Merged development-task-tracker into master-plan. Master-plan now high-level only (phase counts, no task lists). Completed tasks archived. development-task-tracker.md removed. | Claude |

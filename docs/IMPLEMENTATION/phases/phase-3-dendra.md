@@ -1,7 +1,7 @@
 # Phase 3: Dendra Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 3 / 7 tasks (completed tasks 3.1–3.9 archived Feb 18, 2026)  
+**Progress:** 4 / 7 tasks (completed tasks 3.1–3.9 archived Feb 18, 2026)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-3-dendra-completed.md`  
 **Branch:** `v2/dendra`  
 **Depends On:** Phase 0 (Foundation)  
@@ -16,7 +16,7 @@
 |----|--------|---------------------------|------------------|-------|
 | CON-DENDRA-01 | 🟢 Complete | Feb 19, 2026 | Map click on station syncs to right sidebar and opens station | High priority; map-first |
 | CON-DENDRA-02 | 🟢 Complete | Feb 19, 2026 | Multiple time series charts side-by-side; draggable/resizable/minimizable within map area bounds | High priority |
-| CON-DENDRA-03 | 🟡 In Progress | Feb 19, 2026 | Multi-stream selection across stations with stream-name filtering and no reset requirement | High priority |
+| CON-DENDRA-03 | 🟢 Complete | Feb 19, 2026 | Multi-stream selection across stations with stream-name filtering and no reset requirement | High priority |
 | CON-DENDRA-04 | 🟢 Complete | Feb 19, 2026 | Surface pinned-stream counts/icons across Map Layers, stream rows, and station cards | Dynamic labels, chart close fix, sync across views |
 | CON-DENDRA-06 | ⚪ Not Started | Feb 18, 2026 | Review "Update View" versus "Save as New View" language and sync behavior | Low priority |
 | CON-DENDRA-07 | ⚪ Not Started | Feb 18, 2026 | Add icon diagram for station to data stream hierarchy onboarding | Low priority |
@@ -63,7 +63,7 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 |----|------|--------|----------|-------|
 | CON-DENDRA-01 | Map click station -> sidebar station sync | 🟢 Complete | | Two-way sync, flash, Edit Filters fix, Stations header |
 | CON-DENDRA-02 | Multi-chart compare (draggable/resizable/minimizable, map-constrained) | 🟢 Complete | | See Task Details |
-| CON-DENDRA-03 | Multi-stream cross-station selection UX | 🟡 In Progress | | Stream-name filtering + in-detail station switcher implementation started |
+| CON-DENDRA-03 | Multi-stream cross-station selection UX | 🟢 Complete | | Stream-name filtering, in-detail station switcher, no reset requirement |
 | CON-DENDRA-04 | Pinned-stream visibility and count cues across map/sidebar | 🟢 Complete | | See Task Details |
 | CON-DENDRA-06 | Review update/save language | ⚪ Not Started | | Intake from consolidated feedback |
 | CON-DENDRA-07 | Station->stream hierarchy onboarding diagram | ⚪ Not Started | | Intake from consolidated feedback |
@@ -136,17 +136,14 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 **Files touched:** DendraContext.tsx, DendraTimeSeriesPanel.tsx, StationDetailView.tsx, MapContainer.tsx, dendra adapter (FloatingPanel removed from adapter).
 
-### CON-DENDRA-03 Implementation Notes (In Progress — Feb 19, 2026)
+### CON-DENDRA-03 Implementation Notes (Feb 19, 2026)
 
-**Implemented so far:**
-- Added stream-name filter input in Browse tab to narrow station results by datastream name match.
-- Carried stream-name filter into Station Detail view so users keep comparison context while drilling in.
-- Added in-detail station switcher (`Switch Station`) so users can move between matching stations without backing out/resetting.
-- Datastream cards now respect stream-name filter and show filtered counts.
-
-**Next checks before completion:**
-- Verify expected workflow with real use case ("air temp avg across stations") and tune matching behavior if needed.
-- Confirm whether auto-opening same-named stream on station switch is desired or should remain manual.
+**Implemented:**
+- Stream-name filter input in Browse tab narrows station results by datastream name match.
+- Stream-name filter carried into Station Detail view so users keep comparison context while drilling in.
+- In-detail station switcher (`Switch Station`) lets users move between matching stations without backing out or resetting.
+- Datastream cards respect stream-name filter and show filtered counts.
+- No reset requirement: users can compare streams across stations without losing filter context.
 
 ### CON-DENDRA-04 Scope Notes (Feb 19, 2026)
 
@@ -266,6 +263,7 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 19, 2026 | CON-DENDRA-03 | **Complete.** Multi-stream selection across stations: stream-name filtering, in-detail station switcher, no reset requirement. See Task Details. | Cursor |
 | Feb 19, 2026 | CON-DENDRA-04 | **Complete.** Pinned-stream visibility across Map Layers, right sidebar, and station cards. Dynamic child-view labels; chart close fix; effective active view for sync. See Task Details. | Cursor |
 | Feb 19, 2026 | CON-DENDRA-04 | **Started implementation.** Added active-child-view pin count indicators on station cards, datastream pin/unpin affordance in station detail, and child-view pin counts in Map Layers widget. | Cursor |
 | Feb 19, 2026 | CON-DENDRA-04 | **Re-scoped.** Replaced "auto-expand Map Layers widget" with pinned-stream visibility/count UX: count+pin indicators in Map Layers child views, datastream rows, and station cards (pin indicator placed left of `Active`). Added acceptance criteria + one count-scope decision question. | Cursor |
