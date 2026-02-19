@@ -14,6 +14,7 @@ import { StationDetailView } from './StationDetailView';
 import type { DendraStation, DendraSummary } from '../../../services/dendraStationService';
 import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { SpatialQuerySection } from '../shared/SpatialQuerySection';
+import { EditFiltersCard } from '../shared/EditFiltersCard';
 
 export function DendraBrowseTab() {
   const {
@@ -108,47 +109,50 @@ export function DendraBrowseTab() {
 
   return (
     <div id="dendra-browse-tab" className="space-y-3">
-      {/* Filter section */}
-      <div id="dendra-filter-section" className="bg-slate-50 rounded-lg p-3 space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-            Filter Stations
-          </span>
-          <span className="text-xs text-gray-400">
-            {filteredStations.length} of {stationCount}
-          </span>
+      <EditFiltersCard id="dendra-edit-filters-card">
+        {/* Filter section */}
+        <div id="dendra-filter-section" className="rounded-lg border border-emerald-100 bg-white p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              Filter Stations
+            </span>
+            <span className="text-xs text-gray-400">
+              {filteredStations.length} of {stationCount}
+            </span>
+          </div>
+
+          {/* Active only toggle */}
+          <label
+            id="dendra-active-filter"
+            className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors ${
+              showActiveOnly
+                ? 'bg-emerald-50 hover:bg-emerald-100'
+                : 'bg-gray-50 hover:bg-gray-100'
+            }`}
+          >
+            <input
+              id="dendra-active-filter-checkbox"
+              type="checkbox"
+              checked={showActiveOnly}
+              onChange={toggleActiveOnly}
+              className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+            />
+            <span className={`text-sm flex-1 ${showActiveOnly ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
+              Active stations only
+            </span>
+            {inactiveCount > 0 && (
+              <span className="text-xs text-gray-400">
+                ({inactiveCount} inactive)
+              </span>
+            )}
+          </label>
         </div>
 
-        {/* Active only toggle */}
-        <label
-          id="dendra-active-filter"
-          className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors ${
-            showActiveOnly
-              ? 'bg-emerald-50 hover:bg-emerald-100'
-              : 'bg-gray-50 hover:bg-gray-100'
-          }`}
-        >
-          <input
-            type="checkbox"
-            checked={showActiveOnly}
-            onChange={toggleActiveOnly}
-            className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
-          />
-          <span className={`text-sm flex-1 ${showActiveOnly ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
-            Active stations only
-          </span>
-          {inactiveCount > 0 && (
-            <span className="text-xs text-gray-400">
-              ({inactiveCount} inactive)
-            </span>
-          )}
-        </label>
-      </div>
-
-      <SpatialQuerySection
-        id="dendra-spatial-query-section"
-        layerId={activeLayer?.layerId ?? 'dendra-micromet-weather'}
-      />
+        <SpatialQuerySection
+          id="dendra-spatial-query-section"
+          layerId={activeLayer?.layerId ?? 'dendra-micromet-weather'}
+        />
+      </EditFiltersCard>
 
       {/* Loading state */}
       {loading && !dataLoaded && (

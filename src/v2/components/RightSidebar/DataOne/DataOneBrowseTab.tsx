@@ -12,6 +12,7 @@ import { InlineLoadingRow, RefreshLoadingRow } from '../../shared/loading/Loadin
 import { DatasetListView } from './DatasetListView';
 import { DatasetDetailView } from './DatasetDetailView';
 import { SpatialQuerySection } from '../shared/SpatialQuerySection';
+import { EditFiltersCard } from '../shared/EditFiltersCard';
 
 const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 500;
@@ -352,7 +353,7 @@ export function DataOneBrowseTab() {
         Showing {datasets.length} of {totalCount} datasets.
       </div>
 
-      <div id="dataone-filter-panel" className="rounded-lg bg-slate-50 p-3 space-y-3">
+      <EditFiltersCard id="dataone-edit-filters-card">
         <div id="dataone-search-row" className="relative">
           <Search id="dataone-search-icon" className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
@@ -464,7 +465,7 @@ export function DataOneBrowseTab() {
             </button>
           )}
         </div>
-      </div>
+      </EditFiltersCard>
 
       {showInitialLoading && (
         <InlineLoadingRow id="dataone-initial-loading" message="Loading datasets..." />

@@ -17,6 +17,7 @@ import { DateFilterSection } from './DateFilterSection';
 import { ImageList } from './ImageList';
 import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { SpatialQuerySection } from '../shared/SpatialQuerySection';
+import { EditFiltersCard } from '../shared/EditFiltersCard';
 
 const PAGE_SIZE = 20;
 const FETCH_DEBOUNCE_MS = 300;
@@ -221,45 +222,47 @@ export function AnimlBrowseTab() {
 
   return (
     <div id="animl-browse-tab" className="h-full min-h-0 flex flex-col gap-3">
-      {/* Date range filter — above species and cameras */}
-      <DateFilterSection
-        id="animl-filter-date"
-        startDate={startDate}
-        endDate={endDate}
-        onDateChange={setDateRange}
-        onClear={clearDateRange}
-      />
+      <EditFiltersCard id="animl-edit-filters-card">
+        {/* Date range filter — above species and cameras */}
+        <DateFilterSection
+          id="animl-filter-date"
+          startDate={startDate}
+          endDate={endDate}
+          onDateChange={setDateRange}
+          onClear={clearDateRange}
+        />
 
-      <SpatialQuerySection id="animl-spatial-query-section" layerId="animl-camera-traps" />
+        <SpatialQuerySection id="animl-spatial-query-section" layerId="animl-camera-traps" />
 
-      {/* Species filter section — expanded by default */}
-      <FilterSection
-        id="animl-filter-species"
-        label="Species"
-        icon={<PawPrint className="w-4 h-4" />}
-        itemIcon={<PawPrint className="w-3.5 h-3.5" />}
-        items={speciesItems}
-        selectedKeys={selectedAnimals}
-        onToggle={toggleAnimal}
-        onSelectAll={selectAllAnimals}
-        onClear={selectAll}
-        defaultExpanded
-        searchPlaceholder="Search species..."
-      />
+        {/* Species filter section — expanded by default */}
+        <FilterSection
+          id="animl-filter-species"
+          label="Species"
+          icon={<PawPrint className="w-4 h-4" />}
+          itemIcon={<PawPrint className="w-3.5 h-3.5" />}
+          items={speciesItems}
+          selectedKeys={selectedAnimals}
+          onToggle={toggleAnimal}
+          onSelectAll={selectAllAnimals}
+          onClear={selectAll}
+          defaultExpanded
+          searchPlaceholder="Search species..."
+        />
 
-      {/* Camera filter section — collapsed by default */}
-      <FilterSection
-        id="animl-filter-cameras"
-        label="Cameras"
-        icon={<Camera className="w-4 h-4" />}
-        itemIcon={<Camera className="w-3.5 h-3.5" />}
-        items={cameraItems}
-        selectedKeys={selectedCameraKeys}
-        onToggle={(key) => toggleCamera(Number(key))}
-        onSelectAll={selectAllCameras}
-        onClear={clearCameras}
-        searchPlaceholder="Search cameras..."
-      />
+        {/* Camera filter section — collapsed by default */}
+        <FilterSection
+          id="animl-filter-cameras"
+          label="Cameras"
+          icon={<Camera className="w-4 h-4" />}
+          itemIcon={<Camera className="w-3.5 h-3.5" />}
+          items={cameraItems}
+          selectedKeys={selectedCameraKeys}
+          onToggle={(key) => toggleCamera(Number(key))}
+          onSelectAll={selectAllCameras}
+          onClear={clearCameras}
+          searchPlaceholder="Search cameras..."
+        />
+      </EditFiltersCard>
 
       {/* Result count bar */}
       <div id="animl-result-count" className="flex items-center justify-between py-2 px-1">

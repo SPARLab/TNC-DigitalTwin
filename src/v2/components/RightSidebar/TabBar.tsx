@@ -15,7 +15,11 @@ const TABS: { id: SidebarTab; label: string }[] = [
   { id: 'browse', label: 'Browse' },
 ];
 
-export function TabBar({ activeTab, onTabChange, showBrowseTab = true }: TabBarProps) {
+export function TabBar({
+  activeTab,
+  onTabChange,
+  showBrowseTab = true,
+}: TabBarProps) {
   const tabs = showBrowseTab ? TABS : TABS.filter(tab => tab.id !== 'browse');
 
   return (

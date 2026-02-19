@@ -104,10 +104,18 @@ export function RightSidebar() {
       {activeLayer ? (
         <>
           <SidebarHeader activeLayer={activeLayer} onClose={deactivateLayer} shouldFlash={shouldFlash} />
-          <TabBar activeTab={activeTab} onTabChange={handleUserTabChange} showBrowseTab={showBrowseTab} />
+          <TabBar
+            activeTab={activeTab}
+            onTabChange={handleUserTabChange}
+            showBrowseTab={showBrowseTab}
+          />
 
           {/* Tab content — delegated to data source adapter */}
-          <div className="flex-1 overflow-y-auto p-4 scroll-area-right-sidebar" role="tabpanel">
+          <div
+            id="right-sidebar-tab-panel"
+            className="flex-1 overflow-y-auto p-4 scroll-area-right-sidebar"
+            role="tabpanel"
+          >
             {adapter ? (
               activeTab === 'overview' ? (
                 <adapter.OverviewTab onBrowseClick={() => handleUserTabChange('browse')} />
