@@ -59,7 +59,7 @@ export function PinnedLayersSection({
   onRemoveView,
   onRenameView,
 }: PinnedLayersSectionProps) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [justDroppedId, setJustDroppedId] = useState<string | null>(null);
   const [justPinnedId, setJustPinnedId] = useState<string | null>(null);
   const [exitingId, setExitingId] = useState<string | null>(null);
@@ -69,11 +69,29 @@ export function PinnedLayersSection({
 
   const EXIT_DURATION_MS = 400;
 
+  const toggleExpandedLayer = (layerPinnedId: string) => {
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(layerPinnedId)) {
+        next.delete(layerPinnedId);
+      } else {
+        next.add(layerPinnedId);
+      }
+      return next;
+    });
+  };
+
   // Remove with exit animation: collapse + fade, then actually remove
   const handleRemove = (pinnedId: string) => {
     setExitingId(pinnedId);
     setTimeout(() => {
       onRemove(pinnedId);
+      setExpandedIds(prev => {
+        if (!prev.has(pinnedId)) return prev;
+        const next = new Set(prev);
+        next.delete(pinnedId);
+        return next;
+      });
       setExitingId(null);
     }, EXIT_DURATION_MS);
   };
@@ -85,14 +103,33 @@ export function PinnedLayersSection({
       setLastActiveLayerId(activeLayerId);
       const activePinned = layers.find(l => l.layerId === activeLayerId);
       if (activePinned) {
-        // Active layer IS pinned → expand it (only on first activation)
-        setExpandedId(activePinned.id);
-      } else {
-        // Active layer is not in pinned list → collapse all
-        setExpandedId(null);
+        // Active layer IS pinned → expand it without collapsing other rows
+        setExpandedIds(prev => {
+          if (prev.has(activePinned.id)) return prev;
+          const next = new Set(prev);
+          next.add(activePinned.id);
+          return next;
+        });
       }
     }
   }, [activeLayerId, lastActiveLayerId, layers]);
+
+  // Keep expansion state aligned with currently pinned rows
+  useEffect(() => {
+    setExpandedIds(prev => {
+      const currentLayerIds = new Set(layers.map(l => l.id));
+      let changed = false;
+      const next = new Set<string>();
+      prev.forEach(id => {
+        if (currentLayerIds.has(id)) {
+          next.add(id);
+        } else {
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [layers]);
 
   // Detect newly pinned layers and trigger slide-down animation
   useEffect(() => {
@@ -182,12 +219,12 @@ export function PinnedLayersSection({
                     key={layer.id}
                     layer={layer}
                     isDataSourceLoading={loadingByLayerId.get(layer.layerId) ?? false}
-                    isExpanded={expandedId === layer.id}
+                    isExpanded={expandedIds.has(layer.id)}
                     showDragHandle={showDragHandles}
                     justDropped={justDroppedId === layer.id}
                     justPinned={isJustPinned}
                     countDisplayMode={countDisplayMode}
-                    onToggleExpand={() => setExpandedId(prev => prev === layer.id ? null : layer.id)}
+                    onToggleExpand={() => toggleExpandedLayer(layer.id)}
                     onToggleVisibility={() => onToggleVisibility(layer.id)}
                     onRemove={() => handleRemove(layer.id)}
                     onActivate={() => onActivate?.(layer.layerId)}

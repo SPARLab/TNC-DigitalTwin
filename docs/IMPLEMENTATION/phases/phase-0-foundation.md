@@ -34,7 +34,7 @@ Set up the V2 application shell, routing, state management, and shared component
 | CON-GL-02 | 🟢 Complete | Feb 18, 2026 (implemented) | Spatial filter UI in right sidebar under date range | Added shared Spatial Query section under date controls in iNaturalist/ANiML/DataONE; included in Dendra Browse filter stack |
 | CON-GL-02a | 🟢 Complete | Feb 18, 2026 (implemented) | Per-layer spatial polygons | Spatial query state now stores one polygon per layer ID; each data source applies its own stored polygon for filtering |
 | CON-GL-02b | 🟢 Complete | Feb 18, 2026 (implemented) | Hide polygon when layer inactive; keep filter | Map now renders only the active layer polygon while inactive layer polygons remain stored and continue filtering their respective layers |
-| CON-GL-04 | ⚪ Not Started | Feb 18, 2026 | Allow multiple expanded layers in Map Layers widget | High priority |
+| CON-GL-04 | 🟢 Complete | Feb 18, 2026 (implemented) | Allow multiple expanded layers in Map Layers widget | Map Layers now supports multi-expand (open one row no longer collapses others); active-layer auto-expand adds to existing expanded set |
 | CON-GL-05 | ⚪ Not Started | Feb 18, 2026 | Edit Filters visual feedback linking widget to right sidebar | High priority |
 | CON-GL-06 | ⚪ Not Started | Feb 18, 2026 | Add "Edit Filters" section header in right sidebar | Medium priority |
 | CON-GL-07 | ⚪ Not Started | Feb 18, 2026 | Fix map and sidebar filter sync drift bug | High priority bug |
@@ -54,7 +54,7 @@ Set up the V2 application shell, routing, state management, and shared component
 |----|------|--------|----------|-------|
 | CON-GL-01 | Spatial queries across all layers | 🟢 Complete | Claude | Right-sidebar controls now trigger map polygon draw mode; polygon filters active/pinned map layers in implemented data sources |
 | CON-GL-02 | Spatial filter controls in right sidebar | 🟢 Complete | Claude | Added Draw/Redraw, status copy, and Clear controls in shared sidebar section |
-| CON-GL-04 | Multiple expanded map layers | ⚪ Not Started | | High priority |
+| CON-GL-04 | Multiple expanded map layers | 🟢 Complete | Claude | Multi-expand implemented in `PinnedLayersSection` using a Set of expanded row IDs |
 | CON-GL-05 | Edit Filters visual link feedback | ⚪ Not Started | | High priority |
 | CON-GL-06 | "Edit Filters" section header | ⚪ Not Started | | |
 | CON-GL-07 | Map/sidebar filter sync bug fix | ⚪ Not Started | | Bug |
@@ -616,6 +616,7 @@ interface Bookmark {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 18, 2026 | CON-GL-04 | Implemented multi-expand behavior for Map Layers pinned rows. Expanded state now tracks multiple rows simultaneously (Set-based), preserves active-layer auto-expand, and no longer collapses other expanded rows on activation. | Claude |
 | Feb 9, 2026 | 0.8 | ✅ Completed tree connector refinement — Fixed gaps by extending lines into `space-y-1` gaps (4px) between child rows. Used CSS borders for seamless L-shape corners. | Claude |
 | Feb 4, 2026 | 0.5, 0.6 | Updated with DFT-031 resolution (Confirmation dialog strategy: hybrid approach with undo for single-item actions, confirmation for bulk operations) | Will + Claude |
 | Feb 4, 2026 | 0.7 | Added error handling components task (DFT-030 resolution) — toast, inline error, partial failure, critical modal | Will + Claude |
