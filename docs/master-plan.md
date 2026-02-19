@@ -301,7 +301,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
-| Feb 19, 2026 | Phase 2 | **CON-ANIML-03 complete.** Sort cameras by result count (data-rich first, zero-data last). Added Species/Camera count loading indicators in ANiML Browse tab (blue spinner, matches Map Layers). | Will + Claude |
+| Feb 19, 2026 | Phase 2 | **CON-ANIML-04 complete + SpatialQuerySection refinements.** Explicit Remove Polygon CTA; removed redundant copy; matched filter-section card styling (border, bg-slate-50 header). Added CON-ANIML-06: Retry button for image labels API errors. | Will + Claude |
 | Feb 18, 2026 | Docs | **Archive + consolidation.** Merged development-task-tracker into master-plan. Master-plan now high-level only (phase counts, no task lists). Completed tasks archived. development-task-tracker.md removed. | Claude |
 | Feb 17, 2026 | Phase 3 | **Phase 3 Dendra status corrected.** Phase doc showed "Not Started" but Dendra was fully implemented. Updated to 🟢 Complete. | Claude |
 | Feb 16, 2026 | Phase 10 | **DroneDeploy left-sidebar project click loads imagery.** Left-sidebar project select now calls DroneDeploy context so WMTS tiles load on map. | Claude |

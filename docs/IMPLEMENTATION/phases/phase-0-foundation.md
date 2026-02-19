@@ -31,7 +31,7 @@ Set up the V2 application shell, routing, state management, and shared component
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
 | CON-GL-01 | 🟢 Complete | Feb 18, 2026 (implemented) | Implement spatial queries (custom polygon draw) across all layers | Shared map sketch draw + polygon filter wired across iNaturalist, ANiML, Dendra, and DataONE map behaviors |
-| CON-GL-02 | 🟢 Complete | Feb 18, 2026 (implemented) | Spatial filter UI in right sidebar under date range | Added shared Spatial Query section under date controls in iNaturalist/ANiML/DataONE; included in Dendra Browse filter stack |
+| CON-GL-02 | 🟢 Complete | Feb 19, 2026 | Spatial filter UI in right sidebar under date range | Shared SpatialQuerySection (Draw/Redraw/Remove); matches filter-section card styling; present in iNaturalist, ANiML, Dendra, DataOne Browse tabs |
 | CON-GL-02a | 🟢 Complete | Feb 18, 2026 (implemented) | Per-layer spatial polygons | Spatial query state now stores one polygon per layer ID; each data source applies its own stored polygon for filtering |
 | CON-GL-02b | 🟢 Complete | Feb 18, 2026 (implemented) | Hide polygon when layer inactive; keep filter | Map now renders only the active layer polygon while inactive layer polygons remain stored and continue filtering their respective layers |
 | CON-GL-04 | 🟢 Complete | Feb 18, 2026 (implemented) | Allow multiple expanded layers in Map Layers widget | Map Layers now supports multi-expand (open one row no longer collapses others); active-layer auto-expand adds to existing expanded set |
@@ -54,7 +54,7 @@ Set up the V2 application shell, routing, state management, and shared component
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
 | CON-GL-01 | Spatial queries across all layers | 🟢 Complete | Claude | Right-sidebar controls now trigger map polygon draw mode; polygon filters active/pinned map layers in implemented data sources |
-| CON-GL-02 | Spatial filter controls in right sidebar | 🟢 Complete | Claude | Added Draw/Redraw, status copy, and Clear controls in shared sidebar section |
+| CON-GL-02 | Spatial filter controls in right sidebar | 🟢 Complete | Claude | Shared SpatialQuerySection: Draw/Redraw + Remove buttons; matches filter-section card styling; present in iNaturalist, ANiML, Dendra, DataOne Browse tabs |
 | CON-GL-04 | Multiple expanded map layers | 🟢 Complete | Claude | Multi-expand implemented in `PinnedLayersSection` using a Set of expanded row IDs |
 | CON-GL-05 | Edit Filters visual link feedback | 🟢 Complete | Claude | Edit Filters navigation now causes a short darker-green flash on the Browse "Edit Filters" section only |
 | CON-GL-06 | "Edit Filters" section header | 🟢 Complete | Claude | Browse filter controls now live inside a shared green "Edit Filters" card wrapper across implemented data sources |
@@ -594,7 +594,23 @@ interface Bookmark {
 
 | Decision | Date | Rationale | Added to design-system.md? |
 |----------|------|-----------|---------------------------|
-| (none yet) | | | |
+| Draw Custom Polygon section matches filter-section card styling | Feb 19, 2026 | Visual consistency with Date Range, Species, Cameras: `border border-gray-200 rounded-lg overflow-hidden`, `bg-slate-50` header with chevron (expand/collapse), body with Draw/Redraw + Remove buttons. Expanded by default; status text only when drawing. | No |
+
+### Draw Custom Polygon (Spatial Query) — Right Sidebar Standard
+
+**Component:** `SpatialQuerySection` (`src/v2/components/RightSidebar/shared/SpatialQuerySection.tsx`)
+
+**Presence:** Include in Edit Filters for all Browse tabs that support spatial filtering:
+- iNaturalist (`INaturalistBrowseTab`) — `layerId="inaturalist-obs"`
+- ANiML (`AnimlBrowseTab`) — `layerId="animl-camera-traps"`
+- Dendra (`DendraBrowseTab`) — `layerId` from active Dendra layer
+- DataOne (`DataOneBrowseTab`) — `layerId="dataone-datasets"`
+
+**Styling (matches filter-section cards):**
+- Outer: `border border-gray-200 rounded-lg overflow-hidden`
+- Header: `bg-slate-50 px-3 py-2.5`, chevron (expand/collapse) + Crop icon + "Draw Custom Polygon" label; collapsed badge: "Polygon active" or "None"
+- Body: Collapsible, expanded by default (`defaultExpanded={true}`); Draw/Redraw + Remove buttons; status text only when drawing
+- Status text: Only when drawing ("Drawing mode active: click map to add points, double-click to finish.")
 
 ### Integration Note for Merge
 
@@ -630,6 +646,7 @@ interface Bookmark {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 19, 2026 | CON-GL-02 | **Draw Custom Polygon refinements.** Removed "No polygon drawn..." status text. Added expand/collapse (chevron) for visual consistency with Date Range, Species, Cameras; expanded by default. Documented styling standard in phase-0. | Will + Claude |
 | Feb 19, 2026 | 0.9 | Documented Task 0.9 (Dynamic Layer Registry) as complete. Implementation in `useCatalogRegistry.ts` + `CatalogContext.tsx`; left sidebar populated from Data Catalog FeatureServer. Parallel branches unblocked. | Claude |
 | Feb 18, 2026 | CON-GL-07 | Fixed intermittent Map Layers ↔ right-sidebar filter drift by reconciling `activeLayer.viewId` against pinned child views after visibility/view changes, ensuring filter sync/name updates always target the visible/valid child view. | Codex |
 | Feb 18, 2026 | CON-GL-05, CON-GL-06 | Refined Edit Filters navigation feedback to flash only the Browse "Edit Filters" card (darker green), and implemented a shared green "Edit Filters" card wrapper in Browse tabs across iNaturalist/ANiML/Dendra/DataONE. | Claude |
