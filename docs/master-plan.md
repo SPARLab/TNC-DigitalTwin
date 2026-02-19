@@ -37,7 +37,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 3 | Dendra | 🟢 Complete | 0 | `v2/dendra` | No |
 | 4 | DataOne | 🟢 Complete | 0 | `v2/dataone` | No |
 | 5 | Export Builder | 🟢 Complete | 0 | `v2/export-builder` | No |
-| 6 | TNC ArcGIS Services | 🟡 In Progress | 15 tasks | `v2/tnc-arcgis` | No |
+| 6 | TNC ArcGIS Services | 🟡 In Progress | 13 tasks | `v2/tnc-arcgis` | No |
 | 7 | Polish & Consistency | ⚪ Not Started | 7+ tasks | `v2/polish` | No |
 | 8 | Calflora | ⚪ Not Started | 9 tasks | `v2/calflora` | No |
 | 9 | GBIF | ⚪ Not Started | 9 tasks | `v2/gbif` | No |
@@ -53,7 +53,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 0 | [phase-0-foundation.md](IMPLEMENTATION/phases/phase-0-foundation.md) | 0.6 Map Feature Highlight (if pending); 0.9 ✅ complete |
 | 1 | [phase-1-inaturalist.md](IMPLEMENTATION/phases/phase-1-inaturalist.md) | 1 task (CON-INAT-07) |
 | 2 | [phase-2-animl.md](IMPLEMENTATION/phases/phase-2-animl.md) | ~4 tasks |
-| 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 16 tasks (7 complete Feb 19) |
+| 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 12 tasks (10 complete Feb 19; CON-ARCGIS-14 added) |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) | 1 task (10.7) |
 
 ---
@@ -302,6 +302,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 19, 2026 | Phase 6 | **CON-ARCGIS-10, 11, 12 complete:** Right sidebar hierarchy relabel (Feature Service, Current Layer), section rename to "Feature Service Overview", single scrollable layer list. | — |
 | Feb 19, 2026 | Phase 6 | **CON-ARCGIS-09 complete:** Left sidebar layer row clipping fixed. ServiceGroup row wrapper changed from `w-full ml-1 mr-1` to `mx-1 min-w-0` for consistent right margin and no overflow. | — |
 | Feb 19, 2026 | Phase 6 | **CON-ARCGIS-08 complete:** Left sidebar overlay scrollbar (no gutter, custom thumb on scroll/hover). **CON-ARCGIS-13 added:** Align feature service + child layer right edges to match other layers. | — |
 | Feb 19, 2026 | Phase 1 | **CON-INAT-06 complete:** Species/taxa ordering (count default, A-Z toggle) already implemented in CON-INAT-01. CON-INAT-04 won't do (iNaturalist coordinate obfuscation). Remaining: 1 task (CON-INAT-07). | — |

@@ -63,6 +63,8 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
   const isServiceOverview = !!(activeLayer?.isService && siblingLayers.length > 0);
 
   const description = serviceContextLayer?.catalogMeta?.description || 'No description available yet.';
+  const featureServiceName = serviceContextLayer?.name || activeCatalogLayer?.name || 'Unknown service';
+  const currentLayerName = targetLayer?.name || activeCatalogLayer?.name || 'Unknown layer';
   const normalizedServiceDescription = normalizeDescription(serviceContextLayer?.catalogMeta?.description);
   const servicePath = serviceContextLayer?.catalogMeta?.servicePath || 'Unknown service path';
   const serverBaseUrl = serviceContextLayer?.catalogMeta?.serverBaseUrl || 'Unknown host';
@@ -107,24 +109,28 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
     <div id="tnc-arcgis-overview-tab" className="space-y-5">
       {isServiceOverview ? (
         <>
-          <div id="tnc-arcgis-overview-hierarchy-card" className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
-            <h4 id="tnc-arcgis-overview-hierarchy-title" className="text-xs font-semibold uppercase tracking-wide text-amber-800">
-              Current Context
-            </h4>
-            <div id="tnc-arcgis-overview-hierarchy-layer" className="text-sm text-gray-900">
-              <span className="font-medium">Layer:</span> {targetLayer?.name || 'No layer selected'}
+          <div id="tnc-arcgis-overview-context-card" className="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-3">
+            <div id="tnc-arcgis-overview-context-service-block" className="space-y-1">
+              <h4 id="tnc-arcgis-overview-context-service-label" className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                Feature Service
+              </h4>
+              <p id="tnc-arcgis-overview-context-service-value" className="text-base font-semibold text-gray-900 leading-tight">
+                {featureServiceName}
+              </p>
             </div>
-            <div id="tnc-arcgis-overview-hierarchy-service" className="text-sm text-gray-700">
-              <span className="font-medium">Service:</span> {serviceContextLayer?.name || activeCatalogLayer?.name || 'Unknown service'}
-            </div>
-            <div id="tnc-arcgis-overview-hierarchy-catalog" className="text-xs text-gray-600">
-              <span className="font-medium">Catalog:</span> TNC ArcGIS Feature Services
+            <div id="tnc-arcgis-overview-context-layer-block" className="space-y-1">
+              <h4 id="tnc-arcgis-overview-context-layer-label" className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                Current Layer
+              </h4>
+              <p id="tnc-arcgis-overview-context-layer-value" className="text-base text-gray-800 leading-tight">
+                {currentLayerName}
+              </p>
             </div>
           </div>
 
           <div id="tnc-arcgis-overview-description-block" className="space-y-2">
             <h3 id="tnc-arcgis-overview-title" className="text-sm font-semibold text-gray-900">
-              TNC ArcGIS Service
+              Feature Service Overview
             </h3>
             <p id="tnc-arcgis-overview-description" className="text-sm text-gray-600 leading-relaxed">
               {description}
@@ -133,63 +139,48 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
 
           <div id="tnc-arcgis-service-overview-layer-list-block" className="space-y-2">
             <h4 id="tnc-arcgis-service-overview-layer-list-title" className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-              Layer Selection
+              {siblingLayers.length} {siblingLayers.length === 1 ? 'layer' : 'layers'}
             </h4>
-            <p id="tnc-arcgis-service-overview-layer-list-help" className="text-xs text-gray-600 leading-relaxed">
-              Pick a layer here or in the left sidebar. Selection stays synced both ways.
-            </p>
-            <label
-              id="tnc-arcgis-service-overview-layer-select-label"
-              htmlFor="tnc-arcgis-service-overview-layer-select"
-              className="text-xs font-medium text-gray-700"
+            <ul
+              id="tnc-arcgis-service-overview-layer-list"
+              className="max-h-56 overflow-y-auto space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-2"
             >
-              Active layer
-            </label>
-            <select
-              id="tnc-arcgis-service-overview-layer-select"
-              value={targetLayer?.id || ''}
-              onChange={(event) => {
-                if (!event.target.value) return;
-                setActiveServiceSubLayer(event.target.value);
-              }}
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-            >
-              {siblingLayers.map(layer => (
-                <option key={layer.id} value={layer.id}>
-                  {formatLayerLabel(layer.name, layer.catalogMeta?.layerIdInService)}
-                </option>
-              ))}
-            </select>
-            <ul id="tnc-arcgis-service-overview-layer-list" className="space-y-2">
               {siblingLayers.map(layer => {
                 const layerDescription = layer.catalogMeta?.description;
                 const hasDistinctLayerDescription = !!(
                   normalizeDescription(layerDescription)
                   && normalizeDescription(layerDescription) !== normalizedServiceDescription
                 );
+                const isSelectedLayer = targetLayer?.id === layer.id;
 
                 return (
                   <li
                     id={`tnc-arcgis-service-overview-layer-${layer.id}`}
                     key={layer.id}
-                    className={`rounded-lg border bg-white p-3 transition-colors ${
-                      targetLayer?.id === layer.id ? 'border-emerald-300 ring-1 ring-emerald-200' : 'border-gray-200'
-                    }`}
+                    className="list-none"
                   >
-                    <p
+                    <button
                       id={`tnc-arcgis-service-overview-layer-name-${layer.id}`}
-                      className="text-sm font-medium text-gray-900"
+                      type="button"
+                      onClick={() => setActiveServiceSubLayer(layer.id)}
+                      className={`w-full text-left rounded-lg border bg-white p-3 transition-colors ${
+                        isSelectedLayer
+                          ? 'border-emerald-300 ring-1 ring-emerald-200'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
                     >
-                      {formatLayerLabel(layer.name, layer.catalogMeta?.layerIdInService)}
-                    </p>
-                    {hasDistinctLayerDescription && (
-                      <p
-                        id={`tnc-arcgis-service-overview-layer-description-${layer.id}`}
-                        className="mt-1 text-xs text-gray-600 leading-relaxed"
-                      >
-                        {layerDescription}
+                      <p className="text-sm font-medium text-gray-900">
+                        {formatLayerLabel(layer.name, layer.catalogMeta?.layerIdInService)}
                       </p>
-                    )}
+                      {hasDistinctLayerDescription && (
+                        <p
+                          id={`tnc-arcgis-service-overview-layer-description-${layer.id}`}
+                          className="mt-1 text-xs text-gray-600 leading-relaxed"
+                        >
+                          {layerDescription}
+                        </p>
+                      )}
+                    </button>
                   </li>
                 );
               })}
@@ -264,24 +255,28 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
         </>
       ) : (
         <>
-      <div id="tnc-arcgis-overview-hierarchy-card" className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
-        <h4 id="tnc-arcgis-overview-hierarchy-title" className="text-xs font-semibold uppercase tracking-wide text-amber-800">
-          Current Context
-        </h4>
-        <div id="tnc-arcgis-overview-hierarchy-layer" className="text-sm text-gray-900">
-          <span className="font-medium">Layer:</span> {targetLayer?.name || activeCatalogLayer?.name || 'Unknown layer'}
+      <div id="tnc-arcgis-overview-context-card" className="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-3">
+        <div id="tnc-arcgis-overview-context-service-block" className="space-y-1">
+          <h4 id="tnc-arcgis-overview-context-service-label" className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+            Feature Service
+          </h4>
+          <p id="tnc-arcgis-overview-context-service-value" className="text-base font-semibold text-gray-900 leading-tight">
+            {featureServiceName}
+          </p>
         </div>
-        <div id="tnc-arcgis-overview-hierarchy-service" className="text-sm text-gray-700">
-          <span className="font-medium">Service:</span> {serviceContextLayer?.name || activeCatalogLayer?.name || 'Unknown service'}
-        </div>
-        <div id="tnc-arcgis-overview-hierarchy-catalog" className="text-xs text-gray-600">
-          <span className="font-medium">Catalog:</span> TNC ArcGIS Feature Services
+        <div id="tnc-arcgis-overview-context-layer-block" className="space-y-1">
+          <h4 id="tnc-arcgis-overview-context-layer-label" className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+            Current Layer
+          </h4>
+          <p id="tnc-arcgis-overview-context-layer-value" className="text-sm text-gray-800 leading-tight">
+            {currentLayerName}
+          </p>
         </div>
       </div>
 
       <div id="tnc-arcgis-overview-description-block" className="space-y-2">
         <h3 id="tnc-arcgis-overview-title" className="text-sm font-semibold text-gray-900">
-          TNC ArcGIS Service
+          Feature Service Overview
         </h3>
         <p id="tnc-arcgis-overview-description" className="text-sm text-gray-600 leading-relaxed">
           {description}

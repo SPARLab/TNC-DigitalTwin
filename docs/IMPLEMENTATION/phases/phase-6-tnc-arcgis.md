@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 7 / 21 tasks (CON-ARCGIS-01, 02, 04, 05, 08, 09, 6.20 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
+**Progress:** 10 / 22 tasks (CON-ARCGIS-01, 02, 04, 05, 08, 09, 10, 11, 12, 6.20 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived; CON-ARCGIS-14 added Feb 19)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry) ✅ complete  
@@ -39,10 +39,11 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | CON-ARCGIS-07 | ⚪ Not Started | Feb 18, 2026 | Design multi-layer feature service UX follow-up | Low priority / follow-up |
 | **CON-ARCGIS-08** | 🟢 Complete | Feb 19, 2026 | Left sidebar: hover-visible scrollbar pill | Implemented: custom overlay thumb (no gutter); visible on scroll/hover |
 | **CON-ARCGIS-09** | 🟢 Complete | Feb 19, 2026 | Left sidebar: fix layer row clipping | ServiceGroup: w-full→mx-1 min-w-0; consistent right margin |
-| **CON-ARCGIS-10** | ⚪ | Feb 19, 2026 | Right sidebar: relabel hierarchy block | Feature Service (bold name); Current Layer; remove "Catalog: TNC ArcGIS…" |
-| **CON-ARCGIS-11** | ⚪ | Feb 19, 2026 | Right sidebar: rename section to "Feature Service Overview" | Replace "TNC ArcGIS Service" with user-facing label |
-| **CON-ARCGIS-12** | ⚪ | Feb 19, 2026 | Right sidebar: simplify layer list UX | Remove dropdown + helper text; single scrollable list (~5 rows); "N layers" header; highlight selected |
+| **CON-ARCGIS-10** | 🟢 Complete | Feb 19, 2026 | Right sidebar: relabel hierarchy block | Feature Service (bold name); Current Layer; remove "Catalog: TNC ArcGIS…" |
+| **CON-ARCGIS-11** | 🟢 Complete | Feb 19, 2026 | Right sidebar: rename section to "Feature Service Overview" | Replace "TNC ArcGIS Service" with user-facing label |
+| **CON-ARCGIS-12** | 🟢 Complete | Feb 19, 2026 | Right sidebar: simplify layer list UX | Remove dropdown + helper text; single scrollable list (~5 rows); "N layers" header; highlight selected |
 | **CON-ARCGIS-13** | ⚪ | Feb 19, 2026 | Left sidebar: align feature service + child layer right edges | Feature service box and child layer boxes share same right margin as other layers (mr-1); child right edge aligns with parent; scrollbar overlay fits naturally |
+| **CON-ARCGIS-14** | ⚪ | Feb 19, 2026 | Unified Service Workspace: service/layer click behavior + layer list state chips | See task details below. Auto-select sublayer on service click; one right-sidebar layout; layer list shows pinned/visible counts; Browse = inspect current layer |
 | **6.8** | ⚪ | — | Search Enhancement | Match service + layer names; expand parent service when layer matches |
 | **6.9** | ⚪ | — | Keyboard Navigation & ARIA | Arrow keys for expand/collapse, ARIA tree structure, focus management |
 | **6.10** | ⚪ | — | QA & Edge Cases | Single-layer services, empty results, malformed queries, schema fetch errors |
@@ -91,13 +92,12 @@ TNC FeatureService (e.g., "Wetlands")
 ### Right Sidebar Patterns
 
 **Service Overview (Multi-Layer):**
-- Layer switcher dropdown
-- Service description (from Data Catalog)
-- List of available layers with descriptions
+- Context block: Feature Service (bold name), Current Layer (CON-ARCGIS-10)
+- Section: "Feature Service Overview" with service description (CON-ARCGIS-11)
+- Single scrollable layer list with "N layers" header, highlighted selection, click-to-switch (CON-ARCGIS-12)
 - "Browse {Layer} →" button (switches to Browse tab)
 - "Pin {Layer}" button (adds selected layer to Map Layers widget)
 - Source actions: Open Overlay, Open in New Tab (Task 6.19)
-- Layer → Service → TNC catalog hierarchy display (Task 6.20)
 
 **Browse Tab (Any TNC Layer):**
 - Generic filter UI: field/operator/value rows
@@ -482,9 +482,11 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - Remove "Catalog: TNC ArcGIS Feature Services" line entirely
 
 **Acceptance Criteria:**
-- [ ] "Feature Service" label + bold service name visible
-- [ ] "Current Layer" label + layer name visible
-- [ ] "Catalog: TNC ArcGIS Feature Services" removed
+- [x] "Feature Service" label + bold service name visible
+- [x] "Current Layer" label + layer name visible
+- [x] "Catalog: TNC ArcGIS Feature Services" removed
+
+**Resolution (Feb 19, 2026):** Implemented in TNCArcGISOverviewTab. Replaced amber "Current Context" card with gray context block showing Feature Service (bold) and Current Layer. Catalog line removed.
 
 **Estimated Time:** 15–30 min
 
@@ -501,8 +503,10 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - Apply to both service-overview and single-layer overview states
 
 **Acceptance Criteria:**
-- [ ] Section titled "Feature Service Overview"
-- [ ] Consistent across multi-layer and single-layer views
+- [x] Section titled "Feature Service Overview"
+- [x] Consistent across multi-layer and single-layer views
+
+**Resolution (Feb 19, 2026):** Section heading changed from "TNC ArcGIS Service" to "Feature Service Overview" in both service-overview and single-layer paths.
 
 **Estimated Time:** 10–15 min
 
@@ -523,12 +527,14 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - List items remain clickable to change selection (bidirectional sync preserved)
 
 **Acceptance Criteria:**
-- [ ] Dropdown removed
-- [ ] Helper text removed
-- [ ] "N layers" header present
-- [ ] Scrollable list with ~5 visible rows, limited height
-- [ ] Selected layer highlighted
-- [ ] Clicking list item updates selection (sync with left sidebar)
+- [x] Dropdown removed
+- [x] Helper text removed
+- [x] "N layers" header present
+- [x] Scrollable list with ~5 visible rows, limited height
+- [x] Selected layer highlighted
+- [x] Clicking list item updates selection (sync with left sidebar)
+
+**Resolution (Feb 19, 2026):** Replaced dropdown + helper text with single scrollable list (max-h-56). "N layers" header, clickable list items with emerald highlight for selected layer. Bidirectional sync via setActiveServiceSubLayer preserved.
 
 **Estimated Time:** 45–90 min
 
@@ -552,6 +558,49 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - [ ] Overlay scrollbar fits naturally in right margin across all row types
 
 **Estimated Time:** 30–45 min
+
+---
+
+### CON-ARCGIS-14: Unified Service Workspace — Service/Layer Click Behavior + Layer List State Chips
+
+**Goal:** One consistent right-sidebar model for multi-layer TNC services. Clicking the service row or a child layer row both show the same layout; the difference is which layer is "Current Layer" (active inspect target). Resolve confusion where clicking the service shows no map content and clicking a layer shows different sidebar content.
+
+**Context (User Feedback, Feb 19, 2026):**
+- Clicking the feature service in the left sidebar shows overview but nothing on the map.
+- Clicking a child layer shows different right-sidebar content and doesn't clearly communicate "this layer is part of this feature service."
+- User wants: (1) service click to auto-select a current layer so something appears on map; (2) same right-sidebar layout whether clicking service or layer; (3) layer list widget to show pinned/visible counts and which layer is active; (4) Browse CTA to inspect the current layer's table.
+
+**Implementation:**
+
+1. **Service row click (left sidebar):**
+   - Set service as active context.
+   - Auto-select sublayer: use last-active sublayer for this service if available; otherwise first layer.
+   - Activate that layer as the inspect target (Current Layer).
+   - Map: the selected layer becomes visible (if not already pinned, show it as active-only; if pinned, ensure it's visible).
+
+2. **Child layer row click (left sidebar):**
+   - Same right-sidebar layout as service click.
+   - Update Current Layer to the clicked layer.
+   - No layout switch — only the active highlight and context block update.
+
+3. **Right sidebar — layer list widget:**
+   - Header: e.g. `20 layers • 6 pinned • 4 visible` (or similar compact summary).
+   - Each row: show state indicators (Active, Pinned, Visible/Hidden) — keep density readable; if too many icons, at minimum highlight Active and optionally show a small pin badge for pinned layers.
+   - One selected/active highlight.
+   - Optional: per-row pin/eye affordances only if layout remains clean.
+
+4. **Browse CTA:**
+   - Label: "Inspect Current Layer" or "Browse Selected Layer" (clarify it acts on Current Layer).
+   - Always opens Browse tab for the layer shown in the context block.
+
+**Acceptance Criteria:**
+- [ ] Clicking service row auto-selects a sublayer (last-active or first) and shows it on map
+- [ ] Clicking child layer row updates Current Layer; same right-sidebar layout
+- [ ] Layer list header shows pinned/visible counts (e.g. "N layers • X pinned • Y visible")
+- [ ] Layer list rows show Active highlight; pinned/visible state visible where feasible
+- [ ] Browse CTA always inspects Current Layer
+
+**Estimated Time:** 2–3 hours
 
 ---
 
@@ -633,6 +682,8 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 19, 2026 | CON-ARCGIS-14 | Added task: Unified Service Workspace — service/layer click behavior, auto-select sublayer on service click, layer list state chips (pinned/visible counts). | — |
+| Feb 19, 2026 | CON-ARCGIS-10, 11, 12 | Implemented right sidebar hierarchy relabel (Feature Service, Current Layer), section rename to "Feature Service Overview", single scrollable layer list (dropdown + helper text removed). | — |
 | Feb 19, 2026 | CON-ARCGIS-01, 02, 04, 05, 6.20 | Marked complete. Added CON-ARCGIS-08–12 from user feedback: left sidebar scrollbar pill, row clipping fix, right sidebar relabeling, section rename, layer list simplification. | — |
 | Feb 18, 2026 | — | Archived completed tasks 6.1–6.7, 6.15, 6.16, 6.18, 6.19 to `docs/archive/phases/phase-6-tnc-arcgis-completed.md`. Phase doc trimmed for new tasks. | Claude |
 | Feb 16, 2026 | 6.15 | Task complete: Legend iconography parity (esriPMS imageData/contentType) + UX refinements (Select All/Clear All in header, layer name above items, stable selection box, removed redundant "Selected" text). | Claude |
