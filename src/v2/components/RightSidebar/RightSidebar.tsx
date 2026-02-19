@@ -87,6 +87,7 @@ export function RightSidebar() {
     if (
       (
         activeLayer?.layerId === 'inaturalist-obs' ||
+        activeLayer?.dataSource === 'dendra' ||
         activeLayer?.layerId === 'dataone-datasets' ||
         activeLayer?.layerId === 'dataset-193'
       ) &&

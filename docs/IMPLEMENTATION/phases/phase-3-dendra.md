@@ -1,12 +1,12 @@
 # Phase 3: Dendra Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 0 / 7 tasks (completed tasks 3.1–3.9 archived Feb 18, 2026)  
+**Progress:** 1 / 7 tasks (completed tasks 3.1–3.9 archived Feb 18, 2026)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-3-dendra-completed.md`  
 **Branch:** `v2/dendra`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD  
-**Last Updated:** February 18, 2026
+**Last Updated:** February 19, 2026
 
 ---
 
@@ -14,7 +14,7 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| CON-DENDRA-01 | ⚪ Not Started | Feb 18, 2026 | Map click on station syncs to right sidebar and opens station | High priority; map-first |
+| CON-DENDRA-01 | 🟢 Complete | Feb 19, 2026 | Map click on station syncs to right sidebar and opens station | High priority; map-first |
 | CON-DENDRA-02 | ⚪ Not Started | Feb 18, 2026 | Multiple time series charts side-by-side, draggable and resizable | High priority |
 | CON-DENDRA-03 | ⚪ Not Started | Feb 18, 2026 | Multi-stream selection across stations with stream-name filtering and no reset requirement | High priority |
 | CON-DENDRA-04 | ⚪ Not Started | Feb 18, 2026 | Auto-expand Map Layers widget when a child view is added | Medium priority |
@@ -62,7 +62,7 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
-| CON-DENDRA-01 | Map click station -> sidebar station sync | ⚪ Not Started | | Intake from consolidated feedback |
+| CON-DENDRA-01 | Map click station -> sidebar station sync | 🟢 Complete | | Two-way sync, flash, Edit Filters fix, Stations header |
 | CON-DENDRA-02 | Multi-chart compare (draggable/resizable) | ⚪ Not Started | | Intake from consolidated feedback |
 | CON-DENDRA-03 | Multi-stream cross-station selection UX | ⚪ Not Started | | Intake from consolidated feedback |
 | CON-DENDRA-04 | Auto-expand Map Layers widget on child add | ⚪ Not Started | | Intake from consolidated feedback |
@@ -81,6 +81,23 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 ## Task Details
 
 *Completed tasks 3.1–3.9 archived. See `docs/archive/phases/phase-3-dendra-completed.md` for full acceptance criteria and implementation notes.*
+
+### CON-DENDRA-01 Implementation Notes (Feb 19, 2026)
+
+**Map ↔ Sidebar two-way station sync:**
+- Map click: hitTest Dendra graphics → `activateLayer(layerId, undefined, stationId)` immediately (no await on goTo); sidebar switches to Browse + station detail in parallel with pan/zoom.
+- Sidebar click: station card selection triggers `focusStationOnMap()` — blue highlight, goTo (zoom 15, 800ms), ArcGIS popup open on matching graphic.
+- RightSidebar: Dendra layers with `featureId` auto-open Browse tab (same pattern as iNaturalist/DataONE).
+- DendraBrowseTab: hydrates `selectedStation` from `activeLayer.featureId`; `handleSelectStation` / `handleBackToStations` keep featureId in sync.
+
+**Station metadata flash:**
+- Dark-gray background pulse on station header card when map marker opens station detail (60ms delay + 220ms pulse, same cadence as EditFiltersCard; border stays stable).
+
+**Edit Filters behavior:**
+- When `lastEditFiltersRequest` fires, Dendra Browse exits station detail and clears `featureId` so Edit Filters reliably returns to filter controls.
+
+**Stations section header:**
+- Explicit "Stations" header with count above station cards to clarify result set vs filter section.
 
 *Add new task details below as you define them.*
 
@@ -158,6 +175,7 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 19, 2026 | CON-DENDRA-01 | **Complete.** Two-way map↔sidebar station sync, dark-gray station header flash, Edit Filters exits station detail, Stations section header, sidebar→map highlight/popup/zoom, map click activates sidebar immediately (parallel with goTo). See Task Details. | Cursor |
 | Feb 18, 2026 | All | **Archived completed tasks:** Moved tasks 3.1–3.9 (including 3.5a–3.9 fixes) to `docs/archive/phases/phase-3-dendra-completed.md`. Phase doc cleared for new tasks. Status → In Progress. | Claude |
 | Feb 17, 2026 | All | **Phase status corrected:** Dendra was implemented but phase doc showed "Not Started". Updated to 🟢 Complete (9/9 core + 3.5a–3.9 fixes). Added Quick Task Summary; task table now reflects completion. See `docs/archive/phases/phase-3-dendra-completed.md` for archived details. | Claude |
 | Jan 23, 2026 | - | Created phase document | Will + Claude |

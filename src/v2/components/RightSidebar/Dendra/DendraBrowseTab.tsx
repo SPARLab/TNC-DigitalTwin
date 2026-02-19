@@ -22,11 +22,12 @@ export function DendraBrowseTab() {
     showActiveOnly, toggleActiveOnly, setShowActiveOnly, stationCount,
     openChart,
   } = useDendra();
-  const { activeLayer, lastEditFiltersRequest, getPinnedByLayerId } = useLayers();
+  const { activeLayer, activateLayer, lastEditFiltersRequest, getPinnedByLayerId } = useLayers();
   const summariesByStation = useSummariesByStation();
 
   // Detail view state
   const [selectedStation, setSelectedStation] = useState<DendraStation | null>(null);
+  const [stationHeaderFlashSignal, setStationHeaderFlashSignal] = useState(0);
 
   // Map interactions
   const { highlightPoint, clearHighlight, viewRef } = useMap();
@@ -42,7 +43,13 @@ export function DendraBrowseTab() {
     prevHydrateViewIdRef.current = activeLayer.viewId;
 
     if (!viewChanged && !editRequested) return;
-    if (editRequested) lastConsumedHydrateRef.current = lastEditFiltersRequest;
+    if (editRequested) {
+      lastConsumedHydrateRef.current = lastEditFiltersRequest;
+      setSelectedStation(null);
+      if (activeLayer.featureId != null) {
+        activateLayer(activeLayer.layerId, activeLayer.viewId, undefined);
+      }
+    }
 
     const pinned = getPinnedByLayerId(activeLayer.layerId);
     if (!pinned) return;
@@ -57,22 +64,77 @@ export function DendraBrowseTab() {
     activeLayer?.dataSource,
     activeLayer?.layerId,
     activeLayer?.viewId,
+    activeLayer?.featureId,
     lastEditFiltersRequest,
+    activateLayer,
     getPinnedByLayerId,
     setShowActiveOnly,
   ]);
 
-  const handleViewOnMap = useCallback((station: DendraStation) => {
+  // Open station detail when map click sets featureId on the active Dendra layer.
+  useEffect(() => {
+    if (activeLayer?.dataSource !== 'dendra') return;
+    if (activeLayer.featureId == null) return;
+
+    const stationId = Number(activeLayer.featureId);
+    if (!Number.isFinite(stationId)) return;
+
+    const station = filteredStations.find((candidate) => candidate.station_id === stationId);
+    if (station) {
+      setSelectedStation((prev) => (prev?.station_id === station.station_id ? prev : station));
+      setStationHeaderFlashSignal(Date.now());
+    }
+  }, [activeLayer, filteredStations]);
+
+  const focusStationOnMap = useCallback(async (station: DendraStation) => {
     highlightPoint(station.longitude, station.latitude);
     const view = viewRef.current;
-    if (view) {
-      view.goTo(
+    if (!view) return;
+
+    try {
+      await view.goTo(
         { center: [station.longitude, station.latitude], zoom: 15 },
         { duration: 800 },
       );
+    } catch {
+      // Ignore goTo interruptions (for example, rapid user interactions).
     }
+
+    if (activeLayer?.dataSource === 'dendra') {
+      const map = view.map;
+      const layer = map?.findLayerById(`v2-${activeLayer.layerId}`) as __esri.GraphicsLayer | undefined;
+      const matchingGraphic = layer?.graphics.find(
+        (graphic) => graphic.attributes?.station_id === station.station_id,
+      );
+      if (matchingGraphic && matchingGraphic.geometry?.type === 'point') {
+        view.openPopup({
+          features: [matchingGraphic],
+          location: matchingGraphic.geometry as __esri.Point,
+        });
+      }
+    }
+
     setTimeout(clearHighlight, 5000);
-  }, [highlightPoint, clearHighlight, viewRef]);
+  }, [activeLayer, highlightPoint, clearHighlight, viewRef]);
+
+  const handleViewOnMap = useCallback((station: DendraStation) => {
+    void focusStationOnMap(station);
+  }, [focusStationOnMap]);
+
+  const handleSelectStation = useCallback((station: DendraStation) => {
+    setSelectedStation(station);
+    if (activeLayer?.dataSource === 'dendra') {
+      activateLayer(activeLayer.layerId, activeLayer.viewId, station.station_id);
+    }
+    void focusStationOnMap(station);
+  }, [activeLayer, activateLayer, focusStationOnMap]);
+
+  const handleBackToStations = useCallback(() => {
+    setSelectedStation(null);
+    if (activeLayer?.dataSource === 'dendra') {
+      activateLayer(activeLayer.layerId, activeLayer.viewId, undefined);
+    }
+  }, [activeLayer, activateLayer]);
 
   // Chart handler — opens the floating panel + pans/zooms to the station
   const handleViewChart = useCallback((station: DendraStation, summary: DendraSummary) => {
@@ -97,9 +159,10 @@ export function DendraBrowseTab() {
       <StationDetailView
         station={selectedStation}
         summaries={stationSummaries}
-        onBack={() => setSelectedStation(null)}
+        onBack={handleBackToStations}
         onViewOnMap={() => handleViewOnMap(selectedStation)}
         onViewChart={(summary) => handleViewChart(selectedStation, summary)}
+        stationHeaderFlashSignal={stationHeaderFlashSignal}
       />
     );
   }
@@ -169,13 +232,21 @@ export function DendraBrowseTab() {
 
       {/* Station cards */}
       {dataLoaded && !error && (
-        <div className="space-y-2">
+        <div id="dendra-station-results-section" className="space-y-2">
+          <div id="dendra-station-results-header" className="flex items-center justify-between px-1">
+            <h4 id="dendra-station-results-title" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              Stations
+            </h4>
+            <span id="dendra-station-results-count" className="text-xs text-gray-400">
+              {filteredStations.length}
+            </span>
+          </div>
           {filteredStations.map(station => (
             <StationCard
               key={station.station_id}
               station={station}
               summaryCount={summariesByStation.get(station.station_id)?.length ?? 0}
-              onViewDetail={() => setSelectedStation(station)}
+              onViewDetail={() => handleSelectStation(station)}
               onViewOnMap={() => handleViewOnMap(station)}
             />
           ))}

@@ -11,6 +11,7 @@ import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import type Layer from '@arcgis/core/layers/Layer';
 import { useDendra } from '../../context/DendraContext';
 import { useCatalog } from '../../context/CatalogContext';
+import { useLayers } from '../../context/LayerContext';
 import { useMap } from '../../context/MapContext';
 import { populateDendraLayer, filterDendraLayer } from '../../components/Map/layers/dendraLayer';
 import { registerDendraLayerId, isDendraLayer } from '../../components/Map/layers';
@@ -23,7 +24,8 @@ export function useDendraMapBehavior(
   mapReady: number,
 ) {
   const { stations, dataLoaded, warmCache, showActiveOnly } = useDendra();
-  const { getSpatialPolygonForLayer } = useMap();
+  const { activateLayer } = useLayers();
+  const { getSpatialPolygonForLayer, highlightPoint, clearHighlight, viewRef } = useMap();
   const { layerMap } = useCatalog();
   const populatedRef = useRef<Set<string>>(new Set());
 
@@ -80,4 +82,58 @@ export function useDendraMapBehavior(
       filterDendraLayer(arcLayer, showActiveOnly, spatialPolygon);
     }
   }, [showActiveOnly, getSpatialPolygonForLayer, getManagedLayer, activeLayer?.layerId, activeLayerSpatialPolygon]);
+
+  // Map click handler: clicking a Dendra station marker activates its layer
+  // and opens the station detail flow in the right sidebar.
+  useEffect(() => {
+    if (!hasAnyDendraOnMap || !dataLoaded) return;
+    const view = viewRef.current;
+    if (!view) return;
+
+    const handler = view.on('click', async (event) => {
+      try {
+        const response = await view.hitTest(event);
+        const graphicHit = response.results.find(
+          (result): result is __esri.GraphicHit =>
+            result.type === 'graphic'
+            && typeof result.graphic.layer?.id === 'string'
+            && result.graphic.layer.id.startsWith('v2-')
+            && isDendraLayer(result.graphic.layer.id.slice(3)),
+        );
+        if (!graphicHit) return;
+
+        const stationId = graphicHit.graphic.attributes?.station_id as number | undefined;
+        if (stationId == null) return;
+
+        const clickedLayerId = graphicHit.graphic.layer.id.slice(3);
+        const clickedLayer = layerMap.get(clickedLayerId);
+        if (clickedLayer?.dataSource !== 'dendra') return;
+
+        // Activate immediately so sidebar switches to Browse/detail in parallel
+        // with camera movement instead of waiting for goTo to finish.
+        activateLayer(clickedLayerId, undefined, stationId);
+
+        const geometry = graphicHit.graphic.geometry;
+        if (geometry?.type === 'point') {
+          const point = geometry as __esri.Point;
+          highlightPoint(point.longitude, point.latitude);
+          void view.goTo(
+            { center: [point.longitude, point.latitude], zoom: 15 },
+            { duration: 800 },
+          ).catch(() => {
+            // Ignore goTo interruptions from rapid user interactions.
+          });
+          view.openPopup({
+            features: [graphicHit.graphic],
+            location: point,
+          });
+          setTimeout(clearHighlight, 5000);
+        }
+      } catch (error) {
+        console.error('[Dendra Map Click] Error handling marker click', error);
+      }
+    });
+
+    return () => handler.remove();
+  }, [hasAnyDendraOnMap, dataLoaded, viewRef, activateLayer, highlightPoint, clearHighlight, layerMap]);
 }

@@ -4,7 +4,7 @@
 // Time series chart deferred to task 3.5.
 // ============================================================================
 
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ChevronLeft, MapPin, Radio, Activity, Calendar, TrendingUp, TrendingDown, BarChart3, Save } from 'lucide-react';
 import type { DendraStation, DendraSummary } from '../../../services/dendraStationService';
 import { formatTimestamp, formatValue } from '../../../services/dendraStationService';
@@ -17,13 +17,24 @@ interface StationDetailViewProps {
   onBack: () => void;
   onViewOnMap: () => void;
   onViewChart?: (summary: DendraSummary) => void;
+  stationHeaderFlashSignal?: number;
 }
 
-export function StationDetailView({ station, summaries, onBack, onViewOnMap, onViewChart }: StationDetailViewProps) {
+export function StationDetailView({
+  station,
+  summaries,
+  onBack,
+  onViewOnMap,
+  onViewChart,
+  stationHeaderFlashSignal = 0,
+}: StationDetailViewProps) {
   const isActive = station.is_active === 1;
   const displayName = station.station_name?.replace(/^Dangermond_/, '').replace(/_/g, ' ') ?? 'Unknown';
   const [selectedDatastreamId, setSelectedDatastreamId] = useState<number | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [isHeaderFlashing, setIsHeaderFlashing] = useState(false);
+  const flashStartTimeoutRef = useRef<number | null>(null);
+  const flashEndTimeoutRef = useRef<number | null>(null);
   const { chart, setChartFilter, showActiveOnly, filteredStations } = useDendra();
   const { activeLayer, pinLayer, getPinnedByLayerId, syncDendraFilters, createDendraFilteredView } = useLayers();
 
@@ -113,6 +124,31 @@ export function StationDetailView({ station, summaries, onBack, onViewOnMap, onV
     setSaveMessage('Created a new filtered child view in Map Layers.');
   };
 
+  useEffect(() => {
+    if (!stationHeaderFlashSignal) return;
+
+    setIsHeaderFlashing(false);
+    if (flashStartTimeoutRef.current) window.clearTimeout(flashStartTimeoutRef.current);
+    if (flashEndTimeoutRef.current) window.clearTimeout(flashEndTimeoutRef.current);
+
+    // Match EditFilters card cadence: short settle delay, quick pulse, then rest.
+    flashStartTimeoutRef.current = window.setTimeout(() => {
+      setIsHeaderFlashing(true);
+      flashEndTimeoutRef.current = window.setTimeout(() => {
+        setIsHeaderFlashing(false);
+        flashEndTimeoutRef.current = null;
+      }, 220);
+      flashStartTimeoutRef.current = null;
+    }, 60);
+  }, [stationHeaderFlashSignal]);
+
+  useEffect(() => {
+    return () => {
+      if (flashStartTimeoutRef.current) window.clearTimeout(flashStartTimeoutRef.current);
+      if (flashEndTimeoutRef.current) window.clearTimeout(flashEndTimeoutRef.current);
+    };
+  }, []);
+
   return (
     <div id="dendra-station-detail" className="space-y-4">
       {/* Back nav */}
@@ -127,7 +163,14 @@ export function StationDetailView({ station, summaries, onBack, onViewOnMap, onV
       </button>
 
       {/* Station header */}
-      <div id="dendra-station-header" className="bg-slate-50 rounded-lg p-4 space-y-3">
+      <div
+        id="dendra-station-header"
+        className={`rounded-lg border p-4 space-y-3 transition-colors duration-250 ease-in-out ${
+          isHeaderFlashing
+            ? 'bg-slate-300/90 border-slate-200'
+            : 'bg-slate-50 border-slate-200'
+        }`}
+      >
         <div className="flex items-start justify-between gap-2">
           <h3 className="text-base font-semibold text-gray-900 leading-tight">
             {displayName}
