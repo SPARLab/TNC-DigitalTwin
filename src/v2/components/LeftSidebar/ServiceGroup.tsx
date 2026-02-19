@@ -51,7 +51,7 @@ export function ServiceGroup({
     <div id={`service-group-${service.id}`} role="group" className="space-y-1">
       <div
         id={`service-group-row-${service.id}`}
-        className={`w-full flex items-center gap-2 py-1.5 px-1 rounded-lg border transition-colors
+        className={`w-full ml-1 mr-1 flex items-center gap-2 py-1.5 px-1 rounded-lg border transition-colors
           ${
             isActiveService
               ? 'border-amber-300 bg-amber-50 shadow-sm'
@@ -102,7 +102,7 @@ export function ServiceGroup({
         }}
       >
         <div className="overflow-hidden">
-          <div id={`service-group-children-inner-${service.id}`} className="pl-2 pr-0.5 space-y-1 pt-1">
+          <div id={`service-group-children-inner-${service.id}`} className="pl-2 pr-2 space-y-1 pt-1">
             {layers.map(layer => (
               <LayerRow
                 key={layer.id}

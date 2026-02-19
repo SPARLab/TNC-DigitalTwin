@@ -53,7 +53,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 0 | [phase-0-foundation.md](IMPLEMENTATION/phases/phase-0-foundation.md) | 0.6 Map Feature Highlight (if pending); 0.9 ✅ complete |
 | 1 | [phase-1-inaturalist.md](IMPLEMENTATION/phases/phase-1-inaturalist.md) | 1 task (CON-INAT-07) |
 | 2 | [phase-2-animl.md](IMPLEMENTATION/phases/phase-2-animl.md) | ~4 tasks |
-| 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 16 tasks (5 complete Feb 19) |
+| 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 17 tasks (6 complete Feb 19) |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) | 1 task (10.7) |
 
 ---
@@ -302,6 +302,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 19, 2026 | Phase 6 | **CON-ARCGIS-08 complete:** Left sidebar overlay scrollbar (no gutter, custom thumb on scroll/hover). **CON-ARCGIS-13 added:** Align feature service + child layer right edges to match other layers. | — |
 | Feb 19, 2026 | Phase 1 | **CON-INAT-06 complete:** Species/taxa ordering (count default, A-Z toggle) already implemented in CON-INAT-01. CON-INAT-04 won't do (iNaturalist coordinate obfuscation). Remaining: 1 task (CON-INAT-07). | — |
 | Feb 19, 2026 | Phase 1 | **CON-INAT-03 complete:** Added browse result-count row in iNaturalist right sidebar (e.g., "92 observations"). | — |
 | Feb 19, 2026 | Phase 1 | **CON-INAT-02 complete:** Species hierarchy flow (taxa→species→observations). Removed redundant top species search; renamed "Filter Observations" to "Filter Taxa". | — |

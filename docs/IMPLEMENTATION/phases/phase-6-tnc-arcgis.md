@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 5 / 21 tasks (CON-ARCGIS-01, 02, 04, 05, 6.20 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
+**Progress:** 6 / 21 tasks (CON-ARCGIS-01, 02, 04, 05, 08, 6.20 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry) ✅ complete  
@@ -37,11 +37,12 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | CON-ARCGIS-05 | 🟢 Complete | Feb 19, 2026 | Fix iframe to show user-friendly TNC Hub page instead of raw service page | Hub search URL preferred; REST fallback |
 | CON-ARCGIS-06 | ⚪ Not Started | Feb 18, 2026 | Bug: fix Union Pacific Railroad layer (layer ID 0 not found) | Medium priority bug |
 | CON-ARCGIS-07 | ⚪ Not Started | Feb 18, 2026 | Design multi-layer feature service UX follow-up | Low priority / follow-up |
-| **CON-ARCGIS-08** | ⚪ | Feb 19, 2026 | Left sidebar: hover-visible scrollbar pill | Replace gray scroll track; show thin scrollbar on hover/scroll |
+| **CON-ARCGIS-08** | 🟢 Complete | Feb 19, 2026 | Left sidebar: hover-visible scrollbar pill | Implemented: custom overlay thumb (no gutter); visible on scroll/hover |
 | **CON-ARCGIS-09** | ⚪ | Feb 19, 2026 | Left sidebar: fix layer row clipping | Layer names truncated; adjust flex/truncation so content visible |
 | **CON-ARCGIS-10** | ⚪ | Feb 19, 2026 | Right sidebar: relabel hierarchy block | Feature Service (bold name); Current Layer; remove "Catalog: TNC ArcGIS…" |
 | **CON-ARCGIS-11** | ⚪ | Feb 19, 2026 | Right sidebar: rename section to "Feature Service Overview" | Replace "TNC ArcGIS Service" with user-facing label |
 | **CON-ARCGIS-12** | ⚪ | Feb 19, 2026 | Right sidebar: simplify layer list UX | Remove dropdown + helper text; single scrollable list (~5 rows); "N layers" header; highlight selected |
+| **CON-ARCGIS-13** | ⚪ | Feb 19, 2026 | Left sidebar: align feature service + child layer right edges | Feature service box and child layer boxes share same right margin as other layers (mr-1); child right edge aligns with parent; scrollbar overlay fits naturally |
 | **6.8** | ⚪ | — | Search Enhancement | Match service + layer names; expand parent service when layer matches |
 | **6.9** | ⚪ | — | Keyboard Navigation & ARIA | Arrow keys for expand/collapse, ARIA tree structure, focus management |
 | **6.10** | ⚪ | — | QA & Edge Cases | Single-layer services, empty results, malformed queries, schema fetch errors |
@@ -528,6 +529,27 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - [ ] Clicking list item updates selection (sync with left sidebar)
 
 **Estimated Time:** 45–90 min
+
+---
+
+### CON-ARCGIS-13: Left Sidebar — Align Feature Service + Child Layer Right Edges
+
+**Goal:** Ensure feature service box and child layer boxes share the same right margin as other left-sidebar layers (e.g., Fire, Land Cover), so the overlay scrollbar fits naturally and visual alignment is consistent.
+
+**Context:** User feedback (Feb 19, 2026): Feature service rows (e.g., "Coastal and Marine") and their child layers should have right edges aligned with each other and with top-level layers. Child rows are indented from the left (correct); their right edge should align with the feature service box. Both should have the same distance from the right edge of the sidebar as other layers (mr-1 spacing where scrollbar overlay fits naturally).
+
+**Implementation:**
+- Feature service row: same right margin as top-level layers (mr-1)
+- Child layer rows: right edge aligns with feature service row (no extra right margin; indentation from left indicates hierarchy)
+- Verify alignment with category headers and flat layer rows (e.g., "Wind Sensors", "Land Cover")
+
+**Acceptance Criteria:**
+- [ ] Feature service box right edge matches other layer row right edges (consistent mr-1)
+- [ ] Child layer boxes right edge aligns with feature service box right edge
+- [ ] Left indentation of children preserved; hierarchy clear
+- [ ] Overlay scrollbar fits naturally in right margin across all row types
+
+**Estimated Time:** 30–45 min
 
 ---
 
