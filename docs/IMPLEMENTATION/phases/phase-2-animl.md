@@ -88,7 +88,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
 | CON-ANIML-01 | 🟢 Complete | Feb 19, 2026 | Map click on camera trap auto-selects sidebar camera and shows images | Map click + sidebar sync; spatial-query camera auto-select/prioritization; QA passed |
-| CON-ANIML-02 | ⚪ Not Started | Feb 18, 2026 | Rename "Mountain lion" to "Puma" | Medium priority |
+| CON-ANIML-02 | ⚫ Won't Do | Feb 19, 2026 | Rename "Mountain lion" to "Puma" | Deferred: current label comes from ANiML source data; taxonomy decision needed |
 | CON-ANIML-03 | ⚪ Not Started | Feb 18, 2026 | Sort cameras by result count (data-rich first, zero-data last) | Medium priority |
 | CON-ANIML-04 | ⚪ Not Started | Feb 19, 2026 | Add explicit "Remove Polygon" CTA in spatial query panel | Improve discoverability over tiny Clear affordance |
 | CON-ANIML-05 | ⚪ Not Started | Feb 19, 2026 | Improve map badge UI for large counts (e.g., 999+) | Increase badge size/spacing to avoid cramped text |
@@ -99,7 +99,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
 | CON-ANIML-01 | Map click camera -> sidebar sync + images | 🟢 Complete | | Map click handler + browse camera auto-select + spatial polygon camera auto-selection; QA passed |
-| CON-ANIML-02 | Rename Mountain lion label to Puma | ⚪ Not Started | | Intake from consolidated feedback |
+| CON-ANIML-02 | Rename Mountain lion label to Puma | ⚫ Won't Do | | Deferred to backlog: requires taxonomy/product decision (ANiML source label governance) |
 | CON-ANIML-03 | Sort cameras by result count descending | ⚪ Not Started | | Intake from consolidated feedback |
 | CON-ANIML-04 | Add explicit "Remove Polygon" CTA in spatial query panel | ⚪ Not Started | | Requested UX improvement for polygon-clear discoverability |
 | CON-ANIML-05 | Improve map camera badge legibility for high counts (999+) | ⚪ Not Started | | Requested larger badge treatment before broader use |
@@ -112,8 +112,15 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 - 🟡 In Progress
 - 🟢 Complete
 - 🔴 Blocked
+- ⚫ Won't Do
 
 ---
+
+## Backlog (Needs Product/Taxonomy Decision)
+
+| ID | Last Updated (Timestamp) | Backlog Item | Notes |
+|----|---------------------------|--------------|-------|
+| ANIML-BACKLOG-01 | Feb 19, 2026 | Resolve species label policy for Puma vs Mountain Lion terminology | Current frontend uses ANiML labels as-is. "Puma" may be semantically weaker for some users than "Mountain Lion." Requires stakeholder decision on display taxonomy and whether normalization belongs upstream, in a shared mapping layer, or only in UX copy/help text. |
 
 ## Task Details
 
