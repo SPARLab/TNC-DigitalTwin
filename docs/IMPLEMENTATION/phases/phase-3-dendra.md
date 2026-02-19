@@ -17,7 +17,7 @@
 | CON-DENDRA-01 | 🟢 Complete | Feb 19, 2026 | Map click on station syncs to right sidebar and opens station | High priority; map-first |
 | CON-DENDRA-02 | 🟢 Complete | Feb 19, 2026 | Multiple time series charts side-by-side; draggable/resizable/minimizable within map area bounds | High priority |
 | CON-DENDRA-03 | 🟡 In Progress | Feb 19, 2026 | Multi-stream selection across stations with stream-name filtering and no reset requirement | High priority |
-| CON-DENDRA-04 | ⚪ Not Started | Feb 18, 2026 | Auto-expand Map Layers widget when a child view is added | Medium priority |
+| CON-DENDRA-04 | ⚪ Not Started | Feb 19, 2026 | Surface pinned-stream counts/icons across Map Layers, stream rows, and station cards | High priority UX clarity; replaces prior auto-expand ask |
 | CON-DENDRA-06 | ⚪ Not Started | Feb 18, 2026 | Review "Update View" versus "Save as New View" language and sync behavior | Low priority |
 | CON-DENDRA-07 | ⚪ Not Started | Feb 18, 2026 | Add icon diagram for station to data stream hierarchy onboarding | Low priority |
 
@@ -64,7 +64,7 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 | CON-DENDRA-01 | Map click station -> sidebar station sync | 🟢 Complete | | Two-way sync, flash, Edit Filters fix, Stations header |
 | CON-DENDRA-02 | Multi-chart compare (draggable/resizable/minimizable, map-constrained) | 🟢 Complete | | See Task Details |
 | CON-DENDRA-03 | Multi-stream cross-station selection UX | 🟡 In Progress | | Stream-name filtering + in-detail station switcher implementation started |
-| CON-DENDRA-04 | Auto-expand Map Layers widget on child add | ⚪ Not Started | | Intake from consolidated feedback |
+| CON-DENDRA-04 | Pinned-stream visibility and count cues across map/sidebar | ⚪ Not Started | | Re-scoped from auto-expand request (Feb 19 feedback) |
 | CON-DENDRA-06 | Review update/save language | ⚪ Not Started | | Intake from consolidated feedback |
 | CON-DENDRA-07 | Station->stream hierarchy onboarding diagram | ⚪ Not Started | | Intake from consolidated feedback |
 | CON-DENDRA-08 | Collect feedback from Dendra power users | ⚪ Not Started | | Intake from consolidated feedback |
@@ -148,6 +148,32 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 - Verify expected workflow with real use case ("air temp avg across stations") and tune matching behavior if needed.
 - Confirm whether auto-opening same-named stream on station switch is desired or should remain manual.
 
+### CON-DENDRA-04 Scope Notes (Feb 19, 2026)
+
+**Problem framing:**
+- In Dendra, users are thinking primarily in terms of selecting/pinning datastreams (often across stations), not "editing filters" as a mental model.
+- Current UI does not make pinned state obvious enough in key navigation surfaces.
+
+**Core behavior (required):**
+- **Map Layers widget:** For each filtered child view label, show pinned datastream count (numeric) with pin icon so users can quickly see which views have charted/pinned content.
+- **Right sidebar datastream rows/cards:** Add a prominent blue pin affordance per datastream so pinning is explicit and scannable.
+- **Station cards (browse list):** In the top-right metadata area, place a compact pin-count indicator to the left of the existing `Active` badge, using number + blue pin icon (e.g., `1 [pin]`, `4 [pin]`).
+
+**Interaction expectations:**
+- Pin indicators update immediately when users pin/unpin datastreams.
+- Counts remain consistent between Map Layers child views and station-level summaries.
+- Iconography should reuse the existing pin glyph used in map pinned-layers context, with a blue treatment for emphasis.
+
+**Acceptance criteria draft:**
+- Pin one datastream from Station A: station card shows `1 [pin]`; corresponding child view in Map Layers shows matching pinned count.
+- Pin additional datastreams from same station: station card increments correctly (e.g., `4 [pin]`).
+- Pin datastreams across multiple stations: each station card shows its own correct count; Map Layers child views show correct per-view counts.
+- Unpin operations decrement counts immediately in all affected surfaces.
+- Layout check: station card pin-count indicator appears left of `Active` badge and does not cause clipping/wrapping regressions at common sidebar widths.
+
+**Open implementation decision (before build starts):**
+- Confirm count scope for station cards: should value represent **all currently pinned datastreams for that station globally**, or only those pinned within the **currently active child view**?
+
 ---
 
 ## Service Analysis
@@ -222,6 +248,7 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 19, 2026 | CON-DENDRA-04 | **Re-scoped.** Replaced "auto-expand Map Layers widget" with pinned-stream visibility/count UX: count+pin indicators in Map Layers child views, datastream rows, and station cards (pin indicator placed left of `Active`). Added acceptance criteria + one count-scope decision question. | Cursor |
 | Feb 19, 2026 | Dendra chart panel | **Polish.** Chart header typography: stream name bold; labels regular; values semi-bold. Pipe separator. Documented in phase + design-system. | Cursor |
 | Feb 19, 2026 | CON-DENDRA-03 | **Started.** Added stream-name filtering and cross-station switcher foundation in Dendra Browse/Station Detail to support multi-stream comparison without reset workflow. | Cursor |
 | Feb 19, 2026 | CON-DENDRA-02 | **Complete.** Multi-panel time series charts: draggable/resizable/minimizable, map-constrained, bottom-right initial placement, persistence across layer/pin transitions, visibility tied to pinned layer/view. See Task Details. | Cursor |
