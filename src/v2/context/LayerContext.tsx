@@ -3,7 +3,7 @@
 // Provides: activateLayer, pinLayer, unpinLayer, toggleVisibility, reorder
 // ============================================================================
 
-import { createContext, useContext, useCallback, useState, type ReactNode } from 'react';
+import { createContext, useContext, useCallback, useEffect, useState, type ReactNode } from 'react';
 import type {
   ActiveLayer,
   PinnedLayer,
@@ -1624,6 +1624,48 @@ export function LayerProvider({ children }: { children: ReactNode }) {
       })
     );
   }, []);
+
+  // Keep active view selection aligned with pinned child-view visibility/state.
+  // This prevents map/sidebar drift when child visibility changes or views are removed.
+  useEffect(() => {
+    if (!activeLayer) return;
+
+    const pinned = pinnedLayers.find((layer) => layer.layerId === activeLayer.layerId);
+    if (!pinned?.views || pinned.views.length === 0) return;
+
+    const currentActiveView = activeLayer.viewId
+      ? pinned.views.find((view) => view.id === activeLayer.viewId)
+      : undefined;
+    const visibleView = pinned.views.find((view) => view.isVisible);
+
+    const nextActiveView = (() => {
+      if (currentActiveView?.isVisible) return currentActiveView;
+      if (visibleView) return visibleView;
+      if (currentActiveView) return currentActiveView;
+      return pinned.views[0];
+    })();
+
+    const nextFeatureId = activeLayer.layerId === 'dataset-193'
+      ? nextActiveView?.droneView?.flightId
+      : activeLayer.featureId;
+
+    if (
+      nextActiveView &&
+      activeLayer.viewId === nextActiveView.id &&
+      activeLayer.featureId === nextFeatureId
+    ) {
+      return;
+    }
+
+    setActiveLayer((prev) => {
+      if (!prev || prev.layerId !== activeLayer.layerId || !nextActiveView) return prev;
+      return {
+        ...prev,
+        viewId: nextActiveView.id,
+        featureId: nextFeatureId,
+      };
+    });
+  }, [activeLayer, pinnedLayers]);
 
   const renameView = useCallback((pinnedId: string, viewId: string, name: string) => {
     const trimmedName = name.trim();

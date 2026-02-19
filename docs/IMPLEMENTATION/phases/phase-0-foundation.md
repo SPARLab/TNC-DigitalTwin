@@ -37,7 +37,7 @@ Set up the V2 application shell, routing, state management, and shared component
 | CON-GL-04 | 🟢 Complete | Feb 18, 2026 (implemented) | Allow multiple expanded layers in Map Layers widget | Map Layers now supports multi-expand (open one row no longer collapses others); active-layer auto-expand adds to existing expanded set |
 | CON-GL-05 | 🟢 Complete | Feb 18, 2026 (implemented) | Edit Filters visual feedback linking widget to right sidebar | Edit Filters click now triggers a brief darker-green flash on the Browse "Edit Filters" card only |
 | CON-GL-06 | 🟢 Complete | Feb 18, 2026 (implemented) | Add "Edit Filters" section header in right sidebar | Added shared green "Edit Filters" card wrapper around filter controls across Browse tabs (iNaturalist, ANiML, Dendra, DataONE) |
-| CON-GL-07 | ⚪ Not Started | Feb 18, 2026 | Fix map and sidebar filter sync drift bug | High priority bug |
+| CON-GL-07 | 🟢 Complete | Feb 18, 2026 (implemented) | Fix map and sidebar filter sync drift bug | Added active-view reconciliation in `LayerContext` to keep sidebar filters bound to the currently visible/valid child view |
 | CON-GL-08 | 🟢 Complete | Feb 18, 2026 (implemented) | Guide user to filter panel when "New View" is clicked | New View now auto-activates the created child view and triggers Edit Filters guidance to open/hydrate Browse filters |
 
 **Note:** Tasks `0.1` through `0.7` appear to be already implemented and are intentionally removed from active tracking.
@@ -57,7 +57,7 @@ Set up the V2 application shell, routing, state management, and shared component
 | CON-GL-04 | Multiple expanded map layers | 🟢 Complete | Claude | Multi-expand implemented in `PinnedLayersSection` using a Set of expanded row IDs |
 | CON-GL-05 | Edit Filters visual link feedback | 🟢 Complete | Claude | Edit Filters navigation now causes a short darker-green flash on the Browse "Edit Filters" section only |
 | CON-GL-06 | "Edit Filters" section header | 🟢 Complete | Claude | Browse filter controls now live inside a shared green "Edit Filters" card wrapper across implemented data sources |
-| CON-GL-07 | Map/sidebar filter sync bug fix | ⚪ Not Started | | Bug |
+| CON-GL-07 | Map/sidebar filter sync bug fix | 🟢 Complete | Codex | Added central active-view reconciliation in `LayerContext` so child-view visibility/removal cannot leave sidebar bound to a stale view ID |
 | CON-GL-08 | Auto-open or guide to filters on New View | 🟢 Complete | Codex | New view creation now activates the created view and fires `requestEditFilters()` so users are guided to filters immediately |
 
 **Status Legend:**
@@ -616,6 +616,7 @@ interface Bookmark {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 18, 2026 | CON-GL-07 | Fixed intermittent Map Layers ↔ right-sidebar filter drift by reconciling `activeLayer.viewId` against pinned child views after visibility/view changes, ensuring filter sync/name updates always target the visible/valid child view. | Codex |
 | Feb 18, 2026 | CON-GL-05, CON-GL-06 | Refined Edit Filters navigation feedback to flash only the Browse "Edit Filters" card (darker green), and implemented a shared green "Edit Filters" card wrapper in Browse tabs across iNaturalist/ANiML/Dendra/DataONE. | Claude |
 | Feb 18, 2026 | CON-GL-04 | Implemented multi-expand behavior for Map Layers pinned rows. Expanded state now tracks multiple rows simultaneously (Set-based), preserves active-layer auto-expand, and no longer collapses other expanded rows on activation. | Claude |
 | Feb 9, 2026 | 0.8 | ✅ Completed tree connector refinement — Fixed gaps by extending lines into `space-y-1` gaps (4px) between child rows. Used CSS borders for seamless L-shape corners. | Claude |
