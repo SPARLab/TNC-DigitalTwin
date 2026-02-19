@@ -23,11 +23,10 @@ function toDomSafeId(input: string): string {
 }
 
 function pickProjectDefaultFlight(project: DroneImageryProject) {
-  for (let i = project.imageryLayers.length - 1; i >= 0; i -= 1) {
-    const flight = project.imageryLayers[i];
+  for (const flight of project.imageryLayers) {
     if (flight.wmts.itemId.trim().length > 0) return flight;
   }
-  return project.imageryLayers[project.imageryLayers.length - 1] ?? project.imageryLayers[0];
+  return project.imageryLayers[0] ?? project.imageryLayers[project.imageryLayers.length - 1];
 }
 
 export function LayerRow({

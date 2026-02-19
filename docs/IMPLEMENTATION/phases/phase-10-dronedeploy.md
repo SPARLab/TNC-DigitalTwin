@@ -1,7 +1,7 @@
 # Phase 10: DroneDeploy Imagery
 
 **Status:** 🟡 In Progress  
-**Progress:** 0 / 3 tasks (completed tasks 10.1–10.6, 10.8–10.11 archived)  
+**Progress:** 1 / 3 tasks (completed tasks 10.1–10.6, 10.8–10.11 archived; CON-DRONE-01 complete)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-10-dronedeploy-completed.md`  
 **Branch:** `v2/dronedeploy`  
 **Depends On:** Phase 0 (Foundation)  
@@ -13,7 +13,7 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| CON-DRONE-01 | ⚪ Not Started | Feb 18, 2026 | Bug: drone imagery does not change when toggling between flights | High priority bug |
+| CON-DRONE-01 | 🟢 Complete | Feb 19, 2026 | Bug: drone imagery does not change when toggling between flights | Fixed: single-flight replacement, auto-load default, WMTS 404 fallback |
 | CON-DRONE-02 | ⚪ Not Started | Feb 18, 2026 | Simplify project flights UI: default name/date, expand for metadata | Medium-high priority |
 | 10.7 | ⚪ Not Started | — | Render flight footprints as map polygons | Show `plan_geometry` / `project_bounds` as clickable map polygons |
 
@@ -120,6 +120,30 @@ Implement the DroneDeploy drone imagery browse experience in the right sidebar. 
 ---
 
 ## Task Details
+
+### CON-DRONE-01: Fix Flight Toggle Imagery Switching
+
+**Goal:** Ensure map imagery reliably updates when users toggle between flights in DroneDeploy project detail.
+
+**Acceptance Criteria:**
+- [x] Toggling a flight to visible also activates that flight (`activeLayer.featureId`) and updates selected flight context
+- [x] Toggling a different flight visibly changes map imagery to the newly selected flight
+- [x] Toggling off the currently selected flight cleanly falls back to another visible flight (or clears selection if none)
+- [x] Pinned child view visibility and loaded WMTS state stay in sync
+- [x] Manual validation completed for project detail flight list + temporal carousel interaction
+
+**Implementation Notes (Feb 19, 2026):**
+- Started fix in `DroneDeploySidebar`: flight visibility toggle now routes through map activation/view sync flow instead of only flipping loaded IDs.
+- Updated project open + flight select handlers to use `createOrUpdateDroneView(...)` so active view selection is deterministic.
+- Updated default flight selection to prefer the first valid flight (oldest-first list order) to align with expected first-dot carousel behavior.
+- Updated map behavior to auto-load the default flight when DroneDeploy Orthomosaics is activated, so imagery appears without an extra click.
+- Updated selection semantics to single-flight replacement (new selection unloads old flight), matching v1 behavior.
+- Runtime finding: some DroneDeploy WMTS plans are returning repeated tile `404` responses (`public-tiles.dronedeploy.com`), which can still prevent imagery draw even when client selection logic is correct.
+- Added map-level activation guardrails: when a flight becomes active (including carousel-driven activation), force-load only that flight and unload previous flights; if selected flight WMTS fails with `404`, auto-fallback to another valid flight in the same project when available.
+
+**Resolution (Feb 19, 2026):** Task complete. Flight toggle, project switch, and carousel selection now enforce single-flight loaded state; old imagery is unloaded before new imagery loads. WMTS 404 failures trigger same-project fallback with user toast.
+
+---
 
 ### 10.7: Render Flight Footprints as Map Polygons
 
@@ -234,3 +258,4 @@ Validated with sample `wmts_item_id` values from live records.
 | Feb 16, 2026 | 10.9 | Completed temporal comparison UI: fixed on-map carousel rendering path by using layer-aware adapter lookup for floating panels (`dataset-193`), aligned carousel left/right button and dot styling to v1 `DroneImageryCarousel.tsx`, auto-opened right-sidebar flight detail when a flight is map-selected, and verified fly-to request flow on selection. Updated phase progress to 7/11. | Codex |
 | Feb 16, 2026 | 10.4, 10.5 | Incorporated UX feedback for Browse tab information density: reopened Task 10.4 to require compact project-only cards, removed project-list-level flight actions, and clarified that flight data/actions belong in project detail drill-down. Updated phase progress to 6/11. | Codex |
 | Feb 16, 2026 | 10.4 | Implemented compact Browse projects UX in right sidebar: removed per-flight rows/actions from project list, added compact project metadata cards (name, flight count, date range, WMTS summary), and wired project-card click to open project detail with flight-level actions. Updated phase progress to 7/11. | Codex |
+| Feb 19, 2026 | CON-DRONE-01 | **Completed flight toggle imagery bug fix:** Single-flight replacement semantics (new selection unloads old imagery), default to first valid flight for carousel alignment, auto-load default flight when Orthomosaics activates, map-level activation guardrails, WMTS 404 fallback to alternate flight in same project. Files: DroneDeploySidebar.tsx, LayerRow.tsx, useMapBehavior.ts | Claude |
