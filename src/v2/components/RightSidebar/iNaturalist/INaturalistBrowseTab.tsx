@@ -47,26 +47,13 @@ export function INaturalistBrowseTab() {
   } = useINaturalistFilter();
   const { activeLayer, lastEditFiltersRequest, lastFiltersClearedTimestamp, getPinnedByLayerId, syncINaturalistFilters } = useLayers();
 
-  // Search state
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-
-  // Debounce search term (300ms)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
-
   const filters: INatFilters = useMemo(() => ({
     selectedTaxa,
     selectedSpecies,
     excludeAllSpecies,
-    searchTerm: debouncedSearchTerm,
     startDate: startDate || undefined,
     endDate: endDate || undefined,
-  }), [selectedTaxa, selectedSpecies, excludeAllSpecies, debouncedSearchTerm, startDate, endDate]);
+  }), [selectedTaxa, selectedSpecies, excludeAllSpecies, startDate, endDate]);
 
   // Data fetching
   const {
@@ -128,15 +115,21 @@ export function INaturalistBrowseTab() {
 
   const hasTaxaFilter = selectedTaxa.size > 0;
   const hasSpeciesFilter = selectedSpecies.size > 0 || excludeAllSpecies;
+  const hasExplicitSpeciesSelection = selectedSpecies.size > 0;
+  const requiresSpeciesSelection = hasTaxaFilter && !hasExplicitSpeciesSelection;
   const hasFilter = hasTaxaFilter || hasSpeciesFilter;
   const filterCount = hasTaxaFilter ? selectedTaxa.size : TAXON_CATEGORIES.length;
   const speciesFilterCount = hasSpeciesFilter ? selectedSpecies.size : speciesOptions.length;
-  const hasActiveSearch = debouncedSearchTerm.trim().length > 0;
   const hasDateFilter = !!(startDate || endDate);
   const hasStaleResults = allObservations.length > 0;
   const showInitialLoading = loading && !hasStaleResults;
   const showRefreshLoading = loading && hasStaleResults;
   const normalizedSpeciesSearch = speciesSearchTerm.trim().toLowerCase();
+  const handleToggleTaxon = useCallback((taxon: string) => {
+    toggleTaxon(taxon);
+    setIsSpeciesFilterOpen(true);
+  }, [toggleTaxon]);
+
 
   const displayedSpeciesOptions = useMemo(() => {
     const filtered = speciesOptions.filter((option) => {
@@ -250,42 +243,11 @@ export function INaturalistBrowseTab() {
   return (
     <div id="inat-browse-tab" className="space-y-3">
       <EditFiltersCard id="inat-edit-filters-card">
-        {/* Search bar */}
-        <div id="inat-search-bar" className="relative">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              id="inat-search-input"
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by species name..."
-              className="w-full pl-9 pr-9 py-2.5 text-sm border border-gray-200 rounded-lg bg-white
-                         focus:outline-none focus:border-gray-300 focus:shadow-[0_0_0_1px_rgba(107,114,128,0.3)]
-                         placeholder:text-gray-400"
-            />
-            {searchTerm && (
-              <button
-                id="inat-search-clear-button"
-                onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                aria-label="Clear search"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-          {hasActiveSearch && (
-            <p className="text-xs text-gray-500 mt-1.5">
-              Searching in {filterCount === TAXON_CATEGORIES.length ? 'all taxa' : `${filterCount} ${filterCount === 1 ? 'taxon' : 'taxa'}`}
-            </p>
-          )}
-        </div>
         {/* Filter section (DFT-038) - Compact dropdown */}
         <div id="inat-filter-section" className="rounded-lg border border-emerald-100 bg-white p-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-              Filter Observations
+              Filter Taxa
             </span>
             {hasFilter && (
               <div id="inat-filter-actions" className="flex items-center gap-2">
@@ -335,7 +297,7 @@ export function INaturalistBrowseTab() {
                     <input
                       type="checkbox"
                       checked={isTaxonSelected}
-                      onChange={() => toggleTaxon(taxon.value)}
+                      onChange={() => handleToggleTaxon(taxon.value)}
                       className="w-4 h-4 accent-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                     />
                     <span className="text-[10px]">{taxon.emoji}</span>
@@ -568,8 +530,17 @@ export function INaturalistBrowseTab() {
         </div>
       )}
 
+      {requiresSpeciesSelection && !error && !showInitialLoading && (
+        <div
+          id="inat-species-selection-required-message"
+          className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800"
+        >
+          Select one or more species to view observations for the selected taxa.
+        </div>
+      )}
+
       {/* Observation cards */}
-      {!error && !showInitialLoading && (
+      {!error && !showInitialLoading && !requiresSpeciesSelection && (
         <div id="inat-observation-cards" className={`space-y-2 ${showRefreshLoading ? 'opacity-60' : ''}`}>
           {observations.map(obs => (
             <ObservationCard
@@ -585,14 +556,14 @@ export function INaturalistBrowseTab() {
 
           {observations.length === 0 && !showRefreshLoading && (
             <p className="text-sm text-gray-400 text-center py-6">
-              No observations found{hasActiveSearch ? ' matching your search' : hasFilter ? ' for this filter' : ''}.
+              No observations found{hasFilter ? ' for this filter' : ''}.
             </p>
           )}
         </div>
       )}
 
       {/* Pagination */}
-      {totalPages > 1 && !showInitialLoading && (
+      {totalPages > 1 && !showInitialLoading && !requiresSpeciesSelection && (
         <div id="inat-pagination" className="flex items-center justify-between pt-2 border-t border-gray-100">
           <button
             onClick={() => goToPage(page - 1)}

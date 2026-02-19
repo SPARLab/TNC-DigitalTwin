@@ -781,7 +781,7 @@ interface FilterSectionProps {
 
 | Data Source | Level | Header | Controls |
 |---|---|---|---|
-| **iNaturalist** | Single | "Filter Observations" | Taxon dropdown, Species dropdown (2-col), Date range (full), Quality grade checkbox |
+| **iNaturalist** | Single | "Filter Taxa", "Filter Species" | Taxa dropdown, Species dropdown (each with own header per hierarchy flow AF-02), Date range (full) |
 | **ANiML** | L2 | "Filter Cameras" | Region dropdown, Status dropdown (2-col) |
 | **ANiML** | L3 | "Filter Images" | Species multi-select (full), Date range (full), Deployment dropdown |
 | **Dendra** | L2 | "Filter Sensors" | Region dropdown, Status dropdown (2-col) |
