@@ -1,7 +1,7 @@
 # Phase 2: ANiML Right Sidebar
 
-**Status:** 🟡 In Progress  
-**Progress:** 0 / 4 tasks (completed tasks 2.1–2.17 archived)  
+**Status:** 🟢 Complete  
+**Progress:** 6 / 7 tasks (completed tasks 2.1–2.17, 2.18 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-2-animl-completed.md`  
 **Branch:** `v2/animl`  
 **Depends On:** Phase 0 (Foundation) — Data Source Adapter Pattern ✅ Complete  
@@ -87,19 +87,25 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| CON-ANIML-01 | ⚪ Not Started | Feb 18, 2026 | Map click on camera trap auto-selects sidebar camera and shows images | High priority; map-first interaction |
-| CON-ANIML-02 | ⚪ Not Started | Feb 18, 2026 | Rename "Mountain lion" to "Puma" | Medium priority |
-| CON-ANIML-03 | ⚪ Not Started | Feb 18, 2026 | Sort cameras by result count (data-rich first, zero-data last) | Medium priority |
-| 2.18 | ⚪ Not Started | Feb 18, 2026 | Synchronize matching images results with map/layer counts | Existing open ANiML bug |
+| CON-ANIML-01 | 🟢 Complete | Feb 19, 2026 | Map click on camera trap auto-selects sidebar camera and shows images | Map click + sidebar sync; spatial-query camera auto-select/prioritization; QA passed |
+| CON-ANIML-02 | ⚫ Won't Do | Feb 19, 2026 | Rename "Mountain lion" to "Puma" | Deferred: current label comes from ANiML source data; taxonomy decision needed |
+| CON-ANIML-03 | 🟢 Complete | Feb 19, 2026 | Sort cameras by result count (data-rich first, zero-data last) | Comparator in AnimlBrowseTab; zero-result cameras sink to bottom |
+| CON-ANIML-04 | 🟢 Complete | Feb 19, 2026 | Add explicit "Remove Polygon" CTA in spatial query panel | Replaced tiny header Clear action with explicit button-style Remove Polygon CTA |
+| CON-ANIML-05 | 🟢 Complete | Feb 19, 2026 | Improve map badge UI for large counts (e.g., 999+) | Dynamic pill badge, white outline, extra padding for 999+; no clipping; QA passed |
+| CON-ANIML-06 | 🟢 Complete | Feb 19, 2026 | Add Retry button when image labels API error occurs (e.g. 503) | Auto-retry (429/502/503/504 backoff) + manual Retry button; QA passed |
+| 2.18 | 🟢 Complete | Feb 19, 2026 | Synchronize matching images results with map/layer counts | Server-side image pagination; shared filteredImageCount for map, layer badge, and browse totals; QA passed |
 
 ## Task Status
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
-| CON-ANIML-01 | Map click camera -> sidebar sync + images | ⚪ Not Started | | Intake from consolidated feedback |
-| CON-ANIML-02 | Rename Mountain lion label to Puma | ⚪ Not Started | | Intake from consolidated feedback |
-| CON-ANIML-03 | Sort cameras by result count descending | ⚪ Not Started | | Intake from consolidated feedback |
-| 2.18 | Synchronize matching images results with map/layer counts | ⚪ Not Started | | Map shows 605, matching images/layer show 200 — counts out of sync for species+camera filter |
+| CON-ANIML-01 | Map click camera -> sidebar sync + images | 🟢 Complete | | Map click handler + browse camera auto-select + spatial polygon camera auto-selection; QA passed |
+| CON-ANIML-02 | Rename Mountain lion label to Puma | ⚫ Won't Do | | Deferred to backlog: requires taxonomy/product decision (ANiML source label governance) |
+| CON-ANIML-03 | Sort cameras by result count descending | 🟢 Complete | | Data-rich first, zero-data last; preserves spatial-polygon priority |
+| CON-ANIML-04 | Add explicit "Remove Polygon" CTA in spatial query panel | 🟢 Complete | | Replaced tiny "Clear" text action with explicit Remove Polygon button in SpatialQuerySection |
+| CON-ANIML-05 | Improve map camera badge legibility for high counts (999+) | 🟢 Complete | | Dynamic pill badge with white outline; extra padding for 999+; no clipping; QA passed |
+| CON-ANIML-06 | Add Retry button when image labels API error occurs | 🟢 Complete | | Auto retry (429/502/503/504) + manual Retry button in `AnimlBrowseTab`; QA passed |
+| 2.18 | Synchronize matching images results with map/layer counts | 🟢 Complete | | Server-side image pagination; shared filteredImageCount for map, layer badge, and browse totals; QA passed |
 
 *Completed tasks 2.1–2.17 have been archived. See `docs/archive/phases/phase-2-animl-completed.md`.*
 
@@ -108,10 +114,36 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 - 🟡 In Progress
 - 🟢 Complete
 - 🔴 Blocked
+- ⚫ Won't Do
 
 ---
 
+## Backlog (Needs Product/Taxonomy Decision)
+
+| ID | Last Updated (Timestamp) | Backlog Item | Notes |
+|----|---------------------------|--------------|-------|
+| ANIML-BACKLOG-01 | Feb 19, 2026 | Resolve species label policy for Puma vs Mountain Lion terminology | Current frontend uses ANiML labels as-is. "Puma" may be semantically weaker for some users than "Mountain Lion." Requires stakeholder decision on display taxonomy and whether normalization belongs upstream, in a shared mapping layer, or only in UX copy/help text. |
+
 ## Task Details
+
+### CON-ANIML-06: Add Retry Button When Image Labels API Error Occurs
+
+**Goal:** When the image labels API fails (e.g. 503 "User couldn't access this resource 'animl.mapserver'"), show a Retry button so users can re-attempt the request without reloading the page.
+
+**Problem:** AnimlBrowseTab displays an error message when `queryImageLabelsCached` fails, but the only recovery path is a full page reload.
+
+**Acceptance Criteria:**
+- [x] When image fetch fails, error UI includes a visible "Retry" button
+- [x] Clicking Retry re-runs the same query (same filters: species, cameras, date range)
+- [x] No full page reload required
+
+**Implementation Notes (Feb 19, 2026):**
+- Added automatic retry for retryable HTTP failures (`429`, `502`, `503`, `504`) with short backoff delays before surfacing error state.
+- Added explicit Retry CTA in image error state to re-run the same `queryImageLabelsCached` request without reloading the app.
+
+**Notes:** Error originates from `AnimlBrowseTab.tsx` useEffect that calls `animlService.queryImageLabelsCached`. Add `imgError` state handling and a Retry CTA that clears error and re-triggers the fetch (e.g. via a retry counter in deps or explicit refetch callback).
+
+---
 
 ### 2.18: Synchronize Matching Images Results with Map/Layer Counts
 
@@ -120,11 +152,14 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 **Problem:** When selecting species (e.g. Coyote) and camera (e.g. Big Kojo), the map may show 605 results while the matching images section and map layer badge show only 200. These three sources of truth are out of sync.
 
 **Acceptance Criteria:**
-- [ ] Map result count matches matching images count
-- [ ] Map layer badge count matches matching images count
-- [ ] All three use the same underlying query/aggregation logic (or explicitly document why counts may differ, e.g. pagination cap)
+- [x] Map result count matches matching images count
+- [x] Map layer badge count matches matching images count
+- [x] All three use the same underlying query/aggregation logic (or explicitly document why counts may differ, e.g. pagination cap)
 
-**Notes:** Likely root cause: different code paths for count aggregation vs. image fetch (e.g. count from one query, images from another with different limits or filters). Fix by unifying the data source or ensuring count and image fetch share the same query parameters and result set.
+**Implementation Notes (Feb 19, 2026):**
+- Switched AnimlBrowseTab image fetch to server-side pagination (`maxResults: PAGE_SIZE`, `resultOffset`) instead of capped 200-result client-side pagination.
+- Browse "matching images" total, Map Layers widget result count, and map camera badges now all derive from `filteredImageCount` (AnimlFilterContext countLookups).
+- Filter changes reset pagination to page 1; page bounds clamp when totals change.
 
 ---
 
@@ -241,6 +276,12 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | Feb 13, 2026 | 2.17 | **New task added.** Species/camera counts in filter sections and legend show all-time totals; when date filter is applied, image results correctly show 0 but counts remain high — misleading UX. Task 2.17: sync counts with date filter or add clear qualifier. | Will + Claude |
 | Feb 13, 2026 | 2.17 | **Complete.** Implemented Option D (lazy date-filtered counts). AnimlFilterContext fetches `getObservationCountsGroupedCached({ startDate, endDate })` when date filter active, builds `dateScopedCountLookups`, routes all count helpers through `activeCountLookups`. Species/Cameras filter sections and AnimlLegendWidget now show date-scoped counts; no all-time fallback during load. Files: AnimlFilterContext.tsx, AnimlBrowseTab.tsx, AnimlLegendWidget.tsx. | Will + Claude |
 | Feb 16, 2026 | 2.8 | **Complete.** Replaced emoji camera map markers with SVG camera symbols in `animlLayer.ts` for base, badged, and muted states. Added row-level icons in ANiML legend and browse filters (`AnimlLegendWidget`, `FilterSection`, `AnimlBrowseTab`). Final refinement removed circular marker backplates based on visual QA feedback. | Will + Claude |
+| Feb 19, 2026 | 2.18 | **Complete.** Synchronize matching images with map/layer counts. Server-side image pagination; shared filteredImageCount for map, layer badge, and browse totals; QA passed. | Claude |
+| Feb 19, 2026 | CON-ANIML-01 | **Complete.** Map click on camera trap auto-selects sidebar camera and shows images. Includes map click handler, browse camera auto-select, and spatial polygon camera auto-selection/prioritization. QA passed. | Will + Claude |
+| Feb 19, 2026 | CON-ANIML-03 | **Complete.** Sort cameras by result count (data-rich first, zero-data last). Comparator in AnimlBrowseTab sinks zero-result cameras to bottom; preserves spatial-polygon priority. | Will + Claude |
+| Feb 19, 2026 | CON-ANIML-04 | **Complete.** Added explicit button-style "Remove Polygon" CTA in spatial query panel; replaced low-visibility header "Clear" text action for better discoverability. | Will + Claude |
+| Feb 19, 2026 | UX | **Species/Camera count loading indicators.** FilterSection shows "Loading counts..." with blue spinner (EyeSlotLoadingSpinner) when countLookups not ready. AnimlFilterContext exposes `countsLoading`; both Species and Cameras sections use it. Styling matches Map Layers widget. | Will + Claude |
+| Feb 19, 2026 | SpatialQuerySection | **Refinements.** Removed redundant "Polygon applied..." and "Clearing removes..." copy. Matched filter-section card styling: border/rounded-lg/overflow-hidden, bg-slate-50 header row, body with Draw/Redraw + Remove Polygon buttons. Added CON-ANIML-06: Retry button for image labels API errors (e.g. 503). | Will + Claude |
 
 ---
 

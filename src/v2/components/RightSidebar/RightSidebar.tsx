@@ -88,6 +88,7 @@ export function RightSidebar() {
       (
         activeLayer?.layerId === 'inaturalist-obs' ||
         activeLayer?.dataSource === 'dendra' ||
+        activeLayer?.layerId === 'animl-camera-traps' ||
         activeLayer?.layerId === 'dataone-datasets' ||
         activeLayer?.layerId === 'dataset-193'
       ) &&
@@ -95,7 +96,7 @@ export function RightSidebar() {
     ) {
       handleSystemTabChange('browse');
     }
-  }, [activeLayer?.layerId, activeLayer?.featureId, handleSystemTabChange]);
+  }, [activeLayer?.layerId, activeLayer?.dataSource, activeLayer?.featureId, handleSystemTabChange]);
 
   return (
     <aside

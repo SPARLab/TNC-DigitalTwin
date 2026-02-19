@@ -29,7 +29,7 @@ export function ActiveLayerSection({
 
   const isINat = activeLayer.layerId === 'inaturalist-obs';
   const isAniml = activeLayer.layerId === 'animl-camera-traps';
-  const { selectedTaxa, hasFilter } = useINaturalistFilter();
+  const { selectedTaxa, selectedSpecies, excludeAllSpecies, startDate: inatStartDate, endDate: inatEndDate, hasFilter } = useINaturalistFilter();
   const {
     selectedAnimals,
     selectedCameras,
@@ -41,9 +41,14 @@ export function ActiveLayerSection({
 
   // Build filter display for iNaturalist
   const filterDisplay = isINat && hasFilter
-    ? Array.from(selectedTaxa)
-        .map(taxon => TAXON_CONFIG.find(t => t.value === taxon)?.label ?? taxon)
-        .join(', ')
+    ? (() => {
+        const taxaText = Array.from(selectedTaxa)
+          .map(taxon => TAXON_CONFIG.find(t => t.value === taxon)?.label ?? taxon)
+          .join(', ');
+        const speciesText = excludeAllSpecies ? 'No species selected' : Array.from(selectedSpecies).join(', ');
+        const dateText = (inatStartDate || inatEndDate) ? `${inatStartDate || 'Any start'} to ${inatEndDate || 'Any end'}` : '';
+        return [taxaText, speciesText, dateText].filter(Boolean).join(' • ');
+      })()
     : null;
 
   const animlFilterDisplay = (() => {

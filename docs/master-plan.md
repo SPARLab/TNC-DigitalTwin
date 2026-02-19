@@ -33,8 +33,8 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 |-------|------|--------|-----------|--------|-----------|
 | 0 | Foundation | 🟢 Complete | 0 blocking | `v2/foundation` | No — parallel branches ready |
 | 1 | iNaturalist | 🟢 Complete | 0 | `v2/inaturalist` | No |
-| 2 | ANiML | 🟡 In Progress | ~4 tasks | `v2/animl` | No |
-| 3 | Dendra | 🟡 In Progress | 3 | `v2/dendra` | No |
+| 2 | ANiML | 🟢 Complete | 0 | `v2/animl` | No |
+| 3 | Dendra | 🟡 In Progress | 1 task | `v2/dendra` | No |
 | 4 | DataOne | 🟢 Complete | 0 | `v2/dataone` | No |
 | 5 | Export Builder | 🟢 Complete | 0 | `v2/export-builder` | No |
 | 6 | TNC ArcGIS Services | 🟡 In Progress | 9 tasks | `v2/tnc-arcgis` | No |
@@ -51,8 +51,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | Phase | Doc | Remaining |
 |-------|-----|-----------|
 | 0 | [phase-0-foundation.md](IMPLEMENTATION/phases/phase-0-foundation.md) | 0.6 Map Feature Highlight (if pending); 0.9 ✅ complete |
-| 2 | [phase-2-animl.md](IMPLEMENTATION/phases/phase-2-animl.md) | ~4 tasks |
-| 3 | [phase-3-dendra.md](IMPLEMENTATION/phases/phase-3-dendra.md) | 3 tasks (CON-DENDRA-06–08) |
+| 3 | [phase-3-dendra.md](IMPLEMENTATION/phases/phase-3-dendra.md) | 1 task |
 | 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 9 tasks |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) | 1 task (10.7) |
 
@@ -305,6 +304,14 @@ When working on any phase:
 | Feb 19, 2026 | Phase 3 | **CON-DENDRA-03 complete.** Multi-stream selection across stations: stream-name filtering, in-detail station switcher, no reset requirement. | Cursor |
 | Feb 19, 2026 | Phase 3 | **CON-DENDRA-02 complete.** Multi-panel Dendra time series charts: draggable/resizable/minimizable, map-constrained, bottom-right placement, persistence across layer/pin transitions, visibility tied to pinned layer/view. | Cursor |
 | Feb 19, 2026 | Phase 3 | **CON-DENDRA-01 complete.** Map↔sidebar two-way station sync, station header flash, Edit Filters fix, Stations header, parallel sidebar activation on map click. | Cursor |
+| Feb 19, 2026 | Phase 1 | **CON-INAT-06 complete:** Species/taxa ordering (count default, A-Z toggle) already implemented in CON-INAT-01. CON-INAT-04 won't do (iNaturalist coordinate obfuscation). Remaining: 1 task (CON-INAT-07). | — |
+| Feb 19, 2026 | Phase 1 | **CON-INAT-03 complete:** Added browse result-count row in iNaturalist right sidebar (e.g., "92 observations"). | — |
+| Feb 19, 2026 | Phase 1 | **CON-INAT-02 complete:** Species hierarchy flow (taxa→species→observations). Removed redundant top species search; renamed "Filter Observations" to "Filter Taxa". | — |
+| Feb 19, 2026 | Phase 1 | **CON-INAT-01 complete:** Species-level filtering (full scientific names, species search, count/alphabetical sort, map/pinned-view sync). Common/Latin toggle dropped. | — |
+| Feb 19, 2026 | Phase 2 | **Task 2.18 complete: Synchronize matching images with map/layer counts.** Server-side image pagination; shared filteredImageCount for map, layer badge, and browse totals; QA passed. Phase 2 ANiML complete. | Claude |
+| Feb 19, 2026 | Phase 2 | **CON-ANIML-06 complete: Retry for image labels API errors.** Auto-retry (429/502/503/504) with backoff; manual Retry button when exhausted; no full reload. | Claude |
+| Feb 19, 2026 | Phase 2 | **CON-ANIML-05 complete: Map badge UI for large counts.** Dynamic pill badge with white outline; extra padding for 999+; no clipping; QA passed. | Claude |
+| Feb 19, 2026 | Phase 2 | **CON-ANIML-04 complete + SpatialQuerySection refinements.** Explicit Remove Polygon CTA; removed redundant copy; matched filter-section card styling (border, bg-slate-50 header). Added CON-ANIML-06: Retry button for image labels API errors. | Will + Claude |
 | Feb 18, 2026 | Docs | **Archive + consolidation.** Merged development-task-tracker into master-plan. Master-plan now high-level only (phase counts, no task lists). Completed tasks archived. development-task-tracker.md removed. | Claude |
 | Feb 17, 2026 | Phase 3 | **Phase 3 Dendra status corrected.** Phase doc showed "Not Started" but Dendra was fully implemented. Updated to 🟢 Complete. | Claude |
 | Feb 16, 2026 | Phase 10 | **DroneDeploy left-sidebar project click loads imagery.** Left-sidebar project select now calls DroneDeploy context so WMTS tiles load on map. | Claude |

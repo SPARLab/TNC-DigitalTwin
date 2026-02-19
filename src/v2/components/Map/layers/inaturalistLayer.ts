@@ -45,6 +45,7 @@ export function populateINaturalistLayer(
       uuid: obs.uuid,
       commonName: obs.commonName,
       scientificName: obs.scientificName,
+      speciesName: obs.speciesName,
       taxonCategory: obs.taxonCategory,
       observedOn: obs.observedOn,
       observer: obs.observer,
@@ -73,29 +74,37 @@ export function filterINaturalistLayer(
   layer: GraphicsLayer,
   filters: {
     selectedTaxa: Set<string>;
+    selectedSpecies: Set<string>;
+    excludeAllSpecies?: boolean;
     startDate?: string;
     endDate?: string;
     spatialPolygon?: SpatialPolygon | null;
   },
 ): void {
-  const { selectedTaxa, startDate, endDate, spatialPolygon } = filters;
+  const { selectedTaxa, selectedSpecies, excludeAllSpecies, startDate, endDate, spatialPolygon } = filters;
   const showAllTaxa = selectedTaxa.size === 0;
+  const showAllSpecies = selectedSpecies.size === 0;
 
   for (const graphic of layer.graphics.toArray()) {
     const graphicTaxon = graphic.attributes?.taxonCategory as string | undefined;
+    const graphicSpecies = graphic.attributes?.speciesName as string | undefined;
     const graphicDate = graphic.attributes?.observedOn as string | undefined;
     const taxonMatches = showAllTaxa || (graphicTaxon ? selectedTaxa.has(graphicTaxon) : false);
+    const speciesMatches = excludeAllSpecies
+      ? false
+      : (showAllSpecies || (graphicSpecies ? selectedSpecies.has(graphicSpecies) : false));
     const afterStart = !startDate || !graphicDate || graphicDate >= startDate;
     const beforeEnd = !endDate || !graphicDate || graphicDate <= endDate;
     const geometry = graphic.geometry;
     const hasPointGeometry = geometry?.type === 'point';
-    const lon = hasPointGeometry ? (geometry as Point).longitude : Number.NaN;
-    const lat = hasPointGeometry ? (geometry as Point).latitude : Number.NaN;
+    const point = hasPointGeometry ? (geometry as Point) : null;
+    const lon = typeof point?.longitude === 'number' ? point.longitude : Number.NaN;
+    const lat = typeof point?.latitude === 'number' ? point.latitude : Number.NaN;
     const spatialMatch = Number.isFinite(lon) && Number.isFinite(lat)
       ? isPointInsideSpatialPolygon(spatialPolygon, lon, lat)
       : true;
 
-    graphic.visible = taxonMatches && afterStart && beforeEnd && spatialMatch;
+    graphic.visible = taxonMatches && speciesMatches && afterStart && beforeEnd && spatialMatch;
   }
 }
 

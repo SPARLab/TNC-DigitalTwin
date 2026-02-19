@@ -8,9 +8,10 @@
 // ============================================================================
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { PawPrint, Camera, AlertCircle, X } from 'lucide-react';
+import { PawPrint, Camera, AlertCircle, RotateCcw, X } from 'lucide-react';
 import { useAnimlFilter } from '../../../context/AnimlFilterContext';
 import { useLayers } from '../../../context/LayerContext';
+import { useMap } from '../../../context/MapContext';
 import { animlService, type AnimlImageLabel } from '../../../../services/animlService';
 import { FilterSection, type FilterSectionItem } from './FilterSection';
 import { DateFilterSection } from './DateFilterSection';
@@ -18,13 +19,34 @@ import { ImageList } from './ImageList';
 import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { SpatialQuerySection } from '../shared/SpatialQuerySection';
 import { EditFiltersCard } from '../shared/EditFiltersCard';
+import { isPointInsideSpatialPolygon } from '../../../utils/spatialQuery';
 
 const PAGE_SIZE = 20;
 const FETCH_DEBOUNCE_MS = 300;
+const AUTO_RETRY_DELAYS_MS = [500, 1200];
+const RETRYABLE_STATUS_CODES = new Set([429, 502, 503, 504]);
+type SpeciesSortMode = 'count' | 'alpha';
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Failed to load images';
+}
+
+function getHttpStatusFromMessage(message: string): number | null {
+  const statusMatch = message.match(/\b(4\d{2}|5\d{2})\b/);
+  if (!statusMatch) return null;
+  return Number(statusMatch[1]);
+}
+
+function isRetryableError(error: unknown): boolean {
+  const message = getErrorMessage(error);
+  const status = getHttpStatusFromMessage(message);
+  return status !== null && RETRYABLE_STATUS_CODES.has(status);
+}
 
 export function AnimlBrowseTab() {
   const {
     deployments, animalTags, loading, error, dataLoaded,
+    countsLoading,
     selectedAnimals, selectedCameras, startDate, endDate,
     toggleAnimal, setSelectedAnimals, toggleCamera, setSelectedCameras,
     selectAll, selectAllAnimals, clearCameras, selectAllCameras,
@@ -34,16 +56,22 @@ export function AnimlBrowseTab() {
     filteredImageCount, focusDeployment, clearFocusedDeployment,
   } = useAnimlFilter();
   const { activeLayer, lastEditFiltersRequest, getPinnedByLayerId, syncAnimlFilters } = useLayers();
+  const { getSpatialPolygonForLayer } = useMap();
 
   // Image fetch state (local to browse tab)
   const [images, setImages] = useState<AnimlImageLabel[]>([]);
   const [imgLoading, setImgLoading] = useState(false);
   const [imgError, setImgError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [speciesSortMode, setSpeciesSortMode] = useState<SpeciesSortMode>('count');
+  const [manualRetryNonce, setManualRetryNonce] = useState(0);
 
   // ── Hydrate Browse filters (ONE-SHOT, not continuous) ───────────────────
   const lastConsumedHydrateRef = useRef(0);
   const prevHydrateViewIdRef = useRef<string | undefined>(activeLayer?.viewId);
+  const lastHandledMapFeatureIdRef = useRef<string | null>(null);
+  const prevHasCameraFilterRef = useRef(hasCameraFilter);
+  const lastAppliedSpatialPolygonIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (activeLayer?.layerId !== 'animl-camera-traps') return;
@@ -68,31 +96,116 @@ export function AnimlBrowseTab() {
     setDateRange(sourceFilters.startDate || null, sourceFilters.endDate || null);
   }, [activeLayer?.layerId, activeLayer?.viewId, lastEditFiltersRequest, getPinnedByLayerId, setSelectedAnimals, setSelectedCameras, setDateRange]);
 
+  // Map-click flow: selecting a camera marker sets Browse to that camera and
+  // immediately triggers image loading for map-first interaction.
+  useEffect(() => {
+    if (activeLayer?.layerId !== 'animl-camera-traps') return;
+    if (activeLayer.featureId == null) {
+      lastHandledMapFeatureIdRef.current = null;
+      return;
+    }
+
+    const featureKey = String(activeLayer.featureId);
+    if (lastHandledMapFeatureIdRef.current === featureKey) return;
+
+    const deploymentId = Number(activeLayer.featureId);
+    if (!Number.isFinite(deploymentId)) return;
+
+    lastHandledMapFeatureIdRef.current = featureKey;
+    setSelectedCameras(new Set([deploymentId]));
+    focusDeployment(deploymentId);
+  }, [activeLayer?.layerId, activeLayer?.featureId, setSelectedCameras, focusDeployment]);
+
   // ── Build filter section items ──────────────────────────────────────────
 
-  /** Species items: sorted by global count descending (stable order). */
+  const spatialPolygon = getSpatialPolygonForLayer('animl-camera-traps');
+  const hasSpatialPolygon = !!spatialPolygon;
+
+  const camerasInsideSpatialPolygon = useMemo(() => {
+    if (!spatialPolygon) return new Set<number>();
+
+    const inside = new Set<number>();
+    for (const deployment of deployments) {
+      const coordinates = deployment.geometry?.coordinates;
+      if (!coordinates || coordinates.length < 2) continue;
+      const [longitude, latitude] = coordinates;
+      if (isPointInsideSpatialPolygon(spatialPolygon, longitude, latitude)) {
+        inside.add(deployment.id);
+      }
+    }
+    return inside;
+  }, [deployments, spatialPolygon]);
+
+  // Auto-switch to count sort when camera filtering becomes active.
+  useEffect(() => {
+    if (hasCameraFilter && !prevHasCameraFilterRef.current) {
+      setSpeciesSortMode('count');
+    }
+    prevHasCameraFilterRef.current = hasCameraFilter;
+  }, [hasCameraFilter]);
+
+  // Spatial-query flow: when a new polygon is applied for ANiML, auto-select all
+  // cameras inside that polygon so camera filters mirror map context.
+  useEffect(() => {
+    if (!hasSpatialPolygon || !spatialPolygon) {
+      lastAppliedSpatialPolygonIdRef.current = null;
+      return;
+    }
+
+    if (lastAppliedSpatialPolygonIdRef.current === spatialPolygon.id) return;
+    lastAppliedSpatialPolygonIdRef.current = spatialPolygon.id;
+    setSelectedCameras(new Set(camerasInsideSpatialPolygon));
+  }, [hasSpatialPolygon, spatialPolygon, camerasInsideSpatialPolygon, setSelectedCameras]);
+
+  /** Species items: user-toggleable sorting (count or alphabetical). */
   const speciesItems: FilterSectionItem[] = useMemo(
     () => [...animalTags]
       .filter(t => t.totalObservations > 0)
-      .sort((a, b) => b.totalObservations - a.totalObservations)
       .map(t => ({
         key: t.label,
         label: t.label,
         count: getFilteredCountForSpecies(t.label) ?? (hasDateFilter ? null : t.totalObservations),
-      })),
-    [animalTags, getFilteredCountForSpecies, hasDateFilter],
+      }))
+      .sort((a, b) => {
+        if (speciesSortMode === 'alpha') {
+          return a.label.localeCompare(b.label);
+        }
+        const countA = a.count ?? -1;
+        const countB = b.count ?? -1;
+        if (countA !== countB) return countB - countA;
+        return a.label.localeCompare(b.label);
+      }),
+    [animalTags, getFilteredCountForSpecies, hasDateFilter, speciesSortMode],
   );
 
-  /** Camera items: sorted alphabetically by name (stable order). */
+  /** Camera items: when spatial query is active, prioritize in-polygon cameras. */
   const cameraItems: FilterSectionItem[] = useMemo(
     () => [...deployments]
-      .sort((a, b) => a.name.localeCompare(b.name))
       .map(d => ({
         key: String(d.id),
         label: d.name,
         count: getFilteredCountForDeployment(d.id) ?? (hasDateFilter ? null : d.totalObservations ?? 0),
-      })),
-    [deployments, getFilteredCountForDeployment, hasDateFilter],
+      }))
+      .sort((a, b) => {
+        // Always sink zero/unknown-result cameras so data-rich cameras stay first.
+        const aCount = a.count ?? -1;
+        const bCount = b.count ?? -1;
+        const aHasData = aCount > 0;
+        const bHasData = bCount > 0;
+        if (aHasData !== bHasData) return aHasData ? -1 : 1;
+
+        if (hasSpatialPolygon) {
+          const aId = Number(a.key);
+          const bId = Number(b.key);
+          const aInside = camerasInsideSpatialPolygon.has(aId);
+          const bInside = camerasInsideSpatialPolygon.has(bId);
+          if (aInside !== bInside) return aInside ? -1 : 1;
+        }
+
+        if (aCount !== bCount) return bCount - aCount;
+        return a.label.localeCompare(b.label);
+      }),
+    [deployments, getFilteredCountForDeployment, hasDateFilter, hasSpatialPolygon, camerasInsideSpatialPolygon],
   );
 
   /** Adapt selectedCameras Set<number> → Set<string> for FilterSection. */
@@ -100,6 +213,31 @@ export function AnimlBrowseTab() {
     () => new Set([...selectedCameras].map(String)),
     [selectedCameras],
   );
+  const outOfPolygonCameraKeys = useMemo(() => {
+    if (!hasSpatialPolygon) return new Set<string>();
+    return new Set(
+      deployments
+        .filter((deployment) => !camerasInsideSpatialPolygon.has(deployment.id))
+        .map((deployment) => String(deployment.id))
+    );
+  }, [hasSpatialPolygon, deployments, camerasInsideSpatialPolygon]);
+  const visibleCameraCount = hasSpatialPolygon ? camerasInsideSpatialPolygon.size : deployments.length;
+  const hiddenCameraCount = Math.max(0, deployments.length - visibleCameraCount);
+  const cameraContextNote = hasSpatialPolygon
+    ? `${visibleCameraCount.toLocaleString()} visible, ${hiddenCameraCount.toLocaleString()} hidden outside polygon`
+    : undefined;
+  const cameraHeaderBadge = hasSpatialPolygon ? (
+    <span
+      id="animl-camera-header-badge-spatial"
+      className="flex items-center gap-1 text-[11px] tabular-nums"
+    >
+      <span className="bg-emerald-100 text-emerald-700 font-semibold px-1.5 py-0.5 rounded-full">
+        {visibleCameraCount} visible
+      </span>
+      <span className="text-gray-300 select-none">|</span>
+      <span className="text-gray-400 font-medium">{hiddenCameraCount} hidden</span>
+    </span>
+  ) : undefined;
 
   // ── Debounced image fetch ───────────────────────────────────────────────
 
@@ -121,21 +259,38 @@ export function AnimlBrowseTab() {
       try {
         const labels = hasFilter ? [...selectedAnimals] : undefined;
         const deploymentIds = hasCameraFilter ? [...selectedCameras] : undefined;
-
-        const imgs = await animlService.queryImageLabelsCached({
+        const requestOptions = {
           labels,
           deploymentIds,
           startDate: hasDateFilter ? startDate! : undefined,
           endDate: hasDateFilter ? endDate! : undefined,
-          maxResults: 200,
-        });
+          maxResults: PAGE_SIZE,
+          resultOffset: Math.max(0, (currentPage - 1) * PAGE_SIZE),
+        };
+
+        let lastError: unknown = null;
+        for (let attempt = 0; attempt <= AUTO_RETRY_DELAYS_MS.length; attempt += 1) {
+          try {
+            const imgs = await animlService.queryImageLabelsCached(requestOptions);
+            if (cancelled) return;
+            setImages(imgs);
+            setImgError(null);
+            return;
+          } catch (error) {
+            lastError = error;
+            const canAutoRetry = attempt < AUTO_RETRY_DELAYS_MS.length && isRetryableError(error);
+            if (!canAutoRetry) break;
+            await new Promise((resolve) => setTimeout(resolve, AUTO_RETRY_DELAYS_MS[attempt]));
+            if (cancelled) return;
+          }
+        }
 
         if (cancelled) return;
-        setImages(imgs);
-        setCurrentPage(1);
-      } catch (err) {
-        if (cancelled) return;
-        setImgError(err instanceof Error ? err.message : 'Failed to load images');
+        const errorMessage = getErrorMessage(lastError);
+        const retryHint = isRetryableError(lastError)
+          ? ' Automatic retries failed. Please try again.'
+          : '';
+        setImgError(`${errorMessage}${retryHint}`);
       } finally {
         if (!cancelled) setImgLoading(false);
       }
@@ -145,15 +300,29 @@ export function AnimlBrowseTab() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [selectedAnimals, selectedCameras, startDate, endDate, hasAnyFilter, hasFilter, hasCameraFilter, hasDateFilter, dataLoaded, clearFocusedDeployment]);
+  }, [selectedAnimals, selectedCameras, startDate, endDate, hasAnyFilter, hasFilter, hasCameraFilter, hasDateFilter, dataLoaded, clearFocusedDeployment, manualRetryNonce, currentPage]);
 
   // ── Pagination ──────────────────────────────────────────────────────────
 
-  const totalPages = Math.max(1, Math.ceil(images.length / PAGE_SIZE));
-  const visibleImages = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return images.slice(start, start + PAGE_SIZE);
-  }, [images, currentPage]);
+  const filterSignature = useMemo(() => JSON.stringify({
+    selectedAnimals: [...selectedAnimals].sort((a, b) => a.localeCompare(b)),
+    selectedCameras: [...selectedCameras].sort((a, b) => a - b),
+    startDate,
+    endDate,
+  }), [selectedAnimals, selectedCameras, startDate, endDate]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterSignature]);
+
+  const resolvedResultCount = filteredImageCount ?? 0;
+  const totalPages = Math.max(1, Math.ceil(resolvedResultCount / PAGE_SIZE));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const handlePrevPage = useCallback(() => {
     setCurrentPage(prev => Math.max(1, prev - 1));
@@ -163,11 +332,10 @@ export function AnimlBrowseTab() {
     setCurrentPage(prev => Math.min(totalPages, prev + 1));
   }, [totalPages]);
 
-  const resolvedResultCount = filteredImageCount ?? 0;
-
   // Keep Map Layers widget metadata in sync with the active ANiML view.
   useEffect(() => {
     if (activeLayer?.layerId !== 'animl-camera-traps') return;
+    if (filteredImageCount === null) return;
 
     syncAnimlFilters(
       activeLayer.layerId,
@@ -177,7 +345,7 @@ export function AnimlBrowseTab() {
         startDate: startDate || undefined,
         endDate: endDate || undefined,
       },
-      resolvedResultCount,
+      filteredImageCount,
       activeLayer.viewId
     );
   }, [
@@ -188,7 +356,7 @@ export function AnimlBrowseTab() {
     selectedCameras,
     startDate,
     endDate,
-    resolvedResultCount,
+    filteredImageCount,
     syncAnimlFilters,
   ]);
 
@@ -242,11 +410,40 @@ export function AnimlBrowseTab() {
           itemIcon={<PawPrint className="w-3.5 h-3.5" />}
           items={speciesItems}
           selectedKeys={selectedAnimals}
+          isCountLoading={countsLoading}
           onToggle={toggleAnimal}
           onSelectAll={selectAllAnimals}
           onClear={selectAll}
           defaultExpanded
           searchPlaceholder="Search species..."
+          actionsSlot={(
+            <div id="animl-species-sort-toggle" className="inline-flex rounded-md border border-gray-200 bg-white">
+              <button
+                id="animl-species-sort-by-count"
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setSpeciesSortMode('count'); }}
+                className={`px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                  speciesSortMode === 'count'
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                By Count
+              </button>
+              <button
+                id="animl-species-sort-alpha"
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setSpeciesSortMode('alpha'); }}
+                className={`border-l border-gray-200 px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                  speciesSortMode === 'alpha'
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                A-Z
+              </button>
+            </div>
+          )}
         />
 
         {/* Camera filter section — collapsed by default */}
@@ -257,6 +454,10 @@ export function AnimlBrowseTab() {
           itemIcon={<Camera className="w-3.5 h-3.5" />}
           items={cameraItems}
           selectedKeys={selectedCameraKeys}
+          isCountLoading={countsLoading}
+          mutedKeys={outOfPolygonCameraKeys}
+          contextNote={cameraContextNote}
+          headerBadge={cameraHeaderBadge}
           onToggle={(key) => toggleCamera(Number(key))}
           onSelectAll={selectAllCameras}
           onClear={clearCameras}
@@ -308,8 +509,17 @@ export function AnimlBrowseTab() {
 
         {/* Image fetch error */}
         {hasAnyFilter && imgError && (
-          <div id="animl-browse-img-error" className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-            {imgError}
+          <div id="animl-browse-img-error" className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 space-y-2">
+            <p id="animl-browse-img-error-text">{imgError}</p>
+            <button
+              id="animl-browse-img-error-retry-button"
+              type="button"
+              onClick={() => setManualRetryNonce((value) => value + 1)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-red-300 bg-white text-red-700 hover:bg-red-100 transition-colors"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Retry
+            </button>
           </div>
         )}
 
@@ -317,8 +527,8 @@ export function AnimlBrowseTab() {
         {hasAnyFilter && !imgLoading && !imgError && (
           <div id="animl-browse-image-list-wrapper" className="flex-1 min-h-0">
             <ImageList
-              images={visibleImages}
-              totalCount={images.length}
+              images={images}
+              totalCount={resolvedResultCount}
               currentPage={currentPage}
               pageSize={PAGE_SIZE}
               totalPages={totalPages}
