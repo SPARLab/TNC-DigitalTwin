@@ -264,7 +264,8 @@ export function AnimlBrowseTab() {
           deploymentIds,
           startDate: hasDateFilter ? startDate! : undefined,
           endDate: hasDateFilter ? endDate! : undefined,
-          maxResults: 200,
+          maxResults: PAGE_SIZE,
+          resultOffset: Math.max(0, (currentPage - 1) * PAGE_SIZE),
         };
 
         let lastError: unknown = null;
@@ -273,7 +274,6 @@ export function AnimlBrowseTab() {
             const imgs = await animlService.queryImageLabelsCached(requestOptions);
             if (cancelled) return;
             setImages(imgs);
-            setCurrentPage(1);
             setImgError(null);
             return;
           } catch (error) {
@@ -300,15 +300,29 @@ export function AnimlBrowseTab() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [selectedAnimals, selectedCameras, startDate, endDate, hasAnyFilter, hasFilter, hasCameraFilter, hasDateFilter, dataLoaded, clearFocusedDeployment, manualRetryNonce]);
+  }, [selectedAnimals, selectedCameras, startDate, endDate, hasAnyFilter, hasFilter, hasCameraFilter, hasDateFilter, dataLoaded, clearFocusedDeployment, manualRetryNonce, currentPage]);
 
   // ── Pagination ──────────────────────────────────────────────────────────
 
-  const totalPages = Math.max(1, Math.ceil(images.length / PAGE_SIZE));
-  const visibleImages = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return images.slice(start, start + PAGE_SIZE);
-  }, [images, currentPage]);
+  const filterSignature = useMemo(() => JSON.stringify({
+    selectedAnimals: [...selectedAnimals].sort((a, b) => a.localeCompare(b)),
+    selectedCameras: [...selectedCameras].sort((a, b) => a - b),
+    startDate,
+    endDate,
+  }), [selectedAnimals, selectedCameras, startDate, endDate]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterSignature]);
+
+  const resolvedResultCount = filteredImageCount ?? 0;
+  const totalPages = Math.max(1, Math.ceil(resolvedResultCount / PAGE_SIZE));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const handlePrevPage = useCallback(() => {
     setCurrentPage(prev => Math.max(1, prev - 1));
@@ -318,11 +332,10 @@ export function AnimlBrowseTab() {
     setCurrentPage(prev => Math.min(totalPages, prev + 1));
   }, [totalPages]);
 
-  const resolvedResultCount = filteredImageCount ?? 0;
-
   // Keep Map Layers widget metadata in sync with the active ANiML view.
   useEffect(() => {
     if (activeLayer?.layerId !== 'animl-camera-traps') return;
+    if (filteredImageCount === null) return;
 
     syncAnimlFilters(
       activeLayer.layerId,
@@ -332,7 +345,7 @@ export function AnimlBrowseTab() {
         startDate: startDate || undefined,
         endDate: endDate || undefined,
       },
-      resolvedResultCount,
+      filteredImageCount,
       activeLayer.viewId
     );
   }, [
@@ -343,7 +356,7 @@ export function AnimlBrowseTab() {
     selectedCameras,
     startDate,
     endDate,
-    resolvedResultCount,
+    filteredImageCount,
     syncAnimlFilters,
   ]);
 
@@ -514,8 +527,8 @@ export function AnimlBrowseTab() {
         {hasAnyFilter && !imgLoading && !imgError && (
           <div id="animl-browse-image-list-wrapper" className="flex-1 min-h-0">
             <ImageList
-              images={visibleImages}
-              totalCount={images.length}
+              images={images}
+              totalCount={resolvedResultCount}
               currentPage={currentPage}
               pageSize={PAGE_SIZE}
               totalPages={totalPages}
