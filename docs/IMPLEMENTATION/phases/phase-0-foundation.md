@@ -32,6 +32,8 @@ Set up the V2 application shell, routing, state management, and shared component
 |----|--------|---------------------------|------------------|-------|
 | CON-GL-01 | 🟢 Complete | Feb 18, 2026 (implemented) | Implement spatial queries (custom polygon draw) across all layers | Shared map sketch draw + polygon filter wired across iNaturalist, ANiML, Dendra, and DataONE map behaviors |
 | CON-GL-02 | 🟢 Complete | Feb 18, 2026 (implemented) | Spatial filter UI in right sidebar under date range | Added shared Spatial Query section under date controls in iNaturalist/ANiML/DataONE; included in Dendra Browse filter stack |
+| CON-GL-02a | ⚪ Not Started | Feb 18, 2026 | Per-layer spatial polygons | Each layer stores its own polygon; user draws a new polygon per layer when activating that layer |
+| CON-GL-02b | ⚪ Not Started | Feb 18, 2026 | Hide polygon when layer inactive; keep filter | When switching active layer: hide the previous layer's polygon on the map, but continue filtering that layer's data by its stored polygon |
 | CON-GL-03 | ⚪ Not Started | Feb 18, 2026 | Spatial filter: select polygon from pinned layer | Extra credit / v2 |
 | CON-GL-04 | ⚪ Not Started | Feb 18, 2026 | Allow multiple expanded layers in Map Layers widget | High priority |
 | CON-GL-05 | ⚪ Not Started | Feb 18, 2026 | Edit Filters visual feedback linking widget to right sidebar | High priority |
