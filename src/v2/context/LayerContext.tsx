@@ -1412,6 +1412,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const createNewView = useCallback((pinnedId: string) => {
+    let nextActiveView: { layerId: string; viewId: string } | null = null;
+
     setPinnedLayers(prev =>
       prev.map(p => {
         if (p.id !== pinnedId) return p;
@@ -1423,8 +1425,9 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         
         // If already nested, add a new view
         if (p.views && p.views.length > 0) {
+          const newViewId = crypto.randomUUID();
           const newView = {
-            id: crypto.randomUUID(),
+            id: newViewId,
             name: 'Add Filters',
             isNameCustom: false,
             isVisible: false,
@@ -1455,6 +1458,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
               : undefined,
             droneView: undefined,
           };
+          nextActiveView = { layerId: p.layerId, viewId: newViewId };
           return { ...p, views: [...p.views, newView] };
         }
         
@@ -1538,6 +1542,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             : undefined,
           droneView: undefined,
         };
+        nextActiveView = { layerId: p.layerId, viewId: view2.id };
         
         // Clear flat-level filter data (now in views)
         return {
@@ -1575,7 +1580,11 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         };
       })
     );
-  }, [layerMap]);
+    if (nextActiveView) {
+      activateLayer(nextActiveView.layerId, nextActiveView.viewId);
+      requestEditFilters();
+    }
+  }, [layerMap, activateLayer, requestEditFilters]);
 
   const removeView = useCallback((pinnedId: string, viewId: string) => {
     setPinnedLayers(prev =>

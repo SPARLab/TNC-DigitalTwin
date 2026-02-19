@@ -38,7 +38,7 @@ Set up the V2 application shell, routing, state management, and shared component
 | CON-GL-05 | 🟢 Complete | Feb 18, 2026 (implemented) | Edit Filters visual feedback linking widget to right sidebar | Edit Filters click now triggers a brief darker-green flash on the Browse "Edit Filters" card only |
 | CON-GL-06 | 🟢 Complete | Feb 18, 2026 (implemented) | Add "Edit Filters" section header in right sidebar | Added shared green "Edit Filters" card wrapper around filter controls across Browse tabs (iNaturalist, ANiML, Dendra, DataONE) |
 | CON-GL-07 | ⚪ Not Started | Feb 18, 2026 | Fix map and sidebar filter sync drift bug | High priority bug |
-| CON-GL-08 | ⚪ Not Started | Feb 18, 2026 | Guide user to filter panel when "New View" is clicked | Medium priority |
+| CON-GL-08 | 🟢 Complete | Feb 18, 2026 (implemented) | Guide user to filter panel when "New View" is clicked | New View now auto-activates the created child view and triggers Edit Filters guidance to open/hydrate Browse filters |
 
 **Note:** Tasks `0.1` through `0.7` appear to be already implemented and are intentionally removed from active tracking.
 
@@ -58,7 +58,7 @@ Set up the V2 application shell, routing, state management, and shared component
 | CON-GL-05 | Edit Filters visual link feedback | 🟢 Complete | Claude | Edit Filters navigation now causes a short darker-green flash on the Browse "Edit Filters" section only |
 | CON-GL-06 | "Edit Filters" section header | 🟢 Complete | Claude | Browse filter controls now live inside a shared green "Edit Filters" card wrapper across implemented data sources |
 | CON-GL-07 | Map/sidebar filter sync bug fix | ⚪ Not Started | | Bug |
-| CON-GL-08 | Auto-open or guide to filters on New View | ⚪ Not Started | | |
+| CON-GL-08 | Auto-open or guide to filters on New View | 🟢 Complete | Codex | New view creation now activates the created view and fires `requestEditFilters()` so users are guided to filters immediately |
 
 **Status Legend:**
 - ⚪ Not Started
