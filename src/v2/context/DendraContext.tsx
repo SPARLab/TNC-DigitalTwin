@@ -343,12 +343,15 @@ export function DendraProvider({ children }: { children: ReactNode }) {
   const openChart = useCallback((station: DendraStation, summary: DendraSummary) => {
     if (!serviceInfo) return;
     if (!activeLayer || activeLayer.dataSource !== 'dendra') return;
+    const resolvedSourceViewId = activeLayer.viewId
+      ?? pinnedLayers.find((pinned) => pinned.layerId === activeLayer.layerId)
+        ?.views?.find((view) => view.isVisible)?.id;
 
     const existingPanel = chartPanels.find(panel =>
       panel.station?.station_id === station.station_id
       && panel.summary?.datastream_id === summary.datastream_id
       && panel.sourceLayerId === activeLayer.layerId
-      && panel.sourceViewId === activeLayer.viewId
+      && panel.sourceViewId === resolvedSourceViewId
     );
     if (existingPanel) {
       const nextZ = ++nextChartZIndexRef.current;
@@ -371,7 +374,7 @@ export function DendraProvider({ children }: { children: ReactNode }) {
       height: panelRect.height,
       zIndex: nextZ,
       sourceLayerId: activeLayer.layerId,
-      sourceViewId: activeLayer.viewId,
+      sourceViewId: resolvedSourceViewId,
       sourceLayerName: activeLayer.name,
       minimized: false,
       station,
@@ -419,7 +422,7 @@ export function DendraProvider({ children }: { children: ReactNode }) {
             : panel
         )));
       });
-  }, [serviceInfo, chartPanels, activeLayer]);
+  }, [serviceInfo, chartPanels, activeLayer, pinnedLayers]);
 
   const setChartFilter = useCallback((panelId: string, partial: Partial<DendraChartFilter>) => {
     setChartPanels(prev => prev.map(panel => {

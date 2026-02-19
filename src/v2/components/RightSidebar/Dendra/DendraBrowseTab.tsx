@@ -20,7 +20,7 @@ export function DendraBrowseTab() {
   const {
     filteredStations, loading, error, dataLoaded,
     showActiveOnly, toggleActiveOnly, setShowActiveOnly, stationCount,
-    openChart,
+    openChart, chartPanels,
   } = useDendra();
   const { activeLayer, activateLayer, lastEditFiltersRequest, getPinnedByLayerId } = useLayers();
   const summariesByStation = useSummariesByStation();
@@ -138,6 +138,13 @@ export function DendraBrowseTab() {
   }, [activeLayer, activateLayer]);
 
   const normalizedStreamNameFilter = streamNameFilter.trim().toLowerCase();
+  const effectiveActiveViewId = useMemo(() => {
+    if (!activeLayer || activeLayer.dataSource !== 'dendra') return undefined;
+    if (activeLayer.viewId) return activeLayer.viewId;
+    const pinned = getPinnedByLayerId(activeLayer.layerId);
+    return pinned?.views?.find((view) => view.isVisible)?.id;
+  }, [activeLayer, getPinnedByLayerId]);
+
   const filteredStationsByStream = useMemo(() => {
     if (!normalizedStreamNameFilter) return filteredStations;
     return filteredStations.filter((station) => {
@@ -151,6 +158,22 @@ export function DendraBrowseTab() {
   const handleStreamNameFilterChange = useCallback((value: string) => {
     setStreamNameFilter(value);
   }, []);
+
+  const pinnedCountByStationForActiveView = useMemo(() => {
+    const counts = new Map<number, number>();
+    if (!activeLayer || activeLayer.dataSource !== 'dendra') return counts;
+    const pinned = getPinnedByLayerId(activeLayer.layerId);
+
+    for (const panel of chartPanels) {
+      const matchesActiveLayer = panel.sourceLayerId === activeLayer.layerId;
+      const resolvedPanelViewId = panel.sourceViewId ?? pinned?.views?.[0]?.id;
+      const matchesActiveView = resolvedPanelViewId === effectiveActiveViewId;
+      const stationId = panel.station?.station_id;
+      if (!matchesActiveLayer || !matchesActiveView || stationId == null) continue;
+      counts.set(stationId, (counts.get(stationId) ?? 0) + 1);
+    }
+    return counts;
+  }, [chartPanels, activeLayer, effectiveActiveViewId, getPinnedByLayerId]);
 
   // Chart handler — opens the floating panel + pans/zooms to the station
   const handleViewChart = useCallback((station: DendraStation, summary: DendraSummary) => {
@@ -279,6 +302,7 @@ export function DendraBrowseTab() {
               key={station.station_id}
               station={station}
               summaryCount={summariesByStation.get(station.station_id)?.length ?? 0}
+              pinnedStreamCount={pinnedCountByStationForActiveView.get(station.station_id) ?? 0}
               onViewDetail={() => handleSelectStation(station)}
               onViewOnMap={() => handleViewOnMap(station)}
             />

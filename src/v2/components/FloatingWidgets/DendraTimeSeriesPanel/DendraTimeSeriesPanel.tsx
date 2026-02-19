@@ -27,8 +27,9 @@ export function DendraTimeSeriesPanel() {
     const pinned = getPinnedByLayerId(panel.sourceLayerId);
     if (pinned) {
       if (!pinned.isVisible) return false;
-      if (panel.sourceViewId && pinned.views && pinned.views.length > 0) {
-        return Boolean(pinned.views.find((view) => view.id === panel.sourceViewId)?.isVisible);
+      if (pinned.views && pinned.views.length > 0) {
+        const resolvedViewId = panel.sourceViewId ?? pinned.views[0].id;
+        return Boolean(pinned.views.find((view) => view.id === resolvedViewId)?.isVisible);
       }
       return true;
     }
@@ -79,6 +80,10 @@ function ChartPanel({ panelId }: { panelId: string }) {
   const chartInstanceRef = useRef<echarts.ECharts | null>(null);
 
   if (!panel) return null;
+
+  const stopPanelControlEvent = (event: ReactPointerEvent<HTMLElement>) => {
+    event.stopPropagation();
+  };
 
   const displayName = panel.station?.station_name?.replace(/^Dangermond_/, '').replace(/_/g, ' ') ?? '';
   const summary = panel.summary;
@@ -352,6 +357,7 @@ function ChartPanel({ panelId }: { panelId: string }) {
             <button
               id={`dendra-chart-expand-${safePanelId}`}
               type="button"
+              onPointerDown={stopPanelControlEvent}
               onClick={() => toggleMinimizeChart(panel.id)}
               className="p-1.5 hover:bg-teal-100 rounded-lg transition-colors"
               title="Expand"
@@ -361,6 +367,7 @@ function ChartPanel({ panelId }: { panelId: string }) {
             <button
               id={`dendra-chart-close-${safePanelId}`}
               type="button"
+              onPointerDown={stopPanelControlEvent}
               onClick={() => closeChart(panel.id)}
               className="p-1.5 hover:bg-red-100 rounded-lg transition-colors"
               title="Close"
@@ -415,6 +422,7 @@ function ChartPanel({ panelId }: { panelId: string }) {
         <div className="flex items-center gap-1">
           <button
             id={`dendra-chart-minimize-${safePanelId}`}
+            onPointerDown={stopPanelControlEvent}
             onClick={() => toggleMinimizeChart(panel.id)}
             className="p-1.5 hover:bg-teal-100 rounded-lg transition-colors"
             title="Minimize"
@@ -423,6 +431,7 @@ function ChartPanel({ panelId }: { panelId: string }) {
           </button>
           <button
             id={`dendra-chart-close-${safePanelId}`}
+            onPointerDown={stopPanelControlEvent}
             onClick={() => closeChart(panel.id)}
             className="p-1.5 hover:bg-red-100 rounded-lg transition-colors"
             title="Close"

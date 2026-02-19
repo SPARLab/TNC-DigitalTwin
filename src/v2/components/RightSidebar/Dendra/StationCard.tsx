@@ -3,17 +3,24 @@
 // Shows: name, sensor type, status dot, datastream count, location actions.
 // ============================================================================
 
-import { MapPin, Radio, ChevronRight } from 'lucide-react';
+import { MapPin, Radio, ChevronRight, Pin } from 'lucide-react';
 import type { DendraStation } from '../../../services/dendraStationService';
 
 interface StationCardProps {
   station: DendraStation;
   summaryCount: number;
+  pinnedStreamCount: number;
   onViewDetail: () => void;
   onViewOnMap: () => void;
 }
 
-export function StationCard({ station, summaryCount, onViewDetail, onViewOnMap }: StationCardProps) {
+export function StationCard({
+  station,
+  summaryCount,
+  pinnedStreamCount,
+  onViewDetail,
+  onViewOnMap,
+}: StationCardProps) {
   const isActive = station.is_active === 1;
   const displayName = station.station_name?.replace(/^Dangermond_/, '').replace(/_/g, ' ') ?? 'Unknown';
 
@@ -32,16 +39,28 @@ export function StationCard({ station, summaryCount, onViewDetail, onViewOnMap }
         <h4 className="text-sm font-semibold text-gray-900 leading-tight flex-1">
           {displayName}
         </h4>
-        <span
-          className={`flex items-center gap-1 text-xs font-medium shrink-0 ${
-            isActive ? 'text-emerald-600' : 'text-gray-400'
-          }`}
-        >
-          <span className={`inline-block w-2 h-2 rounded-full ${
-            isActive ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'
-          }`} />
-          {isActive ? 'Active' : 'Inactive'}
-        </span>
+        <div id={`dendra-station-${station.station_id}-status-meta`} className="flex items-center gap-2 shrink-0">
+          <span
+            id={`dendra-station-${station.station_id}-pin-count`}
+            className={`inline-flex items-center gap-1 text-xs font-semibold ${
+              pinnedStreamCount > 0 ? 'text-blue-700' : 'text-blue-300'
+            }`}
+            title={`${pinnedStreamCount} pinned datastream${pinnedStreamCount === 1 ? '' : 's'} in active view`}
+          >
+            {pinnedStreamCount}
+            <Pin className="w-3 h-3 fill-current" />
+          </span>
+          <span
+            className={`flex items-center gap-1 text-xs font-medium ${
+              isActive ? 'text-emerald-600' : 'text-gray-400'
+            }`}
+          >
+            <span className={`inline-block w-2 h-2 rounded-full ${
+              isActive ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'
+            }`} />
+            {isActive ? 'Active' : 'Inactive'}
+          </span>
+        </div>
       </div>
 
       {/* Sensor type */}

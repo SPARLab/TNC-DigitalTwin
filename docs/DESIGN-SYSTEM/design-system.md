@@ -936,6 +936,7 @@ interface FeatureDetailCardProps {
 | Component | Decision | Status | Date | Details |
 |-----------|----------|--------|------|---------|
 | Dendra chart panel header | ✅ Decided | Feb 19 | Phase 3 | Stream name bold; labels (Station:, Category:) regular; values (station, category) semi-bold. Pipe separator. See phase-3-dendra.md Styling Decisions. |
+| Dendra Map Layers child labels | ✅ Decided | Feb 19 | Phase 3 | Collapsed: `N data streams, M stations`; expanded: `N data streams from <Station>` (single) or `N data streams from M stations` (multiple). Pin count badge: number + blue pin icon only (no "pins" text). See phase-3-dendra.md CON-DENDRA-04. |
 | Right sidebar header | ⚪ TBD | - | |
 | Card component | ⚪ TBD | - | |
 
@@ -1988,6 +1989,7 @@ February 5, 2026
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 19, 2026 | **Dendra Map Layers child labels (CON-DENDRA-04).** Dynamic labels: collapsed `N data streams, M stations`; expanded by station scope. Pin count badge: number + blue pin icon only. Documented in Components table and phase-3-dendra.md. | Cursor |
 | Feb 19, 2026 | **Dendra chart panel header typography.** Stream name bold; labels (Station:, Category:) regular; values semi-bold. Pipe separator between Station and Category. Documented in Components table and phase-3-dendra.md. | Cursor |
 | Feb 16, 2026 | **Task 34 complete.** Added shared loading primitives (`src/v2/components/shared/loading/`): `loadingTheme.ts`, `LoadingPrimitives.tsx` (EyeSlotLoadingSpinner, InlineLoadingRow, RefreshLoadingRow, MapCenterLoadingOverlay). Wired for iNaturalist, Dendra, ANiML. Single-point styling propagation. | Claude |
 | Feb 16, 2026 | Updated DFT-018 Loading State Patterns with Task 34 unified cross-branch contract: eye-slot spinner in Map Layers, map overlay, legend/sidebar region-specific loading, first-load vs refresh rules | Claude |

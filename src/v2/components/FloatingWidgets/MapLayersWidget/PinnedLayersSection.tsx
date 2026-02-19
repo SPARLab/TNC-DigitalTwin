@@ -24,6 +24,7 @@ import { PinnedLayerRow } from './PinnedLayerRow';
 
 interface PinnedLayersSectionProps {
   layers: PinnedLayer[];
+  isDendraLayer?: (layerId: string) => boolean;
   loadingByLayerId: Map<string, boolean>;
   activeLayerId?: string; // NEW: which layer is currently active
   activeViewId?: string; // NEW: which child view is currently active (for nested layers)
@@ -39,10 +40,16 @@ interface PinnedLayersSectionProps {
   onCreateNewView?: (pinnedId: string) => void;
   onRemoveView?: (pinnedId: string, viewId: string) => void;
   onRenameView?: (pinnedId: string, viewId: string, name: string) => void;
+  getPinnedStreamCount?: (layerId: string, viewId?: string) => number;
+  getPinnedStreamStats?: (
+    layerId: string,
+    viewId?: string
+  ) => { streamCount: number; stationCount: number; stationNames: string[] };
 }
 
 export function PinnedLayersSection({
   layers,
+  isDendraLayer,
   loadingByLayerId,
   activeLayerId,
   activeViewId,
@@ -58,6 +65,8 @@ export function PinnedLayersSection({
   onCreateNewView,
   onRemoveView,
   onRenameView,
+  getPinnedStreamCount,
+  getPinnedStreamStats,
 }: PinnedLayersSectionProps) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [justDroppedId, setJustDroppedId] = useState<string | null>(null);
@@ -218,6 +227,7 @@ export function PinnedLayersSection({
                   <PinnedLayerRow
                     key={layer.id}
                     layer={layer}
+                    isDendraLayer={isDendraLayer?.(layer.layerId) ?? false}
                     isDataSourceLoading={loadingByLayerId.get(layer.layerId) ?? false}
                     isExpanded={expandedIds.has(layer.id)}
                     showDragHandle={showDragHandles}
@@ -239,6 +249,8 @@ export function PinnedLayersSection({
                     onRemoveChildView={(viewId: string) => onRemoveView?.(layer.id, viewId)}
                     onRenameChildView={(viewId: string, name: string) => onRenameView?.(layer.id, viewId, name)}
                     activeViewId={activeLayerId === layer.layerId ? activeViewId : undefined}
+                    getPinnedStreamCount={getPinnedStreamCount}
+                    getPinnedStreamStats={getPinnedStreamStats}
                   />
                 );
                 const collapseWrapper = (

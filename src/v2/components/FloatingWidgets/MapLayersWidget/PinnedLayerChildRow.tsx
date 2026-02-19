@@ -5,7 +5,7 @@
 // ============================================================================
 
 import { useEffect, useState } from 'react';
-import { Eye, EyeOff, X, ChevronRight, Pencil, Check } from 'lucide-react';
+import { Eye, EyeOff, X, ChevronRight, Pencil, Check, Pin } from 'lucide-react';
 import type { PinnedLayerView, CountDisplayMode } from '../../../types';
 import { FilterIndicator } from './FilterIndicator';
 
@@ -14,6 +14,10 @@ interface PinnedLayerChildRowProps {
   isLast: boolean;
   isActive: boolean;
   isExpanded: boolean; // CHANGED: now controlled by parent
+  dynamicLabel?: string;
+  expandedDescriptor?: string;
+  showPinnedStreamCount?: boolean;
+  pinnedStreamCount?: number;
   countDisplayMode: CountDisplayMode; // NEW: how to display counts
   onToggleExpand: () => void; // CHANGED: now calls parent to manage accordion
   onToggleVisibility: () => void;
@@ -29,6 +33,10 @@ export function PinnedLayerChildRow({
   isLast,
   isActive,
   isExpanded,
+  dynamicLabel,
+  expandedDescriptor,
+  showPinnedStreamCount = false,
+  pinnedStreamCount = 0,
   countDisplayMode,
   onToggleExpand,
   onToggleVisibility,
@@ -61,6 +69,8 @@ export function PinnedLayerChildRow({
   const showResultCountInExpanded =
     (countDisplayMode === 'results-expanded' || 
      countDisplayMode === 'results-children') && isExpanded;
+  const shouldShowPinnedStreamCount = showPinnedStreamCount;
+  const displayLabel = dynamicLabel ?? view.name;
 
   return (
     <div id={`pinned-child-row-${view.id}`} className="relative">
@@ -114,7 +124,7 @@ export function PinnedLayerChildRow({
           }}
           role="button"
           tabIndex={0}
-          aria-label={`${view.name} — ${view.isVisible ? 'visible' : 'hidden'}. ${view.filterCount} filters. Click to view details.`}
+          aria-label={`${displayLabel} — ${view.isVisible ? 'visible' : 'hidden'}. ${view.filterCount} filters. Click to view details.`}
           aria-expanded={isExpanded}
           onKeyDown={e => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -164,14 +174,27 @@ export function PinnedLayerChildRow({
               />
             ) : (
               <span className="text-sm block truncate text-gray-800">
-                {view.name}
+                {displayLabel}
               </span>
             )}
           </div>
 
           {/* Count indicators based on display mode */}
-          {countDisplayMode !== 'none' && (
-            <div className="flex items-center gap-1.5">
+          <div id={`pinned-child-row-counts-${view.id}`} className="flex items-center gap-1.5">
+            {shouldShowPinnedStreamCount && (
+              <span
+                id={`pinned-child-row-pin-count-${view.id}`}
+                className={`text-xs flex items-center gap-0.5 ${
+                  pinnedStreamCount > 0 ? 'text-blue-700' : 'text-blue-400'
+                }`}
+                title={`${pinnedStreamCount} pinned datastream${pinnedStreamCount === 1 ? '' : 's'}`}
+              >
+                <span className="font-semibold">{pinnedStreamCount}</span>
+                <Pin className="w-3 h-3 fill-current" />
+              </span>
+            )}
+            {countDisplayMode !== 'none' && (
+              <div id={`pinned-child-row-filter-result-counts-${view.id}`} className="flex items-center gap-1.5">
               {/* Filter count */}
               {shouldShowFilterCount && (
                 <FilterIndicator
@@ -182,13 +205,14 @@ export function PinnedLayerChildRow({
               
               {/* Result count */}
               {shouldShowResultCount && view.resultCount !== undefined && (
-                <span className="text-xs text-gray-500 flex items-center gap-0.5">
+                <span id={`pinned-child-row-result-count-${view.id}`} className="text-xs text-gray-500 flex items-center gap-0.5">
                   <span className="font-medium">{view.resultCount}</span>
                   <span className="text-[10px]">results</span>
                 </span>
               )}
             </div>
-          )}
+            )}
+          </div>
 
           {/* Rename button */}
           {!isRenaming && (
@@ -252,6 +276,21 @@ export function PinnedLayerChildRow({
                       <li key={i}>{s.trim()}</li>
                     ))}
                   </ul>
+                ) : expandedDescriptor ? (
+                  <p
+                    id={`pinned-child-expanded-descriptor-${view.id}`}
+                    className="text-[11px] text-blue-700 leading-relaxed flex-1"
+                  >
+                    {expandedDescriptor}
+                  </p>
+                ) : shouldShowPinnedStreamCount && pinnedStreamCount > 0 ? (
+                  <p
+                    id={`pinned-child-expanded-pin-summary-${view.id}`}
+                    className="text-[11px] text-blue-700 leading-relaxed flex-1 flex items-center gap-1"
+                  >
+                    <Pin className="w-3 h-3 fill-current" />
+                    {pinnedStreamCount} pinned datastream{pinnedStreamCount === 1 ? '' : 's'} in this view
+                  </p>
                 ) : (
                   <p className="text-[11px] text-gray-500 leading-relaxed flex-1">No filters applied.</p>
                 )}

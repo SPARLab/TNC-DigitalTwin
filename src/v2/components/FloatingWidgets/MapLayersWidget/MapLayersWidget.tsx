@@ -3,10 +3,11 @@
 // Position: top-left of map area. Always visible (no close, only collapse).
 // ============================================================================
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Layers, Pin } from 'lucide-react';
 import { useLayers } from '../../../context/LayerContext';
 import { useCatalog } from '../../../context/CatalogContext';
+import { useDendra } from '../../../context/DendraContext';
 import { useCacheStatusByDataSource } from '../../../dataSources/registry';
 import { WidgetShell } from '../shared/WidgetShell';
 import { WidgetHeader } from '../shared/WidgetHeader';
@@ -39,8 +40,61 @@ export function MapLayersWidget() {
     undo,
   } = useLayers();
   const { layerMap } = useCatalog();
+  const { chartPanels } = useDendra();
   const cacheStatusByDataSource = useCacheStatusByDataSource();
   const concreteActiveLayer = activeLayer && !activeLayer.isService ? activeLayer : null;
+
+  const pinnedStreamStatsBySource = useMemo(() => {
+    const stats = new Map<string, { streamCount: number; stationIds: Set<number>; stationNames: Set<string> }>();
+    for (const panel of chartPanels) {
+      const pinnedLayer = pinnedLayers.find((pinned) => pinned.layerId === panel.sourceLayerId);
+      const fallbackViewId = pinnedLayer?.views?.[0]?.id;
+      const resolvedViewId = panel.sourceViewId ?? fallbackViewId;
+      const sourceKey = `${panel.sourceLayerId}::${resolvedViewId ?? '__root__'}`;
+      const stationId = panel.station?.station_id;
+      const stationName = panel.station?.station_name
+        ?.replace(/^Dangermond_/, '')
+        .replace(/_/g, ' ');
+      const existing = stats.get(sourceKey);
+      if (existing) {
+        existing.streamCount += 1;
+        if (stationId != null) existing.stationIds.add(stationId);
+        if (stationName) existing.stationNames.add(stationName);
+      } else {
+        stats.set(sourceKey, {
+          streamCount: 1,
+          stationIds: new Set(stationId != null ? [stationId] : []),
+          stationNames: new Set(stationName ? [stationName] : []),
+        });
+      }
+    }
+    const resolved = new Map<string, { streamCount: number; stationCount: number; stationNames: string[] }>();
+    for (const [key, value] of stats.entries()) {
+      resolved.set(key, {
+        streamCount: value.streamCount,
+        stationCount: value.stationIds.size,
+        stationNames: Array.from(value.stationNames),
+      });
+    }
+    return resolved;
+  }, [chartPanels, pinnedLayers]);
+
+  const isDendraLayer = useCallback((layerId: string) => {
+    const catalogLayer = layerMap.get(layerId);
+    return catalogLayer?.dataSource === 'dendra';
+  }, [layerMap]);
+
+  const getPinnedStreamStats = useCallback((layerId: string, viewId?: string) => {
+    return pinnedStreamStatsBySource.get(`${layerId}::${viewId ?? '__root__'}`) ?? {
+      streamCount: 0,
+      stationCount: 0,
+      stationNames: [],
+    };
+  }, [pinnedStreamStatsBySource]);
+
+  const getPinnedStreamCount = useCallback((layerId: string, viewId?: string) => {
+    return getPinnedStreamStats(layerId, viewId).streamCount;
+  }, [getPinnedStreamStats]);
 
   const loadingByLayerId = new Map<string, boolean>(
     pinnedLayers.map((pinnedLayer) => {
@@ -181,6 +235,7 @@ export function MapLayersWidget() {
             {/* Pinned Layers section */}
             <PinnedLayersSection
               layers={pinnedLayers}
+              isDendraLayer={isDendraLayer}
               loadingByLayerId={loadingByLayerId}
               activeLayerId={concreteActiveLayer?.layerId}
               activeViewId={concreteActiveLayer?.viewId}
@@ -196,6 +251,8 @@ export function MapLayersWidget() {
               onCreateNewView={createNewView}
               onRemoveView={removeView}
               onRenameView={renameView}
+              getPinnedStreamCount={getPinnedStreamCount}
+              getPinnedStreamStats={getPinnedStreamStats}
             />
               </>
             )}

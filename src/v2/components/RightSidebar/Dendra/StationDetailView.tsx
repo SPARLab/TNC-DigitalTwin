@@ -5,7 +5,7 @@
 // ============================================================================
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { ChevronLeft, MapPin, Radio, Activity, Calendar, TrendingUp, TrendingDown, BarChart3, Save } from 'lucide-react';
+import { ChevronLeft, MapPin, Radio, Activity, Calendar, TrendingUp, TrendingDown, BarChart3, Save, Pin } from 'lucide-react';
 import type { DendraStation, DendraSummary } from '../../../services/dendraStationService';
 import { formatTimestamp, formatValue } from '../../../services/dendraStationService';
 import { useDendra } from '../../../context/DendraContext';
@@ -45,8 +45,21 @@ export function StationDetailView({
   const lastSelectedDatastreamNameRef = useRef<string>('');
   const flashStartTimeoutRef = useRef<number | null>(null);
   const flashEndTimeoutRef = useRef<number | null>(null);
-  const { getChartPanel, setChartFilter, showActiveOnly, filteredStations } = useDendra();
+  const {
+    chartPanels,
+    getChartPanel,
+    setChartFilter,
+    closeChart,
+    showActiveOnly,
+    filteredStations,
+  } = useDendra();
   const { activeLayer, pinLayer, getPinnedByLayerId, syncDendraFilters, createDendraFilteredView } = useLayers();
+  const effectiveActiveViewId = useMemo(() => {
+    if (!activeLayer || activeLayer.dataSource !== 'dendra') return undefined;
+    if (activeLayer.viewId) return activeLayer.viewId;
+    const pinned = getPinnedByLayerId(activeLayer.layerId);
+    return pinned?.views?.find((view) => view.isVisible)?.id;
+  }, [activeLayer, getPinnedByLayerId]);
 
   const normalizedStreamNameFilter = streamNameFilter.trim().toLowerCase();
   const filteredSummaries = useMemo(() => {
@@ -97,15 +110,31 @@ export function StationDetailView({
     [filteredSummaries, selectedDatastreamId],
   );
 
+  const pinnedDatastreamIdsInActiveView = useMemo(() => {
+    const ids = new Set<number>();
+    if (!activeLayer || activeLayer.dataSource !== 'dendra') return ids;
+    const pinned = getPinnedByLayerId(activeLayer.layerId);
+    for (const panel of chartPanels) {
+      const matchesLayer = panel.sourceLayerId === activeLayer.layerId;
+      const resolvedPanelViewId = panel.sourceViewId ?? pinned?.views?.[0]?.id;
+      const matchesView = resolvedPanelViewId === effectiveActiveViewId;
+      const matchesStation = panel.station?.station_id === station.station_id;
+      const datastreamId = panel.summary?.datastream_id;
+      if (!matchesLayer || !matchesView || !matchesStation || datastreamId == null) continue;
+      ids.add(datastreamId);
+    }
+    return ids;
+  }, [chartPanels, activeLayer, effectiveActiveViewId, getPinnedByLayerId, station.station_id]);
+
   const selectedChartPanel = useMemo(() => {
     if (!selectedSummary) return null;
     return getChartPanel(
       station.station_id,
       selectedSummary.datastream_id,
       activeLayer?.layerId,
-      activeLayer?.viewId,
+      effectiveActiveViewId,
     );
-  }, [getChartPanel, station.station_id, selectedSummary, activeLayer?.layerId, activeLayer?.viewId]);
+  }, [getChartPanel, station.station_id, selectedSummary, activeLayer?.layerId, effectiveActiveViewId]);
 
   const chartMatchesSelectedDatastream = Boolean(selectedChartPanel);
 
@@ -120,6 +149,23 @@ export function StationDetailView({
     setSelectedDatastreamId(summary.datastream_id);
     setSaveMessage(null);
     onViewChart?.(summary);
+  };
+
+  const handleToggleDatastreamPin = (summary: DendraSummary) => {
+    const existingPanel = getChartPanel(
+      station.station_id,
+      summary.datastream_id,
+      activeLayer?.layerId,
+      effectiveActiveViewId,
+    );
+    if (existingPanel) {
+      closeChart(existingPanel.id);
+      if (selectedDatastreamId === summary.datastream_id) {
+        setSaveMessage(null);
+      }
+      return;
+    }
+    handleSelectDatastream(summary);
   };
 
   const ensurePinnedLayer = () => {
@@ -337,7 +383,9 @@ export function StationDetailView({
                 key={summary.datastream_id}
                 summary={summary}
                 isSelected={selectedDatastreamId === summary.datastream_id}
+                isPinned={pinnedDatastreamIdsInActiveView.has(summary.datastream_id)}
                 onViewChart={() => handleSelectDatastream(summary)}
+                onTogglePin={() => handleToggleDatastreamPin(summary)}
               />
             ))}
           </div>
@@ -491,22 +539,31 @@ function DetailRow({ icon, label, value }: { icon: ReactNode; label: string; val
 }
 
 function DatastreamSummaryCard({
-  summary, onViewChart, isSelected,
+  summary, onViewChart, onTogglePin, isSelected, isPinned,
 }: {
   summary: DendraSummary;
   onViewChart: () => void;
+  onTogglePin: () => void;
   isSelected: boolean;
+  isPinned: boolean;
 }) {
   return (
-    <button
+    <div
       id={`dendra-ds-${summary.datastream_id}`}
-      onClick={onViewChart}
-      type="button"
       className={`w-full text-left bg-white border rounded-md p-3 transition-colors cursor-pointer group ${
         isSelected
           ? 'border-teal-400 bg-teal-50/40'
           : 'border-gray-100 hover:border-teal-300 hover:bg-teal-50/30'
       }`}
+      role="button"
+      tabIndex={0}
+      onClick={onViewChart}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onViewChart();
+        }
+      }}
     >
       {/* Top row: name + unit + chart icon */}
       <div className="flex items-center justify-between mb-1.5">
@@ -514,11 +571,32 @@ function DatastreamSummaryCard({
           <BarChart3 className="w-3.5 h-3.5 text-teal-400 group-hover:text-teal-600 transition-colors shrink-0" />
           {summary.datastream_name}
         </h5>
-        {summary.unit && (
-          <span className="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded shrink-0">
-            {summary.unit}
-          </span>
-        )}
+        <div id={`dendra-ds-${summary.datastream_id}-meta-actions`} className="flex items-center gap-1.5">
+          {summary.unit && (
+            <span className="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded shrink-0">
+              {summary.unit}
+            </span>
+          )}
+          <button
+            id={`dendra-ds-pin-toggle-${summary.datastream_id}`}
+            type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onTogglePin();
+            }}
+            className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold transition-colors ${
+              isPinned
+                ? 'border-blue-300 bg-blue-100 text-blue-800 hover:bg-blue-200'
+                : 'border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100'
+            }`}
+            title={isPinned ? 'Unpin datastream chart' : 'Pin datastream chart'}
+            aria-label={isPinned ? 'Unpin datastream chart' : 'Pin datastream chart'}
+          >
+            <Pin className="w-3 h-3 fill-current" />
+            {isPinned ? 'Pinned' : 'Pin'}
+          </button>
+        </div>
       </div>
 
       {/* Compact inline stats */}
@@ -545,7 +623,7 @@ function DatastreamSummaryCard({
         <Calendar className="w-3 h-3" />
         {formatTimestamp(summary.first_reading_time)} — {formatTimestamp(summary.last_reading_time)}
       </div>
-    </button>
+    </div>
   );
 }
 

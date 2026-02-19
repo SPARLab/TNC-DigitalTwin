@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent, CSSProperties } from 'react';
-import { Eye, EyeOff, GripVertical, X, ChevronRight, Plus } from 'lucide-react';
+import { Eye, EyeOff, GripVertical, X, ChevronRight, Plus, Pin } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS as DndCss } from '@dnd-kit/utilities';
 import type { PinnedLayer, CountDisplayMode } from '../../../types';
@@ -18,6 +18,7 @@ import { EyeSlotLoadingSpinner } from '../../shared/loading/LoadingPrimitives';
 
 interface PinnedLayerRowProps {
   layer: PinnedLayer;
+  isDendraLayer?: boolean;
   isDataSourceLoading: boolean;
   isExpanded: boolean;
   showDragHandle: boolean;
@@ -39,10 +40,16 @@ interface PinnedLayerRowProps {
   onRemoveChildView?: (viewId: string) => void;
   onRenameChildView?: (viewId: string, name: string) => void;
   onActivateChildView?: (viewId: string) => void; // NEW: activate a specific child view
+  getPinnedStreamCount?: (layerId: string, viewId?: string) => number;
+  getPinnedStreamStats?: (
+    layerId: string,
+    viewId?: string
+  ) => { streamCount: number; stationCount: number; stationNames: string[] };
 }
 
 export function PinnedLayerRow({
   layer,
+  isDendraLayer = false,
   isDataSourceLoading,
   isExpanded,
   showDragHandle,
@@ -64,6 +71,8 @@ export function PinnedLayerRow({
   onRemoveChildView,
   onRenameChildView,
   onActivateChildView,
+  getPinnedStreamCount,
+  getPinnedStreamStats,
 }: PinnedLayerRowProps) {
   const isNested = layer.views && layer.views.length > 0;
   const isDroneViewGroup = isNested && layer.views!.every((view) => typeof view.droneView?.flightId === 'number');
@@ -122,6 +131,7 @@ export function PinnedLayerRow({
   const parentResultCount = isNested
     ? layer.views!.find(v => v.isVisible)?.resultCount
     : layer.resultCount;
+  const flatPinnedStreamCount = !isNested ? (getPinnedStreamCount?.(layer.layerId) ?? 0) : 0;
 
   // Determine what to show in the collapsed row based on count display mode
   const shouldShowFilterCount = 
@@ -230,10 +240,23 @@ export function PinnedLayerRow({
           </span>
 
           {/* Count indicators based on display mode */}
-          {countDisplayMode !== 'none' && (
+          {(isDendraLayer && !isNested) || countDisplayMode !== 'none' ? (
             <div className="flex items-center gap-1.5">
+              {isDendraLayer && !isNested && (
+                <span
+                  id={`pinned-row-pin-count-${layer.id}`}
+                  className={`text-xs flex items-center gap-0.5 ${
+                    flatPinnedStreamCount > 0 ? 'text-blue-700' : 'text-blue-400'
+                  }`}
+                  title={`${flatPinnedStreamCount} pinned datastream${flatPinnedStreamCount === 1 ? '' : 's'}`}
+                >
+                  <span className="font-semibold">{flatPinnedStreamCount}</span>
+                  <Pin className="w-3 h-3 fill-current" />
+                </span>
+              )}
+
               {/* Filter count */}
-              {shouldShowFilterCount && (
+              {countDisplayMode !== 'none' && shouldShowFilterCount && (
                 <FilterIndicator 
                   count={parentFilterCount} 
                   onClick={e => { e?.stopPropagation(); onEditFilters?.(); }} 
@@ -241,14 +264,14 @@ export function PinnedLayerRow({
               )}
               
               {/* Result count */}
-              {shouldShowResultCount && parentResultCount !== undefined && (
+              {countDisplayMode !== 'none' && shouldShowResultCount && parentResultCount !== undefined && (
                 <span className="text-xs text-gray-500 flex items-center gap-0.5">
                   <span className="font-medium">{parentResultCount}</span>
                   <span className="text-[10px]">results</span>
                 </span>
               )}
             </div>
-          )}
+          ) : null}
 
           {/* Remove button */}
           <button
@@ -282,6 +305,13 @@ export function PinnedLayerRow({
                         <li key={i}>{s.trim()}</li>
                       ))}
                     </ul>
+                  ) : isDendraLayer && flatPinnedStreamCount > 0 ? (
+                    <p
+                      id={`flat-filter-panel-pinned-summary-${layer.id}`}
+                      className="text-[11px] text-blue-700 leading-relaxed flex-1"
+                    >
+                      {flatPinnedStreamCount} pinned datastream{flatPinnedStreamCount === 1 ? '' : 's'} in this view
+                    </p>
                   ) : (
                     <p className="text-[11px] text-gray-500 leading-relaxed flex-1">No filters applied.</p>
                   )}
@@ -352,12 +382,36 @@ export function PinnedLayerRow({
           <div className="overflow-hidden">
             <div className="mt-1 space-y-1 pb-1">
               {layer.views!.map((view, index) => (
+                (() => {
+                  const streamStats = getPinnedStreamStats?.(layer.layerId, view.id) ?? {
+                    streamCount: 0,
+                    stationCount: 0,
+                    stationNames: [],
+                  };
+                  const dynamicViewLabel = isDendraLayer
+                    ? `${streamStats.streamCount} data stream${streamStats.streamCount === 1 ? '' : 's'}, ${streamStats.stationCount} station${streamStats.stationCount === 1 ? '' : 's'}`
+                    : undefined;
+                  const expandedDescriptor = isDendraLayer
+                    ? (
+                        streamStats.streamCount === 0
+                          ? 'No pinned datastreams in this view.'
+                          : streamStats.stationCount === 1 && streamStats.stationNames[0]
+                            ? `${streamStats.streamCount} data stream${streamStats.streamCount === 1 ? '' : 's'} from ${streamStats.stationNames[0]}`
+                            : `${streamStats.streamCount} data stream${streamStats.streamCount === 1 ? '' : 's'} from ${streamStats.stationCount} station${streamStats.stationCount === 1 ? '' : 's'}`
+                      )
+                    : undefined;
+
+                  return (
                 <PinnedLayerChildRow
                   key={view.id}
                   view={view}
                   isLast={index === layer.views!.length - 1}
                   isActive={activeViewId === view.id}
                   isExpanded={expandedChildId === view.id}
+                  dynamicLabel={dynamicViewLabel}
+                  expandedDescriptor={expandedDescriptor}
+                  showPinnedStreamCount={isDendraLayer}
+                  pinnedStreamCount={getPinnedStreamCount?.(layer.layerId, view.id) ?? 0}
                   countDisplayMode={countDisplayMode}
                   onToggleExpand={() => setExpandedChildId(prev => prev === view.id ? null : view.id)}
                   onToggleVisibility={() => onToggleChildView?.(view.id)}
@@ -367,6 +421,8 @@ export function PinnedLayerRow({
                   onEditFilters={() => onEditFiltersForChild?.(view.id)}
                   onClearFilters={() => onClearFiltersForChild?.(view.id)}
                 />
+                  );
+                })()
               ))}
               {!isDroneViewGroup && <NewViewButton onClick={() => onCreateNewView?.()} />}
             </div>
