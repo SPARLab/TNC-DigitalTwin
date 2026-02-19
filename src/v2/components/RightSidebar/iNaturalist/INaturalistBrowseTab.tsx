@@ -539,6 +539,20 @@ export function INaturalistBrowseTab() {
         </div>
       )}
 
+      {!error && !showInitialLoading && !requiresSpeciesSelection && (
+        <div
+          id="inat-results-count-row"
+          className={`flex items-center justify-between rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 ${showRefreshLoading ? 'opacity-80' : ''}`}
+        >
+          <span id="inat-results-count-label" className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+            Results
+          </span>
+          <span id="inat-results-count-value" className="text-sm font-medium text-emerald-900">
+            {fetchedCount.toLocaleString()} {fetchedCount === 1 ? 'observation' : 'observations'}
+          </span>
+        </div>
+      )}
+
       {/* Observation cards */}
       {!error && !showInitialLoading && !requiresSpeciesSelection && (
         <div id="inat-observation-cards" className={`space-y-2 ${showRefreshLoading ? 'opacity-60' : ''}`}>
