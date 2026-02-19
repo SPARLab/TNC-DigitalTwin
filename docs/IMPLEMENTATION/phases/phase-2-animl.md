@@ -1,7 +1,7 @@
 # Phase 2: ANiML Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 0 / 4 tasks (completed tasks 2.1–2.17 archived)  
+**Progress:** 1 / 6 tasks (completed tasks 2.1–2.17 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-2-animl-completed.md`  
 **Branch:** `v2/animl`  
 **Depends On:** Phase 0 (Foundation) — Data Source Adapter Pattern ✅ Complete  
@@ -87,7 +87,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| CON-ANIML-01 | 🟡 In Progress | Feb 19, 2026 | Map click on camera trap auto-selects sidebar camera and shows images | Added map click + sidebar sync and spatial-query camera auto-select/prioritization; pending QA |
+| CON-ANIML-01 | 🟢 Complete | Feb 19, 2026 | Map click on camera trap auto-selects sidebar camera and shows images | Map click + sidebar sync; spatial-query camera auto-select/prioritization; QA passed |
 | CON-ANIML-02 | ⚪ Not Started | Feb 18, 2026 | Rename "Mountain lion" to "Puma" | Medium priority |
 | CON-ANIML-03 | ⚪ Not Started | Feb 18, 2026 | Sort cameras by result count (data-rich first, zero-data last) | Medium priority |
 | CON-ANIML-04 | ⚪ Not Started | Feb 19, 2026 | Add explicit "Remove Polygon" CTA in spatial query panel | Improve discoverability over tiny Clear affordance |
@@ -98,7 +98,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
-| CON-ANIML-01 | Map click camera -> sidebar sync + images | 🟡 In Progress | | Map click handler + browse camera auto-select + spatial polygon camera auto-selection implemented; pending QA |
+| CON-ANIML-01 | Map click camera -> sidebar sync + images | 🟢 Complete | | Map click handler + browse camera auto-select + spatial polygon camera auto-selection; QA passed |
 | CON-ANIML-02 | Rename Mountain lion label to Puma | ⚪ Not Started | | Intake from consolidated feedback |
 | CON-ANIML-03 | Sort cameras by result count descending | ⚪ Not Started | | Intake from consolidated feedback |
 | CON-ANIML-04 | Add explicit "Remove Polygon" CTA in spatial query panel | ⚪ Not Started | | Requested UX improvement for polygon-clear discoverability |
@@ -245,6 +245,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | Feb 13, 2026 | 2.17 | **New task added.** Species/camera counts in filter sections and legend show all-time totals; when date filter is applied, image results correctly show 0 but counts remain high — misleading UX. Task 2.17: sync counts with date filter or add clear qualifier. | Will + Claude |
 | Feb 13, 2026 | 2.17 | **Complete.** Implemented Option D (lazy date-filtered counts). AnimlFilterContext fetches `getObservationCountsGroupedCached({ startDate, endDate })` when date filter active, builds `dateScopedCountLookups`, routes all count helpers through `activeCountLookups`. Species/Cameras filter sections and AnimlLegendWidget now show date-scoped counts; no all-time fallback during load. Files: AnimlFilterContext.tsx, AnimlBrowseTab.tsx, AnimlLegendWidget.tsx. | Will + Claude |
 | Feb 16, 2026 | 2.8 | **Complete.** Replaced emoji camera map markers with SVG camera symbols in `animlLayer.ts` for base, badged, and muted states. Added row-level icons in ANiML legend and browse filters (`AnimlLegendWidget`, `FilterSection`, `AnimlBrowseTab`). Final refinement removed circular marker backplates based on visual QA feedback. | Will + Claude |
+| Feb 19, 2026 | CON-ANIML-01 | **Complete.** Map click on camera trap auto-selects sidebar camera and shows images. Includes map click handler, browse camera auto-select, and spatial polygon camera auto-selection/prioritization. QA passed. | Will + Claude |
 
 ---
 
