@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 6 / 21 tasks (CON-ARCGIS-01, 02, 04, 05, 08, 6.20 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
+**Progress:** 7 / 21 tasks (CON-ARCGIS-01, 02, 04, 05, 08, 09, 6.20 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry) ✅ complete  
@@ -38,7 +38,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | CON-ARCGIS-06 | ⚪ Not Started | Feb 18, 2026 | Bug: fix Union Pacific Railroad layer (layer ID 0 not found) | Medium priority bug |
 | CON-ARCGIS-07 | ⚪ Not Started | Feb 18, 2026 | Design multi-layer feature service UX follow-up | Low priority / follow-up |
 | **CON-ARCGIS-08** | 🟢 Complete | Feb 19, 2026 | Left sidebar: hover-visible scrollbar pill | Implemented: custom overlay thumb (no gutter); visible on scroll/hover |
-| **CON-ARCGIS-09** | ⚪ | Feb 19, 2026 | Left sidebar: fix layer row clipping | Layer names truncated; adjust flex/truncation so content visible |
+| **CON-ARCGIS-09** | 🟢 Complete | Feb 19, 2026 | Left sidebar: fix layer row clipping | ServiceGroup: w-full→mx-1 min-w-0; consistent right margin |
 | **CON-ARCGIS-10** | ⚪ | Feb 19, 2026 | Right sidebar: relabel hierarchy block | Feature Service (bold name); Current Layer; remove "Catalog: TNC ArcGIS…" |
 | **CON-ARCGIS-11** | ⚪ | Feb 19, 2026 | Right sidebar: rename section to "Feature Service Overview" | Replace "TNC ArcGIS Service" with user-facing label |
 | **CON-ARCGIS-12** | ⚪ | Feb 19, 2026 | Right sidebar: simplify layer list UX | Remove dropdown + helper text; single scrollable list (~5 rows); "N layers" header; highlight selected |
@@ -458,10 +458,12 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - Test with long layer names (e.g., "Coastal and Marine Data", "Deep Sea Corals & Sponges")
 
 **Acceptance Criteria:**
-- [ ] Layer names truncate with ellipsis instead of hard cutoff
-- [ ] Service/Layer badges fully visible
-- [ ] No content clipped at right edge of sidebar
-- [ ] Works at 280px sidebar width
+- [x] Layer names truncate with ellipsis instead of hard cutoff
+- [x] Service/Layer badges fully visible
+- [x] No content clipped at right edge of sidebar
+- [x] Works at 280px sidebar width
+
+**Resolution (Feb 19, 2026):** ServiceGroup row wrapper changed from `w-full ml-1 mr-1` to `mx-1 min-w-0` to prevent width overflow that pushed the SERVICE badge and content too far right. Keeps consistent right margin with other layer rows (e.g., Water Pressure Level Sensors). Child layer rows already use `mr-1` (flat) or `mr-0` (indented); truncation via `truncate min-w-0 flex-1` on name span.
 
 **Estimated Time:** 30–60 min
 
