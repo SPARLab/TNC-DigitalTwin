@@ -28,9 +28,10 @@ function getTargetLayer(activeLayer: CatalogLayer | undefined, selectedSubLayerI
   return siblings.find(layer => layer.id === selectedSubLayerId) ?? siblings[0] ?? null;
 }
 
-export function TNCArcGISOverviewTab({ loading }: TNCArcGISOverviewTabProps) {
+export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOverviewTabProps) {
   const {
     activeLayer,
+    setActiveServiceSubLayer,
     isLayerPinned,
     pinLayer,
     unpinLayer,
@@ -45,6 +46,15 @@ export function TNCArcGISOverviewTab({ loading }: TNCArcGISOverviewTabProps) {
     () => getTargetLayer(activeCatalogLayer, activeLayer?.selectedSubLayerId),
     [activeCatalogLayer, activeLayer?.selectedSubLayerId],
   );
+  const serviceContextLayer = useMemo(() => {
+    if (!activeCatalogLayer) return undefined;
+    if (activeCatalogLayer.catalogMeta?.isMultiLayerService && !activeCatalogLayer.catalogMeta?.parentServiceId) {
+      return activeCatalogLayer;
+    }
+    const parentServiceId = activeCatalogLayer.catalogMeta?.parentServiceId;
+    if (!parentServiceId) return activeCatalogLayer;
+    return layerMap.get(parentServiceId) ?? activeCatalogLayer;
+  }, [activeCatalogLayer, layerMap]);
 
   const siblingLayers = useMemo(
     () => activeCatalogLayer?.catalogMeta?.siblingLayers ?? [],
@@ -52,16 +62,21 @@ export function TNCArcGISOverviewTab({ loading }: TNCArcGISOverviewTabProps) {
   );
   const isServiceOverview = !!(activeLayer?.isService && siblingLayers.length > 0);
 
-  const description = activeCatalogLayer?.catalogMeta?.description || 'No description available yet.';
-  const normalizedServiceDescription = normalizeDescription(activeCatalogLayer?.catalogMeta?.description);
-  const servicePath = activeCatalogLayer?.catalogMeta?.servicePath || 'Unknown service path';
-  const serverBaseUrl = activeCatalogLayer?.catalogMeta?.serverBaseUrl || 'Unknown host';
+  const description = serviceContextLayer?.catalogMeta?.description || 'No description available yet.';
+  const normalizedServiceDescription = normalizeDescription(serviceContextLayer?.catalogMeta?.description);
+  const servicePath = serviceContextLayer?.catalogMeta?.servicePath || 'Unknown service path';
+  const serverBaseUrl = serviceContextLayer?.catalogMeta?.serverBaseUrl || 'Unknown host';
   const sourceLabel = `${serverBaseUrl}/${servicePath}`;
   const activeLayerPinned = activeLayer ? isLayerPinned(activeLayer.layerId) : false;
   const activeLayerPinnedEntry = activeLayer ? getPinnedByLayerId(activeLayer.layerId) : undefined;
   const activeLayerCanPin = !!activeLayer && !activeLayer.isService;
   const sliderOpacityPercent = activeLayer ? Math.round(getLayerOpacity(activeLayer.layerId) * 100) : 100;
-  const sourceUrl = useMemo(() => {
+  const serviceSearchUrl = useMemo(() => {
+    const searchLabel = serviceContextLayer?.name || targetLayer?.name;
+    if (!searchLabel) return '';
+    return `https://dangermondpreserve-tnc.hub.arcgis.com/search?collection=Dataset&q=${encodeURIComponent(searchLabel)}`;
+  }, [serviceContextLayer?.name, targetLayer?.name]);
+  const rawServiceUrl = useMemo(() => {
     if (!targetLayer?.catalogMeta) return '';
     try {
       return buildServiceUrl(targetLayer.catalogMeta);
@@ -69,6 +84,9 @@ export function TNCArcGISOverviewTab({ loading }: TNCArcGISOverviewTabProps) {
       return '';
     }
   }, [targetLayer?.catalogMeta]);
+  const sourceUrl = useMemo(() => {
+    return serviceSearchUrl || rawServiceUrl;
+  }, [serviceSearchUrl, rawServiceUrl]);
 
   const formatLayerLabel = (layerName: string, layerIdInService?: number) => (
     typeof layerIdInService === 'number'
@@ -89,6 +107,21 @@ export function TNCArcGISOverviewTab({ loading }: TNCArcGISOverviewTabProps) {
     <div id="tnc-arcgis-overview-tab" className="space-y-5">
       {isServiceOverview ? (
         <>
+          <div id="tnc-arcgis-overview-hierarchy-card" className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
+            <h4 id="tnc-arcgis-overview-hierarchy-title" className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+              Current Context
+            </h4>
+            <div id="tnc-arcgis-overview-hierarchy-layer" className="text-sm text-gray-900">
+              <span className="font-medium">Layer:</span> {targetLayer?.name || 'No layer selected'}
+            </div>
+            <div id="tnc-arcgis-overview-hierarchy-service" className="text-sm text-gray-700">
+              <span className="font-medium">Service:</span> {serviceContextLayer?.name || activeCatalogLayer?.name || 'Unknown service'}
+            </div>
+            <div id="tnc-arcgis-overview-hierarchy-catalog" className="text-xs text-gray-600">
+              <span className="font-medium">Catalog:</span> TNC ArcGIS Feature Services
+            </div>
+          </div>
+
           <div id="tnc-arcgis-overview-description-block" className="space-y-2">
             <h3 id="tnc-arcgis-overview-title" className="text-sm font-semibold text-gray-900">
               TNC ArcGIS Service
@@ -100,11 +133,33 @@ export function TNCArcGISOverviewTab({ loading }: TNCArcGISOverviewTabProps) {
 
           <div id="tnc-arcgis-service-overview-layer-list-block" className="space-y-2">
             <h4 id="tnc-arcgis-service-overview-layer-list-title" className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-              Available Layers
+              Layer Selection
             </h4>
-            <p id="tnc-arcgis-service-overview-layer-list-help" className="text-xs text-gray-600">
-              Select a child layer in the left sidebar to activate, browse, and pin.
+            <p id="tnc-arcgis-service-overview-layer-list-help" className="text-xs text-gray-600 leading-relaxed">
+              Pick a layer here or in the left sidebar. Selection stays synced both ways.
             </p>
+            <label
+              id="tnc-arcgis-service-overview-layer-select-label"
+              htmlFor="tnc-arcgis-service-overview-layer-select"
+              className="text-xs font-medium text-gray-700"
+            >
+              Active layer
+            </label>
+            <select
+              id="tnc-arcgis-service-overview-layer-select"
+              value={targetLayer?.id || ''}
+              onChange={(event) => {
+                if (!event.target.value) return;
+                setActiveServiceSubLayer(event.target.value);
+              }}
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+            >
+              {siblingLayers.map(layer => (
+                <option key={layer.id} value={layer.id}>
+                  {formatLayerLabel(layer.name, layer.catalogMeta?.layerIdInService)}
+                </option>
+              ))}
+            </select>
             <ul id="tnc-arcgis-service-overview-layer-list" className="space-y-2">
               {siblingLayers.map(layer => {
                 const layerDescription = layer.catalogMeta?.description;
@@ -114,7 +169,13 @@ export function TNCArcGISOverviewTab({ loading }: TNCArcGISOverviewTabProps) {
                 );
 
                 return (
-                  <li id={`tnc-arcgis-service-overview-layer-${layer.id}`} key={layer.id} className="rounded-lg border border-gray-200 bg-white p-3">
+                  <li
+                    id={`tnc-arcgis-service-overview-layer-${layer.id}`}
+                    key={layer.id}
+                    className={`rounded-lg border bg-white p-3 transition-colors ${
+                      targetLayer?.id === layer.id ? 'border-emerald-300 ring-1 ring-emerald-200' : 'border-gray-200'
+                    }`}
+                  >
                     <p
                       id={`tnc-arcgis-service-overview-layer-name-${layer.id}`}
                       className="text-sm font-medium text-gray-900"
@@ -149,12 +210,14 @@ export function TNCArcGISOverviewTab({ loading }: TNCArcGISOverviewTabProps) {
           </div>
 
           <div id="tnc-arcgis-service-overview-actions" className="grid grid-cols-2 gap-3">
-            <div
-              id="tnc-arcgis-service-overview-select-layer-cta"
-              className="col-span-2 w-full py-3 rounded-lg border border-gray-300 bg-gray-50 text-gray-700 text-sm font-medium text-center min-h-[44px] flex items-center justify-center"
+            <button
+              id="tnc-arcgis-service-overview-open-layer-cta"
+              type="button"
+              onClick={onBrowseClick}
+              className="col-span-2 w-full py-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-medium text-center min-h-[44px] hover:bg-emerald-100 transition-colors"
             >
-              Select a layer from the left sidebar
-            </div>
+              Browse Selected Layer
+            </button>
           </div>
 
           <div id="tnc-arcgis-overview-source-card" className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
@@ -164,6 +227,11 @@ export function TNCArcGISOverviewTab({ loading }: TNCArcGISOverviewTabProps) {
             <div id="tnc-arcgis-overview-source-url" className="text-xs text-gray-700 break-all">
               {sourceUrl || 'Select a specific layer to view source URL.'}
             </div>
+            {rawServiceUrl && sourceUrl !== rawServiceUrl && (
+              <div id="tnc-arcgis-overview-raw-source-url" className="text-[11px] text-gray-500 break-all">
+                REST endpoint: {rawServiceUrl}
+              </div>
+            )}
             <div id="tnc-arcgis-overview-source-actions" className="grid grid-cols-2 gap-2">
               <button
                 id="tnc-arcgis-overview-open-overlay-button"
@@ -190,12 +258,27 @@ export function TNCArcGISOverviewTab({ loading }: TNCArcGISOverviewTabProps) {
               </a>
             </div>
             <p id="tnc-arcgis-overview-source-help" className="text-[11px] text-gray-500">
-              If ArcGIS blocks iframe embedding, use New Tab.
+              Opens the TNC Hub search page first; use New Tab if embedding is blocked.
             </p>
           </div>
         </>
       ) : (
         <>
+      <div id="tnc-arcgis-overview-hierarchy-card" className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
+        <h4 id="tnc-arcgis-overview-hierarchy-title" className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+          Current Context
+        </h4>
+        <div id="tnc-arcgis-overview-hierarchy-layer" className="text-sm text-gray-900">
+          <span className="font-medium">Layer:</span> {targetLayer?.name || activeCatalogLayer?.name || 'Unknown layer'}
+        </div>
+        <div id="tnc-arcgis-overview-hierarchy-service" className="text-sm text-gray-700">
+          <span className="font-medium">Service:</span> {serviceContextLayer?.name || activeCatalogLayer?.name || 'Unknown service'}
+        </div>
+        <div id="tnc-arcgis-overview-hierarchy-catalog" className="text-xs text-gray-600">
+          <span className="font-medium">Catalog:</span> TNC ArcGIS Feature Services
+        </div>
+      </div>
+
       <div id="tnc-arcgis-overview-description-block" className="space-y-2">
         <h3 id="tnc-arcgis-overview-title" className="text-sm font-semibold text-gray-900">
           TNC ArcGIS Service
@@ -286,6 +369,11 @@ export function TNCArcGISOverviewTab({ loading }: TNCArcGISOverviewTabProps) {
             <div id="tnc-arcgis-overview-source-url" className="text-xs text-gray-700 break-all">
               {sourceUrl || 'No source URL available.'}
             </div>
+            {rawServiceUrl && sourceUrl !== rawServiceUrl && (
+              <div id="tnc-arcgis-overview-raw-source-url" className="text-[11px] text-gray-500 break-all">
+                REST endpoint: {rawServiceUrl}
+              </div>
+            )}
             <div id="tnc-arcgis-overview-source-actions" className="grid grid-cols-2 gap-2">
               <button
                 id="tnc-arcgis-overview-open-overlay-button"
@@ -312,7 +400,7 @@ export function TNCArcGISOverviewTab({ loading }: TNCArcGISOverviewTabProps) {
               </a>
             </div>
             <p id="tnc-arcgis-overview-source-help" className="text-[11px] text-gray-500">
-              If ArcGIS blocks iframe embedding, use New Tab.
+              Opens the TNC Hub search page first; use New Tab if embedding is blocked.
             </p>
           </div>
         </>
@@ -331,7 +419,7 @@ export function TNCArcGISOverviewTab({ loading }: TNCArcGISOverviewTabProps) {
           >
             <div id="tnc-arcgis-overview-source-overlay-header" className="flex items-center justify-between border-b border-gray-200 px-3 py-2">
               <h3 id="tnc-arcgis-overview-source-overlay-title" className="text-sm font-semibold text-gray-900">
-                ArcGIS Source Viewer
+                TNC ArcGIS Source Viewer
               </h3>
               <button
                 id="tnc-arcgis-overview-source-overlay-close-button"
@@ -346,7 +434,7 @@ export function TNCArcGISOverviewTab({ loading }: TNCArcGISOverviewTabProps) {
             <iframe
               id="tnc-arcgis-overview-source-overlay-iframe"
               src={sourceUrl}
-              title="ArcGIS Service Source"
+              title="TNC ArcGIS Source"
               className="w-full h-full border-0"
             />
           </div>

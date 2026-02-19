@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { CatalogLayer } from '../../types';
+import { useLayers } from '../../context/LayerContext';
 import { LayerRow } from './LayerRow';
 
 interface ServiceGroupProps {
@@ -18,7 +19,14 @@ export function ServiceGroup({
   ariaLevel = 2,
   onToggleExpand,
 }: ServiceGroupProps) {
+  const { activeLayer, activateLayer } = useLayers();
+  const isActiveService = activeLayer?.layerId === service.id && !!activeLayer.isService;
+
   const handleHeaderClick = () => {
+    const selectedSubLayerId = isActiveService
+      ? activeLayer?.selectedSubLayerId
+      : layers[0]?.id;
+    activateLayer(service.id, undefined, undefined, selectedSubLayerId);
     onToggleExpand();
   };
 
@@ -45,7 +53,9 @@ export function ServiceGroup({
         id={`service-group-row-${service.id}`}
         className={`w-full flex items-center gap-2 py-1.5 px-1 rounded-lg border transition-colors
           ${
-            isExpanded
+            isActiveService
+              ? 'border-amber-300 bg-amber-50 shadow-sm'
+              : isExpanded
               ? 'border-amber-300 bg-amber-50'
               : 'border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-gray-300'
           }`}
@@ -71,6 +81,13 @@ export function ServiceGroup({
             className="text-xs text-gray-600 bg-white border border-gray-200 rounded-full px-1.5 py-0.5 flex-shrink-0"
           >
             {layers.length}
+          </span>
+          <span
+            id={`service-group-kind-${service.id}`}
+            className="text-[10px] uppercase tracking-wide text-gray-500 rounded border border-gray-200 bg-white px-1.5 py-0.5 flex-shrink-0"
+            title="Feature service container"
+          >
+            Service
           </span>
         </button>
       </div>

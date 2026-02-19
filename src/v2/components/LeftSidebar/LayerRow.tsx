@@ -65,7 +65,10 @@ export function LayerRow({
   );
   const isDroneDeployOrthomosaicsLayer = catalogLayer?.catalogMeta?.datasetId === 193;
 
-  const isActive = !controlsOnly && activeLayer?.layerId === layerId;
+  const isSelectedServiceChild = !controlsOnly
+    && !!activeLayer?.isService
+    && activeLayer.selectedSubLayerId === layerId;
+  const isActive = !controlsOnly && (activeLayer?.layerId === layerId || isSelectedServiceChild);
   const isPinned = isLayerPinned(layerId);
   const isVisible = isLayerVisible(layerId);
   const pinned = getPinnedByLayerId(layerId);
@@ -177,6 +180,7 @@ export function LayerRow({
         id={`layer-row-${layerId}`}
         role="treeitem"
         aria-level={ariaLevel}
+        aria-current={isActive ? 'true' : undefined}
         tabIndex={controlsOnly ? -1 : 0}
         onClick={handleClick}
         onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && handleClick()}
@@ -202,6 +206,16 @@ export function LayerRow({
         <span className={`truncate flex-1 ${textColor} ${isActive ? 'font-semibold' : ''}`}>
           {name}
         </span>
+
+        {catalogLayer?.catalogMeta?.parentServiceId && (
+          <span
+            id={`layer-row-kind-${layerId}`}
+            className="text-[10px] uppercase tracking-wide text-gray-500 rounded border border-gray-200 bg-white px-1.5 py-0.5 flex-shrink-0"
+            title="Feature service layer"
+          >
+            Layer
+          </span>
+        )}
 
         {isDroneDeployOrthomosaicsLayer && (
           <button
