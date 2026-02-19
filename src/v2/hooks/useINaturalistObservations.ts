@@ -11,6 +11,8 @@ export type { INatObservation };
 
 export interface INatFilters {
   selectedTaxa?: Set<string>;
+  selectedSpecies?: Set<string>;
+  excludeAllSpecies?: boolean;
   startDate?: string;
   endDate?: string;
   searchTerm?: string;
@@ -32,6 +34,11 @@ export function useINaturalistObservations(filters: INatFilters) {
     if (filters.selectedTaxa && filters.selectedTaxa.size > 0) {
       result = result.filter(o => filters.selectedTaxa!.has(o.taxonCategory));
     }
+    if (filters.excludeAllSpecies) {
+      result = [];
+    } else if (filters.selectedSpecies && filters.selectedSpecies.size > 0) {
+      result = result.filter(o => filters.selectedSpecies!.has(o.speciesName));
+    }
     if (filters.startDate) {
       result = result.filter(o => o.observedOn >= filters.startDate!);
     }
@@ -48,23 +55,27 @@ export function useINaturalistObservations(filters: INatFilters) {
     }
 
     return result;
-  }, [allObservations, filters.skip, filters.selectedTaxa, filters.startDate, filters.endDate, filters.searchTerm]);
+  }, [allObservations, filters.skip, filters.selectedTaxa, filters.selectedSpecies, filters.excludeAllSpecies, filters.startDate, filters.endDate, filters.searchTerm]);
 
   // Reset to page 1 when filters change
   const taxaKey = useMemo(
     () => (filters.selectedTaxa ? Array.from(filters.selectedTaxa).sort().join(',') : ''),
     [filters.selectedTaxa],
   );
+  const speciesKey = useMemo(
+    () => `${filters.excludeAllSpecies ? '__none__' : ''}|${filters.selectedSpecies ? Array.from(filters.selectedSpecies).sort().join(',') : ''}`,
+    [filters.selectedSpecies, filters.excludeAllSpecies],
+  );
   const searchTermKey = filters.searchTerm || '';
   const dateKey = `${filters.startDate || ''}~${filters.endDate || ''}`;
-  const prevKeyRef = useRef(taxaKey + '|' + searchTermKey + '|' + dateKey);
+  const prevKeyRef = useRef(taxaKey + '|' + speciesKey + '|' + searchTermKey + '|' + dateKey);
   useEffect(() => {
-    const currentKey = taxaKey + '|' + searchTermKey + '|' + dateKey;
+    const currentKey = taxaKey + '|' + speciesKey + '|' + searchTermKey + '|' + dateKey;
     if (currentKey !== prevKeyRef.current) {
       setPage(1);
       prevKeyRef.current = currentKey;
     }
-  }, [taxaKey, searchTermKey, dateKey]);
+  }, [taxaKey, speciesKey, searchTermKey, dateKey]);
 
   // Pagination
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);

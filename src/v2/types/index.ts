@@ -99,6 +99,8 @@ export interface DroneViewState {
 /** iNaturalist filter state stored per pinned layer/view */
 export interface INaturalistViewFilters {
   selectedTaxa: string[];
+  selectedSpecies: string[];
+  excludeAllSpecies?: boolean;
   startDate?: string;
   endDate?: string;
 }

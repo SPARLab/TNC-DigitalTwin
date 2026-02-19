@@ -32,7 +32,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | Phase | Name | Status | Remaining | Branch | Blocking? |
 |-------|------|--------|-----------|--------|-----------|
 | 0 | Foundation | 🟢 Complete | 0 blocking | `v2/foundation` | No — parallel branches ready |
-| 1 | iNaturalist | 🟢 Complete | 0 | `v2/inaturalist` | No |
+| 1 | iNaturalist | 🟡 In Progress | 1 | `v2/inaturalist` | No |
 | 2 | ANiML | 🟢 Complete | 0 | `v2/animl` | No |
 | 3 | Dendra | 🟢 Complete | 0 | `v2/dendra` | No |
 | 4 | DataOne | 🟢 Complete | 0 | `v2/dataone` | No |
@@ -51,6 +51,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | Phase | Doc | Remaining |
 |-------|-----|-----------|
 | 0 | [phase-0-foundation.md](IMPLEMENTATION/phases/phase-0-foundation.md) | 0.6 Map Feature Highlight (if pending); 0.9 ✅ complete |
+| 1 | [phase-1-inaturalist.md](IMPLEMENTATION/phases/phase-1-inaturalist.md) | 1 task (CON-INAT-07) |
 | 2 | [phase-2-animl.md](IMPLEMENTATION/phases/phase-2-animl.md) | 0 (2.18 ✅) |
 | 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 9 tasks |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) | 1 task (10.7) |
@@ -301,6 +302,10 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 19, 2026 | Phase 1 | **CON-INAT-06 complete:** Species/taxa ordering (count default, A-Z toggle) already implemented in CON-INAT-01. CON-INAT-04 won't do (iNaturalist coordinate obfuscation). Remaining: 1 task (CON-INAT-07). | — |
+| Feb 19, 2026 | Phase 1 | **CON-INAT-03 complete:** Added browse result-count row in iNaturalist right sidebar (e.g., "92 observations"). | — |
+| Feb 19, 2026 | Phase 1 | **CON-INAT-02 complete:** Species hierarchy flow (taxa→species→observations). Removed redundant top species search; renamed "Filter Observations" to "Filter Taxa". | — |
+| Feb 19, 2026 | Phase 1 | **CON-INAT-01 complete:** Species-level filtering (full scientific names, species search, count/alphabetical sort, map/pinned-view sync). Common/Latin toggle dropped. | — |
 | Feb 19, 2026 | Phase 2 | **Task 2.18 complete: Synchronize matching images with map/layer counts.** Server-side image pagination; shared filteredImageCount for map, layer badge, and browse totals; QA passed. Phase 2 ANiML complete. | Claude |
 | Feb 19, 2026 | Phase 2 | **CON-ANIML-06 complete: Retry for image labels API errors.** Auto-retry (429/502/503/504) with backoff; manual Retry button when exhausted; no full reload. | Claude |
 | Feb 19, 2026 | Phase 2 | **CON-ANIML-05 complete: Map badge UI for large counts.** Dynamic pill badge with white outline; extra padding for 999+; no clipping; QA passed. | Claude |
