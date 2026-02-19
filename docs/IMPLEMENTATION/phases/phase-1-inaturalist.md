@@ -1,7 +1,7 @@
 # Phase 1: iNaturalist Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 3 / 6 tasks  
+**Progress:** 4 / 6 tasks complete (1 won't do)  
 **Branch:** `v2/inaturalist`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD  
@@ -20,14 +20,14 @@
 | CON-INAT-01 | 🟢 Complete | Feb 19, 2026 | Add species-level filtering (currently taxa only) | Done: full scientific names, species search, count/alphabetical sort, map/pinned-view sync. Common/Latin toggle dropped (decided against). |
 | CON-INAT-02 | 🟢 Complete | Feb 19, 2026 | Species hierarchy flow: taxa -> species list -> observations per species | Done: taxa→species→observations flow enforced; redundant top species search removed; "Filter Taxa" label. |
 | CON-INAT-03 | 🟢 Complete | Feb 19, 2026 | Show result count in right sidebar (for example, "92 observations") | Done: Browse tab now shows live result-count row (e.g., "92 observations") using filtered total count. |
-| CON-INAT-04 | ⚪ Not Started | Feb 18, 2026 | Investigate reptile observations appearing in ocean (scrambling vs bug) | Medium priority; source: AF-08 |
-| CON-INAT-06 | ⚪ Not Started | Feb 18, 2026 | Species/taxa ordering: common species higher, with editable sort order | Medium priority; source: T15 |
+| CON-INAT-04 | 🚫 Won't Do | Feb 19, 2026 | Investigate reptile observations appearing in ocean (scrambling vs bug) | Not a product bug; iNaturalist intentionally obfuscates coordinates for sensitive/endangered species. Source: AF-08. |
+| CON-INAT-06 | 🟢 Complete | Feb 19, 2026 | Species/taxa ordering: common species higher, with editable sort order | Done: species list defaults to count sort (common higher), toggle to A-Z; implemented in CON-INAT-01. Source: T15. |
 | CON-INAT-07 | ⚪ Not Started | Feb 19, 2026 | Edit filters widget collapsible; results in scrollable section filling remaining viewport height | Edit filters: collapse/expand. Results: scrollable container, height limited to viewport, expands to fill remaining vertical space in right sidebar. |
 
 **Phase-5 handoff:** `CON-INAT-05` (Export Builder cart inversion) is tracked in `docs/IMPLEMENTATION/phases/phase-5-export-builder.md` to avoid cross-branch conflicts.
 
-**Active tasks remaining:** 3  
-**Recently completed:** CON-INAT-03 (result count in sidebar), CON-INAT-02 (species hierarchy flow), CON-INAT-01 (species-level filtering). Archived tasks: `docs/archive/phases/phase-1-inaturalist-completed.md`
+**Active tasks remaining:** 1  
+**Recently completed:** CON-INAT-06 (species/taxa ordering), CON-INAT-03 (result count in sidebar), CON-INAT-02 (species hierarchy flow), CON-INAT-01 (species-level filtering). Archived tasks: `docs/archive/phases/phase-1-inaturalist-completed.md`
 
 ---
 
@@ -101,6 +101,8 @@ TBD
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 19, 2026 | CON-INAT-04 | **Won't Do.** Reptile observations appearing in ocean are due to iNaturalist coordinate obfuscation for sensitive/endangered species, not an app bug. | — |
+| Feb 19, 2026 | CON-INAT-06 | **Complete.** Species/taxa ordering already implemented in CON-INAT-01: count sort (common higher) default, A-Z toggle. | — |
 | Feb 19, 2026 | CON-INAT-07 | **Added.** Edit filters widget collapsible; results in scrollable section filling remaining viewport height. | — |
 | Feb 19, 2026 | CON-INAT-03 | **Complete.** Added result-count row to iNaturalist Browse tab showing filtered total (e.g., "92 observations"), including singular/plural handling. | — |
 | Feb 19, 2026 | CON-INAT-02 | **Complete.** Species hierarchy flow (taxa→species→observations) enforced. Removed redundant top species search bar; renamed "Filter Observations" to "Filter Taxa"; species search remains inside Filter Species dropdown. | — |
