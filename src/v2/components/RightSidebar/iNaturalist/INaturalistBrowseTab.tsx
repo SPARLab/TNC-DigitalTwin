@@ -23,6 +23,7 @@ import { useLayers } from '../../../context/LayerContext';
 import { ObservationCard } from './ObservationCard';
 import { INaturalistDetailView } from './INaturalistDetailView';
 import { InlineLoadingRow, RefreshLoadingRow } from '../../shared/loading/LoadingPrimitives';
+import { SpatialQuerySection } from '../shared/SpatialQuerySection';
 
 export function INaturalistBrowseTab() {
   const {
@@ -340,6 +341,8 @@ export function INaturalistBrowseTab() {
           />
         </div>
       </div>
+
+      <SpatialQuerySection id="inat-spatial-query-section" />
 
       {/* Loading state */}
       {showInitialLoading && (

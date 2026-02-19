@@ -10,6 +10,7 @@ import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
 import PictureMarkerSymbol from '@arcgis/core/symbols/PictureMarkerSymbol';
 import type { AnimlDeployment } from '../../../../services/animlService';
+import { isPointInsideSpatialPolygon, type SpatialPolygon } from '../../../utils/spatialQuery';
 
 const CAMERA_STROKE = '#1f2937';
 const CAMERA_MUTED_STROKE = '#64748b';
@@ -199,12 +200,20 @@ export function filterAnimlLayer(
   layer: GraphicsLayer,
   selectedAnimals: Set<string>,
   _deploymentRelevance?: Set<number> | null,
+  spatialPolygon?: SpatialPolygon | null,
 ): void {
   // If we have deployment relevance data (from animal tags → deployment mapping),
   // use it to gray out irrelevant cameras. For now, show all when no filter.
   if (selectedAnimals.size === 0) {
     for (const graphic of layer.graphics.toArray()) {
-      graphic.visible = true;
+      const geometry = graphic.geometry;
+      const hasPointGeometry = geometry?.type === 'point';
+      const longitude = hasPointGeometry ? (geometry as Point).longitude : Number.NaN;
+      const latitude = hasPointGeometry ? (geometry as Point).latitude : Number.NaN;
+      const spatialMatch = Number.isFinite(longitude) && Number.isFinite(latitude)
+        ? isPointInsideSpatialPolygon(spatialPolygon, longitude, latitude)
+        : true;
+      graphic.visible = spatialMatch;
     }
     return;
   }
@@ -212,10 +221,18 @@ export function filterAnimlLayer(
   // When filters are active but we don't have per-deployment relevance yet,
   // keep all visible (the sidebar handles greying logic via props)
   for (const graphic of layer.graphics.toArray()) {
+    const geometry = graphic.geometry;
+    const hasPointGeometry = geometry?.type === 'point';
+    const longitude = hasPointGeometry ? (geometry as Point).longitude : Number.NaN;
+    const latitude = hasPointGeometry ? (geometry as Point).latitude : Number.NaN;
+    const spatialMatch = Number.isFinite(longitude) && Number.isFinite(latitude)
+      ? isPointInsideSpatialPolygon(spatialPolygon, longitude, latitude)
+      : true;
+
     if (_deploymentRelevance) {
-      graphic.visible = _deploymentRelevance.has(graphic.attributes?.id);
+      graphic.visible = _deploymentRelevance.has(graphic.attributes?.id) && spatialMatch;
     } else {
-      graphic.visible = true;
+      graphic.visible = spatialMatch;
     }
   }
 }

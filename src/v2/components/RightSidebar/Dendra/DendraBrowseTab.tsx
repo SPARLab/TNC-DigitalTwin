@@ -13,6 +13,7 @@ import { StationCard } from './StationCard';
 import { StationDetailView } from './StationDetailView';
 import type { DendraStation, DendraSummary } from '../../../services/dendraStationService';
 import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
+import { SpatialQuerySection } from '../shared/SpatialQuerySection';
 
 export function DendraBrowseTab() {
   const {
@@ -143,6 +144,8 @@ export function DendraBrowseTab() {
           )}
         </label>
       </div>
+
+      <SpatialQuerySection id="dendra-spatial-query-section" />
 
       {/* Loading state */}
       {loading && !dataLoaded && (

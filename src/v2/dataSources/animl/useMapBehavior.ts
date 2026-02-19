@@ -39,7 +39,7 @@ export function useAnimlMapBehavior(
     warmCache,
     focusedDeploymentId,
   } = useAnimlFilter();
-  const { viewRef } = useMap();
+  const { viewRef, spatialPolygon } = useMap();
   const populatedRef = useRef(false);
   const highlightHandleRef = useRef<__esri.Handle | null>(null);
 
@@ -68,7 +68,7 @@ export function useAnimlMapBehavior(
     if (!arcLayer || !(arcLayer instanceof GraphicsLayer)) return;
 
     populateAnimlLayer(arcLayer, deployments);
-    filterAnimlLayer(arcLayer, selectedAnimals);
+    filterAnimlLayer(arcLayer, selectedAnimals, undefined, spatialPolygon);
     updateAnimlCameraBadges(arcLayer, {
       hasActiveFilter: hasAnyFilter,
       getCountForDeployment: (deploymentId) => {
@@ -87,6 +87,7 @@ export function useAnimlMapBehavior(
     hasCameraFilter,
     selectedCameras,
     getFilteredCountForDeployment,
+    spatialPolygon,
     getManagedLayer,
     mapReady,
   ]);
@@ -96,8 +97,8 @@ export function useAnimlMapBehavior(
     if (!populatedRef.current) return;
     const arcLayer = getManagedLayer(LAYER_ID);
     if (!arcLayer || !(arcLayer instanceof GraphicsLayer)) return;
-    filterAnimlLayer(arcLayer, selectedAnimals);
-  }, [selectedAnimals, getManagedLayer]);
+    filterAnimlLayer(arcLayer, selectedAnimals, undefined, spatialPolygon);
+  }, [selectedAnimals, spatialPolygon, getManagedLayer]);
 
   // Update map badges whenever filter state changes.
   useEffect(() => {

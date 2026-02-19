@@ -11,6 +11,7 @@ import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import type Layer from '@arcgis/core/layers/Layer';
 import { useDendra } from '../../context/DendraContext';
 import { useCatalog } from '../../context/CatalogContext';
+import { useMap } from '../../context/MapContext';
 import { populateDendraLayer, filterDendraLayer } from '../../components/Map/layers/dendraLayer';
 import { registerDendraLayerId, isDendraLayer } from '../../components/Map/layers';
 import type { PinnedLayer, ActiveLayer } from '../../types';
@@ -22,6 +23,7 @@ export function useDendraMapBehavior(
   mapReady: number,
 ) {
   const { stations, dataLoaded, warmCache, showActiveOnly } = useDendra();
+  const { spatialPolygon } = useMap();
   const { layerMap } = useCatalog();
   const populatedRef = useRef<Set<string>>(new Set());
 
@@ -61,16 +63,16 @@ export function useDendraMapBehavior(
 
     // Always repopulate when data changes (handles layer switching)
     populateDendraLayer(arcLayer, stations);
-    filterDendraLayer(arcLayer, showActiveOnly);
+    filterDendraLayer(arcLayer, showActiveOnly, spatialPolygon);
     populatedRef.current.add(activeLayerId);
-  }, [dataLoaded, stations, showActiveOnly, getManagedLayer, mapReady, activeLayer]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dataLoaded, stations, showActiveOnly, spatialPolygon, getManagedLayer, mapReady, activeLayer]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Update filter when showActiveOnly changes
   useEffect(() => {
     for (const layerId of populatedRef.current) {
       const arcLayer = getManagedLayer(layerId);
       if (!arcLayer || !(arcLayer instanceof GraphicsLayer)) continue;
-      filterDendraLayer(arcLayer, showActiveOnly);
+      filterDendraLayer(arcLayer, showActiveOnly, spatialPolygon);
     }
-  }, [showActiveOnly, getManagedLayer]);
+  }, [showActiveOnly, spatialPolygon, getManagedLayer]);
 }

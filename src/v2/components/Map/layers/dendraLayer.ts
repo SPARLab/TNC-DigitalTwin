@@ -9,6 +9,7 @@ import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
 import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
 import type { DendraStation } from '../../../services/dendraStationService';
+import { isPointInsideSpatialPolygon, type SpatialPolygon } from '../../../utils/spatialQuery';
 
 const ACTIVE_SYMBOL = new SimpleMarkerSymbol({
   style: 'circle',
@@ -76,8 +77,16 @@ export function populateDendraLayer(
 export function filterDendraLayer(
   layer: GraphicsLayer,
   showActiveOnly: boolean,
+  spatialPolygon?: SpatialPolygon | null,
 ): void {
   for (const graphic of layer.graphics.toArray()) {
-    graphic.visible = !showActiveOnly || graphic.attributes?.is_active === 1;
+    const geometry = graphic.geometry;
+    const hasPointGeometry = geometry?.type === 'point';
+    const longitude = hasPointGeometry ? (geometry as Point).longitude : Number.NaN;
+    const latitude = hasPointGeometry ? (geometry as Point).latitude : Number.NaN;
+    const spatialMatch = Number.isFinite(longitude) && Number.isFinite(latitude)
+      ? isPointInsideSpatialPolygon(spatialPolygon, longitude, latitude)
+      : true;
+    graphic.visible = (!showActiveOnly || graphic.attributes?.is_active === 1) && spatialMatch;
   }
 }

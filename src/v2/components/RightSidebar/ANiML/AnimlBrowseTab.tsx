@@ -16,6 +16,7 @@ import { FilterSection, type FilterSectionItem } from './FilterSection';
 import { DateFilterSection } from './DateFilterSection';
 import { ImageList } from './ImageList';
 import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
+import { SpatialQuerySection } from '../shared/SpatialQuerySection';
 
 const PAGE_SIZE = 20;
 const FETCH_DEBOUNCE_MS = 300;
@@ -228,6 +229,8 @@ export function AnimlBrowseTab() {
         onDateChange={setDateRange}
         onClear={clearDateRange}
       />
+
+      <SpatialQuerySection id="animl-spatial-query-section" />
 
       {/* Species filter section — expanded by default */}
       <FilterSection

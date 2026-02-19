@@ -14,6 +14,7 @@ import { useLayers } from '../../context/LayerContext';
 import { useMap } from '../../context/MapContext';
 import { populateDataOneLayer } from '../../components/Map/layers/dataoneLayer';
 import type { PinnedLayer, ActiveLayer } from '../../types';
+import { isPointInsideSpatialPolygon } from '../../utils/spatialQuery';
 
 const LAYER_ID = 'dataone-datasets';
 const MAP_LAYER_ID = 'v2-dataone-datasets';
@@ -30,7 +31,7 @@ export function useDataOneMapBehavior(
     browseFilters,
   } = useDataOneFilter();
   const { activateLayer } = useLayers();
-  const { viewRef } = useMap();
+  const { viewRef, spatialPolygon } = useMap();
   const mapDatasetsByIdRef = useRef<Map<string, DataOneDataset>>(new Map());
 
   const isPinned = pinnedLayers.some((p) => p.layerId === LAYER_ID);
@@ -63,12 +64,18 @@ export function useDataOneMapBehavior(
         });
         if (abortController.signal.aborted) return;
 
+        const spatiallyFilteredMapData = mapData.filter((dataset) => {
+          const coordinates = dataset.geometry?.coordinates;
+          if (!coordinates) return true;
+          return isPointInsideSpatialPolygon(spatialPolygon, coordinates[0], coordinates[1]);
+        });
+
         const byId = new Map<string, DataOneDataset>();
-        for (const dataset of mapData) {
+        for (const dataset of spatiallyFilteredMapData) {
           byId.set(dataset.dataoneId, dataset);
         }
         mapDatasetsByIdRef.current = byId;
-        await populateDataOneLayer(dataOneLayer, mapData);
+        await populateDataOneLayer(dataOneLayer, spatiallyFilteredMapData);
       } catch (error) {
         if (!abortController.signal.aborted) {
           console.error('[DataONE Map] Failed to refresh map markers', error);
@@ -78,7 +85,7 @@ export function useDataOneMapBehavior(
 
     void run();
     return () => abortController.abort();
-  }, [isOnMap, dataLoaded, browseFilters, getManagedLayer, mapReady]);
+  }, [isOnMap, dataLoaded, browseFilters, spatialPolygon, getManagedLayer, mapReady]);
 
   // Map click handler: activate DataONE and open dataset detail.
   useEffect(() => {

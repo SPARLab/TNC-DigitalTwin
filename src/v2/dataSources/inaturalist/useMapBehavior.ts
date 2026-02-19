@@ -34,7 +34,7 @@ export function useINaturalistMapBehavior(
 ) {
   const { selectedTaxa, startDate, endDate, allObservations, dataLoaded, warmCache } = useINaturalistFilter();
   const { activateLayer } = useLayers();
-  const { viewRef } = useMap();
+  const { viewRef, spatialPolygon } = useMap();
   const populatedRef = useRef(false);
 
   const isPinned = pinnedLayers.some(p => p.layerId === LAYER_ID);
@@ -60,17 +60,17 @@ export function useINaturalistMapBehavior(
     if (!arcLayer || !(arcLayer instanceof GraphicsLayer)) return;
 
     populateINaturalistLayer(arcLayer, allObservations);
-    filterINaturalistLayer(arcLayer, { selectedTaxa, startDate, endDate });
+    filterINaturalistLayer(arcLayer, { selectedTaxa, startDate, endDate, spatialPolygon });
     populatedRef.current = true;
-  }, [isOnMap, dataLoaded, allObservations, selectedTaxa, startDate, endDate, getManagedLayer, mapReady]);
+  }, [isOnMap, dataLoaded, allObservations, selectedTaxa, startDate, endDate, spatialPolygon, getManagedLayer, mapReady]);
 
   // Update filter when selectedTaxa changes (instant local visibility toggle)
   useEffect(() => {
     if (!populatedRef.current) return;
     const arcLayer = getManagedLayer(LAYER_ID);
     if (!arcLayer || !(arcLayer instanceof GraphicsLayer)) return;
-    filterINaturalistLayer(arcLayer, { selectedTaxa, startDate, endDate });
-  }, [selectedTaxa, startDate, endDate, getManagedLayer]);
+    filterINaturalistLayer(arcLayer, { selectedTaxa, startDate, endDate, spatialPolygon });
+  }, [selectedTaxa, startDate, endDate, spatialPolygon, getManagedLayer]);
 
   // Map click handler: when user clicks an iNaturalist marker, activate layer + show detail view
   useEffect(() => {

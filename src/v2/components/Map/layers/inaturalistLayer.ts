@@ -10,6 +10,7 @@ import Point from '@arcgis/core/geometry/Point';
 import PictureMarkerSymbol from '@arcgis/core/symbols/PictureMarkerSymbol';
 import { getTaxonEmoji, emojiToDataUri } from './taxonConfig';
 import type { INatObservation } from '../../../context/INaturalistFilterContext';
+import { isPointInsideSpatialPolygon, type SpatialPolygon } from '../../../utils/spatialQuery';
 
 /** Create an empty GraphicsLayer for iNaturalist observations */
 export function createINaturalistLayer(options: {
@@ -74,9 +75,10 @@ export function filterINaturalistLayer(
     selectedTaxa: Set<string>;
     startDate?: string;
     endDate?: string;
+    spatialPolygon?: SpatialPolygon | null;
   },
 ): void {
-  const { selectedTaxa, startDate, endDate } = filters;
+  const { selectedTaxa, startDate, endDate, spatialPolygon } = filters;
   const showAllTaxa = selectedTaxa.size === 0;
 
   for (const graphic of layer.graphics.toArray()) {
@@ -85,7 +87,15 @@ export function filterINaturalistLayer(
     const taxonMatches = showAllTaxa || (graphicTaxon ? selectedTaxa.has(graphicTaxon) : false);
     const afterStart = !startDate || !graphicDate || graphicDate >= startDate;
     const beforeEnd = !endDate || !graphicDate || graphicDate <= endDate;
-    graphic.visible = taxonMatches && afterStart && beforeEnd;
+    const geometry = graphic.geometry;
+    const hasPointGeometry = geometry?.type === 'point';
+    const lon = hasPointGeometry ? (geometry as Point).longitude : Number.NaN;
+    const lat = hasPointGeometry ? (geometry as Point).latitude : Number.NaN;
+    const spatialMatch = Number.isFinite(lon) && Number.isFinite(lat)
+      ? isPointInsideSpatialPolygon(spatialPolygon, lon, lat)
+      : true;
+
+    graphic.visible = taxonMatches && afterStart && beforeEnd && spatialMatch;
   }
 }
 

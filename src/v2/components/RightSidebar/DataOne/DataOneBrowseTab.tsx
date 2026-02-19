@@ -11,6 +11,7 @@ import { useLayers } from '../../../context/LayerContext';
 import { InlineLoadingRow, RefreshLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { DatasetListView } from './DatasetListView';
 import { DatasetDetailView } from './DatasetDetailView';
+import { SpatialQuerySection } from '../shared/SpatialQuerySection';
 
 const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 500;
@@ -443,6 +444,8 @@ export function DataOneBrowseTab() {
             ))}
           </select>
         </div>
+
+        <SpatialQuerySection id="dataone-spatial-query-section" />
 
         <div id="dataone-result-summary-row" className="flex items-center justify-between text-xs">
           <p id="dataone-result-summary" className="text-gray-600">

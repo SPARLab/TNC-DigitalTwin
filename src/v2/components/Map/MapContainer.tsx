@@ -10,6 +10,7 @@ import { ExternalLink } from 'lucide-react';
 import Map from '@arcgis/core/Map';
 import MapView from '@arcgis/core/views/MapView';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
+import SketchViewModel from '@arcgis/core/widgets/Sketch/SketchViewModel';
 import { MapLayersWidget } from '../FloatingWidgets/MapLayersWidget/MapLayersWidget';
 // NOTE: BookmarkedItemsWidget disabled per Feb 11 design decision.
 // Saved Items merged into Map Layers. Code preserved for CSS/animation reuse.
@@ -27,7 +28,15 @@ const INITIAL_ZOOM = 12;
 
 export function MapContainer() {
   const mapDivRef = useRef<HTMLDivElement>(null);
-  const { viewRef, highlightLayerRef, setMapReady, dataOnePreview, closeDataOnePreview } = useMap();
+  const {
+    viewRef,
+    highlightLayerRef,
+    spatialQueryLayerRef,
+    spatialSketchViewModelRef,
+    setMapReady,
+    dataOnePreview,
+    closeDataOnePreview,
+  } = useMap();
   const { activeLayer } = useLayers();
   const [previewStatus, setPreviewStatus] = useState<'loading' | 'loaded' | 'error' | 'blocked'>('loading');
 
@@ -59,6 +68,11 @@ export function MapContainer() {
     map.add(highlightLayer);
     highlightLayerRef.current = highlightLayer;
 
+    // Graphics layer for right-sidebar-driven spatial query polygons (CON-GL-01/02)
+    const spatialQueryLayer = new GraphicsLayer({ id: 'v2-spatial-query-layer' });
+    map.add(spatialQueryLayer);
+    spatialQueryLayerRef.current = spatialQueryLayer;
+
     const view = new MapView({
       container: mapDivRef.current,
       map,
@@ -68,6 +82,22 @@ export function MapContainer() {
     });
 
     viewRef.current = view;
+
+    spatialSketchViewModelRef.current = new SketchViewModel({
+      view,
+      layer: spatialQueryLayer,
+      polygonSymbol: {
+        type: 'simple-fill',
+        color: [46, 125, 50, 0.14],
+        outline: {
+          color: [46, 125, 50, 0.95],
+          width: 2,
+        },
+      },
+      defaultUpdateOptions: {
+        tool: 'reshape',
+      },
+    });
 
     // Signal map ready once the view finishes loading
     view.when(() => {
@@ -80,6 +110,9 @@ export function MapContainer() {
     return () => {
       viewRef.current = null;
       highlightLayerRef.current = null;
+      spatialQueryLayerRef.current = null;
+      spatialSketchViewModelRef.current?.destroy();
+      spatialSketchViewModelRef.current = null;
       view.destroy();
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

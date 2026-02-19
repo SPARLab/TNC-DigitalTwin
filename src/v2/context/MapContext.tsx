@@ -5,9 +5,17 @@
 
 import { createContext, useContext, useRef, useCallback, useState, type ReactNode } from 'react';
 import Point from '@arcgis/core/geometry/Point';
+import Polygon from '@arcgis/core/geometry/Polygon';
 import Graphic from '@arcgis/core/Graphic';
 import type MapView from '@arcgis/core/views/MapView';
 import type GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
+import type SketchViewModel from '@arcgis/core/widgets/Sketch/SketchViewModel';
+import * as webMercatorUtils from '@arcgis/core/geometry/support/webMercatorUtils';
+import {
+  createSpatialPolygon,
+  type LonLat,
+  type SpatialPolygon,
+} from '../utils/spatialQuery';
 
 interface Toast {
   id: string;
@@ -45,6 +53,17 @@ interface MapContextValue {
   openDataOnePreview: (url: string, title: string) => void;
   /** Close DataONE preview modal */
   closeDataOnePreview: () => void;
+  /** Shared spatial query polygon (null when inactive) */
+  spatialPolygon: SpatialPolygon | null;
+  /** True while map is in polygon draw mode */
+  isSpatialQueryDrawing: boolean;
+  /** Trigger map polygon draw interaction */
+  startSpatialQueryDraw: () => void;
+  /** Clear current spatial query polygon */
+  clearSpatialQuery: () => void;
+  /** Internal refs set by MapContainer for sketch interactions */
+  spatialQueryLayerRef: React.MutableRefObject<GraphicsLayer | null>;
+  spatialSketchViewModelRef: React.MutableRefObject<SketchViewModel | null>;
 }
 
 const MapContext = createContext<MapContextValue | null>(null);
@@ -61,9 +80,13 @@ const HIGHLIGHT_SYMBOL = {
 export function MapProvider({ children }: { children: ReactNode }) {
   const viewRef = useRef<MapView | null>(null);
   const highlightLayerRef = useRef<GraphicsLayer | null>(null);
+  const spatialQueryLayerRef = useRef<GraphicsLayer | null>(null);
+  const spatialSketchViewModelRef = useRef<SketchViewModel | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [dataOnePreview, setDataOnePreview] = useState<DataOnePreviewState | null>(null);
   const [mapReady, setMapReadyState] = useState(0);
+  const [spatialPolygon, setSpatialPolygon] = useState<SpatialPolygon | null>(null);
+  const [isSpatialQueryDrawing, setIsSpatialQueryDrawing] = useState(false);
   const setMapReady = useCallback(() => setMapReadyState(n => n + 1), []);
 
   const highlightPoint = useCallback((longitude: number, latitude: number) => {
@@ -100,6 +123,75 @@ export function MapProvider({ children }: { children: ReactNode }) {
     setDataOnePreview(null);
   }, []);
 
+  const clearSpatialQuery = useCallback(() => {
+    spatialSketchViewModelRef.current?.cancel();
+    spatialQueryLayerRef.current?.removeAll();
+    setSpatialPolygon(null);
+    setIsSpatialQueryDrawing(false);
+  }, []);
+
+  const startSpatialQueryDraw = useCallback(() => {
+    const sketchViewModel = spatialSketchViewModelRef.current;
+    const spatialLayer = spatialQueryLayerRef.current;
+    if (!sketchViewModel || !spatialLayer) {
+      showToast('Map is still loading. Try drawing again in a moment.', 'warning');
+      return;
+    }
+
+    setIsSpatialQueryDrawing(true);
+    sketchViewModel.cancel();
+    spatialLayer.removeAll();
+
+    const createHandle = sketchViewModel.on('create', (event) => {
+      if (event.state === 'cancel') {
+        createHandle.remove();
+        setIsSpatialQueryDrawing(false);
+        return;
+      }
+
+      if (event.state !== 'complete') return;
+      createHandle.remove();
+      setIsSpatialQueryDrawing(false);
+
+      const geometry = event.graphic?.geometry;
+      if (!geometry || geometry.type !== 'polygon') {
+        showToast('Unable to read polygon geometry. Please try again.', 'warning');
+        return;
+      }
+
+      const polygon = geometry as Polygon;
+      const ring = polygon.rings?.[0] ?? [];
+      if (ring.length < 3) {
+        showToast('Draw at least 3 points to create a polygon.', 'warning');
+        setSpatialPolygon(null);
+        spatialLayer.removeAll();
+        return;
+      }
+
+      const lonLatRing: LonLat[] = ring.map(([x, y]) => {
+        const isWebMercator = polygon.spatialReference?.isWebMercator ?? false;
+        if (isWebMercator) {
+          const [longitude, latitude] = webMercatorUtils.xyToLngLat(x, y);
+          return [longitude, latitude];
+        }
+        return [x, y];
+      });
+
+      const nextSpatialPolygon = createSpatialPolygon(lonLatRing);
+      if (!nextSpatialPolygon) {
+        showToast('Polygon is not valid. Please redraw.', 'warning');
+        setSpatialPolygon(null);
+        spatialLayer.removeAll();
+        return;
+      }
+
+      setSpatialPolygon(nextSpatialPolygon);
+      showToast('Spatial query applied to active map layers.', 'info');
+    });
+
+    sketchViewModel.create('polygon');
+  }, [showToast]);
+
   return (
     <MapContext.Provider
       value={{
@@ -108,6 +200,12 @@ export function MapProvider({ children }: { children: ReactNode }) {
         highlightPoint, clearHighlight,
         showToast, toasts, dismissToast,
         dataOnePreview, openDataOnePreview, closeDataOnePreview,
+        spatialPolygon,
+        isSpatialQueryDrawing,
+        startSpatialQueryDraw,
+        clearSpatialQuery,
+        spatialQueryLayerRef,
+        spatialSketchViewModelRef,
       }}
     >
       {children}
