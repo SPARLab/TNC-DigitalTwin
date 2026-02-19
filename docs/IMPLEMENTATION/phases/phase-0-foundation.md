@@ -1,7 +1,7 @@
 # Phase 0: Foundation
 
 **Status:** ⚪ Not Started  
-**Progress:** 0 / 8 tasks  
+**Progress:** 0 / 7 tasks  
 **Branch:** `v2/foundation`  
 **Blocking:** YES - All other phases depend on this  
 **Owner:** TBD
@@ -34,7 +34,6 @@ Set up the V2 application shell, routing, state management, and shared component
 | CON-GL-02 | 🟢 Complete | Feb 18, 2026 (implemented) | Spatial filter UI in right sidebar under date range | Added shared Spatial Query section under date controls in iNaturalist/ANiML/DataONE; included in Dendra Browse filter stack |
 | CON-GL-02a | 🟢 Complete | Feb 18, 2026 (implemented) | Per-layer spatial polygons | Spatial query state now stores one polygon per layer ID; each data source applies its own stored polygon for filtering |
 | CON-GL-02b | 🟢 Complete | Feb 18, 2026 (implemented) | Hide polygon when layer inactive; keep filter | Map now renders only the active layer polygon while inactive layer polygons remain stored and continue filtering their respective layers |
-| CON-GL-03 | ⚪ Not Started | Feb 18, 2026 | Spatial filter: select polygon from pinned layer | Extra credit / v2 |
 | CON-GL-04 | ⚪ Not Started | Feb 18, 2026 | Allow multiple expanded layers in Map Layers widget | High priority |
 | CON-GL-05 | ⚪ Not Started | Feb 18, 2026 | Edit Filters visual feedback linking widget to right sidebar | High priority |
 | CON-GL-06 | ⚪ Not Started | Feb 18, 2026 | Add "Edit Filters" section header in right sidebar | Medium priority |
@@ -43,13 +42,18 @@ Set up the V2 application shell, routing, state management, and shared component
 
 **Note:** Tasks `0.1` through `0.7` appear to be already implemented and are intentionally removed from active tracking.
 
+## Backlog (Nice to Have / v2)
+
+| ID | Status | Last Updated (Timestamp) | Task Description | Notes |
+|----|--------|---------------------------|------------------|-------|
+| CON-GL-03 | ⚪ Not Started | Feb 18, 2026 | Spatial filter: select polygon from pinned layer | Extra credit / v2 |
+
 ## Task Status
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
 | CON-GL-01 | Spatial queries across all layers | 🟢 Complete | Claude | Right-sidebar controls now trigger map polygon draw mode; polygon filters active/pinned map layers in implemented data sources |
 | CON-GL-02 | Spatial filter controls in right sidebar | 🟢 Complete | Claude | Added Draw/Redraw, status copy, and Clear controls in shared sidebar section |
-| CON-GL-03 | Select polygon from pinned layer | ⚪ Not Started | | Extra credit / v2 |
 | CON-GL-04 | Multiple expanded map layers | ⚪ Not Started | | High priority |
 | CON-GL-05 | Edit Filters visual link feedback | ⚪ Not Started | | High priority |
 | CON-GL-06 | "Edit Filters" section header | ⚪ Not Started | | |
