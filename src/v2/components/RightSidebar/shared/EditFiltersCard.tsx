@@ -30,7 +30,7 @@ export function EditFiltersCard({ id, children }: EditFiltersCardProps) {
       flashEndTimeoutRef.current = window.setTimeout(() => {
         setIsFlashing(false);
         flashEndTimeoutRef.current = null;
-      }, 180);
+      }, 220);
       flashStartTimeoutRef.current = null;
     }, 60);
   }, [lastEditFiltersRequest]);
@@ -45,7 +45,7 @@ export function EditFiltersCard({ id, children }: EditFiltersCardProps) {
   return (
     <section
       id={id}
-      className={`rounded-lg border p-3 transition-colors duration-150 ${
+      className={`rounded-lg border p-3 transition-colors duration-250 ease-in-out ${
         isFlashing
           ? 'border-emerald-400 bg-emerald-200/80'
           : 'border-emerald-200 bg-emerald-50/40'
