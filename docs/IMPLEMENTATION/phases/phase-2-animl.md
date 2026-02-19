@@ -1,7 +1,7 @@
 # Phase 2: ANiML Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 1 / 6 tasks (completed tasks 2.1–2.17 archived)  
+**Progress:** 2 / 6 tasks (completed tasks 2.1–2.17 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-2-animl-completed.md`  
 **Branch:** `v2/animl`  
 **Depends On:** Phase 0 (Foundation) — Data Source Adapter Pattern ✅ Complete  
@@ -89,7 +89,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 |----|--------|---------------------------|------------------|-------|
 | CON-ANIML-01 | 🟢 Complete | Feb 19, 2026 | Map click on camera trap auto-selects sidebar camera and shows images | Map click + sidebar sync; spatial-query camera auto-select/prioritization; QA passed |
 | CON-ANIML-02 | ⚫ Won't Do | Feb 19, 2026 | Rename "Mountain lion" to "Puma" | Deferred: current label comes from ANiML source data; taxonomy decision needed |
-| CON-ANIML-03 | ⚪ Not Started | Feb 18, 2026 | Sort cameras by result count (data-rich first, zero-data last) | Medium priority |
+| CON-ANIML-03 | 🟢 Complete | Feb 19, 2026 | Sort cameras by result count (data-rich first, zero-data last) | Comparator in AnimlBrowseTab; zero-result cameras sink to bottom |
 | CON-ANIML-04 | ⚪ Not Started | Feb 19, 2026 | Add explicit "Remove Polygon" CTA in spatial query panel | Improve discoverability over tiny Clear affordance |
 | CON-ANIML-05 | ⚪ Not Started | Feb 19, 2026 | Improve map badge UI for large counts (e.g., 999+) | Increase badge size/spacing to avoid cramped text |
 | 2.18 | ⚪ Not Started | Feb 18, 2026 | Synchronize matching images results with map/layer counts | Existing open ANiML bug |
@@ -100,7 +100,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 |----|------|--------|----------|-------|
 | CON-ANIML-01 | Map click camera -> sidebar sync + images | 🟢 Complete | | Map click handler + browse camera auto-select + spatial polygon camera auto-selection; QA passed |
 | CON-ANIML-02 | Rename Mountain lion label to Puma | ⚫ Won't Do | | Deferred to backlog: requires taxonomy/product decision (ANiML source label governance) |
-| CON-ANIML-03 | Sort cameras by result count descending | ⚪ Not Started | | Intake from consolidated feedback |
+| CON-ANIML-03 | Sort cameras by result count descending | 🟢 Complete | | Data-rich first, zero-data last; preserves spatial-polygon priority |
 | CON-ANIML-04 | Add explicit "Remove Polygon" CTA in spatial query panel | ⚪ Not Started | | Requested UX improvement for polygon-clear discoverability |
 | CON-ANIML-05 | Improve map camera badge legibility for high counts (999+) | ⚪ Not Started | | Requested larger badge treatment before broader use |
 | 2.18 | Synchronize matching images results with map/layer counts | ⚪ Not Started | | Map shows 605, matching images/layer show 200 — counts out of sync for species+camera filter |
@@ -253,6 +253,8 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | Feb 13, 2026 | 2.17 | **Complete.** Implemented Option D (lazy date-filtered counts). AnimlFilterContext fetches `getObservationCountsGroupedCached({ startDate, endDate })` when date filter active, builds `dateScopedCountLookups`, routes all count helpers through `activeCountLookups`. Species/Cameras filter sections and AnimlLegendWidget now show date-scoped counts; no all-time fallback during load. Files: AnimlFilterContext.tsx, AnimlBrowseTab.tsx, AnimlLegendWidget.tsx. | Will + Claude |
 | Feb 16, 2026 | 2.8 | **Complete.** Replaced emoji camera map markers with SVG camera symbols in `animlLayer.ts` for base, badged, and muted states. Added row-level icons in ANiML legend and browse filters (`AnimlLegendWidget`, `FilterSection`, `AnimlBrowseTab`). Final refinement removed circular marker backplates based on visual QA feedback. | Will + Claude |
 | Feb 19, 2026 | CON-ANIML-01 | **Complete.** Map click on camera trap auto-selects sidebar camera and shows images. Includes map click handler, browse camera auto-select, and spatial polygon camera auto-selection/prioritization. QA passed. | Will + Claude |
+| Feb 19, 2026 | CON-ANIML-03 | **Complete.** Sort cameras by result count (data-rich first, zero-data last). Comparator in AnimlBrowseTab sinks zero-result cameras to bottom; preserves spatial-polygon priority. | Will + Claude |
+| Feb 19, 2026 | UX | **Species/Camera count loading indicators.** FilterSection shows "Loading counts..." with blue spinner (EyeSlotLoadingSpinner) when countLookups not ready. AnimlFilterContext exposes `countsLoading`; both Species and Cameras sections use it. Styling matches Map Layers widget. | Will + Claude |
 
 ---
 

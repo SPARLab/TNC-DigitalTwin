@@ -28,6 +28,7 @@ type SpeciesSortMode = 'count' | 'alpha';
 export function AnimlBrowseTab() {
   const {
     deployments, animalTags, loading, error, dataLoaded,
+    countsLoading,
     selectedAnimals, selectedCameras, startDate, endDate,
     toggleAnimal, setSelectedAnimals, toggleCamera, setSelectedCameras,
     selectAll, selectAllAnimals, clearCameras, selectAllCameras,
@@ -167,6 +168,13 @@ export function AnimlBrowseTab() {
         count: getFilteredCountForDeployment(d.id) ?? (hasDateFilter ? null : d.totalObservations ?? 0),
       }))
       .sort((a, b) => {
+        // Always sink zero/unknown-result cameras so data-rich cameras stay first.
+        const aCount = a.count ?? -1;
+        const bCount = b.count ?? -1;
+        const aHasData = aCount > 0;
+        const bHasData = bCount > 0;
+        if (aHasData !== bHasData) return aHasData ? -1 : 1;
+
         if (hasSpatialPolygon) {
           const aId = Number(a.key);
           const bId = Number(b.key);
@@ -175,9 +183,7 @@ export function AnimlBrowseTab() {
           if (aInside !== bInside) return aInside ? -1 : 1;
         }
 
-        const countA = a.count ?? -1;
-        const countB = b.count ?? -1;
-        if (countA !== countB) return countB - countA;
+        if (aCount !== bCount) return bCount - aCount;
         return a.label.localeCompare(b.label);
       }),
     [deployments, getFilteredCountForDeployment, hasDateFilter, hasSpatialPolygon, camerasInsideSpatialPolygon],
@@ -355,6 +361,7 @@ export function AnimlBrowseTab() {
           itemIcon={<PawPrint className="w-3.5 h-3.5" />}
           items={speciesItems}
           selectedKeys={selectedAnimals}
+          isCountLoading={countsLoading}
           onToggle={toggleAnimal}
           onSelectAll={selectAllAnimals}
           onClear={selectAll}
@@ -398,6 +405,7 @@ export function AnimlBrowseTab() {
           itemIcon={<Camera className="w-3.5 h-3.5" />}
           items={cameraItems}
           selectedKeys={selectedCameraKeys}
+          isCountLoading={countsLoading}
           mutedKeys={outOfPolygonCameraKeys}
           contextNote={cameraContextNote}
           headerBadge={cameraHeaderBadge}

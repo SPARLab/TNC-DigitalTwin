@@ -33,7 +33,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 |-------|------|--------|-----------|--------|-----------|
 | 0 | Foundation | 🟢 Complete | 0 blocking | `v2/foundation` | No — parallel branches ready |
 | 1 | iNaturalist | 🟢 Complete | 0 | `v2/inaturalist` | No |
-| 2 | ANiML | 🟡 In Progress | ~4 tasks | `v2/animl` | No |
+| 2 | ANiML | 🟡 In Progress | ~3 tasks | `v2/animl` | No |
 | 3 | Dendra | 🟢 Complete | 0 | `v2/dendra` | No |
 | 4 | DataOne | 🟢 Complete | 0 | `v2/dataone` | No |
 | 5 | Export Builder | 🟢 Complete | 0 | `v2/export-builder` | No |
@@ -301,6 +301,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 19, 2026 | Phase 2 | **CON-ANIML-03 complete.** Sort cameras by result count (data-rich first, zero-data last). Added Species/Camera count loading indicators in ANiML Browse tab (blue spinner, matches Map Layers). | Will + Claude |
 | Feb 18, 2026 | Docs | **Archive + consolidation.** Merged development-task-tracker into master-plan. Master-plan now high-level only (phase counts, no task lists). Completed tasks archived. development-task-tracker.md removed. | Claude |
 | Feb 17, 2026 | Phase 3 | **Phase 3 Dendra status corrected.** Phase doc showed "Not Started" but Dendra was fully implemented. Updated to 🟢 Complete. | Claude |
 | Feb 16, 2026 | Phase 10 | **DroneDeploy left-sidebar project click loads imagery.** Left-sidebar project select now calls DroneDeploy context so WMTS tiles load on map. | Claude |

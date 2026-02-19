@@ -8,6 +8,7 @@
 
 import { useState, useMemo } from 'react';
 import { ChevronRight, ChevronDown, Search } from 'lucide-react';
+import { EyeSlotLoadingSpinner } from '../../shared/loading/LoadingPrimitives';
 
 export interface FilterSectionItem {
   key: string;
@@ -24,6 +25,8 @@ interface FilterSectionProps {
   selectedKeys: Set<string>;
   mutedKeys?: Set<string>;
   contextNote?: string;
+  /** Shows an inline loading indicator for unresolved per-item counts. */
+  isCountLoading?: boolean;
   /** Replaces the default count badge in the header when provided. */
   headerBadge?: React.ReactNode;
   onToggle: (key: string) => void;
@@ -43,6 +46,7 @@ export function FilterSection({
   selectedKeys,
   mutedKeys,
   contextNote,
+  isCountLoading = false,
   headerBadge,
   onToggle,
   onSelectAll,
@@ -81,6 +85,16 @@ export function FilterSection({
         <span className="flex-shrink-0 text-gray-500">{icon}</span>
 
         <span className="text-sm font-medium text-gray-700 flex-1">{label}</span>
+
+        {isCountLoading && (
+          <span
+            id={`${id}-count-loading`}
+            className="inline-flex items-center gap-1 text-[11px] text-blue-700 font-medium"
+          >
+            <EyeSlotLoadingSpinner id={`${id}-count-loading-spinner`} className="w-3 h-3" />
+            Loading counts...
+          </span>
+        )}
 
         {/* Badge: custom override, selected count (emerald), or total count (gray) */}
         {headerBadge ?? (hasFilter ? (

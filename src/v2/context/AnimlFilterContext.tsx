@@ -77,6 +77,8 @@ export interface AnimlFilterContextValue {
   matchingDeploymentIds: Set<number> | null;
   /** Total images matching both filters. null if countLookups not ready. */
   filteredImageCount: number | null;
+  /** True while per-species/per-camera count lookups are being prepared. */
+  countsLoading: boolean;
   /** Deployment id currently focused from browse image interactions. */
   focusedDeploymentId: number | null;
 
@@ -211,6 +213,7 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
   const hasDateFilter = startDate !== null && endDate !== null;
   const hasAnyFilter = hasFilter || hasCameraFilter || hasDateFilter;
   const activeCountLookups = hasDateFilter ? dateScopedCountLookups : countLookups;
+  const countsLoading = activeCountLookups === null;
 
   // ── Cache warming ────────────────────────────────────────────────────────
 
@@ -447,7 +450,7 @@ export function AnimlFilterProvider({ children }: { children: ReactNode }) {
         toggleCamera, setSelectedCameras, clearCameras, selectAllCameras,
         setDateRange, clearDateRange, clearFilters,
         getFilteredCountForDeployment, getFilteredCountForSpecies,
-        matchingDeploymentIds, filteredImageCount, focusedDeploymentId,
+        matchingDeploymentIds, filteredImageCount, countsLoading, focusedDeploymentId,
         warmCache, focusDeployment, clearFocusedDeployment,
       }}
     >
