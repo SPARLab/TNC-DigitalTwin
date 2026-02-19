@@ -1,10 +1,12 @@
 # Phase 9: GBIF Species Occurrences
 
-**Status:** ⚪ Not Started  
-**Progress:** 0 / 9 tasks  
+**Status:** 🟡 In Progress  
+**Progress:** 8 / 10 tasks  
 **Branch:** `v2/gbif`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
+
+**Suggested next task (new chat):** 9.8 Wire Save View flow — or 9.9 Evaluate geographic extent expansion. Both deferred; pick based on priority.
 
 ---
 
@@ -12,15 +14,16 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| 9.1 | ⚪ Not Started | — | Research GBIF data source and API/service availability | Determine if GBIF data is served via ArcGIS FeatureServer or GBIF API; document fields and query patterns |
-| 9.2 | ⚪ Not Started | — | Create GBIF right sidebar shell | Adapter, Overview/Browse/Export tabs, OccurrenceListView, OccurrenceDetailView |
-| 9.3 | ⚪ Not Started | — | Implement search and filter UI | Species search, taxonomy filters, date range, dataset source, basis of record |
-| 9.4 | ⚪ Not Started | — | Implement occurrence list with cards | Card anatomy: species, taxonomy, date, location, dataset, basis of record |
-| 9.5 | ⚪ Not Started | — | Implement occurrence detail view | Full metadata, media, external GBIF link, citation |
-| 9.6 | ⚪ Not Started | — | Sync loading indicators (Map Layers ↔ map center ↔ right sidebar) | Same shared loading pattern as other data sources |
-| 9.7 | ⚪ Not Started | — | Render GBIF occurrences as map markers | Point geometry, filter-synced, click-to-detail |
-| 9.8 | ⚪ Not Started | — | Wire Save View flow in detail | Save filtered view as child in Map Layers |
-| 9.9 | ⚪ Not Started | — | Evaluate geographic extent expansion | GBIF supports any bounding box; consider preserve-only vs regional toggle |
+| 9.1 | 🟢 Complete | 2026-02-19T17:30:00-08:00 | Research GBIF data source and API/service availability | Confirmed ArcGIS FeatureServer in Data Catalog: `dataset-178` → `Dangermond_Preserve_Species_Occurrences/FeatureServer/0`; GBIF direct API not required for v2.0 |
+| 9.2 | 🟢 Complete | 2026-02-19T17:30:00-08:00 | Create GBIF right sidebar shell | Added GBIF adapter override for `dataset-178`, overview + browse/detail flow in right sidebar |
+| 9.3 | 🟢 Complete | 2026-02-19T17:30:00-08:00 | Implement search and filter UI | Server-side filters: text search, taxonomy (kingdom/class/family), basis of record, dataset, date range (year-bounded); `order` filter deferred due ArcGIS reserved-field query error |
+| 9.4 | 🟢 Complete | 2026-02-19T18:00:00-08:00 | Implement occurrence list with cards | iNaturalist-style cards with species naming, basis badge, date, dataset/source action; card thumbnails from `primary_image_url` when present |
+| 9.5 | 🟢 Complete | 2026-02-19T17:30:00-08:00 | Implement occurrence detail view | Added detail metadata, taxonomy string, quality issue count, map focus CTA, external GBIF link |
+| 9.6 | 🟢 Complete | 2026-02-19T17:30:00-08:00 | Sync loading indicators (Map Layers ↔ map center ↔ right sidebar) | Integrated cache/loading status via adapter + shared loading primitives in browse |
+| 9.7 | 🟢 Complete | 2026-02-19T18:00:00-08:00 | Render GBIF occurrences as map markers | Explicit `createGBIFLayer` for `dataset-178`; green circles + clustering; filter-synced via `useGBIFMapBehavior`; map-click opens detail |
+| 9.8 | ⚪ Not Started | — | Wire Save View flow in detail | Deferred; requires `LayerContext` GBIF filter persistence + view naming wiring |
+| 9.9 | ⚪ Not Started | — | Evaluate geographic extent expansion | Deferred to follow-up after preserve-only stability and stakeholder review |
+| 9.10 | 🟢 Complete | 2026-02-19T18:00:00-08:00 | Fix map rendering + add card thumbnails | Map: explicit `gbifLayer.ts` + `dataset-178` in `createMapLayer` switch (bypasses TNC registration); Cards: show `primary_image_url` when present |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -244,26 +247,58 @@ Implement the GBIF (Global Biodiversity Information Facility) species occurrence
 
 ---
 
+### 9.10: Fix Map Rendering + Add Card Thumbnails
+
+**Goal:** Resolve GBIF points not appearing on map; add photo thumbnails to occurrence cards when available.
+
+**Acceptance Criteria:**
+- [x] GBIF occurrences render on map when layer is active
+- [x] Explicit `createGBIFLayer` for `dataset-178` in layer factory (bypasses TNC registration)
+- [x] Card thumbnails from `primary_image_url` when present; Database icon fallback otherwise
+- [x] Exclude `gbif_key` from FeatureLayer `outFields` to avoid big-integer warning
+
+**Files Changed:**
+- `src/v2/components/Map/layers/gbifLayer.ts` (new)
+- `src/v2/components/Map/layers/index.ts` (explicit case for `dataset-178`)
+- `src/v2/components/RightSidebar/GBIF/GBIFOccurrenceCard.tsx` (thumbnail support)
+
+---
+
 ## Service Analysis
 
 > Fill this out during Task 9.1
 
-### Data Source (TBD)
-- ArcGIS FeatureServer URL: TBD
+### Data Source (Task 9.1)
+- ArcGIS FeatureServer URL: `https://dangermondpreserve-spatial.com/server/rest/services/Dangermond_Preserve_Species_Occurrences/FeatureServer/0`
 - GBIF API endpoint: `https://api.gbif.org/v1/occurrence/search`
+- Data Catalog mapping: `dataset-178` (`GBIF Species Occurrence Records`)
+- v2.0 recommendation: ArcGIS FeatureServer first (already curated, no extra API auth/rate-limit complexity)
 
 ### Occurrence Attributes
 | Attribute | Type | Useful For | Notes |
 |-----------|------|------------|-------|
-| (to be documented in 9.1) | | | |
+| `id` | number | Stable feature identity | Used for map click → detail state |
+| `gbif_key` | string | External GBIF deep-linking | Build `gbif.org/occurrence/{gbif_key}` |
+| `scientific_name` / `species` | string | Primary card/detail naming | Fallback logic if one is null |
+| `kingdom` / `taxonomic_class` / `order` / `family` / `genus` | string | Taxonomy filters + metadata | Supports iNaturalist-like taxonomic drill context |
+| `basis_of_record` | string | Record-type filtering | Includes observation/specimen style values |
+| `dataset_name` | string | Source attribution + filter | Visible on cards/details |
+| `recorded_by` | string | Provenance metadata | Included in detail |
+| `event_date_json` | string | Temporal filtering + display | Parsed to normalized date string for UI |
+| `primary_image_url` | string | Detail hero media | Often null for specimen/fossil records |
+| `issues_json` | string | Quality flags | Parsed to issue count in detail view |
+| Geometry (`x`, `y`) | point | Map marker placement | ArcGIS point geometry |
 
 ### Query Performance
 | Query Type | Avg Response Time | Notes |
 |------------|-------------------|-------|
-| (to be documented in 9.1) | | |
+| Catalog dataset discovery | < 1s | Found GBIF row in Data Catalog table 1 |
+| GBIF layer metadata fetch | < 1s | Confirms layer 0: `GBIF Occurrences` |
+| Count query (`returnCountOnly=true`) | < 1s | Current count observed: ~323k records |
+| Paginated query (20 rows) | < 1s | Suitable for server-side browse pagination |
 
 ### iNaturalist Overlap Assessment
-> Document during 9.1: how many GBIF records are sourced from iNaturalist? Should we filter them out or flag them?
+Record-level overlap with iNaturalist is still unquantified in this phase implementation. Current approach keeps all records and surfaces dataset/source attribution (`dataset_name`) in cards/details. A follow-up task can add explicit overlap flags if needed.
 
 ---
 
@@ -273,13 +308,14 @@ Implement the GBIF (Global Biodiversity Information Facility) species occurrence
 
 | Decision | Date | Rationale |
 |----------|------|-----------|
-| (none yet) | | |
+| Use ArcGIS FeatureServer (`dataset-178`) instead of direct GBIF API for v2.0 | 2026-02-19 | Already cataloged in app infrastructure, supports map + SQL filtering + pagination without new API integration risk |
+| Use server-side filtering/pagination for GBIF browse | 2026-02-19 | Record volume (~323k) is too large for iNaturalist-style full client cache |
 
 ### Styling Decisions
 
 | Decision | Date | Rationale | Added to design-system.md? |
 |----------|------|-----------|---------------------------|
-| (none yet) | | | |
+| GBIF browse/detail mirrors iNaturalist card + detail anatomy (with GBIF-specific fields) | 2026-02-19 | Preserves cross-source consistency and recognition-over-recall while handling distinct data semantics | No (phase-local styling parity) |
 
 ---
 
@@ -298,3 +334,5 @@ Implement the GBIF (Global Biodiversity Information Facility) species occurrence
 | Date | Task | Change | By |
 |------|------|--------|-----|
 | Feb 16, 2026 | — | Created phase document | Will + Claude |
+| Feb 19, 2026 | 9.1-9.7 | Implemented GBIF ArcGIS integration: adapter override for `dataset-178`, overview/browse/detail UI, server-side filters/pagination, map click-to-detail behavior | Cursor |
+| Feb 19, 2026 | 9.10 | Fixed map rendering (explicit `gbifLayer.ts` + `dataset-178` in `createMapLayer`); added card thumbnails from `primary_image_url` | Cursor |

@@ -28,6 +28,8 @@ import { dataoneAdapter, useDataOneCacheStatus } from './dataone/adapter';
 import { useDataOneMapBehavior } from './dataone/useMapBehavior';
 import { dronedeployAdapter, useDroneDeployCacheStatus } from './dronedeploy/adapter';
 import { useDroneDeployMapBehavior } from './dronedeploy/useMapBehavior';
+import { gbifAdapter, useGBIFCacheStatus } from './gbif/adapter';
+import { useGBIFMapBehavior } from './gbif/useMapBehavior';
 
 // ── Adapter registry ─────────────────────────────────────────────────────────
 
@@ -50,6 +52,7 @@ export function getAdapter(dataSource: string | undefined): DataSourceAdapter | 
 export function getAdapterForActiveLayer(activeLayer: ActiveLayer | null): DataSourceAdapter | null {
   if (!activeLayer) return null;
   if (activeLayer.layerId === 'dataset-193') return dronedeployAdapter;
+  if (activeLayer.layerId === 'dataset-178') return gbifAdapter;
   return getAdapter(activeLayer.dataSource);
 }
 
@@ -72,6 +75,7 @@ export function useAllMapBehaviors(
   useTNCArcGISMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
   useDataOneMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
   useDroneDeployMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
+  useGBIFMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
 }
 
 /**
@@ -86,6 +90,7 @@ export function useActiveCacheStatus(dataSource: string | undefined): CacheStatu
   const tncArcgis = useTNCArcGISCacheStatus();
   const dataone = useDataOneCacheStatus();
   const dronedeploy = useDroneDeployCacheStatus();
+  const gbif = useGBIFCacheStatus();
 
   switch (dataSource) {
     case 'inaturalist': return inat;
@@ -94,6 +99,7 @@ export function useActiveCacheStatus(dataSource: string | undefined): CacheStatu
     case 'tnc-arcgis': return tncArcgis;
     case 'dataone': return dataone;
     case 'drone': return dronedeploy;
+    case 'gbif': return gbif;
     default: return null;
   }
 }
@@ -109,6 +115,7 @@ export function useCacheStatusByDataSource(): Record<string, CacheStatus> {
   const tncArcgis = useTNCArcGISCacheStatus();
   const dataone = useDataOneCacheStatus();
   const dronedeploy = useDroneDeployCacheStatus();
+  const gbif = useGBIFCacheStatus();
 
   return {
     inaturalist: inat,
@@ -117,5 +124,6 @@ export function useCacheStatusByDataSource(): Record<string, CacheStatus> {
     'tnc-arcgis': tncArcgis,
     dataone,
     drone: dronedeploy,
+    gbif,
   };
 }

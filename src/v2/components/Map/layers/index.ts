@@ -13,6 +13,7 @@ import { createAnimlLayer } from './animlLayer';
 import { createTNCArcGISLayer } from './tncArcgisLayer';
 import { createDataOneLayer } from './dataoneLayer';
 import { createDroneDeployLayer } from './droneDeployLayer';
+import { createGBIFLayer } from './gbifLayer';
 
 /** Set of catalog layer IDs that have real map layer implementations */
 export const IMPLEMENTED_LAYERS = new Set([
@@ -20,6 +21,7 @@ export const IMPLEMENTED_LAYERS = new Set([
   'animl-camera-traps',
   'preserve-boundary',
   'dataone-datasets',
+  'dataset-178',
   'dataset-193',
 ]);
 
@@ -69,6 +71,9 @@ export function createMapLayer(layerId: string, options: {
 
     case 'dataone-datasets':
       return createDataOneLayer({ id: `v2-${layerId}`, ...options });
+
+    case 'dataset-178':
+      return createGBIFLayer({ id: `v2-${layerId}`, ...options });
 
     case 'dataset-193':
       return createDroneDeployLayer({ id: `v2-${layerId}`, ...options });

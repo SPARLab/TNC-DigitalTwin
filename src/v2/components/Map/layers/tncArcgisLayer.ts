@@ -35,6 +35,10 @@ export function createTNCArcGISLayer(options: {
 
   const definitionExpression = whereClause?.trim() || '1=1';
 
+  const isGbifLayer =
+    layer.id === 'dataset-178' ||
+    meta.servicePath.toLowerCase().includes('dangermond_preserve_species_occurrences');
+
   // FeatureServer layers can use FeatureLayer directly with SQL filtering.
   if (meta.hasFeatureServer) {
     return new FeatureLayer({
@@ -43,6 +47,37 @@ export function createTNCArcGISLayer(options: {
       visible,
       outFields: ['*'],
       definitionExpression,
+      // GBIF has very dense points; use high-contrast symbols and clustering
+      // so records are visually obvious at preserve zoom levels.
+      renderer: isGbifLayer ? {
+        type: 'simple',
+        symbol: {
+          type: 'simple-marker',
+          style: 'circle',
+          size: 7,
+          color: [22, 163, 74, 0.85],
+          outline: {
+            color: [255, 255, 255, 1],
+            width: 1.2,
+          },
+        },
+      } : undefined,
+      featureReduction: isGbifLayer ? {
+        type: 'cluster',
+        clusterRadius: '48px',
+        labelingInfo: [{
+          deconflictionStrategy: 'none',
+          labelExpressionInfo: { expression: 'Text($feature.cluster_count, "#,###")' },
+          symbol: {
+            type: 'text',
+            color: 'white',
+            haloColor: [0, 0, 0, 0.25],
+            haloSize: 1,
+            font: { family: 'Arial', size: 11, weight: 'bold' },
+          },
+          labelPlacement: 'center-center',
+        }],
+      } : undefined,
     });
   }
 

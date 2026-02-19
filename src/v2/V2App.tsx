@@ -16,6 +16,7 @@ import { AnimlFilterProvider } from './context/AnimlFilterContext';
 import { TNCArcGISProvider } from './context/TNCArcGISContext';
 import { DataOneFilterProvider } from './context/DataOneFilterContext';
 import { DroneDeployProvider } from './context/DroneDeployContext';
+import { GBIFFilterProvider } from './context/GBIFFilterContext';
 import { V2Header } from './components/Header/V2Header';
 import { LeftSidebar } from './components/LeftSidebar/LeftSidebar';
 import { MapContainer } from './components/Map/MapContainer';
@@ -34,20 +35,22 @@ export default function V2App() {
               <AnimlFilterProvider>
                 <TNCArcGISProvider>
                   <DataOneFilterProvider>
-                    <DroneDeployProvider>
-                      <div id="v2-app" className="flex flex-col h-screen w-screen overflow-hidden">
-                        <V2Header onOpenExportBuilder={() => setIsExportBuilderOpen(true)} />
-                        <div id="v2-main-layout" className="flex flex-1 overflow-hidden">
-                          <LeftSidebar />
-                          <MapContainer />
-                          <RightSidebar />
+                    <GBIFFilterProvider>
+                      <DroneDeployProvider>
+                        <div id="v2-app" className="flex flex-col h-screen w-screen overflow-hidden">
+                          <V2Header onOpenExportBuilder={() => setIsExportBuilderOpen(true)} />
+                          <div id="v2-main-layout" className="flex flex-1 overflow-hidden">
+                            <LeftSidebar />
+                            <MapContainer />
+                            <RightSidebar />
+                          </div>
+                          <ExportBuilderModal
+                            isOpen={isExportBuilderOpen}
+                            onClose={() => setIsExportBuilderOpen(false)}
+                          />
                         </div>
-                        <ExportBuilderModal
-                          isOpen={isExportBuilderOpen}
-                          onClose={() => setIsExportBuilderOpen(false)}
-                        />
-                      </div>
-                    </DroneDeployProvider>
+                      </DroneDeployProvider>
+                    </GBIFFilterProvider>
                   </DataOneFilterProvider>
                 </TNCArcGISProvider>
               </AnimlFilterProvider>

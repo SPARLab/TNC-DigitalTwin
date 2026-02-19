@@ -40,7 +40,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 6 | TNC ArcGIS Services | 🟡 In Progress | 9 tasks | `v2/tnc-arcgis` | No |
 | 7 | Polish & Consistency | ⚪ Not Started | 7+ tasks | `v2/polish` | No |
 | 8 | Calflora | ⚪ Not Started | 9 tasks | `v2/calflora` | No |
-| 9 | GBIF | ⚪ Not Started | 9 tasks | `v2/gbif` | No |
+| 9 | GBIF | 🟡 In Progress | 2 tasks (9.8, 9.9 deferred) | `v2/gbif` | No |
 | 10 | DroneDeploy | 🟡 In Progress | 1 task | `v2/dronedeploy` | No |
 | 11 | MODIS | ⚪ Not Started | 9 tasks | `v2/modis` | No |
 
@@ -53,6 +53,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 0 | [phase-0-foundation.md](IMPLEMENTATION/phases/phase-0-foundation.md) | 0.6 Map Feature Highlight (if pending); 0.9 ✅ complete |
 | 3 | [phase-3-dendra.md](IMPLEMENTATION/phases/phase-3-dendra.md) | 1 task |
 | 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 9 tasks |
+| 9 | [phase-9-gbif.md](IMPLEMENTATION/phases/phase-9-gbif.md) | 2 tasks (9.8 Save View, 9.9 extent expansion — deferred) |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) | 1 task (10.7) |
 
 ---
@@ -301,6 +302,8 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 19, 2026 | Phase 9 | **Task 9.10 complete.** Fixed GBIF map rendering (explicit `gbifLayer.ts` + `dataset-178` in `createMapLayer`); added card thumbnails from `primary_image_url`. Phase 9: 8/10 tasks done. Remaining: 9.8 (Save View), 9.9 (extent expansion) — deferred. | Cursor |
+| Feb 19, 2026 | Phase 9 | **Tasks 9.1-9.7 complete.** GBIF ArcGIS service discovery complete (`dataset-178`), right-sidebar overview/browse/detail shipped, server-side filter + pagination, map click-to-detail wired. Remaining: 9.8-9.9. | Cursor |
 | Feb 19, 2026 | Phase 3 | **CON-DENDRA-03 complete.** Multi-stream selection across stations: stream-name filtering, in-detail station switcher, no reset requirement. | Cursor |
 | Feb 19, 2026 | Phase 3 | **CON-DENDRA-02 complete.** Multi-panel Dendra time series charts: draggable/resizable/minimizable, map-constrained, bottom-right placement, persistence across layer/pin transitions, visibility tied to pinned layer/view. | Cursor |
 | Feb 19, 2026 | Phase 3 | **CON-DENDRA-01 complete.** Map↔sidebar two-way station sync, station header flash, Edit Filters fix, Stations header, parallel sidebar activation on map click. | Cursor |

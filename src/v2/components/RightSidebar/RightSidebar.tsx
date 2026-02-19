@@ -90,7 +90,8 @@ export function RightSidebar() {
         activeLayer?.dataSource === 'dendra' ||
         activeLayer?.layerId === 'animl-camera-traps' ||
         activeLayer?.layerId === 'dataone-datasets' ||
-        activeLayer?.layerId === 'dataset-193'
+        activeLayer?.layerId === 'dataset-193' ||
+        activeLayer?.layerId === 'dataset-178'
       ) &&
       activeLayer.featureId != null
     ) {
