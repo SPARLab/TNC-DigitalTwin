@@ -17,7 +17,7 @@ const CAMERA_MUTED_STROKE = '#64748b';
 const BADGE_FILL = '#10b981';
 const BADGE_TEXT = '#ffffff';
 const CAMERA_BASE_SYMBOL_SIZE = '28px';
-const CAMERA_BADGED_SYMBOL_SIZE = '64px';
+const CAMERA_BADGED_SYMBOL_SIZE = '72px';
 const CAMERA_MUTED_SYMBOL_SIZE = '40px';
 const MAX_BADGE_DISPLAY = 999;
 const cameraBadgeSymbolCache = new Map<number, PictureMarkerSymbol>();
@@ -70,21 +70,42 @@ function buildBaseCameraSvg(): string {
 
 function buildCameraBadgeSvg(count: number): string {
   const badgeText = getBadgeText(count);
+  const badgeFontSize = badgeText.length >= 4 ? 16 : 18;
+  const badgeHeight = 34;
+  const badgeRadius = badgeHeight / 2;
+  const estimatedTextWidth = badgeText.length * badgeFontSize * 0.7;
+  const badgeWidth = Math.max(40, Math.ceil(estimatedTextWidth + 22));
+  // Keep long labels (e.g., 999+) comfortably inside the SVG viewport.
+  const badgeCenterX = 62;
+  const badgeCenterY = 18;
+  const badgeX = badgeCenterX - badgeWidth / 2;
+  const badgeY = badgeCenterY - badgeHeight / 2;
+  const badgeTextY = badgeCenterY + badgeFontSize * 0.34;
   const cameraGlyph = buildCameraGlyph({
-    x: 21,
-    y: 18,
+    x: 22,
+    y: 20,
     size: 42,
     stroke: CAMERA_STROKE,
   });
   return `
-    <svg xmlns="http://www.w3.org/2000/svg" width="84" height="84" viewBox="0 0 84 84">
+    <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
       ${cameraGlyph}
-      <circle cx="66" cy="18" r="18" fill="${BADGE_FILL}" />
+      <rect
+        x="${badgeX}"
+        y="${badgeY}"
+        width="${badgeWidth}"
+        height="${badgeHeight}"
+        rx="${badgeRadius}"
+        ry="${badgeRadius}"
+        fill="${BADGE_FILL}"
+        stroke="#ffffff"
+        stroke-width="1"
+      />
       <text
-        x="66"
-        y="22"
+        x="${badgeCenterX}"
+        y="${badgeTextY}"
         text-anchor="middle"
-        font-size="17"
+        font-size="${badgeFontSize}"
         font-family="Arial, Helvetica, sans-serif"
         font-weight="700"
         fill="${BADGE_TEXT}"

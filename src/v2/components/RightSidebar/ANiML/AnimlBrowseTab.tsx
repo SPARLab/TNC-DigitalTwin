@@ -8,7 +8,7 @@
 // ============================================================================
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { PawPrint, Camera, AlertCircle, X } from 'lucide-react';
+import { PawPrint, Camera, AlertCircle, RotateCcw, X } from 'lucide-react';
 import { useAnimlFilter } from '../../../context/AnimlFilterContext';
 import { useLayers } from '../../../context/LayerContext';
 import { useMap } from '../../../context/MapContext';
@@ -23,7 +23,25 @@ import { isPointInsideSpatialPolygon } from '../../../utils/spatialQuery';
 
 const PAGE_SIZE = 20;
 const FETCH_DEBOUNCE_MS = 300;
+const AUTO_RETRY_DELAYS_MS = [500, 1200];
+const RETRYABLE_STATUS_CODES = new Set([429, 502, 503, 504]);
 type SpeciesSortMode = 'count' | 'alpha';
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Failed to load images';
+}
+
+function getHttpStatusFromMessage(message: string): number | null {
+  const statusMatch = message.match(/\b(4\d{2}|5\d{2})\b/);
+  if (!statusMatch) return null;
+  return Number(statusMatch[1]);
+}
+
+function isRetryableError(error: unknown): boolean {
+  const message = getErrorMessage(error);
+  const status = getHttpStatusFromMessage(message);
+  return status !== null && RETRYABLE_STATUS_CODES.has(status);
+}
 
 export function AnimlBrowseTab() {
   const {
@@ -46,6 +64,7 @@ export function AnimlBrowseTab() {
   const [imgError, setImgError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [speciesSortMode, setSpeciesSortMode] = useState<SpeciesSortMode>('count');
+  const [manualRetryNonce, setManualRetryNonce] = useState(0);
 
   // ── Hydrate Browse filters (ONE-SHOT, not continuous) ───────────────────
   const lastConsumedHydrateRef = useRef(0);
@@ -240,21 +259,38 @@ export function AnimlBrowseTab() {
       try {
         const labels = hasFilter ? [...selectedAnimals] : undefined;
         const deploymentIds = hasCameraFilter ? [...selectedCameras] : undefined;
-
-        const imgs = await animlService.queryImageLabelsCached({
+        const requestOptions = {
           labels,
           deploymentIds,
           startDate: hasDateFilter ? startDate! : undefined,
           endDate: hasDateFilter ? endDate! : undefined,
           maxResults: 200,
-        });
+        };
+
+        let lastError: unknown = null;
+        for (let attempt = 0; attempt <= AUTO_RETRY_DELAYS_MS.length; attempt += 1) {
+          try {
+            const imgs = await animlService.queryImageLabelsCached(requestOptions);
+            if (cancelled) return;
+            setImages(imgs);
+            setCurrentPage(1);
+            setImgError(null);
+            return;
+          } catch (error) {
+            lastError = error;
+            const canAutoRetry = attempt < AUTO_RETRY_DELAYS_MS.length && isRetryableError(error);
+            if (!canAutoRetry) break;
+            await new Promise((resolve) => setTimeout(resolve, AUTO_RETRY_DELAYS_MS[attempt]));
+            if (cancelled) return;
+          }
+        }
 
         if (cancelled) return;
-        setImages(imgs);
-        setCurrentPage(1);
-      } catch (err) {
-        if (cancelled) return;
-        setImgError(err instanceof Error ? err.message : 'Failed to load images');
+        const errorMessage = getErrorMessage(lastError);
+        const retryHint = isRetryableError(lastError)
+          ? ' Automatic retries failed. Please try again.'
+          : '';
+        setImgError(`${errorMessage}${retryHint}`);
       } finally {
         if (!cancelled) setImgLoading(false);
       }
@@ -264,7 +300,7 @@ export function AnimlBrowseTab() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [selectedAnimals, selectedCameras, startDate, endDate, hasAnyFilter, hasFilter, hasCameraFilter, hasDateFilter, dataLoaded, clearFocusedDeployment]);
+  }, [selectedAnimals, selectedCameras, startDate, endDate, hasAnyFilter, hasFilter, hasCameraFilter, hasDateFilter, dataLoaded, clearFocusedDeployment, manualRetryNonce]);
 
   // ── Pagination ──────────────────────────────────────────────────────────
 
@@ -460,8 +496,17 @@ export function AnimlBrowseTab() {
 
         {/* Image fetch error */}
         {hasAnyFilter && imgError && (
-          <div id="animl-browse-img-error" className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-            {imgError}
+          <div id="animl-browse-img-error" className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 space-y-2">
+            <p id="animl-browse-img-error-text">{imgError}</p>
+            <button
+              id="animl-browse-img-error-retry-button"
+              type="button"
+              onClick={() => setManualRetryNonce((value) => value + 1)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-red-300 bg-white text-red-700 hover:bg-red-100 transition-colors"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Retry
+            </button>
           </div>
         )}
 

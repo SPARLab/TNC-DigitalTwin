@@ -1,7 +1,7 @@
 # Phase 2: ANiML Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 3 / 7 tasks (completed tasks 2.1–2.17 archived)  
+**Progress:** 5 / 7 tasks (completed tasks 2.1–2.17 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-2-animl-completed.md`  
 **Branch:** `v2/animl`  
 **Depends On:** Phase 0 (Foundation) — Data Source Adapter Pattern ✅ Complete  
@@ -91,8 +91,8 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | CON-ANIML-02 | ⚫ Won't Do | Feb 19, 2026 | Rename "Mountain lion" to "Puma" | Deferred: current label comes from ANiML source data; taxonomy decision needed |
 | CON-ANIML-03 | 🟢 Complete | Feb 19, 2026 | Sort cameras by result count (data-rich first, zero-data last) | Comparator in AnimlBrowseTab; zero-result cameras sink to bottom |
 | CON-ANIML-04 | 🟢 Complete | Feb 19, 2026 | Add explicit "Remove Polygon" CTA in spatial query panel | Replaced tiny header Clear action with explicit button-style Remove Polygon CTA |
-| CON-ANIML-05 | ⚪ Not Started | Feb 19, 2026 | Improve map badge UI for large counts (e.g., 999+) | Increase badge size/spacing to avoid cramped text |
-| CON-ANIML-06 | ⚪ Not Started | Feb 19, 2026 | Add Retry button when image labels API error occurs (e.g. 503) | Avoid full reload; retry queryImageLabelsCached from error state |
+| CON-ANIML-05 | 🟢 Complete | Feb 19, 2026 | Improve map badge UI for large counts (e.g., 999+) | Dynamic pill badge, white outline, extra padding for 999+; no clipping; QA passed |
+| CON-ANIML-06 | 🟢 Complete | Feb 19, 2026 | Add Retry button when image labels API error occurs (e.g. 503) | Auto-retry (429/502/503/504 backoff) + manual Retry button; QA passed |
 | 2.18 | ⚪ Not Started | Feb 18, 2026 | Synchronize matching images results with map/layer counts | Existing open ANiML bug |
 
 ## Task Status
@@ -103,8 +103,8 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | CON-ANIML-02 | Rename Mountain lion label to Puma | ⚫ Won't Do | | Deferred to backlog: requires taxonomy/product decision (ANiML source label governance) |
 | CON-ANIML-03 | Sort cameras by result count descending | 🟢 Complete | | Data-rich first, zero-data last; preserves spatial-polygon priority |
 | CON-ANIML-04 | Add explicit "Remove Polygon" CTA in spatial query panel | 🟢 Complete | | Replaced tiny "Clear" text action with explicit Remove Polygon button in SpatialQuerySection |
-| CON-ANIML-05 | Improve map camera badge legibility for high counts (999+) | ⚪ Not Started | | Requested larger badge treatment before broader use |
-| CON-ANIML-06 | Add Retry button when image labels API error occurs | ⚪ Not Started | | e.g. 503 "User couldn't access this resource 'animl.mapserver'"; retry without full page reload |
+| CON-ANIML-05 | Improve map camera badge legibility for high counts (999+) | 🟢 Complete | | Dynamic pill badge with white outline; extra padding for 999+; no clipping; QA passed |
+| CON-ANIML-06 | Add Retry button when image labels API error occurs | 🟢 Complete | | Auto retry (429/502/503/504) + manual Retry button in `AnimlBrowseTab`; QA passed |
 | 2.18 | Synchronize matching images results with map/layer counts | ⚪ Not Started | | Map shows 605, matching images/layer show 200 — counts out of sync for species+camera filter |
 
 *Completed tasks 2.1–2.17 have been archived. See `docs/archive/phases/phase-2-animl-completed.md`.*
@@ -133,9 +133,13 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 **Problem:** AnimlBrowseTab displays an error message when `queryImageLabelsCached` fails, but the only recovery path is a full page reload.
 
 **Acceptance Criteria:**
-- [ ] When image fetch fails, error UI includes a visible "Retry" button
-- [ ] Clicking Retry re-runs the same query (same filters: species, cameras, date range)
-- [ ] No full page reload required
+- [x] When image fetch fails, error UI includes a visible "Retry" button
+- [x] Clicking Retry re-runs the same query (same filters: species, cameras, date range)
+- [x] No full page reload required
+
+**Implementation Notes (Feb 19, 2026):**
+- Added automatic retry for retryable HTTP failures (`429`, `502`, `503`, `504`) with short backoff delays before surfacing error state.
+- Added explicit Retry CTA in image error state to re-run the same `queryImageLabelsCached` request without reloading the app.
 
 **Notes:** Error originates from `AnimlBrowseTab.tsx` useEffect that calls `animlService.queryImageLabelsCached`. Add `imgError` state handling and a Retry CTA that clears error and re-triggers the fetch (e.g. via a retry counter in deps or explicit refetch callback).
 
