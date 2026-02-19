@@ -22,11 +22,16 @@ interface FilterSectionProps {
   itemIcon?: React.ReactNode;
   items: FilterSectionItem[];
   selectedKeys: Set<string>;
+  mutedKeys?: Set<string>;
+  contextNote?: string;
+  /** Replaces the default count badge in the header when provided. */
+  headerBadge?: React.ReactNode;
   onToggle: (key: string) => void;
   onSelectAll: () => void;
   onClear: () => void;
   defaultExpanded?: boolean;
   searchPlaceholder?: string;
+  actionsSlot?: React.ReactNode;
 }
 
 export function FilterSection({
@@ -36,11 +41,15 @@ export function FilterSection({
   itemIcon,
   items,
   selectedKeys,
+  mutedKeys,
+  contextNote,
+  headerBadge,
   onToggle,
   onSelectAll,
   onClear,
   defaultExpanded = false,
   searchPlaceholder = 'Search...',
+  actionsSlot,
 }: FilterSectionProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [searchText, setSearchText] = useState('');
@@ -73,8 +82,8 @@ export function FilterSection({
 
         <span className="text-sm font-medium text-gray-700 flex-1">{label}</span>
 
-        {/* Badge: selected count (emerald) or total count (gray) */}
-        {hasFilter ? (
+        {/* Badge: custom override, selected count (emerald), or total count (gray) */}
+        {headerBadge ?? (hasFilter ? (
           <span
             id={`${id}-badge`}
             className="bg-emerald-100 text-emerald-700 text-xs font-semibold
@@ -84,7 +93,7 @@ export function FilterSection({
           </span>
         ) : (
           <span className="text-xs text-gray-400 tabular-nums">{items.length}</span>
-        )}
+        ))}
       </button>
 
       {/* Body — animated expand/collapse */}
@@ -95,8 +104,17 @@ export function FilterSection({
       >
         <div className="overflow-hidden">
           <div className="px-3 py-2 space-y-2 border-t border-gray-100">
+            {contextNote && (
+              <p id={`${id}-context-note`} className="text-[11px] text-gray-500">
+                {contextNote}
+              </p>
+            )}
+
             {/* Select All / Clear All actions */}
-            <div id={`${id}-actions`} className="flex justify-end items-center gap-2">
+            <div id={`${id}-actions`} className="flex justify-between items-center gap-2">
+              <div id={`${id}-actions-slot`} className="flex items-center gap-1">
+                {actionsSlot}
+              </div>
               <button
                 id={`${id}-select-all`}
                 onClick={(e) => { e.stopPropagation(); onSelectAll(); }}
@@ -135,6 +153,7 @@ export function FilterSection({
             <div id={`${id}-list`} className="space-y-0.5 max-h-52 overflow-y-auto">
               {filteredItems.map(item => {
                 const isChecked = selectedKeys.has(item.key);
+                const isMuted = !!mutedKeys?.has(item.key) && !isChecked;
                 return (
                   <label
                     key={item.key}
@@ -143,7 +162,9 @@ export function FilterSection({
                                 transition-colors ${
                       isChecked
                         ? 'bg-emerald-50 hover:bg-emerald-100'
-                        : 'hover:bg-gray-50'
+                        : isMuted
+                          ? 'bg-gray-50/70 hover:bg-gray-100/80'
+                          : 'hover:bg-gray-50'
                     }`}
                   >
                     <input
@@ -164,12 +185,14 @@ export function FilterSection({
                     <span
                       className={`text-sm flex-1 truncate ${
                         isChecked ? 'text-gray-900 font-medium' : 'text-gray-600'
+                      } ${
+                        isMuted ? 'text-gray-400' : ''
                       }`}
                     >
                       {item.label}
                     </span>
                     {item.count !== null && (
-                      <span className="text-xs text-gray-400 tabular-nums flex-shrink-0">
+                      <span className={`text-xs tabular-nums flex-shrink-0 ${isMuted ? 'text-gray-300' : 'text-gray-400'}`}>
                         {item.count.toLocaleString()}
                       </span>
                     )}

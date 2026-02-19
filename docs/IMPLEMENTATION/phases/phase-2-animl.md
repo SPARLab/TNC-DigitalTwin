@@ -87,18 +87,22 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| CON-ANIML-01 | ⚪ Not Started | Feb 18, 2026 | Map click on camera trap auto-selects sidebar camera and shows images | High priority; map-first interaction |
+| CON-ANIML-01 | 🟡 In Progress | Feb 19, 2026 | Map click on camera trap auto-selects sidebar camera and shows images | Added map click + sidebar sync and spatial-query camera auto-select/prioritization; pending QA |
 | CON-ANIML-02 | ⚪ Not Started | Feb 18, 2026 | Rename "Mountain lion" to "Puma" | Medium priority |
 | CON-ANIML-03 | ⚪ Not Started | Feb 18, 2026 | Sort cameras by result count (data-rich first, zero-data last) | Medium priority |
+| CON-ANIML-04 | ⚪ Not Started | Feb 19, 2026 | Add explicit "Remove Polygon" CTA in spatial query panel | Improve discoverability over tiny Clear affordance |
+| CON-ANIML-05 | ⚪ Not Started | Feb 19, 2026 | Improve map badge UI for large counts (e.g., 999+) | Increase badge size/spacing to avoid cramped text |
 | 2.18 | ⚪ Not Started | Feb 18, 2026 | Synchronize matching images results with map/layer counts | Existing open ANiML bug |
 
 ## Task Status
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
-| CON-ANIML-01 | Map click camera -> sidebar sync + images | ⚪ Not Started | | Intake from consolidated feedback |
+| CON-ANIML-01 | Map click camera -> sidebar sync + images | 🟡 In Progress | | Map click handler + browse camera auto-select + spatial polygon camera auto-selection implemented; pending QA |
 | CON-ANIML-02 | Rename Mountain lion label to Puma | ⚪ Not Started | | Intake from consolidated feedback |
 | CON-ANIML-03 | Sort cameras by result count descending | ⚪ Not Started | | Intake from consolidated feedback |
+| CON-ANIML-04 | Add explicit "Remove Polygon" CTA in spatial query panel | ⚪ Not Started | | Requested UX improvement for polygon-clear discoverability |
+| CON-ANIML-05 | Improve map camera badge legibility for high counts (999+) | ⚪ Not Started | | Requested larger badge treatment before broader use |
 | 2.18 | Synchronize matching images results with map/layer counts | ⚪ Not Started | | Map shows 605, matching images/layer show 200 — counts out of sync for species+camera filter |
 
 *Completed tasks 2.1–2.17 have been archived. See `docs/archive/phases/phase-2-animl-completed.md`.*

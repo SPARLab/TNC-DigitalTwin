@@ -10,7 +10,9 @@
 import { useEffect, useRef } from 'react';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import type Layer from '@arcgis/core/layers/Layer';
+import Point from '@arcgis/core/geometry/Point';
 import { useAnimlFilter } from '../../context/AnimlFilterContext';
+import { useLayers } from '../../context/LayerContext';
 import { useMap } from '../../context/MapContext';
 import {
   populateAnimlLayer,
@@ -21,6 +23,7 @@ import {
 import type { PinnedLayer, ActiveLayer } from '../../types';
 
 const LAYER_ID = 'animl-camera-traps';
+const MAP_LAYER_ID = 'v2-animl-camera-traps';
 
 export function useAnimlMapBehavior(
   getManagedLayer: (layerId: string) => Layer | undefined,
@@ -39,10 +42,12 @@ export function useAnimlMapBehavior(
     warmCache,
     focusedDeploymentId,
   } = useAnimlFilter();
+  const { activateLayer } = useLayers();
   const { viewRef, getSpatialPolygonForLayer } = useMap();
   const spatialPolygon = getSpatialPolygonForLayer(LAYER_ID);
   const populatedRef = useRef(false);
   const highlightHandleRef = useRef<__esri.Handle | null>(null);
+  const shouldShowBadges = hasAnyFilter && !(!!spatialPolygon && selectedAnimals.size === 0);
 
   const isPinned = pinnedLayers.some(p => p.layerId === LAYER_ID);
   const isActive = activeLayer?.layerId === LAYER_ID;
@@ -71,7 +76,7 @@ export function useAnimlMapBehavior(
     populateAnimlLayer(arcLayer, deployments);
     filterAnimlLayer(arcLayer, selectedAnimals, undefined, spatialPolygon);
     updateAnimlCameraBadges(arcLayer, {
-      hasActiveFilter: hasAnyFilter,
+      hasActiveFilter: shouldShowBadges,
       getCountForDeployment: (deploymentId) => {
         // Camera filter narrows the query to selected cameras only.
         if (hasCameraFilter && !selectedCameras.has(deploymentId)) return 0;
@@ -85,6 +90,7 @@ export function useAnimlMapBehavior(
     deployments,
     selectedAnimals,
     hasAnyFilter,
+    shouldShowBadges,
     hasCameraFilter,
     selectedCameras,
     getFilteredCountForDeployment,
@@ -108,19 +114,58 @@ export function useAnimlMapBehavior(
     if (!arcLayer || !(arcLayer instanceof GraphicsLayer)) return;
 
     updateAnimlCameraBadges(arcLayer, {
-      hasActiveFilter: hasAnyFilter,
+      hasActiveFilter: shouldShowBadges,
       getCountForDeployment: (deploymentId) => {
         if (hasCameraFilter && !selectedCameras.has(deploymentId)) return 0;
         return getFilteredCountForDeployment(deploymentId);
       },
     });
   }, [
-    hasAnyFilter,
+    shouldShowBadges,
     hasCameraFilter,
     selectedCameras,
     getFilteredCountForDeployment,
     getManagedLayer,
   ]);
+
+  // Map click handler: clicking a camera marker opens ANiML browse for that camera.
+  useEffect(() => {
+    if (!isOnMap || !dataLoaded) return;
+    const view = viewRef.current;
+    if (!view) return;
+
+    const handler = view.on('click', async (event) => {
+      try {
+        const response = await view.hitTest(event);
+        const graphicHit = response.results.find(
+          (result): result is __esri.GraphicHit =>
+            result.type === 'graphic' && result.graphic.layer?.id === MAP_LAYER_ID,
+        );
+        if (!graphicHit) return;
+
+        const deploymentId = Number(graphicHit.graphic.attributes?.id);
+        if (!Number.isFinite(deploymentId)) return;
+
+        activateLayer(LAYER_ID, undefined, deploymentId);
+
+        const geometry = graphicHit.graphic.geometry;
+        if (geometry?.type === 'point') {
+          const point = geometry as Point;
+          void view.goTo(
+            {
+              center: [point.longitude, point.latitude],
+              zoom: Math.max(view.zoom ?? 8, 10),
+            },
+            { duration: 600 },
+          );
+        }
+      } catch (error) {
+        console.error('[ANiML Map Click] Error handling marker click:', error);
+      }
+    });
+
+    return () => handler.remove();
+  }, [isOnMap, dataLoaded, viewRef, activateLayer]);
 
   // Native ArcGIS highlight for camera selected from image interactions.
   useEffect(() => {

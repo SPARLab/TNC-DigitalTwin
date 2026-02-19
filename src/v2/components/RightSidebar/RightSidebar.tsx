@@ -87,6 +87,7 @@ export function RightSidebar() {
     if (
       (
         activeLayer?.layerId === 'inaturalist-obs' ||
+        activeLayer?.layerId === 'animl-camera-traps' ||
         activeLayer?.layerId === 'dataone-datasets' ||
         activeLayer?.layerId === 'dataset-193'
       ) &&
