@@ -1,11 +1,11 @@
 # Phase 1: iNaturalist Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 0 / 5 tasks  
+**Progress:** 1 / 5 tasks  
 **Branch:** `v2/inaturalist`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD  
-**Last Updated:** February 18, 2026
+**Last Updated:** February 19, 2026
 
 ---
 
@@ -17,7 +17,7 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| CON-INAT-01 | 🟡 In Progress | Feb 19, 2026 9:56 AM | Add species-level filtering (currently taxa only) | In progress: full scientific names, common/Latin toggle, species search, count/alphabetical sort, map/pinned-view sync |
+| CON-INAT-01 | 🟢 Complete | Feb 19, 2026 | Add species-level filtering (currently taxa only) | Done: full scientific names, species search, count/alphabetical sort, map/pinned-view sync. Common/Latin toggle dropped (decided against). |
 | CON-INAT-02 | ⚪ Not Started | Feb 18, 2026 | Species hierarchy flow: taxa -> species list -> observations per species | High priority; source: AF-02 |
 | CON-INAT-03 | ⚪ Not Started | Feb 18, 2026 | Show result count in right sidebar (for example, "92 observations") | High priority; source: AF-03 |
 | CON-INAT-04 | ⚪ Not Started | Feb 18, 2026 | Investigate reptile observations appearing in ocean (scrambling vs bug) | Medium priority; source: AF-08 |
@@ -25,8 +25,8 @@
 
 **Phase-5 handoff:** `CON-INAT-05` (Export Builder cart inversion) is tracked in `docs/IMPLEMENTATION/phases/phase-5-export-builder.md` to avoid cross-branch conflicts.
 
-**Active tasks remaining:** 5  
-**Recently completed:** Archived to `docs/archive/phases/phase-1-inaturalist-completed.md`
+**Active tasks remaining:** 4  
+**Recently completed:** CON-INAT-01 (species-level filtering). Archived tasks: `docs/archive/phases/phase-1-inaturalist-completed.md`
 
 ---
 
@@ -83,7 +83,7 @@ TBD
 
 | Decision | Date | Rationale | Added to design-system.md? |
 |----------|------|-----------|---------------------------|
-| | | | |
+| Common/Latin toggle dropped | Feb 19, 2026 | Decided against explicit toggle; species list shows common name primary + scientific secondary (dual-line). | No |
 
 ---
 
@@ -99,4 +99,5 @@ TBD
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 19, 2026 | CON-INAT-01 | **Complete.** Species-level filtering: full scientific names, species search, count/alphabetical sort, map/pinned-view sync. Common/Latin toggle dropped (decided against). | — |
 | Feb 18, 2026 | - | **Archived all Phase 1 iNaturalist tasks** to `docs/archive/phases/phase-1-inaturalist-completed.md`. Cleared phase doc for new tasks. | — |
