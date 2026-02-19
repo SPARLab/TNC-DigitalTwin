@@ -60,6 +60,7 @@ export function INaturalistBrowseTab() {
     observations, loading, error,
     fetchedCount,
     page, totalPages, goToPage,
+    pageSize,
   } = useINaturalistObservations(filters);
 
   // Detail view state
@@ -241,8 +242,8 @@ export function INaturalistBrowseTab() {
   }
 
   return (
-    <div id="inat-browse-tab" className="space-y-3">
-      <EditFiltersCard id="inat-edit-filters-card">
+    <div id="inat-browse-tab" className="h-full min-h-0 flex flex-col gap-3">
+      <EditFiltersCard id="inat-edit-filters-card" collapsible defaultExpanded>
         {/* Filter section (DFT-038) - Compact dropdown */}
         <div id="inat-filter-section" className="rounded-lg border border-emerald-100 bg-white p-3">
           <div className="flex items-center justify-between">
@@ -310,10 +311,6 @@ export function INaturalistBrowseTab() {
             </div>
           )}
 
-          {/* Note about legend widget sync */}
-          <p className="text-xs text-gray-500 italic mt-2">
-            Tip: You can also filter using the legend widget on the map
-          </p>
         </div>
 
         {/* Species filter section */}
@@ -510,96 +507,106 @@ export function INaturalistBrowseTab() {
         <SpatialQuerySection id="inat-spatial-query-section" layerId="inaturalist-obs" />
       </EditFiltersCard>
 
-      {/* Loading state */}
-      {showInitialLoading && (
-        <InlineLoadingRow id="inat-browse-initial-loading" message="Loading observations..." />
-      )}
+      <div id="inat-browse-results-region" className="flex-1 min-h-0 flex flex-col">
+        {/* Loading state */}
+        {showInitialLoading && (
+          <InlineLoadingRow id="inat-browse-initial-loading" message="Loading observations..." />
+        )}
 
-      {showRefreshLoading && (
-        <RefreshLoadingRow
-          id="inat-browse-refresh-loading"
-          message="Refreshing observations..."
-        />
-      )}
+        {showRefreshLoading && (
+          <RefreshLoadingRow
+            id="inat-browse-refresh-loading"
+            message="Refreshing observations..."
+          />
+        )}
 
-      {/* Error state */}
-      {error && (
-        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          {error}
-        </div>
-      )}
+        {/* Error state */}
+        {error && (
+          <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            {error}
+          </div>
+        )}
 
-      {requiresSpeciesSelection && !error && !showInitialLoading && (
-        <div
-          id="inat-species-selection-required-message"
-          className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800"
-        >
-          Select one or more species to view observations for the selected taxa.
-        </div>
-      )}
-
-      {!error && !showInitialLoading && !requiresSpeciesSelection && (
-        <div
-          id="inat-results-count-row"
-          className={`flex items-center justify-between rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 ${showRefreshLoading ? 'opacity-80' : ''}`}
-        >
-          <span id="inat-results-count-label" className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-            Results
-          </span>
-          <span id="inat-results-count-value" className="text-sm font-medium text-emerald-900">
-            {fetchedCount.toLocaleString()} {fetchedCount === 1 ? 'observation' : 'observations'}
-          </span>
-        </div>
-      )}
-
-      {/* Observation cards */}
-      {!error && !showInitialLoading && !requiresSpeciesSelection && (
-        <div id="inat-observation-cards" className={`space-y-2 ${showRefreshLoading ? 'opacity-60' : ''}`}>
-          {observations.map(obs => (
-            <ObservationCard
-              key={obs.id}
-              observation={obs}
-              onViewDetail={() => {
-                setSelectedObs(obs);
-                void handleViewOnMap(obs);
-              }}
-              onViewOnMap={() => { void handleViewOnMap(obs); }}
-            />
-          ))}
-
-          {observations.length === 0 && !showRefreshLoading && (
-            <p className="text-sm text-gray-400 text-center py-6">
-              No observations found{hasFilter ? ' for this filter' : ''}.
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Pagination */}
-      {totalPages > 1 && !showInitialLoading && !requiresSpeciesSelection && (
-        <div id="inat-pagination" className="flex items-center justify-between pt-2 border-t border-gray-100">
-          <button
-            onClick={() => goToPage(page - 1)}
-            disabled={page <= 1}
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-600 hover:text-gray-900
-                       disabled:text-gray-300 disabled:cursor-not-allowed transition-colors"
+        {requiresSpeciesSelection && !error && !showInitialLoading && (
+          <div
+            id="inat-species-selection-required-message"
+            className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800"
           >
-            <ChevronLeft className="w-3.5 h-3.5" /> Previous
-          </button>
-          <span className="text-xs text-gray-500">
-            Page {page} of {totalPages}
-          </span>
-          <button
-            onClick={() => goToPage(page + 1)}
-            disabled={page >= totalPages}
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-600 hover:text-gray-900
-                       disabled:text-gray-300 disabled:cursor-not-allowed transition-colors"
+            Select one or more species to view observations for the selected taxa.
+          </div>
+        )}
+
+        {!error && !showInitialLoading && !requiresSpeciesSelection && (
+          <div
+            id="inat-results-count-row"
+            className={`flex items-center justify-between py-1 px-1 ${showRefreshLoading ? 'opacity-80' : ''}`}
           >
-            Next <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
+            <span id="inat-results-count-label" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              Observations
+            </span>
+            <span id="inat-results-count-value" className="text-xs text-gray-400 tabular-nums">
+              {((page - 1) * pageSize) + 1}–{Math.min(page * pageSize, fetchedCount)} of {fetchedCount.toLocaleString()}
+            </span>
+          </div>
+        )}
+
+        {/* Scrollable observation cards container */}
+        {!error && !showInitialLoading && !requiresSpeciesSelection && (
+          <div id="inat-observation-cards-wrapper" className="flex-1 min-h-0 flex flex-col">
+            <div id="inat-observation-cards" className={`flex-1 overflow-y-auto space-y-2 ${showRefreshLoading ? 'opacity-60' : ''}`}>
+              {observations.map(obs => (
+                <ObservationCard
+                  key={obs.id}
+                  observation={obs}
+                  onViewDetail={() => {
+                    setSelectedObs(obs);
+                    void handleViewOnMap(obs);
+                  }}
+                  onViewOnMap={() => { void handleViewOnMap(obs); }}
+                />
+              ))}
+
+              {observations.length === 0 && !showRefreshLoading && (
+                <p className="text-sm text-gray-400 text-center py-6">
+                  No observations found{hasFilter ? ' for this filter' : ''}.
+                </p>
+              )}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div id="inat-pagination" className="flex items-center justify-between border-t border-gray-100 pt-2">
+                <button
+                  id="inat-pagination-prev"
+                  onClick={() => goToPage(page - 1)}
+                  disabled={page <= 1}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium
+                             text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors
+                             disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  Prev Page
+                </button>
+                <span id="inat-pagination-indicator" className="text-xs text-gray-500 tabular-nums">
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  id="inat-pagination-next"
+                  onClick={() => goToPage(page + 1)}
+                  disabled={page >= totalPages}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium
+                             text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors
+                             disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next Page
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
