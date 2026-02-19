@@ -16,11 +16,10 @@
 |----|--------|---------------------------|------------------|-------|
 | CON-DENDRA-01 | 🟢 Complete | Feb 19, 2026 | Map click on station syncs to right sidebar and opens station | High priority; map-first |
 | CON-DENDRA-02 | 🟢 Complete | Feb 19, 2026 | Multiple time series charts side-by-side; draggable/resizable/minimizable within map area bounds | High priority |
-| CON-DENDRA-03 | ⚪ Not Started | Feb 18, 2026 | Multi-stream selection across stations with stream-name filtering and no reset requirement | High priority |
+| CON-DENDRA-03 | 🟡 In Progress | Feb 19, 2026 | Multi-stream selection across stations with stream-name filtering and no reset requirement | High priority |
 | CON-DENDRA-04 | ⚪ Not Started | Feb 18, 2026 | Auto-expand Map Layers widget when a child view is added | Medium priority |
 | CON-DENDRA-06 | ⚪ Not Started | Feb 18, 2026 | Review "Update View" versus "Save as New View" language and sync behavior | Low priority |
 | CON-DENDRA-07 | ⚪ Not Started | Feb 18, 2026 | Add icon diagram for station to data stream hierarchy onboarding | Low priority |
-| CON-DENDRA-08 | ⚪ Not Started | Feb 18, 2026 | Gather feedback from active Dendra data users | Medium priority |
 
 **Phase-5 handoff:** `CON-DENDRA-05` (Export Builder UX refinement) is tracked in `docs/IMPLEMENTATION/phases/phase-5-export-builder.md`.
 
@@ -64,7 +63,7 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 |----|------|--------|----------|-------|
 | CON-DENDRA-01 | Map click station -> sidebar station sync | 🟢 Complete | | Two-way sync, flash, Edit Filters fix, Stations header |
 | CON-DENDRA-02 | Multi-chart compare (draggable/resizable/minimizable, map-constrained) | 🟢 Complete | | See Task Details |
-| CON-DENDRA-03 | Multi-stream cross-station selection UX | ⚪ Not Started | | Intake from consolidated feedback |
+| CON-DENDRA-03 | Multi-stream cross-station selection UX | 🟡 In Progress | | Stream-name filtering + in-detail station switcher implementation started |
 | CON-DENDRA-04 | Auto-expand Map Layers widget on child add | ⚪ Not Started | | Intake from consolidated feedback |
 | CON-DENDRA-06 | Review update/save language | ⚪ Not Started | | Intake from consolidated feedback |
 | CON-DENDRA-07 | Station->stream hierarchy onboarding diagram | ⚪ Not Started | | Intake from consolidated feedback |
@@ -137,6 +136,18 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 **Files touched:** DendraContext.tsx, DendraTimeSeriesPanel.tsx, StationDetailView.tsx, MapContainer.tsx, dendra adapter (FloatingPanel removed from adapter).
 
+### CON-DENDRA-03 Implementation Notes (In Progress — Feb 19, 2026)
+
+**Implemented so far:**
+- Added stream-name filter input in Browse tab to narrow station results by datastream name match.
+- Carried stream-name filter into Station Detail view so users keep comparison context while drilling in.
+- Added in-detail station switcher (`Switch Station`) so users can move between matching stations without backing out/resetting.
+- Datastream cards now respect stream-name filter and show filtered counts.
+
+**Next checks before completion:**
+- Verify expected workflow with real use case ("air temp avg across stations") and tune matching behavior if needed.
+- Confirm whether auto-opening same-named stream on station switch is desired or should remain manual.
+
 ---
 
 ## Service Analysis
@@ -185,7 +196,7 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 | Decision | Date | Rationale | Added to design-system.md? |
 |----------|------|-----------|---------------------------|
-| (none yet) | | | |
+| Dendra chart panel header typography | Feb 19, 2026 | Stream name bold; labels (Station:, Category:) regular; values (station name, category) semi-bold. Pipe separator between Station and Category. Directs eye to important content. | Yes |
 
 ### Integration Note for Merge
 
@@ -211,6 +222,8 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 19, 2026 | Dendra chart panel | **Polish.** Chart header typography: stream name bold; labels regular; values semi-bold. Pipe separator. Documented in phase + design-system. | Cursor |
+| Feb 19, 2026 | CON-DENDRA-03 | **Started.** Added stream-name filtering and cross-station switcher foundation in Dendra Browse/Station Detail to support multi-stream comparison without reset workflow. | Cursor |
 | Feb 19, 2026 | CON-DENDRA-02 | **Complete.** Multi-panel time series charts: draggable/resizable/minimizable, map-constrained, bottom-right initial placement, persistence across layer/pin transitions, visibility tied to pinned layer/view. See Task Details. | Cursor |
 | Feb 19, 2026 | CON-DENDRA-01 | **Complete.** Two-way map↔sidebar station sync, dark-gray station header flash, Edit Filters exits station detail, Stations section header, sidebar→map highlight/popup/zoom, map click activates sidebar immediately (parallel with goTo). See Task Details. | Cursor |
 | Feb 18, 2026 | All | **Archived completed tasks:** Moved tasks 3.1–3.9 (including 3.5a–3.9 fixes) to `docs/archive/phases/phase-3-dendra-completed.md`. Phase doc cleared for new tasks. Status → In Progress. | Claude |

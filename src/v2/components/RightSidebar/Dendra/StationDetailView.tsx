@@ -18,6 +18,10 @@ interface StationDetailViewProps {
   onViewOnMap: () => void;
   onViewChart?: (summary: DendraSummary) => void;
   stationHeaderFlashSignal?: number;
+  streamNameFilter: string;
+  onStreamNameFilterChange: (value: string) => void;
+  matchingStations: DendraStation[];
+  onSelectStation: (station: DendraStation) => void;
 }
 
 export function StationDetailView({
@@ -27,20 +31,70 @@ export function StationDetailView({
   onViewOnMap,
   onViewChart,
   stationHeaderFlashSignal = 0,
+  streamNameFilter,
+  onStreamNameFilterChange,
+  matchingStations,
+  onSelectStation,
 }: StationDetailViewProps) {
   const isActive = station.is_active === 1;
   const displayName = station.station_name?.replace(/^Dangermond_/, '').replace(/_/g, ' ') ?? 'Unknown';
   const [selectedDatastreamId, setSelectedDatastreamId] = useState<number | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [isHeaderFlashing, setIsHeaderFlashing] = useState(false);
+  const prevStationIdRef = useRef<number>(station.station_id);
+  const lastSelectedDatastreamNameRef = useRef<string>('');
   const flashStartTimeoutRef = useRef<number | null>(null);
   const flashEndTimeoutRef = useRef<number | null>(null);
   const { getChartPanel, setChartFilter, showActiveOnly, filteredStations } = useDendra();
   const { activeLayer, pinLayer, getPinnedByLayerId, syncDendraFilters, createDendraFilteredView } = useLayers();
 
+  const normalizedStreamNameFilter = streamNameFilter.trim().toLowerCase();
+  const filteredSummaries = useMemo(() => {
+    if (!normalizedStreamNameFilter) return summaries;
+    return summaries.filter((summary) =>
+      summary.datastream_name.toLowerCase().includes(normalizedStreamNameFilter),
+    );
+  }, [summaries, normalizedStreamNameFilter]);
+
+  useEffect(() => {
+    const selectedName = summaries.find(
+      (summary) => summary.datastream_id === selectedDatastreamId,
+    )?.datastream_name;
+    if (selectedName) {
+      lastSelectedDatastreamNameRef.current = selectedName;
+    }
+  }, [summaries, selectedDatastreamId]);
+
+  useEffect(() => {
+    const stationChanged = prevStationIdRef.current !== station.station_id;
+    const selectedExistsInFiltered = filteredSummaries.some(
+      (summary) => summary.datastream_id === selectedDatastreamId,
+    );
+
+    if (selectedDatastreamId != null && selectedExistsInFiltered) {
+      prevStationIdRef.current = station.station_id;
+      return;
+    }
+
+    if (stationChanged && lastSelectedDatastreamNameRef.current) {
+      const matchedByName = filteredSummaries.find(
+        (summary) =>
+          summary.datastream_name.toLowerCase() === lastSelectedDatastreamNameRef.current.toLowerCase(),
+      );
+      if (matchedByName) {
+        setSelectedDatastreamId(matchedByName.datastream_id);
+        prevStationIdRef.current = station.station_id;
+        return;
+      }
+    }
+
+    setSelectedDatastreamId(null);
+    prevStationIdRef.current = station.station_id;
+  }, [station.station_id, filteredSummaries, selectedDatastreamId]);
+
   const selectedSummary = useMemo(
-    () => summaries.find(summary => summary.datastream_id === selectedDatastreamId) ?? null,
-    [summaries, selectedDatastreamId],
+    () => filteredSummaries.find(summary => summary.datastream_id === selectedDatastreamId) ?? null,
+    [filteredSummaries, selectedDatastreamId],
   );
 
   const selectedChartPanel = useMemo(() => {
@@ -170,6 +224,47 @@ export function StationDetailView({
         Back to Stations
       </button>
 
+      <div id="dendra-cross-station-tools" className="rounded-lg border border-gray-200 bg-white p-3 space-y-2">
+        <label id="dendra-detail-stream-name-filter" className="block text-xs text-gray-600">
+          Stream Name Filter
+          <input
+            id="dendra-detail-stream-name-filter-input"
+            type="text"
+            value={streamNameFilter}
+            onChange={(event) => onStreamNameFilterChange(event.target.value)}
+            placeholder="Filter streams (example: air temp avg)"
+            className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm
+                       focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          />
+        </label>
+
+        <label id="dendra-detail-station-switcher" className="block text-xs text-gray-600">
+          Switch Station
+          <select
+            id="dendra-detail-station-switcher-select"
+            value={station.station_id}
+            onChange={(event) => {
+              const selectedId = Number(event.target.value);
+              const nextStation = matchingStations.find((candidate) => candidate.station_id === selectedId);
+              if (!nextStation) return;
+              onSelectStation(nextStation);
+            }}
+            className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm bg-white
+                       focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          >
+            {matchingStations.map((candidate) => (
+              <option
+                key={candidate.station_id}
+                id={`dendra-detail-station-switcher-option-${candidate.station_id}`}
+                value={candidate.station_id}
+              >
+                {candidate.station_name?.replace(/^Dangermond_/, '').replace(/_/g, ' ') ?? 'Unknown'}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
       {/* Station header */}
       <div
         id="dendra-station-header"
@@ -226,16 +321,18 @@ export function StationDetailView({
       {/* Datastream summaries */}
       <div id="dendra-datastream-summaries">
         <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-          Datastreams ({summaries.length})
+          Datastreams ({filteredSummaries.length}{normalizedStreamNameFilter ? ` of ${summaries.length}` : ''})
         </h4>
 
-        {summaries.length === 0 ? (
+        {filteredSummaries.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-4">
-            No datastream summaries available.
+            {normalizedStreamNameFilter
+              ? 'No datastreams match this stream name filter.'
+              : 'No datastream summaries available.'}
           </p>
         ) : (
           <div className="space-y-2">
-            {summaries.map(summary => (
+            {filteredSummaries.map(summary => (
               <DatastreamSummaryCard
                 key={summary.datastream_id}
                 summary={summary}

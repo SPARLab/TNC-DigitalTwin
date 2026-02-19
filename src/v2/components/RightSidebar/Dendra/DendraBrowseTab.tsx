@@ -4,7 +4,7 @@
 // Station card click → StationDetailView with datastream summaries.
 // ============================================================================
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { useDendra, useSummariesByStation } from '../../../context/DendraContext';
 import { useMap } from '../../../context/MapContext';
@@ -28,6 +28,7 @@ export function DendraBrowseTab() {
   // Detail view state
   const [selectedStation, setSelectedStation] = useState<DendraStation | null>(null);
   const [stationHeaderFlashSignal, setStationHeaderFlashSignal] = useState(0);
+  const [streamNameFilter, setStreamNameFilter] = useState('');
 
   // Map interactions
   const { highlightPoint, clearHighlight, viewRef } = useMap();
@@ -136,6 +137,21 @@ export function DendraBrowseTab() {
     }
   }, [activeLayer, activateLayer]);
 
+  const normalizedStreamNameFilter = streamNameFilter.trim().toLowerCase();
+  const filteredStationsByStream = useMemo(() => {
+    if (!normalizedStreamNameFilter) return filteredStations;
+    return filteredStations.filter((station) => {
+      const stationSummaries = summariesByStation.get(station.station_id) ?? [];
+      return stationSummaries.some((summary) =>
+        summary.datastream_name.toLowerCase().includes(normalizedStreamNameFilter),
+      );
+    });
+  }, [filteredStations, summariesByStation, normalizedStreamNameFilter]);
+
+  const handleStreamNameFilterChange = useCallback((value: string) => {
+    setStreamNameFilter(value);
+  }, []);
+
   // Chart handler — opens the floating panel + pans/zooms to the station
   const handleViewChart = useCallback((station: DendraStation, summary: DendraSummary) => {
     openChart(station, summary);
@@ -163,6 +179,10 @@ export function DendraBrowseTab() {
         onViewOnMap={() => handleViewOnMap(selectedStation)}
         onViewChart={(summary) => handleViewChart(selectedStation, summary)}
         stationHeaderFlashSignal={stationHeaderFlashSignal}
+        streamNameFilter={streamNameFilter}
+        onStreamNameFilterChange={handleStreamNameFilterChange}
+        matchingStations={filteredStationsByStream}
+        onSelectStation={handleSelectStation}
       />
     );
   }
@@ -180,7 +200,7 @@ export function DendraBrowseTab() {
               Filter Stations
             </span>
             <span className="text-xs text-gray-400">
-              {filteredStations.length} of {stationCount}
+              {filteredStationsByStream.length} of {stationCount}
             </span>
           </div>
 
@@ -208,6 +228,19 @@ export function DendraBrowseTab() {
                 ({inactiveCount} inactive)
               </span>
             )}
+          </label>
+
+          <label id="dendra-stream-name-filter" className="block text-xs text-gray-600">
+            Stream Name
+            <input
+              id="dendra-stream-name-filter-input"
+              type="text"
+              value={streamNameFilter}
+              onChange={(event) => handleStreamNameFilterChange(event.target.value)}
+              placeholder="Filter stations by datastream name..."
+              className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm
+                         focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            />
           </label>
         </div>
 
@@ -238,10 +271,10 @@ export function DendraBrowseTab() {
               Stations
             </h4>
             <span id="dendra-station-results-count" className="text-xs text-gray-400">
-              {filteredStations.length}
+              {filteredStationsByStream.length}
             </span>
           </div>
-          {filteredStations.map(station => (
+          {filteredStationsByStream.map(station => (
             <StationCard
               key={station.station_id}
               station={station}
@@ -251,9 +284,11 @@ export function DendraBrowseTab() {
             />
           ))}
 
-          {filteredStations.length === 0 && (
+          {filteredStationsByStream.length === 0 && (
             <p className="text-sm text-gray-400 text-center py-6">
-              No stations found{showActiveOnly ? ' (try disabling "Active only" filter)' : ''}.
+              No stations found
+              {showActiveOnly ? ' (try disabling "Active only" filter)' : ''}
+              {normalizedStreamNameFilter ? ' for that stream name.' : '.'}
             </p>
           )}
         </div>

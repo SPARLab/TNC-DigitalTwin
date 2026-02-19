@@ -344,8 +344,8 @@ function ChartPanel({ panelId }: { panelId: string }) {
           </div>
           <div id={`dendra-chart-panel-minimized-text-${safePanelId}`} className="min-w-0">
             <p className="text-xs font-semibold text-slate-700 truncate">{displayName}</p>
-            <p className="text-[10px] text-slate-500 truncate">
-              {chartLabel || 'Measurement'} • {displayName} • {categoryLabel}
+            <p className="text-xs font-normal text-slate-500 truncate">
+              {chartLabel || 'Measurement'} | {displayName} | {categoryLabel}
             </p>
           </div>
           <div id={`dendra-chart-panel-minimized-actions-${safePanelId}`} className="ml-auto flex items-center gap-1">
@@ -404,8 +404,11 @@ function ChartPanel({ panelId }: { panelId: string }) {
             <h3 className="text-sm font-bold text-slate-900">
               {chartLabel || 'Measurement'}
             </h3>
-            <p className="text-[10px] text-slate-700">
-              Station: {displayName} • Category: {categoryLabel}
+            <p className="text-sm text-slate-700">
+              <span className="font-normal">Station: </span>
+              <span className="font-semibold">{displayName}</span>
+              <span className="font-normal"> | Category: </span>
+              <span className="font-semibold">{categoryLabel}</span>
             </p>
           </div>
         </div>
