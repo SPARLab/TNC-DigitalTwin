@@ -1,7 +1,7 @@
 # Phase 1: iNaturalist Right Sidebar
 
 **Status:** 🟢 Complete  
-**Progress:** 6 / 6 tasks complete (1 won't do)  
+**Progress:** 6 / 7 tasks complete (1 won't do, 1 in progress)  
 **Branch:** `v2/inaturalist`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD  
@@ -18,6 +18,7 @@
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
 | TF-01 | 🟢 Complete | Feb 20, 2026 | Set minimum height for image results in Browse tab (~150px) so user doesn't need to collapse filters to scroll | Done: min-h-[400px] on inat-observation-cards. Right sidebar scrollable under Overview/Browse tabs is acceptable. |
+| TF-05 | 🟡 In Progress | Feb 20, 2026 | iNaturalist taxa legend UX: move expand/collapse caret to far right; make entire header clickable; ensure rounded corners in both expanded and collapsed states | Caret right-aligned; header onClick toggles; rounded-t-lg + rounded-b-lg on header when collapsed, on content when expanded. |
 | TF-03 | 🟢 Complete | Feb 20, 2026 | Don't gray out species options in Filter Species dropdown; gray communicates "unavailable" but they're just unselected | Done: removed `opacity-60` and `text-gray-500` from unselected rows in both Filter Taxa and Filter Species dropdowns. Unselected rows now use `bg-white hover:bg-gray-50` + `text-gray-700`; checkbox alone conveys selection state. Same pattern fixed in Taxa for consistency. |
 | TF-04 | 🟢 Complete | Feb 20, 2026 | Fix map/right-sidebar desync: selecting taxon in legend + filtering by species results in map not updating | Done: removed global species reset from shared toggleTaxon; legend and sidebar taxon clicks now both apply taxa filter immediately without blanking map. Source: Trisalyn QA Feb 20 |
 | CON-INAT-01 | 🟢 Complete | Feb 19, 2026 | Add species-level filtering (currently taxa only) | Done: full scientific names, species search, count/alphabetical sort, map/pinned-view sync. Common/Latin toggle dropped (decided against). |
@@ -29,7 +30,7 @@
 
 **Phase-5 handoff:** `CON-INAT-05` (Export Builder cart inversion) is tracked in `docs/IMPLEMENTATION/phases/phase-5-export-builder.md` to avoid cross-branch conflicts.
 
-**Active tasks remaining:** 0  
+**Active tasks remaining:** 1 (TF-05)  
 **Recently completed:** TF-04 (map/sidebar taxon filter sync), TF-03 (remove gray/opacity from unselected filter rows), TF-01 (min height for image results), CON-INAT-07 (collapsible filters + scrollable results). Archived tasks: `docs/archive/phases/phase-1-inaturalist-completed.md`
 
 ---

@@ -10,37 +10,37 @@
 
 ## Quick Task Summary
 
-| ID | Status | Last Updated | Task Description | Notes |
-|----|--------|--------------|------------------|-------|
-| D20-01 | ⚪ Not Started | Feb 20, 2026 | Add collapse button to right sidebar — default open, stays collapsed until user manually re-expands | Manual collapse only; no auto-collapse on layer change. Screen real estate issue on laptops. |
-| D20-02 | ⚪ Not Started | Feb 20, 2026 | Add back button in right sidebar for ArcGIS feature service inspect/browse view | When user is in browse tab via "Inspect", show a back button to return to overview without requiring them to click "Overview" tab manually. |
-| D20-03 | ⚪ Not Started | Feb 20, 2026 | Make Map Layers accordion header bar clickable to expand/collapse (not just the caret icon) | Dan kept trying to click the heading to expand. Retain the caret but make the whole header row interactive. |
-| D20-04 | ⚪ Not Started | Feb 20, 2026 | Replace +/- symbols in Map Layers accordion with chevron (V / >) symbols | Plus/minus is not a clear expand/collapse affordance; chevron communicates directionality better. |
-| D20-05 | ⚪ Not Started | Feb 20, 2026 | Investigate and fix Dendra browser popup asking for device access | Observed live during session. We don't want to trigger any device-access permission dialogs. |
-| D20-06 | ⚪ Not Started | Feb 20, 2026 | Verify and fix custom polygon draw tool for Dendra | Will noted the tool needs to be properly implemented for Dendra. |
-| D20-07 | ⚪ Not Started | Feb 20, 2026 | Verify custom polygon draw tool is working consistently across all data sources | iNaturalist and ANiML confirmed working; Dendra suspected broken; audit the rest. |
-| D20-08 | ⚪ Not Started | Feb 20, 2026 | Fix GBIF "classes" filter — populate dropdown with valid options or remove it entirely | Currently empty dropdown in the GBIF species occurrence filter section. |
-| D20-09 | ⚪ Not Started | Feb 20, 2026 | Filter DataOne map to latest dataset version only (deduplicate by latest) | Current flat table shows all versions; 878 deduplicated datasets but one dataset alone shows 700 rows due to versioning. |
-| D20-10 | ⚪ Not Started | Feb 20, 2026 | Replace static layer overview text with actual ArcGIS feature service description text | Confirmed for Dendra layers; should apply broadly to all ArcGIS feature service layers. Feature service already has proper descriptions set by Kelly. |
-| D20-11 | ⚪ Not Started | Feb 20, 2026 | Fix legend-as-filter functionality for TNC ArcGIS feature service layers | Clicking legend items was supposed to filter polygons; Amy flagged it's broken. Apply to all layers that have distinct legend objects. |
-| D20-12 | ⚪ Not Started | Feb 20, 2026 | Implement GBIF media display using `media_json` column | Dan confirmed `media_json` column exists as a stringified JSON. Priority: medium. After DataOne work. iNaturalist already has media. |
-| D20-13 | ⚪ Not Started | Feb 20, 2026 | Add collapse button to left sidebar (lower priority) | Dan mentioned it as nice-to-have for full map exploration. Lower priority than right sidebar. |
-| D20-14 | ⚪ Not Started | Feb 20, 2026 | Add Python API code generation to export builder — especially for real-time Dendra data | In Export Builder, offer a "Get Python Code" option alongside download. Dendra = Python/API access. Static TNC services = shapefile download. |
-| D20-B01 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Update GBIF pipeline so the hosted data store layer stays in sync with source updates | Hosted layer is published and publicly available now; pipeline sync not yet wired up. GBIF is not live-updated so no huge rush. |
-| D20-B02 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Create dedicated DataOne point layer in ArcGIS data store (deduplicated, latest version only) with native clustering enabled | Mirrors what Dan did for GBIF. Will keep the underlying versioned data table; the new point layer is just latest spatial points. |
-| D20-B03 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Investigate why `taxonomic_class` field is empty for many GBIF records | Dan observed this in ArcGIS Enterprise. Backend data pipeline issue. |
-| D20-B04 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Reorder ArcGIS Enterprise layer categories per Amy's survey feedback | Order: Boundaries → Infrastructure → Species → Land Cover → Sensor Equipment → rest. Dan handling in layer management app. |
-| D20-B05 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Re-categorize layer sub-buckets per Amy's feedback — all layers in own bucket, no nested sub-buckets within categories | e.g., Fire has layers across nested sub-buckets; Amy wants them all in one flat bucket. Dan handling in layer management app. |
+| ID | Status | Last Updated | Task Description | Data Source | Notes |
+|----|--------|--------------|------------------|-------------|-------|
+| D20-01 | ⚪ Not Started | Feb 20, 2026 | Add collapse button to right sidebar — default open, stays collapsed until user manually re-expands | App-wide | Manual collapse only; no auto-collapse on layer change. Screen real estate issue on laptops. |
+| D20-02 | ⚪ Not Started | Feb 20, 2026 | Add back button in right sidebar for ArcGIS feature service inspect/browse view | TNC ArcGIS | When user is in browse tab via "Inspect", show a back button to return to overview without requiring them to click "Overview" tab manually. |
+| D20-03 | ⚪ Not Started | Feb 20, 2026 | Make Map Layers accordion header bar clickable to expand/collapse (not just the caret icon) | App-wide | Dan kept trying to click the heading to expand. Retain the caret but make the whole header row interactive. |
+| D20-04 | ⚪ Not Started | Feb 20, 2026 | Replace +/- symbols in Map Layers accordion with chevron (V / >) symbols | App-wide | Plus/minus is not a clear expand/collapse affordance; chevron communicates directionality better. |
+| D20-05 | ⚪ Not Started | Feb 20, 2026 | Investigate and fix Dendra browser popup asking for device access | Dendra | Observed live during session. We don't want to trigger any device-access permission dialogs. |
+| D20-06 | ⚪ Not Started | Feb 20, 2026 | Verify and fix custom polygon draw tool for Dendra | Dendra | Will noted the tool needs to be properly implemented for Dendra. |
+| D20-07 | ⚪ Not Started | Feb 20, 2026 | Verify custom polygon draw tool is working consistently across all data sources | All | iNaturalist and ANiML confirmed working; Dendra suspected broken; audit the rest. |
+| D20-08 | ⚪ Not Started | Feb 20, 2026 | Fix GBIF "classes" filter — populate dropdown with valid options or remove it entirely | GBIF | Currently empty dropdown in the GBIF species occurrence filter section. |
+| D20-09 | ⚪ Not Started | Feb 20, 2026 | Filter DataOne map to latest dataset version only (deduplicate by latest) | DataOne | Current flat table shows all versions; 878 deduplicated datasets but one dataset alone shows 700 rows due to versioning. |
+| D20-10 | ⚪ Not Started | Feb 20, 2026 | Replace static layer overview text with actual ArcGIS feature service description text | Dendra, TNC ArcGIS | Confirmed for Dendra layers; should apply broadly to all ArcGIS feature service layers. Feature service already has proper descriptions set by Kelly. |
+| D20-11 | ⚪ Not Started | Feb 20, 2026 | Fix legend-as-filter functionality for TNC ArcGIS feature service layers | TNC ArcGIS | Clicking legend items was supposed to filter polygons; Amy flagged it's broken. Apply to all layers that have distinct legend objects. |
+| D20-12 | ⚪ Not Started | Feb 20, 2026 | Implement GBIF media display using `media_json` column | GBIF | Dan confirmed `media_json` column exists as a stringified JSON. Priority: medium. After DataOne work. iNaturalist already has media. |
+| D20-13 | ⚪ Not Started | Feb 20, 2026 | Add collapse button to left sidebar (lower priority) | App-wide | Dan mentioned it as nice-to-have for full map exploration. Lower priority than right sidebar. |
+| D20-14 | ⚪ Not Started | Feb 20, 2026 | Add Python API code generation to export builder — especially for real-time Dendra data | Export Builder / Dendra | In Export Builder, offer a "Get Python Code" option alongside download. Dendra = Python/API access. Static TNC services = shapefile download. |
+| D20-B01 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Update GBIF pipeline so the hosted data store layer stays in sync with source updates | GBIF | Hosted layer is published and publicly available now; pipeline sync not yet wired up. GBIF is not live-updated so no huge rush. |
+| D20-B02 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Create dedicated DataOne point layer in ArcGIS data store (deduplicated, latest version only) with native clustering enabled | DataOne | Mirrors what Dan did for GBIF. Will keep the underlying versioned data table; the new point layer is just latest spatial points. |
+| D20-B03 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Investigate why `taxonomic_class` field is empty for many GBIF records | GBIF | Dan observed this in ArcGIS Enterprise. Backend data pipeline issue. |
+| D20-B04 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Reorder ArcGIS Enterprise layer categories per Amy's survey feedback | TNC ArcGIS | Order: Boundaries → Infrastructure → Species → Land Cover → Sensor Equipment → rest. Dan handling in layer management app. |
+| D20-B05 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Re-categorize layer sub-buckets per Amy's feedback — all layers in own bucket, no nested sub-buckets within categories | TNC ArcGIS | e.g., Fire has layers across nested sub-buckets; Amy wants them all in one flat bucket. Dan handling in layer management app. |
 
 ---
 
 ## Backlog (Future Consideration)
 
-| ID | Status | Last Updated | Task Description | Notes |
-|----|--------|--------------|------------------|-------|
-| D20-BL01 | 🔵 Backlog | Feb 20, 2026 | Plot multiple time series data streams on the same floating chart widget | Needs UX design thought — e.g., wind speed avg + wind speed max overlaid. May cause visualization issues at current paradigm. |
-| D20-BL02 | 🔵 Backlog | Feb 20, 2026 | Plot same data stream across multiple stations on the same chart for comparison | e.g., wind speed at Oak State, Sutter, and Team data streams simultaneously. Complements BL01. |
-| D20-BL03 | 🔵 Backlog | Feb 20, 2026 | Real-time weather-style sensor overlays on the map — wind direction arrows, rain gauge icons, temperature readings | Dan's idea: show live sensor readings inline on map (thermometer icon showing current temp at each station, animated wind arrows, rain/dry icon for rain gauges). More "live dashboard" feel. |
+| ID | Status | Last Updated | Task Description | Data Source | Notes |
+|----|--------|--------------|------------------|-------------|-------|
+| D20-BL01 | 🔵 Backlog | Feb 20, 2026 | Plot multiple time series data streams on the same floating chart widget | Dendra | Needs UX design thought — e.g., wind speed avg + wind speed max overlaid. May cause visualization issues at current paradigm. |
+| D20-BL02 | 🔵 Backlog | Feb 20, 2026 | Plot same data stream across multiple stations on the same chart for comparison | Dendra | e.g., wind speed at Oak State, Sutter, and Team data streams simultaneously. Complements BL01. |
+| D20-BL03 | 🔵 Backlog | Feb 20, 2026 | Real-time weather-style sensor overlays on the map — wind direction arrows, rain gauge icons, temperature readings | Dendra | Dan's idea: show live sensor readings inline on map (thermometer icon showing current temp at each station, animated wind arrows, rain/dry icon for rain gauges). More "live dashboard" feel. |
 
 ---
 
