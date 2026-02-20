@@ -6,9 +6,18 @@ import { useCatalog } from '../../../context/CatalogContext';
 import { useTNCArcGIS } from '../../../context/TNCArcGISContext';
 import { buildServiceUrl } from '../../../services/tncArcgisService';
 
+type DefinitionExpressionLayer = __esri.Layer & { definitionExpression?: string };
+
 function isFeatureLayer(layer: __esri.Layer | undefined): layer is FeatureLayer {
   if (!layer) return false;
   return (layer as FeatureLayer).type === 'feature';
+}
+
+function getLayerDefinitionExpression(layer: __esri.Layer | undefined): string | undefined {
+  const expression = (layer as DefinitionExpressionLayer | undefined)?.definitionExpression;
+  if (!expression || typeof expression !== 'string') return undefined;
+  const trimmed = expression.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
 }
 
 export function TNCArcGISTableOverlay() {
@@ -46,24 +55,21 @@ export function TNCArcGISTableOverlay() {
       const mapLayer = view.map.findLayerById(`v2-${tableLayerId}`) ?? view.map.findLayerById(tableLayerId);
       let tableLayer: FeatureLayer | null = null;
 
-      if (isFeatureLayer(mapLayer)) {
-        tableLayer = mapLayer;
-      } else {
-        // Some TNC layers are rendered as map-image layers, but can still expose queryable
-        // feature endpoints. Build a dedicated FeatureLayer for the table widget.
-        try {
-          const serviceUrl = buildServiceUrl(targetLayer.catalogMeta);
-          const fallbackLayer = new FeatureLayer({
-            id: `v2-table-overlay-${tableLayerId}`,
-            url: serviceUrl,
-            outFields: ['*'],
-          });
-          await fallbackLayer.load();
-          fallbackFeatureLayerRef.current = fallbackLayer;
-          tableLayer = fallbackLayer;
-        } catch {
-          tableLayer = null;
-        }
+      // Always use a dedicated table layer instance so FeatureTable lifecycle
+      // never mutates/destroys the live map layer.
+      try {
+        const serviceUrl = buildServiceUrl(targetLayer.catalogMeta);
+        const fallbackLayer = new FeatureLayer({
+          id: `v2-table-overlay-${tableLayerId}`,
+          url: serviceUrl,
+          outFields: ['*'],
+          definitionExpression: getLayerDefinitionExpression(mapLayer),
+        });
+        await fallbackLayer.load();
+        fallbackFeatureLayerRef.current = fallbackLayer;
+        tableLayer = fallbackLayer;
+      } catch {
+        tableLayer = null;
       }
 
       if (!tableLayer) {

@@ -3,7 +3,7 @@ import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import ImageryLayer from '@arcgis/core/layers/ImageryLayer';
 import MapImageLayer from '@arcgis/core/layers/MapImageLayer';
 import type { CatalogLayer } from '../../../types';
-import { buildServiceUrl } from '../../../services/tncArcgisService';
+import { buildServiceRootUrl, buildServiceUrl } from '../../../services/tncArcgisService';
 
 function sanitizeArcGisBaseUrl(serverBaseUrl: string): string {
   const trimmed = serverBaseUrl.trim().replace(/\/+$/, '');
@@ -20,6 +20,51 @@ function buildImageServerServiceUrl(meta: NonNullable<CatalogLayer['catalogMeta'
   const base = sanitizeArcGisBaseUrl(meta.serverBaseUrl);
   const path = meta.servicePath.trim().replace(/^\/+/, '').replace(/\/+$/, '');
   return `${base}/${path}/ImageServer`;
+}
+
+function getFeatureLayerUrlCandidates(meta: NonNullable<CatalogLayer['catalogMeta']>): string[] {
+  const candidates: string[] = [];
+  const seen = new Set<string>();
+  const pushCandidate = (url: string) => {
+    const normalized = url.trim().replace(/\/+$/, '');
+    if (!normalized || seen.has(normalized)) return;
+    seen.add(normalized);
+    candidates.push(normalized);
+  };
+
+  const preferredUrl = buildServiceUrl(meta);
+  pushCandidate(preferredUrl);
+
+  const serviceRootUrl = buildServiceRootUrl(meta).replace(/\/+$/, '');
+  if (meta.isMultiLayerService && Number.isInteger(meta.layerIdInService)) {
+    pushCandidate(`${serviceRootUrl}/${meta.layerIdInService}`);
+  }
+  pushCandidate(`${serviceRootUrl}/0`);
+
+  return candidates;
+}
+
+function attachFeatureLayerLoadFallback(
+  featureLayer: FeatureLayer,
+  candidates: string[],
+  layerName: string,
+): void {
+  if (candidates.length <= 1) return;
+  void featureLayer.load().catch(async () => {
+    for (const candidateUrl of candidates.slice(1)) {
+      try {
+        featureLayer.url = candidateUrl;
+        await featureLayer.load();
+        console.warn(`[TNCArcGIS] Recovered layer load via fallback URL: ${candidateUrl} (${layerName})`);
+        return;
+      } catch {
+        // Try the next candidate.
+      }
+    }
+    console.error(`[TNCArcGIS] Failed to load FeatureLayer after URL fallbacks (${layerName})`, {
+      attemptedUrls: candidates,
+    });
+  });
 }
 
 /** Build a map-ready ArcGIS layer for TNC catalog layers. */
@@ -41,54 +86,65 @@ export function createTNCArcGISLayer(options: {
 
   // FeatureServer layers can use FeatureLayer directly with SQL filtering.
   if (meta.hasFeatureServer) {
-    return new FeatureLayer({
+    const featureLayerUrlCandidates = getFeatureLayerUrlCandidates(meta);
+    const featureLayer = new FeatureLayer({
       id,
-      url: buildServiceUrl(meta),
+      url: featureLayerUrlCandidates[0],
       visible,
       outFields: ['*'],
       definitionExpression,
       // GBIF has very dense points; use high-contrast symbols and clustering
       // so records are visually obvious at preserve zoom levels.
-      renderer: isGbifLayer ? {
-        type: 'simple',
-        symbol: {
-          type: 'simple-marker',
-          style: 'circle',
-          size: 7,
-          color: [22, 163, 74, 0.85],
-          outline: {
-            color: [255, 255, 255, 1],
-            width: 1.2,
+      // IMPORTANT: Only spread renderer/featureReduction when actually needed.
+      // Passing `renderer: undefined` explicitly overrides the service default
+      // renderer, causing non-GBIF layers to render nothing.
+      ...(isGbifLayer ? {
+        renderer: {
+          type: 'simple' as const,
+          symbol: {
+            type: 'simple-marker' as const,
+            style: 'circle' as const,
+            size: 7,
+            color: [22, 163, 74, 0.85],
+            outline: {
+              color: [255, 255, 255, 1],
+              width: 1.2,
+            },
           },
         },
-      } : undefined,
-      featureReduction: isGbifLayer ? {
-        type: 'cluster',
-        clusterRadius: '48px',
-        labelingInfo: [{
-          deconflictionStrategy: 'none',
-          labelExpressionInfo: { expression: 'Text($feature.cluster_count, "#,###")' },
-          symbol: {
-            type: 'text',
-            color: 'white',
-            haloColor: [0, 0, 0, 0.25],
-            haloSize: 1,
-            font: { family: 'Arial', size: 11, weight: 'bold' },
-          },
-          labelPlacement: 'center-center',
-        }],
-      } : undefined,
+        featureReduction: {
+          type: 'cluster' as const,
+          clusterRadius: '48px',
+          labelingInfo: [{
+            deconflictionStrategy: 'none' as const,
+            labelExpressionInfo: { expression: 'Text($feature.cluster_count, "#,###")' },
+            symbol: {
+              type: 'text' as const,
+              color: 'white',
+              haloColor: [0, 0, 0, 0.25],
+              haloSize: 1,
+              font: { family: 'Arial', size: 11, weight: 'bold' },
+            },
+            labelPlacement: 'center-center' as const,
+          }],
+        },
+      } : {}),
     });
+    attachFeatureLayerLoadFallback(featureLayer, featureLayerUrlCandidates, layer.name);
+    return featureLayer;
   }
 
   // MapServer fallback: render as MapImageLayer and apply the filter to the sublayer.
   if (meta.hasMapServer) {
+    const sublayerId = meta.isMultiLayerService
+      ? (Number.isInteger(meta.layerIdInService) ? meta.layerIdInService : 0)
+      : 0;
     return new MapImageLayer({
       id,
       url: buildMapServerServiceUrl(meta),
       visible,
       sublayers: [{
-        id: Number.isInteger(meta.layerIdInService) ? meta.layerIdInService! : 0,
+        id: sublayerId,
         visible: true,
         definitionExpression,
       }],

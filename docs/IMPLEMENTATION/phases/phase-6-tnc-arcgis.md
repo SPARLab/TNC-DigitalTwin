@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 13 / 22 tasks (CON-ARCGIS-01, 02, 03, 04, 05, 08, 09, 10, 11, 12, 14, 6.17, 6.20 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
+**Progress:** 14 / 22 tasks (CON-ARCGIS-01, 02, 03, 04, 05, 08, 09, 10, 11, 12, 14, 15, 6.17, 6.20 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry) ✅ complete  
@@ -37,7 +37,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | CON-ARCGIS-05 | 🟢 Complete | Feb 19, 2026 | Fix iframe to show user-friendly TNC Hub page instead of raw service page | Hub search URL preferred; REST fallback |
 | CON-ARCGIS-06 | ⚪ Not Started | Feb 18, 2026 | Bug: fix Union Pacific Railroad layer (layer ID 0 not found) | Medium priority bug |
 | CON-ARCGIS-07 | ⚪ Not Started | Feb 18, 2026 | Design multi-layer feature service UX follow-up | Low priority / follow-up |
-| CON-ARCGIS-15 | ⚪ Not Started | Feb 19, 2026 | Bug: fix feature service layer rendering — layers not drawing on map | High priority; legend loads but geometry not rendering; affects JLDP invasives ice plant mats, tree-dominated vegetation, oil seeps, most land cover layers |
+| CON-ARCGIS-15 | 🟢 Complete | Feb 19, 2026 | Bug: fix feature service layer rendering — layers not drawing on map | Root cause: `renderer: undefined` in FeatureLayer constructor overrode service default; fixed via conditional spread so non-GBIF layers omit renderer/featureReduction and use service symbology |
 | **CON-ARCGIS-08** | 🟢 Complete | Feb 19, 2026 | Left sidebar: hover-visible scrollbar pill | Implemented: custom overlay thumb (no gutter); visible on scroll/hover |
 | **CON-ARCGIS-09** | 🟢 Complete | Feb 19, 2026 | Left sidebar: fix layer row clipping | ServiceGroup: w-full→mx-1 min-w-0; consistent right margin |
 | **CON-ARCGIS-10** | 🟢 Complete | Feb 19, 2026 | Right sidebar: relabel hierarchy block | Feature Service (bold name); Current Layer; remove "Catalog: TNC ArcGIS…" |
@@ -560,11 +560,23 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - CORS, authentication, or network errors when fetching features
 
 **Acceptance Criteria:**
-- [ ] JLDP invasives ice plant mats (Land Cover) renders on map
-- [ ] Tree-dominated vegetation (Land Cover) renders on map
-- [ ] Oil seeps (Coastal Marine Data) renders on map
-- [ ] Other land cover and feature service layers render as expected
-- [ ] Legend and layer geometry stay in sync
+- [x] JLDP invasives ice plant mats (Land Cover) renders on map
+- [x] Tree-dominated vegetation (Land Cover) renders on map
+- [x] Oil seeps (Coastal Marine Data) renders on map
+- [x] Other land cover and feature service layers render as expected
+- [x] Legend and layer geometry stay in sync
+
+**Implementation Notes (Feb 19, 2026):**
+- Root cause: many single-row FeatureServer catalog rows contain non-zero `layer_id` values that do not map to a real sublayer endpoint, causing `FeatureLayer` load/layerview failures (e.g., `/FeatureServer/14` when service exposes layer `0`).
+- Fix applied in URL resolution: for non-multi-layer services, force layer endpoint `/0`; for explicit multi-layer services, continue honoring `layerIdInService`.
+- Legend target layer ID now uses the same rule so legend + map geometry stay aligned.
+- Additional hardening applied: map-layer factory now attempts fallback FeatureServer URLs when initial layer load fails (`preferred`, explicit sublayer, `/0`) and logs recovery attempts.
+- Table overlay isolation applied: `TNCArcGISTableOverlay` always uses a dedicated throwaway `FeatureLayer` for `FeatureTable` to avoid mutating/destroying live map layer instances.
+
+**Resolution (Feb 19, 2026):**
+- **Actual root cause:** GBIF layer customization introduced `renderer: isGbifLayer ? {...} : undefined` and `featureReduction: isGbifLayer ? {...} : undefined` in the FeatureLayer constructor. For non-GBIF layers, passing `renderer: undefined` explicitly overrides the ArcGIS service default renderer, so features load but draw with no symbology.
+- **Fix:** Use conditional spread `...(isGbifLayer ? { renderer, featureReduction } : {})` so non-GBIF layers omit these properties entirely; ArcGIS then auto-fetches the service default renderer.
+- **Files:** `src/v2/components/Map/layers/tncArcgisLayer.ts`
 
 **Estimated Time:** 4–8 hours (investigation-dependent)
 
@@ -712,6 +724,9 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 19, 2026 | CON-ARCGIS-15 | **Complete.** Root cause: `renderer: undefined` passed explicitly in FeatureLayer constructor overrode service default renderer for non-GBIF layers. Fixed via conditional spread so renderer/featureReduction omitted when not GBIF; ArcGIS auto-fetches service symbology. Removed diagnostic logging from useMapLayers. Files: `tncArcgisLayer.ts`, `useMapLayers.ts`. | Codex |
+| Feb 19, 2026 | CON-ARCGIS-15 | **In progress (handoff update).** Added FeatureLayer URL fallback loading in map layer factory and isolated table overlay lifecycle to dedicated FeatureLayer instances; regression still unresolved and requires fresh-window investigation with runtime map-layer diagnostics. Files: `src/v2/components/Map/layers/tncArcgisLayer.ts`, `src/v2/components/FloatingWidgets/TNCArcGISTableOverlay/TNCArcGISTableOverlay.tsx`. | Codex |
+| Feb 19, 2026 | CON-ARCGIS-15 | **In progress.** Root cause identified and patched: single-layer services now resolve to `/FeatureServer/0` (and `/MapServer` sublayer `0`) unless explicitly marked multi-layer; legend lookup now follows same layer-ID rule. Files: `src/v2/services/tncArcgisService.ts`, `src/v2/components/Map/layers/tncArcgisLayer.ts`. | Codex |
 | Feb 19, 2026 | CON-ARCGIS-15 | **Added.** Bug: fix feature service layer rendering — legend loads but layers (JLDP invasives ice plant mats, tree-dominated vegetation, oil seeps, most land cover) not drawing on map. | — |
 | Feb 19, 2026 | CON-ARCGIS-03, 6.17 | **Complete.** ArcGIS FeatureTable overlay for TNC layers. Browse "Inspect Current Layer" card with row/column summary + Open Table Overlay; hover-revealed Inspect on Overview layer rows; TNCArcGISTableOverlay + fallback FeatureLayer for MapServer layers. | — |
 | Feb 19, 2026 | CON-ARCGIS-14 | **Complete.** Unified Service Workspace: service/layer click auto-selects sublayer; map + Map Layers widget sync with resolved sublayer; right-sidebar layer list with amber active highlight, pin/eye icons, inline pin/unpin; "Inspect Current Layer" CTA. Files: ServiceGroup, useMapLayers, MapLayersWidget, TNCArcGISOverviewTab, LayerContext. | — |
