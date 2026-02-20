@@ -40,6 +40,7 @@ Set up the V2 application shell, routing, state management, and shared component
 | CON-GL-07 | 🟢 Complete | Feb 18, 2026 (implemented) | Fix map and sidebar filter sync drift bug | Added active-view reconciliation in `LayerContext` to keep sidebar filters bound to the currently visible/valid child view |
 | CON-GL-08 | 🟢 Complete | Feb 18, 2026 (implemented) | Guide user to filter panel when "New View" is clicked | New View now auto-activates the created child view and triggers Edit Filters guidance to open/hydrate Browse filters |
 | 0.9 | 🟢 Complete | Feb 19, 2026 | Dynamic Layer Registry from Data Catalog Service | `useCatalogRegistry` fetches from Dangermond_Preserve_Data_Catalog FeatureServer; left sidebar populated dynamically; layers without adapters show generic placeholder in right sidebar |
+| D20-01 | ⚪ Not Started | Feb 20, 2026 | Add collapse button to right sidebar — default open, stays collapsed until user manually re-expands | Manual collapse only; no auto-collapse on layer change. Screen real estate issue on laptops. Source: Dan feedback Feb 20. |
 
 **Note:** Tasks `0.1` through `0.7` appear to be already implemented and are intentionally removed from active tracking.
 
@@ -61,6 +62,7 @@ Set up the V2 application shell, routing, state management, and shared component
 | CON-GL-07 | Map/sidebar filter sync bug fix | 🟢 Complete | Codex | Added central active-view reconciliation in `LayerContext` so child-view visibility/removal cannot leave sidebar bound to a stale view ID |
 | CON-GL-08 | Auto-open or guide to filters on New View | 🟢 Complete | Codex | New view creation now activates the created view and fires `requestEditFilters()` so users are guided to filters immediately |
 | 0.9 | Dynamic Layer Registry from Data Catalog Service | 🟢 Complete | — | `useCatalogRegistry.ts` fetches categories/datasets from Dangermond_Preserve_Data_Catalog; CatalogContext exposes to LeftSidebar; layerRegistry.ts provides icon mapping + external layers only |
+| D20-01 | Right sidebar collapse button | ⚪ Not Started | — | Default open; manual collapse only; no auto-reopen on layer change; user must manually re-expand. Dan feedback Feb 20 — screen real estate on laptops. |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -515,6 +517,28 @@ interface Bookmark {
 
 ---
 
+### D20-01: Right Sidebar Collapse Button
+
+**Goal:** Add a collapse button to the right sidebar so users can maximize map/legend real estate on smaller screens (e.g., laptops).
+
+**Source:** Dan feedback, Feb 20, 2026 — `docs/feedback/meeting-notes/extracted-tasks-dan-feedback-feb-20-2026.md`
+
+**Acceptance Criteria:**
+- [ ] Right sidebar has a collapse button (e.g., chevron or similar affordance)
+- [ ] Default state: sidebar open
+- [ ] When user collapses: sidebar stays collapsed until user manually re-expands
+- [ ] No auto-reopen on layer change, tab switch, or other app events
+- [ ] Collapsed state persists across session (localStorage or equivalent) — user preference respected
+- [ ] When collapsed: a small expand affordance (e.g., tab or button) remains visible so user can re-expand
+
+**Design Decision (from meeting):** Default open. Once collapsed by user, do not auto-reopen. User must intentionally re-expand.
+
+**Files to Modify:**
+- `src/v2/components/RightSidebar/` (or equivalent right sidebar shell)
+- Layout component that hosts the right sidebar
+
+---
+
 ### 0.7: Implement Error Handling Components
 
 **Goal:** Create reusable error handling components that all phases will use.
@@ -646,6 +670,7 @@ interface Bookmark {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 20, 2026 | D20-01 | Added right sidebar collapse button task from Dan feedback. Default open; manual collapse only; no auto-reopen. Phase-0 is appropriate (app-wide layout). | Will |
 | Feb 19, 2026 | CON-GL-02 | **Draw Custom Polygon refinements.** Removed "No polygon drawn..." status text. Added expand/collapse (chevron) for visual consistency with Date Range, Species, Cameras; expanded by default. Documented styling standard in phase-0. | Will + Claude |
 | Feb 19, 2026 | 0.9 | Documented Task 0.9 (Dynamic Layer Registry) as complete. Implementation in `useCatalogRegistry.ts` + `CatalogContext.tsx`; left sidebar populated from Data Catalog FeatureServer. Parallel branches unblocked. | Claude |
 | Feb 18, 2026 | CON-GL-07 | Fixed intermittent Map Layers ↔ right-sidebar filter drift by reconciling `activeLayer.viewId` against pinned child views after visibility/view changes, ensuring filter sync/name updates always target the visible/valid child view. | Codex |

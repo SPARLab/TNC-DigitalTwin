@@ -1,7 +1,7 @@
 # Phase 10: DroneDeploy Imagery
 
 **Status:** 🟢 Complete  
-**Progress:** 3 / 3 tasks (completed tasks 10.1–10.6, 10.8–10.11 archived; CON-DRONE-01, CON-DRONE-02, 10.7 complete)  
+**Progress:** 4 / 4 tasks (completed tasks 10.1–10.6, 10.8–10.11 archived; CON-DRONE-01, CON-DRONE-02, 10.7, TF-10 complete)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-10-dronedeploy-completed.md`  
 **Branch:** `v2/dronedeploy`  
 **Depends On:** Phase 0 (Foundation)  
@@ -13,7 +13,7 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| TF-10 | ⚪ Not Started | Feb 20, 2026 | Add gray background to DroneDeploy project cards | Low priority; visual polish for project switcher view. Source: Trisalyn QA Feb 20 |
+| TF-10 | 🟢 Complete | Feb 20, 2026 | Add gray background to DroneDeploy project cards | Implemented in `ProjectListView`: project cards now use gray default background (`bg-gray-50`) with slightly darker hover state (`bg-gray-100`) for visual polish in project switcher view. Source: Trisalyn QA Feb 20 |
 | CON-DRONE-01 | 🟢 Complete | Feb 19, 2026 | Bug: drone imagery does not change when toggling between flights | Fixed: single-flight replacement, auto-load default, WMTS 404 fallback |
 | CON-DRONE-02 | 🟢 Complete | Feb 19, 2026 | Simplify project flights UI: default name/date, expand for metadata | Card click syncs map + toggles metadata; caret-only disclosure; animated expand/collapse |
 | 10.7 | 🟢 Complete | Feb 19, 2026 | Render flight footprints as map polygons | Skipped / not implementing per user decision |
@@ -305,6 +305,7 @@ Validated with sample `wmts_item_id` values from live records.
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 20, 2026 | TF-10 | **Completed project card background polish:** DroneDeploy browse project cards now use a subtle gray default background (`bg-gray-50`) with a darker gray hover (`bg-gray-100`) to improve visual separation in the project switcher view. File: ProjectListView.tsx | Codex |
 | Feb 16, 2026 | 10.3 | **Left-sidebar project click loads imagery:** LayerRow project select now calls DroneDeploy context (setFlightLoaded, setSelectedFlightId, requestFlyToFlight) so WMTS tiles load on map when selecting a project from left sidebar; previously only right-sidebar project/flight clicks triggered load. Also: Browse tab gating uses adapter.id; default flight prefers valid WMTS; merge conflicts resolved. Files: LayerRow.tsx, RightSidebar.tsx, DroneDeploySidebar.tsx, useMapBehavior.ts | Claude |
 | Feb 16, 2026 | 10.3 | DroneDeploy left sidebar UX refinements: row click anywhere on DroneDeploy layer auto-expands projects panel (no chevron-only click); 300ms CSS transition for smooth expand/collapse animation (max-height + opacity). Files: LayerRow.tsx | Claude |
 | Feb 16, 2026 | — | Created phase document | Will + Claude |
