@@ -1,12 +1,12 @@
 # Phase 9: GBIF Species Occurrences
 
 **Status:** 🟡 In Progress  
-**Progress:** 9 / 11 tasks  
+**Progress:** 10 / 12 tasks  
 **Branch:** `v2/gbif`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
 
-**Suggested next task (new chat):** 9.11 Improve GBIF map visual performance — or 9.8 Wire Save View flow (deferred).
+**Suggested next task (new chat):** 9.8 Wire Save View flow (deferred) — or 9.12 Backend GBIF map aggregation (deferred to v2.1+).
 
 ---
 
@@ -24,7 +24,8 @@
 | 9.8 | ⚪ Not Started | — | Wire Save View flow in detail | Deferred; requires `LayerContext` GBIF filter persistence + view naming wiring |
 | 9.9 | ⚪ Not Started | — | Evaluate geographic extent expansion | Deferred to follow-up after preserve-only stability and stakeholder review |
 | 9.10 | 🟢 Complete | 2026-02-19T18:00:00-08:00 | Fix map rendering + add card thumbnails | Map: explicit `gbifLayer.ts` + `dataset-178` in `createMapLayer` switch (bypasses TNC registration); Cards: show `primary_image_url` when present |
-| 9.11 | ⚪ Not Started | — | Improve GBIF map visual performance | At ~300k+ occurrences, client-side clustering can feel sluggish. Explore: backend pre-aggregation (zoom-level bins), vector tiles, or viewport-based query limits to achieve smooth zoom/pan and fewer rendered clusters |
+| 9.11 | 🟢 Complete | 2026-02-19T17:00:00-08:00 | Improve GBIF map visual performance | Client-side: viewport SQL bounds + zoom-level sampling (`MOD(id, n)`); fixed webMercatorUtils import. Backend pre-aggregation recommended for smooth 323k+ scale — see 9.12 |
+| 9.12 | ⚪ Deferred | — | Backend GBIF map aggregation | For buttery zoom/pan at ~323k+ occurrences: pre-aggregated clusters by zoom, vector tiles, or viewport-capped queries. Deferred to v2.1+ |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -260,6 +261,22 @@ Implement the GBIF (Global Biodiversity Information Facility) species occurrence
 
 **Notes:** Current frontend optimizations (zoom-bucketed cluster radius, compact K/M/B labels, minimal `outFields`) help but have a ceiling. Backend aggregation is the recommended path for buttery interaction at full dataset scale.
 
+**Implementation (2026-02-19):**
+- Viewport SQL bounds using `decimal_longitude` / `decimal_latitude` from map extent (20% buffer)
+- Zoom-bucket sampling via `MOD(id, n)` for far-zoomed views
+- Backend pre-aggregation deferred to task 9.12 (v2.1+)
+
+---
+
+### 9.5 Enhancement: GBIF API Media Fallback (2026-02-19)
+
+**Goal:** Show photos when ArcGIS `primary_image_url` is null — many specimen records lack images in the FeatureServer.
+
+**Implementation:**
+- `gbifService.getMediaUrlsByGbifKey(gbifKey)` fetches from `api.gbif.org/v1/occurrence/{gbifKey}`
+- Detail view: if no `primaryImageUrl` but `gbifKey` exists, fetches media; shows loading state; multi-image thumbnail strip when available
+- Files: `gbifService.ts`, `GBIFOccurrenceDetailView.tsx`
+
 ---
 
 ### 9.10: Fix Map Rendering + Add Card Thumbnails
@@ -352,3 +369,6 @@ Record-level overlap with iNaturalist is still unquantified in this phase implem
 | Feb 19, 2026 | 9.1-9.7 | Implemented GBIF ArcGIS integration: adapter override for `dataset-178`, overview/browse/detail UI, server-side filters/pagination, map click-to-detail behavior | Cursor |
 | Feb 19, 2026 | 9.10 | Fixed map rendering (explicit `gbifLayer.ts` + `dataset-178` in `createMapLayer`); added card thumbnails from `primary_image_url` | Cursor |
 | Feb 19, 2026 | 9.7, 9.11 | Enhanced clustering: zoom-bucketed radius, compact K/M/B labels, minimal outFields; added task 9.11 for backend aggregation / visual performance | Cursor |
+| Feb 19, 2026 | 9.11 | Started viewport-based performance pass: map extent-limited SQL + scale-based sampling (`MOD(id, n)`) in GBIF map behavior | Cursor |
+| Feb 19, 2026 | 9.11 | Complete: viewport + sampling in place; fixed webMercatorUtils import; added task 9.12 for backend aggregation (deferred) | Cursor |
+| Feb 19, 2026 | 9.5 | GBIF API media fallback: fetch occurrence media when ArcGIS lacks primary_image_url; hero + thumbnail strip in detail view | Cursor |

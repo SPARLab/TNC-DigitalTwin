@@ -1,5 +1,6 @@
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Calendar, ExternalLink, MapPin, User, Database } from 'lucide-react';
-import type { GBIFOccurrence } from '../../../../services/gbifService';
+import { gbifService, type GBIFOccurrence } from '../../../../services/gbifService';
 
 interface GBIFOccurrenceDetailViewProps {
   occurrence: GBIFOccurrence;
@@ -30,6 +31,48 @@ export function GBIFOccurrenceDetailView({ occurrence, onBack, onViewOnMap }: GB
     ? `${occurrence.coordinates[1].toFixed(4)}, ${occurrence.coordinates[0].toFixed(4)}`
     : 'Coordinates unavailable';
   const issuesCount = parseIssuesCount(occurrence.issuesJson);
+  const [fallbackMediaUrls, setFallbackMediaUrls] = useState<string[]>([]);
+  const [fallbackMediaLoading, setFallbackMediaLoading] = useState(false);
+  const [heroMediaUrl, setHeroMediaUrl] = useState<string | null>(occurrence.primaryImageUrl);
+
+  useEffect(() => {
+    let cancelled = false;
+    const controller = new AbortController();
+
+    const run = async () => {
+      if (occurrence.primaryImageUrl || !occurrence.gbifKey) {
+        setFallbackMediaUrls([]);
+        return;
+      }
+
+      setFallbackMediaLoading(true);
+      try {
+        const urls = await gbifService.getMediaUrlsByGbifKey(occurrence.gbifKey, controller.signal);
+        if (!cancelled) setFallbackMediaUrls(urls);
+      } catch {
+        if (!cancelled) setFallbackMediaUrls([]);
+      } finally {
+        if (!cancelled) setFallbackMediaLoading(false);
+      }
+    };
+
+    void run();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [occurrence.id, occurrence.gbifKey, occurrence.primaryImageUrl]);
+
+  const mediaUrls = useMemo(() => {
+    const combined = [occurrence.primaryImageUrl, ...fallbackMediaUrls].filter(
+      (value): value is string => typeof value === 'string' && value.trim().length > 0,
+    );
+    return Array.from(new Set(combined));
+  }, [occurrence.primaryImageUrl, fallbackMediaUrls]);
+
+  useEffect(() => {
+    setHeroMediaUrl(mediaUrls[0] ?? null);
+  }, [mediaUrls, occurrence.id]);
 
   return (
     <div id="gbif-detail-view" className="space-y-4">
@@ -43,20 +86,46 @@ export function GBIFOccurrenceDetailView({ occurrence, onBack, onViewOnMap }: GB
       </button>
 
       <div id="gbif-detail-hero" className="w-full aspect-[4/3] bg-slate-100 rounded-lg overflow-hidden">
-        {occurrence.primaryImageUrl ? (
+        {heroMediaUrl ? (
           <img
             id="gbif-detail-hero-image"
-            src={occurrence.primaryImageUrl}
+            src={heroMediaUrl}
             alt={displayName}
             className="w-full h-full object-cover"
           />
         ) : (
           <div id="gbif-detail-hero-empty" className="w-full h-full flex flex-col items-center justify-center text-gray-400">
             <Database className="w-12 h-12 mb-2" />
-            <span className="text-sm">No media available</span>
+            <span id="gbif-detail-hero-empty-text" className="text-sm">
+              {fallbackMediaLoading ? 'Loading media...' : 'No media available'}
+            </span>
           </div>
         )}
       </div>
+
+      {mediaUrls.length > 1 && (
+        <div id="gbif-detail-media-strip" className="flex items-center gap-2 overflow-x-auto pb-1">
+          {mediaUrls.map((mediaUrl, index) => (
+            <button
+              id={`gbif-detail-media-thumb-button-${index}`}
+              key={mediaUrl}
+              onClick={() => setHeroMediaUrl(mediaUrl)}
+              className={`w-14 h-14 rounded-md overflow-hidden border transition-colors ${
+                heroMediaUrl === mediaUrl ? 'border-emerald-600' : 'border-gray-200 hover:border-gray-300'
+              }`}
+              aria-label={`View media ${index + 1}`}
+            >
+              <img
+                id={`gbif-detail-media-thumb-image-${index}`}
+                src={mediaUrl}
+                alt={`${displayName} thumbnail ${index + 1}`}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </button>
+          ))}
+        </div>
+      )}
 
       <div id="gbif-detail-name-block">
         <h3 id="gbif-detail-name" className="text-lg font-semibold text-gray-900">

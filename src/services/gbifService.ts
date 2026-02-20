@@ -46,6 +46,7 @@ export interface GBIFQueryResponse {
 
 const BASE_URL =
   'https://dangermondpreserve-spatial.com/server/rest/services/Dangermond_Preserve_Species_Occurrences/FeatureServer/0';
+const GBIF_API_BASE_URL = 'https://api.gbif.org/v1';
 
 const SEARCH_FIELDS = ['scientific_name', 'species', 'genus', 'family', 'dataset_name', 'recorded_by'];
 
@@ -147,6 +148,21 @@ async function queryDistinct(fieldName: string, limit = 200): Promise<string[]> 
   return Array.from(new Set<string>(values)).sort((a: string, b: string) => a.localeCompare(b));
 }
 
+function extractGbifMediaUrls(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const urls = raw
+    .map((entry) => {
+      if (!entry || typeof entry !== 'object') return null;
+      const candidate = (entry as { identifier?: unknown; references?: unknown }).identifier;
+      if (typeof candidate === 'string' && /^https?:\/\//i.test(candidate)) return candidate;
+      const references = (entry as { references?: unknown }).references;
+      if (typeof references === 'string' && /^https?:\/\//i.test(references)) return references;
+      return null;
+    })
+    .filter((value): value is string => !!value);
+  return Array.from(new Set(urls));
+}
+
 class GBIFService {
   buildWhereClause(filters: GBIFFilters): string {
     return buildWhereClause(filters);
@@ -228,6 +244,17 @@ class GBIFService {
       basisOptions,
       datasetNames,
     };
+  }
+
+  async getMediaUrlsByGbifKey(gbifKey: string, signal?: AbortSignal): Promise<string[]> {
+    const trimmedKey = gbifKey.trim();
+    if (!trimmedKey) return [];
+
+    const response = await fetch(`${GBIF_API_BASE_URL}/occurrence/${encodeURIComponent(trimmedKey)}`, { signal });
+    if (!response.ok) return [];
+
+    const json = (await response.json()) as { media?: unknown };
+    return extractGbifMediaUrls(json.media);
   }
 }
 
