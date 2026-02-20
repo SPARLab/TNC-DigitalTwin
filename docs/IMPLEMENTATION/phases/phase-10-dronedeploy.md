@@ -1,7 +1,7 @@
 # Phase 10: DroneDeploy Imagery
 
-**Status:** 🟡 In Progress  
-**Progress:** 2 / 3 tasks (completed tasks 10.1–10.6, 10.8–10.11 archived; CON-DRONE-01, CON-DRONE-02 complete)  
+**Status:** 🟢 Complete  
+**Progress:** 3 / 3 tasks (completed tasks 10.1–10.6, 10.8–10.11 archived; CON-DRONE-01, CON-DRONE-02, 10.7 complete)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-10-dronedeploy-completed.md`  
 **Branch:** `v2/dronedeploy`  
 **Depends On:** Phase 0 (Foundation)  
@@ -15,7 +15,7 @@
 |----|--------|---------------------------|------------------|-------|
 | CON-DRONE-01 | 🟢 Complete | Feb 19, 2026 | Bug: drone imagery does not change when toggling between flights | Fixed: single-flight replacement, auto-load default, WMTS 404 fallback |
 | CON-DRONE-02 | 🟢 Complete | Feb 19, 2026 | Simplify project flights UI: default name/date, expand for metadata | Card click syncs map + toggles metadata; caret-only disclosure; animated expand/collapse |
-| 10.7 | ⚪ Not Started | — | Render flight footprints as map polygons | Show `plan_geometry` / `project_bounds` as clickable map polygons |
+| 10.7 | 🟢 Complete | Feb 19, 2026 | Render flight footprints as map polygons | Skipped / not implementing per user decision |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -204,7 +204,9 @@ Implement the DroneDeploy drone imagery browse experience in the right sidebar. 
 
 **Goal:** Show drone flight coverage areas on the map as clickable polygon outlines, separate from the actual imagery layers.
 
-**Acceptance Criteria:**
+**Resolution (Feb 19, 2026):** Task marked complete without implementation. Skipped per user decision — flight footprint polygons will not be built.
+
+**Acceptance Criteria (not implemented):**
 - [ ] Parse `plan_geometry` WKT POLYGON into ArcGIS geometry
 - [ ] Render flight footprints as semi-transparent polygon outlines on map
 - [ ] Color-code by project or by recency
@@ -319,3 +321,4 @@ Validated with sample `wmts_item_id` values from live records.
 | Feb 19, 2026 | CON-DRONE-02 | **Implemented first UI pass in project-detail flights list:** default row now emphasizes flight name + capture date, keeps visibility toggle in collapsed state, and moves WMTS/plan metadata, links, and draw-order controls into an explicit expand/collapse metadata panel with keyboard-accessible disclosure state. File: FlightDetailView.tsx | Codex |
 | Feb 19, 2026 | CON-DRONE-02 | **Refined interaction model per feedback:** clicking a flight card now both syncs imagery selection to map and toggles that card’s metadata panel; removed `Selected` text label and removed per-row `Visible/Hidden` button; disclosure is now a top-right caret indicator in each card header. Files: FlightDetailView.tsx, DroneDeploySidebar.tsx | Codex |
 | Feb 19, 2026 | CON-DRONE-02 | **Applied UI polish:** added animated expand/collapse transition for flight metadata panels and removed in-card up/down draw-order controls from metadata content. Files: FlightDetailView.tsx, DroneDeploySidebar.tsx | Codex |
+| Feb 19, 2026 | 10.7 | **Marked complete without implementation:** flight footprint polygons skipped per user decision. Phase progress 3/3. | Claude |
