@@ -11,6 +11,14 @@
 import type { CatalogLayer } from '../types';
 
 /**
+ * Display name overrides for catalog categories. Used when the API name
+ * should differ from the user-facing label (e.g., Trisalyn QA Feb 20).
+ */
+export const CATEGORY_DISPLAY_NAME_OVERRIDE: Record<string, string> = {
+  'Research and Sensor Equipment': 'Field Sensors',
+};
+
+/**
  * Map catalog category *names* (exactly as returned by the FeatureServer)
  * to Lucide icon names. Falls back to 'Folder' if unmapped.
  */

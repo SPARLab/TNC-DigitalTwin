@@ -18,7 +18,7 @@
 | TF-03 | ⚪ Not Started | Feb 20, 2026 | Don't gray out species options in Filter Species dropdown; gray = unavailable, but they're just unselected | iNaturalist | High | Communicates incorrect affordance to user |
 | TF-04 | ⚪ Not Started | Feb 20, 2026 | Fix map/right-sidebar desync: selecting taxon in legend + filtering by species results in map not updating | iNaturalist | High | Discovered live in QA session |
 | TF-05 | ⚪ Not Started | Feb 20, 2026 | Standardize filter control ordering across all data sources (date range first, then custom draw polygon) | All | High | Order differs between Camera Traps and iNaturalist |
-| TF-06 | ⚪ Not Started | Feb 20, 2026 | Rename left sidebar group from "Sensor Equipment" to "Field Sensors" | Dendra | Low | Trisalyn verbally confirmed "Field Sensors" is preferred |
+| TF-06 | 🟢 Complete | Feb 20, 2026 | Rename left sidebar group from "Sensor Equipment" to "Field Sensors" | Dendra | Low | Implemented via CATEGORY_DISPLAY_NAME_OVERRIDE; left sidebar shows "Field Sensors" |
 | TF-07 | ⚪ Not Started | Feb 20, 2026 | Remove "dangermond_" prefix from Dendra station tooltip titles (tooltip says "dangermond_Oaks", sidebar says "Oaks") | Dendra | Medium | Inconsistency; investigate source of prefix |
 | TF-08 | ⚪ Not Started | Feb 20, 2026 | Add collapse/hide caret to Map Layers widget | Map Layers Widget | Medium | Trisalyn had to manually scroll; no clear affordance to collapse |
 | TF-09 | ⚪ Not Started | Feb 20, 2026 | GBIF performance: implement grouping/clustering strategy for 328k data points | GBIF | Medium | Dan and Will already discussing; not a solo task |
@@ -95,9 +95,12 @@ The order of filter controls (e.g., date range, custom draw polygon) differs bet
 
 **Last Updated:** Feb 20, 2026  
 **Data Source:** Dendra  
-**Priority:** Low
+**Priority:** Low  
+**Status:** 🟢 Complete
 
 During the walkthrough of Dendra, the left sidebar group was labeled "Sensor Equipment." Trisalyn verbally confirmed she prefers "Field Sensors." Will: "We can change it to Field Sensors." Simple label update.
+
+**Resolution (Feb 20, 2026):** Added `CATEGORY_DISPLAY_NAME_OVERRIDE` in `layerRegistry.ts` mapping "Research and Sensor Equipment" → "Field Sensors". `useCatalogRegistry` applies the override when building category names for the left sidebar. API/catalog data unchanged; display-only override.
 
 ---
 

@@ -16,7 +16,7 @@
 
 import { useState, useEffect } from 'react';
 import type { Category, CatalogLayer, DataSource } from '../types';
-import { CATEGORY_ICON_MAP, EXTERNAL_LAYERS } from '../data/layerRegistry';
+import { CATEGORY_DISPLAY_NAME_OVERRIDE, CATEGORY_ICON_MAP, EXTERNAL_LAYERS } from '../data/layerRegistry';
 
 const BASE =
   'https://dangermondpreserve-spatial.com/server/rest/services/Dangermond_Preserve_Data_Catalog/FeatureServer';
@@ -500,14 +500,14 @@ export function useCatalogRegistry(): CatalogRegistryState {
 
           // Subcategories
           const subs = childrenByParent.get(raw.id) ?? [];
-          const subcategories: Category[] = subs.map(sub => {
+          const           subcategories: Category[] = subs.map(sub => {
             const subCatId = String(sub.id);
             const subIcon = CATEGORY_ICON_MAP[sub.name] ?? sub.icon ?? icon;
             const subDatasetIds = catToDatasets.get(sub.id) ?? [];
             const subLayers = buildLayersForCategory(subDatasetIds, subCatId);
             return {
               id: subCatId,
-              name: sub.name,
+              name: CATEGORY_DISPLAY_NAME_OVERRIDE[sub.name] ?? sub.name,
               icon: subIcon,
               layers: subLayers,
               parentId: catId,
@@ -516,7 +516,7 @@ export function useCatalogRegistry(): CatalogRegistryState {
 
           return {
             id: catId,
-            name: raw.name,
+            name: CATEGORY_DISPLAY_NAME_OVERRIDE[raw.name] ?? raw.name,
             icon,
             layers: directLayers,
             subcategories: subcategories.length > 0 ? subcategories : undefined,

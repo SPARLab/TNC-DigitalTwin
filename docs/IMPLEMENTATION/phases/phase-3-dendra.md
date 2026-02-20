@@ -14,7 +14,7 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| TF-06 | ⚪ Not Started | Feb 20, 2026 | Rename left sidebar group from "Sensor Equipment" to "Field Sensors" | Low priority; Trisalyn verbally confirmed "Field Sensors" preferred. Source: Trisalyn QA Feb 20 |
+| TF-06 | 🟢 Complete | Feb 20, 2026 | Rename left sidebar group from "Sensor Equipment" to "Field Sensors" | Implemented via CATEGORY_DISPLAY_NAME_OVERRIDE in layerRegistry; left sidebar now shows "Field Sensors". Trisalyn QA Feb 20 |
 | TF-07 | 🟢 Complete | Feb 20, 2026 12:30 PM | Remove "dangermond_" prefix from Dendra station tooltip titles (tooltip says "dangermond_Oaks", sidebar says "Oaks") | Fixed by normalizing station display names (`formatStationDisplayName`) and using sanitized value in map popup title + Dendra UI surfaces. Source: Trisalyn QA Feb 20 |
 | CON-DENDRA-01 | 🟢 Complete | Feb 19, 2026 | Map click on station syncs to right sidebar and opens station | High priority; map-first |
 | CON-DENDRA-02 | 🟢 Complete | Feb 19, 2026 | Multiple time series charts side-by-side; draggable/resizable/minimizable within map area bounds | High priority |
