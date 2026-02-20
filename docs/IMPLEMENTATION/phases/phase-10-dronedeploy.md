@@ -1,7 +1,7 @@
 # Phase 10: DroneDeploy Imagery
 
 **Status:** 🟡 In Progress  
-**Progress:** 1 / 3 tasks (completed tasks 10.1–10.6, 10.8–10.11 archived; CON-DRONE-01 complete)  
+**Progress:** 2 / 3 tasks (completed tasks 10.1–10.6, 10.8–10.11 archived; CON-DRONE-01, CON-DRONE-02 complete)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-10-dronedeploy-completed.md`  
 **Branch:** `v2/dronedeploy`  
 **Depends On:** Phase 0 (Foundation)  
@@ -14,7 +14,7 @@
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
 | CON-DRONE-01 | 🟢 Complete | Feb 19, 2026 | Bug: drone imagery does not change when toggling between flights | Fixed: single-flight replacement, auto-load default, WMTS 404 fallback |
-| CON-DRONE-02 | ⚪ Not Started | Feb 18, 2026 | Simplify project flights UI: default name/date, expand for metadata | Medium-high priority |
+| CON-DRONE-02 | 🟢 Complete | Feb 19, 2026 | Simplify project flights UI: default name/date, expand for metadata | Card click syncs map + toggles metadata; caret-only disclosure; animated expand/collapse |
 | 10.7 | ⚪ Not Started | — | Render flight footprints as map polygons | Show `plan_geometry` / `project_bounds` as clickable map polygons |
 
 **Status Legend:**
@@ -145,6 +145,61 @@ Implement the DroneDeploy drone imagery browse experience in the right sidebar. 
 
 ---
 
+### CON-DRONE-02: Simplify Project Flights UI (Default Name/Date + Expand for Metadata)
+
+**Goal:** Reduce visual clutter in project detail flight lists by showing only the most decision-critical info by default (flight name + capture date), with metadata/actions available via progressive disclosure.
+
+**Current Friction (Observed):**
+- Flight rows currently surface too many secondary fields at once, increasing scan time when users compare flights in the same project.
+- Important selection cues (which flight/date to load) compete with lower-priority metadata.
+- Right sidebar density makes it harder to quickly pivot between dates during temporal exploration.
+
+**Design Direction (Progressive Disclosure):**
+- **Collapsed (default) flight row:** show `plan_name` and formatted `date_captured` only.
+- **Expanded flight row:** reveal secondary metadata (e.g., last updated, IDs, collection/download links, geometry/extent details) and non-primary actions.
+- Preserve current high-priority controls for map behavior (select/visibility toggle) with clear affordances in collapsed state.
+
+**Principle Check (UI/UX):**
+
+| Principle | Why It Matters Here | Proposed Direction Fit |
+|----------|----------------------|------------------------|
+| Hick's Law (Cognitive) | Fewer visible choices/details lowers decision latency | ✅ |
+| Nielsen: Aesthetic & Minimalist Design | Remove non-essential information from default view | ✅ |
+| Recognition over Recall | Keep key identifier/date visible at all times | ✅ |
+| Gestalt: Proximity/Common Region | Group advanced metadata in expandable region | ✅ |
+| Norman: Signifiers & Feedback | Expand/collapse affordance must be explicit and stateful | 🟡 (depends on implementation polish) |
+| Accessibility (POUR) | Expand interaction must be keyboard/screen-reader clear | 🟡 (must be validated) |
+
+**Acceptance Criteria:**
+- [x] In project detail flight list, each flight row defaults to a compact summary (name + date only)
+- [x] Secondary metadata is hidden by default and appears only when the row is expanded
+- [x] Expanded/collapsed state is visually obvious and keyboard operable
+- [x] Card click syncs selected flight to map imagery and toggles metadata expansion (per user feedback: removed per-row visibility button)
+- [x] Temporal comparison workflows are not slowed by the new disclosure pattern
+- [x] Empty/missing metadata fields render gracefully in expanded content
+- [x] Animated expand/collapse transition; removed in-card up/down draw-order controls per user feedback
+
+**Resolution (Feb 19, 2026):** Task complete. Flight cards show name + date by default; clicking a card selects that flight (loads imagery on map) and toggles its metadata panel. Top-right caret indicates expand/collapse state. Removed redundant "Selected" label, "Visible/Hidden" button, and up/down reorder arrows from card UI. CSS transition (200ms ease-out) applied to metadata panels. Files: FlightDetailView.tsx, DroneDeploySidebar.tsx.
+
+**Implementation Plan (Start Here):**
+1. **Row anatomy audit:** identify current flight-row fields/actions rendered in `DroneDeploySidebar` (and related row components/hooks).
+2. **Define compact schema:** lock default-visible fields to `plan_name` + formatted capture date; confirm fallback labels for null/empty values.
+3. **Add disclosure state:** implement per-flight expand/collapse state keyed by stable flight ID.
+4. **Move secondary content:** relocate non-primary metadata/actions into expandable panel content area.
+5. **Accessibility pass:** ensure disclosure control has clear label, state (`aria-expanded`), focus order, and keyboard toggle behavior.
+6. **Manual QA pass:** verify scanability + selection speed across projects and no regressions in visibility/activation/pin flows.
+
+**Out of Scope (for this task):**
+- Changing flight sort/filter semantics
+- Redesigning carousel behavior
+- Introducing new metadata fields from service that are not already used in UI
+
+**Notes (Feb 19, 2026):**
+- Begin with readability-first implementation: concise collapsed rows, low-surprise expansion behavior.
+- Prefer keeping metadata rendering logic centralized to avoid duplicate formatting paths between collapsed and expanded states.
+
+---
+
 ### 10.7: Render Flight Footprints as Map Polygons
 
 **Goal:** Show drone flight coverage areas on the map as clickable polygon outlines, separate from the actual imagery layers.
@@ -226,6 +281,7 @@ Validated with sample `wmts_item_id` values from live records.
 | Decision | Date | Rationale | Added to design-system.md? |
 |----------|------|-----------|---------------------------|
 | Projects browse uses compact card-only layout (project name + date range + flight count) and defers all flight details/actions to project detail view | Feb 16, 2026 | Reduces cognitive load, improves scanability, and aligns with progressive disclosure mental model | No |
+| Project flight cards: compact name + date; click syncs map + toggles metadata; caret-only disclosure; no Selected/Visible/reorder controls in card | Feb 19, 2026 | Progressive disclosure; card click as primary affordance; blue highlight indicates selection; 200ms expand/collapse transition | No |
 
 ---
 
@@ -259,3 +315,7 @@ Validated with sample `wmts_item_id` values from live records.
 | Feb 16, 2026 | 10.4, 10.5 | Incorporated UX feedback for Browse tab information density: reopened Task 10.4 to require compact project-only cards, removed project-list-level flight actions, and clarified that flight data/actions belong in project detail drill-down. Updated phase progress to 6/11. | Codex |
 | Feb 16, 2026 | 10.4 | Implemented compact Browse projects UX in right sidebar: removed per-flight rows/actions from project list, added compact project metadata cards (name, flight count, date range, WMTS summary), and wired project-card click to open project detail with flight-level actions. Updated phase progress to 7/11. | Codex |
 | Feb 19, 2026 | CON-DRONE-01 | **Completed flight toggle imagery bug fix:** Single-flight replacement semantics (new selection unloads old imagery), default to first valid flight for carousel alignment, auto-load default flight when Orthomosaics activates, map-level activation guardrails, WMTS 404 fallback to alternate flight in same project. Files: DroneDeploySidebar.tsx, LayerRow.tsx, useMapBehavior.ts | Claude |
+| Feb 19, 2026 | CON-DRONE-02 | **Started UI simplification task:** updated task status to In Progress and documented implementation-ready UX direction (collapsed default name/date rows + expandable metadata panel), acceptance criteria, and execution plan. File: phase-10-dronedeploy.md | Codex |
+| Feb 19, 2026 | CON-DRONE-02 | **Implemented first UI pass in project-detail flights list:** default row now emphasizes flight name + capture date, keeps visibility toggle in collapsed state, and moves WMTS/plan metadata, links, and draw-order controls into an explicit expand/collapse metadata panel with keyboard-accessible disclosure state. File: FlightDetailView.tsx | Codex |
+| Feb 19, 2026 | CON-DRONE-02 | **Refined interaction model per feedback:** clicking a flight card now both syncs imagery selection to map and toggles that card’s metadata panel; removed `Selected` text label and removed per-row `Visible/Hidden` button; disclosure is now a top-right caret indicator in each card header. Files: FlightDetailView.tsx, DroneDeploySidebar.tsx | Codex |
+| Feb 19, 2026 | CON-DRONE-02 | **Applied UI polish:** added animated expand/collapse transition for flight metadata panels and removed in-card up/down draw-order controls from metadata content. Files: FlightDetailView.tsx, DroneDeploySidebar.tsx | Codex |
