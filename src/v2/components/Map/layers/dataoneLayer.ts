@@ -1,6 +1,6 @@
 // ============================================================================
 // DataONE Map Layer — FeatureLayer populated from DataONE dataset centers.
-// Uses ArcGIS built-in cluster reduction to aggregate dense overlapping points.
+// Supports toggling ArcGIS feature reduction between clusters and bins.
 // ============================================================================
 
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
@@ -8,15 +8,17 @@ import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
 import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
 import SimpleRenderer from '@arcgis/core/renderers/SimpleRenderer';
+import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 import type { DataOneDataset } from '../../../../types/dataone';
+import type { DataOneAggregationMode } from '../../../context/DataOneFilterContext';
 
 const DEFAULT_MARKER_SYMBOL = new SimpleMarkerSymbol({
   style: 'circle',
-  size: 8,
+  size: 11,
   color: [16, 185, 129, 0.85], // emerald-500
   outline: {
     color: [255, 255, 255, 0.95],
-    width: 1.25,
+    width: 1.5,
   },
 });
 
@@ -29,7 +31,125 @@ const CLUSTER_SYMBOL = new SimpleMarkerSymbol({
   },
 });
 
-/** Create an empty FeatureLayer for DataONE datasets with clustering. */
+const BIN_SYMBOL = new SimpleFillSymbol({
+  color: [5, 150, 105, 0.55],
+  outline: {
+    color: [255, 255, 255, 0.45],
+    width: 0.75,
+  },
+});
+
+export function buildDataOneFeatureReduction(mode: DataOneAggregationMode): __esri.FeatureReductionClusterProperties | __esri.FeatureReductionBinningProperties {
+  return buildDataOneFeatureReductionForScale(mode);
+}
+
+export function getBinningLevelForScale(scale: number | null | undefined): number {
+  if (!scale || !Number.isFinite(scale)) return 5;
+  if (scale > 120_000_000) return 1;
+  if (scale > 88_000_000) return 2;
+  if (scale > 14_000_000) return 3;
+  // Keep preserve/regional views intentionally coarse so users see a few large bins first.
+  if (scale > 5_000_000) return 4;
+  if (scale > 800_000) return 5;
+  if (scale > 120_000) return 6;
+  if (scale > 20_000) return 7;
+  if (scale > 4_000) return 8;
+  return 9;
+}
+
+export function buildDataOneFeatureReductionForScale(
+  mode: DataOneAggregationMode,
+  viewScale?: number | null,
+): __esri.FeatureReductionClusterProperties | __esri.FeatureReductionBinningProperties {
+  if (mode === 'binning') {
+    const dynamicBinLevel = getBinningLevelForScale(viewScale);
+    return {
+      type: 'binning',
+      fixedBinLevel: dynamicBinLevel,
+      // Keep bins visible until very close zoom to avoid abrupt "252 -> 2 points" transitions.
+      maxScale: 3_000,
+      fields: [
+        { name: 'aggregateCount', statisticType: 'count' },
+      ],
+      renderer: {
+        type: 'simple',
+        symbol: BIN_SYMBOL,
+        visualVariables: [
+          {
+            type: 'color',
+            field: 'aggregateCount',
+            stops: [
+              { value: 1, color: [209, 250, 229, 0.70] },   // emerald-100
+              { value: 10, color: [52, 211, 153, 0.75] },    // emerald-400
+              { value: 50, color: [16, 185, 129, 0.80] },    // emerald-500
+              { value: 200, color: [5, 150, 105, 0.85] },    // emerald-600
+              { value: 500, color: [4, 120, 87, 0.90] },     // emerald-700
+            ],
+          },
+        ],
+      } as any,
+      labelingInfo: [
+        {
+          deconflictionStrategy: 'none',
+          labelPlacement: 'always-horizontal',
+          labelExpressionInfo: { expression: "$feature.aggregateCount" },
+          symbol: {
+            type: 'text',
+            color: [30, 30, 30],
+            font: {
+              family: 'Arial Unicode MS',
+              size: '11px',
+              weight: 'bold',
+            },
+            haloColor: [255, 255, 255, 0.85],
+            haloSize: 1.5,
+          },
+        },
+      ],
+      popupTemplate: {
+        content: 'This bin contains <b>{aggregateCount}</b> datasets.',
+        fieldInfos: [
+          {
+            fieldName: 'aggregateCount',
+            format: { digitSeparator: true, places: 0 },
+          },
+        ],
+      },
+    };
+  }
+
+  return {
+    type: 'cluster',
+    clusterRadius: '64px',
+    clusterMinSize: '24px',
+    clusterMaxSize: '52px',
+    symbol: CLUSTER_SYMBOL,
+    labelingInfo: [
+      {
+        deconflictionStrategy: 'none',
+        labelPlacement: 'center-center',
+        labelExpressionInfo: { expression: "Text($feature.cluster_count, '#,###')" },
+        symbol: {
+          type: 'text',
+          color: 'white',
+          font: {
+            family: 'Arial Unicode MS',
+            size: '11px',
+            weight: 'bold',
+          },
+          haloColor: [0, 0, 0, 0.15],
+          haloSize: 1,
+        },
+      },
+    ],
+    popupTemplate: {
+      title: '{cluster_count} datasets in this area',
+      content: 'Zoom in to inspect individual datasets, then click a point to open dataset details.',
+    },
+  };
+}
+
+/** Create an empty FeatureLayer for DataONE datasets. */
 export function createDataOneLayer(options: {
   id?: string;
   visible?: boolean;
@@ -64,36 +184,7 @@ export function createDataOneLayer(options: {
         },
       ],
     },
-    featureReduction: {
-      type: 'cluster',
-      clusterRadius: '64px',
-      clusterMinSize: '24px',
-      clusterMaxSize: '52px',
-      // Use symbol (not renderer) to match prior working DataONE clustering setup.
-      symbol: CLUSTER_SYMBOL,
-      labelingInfo: [
-        {
-          deconflictionStrategy: 'none',
-          labelPlacement: 'center-center',
-          labelExpressionInfo: { expression: "Text($feature.cluster_count, '#,###')" },
-          symbol: {
-            type: 'text',
-            color: 'white',
-            font: {
-              family: 'Inter, system-ui, sans-serif',
-              size: '11px',
-              weight: 'bold',
-            },
-            haloColor: [0, 0, 0, 0.15],
-            haloSize: 1,
-          },
-        },
-      ],
-      popupTemplate: {
-        title: '{cluster_count} datasets in this area',
-        content: 'Zoom in to inspect individual datasets, then click a point to open dataset details.',
-      },
-    },
+    featureReduction: buildDataOneFeatureReduction('cluster'),
   });
 }
 

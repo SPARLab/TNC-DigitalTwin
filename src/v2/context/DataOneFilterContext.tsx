@@ -7,6 +7,8 @@ import { createContext, useCallback, useContext, useRef, useState, type ReactNod
 import { dataOneService } from '../../services/dataOneService';
 import type { DataOneDataset } from '../../types/dataone';
 
+export type DataOneAggregationMode = 'cluster' | 'binning';
+
 export interface DataOneBrowseFilters {
   searchText: string;
   tncCategory: string;
@@ -21,11 +23,13 @@ interface DataOneFilterContextValue {
   error: string | null;
   totalDatasetCount: number;
   browseFilters: DataOneBrowseFilters;
+  aggregationMode: DataOneAggregationMode;
   mapSelectionDataoneIds: string[] | null;
   /** Cached map datasets keyed by dataoneId — set by useDataOneMapBehavior. */
   mapDatasetsCache: Map<string, DataOneDataset>;
   warmCache: () => void;
   setBrowseFilters: (next: DataOneBrowseFilters) => void;
+  setAggregationMode: (next: DataOneAggregationMode) => void;
   setMapSelectionDataoneIds: (next: string[] | null) => void;
   setMapDatasetsCache: (next: Map<string, DataOneDataset>) => void;
   createBrowseLoadingScope: () => () => void;
@@ -46,6 +50,7 @@ export function DataOneFilterProvider({ children }: { children: ReactNode }) {
     endDate: '',
     author: '',
   });
+  const [aggregationMode, setAggregationMode] = useState<DataOneAggregationMode>('cluster');
   const [mapSelectionDataoneIds, setMapSelectionDataoneIds] = useState<string[] | null>(null);
   const [mapDatasetsCache, setMapDatasetsCache] = useState<Map<string, DataOneDataset>>(new Map());
   const inFlightRef = useRef(false);
@@ -95,10 +100,12 @@ export function DataOneFilterProvider({ children }: { children: ReactNode }) {
         error,
         totalDatasetCount,
         browseFilters,
+        aggregationMode,
         mapSelectionDataoneIds,
         mapDatasetsCache,
         warmCache,
         setBrowseFilters: handleSetBrowseFilters,
+        setAggregationMode,
         setMapSelectionDataoneIds,
         setMapDatasetsCache,
         createBrowseLoadingScope,

@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
-**Status:** 🟡 Ready for New Tasks  
-**Progress:** 1 / 16 tasks (CON-DONE-01 complete; CON-DONE-16 next)  
+**Status:** 🟡 In Progress  
+**Progress:** 1 / 16 tasks complete (CON-DONE-16 in progress)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-4-dataone-completed.md`  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
@@ -14,7 +14,7 @@
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
 | CON-DONE-01 | 🟢 Complete | Feb 20, 2026 | Cluster click on map populates right sidebar with datasets at that location | Race condition fix applied; counts verified |
-| CON-DONE-16 | ⚪ Not Started | Feb 20, 2026 | Switch from circular clustering to grid binning (FeatureReductionBinning) | Next up; improves count explainability |
+| CON-DONE-16 | 🟡 In Progress | Feb 20, 2026 | Switch from circular clustering to grid binning (FeatureReductionBinning) | Toggle + dynamic binning done; bin scale thresholds need fine-tuning (see task details) |
 | CON-DONE-02 | ⚪ Not Started | Feb 18, 2026 | Auto-pan/zoom when opening dataset detail; repurpose View on Map as Recenter | High priority; resolution applied |
 | CON-DONE-03 | ⚪ Not Started | Feb 18, 2026 | Cluster popup for scrolling individual datasets | Medium priority |
 | CON-DONE-04 | ⚪ Not Started | Feb 18, 2026 | Improve point dispersion as user zooms into clusters | Medium priority |
@@ -135,21 +135,38 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 
 **Goal:** Replace the current circular cluster visualization with ArcGIS **FeatureReductionBinning** (grid cell aggregation). Grid bins use zoom-dependent geohash cells, which can improve count explainability and reduce cluster ambiguity.
 
-**Context:** The DataONE map layer currently uses `featureReduction: { type: 'cluster' }` (circular markers). ArcGIS also supports `FeatureReductionBinning`, which aggregates points into grid cells. See [ArcGIS Binning docs](https://developers.arcgis.com/javascript/latest/api-reference/esri-layers-support-FeatureReductionBinning.html) and [clustering overview](https://developers.arcgis.com/javascript/latest/visualization/high-density-data/clustering/).
+**Context:** The DataONE map layer uses `featureReduction: { type: 'cluster' }` by default. ArcGIS also supports `FeatureReductionBinning`. See [ArcGIS Binning docs](https://developers.arcgis.com/javascript/latest/api-reference/esri-layers-support-FeatureReductionBinning.html).
 
-**Implementation Notes:**
-- Current layer is a client-side FeatureLayer populated via `applyEdits`; binning may require different setup (e.g., pointing at hosted service URL, or ensuring client-side layer supports binning)
-- Binning uses `fixedBinLevel` for zoom-dependent cell size
-- Cluster click → sidebar population flow must be preserved for bin clicks
-- Consider whether `aggregateIds` or similar is available for bin-to-dataset resolution
+**What Was Implemented (Feb 20, 2026):**
+- User-facing toggle in DataONE Browse: **Clusters** vs **Grid bins** (DataOneFilterContext `aggregationMode`)
+- ArcGIS `FeatureReductionBinning` with `fixedBinLevel` driven by map scale (dynamic refinement on zoom)
+- Bin click → sidebar population (geometry-aware member resolution: polygon bins, extent bins, point fallback)
+- Color visual variables on `aggregateCount` for density; `maxScale` breakpoint for bin → individual points
+- Point marker size increased for readability when bins dissolve
+
+**Remaining UX Issues (needs fine-tuning):**
+- **Zoomed out:** Rectangles are too small; user expects a few large bins (e.g., 4) at high zoom, not many small ones
+- **Zoom transition:** Brief moment where bins get bigger, then abruptly dissolve into ultra-tiny rectangles that are way too small
+- **Bin → points cliff:** A bin showing "252" can disappear into just a few visible dots when zooming in (many datasets share same/similar coordinates)
+
+**Where to Fine-Tune:**
+
+| What to adjust | File | Location |
+|---------------|------|----------|
+| Scale → bin level mapping (coarser = fewer, bigger bins at zoom-out) | `src/v2/components/Map/layers/dataoneLayer.ts` | `getBinningLevelForScale()` — scale thresholds and returned levels 1–9 |
+| When bins turn off and show individual points | `src/v2/components/Map/layers/dataoneLayer.ts` | `maxScale` in `buildDataOneFeatureReductionForScale()` |
+| Individual point size when bins are off | `src/v2/components/Map/layers/dataoneLayer.ts` | `DEFAULT_MARKER_SYMBOL` (size, outline) |
+| Scale watcher (when bin level updates on zoom) | `src/v2/dataSources/dataone/useMapBehavior.ts` | Effect that calls `view.watch('scale', ...)` and `buildDataOneFeatureReductionForScale()` |
+
+ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lower numbers = fewer, bigger rectangles. See [API fixedBinLevel table](https://developers.arcgis.com/javascript/latest/api-reference/esri-layers-support-FeatureReductionBinning.html#fixedBinLevel).
 
 **Acceptance Criteria:**
-- [ ] DataONE map layer uses grid binning instead of circular clustering
-- [ ] Bin labels show dataset counts; counts remain synchronized with sidebar total
-- [ ] Clicking a bin populates right sidebar with datasets in that cell
-- [ ] Single-point behavior preserved when zoomed in (if bins break into points)
+- [x] DataONE map layer supports grid binning (toggle with clusters)
+- [x] Bin labels show dataset counts; bin click populates sidebar
+- [x] Single-point behavior preserved when zoomed in past maxScale
+- [ ] Bin scale thresholds fine-tuned for desired zoom progression (few large bins → more smaller bins)
 
-**Estimated Time:** 3–5 hours
+**Estimated Time:** 3–5 hours (core done; ~1–2h for threshold tuning)
 
 ---
 
@@ -239,6 +256,9 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 20, 2026 | CON-DONE-16: marked in progress; documented implemented features, remaining UX issues (zoomed-out bins too small, abrupt bin→points transition), and "Where to fine-tune" code pointers for future tuning. | Assistant |
+| Feb 20, 2026 | CON-DONE-16 update: added DataONE Browse toggle for map aggregation mode (`Clusters`/`Grid bins`) and made cluster default while validating bin rendering. | Assistant |
+| Feb 20, 2026 | CON-DONE-16 started: switched DataONE map layer to `FeatureReductionBinning`; updated aggregate label/popup fields and map click handling for bin-aware aggregate resolution. QA pending. | Assistant |
 | Feb 20, 2026 | CON-DONE-01 marked complete; added CON-DONE-16 (switch to grid binning) as next task. | Assistant |
 | Feb 20, 2026 | CON-DONE-01: Fixed cluster count desynchronization — root cause was race condition in populateDataOneLayer (concurrent applyEdits doubling features). Applied queryFeatures-based deletion + populate-version guard. | Assistant |
 | Feb 20, 2026 | Updated CON-DONE-01 findings: latest-only records confirmed; added unresolved cluster count desynchronization investigation notes; documented large-cluster 414 fix. | Assistant |

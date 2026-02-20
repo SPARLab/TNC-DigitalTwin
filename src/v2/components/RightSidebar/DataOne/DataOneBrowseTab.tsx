@@ -48,6 +48,8 @@ export function DataOneBrowseTab() {
     createBrowseLoadingScope,
     browseFilters,
     setBrowseFilters,
+    aggregationMode,
+    setAggregationMode,
     mapSelectionDataoneIds,
     setMapSelectionDataoneIds,
     mapDatasetsCache,
@@ -390,6 +392,40 @@ export function DataOneBrowseTab() {
       </div>
 
       <EditFiltersCard id="dataone-edit-filters-card">
+        <div id="dataone-aggregation-toggle-section" className="space-y-1">
+          <p id="dataone-aggregation-toggle-label" className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
+            Map aggregation
+          </p>
+          <div id="dataone-aggregation-toggle-group" className="grid grid-cols-2 gap-1 rounded-lg border border-gray-200 bg-gray-50 p-1">
+            <button
+              id="dataone-aggregation-toggle-cluster"
+              type="button"
+              onClick={() => setAggregationMode('cluster')}
+              aria-pressed={aggregationMode === 'cluster'}
+              className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                aggregationMode === 'cluster'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Clusters
+            </button>
+            <button
+              id="dataone-aggregation-toggle-binning"
+              type="button"
+              onClick={() => setAggregationMode('binning')}
+              aria-pressed={aggregationMode === 'binning'}
+              className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                aggregationMode === 'binning'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Grid bins
+            </button>
+          </div>
+        </div>
+
         <div id="dataone-search-row" className="relative">
           <Search id="dataone-search-icon" className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input

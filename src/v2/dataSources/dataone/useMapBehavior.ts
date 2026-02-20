@@ -1,13 +1,16 @@
 // ============================================================================
-// DataONE Map Behavior — Manages GraphicsLayer population from DataONE filters.
+// DataONE Map Behavior — Manages FeatureLayer population from DataONE filters.
 // Layer is "on map" when PINNED or ACTIVE. Map clicks open dataset detail.
-// Cluster clicks resolve members from in-memory cache (not ArcGIS LayerView)
-// because applyEdits-populated FeatureLayers don't support aggregateIds queries.
+// Aggregate clicks (cluster/bin) resolve members from in-memory cache.
+// applyEdits-populated FeatureLayers don't support aggregateIds queries.
 // ============================================================================
 
 import { useEffect, useRef } from 'react';
 import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
+import Polygon from '@arcgis/core/geometry/Polygon';
+import Extent from '@arcgis/core/geometry/Extent';
+import * as geometryEngine from '@arcgis/core/geometry/geometryEngine';
 import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
 import type Layer from '@arcgis/core/layers/Layer';
 import type FeatureLayer from '@arcgis/core/layers/FeatureLayer';
@@ -16,7 +19,7 @@ import { dataOneService } from '../../../services/dataOneService';
 import { useDataOneFilter } from '../../context/DataOneFilterContext';
 import { useLayers } from '../../context/LayerContext';
 import { useMap } from '../../context/MapContext';
-import { populateDataOneLayer } from '../../components/Map/layers/dataoneLayer';
+import { buildDataOneFeatureReduction, buildDataOneFeatureReductionForScale, populateDataOneLayer } from '../../components/Map/layers/dataoneLayer';
 import type { PinnedLayer, ActiveLayer } from '../../types';
 import { isPointInsideSpatialPolygon } from '../../utils/spatialQuery';
 
@@ -34,28 +37,69 @@ const CLUSTER_HIGHLIGHT_SYMBOL = new SimpleMarkerSymbol({
   },
 });
 
-/**
- * Resolve cluster member IDs by finding the N closest datasets to the cluster
- * center, where N = cluster_count.  This avoids pixel→geographic bounding-box
- * conversion, which breaks at low zoom because ArcGIS hierarchical clustering
- * can merge points far beyond the configured clusterRadius.
- */
-function resolveClusterMembersFromCache(
-  clusterGraphic: __esri.Graphic,
+function getAggregateCount(graphic: __esri.Graphic): number {
+  const attrs = graphic.attributes ?? {};
+  const candidates = [
+    attrs.aggregateCount,
+    attrs.cluster_count,
+    attrs.point_count,
+  ];
+  for (const candidate of candidates) {
+    if (typeof candidate === 'number' && Number.isFinite(candidate)) {
+      return Math.max(0, Math.floor(candidate));
+    }
+  }
+  return 0;
+}
+
+/** Resolve aggregate member IDs for bin/cluster graphics from local cache. */
+function resolveAggregateMembersFromCache(
+  aggregateGraphic: __esri.Graphic,
   cachedDatasets: Map<string, DataOneDataset>,
 ): string[] {
   if (cachedDatasets.size === 0) return [];
-  if (clusterGraphic.geometry?.type !== 'point') return [];
-
-  const clusterPoint = clusterGraphic.geometry as Point;
-  const cLon = clusterPoint.longitude as number | null;
-  const cLat = clusterPoint.latitude as number | null;
-  if (cLon == null || cLat == null || !Number.isFinite(cLon) || !Number.isFinite(cLat)) return [];
 
   const targetCount = Math.min(
-    (clusterGraphic.attributes?.cluster_count as number) || cachedDatasets.size,
+    getAggregateCount(aggregateGraphic) || cachedDatasets.size,
     MAX_MAP_SELECTION_IDS,
   );
+
+  const geometry = aggregateGraphic.geometry;
+
+  if (geometry?.type === 'polygon') {
+    const polygon = geometry as Polygon;
+    const inPolygon: string[] = [];
+    for (const [dataoneId, dataset] of cachedDatasets) {
+      const lon = dataset.centerLon;
+      const lat = dataset.centerLat;
+      if (lon == null || lat == null) continue;
+      const point = new Point({ longitude: lon, latitude: lat, spatialReference: polygon.spatialReference });
+      if (geometryEngine.contains(polygon, point)) {
+        inPolygon.push(dataoneId);
+      }
+    }
+    return inPolygon.slice(0, targetCount);
+  }
+
+  if (geometry?.type === 'extent') {
+    const extent = geometry as Extent;
+    const inExtent: string[] = [];
+    for (const [dataoneId, dataset] of cachedDatasets) {
+      const lon = dataset.centerLon;
+      const lat = dataset.centerLat;
+      if (lon == null || lat == null) continue;
+      if (lon >= extent.xmin && lon <= extent.xmax && lat >= extent.ymin && lat <= extent.ymax) {
+        inExtent.push(dataoneId);
+      }
+    }
+    return inExtent.slice(0, targetCount);
+  }
+
+  if (geometry?.type !== 'point') return [];
+  const aggregatePoint = geometry as Point;
+  const cLon = aggregatePoint.longitude as number | null;
+  const cLat = aggregatePoint.latitude as number | null;
+  if (cLon == null || cLat == null || !Number.isFinite(cLon) || !Number.isFinite(cLat)) return [];
 
   const ranked: Array<{ dataoneId: string; distSq: number }> = [];
   for (const [dataoneId, dataset] of cachedDatasets) {
@@ -81,6 +125,7 @@ export function useDataOneMapBehavior(
     warmCache,
     dataLoaded,
     browseFilters,
+    aggregationMode,
     mapSelectionDataoneIds,
     setMapSelectionDataoneIds,
     setMapDatasetsCache,
@@ -157,7 +202,40 @@ export function useDataOneMapBehavior(
     return () => abortController.abort();
   }, [isOnMap, dataLoaded, browseFilters, spatialPolygon, getManagedLayer, mapReady]);
 
-  // Map click handler: activate DataONE and open dataset detail or cluster list.
+  // Keep map aggregation mode (clusters vs bins) in sync with sidebar toggle.
+  useEffect(() => {
+    if (!isOnMap) return;
+    const arcLayer = getManagedLayer(LAYER_ID);
+    if (!arcLayer) return;
+    const dataOneLayer = arcLayer as FeatureLayer;
+    (dataOneLayer as any).featureReduction = buildDataOneFeatureReduction(aggregationMode);
+  }, [isOnMap, aggregationMode, getManagedLayer, mapReady]);
+
+  // Dynamic binning: update fixedBinLevel by map scale while binning is active.
+  useEffect(() => {
+    if (!isOnMap) return;
+    if (aggregationMode !== 'binning') return;
+    const view = viewRef.current;
+    if (!view) return;
+    const arcLayer = getManagedLayer(LAYER_ID);
+    if (!arcLayer) return;
+    const dataOneLayer = arcLayer as FeatureLayer;
+
+    const applyReductionForCurrentScale = () => {
+      (dataOneLayer as any).featureReduction = buildDataOneFeatureReductionForScale('binning', view.scale);
+    };
+
+    applyReductionForCurrentScale();
+    const handle = view.watch('scale', () => {
+      applyReductionForCurrentScale();
+    });
+
+    return () => {
+      handle.remove();
+    };
+  }, [isOnMap, aggregationMode, viewRef, getManagedLayer, mapReady]);
+
+  // Map click handler: activate DataONE and open dataset detail or aggregate list.
   useEffect(() => {
     if (!isOnMap) return;
     const view = viewRef.current;
@@ -191,9 +269,9 @@ export function useDataOneMapBehavior(
         );
         if (!graphicHit) return;
 
-        const clusterCount = graphicHit.graphic.attributes?.cluster_count as number | undefined;
-        if (clusterCount && clusterCount > 1) {
-          const dataoneIds = resolveClusterMembersFromCache(
+        const aggregateCount = getAggregateCount(graphicHit.graphic);
+        if (aggregateCount > 1) {
+          const dataoneIds = resolveAggregateMembersFromCache(
             graphicHit.graphic,
             mapDatasetsByIdRef.current,
           );
