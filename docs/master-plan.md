@@ -1,7 +1,7 @@
 # Master Development Plan — V2 Digital Catalog
 
 **Created:** January 23, 2026  
-**Last Updated:** February 19, 2026  
+**Last Updated:** February 20, 2026  
 **Target Deadline:** February 20, 2026  
 **Status:** 🟡 In Progress
 
@@ -35,7 +35,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 1 | iNaturalist | 🟢 Complete | 0 | `v2/inaturalist` | No |
 | 2 | ANiML | 🟢 Complete | 0 | `v2/animl` | No |
 | 3 | Dendra | 🟡 In Progress | 1 task | `v2/dendra` | No |
-| 4 | DataOne | 🟢 Complete | 0 | `v2/dataone` | No |
+| 4 | DataOne | 🟡 In Progress | 1 next (CON-DONE-16) | `v2/dataone` | No |
 | 5 | Export Builder | 🟢 Complete | 0 | `v2/export-builder` | No |
 | 6 | TNC ArcGIS Services | 🟡 In Progress | 8 tasks | `v2/tnc-arcgis` | No |
 | 7 | Polish & Consistency | ⚪ Not Started | 7+ tasks | `v2/polish` | No |
@@ -54,6 +54,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 1 | [phase-1-inaturalist.md](IMPLEMENTATION/phases/phase-1-inaturalist.md) | 1 task (CON-INAT-07) |
 | 2 | [phase-2-animl.md](IMPLEMENTATION/phases/phase-2-animl.md) | ~4 tasks |
 | 3 | [phase-3-dendra.md](IMPLEMENTATION/phases/phase-3-dendra.md) | 1 task |
+| 4 | [phase-4-dataone.md](IMPLEMENTATION/phases/phase-4-dataone.md) | CON-DONE-16 next (grid binning); 14 others |
 | 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 8 tasks (CON-ARCGIS-15 complete Feb 19) |
 | 9 | [phase-9-gbif.md](IMPLEMENTATION/phases/phase-9-gbif.md) | 2 tasks (9.8 Save View, 9.9 extent expansion — deferred; 9.12 backend aggregation deferred to v2.1+) |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) | 1 task (10.7) |
@@ -304,6 +305,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 20, 2026 | Phase 4 | **CON-DONE-01 complete.** Cluster click populates sidebar; race condition fix (queryFeatures + populate-version guard) resolved count desync. **CON-DONE-16 added:** Switch from circular clustering to grid binning (FeatureReductionBinning) — next task. | Assistant |
 | Feb 19, 2026 | Phase 10 | **CON-DRONE-02 complete.** Simplify project flights UI: compact name/date cards, card click syncs map + toggles metadata, caret-only disclosure, animated expand/collapse, removed Selected/Visible/reorder controls. | Claude |
 | Feb 19, 2026 | Phase 10 | **CON-DRONE-01 complete.** Drone imagery flight toggle bug fix: single-flight replacement, auto-load default, WMTS 404 fallback. | Claude |
 | Feb 19, 2026 | Phase 6 | **CON-ARCGIS-14 complete:** Unified Service Workspace — service/layer click auto-selects sublayer; map + Map Layers widget sync; right-sidebar layer list with amber active highlight, pin/eye icons, inline pin/unpin; "Inspect Current Layer" CTA. | — |

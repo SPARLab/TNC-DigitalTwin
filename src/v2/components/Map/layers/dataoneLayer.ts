@@ -97,7 +97,11 @@ export function createDataOneLayer(options: {
   });
 }
 
-/** Populate DataONE dataset points using applyEdits (required post-load). */
+/**
+ * Populate DataONE dataset points using applyEdits (required post-load).
+ * Uses queryFeatures to detect existing features rather than source.toArray(),
+ * which is unreliable when concurrent applyEdits calls overlap.
+ */
 export async function populateDataOneLayer(
   layer: FeatureLayer,
   datasets: DataOneDataset[],
@@ -121,16 +125,16 @@ export async function populateDataOneLayer(
 
   await layer.when();
 
-  const source = (layer as any).source as __esri.Collection<__esri.Graphic> | undefined;
-  const existingGraphics = source?.toArray?.() ?? [];
-
-  if (existingGraphics.length === 0) {
-    await layer.applyEdits({ addFeatures: graphics });
-    return;
+  let deleteFeatures: __esri.Graphic[] = [];
+  try {
+    const existing = await layer.queryFeatures({ where: '1=1', returnGeometry: false });
+    deleteFeatures = existing.features;
+  } catch {
+    // Layer may be empty or not yet queryable
   }
 
   await layer.applyEdits({
-    deleteFeatures: existingGraphics,
+    ...(deleteFeatures.length > 0 ? { deleteFeatures } : {}),
     addFeatures: graphics,
   });
 }

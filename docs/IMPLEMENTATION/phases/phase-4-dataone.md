@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** 🟡 Ready for New Tasks  
-**Progress:** 0 / 12 tasks  
+**Progress:** 1 / 16 tasks (CON-DONE-01 complete; CON-DONE-16 next)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-4-dataone-completed.md`  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
@@ -13,7 +13,8 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| CON-DONE-01 | 🟡 In Progress | Feb 20, 2026 | Cluster click on map populates right sidebar with datasets at that location | High priority; major progress, unresolved cluster count desynchronization |
+| CON-DONE-01 | 🟢 Complete | Feb 20, 2026 | Cluster click on map populates right sidebar with datasets at that location | Race condition fix applied; counts verified |
+| CON-DONE-16 | ⚪ Not Started | Feb 20, 2026 | Switch from circular clustering to grid binning (FeatureReductionBinning) | Next up; improves count explainability |
 | CON-DONE-02 | ⚪ Not Started | Feb 18, 2026 | Auto-pan/zoom when opening dataset detail; repurpose View on Map as Recenter | High priority; resolution applied |
 | CON-DONE-03 | ⚪ Not Started | Feb 18, 2026 | Cluster popup for scrolling individual datasets | Medium priority |
 | CON-DONE-04 | ⚪ Not Started | Feb 18, 2026 | Improve point dispersion as user zooms into clusters | Medium priority |
@@ -108,15 +109,47 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 - Remaining issue is **cluster count desynchronization**: in some views, visible map cluster labels (e.g., 506 and 722) imply a larger universe than sidebar total (878)
 - Current hypothesis: map cluster aggregation scope is not perfectly aligned with sidebar filter scope in all states/zooms
 
+**Root Cause Found (Feb 20, 2026):**
+- Cluster count desynchronization was caused by a **race condition in `populateDataOneLayer`**.
+- When `browseFilters` changed rapidly (new object reference every update), the `useEffect` fired multiple concurrent runs.
+- The `abortController` only guarded the fetch; after fetch completion, concurrent `populateDataOneLayer` calls would both read `source.toArray()` as empty (before either's `applyEdits` finished), causing both to `addFeatures` without deleting — **doubling the feature count** in the layer.
+- ArcGIS clustering then counted ~1756 features instead of 878, inflating cluster labels.
+
+**Fix Applied:**
+1. `dataoneLayer.ts` — `populateDataOneLayer` now uses `queryFeatures({ where: '1=1' })` to detect existing features before deleting, instead of `source.toArray()` which is unreliable under concurrent edits.
+2. `useMapBehavior.ts` — Added a `populateVersionRef` counter. Each effect run captures a version synchronously; after the async fetch returns, it checks whether the version is still current before proceeding. Stale runs bail out instead of racing.
+
 **Acceptance Criteria:**
 - [x] Clicking a DataONE cluster populates the right sidebar list with datasets for that clicked location/cluster
 - [x] Sidebar clearly indicates that a map-location filter is active and allows clearing it
 - [x] Clicking a single (non-cluster) point continues to open dataset detail as before
 - [x] Large cluster clicks no longer fail with `414 Request-URI Too Large`
-- [ ] Cluster label counts and sidebar total are fully synchronized across zoom levels and map states
-- [ ] QA pass confirms behavior across multiple zoom levels and dense cluster areas
+- [x] Cluster label counts and sidebar total are fully synchronized across zoom levels and map states (race condition fix applied)
+- [x] QA pass confirms behavior across multiple zoom levels and dense cluster areas
 
 **Estimated Time:** 2–4 hours (implementation + QA)
+
+---
+
+### CON-DONE-16: Switch from Circular Clustering to Grid Binning
+
+**Goal:** Replace the current circular cluster visualization with ArcGIS **FeatureReductionBinning** (grid cell aggregation). Grid bins use zoom-dependent geohash cells, which can improve count explainability and reduce cluster ambiguity.
+
+**Context:** The DataONE map layer currently uses `featureReduction: { type: 'cluster' }` (circular markers). ArcGIS also supports `FeatureReductionBinning`, which aggregates points into grid cells. See [ArcGIS Binning docs](https://developers.arcgis.com/javascript/latest/api-reference/esri-layers-support-FeatureReductionBinning.html) and [clustering overview](https://developers.arcgis.com/javascript/latest/visualization/high-density-data/clustering/).
+
+**Implementation Notes:**
+- Current layer is a client-side FeatureLayer populated via `applyEdits`; binning may require different setup (e.g., pointing at hosted service URL, or ensuring client-side layer supports binning)
+- Binning uses `fixedBinLevel` for zoom-dependent cell size
+- Cluster click → sidebar population flow must be preserved for bin clicks
+- Consider whether `aggregateIds` or similar is available for bin-to-dataset resolution
+
+**Acceptance Criteria:**
+- [ ] DataONE map layer uses grid binning instead of circular clustering
+- [ ] Bin labels show dataset counts; counts remain synchronized with sidebar total
+- [ ] Clicking a bin populates right sidebar with datasets in that cell
+- [ ] Single-point behavior preserved when zoomed in (if bins break into points)
+
+**Estimated Time:** 3–5 hours
 
 ---
 
@@ -198,7 +231,7 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 - [ ] How to handle datasets with many files?
 - [ ] Keyword click behavior - filter by that keyword?
 - [ ] Preview capability vs. link to DataOne?
-- [ ] Should we switch from point clustering to grid/bin aggregation (zoom-dependent cells with counts) to improve count explainability and reduce cluster ambiguity?
+- [ ] ~~Should we switch from point clustering to grid/bin aggregation?~~ → Tracked in CON-DONE-16
 
 ---
 
@@ -206,6 +239,8 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 20, 2026 | CON-DONE-01 marked complete; added CON-DONE-16 (switch to grid binning) as next task. | Assistant |
+| Feb 20, 2026 | CON-DONE-01: Fixed cluster count desynchronization — root cause was race condition in populateDataOneLayer (concurrent applyEdits doubling features). Applied queryFeatures-based deletion + populate-version guard. | Assistant |
 | Feb 20, 2026 | Updated CON-DONE-01 findings: latest-only records confirmed; added unresolved cluster count desynchronization investigation notes; documented large-cluster 414 fix. | Assistant |
 | Feb 20, 2026 | Started CON-DONE-01 implementation: map cluster click now drives DataONE sidebar list via cluster-member ID filtering; pending QA. | Assistant |
 | Feb 19, 2026 | Added CON-DONE-15: Spatial query for DataONE datasets — ensure draw/query tools filter by extent. | — |

@@ -90,6 +90,7 @@ export function useDataOneMapBehavior(
   const spatialPolygon = getSpatialPolygonForLayer(LAYER_ID);
   const mapDatasetsByIdRef = useRef<Map<string, DataOneDataset>>(new Map());
   const highlightGraphicRef = useRef<__esri.Graphic | null>(null);
+  const populateVersionRef = useRef(0);
 
   const isPinned = pinnedLayers.some((p) => p.layerId === LAYER_ID);
   const isActive = activeLayer?.layerId === LAYER_ID;
@@ -116,6 +117,7 @@ export function useDataOneMapBehavior(
     const dataOneLayer = arcLayer as FeatureLayer;
 
     const abortController = new AbortController();
+    const version = ++populateVersionRef.current;
 
     const run = async () => {
       try {
@@ -129,6 +131,7 @@ export function useDataOneMapBehavior(
           signal: abortController.signal,
         });
         if (abortController.signal.aborted) return;
+        if (populateVersionRef.current !== version) return;
 
         const spatiallyFilteredMapData = mapData.filter((dataset) => {
           const coordinates = dataset.geometry?.coordinates;
