@@ -23,9 +23,12 @@ export function ServiceGroup({
   const isActiveService = activeLayer?.layerId === service.id && !!activeLayer.isService;
 
   const handleHeaderClick = () => {
-    const selectedSubLayerId = isActiveService
-      ? activeLayer?.selectedSubLayerId
-      : layers[0]?.id;
+    const selectedSubLayerId = (() => {
+      if (isActiveService) return activeLayer?.selectedSubLayerId;
+      const activeLayerIsChildOfService = !!activeLayer && layers.some(layer => layer.id === activeLayer.layerId);
+      if (activeLayerIsChildOfService) return activeLayer?.layerId;
+      return layers[0]?.id;
+    })();
     activateLayer(service.id, undefined, undefined, selectedSubLayerId);
     onToggleExpand();
   };

@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 10 / 22 tasks (CON-ARCGIS-01, 02, 04, 05, 08, 09, 10, 11, 12, 6.20 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived; CON-ARCGIS-14 added Feb 19)  
+**Progress:** 11 / 22 tasks (CON-ARCGIS-01, 02, 04, 05, 08, 09, 10, 11, 12, 14, 6.20 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry) ✅ complete  
@@ -43,7 +43,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **CON-ARCGIS-11** | 🟢 Complete | Feb 19, 2026 | Right sidebar: rename section to "Feature Service Overview" | Replace "TNC ArcGIS Service" with user-facing label |
 | **CON-ARCGIS-12** | 🟢 Complete | Feb 19, 2026 | Right sidebar: simplify layer list UX | Remove dropdown + helper text; single scrollable list (~5 rows); "N layers" header; highlight selected |
 | **CON-ARCGIS-13** | ⚪ | Feb 19, 2026 | Left sidebar: align feature service + child layer right edges | Feature service box and child layer boxes share same right margin as other layers (mr-1); child right edge aligns with parent; scrollbar overlay fits naturally |
-| **CON-ARCGIS-14** | ⚪ | Feb 19, 2026 | Unified Service Workspace: service/layer click behavior + layer list state chips | See task details below. Auto-select sublayer on service click; one right-sidebar layout; layer list shows pinned/visible counts; Browse = inspect current layer |
+| **CON-ARCGIS-14** | 🟢 Complete | Feb 19, 2026 | Unified Service Workspace: service/layer click behavior + layer list state chips | Auto-select sublayer on service click; one right-sidebar layout; layer list header (N pinned • N visible); amber active highlight; pin/eye icons; inline pin/unpin; Map Layers widget sync |
 | **6.8** | ⚪ | — | Search Enhancement | Match service + layer names; expand parent service when layer matches |
 | **6.9** | ⚪ | — | Keyboard Navigation & ARIA | Arrow keys for expand/collapse, ARIA tree structure, focus management |
 | **6.10** | ⚪ | — | QA & Edge Cases | Single-layer services, empty results, malformed queries, schema fetch errors |
@@ -594,13 +594,13 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
    - Always opens Browse tab for the layer shown in the context block.
 
 **Acceptance Criteria:**
-- [ ] Clicking service row auto-selects a sublayer (last-active or first) and shows it on map
-- [ ] Clicking child layer row updates Current Layer; same right-sidebar layout
-- [ ] Layer list header shows pinned/visible counts (e.g. "N layers • X pinned • Y visible")
-- [ ] Layer list rows show Active highlight; pinned/visible state visible where feasible
-- [ ] Browse CTA always inspects Current Layer
+- [x] Clicking service row auto-selects a sublayer (last-active or first) and shows it on map
+- [x] Clicking child layer row updates Current Layer; same right-sidebar layout
+- [x] Layer list header shows pinned/visible counts (e.g. "N layers • X pinned • Y visible")
+- [x] Layer list rows show Active highlight; pinned/visible state visible where feasible
+- [x] Browse CTA always inspects Current Layer
 
-**Estimated Time:** 2–3 hours
+**Completed (Feb 19, 2026):** ServiceGroup auto-selects sublayer (last-active or first); useMapLayers resolves concrete active sublayer for map visibility; MapLayersWidget resolves service-selected sublayer for Active section sync; TNCArcGISOverviewTab unified layout with amber active highlight, pin/eye icons (right-aligned), inline pin/unpin toggle; LayerContext.isLayerVisible treats service-selected sublayer as visible; Browse CTA relabeled "Inspect Current Layer".
 
 ---
 
@@ -682,6 +682,7 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 19, 2026 | CON-ARCGIS-14 | **Complete.** Unified Service Workspace: service/layer click auto-selects sublayer; map + Map Layers widget sync with resolved sublayer; right-sidebar layer list with amber active highlight, pin/eye icons, inline pin/unpin; "Inspect Current Layer" CTA. Files: ServiceGroup, useMapLayers, MapLayersWidget, TNCArcGISOverviewTab, LayerContext. | — |
 | Feb 19, 2026 | CON-ARCGIS-14 | Added task: Unified Service Workspace — service/layer click behavior, auto-select sublayer on service click, layer list state chips (pinned/visible counts). | — |
 | Feb 19, 2026 | CON-ARCGIS-10, 11, 12 | Implemented right sidebar hierarchy relabel (Feature Service, Current Layer), section rename to "Feature Service Overview", single scrollable layer list (dropdown + helper text removed). | — |
 | Feb 19, 2026 | CON-ARCGIS-01, 02, 04, 05, 6.20 | Marked complete. Added CON-ARCGIS-08–12 from user feedback: left sidebar scrollbar pill, row clipping fix, right sidebar relabeling, section rename, layer list simplification. | — |

@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { ExternalLink, X } from 'lucide-react';
+import { useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { ExternalLink, Eye, EyeOff, Pin, X } from 'lucide-react';
 import { useCatalog } from '../../../context/CatalogContext';
 import { useLayers } from '../../../context/LayerContext';
 import { buildServiceUrl } from '../../../services/tncArcgisService';
@@ -31,8 +31,10 @@ function getTargetLayer(activeLayer: CatalogLayer | undefined, selectedSubLayerI
 export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOverviewTabProps) {
   const {
     activeLayer,
+    activateLayer,
     setActiveServiceSubLayer,
     isLayerPinned,
+    isLayerVisible,
     pinLayer,
     unpinLayer,
     getPinnedByLayerId,
@@ -57,10 +59,10 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
   }, [activeCatalogLayer, layerMap]);
 
   const siblingLayers = useMemo(
-    () => activeCatalogLayer?.catalogMeta?.siblingLayers ?? [],
-    [activeCatalogLayer],
+    () => serviceContextLayer?.catalogMeta?.siblingLayers ?? [],
+    [serviceContextLayer],
   );
-  const isServiceOverview = !!(activeLayer?.isService && siblingLayers.length > 0);
+  const isUnifiedServiceWorkspace = siblingLayers.length > 0;
 
   const description = serviceContextLayer?.catalogMeta?.description || 'No description available yet.';
   const featureServiceName = serviceContextLayer?.name || activeCatalogLayer?.name || 'Unknown service';
@@ -69,10 +71,12 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
   const servicePath = serviceContextLayer?.catalogMeta?.servicePath || 'Unknown service path';
   const serverBaseUrl = serviceContextLayer?.catalogMeta?.serverBaseUrl || 'Unknown host';
   const sourceLabel = `${serverBaseUrl}/${servicePath}`;
-  const activeLayerPinned = activeLayer ? isLayerPinned(activeLayer.layerId) : false;
-  const activeLayerPinnedEntry = activeLayer ? getPinnedByLayerId(activeLayer.layerId) : undefined;
-  const activeLayerCanPin = !!activeLayer && !activeLayer.isService;
-  const sliderOpacityPercent = activeLayer ? Math.round(getLayerOpacity(activeLayer.layerId) * 100) : 100;
+  const targetLayerPinned = targetLayer ? isLayerPinned(targetLayer.id) : false;
+  const targetLayerPinnedEntry = targetLayer ? getPinnedByLayerId(targetLayer.id) : undefined;
+  const targetLayerCanPin = !!targetLayer;
+  const sliderOpacityPercent = targetLayer ? Math.round(getLayerOpacity(targetLayer.id) * 100) : 100;
+  const pinnedLayerCount = siblingLayers.filter(layer => isLayerPinned(layer.id)).length;
+  const visibleLayerCount = siblingLayers.filter(layer => isLayerVisible(layer.id)).length;
   const serviceSearchUrl = useMemo(() => {
     const searchLabel = serviceContextLayer?.name || targetLayer?.name;
     if (!searchLabel) return '';
@@ -97,17 +101,33 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
   );
 
   const handlePinActiveLayer = () => {
-    if (!activeLayer) return;
-    pinLayer(activeLayer.layerId);
+    if (!targetLayer) return;
+    pinLayer(targetLayer.id);
   };
   const handleUnpinActiveLayer = () => {
-    if (!activeLayerPinnedEntry) return;
-    unpinLayer(activeLayerPinnedEntry.id);
+    if (!targetLayerPinnedEntry) return;
+    unpinLayer(targetLayerPinnedEntry.id);
+  };
+  const handleLayerListSelect = (layerId: string) => {
+    if (activeLayer?.isService) {
+      setActiveServiceSubLayer(layerId);
+      return;
+    }
+    activateLayer(layerId);
+  };
+  const handleInlinePinToggle = (event: ReactMouseEvent, layerId: string) => {
+    event.stopPropagation();
+    const pinnedEntry = getPinnedByLayerId(layerId);
+    if (pinnedEntry) {
+      unpinLayer(pinnedEntry.id);
+    } else {
+      pinLayer(layerId);
+    }
   };
 
   return (
     <div id="tnc-arcgis-overview-tab" className="space-y-5">
-      {isServiceOverview ? (
+      {isUnifiedServiceWorkspace ? (
         <>
           <div id="tnc-arcgis-overview-context-card" className="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-3">
             <div id="tnc-arcgis-overview-context-service-block" className="space-y-1">
@@ -139,7 +159,7 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
 
           <div id="tnc-arcgis-service-overview-layer-list-block" className="space-y-2">
             <h4 id="tnc-arcgis-service-overview-layer-list-title" className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-              {siblingLayers.length} {siblingLayers.length === 1 ? 'layer' : 'layers'}
+              {siblingLayers.length} {siblingLayers.length === 1 ? 'layer' : 'layers'} • {pinnedLayerCount} pinned • {visibleLayerCount} visible
             </h4>
             <ul
               id="tnc-arcgis-service-overview-layer-list"
@@ -162,16 +182,72 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
                     <button
                       id={`tnc-arcgis-service-overview-layer-name-${layer.id}`}
                       type="button"
-                      onClick={() => setActiveServiceSubLayer(layer.id)}
-                      className={`w-full text-left rounded-lg border bg-white p-3 transition-colors ${
+                      onClick={() => handleLayerListSelect(layer.id)}
+                      className={`w-full text-left rounded-lg border p-3 transition-colors ${
                         isSelectedLayer
-                          ? 'border-emerald-300 ring-1 ring-emerald-200'
-                          : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-amber-300 bg-amber-50 ring-1 ring-amber-200'
+                          : 'border-gray-200 bg-white hover:border-gray-300'
                       }`}
                     >
-                      <p className="text-sm font-medium text-gray-900">
-                        {formatLayerLabel(layer.name, layer.catalogMeta?.layerIdInService)}
-                      </p>
+                      <div
+                        id={`tnc-arcgis-service-overview-layer-title-row-${layer.id}`}
+                        className="flex items-start justify-between gap-2"
+                      >
+                        <p className="text-sm font-medium text-gray-900 min-w-0 truncate">
+                          {formatLayerLabel(layer.name, layer.catalogMeta?.layerIdInService)}
+                        </p>
+                        <div
+                          id={`tnc-arcgis-service-overview-layer-state-icons-${layer.id}`}
+                          className="flex items-center gap-2 flex-shrink-0 translate-y-[1px]"
+                        >
+                          {isLayerPinned(layer.id) ? (
+                            <span
+                              id={`tnc-arcgis-service-overview-layer-pin-button-${layer.id}`}
+                              onClick={(event) => handleInlinePinToggle(event, layer.id)}
+                              className="inline-flex items-center justify-center rounded text-blue-600 hover:text-blue-400 transition-colors cursor-pointer"
+                              title="Unpin layer"
+                              role="button"
+                              aria-label="Unpin layer"
+                            >
+                              <Pin
+                                id={`tnc-arcgis-service-overview-layer-pin-icon-${layer.id}`}
+                                className="h-3.5 w-3.5 fill-blue-600 hover:fill-blue-400"
+                              />
+                            </span>
+                          ) : isSelectedLayer ? (
+                            <span
+                              id={`tnc-arcgis-service-overview-layer-pin-button-${layer.id}`}
+                              onClick={(event) => handleInlinePinToggle(event, layer.id)}
+                              className="inline-flex items-center justify-center rounded text-amber-600 hover:text-amber-700 transition-colors cursor-pointer"
+                              title="Pin layer"
+                              role="button"
+                              aria-label="Pin layer"
+                            >
+                              <Pin
+                                id={`tnc-arcgis-service-overview-layer-pin-outline-icon-${layer.id}`}
+                                className="h-3.5 w-3.5"
+                              />
+                            </span>
+                          ) : null}
+                          <span
+                            id={`tnc-arcgis-service-overview-layer-visibility-icon-container-${layer.id}`}
+                            className="inline-flex items-center justify-center"
+                            title={isLayerVisible(layer.id) ? 'Visible on map' : 'Hidden on map'}
+                          >
+                            {isLayerVisible(layer.id) ? (
+                              <Eye
+                                id={`tnc-arcgis-service-overview-layer-eye-icon-${layer.id}`}
+                                className="h-3.5 w-3.5 text-emerald-700"
+                              />
+                            ) : (
+                              <EyeOff
+                                id={`tnc-arcgis-service-overview-layer-eye-off-icon-${layer.id}`}
+                                className="h-3.5 w-3.5 text-gray-400"
+                              />
+                            )}
+                          </span>
+                        </div>
+                      </div>
                       {hasDistinctLayerDescription && (
                         <p
                           id={`tnc-arcgis-service-overview-layer-description-${layer.id}`}
@@ -200,14 +276,72 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
             </dl>
           </div>
 
-          <div id="tnc-arcgis-service-overview-actions" className="grid grid-cols-2 gap-3">
+          {targetLayerCanPin && (
+            <div id="tnc-arcgis-overview-opacity-control-container" className="rounded-lg border border-gray-200 bg-white p-3">
+              <div id="tnc-arcgis-overview-opacity-control-header" className="flex items-center justify-between gap-3">
+                <label
+                  id="tnc-arcgis-overview-opacity-control-label"
+                  htmlFor="tnc-arcgis-overview-opacity-control-slider"
+                  className="text-xs font-semibold uppercase tracking-wide text-gray-600"
+                >
+                  Layer Opacity
+                </label>
+                <span id="tnc-arcgis-overview-opacity-control-value" className="text-xs text-gray-700 font-medium">
+                  {sliderOpacityPercent}%
+                </span>
+              </div>
+              <input
+                id="tnc-arcgis-overview-opacity-control-slider"
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={sliderOpacityPercent}
+                onChange={event => {
+                  if (!targetLayer) return;
+                  const nextPercent = Number(event.target.value);
+                  setLayerOpacity(targetLayer.id, nextPercent / 100);
+                }}
+                className="mt-2 w-full accent-emerald-600 cursor-pointer"
+                aria-label="Adjust layer opacity"
+              />
+            </div>
+          )}
+
+          <div id="tnc-arcgis-service-overview-actions" className="grid grid-cols-1 gap-3">
+            {targetLayerPinned ? (
+              <button
+                id="tnc-arcgis-overview-unpin-cta"
+                type="button"
+                onClick={handleUnpinActiveLayer}
+                className="w-full py-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-medium text-center min-h-[44px] hover:bg-emerald-100 transition-colors"
+              >
+                Unpin Layer
+              </button>
+            ) : !targetLayerCanPin ? (
+              <div
+                id="tnc-arcgis-overview-service-badge"
+                className="w-full py-3 rounded-lg border border-gray-300 bg-gray-50 text-gray-700 text-sm font-medium text-center min-h-[44px] flex items-center justify-center"
+              >
+                Service selected
+              </div>
+            ) : (
+              <button
+                id="tnc-arcgis-overview-pin-cta"
+                type="button"
+                onClick={handlePinActiveLayer}
+                className="w-full py-3 border border-blue-200 text-blue-700 font-medium rounded-lg hover:bg-blue-50 transition-colors text-sm min-h-[44px]"
+              >
+                Pin Layer
+              </button>
+            )}
             <button
               id="tnc-arcgis-service-overview-open-layer-cta"
               type="button"
               onClick={onBrowseClick}
-              className="col-span-2 w-full py-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-medium text-center min-h-[44px] hover:bg-emerald-100 transition-colors"
+              className="w-full py-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-medium text-center min-h-[44px] hover:bg-emerald-100 transition-colors"
             >
-              Browse Selected Layer
+              Inspect Current Layer
             </button>
           </div>
 
@@ -296,7 +430,7 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
         </dl>
       </div>
 
-          {activeLayerCanPin && (
+          {targetLayerCanPin && (
             <div id="tnc-arcgis-overview-opacity-control-container" className="rounded-lg border border-gray-200 bg-white p-3">
               <div id="tnc-arcgis-overview-opacity-control-header" className="flex items-center justify-between gap-3">
                 <label
@@ -318,9 +452,9 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
                 step={5}
                 value={sliderOpacityPercent}
                 onChange={event => {
-                  if (!activeLayer) return;
+                  if (!targetLayer) return;
                   const nextPercent = Number(event.target.value);
-                  setLayerOpacity(activeLayer.layerId, nextPercent / 100);
+                  setLayerOpacity(targetLayer.id, nextPercent / 100);
                 }}
                 className="mt-2 w-full accent-emerald-600 cursor-pointer"
                 aria-label="Adjust layer opacity"
@@ -329,7 +463,7 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
           )}
 
           <div id="tnc-arcgis-overview-actions" className="grid grid-cols-1 gap-3">
-            {activeLayerPinned ? (
+            {targetLayerPinned ? (
               <button
                 id="tnc-arcgis-overview-unpin-cta"
                 type="button"
@@ -338,7 +472,7 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
               >
                 Unpin Layer
               </button>
-            ) : !activeLayerCanPin ? (
+            ) : !targetLayerCanPin ? (
               <div
                 id="tnc-arcgis-overview-service-badge"
                 className="w-full py-3 rounded-lg border border-gray-300 bg-gray-50 text-gray-700 text-sm font-medium text-center min-h-[44px] flex items-center justify-center"

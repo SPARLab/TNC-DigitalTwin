@@ -1790,7 +1790,10 @@ export function LayerProvider({ children }: { children: ReactNode }) {
   const isLayerVisible = useCallback(
     (layerId: string) => {
       const pinned = pinnedLayers.find(p => p.layerId === layerId);
-      return pinned ? pinned.isVisible : activeLayer?.layerId === layerId;
+      if (pinned) return pinned.isVisible;
+      if (!activeLayer) return false;
+      if (activeLayer.layerId === layerId) return true;
+      return !!(activeLayer.isService && activeLayer.selectedSubLayerId === layerId);
     },
     [pinnedLayers, activeLayer]
   );
