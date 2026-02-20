@@ -18,7 +18,7 @@
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
 | TF-01 | 🟢 Complete | Feb 20, 2026 | Set minimum height for image results in Browse tab (~150px) so user doesn't need to collapse filters to scroll | Done: min-h-[400px] on inat-observation-cards. Right sidebar scrollable under Overview/Browse tabs is acceptable. |
-| TF-03 | ⚪ Not Started | Feb 20, 2026 | Don't gray out species options in Filter Species dropdown; gray communicates "unavailable" but they're just unselected | High priority; communicates incorrect affordance. Source: Trisalyn QA Feb 20 |
+| TF-03 | 🟢 Complete | Feb 20, 2026 | Don't gray out species options in Filter Species dropdown; gray communicates "unavailable" but they're just unselected | Done: removed `opacity-60` and `text-gray-500` from unselected rows in both Filter Taxa and Filter Species dropdowns. Unselected rows now use `bg-white hover:bg-gray-50` + `text-gray-700`; checkbox alone conveys selection state. Same pattern fixed in Taxa for consistency. |
 | TF-04 | ⚪ Not Started | Feb 20, 2026 | Fix map/right-sidebar desync: selecting taxon in legend + filtering by species results in map not updating | High priority; discovered live in QA. Source: Trisalyn QA Feb 20 |
 | CON-INAT-01 | 🟢 Complete | Feb 19, 2026 | Add species-level filtering (currently taxa only) | Done: full scientific names, species search, count/alphabetical sort, map/pinned-view sync. Common/Latin toggle dropped (decided against). |
 | CON-INAT-02 | 🟢 Complete | Feb 19, 2026 | Species hierarchy flow: taxa -> species list -> observations per species | Done: taxa→species→observations flow enforced; redundant top species search removed; "Filter Taxa" label. |
@@ -29,8 +29,8 @@
 
 **Phase-5 handoff:** `CON-INAT-05` (Export Builder cart inversion) is tracked in `docs/IMPLEMENTATION/phases/phase-5-export-builder.md` to avoid cross-branch conflicts.
 
-**Active tasks remaining:** 2 (TF-03, TF-04)  
-**Recently completed:** TF-01 (min height for image results), CON-INAT-07 (collapsible filters + scrollable results), CON-INAT-06 (species/taxa ordering). Archived tasks: `docs/archive/phases/phase-1-inaturalist-completed.md`
+**Active tasks remaining:** 1 (TF-04)  
+**Recently completed:** TF-03 (remove gray/opacity from unselected filter rows), TF-01 (min height for image results), CON-INAT-07 (collapsible filters + scrollable results). Archived tasks: `docs/archive/phases/phase-1-inaturalist-completed.md`
 
 ---
 
@@ -105,6 +105,7 @@ TBD
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 20, 2026 | TF-03 | **Complete.** Removed `opacity-60` and `text-gray-500` from unselected filter rows in both Filter Taxa and Filter Species dropdowns. Unselected items now use `bg-white hover:bg-gray-50` + `text-gray-700`; the checkbox alone conveys selection state. Same fix applied to Taxa dropdown for parity. | — |
 | Feb 20, 2026 | TF-01 | **Complete.** Added min-h-[400px] to observation cards container so image results area has minimum height; users no longer need to collapse filters to scroll. Right sidebar scrollable under Overview/Browse tabs is acceptable. | — |
 | Feb 19, 2026 | CON-INAT-04 | **Won't Do.** Reptile observations appearing in ocean are due to iNaturalist coordinate obfuscation for sensitive/endangered species, not an app bug. | — |
 | Feb 19, 2026 | CON-INAT-06 | **Complete.** Species/taxa ordering already implemented in CON-INAT-01: count sort (common higher) default, A-Z toggle. | — |
