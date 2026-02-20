@@ -1,7 +1,7 @@
 # Phase 0: Foundation
 
 **Status:** 🟢 Foundation complete — parallel branches ready  
-**Progress:** CON-GL-01 through 08 + 0.9 complete  
+**Progress:** CON-GL-01 through 08 + 0.9 + D20-01 complete  
 **Branch:** `v2/foundation`  
 **Blocking:** YES - All other phases depend on this  
 **Owner:** TBD
@@ -40,7 +40,7 @@ Set up the V2 application shell, routing, state management, and shared component
 | CON-GL-07 | 🟢 Complete | Feb 18, 2026 (implemented) | Fix map and sidebar filter sync drift bug | Added active-view reconciliation in `LayerContext` to keep sidebar filters bound to the currently visible/valid child view |
 | CON-GL-08 | 🟢 Complete | Feb 18, 2026 (implemented) | Guide user to filter panel when "New View" is clicked | New View now auto-activates the created child view and triggers Edit Filters guidance to open/hydrate Browse filters |
 | 0.9 | 🟢 Complete | Feb 19, 2026 | Dynamic Layer Registry from Data Catalog Service | `useCatalogRegistry` fetches from Dangermond_Preserve_Data_Catalog FeatureServer; left sidebar populated dynamically; layers without adapters show generic placeholder in right sidebar |
-| D20-01 | ⚪ Not Started | Feb 20, 2026 | Add collapse button to right sidebar — default open, stays collapsed until user manually re-expands | Manual collapse only; no auto-collapse on layer change. Screen real estate issue on laptops. Source: Dan feedback Feb 20. |
+| D20-01 | 🟢 Complete | Feb 20, 2026 | Add collapse button to right sidebar — default open, stays collapsed until user manually re-expands | Extruded tab on left edge; single margin-right animation; localStorage persistence; no auto-reopen. Source: Dan feedback Feb 20. |
 
 **Note:** Tasks `0.1` through `0.7` appear to be already implemented and are intentionally removed from active tracking.
 
@@ -62,7 +62,7 @@ Set up the V2 application shell, routing, state management, and shared component
 | CON-GL-07 | Map/sidebar filter sync bug fix | 🟢 Complete | Codex | Added central active-view reconciliation in `LayerContext` so child-view visibility/removal cannot leave sidebar bound to a stale view ID |
 | CON-GL-08 | Auto-open or guide to filters on New View | 🟢 Complete | Codex | New view creation now activates the created view and fires `requestEditFilters()` so users are guided to filters immediately |
 | 0.9 | Dynamic Layer Registry from Data Catalog Service | 🟢 Complete | — | `useCatalogRegistry.ts` fetches categories/datasets from Dangermond_Preserve_Data_Catalog; CatalogContext exposes to LeftSidebar; layerRegistry.ts provides icon mapping + external layers only |
-| D20-01 | Right sidebar collapse button | ⚪ Not Started | — | Default open; manual collapse only; no auto-reopen on layer change; user must manually re-expand. Dan feedback Feb 20 — screen real estate on laptops. |
+| D20-01 | Right sidebar collapse button | 🟢 Complete | Codex | V2App: extruded tab on sidebar left edge (PanelRightClose/Open icons), single margin-right animation for sync, localStorage persistence, 300ms transition. Header Collapse button removed; X close removed. |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -524,18 +524,21 @@ interface Bookmark {
 **Source:** Dan feedback, Feb 20, 2026 — `docs/feedback/meeting-notes/extracted-tasks-dan-feedback-feb-20-2026.md`
 
 **Acceptance Criteria:**
-- [ ] Right sidebar has a collapse button (e.g., chevron or similar affordance)
-- [ ] Default state: sidebar open
-- [ ] When user collapses: sidebar stays collapsed until user manually re-expands
-- [ ] No auto-reopen on layer change, tab switch, or other app events
-- [ ] Collapsed state persists across session (localStorage or equivalent) — user preference respected
-- [ ] When collapsed: a small expand affordance (e.g., tab or button) remains visible so user can re-expand
+- [x] Right sidebar has a collapse button (e.g., chevron or similar affordance)
+- [x] Default state: sidebar open
+- [x] When user collapses: sidebar stays collapsed until user manually re-expands
+- [x] No auto-reopen on layer change, tab switch, or other app events
+- [x] Collapsed state persists across session (localStorage or equivalent) — user preference respected
+- [x] When collapsed: a small expand affordance (e.g., tab or button) remains visible so user can re-expand
 
 **Design Decision (from meeting):** Default open. Once collapsed by user, do not auto-reopen. User must intentionally re-expand.
 
-**Files to Modify:**
-- `src/v2/components/RightSidebar/` (or equivalent right sidebar shell)
-- Layout component that hosts the right sidebar
+**Implementation (Feb 20, 2026):** Extruded tab on the left edge of the right sidebar, centered vertically. Uses `PanelRightClose`/`PanelRightOpen` icons. Single `margin-right` animation (shell stays 400px wide, slides off via `-mr-[400px]`) so the tab and sidebar move as one unit. Header X close removed; header Collapse button removed in favor of edge tab. localStorage key `v2-right-sidebar-collapsed`. 300ms ease-in-out transition.
+
+**Files Modified:**
+- `src/v2/V2App.tsx` — shell, edge toggle button, localStorage, layout
+- `src/v2/components/RightSidebar/SidebarHeader.tsx` — removed X close, collapse moved to edge
+- `src/v2/components/RightSidebar/RightSidebar.tsx` — removed onClose prop
 
 ---
 

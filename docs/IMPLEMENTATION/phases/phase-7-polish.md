@@ -29,7 +29,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| D20-01 | ⚪ Not Started | Feb 20, 2026 | Add collapse button to right sidebar — default open, stays collapsed until user manually re-expands | Manual collapse only; no auto-collapse on layer change. Screen real estate issue on laptops. Source: Dan Meeting Feb 20 |
+| D20-01 | 🟢 Complete | Feb 20, 2026 | Add collapse button to right sidebar — default open, stays collapsed until user manually re-expands | Implemented in Phase 0 (app-wide layout). Extruded tab, localStorage, 300ms transition. |
 | D20-03 | ⚪ Not Started | Feb 20, 2026 | Make Map Layers accordion header bar clickable to expand/collapse (not just the caret icon) | Dan kept trying to click the heading to expand. Retain the caret but make the whole header row interactive. Source: Dan Meeting Feb 20 |
 | D20-04 | ⚪ Not Started | Feb 20, 2026 | Replace +/- symbols in Map Layers accordion with chevron (V / >) symbols | Plus/minus is not a clear expand/collapse affordance; chevron communicates directionality better. Source: Dan Meeting Feb 20 |
 | D20-07 | ⚪ Not Started | Feb 20, 2026 | Verify custom polygon draw tool is working consistently across all data sources | iNaturalist and ANiML confirmed working; Dendra suspected broken; audit the rest. Source: Dan Meeting Feb 20 |
@@ -41,7 +41,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
-| D20-01 | Add collapse button to right sidebar | ⚪ Not Started | | Default open; stays collapsed until user manually re-expands. Source: Dan Meeting Feb 20 |
+| D20-01 | Add collapse button to right sidebar | 🟢 Complete | Codex | Implemented in Phase 0. Extruded tab on left edge, localStorage, no auto-reopen. |
 | D20-03 | Map Layers accordion header bar clickable | ⚪ Not Started | | Whole header row interactive, not just caret. Source: Dan Meeting Feb 20 |
 | D20-04 | Replace +/- with chevron in Map Layers accordion | ⚪ Not Started | | V when open, > when closed. Source: Dan Meeting Feb 20 |
 | D20-07 | Audit custom polygon draw tool across all data sources | ⚪ Not Started | | iNaturalist ✅, ANiML ✅; Dendra suspected broken. Source: Dan Meeting Feb 20 |
