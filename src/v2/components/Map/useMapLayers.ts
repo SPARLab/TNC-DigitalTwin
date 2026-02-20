@@ -17,6 +17,7 @@ import { useMap } from '../../context/MapContext';
 import { useCatalog } from '../../context/CatalogContext';
 import { createMapLayer, IMPLEMENTED_LAYERS } from './layers';
 import { useAllMapBehaviors } from '../../dataSources/registry';
+import type { ActiveLayer, CatalogLayer } from '../../types';
 
 type DefinitionExpressionLayer = Layer & { definitionExpression?: string };
 type MapImageSublayerLike = { definitionExpression?: string };
@@ -38,12 +39,27 @@ function getFirstMapImageSublayer(layer: Layer): MapImageSublayerLike | undefine
   return undefined;
 }
 
+function getConcreteActiveLayerId(activeLayer: ActiveLayer | null, layerMap: Map<string, CatalogLayer>): string | null {
+  if (!activeLayer) return null;
+  if (!activeLayer.isService) return activeLayer.layerId;
+  const serviceLayer = layerMap.get(activeLayer.layerId);
+  const siblingLayers = serviceLayer?.catalogMeta?.siblingLayers ?? [];
+  if (activeLayer.selectedSubLayerId && siblingLayers.some(sibling => sibling.id === activeLayer.selectedSubLayerId)) {
+    return activeLayer.selectedSubLayerId;
+  }
+  return siblingLayers[0]?.id ?? null;
+}
+
 export function useMapLayers() {
   const { pinnedLayers, activeLayer, getLayerOpacity } = useLayers();
   const { viewRef, mapReady, showToast } = useMap();
   const { layerMap } = useCatalog();
   const managedLayersRef = useRef<Map<string, Layer>>(new Map());
   const warnedLayersRef = useRef<Set<string>>(new Set());
+  const concreteActiveLayerId = getConcreteActiveLayerId(activeLayer, layerMap);
+  const concreteActiveLayerName = concreteActiveLayerId
+    ? (layerMap.get(concreteActiveLayerId)?.name ?? activeLayer?.name ?? 'Layer')
+    : null;
 
   // Stable callback for adapter hooks to look up managed ArcGIS layers by ID
   const getManagedLayer = useCallback(
@@ -68,8 +84,8 @@ export function useMapLayers() {
       shouldBeOnMap.set(p.layerId, { name: p.name, visible: p.isVisible });
     }
     // Active but not pinned → always visible (DFT-021: clicking makes active AND visible)
-    if (activeLayer && !activeLayer.isService && !shouldBeOnMap.has(activeLayer.layerId)) {
-      shouldBeOnMap.set(activeLayer.layerId, { name: activeLayer.name, visible: true });
+    if (concreteActiveLayerId && concreteActiveLayerName && !shouldBeOnMap.has(concreteActiveLayerId)) {
+      shouldBeOnMap.set(concreteActiveLayerId, { name: concreteActiveLayerName, visible: true });
     }
 
     // Remove layers that should no longer be on the map
@@ -105,7 +121,7 @@ export function useMapLayers() {
       map.add(arcLayer);
       managed.set(layerId, arcLayer);
     }
-  }, [pinnedLayers, activeLayer, getLayerOpacity, viewRef, mapReady, showToast]);
+  }, [pinnedLayers, concreteActiveLayerId, concreteActiveLayerName, getLayerOpacity, viewRef, mapReady, showToast]);
 
   // Sync visibility: pinned layers use eye toggle; active-only always visible
   useEffect(() => {
@@ -118,17 +134,17 @@ export function useMapLayers() {
       }
     }
     // Active but not pinned: ensure visible
-    if (activeLayer && !activeLayer.isService) {
-      const isPinned = pinnedLayers.some(p => p.layerId === activeLayer.layerId);
+    if (concreteActiveLayerId) {
+      const isPinned = pinnedLayers.some(p => p.layerId === concreteActiveLayerId);
       if (!isPinned) {
-        const arcLayer = managed.get(activeLayer.layerId);
+        const arcLayer = managed.get(concreteActiveLayerId);
         if (arcLayer) {
           arcLayer.visible = true;
-          arcLayer.opacity = Math.min(1, Math.max(0, getLayerOpacity(activeLayer.layerId)));
+          arcLayer.opacity = Math.min(1, Math.max(0, getLayerOpacity(concreteActiveLayerId)));
         }
       }
     }
-  }, [pinnedLayers, activeLayer, getLayerOpacity]);
+  }, [pinnedLayers, concreteActiveLayerId, getLayerOpacity]);
 
   // Sync TNC ArcGIS filter updates to map layer definitionExpression.
   useEffect(() => {
@@ -179,13 +195,12 @@ export function useMapLayers() {
 
   // Toast for activating unimplemented layers (browsing, not yet pinned)
   useEffect(() => {
-    if (!activeLayer) return;
-    if (activeLayer.isService) return;
-    if (IMPLEMENTED_LAYERS.has(activeLayer.layerId)) return;
+    if (!concreteActiveLayerId) return;
+    if (IMPLEMENTED_LAYERS.has(concreteActiveLayerId)) return;
     // Only toast if not pinned (pinned layers toast in the add-layer effect)
-    if (pinnedLayers.some(p => p.layerId === activeLayer.layerId)) return;
-    showToast(`"${activeLayer.name}" — map data not available yet`, 'info');
-  }, [activeLayer?.layerId]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (pinnedLayers.some(p => p.layerId === concreteActiveLayerId)) return;
+    showToast(`"${concreteActiveLayerName ?? 'Layer'}" — map data not available yet`, 'info');
+  }, [concreteActiveLayerId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Adapter hooks (declared AFTER core effects — their effects fire later) ─
 

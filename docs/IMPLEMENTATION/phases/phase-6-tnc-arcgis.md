@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 0 / 16 tasks (completed tasks 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
+**Progress:** 13 / 22 tasks (CON-ARCGIS-01, 02, 03, 04, 05, 08, 09, 10, 11, 12, 14, 6.17, 6.20 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry) ✅ complete  
@@ -30,13 +30,20 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| CON-ARCGIS-01 | ⚪ Not Started | Feb 18, 2026 | Right sidebar shows service overview and layer-specific info with progressive disclosure | High priority; resolved interaction model |
-| CON-ARCGIS-02 | ⚪ Not Started | Feb 18, 2026 | Clarify feature service vs category hierarchy in left sidebar | High priority |
-| CON-ARCGIS-03 | ⚪ Not Started | Feb 18, 2026 | Add "See table" button to open tabular layer/table view | Medium priority |
-| CON-ARCGIS-04 | ⚪ Not Started | Feb 18, 2026 | Bidirectional sync between right sidebar layer selection and left sidebar | Medium priority |
-| CON-ARCGIS-05 | ⚪ Not Started | Feb 18, 2026 | Fix iframe to show user-friendly TNC Hub page instead of raw service page | Medium priority |
+| CON-ARCGIS-01 | 🟢 Complete | Feb 19, 2026 | Right sidebar shows service overview and layer-specific info with progressive disclosure | Hierarchy context, layer selector, sync |
+| CON-ARCGIS-02 | 🟢 Complete | Feb 19, 2026 | Clarify feature service vs category hierarchy in left sidebar | Service/Layer badges, active-state styling |
+| CON-ARCGIS-03 | 🟢 Complete | Feb 19, 2026 | Add "See table" button to open tabular layer/table view | Implemented via 6.17: Browse "Open Table Overlay" + ArcGIS FeatureTable |
+| CON-ARCGIS-04 | 🟢 Complete | Feb 19, 2026 | Bidirectional sync between right sidebar layer selection and left sidebar | LayerContext + Overview selector |
+| CON-ARCGIS-05 | 🟢 Complete | Feb 19, 2026 | Fix iframe to show user-friendly TNC Hub page instead of raw service page | Hub search URL preferred; REST fallback |
 | CON-ARCGIS-06 | ⚪ Not Started | Feb 18, 2026 | Bug: fix Union Pacific Railroad layer (layer ID 0 not found) | Medium priority bug |
 | CON-ARCGIS-07 | ⚪ Not Started | Feb 18, 2026 | Design multi-layer feature service UX follow-up | Low priority / follow-up |
+| **CON-ARCGIS-08** | 🟢 Complete | Feb 19, 2026 | Left sidebar: hover-visible scrollbar pill | Implemented: custom overlay thumb (no gutter); visible on scroll/hover |
+| **CON-ARCGIS-09** | 🟢 Complete | Feb 19, 2026 | Left sidebar: fix layer row clipping | ServiceGroup: w-full→mx-1 min-w-0; consistent right margin |
+| **CON-ARCGIS-10** | 🟢 Complete | Feb 19, 2026 | Right sidebar: relabel hierarchy block | Feature Service (bold name); Current Layer; remove "Catalog: TNC ArcGIS…" |
+| **CON-ARCGIS-11** | 🟢 Complete | Feb 19, 2026 | Right sidebar: rename section to "Feature Service Overview" | Replace "TNC ArcGIS Service" with user-facing label |
+| **CON-ARCGIS-12** | 🟢 Complete | Feb 19, 2026 | Right sidebar: simplify layer list UX | Remove dropdown + helper text; single scrollable list (~5 rows); "N layers" header; highlight selected |
+| **CON-ARCGIS-13** | ⚪ | Feb 19, 2026 | Left sidebar: align feature service + child layer right edges | Feature service box and child layer boxes share same right margin as other layers (mr-1); child right edge aligns with parent; scrollbar overlay fits naturally |
+| **CON-ARCGIS-14** | 🟢 Complete | Feb 19, 2026 | Unified Service Workspace: service/layer click behavior + layer list state chips | Auto-select sublayer on service click; one right-sidebar layout; layer list header (N pinned • N visible); amber active highlight; pin/eye icons; inline pin/unpin; Map Layers widget sync |
 | **6.8** | ⚪ | — | Search Enhancement | Match service + layer names; expand parent service when layer matches |
 | **6.9** | ⚪ | — | Keyboard Navigation & ARIA | Arrow keys for expand/collapse, ARIA tree structure, focus management |
 | **6.10** | ⚪ | — | QA & Edge Cases | Single-layer services, empty results, malformed queries, schema fetch errors |
@@ -44,8 +51,8 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **6.12** | 🟡 | Feb 16, 2026 | Terminology + CTA Realignment | Decision locked: remove right-sidebar pin actions for now; keep pinning in left sidebar + Map Layers widget only |
 | **6.13** | 🟡 | Feb 16, 2026 | Multi-Layer Service Discoverability | In progress: stable left-sidebar scrollbar gutter; service-group spacing refinements retained |
 | **6.14** | 🟡 | Feb 16, 2026 | Service Reference + External Viewer | WIP: right-sidebar Browse focuses on source actions; legend controls live in floating map widget |
-| **6.17** | ⚪ | — | Generic Layer Table View (Feature Layers) | Add table view for feature layers: button in Browse tab to view layer table; generic across all feature layers |
-| **6.20** | ⚪ | — | Right Sidebar: Layer + Service Hierarchy Communication | Visually communicate: selected layer → feature service → TNC ArcGIS catalog hierarchy |
+| **6.17** | 🟢 Complete | Feb 19, 2026 | Generic Layer Table View (Feature Layers) | ArcGIS FeatureTable overlay on map; Browse shows row/column summary + Open Table Overlay |
+| **6.20** | 🟢 Complete | Feb 19, 2026 | Right Sidebar: Layer + Service Hierarchy Communication | Implemented via CON-ARCGIS-01/02 (Current Context block) |
 
 *Completed tasks 6.1–6.7, 6.15, 6.16, 6.18, 6.19 have been archived. See `docs/archive/phases/phase-6-tnc-arcgis-completed.md`.*
 
@@ -85,21 +92,18 @@ TNC FeatureService (e.g., "Wetlands")
 ### Right Sidebar Patterns
 
 **Service Overview (Multi-Layer):**
-- Layer switcher dropdown
-- Service description (from Data Catalog)
-- List of available layers with descriptions
+- Context block: Feature Service (bold name), Current Layer (CON-ARCGIS-10)
+- Section: "Feature Service Overview" with service description (CON-ARCGIS-11)
+- Single scrollable layer list with "N layers" header, highlighted selection, click-to-switch (CON-ARCGIS-12)
 - "Browse {Layer} →" button (switches to Browse tab)
 - "Pin {Layer}" button (adds selected layer to Map Layers widget)
 - Source actions: Open Overlay, Open in New Tab (Task 6.19)
-- Layer → Service → TNC catalog hierarchy display (Task 6.20)
 
 **Browse Tab (Any TNC Layer):**
-- Generic filter UI: field/operator/value rows
-- "Add Filter" button (adds new row)
-- "Preview Results" button (validates query, shows count)
-- "View Layer Table" button (Task 6.17) — opens table view for schema/column inspection
+- "Inspect Current Layer" card: row count, column count, column preview; "Open Table Overlay" button (Task 6.17)
+- ArcGIS FeatureTable overlay: floating panel over map area; auto-populates columns and rows from FeatureServer
+- Generic filter UI: field/operator/value rows (future)
 - "Pin Layer" button (appears when layer not pinned)
-- Result count display
 - *Note:* Source actions (Overlay, New Tab) move to Overview tab (Task 6.19)
 
 ---
@@ -381,11 +385,13 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - Reuse or extend `tncArcgisService.queryFeatures` for data fetch
 
 **Acceptance Criteria:**
-- [ ] Button to view layer table present in Browse tab for TNC feature layers
-- [ ] Table displays column headers and sample rows from the feature service
-- [ ] Table view is usable for schema/column inspection (backend audience)
-- [ ] Design allows reuse for other feature-layer data sources (Dendra, etc.)
-- [ ] Handles large result sets (pagination or virtualization)
+- [x] Button to view layer table present in Browse tab for TNC feature layers
+- [x] Table displays column headers and sample rows from the feature service
+- [x] Table view is usable for schema/column inspection (backend audience)
+- [x] Design allows reuse for other feature-layer data sources (Dendra, etc.)
+- [x] Handles large result sets (pagination or virtualization via ArcGIS FeatureTable)
+
+**Resolution (Feb 19, 2026):** Implemented via ArcGIS SDK `FeatureTable` widget. Browse tab shows "Inspect Current Layer" card with row count, column count, and column preview; "Open Table Overlay" opens a floating panel over the map. Panel uses ArcGIS FeatureTable bound to map layer or fallback FeatureLayer from service URL. TNCArcGISTableOverlay component; TNCArcGISContext state for open/close; adapter FloatingPanel. Hover-revealed "Inspect" action on Overview layer rows switches to Browse and opens table overlay.
 
 **Estimated Time:** 6–8 hours
 
@@ -416,6 +422,185 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - [ ] Single-layer services also show appropriate context (layer = service in that case)
 
 **Estimated Time:** 3–4 hours
+
+---
+
+### CON-ARCGIS-08: Left Sidebar — Hover-Visible Scrollbar Pill
+
+**Goal:** Replace the always-visible gray scroll track with a thin scrollbar that appears on hover/scroll.
+
+**Context:** User feedback (Feb 19, 2026): "There's like this gray bar that I think is like the scroll track for the scroll pill. I think what we just need to do is we just need to have like one of those scroll pills that hovers, like becomes visible in the left sidebar when you hover your mouse over and begin scrolling."
+
+**Implementation:**
+- Target: `#left-sidebar-scroll-area` (or equivalent scroll container in LeftSidebar)
+- Use CSS `scrollbar-gutter` and/or `::-webkit-scrollbar` with `width: thin`; show scrollbar thumb only on `:hover` or when actively scrolling
+- Ensure keyboard/trackpad scroll still works; scrollbar is overlay-style (does not shift content)
+
+**Acceptance Criteria:**
+- [ ] Gray scroll track not always visible
+- [ ] Thin scrollbar appears when hovering over left sidebar and scrolling
+- [ ] Scrollbar visible during active scroll (mouse wheel, trackpad)
+- [ ] No layout shift when scrollbar appears/disappears
+
+**Estimated Time:** 30–60 min
+
+---
+
+### CON-ARCGIS-09: Left Sidebar — Fix Layer Row Clipping
+
+**Goal:** Fix layer names and badges getting cut off at the right edge of the left sidebar.
+
+**Context:** User feedback (Feb 19, 2026): "The layers are getting cut off in the left sidebar."
+
+**Implementation:**
+- Adjust `LayerRow` and `ServiceGroup` flex layout: name text uses `truncate` with `min-w-0`; badges (Service/Layer pills) use `flex-shrink-0`
+- Ensure row padding and container width allow full visibility; verify at 280px sidebar width
+- Test with long layer names (e.g., "Coastal and Marine Data", "Deep Sea Corals & Sponges")
+
+**Acceptance Criteria:**
+- [x] Layer names truncate with ellipsis instead of hard cutoff
+- [x] Service/Layer badges fully visible
+- [x] No content clipped at right edge of sidebar
+- [x] Works at 280px sidebar width
+
+**Resolution (Feb 19, 2026):** ServiceGroup row wrapper changed from `w-full ml-1 mr-1` to `mx-1 min-w-0` to prevent width overflow that pushed the SERVICE badge and content too far right. Keeps consistent right margin with other layer rows (e.g., Water Pressure Level Sensors). Child layer rows already use `mr-1` (flat) or `mr-0` (indented); truncation via `truncate min-w-0 flex-1` on name span.
+
+**Estimated Time:** 30–60 min
+
+---
+
+### CON-ARCGIS-10: Right Sidebar — Relabel Hierarchy Block
+
+**Goal:** Replace internal jargon with user-facing labels: Feature Service (bold name), Current Layer.
+
+**Context:** User feedback (Feb 19, 2026): "I don't think saying catalog TNC ArcGIS feature services really makes a ton of sense. I don't really know what people are gonna do with that. I feel like that's an internal label."
+
+**Implementation:**
+- Replace "Current Context" block with:
+  - **Feature Service:** `{service name}` (bold, prominent)
+  - **Current Layer:** `{layer name}`
+- Remove "Catalog: TNC ArcGIS Feature Services" line entirely
+
+**Acceptance Criteria:**
+- [x] "Feature Service" label + bold service name visible
+- [x] "Current Layer" label + layer name visible
+- [x] "Catalog: TNC ArcGIS Feature Services" removed
+
+**Resolution (Feb 19, 2026):** Implemented in TNCArcGISOverviewTab. Replaced amber "Current Context" card with gray context block showing Feature Service (bold) and Current Layer. Catalog line removed.
+
+**Estimated Time:** 15–30 min
+
+---
+
+### CON-ARCGIS-11: Right Sidebar — Rename Section to "Feature Service Overview"
+
+**Goal:** Use "Feature Service Overview" as the section title instead of "TNC ArcGIS Service".
+
+**Context:** User feedback (Feb 19, 2026): "Overview of Feature service, like feature service overview, and then you would actually put in the overview."
+
+**Implementation:**
+- Change section title from "TNC ArcGIS Service" to "Feature Service Overview"
+- Apply to both service-overview and single-layer overview states
+
+**Acceptance Criteria:**
+- [x] Section titled "Feature Service Overview"
+- [x] Consistent across multi-layer and single-layer views
+
+**Resolution (Feb 19, 2026):** Section heading changed from "TNC ArcGIS Service" to "Feature Service Overview" in both service-overview and single-layer paths.
+
+**Estimated Time:** 10–15 min
+
+---
+
+### CON-ARCGIS-12: Right Sidebar — Simplify Layer List UX
+
+**Goal:** Remove redundant dropdown and helper text; use a single scrollable list with limited height.
+
+**Context:** User feedback (Feb 19, 2026): "I don't want this text which says pick a layer here or in the left sidebar selection stays synced both ways. I don't think that's necessary. I don't currently like the dropdown where it says oil seeps... why do we have those two widgets? It's just taking up a lot of vertical space. I want a scrollable section that just tells me like, you have 20 layers, and then we just have the currently selected layer highlighted, but then it's like a scrollable section with like a limited height, like shows five layers at a time."
+
+**Implementation:**
+- Remove layer dropdown selector
+- Remove "Pick a layer here or in the left sidebar. Selection stays synced both ways." helper text
+- Add "N layers" header (e.g., "20 layers")
+- Single scrollable list with `max-height` ~5 rows; visible scrollbar
+- Highlight currently selected layer in list
+- List items remain clickable to change selection (bidirectional sync preserved)
+
+**Acceptance Criteria:**
+- [x] Dropdown removed
+- [x] Helper text removed
+- [x] "N layers" header present
+- [x] Scrollable list with ~5 visible rows, limited height
+- [x] Selected layer highlighted
+- [x] Clicking list item updates selection (sync with left sidebar)
+
+**Resolution (Feb 19, 2026):** Replaced dropdown + helper text with single scrollable list (max-h-56). "N layers" header, clickable list items with emerald highlight for selected layer. Bidirectional sync via setActiveServiceSubLayer preserved.
+
+**Estimated Time:** 45–90 min
+
+---
+
+### CON-ARCGIS-13: Left Sidebar — Align Feature Service + Child Layer Right Edges
+
+**Goal:** Ensure feature service box and child layer boxes share the same right margin as other left-sidebar layers (e.g., Fire, Land Cover), so the overlay scrollbar fits naturally and visual alignment is consistent.
+
+**Context:** User feedback (Feb 19, 2026): Feature service rows (e.g., "Coastal and Marine") and their child layers should have right edges aligned with each other and with top-level layers. Child rows are indented from the left (correct); their right edge should align with the feature service box. Both should have the same distance from the right edge of the sidebar as other layers (mr-1 spacing where scrollbar overlay fits naturally).
+
+**Implementation:**
+- Feature service row: same right margin as top-level layers (mr-1)
+- Child layer rows: right edge aligns with feature service row (no extra right margin; indentation from left indicates hierarchy)
+- Verify alignment with category headers and flat layer rows (e.g., "Wind Sensors", "Land Cover")
+
+**Acceptance Criteria:**
+- [ ] Feature service box right edge matches other layer row right edges (consistent mr-1)
+- [ ] Child layer boxes right edge aligns with feature service box right edge
+- [ ] Left indentation of children preserved; hierarchy clear
+- [ ] Overlay scrollbar fits naturally in right margin across all row types
+
+**Estimated Time:** 30–45 min
+
+---
+
+### CON-ARCGIS-14: Unified Service Workspace — Service/Layer Click Behavior + Layer List State Chips
+
+**Goal:** One consistent right-sidebar model for multi-layer TNC services. Clicking the service row or a child layer row both show the same layout; the difference is which layer is "Current Layer" (active inspect target). Resolve confusion where clicking the service shows no map content and clicking a layer shows different sidebar content.
+
+**Context (User Feedback, Feb 19, 2026):**
+- Clicking the feature service in the left sidebar shows overview but nothing on the map.
+- Clicking a child layer shows different right-sidebar content and doesn't clearly communicate "this layer is part of this feature service."
+- User wants: (1) service click to auto-select a current layer so something appears on map; (2) same right-sidebar layout whether clicking service or layer; (3) layer list widget to show pinned/visible counts and which layer is active; (4) Browse CTA to inspect the current layer's table.
+
+**Implementation:**
+
+1. **Service row click (left sidebar):**
+   - Set service as active context.
+   - Auto-select sublayer: use last-active sublayer for this service if available; otherwise first layer.
+   - Activate that layer as the inspect target (Current Layer).
+   - Map: the selected layer becomes visible (if not already pinned, show it as active-only; if pinned, ensure it's visible).
+
+2. **Child layer row click (left sidebar):**
+   - Same right-sidebar layout as service click.
+   - Update Current Layer to the clicked layer.
+   - No layout switch — only the active highlight and context block update.
+
+3. **Right sidebar — layer list widget:**
+   - Header: e.g. `20 layers • 6 pinned • 4 visible` (or similar compact summary).
+   - Each row: show state indicators (Active, Pinned, Visible/Hidden) — keep density readable; if too many icons, at minimum highlight Active and optionally show a small pin badge for pinned layers.
+   - One selected/active highlight.
+   - Optional: per-row pin/eye affordances only if layout remains clean.
+
+4. **Browse CTA:**
+   - Label: "Inspect Current Layer" or "Browse Selected Layer" (clarify it acts on Current Layer).
+   - Always opens Browse tab for the layer shown in the context block.
+
+**Acceptance Criteria:**
+- [x] Clicking service row auto-selects a sublayer (last-active or first) and shows it on map
+- [x] Clicking child layer row updates Current Layer; same right-sidebar layout
+- [x] Layer list header shows pinned/visible counts (e.g. "N layers • X pinned • Y visible")
+- [x] Layer list rows show Active highlight; pinned/visible state visible where feasible
+- [x] Browse CTA always inspects Current Layer
+
+**Completed (Feb 19, 2026):** ServiceGroup auto-selects sublayer (last-active or first); useMapLayers resolves concrete active sublayer for map visibility; MapLayersWidget resolves service-selected sublayer for Active section sync; TNCArcGISOverviewTab unified layout with amber active highlight, pin/eye icons (right-aligned), inline pin/unpin toggle; LayerContext.isLayerVisible treats service-selected sublayer as visible; Browse CTA relabeled "Inspect Current Layer".
 
 ---
 
@@ -497,6 +682,11 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 19, 2026 | CON-ARCGIS-03, 6.17 | **Complete.** ArcGIS FeatureTable overlay for TNC layers. Browse "Inspect Current Layer" card with row/column summary + Open Table Overlay; hover-revealed Inspect on Overview layer rows; TNCArcGISTableOverlay + fallback FeatureLayer for MapServer layers. | — |
+| Feb 19, 2026 | CON-ARCGIS-14 | **Complete.** Unified Service Workspace: service/layer click auto-selects sublayer; map + Map Layers widget sync with resolved sublayer; right-sidebar layer list with amber active highlight, pin/eye icons, inline pin/unpin; "Inspect Current Layer" CTA. Files: ServiceGroup, useMapLayers, MapLayersWidget, TNCArcGISOverviewTab, LayerContext. | — |
+| Feb 19, 2026 | CON-ARCGIS-14 | Added task: Unified Service Workspace — service/layer click behavior, auto-select sublayer on service click, layer list state chips (pinned/visible counts). | — |
+| Feb 19, 2026 | CON-ARCGIS-10, 11, 12 | Implemented right sidebar hierarchy relabel (Feature Service, Current Layer), section rename to "Feature Service Overview", single scrollable layer list (dropdown + helper text removed). | — |
+| Feb 19, 2026 | CON-ARCGIS-01, 02, 04, 05, 6.20 | Marked complete. Added CON-ARCGIS-08–12 from user feedback: left sidebar scrollbar pill, row clipping fix, right sidebar relabeling, section rename, layer list simplification. | — |
 | Feb 18, 2026 | — | Archived completed tasks 6.1–6.7, 6.15, 6.16, 6.18, 6.19 to `docs/archive/phases/phase-6-tnc-arcgis-completed.md`. Phase doc trimmed for new tasks. | Claude |
 | Feb 16, 2026 | 6.15 | Task complete: Legend iconography parity (esriPMS imageData/contentType) + UX refinements (Select All/Clear All in header, layer name above items, stable selection box, removed redundant "Selected" text). | Claude |
 | Feb 16, 2026 | - | Created Phase 6 document for TNC ArcGIS Feature Services. Renumbered old Phase 6 (Polish) to Phase 7. | Claude |

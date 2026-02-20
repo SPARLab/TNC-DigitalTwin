@@ -4,9 +4,10 @@
 // Dynamically populated from the Data Catalog via CatalogContext.
 // ============================================================================
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 import type { Category, CatalogLayer } from '../../types';
+import { useLayers } from '../../context/LayerContext';
 import { LayerRow } from './LayerRow';
 import { LucideIcon } from '../shared/LucideIcon';
 import { ServiceGroup } from './ServiceGroup';
@@ -37,6 +38,7 @@ function visibleLayers(layers: CatalogLayer[], filter?: Set<string>): CatalogLay
 }
 
 export function CategoryGroup({ category, filteredLayerIds, isSubcategory }: CategoryGroupProps) {
+  const { activeLayer } = useLayers();
   const [isExpanded, setIsExpanded] = useState(false);
   const [expandedServiceIds, setExpandedServiceIds] = useState<Set<string>>(new Set());
 
@@ -77,6 +79,29 @@ export function CategoryGroup({ category, filteredLayerIds, isSubcategory }: Cat
     }
     return map;
   }, [directLayers]);
+
+  useEffect(() => {
+    if (!activeLayer) return;
+    const activeLayerId = activeLayer.layerId;
+    const selectedSubLayerId = activeLayer.selectedSubLayerId;
+    const matchingDirectLayer = directLayers.find(
+      layer => layer.id === activeLayerId || (!!selectedSubLayerId && layer.id === selectedSubLayerId),
+    );
+    if (!matchingDirectLayer) return;
+
+    setIsExpanded(true);
+
+    const parentServiceId = matchingDirectLayer.catalogMeta?.parentServiceId
+      ?? (isServiceParent(matchingDirectLayer) ? matchingDirectLayer.id : undefined);
+    if (!parentServiceId) return;
+
+    setExpandedServiceIds(prev => {
+      if (prev.has(parentServiceId)) return prev;
+      const next = new Set(prev);
+      next.add(parentServiceId);
+      return next;
+    });
+  }, [activeLayer, directLayers, isServiceParent]);
 
   // Styling varies by depth
   const headerBgClasses = isSubcategory

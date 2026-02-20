@@ -24,10 +24,7 @@ export function RightSidebar() {
 
   // Look up the adapter for the active layer's data source
   const adapter = getAdapterForActiveLayer(activeLayer);
-  // Use resolved adapter (not raw catalog dataSource) so layer-level overrides
-  // like DroneDeploy dataset-193 can still expose Browse.
-  const isTncArcgisLayer = adapter?.id === 'tnc-arcgis';
-  const showBrowseTab = !isTncArcgisLayer;
+  const showBrowseTab = true;
 
   const handleSystemTabChange = useCallback((tab: SidebarTab) => {
     setActiveTab(tab);
@@ -56,25 +53,23 @@ export function RightSidebar() {
     if (!currentLayerId) return;
 
     const restoredTab = lastTabByLayerId[currentLayerId] ?? 'overview';
-    setActiveTab(isTncArcgisLayer ? 'overview' : restoredTab);
+    setActiveTab(restoredTab);
     setShouldFlash(true);
     const timer = window.setTimeout(() => setShouldFlash(false), 600);
     return () => window.clearTimeout(timer);
-  }, [activeLayer?.layerId, isTncArcgisLayer, lastTabByLayerId]);
+  }, [activeLayer?.layerId, lastTabByLayerId]);
 
   // Persist current tab for the active layer.
   useEffect(() => {
     if (!activeLayer) return;
-    if (isTncArcgisLayer && activeTab === 'browse') return;
     setLastTabByLayerId(prev => {
       if (prev[activeLayer.layerId] === activeTab) return prev;
       return { ...prev, [activeLayer.layerId]: activeTab };
     });
-  }, [activeLayer, activeTab, isTncArcgisLayer]);
+  }, [activeLayer, activeTab]);
 
   // DFT-019: Edit Filters → open Browse tab
   useEffect(() => {
-    if (isTncArcgisLayer) return;
     if (activeLayer && lastEditFiltersRequest > 0 && lastEditFiltersRequest !== consumedRequestRef.current) {
       handleSystemTabChange('browse');
       consumedRequestRef.current = lastEditFiltersRequest;

@@ -42,7 +42,29 @@ export function MapLayersWidget() {
   const { layerMap } = useCatalog();
   const { chartPanels } = useDendra();
   const cacheStatusByDataSource = useCacheStatusByDataSource();
-  const concreteActiveLayer = activeLayer && !activeLayer.isService ? activeLayer : null;
+  const concreteActiveLayer = useMemo<ActiveLayer | null>(() => {
+    if (!activeLayer) return null;
+    if (!activeLayer.isService) return activeLayer;
+
+    const serviceLayer = layerMap.get(activeLayer.layerId);
+    const siblingLayers = serviceLayer?.catalogMeta?.siblingLayers ?? [];
+    const selectedLayer = activeLayer.selectedSubLayerId
+      ? siblingLayers.find(layer => layer.id === activeLayer.selectedSubLayerId)
+      : undefined;
+    const fallbackLayer = selectedLayer ?? siblingLayers[0];
+    if (!fallbackLayer) return null;
+
+    const isPinned = pinnedLayers.some(layer => layer.layerId === fallbackLayer.id);
+    return {
+      ...activeLayer,
+      id: fallbackLayer.id,
+      layerId: fallbackLayer.id,
+      name: fallbackLayer.name,
+      isPinned,
+      isService: false,
+      selectedSubLayerId: undefined,
+    };
+  }, [activeLayer, layerMap, pinnedLayers]);
 
   const pinnedStreamStatsBySource = useMemo(() => {
     const stats = new Map<string, { streamCount: number; stationIds: Set<number>; stationNames: Set<string> }>();

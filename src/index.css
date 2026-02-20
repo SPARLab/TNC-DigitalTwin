@@ -200,39 +200,18 @@ body {
 
 /* -----------------------------------------------------------------------------
    Left Sidebar scroll area
-   - Stable scrollbar gutter prevents horizontal content shift.
-   - Keep scrollbar subtle (visible on hover/focus) for cleaner UI.
+   - Native scrollbar hidden to avoid reserving gutter width.
+   - Custom overlay thumb is rendered in LeftSidebar.tsx.
    ----------------------------------------------------------------------------- */
 .scroll-area-left-sidebar {
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-}
-
-.scroll-area-left-sidebar:hover,
-.scroll-area-left-sidebar:focus-within {
-  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge legacy */
 }
 
 .scroll-area-left-sidebar::-webkit-scrollbar {
-  width: 8px;
-}
-
-.scroll-area-left-sidebar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.scroll-area-left-sidebar::-webkit-scrollbar-thumb {
-  background-color: transparent;
-  border-radius: 4px;
-}
-
-.scroll-area-left-sidebar:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.5);
-}
-
-.scroll-area-left-sidebar::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(107, 114, 128, 0.7);
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 /* -----------------------------------------------------------------------------

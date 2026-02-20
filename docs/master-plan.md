@@ -51,8 +51,10 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | Phase | Doc | Remaining |
 |-------|-----|-----------|
 | 0 | [phase-0-foundation.md](IMPLEMENTATION/phases/phase-0-foundation.md) | 0.6 Map Feature Highlight (if pending); 0.9 ✅ complete |
+| 1 | [phase-1-inaturalist.md](IMPLEMENTATION/phases/phase-1-inaturalist.md) | 1 task (CON-INAT-07) |
+| 2 | [phase-2-animl.md](IMPLEMENTATION/phases/phase-2-animl.md) | ~4 tasks |
 | 3 | [phase-3-dendra.md](IMPLEMENTATION/phases/phase-3-dendra.md) | 1 task |
-| 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 9 tasks |
+| 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 9 tasks (CON-ARCGIS-03, 6.17 complete Feb 19) |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) | 1 task (10.7) |
 
 ---
@@ -303,6 +305,10 @@ When working on any phase:
 |------|-------|--------|-----|
 | Feb 19, 2026 | Phase 10 | **CON-DRONE-02 complete.** Simplify project flights UI: compact name/date cards, card click syncs map + toggles metadata, caret-only disclosure, animated expand/collapse, removed Selected/Visible/reorder controls. | Claude |
 | Feb 19, 2026 | Phase 10 | **CON-DRONE-01 complete.** Drone imagery flight toggle bug fix: single-flight replacement, auto-load default, WMTS 404 fallback. | Claude |
+| Feb 19, 2026 | Phase 6 | **CON-ARCGIS-14 complete:** Unified Service Workspace — service/layer click auto-selects sublayer; map + Map Layers widget sync; right-sidebar layer list with amber active highlight, pin/eye icons, inline pin/unpin; "Inspect Current Layer" CTA. | — |
+| Feb 19, 2026 | Phase 6 | **CON-ARCGIS-10, 11, 12 complete:** Right sidebar hierarchy relabel (Feature Service, Current Layer), section rename to "Feature Service Overview", single scrollable layer list. | — |
+| Feb 19, 2026 | Phase 6 | **CON-ARCGIS-09 complete:** Left sidebar layer row clipping fixed. ServiceGroup row wrapper changed from `w-full ml-1 mr-1` to `mx-1 min-w-0` for consistent right margin and no overflow. | — |
+| Feb 19, 2026 | Phase 6 | **CON-ARCGIS-08 complete:** Left sidebar overlay scrollbar (no gutter, custom thumb on scroll/hover). **CON-ARCGIS-13 added:** Align feature service + child layer right edges to match other layers. | — |
 | Feb 19, 2026 | Phase 3 | **CON-DENDRA-03 complete.** Multi-stream selection across stations: stream-name filtering, in-detail station switcher, no reset requirement. | Cursor |
 | Feb 19, 2026 | Phase 3 | **CON-DENDRA-02 complete.** Multi-panel Dendra time series charts: draggable/resizable/minimizable, map-constrained, bottom-right placement, persistence across layer/pin transitions, visibility tied to pinned layer/view. | Cursor |
 | Feb 19, 2026 | Phase 3 | **CON-DENDRA-01 complete.** Map↔sidebar two-way station sync, station header flash, Edit Filters fix, Stations header, parallel sidebar activation on map click. | Cursor |

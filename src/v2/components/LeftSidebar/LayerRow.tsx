@@ -64,7 +64,10 @@ export function LayerRow({
   );
   const isDroneDeployOrthomosaicsLayer = catalogLayer?.catalogMeta?.datasetId === 193;
 
-  const isActive = !controlsOnly && activeLayer?.layerId === layerId;
+  const isSelectedServiceChild = !controlsOnly
+    && !!activeLayer?.isService
+    && activeLayer.selectedSubLayerId === layerId;
+  const isActive = !controlsOnly && (activeLayer?.layerId === layerId || isSelectedServiceChild);
   const isPinned = isLayerPinned(layerId);
   const isVisible = isLayerVisible(layerId);
   const pinned = getPinnedByLayerId(layerId);
@@ -176,11 +179,12 @@ export function LayerRow({
         id={`layer-row-${layerId}`}
         role="treeitem"
         aria-level={ariaLevel}
+        aria-current={isActive ? 'true' : undefined}
         tabIndex={controlsOnly ? -1 : 0}
         onClick={handleClick}
         onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && handleClick()}
-        className={`w-full group flex items-center gap-1.5 py-2 px-3 ml-1 mr-1 cursor-pointer
-                    text-sm rounded-lg transition-all duration-200 ${indented ? 'ml-4' : 'ml-1'} ${activeClasses}
+        className={`group min-w-0 flex items-center gap-1.5 py-2 px-3 cursor-pointer
+                    text-sm rounded-lg transition-all duration-200 ${indented ? 'ml-4 mr-0' : 'ml-1 mr-1'} ${activeClasses}
                     ${controlsOnly ? 'cursor-default' : 'cursor-pointer'}`}
       >
         {isPinned && (
@@ -198,9 +202,19 @@ export function LayerRow({
           </button>
         )}
 
-        <span className={`truncate flex-1 ${textColor} ${isActive ? 'font-semibold' : ''}`}>
+        <span className={`truncate min-w-0 flex-1 ${textColor} ${isActive ? 'font-semibold' : ''}`}>
           {name}
         </span>
+
+        {catalogLayer?.catalogMeta?.parentServiceId && (
+          <span
+            id={`layer-row-kind-${layerId}`}
+            className="text-[10px] uppercase tracking-wide text-gray-500 rounded border border-gray-200 bg-white px-1.5 py-0.5 flex-shrink-0"
+            title="Feature service layer"
+          >
+            Layer
+          </span>
+        )}
 
         {isDroneDeployOrthomosaicsLayer && (
           <button
