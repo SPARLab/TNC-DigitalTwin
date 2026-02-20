@@ -14,6 +14,8 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
+| TF-06 | ⚪ Not Started | Feb 20, 2026 | Rename left sidebar group from "Sensor Equipment" to "Field Sensors" | Low priority; Trisalyn verbally confirmed "Field Sensors" preferred. Source: Trisalyn QA Feb 20 |
+| TF-07 | ⚪ Not Started | Feb 20, 2026 | Remove "dangermond_" prefix from Dendra station tooltip titles (tooltip says "dangermond_Oaks", sidebar says "Oaks") | Medium priority; investigate source of prefix and strip from display strings. Source: Trisalyn QA Feb 20 |
 | CON-DENDRA-01 | 🟢 Complete | Feb 19, 2026 | Map click on station syncs to right sidebar and opens station | High priority; map-first |
 | CON-DENDRA-02 | 🟢 Complete | Feb 19, 2026 | Multiple time series charts side-by-side; draggable/resizable/minimizable within map area bounds | High priority |
 | CON-DENDRA-03 | 🟢 Complete | Feb 19, 2026 | Multi-stream selection across stations with stream-name filtering and no reset requirement | High priority |

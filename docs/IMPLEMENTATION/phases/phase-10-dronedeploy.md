@@ -13,6 +13,7 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
+| TF-10 | ⚪ Not Started | Feb 20, 2026 | Add gray background to DroneDeploy project cards | Low priority; visual polish for project switcher view. Source: Trisalyn QA Feb 20 |
 | CON-DRONE-01 | 🟢 Complete | Feb 19, 2026 | Bug: drone imagery does not change when toggling between flights | Fixed: single-flight replacement, auto-load default, WMTS 404 fallback |
 | CON-DRONE-02 | 🟢 Complete | Feb 19, 2026 | Simplify project flights UI: default name/date, expand for metadata | Card click syncs map + toggles metadata; caret-only disclosure; animated expand/collapse |
 | 10.7 | 🟢 Complete | Feb 19, 2026 | Render flight footprints as map polygons | Skipped / not implementing per user decision |

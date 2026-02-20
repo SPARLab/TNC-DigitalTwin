@@ -13,6 +13,8 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
+| TF-13 | ⚪ Not Started | Feb 20, 2026 | Add loading indicator when DataOne layer is selected and map data is loading | High priority; no visual feedback during load leaves user uncertain if app is working. Source: Trisalyn QA Feb 20 |
+| TF-14 | ⚪ Not Started | Feb 20, 2026 | Render a specific map marker when "View on Map" is clicked on a dataset | High priority; currently highlights the group but doesn't drop a specific dot at the dataset location. Source: Trisalyn QA Feb 20 |
 | CON-DONE-01 | ⚪ Not Started | Feb 18, 2026 | Cluster click on map populates right sidebar with datasets at that location | High priority |
 | CON-DONE-02 | ⚪ Not Started | Feb 18, 2026 | Auto-pan/zoom when opening dataset detail; repurpose View on Map as Recenter | High priority; resolution applied |
 | CON-DONE-03 | ⚪ Not Started | Feb 18, 2026 | Cluster popup for scrolling individual datasets | Medium priority |

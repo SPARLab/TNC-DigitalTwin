@@ -14,6 +14,7 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
+| TF-09 | ⚪ Not Started | Feb 20, 2026 | Implement grouping/clustering strategy for 328k data points to improve map performance | Medium priority; Will and Dan already discussing approach. Source: Trisalyn QA Feb 20 |
 | 9.1 | 🟢 Complete | 2026-02-19T17:30:00-08:00 | Research GBIF data source and API/service availability | Confirmed ArcGIS FeatureServer in Data Catalog: `dataset-178` → `Dangermond_Preserve_Species_Occurrences/FeatureServer/0`; GBIF direct API not required for v2.0 |
 | 9.2 | 🟢 Complete | 2026-02-19T17:30:00-08:00 | Create GBIF right sidebar shell | Added GBIF adapter override for `dataset-178`, overview + browse/detail flow in right sidebar |
 | 9.3 | 🟢 Complete | 2026-02-19T17:30:00-08:00 | Implement search and filter UI | Server-side filters: text search, taxonomy (kingdom/class/family), basis of record, dataset, date range (year-bounded); `order` filter deferred due ArcGIS reserved-field query error |

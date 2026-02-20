@@ -17,6 +17,9 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
+| TF-01 | ⚪ Not Started | Feb 20, 2026 | Set minimum height for image results in Browse tab (~150px) so user doesn't need to collapse filters to scroll | High priority; same issue likely applies to ANiML Browse tab. Source: Trisalyn QA Feb 20 |
+| TF-03 | ⚪ Not Started | Feb 20, 2026 | Don't gray out species options in Filter Species dropdown; gray communicates "unavailable" but they're just unselected | High priority; communicates incorrect affordance. Source: Trisalyn QA Feb 20 |
+| TF-04 | ⚪ Not Started | Feb 20, 2026 | Fix map/right-sidebar desync: selecting taxon in legend + filtering by species results in map not updating | High priority; discovered live in QA. Source: Trisalyn QA Feb 20 |
 | CON-INAT-01 | 🟢 Complete | Feb 19, 2026 | Add species-level filtering (currently taxa only) | Done: full scientific names, species search, count/alphabetical sort, map/pinned-view sync. Common/Latin toggle dropped (decided against). |
 | CON-INAT-02 | 🟢 Complete | Feb 19, 2026 | Species hierarchy flow: taxa -> species list -> observations per species | Done: taxa→species→observations flow enforced; redundant top species search removed; "Filter Taxa" label. |
 | CON-INAT-03 | 🟢 Complete | Feb 19, 2026 | Show result count in right sidebar (for example, "92 observations") | Done: Browse tab now shows live result-count row (e.g., "92 observations") using filtered total count. |

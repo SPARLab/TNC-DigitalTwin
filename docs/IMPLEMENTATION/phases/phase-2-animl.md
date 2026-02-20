@@ -87,6 +87,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
+| TF-01 | ⚪ Not Started | Feb 20, 2026 | Set minimum height for image results in Browse tab (~150px) so user doesn't need to collapse filters to scroll | High priority; same issue identified in iNaturalist Browse tab. Source: Trisalyn QA Feb 20 |
 | CON-ANIML-01 | 🟢 Complete | Feb 19, 2026 | Map click on camera trap auto-selects sidebar camera and shows images | Map click + sidebar sync; spatial-query camera auto-select/prioritization; QA passed |
 | CON-ANIML-02 | ⚫ Won't Do | Feb 19, 2026 | Rename "Mountain lion" to "Puma" | Deferred: current label comes from ANiML source data; taxonomy decision needed |
 | CON-ANIML-03 | 🟢 Complete | Feb 19, 2026 | Sort cameras by result count (data-rich first, zero-data last) | Comparator in AnimlBrowseTab; zero-result cameras sink to bottom |

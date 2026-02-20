@@ -31,6 +31,10 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
+| TF-02 | Replace emoji icons with SVGs for cross-browser/cross-OS visual consistency | ⚪ Not Started | | High priority; emojis render differently on PC vs Mac. Source: Trisalyn QA Feb 20 |
+| TF-05 | Standardize filter control ordering across all data sources (date range first, then custom draw polygon) | ⚪ Not Started | | High priority; order currently differs between Camera Traps and iNaturalist. Source: Trisalyn QA Feb 20 |
+| TF-08 | Add collapse/hide caret to Map Layers widget | ⚪ Not Started | | Medium priority; no visible affordance to collapse widget. Source: Trisalyn QA Feb 20 |
+| TF-15 | Create GIFs of current app state for Jack Dangermond presentation materials | ⚪ Not Started | | High priority; should be done before starting monitoring feature work. Source: Trisalyn QA Feb 20 |
 | 7.1 | Integrate TNC brand fonts (Barlow, Chronicle) | ⚪ Not Started | | DFT-008, DFT-009 |
 | 7.2 | Add TNC theme variants (Official, Soft) | ⚪ Not Started | | DFT-008, DFT-009 |
 | 7.3 | Design system audit | ⚪ Not Started | | |
