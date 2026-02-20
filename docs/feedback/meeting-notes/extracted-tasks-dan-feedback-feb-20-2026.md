@@ -6,6 +6,8 @@
 **Scope Reviewed:** GBIF clustering, DataOne deduplication, right sidebar UX, map layers widget, Dendra bugs, ArcGIS feature service descriptions, export builder, layer categories  
 **Meeting Type:** Feedback / working session
 
+**Distribution:** ✅ Tasks distributed to phase docs (Feb 20, 2026). See phase-3, 4, 5, 6, 7, 9 in `docs/IMPLEMENTATION/phases/`.
+
 ---
 
 ## Quick Task Summary
