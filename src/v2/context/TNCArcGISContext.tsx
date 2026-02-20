@@ -11,6 +11,10 @@ interface TNCArcGISContextValue {
   warmCache: () => void;
   loadSchema: (layer: CatalogLayer) => Promise<LayerSchema | null>;
   getSchema: (layerId: string) => LayerSchema | undefined;
+  tableOverlayLayerId: string | null;
+  isTableOverlayOpen: boolean;
+  openTableOverlay: (layerId: string) => void;
+  closeTableOverlay: () => void;
 }
 
 const TNCArcGISContext = createContext<TNCArcGISContextValue | null>(null);
@@ -37,6 +41,8 @@ export function TNCArcGISProvider({ children }: { children: ReactNode }) {
   const [schemas, setSchemas] = useState<Map<string, LayerSchema>>(new Map());
   const [loadingByLayerId, setLoadingByLayerId] = useState<Set<string>>(new Set());
   const [failedByLayerId, setFailedByLayerId] = useState<Set<string>>(new Set());
+  const [tableOverlayLayerId, setTableOverlayLayerId] = useState<string | null>(null);
+  const [isTableOverlayOpen, setIsTableOverlayOpen] = useState(false);
 
   const activeLayerId = activeLayer?.dataSource === 'tnc-arcgis' ? activeLayer.layerId : null;
   const targetLayer = useMemo(
@@ -99,6 +105,16 @@ export function TNCArcGISProvider({ children }: { children: ReactNode }) {
     void loadSchema(targetLayer);
   }, [targetLayer, schemas, loadingByLayerId, failedByLayerId, loadSchema]);
 
+  const openTableOverlay = useCallback((layerId: string) => {
+    if (!layerId) return;
+    setTableOverlayLayerId(layerId);
+    setIsTableOverlayOpen(true);
+  }, []);
+
+  const closeTableOverlay = useCallback(() => {
+    setIsTableOverlayOpen(false);
+  }, []);
+
   const value = useMemo<TNCArcGISContextValue>(() => ({
     schemas,
     loading: !!targetLayerId && loadingByLayerId.has(targetLayerId),
@@ -106,7 +122,22 @@ export function TNCArcGISProvider({ children }: { children: ReactNode }) {
     warmCache,
     loadSchema,
     getSchema: (layerId: string) => schemas.get(layerId),
-  }), [schemas, loadingByLayerId, targetLayerId, failedByLayerId, warmCache, loadSchema]);
+    tableOverlayLayerId,
+    isTableOverlayOpen,
+    openTableOverlay,
+    closeTableOverlay,
+  }), [
+    schemas,
+    loadingByLayerId,
+    targetLayerId,
+    failedByLayerId,
+    warmCache,
+    loadSchema,
+    tableOverlayLayerId,
+    isTableOverlayOpen,
+    openTableOverlay,
+    closeTableOverlay,
+  ]);
 
   return (
     <TNCArcGISContext.Provider value={value}>

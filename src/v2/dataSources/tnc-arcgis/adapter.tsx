@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { TNCArcGISOverviewTab } from '../../components/RightSidebar/TNCArcGIS/TNCArcGISOverviewTab';
 import { TNCArcGISBrowseTab } from '../../components/RightSidebar/TNCArcGIS/TNCArcGISBrowseTab';
 import { TNCArcGISLegendWidget } from '../../components/FloatingWidgets/TNCArcGISLegendWidget/TNCArcGISLegendWidget';
+import { TNCArcGISTableOverlay } from '../../components/FloatingWidgets/TNCArcGISTableOverlay/TNCArcGISTableOverlay';
 import { TNCArcGISProvider, useTNCArcGIS } from '../../context/TNCArcGISContext';
 import type { CacheStatus, DataSourceAdapter, OverviewTabProps } from '../types';
 
@@ -30,5 +31,6 @@ export const tncArcgisAdapter: DataSourceAdapter = {
   OverviewTab: TNCArcGISOverviewWithCache,
   BrowseTab: TNCArcGISBrowseTab,
   LegendWidget: TNCArcGISLegendWidget,
+  FloatingPanel: TNCArcGISTableOverlay,
   CacheProvider: TNCArcGISProvider,
 };

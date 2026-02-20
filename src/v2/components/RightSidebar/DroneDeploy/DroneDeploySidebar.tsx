@@ -7,11 +7,10 @@ import { FlightDetailView } from './FlightDetailView';
 import { ProjectListView } from './ProjectListView';
 
 function pickProjectDefaultFlight(project: DroneImageryProject): DroneImageryMetadata | undefined {
-  for (let i = project.imageryLayers.length - 1; i >= 0; i -= 1) {
-    const flight = project.imageryLayers[i];
+  for (const flight of project.imageryLayers) {
     if (flight.wmts.itemId.trim().length > 0) return flight;
   }
-  return project.imageryLayers[project.imageryLayers.length - 1] ?? project.imageryLayers[0];
+  return project.imageryLayers[0] ?? project.imageryLayers[project.imageryLayers.length - 1];
 }
 
 export function DroneDeploySidebar() {
@@ -31,7 +30,6 @@ export function DroneDeploySidebar() {
     setSortMode,
     setFlightLoaded,
     setFlightOpacity,
-    reorderLoadedFlights,
     setSelectedFlightId,
     requestFlyToFlight,
   } = useDroneDeploy();
@@ -73,11 +71,14 @@ export function DroneDeploySidebar() {
     ) ?? null;
   }, [projects, currentFlight]);
 
-  const currentProjectLoadedFlightIds = useMemo(() => {
-    if (!currentProject) return [];
-    const projectFlightIds = new Set(currentProject.imageryLayers.map((flight) => flight.id));
-    return loadedFlightIds.filter((flightId) => projectFlightIds.has(flightId));
-  }, [currentProject, loadedFlightIds]);
+  const setSingleLoadedFlight = (nextFlightId: number) => {
+    for (const flightId of loadedFlightIds) {
+      if (flightId !== nextFlightId) {
+        setFlightLoaded(flightId, false);
+      }
+    }
+    setFlightLoaded(nextFlightId, true);
+  };
 
   useEffect(() => {
     if (activeLayer?.layerId !== 'dataset-193') return;
@@ -91,11 +92,12 @@ export function DroneDeploySidebar() {
   const handleOpenProjectDetail = (project: DroneImageryProject) => {
     const nextFlight = pickProjectDefaultFlight(project);
     if (!nextFlight) return;
+    const viewId = createOrUpdateDroneView('dataset-193', nextFlight);
     setShowDetailView(true);
     setSelectedFlightId(nextFlight.id);
-    setFlightLoaded(nextFlight.id, true);
+    setSingleLoadedFlight(nextFlight.id);
     requestFlyToFlight(nextFlight.id);
-    activateLayer('dataset-193', undefined, nextFlight.id);
+    activateLayer('dataset-193', viewId, nextFlight.id);
   };
 
   const handleTogglePinned = (flight: DroneImageryMetadata) => {
@@ -105,7 +107,7 @@ export function DroneDeploySidebar() {
         pinLayer('dataset-193');
       }
       const viewId = createOrUpdateDroneView('dataset-193', flight);
-      setFlightLoaded(flight.id, true);
+      setSingleLoadedFlight(flight.id);
       setSelectedFlightId(flight.id);
       requestFlyToFlight(flight.id);
       activateLayer('dataset-193', viewId, flight.id);
@@ -128,26 +130,18 @@ export function DroneDeploySidebar() {
       pinLayer('dataset-193');
     }
     const viewId = createOrUpdateDroneView('dataset-193', flight);
-    setFlightLoaded(flight.id, true);
+    setSingleLoadedFlight(flight.id);
     setSelectedFlightId(flight.id);
     requestFlyToFlight(flight.id);
     activateLayer('dataset-193', viewId, flight.id);
   };
 
   const handleSelectFlight = (flight: DroneImageryMetadata) => {
-    const pinned = getPinnedByLayerId('dataset-193');
-    const matchingView = pinned?.views?.find((view) => view.droneView?.flightId === flight.id);
-    const currentlyVisibleView = pinned?.views?.find((view) => view.isVisible);
-    if (pinned && currentlyVisibleView && currentlyVisibleView.droneView?.flightId !== flight.id) {
-      toggleChildVisibility(pinned.id, currentlyVisibleView.id);
-    }
-    if (pinned && matchingView && !matchingView.isVisible) {
-      toggleChildVisibility(pinned.id, matchingView.id);
-    }
+    const viewId = createOrUpdateDroneView('dataset-193', flight);
     setSelectedFlightId(flight.id);
-    setFlightLoaded(flight.id, true);
+    setSingleLoadedFlight(flight.id);
     requestFlyToFlight(flight.id);
-    activateLayer('dataset-193', matchingView?.id, flight.id);
+    activateLayer('dataset-193', viewId, flight.id);
   };
 
   return (
@@ -174,7 +168,6 @@ export function DroneDeploySidebar() {
           isLoaded={loadedFlightIds.includes(currentFlight.id)}
           isLoading={isFlightLoading(currentFlight.id)}
           opacity={opacityByFlightId[currentFlight.id] ?? 0.8}
-          loadedFlightIds={currentProjectLoadedFlightIds}
           selectedFlightId={selectedFlightId ?? currentFlight.id}
           onBack={() => {
             setShowDetailView(false);
@@ -185,8 +178,6 @@ export function DroneDeploySidebar() {
           onSaveView={() => handleSaveAsView(currentFlight)}
           onFlyTo={() => requestFlyToFlight(currentFlight.id)}
           onOpacityChange={(next) => setFlightOpacity(currentFlight.id, next)}
-          onToggleFlightVisibility={(flightId) => setFlightLoaded(flightId, !loadedFlightIds.includes(flightId))}
-          onReorderFlight={(flightId, direction) => reorderLoadedFlights(flightId, direction)}
         />
       ) : (
         <ProjectListView

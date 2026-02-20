@@ -26,14 +26,19 @@ function extentFromRings(rings?: number[][][]): Extent | null {
   });
 }
 
-function pickDefaultFlightIdForProject(projects: ReturnType<typeof useDroneDeploy>['projects']): number | null {
+function pickDefaultFlightIdForProject(
+  projects: ReturnType<typeof useDroneDeploy>['projects'],
+  failedFlightIds?: Set<number>
+): number | null {
   for (const project of projects) {
-    for (let i = project.imageryLayers.length - 1; i >= 0; i -= 1) {
-      const flight = project.imageryLayers[i];
+    for (const flight of project.imageryLayers) {
+      if (failedFlightIds?.has(flight.id)) continue;
       if (flight.wmts.itemId.trim().length > 0) return flight.id;
     }
   }
-  const fallback = projects[0]?.imageryLayers[projects[0].imageryLayers.length - 1] ?? projects[0]?.imageryLayers[0];
+  const fallback = projects[0]?.imageryLayers.find((flight) => !failedFlightIds?.has(flight.id))
+    ?? projects[0]?.imageryLayers[0]
+    ?? projects[0]?.imageryLayers[projects[0].imageryLayers.length - 1];
   return fallback?.id ?? null;
 }
 
@@ -58,6 +63,7 @@ export function useDroneDeployMapBehavior(
     selectedFlightId,
     setSelectedFlightId,
     getFlightById,
+    getProjectByFlightId,
     flyToFlightId,
     clearFlyToRequest,
     setFlightLoaded,
@@ -67,6 +73,7 @@ export function useDroneDeployMapBehavior(
   const { activateLayer } = useLayers();
   const { viewRef, showToast } = useMap();
   const loadedArcLayersRef = useRef<Map<number, WMTSLayer>>(new Map());
+  const failedFlightIdsRef = useRef<Set<number>>(new Set());
   const isHandlingMapReadyRef = useRef(false);
   const lastRequestedFlyToFlightIdRef = useRef<number | null>(null);
 
@@ -95,6 +102,12 @@ export function useDroneDeployMapBehavior(
     }
     if (activeFlightId != null) {
       setSelectedFlightId(activeFlightId);
+      for (const loadedFlightId of loadedFlightIds) {
+        if (loadedFlightId !== activeFlightId) {
+          setFlightLoaded(loadedFlightId, false);
+        }
+      }
+      setFlightLoaded(activeFlightId, true);
       if (lastRequestedFlyToFlightIdRef.current !== activeFlightId) {
         requestFlyToFlight(activeFlightId);
         lastRequestedFlyToFlightIdRef.current = activeFlightId;
@@ -113,10 +126,16 @@ export function useDroneDeployMapBehavior(
       }
       return;
     }
-    const defaultFlightId = pickDefaultFlightIdForProject(projects);
+    const defaultFlightId = pickDefaultFlightIdForProject(projects, failedFlightIdsRef.current);
     if (defaultFlightId != null) {
       const firstPinnedViewId = pinnedViews.find((view) => view.droneView?.flightId === defaultFlightId)?.id;
+      for (const loadedFlightId of loadedFlightIds) {
+        if (loadedFlightId !== defaultFlightId) {
+          setFlightLoaded(loadedFlightId, false);
+        }
+      }
       setSelectedFlightId(defaultFlightId);
+      setFlightLoaded(defaultFlightId, true);
       activateLayer(LAYER_ID, firstPinnedViewId, defaultFlightId);
       requestFlyToFlight(defaultFlightId);
       lastRequestedFlyToFlightIdRef.current = defaultFlightId;
@@ -139,6 +158,7 @@ export function useDroneDeployMapBehavior(
     visiblePinnedFlightIds,
     activeLayer?.viewId,
     activateLayer,
+    setFlightLoaded,
     requestFlyToFlight,
   ]);
 
@@ -200,7 +220,30 @@ export function useDroneDeployMapBehavior(
         byFlightId.delete(flight.id);
         setFlightLoading(flight.id, false);
         setFlightLoaded(flight.id, false);
+        failedFlightIdsRef.current.add(flight.id);
         console.error('[DroneDeploy Map] Failed to load WMTS layer', error);
+        const failedFlightProject = getProjectByFlightId(flight.id);
+        const fallbackFlight = failedFlightProject?.imageryLayers.find(
+          (candidate) => (
+            candidate.id !== flight.id
+            && candidate.wmts.itemId.trim().length > 0
+            && !failedFlightIdsRef.current.has(candidate.id)
+          )
+        );
+        if (fallbackFlight && selectedFlightId === flight.id) {
+          const fallbackViewId = pinnedViews.find(
+            (savedView) => savedView.droneView?.flightId === fallbackFlight.id
+          )?.id;
+          setSelectedFlightId(fallbackFlight.id);
+          setFlightLoaded(fallbackFlight.id, true);
+          requestFlyToFlight(fallbackFlight.id);
+          activateLayer(LAYER_ID, fallbackViewId, fallbackFlight.id);
+          showToast(
+            `Failed to load "${flight.planName}". Switched to "${fallbackFlight.planName}".`,
+            'warning'
+          );
+          return;
+        }
         showToast(`Failed to load "${flight.planName}"`, 'warning');
       });
     }
@@ -220,16 +263,22 @@ export function useDroneDeployMapBehavior(
     loadedFlightIds,
     opacityByFlightId,
     getFlightById,
+    getProjectByFlightId,
     getManagedLayer,
     showToast,
     flyToFlightId,
     clearFlyToRequest,
     setFlightLoaded,
+    setSelectedFlightId,
     setFlightLoading,
+    requestFlyToFlight,
+    activateLayer,
     viewRef,
     mapReady,
     dataLoaded,
     visiblePinnedFlightIds,
+    selectedFlightId,
+    pinnedViews,
   ]);
 
   useEffect(() => {

@@ -51,8 +51,10 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | Phase | Doc | Remaining |
 |-------|-----|-----------|
 | 0 | [phase-0-foundation.md](IMPLEMENTATION/phases/phase-0-foundation.md) | 0.6 Map Feature Highlight (if pending); 0.9 ✅ complete |
+| 1 | [phase-1-inaturalist.md](IMPLEMENTATION/phases/phase-1-inaturalist.md) | 1 task (CON-INAT-07) |
+| 2 | [phase-2-animl.md](IMPLEMENTATION/phases/phase-2-animl.md) | ~4 tasks |
 | 3 | [phase-3-dendra.md](IMPLEMENTATION/phases/phase-3-dendra.md) | 1 task |
-| 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 9 tasks |
+| 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 9 tasks (CON-ARCGIS-03, 6.17 complete Feb 19) |
 | 9 | [phase-9-gbif.md](IMPLEMENTATION/phases/phase-9-gbif.md) | 2 tasks (9.8 Save View, 9.9 extent expansion — deferred; 9.12 backend aggregation deferred to v2.1+) |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) | 1 task (10.7) |
 
@@ -302,6 +304,12 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 19, 2026 | Phase 10 | **CON-DRONE-02 complete.** Simplify project flights UI: compact name/date cards, card click syncs map + toggles metadata, caret-only disclosure, animated expand/collapse, removed Selected/Visible/reorder controls. | Claude |
+| Feb 19, 2026 | Phase 10 | **CON-DRONE-01 complete.** Drone imagery flight toggle bug fix: single-flight replacement, auto-load default, WMTS 404 fallback. | Claude |
+| Feb 19, 2026 | Phase 6 | **CON-ARCGIS-14 complete:** Unified Service Workspace — service/layer click auto-selects sublayer; map + Map Layers widget sync; right-sidebar layer list with amber active highlight, pin/eye icons, inline pin/unpin; "Inspect Current Layer" CTA. | — |
+| Feb 19, 2026 | Phase 6 | **CON-ARCGIS-10, 11, 12 complete:** Right sidebar hierarchy relabel (Feature Service, Current Layer), section rename to "Feature Service Overview", single scrollable layer list. | — |
+| Feb 19, 2026 | Phase 6 | **CON-ARCGIS-09 complete:** Left sidebar layer row clipping fixed. ServiceGroup row wrapper changed from `w-full ml-1 mr-1` to `mx-1 min-w-0` for consistent right margin and no overflow. | — |
+| Feb 19, 2026 | Phase 6 | **CON-ARCGIS-08 complete:** Left sidebar overlay scrollbar (no gutter, custom thumb on scroll/hover). **CON-ARCGIS-13 added:** Align feature service + child layer right edges to match other layers. | — |
 | Feb 19, 2026 | Phase 9 | **Tasks 9.11 complete + 9.12 added + GBIF media fallback.** Map: viewport SQL + zoom sampling; fixed webMercatorUtils import. Detail: GBIF API media fallback when ArcGIS lacks primary_image_url. Task 9.12 (backend aggregation) deferred to v2.1+. Phase 9: 10/12 tasks done. | Cursor |
 | Feb 19, 2026 | Phase 9 | **Task 9.10 complete.** Fixed GBIF map rendering (explicit `gbifLayer.ts` + `dataset-178` in `createMapLayer`); added card thumbnails from `primary_image_url`. Phase 9: 8/10 tasks done. Remaining: 9.8 (Save View), 9.9 (extent expansion) — deferred. | Cursor |
 | Feb 19, 2026 | Phase 9 | **Tasks 9.1-9.7 complete.** GBIF ArcGIS service discovery complete (`dataset-178`), right-sidebar overview/browse/detail shipped, server-side filter + pagination, map click-to-detail wired. Remaining: 9.8-9.9. | Cursor |

@@ -23,7 +23,12 @@ import { TAXON_CONFIG } from '../components/Map/layers/taxonConfig';
 interface LayerContextValue {
   // Active layer (one at a time)
   activeLayer: ActiveLayer | null;
-  activateLayer: (layerId: string, viewId?: string, featureId?: string | number) => void;
+  activateLayer: (
+    layerId: string,
+    viewId?: string,
+    featureId?: string | number,
+    selectedSubLayerId?: string,
+  ) => void;
   setActiveServiceSubLayer: (layerId: string) => void;
   deactivateLayer: () => void;
 
@@ -448,13 +453,25 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     ].slice(0, 5)); // DFT-031: max 5 actions
   }, []);
 
-  const activateLayer = useCallback((layerId: string, viewId?: string, featureId?: string | number) => {
+  const activateLayer = useCallback((
+    layerId: string,
+    viewId?: string,
+    featureId?: string | number,
+    selectedSubLayerId?: string,
+  ) => {
     const layer = layerMap.get(layerId);
     if (!layer) return;
 
     const pinned = pinnedLayers.find(p => p.layerId === layerId);
     const isService = isServiceContainerLayer(layer);
-    const selectedSubLayerId = isService ? layer.catalogMeta?.siblingLayers?.[0]?.id : undefined;
+    const resolvedSubLayerId = isService
+      ? (
+        selectedSubLayerId
+        && layer.catalogMeta?.siblingLayers?.some(sibling => sibling.id === selectedSubLayerId)
+      )
+        ? selectedSubLayerId
+        : layer.catalogMeta?.siblingLayers?.[0]?.id
+      : undefined;
     const resolvedFeatureId = (() => {
       if (featureId != null) return featureId;
       if (!viewId || layerId !== 'dataset-193' || !pinned?.views) return undefined;
@@ -470,7 +487,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
       viewId,
       featureId: resolvedFeatureId,
       isService,
-      selectedSubLayerId,
+      selectedSubLayerId: resolvedSubLayerId,
     });
 
     // DFT-001: clicking a pinned-but-hidden layer restores visibility
@@ -1773,7 +1790,10 @@ export function LayerProvider({ children }: { children: ReactNode }) {
   const isLayerVisible = useCallback(
     (layerId: string) => {
       const pinned = pinnedLayers.find(p => p.layerId === layerId);
-      return pinned ? pinned.isVisible : activeLayer?.layerId === layerId;
+      if (pinned) return pinned.isVisible;
+      if (!activeLayer) return false;
+      if (activeLayer.layerId === layerId) return true;
+      return !!(activeLayer.isService && activeLayer.selectedSubLayerId === layerId);
     },
     [pinnedLayers, activeLayer]
   );

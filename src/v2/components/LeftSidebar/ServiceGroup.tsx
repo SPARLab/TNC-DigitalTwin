@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { CatalogLayer } from '../../types';
+import { useLayers } from '../../context/LayerContext';
 import { LayerRow } from './LayerRow';
 
 interface ServiceGroupProps {
@@ -18,7 +19,17 @@ export function ServiceGroup({
   ariaLevel = 2,
   onToggleExpand,
 }: ServiceGroupProps) {
+  const { activeLayer, activateLayer } = useLayers();
+  const isActiveService = activeLayer?.layerId === service.id && !!activeLayer.isService;
+
   const handleHeaderClick = () => {
+    const selectedSubLayerId = (() => {
+      if (isActiveService) return activeLayer?.selectedSubLayerId;
+      const activeLayerIsChildOfService = !!activeLayer && layers.some(layer => layer.id === activeLayer.layerId);
+      if (activeLayerIsChildOfService) return activeLayer?.layerId;
+      return layers[0]?.id;
+    })();
+    activateLayer(service.id, undefined, undefined, selectedSubLayerId);
     onToggleExpand();
   };
 
@@ -43,9 +54,11 @@ export function ServiceGroup({
     <div id={`service-group-${service.id}`} role="group" className="space-y-1">
       <div
         id={`service-group-row-${service.id}`}
-        className={`w-full flex items-center gap-2 py-1.5 px-1 rounded-lg border transition-colors
+        className={`mx-1 min-w-0 flex items-center gap-2 py-1.5 px-1 rounded-lg border transition-colors
           ${
-            isExpanded
+            isActiveService
+              ? 'border-amber-300 bg-amber-50 shadow-sm'
+              : isExpanded
               ? 'border-amber-300 bg-amber-50'
               : 'border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-gray-300'
           }`}
@@ -72,6 +85,13 @@ export function ServiceGroup({
           >
             {layers.length}
           </span>
+          <span
+            id={`service-group-kind-${service.id}`}
+            className="text-[10px] uppercase tracking-wide text-gray-500 rounded border border-gray-200 bg-white px-1.5 py-0.5 flex-shrink-0"
+            title="Feature service container"
+          >
+            Service
+          </span>
         </button>
       </div>
 
@@ -85,7 +105,7 @@ export function ServiceGroup({
         }}
       >
         <div className="overflow-hidden">
-          <div id={`service-group-children-inner-${service.id}`} className="pl-2 pr-0.5 space-y-1 pt-1">
+          <div id={`service-group-children-inner-${service.id}`} className="pl-2 pr-1 space-y-1 pt-1">
             {layers.map(layer => (
               <LayerRow
                 key={layer.id}
