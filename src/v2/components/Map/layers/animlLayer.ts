@@ -228,9 +228,9 @@ export function filterAnimlLayer(
   if (selectedAnimals.size === 0) {
     for (const graphic of layer.graphics.toArray()) {
       const geometry = graphic.geometry;
-      const hasPointGeometry = geometry?.type === 'point';
-      const longitude = hasPointGeometry ? (geometry as Point).longitude : Number.NaN;
-      const latitude = hasPointGeometry ? (geometry as Point).latitude : Number.NaN;
+      const point = geometry?.type === 'point' ? (geometry as Point) : null;
+      const longitude = typeof point?.longitude === 'number' ? point.longitude : Number.NaN;
+      const latitude = typeof point?.latitude === 'number' ? point.latitude : Number.NaN;
       const spatialMatch = Number.isFinite(longitude) && Number.isFinite(latitude)
         ? isPointInsideSpatialPolygon(spatialPolygon, longitude, latitude)
         : true;
@@ -243,9 +243,9 @@ export function filterAnimlLayer(
   // keep all visible (the sidebar handles greying logic via props)
   for (const graphic of layer.graphics.toArray()) {
     const geometry = graphic.geometry;
-    const hasPointGeometry = geometry?.type === 'point';
-    const longitude = hasPointGeometry ? (geometry as Point).longitude : Number.NaN;
-    const latitude = hasPointGeometry ? (geometry as Point).latitude : Number.NaN;
+    const point = geometry?.type === 'point' ? (geometry as Point) : null;
+    const longitude = typeof point?.longitude === 'number' ? point.longitude : Number.NaN;
+    const latitude = typeof point?.latitude === 'number' ? point.latitude : Number.NaN;
     const spatialMatch = Number.isFinite(longitude) && Number.isFinite(latitude)
       ? isPointInsideSpatialPolygon(spatialPolygon, longitude, latitude)
       : true;

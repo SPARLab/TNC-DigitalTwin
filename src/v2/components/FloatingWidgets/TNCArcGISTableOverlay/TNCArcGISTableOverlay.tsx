@@ -8,11 +8,6 @@ import { buildServiceUrl } from '../../../services/tncArcgisService';
 
 type DefinitionExpressionLayer = __esri.Layer & { definitionExpression?: string };
 
-function isFeatureLayer(layer: __esri.Layer | undefined): layer is FeatureLayer {
-  if (!layer) return false;
-  return (layer as FeatureLayer).type === 'feature';
-}
-
 function getLayerDefinitionExpression(layer: __esri.Layer | undefined): string | undefined {
   const expression = (layer as DefinitionExpressionLayer | undefined)?.definitionExpression;
   if (!expression || typeof expression !== 'string') return undefined;
@@ -52,7 +47,9 @@ export function TNCArcGISTableOverlay() {
       fallbackFeatureLayerRef.current?.destroy();
       fallbackFeatureLayerRef.current = null;
 
-      const mapLayer = view.map.findLayerById(`v2-${tableLayerId}`) ?? view.map.findLayerById(tableLayerId);
+      const map = view.map;
+      if (!map) return;
+      const mapLayer = map.findLayerById(`v2-${tableLayerId}`) ?? map.findLayerById(tableLayerId);
       let tableLayer: FeatureLayer | null = null;
 
       // Always use a dedicated table layer instance so FeatureTable lifecycle
@@ -63,7 +60,7 @@ export function TNCArcGISTableOverlay() {
           id: `v2-table-overlay-${tableLayerId}`,
           url: serviceUrl,
           outFields: ['*'],
-          definitionExpression: getLayerDefinitionExpression(mapLayer),
+          definitionExpression: getLayerDefinitionExpression(mapLayer ?? undefined),
         });
         await fallbackLayer.load();
         fallbackFeatureLayerRef.current = fallbackLayer;

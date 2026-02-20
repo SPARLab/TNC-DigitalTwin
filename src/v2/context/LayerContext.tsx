@@ -1453,7 +1453,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const createNewView = useCallback((pinnedId: string) => {
-    let nextActiveView: { layerId: string; viewId: string } | null = null;
+    const nextActiveViewRef: { current: { layerId: string; viewId: string } | null } = { current: null };
 
     setPinnedLayers(prev =>
       prev.map(p => {
@@ -1499,7 +1499,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
               : undefined,
             droneView: undefined,
           };
-          nextActiveView = { layerId: p.layerId, viewId: newViewId };
+          nextActiveViewRef.current = { layerId: p.layerId, viewId: newViewId };
           return { ...p, views: [...p.views, newView] };
         }
         
@@ -1583,7 +1583,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             : undefined,
           droneView: undefined,
         };
-        nextActiveView = { layerId: p.layerId, viewId: view2.id };
+        nextActiveViewRef.current = { layerId: p.layerId, viewId: view2.id };
         
         // Clear flat-level filter data (now in views)
         return {
@@ -1621,8 +1621,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         };
       })
     );
-    if (nextActiveView) {
-      activateLayer(nextActiveView.layerId, nextActiveView.viewId);
+    if (nextActiveViewRef.current) {
+      activateLayer(nextActiveViewRef.current.layerId, nextActiveViewRef.current.viewId);
       requestEditFilters();
     }
   }, [layerMap, activateLayer, requestEditFilters]);

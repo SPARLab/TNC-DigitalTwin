@@ -32,10 +32,13 @@ function applyClusterConfig(layer: FeatureLayer, config: ClusterSizeConfig): voi
   if (!reduction || reduction.type !== 'cluster') return;
 
   const clusterReduction = reduction as __esri.FeatureReductionCluster;
+  const currentRadius = String(clusterReduction.clusterRadius);
+  const currentMinSize = String(clusterReduction.clusterMinSize);
+  const currentMaxSize = String(clusterReduction.clusterMaxSize);
   if (
-    clusterReduction.clusterRadius === config.radius &&
-    clusterReduction.clusterMinSize === config.minSize &&
-    clusterReduction.clusterMaxSize === config.maxSize
+    currentRadius === config.radius &&
+    currentMinSize === config.minSize &&
+    currentMaxSize === config.maxSize
   ) {
     return;
   }
