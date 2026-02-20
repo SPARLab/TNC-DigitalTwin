@@ -124,6 +124,11 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
       pinLayer(layerId);
     }
   };
+  const handleInspectLayer = (event: ReactMouseEvent, layerId: string) => {
+    event.stopPropagation();
+    handleLayerListSelect(layerId);
+    onBrowseClick();
+  };
 
   return (
     <div id="tnc-arcgis-overview-tab" className="space-y-5">
@@ -183,7 +188,7 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
                       id={`tnc-arcgis-service-overview-layer-name-${layer.id}`}
                       type="button"
                       onClick={() => handleLayerListSelect(layer.id)}
-                      className={`w-full text-left rounded-lg border p-3 transition-colors ${
+                      className={`group w-full text-left rounded-lg border p-3 transition-colors ${
                         isSelectedLayer
                           ? 'border-amber-300 bg-amber-50 ring-1 ring-amber-200'
                           : 'border-gray-200 bg-white hover:border-gray-300'
@@ -200,6 +205,20 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
                           id={`tnc-arcgis-service-overview-layer-state-icons-${layer.id}`}
                           className="flex items-center gap-2 flex-shrink-0 translate-y-[1px]"
                         >
+                          <span
+                            id={`tnc-arcgis-service-overview-layer-inspect-button-${layer.id}`}
+                            onClick={(event) => handleInspectLayer(event, layer.id)}
+                            className={`inline-flex items-center justify-center rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition ${
+                              isSelectedLayer
+                                ? 'opacity-100 text-emerald-700 bg-emerald-100 hover:bg-emerald-200'
+                                : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 text-emerald-700 bg-emerald-100 hover:bg-emerald-200'
+                            }`}
+                            title="Inspect layer in Browse tab"
+                            role="button"
+                            aria-label={`Inspect ${layer.name}`}
+                          >
+                            Inspect
+                          </span>
                           {isLayerPinned(layer.id) ? (
                             <span
                               id={`tnc-arcgis-service-overview-layer-pin-button-${layer.id}`}
@@ -489,6 +508,14 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
                 Pin Layer
               </button>
             )}
+            <button
+              id="tnc-arcgis-overview-open-layer-cta"
+              type="button"
+              onClick={onBrowseClick}
+              className="w-full py-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-medium text-center min-h-[44px] hover:bg-emerald-100 transition-colors"
+            >
+              Inspect Current Layer
+            </button>
           </div>
 
           <div id="tnc-arcgis-overview-source-card" className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
