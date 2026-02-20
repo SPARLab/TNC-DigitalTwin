@@ -14,7 +14,7 @@
 
 | ID | Status | Last Updated | Task Description | Data Source | Notes |
 |----|--------|--------------|------------------|-------------|-------|
-| D20-01 | ⚪ Not Started | Feb 20, 2026 | Add collapse button to right sidebar — default open, stays collapsed until user manually re-expands | App-wide | Manual collapse only; no auto-collapse on layer change. Screen real estate issue on laptops. |
+| D20-01 | 🟢 Complete | Feb 20, 2026 | Add collapse button to right sidebar — default open, stays collapsed until user manually re-expands | App-wide | Implemented in Phase 0. Extruded tab, localStorage, 300ms. |
 | D20-02 | ⚪ Not Started | Feb 20, 2026 | Add back button in right sidebar for ArcGIS feature service inspect/browse view | TNC ArcGIS | When user is in browse tab via "Inspect", show a back button to return to overview without requiring them to click "Overview" tab manually. |
 | D20-03 | ⚪ Not Started | Feb 20, 2026 | Make Map Layers accordion header bar clickable to expand/collapse (not just the caret icon) | App-wide | Dan kept trying to click the heading to expand. Retain the caret but make the whole header row interactive. |
 | D20-04 | ⚪ Not Started | Feb 20, 2026 | Replace +/- symbols in Map Layers accordion with chevron (V / >) symbols | App-wide | Plus/minus is not a clear expand/collapse affordance; chevron communicates directionality better. |

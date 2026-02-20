@@ -57,7 +57,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 4 | [phase-4-dataone.md](IMPLEMENTATION/phases/phase-4-dataone.md) | + D20-09, D20-B02 (Dan meeting Feb 20) |
 | 5 | [phase-5-export-builder.md](IMPLEMENTATION/phases/phase-5-export-builder.md) | + D20-14 (Dan meeting Feb 20) |
 | 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 13 tasks (+ D20-02, D20-10, D20-11, D20-B04, D20-B05 from Dan meeting Feb 20) |
-| 7 | [phase-7-polish.md](IMPLEMENTATION/phases/phase-7-polish.md) | 12+ tasks (+ D20-01, D20-03, D20-04, D20-07, D20-13 from Dan meeting Feb 20) |
+| 7 | [phase-7-polish.md](IMPLEMENTATION/phases/phase-7-polish.md) | 12+ tasks (+ D20-03, D20-04, D20-07, D20-13 from Dan meeting Feb 20; D20-01 ✅ done in Phase 0) |
 | 9 | [phase-9-gbif.md](IMPLEMENTATION/phases/phase-9-gbif.md) | 6 tasks (+ D20-08, D20-12, D20-B01, D20-B03 from Dan meeting Feb 20) |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) | 0 |
 
@@ -310,6 +310,7 @@ When working on any phase:
 | Feb 20, 2026 | Phase 3 | **D20-06 complete.** Custom polygon draw tool for Dendra: suppressed station click during draw mode; synced sidebar station list with polygon filter so map markers and station cards match. Phase 3: 0 blocking tasks. | Cursor |
 | Feb 20, 2026 | Phase 3 | **TF-06 complete.** Renamed left sidebar group "Research and Sensor Equipment" → "Field Sensors" via `CATEGORY_DISPLAY_NAME_OVERRIDE`. Trisalyn QA. | Claude |
 | Feb 20, 2026 | Phase 3 | **TF-07 complete.** Removed `dangermond_` prefix from Dendra station tooltip titles; shared `formatStationDisplayName()` normalizes names across map popup, sidebar, chart panels, Map Layers. Trisalyn QA. | Claude |
+| Feb 20, 2026 | Phase 0 | **D20-01 complete.** Right sidebar collapse: extruded tab on left edge (PanelRightClose/Open), single margin-right animation, localStorage persistence, 300ms transition. Header X close and Collapse button removed. Implemented in V2App + RightSidebar. | Codex |
 | Feb 20, 2026 | Phase 10 | **TF-10 complete.** DroneDeploy browse project cards now use subtle gray default background (`bg-gray-50`) with darker gray hover (`bg-gray-100`) for project switcher visual polish. Phase 10 remaining updated to 0 (complete). | Codex |
 | Feb 20, 2026 | Docs | **Dan meeting tasks distributed to phase docs.** Extracted tasks from `extracted-tasks-dan-feedback-feb-20-2026.md` spread across Phase 3 (Dendra), 4 (DataOne), 5 (Export Builder), 6 (TNC ArcGIS), 7 (Polish), 9 (GBIF) by data source. D20-01 through D20-14, D20-B01–B05, D20-BL01–BL03 now tracked in respective phase Quick Task Summary tables. | Claude |
 | Feb 19, 2026 | Phase 10 | **CON-DRONE-02 complete.** Simplify project flights UI: compact name/date cards, card click syncs map + toggles metadata, caret-only disclosure, animated expand/collapse, removed Selected/Visible/reorder controls. | Claude |

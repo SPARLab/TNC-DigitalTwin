@@ -4,14 +4,14 @@
 // Flash animation when active layer changes
 // ============================================================================
 
-import { X } from 'lucide-react';
+import { PanelRightClose } from 'lucide-react';
 import type { ActiveLayer } from '../../types';
 import { LucideIcon } from '../shared/LucideIcon';
 import { useCatalog } from '../../context/CatalogContext';
 
 interface SidebarHeaderProps {
   activeLayer: ActiveLayer;
-  onClose: () => void;
+  onCollapse: () => void;
   shouldFlash?: boolean;
 }
 
@@ -26,7 +26,11 @@ const DATA_SOURCE_LABELS: Record<string, string> = {
   lidar: 'LiDAR Scans',
 };
 
-export function SidebarHeader({ activeLayer, onClose, shouldFlash = false }: SidebarHeaderProps) {
+export function SidebarHeader({
+  activeLayer,
+  onCollapse,
+  shouldFlash = false,
+}: SidebarHeaderProps) {
   const { layerMap } = useCatalog();
   const layer = layerMap.get(activeLayer.layerId);
   const iconName = layer?.icon ?? 'HelpCircle';
@@ -46,11 +50,15 @@ export function SidebarHeader({ activeLayer, onClose, shouldFlash = false }: Sid
         <p className="text-xs text-gray-500 mt-0.5">Source: via {sourceLabel}</p>
       </div>
       <button
-        onClick={onClose}
-        className="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-pointer flex-shrink-0 mt-1"
-        title="Close sidebar"
+        id="right-sidebar-collapse-button"
+        type="button"
+        onClick={onCollapse}
+        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-amber-300 bg-white px-2.5 text-xs font-semibold text-amber-900 shadow-sm transition-colors hover:bg-amber-100"
+        title="Collapse sidebar"
+        aria-label="Collapse sidebar"
       >
-        <X className="w-5 h-5" />
+        <PanelRightClose className="h-4 w-4" />
+        <span>Collapse</span>
       </button>
     </div>
   );
