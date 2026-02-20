@@ -30,6 +30,11 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
+| D20-02 | ⚪ Not Started | Feb 20, 2026 | Add back button in right sidebar for ArcGIS feature service inspect/browse view | When user is in browse tab via "Inspect", show back button to return to overview. Source: Dan Meeting Feb 20 |
+| D20-10 | ⚪ Not Started | Feb 20, 2026 | Replace static layer overview text with actual ArcGIS feature service description text | Apply to all ArcGIS feature service layers. Feature service already has proper descriptions set by Kelly. Source: Dan Meeting Feb 20 |
+| D20-11 | ⚪ Not Started | Feb 20, 2026 | Fix legend-as-filter functionality for TNC ArcGIS feature service layers | Clicking legend items should filter polygons; Amy flagged it's broken. Source: Dan Meeting Feb 20 |
+| D20-B04 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Reorder ArcGIS Enterprise layer categories per Amy's survey feedback | Order: Boundaries → Infrastructure → Species → Land Cover → Sensor Equipment → rest. Dan handling in layer management app. Source: Dan Meeting Feb 20 |
+| D20-B05 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Re-categorize layer sub-buckets per Amy's feedback — all layers in own bucket, no nested sub-buckets | e.g., Fire has layers across nested sub-buckets; Amy wants them all in one flat bucket. Source: Dan Meeting Feb 20 |
 | TF-11 | ⚪ Not Started | Feb 20, 2026 | Fix intermittent "layer zero not found" error for Coastal Marine Data feature service in right sidebar/legend | High priority; intermittent, needs repro + investigation. Source: Trisalyn QA Feb 20 |
 | TF-12 | ⚪ Not Started | Feb 20, 2026 | Expand "Open Table Overlay" to all TNC ArcGIS feature service layers (currently only Oil Seeps) | Medium priority; Trisalyn reacted very positively — "this is how the GIS brain thinks." Source: Trisalyn QA Feb 20 |
 | CON-ARCGIS-01 | 🟢 Complete | Feb 19, 2026 | Right sidebar shows service overview and layer-specific info with progressive disclosure | Hierarchy context, layer selector, sync |

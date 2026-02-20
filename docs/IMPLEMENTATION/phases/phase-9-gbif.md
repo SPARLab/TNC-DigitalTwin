@@ -14,6 +14,10 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
+| D20-08 | ⚪ Not Started | Feb 20, 2026 | Fix GBIF "classes" filter — populate dropdown with valid options or remove it entirely | Currently empty dropdown in the GBIF species occurrence filter section. Source: Dan Meeting Feb 20 |
+| D20-12 | ⚪ Not Started | Feb 20, 2026 | Implement GBIF media display using `media_json` column | Dan confirmed `media_json` column exists as stringified JSON. Priority: medium. After DataOne work. Source: Dan Meeting Feb 20 |
+| D20-B01 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Update GBIF pipeline so the hosted data store layer stays in sync with source updates | Hosted layer is published and publicly available now; pipeline sync not yet wired up. Source: Dan Meeting Feb 20 |
+| D20-B03 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Investigate why `taxonomic_class` field is empty for many GBIF records | Dan observed this in ArcGIS Enterprise. Backend data pipeline issue. Source: Dan Meeting Feb 20 |
 | TF-09 | ⚪ Not Started | Feb 20, 2026 | Implement grouping/clustering strategy for 328k data points to improve map performance | Medium priority; Will and Dan already discussing approach. Source: Trisalyn QA Feb 20 |
 | 9.1 | 🟢 Complete | 2026-02-19T17:30:00-08:00 | Research GBIF data source and API/service availability | Confirmed ArcGIS FeatureServer in Data Catalog: `dataset-178` → `Dangermond_Preserve_Species_Occurrences/FeatureServer/0`; GBIF direct API not required for v2.0 |
 | 9.2 | 🟢 Complete | 2026-02-19T17:30:00-08:00 | Create GBIF right sidebar shell | Added GBIF adapter override for `dataset-178`, overview + browse/detail flow in right sidebar |

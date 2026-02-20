@@ -25,12 +25,27 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 ---
 
+## Quick Task Summary
+
+| ID | Status | Last Updated (Timestamp) | Task Description | Notes |
+|----|--------|---------------------------|------------------|-------|
+| D20-01 | ⚪ Not Started | Feb 20, 2026 | Add collapse button to right sidebar — default open, stays collapsed until user manually re-expands | Manual collapse only; no auto-collapse on layer change. Screen real estate issue on laptops. Source: Dan Meeting Feb 20 |
+| D20-03 | ⚪ Not Started | Feb 20, 2026 | Make Map Layers accordion header bar clickable to expand/collapse (not just the caret icon) | Dan kept trying to click the heading to expand. Retain the caret but make the whole header row interactive. Source: Dan Meeting Feb 20 |
+| D20-04 | ⚪ Not Started | Feb 20, 2026 | Replace +/- symbols in Map Layers accordion with chevron (V / >) symbols | Plus/minus is not a clear expand/collapse affordance; chevron communicates directionality better. Source: Dan Meeting Feb 20 |
+| D20-07 | ⚪ Not Started | Feb 20, 2026 | Verify custom polygon draw tool is working consistently across all data sources | iNaturalist and ANiML confirmed working; Dendra suspected broken; audit the rest. Source: Dan Meeting Feb 20 |
+| D20-13 | ⚪ Not Started | Feb 20, 2026 | Add collapse button to left sidebar (lower priority) | Nice-to-have for full map exploration. Lower priority than right sidebar. Source: Dan Meeting Feb 20 |
+
 ## Task Status
 
 > Tasks will be added after Phases 1-5 are complete, based on discovered inconsistencies.
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
+| D20-01 | Add collapse button to right sidebar | ⚪ Not Started | | Default open; stays collapsed until user manually re-expands. Source: Dan Meeting Feb 20 |
+| D20-03 | Map Layers accordion header bar clickable | ⚪ Not Started | | Whole header row interactive, not just caret. Source: Dan Meeting Feb 20 |
+| D20-04 | Replace +/- with chevron in Map Layers accordion | ⚪ Not Started | | V when open, > when closed. Source: Dan Meeting Feb 20 |
+| D20-07 | Audit custom polygon draw tool across all data sources | ⚪ Not Started | | iNaturalist ✅, ANiML ✅; Dendra suspected broken. Source: Dan Meeting Feb 20 |
+| D20-13 | Add collapse button to left sidebar | ⚪ Not Started | | Lower priority than right sidebar. Source: Dan Meeting Feb 20 |
 | TF-02 | Replace emoji icons with SVGs for cross-browser/cross-OS visual consistency | ⚪ Not Started | | High priority; emojis render differently on PC vs Mac. Source: Trisalyn QA Feb 20 |
 | TF-05 | Standardize filter control ordering across all data sources (date range first, then custom draw polygon) | ⚪ Not Started | | High priority; order currently differs between Camera Traps and iNaturalist. Source: Trisalyn QA Feb 20 |
 | TF-08 | Add collapse/hide caret to Map Layers widget | ⚪ Not Started | | Medium priority; no visible affordance to collapse widget. Source: Trisalyn QA Feb 20 |

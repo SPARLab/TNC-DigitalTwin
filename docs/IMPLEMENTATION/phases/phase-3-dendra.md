@@ -14,6 +14,11 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
+| D20-05 | ⚪ Not Started | Feb 20, 2026 | Investigate and fix Dendra browser popup asking for device access | Observed live during session. We don't want to trigger any device-access permission dialogs. Source: Dan Meeting Feb 20 |
+| D20-06 | ⚪ Not Started | Feb 20, 2026 | Verify and fix custom polygon draw tool for Dendra | Will noted the tool needs to be properly implemented for Dendra. Source: Dan Meeting Feb 20 |
+| D20-BL01 | 🔵 Backlog | Feb 20, 2026 | Plot multiple time series data streams on the same floating chart widget | e.g., wind speed avg + wind speed max overlaid. Needs UX design thought. Source: Dan Meeting Feb 20 |
+| D20-BL02 | 🔵 Backlog | Feb 20, 2026 | Plot same data stream across multiple stations on the same chart for comparison | e.g., wind speed at Oak State, Sutter, and Team data streams simultaneously. Source: Dan Meeting Feb 20 |
+| D20-BL03 | 🔵 Backlog | Feb 20, 2026 | Real-time weather-style sensor overlays on the map — wind direction arrows, rain gauge icons, temperature readings | Dan's idea: show live sensor readings inline on map. More "live dashboard" feel. Source: Dan Meeting Feb 20 |
 | TF-06 | ⚪ Not Started | Feb 20, 2026 | Rename left sidebar group from "Sensor Equipment" to "Field Sensors" | Low priority; Trisalyn verbally confirmed "Field Sensors" preferred. Source: Trisalyn QA Feb 20 |
 | TF-07 | ⚪ Not Started | Feb 20, 2026 | Remove "dangermond_" prefix from Dendra station tooltip titles (tooltip says "dangermond_Oaks", sidebar says "Oaks") | Medium priority; investigate source of prefix and strip from display strings. Source: Trisalyn QA Feb 20 |
 | CON-DENDRA-01 | 🟢 Complete | Feb 19, 2026 | Map click on station syncs to right sidebar and opens station | High priority; map-first |

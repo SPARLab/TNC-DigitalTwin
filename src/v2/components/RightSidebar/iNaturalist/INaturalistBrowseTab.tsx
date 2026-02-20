@@ -127,6 +127,8 @@ export function INaturalistBrowseTab() {
   const showRefreshLoading = loading && hasStaleResults;
   const normalizedSpeciesSearch = speciesSearchTerm.trim().toLowerCase();
   const handleToggleTaxon = useCallback((taxon: string) => {
+    // Sidebar taxon toggles should match legend behavior: apply taxa immediately
+    // without implicitly excluding all species.
     toggleTaxon(taxon);
     setIsSpeciesFilterOpen(true);
   }, [toggleTaxon]);
@@ -292,7 +294,7 @@ export function INaturalistBrowseTab() {
                   <label
                     key={taxon.value}
                     className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors ${
-                      isTaxonSelected ? 'bg-emerald-50 hover:bg-emerald-100' : 'bg-gray-50 hover:bg-gray-100 opacity-60'
+                      isTaxonSelected ? 'bg-emerald-50 hover:bg-emerald-100' : 'bg-white hover:bg-gray-50'
                     }`}
                   >
                     <input
@@ -302,7 +304,7 @@ export function INaturalistBrowseTab() {
                       className="w-4 h-4 accent-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                     />
                     <span className="text-[10px]">{taxon.emoji}</span>
-                    <span className={`text-sm flex-1 ${isTaxonSelected ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
+                    <span className={`text-sm flex-1 ${isTaxonSelected ? 'text-gray-900 font-medium' : 'text-gray-700'}`}>
                       {taxon.label}
                     </span>
                   </label>
@@ -431,7 +433,7 @@ export function INaturalistBrowseTab() {
                       id={`inat-species-row-${speciesId}`}
                       key={scientificName}
                       className={`flex items-center justify-between gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors ${
-                        isSpeciesSelected ? 'bg-emerald-50 hover:bg-emerald-100' : 'bg-gray-50 hover:bg-gray-100 opacity-60'
+                        isSpeciesSelected ? 'bg-emerald-50 hover:bg-emerald-100' : 'bg-white hover:bg-gray-50'
                       }`}
                     >
                       <div id={`inat-species-row-main-${speciesId}`} className="flex items-center gap-2 min-w-0">
@@ -443,7 +445,7 @@ export function INaturalistBrowseTab() {
                           className="w-4 h-4 accent-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                         />
                         <div id={`inat-species-row-label-group-${speciesId}`} className="min-w-0">
-                          <p id={`inat-species-row-label-${speciesId}`} className={`text-sm truncate ${isSpeciesSelected ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
+                          <p id={`inat-species-row-label-${speciesId}`} className={`text-sm truncate ${isSpeciesSelected ? 'text-gray-900 font-medium' : 'text-gray-700'}`}>
                             {primaryLabel}
                           </p>
                           <p id={`inat-species-row-secondary-${speciesId}`} className="text-[11px] text-gray-500 truncate">
@@ -554,7 +556,7 @@ export function INaturalistBrowseTab() {
         {/* Scrollable observation cards container */}
         {!error && !showInitialLoading && !requiresSpeciesSelection && (
           <div id="inat-observation-cards-wrapper" className="flex-1 min-h-0 flex flex-col">
-            <div id="inat-observation-cards" className={`flex-1 overflow-y-auto space-y-2 ${showRefreshLoading ? 'opacity-60' : ''}`}>
+            <div id="inat-observation-cards" className={`flex-1 min-h-[400px] overflow-y-auto space-y-2 ${showRefreshLoading ? 'opacity-60' : ''}`}>
               {observations.map(obs => (
                 <ObservationCard
                   key={obs.id}

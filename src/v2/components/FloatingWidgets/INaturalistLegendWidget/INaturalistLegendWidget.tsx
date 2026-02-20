@@ -49,15 +49,52 @@ export function INaturalistLegendWidget() {
       id="inat-legend-widget"
       className="absolute bottom-6 right-6 bg-white rounded-lg shadow-lg border border-gray-300 z-30 w-72"
     >
-      {/* Header */}
+      {/* Header — click anywhere to expand/collapse; caret at far right */}
       <div
         id="inat-legend-header"
-        className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg"
+        role="button"
+        tabIndex={0}
+        onClick={() => setIsExpanded(!isExpanded)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsExpanded((v) => !v);
+          }
+        }}
+        className={`flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors ${isExpanded ? 'rounded-t-lg' : 'rounded-lg'}`}
+        aria-label={isExpanded ? 'Collapse legend' : 'Expand legend'}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <h3 className="text-sm font-semibold text-gray-900">iNaturalist Taxa</h3>
+          {loading && dataLoaded && (
+            <Loader2 id="inat-legend-refresh-spinner" className={loadingTheme.legendRefreshSpinner} />
+          )}
+        </div>
+        <div id="inat-legend-header-right" className="flex items-center gap-2 flex-shrink-0">
+          {hasFilter && (
+            <div id="inat-legend-actions" className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <button
+                id="inat-legend-select-all"
+                onClick={selectAll}
+                className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+              >
+                Select All
+              </button>
+              <button
+                id="inat-legend-clear-all"
+                onClick={clearAll}
+                className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+              >
+                Clear All
+              </button>
+            </div>
+          )}
           <button
             id="inat-legend-expand-toggle"
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(!isExpanded);
+            }}
             className="p-0.5 hover:bg-gray-200 rounded transition-colors"
             aria-label={isExpanded ? 'Collapse legend' : 'Expand legend'}
           >
@@ -65,34 +102,12 @@ export function INaturalistLegendWidget() {
               ? <ChevronDown className="w-4 h-4 text-gray-600" />
               : <ChevronRight className="w-4 h-4 text-gray-600" />}
           </button>
-          <h3 className="text-sm font-semibold text-gray-900">iNaturalist Taxa</h3>
-          {loading && dataLoaded && (
-            <Loader2 id="inat-legend-refresh-spinner" className={loadingTheme.legendRefreshSpinner} />
-          )}
         </div>
-        {hasFilter && (
-          <div id="inat-legend-actions" className="flex items-center gap-2">
-            <button
-              id="inat-legend-select-all"
-              onClick={selectAll}
-              className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
-            >
-              Select All
-            </button>
-            <button
-              id="inat-legend-clear-all"
-              onClick={clearAll}
-              className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
-            >
-              Clear All
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Taxon filter list */}
       {isExpanded && (
-        <div id="inat-legend-content" className="p-2 max-h-[32rem] overflow-y-auto space-y-1">
+        <div id="inat-legend-content" className="p-2 max-h-[32rem] overflow-y-auto space-y-1 rounded-b-lg">
           {groups.map(group => {
             const isSelected = hasFilter ? selectedTaxa.has(group.value) : true;
             const bgColor = isSelected
