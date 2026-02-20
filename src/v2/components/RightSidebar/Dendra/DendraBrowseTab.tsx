@@ -12,6 +12,7 @@ import { useLayers } from '../../../context/LayerContext';
 import { StationCard } from './StationCard';
 import { StationDetailView } from './StationDetailView';
 import type { DendraStation, DendraSummary } from '../../../services/dendraStationService';
+import { isPointInsideSpatialPolygon } from '../../../utils/spatialQuery';
 import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { SpatialQuerySection } from '../shared/SpatialQuerySection';
 import { EditFiltersCard } from '../shared/EditFiltersCard';
@@ -31,7 +32,7 @@ export function DendraBrowseTab() {
   const [streamNameFilter, setStreamNameFilter] = useState('');
 
   // Map interactions
-  const { highlightPoint, clearHighlight, viewRef } = useMap();
+  const { highlightPoint, clearHighlight, viewRef, getSpatialPolygonForLayer } = useMap();
 
   const lastConsumedHydrateRef = useRef(0);
   const prevHydrateViewIdRef = useRef<string | undefined>(activeLayer?.viewId);
@@ -145,15 +146,27 @@ export function DendraBrowseTab() {
     return pinned?.views?.find((view) => view.isVisible)?.id;
   }, [activeLayer, getPinnedByLayerId]);
 
+  const dendraSpatialLayerId = activeLayer?.dataSource === 'dendra'
+    ? activeLayer.layerId
+    : 'dendra-micromet-weather';
+  const spatialPolygon = getSpatialPolygonForLayer(dendraSpatialLayerId);
+
+  const filteredStationsBySpatial = useMemo(() => {
+    if (!spatialPolygon) return filteredStations;
+    return filteredStations.filter((station) =>
+      isPointInsideSpatialPolygon(spatialPolygon, station.longitude, station.latitude),
+    );
+  }, [filteredStations, spatialPolygon]);
+
   const filteredStationsByStream = useMemo(() => {
-    if (!normalizedStreamNameFilter) return filteredStations;
-    return filteredStations.filter((station) => {
+    if (!normalizedStreamNameFilter) return filteredStationsBySpatial;
+    return filteredStationsBySpatial.filter((station) => {
       const stationSummaries = summariesByStation.get(station.station_id) ?? [];
       return stationSummaries.some((summary) =>
         summary.datastream_name.toLowerCase().includes(normalizedStreamNameFilter),
       );
     });
-  }, [filteredStations, summariesByStation, normalizedStreamNameFilter]);
+  }, [filteredStationsBySpatial, summariesByStation, normalizedStreamNameFilter]);
 
   const handleStreamNameFilterChange = useCallback((value: string) => {
     setStreamNameFilter(value);
@@ -210,7 +223,7 @@ export function DendraBrowseTab() {
     );
   }
 
-  const activeCount = filteredStations.filter(s => s.is_active === 1).length;
+  const activeCount = filteredStationsBySpatial.filter(s => s.is_active === 1).length;
   const inactiveCount = stationCount - activeCount;
 
   return (

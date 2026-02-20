@@ -15,7 +15,7 @@
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
 | D20-05 | 🟢 Complete | Feb 20, 2026 | Investigate and fix Dendra browser popup asking for device access | Removed stray localhost ingest debug `fetch()` calls from Dendra service/context code; V2-wide scan found no camera/mic/geolocation permission API usage in app code. Source: Dan Meeting Feb 20 |
-| D20-06 | ⚪ Not Started | Feb 20, 2026 | Verify and fix custom polygon draw tool for Dendra | Will noted the tool needs to be properly implemented for Dendra. Source: Dan Meeting Feb 20 |
+| D20-06 | 🟢 Complete | Feb 20, 2026 | Verify and fix custom polygon draw tool for Dendra | Suppressed station click during draw mode; synced sidebar station list with polygon filter so map and list match. Source: Dan Meeting Feb 20 |
 | D20-BL01 | 🔵 Backlog | Feb 20, 2026 | Plot multiple time series data streams on the same floating chart widget | e.g., wind speed avg + wind speed max overlaid. Needs UX design thought. Source: Dan Meeting Feb 20 |
 | D20-BL02 | 🔵 Backlog | Feb 20, 2026 | Plot same data stream across multiple stations on the same chart for comparison | e.g., wind speed at Oak State, Sutter, and Team data streams simultaneously. Source: Dan Meeting Feb 20 |
 | D20-BL03 | 🔵 Backlog | Feb 20, 2026 | Real-time weather-style sensor overlays on the map — wind direction arrows, rain gauge icons, temperature readings | Dan's idea: show live sensor readings inline on map. More "live dashboard" feel. Source: Dan Meeting Feb 20 |
@@ -206,6 +206,16 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 - Searched V2 codebase for direct browser permission/device APIs (`getUserMedia`, `mediaDevices`, `geolocation`, `Notification.requestPermission`, `requestMIDIAccess`, `bluetooth/usb/serial/hid` request calls, ArcGIS Locate/Track widgets).
 - No direct permission-triggering API usage found in current app code.
 
+### D20-06 Implementation Notes (Feb 20, 2026)
+
+**What was observed:**
+- Dendra has a layer-wide map click handler that performs station hit-testing and auto-activates station detail/popup/goTo. During custom polygon draw, those clicks interfered with the draw flow.
+- Map markers were filtered by the custom polygon, but the sidebar station list was not — users saw all stations in the list even when the polygon enclosed only a subset.
+
+**What was fixed:**
+1. **Draw-mode guard:** `src/v2/dataSources/dendra/useMapBehavior.ts` — Dendra station click handler no-ops while `isSpatialQueryDrawing` is true so map clicks stay dedicated to Sketch polygon vertex placement/finish.
+2. **Sidebar sync:** `src/v2/components/RightSidebar/Dendra/DendraBrowseTab.tsx` — Station cards now apply the same polygon containment filter used on map markers; stream-name filtering runs on top of the spatially filtered result. Counts (e.g., "1 of 3") reflect the polygon-filtered set.
+
 ---
 
 ## Service Analysis
@@ -280,6 +290,9 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 20, 2026 | D20-06 | **Complete.** Custom polygon draw tool for Dendra: (1) station click handler suppressed during draw mode; (2) sidebar station list synced with polygon filter so map and list match. See D20-06 Implementation Notes. | Cursor |
+| Feb 20, 2026 | D20-06 | **Continue.** Added sidebar spatial synchronization for Dendra station list: station cards now apply the same custom polygon filter used on map markers, then apply stream-name filtering on top. | Cursor |
+| Feb 20, 2026 | D20-06 | **Started.** Guarded Dendra map click station-activation flow during spatial polygon draw mode (`isSpatialQueryDrawing`) to avoid draw interruption from hit-test/popup/goTo interactions. | Cursor |
 | Feb 20, 2026 | TF-07 | **Complete.** Removed `dangermond_` station-name prefix from Dendra tooltip titles by introducing shared station display-name formatter and using it in map popup + Dendra display surfaces for consistent naming. | Cursor |
 | Feb 19, 2026 | CON-DENDRA-03 | **Complete.** Multi-stream selection across stations: stream-name filtering, in-detail station switcher, no reset requirement. See Task Details. | Cursor |
 | Feb 19, 2026 | CON-DENDRA-04 | **Complete.** Pinned-stream visibility across Map Layers, right sidebar, and station cards. Dynamic child-view labels; chart close fix; effective active view for sync. See Task Details. | Cursor |

@@ -34,7 +34,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 0 | Foundation | 🟢 Complete | 0 blocking | `v2/foundation` | No — parallel branches ready |
 | 1 | iNaturalist | 🟢 Complete | 0 | `v2/inaturalist` | No |
 | 2 | ANiML | 🟢 Complete | 0 | `v2/animl` | No |
-| 3 | Dendra | 🟡 In Progress | 1 task | `v2/dendra` | No |
+| 3 | Dendra | 🟡 In Progress | 0 blocking | `v2/dendra` | No |
 | 4 | DataOne | 🟡 In Progress | 2 tasks | `v2/dataone` | No |
 | 5 | Export Builder | 🟡 In Progress | 1 task | `v2/export-builder` | No |
 | 6 | TNC ArcGIS Services | 🟡 In Progress | 8 tasks | `v2/tnc-arcgis` | No |
@@ -53,7 +53,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 0 | [phase-0-foundation.md](IMPLEMENTATION/phases/phase-0-foundation.md) | 0.6 Map Feature Highlight (if pending); 0.9 ✅ complete |
 | 1 | [phase-1-inaturalist.md](IMPLEMENTATION/phases/phase-1-inaturalist.md) | 0 |
 | 2 | [phase-2-animl.md](IMPLEMENTATION/phases/phase-2-animl.md) | ~4 tasks |
-| 3 | [phase-3-dendra.md](IMPLEMENTATION/phases/phase-3-dendra.md) | 6 tasks (+ D20-05, D20-06, D20-BL01–03 from Dan meeting Feb 20) |
+| 3 | [phase-3-dendra.md](IMPLEMENTATION/phases/phase-3-dendra.md) | D20-06 ✅; D20-BL01–03 backlog; CON-DENDRA-08 |
 | 4 | [phase-4-dataone.md](IMPLEMENTATION/phases/phase-4-dataone.md) | + D20-09, D20-B02 (Dan meeting Feb 20) |
 | 5 | [phase-5-export-builder.md](IMPLEMENTATION/phases/phase-5-export-builder.md) | + D20-14 (Dan meeting Feb 20) |
 | 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 13 tasks (+ D20-02, D20-10, D20-11, D20-B04, D20-B05 from Dan meeting Feb 20) |
@@ -307,6 +307,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 20, 2026 | Phase 3 | **D20-06 complete.** Custom polygon draw tool for Dendra: suppressed station click during draw mode; synced sidebar station list with polygon filter so map markers and station cards match. Phase 3: 0 blocking tasks. | Cursor |
 | Feb 20, 2026 | Phase 3 | **TF-06 complete.** Renamed left sidebar group "Research and Sensor Equipment" → "Field Sensors" via `CATEGORY_DISPLAY_NAME_OVERRIDE`. Trisalyn QA. | Claude |
 | Feb 20, 2026 | Phase 3 | **TF-07 complete.** Removed `dangermond_` prefix from Dendra station tooltip titles; shared `formatStationDisplayName()` normalizes names across map popup, sidebar, chart panels, Map Layers. Trisalyn QA. | Claude |
 | Feb 20, 2026 | Phase 10 | **TF-10 complete.** DroneDeploy browse project cards now use subtle gray default background (`bg-gray-50`) with darker gray hover (`bg-gray-100`) for project switcher visual polish. Phase 10 remaining updated to 0 (complete). | Codex |

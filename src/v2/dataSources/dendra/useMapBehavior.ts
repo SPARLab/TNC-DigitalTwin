@@ -25,7 +25,13 @@ export function useDendraMapBehavior(
 ) {
   const { stations, dataLoaded, warmCache, showActiveOnly } = useDendra();
   const { activateLayer } = useLayers();
-  const { getSpatialPolygonForLayer, highlightPoint, clearHighlight, viewRef } = useMap();
+  const {
+    getSpatialPolygonForLayer,
+    highlightPoint,
+    clearHighlight,
+    viewRef,
+    isSpatialQueryDrawing,
+  } = useMap();
   const { layerMap } = useCatalog();
   const populatedRef = useRef<Set<string>>(new Set());
 
@@ -91,6 +97,7 @@ export function useDendraMapBehavior(
     if (!view) return;
 
     const handler = view.on('click', async (event) => {
+      if (isSpatialQueryDrawing) return;
       try {
         const response = await view.hitTest(event);
         const graphicHit = response.results.find(
@@ -137,5 +144,5 @@ export function useDendraMapBehavior(
     });
 
     return () => handler.remove();
-  }, [hasAnyDendraOnMap, dataLoaded, viewRef, activateLayer, highlightPoint, clearHighlight, layerMap]);
+  }, [hasAnyDendraOnMap, dataLoaded, viewRef, activateLayer, highlightPoint, clearHighlight, layerMap, isSpatialQueryDrawing]);
 }
