@@ -293,7 +293,12 @@ export function buildServiceUrl(meta: CatalogLayer['catalogMeta']): string {
     return serviceUrl;
   }
 
-  const layerId = Number.isInteger(meta.layerIdInService) ? meta.layerIdInService : 0;
+  // Catalog `layer_id` is not always reliable for single-row FeatureServer datasets.
+  // For explicit multi-layer services, honor the discovered/catalog layer id.
+  // Otherwise default to layer 0, which is the canonical layer for single-layer services.
+  const layerId = meta.isMultiLayerService
+    ? (Number.isInteger(meta.layerIdInService) ? meta.layerIdInService : 0)
+    : 0;
   return `${serviceUrl}/${layerId}`;
 }
 
@@ -466,8 +471,10 @@ function parseRendererLegend(
 /** Fetch legend entries for the selected ArcGIS layer. */
 export async function fetchLayerLegend(meta: CatalogLayer['catalogMeta']): Promise<ArcGISLayerLegend | null> {
   if (!meta) return null;
-  const targetLayerId = typeof meta.layerIdInService === 'number' && Number.isFinite(meta.layerIdInService)
-    ? meta.layerIdInService
+  const targetLayerId = meta.isMultiLayerService
+    ? (typeof meta.layerIdInService === 'number' && Number.isFinite(meta.layerIdInService)
+      ? meta.layerIdInService
+      : 0)
     : 0;
   const serviceRootUrl = buildServiceRootUrl(meta);
 

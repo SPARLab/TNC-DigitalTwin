@@ -104,8 +104,9 @@ export function useDendraMapBehavior(
 
         const stationId = graphicHit.graphic.attributes?.station_id as number | undefined;
         if (stationId == null) return;
-
-        const clickedLayerId = graphicHit.graphic.layer.id.slice(3);
+        const layerId = graphicHit.graphic.layer?.id;
+        if (typeof layerId !== 'string') return;
+        const clickedLayerId = layerId.slice(3);
         const clickedLayer = layerMap.get(clickedLayerId);
         if (clickedLayer?.dataSource !== 'dendra') return;
 
@@ -116,6 +117,7 @@ export function useDendraMapBehavior(
         const geometry = graphicHit.graphic.geometry;
         if (geometry?.type === 'point') {
           const point = geometry as __esri.Point;
+          if (typeof point.longitude !== 'number' || typeof point.latitude !== 'number') return;
           highlightPoint(point.longitude, point.latitude);
           void view.goTo(
             { center: [point.longitude, point.latitude], zoom: 15 },

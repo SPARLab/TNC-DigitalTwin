@@ -26,6 +26,7 @@
 | CON-DONE-09 | ⚪ Not Started | Feb 18, 2026 | Search by title and abstract/keywords | High priority |
 | CON-DONE-10 | ⚪ Not Started | Feb 18, 2026 | Filter by file type (CSV, TIF, imagery, and others) | Medium priority |
 | CON-DONE-11 | ⚪ Not Started | Feb 18, 2026 | Saved indicator on browse cards (icon plus subtle highlight) | Medium priority |
+| CON-DONE-15 | ⚪ Not Started | Feb 19, 2026 | Spatial query: ensure draw/query tools filter DataONE datasets by extent | High priority; must work with SpatialQuerySection |
 | CON-DONE-14 | ⚪ Not Started | Feb 18, 2026 | Search highlight: show matching keyword inside abstract snippet | Low / nice-to-have |
 
 **Phase-5 handoff:** `CON-DONE-12` and `CON-DONE-13` (export behavior tasks) are tracked in `docs/IMPLEMENTATION/phases/phase-5-export-builder.md`.
@@ -88,6 +89,28 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 ## Task Details
 
 *(Add new task details below. Completed tasks 4.1–4.12 are in the archive.)*
+
+---
+
+### CON-DONE-15: Spatial Query for DataONE Datasets
+
+**Goal:** Ensure the spatial query (draw polygon/rectangle, query by extent) correctly filters DataONE datasets. When the user draws a query area on the map, DataONE browse results should be constrained to datasets whose spatial extent intersects the drawn area.
+
+**Context:** The app has a `SpatialQuerySection` component used for spatial filtering. DataONE datasets have `center_lat`/`center_lon` and/or `north_bound`/`south_bound`/`east_bound`/`west_bound` fields. The spatial query must apply to DataONE when that data source is active.
+
+**Implementation Notes:**
+- Integrate with existing `SpatialQuerySection` / spatial query context
+- Use DataONE Feature Service `query` with `geometry` and `geometryType` params to filter by drawn extent
+- Ensure cluster map and browse list both respect the spatial filter
+- Clear spatial filter when user clears the draw or switches data sources
+
+**Acceptance Criteria:**
+- [ ] Drawing a polygon/rectangle on map filters DataONE datasets to those intersecting the extent
+- [ ] Browse list and cluster map both reflect the spatial filter
+- [ ] Clearing the spatial query restores full dataset list
+- [ ] Works with DataONE Layer 0 (Lite) and Layer 1 (Latest) as appropriate
+
+**Estimated Time:** 4–6 hours
 
 ---
 
@@ -154,4 +177,5 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 19, 2026 | Added CON-DONE-15: Spatial query for DataONE datasets — ensure draw/query tools filter by extent. | — |
 | Feb 18, 2026 | Archived tasks 4.1–4.12 to `docs/archive/phases/phase-4-dataone-completed.md`. Phase doc reset for new tasks. | User |
