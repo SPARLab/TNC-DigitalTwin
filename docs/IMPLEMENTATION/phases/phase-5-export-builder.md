@@ -37,6 +37,7 @@ Implement the Export Builder that brings together all pinned layers and their ac
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
+| D20-14 | ⚪ Not Started | Feb 20, 2026 | Add Python API code generation to export builder — especially for real-time Dendra data | In Export Builder, offer "Get Python Code" option alongside download. Dendra = Python/API access. Static TNC services = shapefile download. Source: Dan Meeting Feb 20 |
 | CON-EXP-01 | ⚪ Not Started | Feb 18, 2026 | iNaturalist export behavior: invert to cart metaphor (everything exports unless removed) | Source: CON-INAT-05; high priority |
 | CON-EXP-02 | ⚪ Not Started | Feb 18, 2026 | Dendra export builder UX refinement | Source: CON-DENDRA-05; medium priority |
 | CON-EXP-03 | ⚪ Not Started | Feb 18, 2026 | DataONE export: metadata CSV plus source download link (no data proxy) | Source: CON-DONE-12; medium priority |

@@ -133,7 +133,7 @@ export function ProjectListView({
                 id={`drone-project-card-${projectId}`}
                 type="button"
                 onClick={() => onOpenProjectDetail(project)}
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-left hover:border-gray-300 hover:bg-gray-50 transition-colors"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-left hover:border-gray-300 hover:bg-gray-100 transition-colors"
               >
                 <div id={`drone-project-card-header-${projectId}`} className="flex items-center justify-between gap-2">
                   <p className="truncate text-sm font-semibold text-gray-900">{project.projectName}</p>

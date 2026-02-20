@@ -13,6 +13,8 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
+| D20-09 | ⚪ Not Started | Feb 20, 2026 | Filter DataOne map to latest dataset version only (deduplicate by latest) | Current flat table shows all versions; 878 deduplicated datasets but one dataset alone shows 700 rows due to versioning. Source: Dan Meeting Feb 20 |
+| D20-B02 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Create dedicated DataOne point layer in ArcGIS data store (deduplicated, latest version only) with native clustering enabled | Mirrors what Dan did for GBIF. Will keep underlying versioned data table; new point layer is just latest spatial points. Source: Dan Meeting Feb 20 |
 | TF-13 | ⚪ Not Started | Feb 20, 2026 | Add loading indicator when DataOne layer is selected and map data is loading | High priority; no visual feedback during load leaves user uncertain if app is working. Source: Trisalyn QA Feb 20 |
 | TF-14 | ⚪ Not Started | Feb 20, 2026 | Render a specific map marker when "View on Map" is clicked on a dataset | High priority; currently highlights the group but doesn't drop a specific dot at the dataset location. Source: Trisalyn QA Feb 20 |
 | CON-DONE-01 | ⚪ Not Started | Feb 18, 2026 | Cluster click on map populates right sidebar with datasets at that location | High priority |
