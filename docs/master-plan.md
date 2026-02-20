@@ -37,7 +37,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 3 | Dendra | 🟢 Complete | 0 | `v2/dendra` | No |
 | 4 | DataOne | 🟢 Complete | 0 | `v2/dataone` | No |
 | 5 | Export Builder | 🟢 Complete | 0 | `v2/export-builder` | No |
-| 6 | TNC ArcGIS Services | 🟡 In Progress | 12 tasks | `v2/tnc-arcgis` | No |
+| 6 | TNC ArcGIS Services | 🟡 In Progress | 9 tasks | `v2/tnc-arcgis` | No |
 | 7 | Polish & Consistency | ⚪ Not Started | 7+ tasks | `v2/polish` | No |
 | 8 | Calflora | ⚪ Not Started | 9 tasks | `v2/calflora` | No |
 | 9 | GBIF | ⚪ Not Started | 9 tasks | `v2/gbif` | No |
@@ -53,7 +53,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 0 | [phase-0-foundation.md](IMPLEMENTATION/phases/phase-0-foundation.md) | 0.6 Map Feature Highlight (if pending); 0.9 ✅ complete |
 | 1 | [phase-1-inaturalist.md](IMPLEMENTATION/phases/phase-1-inaturalist.md) | 1 task (CON-INAT-07) |
 | 2 | [phase-2-animl.md](IMPLEMENTATION/phases/phase-2-animl.md) | ~4 tasks |
-| 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 11 tasks (CON-ARCGIS-14 complete Feb 19) |
+| 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 9 tasks (CON-ARCGIS-03, 6.17 complete Feb 19) |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) | 1 task (10.7) |
 
 ---

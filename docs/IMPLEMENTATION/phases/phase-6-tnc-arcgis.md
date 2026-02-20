@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 11 / 22 tasks (CON-ARCGIS-01, 02, 04, 05, 08, 09, 10, 11, 12, 14, 6.20 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
+**Progress:** 13 / 22 tasks (CON-ARCGIS-01, 02, 03, 04, 05, 08, 09, 10, 11, 12, 14, 6.17, 6.20 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry) ✅ complete  
@@ -32,7 +32,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 |----|--------|---------------------------|------------------|-------|
 | CON-ARCGIS-01 | 🟢 Complete | Feb 19, 2026 | Right sidebar shows service overview and layer-specific info with progressive disclosure | Hierarchy context, layer selector, sync |
 | CON-ARCGIS-02 | 🟢 Complete | Feb 19, 2026 | Clarify feature service vs category hierarchy in left sidebar | Service/Layer badges, active-state styling |
-| CON-ARCGIS-03 | ⚪ Not Started | Feb 18, 2026 | Add "See table" button to open tabular layer/table view | Medium priority; ties to 6.17 |
+| CON-ARCGIS-03 | 🟢 Complete | Feb 19, 2026 | Add "See table" button to open tabular layer/table view | Implemented via 6.17: Browse "Open Table Overlay" + ArcGIS FeatureTable |
 | CON-ARCGIS-04 | 🟢 Complete | Feb 19, 2026 | Bidirectional sync between right sidebar layer selection and left sidebar | LayerContext + Overview selector |
 | CON-ARCGIS-05 | 🟢 Complete | Feb 19, 2026 | Fix iframe to show user-friendly TNC Hub page instead of raw service page | Hub search URL preferred; REST fallback |
 | CON-ARCGIS-06 | ⚪ Not Started | Feb 18, 2026 | Bug: fix Union Pacific Railroad layer (layer ID 0 not found) | Medium priority bug |
@@ -51,7 +51,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **6.12** | 🟡 | Feb 16, 2026 | Terminology + CTA Realignment | Decision locked: remove right-sidebar pin actions for now; keep pinning in left sidebar + Map Layers widget only |
 | **6.13** | 🟡 | Feb 16, 2026 | Multi-Layer Service Discoverability | In progress: stable left-sidebar scrollbar gutter; service-group spacing refinements retained |
 | **6.14** | 🟡 | Feb 16, 2026 | Service Reference + External Viewer | WIP: right-sidebar Browse focuses on source actions; legend controls live in floating map widget |
-| **6.17** | ⚪ | — | Generic Layer Table View (Feature Layers) | Add table view for feature layers; "Browse Selected Layer" will open table (deferred) |
+| **6.17** | 🟢 Complete | Feb 19, 2026 | Generic Layer Table View (Feature Layers) | ArcGIS FeatureTable overlay on map; Browse shows row/column summary + Open Table Overlay |
 | **6.20** | 🟢 Complete | Feb 19, 2026 | Right Sidebar: Layer + Service Hierarchy Communication | Implemented via CON-ARCGIS-01/02 (Current Context block) |
 
 *Completed tasks 6.1–6.7, 6.15, 6.16, 6.18, 6.19 have been archived. See `docs/archive/phases/phase-6-tnc-arcgis-completed.md`.*
@@ -100,12 +100,10 @@ TNC FeatureService (e.g., "Wetlands")
 - Source actions: Open Overlay, Open in New Tab (Task 6.19)
 
 **Browse Tab (Any TNC Layer):**
-- Generic filter UI: field/operator/value rows
-- "Add Filter" button (adds new row)
-- "Preview Results" button (validates query, shows count)
-- "View Layer Table" button (Task 6.17) — opens table view for schema/column inspection
+- "Inspect Current Layer" card: row count, column count, column preview; "Open Table Overlay" button (Task 6.17)
+- ArcGIS FeatureTable overlay: floating panel over map area; auto-populates columns and rows from FeatureServer
+- Generic filter UI: field/operator/value rows (future)
 - "Pin Layer" button (appears when layer not pinned)
-- Result count display
 - *Note:* Source actions (Overlay, New Tab) move to Overview tab (Task 6.19)
 
 ---
@@ -387,11 +385,13 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - Reuse or extend `tncArcgisService.queryFeatures` for data fetch
 
 **Acceptance Criteria:**
-- [ ] Button to view layer table present in Browse tab for TNC feature layers
-- [ ] Table displays column headers and sample rows from the feature service
-- [ ] Table view is usable for schema/column inspection (backend audience)
-- [ ] Design allows reuse for other feature-layer data sources (Dendra, etc.)
-- [ ] Handles large result sets (pagination or virtualization)
+- [x] Button to view layer table present in Browse tab for TNC feature layers
+- [x] Table displays column headers and sample rows from the feature service
+- [x] Table view is usable for schema/column inspection (backend audience)
+- [x] Design allows reuse for other feature-layer data sources (Dendra, etc.)
+- [x] Handles large result sets (pagination or virtualization via ArcGIS FeatureTable)
+
+**Resolution (Feb 19, 2026):** Implemented via ArcGIS SDK `FeatureTable` widget. Browse tab shows "Inspect Current Layer" card with row count, column count, and column preview; "Open Table Overlay" opens a floating panel over the map. Panel uses ArcGIS FeatureTable bound to map layer or fallback FeatureLayer from service URL. TNCArcGISTableOverlay component; TNCArcGISContext state for open/close; adapter FloatingPanel. Hover-revealed "Inspect" action on Overview layer rows switches to Browse and opens table overlay.
 
 **Estimated Time:** 6–8 hours
 
@@ -682,6 +682,7 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 19, 2026 | CON-ARCGIS-03, 6.17 | **Complete.** ArcGIS FeatureTable overlay for TNC layers. Browse "Inspect Current Layer" card with row/column summary + Open Table Overlay; hover-revealed Inspect on Overview layer rows; TNCArcGISTableOverlay + fallback FeatureLayer for MapServer layers. | — |
 | Feb 19, 2026 | CON-ARCGIS-14 | **Complete.** Unified Service Workspace: service/layer click auto-selects sublayer; map + Map Layers widget sync with resolved sublayer; right-sidebar layer list with amber active highlight, pin/eye icons, inline pin/unpin; "Inspect Current Layer" CTA. Files: ServiceGroup, useMapLayers, MapLayersWidget, TNCArcGISOverviewTab, LayerContext. | — |
 | Feb 19, 2026 | CON-ARCGIS-14 | Added task: Unified Service Workspace — service/layer click behavior, auto-select sublayer on service click, layer list state chips (pinned/visible counts). | — |
 | Feb 19, 2026 | CON-ARCGIS-10, 11, 12 | Implemented right sidebar hierarchy relabel (Feature Service, Current Layer), section rename to "Feature Service Overview", single scrollable layer list (dropdown + helper text removed). | — |
