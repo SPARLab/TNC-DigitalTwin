@@ -9,6 +9,7 @@ import { useLayers } from '../../../context/LayerContext';
 import { useCatalog } from '../../../context/CatalogContext';
 import { useDendra } from '../../../context/DendraContext';
 import { useCacheStatusByDataSource } from '../../../dataSources/registry';
+import { formatStationDisplayName } from '../../../services/dendraStationService';
 import { WidgetShell } from '../shared/WidgetShell';
 import { WidgetHeader } from '../shared/WidgetHeader';
 import { CountDisplayDropdown } from '../shared/CountDisplayDropdown';
@@ -75,8 +76,8 @@ export function MapLayersWidget() {
       const sourceKey = `${panel.sourceLayerId}::${resolvedViewId ?? '__root__'}`;
       const stationId = panel.station?.station_id;
       const stationName = panel.station?.station_name
-        ?.replace(/^Dangermond_/, '')
-        .replace(/_/g, ' ');
+        ? formatStationDisplayName(panel.station.station_name)
+        : undefined;
       const existing = stats.get(sourceKey);
       if (existing) {
         existing.streamCount += 1;

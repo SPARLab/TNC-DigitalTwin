@@ -8,7 +8,7 @@ import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
 import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
-import type { DendraStation } from '../../../services/dendraStationService';
+import { formatStationDisplayName, type DendraStation } from '../../../services/dendraStationService';
 import { isPointInsideSpatialPolygon, type SpatialPolygon } from '../../../utils/spatialQuery';
 
 const ACTIVE_SYMBOL = new SimpleMarkerSymbol({
@@ -49,13 +49,14 @@ export function populateDendraLayer(
     attributes: {
       station_id: s.station_id,
       station_name: s.station_name,
+      station_display_name: formatStationDisplayName(s.station_name),
       sensor_name: s.sensor_name,
       is_active: s.is_active,
       datastream_count: s.datastream_count,
       elevation: s.elevation,
     },
     popupTemplate: {
-      title: '{station_name}',
+      title: '{station_display_name}',
       content: [
         {
           type: 'fields',

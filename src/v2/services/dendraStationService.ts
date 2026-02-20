@@ -264,6 +264,12 @@ export function toColumnName(datastreamName: string): string {
 
 // ── Formatting ───────────────────────────────────────────────────────────────
 
+/** Normalize station names for display (e.g., "dangermond_Oaks" -> "Oaks"). */
+export function formatStationDisplayName(stationName: string | null | undefined): string {
+  if (!stationName) return 'Unknown';
+  return stationName.replace(/^dangermond_/i, '').replace(/_/g, ' ').trim() || 'Unknown';
+}
+
 /** Format an epoch timestamp to a readable date string */
 export function formatTimestamp(epochMs: number | null): string {
   if (!epochMs) return '—';

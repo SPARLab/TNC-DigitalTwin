@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useDendra } from '../../../context/DendraContext';
 import { useLayers } from '../../../context/LayerContext';
-import { formatValue, formatTimestamp } from '../../../services/dendraStationService';
+import { formatStationDisplayName, formatValue, formatTimestamp } from '../../../services/dendraStationService';
 
 export function DendraTimeSeriesPanel() {
   const { chartPanels } = useDendra();
@@ -85,7 +85,7 @@ function ChartPanel({ panelId }: { panelId: string }) {
     event.stopPropagation();
   };
 
-  const displayName = panel.station?.station_name?.replace(/^Dangermond_/, '').replace(/_/g, ' ') ?? '';
+  const displayName = formatStationDisplayName(panel.station?.station_name);
   const summary = panel.summary;
   const data = panel.data;
   const chartLabel = summary?.datastream_name ?? '';

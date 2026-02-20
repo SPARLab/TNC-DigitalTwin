@@ -1,6 +1,6 @@
 # Design System - TNC Digital Catalog
 
-**Last Updated:** February 5, 2026 (Audit gap resolution — added 12 missing DFT specs: Viewport Requirements, Accessibility Baseline, Bookmark Hover-to-Highlight, Filter Indicator, Multiple Filtered Views, Widget Animation, Map Badge Behavior, Widget Auto-Collapse, TabBar default/transitions, ResultCard animation, TNC brand reference)  
+**Last Updated:** February 20, 2026 (Dendra station display name normalization)  
 **Purpose:** Single source of truth for styling decisions, component patterns, and design policies that affect multiple phases.
 
 ---
@@ -1058,7 +1058,7 @@ All tooltips follow this format: `"[ID] • [Type]"`
 | Data Source | Example |
 |-------------|---------|
 | **ANiML Cameras** | `"CAM-042 • Camera"` |
-| **Dendra Sensors** | `"WL-08 • Water Level Sensor"` |
+| **Dendra Sensors** | `"Oaks"` (station name; strip `dangermond_` prefix via `formatStationDisplayName()`) |
 | **iNaturalist** | `"California Condor • Observation"` |
 | **eBird** | `"Spotted Owl • Sighting"` |
 | **DataOne** | `"Vegetation Survey 2022 • Dataset"` (truncate title if >40 chars) |
@@ -1992,6 +1992,7 @@ February 5, 2026
 | Feb 19, 2026 | **Dendra Map Layers child labels (CON-DENDRA-04).** Dynamic labels: collapsed `N data streams, M stations`; expanded by station scope. Pin count badge: number + blue pin icon only. Documented in Components table and phase-3-dendra.md. | Cursor |
 | Feb 19, 2026 | **Dendra chart panel header typography.** Stream name bold; labels (Station:, Category:) regular; values semi-bold. Pipe separator between Station and Category. Documented in Components table and phase-3-dendra.md. | Cursor |
 | Feb 16, 2026 | **Task 34 complete.** Added shared loading primitives (`src/v2/components/shared/loading/`): `loadingTheme.ts`, `LoadingPrimitives.tsx` (EyeSlotLoadingSpinner, InlineLoadingRow, RefreshLoadingRow, MapCenterLoadingOverlay). Wired for iNaturalist, Dendra, ANiML. Single-point styling propagation. | Claude |
+| Feb 20, 2026 | Dendra station display names: strip `dangermond_` prefix for map popup, sidebar, chart panels. Shared `formatStationDisplayName()` in `dendraStationService.ts`. TF-07 (Trisalyn QA). | Claude |
 | Feb 16, 2026 | Updated DFT-018 Loading State Patterns with Task 34 unified cross-branch contract: eye-slot spinner in Map Layers, map overlay, legend/sidebar region-specific loading, first-load vs refresh rules | Claude |
 | Feb 6, 2026 | Added Detail View Components (DFT-044) — shared sub-components for self-contained row detail views: `DetailBackButton`, `DetailActionRow`, `DetailMetadataGrid`. Purpose-built views: iNaturalist (hero image + flat grid), DataOne (multi-section hierarchical). Architectural principle: consistent structural template with flexibility for custom content. Design tokens added for back button, action row, metadata grid, and full detail view styling. Analyzed via Nielsen #4/#8, Norman, Hick's Law, IA Mental Models | Will + Claude |
 | Feb 5, 2026 | Audit gap resolution — added 12 missing DFT specs: Viewport Requirements (DFT-016), Accessibility Baseline (DFT-017), Bookmark Hover-to-Highlight (DFT-036), Filter Indicator (DFT-024), Multiple Filtered Views (DFT-013), Widget Animation Patterns (DFT-025), Map Badge Behavior (DFT-029), Widget Auto-Collapse (DFT-005), TabBar default tab + Edit Filters transition (DFT-006/DFT-019), ResultCard grayed animation detail (DFT-028), TNC brand color/font reference (DFT-008/DFT-009) | Will + Claude |

@@ -6,7 +6,7 @@
 **Branch:** `v2/dendra`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD  
-**Last Updated:** February 19, 2026
+**Last Updated:** February 20, 2026
 
 ---
 
@@ -15,7 +15,7 @@
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
 | TF-06 | ⚪ Not Started | Feb 20, 2026 | Rename left sidebar group from "Sensor Equipment" to "Field Sensors" | Low priority; Trisalyn verbally confirmed "Field Sensors" preferred. Source: Trisalyn QA Feb 20 |
-| TF-07 | ⚪ Not Started | Feb 20, 2026 | Remove "dangermond_" prefix from Dendra station tooltip titles (tooltip says "dangermond_Oaks", sidebar says "Oaks") | Medium priority; investigate source of prefix and strip from display strings. Source: Trisalyn QA Feb 20 |
+| TF-07 | 🟢 Complete | Feb 20, 2026 12:30 PM | Remove "dangermond_" prefix from Dendra station tooltip titles (tooltip says "dangermond_Oaks", sidebar says "Oaks") | Fixed by normalizing station display names (`formatStationDisplayName`) and using sanitized value in map popup title + Dendra UI surfaces. Source: Trisalyn QA Feb 20 |
 | CON-DENDRA-01 | 🟢 Complete | Feb 19, 2026 | Map click on station syncs to right sidebar and opens station | High priority; map-first |
 | CON-DENDRA-02 | 🟢 Complete | Feb 19, 2026 | Multiple time series charts side-by-side; draggable/resizable/minimizable within map area bounds | High priority |
 | CON-DENDRA-03 | 🟢 Complete | Feb 19, 2026 | Multi-stream selection across stations with stream-name filtering and no reset requirement | High priority |
@@ -261,6 +261,7 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 20, 2026 | TF-07 | **Complete.** Removed `dangermond_` station-name prefix from Dendra tooltip titles by introducing shared station display-name formatter and using it in map popup + Dendra display surfaces for consistent naming. | Cursor |
 | Feb 19, 2026 | CON-DENDRA-03 | **Complete.** Multi-stream selection across stations: stream-name filtering, in-detail station switcher, no reset requirement. See Task Details. | Cursor |
 | Feb 19, 2026 | CON-DENDRA-04 | **Complete.** Pinned-stream visibility across Map Layers, right sidebar, and station cards. Dynamic child-view labels; chart close fix; effective active view for sync. See Task Details. | Cursor |
 | Feb 19, 2026 | CON-DENDRA-04 | **Started implementation.** Added active-child-view pin count indicators on station cards, datastream pin/unpin affordance in station detail, and child-view pin counts in Map Layers widget. | Cursor |

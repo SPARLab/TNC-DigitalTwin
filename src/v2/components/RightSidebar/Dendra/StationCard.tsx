@@ -4,7 +4,7 @@
 // ============================================================================
 
 import { MapPin, Radio, ChevronRight, Pin } from 'lucide-react';
-import type { DendraStation } from '../../../services/dendraStationService';
+import { formatStationDisplayName, type DendraStation } from '../../../services/dendraStationService';
 
 interface StationCardProps {
   station: DendraStation;
@@ -22,7 +22,7 @@ export function StationCard({
   onViewOnMap,
 }: StationCardProps) {
   const isActive = station.is_active === 1;
-  const displayName = station.station_name?.replace(/^Dangermond_/, '').replace(/_/g, ' ') ?? 'Unknown';
+  const displayName = formatStationDisplayName(station.station_name);
 
   return (
     <div

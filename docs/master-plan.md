@@ -1,7 +1,7 @@
 # Master Development Plan — V2 Digital Catalog
 
 **Created:** January 23, 2026  
-**Last Updated:** February 19, 2026  
+**Last Updated:** February 20, 2026  
 **Target Deadline:** February 20, 2026  
 **Status:** 🟡 In Progress
 
@@ -304,6 +304,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 20, 2026 | Phase 3 | **TF-07 complete.** Removed `dangermond_` prefix from Dendra station tooltip titles; shared `formatStationDisplayName()` normalizes names across map popup, sidebar, chart panels, Map Layers. Trisalyn QA. | Claude |
 | Feb 19, 2026 | Phase 10 | **CON-DRONE-02 complete.** Simplify project flights UI: compact name/date cards, card click syncs map + toggles metadata, caret-only disclosure, animated expand/collapse, removed Selected/Visible/reorder controls. | Claude |
 | Feb 19, 2026 | Phase 10 | **CON-DRONE-01 complete.** Drone imagery flight toggle bug fix: single-flight replacement, auto-load default, WMTS 404 fallback. | Claude |
 | Feb 19, 2026 | Phase 6 | **CON-ARCGIS-14 complete:** Unified Service Workspace — service/layer click auto-selects sublayer; map + Map Layers widget sync; right-sidebar layer list with amber active highlight, pin/eye icons, inline pin/unpin; "Inspect Current Layer" CTA. | — |

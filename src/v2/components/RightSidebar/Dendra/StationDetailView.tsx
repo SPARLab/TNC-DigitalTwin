@@ -7,7 +7,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ChevronLeft, MapPin, Radio, Activity, Calendar, TrendingUp, TrendingDown, BarChart3, Save, Pin } from 'lucide-react';
 import type { DendraStation, DendraSummary } from '../../../services/dendraStationService';
-import { formatTimestamp, formatValue } from '../../../services/dendraStationService';
+import { formatStationDisplayName, formatTimestamp, formatValue } from '../../../services/dendraStationService';
 import { useDendra } from '../../../context/DendraContext';
 import { useLayers } from '../../../context/LayerContext';
 
@@ -37,7 +37,7 @@ export function StationDetailView({
   onSelectStation,
 }: StationDetailViewProps) {
   const isActive = station.is_active === 1;
-  const displayName = station.station_name?.replace(/^Dangermond_/, '').replace(/_/g, ' ') ?? 'Unknown';
+  const displayName = formatStationDisplayName(station.station_name);
   const [selectedDatastreamId, setSelectedDatastreamId] = useState<number | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [isHeaderFlashing, setIsHeaderFlashing] = useState(false);
@@ -304,7 +304,7 @@ export function StationDetailView({
                 id={`dendra-detail-station-switcher-option-${candidate.station_id}`}
                 value={candidate.station_id}
               >
-                {candidate.station_name?.replace(/^Dangermond_/, '').replace(/_/g, ' ') ?? 'Unknown'}
+                {formatStationDisplayName(candidate.station_name)}
               </option>
             ))}
           </select>
