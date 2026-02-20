@@ -1,11 +1,11 @@
 # Phase 1: iNaturalist Right Sidebar
 
 **Status:** 🟢 Complete  
-**Progress:** 5 / 6 tasks complete (1 won't do)  
+**Progress:** 6 / 6 tasks complete (1 won't do)  
 **Branch:** `v2/inaturalist`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD  
-**Last Updated:** February 19, 2026
+**Last Updated:** February 20, 2026
 
 ---
 
@@ -19,7 +19,7 @@
 |----|--------|---------------------------|------------------|-------|
 | TF-01 | 🟢 Complete | Feb 20, 2026 | Set minimum height for image results in Browse tab (~150px) so user doesn't need to collapse filters to scroll | Done: min-h-[400px] on inat-observation-cards. Right sidebar scrollable under Overview/Browse tabs is acceptable. |
 | TF-03 | 🟢 Complete | Feb 20, 2026 | Don't gray out species options in Filter Species dropdown; gray communicates "unavailable" but they're just unselected | Done: removed `opacity-60` and `text-gray-500` from unselected rows in both Filter Taxa and Filter Species dropdowns. Unselected rows now use `bg-white hover:bg-gray-50` + `text-gray-700`; checkbox alone conveys selection state. Same pattern fixed in Taxa for consistency. |
-| TF-04 | ⚪ Not Started | Feb 20, 2026 | Fix map/right-sidebar desync: selecting taxon in legend + filtering by species results in map not updating | High priority; discovered live in QA. Source: Trisalyn QA Feb 20 |
+| TF-04 | 🟢 Complete | Feb 20, 2026 | Fix map/right-sidebar desync: selecting taxon in legend + filtering by species results in map not updating | Done: removed global species reset from shared toggleTaxon; legend and sidebar taxon clicks now both apply taxa filter immediately without blanking map. Source: Trisalyn QA Feb 20 |
 | CON-INAT-01 | 🟢 Complete | Feb 19, 2026 | Add species-level filtering (currently taxa only) | Done: full scientific names, species search, count/alphabetical sort, map/pinned-view sync. Common/Latin toggle dropped (decided against). |
 | CON-INAT-02 | 🟢 Complete | Feb 19, 2026 | Species hierarchy flow: taxa -> species list -> observations per species | Done: taxa→species→observations flow enforced; redundant top species search removed; "Filter Taxa" label. |
 | CON-INAT-03 | 🟢 Complete | Feb 19, 2026 | Show result count in right sidebar (for example, "92 observations") | Done: Browse tab now shows live result-count row (e.g., "92 observations") using filtered total count. |
@@ -29,8 +29,8 @@
 
 **Phase-5 handoff:** `CON-INAT-05` (Export Builder cart inversion) is tracked in `docs/IMPLEMENTATION/phases/phase-5-export-builder.md` to avoid cross-branch conflicts.
 
-**Active tasks remaining:** 1 (TF-04)  
-**Recently completed:** TF-03 (remove gray/opacity from unselected filter rows), TF-01 (min height for image results), CON-INAT-07 (collapsible filters + scrollable results). Archived tasks: `docs/archive/phases/phase-1-inaturalist-completed.md`
+**Active tasks remaining:** 0  
+**Recently completed:** TF-04 (map/sidebar taxon filter sync), TF-03 (remove gray/opacity from unselected filter rows), TF-01 (min height for image results), CON-INAT-07 (collapsible filters + scrollable results). Archived tasks: `docs/archive/phases/phase-1-inaturalist-completed.md`
 
 ---
 
@@ -81,7 +81,7 @@ TBD
 
 | Decision | Date | Rationale |
 |----------|------|-----------|
-| | | |
+| TF-04: Taxon toggle no longer resets species | Feb 20, 2026 | Shared `toggleTaxon` previously set `excludeAllSpecies=true` and cleared `selectedSpecies`, causing map to blank when filtering by taxa (legend or sidebar). Removed side-effect so taxa filter applies immediately; species filter remains independent. Legend and sidebar now behave consistently. |
 
 ### Styling Decisions
 
@@ -105,7 +105,8 @@ TBD
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
-| Feb 20, 2026 | TF-03 | **Complete.** Removed `opacity-60` and `text-gray-500` from unselected filter rows in both Filter Taxa and Filter Species dropdowns. Unselected items now use `bg-white hover:bg-gray-50` + `text-gray-700`; the checkbox alone conveys selection state. Same fix applied to Taxa dropdown for parity. | — |
+| Feb 20, 2026 | TF-04 | **Complete.** Fixed map/right-sidebar desync: removed global species reset from shared `toggleTaxon`; legend and sidebar taxon clicks now both apply taxa filter immediately without blanking map. Species filter remains independent; combined taxa + species filtering syncs correctly. | — |
+ | Feb 20, 2026 | TF-03 | **Complete.** Removed `opacity-60` and `text-gray-500` from unselected filter rows in both Filter Taxa and Filter Species dropdowns. Unselected items now use `bg-white hover:bg-gray-50` + `text-gray-700`; the checkbox alone conveys selection state. Same fix applied to Taxa dropdown for parity. | — |
 | Feb 20, 2026 | TF-01 | **Complete.** Added min-h-[400px] to observation cards container so image results area has minimum height; users no longer need to collapse filters to scroll. Right sidebar scrollable under Overview/Browse tabs is acceptable. | — |
 | Feb 19, 2026 | CON-INAT-04 | **Won't Do.** Reptile observations appearing in ocean are due to iNaturalist coordinate obfuscation for sensitive/endangered species, not an app bug. | — |
 | Feb 19, 2026 | CON-INAT-06 | **Complete.** Species/taxa ordering already implemented in CON-INAT-01: count sort (common higher) default, A-Z toggle. | — |

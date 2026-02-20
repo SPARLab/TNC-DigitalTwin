@@ -127,6 +127,8 @@ export function INaturalistBrowseTab() {
   const showRefreshLoading = loading && hasStaleResults;
   const normalizedSpeciesSearch = speciesSearchTerm.trim().toLowerCase();
   const handleToggleTaxon = useCallback((taxon: string) => {
+    // Sidebar taxon toggles should match legend behavior: apply taxa immediately
+    // without implicitly excluding all species.
     toggleTaxon(taxon);
     setIsSpeciesFilterOpen(true);
   }, [toggleTaxon]);

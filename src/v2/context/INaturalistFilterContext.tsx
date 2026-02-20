@@ -129,9 +129,6 @@ export function INaturalistFilterProvider({ children }: { children: ReactNode })
       else next.add(taxon);
       return next;
     });
-    // Hierarchy flow: taxa selection should lead to explicit species selection.
-    setExcludeAllSpecies(true);
-    setSelectedSpecies(prev => (prev.size === 0 ? prev : new Set()));
   }, []);
 
   const toggleSpecies = useCallback((species: string) => {
