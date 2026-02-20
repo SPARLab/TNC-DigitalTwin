@@ -61,7 +61,7 @@ export function INaturalistLegendWidget() {
             setIsExpanded((v) => !v);
           }
         }}
-        className={`flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors ${isExpanded ? 'rounded-t-lg' : 'rounded-lg'}`}
+        className={`flex items-center justify-between px-4 py-3 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors ${isExpanded ? 'rounded-t-lg border-b border-gray-200' : 'rounded-lg'}`}
         aria-label={isExpanded ? 'Collapse legend' : 'Expand legend'}
       >
         <div className="flex items-center gap-2 min-w-0">
@@ -105,39 +105,46 @@ export function INaturalistLegendWidget() {
         </div>
       </div>
 
-      {/* Taxon filter list */}
-      {isExpanded && (
-        <div id="inat-legend-content" className="p-2 max-h-[32rem] overflow-y-auto space-y-1 rounded-b-lg">
-          {groups.map(group => {
-            const isSelected = hasFilter ? selectedTaxa.has(group.value) : true;
-            const bgColor = isSelected
-              ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200'
-              : 'bg-gray-100 hover:bg-gray-150 border-gray-200 opacity-60';
+      {/* Taxon filter list — grid-template-rows drives the expand/collapse animation */}
+      <div
+        id="inat-legend-content-wrapper"
+        className={`grid transition-[grid-template-rows] duration-200 ease-in-out ${
+          isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div id="inat-legend-content" className="p-2 max-h-[32rem] overflow-y-auto space-y-1 rounded-b-lg">
+            {groups.map(group => {
+              const isSelected = hasFilter ? selectedTaxa.has(group.value) : true;
+              const bgColor = isSelected
+                ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200'
+                : 'bg-gray-100 hover:bg-gray-150 border-gray-200 opacity-60';
 
-            return (
-              <button
-                key={group.value}
-                id={`inat-legend-item-${group.value}`}
-                onClick={() => toggleTaxon(group.value)}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded border transition-all ${bgColor}`}
-                title={`${isSelected ? 'Hide' : 'Show'} ${group.label}`}
-              >
-                <div className="flex items-center gap-2">
-                  <span
-                    className="w-3 h-3 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: getTaxonColor(group.value) }}
-                  />
-                  <span className="text-base leading-none">{getTaxonEmoji(group.value)}</span>
-                  <span className={`text-sm ${isSelected ? 'text-gray-800 font-medium' : 'text-gray-500'}`}>
-                    {group.label}
-                  </span>
-                </div>
-                <span className="text-xs text-gray-600">{group.count.toLocaleString()}</span>
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={group.value}
+                  id={`inat-legend-item-${group.value}`}
+                  onClick={() => toggleTaxon(group.value)}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded border transition-all ${bgColor}`}
+                  title={`${isSelected ? 'Hide' : 'Show'} ${group.label}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-3 h-3 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: getTaxonColor(group.value) }}
+                    />
+                    <span className="text-base leading-none">{getTaxonEmoji(group.value)}</span>
+                    <span className={`text-sm ${isSelected ? 'text-gray-800 font-medium' : 'text-gray-500'}`}>
+                      {group.label}
+                    </span>
+                  </div>
+                  <span className="text-xs text-gray-600">{group.count.toLocaleString()}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
