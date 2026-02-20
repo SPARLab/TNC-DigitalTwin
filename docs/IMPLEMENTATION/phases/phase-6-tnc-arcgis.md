@@ -37,6 +37,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | CON-ARCGIS-05 | 🟢 Complete | Feb 19, 2026 | Fix iframe to show user-friendly TNC Hub page instead of raw service page | Hub search URL preferred; REST fallback |
 | CON-ARCGIS-06 | ⚪ Not Started | Feb 18, 2026 | Bug: fix Union Pacific Railroad layer (layer ID 0 not found) | Medium priority bug |
 | CON-ARCGIS-07 | ⚪ Not Started | Feb 18, 2026 | Design multi-layer feature service UX follow-up | Low priority / follow-up |
+| CON-ARCGIS-15 | ⚪ Not Started | Feb 19, 2026 | Bug: fix feature service layer rendering — layers not drawing on map | High priority; legend loads but geometry not rendering; affects JLDP invasives ice plant mats, tree-dominated vegetation, oil seeps, most land cover layers |
 | **CON-ARCGIS-08** | 🟢 Complete | Feb 19, 2026 | Left sidebar: hover-visible scrollbar pill | Implemented: custom overlay thumb (no gutter); visible on scroll/hover |
 | **CON-ARCGIS-09** | 🟢 Complete | Feb 19, 2026 | Left sidebar: fix layer row clipping | ServiceGroup: w-full→mx-1 min-w-0; consistent right margin |
 | **CON-ARCGIS-10** | 🟢 Complete | Feb 19, 2026 | Right sidebar: relabel hierarchy block | Feature Service (bold name); Current Layer; remove "Catalog: TNC ArcGIS…" |
@@ -540,6 +541,35 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 
 ---
 
+### CON-ARCGIS-15: Fix Feature Service Layer Rendering (Layers Not Drawing on Map)
+
+**Goal:** Fix TNC ArcGIS feature service layers so they render on the map. Currently the legend loads but the layer geometry does not draw.
+
+**Context (User Feedback, Feb 19, 2026):**
+- **Land Cover:** JLDP invasives ice plant mats — legend loads, layer does not
+- **Land Cover:** Tree-dominated vegetation — not working
+- **Land Cover:** Most layers not working
+- **Oil Seeps:** Not rendering on the map
+- **General:** Feature service layers in general are not rendering correctly
+
+**Investigation Areas:**
+- Layer view creation / FeatureLayer instantiation for TNC feature services
+- Map layer add order, visibility, or extent issues
+- Possible mismatch between service URL, layer ID, or sublayer resolution
+- Symbology/renderer application (legend loads → renderer may be correct; geometry fetch may fail)
+- CORS, authentication, or network errors when fetching features
+
+**Acceptance Criteria:**
+- [ ] JLDP invasives ice plant mats (Land Cover) renders on map
+- [ ] Tree-dominated vegetation (Land Cover) renders on map
+- [ ] Oil seeps (Coastal Marine Data) renders on map
+- [ ] Other land cover and feature service layers render as expected
+- [ ] Legend and layer geometry stay in sync
+
+**Estimated Time:** 4–8 hours (investigation-dependent)
+
+---
+
 ### CON-ARCGIS-13: Left Sidebar — Align Feature Service + Child Layer Right Edges
 
 **Goal:** Ensure feature service box and child layer boxes share the same right margin as other left-sidebar layers (e.g., Fire, Land Cover), so the overlay scrollbar fits naturally and visual alignment is consistent.
@@ -682,6 +712,7 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 19, 2026 | CON-ARCGIS-15 | **Added.** Bug: fix feature service layer rendering — legend loads but layers (JLDP invasives ice plant mats, tree-dominated vegetation, oil seeps, most land cover) not drawing on map. | — |
 | Feb 19, 2026 | CON-ARCGIS-03, 6.17 | **Complete.** ArcGIS FeatureTable overlay for TNC layers. Browse "Inspect Current Layer" card with row/column summary + Open Table Overlay; hover-revealed Inspect on Overview layer rows; TNCArcGISTableOverlay + fallback FeatureLayer for MapServer layers. | — |
 | Feb 19, 2026 | CON-ARCGIS-14 | **Complete.** Unified Service Workspace: service/layer click auto-selects sublayer; map + Map Layers widget sync with resolved sublayer; right-sidebar layer list with amber active highlight, pin/eye icons, inline pin/unpin; "Inspect Current Layer" CTA. Files: ServiceGroup, useMapLayers, MapLayersWidget, TNCArcGISOverviewTab, LayerContext. | — |
 | Feb 19, 2026 | CON-ARCGIS-14 | Added task: Unified Service Workspace — service/layer click behavior, auto-select sublayer on service click, layer list state chips (pinned/visible counts). | — |
