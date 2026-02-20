@@ -13,7 +13,7 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| CON-DONE-01 | ⚪ Not Started | Feb 18, 2026 | Cluster click on map populates right sidebar with datasets at that location | High priority |
+| CON-DONE-01 | 🟡 In Progress | Feb 20, 2026 | Cluster click on map populates right sidebar with datasets at that location | High priority; major progress, unresolved cluster count desynchronization |
 | CON-DONE-02 | ⚪ Not Started | Feb 18, 2026 | Auto-pan/zoom when opening dataset detail; repurpose View on Map as Recenter | High priority; resolution applied |
 | CON-DONE-03 | ⚪ Not Started | Feb 18, 2026 | Cluster popup for scrolling individual datasets | Medium priority |
 | CON-DONE-04 | ⚪ Not Started | Feb 18, 2026 | Improve point dispersion as user zooms into clusters | Medium priority |
@@ -87,6 +87,36 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 ## Task Details
 
 *(Add new task details below. Completed tasks 4.1–4.12 are in the archive.)*
+
+---
+
+### CON-DONE-01: Cluster Click Populates Sidebar with Local Datasets
+
+**Goal:** When a user clicks a clustered DataONE marker on the map, the right sidebar should immediately show the datasets represented by that cluster/location.
+
+**Context:** Previously, cluster clicks only zoomed the map. Users had no direct way to inspect which datasets were in the clicked cluster without repeated zoom interactions.
+
+**Implementation Notes (Feb 20, 2026):**
+- Added map-selection flow for cluster clicks (`mapSelectionDataoneIds`) so cluster clicks drive sidebar filtering
+- Added visual synchronization aid: blue highlight ring on selected cluster
+- Preserved single-point click behavior: clicking a non-cluster marker opens dataset detail directly
+- Moved large-cluster sidebar filtering to client-side cache matching (to avoid 414 URI Too Large when cluster selections are very large)
+
+**Investigation Findings (Feb 20, 2026):**
+- Verified with live service checks: `FeatureServer/0` currently returns latest-only records (`is_latest_version = 0` count is 0)
+- Verified preserve-bounds subset used by app has 878 records, all latest-only, with no version duplication
+- Remaining issue is **cluster count desynchronization**: in some views, visible map cluster labels (e.g., 506 and 722) imply a larger universe than sidebar total (878)
+- Current hypothesis: map cluster aggregation scope is not perfectly aligned with sidebar filter scope in all states/zooms
+
+**Acceptance Criteria:**
+- [x] Clicking a DataONE cluster populates the right sidebar list with datasets for that clicked location/cluster
+- [x] Sidebar clearly indicates that a map-location filter is active and allows clearing it
+- [x] Clicking a single (non-cluster) point continues to open dataset detail as before
+- [x] Large cluster clicks no longer fail with `414 Request-URI Too Large`
+- [ ] Cluster label counts and sidebar total are fully synchronized across zoom levels and map states
+- [ ] QA pass confirms behavior across multiple zoom levels and dense cluster areas
+
+**Estimated Time:** 2–4 hours (implementation + QA)
 
 ---
 
@@ -168,6 +198,7 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 - [ ] How to handle datasets with many files?
 - [ ] Keyword click behavior - filter by that keyword?
 - [ ] Preview capability vs. link to DataOne?
+- [ ] Should we switch from point clustering to grid/bin aggregation (zoom-dependent cells with counts) to improve count explainability and reduce cluster ambiguity?
 
 ---
 
@@ -175,5 +206,7 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 20, 2026 | Updated CON-DONE-01 findings: latest-only records confirmed; added unresolved cluster count desynchronization investigation notes; documented large-cluster 414 fix. | Assistant |
+| Feb 20, 2026 | Started CON-DONE-01 implementation: map cluster click now drives DataONE sidebar list via cluster-member ID filtering; pending QA. | Assistant |
 | Feb 19, 2026 | Added CON-DONE-15: Spatial query for DataONE datasets — ensure draw/query tools filter by extent. | — |
 | Feb 18, 2026 | Archived tasks 4.1–4.12 to `docs/archive/phases/phase-4-dataone-completed.md`. Phase doc reset for new tasks. | User |
