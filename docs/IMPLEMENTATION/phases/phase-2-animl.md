@@ -87,7 +87,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| TF-01 | ⚪ Not Started | Feb 20, 2026 | Set minimum height for image results in Browse tab (~150px) so user doesn't need to collapse filters to scroll | High priority; same issue identified in iNaturalist Browse tab. Source: Trisalyn QA Feb 20 |
+| TF-01 | 🟢 Complete | Feb 20, 2026 | Set minimum height for image results in Browse tab (~150px) so user doesn't need to collapse filters to scroll | Follow-up tuning: `#animl-image-list-scrollable` now enforces `min-h-[300px]` (prevents zero-height collapse at browser zoom), non-collapsible `EditFiltersCard` uses `overflow-visible`, and right-sidebar scrollbar uses hover-only styling without stable gutter reservation to avoid content shift. Source: Trisalyn QA Feb 20 |
 | CON-ANIML-01 | 🟢 Complete | Feb 19, 2026 | Map click on camera trap auto-selects sidebar camera and shows images | Map click + sidebar sync; spatial-query camera auto-select/prioritization; QA passed |
 | CON-ANIML-02 | ⚫ Won't Do | Feb 19, 2026 | Rename "Mountain lion" to "Puma" | Deferred: current label comes from ANiML source data; taxonomy decision needed |
 | CON-ANIML-03 | 🟢 Complete | Feb 19, 2026 | Sort cameras by result count (data-rich first, zero-data last) | Comparator in AnimlBrowseTab; zero-result cameras sink to bottom |
@@ -107,6 +107,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | CON-ANIML-05 | Improve map camera badge legibility for high counts (999+) | 🟢 Complete | | Dynamic pill badge with white outline; extra padding for 999+; no clipping; QA passed |
 | CON-ANIML-06 | Add Retry button when image labels API error occurs | 🟢 Complete | | Auto retry (429/502/503/504) + manual Retry button in `AnimlBrowseTab`; QA passed |
 | 2.18 | Synchronize matching images results with map/layer counts | 🟢 Complete | | Server-side image pagination; shared filteredImageCount for map, layer badge, and browse totals; QA passed |
+| TF-01 | Min height + scrollbar for ANiML Browse image results | 🟢 Complete | | `#animl-image-list-scrollable` min-h-[300px]; EditFiltersCard overflow-visible; right-sidebar hover-only overlay scrollbar. Trisalyn QA Feb 20. |
 
 *Completed tasks 2.1–2.17 have been archived. See `docs/archive/phases/phase-2-animl-completed.md`.*
 
@@ -126,6 +127,26 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | ANIML-BACKLOG-01 | Feb 19, 2026 | Resolve species label policy for Puma vs Mountain Lion terminology | Current frontend uses ANiML labels as-is. "Puma" may be semantically weaker for some users than "Mountain Lion." Requires stakeholder decision on display taxonomy and whether normalization belongs upstream, in a shared mapping layer, or only in UX copy/help text. |
 
 ## Task Details
+
+### TF-01: Minimum Image Result Height + Overlay Scrollbar (ANiML Browse)
+
+**Goal:** Prevent the image results area from collapsing to zero height when the user zooms the browser (e.g., Cmd+zoom in Chrome), and ensure the right sidebar scrollbar overlays content (no horizontal shift).
+
+**Problem:** At high zoom levels, `#animl-image-list-scrollable` collapsed to zero height. Users had to collapse filter sections to scroll images. The stable scrollbar gutter also pushed content left when the scrollbar appeared.
+
+**Acceptance Criteria:**
+- [x] `#animl-image-list-scrollable` enforces `min-h-[300px]` so results area never collapses
+- [x] EditFiltersCard (non-collapsible) grows to fit children (`overflow-visible`)
+- [x] Right-sidebar scrollbar appears on hover, overlays content (no gutter reservation)
+
+**Implementation Notes (Feb 20, 2026):**
+- `ImageList.tsx`: `animl-image-list-scrollable` uses `min-h-[300px]` in both expandToFill and non-fill modes
+- `EditFiltersCard.tsx`: Conditional overflow — `overflow-visible` when not collapsible
+- `index.css`: `.scroll-area-right-sidebar` — removed `scrollbar-gutter: stable`; `scrollbar-width: none` by default, `thin` on hover/focus-within
+
+**Source:** Trisalyn QA Feb 20. Same fix applies to iNaturalist (TF-01-INAT).
+
+---
 
 ### CON-ANIML-06: Add Retry Button When Image Labels API Error Occurs
 

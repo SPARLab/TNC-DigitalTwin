@@ -161,18 +161,17 @@ body {
 
 /* -----------------------------------------------------------------------------
    Right Sidebar scroll area
-   - scrollbar-gutter: stable reserves space so content never shifts when the
-     scrollbar appears/disappears (e.g., expanding filter sections).
-   - Thin, subtle scrollbar that appears on hover.
+   - Scrollbar remains hidden until hover/focus-within.
+   - No reserved gutter so content width is not pre-shrunk.
    ----------------------------------------------------------------------------- */
 .scroll-area-right-sidebar {
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
+  scrollbar-width: none;
   scrollbar-color: transparent transparent;
 }
 
 .scroll-area-right-sidebar:hover,
 .scroll-area-right-sidebar:focus-within {
+  scrollbar-width: thin;
   scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
 }
 

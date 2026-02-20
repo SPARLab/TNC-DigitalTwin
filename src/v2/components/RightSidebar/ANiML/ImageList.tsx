@@ -168,8 +168,8 @@ export function ImageList({
       <div
         id="animl-image-list-scrollable"
         className={expandToFill
-          ? 'space-y-1.5 flex-1 min-h-0 overflow-y-auto pr-1 scroll-area-animl-images'
-          : 'space-y-1.5 max-h-96 overflow-y-auto pr-1 scroll-area-animl-images'}
+          ? 'space-y-1.5 flex-1 min-h-[300px] overflow-y-auto pr-1 scroll-area-animl-images'
+          : 'space-y-1.5 min-h-[300px] max-h-96 overflow-y-auto pr-1 scroll-area-animl-images'}
       >
         {images.map((img, idx) => {
           const date = parseDate(img.timestamp);

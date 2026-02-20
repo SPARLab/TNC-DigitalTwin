@@ -49,7 +49,9 @@ export function EditFiltersCard({ id, children, collapsible = false, defaultExpa
   return (
     <section
       id={id}
-      className={`rounded-lg border transition-colors duration-250 ease-in-out overflow-hidden ${
+      className={`rounded-lg border transition-colors duration-250 ease-in-out ${
+        collapsible ? 'overflow-hidden' : 'overflow-visible'
+      } ${
         isFlashing
           ? 'border-emerald-400 bg-emerald-200/80'
           : 'border-emerald-200 bg-emerald-50/40'

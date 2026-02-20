@@ -12,7 +12,8 @@
 
 | ID | Status | Last Updated | Task Description | Data Source | Priority | Notes |
 |----|--------|--------------|-----------------|-------------|----------|-------|
-| TF-01 | ⚪ Not Started | Feb 20, 2026 | Set minimum height for image results in Browse tab (~150px) so user doesn't need to collapse filters to scroll | iNaturalist | High | Same issue likely applies to ANiML Browse tab |
+| TF-01 | 🟡 Partial | Feb 20, 2026 | Set minimum height for image results in Browse tab (~150px) so user doesn't need to collapse filters to scroll | iNaturalist, ANiML | High | ANiML complete (min-h 300px, overlay scrollbar). iNaturalist pending — see TF-01-INAT. |
+| TF-01-INAT | ⚪ Not Started | Feb 20, 2026 | Apply TF-01 parity to iNaturalist Browse: min-h 300px for results, overlay scrollbar | iNaturalist | High | ANiML done; same fix for inat-browse-results-region / observation cards |
 | TF-02 | ⚪ Not Started | Feb 20, 2026 | Replace emoji icons with SVGs for cross-browser/cross-OS visual consistency | All | High | Emojis render differently on PC vs Mac |
 | TF-03 | ⚪ Not Started | Feb 20, 2026 | Don't gray out species options in Filter Species dropdown; gray = unavailable, but they're just unselected | iNaturalist | High | Communicates incorrect affordance to user |
 | TF-04 | ⚪ Not Started | Feb 20, 2026 | Fix map/right-sidebar desync: selecting taxon in legend + filtering by species results in map not updating | iNaturalist | High | Discovered live in QA session |
@@ -37,10 +38,16 @@
 ### TF-01 — Minimum image result height in Browse tab (~150px)
 
 **Last Updated:** Feb 20, 2026  
-**Data Source:** iNaturalist (likely ANiML too)  
-**Priority:** High
+**Data Source:** iNaturalist, ANiML  
+**Priority:** High  
+**Status:** 🟡 Partial — ANiML complete; iNaturalist pending (TF-01-INAT)
 
 Trisalyn found that when the species filter is expanded, the results section was too short to scroll through images meaningfully. She had to collapse the filter to get enough vertical space. Will's note: "Make sure the height of the image results is at a minimum something like 150px so the user can scroll down and see a sizable window, and not be forced to collapse filter sections."
+
+**Resolution (ANiML, Feb 20, 2026):**
+- `#animl-image-list-scrollable` enforces `min-h-[300px]` to prevent zero-height collapse at browser zoom
+- Non-collapsible `EditFiltersCard` uses `overflow-visible` so filter content grows without clipping
+- Right-sidebar scrollbar: hover-only, no gutter reservation (avoids content shift)
 
 ---
 

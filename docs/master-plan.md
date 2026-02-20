@@ -320,6 +320,7 @@ When working on any phase:
 | Feb 19, 2026 | Phase 1 | **CON-INAT-03 complete:** Added browse result-count row in iNaturalist right sidebar (e.g., "92 observations"). | — |
 | Feb 19, 2026 | Phase 1 | **CON-INAT-02 complete:** Species hierarchy flow (taxa→species→observations). Removed redundant top species search; renamed "Filter Observations" to "Filter Taxa". | — |
 | Feb 19, 2026 | Phase 1 | **CON-INAT-01 complete:** Species-level filtering (full scientific names, species search, count/alphabetical sort, map/pinned-view sync). Common/Latin toggle dropped. | — |
+| Feb 20, 2026 | Phase 2 | **TF-01 complete (ANiML):** Min height 300px for `#animl-image-list-scrollable` (prevents zoom collapse); EditFiltersCard overflow-visible; right-sidebar hover-only overlay scrollbar. Trisalyn QA. | Claude |
 | Feb 19, 2026 | Phase 2 | **Task 2.18 complete: Synchronize matching images with map/layer counts.** Server-side image pagination; shared filteredImageCount for map, layer badge, and browse totals; QA passed. Phase 2 ANiML complete. | Claude |
 | Feb 19, 2026 | Phase 2 | **CON-ANIML-06 complete: Retry for image labels API errors.** Auto-retry (429/502/503/504) with backoff; manual Retry button when exhausted; no full reload. | Claude |
 | Feb 19, 2026 | Phase 2 | **CON-ANIML-05 complete: Map badge UI for large counts.** Dynamic pill badge with white outline; extra padding for 999+; no clipping; QA passed. | Claude |
