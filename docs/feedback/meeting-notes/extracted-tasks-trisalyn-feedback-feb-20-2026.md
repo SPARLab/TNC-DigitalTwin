@@ -12,7 +12,7 @@
 
 | ID | Status | Last Updated | Task Description | Data Source | Priority | Notes |
 |----|--------|--------------|-----------------|-------------|----------|-------|
-| TF-01 | ⚪ Not Started | Feb 20, 2026 | Set minimum height for image results in Browse tab (~150px) so user doesn't need to collapse filters to scroll | iNaturalist | High | Same issue likely applies to ANiML Browse tab |
+| TF-01 | 🟢 Complete (iNat) / ⚪ Not Started (ANiML) | Feb 20, 2026 | Set minimum height for image results in Browse tab (~150px) so user doesn't need to collapse filters to scroll | iNaturalist, ANiML | High | iNat done: min-h-[400px] on observation cards. ANiML tracked in phase-2-animl.md TF-01. |
 | TF-02 | ⚪ Not Started | Feb 20, 2026 | Replace emoji icons with SVGs for cross-browser/cross-OS visual consistency | All | High | Emojis render differently on PC vs Mac |
 | TF-03 | ⚪ Not Started | Feb 20, 2026 | Don't gray out species options in Filter Species dropdown; gray = unavailable, but they're just unselected | iNaturalist | High | Communicates incorrect affordance to user |
 | TF-04 | ⚪ Not Started | Feb 20, 2026 | Fix map/right-sidebar desync: selecting taxon in legend + filtering by species results in map not updating | iNaturalist | High | Discovered live in QA session |
@@ -38,9 +38,12 @@
 
 **Last Updated:** Feb 20, 2026  
 **Data Source:** iNaturalist (likely ANiML too)  
-**Priority:** High
+**Priority:** High  
+**Status:** 🟢 Complete for iNaturalist — ⚪ Not Started for ANiML
 
 Trisalyn found that when the species filter is expanded, the results section was too short to scroll through images meaningfully. She had to collapse the filter to get enough vertical space. Will's note: "Make sure the height of the image results is at a minimum something like 150px so the user can scroll down and see a sizable window, and not be forced to collapse filter sections."
+
+**Resolution (Feb 20, 2026):** Added `min-h-[400px]` to `inat-observation-cards` container in `INaturalistBrowseTab.tsx`. Right sidebar is scrollable under Overview/Browse subheaders, so a tall min-height is fine. ANiML equivalent tracked in `phase-2-animl.md` TF-01.
 
 ---
 

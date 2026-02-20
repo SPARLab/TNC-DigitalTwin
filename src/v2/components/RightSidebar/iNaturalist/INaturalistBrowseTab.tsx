@@ -554,7 +554,7 @@ export function INaturalistBrowseTab() {
         {/* Scrollable observation cards container */}
         {!error && !showInitialLoading && !requiresSpeciesSelection && (
           <div id="inat-observation-cards-wrapper" className="flex-1 min-h-0 flex flex-col">
-            <div id="inat-observation-cards" className={`flex-1 overflow-y-auto space-y-2 ${showRefreshLoading ? 'opacity-60' : ''}`}>
+            <div id="inat-observation-cards" className={`flex-1 min-h-[400px] overflow-y-auto space-y-2 ${showRefreshLoading ? 'opacity-60' : ''}`}>
               {observations.map(obs => (
                 <ObservationCard
                   key={obs.id}
