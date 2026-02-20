@@ -9,19 +9,11 @@ import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 const GBIF_FEATURE_SERVER_URL =
   'https://dangermondpreserve-spatial.com/server/rest/services/Dangermond_Preserve_Species_Occurrences/FeatureServer/0';
 
-/** Fields needed for map display; exclude gbif_key to avoid big-integer experimental warning */
-const OUT_FIELDS = [
-  'id',
-  'scientific_name',
-  'species',
-  'genus',
-  'family',
-  'kingdom',
-  'basis_of_record',
-  'dataset_name',
-  'event_date_json',
-  'primary_image_url',
-];
+/**
+ * Keep map payload minimal for faster cluster rendering.
+ * We only need `id` for hit-testing into the sidebar detail view.
+ */
+const OUT_FIELDS = ['id'];
 
 export function createGBIFLayer(options: {
   id: string;
@@ -52,17 +44,33 @@ export function createGBIFLayer(options: {
     },
     featureReduction: {
       type: 'cluster',
-      clusterRadius: '48px',
+      clusterRadius: '96px',
+      clusterMinSize: '28px',
+      clusterMaxSize: '72px',
       labelingInfo: [
         {
           deconflictionStrategy: 'none',
-          labelExpressionInfo: { expression: 'Text($feature.cluster_count, "#,###")' },
+          labelExpressionInfo: {
+            expression: `
+              var count = $feature.cluster_count;
+              if (count >= 1000000000) {
+                return Text(Round(count / 1000000000, 1), '#.#') + 'B';
+              }
+              if (count >= 1000000) {
+                return Text(Round(count / 1000000, 1), '#.#') + 'M';
+              }
+              if (count >= 1000) {
+                return Text(Round(count / 1000, 1), '#.#') + 'K';
+              }
+              return Text(count, '#');
+            `,
+          },
           symbol: {
             type: 'text',
             color: 'white',
             haloColor: [0, 0, 0, 0.25],
             haloSize: 1,
-            font: { family: 'Arial', size: 11, weight: 'bold' },
+            font: { family: 'Arial', size: 12, weight: 'bold' },
           },
           labelPlacement: 'center-center',
         },

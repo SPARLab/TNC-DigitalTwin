@@ -1,12 +1,12 @@
 # Phase 9: GBIF Species Occurrences
 
 **Status:** 🟡 In Progress  
-**Progress:** 8 / 10 tasks  
+**Progress:** 9 / 11 tasks  
 **Branch:** `v2/gbif`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
 
-**Suggested next task (new chat):** 9.8 Wire Save View flow — or 9.9 Evaluate geographic extent expansion. Both deferred; pick based on priority.
+**Suggested next task (new chat):** 9.11 Improve GBIF map visual performance — or 9.8 Wire Save View flow (deferred).
 
 ---
 
@@ -20,10 +20,11 @@
 | 9.4 | 🟢 Complete | 2026-02-19T18:00:00-08:00 | Implement occurrence list with cards | iNaturalist-style cards with species naming, basis badge, date, dataset/source action; card thumbnails from `primary_image_url` when present |
 | 9.5 | 🟢 Complete | 2026-02-19T17:30:00-08:00 | Implement occurrence detail view | Added detail metadata, taxonomy string, quality issue count, map focus CTA, external GBIF link |
 | 9.6 | 🟢 Complete | 2026-02-19T17:30:00-08:00 | Sync loading indicators (Map Layers ↔ map center ↔ right sidebar) | Integrated cache/loading status via adapter + shared loading primitives in browse |
-| 9.7 | 🟢 Complete | 2026-02-19T18:00:00-08:00 | Render GBIF occurrences as map markers | Explicit `createGBIFLayer` for `dataset-178`; green circles + clustering; filter-synced via `useGBIFMapBehavior`; map-click opens detail |
+| 9.7 | 🟢 Complete | 2026-02-19T19:00:00-08:00 | Render GBIF occurrences as map markers | Explicit `createGBIFLayer`; green circles + clustering; zoom-based cluster sizing; compact K/M/B labels; `outFields: ['id']` for lighter payload; filter-synced via `useGBIFMapBehavior`; map-click opens detail |
 | 9.8 | ⚪ Not Started | — | Wire Save View flow in detail | Deferred; requires `LayerContext` GBIF filter persistence + view naming wiring |
 | 9.9 | ⚪ Not Started | — | Evaluate geographic extent expansion | Deferred to follow-up after preserve-only stability and stakeholder review |
 | 9.10 | 🟢 Complete | 2026-02-19T18:00:00-08:00 | Fix map rendering + add card thumbnails | Map: explicit `gbifLayer.ts` + `dataset-178` in `createMapLayer` switch (bypasses TNC registration); Cards: show `primary_image_url` when present |
+| 9.11 | ⚪ Not Started | — | Improve GBIF map visual performance | At ~300k+ occurrences, client-side clustering can feel sluggish. Explore: backend pre-aggregation (zoom-level bins), vector tiles, or viewport-based query limits to achieve smooth zoom/pan and fewer rendered clusters |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -247,6 +248,20 @@ Implement the GBIF (Global Biodiversity Information Facility) species occurrence
 
 ---
 
+### 9.11: Improve GBIF Map Visual Performance
+
+**Goal:** At ~300k+ occurrences, client-side clustering can feel sluggish during zoom/pan. Improve perceived responsiveness and reduce render load.
+
+**Acceptance Criteria:**
+- [ ] Evaluate options: backend pre-aggregation (zoom-level bins), vector tiles, viewport-based query limits
+- [ ] Implement chosen approach so zoomed-out views show fewer, larger clusters; zoomed-in views load only relevant points
+- [ ] Cluster click queries only the clicked area for detail rows (lazy load)
+- [ ] Smooth zoom/pan without visible lag or stutter
+
+**Notes:** Current frontend optimizations (zoom-bucketed cluster radius, compact K/M/B labels, minimal `outFields`) help but have a ceiling. Backend aggregation is the recommended path for buttery interaction at full dataset scale.
+
+---
+
 ### 9.10: Fix Map Rendering + Add Card Thumbnails
 
 **Goal:** Resolve GBIF points not appearing on map; add photo thumbnails to occurrence cards when available.
@@ -336,3 +351,4 @@ Record-level overlap with iNaturalist is still unquantified in this phase implem
 | Feb 16, 2026 | — | Created phase document | Will + Claude |
 | Feb 19, 2026 | 9.1-9.7 | Implemented GBIF ArcGIS integration: adapter override for `dataset-178`, overview/browse/detail UI, server-side filters/pagination, map click-to-detail behavior | Cursor |
 | Feb 19, 2026 | 9.10 | Fixed map rendering (explicit `gbifLayer.ts` + `dataset-178` in `createMapLayer`); added card thumbnails from `primary_image_url` | Cursor |
+| Feb 19, 2026 | 9.7, 9.11 | Enhanced clustering: zoom-bucketed radius, compact K/M/B labels, minimal outFields; added task 9.11 for backend aggregation / visual performance | Cursor |
