@@ -77,9 +77,6 @@ export function buildServiceUrl(serverBaseUrl: string, servicePath: string): str
   // serverBaseUrl from catalog already includes /server/rest/services
   const url = `${protocol}${base}/${servicePath}/FeatureServer`;
   console.log(`[Dendra buildServiceUrl] base="${serverBaseUrl}", path="${servicePath}" → ${url}`);
-  // #region agent log
-  fetch('http://127.0.0.1:7243/ingest/8701f2ee-5a1c-4168-87bb-b7318a0ad334',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({runId:'pre-fix',hypothesisId:'H1',location:'src/v2/services/dendraStationService.ts:buildServiceUrl',message:'Built Dendra service URL from catalog metadata',data:{serverBaseUrl,servicePath,url},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
   return url;
 }
 
@@ -87,13 +84,7 @@ export function buildServiceUrl(serverBaseUrl: string, servicePath: string): str
 async function queryTable<T>(serviceUrl: string, tableIndex: number): Promise<T[]> {
   const url = `${serviceUrl}/${tableIndex}/query?where=1=1&outFields=*&f=json`;
   console.log(`[Dendra Query] Requesting: ${url}`);
-  // #region agent log
-  fetch('http://127.0.0.1:7243/ingest/8701f2ee-5a1c-4168-87bb-b7318a0ad334',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({runId:'pre-fix',hypothesisId:tableIndex===2?'H2':'H3',location:'src/v2/services/dendraStationService.ts:queryTable:beforeFetch',message:'Issuing ArcGIS query request',data:{serviceUrl,tableIndex,url},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
   const res = await fetch(url);
-  // #region agent log
-  fetch('http://127.0.0.1:7243/ingest/8701f2ee-5a1c-4168-87bb-b7318a0ad334',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({runId:'pre-fix',hypothesisId:'H4',location:'src/v2/services/dendraStationService.ts:queryTable:afterFetch',message:'Received ArcGIS query HTTP response',data:{tableIndex,status:res.status,ok:res.ok,contentType:res.headers.get('content-type')},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
   if (!res.ok) {
     console.error(`[Dendra Query] HTTP ${res.status} for ${url}`);
     throw new Error(`Dendra query failed: HTTP ${res.status}`);
@@ -102,15 +93,8 @@ async function queryTable<T>(serviceUrl: string, tableIndex: number): Promise<T[
   const json: ArcGISQueryResponse<T> = await res.json();
   if (json.error) {
     console.error(`[Dendra Query] Error response:`, json.error);
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/8701f2ee-5a1c-4168-87bb-b7318a0ad334',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({runId:'pre-fix',hypothesisId:tableIndex===2?'H2':'H3',location:'src/v2/services/dendraStationService.ts:queryTable:errorPayload',message:'ArcGIS query returned JSON error payload',data:{tableIndex,errorMessage:json.error.message},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     throw new Error(`Dendra query error: ${json.error.message}`);
   }
-
-  // #region agent log
-  fetch('http://127.0.0.1:7243/ingest/8701f2ee-5a1c-4168-87bb-b7318a0ad334',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({runId:'pre-fix',hypothesisId:tableIndex===2?'H2':'H3',location:'src/v2/services/dendraStationService.ts:queryTable:success',message:'ArcGIS query parsed successfully',data:{tableIndex,featureCount:(json.features??[]).length},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
   return (json.features ?? []).map(f => f.attributes);
 }
 
@@ -131,27 +115,15 @@ export async function fetchSummaries(serviceUrl: string): Promise<DendraSummary[
  * This is the primary entry point for the DendraContext warmCache.
  */
 export async function fetchServiceData(serviceUrl: string): Promise<DendraServiceData> {
-  // #region agent log
-  fetch('http://127.0.0.1:7243/ingest/8701f2ee-5a1c-4168-87bb-b7318a0ad334',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({runId:'pre-fix',hypothesisId:'H5',location:'src/v2/services/dendraStationService.ts:fetchServiceData:start',message:'Starting parallel fetch for stations and summaries',data:{serviceUrl},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
   try {
     const stationsPromise = fetchStations(serviceUrl);
     const summariesPromise = fetchSummaries(serviceUrl).catch(error => {
       console.warn('[Dendra Summary] Table 2 query failed; continuing with stations only:', error);
-      // #region agent log
-      fetch('http://127.0.0.1:7243/ingest/8701f2ee-5a1c-4168-87bb-b7318a0ad334',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({runId:'post-fix',hypothesisId:'H2',location:'src/v2/services/dendraStationService.ts:fetchServiceData:summaryFallback',message:'Summary table query failed; fallback to stations-only payload',data:{serviceUrl,error:error instanceof Error ? error.message : String(error)},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
       return [] as DendraSummary[];
     });
     const [stations, summaries] = await Promise.all([stationsPromise, summariesPromise]);
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/8701f2ee-5a1c-4168-87bb-b7318a0ad334',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({runId:'pre-fix',hypothesisId:'H5',location:'src/v2/services/dendraStationService.ts:fetchServiceData:success',message:'Completed stations and summaries fetch',data:{stationCount:stations.length,summaryCount:summaries.length},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     return { stations, summaries };
   } catch (error) {
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/8701f2ee-5a1c-4168-87bb-b7318a0ad334',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({runId:'pre-fix',hypothesisId:'H5',location:'src/v2/services/dendraStationService.ts:fetchServiceData:failure',message:'Failed while fetching stations or summaries',data:{serviceUrl,error:error instanceof Error ? error.message : String(error)},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     throw error;
   }
 }

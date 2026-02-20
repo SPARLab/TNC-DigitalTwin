@@ -14,7 +14,7 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| D20-05 | ⚪ Not Started | Feb 20, 2026 | Investigate and fix Dendra browser popup asking for device access | Observed live during session. We don't want to trigger any device-access permission dialogs. Source: Dan Meeting Feb 20 |
+| D20-05 | 🟢 Complete | Feb 20, 2026 | Investigate and fix Dendra browser popup asking for device access | Removed stray localhost ingest debug `fetch()` calls from Dendra service/context code; V2-wide scan found no camera/mic/geolocation permission API usage in app code. Source: Dan Meeting Feb 20 |
 | D20-06 | ⚪ Not Started | Feb 20, 2026 | Verify and fix custom polygon draw tool for Dendra | Will noted the tool needs to be properly implemented for Dendra. Source: Dan Meeting Feb 20 |
 | D20-BL01 | 🔵 Backlog | Feb 20, 2026 | Plot multiple time series data streams on the same floating chart widget | e.g., wind speed avg + wind speed max overlaid. Needs UX design thought. Source: Dan Meeting Feb 20 |
 | D20-BL02 | 🔵 Backlog | Feb 20, 2026 | Plot same data stream across multiple stations on the same chart for comparison | e.g., wind speed at Oak State, Sutter, and Team data streams simultaneously. Source: Dan Meeting Feb 20 |
@@ -191,6 +191,20 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 - Chart close/minimize/expand buttons: `onPointerDown` stopPropagation so map click handlers don't steal focus.
 
 **Files touched:** DendraContext.tsx, DendraTimeSeriesPanel.tsx, MapLayersWidget.tsx, PinnedLayersSection.tsx, PinnedLayerRow.tsx, PinnedLayerChildRow.tsx, DendraBrowseTab.tsx, StationCard.tsx, StationDetailView.tsx.
+
+### D20-05 Implementation Notes (Feb 20, 2026)
+
+**What was observed:**
+- Browser device-access style popups were reported during live Dendra sessions.
+
+**What was fixed:**
+- Removed accidental debug telemetry `fetch()` calls to `http://127.0.0.1:7243/ingest/...` from:
+  - `src/v2/services/dendraStationService.ts`
+  - `src/v2/context/DendraContext.tsx`
+
+**V2-wide permission scan result:**
+- Searched V2 codebase for direct browser permission/device APIs (`getUserMedia`, `mediaDevices`, `geolocation`, `Notification.requestPermission`, `requestMIDIAccess`, `bluetooth/usb/serial/hid` request calls, ArcGIS Locate/Track widgets).
+- No direct permission-triggering API usage found in current app code.
 
 ---
 

@@ -287,9 +287,6 @@ export function DendraProvider({ children }: { children: ReactNode }) {
 
     // Already cached or in-flight
     if (cacheRef.current.has(url) || fetchingRef.current.has(url)) {
-      // #region agent log
-      fetch('http://127.0.0.1:7243/ingest/8701f2ee-5a1c-4168-87bb-b7318a0ad334',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({runId:'pre-fix',hypothesisId:'H5',location:'src/v2/context/DendraContext.tsx:warmCache:skip',message:'Skipped warmCache because data is cached or already fetching',data:{url,hasCached:cacheRef.current.has(url),isFetching:fetchingRef.current.has(url)},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
       return;
     }
 
@@ -299,9 +296,6 @@ export function DendraProvider({ children }: { children: ReactNode }) {
 
     const startTime = performance.now();
     console.log(`[Dendra Cache] 🔥 Warming cache for ${url}`);
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/8701f2ee-5a1c-4168-87bb-b7318a0ad334',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({runId:'pre-fix',hypothesisId:'H5',location:'src/v2/context/DendraContext.tsx:warmCache:start',message:'Dendra warmCache started for active service',data:{url,activeLayerTitle:serviceInfo.title},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
 
     fetchServiceData(url)
       .then(data => {
