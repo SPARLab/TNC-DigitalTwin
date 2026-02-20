@@ -86,7 +86,8 @@ export function RightSidebar() {
         activeLayer?.layerId === 'animl-camera-traps' ||
         activeLayer?.layerId === 'dataone-datasets' ||
         activeLayer?.layerId === 'dataset-193' ||
-        activeLayer?.layerId === 'dataset-178'
+        activeLayer?.layerId === 'dataset-178' ||
+        activeLayer?.layerId === 'dataset-215'
       ) &&
       activeLayer.featureId != null
     ) {

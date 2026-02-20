@@ -27,7 +27,7 @@ export function useGBIFCacheStatus(): CacheStatus {
 
 export const gbifAdapter: DataSourceAdapter = {
   id: 'gbif',
-  layerIds: ['dataset-178'],
+  layerIds: ['dataset-178', 'dataset-215'],
   OverviewTab: GBIFOverviewWithCache,
   BrowseTab: GBIFBrowseTab,
   CacheProvider: GBIFFilterProvider,

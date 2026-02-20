@@ -1,5 +1,5 @@
 // ============================================================================
-// GBIF Layer — Explicit FeatureLayer for dataset-178 (Dangermond GBIF Occurrences)
+// GBIF Layer — Explicit FeatureLayer for GBIF hosted datasets.
 // Bypasses TNC ArcGIS registration so the layer always renders when active.
 // ============================================================================
 
@@ -7,7 +7,7 @@ import type Layer from '@arcgis/core/layers/Layer';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 
 const GBIF_FEATURE_SERVER_URL =
-  'https://dangermondpreserve-spatial.com/server/rest/services/Dangermond_Preserve_Species_Occurrences/FeatureServer/0';
+  'https://dangermondpreserve-spatial.com/server/rest/services/Hosted/GBIF_Hosted/FeatureServer/0';
 
 /**
  * Keep map payload minimal for faster cluster rendering.

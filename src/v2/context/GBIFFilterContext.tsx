@@ -14,7 +14,6 @@ export interface GBIFBrowseFilters extends GBIFFilters {
 
 interface GBIFFilterOptions {
   kingdoms: string[];
-  classes: string[];
   families: string[];
   basisOptions: string[];
   datasetNames: string[];
@@ -45,7 +44,6 @@ const DEFAULT_FILTERS: GBIFBrowseFilters = {
 
 const DEFAULT_FILTER_OPTIONS: GBIFFilterOptions = {
   kingdoms: [],
-  classes: [],
   families: [],
   basisOptions: [],
   datasetNames: [],

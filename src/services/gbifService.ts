@@ -45,7 +45,7 @@ export interface GBIFQueryResponse {
 }
 
 const BASE_URL =
-  'https://dangermondpreserve-spatial.com/server/rest/services/Dangermond_Preserve_Species_Occurrences/FeatureServer/0';
+  'https://dangermondpreserve-spatial.com/server/rest/services/Hosted/GBIF_Hosted/FeatureServer/0';
 const GBIF_API_BASE_URL = 'https://api.gbif.org/v1';
 
 const SEARCH_FIELDS = ['scientific_name', 'species', 'genus', 'family', 'dataset_name', 'recorded_by'];
@@ -126,7 +126,14 @@ async function queryArcgis(params: Record<string, string | number | boolean>, si
   }
   const json = await response.json();
   if (json.error) {
-    throw new Error(json.error.message || 'GBIF service error');
+    const errorMessage =
+      typeof json.error.message === 'string' && json.error.message.trim()
+        ? json.error.message.trim()
+        : 'GBIF service error';
+    const details = Array.isArray(json.error.details)
+      ? json.error.details.filter((detail: unknown): detail is string => typeof detail === 'string' && detail.trim().length > 0)
+      : [];
+    throw new Error(details.length > 0 ? `${errorMessage} ${details.join(' ')}` : errorMessage);
   }
   return json;
 }
@@ -174,33 +181,36 @@ class GBIFService {
     const pageSize = Math.max(1, Math.min(options.pageSize, 100));
     const offset = page * pageSize;
 
-    const [countJson, dataJson] = await Promise.all([
-      queryArcgis(
-        {
-          where,
-          returnCountOnly: true,
-          f: 'json',
-        },
-        options.signal,
-      ),
-      queryArcgis(
-        {
-          where,
-          outFields:
-            'id,gbif_key,scientific_name,species,genus,family,taxonomic_class,phylum,kingdom,basis_of_record,dataset_name,recorded_by,event_date_json,primary_image_url,references_url,country,state_province,occurrence_status,issues_json',
-          returnGeometry: true,
-          orderByFields: 'year DESC, month DESC, day DESC, id DESC',
-          resultRecordCount: pageSize,
-          resultOffset: offset,
-          f: 'json',
-        },
-        options.signal,
-      ),
-    ]);
+    const countPromise = queryArcgis(
+      {
+        where,
+        returnCountOnly: true,
+        f: 'json',
+      },
+      options.signal,
+    ).catch(() => null);
+
+    const dataJson = await queryArcgis(
+      {
+        where,
+        outFields:
+          'id,gbif_key,scientific_name,species,genus,family,taxonomic_class,phylum,kingdom,basis_of_record,dataset_name,recorded_by,event_date_json,primary_image_url,references_url,country,state_province,occurrence_status,issues_json',
+        returnGeometry: true,
+        orderByFields: 'year DESC, month DESC, day DESC, id DESC',
+        resultRecordCount: pageSize,
+        resultOffset: offset,
+        f: 'json',
+      },
+      options.signal,
+    );
+    const countJson = await countPromise;
+    const occurrences = (dataJson.features ?? []).map(toOccurrence);
+    const countFromService = typeof countJson?.count === 'number' ? countJson.count : null;
+    const fallbackCount = offset + occurrences.length + (occurrences.length === pageSize ? 1 : 0);
 
     return {
-      totalCount: typeof countJson.count === 'number' ? countJson.count : 0,
-      occurrences: (dataJson.features ?? []).map(toOccurrence),
+      totalCount: countFromService ?? fallbackCount,
+      occurrences,
     };
   }
 
@@ -220,26 +230,28 @@ class GBIFService {
   }
 
   async getOverviewCount(): Promise<number> {
-    const json = await queryArcgis({
-      where: '1=1',
-      returnCountOnly: true,
-      f: 'json',
-    });
-    return typeof json.count === 'number' ? json.count : 0;
+    try {
+      const json = await queryArcgis({
+        where: '1=1',
+        returnCountOnly: true,
+        f: 'json',
+      });
+      return typeof json.count === 'number' ? json.count : 0;
+    } catch {
+      return 0;
+    }
   }
 
   async getFilterOptions() {
-    const [kingdoms, classes, families, basisOptions, datasetNames] = await Promise.all([
-      queryDistinct('kingdom'),
-      queryDistinct('taxonomic_class'),
-      queryDistinct('family'),
-      queryDistinct('basis_of_record'),
-      queryDistinct('dataset_name'),
+    const [kingdoms, families, basisOptions, datasetNames] = await Promise.all([
+      queryDistinct('kingdom').catch(() => []),
+      queryDistinct('family').catch(() => []),
+      queryDistinct('basis_of_record').catch(() => []),
+      queryDistinct('dataset_name').catch(() => []),
     ]);
 
     return {
       kingdoms,
-      classes,
       families,
       basisOptions,
       datasetNames,

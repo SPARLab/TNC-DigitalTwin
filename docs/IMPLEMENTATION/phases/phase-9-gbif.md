@@ -1,12 +1,12 @@
 # Phase 9: GBIF Species Occurrences
 
 **Status:** 🟡 In Progress  
-**Progress:** 10 / 12 tasks  
+**Progress:** 12 / 13 tasks (P9-GRIDBIN high priority; GBIF-HOSTED complete)  
 **Branch:** `v2/gbif`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
 
-**Suggested next task (new chat):** 9.8 Wire Save View flow (deferred) — or 9.12 Backend GBIF map aggregation (deferred to v2.1+).
+**Suggested next task (new chat):** P9-GRIDBIN — Grid bin native ArcGIS strategy (after DataOne merge). Or 9.8 Wire Save View flow (deferred) — or 9.12 Backend GBIF map aggregation (deferred to v2.1+).
 
 ---
 
@@ -14,7 +14,9 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| D20-08 | ⚪ Not Started | Feb 20, 2026 | Fix GBIF "classes" filter — populate dropdown with valid options or remove it entirely | Currently empty dropdown in the GBIF species occurrence filter section. Source: Dan Meeting Feb 20 |
+| P9-GRIDBIN | 🟡 High Priority | Feb 20, 2026 | **Grid bin native ArcGIS strategy** — Check out DataOne branch; merge DataOne into main first | Implementing with DataOne; different branch has that code. Blocked on DataOne merge. |
+| GBIF-HOSTED | 🟢 Complete | 2026-02-20T17:00:00-08:00 | Switch GBIF to hosted endpoint (`dataset-215` / `Hosted/GBIF_Hosted`) | Old endpoint (`dataset-178`) failing; coworker moved to hosted layer for better clustering. Adapter now supports both IDs. |
+| D20-08 | 🟢 Complete | 2026-02-20T16:20:00-08:00 | Fix GBIF "classes" filter — populate dropdown with valid options or remove it entirely | Removed classes dropdown from GBIF browse filters because `taxonomic_class` options are not reliably queryable from FeatureServer. Source: Dan Meeting Feb 20 |
 | D20-12 | ⚪ Not Started | Feb 20, 2026 | Implement GBIF media display using `media_json` column | Dan confirmed `media_json` column exists as stringified JSON. Priority: medium. After DataOne work. Source: Dan Meeting Feb 20 |
 | D20-B01 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Update GBIF pipeline so the hosted data store layer stays in sync with source updates | Hosted layer is published and publicly available now; pipeline sync not yet wired up. Source: Dan Meeting Feb 20 |
 | D20-B03 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Investigate why `taxonomic_class` field is empty for many GBIF records | Dan observed this in ArcGIS Enterprise. Backend data pipeline issue. Source: Dan Meeting Feb 20 |
@@ -34,7 +36,7 @@
 
 **Status Legend:**
 - ⚪ Not Started
-- 🟡 In Progress
+- 🟡 In Progress / High Priority
 - 🟢 Complete
 - 🔴 Blocked
 
@@ -306,10 +308,11 @@ Implement the GBIF (Global Biodiversity Information Facility) species occurrence
 > Fill this out during Task 9.1
 
 ### Data Source (Task 9.1)
-- ArcGIS FeatureServer URL: `https://dangermondpreserve-spatial.com/server/rest/services/Dangermond_Preserve_Species_Occurrences/FeatureServer/0`
+- **Active endpoint (Feb 2026):** `https://dangermondpreserve-spatial.com/server/rest/services/Hosted/GBIF_Hosted/FeatureServer/0` — `dataset-215` (GBIF Hosted)
+- Legacy (failing): `Dangermond_Preserve_Species_Occurrences/FeatureServer/0` — `dataset-178`
 - GBIF API endpoint: `https://api.gbif.org/v1/occurrence/search`
-- Data Catalog mapping: `dataset-178` (`GBIF Species Occurrence Records`)
-- v2.0 recommendation: ArcGIS FeatureServer first (already curated, no extra API auth/rate-limit complexity)
+- Data Catalog mapping: `dataset-215` (GBIF Hosted), `dataset-178` (legacy)
+- v2.0: Hosted layer used for better clustering; adapter supports both IDs during transition
 
 ### Occurrence Attributes
 | Attribute | Type | Useful For | Notes |
@@ -377,3 +380,6 @@ Record-level overlap with iNaturalist is still unquantified in this phase implem
 | Feb 19, 2026 | 9.11 | Started viewport-based performance pass: map extent-limited SQL + scale-based sampling (`MOD(id, n)`) in GBIF map behavior | Cursor |
 | Feb 19, 2026 | 9.11 | Complete: viewport + sampling in place; fixed webMercatorUtils import; added task 9.12 for backend aggregation (deferred) | Cursor |
 | Feb 19, 2026 | 9.5 | GBIF API media fallback: fetch occurrence media when ArcGIS lacks primary_image_url; hero + thumbnail strip in detail view | Cursor |
+| Feb 20, 2026 | D20-08 | Removed empty classes filter; GBIF browse resilient to count/distinct failures | Cursor |
+| Feb 20, 2026 | GBIF-HOSTED | Switched GBIF service + map to `Hosted/GBIF_Hosted` (dataset-215); adapter supports dataset-178 and dataset-215 | Cursor |
+| Feb 20, 2026 | P9-GRIDBIN | Added high-priority task: grid bin native ArcGIS strategy; blocked on DataOne merge | User |

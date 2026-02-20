@@ -52,7 +52,7 @@ export function getAdapter(dataSource: string | undefined): DataSourceAdapter | 
 export function getAdapterForActiveLayer(activeLayer: ActiveLayer | null): DataSourceAdapter | null {
   if (!activeLayer) return null;
   if (activeLayer.layerId === 'dataset-193') return dronedeployAdapter;
-  if (activeLayer.layerId === 'dataset-178') return gbifAdapter;
+  if (activeLayer.layerId === 'dataset-178' || activeLayer.layerId === 'dataset-215') return gbifAdapter;
   return getAdapter(activeLayer.dataSource);
 }
 

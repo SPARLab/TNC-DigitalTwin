@@ -8,8 +8,7 @@ import { useLayers } from '../../context/LayerContext';
 import { gbifService } from '../../../services/gbifService';
 import { useMap } from '../../context/MapContext';
 
-const LAYER_ID = 'dataset-178';
-const MAP_LAYER_ID = 'v2-dataset-178';
+const GBIF_LAYER_IDS = new Set(['dataset-178', 'dataset-215']);
 
 type ClusterSizeConfig = {
   radius: string;
@@ -116,9 +115,12 @@ export function useGBIFMapBehavior(
   const { activateLayer } = useLayers();
   const { viewRef } = useMap();
 
-  const isPinned = pinnedLayers.some((layer) => layer.layerId === LAYER_ID);
-  const isActive = activeLayer?.layerId === LAYER_ID;
-  const isOnMap = isPinned || isActive;
+  const activeGbifLayerId = activeLayer && GBIF_LAYER_IDS.has(activeLayer.layerId)
+    ? activeLayer.layerId
+    : null;
+  const pinnedGbifLayerId = pinnedLayers.find((layer) => GBIF_LAYER_IDS.has(layer.layerId))?.layerId ?? null;
+  const targetLayerId = activeGbifLayerId ?? pinnedGbifLayerId;
+  const isOnMap = !!targetLayerId;
 
   useEffect(() => {
     if (isOnMap) warmCache();
@@ -126,7 +128,8 @@ export function useGBIFMapBehavior(
 
   useEffect(() => {
     if (!isOnMap) return;
-    const layer = getManagedLayer(LAYER_ID) as FeatureLayer | undefined;
+    if (!targetLayerId) return;
+    const layer = getManagedLayer(targetLayerId) as FeatureLayer | undefined;
     if (!layer || typeof layer.definitionExpression !== 'string') return;
 
     const baseWhereClause = gbifService.buildWhereClause({
@@ -162,12 +165,13 @@ export function useGBIFMapBehavior(
     });
 
     return () => stationaryHandle.remove();
-  }, [isOnMap, browseFilters, getManagedLayer, viewRef]);
+  }, [isOnMap, targetLayerId, browseFilters, getManagedLayer, viewRef]);
 
   useEffect(() => {
     if (!isOnMap) return;
+    if (!targetLayerId) return;
     const view = viewRef.current;
-    const layer = getManagedLayer(LAYER_ID) as FeatureLayer | undefined;
+    const layer = getManagedLayer(targetLayerId) as FeatureLayer | undefined;
     if (!view || !layer) return;
 
     let lastBucket = '';
@@ -183,7 +187,7 @@ export function useGBIFMapBehavior(
     updateFromScale(view.scale);
     const handle = view.watch('scale', (scale) => updateFromScale(scale));
     return () => handle.remove();
-  }, [isOnMap, getManagedLayer, viewRef]);
+  }, [isOnMap, targetLayerId, getManagedLayer, viewRef]);
 
   useEffect(() => {
     if (!isOnMap) return;
@@ -195,13 +199,17 @@ export function useGBIFMapBehavior(
         const response = await view.hitTest(event);
         const graphicHit = response.results.find(
           (result): result is __esri.GraphicHit =>
-            result.type === 'graphic' && result.graphic.layer?.id === MAP_LAYER_ID,
+            result.type === 'graphic' &&
+            typeof result.graphic.layer?.id === 'string' &&
+            GBIF_LAYER_IDS.has(result.graphic.layer.id.replace(/^v2-/, '')),
         );
         if (!graphicHit) return;
 
         const occurrenceId = graphicHit.graphic.attributes?.id as number | undefined;
         if (!occurrenceId) return;
-        activateLayer(LAYER_ID, undefined, occurrenceId);
+        const layerId = String(graphicHit.graphic.layer?.id ?? '').replace(/^v2-/, '');
+        const gbifLayerId = GBIF_LAYER_IDS.has(layerId) ? layerId : 'dataset-215';
+        activateLayer(gbifLayerId, undefined, occurrenceId);
       } catch (error) {
         console.error('[GBIF Map Click] Failed to handle marker click', error);
       }
