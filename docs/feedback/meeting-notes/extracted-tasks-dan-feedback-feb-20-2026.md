@@ -23,7 +23,7 @@
 | D20-07 | ⚪ Not Started | Feb 20, 2026 | Verify custom polygon draw tool is working consistently across all data sources | All | iNaturalist and ANiML confirmed working; Dendra suspected broken; audit the rest. |
 | D20-08 | ⚪ Not Started | Feb 20, 2026 | Fix GBIF "classes" filter — populate dropdown with valid options or remove it entirely | GBIF | Currently empty dropdown in the GBIF species occurrence filter section. |
 | D20-09 | ⚪ Not Started | Feb 20, 2026 | Filter DataOne map to latest dataset version only (deduplicate by latest) | DataOne | Current flat table shows all versions; 878 deduplicated datasets but one dataset alone shows 700 rows due to versioning. |
-| D20-10 | ⚪ Not Started | Feb 20, 2026 | Replace static layer overview text with actual ArcGIS feature service description text | Dendra, TNC ArcGIS | Confirmed for Dendra layers; should apply broadly to all ArcGIS feature service layers. Feature service already has proper descriptions set by Kelly. |
+| D20-10 | 🟢 Complete | Feb 20, 2026 | Replace static layer overview text with actual ArcGIS feature service description text | Dendra, TNC ArcGIS | Fetches from ArcGIS item metadata (serviceItemId → snippet + description); HTML normalized for line breaks; no per-layer descriptions in layer list. |
 | D20-11 | ⚪ Not Started | Feb 20, 2026 | Fix legend-as-filter functionality for TNC ArcGIS feature service layers | TNC ArcGIS | Clicking legend items was supposed to filter polygons; Amy flagged it's broken. Apply to all layers that have distinct legend objects. |
 | D20-12 | ⚪ Not Started | Feb 20, 2026 | Implement GBIF media display using `media_json` column | GBIF | Dan confirmed `media_json` column exists as a stringified JSON. Priority: medium. After DataOne work. iNaturalist already has media. |
 | D20-13 | ⚪ Not Started | Feb 20, 2026 | Add collapse button to left sidebar (lower priority) | App-wide | Dan mentioned it as nice-to-have for full map exploration. Lower priority than right sidebar. |
@@ -83,8 +83,10 @@ Current DataOne data is a flat table where each row is a version of a dataset. D
 
 ---
 
-### D20-10 — Feature service description text
+### D20-10 — Feature service description text ✅ Complete
 Dan confirmed that the Dendra layers in ArcGIS Enterprise have proper descriptions written by Kelly (e.g., "Wind monitoring data from depleted danger, we observe sensors measure wind speed…"). The current UI renders static/hardcoded overview text with only the layer name dynamically inserted. The feature service metadata description should be pulled and rendered instead. Apply to all ArcGIS feature service layers where descriptions exist.
+
+**Resolution (Feb 20, 2026):** Implemented `fetchServiceDescription()` in `tncArcgisService.ts`. Fetches ArcGIS item metadata via `serviceItemId` (snippet + description from Hub/portal), then falls back to service-level and layer-level description. HTML tags converted to newlines; `whitespace-pre-line` preserves paragraph breaks. Applied to TNC ArcGIS Overview and Dendra Overview tabs. Per-layer descriptions removed from layer list (no descriptions under individual layer rows). Source: Dan Meeting Feb 20.
 
 ---
 

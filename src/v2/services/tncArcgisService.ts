@@ -34,6 +34,79 @@ export interface ArcGISLayerLegend {
   items: ArcGISLegendItem[];
 }
 
+function normalizeArcGisDescription(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const normalized = value
+    .replace(/\r\n/g, '\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .split('\n')
+    .map(line => line.replace(/[ \t]{2,}/g, ' ').trim())
+    .join('\n')
+    .trim();
+  return normalized || null;
+}
+
+function normalizeArcGisHtmlText(value: unknown): string | null {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  if (!/[<>]/.test(value)) return normalizeArcGisDescription(value);
+  const htmlWithLineBreaks = value
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|section|article|li|h[1-6]|tr)>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '- ');
+  const stripped = htmlWithLineBreaks.replace(/<[^>]+>/g, ' ');
+  const decoded = stripped
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&#39;/gi, "'")
+    .replace(/&quot;/gi, '"');
+  return normalizeArcGisDescription(decoded);
+}
+
+function getPortalCandidatesFromServiceUrl(serviceRootUrl: string): string[] {
+  const candidates = new Set<string>();
+  candidates.add('https://www.arcgis.com');
+
+  try {
+    const serviceOrigin = new URL(serviceRootUrl).origin;
+    candidates.add(serviceOrigin);
+  } catch {
+    // ignore invalid URL
+  }
+
+  return Array.from(candidates);
+}
+
+async function fetchArcGisItemDescription(serviceRootUrl: string, serviceItemId: string): Promise<string | null> {
+  if (!serviceItemId.trim()) return null;
+
+  const portals = getPortalCandidatesFromServiceUrl(serviceRootUrl);
+  for (const portalBase of portals) {
+    try {
+      const itemUrl = `${portalBase}/sharing/rest/content/items/${serviceItemId}?f=json`;
+      const itemJson = await fetchArcGisJson(itemUrl, 'ArcGIS item metadata fetch failed');
+      const snippet = normalizeArcGisHtmlText(itemJson.snippet);
+      const description = normalizeArcGisHtmlText(itemJson.description);
+
+      if (snippet && description) {
+        const normalizedSnippet = snippet.toLowerCase();
+        const normalizedDescription = description.toLowerCase();
+        return normalizedDescription.includes(normalizedSnippet)
+          ? description
+          : `${snippet} ${description}`;
+      }
+      if (snippet) return snippet;
+      if (description) return description;
+    } catch {
+      // Try next candidate portal.
+    }
+  }
+
+  return null;
+}
+
 interface ArcGISResponseError {
   message?: string;
   details?: unknown;
@@ -495,6 +568,36 @@ export async function fetchLayerLegend(meta: CatalogLayer['catalogMeta']): Promi
   const layerUrl = `${layerResourceUrl}?f=json`;
   const layerJson = await fetchArcGisJson(layerUrl, 'Layer metadata fetch failed');
   return parseRendererLegend(layerJson, targetLayerId, layerResourceUrl);
+}
+
+/** Fetch best-available service description from ArcGIS metadata endpoints. */
+export async function fetchServiceDescription(meta: CatalogLayer['catalogMeta']): Promise<string | null> {
+  if (!meta) return null;
+
+  // Prefer ArcGIS item metadata (Hub summary/description), then service/layer metadata.
+  try {
+    const serviceRootUrl = buildServiceRootUrl(meta);
+    const serviceJson = await fetchArcGisJson(`${serviceRootUrl.replace(/\/+$/, '')}?f=json`, 'Service metadata fetch failed');
+    const serviceItemId = typeof serviceJson.serviceItemId === 'string' ? serviceJson.serviceItemId.trim() : '';
+    if (serviceItemId) {
+      const itemDescription = await fetchArcGisItemDescription(serviceRootUrl, serviceItemId);
+      if (itemDescription) return itemDescription;
+    }
+
+    const serviceDescription = normalizeArcGisHtmlText(serviceJson.serviceDescription)
+      ?? normalizeArcGisDescription(serviceJson.description);
+    if (serviceDescription) return serviceDescription;
+  } catch {
+    // Fall through to layer-level metadata.
+  }
+
+  try {
+    const layerUrl = buildServiceUrl(meta);
+    const layerJson = await fetchArcGisJson(`${layerUrl.replace(/\/+$/, '')}?f=json`, 'Layer metadata fetch failed');
+    return normalizeArcGisHtmlText(layerJson.description);
+  } catch {
+    return null;
+  }
 }
 
 /** Fetch layer schema (fields, extent, geometry type) */
