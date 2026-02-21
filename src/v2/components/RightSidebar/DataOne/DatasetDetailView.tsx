@@ -3,7 +3,7 @@
 // Implements Phase 4 task 4.5 acceptance criteria.
 // ============================================================================
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ChevronDown, ChevronUp, Copy, ExternalLink, FileText, History, Loader2, MapPin, Quote, Save } from 'lucide-react';
 import {
   dataOneService,
@@ -11,6 +11,7 @@ import {
   type DataOneDatasetDetail,
   type DataOneVersionEntry,
 } from '../../../../services/dataOneService';
+import Extent from '@arcgis/core/geometry/Extent';
 import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { useMap } from '../../../context/MapContext';
 
@@ -122,6 +123,36 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onKeywor
   const [versionEntries, setVersionEntries] = useState<DataOneVersionEntry[]>([]);
   const [loadingVersionId, setLoadingVersionId] = useState<string | null>(null);
   const { viewRef, highlightPoint, showToast, openDataOnePreview } = useMap();
+  const lastPannedDatasetIdRef = useRef<string | null>(null);
+
+  // Auto-pan/zoom when opening dataset detail (CON-DONE-02)
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    if (lastPannedDatasetIdRef.current === dataset.dataoneId) return;
+
+    const centerLon = dataset.centerLon;
+    const centerLat = dataset.centerLat;
+    if (Number.isFinite(centerLon) && Number.isFinite(centerLat)) {
+      lastPannedDatasetIdRef.current = dataset.dataoneId;
+      void view.goTo({ center: [centerLon as number, centerLat as number], zoom: 16 }, { duration: 800 });
+      highlightPoint(centerLon as number, centerLat as number);
+      return;
+    }
+
+    const bounds = details?.spatialCoverage;
+    if (bounds && bounds.west != null && bounds.south != null && bounds.east != null && bounds.north != null) {
+      lastPannedDatasetIdRef.current = dataset.dataoneId;
+      const extent = new Extent({
+        xmin: bounds.west,
+        ymin: bounds.south,
+        xmax: bounds.east,
+        ymax: bounds.north,
+        spatialReference: { wkid: 4326 },
+      });
+      void view.goTo(extent.expand(1.2), { duration: 800 });
+    }
+  }, [dataset.dataoneId, dataset.centerLon, dataset.centerLat, details, viewRef, highlightPoint]);
 
   useEffect(() => {
     let cancelled = false;
@@ -241,7 +272,7 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onKeywor
     openDataOnePreview(openDataOneUrl, dataset.title);
   };
 
-  const handleViewOnMap = async () => {
+  const handleRecenter = async () => {
     const view = viewRef.current;
     if (!view) return;
 
@@ -250,7 +281,7 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onKeywor
 
     if (Number.isFinite(centerLon) && Number.isFinite(centerLat)) {
       try {
-        await view.goTo({ center: [centerLon as number, centerLat as number], zoom: 11 }, { duration: 800 });
+        await view.goTo({ center: [centerLon as number, centerLat as number], zoom: 16 }, { duration: 800 });
         highlightPoint(centerLon as number, centerLat as number);
         showToast('Centered map on dataset location', 'info');
       } catch {
@@ -262,15 +293,14 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onKeywor
     const bounds = details?.spatialCoverage;
     if (bounds && bounds.west != null && bounds.south != null && bounds.east != null && bounds.north != null) {
       try {
-        await view.goTo({
-          target: {
-            xmin: bounds.west,
-            ymin: bounds.south,
-            xmax: bounds.east,
-            ymax: bounds.north,
-            spatialReference: { wkid: 4326 },
-          },
-        }, { duration: 800 });
+        const extent = new Extent({
+          xmin: bounds.west,
+          ymin: bounds.south,
+          xmax: bounds.east,
+          ymax: bounds.north,
+          spatialReference: { wkid: 4326 },
+        });
+        await view.goTo(extent.expand(1.2), { duration: 800 });
         showToast('Centered map on dataset spatial extent', 'info');
       } catch {
         showToast('Could not focus map on dataset extent', 'warning');
@@ -555,12 +585,12 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onKeywor
                 Spatial Coverage
               </h4>
               <button
-                id="dataone-detail-view-on-map-button"
+                id="dataone-detail-recenter-button"
                 type="button"
-                onClick={() => { void handleViewOnMap(); }}
+                onClick={() => { void handleRecenter(); }}
                 className="text-xs font-medium text-emerald-700 hover:text-emerald-800"
               >
-                View on Map
+                Recenter
               </button>
             </div>
             <p id="dataone-detail-spatial-value" className="text-xs text-gray-600">

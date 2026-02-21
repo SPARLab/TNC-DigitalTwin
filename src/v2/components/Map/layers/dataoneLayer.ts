@@ -123,6 +123,8 @@ export function buildDataOneFeatureReductionForScale(
     clusterRadius: '64px',
     clusterMinSize: '24px',
     clusterMaxSize: '52px',
+    // Disable clustering at close zoom so selected datasets resolve to dots.
+    maxScale: 12_000,
     symbol: CLUSTER_SYMBOL,
     labelingInfo: [
       {

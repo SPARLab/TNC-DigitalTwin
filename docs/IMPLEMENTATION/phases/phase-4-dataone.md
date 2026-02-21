@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 2 / 16 tasks complete  
+**Progress:** 3 / 16 tasks complete  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-4-dataone-completed.md`  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
@@ -15,7 +15,7 @@
 |----|--------|---------------------------|------------------|-------|
 | CON-DONE-01 | 🟢 Complete | Feb 20, 2026 | Cluster click on map populates right sidebar with datasets at that location | Race condition fix applied; counts verified |
 | CON-DONE-16 | 🟢 Complete | Feb 20, 2026 | Switch from circular clustering to grid binning (FeatureReductionBinning) | Scale thresholds tuned; stationary watcher eliminates zoom blink; "Where to Fine-Tune" doc'd |
-| CON-DONE-02 | ⚪ Not Started | Feb 18, 2026 | Auto-pan/zoom when opening dataset detail; repurpose View on Map as Recenter | High priority; resolution applied |
+| CON-DONE-02 | 🟢 Complete | Feb 20, 2026 | Auto-pan/zoom when opening dataset detail; repurpose View on Map as Recenter | High priority; resolution applied |
 | CON-DONE-03 | ⚪ Not Started | Feb 18, 2026 | Cluster popup for scrolling individual datasets | Medium priority |
 | CON-DONE-04 | ⚪ Not Started | Feb 18, 2026 | Improve point dispersion as user zooms into clusters | Medium priority |
 | CON-DONE-05 | ⚪ Not Started | Feb 18, 2026 | Fix map vs sidebar count discrepancy (dedupe dataset versions) | High priority bug |
@@ -173,6 +173,31 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 ---
 
+### CON-DONE-02: Auto-Pan/Zoom When Opening Dataset Detail; Repurpose View on Map as Recenter
+
+**Goal:** When the user opens a DataONE dataset detail view (from browse card or map click), the map automatically pans and zooms to the dataset location. The former "View on Map" button is repurposed as "Recenter" for recoverability when the user has panned away.
+
+**Context:** Per consolidated feedback (Feb 18, 2026), auto-pan/zoom should happen on click when opening the detail view; "View on Map" becomes a conditional Recenter action.
+
+**Implementation Notes (Feb 20, 2026):**
+- `DatasetDetailView`: Added `useEffect` that auto-pans/zooms when `dataset` or `details` change (on open, version switch, or when bounds load from details)
+- Uses `lastPannedDatasetIdRef` to avoid duplicate pans when details load after center-based pan
+- Supports both center point (`centerLon`/`centerLat`) and spatial extent bounds from detail metadata
+- Zoom level 16 for center case (breaks cluster grouping so individual dataset dot is visible); extent case uses `Extent.expand(1.2)` for padding
+- `dataoneLayer.ts`: Cluster `maxScale: 12_000` so clustering turns off at close zoom; selected dataset resolves to a visible dot
+- Renamed "View on Map" button to "Recenter"; handler `handleRecenter` shows toast on manual recenter
+- Card click in browse list now calls `activateLayer` with dataset ID for map/sidebar sync
+
+**Acceptance Criteria:**
+- [x] Opening dataset detail (card click or map point click) auto-pans/zooms map to dataset location
+- [x] "View on Map" repurposed as "Recenter" for when user has panned away
+- [x] Version switch within detail view triggers auto-pan to new version's location
+- [x] Datasets with bounds-only (no center) pan when detail metadata loads
+
+**Estimated Time:** 1–2 hours
+
+---
+
 ### CON-DONE-15: Spatial Query for DataONE Datasets
 
 **Goal:** Ensure the spatial query (draw polygon/rectangle, query by extent) correctly filters DataONE datasets. When the user draws a query area on the map, DataONE browse results should be constrained to datasets whose spatial extent intersects the drawn area.
@@ -259,6 +284,7 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 20, 2026 | CON-DONE-02: marked complete. Auto-pan/zoom on dataset detail open; "View on Map" repurposed as "Recenter". Zoom 16 + cluster maxScale 12_000 so selected dataset breaks out of cluster and shows as dot. | Assistant |
 | Feb 20, 2026 | CON-DONE-16: marked complete. Switched to `view.watch('stationary', ...)` to eliminate bin blink during wheel zoom; scale thresholds tuned. | Assistant |
 | Feb 20, 2026 | CON-DONE-16: fine-tuned bin scale thresholds (shifted ~1 level coarser); added debounced scale watcher with level-change guard to eliminate flicker on zoom. | Assistant |
 | Feb 20, 2026 | CON-DONE-16: marked in progress; documented implemented features, remaining UX issues (zoomed-out bins too small, abrupt bin→points transition), and "Where to fine-tune" code pointers for future tuning. | Assistant |

@@ -579,6 +579,9 @@ export function DataOneBrowseTab() {
           onViewDetail={(dataset) => {
             lastHandledFeatureIdRef.current = dataset.dataoneId;
             setSelectedDataset(dataset);
+            if (activeLayer?.layerId === 'dataone-datasets') {
+              activateLayer('dataone-datasets', activeLayer.viewId, dataset.dataoneId);
+            }
           }}
         />
       )}
