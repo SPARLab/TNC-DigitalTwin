@@ -12,17 +12,19 @@ import { GBIFOccurrenceDetailView } from './GBIFOccurrenceDetailView';
 const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 450;
 const MIN_SEARCH_CHARS = 2;
-const LAYER_ID = 'dataset-178';
-const MAP_LAYER_ID = 'v2-dataset-178';
+const GBIF_LAYER_IDS = new Set(['dataset-178', 'dataset-215']);
+const DEFAULT_GBIF_LAYER_ID = 'dataset-215';
 
 export function GBIFBrowseTab() {
   const { warmCache, createBrowseLoadingScope, filterOptions } = useGBIFFilter();
   const { activeLayer, activateLayer } = useLayers();
   const { viewRef } = useMap();
+  const activeGbifLayerId =
+    activeLayer && GBIF_LAYER_IDS.has(activeLayer.layerId) ? activeLayer.layerId : DEFAULT_GBIF_LAYER_ID;
+  const activeGbifMapLayerId = `v2-${activeGbifLayerId}`;
   const [searchInput, setSearchInput] = useState('');
   const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
   const [kingdom, setKingdom] = useState('');
-  const [taxonomicClass, setTaxonomicClass] = useState('');
   const [family, setFamily] = useState('');
   const [basisOfRecord, setBasisOfRecord] = useState('');
   const [datasetName, setDatasetName] = useState('');
@@ -56,7 +58,7 @@ export function GBIFBrowseTab() {
 
   useEffect(() => {
     setPage(0);
-  }, [appliedSearchTerm, kingdom, taxonomicClass, family, basisOfRecord, datasetName, startDate, endDate]);
+  }, [appliedSearchTerm, kingdom, family, basisOfRecord, datasetName, startDate, endDate]);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -71,7 +73,6 @@ export function GBIFBrowseTab() {
           pageSize: PAGE_SIZE,
           searchText: appliedSearchTerm || undefined,
           kingdom: kingdom || undefined,
-          taxonomicClass: taxonomicClass || undefined,
           family: family || undefined,
           basisOfRecord: basisOfRecord || undefined,
           datasetName: datasetName || undefined,
@@ -84,7 +85,13 @@ export function GBIFBrowseTab() {
         setTotalCount(response.totalCount);
       } catch (err) {
         if (abortController.signal.aborted) return;
-        setError(err instanceof Error ? err.message : 'Failed to query GBIF occurrences');
+        const rawMessage = err instanceof Error ? err.message : 'Failed to query GBIF occurrences';
+        const normalizedMessage = rawMessage.toLowerCase();
+        if (normalizedMessage.includes('unable to complete operation') || normalizedMessage.includes('unable to perform query operation')) {
+          setError('GBIF service is temporarily unavailable (ArcGIS query failed). Please try again shortly.');
+        } else {
+          setError(rawMessage);
+        }
       } finally {
         if (!abortController.signal.aborted) {
           setLoading(false);
@@ -98,10 +105,10 @@ export function GBIFBrowseTab() {
       abortController.abort();
       closeLoadingScope();
     };
-  }, [appliedSearchTerm, kingdom, taxonomicClass, family, basisOfRecord, datasetName, startDate, endDate, page, createBrowseLoadingScope]);
+  }, [appliedSearchTerm, kingdom, family, basisOfRecord, datasetName, startDate, endDate, page, createBrowseLoadingScope]);
 
   useEffect(() => {
-    if (activeLayer?.layerId !== LAYER_ID || activeLayer.featureId == null) return;
+    if (!activeLayer || !GBIF_LAYER_IDS.has(activeLayer.layerId) || activeLayer.featureId == null) return;
     const featureId = String(activeLayer.featureId);
     if (lastHandledFeatureIdRef.current === featureId) return;
     if (selectedOccurrence && String(selectedOccurrence.id) === featureId) return;
@@ -138,25 +145,24 @@ export function GBIFBrowseTab() {
       Boolean(
         appliedSearchTerm ||
           kingdom ||
-          taxonomicClass ||
           family ||
           basisOfRecord ||
           datasetName ||
           startDate ||
           endDate,
       ),
-    [appliedSearchTerm, kingdom, taxonomicClass, family, basisOfRecord, datasetName, startDate, endDate],
+    [appliedSearchTerm, kingdom, family, basisOfRecord, datasetName, startDate, endDate],
   );
 
   const viewOccurrenceOnMap = (occurrence: GBIFOccurrence) => {
     if (!occurrence.coordinates) return;
     const view = viewRef.current;
     if (!view) return;
-    activateLayer(LAYER_ID, activeLayer?.viewId, occurrence.id);
+    activateLayer(activeGbifLayerId, activeLayer?.viewId, occurrence.id);
     void view.goTo({ center: occurrence.coordinates, zoom: 13 }, { duration: 650 });
     const map = view.map;
     if (!map) return;
-    const layer = map.findLayerById(MAP_LAYER_ID) as __esri.FeatureLayer | undefined;
+    const layer = map.findLayerById(activeGbifMapLayerId) as __esri.FeatureLayer | undefined;
     if (!layer) return;
     void view.openPopup({
       location: {
@@ -172,7 +178,6 @@ export function GBIFBrowseTab() {
     setSearchInput('');
     setAppliedSearchTerm('');
     setKingdom('');
-    setTaxonomicClass('');
     setFamily('');
     setBasisOfRecord('');
     setDatasetName('');
@@ -187,7 +192,9 @@ export function GBIFBrowseTab() {
         occurrence={selectedOccurrence}
         onBack={() => {
           setSelectedOccurrence(null);
-          if (activeLayer?.layerId === LAYER_ID) activateLayer(LAYER_ID, activeLayer.viewId, undefined);
+          if (activeLayer?.layerId && GBIF_LAYER_IDS.has(activeLayer.layerId)) {
+            activateLayer(activeLayer.layerId, activeLayer.viewId, undefined);
+          }
         }}
         onViewOnMap={() => viewOccurrenceOnMap(selectedOccurrence)}
       />
@@ -230,7 +237,6 @@ export function GBIFBrowseTab() {
 
         <div id="gbif-filter-grid" className="grid grid-cols-2 gap-2">
           <FilterSelect id="gbif-kingdom-filter" value={kingdom} onChange={setKingdom} placeholder="All kingdoms" options={filterOptions.kingdoms} />
-          <FilterSelect id="gbif-class-filter" value={taxonomicClass} onChange={setTaxonomicClass} placeholder="All classes" options={filterOptions.classes} />
           <FilterSelect id="gbif-family-filter" value={family} onChange={setFamily} placeholder="All families" options={filterOptions.families} />
           <FilterSelect id="gbif-basis-filter" value={basisOfRecord} onChange={setBasisOfRecord} placeholder="All record types" options={filterOptions.basisOptions} />
           <FilterSelect id="gbif-dataset-filter" value={datasetName} onChange={setDatasetName} placeholder="All datasets" options={filterOptions.datasetNames} />
@@ -291,7 +297,7 @@ export function GBIFBrowseTab() {
               occurrence={occurrence}
               onViewDetail={() => {
                 setSelectedOccurrence(occurrence);
-                activateLayer(LAYER_ID, activeLayer?.viewId, occurrence.id);
+                activateLayer(activeGbifLayerId, activeLayer?.viewId, occurrence.id);
               }}
               onViewOnMap={() => viewOccurrenceOnMap(occurrence)}
             />

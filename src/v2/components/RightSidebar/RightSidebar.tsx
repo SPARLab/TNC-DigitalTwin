@@ -23,6 +23,11 @@ export function RightSidebar({ onCollapse }: RightSidebarProps) {
   const [isInspectBrowseFlow, setIsInspectBrowseFlow] = useState(false);
   const consumedRequestRef = useRef(0);
   const prevLayerIdRef = useRef<string | null>(null);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollHideTimerRef = useRef<number | null>(null);
+  const scrollAreaRef = useRef<HTMLDivElement | null>(null);
+  const [scrollThumbHeight, setScrollThumbHeight] = useState(0);
+  const [scrollThumbTop, setScrollThumbTop] = useState(0);
 
   // Track layer changes for flash animation
   const [shouldFlash, setShouldFlash] = useState(false);
@@ -30,6 +35,39 @@ export function RightSidebar({ onCollapse }: RightSidebarProps) {
   // Look up the adapter for the active layer's data source
   const adapter = getAdapterForActiveLayer(activeLayer);
   const showBrowseTab = true;
+
+  const updateScrollThumb = useCallback(() => {
+    const scrollEl = scrollAreaRef.current;
+    if (!scrollEl) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = scrollEl;
+    if (scrollHeight <= clientHeight + 1) {
+      setScrollThumbHeight(0);
+      setScrollThumbTop(0);
+      return;
+    }
+
+    const thumbHeight = Math.max(28, (clientHeight / scrollHeight) * clientHeight);
+    const maxThumbTop = clientHeight - thumbHeight;
+    const scrollProgress = scrollTop / (scrollHeight - clientHeight);
+    const thumbTop = maxThumbTop * scrollProgress;
+
+    setScrollThumbHeight(thumbHeight);
+    setScrollThumbTop(thumbTop);
+  }, []);
+
+  const handleScroll = useCallback(() => {
+    updateScrollThumb();
+    setIsScrolling(true);
+
+    if (scrollHideTimerRef.current !== null) {
+      window.clearTimeout(scrollHideTimerRef.current);
+    }
+
+    scrollHideTimerRef.current = window.setTimeout(() => {
+      setIsScrolling(false);
+    }, 650);
+  }, [updateScrollThumb]);
 
   const handleSystemTabChange = useCallback((tab: SidebarTab) => {
     if (tab !== 'browse') {
@@ -105,13 +143,29 @@ export function RightSidebar({ onCollapse }: RightSidebarProps) {
         activeLayer?.layerId === 'animl-camera-traps' ||
         activeLayer?.layerId === 'dataone-datasets' ||
         activeLayer?.layerId === 'dataset-193' ||
-        activeLayer?.layerId === 'dataset-178'
+        activeLayer?.layerId === 'dataset-178' ||
+        activeLayer?.layerId === 'dataset-215'
       ) &&
       activeLayer.featureId != null
     ) {
       handleSystemTabChange('browse');
     }
   }, [activeLayer?.layerId, activeLayer?.dataSource, activeLayer?.featureId, handleSystemTabChange]);
+
+  useEffect(() => {
+    updateScrollThumb();
+  }, [activeLayer?.layerId, activeTab, updateScrollThumb]);
+
+  useEffect(() => {
+    const handleResize = () => updateScrollThumb();
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (scrollHideTimerRef.current !== null) {
+        window.clearTimeout(scrollHideTimerRef.current);
+      }
+    };
+  }, [updateScrollThumb]);
 
   return (
     <aside
@@ -132,51 +186,70 @@ export function RightSidebar({ onCollapse }: RightSidebarProps) {
           />
 
           {/* Tab content — delegated to data source adapter */}
-          <div
-            id="right-sidebar-tab-panel"
-            className="flex-1 overflow-y-auto p-4 scroll-area-right-sidebar"
-            role="tabpanel"
-          >
-            {adapter ? (
-              activeTab === 'overview' ? (
-                <adapter.OverviewTab
-                  onBrowseClick={handleOverviewBrowseClick}
-                  onInspectBrowseClick={handleOverviewInspectBrowseClick}
-                />
-              ) : showBrowseTab ? (
-                <adapter.BrowseTab
-                  showBackToOverview={activeLayer.dataSource === 'tnc-arcgis' || isInspectBrowseFlow}
-                  onBackToOverview={() => handleSystemTabChange('overview')}
-                />
+          <div id="right-sidebar-scroll-wrap" className="relative flex-1 overflow-hidden group">
+            <div
+              id="right-sidebar-tab-panel"
+              ref={scrollAreaRef}
+              onScroll={handleScroll}
+              className="h-full overflow-y-auto p-4 scroll-area-right-sidebar"
+              role="tabpanel"
+            >
+              {adapter ? (
+                activeTab === 'overview' ? (
+                  <adapter.OverviewTab
+                    onBrowseClick={handleOverviewBrowseClick}
+                    onInspectBrowseClick={handleOverviewInspectBrowseClick}
+                  />
+                ) : showBrowseTab ? (
+                  <adapter.BrowseTab
+                    showBackToOverview={activeLayer.dataSource === 'tnc-arcgis' || isInspectBrowseFlow}
+                    onBackToOverview={() => handleSystemTabChange('overview')}
+                  />
+                ) : (
+                  <adapter.OverviewTab
+                    onBrowseClick={handleOverviewBrowseClick}
+                    onInspectBrowseClick={handleOverviewInspectBrowseClick}
+                  />
+                )
               ) : (
-                <adapter.OverviewTab
-                  onBrowseClick={handleOverviewBrowseClick}
-                  onInspectBrowseClick={handleOverviewInspectBrowseClick}
-                />
-              )
-            ) : (
-              /* Generic placeholder for unimplemented data sources */
-              activeTab === 'overview' ? (
-                <div className="space-y-4">
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    Overview content for <strong>{activeLayer.name}</strong> will be implemented
-                    in Phase 2-4 (per data source).
+                /* Generic placeholder for unimplemented data sources */
+                activeTab === 'overview' ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      Overview content for <strong>{activeLayer.name}</strong> will be implemented
+                      in Phase 2-4 (per data source).
+                    </p>
+                    <button
+                      id="generic-browse-cta"
+                      onClick={handleOverviewBrowseClick}
+                      className="w-full py-3 bg-[#2e7d32] text-white font-medium rounded-lg
+                                 hover:bg-[#256d29] transition-colors text-sm"
+                    >
+                      Browse Items &rarr;
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    Browse tab content for <strong>{activeLayer.name}</strong> will be implemented
+                    in Phase 2-4.
                   </p>
-                  <button
-                    id="generic-browse-cta"
-                    onClick={() => handleUserTabChange('browse')}
-                    className="w-full py-3 bg-[#2e7d32] text-white font-medium rounded-lg
-                               hover:bg-[#256d29] transition-colors text-sm"
-                  >
-                    Browse Items &rarr;
-                  </button>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">
-                  Browse tab content for <strong>{activeLayer.name}</strong> will be implemented
-                  in Phase 2-4.
-                </p>
-              )
+                )
+              )}
+            </div>
+
+            {scrollThumbHeight > 0 && (
+              <div
+                id="right-sidebar-scrollbar-overlay"
+                className="pointer-events-none absolute inset-y-1 right-0.5 w-2"
+              >
+                <div
+                  id="right-sidebar-scrollbar-thumb"
+                  className={`absolute right-0 w-1.5 rounded-full bg-gray-500/55 transition-opacity duration-200 ${
+                    isScrolling ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                  }`}
+                  style={{ top: scrollThumbTop, height: scrollThumbHeight }}
+                />
+              </div>
             )}
           </div>
         </>

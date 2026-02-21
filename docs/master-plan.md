@@ -40,7 +40,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 6 | TNC ArcGIS Services | 🟡 In Progress | 8 tasks | `v2/tnc-arcgis` | No |
 | 7 | Polish & Consistency | ⚪ Not Started | 12+ tasks | `v2/polish` | No |
 | 8 | Calflora | ⚪ Not Started | 9 tasks | `v2/calflora` | No |
-| 9 | GBIF | 🟡 In Progress | 2 tasks (9.8, 9.9 deferred; 9.12 backend aggregation deferred to v2.1+) | `v2/gbif` | No |
+| 9 | GBIF | 🟡 In Progress | 5 tasks (D20-08 ✅, GBIF-HOSTED ✅; D20-12 🟡 in progress; P9-GRIDBIN high priority; 9.8/9.9 deferred; 9.12 deferred to v2.1+) | `v2/gbif` | No |
 | 10 | DroneDeploy | 🟢 Complete | 0 tasks | `v2/dronedeploy` | No |
 | 11 | MODIS | ⚪ Not Started | 9 tasks | `v2/modis` | No |
 
@@ -58,7 +58,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 5 | [phase-5-export-builder.md](IMPLEMENTATION/phases/phase-5-export-builder.md) | + D20-14 (Dan meeting Feb 20) |
 | 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 13 tasks (+ D20-02, D20-10, D20-11, D20-B04, D20-B05 from Dan meeting Feb 20) |
 | 7 | [phase-7-polish.md](IMPLEMENTATION/phases/phase-7-polish.md) | 12+ tasks (+ D20-03, D20-04, D20-07, D20-13 from Dan meeting Feb 20; D20-01 ✅ done in Phase 0) |
-| 9 | [phase-9-gbif.md](IMPLEMENTATION/phases/phase-9-gbif.md) | 6 tasks (+ D20-08, D20-12, D20-B01, D20-B03 from Dan meeting Feb 20) |
+| 9 | [phase-9-gbif.md](IMPLEMENTATION/phases/phase-9-gbif.md) | 5 tasks (D20-08 ✅, GBIF-HOSTED ✅; D20-12 🟡 in progress; P9-GRIDBIN high priority; + D20-B01, D20-B03, D20-12-FOLLOW optional) |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) | 0 |
 
 ---
@@ -307,6 +307,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 20, 2026 | Phase 9 | **D20-12 in progress.** media_json parsing, card/detail wiring, overlay scrollbar, dev debug panel. ~2.8k/323k rows have media; coworker may populate more. Optional follow-up: D20-12-FOLLOW "Has media only" filter. | Cursor |
 | Feb 20, 2026 | Phase 3 | **D20-06 complete.** Custom polygon draw tool for Dendra: suppressed station click during draw mode; synced sidebar station list with polygon filter so map markers and station cards match. Phase 3: 0 blocking tasks. | Cursor |
 | Feb 20, 2026 | Phase 3 | **TF-06 complete.** Renamed left sidebar group "Research and Sensor Equipment" → "Field Sensors" via `CATEGORY_DISPLAY_NAME_OVERRIDE`. Trisalyn QA. | Claude |
 | Feb 20, 2026 | Phase 3 | **TF-07 complete.** Removed `dangermond_` prefix from Dendra station tooltip titles; shared `formatStationDisplayName()` normalizes names across map popup, sidebar, chart panels, Map Layers. Trisalyn QA. | Claude |

@@ -22,6 +22,7 @@ export const IMPLEMENTED_LAYERS = new Set([
   'preserve-boundary',
   'dataone-datasets',
   'dataset-178',
+  'dataset-215',
   'dataset-193',
 ]);
 
@@ -73,6 +74,9 @@ export function createMapLayer(layerId: string, options: {
       return createDataOneLayer({ id: `v2-${layerId}`, ...options });
 
     case 'dataset-178':
+      return createGBIFLayer({ id: `v2-${layerId}`, ...options });
+
+    case 'dataset-215':
       return createGBIFLayer({ id: `v2-${layerId}`, ...options });
 
     case 'dataset-193':
