@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import { gbifService, type GBIFFilters } from '../../services/gbifService';
 
+export type GBIFAggregationMode = 'cluster' | 'binning';
+
 export interface GBIFBrowseFilters extends GBIFFilters {
   searchText: string;
   kingdom: string;
@@ -25,9 +27,11 @@ interface GBIFFilterContextValue {
   error: string | null;
   totalOccurrenceCount: number;
   browseFilters: GBIFBrowseFilters;
+  aggregationMode: GBIFAggregationMode;
   filterOptions: GBIFFilterOptions;
   warmCache: () => void;
   setBrowseFilters: (next: GBIFBrowseFilters) => void;
+  setAggregationMode: (next: GBIFAggregationMode) => void;
   createBrowseLoadingScope: () => () => void;
 }
 
@@ -58,6 +62,7 @@ export function GBIFFilterProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [totalOccurrenceCount, setTotalOccurrenceCount] = useState(0);
   const [browseFilters, setBrowseFilters] = useState<GBIFBrowseFilters>(DEFAULT_FILTERS);
+  const [aggregationMode, setAggregationMode] = useState<GBIFAggregationMode>('binning');
   const [filterOptions, setFilterOptions] = useState<GBIFFilterOptions>(DEFAULT_FILTER_OPTIONS);
   const inFlightRef = useRef(false);
   const loading = isWarmLoading || browseLoadCount > 0;
@@ -101,12 +106,14 @@ export function GBIFFilterProvider({ children }: { children: ReactNode }) {
       error,
       totalOccurrenceCount,
       browseFilters,
+      aggregationMode,
       filterOptions,
       warmCache,
       setBrowseFilters,
+      setAggregationMode,
       createBrowseLoadingScope,
     }),
-    [loading, dataLoaded, error, totalOccurrenceCount, browseFilters, filterOptions, warmCache, createBrowseLoadingScope],
+    [loading, dataLoaded, error, totalOccurrenceCount, browseFilters, aggregationMode, filterOptions, warmCache, createBrowseLoadingScope],
   );
 
   return (

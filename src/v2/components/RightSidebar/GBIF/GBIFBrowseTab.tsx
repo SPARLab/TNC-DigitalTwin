@@ -16,7 +16,7 @@ const GBIF_LAYER_IDS = new Set(['dataset-178', 'dataset-215']);
 const DEFAULT_GBIF_LAYER_ID = 'dataset-215';
 
 export function GBIFBrowseTab() {
-  const { warmCache, createBrowseLoadingScope, filterOptions } = useGBIFFilter();
+  const { warmCache, createBrowseLoadingScope, filterOptions, aggregationMode, setAggregationMode } = useGBIFFilter();
   const { activeLayer, activateLayer } = useLayers();
   const { viewRef } = useMap();
   const activeGbifLayerId =
@@ -208,6 +208,40 @@ export function GBIFBrowseTab() {
       </div>
 
       <EditFiltersCard id="gbif-edit-filters-card">
+        <div id="gbif-aggregation-toggle-section" className="space-y-1">
+          <p id="gbif-aggregation-toggle-label" className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
+            Map aggregation
+          </p>
+          <div id="gbif-aggregation-toggle-group" className="grid grid-cols-2 gap-1 rounded-lg border border-gray-200 bg-gray-50 p-1">
+            <button
+              id="gbif-aggregation-toggle-cluster"
+              type="button"
+              onClick={() => setAggregationMode('cluster')}
+              aria-pressed={aggregationMode === 'cluster'}
+              className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                aggregationMode === 'cluster'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Clusters
+            </button>
+            <button
+              id="gbif-aggregation-toggle-binning"
+              type="button"
+              onClick={() => setAggregationMode('binning')}
+              aria-pressed={aggregationMode === 'binning'}
+              className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                aggregationMode === 'binning'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Grid bins
+            </button>
+          </div>
+        </div>
+
         <div id="gbif-search-row" className="relative">
           <Search id="gbif-search-icon" className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
