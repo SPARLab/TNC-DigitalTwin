@@ -30,7 +30,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| D20-02 | ⚪ Not Started | Feb 20, 2026 | Add back button in right sidebar for ArcGIS feature service inspect/browse view | When user is in browse tab via "Inspect", show back button to return to overview. Source: Dan Meeting Feb 20 |
+| D20-02 | 🟢 Complete | Feb 20, 2026 | Add back button in right sidebar for ArcGIS feature service inspect/browse view | Shared `BrowseBackButton` (Dendra-style); layer context card (current layer + feature service, gray bg); Open Table Overlay above table snapshot; full field list (no truncation); Legend removed. Source: Dan Meeting Feb 20 |
 | D20-10 | ⚪ Not Started | Feb 20, 2026 | Replace static layer overview text with actual ArcGIS feature service description text | Apply to all ArcGIS feature service layers. Feature service already has proper descriptions set by Kelly. Source: Dan Meeting Feb 20 |
 | D20-11 | ⚪ Not Started | Feb 20, 2026 | Fix legend-as-filter functionality for TNC ArcGIS feature service layers | Clicking legend items should filter polygons; Amy flagged it's broken. Source: Dan Meeting Feb 20 |
 | D20-B04 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Reorder ArcGIS Enterprise layer categories per Amy's survey feedback | Order: Boundaries → Infrastructure → Species → Land Cover → Sensor Equipment → rest. Dan handling in layer management app. Source: Dan Meeting Feb 20 |

@@ -15,7 +15,7 @@
 | ID | Status | Last Updated | Task Description | Data Source | Notes |
 |----|--------|--------------|------------------|-------------|-------|
 | D20-01 | 🟢 Complete | Feb 20, 2026 | Add collapse button to right sidebar — default open, stays collapsed until user manually re-expands | App-wide | Implemented in Phase 0. Extruded tab, localStorage, 300ms. |
-| D20-02 | ⚪ Not Started | Feb 20, 2026 | Add back button in right sidebar for ArcGIS feature service inspect/browse view | TNC ArcGIS | When user is in browse tab via "Inspect", show a back button to return to overview without requiring them to click "Overview" tab manually. |
+| D20-02 | 🟢 Complete | Feb 20, 2026 | Add back button in right sidebar for ArcGIS feature service inspect/browse view | TNC ArcGIS | Shared BrowseBackButton; layer context card; Open Table Overlay repositioned; full field list; Legend removed. |
 | D20-03 | ⚪ Not Started | Feb 20, 2026 | Make Map Layers accordion header bar clickable to expand/collapse (not just the caret icon) | App-wide | Dan kept trying to click the heading to expand. Retain the caret but make the whole header row interactive. |
 | D20-04 | ⚪ Not Started | Feb 20, 2026 | Replace +/- symbols in Map Layers accordion with chevron (V / >) symbols | App-wide | Plus/minus is not a clear expand/collapse affordance; chevron communicates directionality better. |
 | D20-05 | ⚪ Not Started | Feb 20, 2026 | Investigate and fix Dendra browser popup asking for device access | Dendra | Observed live during session. We don't want to trigger any device-access permission dialogs. |
@@ -53,8 +53,8 @@ Dan's primary UX feedback. On his laptop, the right sidebar covers most of the m
 
 ---
 
-### D20-02 — Back button in right sidebar (ArcGIS feature service inspect view)
-Flow: Overview tab → user clicks "Inspect" → lands on Browse tab. There is currently no back button visible that clearly returns the user to the Overview tab. Dan noted he didn't notice that the tab had changed from "overview" to "browse." A back button above the browse content (or at the top of the panel) would make the flow clear.
+### D20-02 — Back button in right sidebar (ArcGIS feature service inspect view) ✅ Complete
+Flow: Overview tab → user clicks "Inspect" → lands on Browse tab. **Resolution (Feb 20, 2026):** Implemented shared `BrowseBackButton` component (matches Dendra "Back to Stations" styling). TNC ArcGIS Browse now shows "Back to Layers" at top; layer context card (current layer + feature service, light gray bg); Open Table Overlay moved between context and table snapshot; full field list (no truncation); Legend section removed.
 
 ---
 

@@ -5,7 +5,8 @@
 // ============================================================================
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { ChevronLeft, MapPin, Radio, Activity, Calendar, TrendingUp, TrendingDown, BarChart3, Save, Pin } from 'lucide-react';
+import { MapPin, Radio, Activity, Calendar, TrendingUp, TrendingDown, BarChart3, Save, Pin } from 'lucide-react';
+import { BrowseBackButton } from '../shared/BrowseBackButton';
 import type { DendraStation, DendraSummary } from '../../../services/dendraStationService';
 import { formatStationDisplayName, formatTimestamp, formatValue } from '../../../services/dendraStationService';
 import { useDendra } from '../../../context/DendraContext';
@@ -259,16 +260,11 @@ export function StationDetailView({
 
   return (
     <div id="dendra-station-detail" className="space-y-4">
-      {/* Back nav */}
-      <button
+      <BrowseBackButton
         id="dendra-back-to-stations"
+        label="Back to Stations"
         onClick={onBack}
-        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800
-                   transition-colors -ml-1"
-      >
-        <ChevronLeft className="w-4 h-4" />
-        Back to Stations
-      </button>
+      />
 
       <div id="dendra-cross-station-tools" className="rounded-lg border border-gray-200 bg-white p-3 space-y-2">
         <label id="dendra-detail-stream-name-filter" className="block text-xs text-gray-600">
