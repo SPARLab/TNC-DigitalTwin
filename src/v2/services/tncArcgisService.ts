@@ -116,6 +116,8 @@ interface ArcGISJsonWithError {
   error?: ArcGISResponseError;
 }
 
+const serviceLayerIdCache = new Map<string, number[]>();
+
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
@@ -338,6 +340,75 @@ async function fetchArcGisJson(url: string, operation: string): Promise<Record<s
   }
 
   return json;
+}
+
+function parseFeatureServiceLayerUrl(url: string): { serviceRootUrl: string; layerId: number | null } | null {
+  const normalized = url.trim().replace(/\/+$/, '');
+  if (!normalized) return null;
+  const match = normalized.match(/^(.*\/FeatureServer)(?:\/(\d+))?$/i);
+  if (!match) return null;
+  const root = match[1];
+  const layerId = match[2] ? Number(match[2]) : null;
+  if (layerId !== null && !Number.isFinite(layerId)) return { serviceRootUrl: root, layerId: null };
+  return { serviceRootUrl: root, layerId };
+}
+
+async function fetchServiceLayerIds(serviceRootUrl: string): Promise<number[]> {
+  const normalizedRoot = serviceRootUrl.trim().replace(/\/+$/, '');
+  if (!normalizedRoot) return [];
+  const cached = serviceLayerIdCache.get(normalizedRoot);
+  if (cached) return cached;
+
+  const serviceJson = await fetchArcGisJson(
+    `${normalizedRoot}?f=json`,
+    'Feature service metadata fetch failed',
+  );
+  const rawLayers = serviceJson.layers;
+  if (!Array.isArray(rawLayers)) {
+    serviceLayerIdCache.set(normalizedRoot, []);
+    return [];
+  }
+  const layerIds = rawLayers
+    .map((layer) => (isObject(layer) && typeof layer.id === 'number' && Number.isFinite(layer.id) ? layer.id : null))
+    .filter((id): id is number => id !== null)
+    .sort((a, b) => a - b);
+  serviceLayerIdCache.set(normalizedRoot, layerIds);
+  return layerIds;
+}
+
+async function runWithFeatureLayerFallback(
+  url: string,
+  operation: string,
+  execute: (resolvedUrl: string) => Promise<Record<string, unknown>>,
+): Promise<Record<string, unknown>> {
+  const normalizedUrl = url.trim().replace(/\/+$/, '');
+  try {
+    return await execute(normalizedUrl);
+  } catch (error) {
+    const parsed = parseFeatureServiceLayerUrl(normalizedUrl);
+    if (!parsed) throw error;
+
+    let layerIds: number[] = [];
+    try {
+      layerIds = await fetchServiceLayerIds(parsed.serviceRootUrl);
+    } catch {
+      throw error;
+    }
+
+    const fallbackUrls = layerIds
+      .map((id) => `${parsed.serviceRootUrl}/${id}`)
+      .filter((candidateUrl) => candidateUrl !== normalizedUrl);
+
+    for (const fallbackUrl of fallbackUrls) {
+      try {
+        return await execute(fallbackUrl);
+      } catch {
+        // Try next candidate layer URL.
+      }
+    }
+
+    throw error;
+  }
 }
 
 /** Build full service URL from catalog metadata */
@@ -564,10 +635,18 @@ export async function fetchLayerLegend(meta: CatalogLayer['catalogMeta']): Promi
   }
 
   // Strategy 2: Fallback to layer metadata renderer (V1 behavior).
-  const layerResourceUrl = buildServiceUrl(meta).replace(/\/+$/, '');
-  const layerUrl = `${layerResourceUrl}?f=json`;
-  const layerJson = await fetchArcGisJson(layerUrl, 'Layer metadata fetch failed');
-  return parseRendererLegend(layerJson, targetLayerId, layerResourceUrl);
+  const initialLayerResourceUrl = buildServiceUrl(meta).replace(/\/+$/, '');
+  let resolvedLayerResourceUrl = initialLayerResourceUrl;
+  const layerJson = await runWithFeatureLayerFallback(
+    initialLayerResourceUrl,
+    'Layer metadata fetch failed',
+    async (resolvedUrl) => {
+      resolvedLayerResourceUrl = resolvedUrl.replace(/\/+$/, '');
+      const layerUrl = `${resolvedLayerResourceUrl}?f=json`;
+      return fetchArcGisJson(layerUrl, 'Layer metadata fetch failed');
+    },
+  );
+  return parseRendererLegend(layerJson, targetLayerId, resolvedLayerResourceUrl);
 }
 
 /** Fetch best-available service description from ArcGIS metadata endpoints. */
@@ -602,8 +681,10 @@ export async function fetchServiceDescription(meta: CatalogLayer['catalogMeta'])
 
 /** Fetch layer schema (fields, extent, geometry type) */
 export async function fetchLayerSchema(url: string): Promise<LayerSchema> {
-  const endpoint = `${url.replace(/\/+$/, '')}?f=json`;
-  const json = await fetchArcGisJson(endpoint, 'Schema fetch failed');
+  const json = await runWithFeatureLayerFallback(url, 'Schema fetch failed', async (resolvedUrl) => {
+    const endpoint = `${resolvedUrl}?f=json`;
+    return fetchArcGisJson(endpoint, 'Schema fetch failed');
+  });
 
   const rawFields = json.fields;
   if (rawFields !== undefined && !Array.isArray(rawFields)) {
@@ -638,8 +719,10 @@ export async function queryFeatures(
     f: 'json',
   });
 
-  const endpoint = `${url.replace(/\/+$/, '')}/query?${params.toString()}`;
-  const json = await fetchArcGisJson(endpoint, 'Query failed');
+  const json = await runWithFeatureLayerFallback(url, 'Query failed', async (resolvedUrl) => {
+    const endpoint = `${resolvedUrl}/query?${params.toString()}`;
+    return fetchArcGisJson(endpoint, 'Query failed');
+  });
 
   const rawFeatures = json.features;
   if (rawFeatures !== undefined && !Array.isArray(rawFeatures)) {
