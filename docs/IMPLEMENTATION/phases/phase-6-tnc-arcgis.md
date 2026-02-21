@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 19 / 22 tasks (CON-ARCGIS-01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 6.17, 6.20, D20-11, TF-13 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
+**Progress:** 20 / 23 tasks (CON-ARCGIS-01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 6.17, 6.20, D20-02, D20-02a, D20-11, TF-13 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry) ✅ complete  
@@ -33,6 +33,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | TF-13 | 🟢 Complete | Feb 20, 2026 | Implement multi-layer service detection improvements from CON-ARCGIS-07 audit | Removed top-12 discovery cap in `useCatalogRegistry`; all eligible single-row FeatureServer candidates now discovered. Dev-mode classification logging added. All 12+ multi-layer services (incl. Coastal and Marine, DP_COASTAL) get service-container UX. |
 | CON-ARCGIS-07 | 🟢 Complete | Feb 20, 2026 | Ensure proper detection of multi-layer feature services vs single-layer ones | Audit complete; implementation captured in TF-13 |
 | D20-02 | 🟢 Complete | Feb 20, 2026 | Add back button in right sidebar for ArcGIS feature service inspect/browse view | Shared `BrowseBackButton` (Dendra-style); layer context card (current layer + feature service, gray bg); Open Table Overlay above table snapshot; full field list (no truncation); Legend removed. Source: Dan Meeting Feb 20 |
+| D20-02a | 🟢 Complete | Feb 20, 2026 | Add table/spreadsheet icon to Open Table Overlay button | Inline SVG grid icon (rows/columns) for table affordance; replaces CSV-style glyph. UX polish for Browse tab. |
 | D20-10 | 🟢 Complete | Feb 20, 2026 | Replace static layer overview text with actual ArcGIS feature service description text | Overview tabs fetch ArcGIS item metadata via `serviceItemId` (snippet + description, Hub-style), then fall back to service/layer description. HTML normalized to preserve line breaks; no per-layer descriptions in layer list. TNC ArcGIS + Dendra. Source: Dan Meeting Feb 20 |
 | D20-11 | 🟢 Complete | Feb 20, 2026 | Fix legend-as-filter functionality for TNC ArcGIS feature service layers | Legend clicks sync to root TNC ArcGIS filter state; auto-pin on first legend interaction so filtering applies when layer was active but unpinned. Source: Dan Meeting Feb 20 |
 | TF-11 | 🟢 Complete | Feb 20, 2026 | Fix intermittent "layer zero not found" error for Coastal Marine Data feature service in right sidebar/legend | Root cause: multiple single-row FeatureServer services (Coastal starts at 2; Shrub at 8; Tree at 7; Sensitive vegetation at 3) do not expose layer `0`. Added runtime fallback to discovered valid layer IDs for schema/query, legend metadata, and map-layer load. QA passed. Source: Trisalyn QA Feb 20 |

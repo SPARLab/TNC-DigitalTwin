@@ -56,7 +56,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 3 | [phase-3-dendra.md](IMPLEMENTATION/phases/phase-3-dendra.md) | D20-06 ✅; D20-BL01–03 backlog; CON-DENDRA-08 |
 | 4 | [phase-4-dataone.md](IMPLEMENTATION/phases/phase-4-dataone.md) | CON-DONE-01/02/16 ✅; remaining: CON-DONE-03–11, CON-DONE-14, CON-DONE-15, D20-09, D20-B02, TF-13, TF-14 |
 | 5 | [phase-5-export-builder.md](IMPLEMENTATION/phases/phase-5-export-builder.md) | + D20-14 (Dan meeting Feb 20) |
-| 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 9 tasks (+ D20-02 ✅, D20-10 ✅, D20-11 ✅, TF-11 ✅, TF-13 ✅; D20-B04, D20-B05 from Dan meeting Feb 20) |
+| 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 8 tasks (+ D20-02 ✅, D20-02a ✅, D20-10 ✅, D20-11 ✅, TF-11 ✅, TF-13 ✅; D20-B04, D20-B05 from Dan meeting Feb 20) |
 | 7 | [phase-7-polish.md](IMPLEMENTATION/phases/phase-7-polish.md) | 12+ tasks (+ D20-03, D20-04, D20-07, D20-13 from Dan meeting Feb 20; D20-01 ✅ done in Phase 0) |
 | 9 | [phase-9-gbif.md](IMPLEMENTATION/phases/phase-9-gbif.md) | 5 tasks (D20-08 ✅, GBIF-HOSTED ✅; D20-12 🟡 in progress; P9-GRIDBIN high priority; + D20-B01, D20-B03, D20-12-FOLLOW optional) |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) | 0 |
