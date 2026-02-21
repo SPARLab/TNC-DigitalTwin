@@ -44,17 +44,17 @@ export function buildDataOneFeatureReduction(mode: DataOneAggregationMode): __es
 }
 
 export function getBinningLevelForScale(scale: number | null | undefined): number {
-  if (!scale || !Number.isFinite(scale)) return 5;
-  if (scale > 120_000_000) return 1;
-  if (scale > 88_000_000) return 2;
-  if (scale > 14_000_000) return 3;
-  // Keep preserve/regional views intentionally coarse so users see a few large bins first.
-  if (scale > 5_000_000) return 4;
-  if (scale > 800_000) return 5;
-  if (scale > 120_000) return 6;
-  if (scale > 20_000) return 7;
-  if (scale > 4_000) return 8;
-  return 9;
+  if (!scale || !Number.isFinite(scale)) return 3;
+  // Shifted ~1 level coarser than the ArcGIS reference table so bins appear
+  // as large, readable rectangles at each zoom (state → few big, county → more medium, etc.).
+  if (scale > 80_000_000) return 1;   // World / continent
+  if (scale > 14_000_000) return 2;   // Multi-state overview
+  if (scale > 3_000_000) return 3;    // State / regional (~156 km bins)
+  if (scale > 800_000) return 4;      // County (~39 km bins)
+  if (scale > 200_000) return 5;      // Sub-county / preserve overview (~5 km bins)
+  if (scale > 50_000) return 6;       // Preserve detail (~1.2 km bins)
+  if (scale > 10_000) return 7;       // Local area (~150 m bins)
+  return 8;                           // Neighborhood (~40 m bins)
 }
 
 export function buildDataOneFeatureReductionForScale(

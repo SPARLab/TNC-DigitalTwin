@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 1 / 16 tasks complete (CON-DONE-16 in progress)  
+**Progress:** 2 / 16 tasks complete  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-4-dataone-completed.md`  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
@@ -14,7 +14,7 @@
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
 | CON-DONE-01 | 🟢 Complete | Feb 20, 2026 | Cluster click on map populates right sidebar with datasets at that location | Race condition fix applied; counts verified |
-| CON-DONE-16 | 🟡 In Progress | Feb 20, 2026 | Switch from circular clustering to grid binning (FeatureReductionBinning) | Toggle + dynamic binning done; bin scale thresholds need fine-tuning (see task details) |
+| CON-DONE-16 | 🟢 Complete | Feb 20, 2026 | Switch from circular clustering to grid binning (FeatureReductionBinning) | Scale thresholds tuned; stationary watcher eliminates zoom blink; "Where to Fine-Tune" doc'd |
 | CON-DONE-02 | ⚪ Not Started | Feb 18, 2026 | Auto-pan/zoom when opening dataset detail; repurpose View on Map as Recenter | High priority; resolution applied |
 | CON-DONE-03 | ⚪ Not Started | Feb 18, 2026 | Cluster popup for scrolling individual datasets | Medium priority |
 | CON-DONE-04 | ⚪ Not Started | Feb 18, 2026 | Improve point dispersion as user zooms into clusters | Medium priority |
@@ -144,9 +144,11 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 - Color visual variables on `aggregateCount` for density; `maxScale` breakpoint for bin → individual points
 - Point marker size increased for readability when bins dissolve
 
-**Remaining UX Issues (needs fine-tuning):**
-- **Zoomed out:** Rectangles are too small; user expects a few large bins (e.g., 4) at high zoom, not many small ones
-- **Zoom transition:** Brief moment where bins get bigger, then abruptly dissolve into ultra-tiny rectangles that are way too small
+**Resolved UX Issues:**
+- ~~**Zoomed out:** Rectangles too small~~ → Fixed: shifted scale→level mapping ~1 level coarser
+- ~~**Zoom transition / blink:** Bins flicker during wheel zoom~~ → Fixed: `view.watch('stationary', ...)` so bins only rebuild when zoom settles
+
+**Remaining (known limitation):**
 - **Bin → points cliff:** A bin showing "252" can disappear into just a few visible dots when zooming in (many datasets share same/similar coordinates)
 
 **Where to Fine-Tune:**
@@ -156,7 +158,7 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 | Scale → bin level mapping (coarser = fewer, bigger bins at zoom-out) | `src/v2/components/Map/layers/dataoneLayer.ts` | `getBinningLevelForScale()` — scale thresholds and returned levels 1–9 |
 | When bins turn off and show individual points | `src/v2/components/Map/layers/dataoneLayer.ts` | `maxScale` in `buildDataOneFeatureReductionForScale()` |
 | Individual point size when bins are off | `src/v2/components/Map/layers/dataoneLayer.ts` | `DEFAULT_MARKER_SYMBOL` (size, outline) |
-| Scale watcher (when bin level updates on zoom) | `src/v2/dataSources/dataone/useMapBehavior.ts` | Effect that calls `view.watch('scale', ...)` and `buildDataOneFeatureReductionForScale()` |
+| When bin level updates on zoom | `src/v2/dataSources/dataone/useMapBehavior.ts` | Effect that calls `view.watch('stationary', ...)` — bins rebuild only when zoom settles |
 
 ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lower numbers = fewer, bigger rectangles. See [API fixedBinLevel table](https://developers.arcgis.com/javascript/latest/api-reference/esri-layers-support-FeatureReductionBinning.html#fixedBinLevel).
 
@@ -164,9 +166,10 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 - [x] DataONE map layer supports grid binning (toggle with clusters)
 - [x] Bin labels show dataset counts; bin click populates sidebar
 - [x] Single-point behavior preserved when zoomed in past maxScale
-- [ ] Bin scale thresholds fine-tuned for desired zoom progression (few large bins → more smaller bins)
+- [x] Bin scale thresholds fine-tuned for desired zoom progression (few large bins → more smaller bins)
+- [x] No bin blink/flicker during wheel zoom (stationary watcher)
 
-**Estimated Time:** 3–5 hours (core done; ~1–2h for threshold tuning)
+**Estimated Time:** 3–5 hours (complete)
 
 ---
 
@@ -256,6 +259,8 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 20, 2026 | CON-DONE-16: marked complete. Switched to `view.watch('stationary', ...)` to eliminate bin blink during wheel zoom; scale thresholds tuned. | Assistant |
+| Feb 20, 2026 | CON-DONE-16: fine-tuned bin scale thresholds (shifted ~1 level coarser); added debounced scale watcher with level-change guard to eliminate flicker on zoom. | Assistant |
 | Feb 20, 2026 | CON-DONE-16: marked in progress; documented implemented features, remaining UX issues (zoomed-out bins too small, abrupt bin→points transition), and "Where to fine-tune" code pointers for future tuning. | Assistant |
 | Feb 20, 2026 | CON-DONE-16 update: added DataONE Browse toggle for map aggregation mode (`Clusters`/`Grid bins`) and made cluster default while validating bin rendering. | Assistant |
 | Feb 20, 2026 | CON-DONE-16 started: switched DataONE map layer to `FeatureReductionBinning`; updated aggregate label/popup fields and map click handling for bin-aware aggregate resolution. QA pending. | Assistant |

@@ -19,7 +19,7 @@ import { dataOneService } from '../../../services/dataOneService';
 import { useDataOneFilter } from '../../context/DataOneFilterContext';
 import { useLayers } from '../../context/LayerContext';
 import { useMap } from '../../context/MapContext';
-import { buildDataOneFeatureReduction, buildDataOneFeatureReductionForScale, populateDataOneLayer } from '../../components/Map/layers/dataoneLayer';
+import { buildDataOneFeatureReduction, buildDataOneFeatureReductionForScale, getBinningLevelForScale, populateDataOneLayer } from '../../components/Map/layers/dataoneLayer';
 import type { PinnedLayer, ActiveLayer } from '../../types';
 import { isPointInsideSpatialPolygon } from '../../utils/spatialQuery';
 
@@ -212,6 +212,7 @@ export function useDataOneMapBehavior(
   }, [isOnMap, aggregationMode, getManagedLayer, mapReady]);
 
   // Dynamic binning: update fixedBinLevel by map scale while binning is active.
+  // Apply only when zoom settles to avoid bin "blink" while wheel-zooming.
   useEffect(() => {
     if (!isOnMap) return;
     if (aggregationMode !== 'binning') return;
@@ -221,17 +222,24 @@ export function useDataOneMapBehavior(
     if (!arcLayer) return;
     const dataOneLayer = arcLayer as FeatureLayer;
 
-    const applyReductionForCurrentScale = () => {
+    let lastAppliedLevel: number | null = null;
+
+    const applyIfLevelChanged = () => {
+      const level = getBinningLevelForScale(view.scale);
+      if (level === lastAppliedLevel) return;
+      lastAppliedLevel = level;
       (dataOneLayer as any).featureReduction = buildDataOneFeatureReductionForScale('binning', view.scale);
     };
 
-    applyReductionForCurrentScale();
-    const handle = view.watch('scale', () => {
-      applyReductionForCurrentScale();
+    applyIfLevelChanged();
+
+    const stationaryHandle = view.watch('stationary', (isStationary) => {
+      if (!isStationary) return;
+      applyIfLevelChanged();
     });
 
     return () => {
-      handle.remove();
+      stationaryHandle.remove();
     };
   }, [isOnMap, aggregationMode, viewRef, getManagedLayer, mapReady]);
 
