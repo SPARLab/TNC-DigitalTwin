@@ -3,6 +3,7 @@ export interface MotusBrowseItem {
   title: string;
   scientificName: string;
   tagCountLabel: string;
+  detectionCountLabel: string;
   notes: string;
 }
 
@@ -39,9 +40,14 @@ export function ProductListView({ items, onSelect }: ProductListViewProps) {
               {item.scientificName}
             </p>
             <div id={`motus-list-card-meta-${item.id}`} className="mt-2 flex items-center justify-between text-xs">
-              <span id={`motus-list-card-tag-count-${item.id}`} className="font-medium text-gray-700">
-                {item.tagCountLabel}
-              </span>
+              <div id={`motus-list-card-left-meta-${item.id}`} className="space-y-0.5">
+                <span id={`motus-list-card-tag-count-${item.id}`} className="block font-medium text-gray-700">
+                  {item.tagCountLabel}
+                </span>
+                <span id={`motus-list-card-detection-count-${item.id}`} className="block text-gray-500">
+                  {item.detectionCountLabel}
+                </span>
+              </div>
               <span id={`motus-list-card-notes-${item.id}`} className="text-gray-500">
                 {item.notes}
               </span>

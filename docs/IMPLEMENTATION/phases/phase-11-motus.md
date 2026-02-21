@@ -1,7 +1,7 @@
 # Phase 11: MOTUS Wildlife Telemetry
 
 **Status:** 🟡 In Progress  
-**Progress:** 2 / 9 tasks  
+**Progress:** 5 / 9 tasks  
 **Branch:** `v2/motus`  
 **Depends On:** Phase 0 (Foundation); Phase 10 (DroneDeploy) recommended first — shares time-series interaction patterns  
 **Owner:** TBD
@@ -14,11 +14,11 @@
 |----|--------|---------------------------|------------------|-------|
 | 11.1 | 🟢 Complete | Feb 20, 2026 | Research MOTUS data availability and service endpoints | Confirmed active ArcGIS FeatureServer (`Dangermond_Preserve_Wildlife_Telemetry`) and documented schema/limits for path rendering |
 | 11.2 | 🟢 Complete | Feb 20, 2026 | Create MOTUS right sidebar shell | Added MOTUS adapter + sidebar shell components (Overview/Browse, list/detail shell) and registry wiring |
-| 11.3 | ⚪ Not Started | — | Implement species/tag browse + date window UI | Filter by species and tagged animal; apply date and quality filters |
-| 11.4 | ⚪ Not Started | — | Implement tagged animal detail view | Tag metadata, deployment window, detection summary, and map actions |
-| 11.5 | ⚪ Not Started | — | Render MOTUS movement context on map | Draw stations + inferred movement legs with clear confidence messaging |
-| 11.6 | ⚪ Not Started | — | Implement temporal navigation / playback | Time scrub and playback over detection windows |
-| 11.7 | ⚪ Not Started | — | Implement legend and symbology controls | Explain stations, detections, inferred paths, and confidence state |
+| 11.3 | 🟢 Complete | Feb 20, 2026 | Implement species/tag browse + date window UI | Added live species/tag browse with date window, quality controls (`motus_filter`, `hit_count`), latest-window action, seasonal presets, and direct load-on-map flow |
+| 11.4 | 🟢 Complete | Feb 20, 2026 | Implement tagged animal detail view | Added tag detail metadata, deployment + detection windows, quality summary, attribution, methodology links, and load/remove map action |
+| 11.5 | 🟢 Complete | Feb 20, 2026 | Render MOTUS movement context on map | Added explicit MOTUS map layer + graphics overlay for receiver stations and inferred low-confidence legs when station inference is available, with clear confidence disclaimer fallback |
+| 11.6 | 🟡 In Progress | Feb 20, 2026 | Implement temporal navigation / playback | Time scrub and playback over detection windows |
+| 11.7 | 🟡 In Progress | Feb 20, 2026 | Implement legend and symbology controls | Explain stations, detections, inferred paths, and confidence state |
 | 11.8 | ⚪ Not Started | — | Sync loading indicators | Same shared loading pattern as other data sources |
 | 11.9 | ⚪ Not Started | — | Wire Save View flow | Pin MOTUS layers, save product/date views to Map Layers |
 
@@ -139,13 +139,13 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 **Goal:** Browse MOTUS telemetry by species and tag with temporal controls.
 
 **Acceptance Criteria:**
-- [ ] Species cards/list: species name, tracked tag count, detection count summary
-- [ ] Species selection → reveal tagged animals for that species
-- [ ] Date range picker for detection window (`ts_begin` / `ts_end`)
-- [ ] Quality filter controls (`motus_filter`, minimum `hit_count`)
-- [ ] "Latest available" quick action
-- [ ] Seasonal presets (optional): migration windows by month range
-- [ ] "Load on Map" button from browse (no drill-down required)
+- [x] Species cards/list: species name, tracked tag count, detection count summary
+- [x] Species selection → reveal tagged animals for that species
+- [x] Date range picker for detection window (`ts_begin` / `ts_end`)
+- [x] Quality filter controls (`motus_filter`, minimum `hit_count`)
+- [x] "Latest available" quick action
+- [x] Seasonal presets (optional): migration windows by month range
+- [x] "Load on Map" button from browse (no drill-down required)
 
 ---
 
@@ -154,16 +154,16 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 **Goal:** Show detailed information about a specific tagged animal and its detections.
 
 **Acceptance Criteria:**
-- [ ] "← Back to Species" navigation
-- [ ] Species name + scientific name + tag ID / deploy ID
-- [ ] Deployment location and deployment window (`ts_start` → `ts_end`)
-- [ ] Detection window summary (`ts_begin` min/max in selected range)
-- [ ] Detection quality summary (`motus_filter` mix, `hit_count` distribution)
-- [ ] Currently selected date window and "Change Window" action
-- [ ] "Load on Map" / "Remove from Map" toggle
-- [ ] Confidence messaging shown when rendering inferred paths
-- [ ] Data source attribution (Motus Wildlife Tracking System / Birds Canada / TNC)
-- [ ] External links to Motus methodology docs
+- [x] "← Back to Species" navigation
+- [x] Species name + scientific name + tag ID / deploy ID
+- [x] Deployment location and deployment window (`ts_start` → `ts_end`)
+- [x] Detection window summary (`ts_begin` min/max in selected range)
+- [x] Detection quality summary (`motus_filter` mix, `hit_count` distribution)
+- [x] Currently selected date window and "Change Window" action
+- [x] "Load on Map" / "Remove from Map" toggle
+- [x] Confidence messaging shown when rendering inferred paths
+- [x] Data source attribution (Motus Wildlife Tracking System / Birds Canada / TNC)
+- [x] External links to Motus methodology docs
 
 ---
 
@@ -172,12 +172,12 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 **Goal:** Render station context + inferred movement lines for selected species/tags.
 
 **Acceptance Criteria:**
-- [ ] Create `motusLayer.ts` using ArcGIS `FeatureLayer` + optional client `GraphicsLayer` for inferred paths
-- [ ] Load station and tagged-animal context for selected filters
-- [ ] Build inferred path legs only when source/destination inference is valid from current schema
-- [ ] Display clear "inferred path" disclaimer in map/UI
-- [ ] Handle large detection table via paged querying and scoped date filters
-- [ ] Add to `IMPLEMENTED_LAYERS` registry
+- [x] Create `motusLayer.ts` using ArcGIS `FeatureLayer` + optional client `GraphicsLayer` for inferred paths
+- [x] Load station and tagged-animal context for selected filters
+- [x] Build inferred path legs only when source/destination inference is valid from current schema
+- [x] Display clear "inferred path" disclaimer in map/UI
+- [x] Handle large detection table via paged querying and scoped date filters
+- [x] Add to `IMPLEMENTED_LAYERS` registry
 
 ---
 
@@ -316,6 +316,7 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 20, 2026 | 11.3, 11.4, 11.5 | Implemented MOTUS species/tag browse filters (date + quality), tagged-animal detail panel, and map movement context (receiver station overlay + inferred leg rendering with confidence/disclaimer messaging) | Codex |
 | Feb 20, 2026 | 11.2 | Implemented MOTUS sidebar shell + adapter wiring (`motus` data source, registry integration, overview/browse list-detail scaffold, map behavior registration for MOTUS catalog layers) | Codex |
 | Feb 20, 2026 | 11.1 | Completed research: confirmed ArcGIS Wildlife Telemetry service, documented schema/counts, and added recommended inferred-path strategy with data-quality caveats | Codex |
 | Feb 16, 2026 | — | Created phase document | Will + Claude |

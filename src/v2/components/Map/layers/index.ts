@@ -14,6 +14,7 @@ import { createTNCArcGISLayer } from './tncArcgisLayer';
 import { createDataOneLayer } from './dataoneLayer';
 import { createDroneDeployLayer } from './droneDeployLayer';
 import { createGBIFLayer } from './gbifLayer';
+import { createMotusLayer, MOTUS_TAGGED_ANIMALS_LAYER_ID } from './motusLayer';
 
 /** Set of catalog layer IDs that have real map layer implementations */
 export const IMPLEMENTED_LAYERS = new Set([
@@ -24,6 +25,7 @@ export const IMPLEMENTED_LAYERS = new Set([
   'dataset-178',
   'dataset-215',
   'dataset-193',
+  MOTUS_TAGGED_ANIMALS_LAYER_ID,
 ]);
 
 /** Layer IDs known to be Dendra sensor services (detected dynamically) */
@@ -81,6 +83,9 @@ export function createMapLayer(layerId: string, options: {
 
     case 'dataset-193':
       return createDroneDeployLayer({ id: `v2-${layerId}`, ...options });
+
+    case MOTUS_TAGGED_ANIMALS_LAYER_ID:
+      return createMotusLayer({ id: `v2-${layerId}`, ...options });
 
     default:
       // Dynamically registered Dendra layers
