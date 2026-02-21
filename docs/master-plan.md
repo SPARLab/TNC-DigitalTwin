@@ -42,7 +42,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 8 | Calflora | ⚪ Not Started | 9 tasks | `v2/calflora` | No |
 | 9 | GBIF | 🟡 In Progress | 2 tasks (9.8 ✅; D20-08 ✅, GBIF-HOSTED ✅, P9-GRIDBIN ✅, TF-09 ✅; D20-12 🟡 in progress; 9.9 deferred; 9.12 deferred to v2.1+) | `v2/gbif` | No |
 | 10 | DroneDeploy | 🟢 Complete | 0 tasks | `v2/dronedeploy` | No |
-| 11 | MODIS | ⚪ Not Started | 9 tasks | `v2/modis` | No |
+| 11 | MOTUS | 🟡 In Progress | 7 tasks | `v2/motus` | No |
 
 **Status Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
 
@@ -60,6 +60,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 7 | [phase-7-polish.md](IMPLEMENTATION/phases/phase-7-polish.md) | 12+ tasks (+ D20-03, D20-04, D20-07, D20-13 from Dan meeting Feb 20; D20-01 ✅ done in Phase 0) |
 | 9 | [phase-9-gbif.md](IMPLEMENTATION/phases/phase-9-gbif.md) | 2 tasks (9.8 ✅; D20-12 🟡 in progress; + D20-B01, D20-B03, D20-12-FOLLOW optional; 9.9/9.12 deferred) |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) | 0 |
+| 11 | [phase-11-motus.md](IMPLEMENTATION/phases/phase-11-motus.md) | 7 (11.1 ✅, 11.2 ✅) |
 
 ---
 
@@ -84,7 +85,7 @@ Phase 0: Foundation
     │                                                    │                              │
     ├──► Phase 10: DroneDeploy ─────────────────────────┤                              │
     │                                                    │                              │
-    └──► Phase 11: MODIS (after Phase 10 recommended) ──┘                              │
+    └──► Phase 11: MOTUS (after Phase 10 recommended) ──┘                              │
                                                                                         │
                                                                                         └──► Phase 7: Polish
 ```
@@ -94,7 +95,7 @@ Phase 0: Foundation
 
 **Parallelization:**
 - Phases 1-6, 8-9 can be worked on simultaneously (different Cursor windows, different branches) — **ACTIVE; Task 0.9 complete**
-- Phase 10 (DroneDeploy) and Phase 11 (MODIS) share raster imagery patterns; DroneDeploy first is recommended so shared components can be reused
+- Phase 10 (DroneDeploy) and Phase 11 (MOTUS) share temporal interaction patterns; DroneDeploy first is recommended so shared components can be reused
 - Task 0.9 (Dynamic Layer Registry) ✅ complete — `useCatalogRegistry` fetches from Data Catalog FeatureServer; left sidebar populated dynamically
 - Each phase has its own branch, merged to `v2/main` when complete
 - Phase 5 requires all data sources to be functional
@@ -297,7 +298,7 @@ When working on any phase:
 - **Phase 8:** `docs/IMPLEMENTATION/phases/phase-8-calflora.md`
 - **Phase 9:** `docs/IMPLEMENTATION/phases/phase-9-gbif.md`
 - **Phase 10:** `docs/IMPLEMENTATION/phases/phase-10-dronedeploy.md`
-- **Phase 11:** `docs/IMPLEMENTATION/phases/phase-11-modis.md`
+- **Phase 11:** `docs/IMPLEMENTATION/phases/phase-11-motus.md`
 
 ---
 
@@ -307,6 +308,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 20, 2026 | Phase 11 | **Tasks 11.1, 11.2 complete.** MOTUS Wildlife Telemetry: research done (ArcGIS service documented, path-rendering strategy); sidebar shell shipped (adapter, Overview/Browse tabs, list/detail scaffold, registry wiring). 7 tasks remaining. | Cursor |
 | Feb 20, 2026 | Phase 9 | **D20-12 in progress.** media_json parsing, card/detail wiring, overlay scrollbar, dev debug panel. ~2.8k/323k rows have media; coworker may populate more. Optional follow-up: D20-12-FOLLOW "Has media only" filter. | Cursor |
 | Feb 20, 2026 | Phase 3 | **D20-06 complete.** Custom polygon draw tool for Dendra: suppressed station click during draw mode; synced sidebar station list with polygon filter so map markers and station cards match. Phase 3: 0 blocking tasks. | Cursor |
 | Feb 20, 2026 | Phase 3 | **TF-06 complete.** Renamed left sidebar group "Research and Sensor Equipment" → "Field Sensors" via `CATEGORY_DISPLAY_NAME_OVERRIDE`. Trisalyn QA. | Claude |

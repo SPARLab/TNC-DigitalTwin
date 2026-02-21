@@ -30,6 +30,8 @@ import { dronedeployAdapter, useDroneDeployCacheStatus } from './dronedeploy/ada
 import { useDroneDeployMapBehavior } from './dronedeploy/useMapBehavior';
 import { gbifAdapter, useGBIFCacheStatus } from './gbif/adapter';
 import { useGBIFMapBehavior } from './gbif/useMapBehavior';
+import { motusAdapter, useMotusCacheStatus } from './motus/adapter';
+import { useMotusMapBehavior } from './motus/useMapBehavior';
 
 // ── Adapter registry ─────────────────────────────────────────────────────────
 
@@ -38,6 +40,7 @@ const ADAPTER_MAP: Record<string, DataSourceAdapter> = {
   dendra: dendraAdapter,
   animl: animlAdapter,
   'tnc-arcgis': tncArcgisAdapter,
+  motus: motusAdapter,
   dataone: dataoneAdapter,
   drone: dronedeployAdapter,
 };
@@ -73,6 +76,7 @@ export function useAllMapBehaviors(
   useDendraMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
   useAnimlMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
   useTNCArcGISMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
+  useMotusMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
   useDataOneMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
   useDroneDeployMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
   useGBIFMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
@@ -88,6 +92,7 @@ export function useActiveCacheStatus(dataSource: string | undefined): CacheStatu
   const dendra = useDendraCacheStatus();
   const animl = useAnimlCacheStatus();
   const tncArcgis = useTNCArcGISCacheStatus();
+  const motus = useMotusCacheStatus();
   const dataone = useDataOneCacheStatus();
   const dronedeploy = useDroneDeployCacheStatus();
   const gbif = useGBIFCacheStatus();
@@ -97,6 +102,7 @@ export function useActiveCacheStatus(dataSource: string | undefined): CacheStatu
     case 'dendra': return dendra;
     case 'animl': return animl;
     case 'tnc-arcgis': return tncArcgis;
+    case 'motus': return motus;
     case 'dataone': return dataone;
     case 'drone': return dronedeploy;
     case 'gbif': return gbif;
@@ -113,6 +119,7 @@ export function useCacheStatusByDataSource(): Record<string, CacheStatus> {
   const dendra = useDendraCacheStatus();
   const animl = useAnimlCacheStatus();
   const tncArcgis = useTNCArcGISCacheStatus();
+  const motus = useMotusCacheStatus();
   const dataone = useDataOneCacheStatus();
   const dronedeploy = useDroneDeployCacheStatus();
   const gbif = useGBIFCacheStatus();
@@ -122,6 +129,7 @@ export function useCacheStatusByDataSource(): Record<string, CacheStatus> {
     dendra,
     animl,
     'tnc-arcgis': tncArcgis,
+    motus,
     dataone,
     drone: dronedeploy,
     gbif,

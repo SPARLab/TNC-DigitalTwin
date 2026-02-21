@@ -183,6 +183,7 @@ async function fetchFeatureServiceLayers(d: RawDataset): Promise<ArcGISServiceLa
 function detectDataSource(d: RawDataset): DataSource {
   const path = d.service_path ?? '';
   const base = d.server_base_url ?? '';
+  const pathLower = path.toLowerCase();
 
   // Dendra per-type sensor services on preserve server
   if (base.includes('dangermondpreserve-spatial.com') && path.includes('_Sensor')) {
@@ -193,6 +194,11 @@ function detectDataSource(d: RawDataset): DataSource {
     return 'dendra';
   }
 
+  // MOTUS wildlife telemetry service on preserve server
+  if (base.includes('dangermondpreserve-spatial.com') && pathLower.includes('wildlife_telemetry')) {
+    return 'motus';
+  }
+
   // Default: TNC ArcGIS hosted or external ArcGIS service
   return 'tnc-arcgis';
 }
@@ -201,6 +207,7 @@ function detectDataSource(d: RawDataset): DataSource {
 function datasetIcon(ds: DataSource): string {
   switch (ds) {
     case 'dendra': return 'Thermometer';
+    case 'motus': return 'Radio';
     case 'inaturalist': return 'Leaf';
     case 'animl': return 'Camera';
     case 'dataone': return 'BookOpen';

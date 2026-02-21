@@ -1,9 +1,9 @@
-# Phase 11: MOTUS Satellite Imagery
+# Phase 11: MOTUS Wildlife Telemetry
 
-**Status:** ⚪ Not Started  
-**Progress:** 0 / 9 tasks  
+**Status:** 🟡 In Progress  
+**Progress:** 2 / 9 tasks  
 **Branch:** `v2/motus`  
-**Depends On:** Phase 0 (Foundation); Phase 10 (DroneDeploy) recommended first — shares raster imagery patterns  
+**Depends On:** Phase 0 (Foundation); Phase 10 (DroneDeploy) recommended first — shares time-series interaction patterns  
 **Owner:** TBD
 
 ---
@@ -12,13 +12,13 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| 11.1 | ⚪ Not Started | — | Research MOTUS data availability and service endpoints | Determine how MOTUS data is accessed — ArcGIS ImageServer, NASA Earthdata, or pre-processed layers |
-| 11.2 | ⚪ Not Started | — | Create MOTUS right sidebar shell | Adapter, Overview/Browse tabs; product-oriented layout |
-| 11.3 | ⚪ Not Started | — | Implement product/date browse UI | Browse by MOTUS product (NDVI, LST, etc.), temporal navigation |
-| 11.4 | ⚪ Not Started | — | Implement product detail view | Product description, temporal coverage, resolution info, load actions |
-| 11.5 | ⚪ Not Started | — | Load MOTUS raster layers on map | Render MOTUS imagery as map overlay (ImageServer or pre-rendered tiles) |
-| 11.6 | ⚪ Not Started | — | Implement temporal navigation / time slider | Date picker or slider to navigate MOTUS time series |
-| 11.7 | ⚪ Not Started | — | Implement legend and symbology controls | Color ramp legend for NDVI, temperature, etc.; optional ramp switching |
+| 11.1 | 🟢 Complete | Feb 20, 2026 | Research MOTUS data availability and service endpoints | Confirmed active ArcGIS FeatureServer (`Dangermond_Preserve_Wildlife_Telemetry`) and documented schema/limits for path rendering |
+| 11.2 | 🟢 Complete | Feb 20, 2026 | Create MOTUS right sidebar shell | Added MOTUS adapter + sidebar shell components (Overview/Browse, list/detail shell) and registry wiring |
+| 11.3 | ⚪ Not Started | — | Implement species/tag browse + date window UI | Filter by species and tagged animal; apply date and quality filters |
+| 11.4 | ⚪ Not Started | — | Implement tagged animal detail view | Tag metadata, deployment window, detection summary, and map actions |
+| 11.5 | ⚪ Not Started | — | Render MOTUS movement context on map | Draw stations + inferred movement legs with clear confidence messaging |
+| 11.6 | ⚪ Not Started | — | Implement temporal navigation / playback | Time scrub and playback over detection windows |
+| 11.7 | ⚪ Not Started | — | Implement legend and symbology controls | Explain stations, detections, inferred paths, and confidence state |
 | 11.8 | ⚪ Not Started | — | Sync loading indicators | Same shared loading pattern as other data sources |
 | 11.9 | ⚪ Not Started | — | Wire Save View flow | Pin MOTUS layers, save product/date views to Map Layers |
 
@@ -37,35 +37,33 @@
 
 ## Phase Goal
 
-Implement the MOTUS satellite imagery browse experience in the right sidebar. MOTUS provides continuous global coverage since 2000. For Dangermond, MOTUS data enables long-term time-series analysis of vegetation health (NDVI), land surface temperature, fire detection, and other environmental variables.
+Implement the MOTUS wildlife telemetry browse experience in the right sidebar. MOTUS here is automated radio telemetry for tagged animals (birds, bats, and insects), not satellite raster imagery. For Dangermond, this data supports movement analysis, migration timing, and connectivity narratives by species and tagged individual.
 
 ### Data Source Status
 
-**Unknown — needs research in Task 11.1:**
-- Is MOTUS data already processed and served via ArcGIS ImageServer on `dangermondpreserve-spatial.com`?
-- Or should we access NASA Earthdata / USGS EROS directly?
-- Or are there pre-processed MOTUS products already tiled and available?
-- Meeting notes mention MOTUS as "planned" alongside GBIF, suggesting it's not yet integrated
+**Completed in Task 11.1 (Feb 20, 2026):**
+- Active ArcGIS service exists at `https://dangermondpreserve-spatial.com/server/rest/services/Dangermond_Preserve_Wildlife_Telemetry/FeatureServer`
+- Service contains 3 point layers (`Tagged Animals`, `Station Deployments`, `Receiver Stations`) and 1 table (`Tag Detections`)
+- Current volumes: 228 tagged animals, 17 station deployments, 12 receiver stations, 546,499 detection rows
+- Key implementation implication: detections table currently has no geometry and no explicit station foreign key field for direct polyline construction
 
 ### Key Characteristics
 
-- **Data Type:** Raster imagery (satellite), not point features
-- **Pin-Only Model:** Like DroneDeploy — raster layers are pinnable, no individual features to bookmark
-- **Time Series:** MOTUS has daily/8-day/16-day/monthly composites going back to 2000
-- **Multiple Products:** NDVI, EVI, land surface temperature, snow cover, fire detection, etc.
-- **Resolution:** 250m–1km (much coarser than drone imagery)
-- **Key Value:** Long-term trends that drone and ground observations can't provide
+- **Data Type:** Telemetry observations + metadata (points + detection table), not raster
+- **Entities:** Tagged animals, receiver stations, station deployments, detection runs
+- **Time Series:** Per-run detection timestamps (`ts_begin`, `ts_end`), UTC
+- **Data Quality Signals:** `motus_filter`, `hit_count`, and run-length behavior matter for false-positive handling
+- **Path Caveat:** Official Motus docs note web tracks are shortest-path estimates between stations and are not true flight paths
+- **Key Value:** Movement timing/connectivity by species and individual tags
 
-### Common MOTUS Products for Conservation
+### Common MOTUS Data Entities for Conservation
 
-| Product | Code | Resolution | Frequency | Use Case |
-|---------|------|-----------|-----------|----------|
-| Vegetation Index (NDVI/EVI) | MOD13Q1 | 250m | 16-day | Vegetation health, drought monitoring, seasonal patterns |
-| Land Surface Temperature | MOD11A2 | 1km | 8-day | Microclimate analysis, fire risk assessment |
-| Surface Reflectance | MOD09GA | 500m | Daily | General land analysis, custom indices |
-| Burned Area | MCD64A1 | 500m | Monthly | Post-fire monitoring, burn severity |
-| Land Cover | MCD12Q1 | 500m | Annual | Land cover change detection |
-| Snow Cover | MOD10A2 | 500m | 8-day | Hydrological modeling (less relevant for coastal CA) |
+| Entity | ArcGIS Layer/Table | Temporal Coverage | Spatial Coverage | Use Case |
+|--------|---------------------|-------------------|------------------|----------|
+| Tagged Animals | Layer 0 (`Tagged Animals`) | Per-tag deployment window (`ts_start`, `ts_end`) | Point at deployment location | Species/tag browse, filtering, and deployment context |
+| Receiver Stations | Layer 2 (`Receiver Stations`) | Station lifecycle | Point station locations | Network context and station map |
+| Station Deployments | Layer 1 (`Station Deployments`) | Deployment start/end | Point (station-level) | Active/terminated periods for receiver configurations |
+| Tag Detections | Table 3 (`Tag Detections`) | Run timestamps (`ts_begin`, `ts_end`) | No geometry | Time-series detections and event intensity (`hit_count`) |
 
 ---
 
@@ -74,17 +72,17 @@ Implement the MOTUS satellite imagery browse experience in the right sidebar. MO
 - Master Plan: `docs/master-plan.md`
 - Design System: `docs/DESIGN-SYSTEM/design-system.md`
 - DFT-015 (pin-only model): MOTUS, like Drone/LiDAR, is pin-only
-- Phase 10 (DroneDeploy): shares raster imagery patterns, temporal comparison concepts
+- Phase 10 (DroneDeploy): shares temporal interaction patterns, playback controls, and map-layer state sync concepts
 - Meeting feedback: `docs/PLANNING/feedback/ai-derived-tasks-from-transcripts/digital-catalog-feedback-meeting-jan-15-2026.md` (MOTUS mentioned as "planned" / "coming soon")
 
 ## Key Paradigm Notes
 
-- **Row Type:** Raster imagery layer (satellite product for a date/period)
-- **Pin-Only:** No bookmarkable individual items — pinning loads a raster overlay
-- **Save/View Options:** Save product + date configuration as view
-- **Category Placement:** Earth Observations (primary), potentially cross-listed under Weather and Climate, Land Cover
-- **Browse Pattern:** Browse by product type → select date/period → load on map. Very different from point-observation search.
-- **Shared Patterns with DroneDeploy:** Raster overlay loading, opacity controls, temporal navigation. Consider building shared raster-imagery components during Phase 10 that Phase 11 can reuse.
+- **Row Type:** Tagged animal (or species aggregate) with related detections
+- **Pin Model:** Pin species/tag movement views (not single detection points)
+- **Save/View Options:** Save species/tag + date-window + quality filter configuration
+- **Category Placement:** Species and Animal Movement (cross-list in Monitoring)
+- **Browse Pattern:** Select species/tag → select date window + quality settings → render inferred movement lines
+- **Shared Patterns with DroneDeploy:** Time-window controls and playback interactions (not raster overlay code paths)
 
 ---
 
@@ -95,24 +93,19 @@ Implement the MOTUS satellite imagery browse experience in the right sidebar. MO
 **Goal:** This is the critical path task. Determine how MOTUS data is or will be served for the digital catalog.
 
 **Acceptance Criteria:**
-- [ ] Check `dangermondpreserve-spatial.com` for any existing MOTUS layers/services
-- [ ] If ArcGIS ImageServer exists: document URL, available products, temporal range, resolution
-- [ ] If no existing service: evaluate options:
-  - [ ] NASA Earthdata API (`https://appeears.earthdatacloud.nasa.gov/`)
-  - [ ] USGS EROS / EarthExplorer
-  - [ ] ArcGIS Living Atlas MOTUS layers
-  - [ ] Pre-processed and hosted on `dangermondpreserve-spatial.com`
-- [ ] Document which MOTUS products are most relevant for Dangermond
-- [ ] Assess temporal coverage (how far back? how current?)
-- [ ] Document spatial resolution and how it looks at Dangermond scale (~24,000 acres)
-- [ ] Recommend service approach for v2
+- [x] Check `dangermondpreserve-spatial.com` for any existing MOTUS layers/services
+- [x] Document active ArcGIS service URL, layers/tables, record counts, and key fields
+- [x] Validate data-model assumptions against Motus official docs (processing + filters + path caveats)
+- [x] Identify whether direct path geometry exists (it currently does not)
+- [x] Recommend v2 service approach for movement rendering
+- [x] Record risks/blockers and required enrichment for high-confidence paths
 
-**Questions to Answer:**
-- Is MOTUS data already processed for the Dangermond extent?
-- Which MOTUS products do researchers most want? (NDVI is likely #1)
-- How is time-series data served — individual dates or time-enabled layers?
-- What's the data volume? (250m MOTUS for Dangermond is a small area — very manageable)
-- Can we leverage ArcGIS Living Atlas MOTUS layers directly?
+**Questions Answered:**
+- Yes, MOTUS telemetry is already hosted in ArcGIS (`Dangermond_Preserve_Wildlife_Telemetry`)
+- Time-series is served as timestamped detection runs in a table (`ts_begin`, `ts_end`)
+- Volume is substantial but manageable with scoped queries (546k detections; max record count 2000/page)
+- Current schema does not support exact inter-station path drawing without inference/enrichment
+- ArcGIS-hosted Dangermond service should be source-of-truth for v2 UI
 
 **Output:** Add findings to "Service Analysis" section below.
 
@@ -123,13 +116,15 @@ Implement the MOTUS satellite imagery browse experience in the right sidebar. MO
 **Goal:** Set up the component structure for MOTUS browse experience.
 
 **Acceptance Criteria:**
-- [ ] MOTUS adapter registered in v2 data source registry
-- [ ] Component renders when MOTUS layer is selected
-- [ ] Tabs: Overview | Browse (no Export tab initially)
-- [ ] Overview tab: available products summary, temporal range, "Browse Products →" button
-- [ ] Component can show product list OR product detail (drill-down)
+- [x] MOTUS adapter registered in v2 data source registry
+- [x] Component renders when MOTUS layer is selected
+- [x] Tabs: Overview | Browse (no Export tab initially)
+- [x] Overview tab: available products summary, temporal range, "Browse Species & Tags →" button
+- [x] Component can show product list OR product detail (drill-down)
 
-**Files to Create:**
+**Implementation (Feb 20, 2026):** Adapter + registry wiring; `motus` data source detection for Wildlife_Telemetry in catalog; Overview/Browse tabs with static species list and detail drill-down. Map behavior registers MOTUS catalog layers via TNC ArcGIS layer factory.
+
+**Files Created:**
 - `src/v2/dataSources/motus/adapter.tsx`
 - `src/v2/components/RightSidebar/MOTUS/MOTUSSidebar.tsx`
 - `src/v2/components/RightSidebar/MOTUS/MOTUSBrowseTab.tsx`
@@ -139,81 +134,80 @@ Implement the MOTUS satellite imagery browse experience in the right sidebar. MO
 
 ---
 
-### 11.3: Implement Product/Date Browse UI
+### 11.3: Implement Species/Tag Browse + Date Window UI
 
-**Goal:** Browse MOTUS imagery organized by product with temporal navigation.
+**Goal:** Browse MOTUS telemetry by species and tag with temporal controls.
 
 **Acceptance Criteria:**
-- [ ] Product cards: product name, description, resolution, frequency, available date range
-- [ ] Product selection → reveal date/period picker for that product
-- [ ] Date picker appropriate to product frequency (16-day for NDVI, 8-day for LST, etc.)
-- [ ] Calendar or slider UI for date selection
+- [ ] Species cards/list: species name, tracked tag count, detection count summary
+- [ ] Species selection → reveal tagged animals for that species
+- [ ] Date range picker for detection window (`ts_begin` / `ts_end`)
+- [ ] Quality filter controls (`motus_filter`, minimum `hit_count`)
 - [ ] "Latest available" quick action
-- [ ] Seasonal presets (optional): "Show all January composites" for seasonal comparison
+- [ ] Seasonal presets (optional): migration windows by month range
 - [ ] "Load on Map" button from browse (no drill-down required)
 
 ---
 
-### 11.4: Implement Product Detail View
+### 11.4: Implement Tagged Animal Detail View
 
-**Goal:** Show detailed information about a specific MOTUS product.
+**Goal:** Show detailed information about a specific tagged animal and its detections.
 
 **Acceptance Criteria:**
-- [ ] "← Back to Products" navigation
-- [ ] Product name, code, and full description
-- [ ] Spatial resolution and coverage area
-- [ ] Temporal coverage (earliest → latest available date)
-- [ ] Composite frequency (daily, 8-day, 16-day, monthly, annual)
-- [ ] Currently selected date and "Change Date" action
+- [ ] "← Back to Species" navigation
+- [ ] Species name + scientific name + tag ID / deploy ID
+- [ ] Deployment location and deployment window (`ts_start` → `ts_end`)
+- [ ] Detection window summary (`ts_begin` min/max in selected range)
+- [ ] Detection quality summary (`motus_filter` mix, `hit_count` distribution)
+- [ ] Currently selected date window and "Change Window" action
 - [ ] "Load on Map" / "Remove from Map" toggle
-- [ ] Opacity slider (if loaded)
-- [ ] Color ramp preview (what the colors mean)
-- [ ] Data source attribution (NASA, USGS)
-- [ ] External link to product documentation
+- [ ] Confidence messaging shown when rendering inferred paths
+- [ ] Data source attribution (Motus Wildlife Tracking System / Birds Canada / TNC)
+- [ ] External links to Motus methodology docs
 
 ---
 
-### 11.5: Load MOTUS Raster Layers on Map
+### 11.5: Render MOTUS Movement Context on Map
 
-**Goal:** Render MOTUS imagery as a map overlay.
+**Goal:** Render station context + inferred movement lines for selected species/tags.
 
 **Acceptance Criteria:**
-- [ ] Create `motusLayer.ts` appropriate to service type (ImageryLayer, WMTSLayer, or TileLayer)
-- [ ] Load MOTUS raster for selected product + date
-- [ ] Layer renders correctly at Dangermond extent
-- [ ] Default opacity: 70% (adjustable — MOTUS should be semi-transparent over basemap)
-- [ ] Handle time-enabled layers (if using ArcGIS time-enabled ImageServer)
+- [ ] Create `motusLayer.ts` using ArcGIS `FeatureLayer` + optional client `GraphicsLayer` for inferred paths
+- [ ] Load station and tagged-animal context for selected filters
+- [ ] Build inferred path legs only when source/destination inference is valid from current schema
+- [ ] Display clear "inferred path" disclaimer in map/UI
+- [ ] Handle large detection table via paged querying and scoped date filters
 - [ ] Add to `IMPLEMENTED_LAYERS` registry
 
 ---
 
-### 11.6: Implement Temporal Navigation / Time Slider
+### 11.6: Implement Temporal Navigation / Playback
 
-**Goal:** Navigate through MOTUS time series to see changes over time. This is the core value proposition for MOTUS.
+**Goal:** Navigate through telemetry detections over time. This is the core value proposition for MOTUS.
 
 **Acceptance Criteria:**
-- [ ] Time slider widget for scrubbing through available dates
-- [ ] Play/pause animation for temporal sequence
+- [ ] Time slider widget for scrubbing through available detection windows
+- [ ] Play/pause animation for detection sequence
 - [ ] Speed control for animation
 - [ ] Current date label prominently displayed
-- [ ] Works with selected MOTUS product
-- [ ] Optional: "Compare two dates" split-view (reuse DroneDeploy temporal comparison if built)
+- [ ] Works with selected species/tag filters
+- [ ] Optional: "Compare two windows" split-view (reuse shared temporal components if built)
 
-**Reference:** ArcGIS TimeSlider widget, v1 DroneDeploy carousel concepts
+**Reference:** ArcGIS TimeSlider widget, shared temporal patterns from DroneDeploy
 
-**Note:** This is where the shared raster-imagery temporal components from DroneDeploy (Phase 10) would pay off. Consider building generic temporal comparison UI in Phase 10 that Phase 11 reuses.
+**Note:** This is where shared temporal interaction components from DroneDeploy (Phase 10) can be reused without sharing raster-specific rendering code.
 
 ---
 
 ### 11.7: Implement Legend and Symbology Controls
 
-**Goal:** MOTUS raster layers need clear legends to be interpretable (unlike point observations which are self-describing).
+**Goal:** MOTUS movement views need clear symbology so inferred paths and confidence are interpretable.
 
 **Acceptance Criteria:**
-- [ ] Color ramp legend for active MOTUS layer
-- [ ] Legend shows value range with units (e.g., NDVI: -1.0 to 1.0, LST: °C/°F)
-- [ ] Legend auto-updates when product changes
-- [ ] Optional: color ramp selector (different visualization schemes)
+- [ ] Legend for station points, deployment points, detections, and inferred path legs
+- [ ] Confidence legend (high-confidence vs inferred/low-confidence segments)
+- [ ] Legend auto-updates when species/tag filters change
+- [ ] Optional: color by species or by recency
 - [ ] Legend position: floating widget or within right sidebar
 - [ ] Accessible: values labeled, contrast sufficient
 
@@ -221,47 +215,72 @@ Implement the MOTUS satellite imagery browse experience in the right sidebar. MO
 
 ### 11.8: Sync Loading Indicators
 
-**Goal:** Loading indicators for raster layer loading.
+**Goal:** Loading indicators for telemetry query + path rendering.
 
 **Acceptance Criteria:**
 - [ ] MOTUS adapter exposes `loading` via registry
-- [ ] Map Layers widget shows spinner while imagery loads
-- [ ] Right sidebar shows loading state during product queries
+- [ ] Map Layers widget shows spinner while detections/paths load
+- [ ] Right sidebar shows loading state during species/tag queries
 - [ ] Uses shared loading primitives
 
 ---
 
 ### 11.9: Wire Save View Flow
 
-**Goal:** Save MOTUS product/date configurations to Map Layers.
+**Goal:** Save MOTUS species/tag/date configurations to Map Layers.
 
 **Acceptance Criteria:**
 - [ ] Pin creates a MOTUS parent layer in Map Layers
-- [ ] Saved views encode product + date selection
-- [ ] Selecting a saved view restores product and date
-- [ ] Auto-naming: "{Product} — {Date}" (e.g., "NDVI — 2024-06-10")
+- [ ] Saved views encode species/tag + date window + quality filters
+- [ ] Selecting a saved view restores species/tag and time window
+- [ ] Auto-naming: "{Species} — {Tag or Group} — {Date Window}"
 - [ ] Follows shared child-view conventions from `LayerContext`
 
 ---
 
 ## Service Analysis
 
-> Fill this out during Task 11.1
+> Completed during Task 11.1
 
-### Data Source (TBD)
-- ArcGIS service URL: TBD
-- NASA Earthdata API: TBD
-- ArcGIS Living Atlas: TBD
+### Data Source (Confirmed)
+- ArcGIS service URL: `https://dangermondpreserve-spatial.com/server/rest/services/Dangermond_Preserve_Wildlife_Telemetry/FeatureServer`
+- Service item id: `2ebff467411b4810887d6a6261ed44ef`
+- Geometry model: all map layers are points; detections are in a non-spatial table
+- External Motus reference: `https://docs.motus.org/en/about-motus/how-data-are-processed`
 
-### Available Products
-| Product | Service Type | Temporal Range | Resolution | Notes |
-|---------|-------------|----------------|------------|-------|
-| (to be documented in 11.1) | | | | |
+### Available Layers/Tables
+| Entity | Service Type | Temporal Range | Geometry | Notes |
+|--------|--------------|----------------|----------|-------|
+| Tagged Animals (id=0) | Feature Layer | `ts_start` / `ts_end` per tag | Point | 228 records; species and deployment metadata |
+| Station Deployments (id=1) | Feature Layer | `ts_start` / `ts_end` per deployment | Point | 17 records; includes status and receiver/device fields |
+| Receiver Stations (id=2) | Feature Layer | Station lifecycle | Point | 12 records; station identity/location |
+| Tag Detections (id=3) | Table | `ts_begin` / `ts_end` per run | None | 546,499 records; includes `tag_id`, `run_id`, `hit_count`, `motus_filter`, `antenna` |
 
 ### Query/Loading Performance
 | Operation | Avg Time | Notes |
 |-----------|----------|-------|
-| (to be documented in 11.1) | | |
+| Service metadata (`FeatureServer?f=pjson`) | < 1s | Includes counts and schema entry points |
+| Sample tag query (layer 0, 5 rows) | < 1s | Returned quickly with `exceededTransferLimit=true` |
+| Sample detections query (table 3, 5 rows) | < 1s | Fast but paged; high-cardinality table |
+| Detections count query | < 1s | 546,499 total rows |
+
+### Flight Path Rendering Strategy (Recommended)
+
+1. **v2 baseline (now): inferred movement legs from available fields**
+   - Render station points and tagged-animal deployment points first.
+   - For each selected tag/species, query detections in date window and aggregate by `tag_id` and time buckets.
+   - Draw **inferred geodesic legs** only when source/destination can be justified from available metadata (label as inferred, not true path).
+
+2. **Quality-first filtering**
+   - Default to detections with higher-confidence criteria (exclude or visually de-emphasize `motus_filter == 0` runs).
+   - Use `hit_count` thresholds to reduce noisy one-hit runs in map view.
+
+3. **Required enrichment for robust per-animal path lines**
+   - Add explicit station/deployment join fields in detections output (e.g., `station_id` or `recv_deploy_id`).
+   - Optionally precompute path segments server-side so frontend can consume ready-to-draw polylines.
+
+4. **UX copy requirement**
+   - Include a visible caveat matching Motus guidance: displayed tracks are shortest-path estimates, not exact flight routes.
 
 ---
 
@@ -271,8 +290,9 @@ Implement the MOTUS satellite imagery browse experience in the right sidebar. MO
 
 | Decision | Date | Rationale |
 |----------|------|-----------|
-| Pin-only model (no bookmarkable items) | Feb 3, 2026 | DFT-015: Satellite imagery is raster; no individual features to bookmark |
-| Recommended after DroneDeploy | Feb 16, 2026 | Phases 10 and 11 share raster patterns; DroneDeploy-first enables shared component reuse |
+| Treat Phase 11 as telemetry, not satellite raster | Feb 20, 2026 | Live service + official Motus docs confirm this is animal tracking data, not MODIS imagery |
+| Use ArcGIS Wildlife Telemetry service as v2 source of truth | Feb 20, 2026 | Existing FeatureServer already hosts relevant layers/tables and volumes are manageable |
+| Mark path lines as inferred unless schema is enriched | Feb 20, 2026 | Motus docs explicitly warn tracks are shortest-path estimates; current table lacks explicit station geometry join key |
 
 ### Styling Decisions
 
@@ -284,12 +304,11 @@ Implement the MOTUS satellite imagery browse experience in the right sidebar. MO
 
 ## Open Questions
 
-- [ ] Is MOTUS data already available via ArcGIS on `dangermondpreserve-spatial.com`?
-- [ ] Which MOTUS products are highest priority for Dangermond researchers?
-- [ ] Should MOTUS share temporal comparison UI with DroneDeploy (build generic)?
-- [ ] At 250m–1km resolution, how useful is MOTUS at the preserve scale? (The entire preserve is ~24,000 acres / ~97 km2 — a ~10x10 km area gets roughly 40x40 MOTUS pixels at 250m)
-- [ ] Should we show MOTUS alongside drone imagery for multi-scale comparison (satellite vs drone)?
-- [ ] Is there value in MOTUS trends (20+ years) beyond just current snapshots?
+- [ ] Do we want to enrich `Tag Detections` with explicit station/deployment join fields for deterministic path rendering?
+- [ ] Should first release prioritize species-level path density, per-tag timelines, or both?
+- [ ] What default quality thresholds should we enforce (`motus_filter`, minimum `hit_count`)?
+- [ ] Should we include off-preserve stations by default, or focus on Dangermond-centric movement context first?
+- [ ] Do we want animation playback by detection time in v2, or static paths first then animation in v2.1?
 
 ---
 
@@ -297,5 +316,7 @@ Implement the MOTUS satellite imagery browse experience in the right sidebar. MO
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 20, 2026 | 11.2 | Implemented MOTUS sidebar shell + adapter wiring (`motus` data source, registry integration, overview/browse list-detail scaffold, map behavior registration for MOTUS catalog layers) | Codex |
+| Feb 20, 2026 | 11.1 | Completed research: confirmed ArcGIS Wildlife Telemetry service, documented schema/counts, and added recommended inferred-path strategy with data-quality caveats | Codex |
 | Feb 16, 2026 | — | Created phase document | Will + Claude |
 | Feb 16, 2026 | — | Renamed from MODIS to MOTUS | — |

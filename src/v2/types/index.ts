@@ -28,6 +28,7 @@ export interface CatalogLayer {
 /** Supported data sources */
 export type DataSource =
   | 'tnc-arcgis'
+  | 'motus'
   | 'inaturalist'
   | 'animl'
   | 'dendra'
