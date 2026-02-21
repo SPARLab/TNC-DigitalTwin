@@ -130,7 +130,7 @@ export function useDataOneMapBehavior(
     setMapSelectionDataoneIds,
     setMapDatasetsCache,
   } = useDataOneFilter();
-  const { activateLayer } = useLayers();
+  const { activateLayer, requestBrowseTab } = useLayers();
   const { viewRef, getSpatialPolygonForLayer } = useMap();
   const spatialPolygon = getSpatialPolygonForLayer(LAYER_ID);
   const mapDatasetsByIdRef = useRef<Map<string, DataOneDataset>>(new Map());
@@ -279,13 +279,29 @@ export function useDataOneMapBehavior(
         );
         if (!graphicHit) return;
 
+        // Always clear previous selection highlight before handling new click.
+        clearHighlight();
+
         const aggregateCount = getAggregateCount(graphicHit.graphic);
-        if (aggregateCount > 1) {
+
+        // Aggregate click (cluster/bin with ≥1 features).
+        // count=1 aggregates are still cluster/bin graphics without feature
+        // attributes like dataoneId, so they must go through cache resolution.
+        if (aggregateCount >= 1) {
           const dataoneIds = resolveAggregateMembersFromCache(
             graphicHit.graphic,
             mapDatasetsByIdRef.current,
           );
 
+          // Single-member aggregate: open dataset detail directly.
+          if (dataoneIds.length === 1) {
+            setMapSelectionDataoneIds(null);
+            activateLayer(LAYER_ID, undefined, dataoneIds[0]);
+            view.closePopup();
+            return;
+          }
+
+          // Multi-member aggregate: show filtered list in sidebar.
           if (dataoneIds.length > 0) {
             setMapSelectionDataoneIds(dataoneIds);
           } else {
@@ -293,6 +309,7 @@ export function useDataOneMapBehavior(
           }
 
           activateLayer(LAYER_ID, undefined, undefined);
+          requestBrowseTab();
           view.closePopup();
 
           if (graphicHit.graphic.geometry) {
@@ -306,11 +323,10 @@ export function useDataOneMapBehavior(
           return;
         }
 
-        // Single point click — open dataset detail directly.
+        // Single point click (non-aggregate feature) — open dataset detail.
         const dataoneId = graphicHit.graphic.attributes?.dataoneId as string | undefined;
         if (!dataoneId) return;
         setMapSelectionDataoneIds(null);
-        clearHighlight();
 
         if (!mapDatasetsByIdRef.current.has(dataoneId)) {
           const dataset = await dataOneService.getDatasetByDataoneId(dataoneId);
@@ -340,5 +356,5 @@ export function useDataOneMapBehavior(
       handler.remove();
       clearHighlight();
     };
-  }, [isOnMap, viewRef, activateLayer, getManagedLayer, setMapSelectionDataoneIds]);
+  }, [isOnMap, viewRef, activateLayer, requestBrowseTab, getManagedLayer, setMapSelectionDataoneIds]);
 }

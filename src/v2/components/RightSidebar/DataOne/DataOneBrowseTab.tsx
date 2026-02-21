@@ -199,23 +199,34 @@ export function DataOneBrowseTab() {
     };
   }, [mapSelectionIdSet, appliedSearchTerm, selectedCategory, startYear, endYear, authorFilter, page, createBrowseLoadingScope]);
 
+  // When featureId is cleared (cluster click, back navigation), return to list view.
+  useEffect(() => {
+    if (activeLayer?.layerId !== 'dataone-datasets') return;
+    if (activeLayer.featureId != null) return;
+    setSelectedDataset(null);
+    lastHandledFeatureIdRef.current = null;
+  }, [activeLayer?.layerId, activeLayer?.featureId]);
+
   // Map marker clicks set activeLayer.featureId. Ensure detail opens even when
   // the clicked dataset is not in the current paginated result set.
+  // Ref update is deferred to AFTER the fetch resolves so that if this effect
+  // re-runs (activeLayer object recreated by side effects), a cancelled fetch
+  // doesn't permanently block re-issuing the request.
   useEffect(() => {
     if (activeLayer?.layerId !== 'dataone-datasets' || !activeLayer.featureId) return;
     const featureId = String(activeLayer.featureId);
     if (lastHandledFeatureIdRef.current === featureId) return;
     if (selectedDataset?.dataoneId === featureId) return;
-    lastHandledFeatureIdRef.current = featureId;
 
     let cancelled = false;
     void dataOneService.getDatasetByDataoneId(featureId)
       .then((dataset) => {
-        if (!cancelled && dataset) setSelectedDataset(dataset);
+        if (!cancelled && dataset) {
+          lastHandledFeatureIdRef.current = featureId;
+          setSelectedDataset(dataset);
+        }
       })
-      .catch(() => {
-        // Map behavior already logs marker click issues; no duplicate UI noise here.
-      });
+      .catch(() => {});
     return () => {
       cancelled = true;
     };

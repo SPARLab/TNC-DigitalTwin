@@ -96,6 +96,10 @@ interface LayerContextValue {
   lastEditFiltersRequest: number;
   requestEditFilters: () => void;
 
+  // Generic Browse tab switch (e.g. cluster click when user is on Overview)
+  lastBrowseTabRequest: number;
+  requestBrowseTab: () => void;
+
   // Filters cleared → hydrate Browse tab with empty state
   lastFiltersClearedTimestamp: number;
 
@@ -500,6 +504,9 @@ export function LayerProvider({ children }: { children: ReactNode }) {
 
   const [lastEditFiltersRequest, setLastEditFiltersRequest] = useState(0);
   const requestEditFilters = useCallback(() => setLastEditFiltersRequest(Date.now()), []);
+
+  const [lastBrowseTabRequest, setLastBrowseTabRequest] = useState(0);
+  const requestBrowseTab = useCallback(() => setLastBrowseTabRequest(Date.now()), []);
 
   const [lastFiltersClearedTimestamp, setLastFiltersClearedTimestamp] = useState(0);
 
@@ -1845,6 +1852,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         renameView,
         lastEditFiltersRequest,
         requestEditFilters,
+        lastBrowseTabRequest,
+        requestBrowseTab,
         lastFiltersClearedTimestamp,
         isLayerPinned,
         isLayerVisible,

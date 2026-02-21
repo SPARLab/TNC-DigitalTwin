@@ -107,6 +107,11 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 - Preserved single-point click behavior: clicking a non-cluster marker opens dataset detail directly
 - Moved large-cluster sidebar filtering to client-side cache matching (to avoid 414 URI Too Large when cluster selections are very large)
 
+**Cluster↔Dataset Navigation Fix (Feb 20, 2026):**
+- Fixed bug where cluster → dataset → cluster → dataset left second dataset click not opening detail
+- Root causes: (1) `selectedDataset` not cleared when `featureId` went null on cluster click; (2) `lastHandledFeatureIdRef` set before async fetch, blocking re-issue after cancellation; (3) count=1 aggregates (cluster/bin with one item) fell through to single-point path but lack `dataoneId` → silent no-op; (4) no tab switch when cluster clicked from Overview
+- Fixes: new effect clears `selectedDataset` when `featureId` null; ref update deferred to post-fetch; `aggregateCount >= 1` routes count=1 through cache resolution (single-member opens detail directly); `requestBrowseTab` signal switches to Browse from Overview; `clearHighlight()` at start of every DataONE click prevents stale blue rings
+
 **Investigation Findings (Feb 20, 2026):**
 - Verified with live service checks: `FeatureServer/0` currently returns latest-only records (`is_latest_version = 0` count is 0)
 - Verified preserve-bounds subset used by app has 878 records, all latest-only, with no version duplication
@@ -288,6 +293,7 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 20, 2026 | CON-DONE-01 refinement: Fixed cluster↔dataset click navigation. Cluster click now always shows filtered list; dataset click always shows detail. Fixed selectedDataset not clearing, lastHandledFeatureIdRef race, count=1 aggregate silent no-op, tab switch from Overview, stale highlight rings. | Assistant |
 | Feb 20, 2026 | CON-DONE-02: marked complete. Auto-pan/zoom on dataset detail open; "View on Map" repurposed as "Recenter". Zoom 16 + cluster maxScale 12_000 so selected dataset breaks out of cluster and shows as dot. | Assistant |
 | Feb 20, 2026 | CON-DONE-16: final UX fix. Switched to continuous `view.watch('scale', ...)` with level-change guard; in-place `fixedBinLevel` mutation avoids full reduction rebuild flicker; `maxScale: 0` keeps bins visible during zoom. Bins now resize live when crossing thresholds without blink-out. | Assistant |
 | Feb 20, 2026 | CON-DONE-16: marked complete. Switched to `view.watch('stationary', ...)` to eliminate bin blink during wheel zoom; scale thresholds tuned. | Assistant |

@@ -17,11 +17,12 @@ interface RightSidebarProps {
 }
 
 export function RightSidebar({ onCollapse }: RightSidebarProps) {
-  const { activeLayer, activateLayer, lastEditFiltersRequest } = useLayers();
+  const { activeLayer, activateLayer, lastEditFiltersRequest, lastBrowseTabRequest } = useLayers();
   const [activeTab, setActiveTab] = useState<SidebarTab>('overview');
   const [lastTabByLayerId, setLastTabByLayerId] = useState<Record<string, SidebarTab>>({});
   const [isInspectBrowseFlow, setIsInspectBrowseFlow] = useState(false);
   const consumedRequestRef = useRef(0);
+  const consumedBrowseRef = useRef(0);
   const prevLayerIdRef = useRef<string | null>(null);
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollHideTimerRef = useRef<number | null>(null);
@@ -132,6 +133,14 @@ export function RightSidebar({ onCollapse }: RightSidebarProps) {
       consumedRequestRef.current = lastEditFiltersRequest;
     }
   }, [activeLayer, lastEditFiltersRequest, handleSystemTabChange]);
+
+  // Cluster click → open Browse tab (works even when starting from Overview).
+  useEffect(() => {
+    if (activeLayer && lastBrowseTabRequest > 0 && lastBrowseTabRequest !== consumedBrowseRef.current) {
+      handleSystemTabChange('browse');
+      consumedBrowseRef.current = lastBrowseTabRequest;
+    }
+  }, [activeLayer, lastBrowseTabRequest, handleSystemTabChange]);
 
   // Map feature clicks should open Browse detail flow immediately.
   // Browse tab owns detail-view rendering for marker-driven selections.
