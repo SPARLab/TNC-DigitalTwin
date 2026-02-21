@@ -8,6 +8,7 @@ import type { CatalogLayer } from '../../../types';
 interface TNCArcGISOverviewTabProps {
   loading: boolean;
   onBrowseClick: () => void;
+  onInspectBrowseClick?: () => void;
 }
 
 function normalizeDescription(value: string | undefined): string {
@@ -28,7 +29,7 @@ function getTargetLayer(activeLayer: CatalogLayer | undefined, selectedSubLayerI
   return siblings.find(layer => layer.id === selectedSubLayerId) ?? siblings[0] ?? null;
 }
 
-export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOverviewTabProps) {
+export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseClick }: TNCArcGISOverviewTabProps) {
   const {
     activeLayer,
     activateLayer,
@@ -127,6 +128,10 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
   const handleInspectLayer = (event: ReactMouseEvent, layerId: string) => {
     event.stopPropagation();
     handleLayerListSelect(layerId);
+    if (onInspectBrowseClick) {
+      onInspectBrowseClick();
+      return;
+    }
     onBrowseClick();
   };
 
@@ -357,7 +362,13 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
             <button
               id="tnc-arcgis-service-overview-open-layer-cta"
               type="button"
-              onClick={onBrowseClick}
+              onClick={() => {
+                if (onInspectBrowseClick) {
+                  onInspectBrowseClick();
+                  return;
+                }
+                onBrowseClick();
+              }}
               className="w-full py-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-medium text-center min-h-[44px] hover:bg-emerald-100 transition-colors"
             >
               Inspect Current Layer
@@ -511,7 +522,13 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick }: TNCArcGISOvervi
             <button
               id="tnc-arcgis-overview-open-layer-cta"
               type="button"
-              onClick={onBrowseClick}
+              onClick={() => {
+                if (onInspectBrowseClick) {
+                  onInspectBrowseClick();
+                  return;
+                }
+                onBrowseClick();
+              }}
               className="w-full py-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-medium text-center min-h-[44px] hover:bg-emerald-100 transition-colors"
             >
               Inspect Current Layer

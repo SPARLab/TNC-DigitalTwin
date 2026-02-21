@@ -20,6 +20,7 @@ export function RightSidebar({ onCollapse }: RightSidebarProps) {
   const { activeLayer, activateLayer, lastEditFiltersRequest } = useLayers();
   const [activeTab, setActiveTab] = useState<SidebarTab>('overview');
   const [lastTabByLayerId, setLastTabByLayerId] = useState<Record<string, SidebarTab>>({});
+  const [isInspectBrowseFlow, setIsInspectBrowseFlow] = useState(false);
   const consumedRequestRef = useRef(0);
   const prevLayerIdRef = useRef<string | null>(null);
 
@@ -31,6 +32,9 @@ export function RightSidebar({ onCollapse }: RightSidebarProps) {
   const showBrowseTab = true;
 
   const handleSystemTabChange = useCallback((tab: SidebarTab) => {
+    if (tab !== 'browse') {
+      setIsInspectBrowseFlow(false);
+    }
     setActiveTab(tab);
   }, []);
 
@@ -44,8 +48,19 @@ export function RightSidebar({ onCollapse }: RightSidebarProps) {
     ) {
       activateLayer(activeLayer.layerId, activeLayer.viewId, undefined);
     }
+    setIsInspectBrowseFlow(false);
     setActiveTab(tab);
   }, [activeLayer, activateLayer]);
+
+  const handleOverviewBrowseClick = useCallback(() => {
+    setIsInspectBrowseFlow(false);
+    setActiveTab('browse');
+  }, []);
+
+  const handleOverviewInspectBrowseClick = useCallback(() => {
+    setIsInspectBrowseFlow(true);
+    setActiveTab('browse');
+  }, []);
 
   // Task 22: Restore last active tab per layer on reactivation.
   // First visit still defaults to Overview (DFT-006).
@@ -124,11 +139,20 @@ export function RightSidebar({ onCollapse }: RightSidebarProps) {
           >
             {adapter ? (
               activeTab === 'overview' ? (
-                <adapter.OverviewTab onBrowseClick={() => handleUserTabChange('browse')} />
+                <adapter.OverviewTab
+                  onBrowseClick={handleOverviewBrowseClick}
+                  onInspectBrowseClick={handleOverviewInspectBrowseClick}
+                />
               ) : showBrowseTab ? (
-                <adapter.BrowseTab />
+                <adapter.BrowseTab
+                  showBackToOverview={activeLayer.dataSource === 'tnc-arcgis' || isInspectBrowseFlow}
+                  onBackToOverview={() => handleSystemTabChange('overview')}
+                />
               ) : (
-                <adapter.OverviewTab onBrowseClick={() => handleUserTabChange('browse')} />
+                <adapter.OverviewTab
+                  onBrowseClick={handleOverviewBrowseClick}
+                  onInspectBrowseClick={handleOverviewInspectBrowseClick}
+                />
               )
             ) : (
               /* Generic placeholder for unimplemented data sources */

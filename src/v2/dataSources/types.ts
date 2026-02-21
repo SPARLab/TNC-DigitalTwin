@@ -12,6 +12,13 @@ import type { ComponentType, ReactNode } from 'react';
 /** Props shared by every data source's OverviewTab */
 export interface OverviewTabProps {
   onBrowseClick: () => void;
+  onInspectBrowseClick?: () => void;
+}
+
+/** Optional props passed to every data source's BrowseTab */
+export interface BrowseTabProps {
+  showBackToOverview?: boolean;
+  onBackToOverview?: () => void;
 }
 
 /** Cache/loading status exposed by each data source */
@@ -41,7 +48,7 @@ export interface DataSourceAdapter {
   OverviewTab: ComponentType<OverviewTabProps>;
 
   /** Right sidebar Browse tab (self-contained — uses own hooks/context) */
-  BrowseTab: ComponentType;
+  BrowseTab: ComponentType<BrowseTabProps>;
 
   /** Floating legend widget — rendered only when this source is the active layer */
   LegendWidget?: ComponentType;

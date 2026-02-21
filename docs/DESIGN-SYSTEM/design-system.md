@@ -1,6 +1,6 @@
 # Design System - TNC Digital Catalog
 
-**Last Updated:** February 20, 2026 (Dendra station display name normalization)  
+**Last Updated:** February 20, 2026 (BrowseBackButton D20-02; Dendra station display name normalization)  
 **Purpose:** Single source of truth for styling decisions, component patterns, and design policies that affect multiple phases.
 
 ---
@@ -1842,8 +1842,9 @@ src/v2/components/RightSidebar/
 │   ├── ResultCard.tsx            ← Standard result card
 │   ├── Pagination.tsx            ← Previous/Next or Load More
 │   ├── BrowseFeaturesButton.tsx  ← DFT-027 CTA button
-│   ├── DetailBackButton.tsx      ← DFT-044 Back navigation for detail views
-│   ├── DetailActionRow.tsx       ← DFT-044 Action button row for detail views
+│   ├── BrowseBackButton.tsx       ← D20-02 Back navigation for Browse drill-down (Dendra, TNC ArcGIS)
+│   ├── DetailBackButton.tsx       ← DFT-044 Back navigation for detail views
+│   ├── DetailActionRow.tsx        ← DFT-044 Action button row for detail views
 │   └── DetailMetadataGrid.tsx    ← DFT-044 2-col key-value grid
 ├── iNaturalist/                  ← Only content/config, imports shared
 │   └── ObservationDetailView.tsx ← Uses DetailBackButton, DetailActionRow, DetailMetadataGrid
@@ -1852,6 +1853,22 @@ src/v2/components/RightSidebar/
 └── DataOne/                      ← Only content/config
     └── DatasetDetailView.tsx     ← Uses DetailBackButton, DetailActionRow
 ```
+
+### Browse Back Button (D20-02)
+
+**Policy:** Browse tab drill-down contexts (Dendra station detail, TNC ArcGIS layer inspect) use shared `BrowseBackButton` for consistent back navigation. Same styling across data sources — change once, updates everywhere.
+
+**Location:** `src/v2/components/RightSidebar/shared/BrowseBackButton.tsx`
+
+**Props:** `id`, `label`, `onClick`
+
+**Styling:** `flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 transition-colors -ml-1`; Lucide `ChevronLeft` (w-4 h-4)
+
+**Usage:** Dendra `StationDetailView` ("Back to Stations"); TNC ArcGIS `TNCArcGISBrowseTab` ("Back to Layers")
+
+**Decision Date:** February 20, 2026
+
+---
 
 ### Detail View Components (DFT-044)
 
