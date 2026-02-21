@@ -61,7 +61,6 @@ interface ArcGISServiceLayer {
 }
 
 const SERVICE_DISCOVERY_TIMEOUT_MS = 1200;
-const MAX_SERVICE_DISCOVERY_CANDIDATES = 12;
 
 // ── Hook return type ─────────────────────────────────────────────────────────
 
@@ -179,6 +178,39 @@ async function fetchFeatureServiceLayers(d: RawDataset): Promise<ArcGISServiceLa
     .sort((a, b) => a.id - b.id);
 }
 
+function logServiceDiscoveryResults(
+  candidates: RawDataset[],
+  discoveredLayersByServiceKey: Map<string, ArcGISServiceLayer[]>,
+): void {
+  if (!import.meta.env.DEV) return;
+
+  const seenServiceKeys = new Set<string>();
+  let multi = 0;
+  let single = 0;
+  let unreadable = 0;
+
+  for (const d of candidates) {
+    const serviceKey = serviceKeyForDataset(d);
+    if (!serviceKey || seenServiceKeys.has(serviceKey)) continue;
+    seenServiceKeys.add(serviceKey);
+
+    const discoveredLayers = discoveredLayersByServiceKey.get(serviceKey) ?? [];
+    if (discoveredLayers.length > 1) {
+      multi += 1;
+      continue;
+    }
+    if (discoveredLayers.length === 1) {
+      single += 1;
+      continue;
+    }
+    unreadable += 1;
+  }
+
+  console.info(
+    `[CatalogRegistry] Service discovery classification: multi=${multi}, single=${single}, unreadable=${unreadable}`,
+  );
+}
+
 /** Detect the data source adapter key from service URL patterns. */
 function detectDataSource(d: RawDataset): DataSource {
   const path = d.service_path ?? '';
@@ -267,8 +299,7 @@ export function useCatalogRegistry(): CatalogRegistryState {
             const bPriority = /(coastal|marine)/.test(bText) ? 0 : /data/.test(bText) ? 1 : 2;
             if (aPriority !== bPriority) return aPriority - bPriority;
             return a.display_order - b.display_order;
-          })
-          .slice(0, MAX_SERVICE_DISCOVERY_CANDIDATES);
+          });
 
         const discoveredLayersByServiceKey = new Map<string, ArcGISServiceLayer[]>();
         await Promise.all(
@@ -279,6 +310,7 @@ export function useCatalogRegistry(): CatalogRegistryState {
             discoveredLayersByServiceKey.set(serviceKey, layers);
           }),
         );
+        logServiceDiscoveryResults(prioritizedDiscoveryCandidates, discoveredLayersByServiceKey);
 
         // ── Create CatalogLayer for every visible dataset ────────────────
         const allLayers = new Map<string, CatalogLayer>();

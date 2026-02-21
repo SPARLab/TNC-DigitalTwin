@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 18 / 23 tasks (CON-ARCGIS-01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 6.17, 6.20, D20-11 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
+**Progress:** 19 / 23 tasks (CON-ARCGIS-01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 6.17, 6.20, D20-11, TF-13 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry) ✅ complete  
@@ -31,7 +31,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
 | TF-12 | ⚪ Not Started | Feb 20, 2026 | Expand "Open Table Overlay" to all TNC ArcGIS feature service layers (currently only Oil Seeps) | Medium priority; Trisalyn reacted very positively — "this is how the GIS brain thinks." Source: Trisalyn QA Feb 20 |
-| TF-13 | ⚪ Not Started | Feb 20, 2026 | Implement multi-layer service detection improvements from CON-ARCGIS-07 audit | **Next task after TF-12.** Remove top-12 discovery cap in `useCatalogRegistry`; ensure all 12+ multi-layer services (incl. Coastal and Marine, DP_COASTAL) get service-container UX. See CON-ARCGIS-07 Audit section for findings. |
+| TF-13 | 🟢 Complete | Feb 20, 2026 | Implement multi-layer service detection improvements from CON-ARCGIS-07 audit | Removed top-12 discovery cap in `useCatalogRegistry`; all eligible single-row FeatureServer candidates now discovered. Dev-mode classification logging added. All 12+ multi-layer services (incl. Coastal and Marine, DP_COASTAL) get service-container UX. |
 | CON-ARCGIS-07 | 🟢 Complete | Feb 20, 2026 | Ensure proper detection of multi-layer feature services vs single-layer ones | Audit complete; implementation captured in TF-13 |
 | D20-02 | 🟢 Complete | Feb 20, 2026 | Add back button in right sidebar for ArcGIS feature service inspect/browse view | Shared `BrowseBackButton` (Dendra-style); layer context card (current layer + feature service, gray bg); Open Table Overlay above table snapshot; full field list (no truncation); Legend removed. Source: Dan Meeting Feb 20 |
 | D20-10 | 🟢 Complete | Feb 20, 2026 | Replace static layer overview text with actual ArcGIS feature service description text | Overview tabs fetch ArcGIS item metadata via `serviceItemId` (snippet + description, Hub-style), then fall back to service/layer description. HTML normalized to preserve line breaks; no per-layer descriptions in layer list. TNC ArcGIS + Dendra. Source: Dan Meeting Feb 20 |
@@ -79,7 +79,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 ### Current Codepath Findings
 
 - `useCatalogRegistry` treats every visible TNC ArcGIS dataset row as its own service key today (catalog currently has one row per service path).
-- Runtime discovery is only attempted for single-row, `layer_id = null` FeatureServer rows and is capped at `MAX_SERVICE_DISCOVERY_CANDIDATES = 12`.
+- Runtime discovery is attempted for all visible single-row, `layer_id = null` FeatureServer rows (cap removed Feb 20, 2026 per TF-13).
 - Service-container UX logic already exists once a service is classified as multi-layer:
   - left sidebar: service rows are non-pinnable containers, child rows are pinnable layers.
   - right sidebar Browse: resolves target layer from selected child when active row is a service parent.
@@ -126,11 +126,11 @@ Confirmed multi-layer examples:
 - **12 multi-layer services** total; runtime discovery is capped at 12 candidates, so ordering can cause some to render as single-layer.
 - **14 single-layer services** use non-zero layer IDs (e.g., Shrub at 8, Tree at 7); TF-11 runtime fallback already handles these.
 
-**Implementation checklist:**
+**Implementation checklist (complete Feb 20, 2026):**
 
-1. **Remove or raise `MAX_SERVICE_DISCOVERY_CANDIDATES`** in `useCatalogRegistry.ts` — either discover all visible single-row FeatureServer candidates, or switch to on-demand discovery with cache.
-2. **Verify service-container UX** for all 12 multi-layer services — left sidebar shows Service/Layer badges; right sidebar Browse resolves target layer correctly.
-3. **(Optional)** Add dev-mode logging for service classification (`single` / `multi` / `unreadable`) for QA.
+- [x] Remove `MAX_SERVICE_DISCOVERY_CANDIDATES` cap in `useCatalogRegistry.ts` so all eligible visible single-row FeatureServer candidates are discovered.
+- [x] Verify service-container UX for all 12 multi-layer services — left sidebar shows Service/Layer badges; right sidebar Browse resolves target layer correctly.
+- [x] Add dev-mode logging for service classification (`single` / `multi` / `unreadable`) for QA.
 
 **Files:** `src/v2/hooks/useCatalogRegistry.ts`
 
