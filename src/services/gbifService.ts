@@ -19,6 +19,8 @@ export interface GBIFOccurrence {
   stateProvince: string | null;
   occurrenceStatus: string | null;
   issuesJson: string | null;
+  mediaJson: string | null;
+  mediaUrls: string[];
   coordinates: [number, number] | null;
 }
 
@@ -62,6 +64,60 @@ function normalizeDate(raw: string | null | undefined): string | null {
   return dequoted || null;
 }
 
+function normalizeGbifKey(raw: unknown): string | null {
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  if (typeof raw === 'number' && Number.isFinite(raw)) return String(raw);
+  if (typeof raw === 'bigint') return raw.toString();
+  return null;
+}
+
+function isHttpUrl(raw: unknown): raw is string {
+  return typeof raw === 'string' && /^https?:\/\//i.test(raw);
+}
+
+function isImageLikeUrl(url: string): boolean {
+  const normalized = url.toLowerCase();
+  return (
+    /\.(jpg|jpeg|png|webp|gif)(\?|$)/.test(normalized) ||
+    normalized.includes('image') ||
+    normalized.includes('photos/')
+  );
+}
+
+function extractMediaUrls(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const urls = raw
+    .map((entry) => {
+      if (!entry || typeof entry !== 'object') return null;
+      const item = entry as { type?: unknown; format?: unknown; identifier?: unknown; references?: unknown };
+      const mediaType = typeof item.type === 'string' ? item.type.toLowerCase() : '';
+      const mediaFormat = typeof item.format === 'string' ? item.format.toLowerCase() : '';
+      const identifier = isHttpUrl(item.identifier) ? item.identifier : null;
+      const references = isHttpUrl(item.references) ? item.references : null;
+      const candidate = identifier ?? references;
+      if (!candidate) return null;
+      const looksLikeImage = mediaType.includes('image') || mediaFormat.startsWith('image/') || isImageLikeUrl(candidate);
+      return looksLikeImage ? candidate : null;
+    })
+    .filter((value): value is string => !!value);
+  return Array.from(new Set(urls));
+}
+
+function parseMediaUrlsFromJson(raw: unknown): string[] {
+  if (typeof raw !== 'string') return [];
+  const trimmed = raw.trim();
+  if (!trimmed || trimmed === '[]') return [];
+  try {
+    const parsed = JSON.parse(trimmed);
+    return extractMediaUrls(parsed);
+  } catch {
+    return [];
+  }
+}
+
 function toOccurrence(feature: {
   attributes: Record<string, unknown>;
   geometry?: { x?: number; y?: number };
@@ -69,9 +125,14 @@ function toOccurrence(feature: {
   const a = feature.attributes ?? {};
   const lon = typeof feature.geometry?.x === 'number' ? feature.geometry.x : Number.NaN;
   const lat = typeof feature.geometry?.y === 'number' ? feature.geometry.y : Number.NaN;
+  const mediaJson = typeof a.media_json === 'string' ? a.media_json : null;
+  const parsedMediaUrls = parseMediaUrlsFromJson(mediaJson);
+  const primaryImageUrl =
+    typeof a.primary_image_url === 'string' && isImageLikeUrl(a.primary_image_url) ? a.primary_image_url : null;
+  const mediaUrls = Array.from(new Set([...(primaryImageUrl ? [primaryImageUrl] : []), ...parsedMediaUrls]));
   return {
     id: Number(a.id),
-    gbifKey: typeof a.gbif_key === 'string' ? a.gbif_key : null,
+    gbifKey: normalizeGbifKey(a.gbif_key),
     scientificName: typeof a.scientific_name === 'string' ? a.scientific_name : null,
     species: typeof a.species === 'string' ? a.species : null,
     genus: typeof a.genus === 'string' ? a.genus : null,
@@ -84,12 +145,14 @@ function toOccurrence(feature: {
     datasetName: typeof a.dataset_name === 'string' ? a.dataset_name : null,
     recordedBy: typeof a.recorded_by === 'string' ? a.recorded_by : null,
     eventDate: normalizeDate(typeof a.event_date_json === 'string' ? a.event_date_json : null),
-    primaryImageUrl: typeof a.primary_image_url === 'string' ? a.primary_image_url : null,
+    primaryImageUrl,
     referencesUrl: typeof a.references_url === 'string' ? a.references_url : null,
     country: typeof a.country === 'string' ? a.country : null,
     stateProvince: typeof a.state_province === 'string' ? a.state_province : null,
     occurrenceStatus: typeof a.occurrence_status === 'string' ? a.occurrence_status : null,
     issuesJson: typeof a.issues_json === 'string' ? a.issues_json : null,
+    mediaJson,
+    mediaUrls,
     coordinates: Number.isFinite(lon) && Number.isFinite(lat) ? [lon, lat] : null,
   };
 }
@@ -155,21 +218,6 @@ async function queryDistinct(fieldName: string, limit = 200): Promise<string[]> 
   return Array.from(new Set<string>(values)).sort((a: string, b: string) => a.localeCompare(b));
 }
 
-function extractGbifMediaUrls(raw: unknown): string[] {
-  if (!Array.isArray(raw)) return [];
-  const urls = raw
-    .map((entry) => {
-      if (!entry || typeof entry !== 'object') return null;
-      const candidate = (entry as { identifier?: unknown; references?: unknown }).identifier;
-      if (typeof candidate === 'string' && /^https?:\/\//i.test(candidate)) return candidate;
-      const references = (entry as { references?: unknown }).references;
-      if (typeof references === 'string' && /^https?:\/\//i.test(references)) return references;
-      return null;
-    })
-    .filter((value): value is string => !!value);
-  return Array.from(new Set(urls));
-}
-
 class GBIFService {
   buildWhereClause(filters: GBIFFilters): string {
     return buildWhereClause(filters);
@@ -194,7 +242,7 @@ class GBIFService {
       {
         where,
         outFields:
-          'id,gbif_key,scientific_name,species,genus,family,taxonomic_class,phylum,kingdom,basis_of_record,dataset_name,recorded_by,event_date_json,primary_image_url,references_url,country,state_province,occurrence_status,issues_json',
+          'id,gbif_key,scientific_name,species,genus,family,taxonomic_class,phylum,kingdom,basis_of_record,dataset_name,recorded_by,event_date_json,primary_image_url,media_json,references_url,country,state_province,occurrence_status,issues_json',
         returnGeometry: true,
         orderByFields: 'year DESC, month DESC, day DESC, id DESC',
         resultRecordCount: pageSize,
@@ -205,6 +253,22 @@ class GBIFService {
     );
     const countJson = await countPromise;
     const occurrences = (dataJson.features ?? []).map(toOccurrence);
+    if (import.meta.env.DEV) {
+      const pageRowsWithRawMediaJson = occurrences.filter((occurrence) => {
+        const raw = occurrence.mediaJson?.trim() ?? '';
+        return raw.length > 0 && raw !== '[]';
+      }).length;
+      const pageRowsWithParsedImageUrls = occurrences.filter((occurrence) => occurrence.mediaUrls.length > 0).length;
+      // Dev-only breadcrumb to quickly confirm if a browse page is expected to show thumbnails.
+      console.debug('[GBIF queryOccurrences]', {
+        page: options.page,
+        pageSize,
+        results: occurrences.length,
+        pageRowsWithRawMediaJson,
+        pageRowsWithParsedImageUrls,
+        where,
+      });
+    }
     const countFromService = typeof countJson?.count === 'number' ? countJson.count : null;
     const fallbackCount = offset + occurrences.length + (occurrences.length === pageSize ? 1 : 0);
 
@@ -266,7 +330,7 @@ class GBIFService {
     if (!response.ok) return [];
 
     const json = (await response.json()) as { media?: unknown };
-    return extractGbifMediaUrls(json.media);
+    return extractMediaUrls(json.media);
   }
 }
 

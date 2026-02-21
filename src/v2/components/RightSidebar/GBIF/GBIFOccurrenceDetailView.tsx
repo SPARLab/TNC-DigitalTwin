@@ -33,14 +33,14 @@ export function GBIFOccurrenceDetailView({ occurrence, onBack, onViewOnMap }: GB
   const issuesCount = parseIssuesCount(occurrence.issuesJson);
   const [fallbackMediaUrls, setFallbackMediaUrls] = useState<string[]>([]);
   const [fallbackMediaLoading, setFallbackMediaLoading] = useState(false);
-  const [heroMediaUrl, setHeroMediaUrl] = useState<string | null>(occurrence.primaryImageUrl);
+  const [heroMediaUrl, setHeroMediaUrl] = useState<string | null>(occurrence.mediaUrls[0] ?? occurrence.primaryImageUrl);
 
   useEffect(() => {
     let cancelled = false;
     const controller = new AbortController();
 
     const run = async () => {
-      if (occurrence.primaryImageUrl || !occurrence.gbifKey) {
+      if (occurrence.mediaUrls.length > 0 || occurrence.primaryImageUrl || !occurrence.gbifKey) {
         setFallbackMediaUrls([]);
         return;
       }
@@ -61,14 +61,29 @@ export function GBIFOccurrenceDetailView({ occurrence, onBack, onViewOnMap }: GB
       cancelled = true;
       controller.abort();
     };
-  }, [occurrence.id, occurrence.gbifKey, occurrence.primaryImageUrl]);
+  }, [occurrence.id, occurrence.gbifKey, occurrence.primaryImageUrl, occurrence.mediaUrls]);
 
   const mediaUrls = useMemo(() => {
-    const combined = [occurrence.primaryImageUrl, ...fallbackMediaUrls].filter(
+    const combined = [...occurrence.mediaUrls, occurrence.primaryImageUrl, ...fallbackMediaUrls].filter(
       (value): value is string => typeof value === 'string' && value.trim().length > 0,
     );
     return Array.from(new Set(combined));
-  }, [occurrence.primaryImageUrl, fallbackMediaUrls]);
+  }, [occurrence.mediaUrls, occurrence.primaryImageUrl, fallbackMediaUrls]);
+  const mediaJsonDebugLabel = useMemo(() => {
+    const raw = occurrence.mediaJson;
+    if (!raw) return 'null';
+    const trimmed = raw.trim();
+    if (!trimmed) return 'empty string';
+    if (trimmed === '[]') return 'empty array []';
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (!Array.isArray(parsed)) return 'non-array JSON';
+      return `array(${parsed.length})`;
+    } catch {
+      return 'invalid JSON';
+    }
+  }, [occurrence.mediaJson]);
+  const showDevDebugPanel = import.meta.env.DEV;
 
   useEffect(() => {
     setHeroMediaUrl(mediaUrls[0] ?? null);
@@ -125,6 +140,26 @@ export function GBIFOccurrenceDetailView({ occurrence, onBack, onViewOnMap }: GB
             </button>
           ))}
         </div>
+      )}
+
+      {showDevDebugPanel && (
+        <details id="gbif-detail-media-debug-panel" className="rounded-lg border border-amber-200 bg-amber-50/60 p-3">
+          <summary id="gbif-detail-media-debug-summary" className="cursor-pointer text-xs font-semibold text-amber-800">
+            Media debug (dev only)
+          </summary>
+          <div id="gbif-detail-media-debug-body" className="mt-2 space-y-1 text-xs text-amber-900">
+            <p id="gbif-detail-media-debug-id">id: {occurrence.id}</p>
+            <p id="gbif-detail-media-debug-gbif-key">gbif_key: {occurrence.gbifKey ?? 'null'}</p>
+            <p id="gbif-detail-media-debug-primary">primary_image_url: {occurrence.primaryImageUrl ?? 'null'}</p>
+            <p id="gbif-detail-media-debug-media-json-presence">
+              media_json: {mediaJsonDebugLabel}
+            </p>
+            <p id="gbif-detail-media-debug-parsed-count">parsed mediaUrls: {occurrence.mediaUrls.length}</p>
+            <p id="gbif-detail-media-debug-fallback-loading">fallback loading: {fallbackMediaLoading ? 'yes' : 'no'}</p>
+            <p id="gbif-detail-media-debug-fallback-count">fallback media count: {fallbackMediaUrls.length}</p>
+            <p id="gbif-detail-media-debug-final-count">final displayed media count: {mediaUrls.length}</p>
+          </div>
+        </details>
       )}
 
       <div id="gbif-detail-name-block">

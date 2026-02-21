@@ -28,7 +28,8 @@ export function GBIFOccurrenceCard({ occurrence, onViewDetail, onViewOnMap }: GB
   const subtitle = occurrence.species && occurrence.scientificName && occurrence.species !== occurrence.scientificName
     ? occurrence.scientificName
     : occurrence.genus || occurrence.family || 'Taxonomy unavailable';
-  const hasThumbnail = !!occurrence.primaryImageUrl;
+  const thumbnailUrl = occurrence.mediaUrls[0] ?? occurrence.primaryImageUrl;
+  const hasThumbnail = !!thumbnailUrl;
 
   return (
     <div
@@ -47,7 +48,7 @@ export function GBIFOccurrenceCard({ occurrence, onViewDetail, onViewOnMap }: GB
         >
           {hasThumbnail ? (
             <img
-              src={occurrence.primaryImageUrl!}
+              src={thumbnailUrl!}
               alt={displayName}
               className="w-full h-full object-cover"
               loading="lazy"

@@ -161,40 +161,19 @@ body {
 
 /* -----------------------------------------------------------------------------
    Right Sidebar scroll area
-   - Scrollbar remains hidden until hover/focus-within.
-   - No reserved gutter so content width is not pre-shrunk.
+   - Native scrollbar hidden so it never reserves width.
+   - Custom overlay thumb is rendered in RightSidebar.tsx.
    ----------------------------------------------------------------------------- */
 .scroll-area-right-sidebar {
-  scrollbar-width: none;
-  scrollbar-color: transparent transparent;
-}
-
-.scroll-area-right-sidebar:hover,
-.scroll-area-right-sidebar:focus-within {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge legacy */
 }
 
 /* Webkit (Chrome, Safari, Edge) */
 .scroll-area-right-sidebar::-webkit-scrollbar {
-  width: 8px;
-}
-
-.scroll-area-right-sidebar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.scroll-area-right-sidebar::-webkit-scrollbar-thumb {
-  background-color: transparent;
-  border-radius: 4px;
-}
-
-.scroll-area-right-sidebar:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.5);
-}
-
-.scroll-area-right-sidebar::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(107, 114, 128, 0.7);
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 /* -----------------------------------------------------------------------------
