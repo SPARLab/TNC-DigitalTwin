@@ -64,7 +64,7 @@ export function TNCArcGISLegendWidget() {
   const [legendData, setLegendData] = useState<ArcGISLayerLegend | null>(null);
   const [selectedLegendValues, setSelectedLegendValues] = useState<Array<string | number>>([]);
 
-  const { activeLayer, syncTNCArcGISFilters, isLayerPinned } = useLayers();
+  const { activeLayer, syncTNCArcGISFilters, isLayerPinned, pinLayer } = useLayers();
   const { layerMap } = useCatalog();
   const activeCatalogLayer = activeLayer ? layerMap.get(activeLayer.layerId) : undefined;
   const targetLayer = useMemo(
@@ -118,6 +118,7 @@ export function TNCArcGISLegendWidget() {
     && legendData.filterField
     && filterableLegendItems.length > 0
   );
+  const pinned = targetLayer ? isLayerPinned(targetLayer.id) : false;
 
   useEffect(() => {
     if (!targetLayer || !canFilterByLegend || !legendData?.filterField) return;
@@ -126,12 +127,14 @@ export function TNCArcGISLegendWidget() {
       targetLayer.id,
       { whereClause, fields: [] },
       undefined,
-      activeLayer?.viewId,
+      // Legend filtering is a map-level interaction, so keep the root
+      // TNC ArcGIS filter state in sync (map layer definitionExpression reads root).
+      undefined,
     );
   }, [
-    activeLayer?.viewId,
     canFilterByLegend,
     legendData?.filterField,
+    pinned,
     selectedLegendValues,
     syncTNCArcGISFilters,
     targetLayer,
@@ -139,9 +142,14 @@ export function TNCArcGISLegendWidget() {
 
   if (!activeLayer || activeLayer.dataSource !== 'tnc-arcgis' || !targetLayer) return null;
 
-  const pinned = isLayerPinned(targetLayer.id);
+  const ensurePinnedForLegendFiltering = () => {
+    if (!pinned) {
+      pinLayer(targetLayer.id);
+    }
+  };
   const toggleLegendValue = (value: string | number | undefined) => {
     if (value === undefined) return;
+    ensurePinnedForLegendFiltering();
     setSelectedLegendValues(prev => (
       prev.includes(value)
         ? prev.filter(entry => entry !== value)
@@ -150,10 +158,12 @@ export function TNCArcGISLegendWidget() {
   };
 
   const selectAllLegendValues = () => {
+    ensurePinnedForLegendFiltering();
     setSelectedLegendValues(filterableLegendItems.map(item => item.value!));
   };
 
   const clearLegendValues = () => {
+    ensurePinnedForLegendFiltering();
     setSelectedLegendValues([]);
   };
 
@@ -256,7 +266,7 @@ export function TNCArcGISLegendWidget() {
             <p id="tnc-arcgis-legend-widget-filter-hint" className="px-1 text-[11px] text-gray-500">
               {pinned
                 ? 'Legend selections update this layer filter.'
-                : 'Pin this layer to apply legend selections to the map.'}
+                : 'Legend filtering will auto-pin this layer when you select an item.'}
             </p>
           )}
         </div>
