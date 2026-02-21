@@ -32,6 +32,7 @@ export type DataSource =
   | 'animl'
   | 'dendra'
   | 'dataone'
+  | 'gbif'
   | 'ebird'
   | 'drone'
   | 'lidar';
@@ -62,6 +63,7 @@ export interface PinnedLayer {
   dendraFilters?: DendraViewFilters;
   tncArcgisFilters?: TNCArcGISViewFilters;
   dataoneFilters?: DataOneViewFilters;
+  gbifFilters?: GBIFViewFilters;
   droneView?: DroneViewState;
   distinguisher?: string;
   views?: PinnedLayerView[];
@@ -83,6 +85,7 @@ export interface PinnedLayerView {
   dendraFilters?: DendraViewFilters;
   tncArcgisFilters?: TNCArcGISViewFilters;
   dataoneFilters?: DataOneViewFilters;
+  gbifFilters?: GBIFViewFilters;
   droneView?: DroneViewState;
   resultCount?: number; // Number of features matching filters (for count display testing)
 }
@@ -144,6 +147,20 @@ export interface DataOneViewFilters {
   author?: string;
   selectedDatasetId?: string;
   selectedDatasetTitle?: string;
+}
+
+/** GBIF filter + detail state stored per pinned layer/view */
+export interface GBIFViewFilters {
+  searchText?: string;
+  kingdom?: string;
+  taxonomicClass?: string;
+  family?: string;
+  basisOfRecord?: string;
+  datasetName?: string;
+  startDate?: string;
+  endDate?: string;
+  selectedOccurrenceId?: number;
+  selectedOccurrenceLabel?: string;
 }
 
 // =============================================================================

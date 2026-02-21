@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Calendar, ExternalLink, MapPin, User, Database } from 'lucide-react';
+import { ArrowLeft, Calendar, ExternalLink, MapPin, User, Database, Save } from 'lucide-react';
 import { gbifService, type GBIFOccurrence } from '../../../../services/gbifService';
 
 interface GBIFOccurrenceDetailViewProps {
   occurrence: GBIFOccurrence;
   onBack: () => void;
   onViewOnMap: () => void;
+  onSaveView?: (occurrence: GBIFOccurrence) => string | void;
 }
 
 function formatFullDate(dateStr: string | null): string {
@@ -25,7 +26,12 @@ function parseIssuesCount(issuesJson: string | null): number {
   }
 }
 
-export function GBIFOccurrenceDetailView({ occurrence, onBack, onViewOnMap }: GBIFOccurrenceDetailViewProps) {
+export function GBIFOccurrenceDetailView({
+  occurrence,
+  onBack,
+  onViewOnMap,
+  onSaveView,
+}: GBIFOccurrenceDetailViewProps) {
   const displayName = occurrence.species || occurrence.scientificName || 'Unknown taxon';
   const locationLabel = occurrence.coordinates
     ? `${occurrence.coordinates[1].toFixed(4)}, ${occurrence.coordinates[0].toFixed(4)}`
@@ -34,6 +40,8 @@ export function GBIFOccurrenceDetailView({ occurrence, onBack, onViewOnMap }: GB
   const [fallbackMediaUrls, setFallbackMediaUrls] = useState<string[]>([]);
   const [fallbackMediaLoading, setFallbackMediaLoading] = useState(false);
   const [heroMediaUrl, setHeroMediaUrl] = useState<string | null>(occurrence.mediaUrls[0] ?? occurrence.primaryImageUrl);
+  const [viewSaved, setViewSaved] = useState(false);
+  const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -88,6 +96,11 @@ export function GBIFOccurrenceDetailView({ occurrence, onBack, onViewOnMap }: GB
   useEffect(() => {
     setHeroMediaUrl(mediaUrls[0] ?? null);
   }, [mediaUrls, occurrence.id]);
+
+  useEffect(() => {
+    setViewSaved(false);
+    setSaveFeedback(null);
+  }, [occurrence.id]);
 
   return (
     <div id="gbif-detail-view" className="space-y-4">
@@ -186,6 +199,24 @@ export function GBIFOccurrenceDetailView({ occurrence, onBack, onViewOnMap }: GB
       </div>
 
       <div id="gbif-detail-actions" className="flex flex-col gap-2">
+        <button
+          id="gbif-detail-save-view-button"
+          type="button"
+          onClick={() => {
+            const feedback = onSaveView?.(occurrence);
+            setViewSaved(true);
+            setSaveFeedback(feedback || 'Saved GBIF view in Map Layers.');
+          }}
+          className="w-full flex items-center justify-center gap-2 py-2.5 border border-amber-200 bg-amber-50 text-sm text-amber-800 font-medium rounded-lg hover:bg-amber-100 transition-colors"
+        >
+          <Save className="w-4 h-4" />
+          {viewSaved ? 'View Saved' : 'Save View'}
+        </button>
+        {viewSaved && (
+          <p id="gbif-detail-save-view-feedback" className="text-xs text-emerald-700">
+            {saveFeedback}
+          </p>
+        )}
         <button
           id="gbif-detail-view-map-button"
           onClick={onViewOnMap}

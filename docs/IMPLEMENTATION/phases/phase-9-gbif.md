@@ -1,12 +1,12 @@
 # Phase 9: GBIF Species Occurrences
 
 **Status:** 🟡 In Progress  
-**Progress:** 14 / 16 tasks (D20-12 🟡 in progress; P9-GRIDBIN ✅ TF-09 ✅; GBIF-HOSTED complete)  
+**Progress:** 15 / 16 tasks (9.8 ✅; D20-12 🟡 in progress; P9-GRIDBIN ✅ TF-09 ✅; GBIF-HOSTED complete)  
 **Branch:** `v2/gbif`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
 
-**Suggested next task (new chat):** D20-12 — GBIF media display (in progress; coworker populating media). Or 9.8 Wire Save View flow (deferred) — or 9.12 Backend GBIF map aggregation (deferred to v2.1+).
+**Suggested next task (new chat):** D20-12 — GBIF media display (in progress; coworker populating media). Or 9.9 Evaluate geographic extent expansion (deferred) — or 9.12 Backend GBIF map aggregation (deferred to v2.1+).
 
 ---
 
@@ -26,7 +26,7 @@
 | 9.5 | 🟢 Complete | 2026-02-19T17:30:00-08:00 | Implement occurrence detail view | Added detail metadata, taxonomy string, quality issue count, map focus CTA, external GBIF link |
 | 9.6 | 🟢 Complete | 2026-02-19T17:30:00-08:00 | Sync loading indicators (Map Layers ↔ map center ↔ right sidebar) | Integrated cache/loading status via adapter + shared loading primitives in browse |
 | 9.7 | 🟢 Complete | 2026-02-19T19:00:00-08:00 | Render GBIF occurrences as map markers | Explicit `createGBIFLayer`; green circles + clustering; zoom-based cluster sizing; compact K/M/B labels; `outFields: ['id']` for lighter payload; filter-synced via `useGBIFMapBehavior`; map-click opens detail |
-| 9.8 | ⚪ Not Started | — | Wire Save View flow in detail | Deferred; requires `LayerContext` GBIF filter persistence + view naming wiring |
+| 9.8 | 🟢 Complete | 2026-02-20 | Wire Save View flow in detail | LayerContext GBIF filter persistence + view naming; syncGBIFFilters, createOrUpdateGBIFFilteredView; Save View button in detail; hydrate from saved child views; map-click preserves viewId |
 | 9.9 | ⚪ Not Started | — | Evaluate geographic extent expansion | Deferred to follow-up after preserve-only stability and stakeholder review |
 | 9.10 | 🟢 Complete | 2026-02-19T18:00:00-08:00 | Fix map rendering + add card thumbnails | Map: explicit `gbifLayer.ts` + `dataset-178` in `createMapLayer` switch (bypasses TNC registration); Cards: show `primary_image_url` when present |
 | 9.11 | 🟢 Complete | 2026-02-19T17:00:00-08:00 | Improve GBIF map visual performance | Client-side: viewport SQL bounds + zoom-level sampling (`MOD(id, n)`); fixed webMercatorUtils import. Backend pre-aggregation recommended for smooth 323k+ scale — see 9.12 |

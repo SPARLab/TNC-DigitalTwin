@@ -183,12 +183,15 @@ export function useGBIFMapBehavior(
         if (!occurrenceId) return;
         const layerId = String(graphicHit.graphic.layer?.id ?? '').replace(/^v2-/, '');
         const gbifLayerId = GBIF_LAYER_IDS.has(layerId) ? layerId : 'dataset-215';
-        activateLayer(gbifLayerId, undefined, occurrenceId);
+        const nextViewId = activeLayer && GBIF_LAYER_IDS.has(activeLayer.layerId)
+          ? activeLayer.viewId
+          : undefined;
+        activateLayer(gbifLayerId, nextViewId, occurrenceId);
       } catch (error) {
         console.error('[GBIF Map Click] Failed to handle marker click', error);
       }
     });
 
     return () => handler.remove();
-  }, [isOnMap, viewRef, activateLayer]);
+  }, [isOnMap, viewRef, activateLayer, activeLayer]);
 }

@@ -15,6 +15,7 @@ import type {
   DendraViewFilters,
   TNCArcGISViewFilters,
   DataOneViewFilters,
+  GBIFViewFilters,
 } from '../types';
 import type { DroneImageryMetadata } from '../../types/droneImagery';
 import { useCatalog } from './CatalogContext';
@@ -71,6 +72,12 @@ interface LayerContextValue {
     resultCount: number,
     viewId?: string,
   ) => void;
+  syncGBIFFilters: (
+    layerId: string,
+    filters: GBIFViewFilters,
+    resultCount: number,
+    viewId?: string,
+  ) => void;
   createDendraFilteredView: (
     layerId: string,
     filters: DendraViewFilters,
@@ -79,6 +86,12 @@ interface LayerContextValue {
   createOrUpdateDataOneFilteredView: (
     layerId: string,
     filters: DataOneViewFilters,
+    resultCount: number,
+    targetViewId?: string,
+  ) => string | undefined;
+  createOrUpdateGBIFFilteredView: (
+    layerId: string,
+    filters: GBIFViewFilters,
     resultCount: number,
     targetViewId?: string,
   ) => string | undefined;
@@ -227,6 +240,64 @@ function buildDataOneViewName(filters: DataOneViewFilters): string {
   if (nonDate) return nonDate;
   if (datePart) return `Date: ${datePart}`;
   return 'All Datasets';
+}
+
+function buildGBIFFilterSummary(filters: GBIFViewFilters): string | undefined {
+  if (filters.selectedOccurrenceId) {
+    return `Occurrence: ${filters.selectedOccurrenceLabel || filters.selectedOccurrenceId}`;
+  }
+  const parts: string[] = [];
+  if (filters.searchText?.trim()) {
+    parts.push(`Search: "${filters.searchText.trim()}"`);
+  }
+  if (filters.kingdom?.trim()) {
+    parts.push(`Kingdom: ${filters.kingdom.trim()}`);
+  }
+  if (filters.family?.trim()) {
+    parts.push(`Family: ${filters.family.trim()}`);
+  }
+  if (filters.basisOfRecord?.trim()) {
+    parts.push(`Basis: ${filters.basisOfRecord.trim()}`);
+  }
+  if (filters.datasetName?.trim()) {
+    parts.push(`Dataset: ${filters.datasetName.trim()}`);
+  }
+  if (filters.startDate || filters.endDate) {
+    parts.push(`Date: ${filters.startDate || 'Any'} to ${filters.endDate || 'Any'}`);
+  }
+  return parts.length > 0 ? parts.join(', ') : undefined;
+}
+
+function getGBIFFilterCount(filters: GBIFViewFilters): number {
+  if (filters.selectedOccurrenceId) return 1;
+  let count = 0;
+  if (filters.searchText?.trim()) count += 1;
+  if (filters.kingdom?.trim()) count += 1;
+  if (filters.taxonomicClass?.trim()) count += 1;
+  if (filters.family?.trim()) count += 1;
+  if (filters.basisOfRecord?.trim()) count += 1;
+  if (filters.datasetName?.trim()) count += 1;
+  if (filters.startDate || filters.endDate) count += 1;
+  return count;
+}
+
+function buildGBIFViewName(filters: GBIFViewFilters): string {
+  if (filters.selectedOccurrenceId) {
+    return filters.selectedOccurrenceLabel || `Occurrence ${filters.selectedOccurrenceId}`;
+  }
+  const searchPart = filters.searchText?.trim() ? `"${filters.searchText.trim()}"` : '';
+  const kingdomPart = filters.kingdom?.trim() || '';
+  const familyPart = filters.family?.trim() || '';
+  const basisPart = filters.basisOfRecord?.trim() || '';
+  const datasetPart = filters.datasetName?.trim() || '';
+  const datePart = (filters.startDate || filters.endDate)
+    ? `${filters.startDate || 'Any start'} to ${filters.endDate || 'Any end'}`
+    : '';
+  const nonDate = [searchPart, kingdomPart, familyPart, basisPart, datasetPart].filter(Boolean).join(' • ');
+  if (nonDate && datePart) return `${nonDate} (${datePart})`;
+  if (nonDate) return nonDate;
+  if (datePart) return `Date: ${datePart}`;
+  return 'All Occurrences';
 }
 
 function buildDendraViewName(filters: DendraViewFilters): string {
@@ -436,6 +507,26 @@ function dataOneFiltersEqual(
     (a.author || '') === (b.author || '') &&
     (a.selectedDatasetId || '') === (b.selectedDatasetId || '') &&
     (a.selectedDatasetTitle || '') === (b.selectedDatasetTitle || '')
+  );
+}
+
+function gbifFiltersEqual(
+  a: GBIFViewFilters | undefined,
+  b: GBIFViewFilters | undefined,
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    (a.searchText || '') === (b.searchText || '') &&
+    (a.kingdom || '') === (b.kingdom || '') &&
+    (a.taxonomicClass || '') === (b.taxonomicClass || '') &&
+    (a.family || '') === (b.family || '') &&
+    (a.basisOfRecord || '') === (b.basisOfRecord || '') &&
+    (a.datasetName || '') === (b.datasetName || '') &&
+    (a.startDate || '') === (b.startDate || '') &&
+    (a.endDate || '') === (b.endDate || '') &&
+    (a.selectedOccurrenceId || 0) === (b.selectedOccurrenceId || 0) &&
+    (a.selectedOccurrenceLabel || '') === (b.selectedOccurrenceLabel || '')
   );
 }
 
@@ -675,6 +766,18 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                       author: undefined,
                       selectedDatasetId: undefined,
                     },
+                    gbifFilters: {
+                      searchText: undefined,
+                      kingdom: undefined,
+                      taxonomicClass: undefined,
+                      family: undefined,
+                      basisOfRecord: undefined,
+                      datasetName: undefined,
+                      startDate: undefined,
+                      endDate: undefined,
+                      selectedOccurrenceId: undefined,
+                      selectedOccurrenceLabel: undefined,
+                    },
                   }
                 : v
             ),
@@ -704,6 +807,18 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             endDate: undefined,
             author: undefined,
             selectedDatasetId: undefined,
+          },
+          gbifFilters: {
+            searchText: undefined,
+            kingdom: undefined,
+            taxonomicClass: undefined,
+            family: undefined,
+            basisOfRecord: undefined,
+            datasetName: undefined,
+            startDate: undefined,
+            endDate: undefined,
+            selectedOccurrenceId: undefined,
+            selectedOccurrenceLabel: undefined,
           },
           distinguisher: undefined,
         };
@@ -1070,6 +1185,82 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const syncGBIFFilters = useCallback(
+    (layerId: string, filters: GBIFViewFilters, resultCount: number, viewId?: string) => {
+      setPinnedLayers(prev => {
+        const nextLayers = prev.map(p => {
+          if (p.layerId !== layerId) return p;
+
+          const normalizedFilters: GBIFViewFilters = {
+            searchText: filters.searchText?.trim() || undefined,
+            kingdom: filters.kingdom?.trim() || undefined,
+            taxonomicClass: filters.taxonomicClass?.trim() || undefined,
+            family: filters.family?.trim() || undefined,
+            basisOfRecord: filters.basisOfRecord?.trim() || undefined,
+            datasetName: filters.datasetName?.trim() || undefined,
+            startDate: filters.startDate || undefined,
+            endDate: filters.endDate || undefined,
+            selectedOccurrenceId: filters.selectedOccurrenceId || undefined,
+            selectedOccurrenceLabel: filters.selectedOccurrenceLabel?.trim() || undefined,
+          };
+          const nextFilterCount = getGBIFFilterCount(normalizedFilters);
+          const nextFilterSummary = buildGBIFFilterSummary(normalizedFilters);
+
+          if (viewId && p.views) {
+            const targetView = p.views.find(v => v.id === viewId);
+            const nextViewName = targetView?.isNameCustom
+              ? targetView.name
+              : buildGBIFViewName(normalizedFilters);
+
+            if (
+              targetView &&
+              targetView.name === nextViewName &&
+              targetView.filterCount === nextFilterCount &&
+              targetView.filterSummary === nextFilterSummary &&
+              targetView.resultCount === resultCount &&
+              gbifFiltersEqual(targetView.gbifFilters, normalizedFilters)
+            ) return p;
+
+            return {
+              ...p,
+              views: p.views.map(v =>
+                v.id === viewId
+                  ? {
+                      ...v,
+                      name: nextViewName,
+                      filterCount: nextFilterCount,
+                      filterSummary: nextFilterSummary,
+                      gbifFilters: normalizedFilters,
+                      resultCount,
+                    }
+                  : v
+              ),
+            };
+          }
+
+          if (
+            p.filterCount === nextFilterCount &&
+            p.filterSummary === nextFilterSummary &&
+            p.resultCount === resultCount &&
+            gbifFiltersEqual(p.gbifFilters, normalizedFilters)
+          ) return p;
+
+          return {
+            ...p,
+            filterCount: nextFilterCount,
+            filterSummary: nextFilterSummary,
+            gbifFilters: normalizedFilters,
+            resultCount,
+          };
+        });
+
+        const changed = nextLayers.some((l, i) => l !== prev[i]);
+        return changed ? nextLayers : prev;
+      });
+    },
+    []
+  );
+
   const createDendraFilteredView = useCallback(
     (layerId: string, filters: DendraViewFilters, resultCount: number) => {
       const layer = layerMap.get(layerId);
@@ -1340,6 +1531,176 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     [activeLayer, layerMap]
   );
 
+  const createOrUpdateGBIFFilteredView = useCallback(
+    (layerId: string, filters: GBIFViewFilters, resultCount: number, targetViewId?: string) => {
+      const layer = layerMap.get(layerId);
+      if (!layer) return undefined;
+
+      const normalizedFilters: GBIFViewFilters = {
+        searchText: filters.searchText?.trim() || undefined,
+        kingdom: filters.kingdom?.trim() || undefined,
+        taxonomicClass: filters.taxonomicClass?.trim() || undefined,
+        family: filters.family?.trim() || undefined,
+        basisOfRecord: filters.basisOfRecord?.trim() || undefined,
+        datasetName: filters.datasetName?.trim() || undefined,
+        startDate: filters.startDate || undefined,
+        endDate: filters.endDate || undefined,
+        selectedOccurrenceId: filters.selectedOccurrenceId || undefined,
+        selectedOccurrenceLabel: filters.selectedOccurrenceLabel?.trim() || undefined,
+      };
+      const nextFilterCount = getGBIFFilterCount(normalizedFilters);
+      const nextFilterSummary = buildGBIFFilterSummary(normalizedFilters);
+      const newViewName = buildGBIFViewName(normalizedFilters);
+      const newViewId = targetViewId || crypto.randomUUID();
+
+      const newView = {
+        id: newViewId,
+        name: newViewName,
+        isNameCustom: false,
+        isVisible: true,
+        filterCount: nextFilterCount,
+        filterSummary: nextFilterSummary,
+        gbifFilters: normalizedFilters,
+        resultCount,
+      };
+
+      setPinnedLayers(prev => {
+        const target = prev.find(p => p.layerId === layerId);
+        if (!target) {
+          const newPinned: PinnedLayer = {
+            id: crypto.randomUUID(),
+            layerId,
+            name: layer.name,
+            isVisible: true,
+            isActive: activeLayer?.layerId === layerId,
+            filterCount: 0,
+            views: [newView],
+            order: 0,
+          };
+          return [newPinned, ...prev.map((p, i) => ({ ...p, order: i + 1 }))];
+        }
+
+        return prev.map(p => {
+          if (p.layerId !== layerId) return p;
+
+          if (p.views && p.views.length > 0) {
+            const hasTarget = !!targetViewId && p.views.some(v => v.id === targetViewId);
+            if (hasTarget) {
+              return {
+                ...p,
+                isVisible: true,
+                views: p.views.map(v => {
+                  if (v.id === targetViewId) {
+                    const nextName = v.isNameCustom ? v.name : newViewName;
+                    return {
+                      ...v,
+                      name: nextName,
+                      isVisible: true,
+                      filterCount: nextFilterCount,
+                      filterSummary: nextFilterSummary,
+                      gbifFilters: normalizedFilters,
+                      resultCount,
+                    };
+                  }
+                  return { ...v, isVisible: false };
+                }),
+              };
+            }
+
+            return {
+              ...p,
+              isVisible: true,
+              views: [
+                ...p.views.map(v => ({ ...v, isVisible: false })),
+                newView,
+              ],
+            };
+          }
+
+          const existingFlatViewName = p.distinguisher || buildGBIFViewName(
+            p.gbifFilters || {
+              searchText: undefined,
+              kingdom: undefined,
+              taxonomicClass: undefined,
+              family: undefined,
+              basisOfRecord: undefined,
+              datasetName: undefined,
+              startDate: undefined,
+              endDate: undefined,
+              selectedOccurrenceId: undefined,
+              selectedOccurrenceLabel: undefined,
+            }
+          );
+
+          const existingFlatView = {
+            id: crypto.randomUUID(),
+            name: existingFlatViewName,
+            isNameCustom: !!p.distinguisher,
+            isVisible: false,
+            filterCount: p.filterCount,
+            filterSummary: p.filterSummary,
+            inaturalistFilters: p.inaturalistFilters,
+            animlFilters: p.animlFilters,
+            dendraFilters: p.dendraFilters,
+            dataoneFilters: p.dataoneFilters,
+            gbifFilters: p.gbifFilters,
+            resultCount: p.resultCount,
+          };
+
+          return {
+            ...p,
+            isVisible: true,
+            views: [existingFlatView, newView],
+            filterCount: 0,
+            filterSummary: undefined,
+            inaturalistFilters: { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined },
+            animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
+            dendraFilters: {
+              showActiveOnly: false,
+              selectedStationId: undefined,
+              selectedStationName: undefined,
+              selectedDatastreamId: undefined,
+              selectedDatastreamName: undefined,
+              startDate: undefined,
+              endDate: undefined,
+              aggregation: undefined,
+            },
+            dataoneFilters: {
+              searchText: undefined,
+              tncCategory: undefined,
+              startDate: undefined,
+              endDate: undefined,
+              author: undefined,
+              selectedDatasetId: undefined,
+            },
+            gbifFilters: {
+              searchText: undefined,
+              kingdom: undefined,
+              taxonomicClass: undefined,
+              family: undefined,
+              basisOfRecord: undefined,
+              datasetName: undefined,
+              startDate: undefined,
+              endDate: undefined,
+              selectedOccurrenceId: undefined,
+              selectedOccurrenceLabel: undefined,
+            },
+            distinguisher: undefined,
+            resultCount: undefined,
+          };
+        });
+      });
+
+      setActiveLayer(prev =>
+        prev && prev.layerId === layerId
+          ? { ...prev, isPinned: true, viewId: newViewId, featureId: normalizedFilters.selectedOccurrenceId }
+          : prev
+      );
+      return newViewId;
+    },
+    [activeLayer, layerMap]
+  );
+
   const createOrUpdateDroneView = useCallback(
     (layerId: string, flight: DroneImageryMetadata, comparisonMode: 'single' | 'temporal' = 'single') => {
       const layer = layerMap.get(layerId);
@@ -1461,6 +1822,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         const isDendraLayer = layerMap.get(p.layerId)?.dataSource === 'dendra';
         const isAnimlLayer = layerMap.get(p.layerId)?.dataSource === 'animl';
         const isDataOneLayer = layerMap.get(p.layerId)?.dataSource === 'dataone';
+        const isGBIFLayer = layerMap.get(p.layerId)?.dataSource === 'gbif';
         const isDroneLayer = p.layerId === 'dataset-193';
         if (isDroneLayer) return p;
         
@@ -1495,6 +1857,20 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                   endDate: undefined,
                   author: undefined,
                   selectedDatasetId: undefined,
+                }
+              : undefined,
+            gbifFilters: isGBIFLayer
+              ? {
+                  searchText: undefined,
+                  kingdom: undefined,
+                  taxonomicClass: undefined,
+                  family: undefined,
+                  basisOfRecord: undefined,
+                  datasetName: undefined,
+                  startDate: undefined,
+                  endDate: undefined,
+                  selectedOccurrenceId: undefined,
+                  selectedOccurrenceLabel: undefined,
                 }
               : undefined,
             droneView: undefined,
@@ -1533,6 +1909,21 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                 selectedDatasetId: undefined,
               }
             )
+            : isGBIFLayer
+            ? buildGBIFViewName(
+              p.gbifFilters || {
+                searchText: undefined,
+                kingdom: undefined,
+                taxonomicClass: undefined,
+                family: undefined,
+                basisOfRecord: undefined,
+                datasetName: undefined,
+                startDate: undefined,
+                endDate: undefined,
+                selectedOccurrenceId: undefined,
+                selectedOccurrenceLabel: undefined,
+              }
+            )
             : buildINaturalistViewName(
               p.inaturalistFilters || { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined }
             )
@@ -1548,6 +1939,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           animlFilters: p.animlFilters,
           dendraFilters: p.dendraFilters,
           dataoneFilters: p.dataoneFilters,
+          gbifFilters: p.gbifFilters,
           droneView: p.droneView,
           resultCount: p.resultCount,
         };
@@ -1579,6 +1971,20 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                 endDate: undefined,
                 author: undefined,
                 selectedDatasetId: undefined,
+              }
+            : undefined,
+          gbifFilters: isGBIFLayer
+            ? {
+                searchText: undefined,
+                kingdom: undefined,
+                taxonomicClass: undefined,
+                family: undefined,
+                basisOfRecord: undefined,
+                datasetName: undefined,
+                startDate: undefined,
+                endDate: undefined,
+                selectedOccurrenceId: undefined,
+                selectedOccurrenceLabel: undefined,
               }
             : undefined,
           droneView: undefined,
@@ -1613,6 +2019,20 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                 endDate: undefined,
                 author: undefined,
                 selectedDatasetId: undefined,
+              }
+            : undefined,
+          gbifFilters: isGBIFLayer
+            ? {
+                searchText: undefined,
+                kingdom: undefined,
+                taxonomicClass: undefined,
+                family: undefined,
+                basisOfRecord: undefined,
+                datasetName: undefined,
+                startDate: undefined,
+                endDate: undefined,
+                selectedOccurrenceId: undefined,
+                selectedOccurrenceLabel: undefined,
               }
             : undefined,
           droneView: undefined,
@@ -1654,6 +2074,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             animlFilters: lastView.animlFilters,
             dendraFilters: lastView.dendraFilters,
             dataoneFilters: lastView.dataoneFilters,
+            gbifFilters: lastView.gbifFilters,
             droneView: lastView.droneView,
             distinguisher: lastView.isNameCustom ? lastView.name : undefined,
             resultCount: lastView.resultCount,
@@ -1719,6 +2140,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         const isDendraLayer = layerMap.get(p.layerId)?.dataSource === 'dendra';
         const isAnimlLayer = layerMap.get(p.layerId)?.dataSource === 'animl';
         const isDataOneLayer = layerMap.get(p.layerId)?.dataSource === 'dataone';
+        const isGBIFLayer = layerMap.get(p.layerId)?.dataSource === 'gbif';
         const isDroneLayer = p.layerId === 'dataset-193';
 
         const autoName = isDendraLayer
@@ -1747,6 +2169,21 @@ export function LayerProvider({ children }: { children: ReactNode }) {
               endDate: undefined,
               author: undefined,
               selectedDatasetId: undefined,
+            }
+          )
+          : isGBIFLayer
+          ? buildGBIFViewName(
+            targetView.gbifFilters || {
+              searchText: undefined,
+              kingdom: undefined,
+              taxonomicClass: undefined,
+              family: undefined,
+              basisOfRecord: undefined,
+              datasetName: undefined,
+              startDate: undefined,
+              endDate: undefined,
+              selectedOccurrenceId: undefined,
+              selectedOccurrenceLabel: undefined,
             }
           )
           : isDroneLayer && targetView.droneView
@@ -1836,8 +2273,10 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         syncDendraFilters,
         syncTNCArcGISFilters,
         syncDataOneFilters,
+        syncGBIFFilters,
         createDendraFilteredView,
         createOrUpdateDataOneFilteredView,
+        createOrUpdateGBIFFilteredView,
         createOrUpdateDroneView,
         reorderLayers,
         createNewView,

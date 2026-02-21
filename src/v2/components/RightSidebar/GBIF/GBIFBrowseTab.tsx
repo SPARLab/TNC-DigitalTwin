@@ -16,20 +16,36 @@ const GBIF_LAYER_IDS = new Set(['dataset-178', 'dataset-215']);
 const DEFAULT_GBIF_LAYER_ID = 'dataset-215';
 
 export function GBIFBrowseTab() {
-  const { warmCache, createBrowseLoadingScope, filterOptions, aggregationMode, setAggregationMode } = useGBIFFilter();
-  const { activeLayer, activateLayer } = useLayers();
+  const {
+    warmCache,
+    createBrowseLoadingScope,
+    filterOptions,
+    aggregationMode,
+    setAggregationMode,
+    browseFilters,
+    setBrowseFilters,
+  } = useGBIFFilter();
+  const {
+    activeLayer,
+    activateLayer,
+    lastEditFiltersRequest,
+    lastFiltersClearedTimestamp,
+    getPinnedByLayerId,
+    syncGBIFFilters,
+    createOrUpdateGBIFFilteredView,
+  } = useLayers();
   const { viewRef } = useMap();
   const activeGbifLayerId =
     activeLayer && GBIF_LAYER_IDS.has(activeLayer.layerId) ? activeLayer.layerId : DEFAULT_GBIF_LAYER_ID;
   const activeGbifMapLayerId = `v2-${activeGbifLayerId}`;
-  const [searchInput, setSearchInput] = useState('');
-  const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
-  const [kingdom, setKingdom] = useState('');
-  const [family, setFamily] = useState('');
-  const [basisOfRecord, setBasisOfRecord] = useState('');
-  const [datasetName, setDatasetName] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [searchInput, setSearchInput] = useState(browseFilters.searchText || '');
+  const [appliedSearchTerm, setAppliedSearchTerm] = useState(browseFilters.searchText || '');
+  const [kingdom, setKingdom] = useState(browseFilters.kingdom || '');
+  const [family, setFamily] = useState(browseFilters.family || '');
+  const [basisOfRecord, setBasisOfRecord] = useState(browseFilters.basisOfRecord || '');
+  const [datasetName, setDatasetName] = useState(browseFilters.datasetName || '');
+  const [startDate, setStartDate] = useState(browseFilters.startDate || '');
+  const [endDate, setEndDate] = useState(browseFilters.endDate || '');
   const [occurrences, setOccurrences] = useState<GBIFOccurrence[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(0);
@@ -37,6 +53,9 @@ export function GBIFBrowseTab() {
   const [error, setError] = useState<string | null>(null);
   const [selectedOccurrence, setSelectedOccurrence] = useState<GBIFOccurrence | null>(null);
   const lastHandledFeatureIdRef = useRef<string | null>(null);
+  const lastConsumedHydrateRef = useRef(0);
+  const lastConsumedClearRef = useRef(0);
+  const prevHydrateViewIdRef = useRef<string | undefined>(activeLayer?.viewId);
 
   useEffect(() => {
     warmCache();
@@ -59,6 +78,20 @@ export function GBIFBrowseTab() {
   useEffect(() => {
     setPage(0);
   }, [appliedSearchTerm, kingdom, family, basisOfRecord, datasetName, startDate, endDate]);
+
+  // Keep map-query filters synchronized with browse controls.
+  useEffect(() => {
+    setBrowseFilters({
+      searchText: appliedSearchTerm,
+      kingdom,
+      taxonomicClass: '',
+      family,
+      basisOfRecord,
+      datasetName,
+      startDate,
+      endDate,
+    });
+  }, [appliedSearchTerm, kingdom, family, basisOfRecord, datasetName, startDate, endDate, setBrowseFilters]);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -135,6 +168,111 @@ export function GBIFBrowseTab() {
     };
   }, [activeLayer, occurrences, selectedOccurrence]);
 
+  // Hydrate GBIF browse controls from the selected pinned child view.
+  useEffect(() => {
+    if (!activeLayer || !GBIF_LAYER_IDS.has(activeLayer.layerId)) return;
+
+    const viewChanged = activeLayer.viewId !== prevHydrateViewIdRef.current;
+    const editRequested = lastEditFiltersRequest > lastConsumedHydrateRef.current;
+    const clearRequested = lastFiltersClearedTimestamp > lastConsumedClearRef.current;
+    prevHydrateViewIdRef.current = activeLayer.viewId;
+
+    if (!viewChanged && !editRequested && !clearRequested) return;
+    if (editRequested) lastConsumedHydrateRef.current = lastEditFiltersRequest;
+    if (clearRequested) lastConsumedClearRef.current = lastFiltersClearedTimestamp;
+
+    const pinned = getPinnedByLayerId(activeLayer.layerId);
+    if (!pinned) return;
+
+    const sourceFilters = activeLayer.viewId && pinned.views
+      ? pinned.views.find(v => v.id === activeLayer.viewId)?.gbifFilters
+      : pinned.gbifFilters;
+    if (!sourceFilters) return;
+
+    const nextSearch = sourceFilters.searchText || '';
+    setSearchInput(nextSearch);
+    setAppliedSearchTerm(nextSearch);
+    setKingdom(sourceFilters.kingdom || '');
+    setFamily(sourceFilters.family || '');
+    setBasisOfRecord(sourceFilters.basisOfRecord || '');
+    setDatasetName(sourceFilters.datasetName || '');
+    setStartDate(sourceFilters.startDate || '');
+    setEndDate(sourceFilters.endDate || '');
+    setPage(0);
+
+    if (sourceFilters.selectedOccurrenceId) {
+      void gbifService.getOccurrenceById(sourceFilters.selectedOccurrenceId)
+        .then((occurrence) => {
+          if (occurrence) {
+            lastHandledFeatureIdRef.current = String(occurrence.id);
+            setSelectedOccurrence(occurrence);
+          }
+        })
+        .catch(() => {
+          // Best-effort restore only.
+        });
+    } else if (activeLayer.featureId == null) {
+      setSelectedOccurrence(null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally gated by refs
+  }, [
+    activeLayer?.layerId,
+    activeLayer?.viewId,
+    activeLayer?.featureId,
+    lastEditFiltersRequest,
+    lastFiltersClearedTimestamp,
+    getPinnedByLayerId,
+  ]);
+
+  // Keep Map Layers metadata synced to current GBIF filters/detail selection.
+  useEffect(() => {
+    if (!activeLayer || !GBIF_LAYER_IDS.has(activeLayer.layerId)) return;
+    const pinned = getPinnedByLayerId(activeLayer.layerId);
+    const activeView = activeLayer.viewId && pinned?.views
+      ? pinned.views.find((view) => view.id === activeLayer.viewId)
+      : undefined;
+
+    // Saved occurrence child views are snapshots and should not be overwritten
+    // while users keep browsing other records in detail/list flow.
+    if (activeView?.gbifFilters?.selectedOccurrenceId) return;
+
+    syncGBIFFilters(
+      activeLayer.layerId,
+      {
+        searchText: appliedSearchTerm || undefined,
+        kingdom: kingdom || undefined,
+        family: family || undefined,
+        basisOfRecord: basisOfRecord || undefined,
+        datasetName: datasetName || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+        selectedOccurrenceId: selectedOccurrence?.id,
+        selectedOccurrenceLabel: selectedOccurrence
+          ? (selectedOccurrence.species || selectedOccurrence.scientificName || undefined)
+          : undefined,
+      },
+      totalCount,
+      activeLayer.viewId
+    );
+  }, [
+    activeLayer?.layerId,
+    activeLayer?.viewId,
+    activeLayer?.isPinned,
+    appliedSearchTerm,
+    kingdom,
+    family,
+    basisOfRecord,
+    datasetName,
+    startDate,
+    endDate,
+    selectedOccurrence?.id,
+    selectedOccurrence?.species,
+    selectedOccurrence?.scientificName,
+    totalCount,
+    getPinnedByLayerId,
+    syncGBIFFilters,
+  ]);
+
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const hasStaleResults = occurrences.length > 0;
   const showInitialLoading = loading && !hasStaleResults;
@@ -186,10 +324,33 @@ export function GBIFBrowseTab() {
     setPage(0);
   };
 
+  const handleSaveOccurrenceView = (occurrence: GBIFOccurrence): string => {
+    if (!activeLayer || !GBIF_LAYER_IDS.has(activeLayer.layerId)) {
+      return 'Unable to save view: GBIF layer is not active.';
+    }
+
+    const savedViewId = createOrUpdateGBIFFilteredView(
+      activeLayer.layerId,
+      {
+        selectedOccurrenceId: occurrence.id,
+        selectedOccurrenceLabel: occurrence.species || occurrence.scientificName || `Occurrence ${occurrence.id}`,
+      },
+      1
+    );
+
+    if (!savedViewId) {
+      return 'Unable to save GBIF view in Map Layers.';
+    }
+
+    activateLayer(activeLayer.layerId, savedViewId, occurrence.id);
+    return 'Saved as a new GBIF child view in Map Layers.';
+  };
+
   if (selectedOccurrence) {
     return (
       <GBIFOccurrenceDetailView
         occurrence={selectedOccurrence}
+        onSaveView={handleSaveOccurrenceView}
         onBack={() => {
           setSelectedOccurrence(null);
           if (activeLayer?.layerId && GBIF_LAYER_IDS.has(activeLayer.layerId)) {
