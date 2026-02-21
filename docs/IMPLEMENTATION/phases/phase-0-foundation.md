@@ -41,6 +41,7 @@ Set up the V2 application shell, routing, state management, and shared component
 | CON-GL-08 | 🟢 Complete | Feb 18, 2026 (implemented) | Guide user to filter panel when "New View" is clicked | New View now auto-activates the created child view and triggers Edit Filters guidance to open/hydrate Browse filters |
 | 0.9 | 🟢 Complete | Feb 19, 2026 | Dynamic Layer Registry from Data Catalog Service | `useCatalogRegistry` fetches from Dangermond_Preserve_Data_Catalog FeatureServer; left sidebar populated dynamically; layers without adapters show generic placeholder in right sidebar |
 | D20-01 | 🟢 Complete | Feb 20, 2026 | Add collapse button to right sidebar — default open, stays collapsed until user manually re-expands | Extruded tab on left edge; single margin-right animation; localStorage persistence; no auto-reopen. Source: Dan feedback Feb 20. |
+| TF-12 | ⚪ Not Started | Feb 20, 2026 | Expand "Open Table Overlay" to all TNC ArcGIS feature service layers (currently only Oil Seeps) | Medium priority; Trisalyn reacted very positively — "this is how the GIS brain thinks." Source: Trisalyn QA Feb 20 |
 
 **Note:** Tasks `0.1` through `0.7` appear to be already implemented and are intentionally removed from active tracking.
 
