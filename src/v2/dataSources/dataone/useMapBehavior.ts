@@ -211,8 +211,8 @@ export function useDataOneMapBehavior(
     (dataOneLayer as any).featureReduction = buildDataOneFeatureReduction(aggregationMode);
   }, [isOnMap, aggregationMode, getManagedLayer, mapReady]);
 
-  // Dynamic binning: update fixedBinLevel by map scale while binning is active.
-  // Apply only when zoom settles to avoid bin "blink" while wheel-zooming.
+  // Dynamic binning: watch scale continuously and switch levels
+  // only when crossing a threshold (level change guard).
   useEffect(() => {
     if (!isOnMap) return;
     if (aggregationMode !== 'binning') return;
@@ -228,18 +228,20 @@ export function useDataOneMapBehavior(
       const level = getBinningLevelForScale(view.scale);
       if (level === lastAppliedLevel) return;
       lastAppliedLevel = level;
+      const reduction = (dataOneLayer as any).featureReduction;
+      // Prefer mutating the existing reduction to avoid full reduction rebuild flicker.
+      if (reduction?.type === 'binning') {
+        reduction.fixedBinLevel = level;
+        return;
+      }
       (dataOneLayer as any).featureReduction = buildDataOneFeatureReductionForScale('binning', view.scale);
     };
 
     applyIfLevelChanged();
-
-    const stationaryHandle = view.watch('stationary', (isStationary) => {
-      if (!isStationary) return;
-      applyIfLevelChanged();
-    });
+    const scaleHandle = view.watch('scale', () => applyIfLevelChanged());
 
     return () => {
-      stationaryHandle.remove();
+      scaleHandle.remove();
     };
   }, [isOnMap, aggregationMode, viewRef, getManagedLayer, mapReady]);
 

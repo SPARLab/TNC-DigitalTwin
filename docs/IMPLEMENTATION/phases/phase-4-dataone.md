@@ -18,7 +18,7 @@
 | TF-13 | ⚪ Not Started | Feb 20, 2026 | Add loading indicator when DataOne layer is selected and map data is loading | High priority; no visual feedback during load leaves user uncertain if app is working. Source: Trisalyn QA Feb 20 |
 | TF-14 | ⚪ Not Started | Feb 20, 2026 | Render a specific map marker when "View on Map" is clicked on a dataset | High priority; currently highlights the group but doesn't drop a specific dot at the dataset location. Source: Trisalyn QA Feb 20 |
 | CON-DONE-01 | 🟢 Complete | Feb 20, 2026 | Cluster click on map populates right sidebar with datasets at that location | Race condition fix applied; counts verified |
-| CON-DONE-16 | 🟢 Complete | Feb 20, 2026 | Switch from circular clustering to grid binning (FeatureReductionBinning) | Scale thresholds tuned; stationary watcher eliminates zoom blink; "Where to Fine-Tune" doc'd |
+| CON-DONE-16 | 🟢 Complete | Feb 20, 2026 | Switch from circular clustering to grid binning (FeatureReductionBinning) | Live scale watcher; in-place fixedBinLevel mutation; maxScale:0 keeps bins visible; "Where to Fine-Tune" doc'd |
 | CON-DONE-02 | 🟢 Complete | Feb 20, 2026 | Auto-pan/zoom when opening dataset detail; repurpose View on Map as Recenter | High priority; resolution applied |
 | CON-DONE-03 | ⚪ Not Started | Feb 18, 2026 | Cluster popup for scrolling individual datasets | Medium priority |
 | CON-DONE-04 | ⚪ Not Started | Feb 18, 2026 | Improve point dispersion as user zooms into clusters | Medium priority |
@@ -145,12 +145,12 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 - User-facing toggle in DataONE Browse: **Clusters** vs **Grid bins** (DataOneFilterContext `aggregationMode`)
 - ArcGIS `FeatureReductionBinning` with `fixedBinLevel` driven by map scale (dynamic refinement on zoom)
 - Bin click → sidebar population (geometry-aware member resolution: polygon bins, extent bins, point fallback)
-- Color visual variables on `aggregateCount` for density; `maxScale` breakpoint for bin → individual points
+- Color visual variables on `aggregateCount` for density; `maxScale: 0` keeps bins visible at all zoom levels (no drop-out during navigation)
 - Point marker size increased for readability when bins dissolve
 
 **Resolved UX Issues:**
 - ~~**Zoomed out:** Rectangles too small~~ → Fixed: shifted scale→level mapping ~1 level coarser
-- ~~**Zoom transition / blink:** Bins flicker during wheel zoom~~ → Fixed: `view.watch('stationary', ...)` so bins only rebuild when zoom settles
+- ~~**Zoom transition / blink:** Bins flicker or disappear during wheel zoom~~ → Fixed: continuous `view.watch('scale', ...)` with level-change guard; in-place `fixedBinLevel` mutation avoids full reduction rebuild; `maxScale: 0` keeps bins visible at all zoom levels
 
 **Remaining (known limitation):**
 - **Bin → points cliff:** A bin showing "252" can disappear into just a few visible dots when zooming in (many datasets share same/similar coordinates)
@@ -160,9 +160,9 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 | What to adjust | File | Location |
 |---------------|------|----------|
 | Scale → bin level mapping (coarser = fewer, bigger bins at zoom-out) | `src/v2/components/Map/layers/dataoneLayer.ts` | `getBinningLevelForScale()` — scale thresholds and returned levels 1–9 |
-| When bins turn off and show individual points | `src/v2/components/Map/layers/dataoneLayer.ts` | `maxScale` in `buildDataOneFeatureReductionForScale()` |
+| When bins turn off and show individual points | `src/v2/components/Map/layers/dataoneLayer.ts` | `maxScale` in `buildDataOneFeatureReductionForScale()` (0 = always bins) |
 | Individual point size when bins are off | `src/v2/components/Map/layers/dataoneLayer.ts` | `DEFAULT_MARKER_SYMBOL` (size, outline) |
-| When bin level updates on zoom | `src/v2/dataSources/dataone/useMapBehavior.ts` | Effect that calls `view.watch('stationary', ...)` — bins rebuild only when zoom settles |
+| When bin level updates on zoom | `src/v2/dataSources/dataone/useMapBehavior.ts` | Effect that calls `view.watch('scale', ...)` — bins update live when crossing scale thresholds; in-place `fixedBinLevel` mutation avoids flicker |
 
 ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lower numbers = fewer, bigger rectangles. See [API fixedBinLevel table](https://developers.arcgis.com/javascript/latest/api-reference/esri-layers-support-FeatureReductionBinning.html#fixedBinLevel).
 
@@ -171,7 +171,7 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 - [x] Bin labels show dataset counts; bin click populates sidebar
 - [x] Single-point behavior preserved when zoomed in past maxScale
 - [x] Bin scale thresholds fine-tuned for desired zoom progression (few large bins → more smaller bins)
-- [x] No bin blink/flicker during wheel zoom (stationary watcher)
+- [x] No bin blink/flicker during wheel zoom (live scale watcher + in-place fixedBinLevel mutation)
 
 **Estimated Time:** 3–5 hours (complete)
 
@@ -289,6 +289,7 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 | Date | Change | By |
 |------|--------|-----|
 | Feb 20, 2026 | CON-DONE-02: marked complete. Auto-pan/zoom on dataset detail open; "View on Map" repurposed as "Recenter". Zoom 16 + cluster maxScale 12_000 so selected dataset breaks out of cluster and shows as dot. | Assistant |
+| Feb 20, 2026 | CON-DONE-16: final UX fix. Switched to continuous `view.watch('scale', ...)` with level-change guard; in-place `fixedBinLevel` mutation avoids full reduction rebuild flicker; `maxScale: 0` keeps bins visible during zoom. Bins now resize live when crossing thresholds without blink-out. | Assistant |
 | Feb 20, 2026 | CON-DONE-16: marked complete. Switched to `view.watch('stationary', ...)` to eliminate bin blink during wheel zoom; scale thresholds tuned. | Assistant |
 | Feb 20, 2026 | CON-DONE-16: fine-tuned bin scale thresholds (shifted ~1 level coarser); added debounced scale watcher with level-change guard to eliminate flicker on zoom. | Assistant |
 | Feb 20, 2026 | CON-DONE-16: marked in progress; documented implemented features, remaining UX issues (zoomed-out bins too small, abrupt bin→points transition), and "Where to fine-tune" code pointers for future tuning. | Assistant |
