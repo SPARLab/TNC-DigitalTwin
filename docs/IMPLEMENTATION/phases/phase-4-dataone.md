@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
-**Status:** 🟡 Ready for New Tasks  
-**Progress:** 0 / 12 tasks  
+**Status:** 🟡 In Progress  
+**Progress:** 3 / 18 tasks complete  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-4-dataone-completed.md`  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
@@ -17,8 +17,9 @@
 | D20-B02 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Create dedicated DataOne point layer in ArcGIS data store (deduplicated, latest version only) with native clustering enabled | Mirrors what Dan did for GBIF. Will keep underlying versioned data table; new point layer is just latest spatial points. Source: Dan Meeting Feb 20 |
 | TF-13 | ⚪ Not Started | Feb 20, 2026 | Add loading indicator when DataOne layer is selected and map data is loading | High priority; no visual feedback during load leaves user uncertain if app is working. Source: Trisalyn QA Feb 20 |
 | TF-14 | ⚪ Not Started | Feb 20, 2026 | Render a specific map marker when "View on Map" is clicked on a dataset | High priority; currently highlights the group but doesn't drop a specific dot at the dataset location. Source: Trisalyn QA Feb 20 |
-| CON-DONE-01 | ⚪ Not Started | Feb 18, 2026 | Cluster click on map populates right sidebar with datasets at that location | High priority |
-| CON-DONE-02 | ⚪ Not Started | Feb 18, 2026 | Auto-pan/zoom when opening dataset detail; repurpose View on Map as Recenter | High priority; resolution applied |
+| CON-DONE-01 | 🟢 Complete | Feb 20, 2026 | Cluster click on map populates right sidebar with datasets at that location | Race condition fix applied; counts verified |
+| CON-DONE-16 | 🟢 Complete | Feb 20, 2026 | Switch from circular clustering to grid binning (FeatureReductionBinning) | Scale thresholds tuned; stationary watcher eliminates zoom blink; "Where to Fine-Tune" doc'd |
+| CON-DONE-02 | 🟢 Complete | Feb 20, 2026 | Auto-pan/zoom when opening dataset detail; repurpose View on Map as Recenter | High priority; resolution applied |
 | CON-DONE-03 | ⚪ Not Started | Feb 18, 2026 | Cluster popup for scrolling individual datasets | Medium priority |
 | CON-DONE-04 | ⚪ Not Started | Feb 18, 2026 | Improve point dispersion as user zooms into clusters | Medium priority |
 | CON-DONE-05 | ⚪ Not Started | Feb 18, 2026 | Fix map vs sidebar count discrepancy (dedupe dataset versions) | High priority bug |
@@ -91,6 +92,113 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 ## Task Details
 
 *(Add new task details below. Completed tasks 4.1–4.12 are in the archive.)*
+
+---
+
+### CON-DONE-01: Cluster Click Populates Sidebar with Local Datasets
+
+**Goal:** When a user clicks a clustered DataONE marker on the map, the right sidebar should immediately show the datasets represented by that cluster/location.
+
+**Context:** Previously, cluster clicks only zoomed the map. Users had no direct way to inspect which datasets were in the clicked cluster without repeated zoom interactions.
+
+**Implementation Notes (Feb 20, 2026):**
+- Added map-selection flow for cluster clicks (`mapSelectionDataoneIds`) so cluster clicks drive sidebar filtering
+- Added visual synchronization aid: blue highlight ring on selected cluster
+- Preserved single-point click behavior: clicking a non-cluster marker opens dataset detail directly
+- Moved large-cluster sidebar filtering to client-side cache matching (to avoid 414 URI Too Large when cluster selections are very large)
+
+**Investigation Findings (Feb 20, 2026):**
+- Verified with live service checks: `FeatureServer/0` currently returns latest-only records (`is_latest_version = 0` count is 0)
+- Verified preserve-bounds subset used by app has 878 records, all latest-only, with no version duplication
+- Remaining issue is **cluster count desynchronization**: in some views, visible map cluster labels (e.g., 506 and 722) imply a larger universe than sidebar total (878)
+- Current hypothesis: map cluster aggregation scope is not perfectly aligned with sidebar filter scope in all states/zooms
+
+**Root Cause Found (Feb 20, 2026):**
+- Cluster count desynchronization was caused by a **race condition in `populateDataOneLayer`**.
+- When `browseFilters` changed rapidly (new object reference every update), the `useEffect` fired multiple concurrent runs.
+- The `abortController` only guarded the fetch; after fetch completion, concurrent `populateDataOneLayer` calls would both read `source.toArray()` as empty (before either's `applyEdits` finished), causing both to `addFeatures` without deleting — **doubling the feature count** in the layer.
+- ArcGIS clustering then counted ~1756 features instead of 878, inflating cluster labels.
+
+**Fix Applied:**
+1. `dataoneLayer.ts` — `populateDataOneLayer` now uses `queryFeatures({ where: '1=1' })` to detect existing features before deleting, instead of `source.toArray()` which is unreliable under concurrent edits.
+2. `useMapBehavior.ts` — Added a `populateVersionRef` counter. Each effect run captures a version synchronously; after the async fetch returns, it checks whether the version is still current before proceeding. Stale runs bail out instead of racing.
+
+**Acceptance Criteria:**
+- [x] Clicking a DataONE cluster populates the right sidebar list with datasets for that clicked location/cluster
+- [x] Sidebar clearly indicates that a map-location filter is active and allows clearing it
+- [x] Clicking a single (non-cluster) point continues to open dataset detail as before
+- [x] Large cluster clicks no longer fail with `414 Request-URI Too Large`
+- [x] Cluster label counts and sidebar total are fully synchronized across zoom levels and map states (race condition fix applied)
+- [x] QA pass confirms behavior across multiple zoom levels and dense cluster areas
+
+**Estimated Time:** 2–4 hours (implementation + QA)
+
+---
+
+### CON-DONE-16: Switch from Circular Clustering to Grid Binning
+
+**Goal:** Replace the current circular cluster visualization with ArcGIS **FeatureReductionBinning** (grid cell aggregation). Grid bins use zoom-dependent geohash cells, which can improve count explainability and reduce cluster ambiguity.
+
+**Context:** The DataONE map layer uses `featureReduction: { type: 'cluster' }` by default. ArcGIS also supports `FeatureReductionBinning`. See [ArcGIS Binning docs](https://developers.arcgis.com/javascript/latest/api-reference/esri-layers-support-FeatureReductionBinning.html).
+
+**What Was Implemented (Feb 20, 2026):**
+- User-facing toggle in DataONE Browse: **Clusters** vs **Grid bins** (DataOneFilterContext `aggregationMode`)
+- ArcGIS `FeatureReductionBinning` with `fixedBinLevel` driven by map scale (dynamic refinement on zoom)
+- Bin click → sidebar population (geometry-aware member resolution: polygon bins, extent bins, point fallback)
+- Color visual variables on `aggregateCount` for density; `maxScale` breakpoint for bin → individual points
+- Point marker size increased for readability when bins dissolve
+
+**Resolved UX Issues:**
+- ~~**Zoomed out:** Rectangles too small~~ → Fixed: shifted scale→level mapping ~1 level coarser
+- ~~**Zoom transition / blink:** Bins flicker during wheel zoom~~ → Fixed: `view.watch('stationary', ...)` so bins only rebuild when zoom settles
+
+**Remaining (known limitation):**
+- **Bin → points cliff:** A bin showing "252" can disappear into just a few visible dots when zooming in (many datasets share same/similar coordinates)
+
+**Where to Fine-Tune:**
+
+| What to adjust | File | Location |
+|---------------|------|----------|
+| Scale → bin level mapping (coarser = fewer, bigger bins at zoom-out) | `src/v2/components/Map/layers/dataoneLayer.ts` | `getBinningLevelForScale()` — scale thresholds and returned levels 1–9 |
+| When bins turn off and show individual points | `src/v2/components/Map/layers/dataoneLayer.ts` | `maxScale` in `buildDataOneFeatureReductionForScale()` |
+| Individual point size when bins are off | `src/v2/components/Map/layers/dataoneLayer.ts` | `DEFAULT_MARKER_SYMBOL` (size, outline) |
+| When bin level updates on zoom | `src/v2/dataSources/dataone/useMapBehavior.ts` | Effect that calls `view.watch('stationary', ...)` — bins rebuild only when zoom settles |
+
+ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lower numbers = fewer, bigger rectangles. See [API fixedBinLevel table](https://developers.arcgis.com/javascript/latest/api-reference/esri-layers-support-FeatureReductionBinning.html#fixedBinLevel).
+
+**Acceptance Criteria:**
+- [x] DataONE map layer supports grid binning (toggle with clusters)
+- [x] Bin labels show dataset counts; bin click populates sidebar
+- [x] Single-point behavior preserved when zoomed in past maxScale
+- [x] Bin scale thresholds fine-tuned for desired zoom progression (few large bins → more smaller bins)
+- [x] No bin blink/flicker during wheel zoom (stationary watcher)
+
+**Estimated Time:** 3–5 hours (complete)
+
+---
+
+### CON-DONE-02: Auto-Pan/Zoom When Opening Dataset Detail; Repurpose View on Map as Recenter
+
+**Goal:** When the user opens a DataONE dataset detail view (from browse card or map click), the map automatically pans and zooms to the dataset location. The former "View on Map" button is repurposed as "Recenter" for recoverability when the user has panned away.
+
+**Context:** Per consolidated feedback (Feb 18, 2026), auto-pan/zoom should happen on click when opening the detail view; "View on Map" becomes a conditional Recenter action.
+
+**Implementation Notes (Feb 20, 2026):**
+- `DatasetDetailView`: Added `useEffect` that auto-pans/zooms when `dataset` or `details` change (on open, version switch, or when bounds load from details)
+- Uses `lastPannedDatasetIdRef` to avoid duplicate pans when details load after center-based pan
+- Supports both center point (`centerLon`/`centerLat`) and spatial extent bounds from detail metadata
+- Zoom level 16 for center case (breaks cluster grouping so individual dataset dot is visible); extent case uses `Extent.expand(1.2)` for padding
+- `dataoneLayer.ts`: Cluster `maxScale: 12_000` so clustering turns off at close zoom; selected dataset resolves to a visible dot
+- Renamed "View on Map" button to "Recenter"; handler `handleRecenter` shows toast on manual recenter
+- Card click in browse list now calls `activateLayer` with dataset ID for map/sidebar sync
+
+**Acceptance Criteria:**
+- [x] Opening dataset detail (card click or map point click) auto-pans/zooms map to dataset location
+- [x] "View on Map" repurposed as "Recenter" for when user has panned away
+- [x] Version switch within detail view triggers auto-pan to new version's location
+- [x] Datasets with bounds-only (no center) pan when detail metadata loads
+
+**Estimated Time:** 1–2 hours
 
 ---
 
@@ -172,6 +280,7 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 - [ ] How to handle datasets with many files?
 - [ ] Keyword click behavior - filter by that keyword?
 - [ ] Preview capability vs. link to DataOne?
+- [ ] ~~Should we switch from point clustering to grid/bin aggregation?~~ → Tracked in CON-DONE-16
 
 ---
 
@@ -179,5 +288,15 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 20, 2026 | CON-DONE-02: marked complete. Auto-pan/zoom on dataset detail open; "View on Map" repurposed as "Recenter". Zoom 16 + cluster maxScale 12_000 so selected dataset breaks out of cluster and shows as dot. | Assistant |
+| Feb 20, 2026 | CON-DONE-16: marked complete. Switched to `view.watch('stationary', ...)` to eliminate bin blink during wheel zoom; scale thresholds tuned. | Assistant |
+| Feb 20, 2026 | CON-DONE-16: fine-tuned bin scale thresholds (shifted ~1 level coarser); added debounced scale watcher with level-change guard to eliminate flicker on zoom. | Assistant |
+| Feb 20, 2026 | CON-DONE-16: marked in progress; documented implemented features, remaining UX issues (zoomed-out bins too small, abrupt bin→points transition), and "Where to fine-tune" code pointers for future tuning. | Assistant |
+| Feb 20, 2026 | CON-DONE-16 update: added DataONE Browse toggle for map aggregation mode (`Clusters`/`Grid bins`) and made cluster default while validating bin rendering. | Assistant |
+| Feb 20, 2026 | CON-DONE-16 started: switched DataONE map layer to `FeatureReductionBinning`; updated aggregate label/popup fields and map click handling for bin-aware aggregate resolution. QA pending. | Assistant |
+| Feb 20, 2026 | CON-DONE-01 marked complete; added CON-DONE-16 (switch to grid binning) as next task. | Assistant |
+| Feb 20, 2026 | CON-DONE-01: Fixed cluster count desynchronization — root cause was race condition in populateDataOneLayer (concurrent applyEdits doubling features). Applied queryFeatures-based deletion + populate-version guard. | Assistant |
+| Feb 20, 2026 | Updated CON-DONE-01 findings: latest-only records confirmed; added unresolved cluster count desynchronization investigation notes; documented large-cluster 414 fix. | Assistant |
+| Feb 20, 2026 | Started CON-DONE-01 implementation: map cluster click now drives DataONE sidebar list via cluster-member ID filtering; pending QA. | Assistant |
 | Feb 19, 2026 | Added CON-DONE-15: Spatial query for DataONE datasets — ensure draw/query tools filter by extent. | — |
 | Feb 18, 2026 | Archived tasks 4.1–4.12 to `docs/archive/phases/phase-4-dataone-completed.md`. Phase doc reset for new tasks. | User |

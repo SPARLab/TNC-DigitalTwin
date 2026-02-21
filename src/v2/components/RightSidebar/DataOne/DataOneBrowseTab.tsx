@@ -48,6 +48,11 @@ export function DataOneBrowseTab() {
     createBrowseLoadingScope,
     browseFilters,
     setBrowseFilters,
+    aggregationMode,
+    setAggregationMode,
+    mapSelectionDataoneIds,
+    setMapSelectionDataoneIds,
+    mapDatasetsCache,
   } = useDataOneFilter();
   const {
     activeLayer,
@@ -119,8 +124,40 @@ export function DataOneBrowseTab() {
     setPage(0);
   }, [appliedSearchTerm, selectedCategory, startYear, endYear, authorFilter]);
 
-  // Abort in-flight requests when filters/pagination change.
+  // When map-selection is active, resolve datasets entirely client-side from
+  // the map behaviour's in-memory cache to avoid 414 URI-Too-Large errors.
+  const mapSelectionIdSet = useMemo(
+    () => (mapSelectionDataoneIds ? new Set(mapSelectionDataoneIds) : null),
+    [mapSelectionDataoneIds],
+  );
+
   useEffect(() => {
+    if (!mapSelectionIdSet) return;
+
+    const matched: DataOneDataset[] = [];
+    for (const [id, dataset] of mapDatasetsCache) {
+      if (mapSelectionIdSet.has(id)) matched.push(dataset);
+    }
+    matched.sort(
+      (a, b) => (b.dateUploaded?.getTime() ?? 0) - (a.dateUploaded?.getTime() ?? 0),
+    );
+
+    const clientTotal = matched.length;
+    const clientPages = Math.ceil(clientTotal / PAGE_SIZE);
+    const safePage = Math.min(page, Math.max(clientPages - 1, 0));
+    const pageSlice = matched.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+
+    setDatasets(pageSlice);
+    setTotalCount(clientTotal);
+    setTotalPages(clientPages);
+    setLoading(false);
+    setError(null);
+  }, [mapSelectionIdSet, mapDatasetsCache, page]);
+
+  // Server-side query for normal (non-map-selection) browsing.
+  useEffect(() => {
+    if (mapSelectionIdSet) return;
+
     const abortController = new AbortController();
     const closeLoadingScope = createBrowseLoadingScope();
 
@@ -160,7 +197,7 @@ export function DataOneBrowseTab() {
       abortController.abort();
       closeLoadingScope();
     };
-  }, [appliedSearchTerm, selectedCategory, startYear, endYear, authorFilter, page, createBrowseLoadingScope]);
+  }, [mapSelectionIdSet, appliedSearchTerm, selectedCategory, startYear, endYear, authorFilter, page, createBrowseLoadingScope]);
 
   // Map marker clicks set activeLayer.featureId. Ensure detail opens even when
   // the clicked dataset is not in the current paginated result set.
@@ -334,7 +371,7 @@ export function DataOneBrowseTab() {
   const showInitialLoading = loading && !hasStaleResults;
   const showRefreshLoading = loading && hasStaleResults;
   const hasAnyFilter = Boolean(
-    appliedSearchTerm || selectedCategory !== 'all' || startYear || endYear || authorFilter.trim()
+    appliedSearchTerm || selectedCategory !== 'all' || startYear || endYear || authorFilter.trim() || mapSelectionDataoneIds?.length
   );
 
   const clearAllFilters = () => {
@@ -344,6 +381,7 @@ export function DataOneBrowseTab() {
     setStartYear('');
     setEndYear('');
     setAuthorFilter('');
+    setMapSelectionDataoneIds(null);
     setPage(0);
   };
 
@@ -354,6 +392,40 @@ export function DataOneBrowseTab() {
       </div>
 
       <EditFiltersCard id="dataone-edit-filters-card">
+        <div id="dataone-aggregation-toggle-section" className="space-y-1">
+          <p id="dataone-aggregation-toggle-label" className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
+            Map aggregation
+          </p>
+          <div id="dataone-aggregation-toggle-group" className="grid grid-cols-2 gap-1 rounded-lg border border-gray-200 bg-gray-50 p-1">
+            <button
+              id="dataone-aggregation-toggle-cluster"
+              type="button"
+              onClick={() => setAggregationMode('cluster')}
+              aria-pressed={aggregationMode === 'cluster'}
+              className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                aggregationMode === 'cluster'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Clusters
+            </button>
+            <button
+              id="dataone-aggregation-toggle-binning"
+              type="button"
+              onClick={() => setAggregationMode('binning')}
+              aria-pressed={aggregationMode === 'binning'}
+              className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                aggregationMode === 'binning'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Grid bins
+            </button>
+          </div>
+        </div>
+
         <div id="dataone-search-row" className="relative">
           <Search id="dataone-search-icon" className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
@@ -465,6 +537,24 @@ export function DataOneBrowseTab() {
             </button>
           )}
         </div>
+        {mapSelectionDataoneIds && mapSelectionDataoneIds.length > 0 && (
+          <div id="dataone-map-selection-chip-row" className="flex items-center justify-between rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs text-emerald-800">
+            <span id="dataone-map-selection-chip-label">
+              Map location filter active ({mapSelectionDataoneIds.length} dataset{mapSelectionDataoneIds.length === 1 ? '' : 's'})
+            </span>
+            <button
+              id="dataone-map-selection-chip-clear-button"
+              type="button"
+              onClick={() => {
+                setMapSelectionDataoneIds(null);
+                setPage(0);
+              }}
+              className="font-medium text-emerald-700 hover:text-emerald-900"
+            >
+              Clear
+            </button>
+          </div>
+        )}
       </EditFiltersCard>
 
       {showInitialLoading && (
@@ -489,6 +579,9 @@ export function DataOneBrowseTab() {
           onViewDetail={(dataset) => {
             lastHandledFeatureIdRef.current = dataset.dataoneId;
             setSelectedDataset(dataset);
+            if (activeLayer?.layerId === 'dataone-datasets') {
+              activateLayer('dataone-datasets', activeLayer.viewId, dataset.dataoneId);
+            }
           }}
         />
       )}
