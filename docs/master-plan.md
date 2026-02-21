@@ -307,6 +307,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 20, 2026 | Phase 6 | **CON-ARCGIS-06, CON-ARCGIS-13 complete.** CON-ARCGIS-06 (Union Pacific Railroad layer ID 0) resolved by TF-11 runtime fallback. CON-ARCGIS-13: left sidebar feature service + child layer right-edge alignment (mr-1, scrollbar overlay). Phase 6: 17/22 tasks. | — |
 | Feb 20, 2026 | Phase 6 | **TF-11 complete.** Fix "layer zero not found" for TNC ArcGIS FeatureServer layers (Shrub, Tree, Sensitive Vegetation, Coastal Marine, etc.). Runtime fallback discovers valid layer IDs when initial URL fails. QA passed. | Claude |
 | Feb 20, 2026 | Phase 9 | **D20-12 in progress.** media_json parsing, card/detail wiring, overlay scrollbar, dev debug panel. ~2.8k/323k rows have media; coworker may populate more. Optional follow-up: D20-12-FOLLOW "Has media only" filter. | Cursor |
 | Feb 20, 2026 | Phase 3 | **D20-06 complete.** Custom polygon draw tool for Dendra: suppressed station click during draw mode; synced sidebar station list with polygon filter so map markers and station cards match. Phase 3: 0 blocking tasks. | Cursor |

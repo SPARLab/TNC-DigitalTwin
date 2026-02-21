@@ -15,7 +15,7 @@
 | DP1-02 | ⚪ Not Started | Edit Filters: visual feedback to draw eye to right sidebar | Trislin | Feb 17, 2026 1:00 PM | iNaturalist / Map Layers | High |
 | DP1-03 | ⚪ Not Started | Implement spatial queries (custom polygon) for all layers | Trislin | Feb 17, 2026 1:00 PM | Cross-cutting | Super High |
 | DP1-04 | ⚪ Not Started | Spatial filter: select from pinned map layer (polygon) | Trislin | Feb 17, 2026 1:00 PM | Cross-cutting | Low |
-| DP1-05 | ⚪ Not Started | Fix Union Pacific Railroad TNC ArcGIS layer (layer ID 0 not found) | Trislin | Feb 17, 2026 1:00 PM | TNC ArcGIS | Medium |
+| DP1-05 | 🟢 Complete | Fix Union Pacific Railroad TNC ArcGIS layer (layer ID 0 not found) | Trislin | Feb 20, 2026 | TNC ArcGIS | Medium |
 | DP1-06 | ⚪ Not Started | Bug: Map layers widget filter sync with right sidebar | Trislin | Feb 17, 2026 1:00 PM | iNaturalist / Map Layers | High |
 | DP1-07 | ⚪ Not Started | Right sidebar: add "Edit Filters" section header with filter title | Trislin | Feb 17, 2026 1:00 PM | iNaturalist / Map Layers | Medium |
 | DP1-08 | ⚪ Not Started | Edit Filters button: provide feedback when already in edit mode | Trislin | Feb 17, 2026 1:00 PM | iNaturalist / Map Layers | High |
@@ -71,11 +71,12 @@ Spatial queries were originally in the plan but not yet implemented. Dan was ask
 
 ### DP1-05 — Fix Union Pacific Railroad TNC ArcGIS layer (layer ID 0 not found)
 
-**Last Updated:** Feb 17, 2026 1:00 PM  
+**Last Updated:** Feb 20, 2026  
 **Data Source:** TNC ArcGIS  
-**Priority:** Medium
+**Priority:** Medium  
+**Status:** 🟢 Complete (resolved via CON-ARCGIS-06 / TF-11)
 
-**Bug.** Union Pacific Railroad (TNC ArcGIS Hub feature service) is not working. Error observed: "ArcGIS error. The requested layer, layer ID 0, was not found." Will noted this error appears in a couple of different feature services; needs investigation. Log as bug fix for the future.
+**Bug.** Union Pacific Railroad (TNC ArcGIS Hub feature service) is not working. Error observed: "ArcGIS error. The requested layer, layer ID 0, was not found." Will noted this error appears in a couple of different feature services; needs investigation. **Resolved:** TF-11 added runtime fallback for single-row FeatureServer services that don't expose layer 0.
 
 ---
 
