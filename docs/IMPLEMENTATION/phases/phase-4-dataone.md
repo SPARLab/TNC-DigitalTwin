@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 4 / 18 tasks complete  
+**Progress:** 5 / 18 tasks complete  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-4-dataone-completed.md`  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
@@ -14,9 +14,8 @@
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
 | D20-09 | 🟢 Complete | Feb 23, 2026 | Filter DataOne map to latest dataset version only (deduplicate by latest) | Implemented: Lite layer + dedupeDatasetsByDataoneId in getDatasetsForMapLayer/queryDatasets; prefers isLatestVersion and newest date. Verified visually. |
-| D20-B02 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Create dedicated DataOne point layer in ArcGIS data store (deduplicated, latest version only) with native clustering enabled | Mirrors what Dan did for GBIF. Will keep underlying versioned data table; new point layer is just latest spatial points. Source: Dan Meeting Feb 20 |
 | TF-13 | ⚪ Not Started | Feb 20, 2026 | Add loading indicator when DataOne layer is selected and map data is loading | High priority; no visual feedback during load leaves user uncertain if app is working. Source: Trisalyn QA Feb 20 |
-| TF-14 | ⚪ Not Started | Feb 20, 2026 | Render a specific map marker when "View on Map" is clicked on a dataset | High priority; currently highlights the group but doesn't drop a specific dot at the dataset location. Source: Trisalyn QA Feb 20 |
+| TF-14 | 🟢 Complete | Feb 23, 2026 | Render a specific map marker when "View on Map" is clicked on a dataset | Implemented: highlightPoint draws a cyan ring at dataset coordinates; zoom 16 breaks clusters so individual point visible. Fallback marker at exact location when inside bin. Source: Trisalyn QA Feb 20 |
 | CON-DONE-01 | 🟢 Complete | Feb 20, 2026 | Cluster click on map populates right sidebar with datasets at that location | Race condition fix applied; counts verified |
 | CON-DONE-16 | 🟢 Complete | Feb 20, 2026 | Switch from circular clustering to grid binning (FeatureReductionBinning) | Live scale watcher; in-place fixedBinLevel mutation; maxScale:0 keeps bins visible; "Where to Fine-Tune" doc'd |
 | CON-DONE-02 | 🟢 Complete | Feb 20, 2026 | Auto-pan/zoom when opening dataset detail; repurpose View on Map as Recenter | High priority; resolution applied |
@@ -192,6 +191,29 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 ---
 
+### TF-14: Render Specific Map Marker When Recenter Is Clicked ✅
+
+**Goal:** When the user clicks "Recenter" (formerly "View on Map") for a DataONE dataset, the map renders a specific marker at the dataset's exact location — not just a group/cluster highlight.
+
+**Context:** Per Trisalyn QA (Feb 20, 2026), the map was highlighting the general group area but not dropping a specific dot at the dataset location. Will's note: "We need to make sure that we're actually drawing a map marker when we click on View on Map because it looks like we are highlighting the group but we're not highlighting the specific dot location for this dataset."
+
+**Resolution (Feb 23, 2026):**
+- `DatasetDetailView` `handleRecenter` and auto-pan effect both call `highlightPoint(centerLon, centerLat)` from MapContext
+- MapContext `highlightPoint` draws a cyan ring marker at the exact dataset coordinates on the highlight graphics layer
+- Zoom level 16 (center case) breaks cluster grouping so the individual DataONE point is visible; extent case uses bounds
+- When the dataset is inside a bin/cluster, the highlight ring serves as a fallback marker at the exact location
+
+**Files:** `src/v2/components/RightSidebar/DataOne/DatasetDetailView.tsx`, `src/v2/context/MapContext.tsx`
+
+**Acceptance Criteria:**
+- [x] Clicking Recenter renders a visible marker at the dataset's exact coordinates
+- [x] Marker is identifiable even when the underlying feature is aggregated in a cluster/bin
+- [x] Auto-pan on detail open also shows the marker
+
+**Estimated Time:** 1–2 hours
+
+---
+
 ### CON-DONE-02: Auto-Pan/Zoom When Opening Dataset Detail; Repurpose View on Map as Recenter
 
 **Goal:** When the user opens a DataONE dataset detail view (from browse card or map click), the map automatically pans and zooms to the dataset location. The former "View on Map" button is repurposed as "Recenter" for recoverability when the user has panned away.
@@ -303,6 +325,7 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 23, 2026 | TF-14 marked complete. Recenter/View on Map now renders a specific marker (highlightPoint cyan ring) at dataset coordinates; zoom 16 breaks clusters for visibility. | Assistant |
 | Feb 23, 2026 | D20-09 marked complete. Map and browse already use Lite layer + dedupeDatasetsByDataoneId; one point per dataone_id, prefers isLatestVersion. Verified visually. | Assistant |
 | Feb 20, 2026 | CON-DONE-01 refinement: Fixed cluster↔dataset click navigation. Cluster click now always shows filtered list; dataset click always shows detail. Fixed selectedDataset not clearing, lastHandledFeatureIdRef race, count=1 aggregate silent no-op, tab switch from Overview, stale highlight rings. | Assistant |
 | Feb 20, 2026 | CON-DONE-02: marked complete. Auto-pan/zoom on dataset detail open; "View on Map" repurposed as "Recenter". Zoom 16 + cluster maxScale 12_000 so selected dataset breaks out of cluster and shows as dot. | Assistant |
