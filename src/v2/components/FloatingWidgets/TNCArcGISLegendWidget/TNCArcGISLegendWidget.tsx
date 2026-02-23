@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
 import { useCatalog } from '../../../context/CatalogContext';
 import { useLayers } from '../../../context/LayerContext';
@@ -166,6 +166,13 @@ export function TNCArcGISLegendWidget() {
     ensurePinnedForLegendFiltering();
     setSelectedLegendValues([]);
   };
+  const toggleExpanded = () => setIsExpanded(prev => !prev);
+  const handleHeaderKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      toggleExpanded();
+    }
+  };
 
   return (
     <div
@@ -174,20 +181,26 @@ export function TNCArcGISLegendWidget() {
     >
       <div
         id="tnc-arcgis-legend-widget-header"
-        className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg"
+        className={`flex items-center justify-between px-4 py-3 bg-gray-50 cursor-pointer ${
+          isExpanded ? 'border-b border-gray-200 rounded-t-lg' : 'rounded-lg'
+        }`}
+        role="button"
+        tabIndex={0}
+        aria-expanded={isExpanded}
+        aria-controls="tnc-arcgis-legend-widget-content"
+        onClick={toggleExpanded}
+        onKeyDown={handleHeaderKeyDown}
       >
         <div id="tnc-arcgis-legend-widget-header-left" className="flex items-center gap-2 min-w-0">
-          <button
+          <span
             id="tnc-arcgis-legend-widget-expand-toggle"
-            type="button"
-            onClick={() => setIsExpanded(prev => !prev)}
-            className="p-0.5 hover:bg-gray-200 rounded transition-colors"
-            aria-label={isExpanded ? 'Collapse legend' : 'Expand legend'}
+            className="p-0.5 rounded text-gray-600"
+            aria-hidden="true"
           >
             {isExpanded
               ? <ChevronDown className="w-4 h-4 text-gray-600" />
               : <ChevronRight className="w-4 h-4 text-gray-600" />}
-          </button>
+          </span>
           <h3 id="tnc-arcgis-legend-widget-title" className="text-sm font-semibold text-gray-900 truncate">
             Legend
           </h3>
@@ -198,7 +211,10 @@ export function TNCArcGISLegendWidget() {
             <button
               id="tnc-arcgis-legend-widget-select-all-button"
               type="button"
-              onClick={selectAllLegendValues}
+              onClick={(event) => {
+                event.stopPropagation();
+                selectAllLegendValues();
+              }}
               className="rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-100"
             >
               Select All
@@ -206,7 +222,10 @@ export function TNCArcGISLegendWidget() {
             <button
               id="tnc-arcgis-legend-widget-clear-all-button"
               type="button"
-              onClick={clearLegendValues}
+              onClick={(event) => {
+                event.stopPropagation();
+                clearLegendValues();
+              }}
               className="rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-100"
             >
               Clear All

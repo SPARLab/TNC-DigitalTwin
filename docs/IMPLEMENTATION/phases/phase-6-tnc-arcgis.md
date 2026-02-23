@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 17 / 22 tasks (CON-ARCGIS-01, 02, 03, 04, 05, 06, 08, 09, 10, 11, 12, 13, 14, 15, 6.17, 6.20, D20-11 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
+**Progress:** 29 tasks (CON-ARCGIS-01–17, 6.8, 6.9, 6.10, 6.11, 6.12, 6.13, 6.14, 6.17, 6.20, D20-02, D20-02a, D20-10, D20-11, TF-11, TF-13 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry) ✅ complete  
@@ -30,8 +30,12 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| TF-12 | ⚪ Not Started | Feb 20, 2026 | Expand "Open Table Overlay" to all TNC ArcGIS feature service layers (currently only Oil Seeps) | Medium priority; Trisalyn reacted very positively — "this is how the GIS brain thinks." Source: Trisalyn QA Feb 20 |
+| CON-ARCGIS-17 | 🟢 Complete | Feb 23, 2026 | Left sidebar: feature service expand/collapse toggle on repeated clicks | ServiceGroup: when already expanded, click collapses immediately (no re-activation); when collapsed, click expands and activates. Fixes prior behavior where collapse was blocked by auto-expand side effects. |
+| CON-ARCGIS-16 | 🟢 Complete | Feb 23, 2026 | Sync loading indicators (Map Layers ↔ right sidebar) per Task 34 / DFT-018 | TNC ArcGIS adapter exposes `isLayerRendering` via `useTNCArcGISCacheStatus`; Map Layers widget shows EyeSlotLoadingSpinner during layer fetch/render. Right sidebar shows phase-based status (Fetching imagery/features…, Rendering features…, Ready). Uses `layerView.updating` and `FeatureLayerView.dataUpdating`; imagery layers go straight to Ready once `updating` clears. |
+| TF-13 | 🟢 Complete | Feb 20, 2026 | Implement multi-layer service detection improvements from CON-ARCGIS-07 audit | Removed top-12 discovery cap in `useCatalogRegistry`; all eligible single-row FeatureServer candidates now discovered. Dev-mode classification logging added. All 12+ multi-layer services (incl. Coastal and Marine, DP_COASTAL) get service-container UX. |
+| CON-ARCGIS-07 | 🟢 Complete | Feb 20, 2026 | Ensure proper detection of multi-layer feature services vs single-layer ones | Audit complete; implementation captured in TF-13 |
 | D20-02 | 🟢 Complete | Feb 20, 2026 | Add back button in right sidebar for ArcGIS feature service inspect/browse view | Shared `BrowseBackButton` (Dendra-style); layer context card (current layer + feature service, gray bg); Open Table Overlay above table snapshot; full field list (no truncation); Legend removed. Source: Dan Meeting Feb 20 |
+| D20-02a | 🟢 Complete | Feb 20, 2026 | Add table/spreadsheet icon to Open Table Overlay button | Inline SVG grid icon (rows/columns) for table affordance; replaces CSV-style glyph. UX polish for Browse tab. |
 | D20-10 | 🟢 Complete | Feb 20, 2026 | Replace static layer overview text with actual ArcGIS feature service description text | Overview tabs fetch ArcGIS item metadata via `serviceItemId` (snippet + description, Hub-style), then fall back to service/layer description. HTML normalized to preserve line breaks; no per-layer descriptions in layer list. TNC ArcGIS + Dendra. Source: Dan Meeting Feb 20 |
 | D20-11 | 🟢 Complete | Feb 20, 2026 | Fix legend-as-filter functionality for TNC ArcGIS feature service layers | Legend clicks sync to root TNC ArcGIS filter state; auto-pin on first legend interaction so filtering applies when layer was active but unpinned. Source: Dan Meeting Feb 20 |
 | TF-11 | 🟢 Complete | Feb 20, 2026 | Fix intermittent "layer zero not found" error for Coastal Marine Data feature service in right sidebar/legend | Root cause: multiple single-row FeatureServer services (Coastal starts at 2; Shrub at 8; Tree at 7; Sensitive vegetation at 3) do not expose layer `0`. Added runtime fallback to discovered valid layer IDs for schema/query, legend metadata, and map-layer load. QA passed. Source: Trisalyn QA Feb 20 |
@@ -41,7 +45,6 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | CON-ARCGIS-04 | 🟢 Complete | Feb 19, 2026 | Bidirectional sync between right sidebar layer selection and left sidebar | LayerContext + Overview selector |
 | CON-ARCGIS-05 | 🟢 Complete | Feb 19, 2026 | Fix iframe to show user-friendly TNC Hub page instead of raw service page | Hub search URL preferred; REST fallback |
 | CON-ARCGIS-06 | 🟢 Complete | Feb 20, 2026 | Bug: fix Union Pacific Railroad layer (layer ID 0 not found) | Resolved by TF-11 runtime fallback for single-row services that don't expose layer 0 |
-| CON-ARCGIS-07 | ⚪ Not Started | Feb 18, 2026 | Design multi-layer feature service UX follow-up | Low priority / follow-up |
 | CON-ARCGIS-15 | 🟢 Complete | Feb 19, 2026 | Bug: fix feature service layer rendering — layers not drawing on map | Root cause: `renderer: undefined` in FeatureLayer constructor overrode service default; fixed via conditional spread so non-GBIF layers omit renderer/featureReduction and use service symbology |
 | **CON-ARCGIS-08** | 🟢 Complete | Feb 19, 2026 | Left sidebar: hover-visible scrollbar pill | Implemented: custom overlay thumb (no gutter); visible on scroll/hover |
 | **CON-ARCGIS-09** | 🟢 Complete | Feb 19, 2026 | Left sidebar: fix layer row clipping | ServiceGroup: w-full→mx-1 min-w-0; consistent right margin |
@@ -50,13 +53,13 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **CON-ARCGIS-12** | 🟢 Complete | Feb 19, 2026 | Right sidebar: simplify layer list UX | Remove dropdown + helper text; single scrollable list (~5 rows); "N layers" header; highlight selected |
 | **CON-ARCGIS-13** | 🟢 Complete | Feb 20, 2026 | Left sidebar: align feature service + child layer right edges | Feature service box and child layer boxes share same right margin as other layers (mr-1); child right edge aligns with parent; scrollbar overlay fits naturally |
 | **CON-ARCGIS-14** | 🟢 Complete | Feb 19, 2026 | Unified Service Workspace: service/layer click behavior + layer list state chips | Auto-select sublayer on service click; one right-sidebar layout; layer list header (N pinned • N visible); amber active highlight; pin/eye icons; inline pin/unpin; Map Layers widget sync |
-| **6.8** | ⚪ | — | Search Enhancement | Match service + layer names; expand parent service when layer matches |
-| **6.9** | ⚪ | — | Keyboard Navigation & ARIA | Arrow keys for expand/collapse, ARIA tree structure, focus management |
-| **6.10** | ⚪ | — | QA & Edge Cases | Single-layer services, empty results, malformed queries, schema fetch errors |
-| **6.11** | 🟡 | Feb 16, 2026 | Capability-Aware Browse UX | Legend display moved out of right-sidebar Browse and into a floating map widget (bottom-right) for active TNC layers |
-| **6.12** | 🟡 | Feb 16, 2026 | Terminology + CTA Realignment | Decision locked: remove right-sidebar pin actions for now; keep pinning in left sidebar + Map Layers widget only |
-| **6.13** | 🟡 | Feb 16, 2026 | Multi-Layer Service Discoverability | In progress: stable left-sidebar scrollbar gutter; service-group spacing refinements retained |
-| **6.14** | 🟡 | Feb 16, 2026 | Service Reference + External Viewer | WIP: right-sidebar Browse focuses on source actions; legend controls live in floating map widget |
+| **6.8** | 🟢 Complete | Feb 23, 2026 | Search Enhancement | Match service + layer names; expand parent service when layer matches; highlight matched text. Parent service IDs included when child matches; auto-expand on child match. |
+| **6.9** | 🟢 Complete | Feb 23, 2026 | Keyboard Navigation & ARIA | Arrow-key tree navigation finalized: Right expands/focuses first child, Left collapses or returns focus to parent, Up/Down/Home/End move between visible rows; ARIA tree/treeitem/group semantics + live announcements in place. |
+| **6.10** | 🟢 Complete | Feb 24, 2026 | QA & Edge Cases | Manual UI checklist completed; single-layer services, empty results, malformed queries, schema fetch errors verified |
+| **6.11** | 🟢 Complete | Feb 23, 2026 | Capability-Aware Browse UX | Legend display moved out of right-sidebar Browse and into a floating map widget (bottom-right) for active TNC layers. Full legend header clickable for expand/collapse; collapsed state has rounded bottom-left and bottom-right corners; keyboard toggle (Enter/Space) for accessibility. |
+| **6.12** | 🟢 Complete | Feb 23, 2026 | Terminology + CTA Realignment | Right-sidebar pin actions removed from TNCArcGISOverviewTab; pinning only in left sidebar + Map Layers widget. Inline pin icons and Pin/Unpin CTAs removed. |
+| **6.13** | 🟢 Complete | Feb 23, 2026 | Multi-Layer Service Discoverability | Search matches service + child names; parent auto-expands for child match; no blank category blocks; Coastal and Marine Data discoverable via category/search. Path context (Category > Service > Layer) deferred. |
+| **6.14** | 🟢 Complete | Feb 23, 2026 | Service Reference + External Viewer | Overview Source card + New Tab action + overlay iframe viewer with explicit blocked-embed fallback (CSP/X-Frame-Options) |
 | **6.17** | 🟢 Complete | Feb 19, 2026 | Generic Layer Table View (Feature Layers) | ArcGIS FeatureTable overlay on map; Browse shows row/column summary + Open Table Overlay |
 | **6.20** | 🟢 Complete | Feb 19, 2026 | Right Sidebar: Layer + Service Hierarchy Communication | Implemented via CON-ARCGIS-01/02 (Current Context block) |
 
@@ -64,6 +67,105 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 
 **Status Legend:**  
 ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
+
+---
+
+## CON-ARCGIS-07 Audit (Feb 20, 2026)
+
+### Scope
+
+- Audited `useCatalogRegistry` runtime service discovery behavior.
+- Verified actual ArcGIS `FeatureServer?f=json` metadata for visible TNC ArcGIS feature services.
+- Checked current UX differentiation paths for service containers vs layer targets.
+
+### Current Codepath Findings
+
+- `useCatalogRegistry` treats every visible TNC ArcGIS dataset row as its own service key today (catalog currently has one row per service path).
+- Runtime discovery is attempted for all visible single-row FeatureServer rows (cap removed Feb 20 per TF-13; `layer_id !== null` gate removed Feb 23 so services like Coastal_and_Marine with layer_id=2 are discovered).
+- Service-container UX logic already exists once a service is classified as multi-layer:
+  - left sidebar: service rows are non-pinnable containers, child rows are pinnable layers.
+  - right sidebar Browse: resolves target layer from selected child when active row is a service parent.
+
+### Live Runtime Verification Results
+
+- Total visible FeatureServer services audited: **90**
+- Multi-layer services (`layers.length > 1`): **12**
+- Single-layer services (`layers.length = 1`): **75**
+- Unreadable/zero-layer responses: **3** (token-required, timeout, or metadata-only)
+- Single-layer services with non-zero layer IDs: **14**
+- Multi-layer services without layer `0`: **4**
+
+Confirmed multi-layer examples:
+
+- `Coastal_and_Marine` (`Coastal and Marine Data`): **20 layers**, IDs **2..21** (no layer `0`)
+- `DP_COASTAL` (`Coastal Data for at Natures Crossroads Story Map`): **3 layers**, IDs **0..2**
+- `NWS_Watches_Warnings_v1`: **11 layers**, IDs **1..12**
+- `Wild_Coast_Project_WebMap_WFL1`: **6 layers**, IDs **1..6**
+
+### Risk / Gap (resolved Feb 23, 2026)
+
+- ~~Because discovery is capped to top-priority 12 candidates~~ — cap removed Feb 20.
+- ~~Timeout (1200ms) too short for slow services~~ — increased to 3s + 5s retry Feb 23.
+- ~~`layer_id !== null` excluded Coastal_and_Marine~~ — gate removed Feb 23.
+
+### Recommended Next Step (implementation)
+
+1. Replace fixed top-12 cap with a broader strategy:
+   - either discover all visible single-row FeatureServer candidates,
+   - or discover on-demand when user activates an unclassified service, then cache result.
+2. Keep current service/container UX behavior unchanged, but feed it fuller runtime classification data.
+3. Add lightweight instrumentation in dev mode to log service classification outcome (`single`, `multi`, `unreadable`) for QA.
+
+---
+
+## TF-13: Multi-Layer Detection Implementation
+
+**Task:** Implement the recommended next steps from the CON-ARCGIS-07 audit so all multi-layer services get proper service-container UX.
+
+**Findings (from audit above):**
+
+- **Coastal and Marine Data** (`Coastal_and_Marine`): **20 layers**, IDs 2..21. Confirmed multi-layer.
+- **DP_COASTAL** (`Coastal Data for at Natures Crossroads Story Map`): **3 layers**, IDs 0..2.
+- **12 multi-layer services** total; runtime discovery is capped at 12 candidates, so ordering can cause some to render as single-layer.
+- **14 single-layer services** use non-zero layer IDs (e.g., Shrub at 8, Tree at 7); TF-11 runtime fallback already handles these.
+
+**Implementation checklist (complete Feb 20, 2026):**
+
+- [x] Remove `MAX_SERVICE_DISCOVERY_CANDIDATES` cap in `useCatalogRegistry.ts` so all eligible visible single-row FeatureServer candidates are discovered.
+- [x] Verify service-container UX for all 12 multi-layer services — left sidebar shows Service/Layer badges; right sidebar Browse resolves target layer correctly.
+- [x] Add dev-mode logging for service classification (`single` / `multi` / `unreadable`) for QA.
+
+**Follow-up fixes (Feb 23, 2026):** Discovery regression caused Coastal and Marine to render as single-layer. Root causes: (1) `SERVICE_DISCOVERY_TIMEOUT_MS` (1200ms) too short — Coastal_and_Marine metadata fetch ~1.4s; (2) candidate filter excluded rows with `layer_id !== null`, so Coastal (layer_id=2) never entered discovery. Fixes: timeout 3s + 5s retry on timeout-only; remove `layer_id !== null` gate so single-row services with non-zero layer_id are discovered.
+
+**Files:** `src/v2/hooks/useCatalogRegistry.ts`
+
+---
+
+## CON-ARCGIS-16: Loading Indicators (Sync Map Layers ↔ Right Sidebar)
+
+**Task:** Align TNC ArcGIS loading indicators with Task 34 / DFT-018 (Unified loading indicator strategy). Same anatomy as iNaturalist, ANiML, GBIF, Dendra.
+
+**Implementation (complete Feb 23, 2026):**
+
+- [x] `TNCArcGISContext` tracks `layerView.updating`, `FeatureLayerView.dataUpdating`, and `view.updating` via `reactiveUtils.watch`; derives `isLayerRendering` and `renderPhase` (fetching-data, rendering-features, updating-view, idle).
+- [x] `useTNCArcGISCacheStatus` includes `isLayerRendering` in its `loading` / `dataLoaded` signals so the Map Layers widget shows `EyeSlotLoadingSpinner` during layer fetch/render.
+- [x] Right sidebar Overview and Browse tabs show phase-based status (Fetching imagery…, Fetching features…, Rendering features…, Ready).
+- [x] Imagery layers (e.g., USA Annual NLCD Land Cover): `layerView.updating` aligns with when imagery is visually rendered; no extended compositing phase.
+
+**Files:** `src/v2/context/TNCArcGISContext.tsx`, `src/v2/dataSources/tnc-arcgis/adapter.tsx`, `src/v2/components/RightSidebar/TNCArcGIS/TNCArcGISOverviewTab.tsx`, `src/v2/components/RightSidebar/TNCArcGIS/TNCArcGISBrowseTab.tsx`
+
+---
+
+## CON-ARCGIS-17: Feature Service Expand/Collapse Toggle (Left Sidebar)
+
+**Task:** Make feature service rows in the left sidebar toggle expand/collapse on repeated clicks. First click expands; second click collapses.
+
+**Implementation (complete Feb 23, 2026):**
+
+- [x] `ServiceGroup.handleHeaderClick`: when `isExpanded`, short-circuit to `onToggleExpand()` only (no re-activation), avoiding upstream auto-expand effects that prevented collapse.
+- [x] When collapsed, click still expands and activates service as before.
+
+**Files:** `src/v2/components/LeftSidebar/ServiceGroup.tsx`
 
 ---
 
@@ -89,7 +191,7 @@ TNC FeatureService (e.g., "Wetlands")
 
 **Multi-layer TNC service (collapsible group):**
 ```
-│ 📊 Wetlands (3)                [▼]    │ ← Click = activate service (show overview)
+│ 📊 Wetlands (3)                [▼]    │ ← Click = expand/collapse toggle; when collapsed, click also activates
 │      □ Polygons                [🔵👁] │ ← Pin/eye only (not activation target)
 │      □ Points                  [  👁] │
 │      □ Transects               [  👁] │
@@ -167,13 +269,13 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 ```
 
 **Acceptance Criteria:**
-- [ ] Search matches service names
-- [ ] Search matches layer names within services
-- [ ] Matching layers auto-expand parent service
-- [ ] Highlight matched text in results
-- [ ] Clear search restores collapsed state
+- [x] Search matches service names
+- [x] Search matches layer names within services
+- [x] Matching layers auto-expand parent service
+- [x] Highlight matched text in results
+- [x] Clear search restores collapsed state
 
-**Estimated Time:** 2-3 hours
+**Implementation (complete Feb 23, 2026):** LeftSidebar `filteredLayerIds` now includes parent service IDs when child layers match; `searchAutoExpandServiceIds` drives CategoryGroup/ServiceGroup expansion; `renderHighlightedText` in ServiceGroup and LayerRow highlights matches with amber `<mark>`.
 
 ---
 
@@ -218,22 +320,26 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - Unpin layer: "Wetlands Polygons layer unpinned"
 
 **Acceptance Criteria:**
-- [ ] Arrow keys navigate between service/layer rows
-- [ ] Arrow Right/Left expand/collapse services
-- [ ] Tab order follows visual hierarchy (service → layers)
-- [ ] `role="tree"` and `aria-level` attributes correct
-- [ ] Screen reader announces expand/collapse/pin actions
-- [ ] Focus visible on all interactive elements
+- [x] Arrow keys navigate between service/layer rows
+- [x] Arrow Right/Left expand/collapse services
+- [x] Tab order follows visual hierarchy (service → layers)
+- [x] `role="tree"` and `aria-level` attributes correct
+- [x] Screen reader announces expand/collapse/pin actions
+- [x] Focus visible on all interactive elements
+
+**Implementation (complete Feb 23, 2026):** Left-sidebar tree focus management now mirrors ARIA tree expectations. `CategoryGroup` and `ServiceGroup` move focus to the first visible child on `ArrowRight` when already expanded; `LayerRow` and collapsed parent rows return focus to their parent treeitem on `ArrowLeft`. Existing `LeftSidebar` capture handler continues to provide visible-row `ArrowUp`/`ArrowDown`/`Home`/`End` navigation, with SR announcements for expand/collapse and pin/unpin actions.
 
 **Estimated Time:** 3-4 hours
 
 ---
 
-### 6.10: QA & Edge Cases
+### 6.10: QA & Edge Cases ✅ Complete Feb 24, 2026
 
 **Goal:** Test edge cases and error states.
 
-**Test Scenarios:**
+**Completion Notes:** Manual UI checklist executed. No automated test framework added; checklist below serves as repeatable QA reference.
+
+**Manual UI Checklist (QA Reference):**
 
 | Scenario | Expected Behavior |
 |----------|-------------------|
@@ -256,19 +362,21 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - Empty results: Not an error — show "0 features match" (allow user to adjust filters)
 
 **Acceptance Criteria:**
-- [ ] All edge cases tested and handled gracefully
-- [ ] Error messages are actionable (e.g., "Retry", "Edit Query")
-- [ ] No crashes from malformed data
-- [ ] Performance acceptable with 10+ layers in service
-- [ ] Single-layer services work correctly (flat pattern)
+- [x] All edge cases tested and handled gracefully (manual checklist)
+- [x] Error messages are actionable (e.g., "Retry", "Edit Query")
+- [x] No crashes from malformed data
+- [x] Performance acceptable with 10+ layers in service
+- [x] Single-layer services work correctly (flat pattern)
 
 **Estimated Time:** 4-6 hours
 
 ---
 
-### 6.11: Capability-Aware Browse UX (Feedback Pivot)
+### 6.11: Capability-Aware Browse UX (Feedback Pivot) ✅ Complete Feb 23, 2026
 
 **Goal:** Avoid showing SQL-style filtering UI for layer types where it does not match user mental models.
+
+**Implementation Notes (Feb 23, 2026):** Floating legend widget UX polish: entire header bar is clickable for expand/collapse (not just chevron); collapsed state uses `rounded-lg` so bottom-left and bottom-right corners are rounded; keyboard toggle (Enter/Space) with `role="button"` and `aria-expanded` for accessibility; Select All/Clear All buttons use `stopPropagation` so they do not trigger collapse.
 
 **Problem (User Feedback):**
 - Image-focused layers currently show field/operator/value query builder, which feels incorrect and confusing.
@@ -311,10 +419,12 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - User requested removing right-sidebar pin entirely for this phase and revisiting later.
 
 **Acceptance Criteria:**
-- [ ] Right sidebar CTA text is capability-aware and non-ambiguous
-- [ ] Primary pinning affordance remains consistent with existing app patterns
-- [ ] No duplicate high-emphasis CTAs that compete for the same action
-- [ ] First-time users can identify where to pin within 5 seconds (heuristic walkthrough)
+- [x] Right sidebar CTA text is capability-aware and non-ambiguous
+- [x] Primary pinning affordance remains consistent with existing app patterns (left sidebar + Map Layers only)
+- [x] No duplicate high-emphasis CTAs that compete for the same action
+- [x] First-time users can identify where to pin within 5 seconds (heuristic walkthrough)
+
+**Implementation (Feb 23, 2026):** Removed all right-sidebar pin actions from `TNCArcGISOverviewTab.tsx`: inline pin icons in layer list, Pin/Unpin Layer CTAs. Pinning now only in left sidebar (`LayerRow`) and Map Layers widget. Visibility indicators (eye/eye-off) and pinned count display retained.
 
 **Estimated Time:** 3-5 hours
 
@@ -335,17 +445,12 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - Ensure service-parent rows are never hidden when any child matches.
 
 **Acceptance Criteria:**
-- [ ] Search works for both service and child-layer names
-- [ ] Parent service auto-expands for child match
-- [ ] No blank category blocks during service/child filtered states
-- [ ] "Coastal and Marine Data" (and peers) are discoverable via category OR search
+- [x] Search works for both service and child-layer names
+- [x] Parent service auto-expands for child match
+- [x] No blank category blocks during service/child filtered states
+- [x] "Coastal and Marine Data" (and peers) are discoverable via category OR search
 
-**Status Update (Feb 16, 2026 15:28 PST):**
-- ✅ Service containers are now visually identified (`Service`) and treated as non-pinnable.
-- ✅ Service containers no longer follow normal Active/Pin map-layer behavior.
-- ⚠️ **Not complete yet:** clicking `Coastal and Marine Data` does not consistently render discovered child layer rows in the left sidebar.
-- ⚠️ Current behavior still relies on right-sidebar "Available Layers" list for visibility of discovered children in this case.
-- 🎯 Remaining requirement: service click in left sidebar must reveal concrete child layer rows there; selecting child rows should drive normal Active -> Pin -> Pinned flow.
+**Resolution (Feb 23, 2026):** Core acceptance criteria met. LeftSidebar search iterates `allLayersInCategory` by name; `searchAutoExpandServiceIds` passed to CategoryGroup → ServiceGroup; categories with 0 matches hidden. TF-13 fixed multi-layer discovery (Coastal_and_Marine, DP_COASTAL, etc.). ServiceGroup renders child rows when expanded; CON-ARCGIS-17 handles expand/collapse. Path context (Category > Service > Layer) deferred — not implemented.
 
 **Estimated Time:** 4-6 hours
 
@@ -366,10 +471,12 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - If iframe blocked, show graceful fallback with explanatory message.
 
 **Acceptance Criteria:**
-- [ ] Service reference card visible for TNC services
-- [ ] `Open in new tab` action present and functional
-- [ ] iframe fallback handles CSP/X-Frame-Options failures without breaking layout
-- [ ] Behavior mirrors legacy app expectations where possible
+- [x] Service reference card visible for TNC services
+- [x] `Open in new tab` action present and functional
+- [x] iframe fallback handles CSP/X-Frame-Options failures without breaking layout
+- [x] Behavior mirrors legacy app expectations where possible
+
+**Resolution (Feb 23, 2026):** Completed in `TNCArcGISOverviewTab`. Source card shows service URL context, supports direct handoff via New Tab, and opens an in-app overlay viewer. Overlay now includes explicit embed-failure handling: iframe load timeout + error path switch to a graceful fallback panel with explanation, `Open in New Tab`, and `Retry Embed` actions so layout remains stable when target sites block framing.
 
 **Estimated Time:** 3-5 hours
 
@@ -731,6 +838,7 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 23, 2026 | 6.14 | **Complete.** Added explicit iframe-block fallback for Source overlay viewer (timeout + error detection), with graceful fallback panel and `Open in New Tab` + `Retry Embed` actions. Updated task row/checklist to complete. Files: `src/v2/components/RightSidebar/TNCArcGIS/TNCArcGISOverviewTab.tsx`, `docs/IMPLEMENTATION/phases/phase-6-tnc-arcgis.md`. | Codex |
 | Feb 20, 2026 | TF-11 | **Complete.** Runtime fallback for non-zero FeatureServer layer IDs (schema, query, legend, map load). QA passed. | Codex |
 | Feb 20, 2026 | TF-11 | **In progress (scope expanded after QA screenshot).** Confirmed additional affected services where valid FeatureServer layer IDs are non-zero (`Shrub_Vegetation`=8, `Tree_Dominated_Vegetation`=7, `jldp_sensitive_vegcommunites`=3). Patched legend renderer fallback to retry with discovered valid layer IDs (instead of hard failing on `/0`) and fixed map-layer recovery guard to run even when only one static candidate exists. Files: `src/v2/services/tncArcgisService.ts`, `src/v2/components/Map/layers/tncArcgisLayer.ts`. | Codex |
 | Feb 20, 2026 | TF-11 | **In progress (investigation + hardening patch).** Confirmed Coastal_and_Marine FeatureServer exposes layers 2–21 (no layer 0). Added runtime fallback for layer-scoped schema/query requests: when a target layer URL fails, service metadata is fetched and requests retry across discovered layer IDs. Added map `FeatureLayer` load fallback to probe discovered service layer URLs after static candidates fail. Files: `src/v2/services/tncArcgisService.ts`, `src/v2/components/Map/layers/tncArcgisLayer.ts`. | Codex |
@@ -739,7 +847,8 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 | Feb 19, 2026 | CON-ARCGIS-15 | **In progress.** Root cause identified and patched: single-layer services now resolve to `/FeatureServer/0` (and `/MapServer` sublayer `0`) unless explicitly marked multi-layer; legend lookup now follows same layer-ID rule. Files: `src/v2/services/tncArcgisService.ts`, `src/v2/components/Map/layers/tncArcgisLayer.ts`. | Codex |
 | Feb 19, 2026 | CON-ARCGIS-15 | **Added.** Bug: fix feature service layer rendering — legend loads but layers (JLDP invasives ice plant mats, tree-dominated vegetation, oil seeps, most land cover) not drawing on map. | — |
 | Feb 19, 2026 | CON-ARCGIS-03, 6.17 | **Complete.** ArcGIS FeatureTable overlay for TNC layers. Browse "Inspect Current Layer" card with row/column summary + Open Table Overlay; hover-revealed Inspect on Overview layer rows; TNCArcGISTableOverlay + fallback FeatureLayer for MapServer layers. | — |
-| Feb 19, 2026 | CON-ARCGIS-14 | **Complete.** Unified Service Workspace: service/layer click auto-selects sublayer; map + Map Layers widget sync with resolved sublayer; right-sidebar layer list with amber active highlight, pin/eye icons, inline pin/unpin; "Inspect Current Layer" CTA. Files: ServiceGroup, useMapLayers, MapLayersWidget, TNCArcGISOverviewTab, LayerContext. | — |
+| Feb 23, 2026 | 6.12 | **Complete.** Terminology + CTA Realignment: removed right-sidebar pin actions from TNCArcGISOverviewTab (inline pin icons, Pin/Unpin CTAs). Pinning only in left sidebar + Map Layers widget per user decision. File: `TNCArcGISOverviewTab.tsx`. | — |
+| Feb 19, 2026 | CON-ARCGIS-14 | **Complete.** Unified Service Workspace: service/layer click auto-selects sublayer; map + Map Layers widget sync with resolved sublayer; right-sidebar layer list with amber active highlight, pin/eye icons, inline pin/unpin; "Inspect Current Layer" CTA. (Note: 6.12 later removed right-sidebar pin actions.) Files: ServiceGroup, useMapLayers, MapLayersWidget, TNCArcGISOverviewTab, LayerContext. | — |
 | Feb 19, 2026 | CON-ARCGIS-14 | Added task: Unified Service Workspace — service/layer click behavior, auto-select sublayer on service click, layer list state chips (pinned/visible counts). | — |
 | Feb 19, 2026 | CON-ARCGIS-10, 11, 12 | Implemented right sidebar hierarchy relabel (Feature Service, Current Layer), section rename to "Feature Service Overview", single scrollable layer list (dropdown + helper text removed). | — |
 | Feb 19, 2026 | CON-ARCGIS-01, 02, 04, 05, 6.20 | Marked complete. Added CON-ARCGIS-08–12 from user feedback: left sidebar scrollbar pill, row clipping fix, right sidebar relabeling, section rename, layer list simplification. | — |

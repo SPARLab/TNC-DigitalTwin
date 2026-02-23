@@ -25,6 +25,8 @@ export interface BrowseTabProps {
 export interface CacheStatus {
   loading: boolean;
   dataLoaded: boolean;
+  /** Optional source-specific message for center map loading overlay. */
+  loadingMessage?: string;
   /** Trigger data fetch. Idempotent — no-op if already loaded or in-flight. */
   warmCache: () => void;
 }

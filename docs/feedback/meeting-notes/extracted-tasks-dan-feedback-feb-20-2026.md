@@ -16,6 +16,7 @@
 |----|--------|--------------|------------------|-------------|-------|
 | D20-01 | 🟢 Complete | Feb 20, 2026 | Add collapse button to right sidebar — default open, stays collapsed until user manually re-expands | App-wide | Implemented in Phase 0. Extruded tab, localStorage, 300ms. |
 | D20-02 | 🟢 Complete | Feb 20, 2026 | Add back button in right sidebar for ArcGIS feature service inspect/browse view | TNC ArcGIS | Shared BrowseBackButton; layer context card; Open Table Overlay repositioned; full field list; Legend removed. |
+| D20-02a | 🟢 Complete | Feb 20, 2026 | Add table/spreadsheet icon to Open Table Overlay button | TNC ArcGIS | Inline SVG grid icon (rows/columns) for table affordance. UX polish. |
 | D20-03 | ⚪ Not Started | Feb 20, 2026 | Make Map Layers accordion header bar clickable to expand/collapse (not just the caret icon) | App-wide | Dan kept trying to click the heading to expand. Retain the caret but make the whole header row interactive. |
 | D20-04 | ⚪ Not Started | Feb 20, 2026 | Replace +/- symbols in Map Layers accordion with chevron (V / >) symbols | App-wide | Plus/minus is not a clear expand/collapse affordance; chevron communicates directionality better. |
 | D20-05 | ⚪ Not Started | Feb 20, 2026 | Investigate and fix Dendra browser popup asking for device access | Dendra | Observed live during session. We don't want to trigger any device-access permission dialogs. |
@@ -55,6 +56,9 @@ Dan's primary UX feedback. On his laptop, the right sidebar covers most of the m
 
 ### D20-02 — Back button in right sidebar (ArcGIS feature service inspect view) ✅ Complete
 Flow: Overview tab → user clicks "Inspect" → lands on Browse tab. **Resolution (Feb 20, 2026):** Implemented shared `BrowseBackButton` component (matches Dendra "Back to Stations" styling). TNC ArcGIS Browse now shows "Back to Layers" at top; layer context card (current layer + feature service, light gray bg); Open Table Overlay moved between context and table snapshot; full field list (no truncation); Legend section removed.
+
+### D20-02a — Table/spreadsheet icon on Open Table Overlay button ✅ Complete
+**Resolution (Feb 20, 2026):** Added inline SVG grid icon (rows/columns) to the Open/Close Table Overlay button in `TNCArcGISBrowseTab` for clearer table affordance. Icon conveys spreadsheet/table structure rather than file-type semantics.
 
 ---
 

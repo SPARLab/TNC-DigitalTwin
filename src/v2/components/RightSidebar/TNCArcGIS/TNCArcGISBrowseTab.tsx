@@ -31,6 +31,9 @@ export function TNCArcGISBrowseTab({ showBackToOverview = false, onBackToOvervie
     tableOverlayLayerId,
     isTableOverlayOpen,
     closeTableOverlay,
+    isLayerRendering,
+    renderPhase,
+    layerKind,
   } = useTNCArcGIS();
   const [rowCount, setRowCount] = useState<number | null>(null);
   const [summaryError, setSummaryError] = useState<string | null>(null);
@@ -69,6 +72,14 @@ export function TNCArcGISBrowseTab({ showBackToOverview = false, onBackToOvervie
   const isCurrentLayerTableOpen = isTableOverlayOpen && tableOverlayLayerId === targetLayer?.id;
   const featureServiceName = serviceContextLayer?.name || activeCatalogLayer?.name || 'Unknown service';
   const currentLayerName = targetLayer?.name || activeCatalogLayer?.name || 'Unknown layer';
+  const isImg = layerKind === 'imagery';
+  const renderStatusText = isLayerRendering
+    ? renderPhase === 'fetching-data'
+      ? (isImg ? 'Fetching imagery...' : 'Fetching features...')
+      : renderPhase === 'rendering-features'
+        ? 'Rendering features...'
+        : 'Updating map view...'
+    : 'Map ready';
 
   useEffect(() => {
     let cancelled = false;
@@ -157,6 +168,18 @@ export function TNCArcGISBrowseTab({ showBackToOverview = false, onBackToOvervie
             </dd>
           </div>
         </dl>
+        <div id="tnc-arcgis-browse-layer-render-status-row" className="mt-2 flex items-center justify-end">
+          <span
+            id="tnc-arcgis-browse-layer-render-status-pill"
+            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+              isLayerRendering
+                ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+            }`}
+          >
+            {renderStatusText}
+          </span>
+        </div>
       </div>
 
       {/* Open Table Overlay action — positioned between context and snapshot */}
@@ -172,9 +195,36 @@ export function TNCArcGISBrowseTab({ showBackToOverview = false, onBackToOvervie
           openTableOverlay(targetLayer.id);
         }}
         disabled={!isFeatureLayer}
-        className="w-full py-2.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-800 text-sm font-semibold hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="w-full py-2.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-800 text-sm font-semibold hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors inline-flex items-center justify-center gap-2"
       >
-        {isCurrentLayerTableOpen ? 'Close Table Overlay' : 'Open Table Overlay'}
+        <svg
+          id="tnc-arcgis-browse-open-table-overlay-button-icon"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          strokeWidth="2"
+          stroke="currentColor"
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+          className="h-4 w-4 shrink-0"
+        >
+          <rect
+            id="tnc-arcgis-browse-open-table-overlay-button-icon-outline"
+            x="3"
+            y="4"
+            width="18"
+            height="16"
+            rx="2"
+          />
+          <path id="tnc-arcgis-browse-open-table-overlay-button-icon-header-row" d="M3 9h18" />
+          <path id="tnc-arcgis-browse-open-table-overlay-button-icon-row-divider" d="M3 14h18" />
+          <path id="tnc-arcgis-browse-open-table-overlay-button-icon-col-left" d="M9 9v11" />
+          <path id="tnc-arcgis-browse-open-table-overlay-button-icon-col-right" d="M15 9v11" />
+        </svg>
+        <span id="tnc-arcgis-browse-open-table-overlay-button-label">
+          {isCurrentLayerTableOpen ? 'Close Table Overlay' : 'Open Table Overlay'}
+        </span>
       </button>
 
       {/* Table snapshot — rows, columns, full field list */}

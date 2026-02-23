@@ -1,12 +1,18 @@
 import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
-import { ExternalLink, Eye, EyeOff, Pin, X } from 'lucide-react';
+import { ExternalLink, Eye, EyeOff, X } from 'lucide-react';
 import { useCatalog } from '../../../context/CatalogContext';
 import { useLayers } from '../../../context/LayerContext';
 import { buildServiceUrl, fetchServiceDescription } from '../../../services/tncArcgisService';
 import type { CatalogLayer } from '../../../types';
 
+type LayerKind = 'feature' | 'map-image' | 'imagery' | null;
+type SourceIframeStatus = 'idle' | 'loading' | 'ready' | 'blocked';
+
 interface TNCArcGISOverviewTabProps {
   loading: boolean;
+  isLayerRendering: boolean;
+  renderPhase: 'idle' | 'fetching-data' | 'rendering-features' | 'updating-view';
+  layerKind: LayerKind;
   onBrowseClick: () => void;
   onInspectBrowseClick?: () => void;
 }
@@ -25,21 +31,40 @@ function getTargetLayer(activeLayer: CatalogLayer | undefined, selectedSubLayerI
   return siblings.find(layer => layer.id === selectedSubLayerId) ?? siblings[0] ?? null;
 }
 
-export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseClick }: TNCArcGISOverviewTabProps) {
+function getRenderStatusLabel(
+  loading: boolean,
+  isLayerRendering: boolean,
+  renderPhase: 'idle' | 'fetching-data' | 'rendering-features' | 'updating-view',
+  layerKind: LayerKind,
+): string {
+  if (loading) return 'Loading metadata...';
+  if (!isLayerRendering) return 'Ready';
+  const isImg = layerKind === 'imagery';
+  if (renderPhase === 'fetching-data') return isImg ? 'Fetching imagery...' : 'Fetching features...';
+  if (renderPhase === 'rendering-features') return 'Rendering features...';
+  return 'Updating map view...';
+}
+
+export function TNCArcGISOverviewTab({
+  loading,
+  isLayerRendering,
+  renderPhase,
+  layerKind,
+  onBrowseClick,
+  onInspectBrowseClick,
+}: TNCArcGISOverviewTabProps) {
   const {
     activeLayer,
     activateLayer,
     setActiveServiceSubLayer,
     isLayerPinned,
     isLayerVisible,
-    pinLayer,
-    unpinLayer,
-    getPinnedByLayerId,
     getLayerOpacity,
     setLayerOpacity,
   } = useLayers();
   const { layerMap } = useCatalog();
   const [isSourceOverlayOpen, setIsSourceOverlayOpen] = useState(false);
+  const [sourceIframeStatus, setSourceIframeStatus] = useState<SourceIframeStatus>('idle');
   const activeCatalogLayer = activeLayer ? layerMap.get(activeLayer.layerId) : undefined;
   const targetLayer = useMemo(
     () => getTargetLayer(activeCatalogLayer, activeLayer?.selectedSubLayerId),
@@ -69,8 +94,6 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseCl
   const servicePath = serviceContextLayer?.catalogMeta?.servicePath || 'Unknown service path';
   const serverBaseUrl = serviceContextLayer?.catalogMeta?.serverBaseUrl || 'Unknown host';
   const sourceLabel = `${serverBaseUrl}/${servicePath}`;
-  const targetLayerPinned = targetLayer ? isLayerPinned(targetLayer.id) : false;
-  const targetLayerPinnedEntry = targetLayer ? getPinnedByLayerId(targetLayer.id) : undefined;
   const targetLayerCanPin = !!targetLayer;
   const sliderOpacityPercent = targetLayer ? Math.round(getLayerOpacity(targetLayer.id) * 100) : 100;
   const pinnedLayerCount = siblingLayers.filter(layer => isLayerPinned(layer.id)).length;
@@ -91,6 +114,20 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseCl
   const sourceUrl = useMemo(() => {
     return serviceSearchUrl || rawServiceUrl;
   }, [serviceSearchUrl, rawServiceUrl]);
+  const renderStatusLabel = getRenderStatusLabel(loading, isLayerRendering, renderPhase, layerKind);
+
+  useEffect(() => {
+    if (!isSourceOverlayOpen || !sourceUrl || sourceIframeStatus !== 'loading') return undefined;
+    // CSP/X-Frame-Options failures often do not emit a reliable iframe error event.
+    const timeoutId = window.setTimeout(() => {
+      setSourceIframeStatus((currentStatus) => (
+        currentStatus === 'loading' ? 'blocked' : currentStatus
+      ));
+    }, 4500);
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [isSourceOverlayOpen, sourceUrl, sourceIframeStatus]);
 
   useEffect(() => {
     let cancelled = false;
@@ -119,29 +156,12 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseCl
       : layerName
   );
 
-  const handlePinActiveLayer = () => {
-    if (!targetLayer) return;
-    pinLayer(targetLayer.id);
-  };
-  const handleUnpinActiveLayer = () => {
-    if (!targetLayerPinnedEntry) return;
-    unpinLayer(targetLayerPinnedEntry.id);
-  };
   const handleLayerListSelect = (layerId: string) => {
     if (activeLayer?.isService) {
       setActiveServiceSubLayer(layerId);
       return;
     }
     activateLayer(layerId);
-  };
-  const handleInlinePinToggle = (event: ReactMouseEvent, layerId: string) => {
-    event.stopPropagation();
-    const pinnedEntry = getPinnedByLayerId(layerId);
-    if (pinnedEntry) {
-      unpinLayer(pinnedEntry.id);
-    } else {
-      pinLayer(layerId);
-    }
   };
   const handleInspectLayer = (event: ReactMouseEvent, layerId: string) => {
     event.stopPropagation();
@@ -151,6 +171,15 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseCl
       return;
     }
     onBrowseClick();
+  };
+  const handleOpenSourceOverlay = () => {
+    if (!sourceUrl) return;
+    setSourceIframeStatus('loading');
+    setIsSourceOverlayOpen(true);
+  };
+  const handleCloseSourceOverlay = () => {
+    setIsSourceOverlayOpen(false);
+    setSourceIframeStatus('idle');
   };
 
   return (
@@ -237,35 +266,6 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseCl
                           >
                             Inspect
                           </span>
-                          {isLayerPinned(layer.id) ? (
-                            <span
-                              id={`tnc-arcgis-service-overview-layer-pin-button-${layer.id}`}
-                              onClick={(event) => handleInlinePinToggle(event, layer.id)}
-                              className="inline-flex items-center justify-center rounded text-blue-600 hover:text-blue-400 transition-colors cursor-pointer"
-                              title="Unpin layer"
-                              role="button"
-                              aria-label="Unpin layer"
-                            >
-                              <Pin
-                                id={`tnc-arcgis-service-overview-layer-pin-icon-${layer.id}`}
-                                className="h-3.5 w-3.5 fill-blue-600 hover:fill-blue-400"
-                              />
-                            </span>
-                          ) : isSelectedLayer ? (
-                            <span
-                              id={`tnc-arcgis-service-overview-layer-pin-button-${layer.id}`}
-                              onClick={(event) => handleInlinePinToggle(event, layer.id)}
-                              className="inline-flex items-center justify-center rounded text-amber-600 hover:text-amber-700 transition-colors cursor-pointer"
-                              title="Pin layer"
-                              role="button"
-                              aria-label="Pin layer"
-                            >
-                              <Pin
-                                id={`tnc-arcgis-service-overview-layer-pin-outline-icon-${layer.id}`}
-                                className="h-3.5 w-3.5"
-                              />
-                            </span>
-                          ) : null}
                           <span
                             id={`tnc-arcgis-service-overview-layer-visibility-icon-container-${layer.id}`}
                             className="inline-flex items-center justify-center"
@@ -300,7 +300,7 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseCl
               </dd>
               <dt id="tnc-arcgis-overview-type-label" className="text-gray-500">Status</dt>
               <dd id="tnc-arcgis-overview-type-value" className="text-gray-900 font-medium text-right">
-                {loading ? 'Loading metadata...' : 'Ready'}
+                {renderStatusLabel}
               </dd>
             </dl>
           </div>
@@ -338,32 +338,6 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseCl
           )}
 
           <div id="tnc-arcgis-service-overview-actions" className="grid grid-cols-1 gap-3">
-            {targetLayerPinned ? (
-              <button
-                id="tnc-arcgis-overview-unpin-cta"
-                type="button"
-                onClick={handleUnpinActiveLayer}
-                className="w-full py-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-medium text-center min-h-[44px] hover:bg-emerald-100 transition-colors"
-              >
-                Unpin Layer
-              </button>
-            ) : !targetLayerCanPin ? (
-              <div
-                id="tnc-arcgis-overview-service-badge"
-                className="w-full py-3 rounded-lg border border-gray-300 bg-gray-50 text-gray-700 text-sm font-medium text-center min-h-[44px] flex items-center justify-center"
-              >
-                Service selected
-              </div>
-            ) : (
-              <button
-                id="tnc-arcgis-overview-pin-cta"
-                type="button"
-                onClick={handlePinActiveLayer}
-                className="w-full py-3 border border-blue-200 text-blue-700 font-medium rounded-lg hover:bg-blue-50 transition-colors text-sm min-h-[44px]"
-              >
-                Pin Layer
-              </button>
-            )}
             <button
               id="tnc-arcgis-service-overview-open-layer-cta"
               type="button"
@@ -396,7 +370,7 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseCl
               <button
                 id="tnc-arcgis-overview-open-overlay-button"
                 type="button"
-                onClick={() => setIsSourceOverlayOpen(true)}
+                onClick={handleOpenSourceOverlay}
                 disabled={!sourceUrl}
                 className="rounded-md border border-gray-300 bg-white px-2 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -460,7 +434,7 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseCl
           </dd>
           <dt id="tnc-arcgis-overview-type-label" className="text-gray-500">Status</dt>
           <dd id="tnc-arcgis-overview-type-value" className="text-gray-900 font-medium text-right">
-            {loading ? 'Loading metadata...' : 'Ready'}
+            {renderStatusLabel}
           </dd>
         </dl>
       </div>
@@ -498,32 +472,6 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseCl
           )}
 
           <div id="tnc-arcgis-overview-actions" className="grid grid-cols-1 gap-3">
-            {targetLayerPinned ? (
-              <button
-                id="tnc-arcgis-overview-unpin-cta"
-                type="button"
-                onClick={handleUnpinActiveLayer}
-                className="w-full py-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-medium text-center min-h-[44px] hover:bg-emerald-100 transition-colors"
-              >
-                Unpin Layer
-              </button>
-            ) : !targetLayerCanPin ? (
-              <div
-                id="tnc-arcgis-overview-service-badge"
-                className="w-full py-3 rounded-lg border border-gray-300 bg-gray-50 text-gray-700 text-sm font-medium text-center min-h-[44px] flex items-center justify-center"
-              >
-                Service selected
-              </div>
-            ) : (
-              <button
-                id="tnc-arcgis-overview-pin-cta"
-                type="button"
-                onClick={handlePinActiveLayer}
-                className="w-full py-3 border border-blue-200 text-blue-700 font-medium rounded-lg hover:bg-blue-50 transition-colors text-sm min-h-[44px]"
-              >
-                Pin Layer
-              </button>
-            )}
             <button
               id="tnc-arcgis-overview-open-layer-cta"
               type="button"
@@ -556,7 +504,7 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseCl
               <button
                 id="tnc-arcgis-overview-open-overlay-button"
                 type="button"
-                onClick={() => setIsSourceOverlayOpen(true)}
+                onClick={handleOpenSourceOverlay}
                 disabled={!sourceUrl}
                 className="rounded-md border border-gray-300 bg-white px-2 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -588,7 +536,7 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseCl
         <div
           id="tnc-arcgis-overview-source-overlay-backdrop"
           className="fixed inset-0 z-[100] bg-black/45 flex items-center justify-center p-4"
-          onClick={() => setIsSourceOverlayOpen(false)}
+          onClick={handleCloseSourceOverlay}
         >
           <div
             id="tnc-arcgis-overview-source-overlay-panel"
@@ -602,19 +550,67 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseCl
               <button
                 id="tnc-arcgis-overview-source-overlay-close-button"
                 type="button"
-                onClick={() => setIsSourceOverlayOpen(false)}
+                onClick={handleCloseSourceOverlay}
                 className="p-1 rounded-md hover:bg-gray-100"
                 aria-label="Close source overlay"
               >
                 <X className="w-4 h-4 text-gray-600" />
               </button>
             </div>
-            <iframe
-              id="tnc-arcgis-overview-source-overlay-iframe"
-              src={sourceUrl}
-              title="TNC ArcGIS Source"
-              className="w-full h-full border-0"
-            />
+            {sourceIframeStatus === 'blocked' ? (
+              <div
+                id="tnc-arcgis-overview-source-overlay-fallback"
+                className="h-full flex flex-col items-center justify-center gap-3 p-6 text-center bg-slate-50"
+              >
+                <p id="tnc-arcgis-overview-source-overlay-fallback-title" className="text-sm font-semibold text-gray-900">
+                  Embedded preview is blocked by the source site.
+                </p>
+                <p id="tnc-arcgis-overview-source-overlay-fallback-copy" className="max-w-xl text-xs text-gray-600">
+                  This source likely disallows iframe embedding via browser security headers. Open it in a new tab to continue.
+                </p>
+                <div id="tnc-arcgis-overview-source-overlay-fallback-actions" className="flex items-center gap-2">
+                  <a
+                    id="tnc-arcgis-overview-source-overlay-fallback-new-tab-link"
+                    href={sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100 inline-flex items-center gap-1"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Open in New Tab
+                  </a>
+                  <button
+                    id="tnc-arcgis-overview-source-overlay-fallback-retry-button"
+                    type="button"
+                    onClick={() => setSourceIframeStatus('loading')}
+                    className="rounded-md border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100"
+                  >
+                    Retry Embed
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div id="tnc-arcgis-overview-source-overlay-iframe-shell" className="relative h-full">
+                {sourceIframeStatus === 'loading' && (
+                  <div
+                    id="tnc-arcgis-overview-source-overlay-loading-banner"
+                    className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full border border-slate-200 bg-white/95 px-3 py-1 text-xs text-slate-600 shadow-sm"
+                  >
+                    Loading source preview...
+                  </div>
+                )}
+                <iframe
+                  id="tnc-arcgis-overview-source-overlay-iframe"
+                  src={sourceUrl}
+                  title="TNC ArcGIS Source"
+                  onLoad={() => setSourceIframeStatus('ready')}
+                  onError={() => setSourceIframeStatus('blocked')}
+                  className={`w-full h-full border-0 transition-opacity ${
+                    sourceIframeStatus === 'ready' ? 'opacity-100' : 'opacity-60'
+                  }`}
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

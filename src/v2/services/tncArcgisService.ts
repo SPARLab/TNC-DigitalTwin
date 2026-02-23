@@ -437,12 +437,10 @@ export function buildServiceUrl(meta: CatalogLayer['catalogMeta']): string {
     return serviceUrl;
   }
 
-  // Catalog `layer_id` is not always reliable for single-row FeatureServer datasets.
-  // For explicit multi-layer services, honor the discovered/catalog layer id.
-  // Otherwise default to layer 0, which is the canonical layer for single-layer services.
-  const layerId = meta.isMultiLayerService
-    ? (Number.isInteger(meta.layerIdInService) ? meta.layerIdInService : 0)
-    : 0;
+  // Prefer explicit catalog/discovery layer IDs when present. Many valid public
+  // FeatureServer services use non-zero IDs as their only layer (e.g. /7, /8, /9).
+  // Keep layer 0 as the conservative fallback when metadata does not provide one.
+  const layerId = Number.isInteger(meta.layerIdInService) ? meta.layerIdInService : 0;
   return `${serviceUrl}/${layerId}`;
 }
 

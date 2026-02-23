@@ -4,13 +4,18 @@
 // Shows hierarchical categories with subcategories and ~90+ real datasets.
 // ============================================================================
 
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useCatalog } from '../../context/CatalogContext';
 import { SearchBar } from './SearchBar';
 import { CategoryGroup } from './CategoryGroup';
 import { Search } from 'lucide-react';
 import type { Category, CatalogLayer } from '../../types';
 import { InlineLoadingRow } from '../shared/loading/LoadingPrimitives';
+
+interface SearchState {
+  filteredLayerIds: Set<string>;
+  autoExpandServiceIds: Set<string>;
+}
 
 /** Recursively collect all layers from a category and its subcategories. */
 function allLayersInCategory(cat: Category): CatalogLayer[] {
@@ -26,13 +31,65 @@ function allLayersInCategory(cat: Category): CatalogLayer[] {
 export function LeftSidebar() {
   const { categories, loading, error } = useCatalog();
   const [searchQuery, setSearchQuery] = useState('');
+  const [liveMessage, setLiveMessage] = useState('');
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollHideTimerRef = useRef<number | null>(null);
+  const announceTimerRef = useRef<number | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
   const [scrollThumbHeight, setScrollThumbHeight] = useState(0);
   const [scrollThumbTop, setScrollThumbTop] = useState(0);
 
   const handleSearch = useCallback((query: string) => setSearchQuery(query), []);
+  const announce = useCallback((message: string) => {
+    if (announceTimerRef.current !== null) {
+      window.clearTimeout(announceTimerRef.current);
+    }
+    // Clear first so repeated identical announcements are still read.
+    setLiveMessage('');
+    announceTimerRef.current = window.setTimeout(() => {
+      setLiveMessage(message);
+    }, 15);
+  }, []);
+
+  const handleTreeKeyDownCapture = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const supportedKey = event.key === 'ArrowDown'
+      || event.key === 'ArrowUp'
+      || event.key === 'Home'
+      || event.key === 'End';
+    if (!supportedKey) return;
+
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+
+    const currentRow = target.closest('[data-left-sidebar-tree-row="true"]') as HTMLElement | null;
+    if (!currentRow) return;
+
+    const rows = Array.from(
+      event.currentTarget.querySelectorAll<HTMLElement>('[data-left-sidebar-tree-row="true"]')
+    ).filter((row) => {
+      const rects = row.getClientRects();
+      return Array.from(rects).some((rect) => rect.width > 0 && rect.height > 0);
+    });
+    if (rows.length === 0) return;
+
+    const currentIndex = rows.indexOf(currentRow);
+    if (currentIndex === -1) return;
+
+    let nextIndex = currentIndex;
+    if (event.key === 'ArrowDown') {
+      nextIndex = Math.min(rows.length - 1, currentIndex + 1);
+    } else if (event.key === 'ArrowUp') {
+      nextIndex = Math.max(0, currentIndex - 1);
+    } else if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = rows.length - 1;
+    }
+
+    if (nextIndex === currentIndex) return;
+    event.preventDefault();
+    rows[nextIndex]?.focus();
+  }, []);
   const updateScrollThumb = useCallback(() => {
     const scrollEl = scrollAreaRef.current;
     if (!scrollEl) return;
@@ -80,34 +137,50 @@ export function LeftSidebar() {
       if (scrollHideTimerRef.current !== null) {
         window.clearTimeout(scrollHideTimerRef.current);
       }
+      if (announceTimerRef.current !== null) {
+        window.clearTimeout(announceTimerRef.current);
+      }
     };
   }, [updateScrollThumb]);
 
-  // Compute filtered layer IDs when search is active
-  const filteredLayerIds = useMemo(() => {
+  // Compute filtered layer IDs when search is active.
+  // If a child layer matches, also include + auto-expand the parent service.
+  const searchState = useMemo<SearchState | undefined>(() => {
     if (searchQuery.length < 2) return undefined;
     const q = searchQuery.toLowerCase();
     const ids = new Set<string>();
+    const autoExpandServiceIds = new Set<string>();
     for (const cat of categories) {
       for (const layer of allLayersInCategory(cat)) {
         if (layer.name.toLowerCase().includes(q)) {
           ids.add(layer.id);
+          const parentServiceId = layer.catalogMeta?.parentServiceId;
+          if (parentServiceId) {
+            ids.add(parentServiceId);
+            autoExpandServiceIds.add(parentServiceId);
+          }
         }
       }
     }
-    return ids;
+    return {
+      filteredLayerIds: ids,
+      autoExpandServiceIds,
+    };
   }, [searchQuery, categories]);
 
+  const filteredLayerIds = searchState?.filteredLayerIds;
   const hasResults = !filteredLayerIds || filteredLayerIds.size > 0;
 
   return (
     <aside
       id="left-sidebar"
-      role="tree"
       aria-label="Layer browser"
       className="w-[280px] flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full overflow-hidden"
     >
       <SearchBar onSearch={handleSearch} />
+      <div id="left-sidebar-live-region" className="sr-only" aria-live="polite" aria-atomic="true">
+        {liveMessage}
+      </div>
 
       <div id="left-sidebar-scroll-wrap" className="relative flex-1 overflow-hidden group">
         <div
@@ -135,13 +208,23 @@ export function LeftSidebar() {
 
           {/* Category tree */}
           {!loading && !error && hasResults && (
-            categories.map(cat => (
-              <CategoryGroup
-                key={cat.id}
-                category={cat}
-                filteredLayerIds={filteredLayerIds}
-              />
-            ))
+            <div
+              id="left-sidebar-tree"
+              role="tree"
+              aria-label="Data catalog layers"
+              onKeyDownCapture={handleTreeKeyDownCapture}
+            >
+              {categories.map(cat => (
+                <CategoryGroup
+                  key={cat.id}
+                  category={cat}
+                  filteredLayerIds={filteredLayerIds}
+                  searchQuery={searchQuery.length >= 2 ? searchQuery : undefined}
+                  searchAutoExpandServiceIds={searchState?.autoExpandServiceIds}
+                  onAnnounce={announce}
+                />
+              ))}
+            </div>
           )}
 
           {/* Empty search results */}
