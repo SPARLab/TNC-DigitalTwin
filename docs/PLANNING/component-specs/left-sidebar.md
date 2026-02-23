@@ -366,8 +366,13 @@ If we add other repositories (Dryad, Zenodo), we can add more shortcut rows:
 
 - **ARIA:** `role="tree"` on sidebar, `role="treeitem"` on layer rows (DFT-017)
 - **Keyboard:** Enter/Space toggles categories; Arrow keys navigate layers
+  - Arrow Right: expand (if collapsed) or move focus to first child (if expanded)
+  - Arrow Left: collapse (if expanded) or move focus to parent (if collapsed)
+  - Arrow Up/Down: move between visible rows; Home/End: first/last row
 - **Tab order:** Left sidebar is first in global tab order (DFT-017)
 - **Focus:** Category expand/collapse maintains focus on the header
+
+**Implementation (Phase 6 task 6.9):** Full ARIA tree keyboard pattern in `CategoryGroup`, `ServiceGroup`, `LayerRow`; live region announcements for expand/collapse and pin/unpin.
 
 ---
 

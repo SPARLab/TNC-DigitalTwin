@@ -10,6 +10,7 @@ interface ServiceGroupProps {
   isExpanded: boolean;
   highlightQuery?: string;
   ariaLevel?: number;
+  parentTreeItemId?: string;
   onAnnounce?: (message: string) => void;
   onToggleExpand: () => void;
 }
@@ -35,12 +36,22 @@ function renderHighlightedText(text: string, query?: string) {
   );
 }
 
+function focusFirstVisibleChildRow(childrenGroupId: string) {
+  const group = document.getElementById(childrenGroupId);
+  if (!group) return;
+
+  const rows = Array.from(group.querySelectorAll<HTMLElement>('[data-left-sidebar-tree-row="true"]'));
+  const firstVisible = rows.find((row) => row.offsetParent !== null);
+  firstVisible?.focus();
+}
+
 export function ServiceGroup({
   service,
   layers,
   isExpanded,
   highlightQuery,
   ariaLevel = 2,
+  parentTreeItemId,
   onAnnounce,
   onToggleExpand,
 }: ServiceGroupProps) {
@@ -83,10 +94,20 @@ export function ServiceGroup({
       announceExpandState(true);
       return;
     }
+    if (event.key === 'ArrowRight' && isExpanded) {
+      event.preventDefault();
+      focusFirstVisibleChildRow(childrenGroupId);
+      return;
+    }
     if (event.key === 'ArrowLeft' && isExpanded) {
       event.preventDefault();
       onToggleExpand();
       announceExpandState(false);
+      return;
+    }
+    if (event.key === 'ArrowLeft' && !isExpanded && parentTreeItemId) {
+      event.preventDefault();
+      document.getElementById(parentTreeItemId)?.focus();
       return;
     }
     if (event.key === 'Enter' || event.key === ' ') {
@@ -162,6 +183,7 @@ export function ServiceGroup({
                 name={layer.name}
                 indented
                 ariaLevel={ariaLevel + 1}
+                parentTreeItemId={`service-group-header-${service.id}`}
                 onAnnounce={onAnnounce}
               />
             ))}

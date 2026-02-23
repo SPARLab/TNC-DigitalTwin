@@ -15,6 +15,7 @@ interface LayerRowProps {
   name: string;
   highlightQuery?: string;
   ariaLevel?: number;
+  parentTreeItemId?: string;
   controlsOnly?: boolean;
   indented?: boolean;
   onAnnounce?: (message: string) => void;
@@ -57,6 +58,7 @@ export function LayerRow({
   name,
   highlightQuery,
   ariaLevel = 2,
+  parentTreeItemId,
   controlsOnly = false,
   indented = false,
   onAnnounce,
@@ -107,6 +109,11 @@ export function LayerRow({
   };
 
   const handleRowKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'ArrowLeft' && parentTreeItemId) {
+      event.preventDefault();
+      document.getElementById(parentTreeItemId)?.focus();
+      return;
+    }
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       handleClick();

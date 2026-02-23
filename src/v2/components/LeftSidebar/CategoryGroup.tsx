@@ -19,6 +19,7 @@ interface CategoryGroupProps {
   searchAutoExpandServiceIds?: Set<string>;
   onAnnounce?: (message: string) => void;
   ariaLevelBase?: number;
+  parentTreeItemId?: string;
   /** Render at subcategory depth (indented, no outer border) */
   isSubcategory?: boolean;
 }
@@ -48,6 +49,7 @@ export function CategoryGroup({
   searchAutoExpandServiceIds,
   onAnnounce,
   ariaLevelBase = 1,
+  parentTreeItemId,
   isSubcategory
 }: CategoryGroupProps) {
   const { activeLayer } = useLayers();
@@ -64,10 +66,23 @@ export function CategoryGroup({
       return next;
     });
   }, [category.name, onAnnounce]);
+  const focusFirstVisibleChildRow = useCallback(() => {
+    const group = document.getElementById(`category-children-${category.id}`);
+    if (!group) return;
+    const rows = Array.from(group.querySelectorAll<HTMLElement>('[data-left-sidebar-tree-row="true"]'));
+    const firstVisible = rows.find((row) => row.offsetParent !== null);
+    firstVisible?.focus();
+  }, [category.id]);
+
   const handleHeaderKeyDown = useCallback((event: ReactKeyboardEvent<HTMLButtonElement>) => {
     if (event.key === 'ArrowRight' && !isExpanded) {
       event.preventDefault();
       toggle();
+      return;
+    }
+    if (event.key === 'ArrowRight' && isExpanded) {
+      event.preventDefault();
+      focusFirstVisibleChildRow();
       return;
     }
 
@@ -76,12 +91,17 @@ export function CategoryGroup({
       toggle();
       return;
     }
+    if (event.key === 'ArrowLeft' && !isExpanded && parentTreeItemId) {
+      event.preventDefault();
+      document.getElementById(parentTreeItemId)?.focus();
+      return;
+    }
 
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       toggle();
     }
-  }, [isExpanded, toggle]);
+  }, [focusFirstVisibleChildRow, isExpanded, parentTreeItemId, toggle]);
 
   const directLayers = visibleLayers(category.layers, filteredLayerIds);
   const childRowAriaLevel = ariaLevelBase + 1;
@@ -224,6 +244,7 @@ export function CategoryGroup({
                       service={layer}
                       layers={serviceLayers}
                       ariaLevel={childRowAriaLevel}
+                      parentTreeItemId={`category-toggle-${category.id}`}
                       isExpanded={expandedServiceIds.has(layer.id) || !!searchAutoExpandServiceIds?.has(layer.id)}
                       highlightQuery={searchQuery}
                       onAnnounce={onAnnounce}
@@ -238,6 +259,7 @@ export function CategoryGroup({
                     layerId={layer.id}
                     name={layer.name}
                     ariaLevel={childRowAriaLevel}
+                    parentTreeItemId={`category-toggle-${category.id}`}
                     highlightQuery={searchQuery}
                     onAnnounce={onAnnounce}
                   />
@@ -256,6 +278,7 @@ export function CategoryGroup({
               searchAutoExpandServiceIds={searchAutoExpandServiceIds}
               onAnnounce={onAnnounce}
               ariaLevelBase={ariaLevelBase + 1}
+              parentTreeItemId={`category-toggle-${category.id}`}
               isSubcategory
             />
           ))}

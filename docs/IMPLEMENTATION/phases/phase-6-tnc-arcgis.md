@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 28 tasks (CON-ARCGIS-01–17, 6.8, 6.10, 6.11, 6.12, 6.13, 6.14, 6.17, 6.20, D20-02, D20-02a, D20-10, D20-11, TF-11, TF-13 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
+**Progress:** 29 tasks (CON-ARCGIS-01–17, 6.8, 6.9, 6.10, 6.11, 6.12, 6.13, 6.14, 6.17, 6.20, D20-02, D20-02a, D20-10, D20-11, TF-11, TF-13 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry) ✅ complete  
@@ -54,7 +54,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **CON-ARCGIS-13** | 🟢 Complete | Feb 20, 2026 | Left sidebar: align feature service + child layer right edges | Feature service box and child layer boxes share same right margin as other layers (mr-1); child right edge aligns with parent; scrollbar overlay fits naturally |
 | **CON-ARCGIS-14** | 🟢 Complete | Feb 19, 2026 | Unified Service Workspace: service/layer click behavior + layer list state chips | Auto-select sublayer on service click; one right-sidebar layout; layer list header (N pinned • N visible); amber active highlight; pin/eye icons; inline pin/unpin; Map Layers widget sync |
 | **6.8** | 🟢 Complete | Feb 23, 2026 | Search Enhancement | Match service + layer names; expand parent service when layer matches; highlight matched text. Parent service IDs included when child matches; auto-expand on child match. |
-| **6.9** | ⚪ | — | Keyboard Navigation & ARIA | Arrow keys for expand/collapse, ARIA tree structure, focus management |
+| **6.9** | 🟢 Complete | Feb 23, 2026 | Keyboard Navigation & ARIA | Arrow-key tree navigation finalized: Right expands/focuses first child, Left collapses or returns focus to parent, Up/Down/Home/End move between visible rows; ARIA tree/treeitem/group semantics + live announcements in place. |
 | **6.10** | 🟢 Complete | Feb 24, 2026 | QA & Edge Cases | Manual UI checklist completed; single-layer services, empty results, malformed queries, schema fetch errors verified |
 | **6.11** | 🟢 Complete | Feb 23, 2026 | Capability-Aware Browse UX | Legend display moved out of right-sidebar Browse and into a floating map widget (bottom-right) for active TNC layers. Full legend header clickable for expand/collapse; collapsed state has rounded bottom-left and bottom-right corners; keyboard toggle (Enter/Space) for accessibility. |
 | **6.12** | 🟢 Complete | Feb 23, 2026 | Terminology + CTA Realignment | Right-sidebar pin actions removed from TNCArcGISOverviewTab; pinning only in left sidebar + Map Layers widget. Inline pin icons and Pin/Unpin CTAs removed. |
@@ -320,12 +320,14 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - Unpin layer: "Wetlands Polygons layer unpinned"
 
 **Acceptance Criteria:**
-- [ ] Arrow keys navigate between service/layer rows
-- [ ] Arrow Right/Left expand/collapse services
-- [ ] Tab order follows visual hierarchy (service → layers)
-- [ ] `role="tree"` and `aria-level` attributes correct
-- [ ] Screen reader announces expand/collapse/pin actions
-- [ ] Focus visible on all interactive elements
+- [x] Arrow keys navigate between service/layer rows
+- [x] Arrow Right/Left expand/collapse services
+- [x] Tab order follows visual hierarchy (service → layers)
+- [x] `role="tree"` and `aria-level` attributes correct
+- [x] Screen reader announces expand/collapse/pin actions
+- [x] Focus visible on all interactive elements
+
+**Implementation (complete Feb 23, 2026):** Left-sidebar tree focus management now mirrors ARIA tree expectations. `CategoryGroup` and `ServiceGroup` move focus to the first visible child on `ArrowRight` when already expanded; `LayerRow` and collapsed parent rows return focus to their parent treeitem on `ArrowLeft`. Existing `LeftSidebar` capture handler continues to provide visible-row `ArrowUp`/`ArrowDown`/`Home`/`End` navigation, with SR announcements for expand/collapse and pin/unpin actions.
 
 **Estimated Time:** 3-4 hours
 
