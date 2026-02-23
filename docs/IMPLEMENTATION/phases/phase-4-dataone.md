@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 14 / 16 tasks complete  
+**Progress:** 15 / 16 tasks complete  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-4-dataone-completed.md`  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
@@ -25,7 +25,7 @@
 | CON-DONE-08 | 🟢 Complete | Feb 23, 2026 | Multi-select categories filter checklist | Replaced single-select dropdown with checkbox checklist; Select all / Clear all; tncCategories wired through browse, query, map, and saved views |
 | CON-DONE-09 | 🟢 Complete | Feb 23, 2026 | Search by title and abstract/keywords | Layer 1 used when searchText present; title OR abstract OR keywords predicate; browse + map + count paths updated |
 | CON-DONE-10 | 🟢 Complete | Feb 23, 2026 | Filter by file type (CSV, TIF, imagery, and others) | File-type checklist (CSV/TIF/Imagery/Other) with Select all/Clear all; client-side filtering from files_summary.by_ext; wired through browse, map, saved views |
-| CON-DONE-11 | ⚪ Not Started | Feb 18, 2026 | Saved indicator on browse cards (icon plus subtle highlight) | Medium priority |
+| CON-DONE-11 | 🟢 Complete | Feb 23, 2026 | Saved indicator on browse cards (icon plus subtle highlight) | DatasetListView: BookmarkCheck icon + "Saved" badge; amber border/bg on card |
 | CON-DONE-15 | 🟢 Complete | Feb 23, 2026 | Spatial query: ensure draw/query tools filter DataONE datasets by extent | Verified working with SpatialQuerySection |
 | CON-DONE-14 | 🟢 Complete | Feb 23, 2026 | Search highlight: show matching keyword inside abstract snippet | DatasetListView: abstract snippet with case-insensitive phrase highlight; optional abstract on DataOneDataset; Layer 1 carries abstract when search active |
 
