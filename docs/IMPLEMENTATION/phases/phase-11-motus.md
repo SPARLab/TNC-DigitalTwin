@@ -1,7 +1,7 @@
 # Phase 11: MOTUS Wildlife Telemetry
 
-**Status:** 🟡 In Progress  
-**Progress:** 8 / 9 tasks  
+**Status:** 🟢 Complete  
+**Progress:** 9 / 9 tasks  
 **Branch:** `v2/motus`  
 **Depends On:** Phase 0 (Foundation); Phase 10 (DroneDeploy) recommended first — shares time-series interaction patterns  
 **Owner:** TBD
@@ -20,7 +20,7 @@
 | 11.6 | 🟢 Complete | Feb 23, 2026 | Implement Journey playback widget (temporal navigation / playback) | Floating map playback widget (scrubber, play/pause, step, speed, start/latest); progressive leg drawing between stations; single leading-edge directional arrow; correct bearing via atan2(dx,dy); **playback auto-framing** — map zooms/pans to journey station extent when Play is pressed |
 | 11.7 | 🟢 Complete | Feb 23, 2026 | Implement legend and symbology controls | First-pass in-sidebar legend for tagged animal marker, receiver station marker, and inferred movement legs; moved to floating map widget (adapter legend slot). Deferred: confidence split, detections-specific legend, dynamic updates |
 | 11.8 | 🟢 Complete | Feb 23, 2026 | Sync loading indicators | MOTUS loading now flows through shared adapter status: Map Layers eye-slot spinner tracks telemetry/path fetches and Browse uses shared loading primitives (`InlineLoadingRow`, `RefreshLoadingRow`) for species/tag/detail queries |
-| 11.9 | ⚪ Not Started | — | Wire Save View flow | Pin MOTUS layers, save product/date views to Map Layers |
+| 11.9 | 🟢 Complete | Feb 23, 2026 | Wire Save View flow | MOTUS views now persist in Map Layers as child views with auto-name format `{Species} — {Tag or Group} — {Date Window}`; saved views restore species/tag/date + quality filters and pin MOTUS layer when needed |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -254,11 +254,11 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 **Goal:** Save MOTUS species/tag/date configurations to Map Layers.
 
 **Acceptance Criteria:**
-- [ ] Pin creates a MOTUS parent layer in Map Layers
-- [ ] Saved views encode species/tag + date window + quality filters
-- [ ] Selecting a saved view restores species/tag and time window
-- [ ] Auto-naming: "{Species} — {Tag or Group} — {Date Window}"
-- [ ] Follows shared child-view conventions from `LayerContext`
+- [x] Pin creates a MOTUS parent layer in Map Layers
+- [x] Saved views encode species/tag + date window + quality filters
+- [x] Selecting a saved view restores species/tag and time window
+- [x] Auto-naming: "{Species} — {Tag or Group} — {Date Window}"
+- [x] Follows shared child-view conventions from `LayerContext`
 
 ---
 
@@ -340,6 +340,7 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 23, 2026 | 11.9 | Wired MOTUS Save View flow end-to-end: added `motusFilters` support in `LayerContext`/`PinnedLayer` view models, auto-named MOTUS child views (`{Species} — {Tag or Group} — {Date Window}`), browse-tab hydration from selected Map Layers child view, and detail-panel "Save View to Map Layers" action that pins layer if needed and restores species/tag/date+quality filter state on reselect | Cursor |
 | Feb 23, 2026 | 11.8 | Synced MOTUS loading with shared patterns: context loading scopes now cover species/tag/detail + movement/station fetches, Browse switched to shared loading primitives, and Map Layers MOTUS row now shows eye-slot spinner while telemetry/path requests are in flight | Cursor |
 | Feb 23, 2026 | 11.7 | Marked complete: first-pass legend (tagged animal, receiver station, inferred legs) in floating map widget; confidence split, detections legend, dynamic updates deferred | Cursor |
 | Feb 23, 2026 | 11.3 | Implemented selected species card state: ProductListView now accepts `selectedItemId`; active species card uses `bg-gray-100` + `border-gray-400`; `aria-pressed` for accessibility | Cursor |

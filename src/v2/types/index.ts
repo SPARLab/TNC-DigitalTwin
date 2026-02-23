@@ -65,6 +65,7 @@ export interface PinnedLayer {
   tncArcgisFilters?: TNCArcGISViewFilters;
   dataoneFilters?: DataOneViewFilters;
   gbifFilters?: GBIFViewFilters;
+  motusFilters?: MotusViewFilters;
   droneView?: DroneViewState;
   distinguisher?: string;
   views?: PinnedLayerView[];
@@ -87,6 +88,7 @@ export interface PinnedLayerView {
   tncArcgisFilters?: TNCArcGISViewFilters;
   dataoneFilters?: DataOneViewFilters;
   gbifFilters?: GBIFViewFilters;
+  motusFilters?: MotusViewFilters;
   droneView?: DroneViewState;
   resultCount?: number; // Number of features matching filters (for count display testing)
 }
@@ -162,6 +164,16 @@ export interface GBIFViewFilters {
   endDate?: string;
   selectedOccurrenceId?: number;
   selectedOccurrenceLabel?: string;
+}
+
+/** MOTUS filter + detail state stored per pinned layer/view */
+export interface MotusViewFilters {
+  selectedSpecies?: string;
+  selectedTagId?: number;
+  startDate?: string;
+  endDate?: string;
+  minHitCount?: number;
+  minMotusFilter?: number;
 }
 
 // =============================================================================

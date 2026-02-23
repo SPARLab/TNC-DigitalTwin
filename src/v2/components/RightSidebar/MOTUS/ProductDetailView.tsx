@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { MotusTaggedAnimalDetail } from '../../../../services/motusService';
 
 interface ProductDetailViewProps {
@@ -6,6 +7,7 @@ interface ProductDetailViewProps {
   isLayerPinned: boolean;
   onBack: () => void;
   onLoadOnMap: () => void;
+  onSaveView?: () => string | void;
   onChangeWindow: () => void;
 }
 
@@ -26,8 +28,11 @@ export function ProductDetailView({
   isLayerPinned,
   onBack,
   onLoadOnMap,
+  onSaveView,
   onChangeWindow,
 }: ProductDetailViewProps) {
+  const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
+
   return (
     <div id="motus-detail-view" className="space-y-4">
       <button
@@ -113,6 +118,24 @@ export function ProductDetailView({
         >
           {isLayerPinned ? 'Remove from Map' : 'Load on Map'}
         </button>
+
+        <button
+          id="motus-detail-save-view-button"
+          type="button"
+          onClick={() => {
+            const feedback = onSaveView?.();
+            setSaveFeedback(feedback || 'Saved MOTUS view in Map Layers.');
+          }}
+          className="w-full rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 text-sm font-medium py-2.5
+                     hover:bg-emerald-100 transition-colors"
+        >
+          Save View to Map Layers
+        </button>
+        {saveFeedback && (
+          <p id="motus-detail-save-feedback" className="text-xs text-emerald-700">
+            {saveFeedback}
+          </p>
+        )}
 
         <div id="motus-detail-attribution-block" className="border-t border-gray-100 pt-3 text-xs text-gray-600 space-y-2">
           <p id="motus-detail-attribution-text">

@@ -42,7 +42,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 8 | Calflora | ⚪ Not Started | 9 tasks | `v2/calflora` | No |
 | 9 | GBIF | 🟡 In Progress | 2 tasks (9.8 ✅; D20-08 ✅, GBIF-HOSTED ✅, P9-GRIDBIN ✅, TF-09 ✅; D20-12 🟡 in progress; 9.9 deferred; 9.12 deferred to v2.1+) | `v2/gbif` | No |
 | 10 | DroneDeploy | 🟢 Complete | 0 tasks | `v2/dronedeploy` | No |
-| 11 | MOTUS | 🟡 In Progress | 1 task | `v2/motus` | No — 11.6–11.8 complete; device_id linkage + shared loading sync implemented (Feb 23) |
+| 11 | MOTUS | 🟢 Complete | 0 tasks | `v2/motus` | No — Phase 11 complete (11.9 Save View flow shipped Feb 23) |
 
 **Status Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
 
@@ -60,7 +60,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 7 | [phase-7-polish.md](IMPLEMENTATION/phases/phase-7-polish.md) | 12+ tasks (+ D20-03, D20-04, D20-07, D20-13 from Dan meeting Feb 20; D20-01 ✅ done in Phase 0) |
 | 9 | [phase-9-gbif.md](IMPLEMENTATION/phases/phase-9-gbif.md) | 2 tasks (9.8 ✅; D20-12 🟡 in progress; + D20-B01, D20-B03, D20-12-FOLLOW optional; 9.9/9.12 deferred) |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) | 0 |
-| 11 | [phase-11-motus.md](IMPLEMENTATION/phases/phase-11-motus.md) | 1 (11.1–11.8 ✅; 11.9 not started) |
+| 11 | [phase-11-motus.md](IMPLEMENTATION/phases/phase-11-motus.md) | 0 (11.1–11.9 ✅ complete) |
 
 ---
 
@@ -309,6 +309,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 23, 2026 | Phase 11 | **Task 11.9 complete.** MOTUS Save View flow now pins MOTUS when needed, persists species/tag/date+quality configurations as Map Layers child views, restores saved view state on selection, and auto-names views as `{Species} — {Tag or Group} — {Date Window}`. Phase 11 remaining updated to 0 (complete). | Cursor |
 | Feb 23, 2026 | Phase 11 | **Task 11.8 complete.** MOTUS loading indicators synchronized with shared pattern: adapter/context loading now covers species/tag/detail + movement path fetches; Map Layers eye-slot spinner now reflects in-flight telemetry/path requests; right sidebar uses shared loading primitives. 1 task remaining (11.9). | Cursor |
 | Feb 23, 2026 | Phase 11 | **Task 11.7 complete.** MOTUS legend and symbology: first-pass legend (tagged animal, receiver station, inferred legs) in floating map widget; confidence split, detections legend, dynamic updates deferred. 2 tasks remaining (11.8–11.9). | Cursor |
 | Feb 23, 2026 | Phase 11 | **Task 11.6 complete.** MOTUS Journey Playback widget: floating map controls (play/pause, step, speed, scrubber), progressive leg drawing between stations, single leading-edge directional arrow, correct bearing. 3 tasks remaining. | Cursor |

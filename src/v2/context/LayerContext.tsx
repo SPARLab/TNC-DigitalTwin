@@ -16,6 +16,7 @@ import type {
   TNCArcGISViewFilters,
   DataOneViewFilters,
   GBIFViewFilters,
+  MotusViewFilters,
 } from '../types';
 import type { DroneImageryMetadata } from '../../types/droneImagery';
 import { useCatalog } from './CatalogContext';
@@ -78,6 +79,12 @@ interface LayerContextValue {
     resultCount: number,
     viewId?: string,
   ) => void;
+  syncMotusFilters: (
+    layerId: string,
+    filters: MotusViewFilters,
+    resultCount: number,
+    viewId?: string,
+  ) => void;
   createDendraFilteredView: (
     layerId: string,
     filters: DendraViewFilters,
@@ -92,6 +99,12 @@ interface LayerContextValue {
   createOrUpdateGBIFFilteredView: (
     layerId: string,
     filters: GBIFViewFilters,
+    resultCount: number,
+    targetViewId?: string,
+  ) => string | undefined;
+  createOrUpdateMotusFilteredView: (
+    layerId: string,
+    filters: MotusViewFilters,
     resultCount: number,
     targetViewId?: string,
   ) => string | undefined;
@@ -298,6 +311,45 @@ function buildGBIFViewName(filters: GBIFViewFilters): string {
   if (nonDate) return nonDate;
   if (datePart) return `Date: ${datePart}`;
   return 'All Occurrences';
+}
+
+function buildMotusFilterSummary(filters: MotusViewFilters): string | undefined {
+  const parts: string[] = [];
+  if (filters.selectedSpecies?.trim()) {
+    parts.push(`Species: ${filters.selectedSpecies.trim()}`);
+  }
+  if (typeof filters.selectedTagId === 'number') {
+    parts.push(`Tag: ${filters.selectedTagId}`);
+  }
+  if (filters.startDate || filters.endDate) {
+    parts.push(`Date: ${filters.startDate || 'Any'} to ${filters.endDate || 'Any'}`);
+  }
+  if (typeof filters.minHitCount === 'number') {
+    parts.push(`Min hits: ${filters.minHitCount}`);
+  }
+  if (typeof filters.minMotusFilter === 'number') {
+    parts.push(`Min motus_filter: ${filters.minMotusFilter}`);
+  }
+  return parts.length > 0 ? parts.join(', ') : undefined;
+}
+
+function getMotusFilterCount(filters: MotusViewFilters): number {
+  let count = 0;
+  if (filters.selectedSpecies?.trim()) count += 1;
+  if (typeof filters.selectedTagId === 'number') count += 1;
+  if (filters.startDate || filters.endDate) count += 1;
+  if (typeof filters.minHitCount === 'number') count += 1;
+  if (typeof filters.minMotusFilter === 'number') count += 1;
+  return count;
+}
+
+function buildMotusViewName(filters: MotusViewFilters): string {
+  const speciesPart = filters.selectedSpecies?.trim() || 'All Species';
+  const tagPart = typeof filters.selectedTagId === 'number' ? `Tag ${filters.selectedTagId}` : 'Group';
+  const datePart = (filters.startDate || filters.endDate)
+    ? `${filters.startDate || 'Any start'} to ${filters.endDate || 'Any end'}`
+    : 'Any dates';
+  return `${speciesPart} — ${tagPart} — ${datePart}`;
 }
 
 function buildDendraViewName(filters: DendraViewFilters): string {
@@ -527,6 +579,22 @@ function gbifFiltersEqual(
     (a.endDate || '') === (b.endDate || '') &&
     (a.selectedOccurrenceId || 0) === (b.selectedOccurrenceId || 0) &&
     (a.selectedOccurrenceLabel || '') === (b.selectedOccurrenceLabel || '')
+  );
+}
+
+function motusFiltersEqual(
+  a: MotusViewFilters | undefined,
+  b: MotusViewFilters | undefined,
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    (a.selectedSpecies || '') === (b.selectedSpecies || '') &&
+    (a.selectedTagId || 0) === (b.selectedTagId || 0) &&
+    (a.startDate || '') === (b.startDate || '') &&
+    (a.endDate || '') === (b.endDate || '') &&
+    (a.minHitCount ?? 0) === (b.minHitCount ?? 0) &&
+    (a.minMotusFilter ?? 0) === (b.minMotusFilter ?? 0)
   );
 }
 
@@ -778,6 +846,14 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                       selectedOccurrenceId: undefined,
                       selectedOccurrenceLabel: undefined,
                     },
+                    motusFilters: {
+                      selectedSpecies: undefined,
+                      selectedTagId: undefined,
+                      startDate: undefined,
+                      endDate: undefined,
+                      minHitCount: undefined,
+                      minMotusFilter: undefined,
+                    },
                   }
                 : v
             ),
@@ -819,6 +895,14 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             endDate: undefined,
             selectedOccurrenceId: undefined,
             selectedOccurrenceLabel: undefined,
+          },
+          motusFilters: {
+            selectedSpecies: undefined,
+            selectedTagId: undefined,
+            startDate: undefined,
+            endDate: undefined,
+            minHitCount: undefined,
+            minMotusFilter: undefined,
           },
           distinguisher: undefined,
         };
@@ -1250,6 +1334,78 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             filterCount: nextFilterCount,
             filterSummary: nextFilterSummary,
             gbifFilters: normalizedFilters,
+            resultCount,
+          };
+        });
+
+        const changed = nextLayers.some((l, i) => l !== prev[i]);
+        return changed ? nextLayers : prev;
+      });
+    },
+    []
+  );
+
+  const syncMotusFilters = useCallback(
+    (layerId: string, filters: MotusViewFilters, resultCount: number, viewId?: string) => {
+      setPinnedLayers(prev => {
+        const nextLayers = prev.map(p => {
+          if (p.layerId !== layerId) return p;
+
+          const normalizedFilters: MotusViewFilters = {
+            selectedSpecies: filters.selectedSpecies?.trim() || undefined,
+            selectedTagId: filters.selectedTagId,
+            startDate: filters.startDate || undefined,
+            endDate: filters.endDate || undefined,
+            minHitCount: typeof filters.minHitCount === 'number' ? Math.max(0, Math.floor(filters.minHitCount)) : undefined,
+            minMotusFilter: typeof filters.minMotusFilter === 'number' ? filters.minMotusFilter : undefined,
+          };
+          const nextFilterCount = getMotusFilterCount(normalizedFilters);
+          const nextFilterSummary = buildMotusFilterSummary(normalizedFilters);
+
+          if (viewId && p.views) {
+            const targetView = p.views.find(v => v.id === viewId);
+            const nextViewName = targetView?.isNameCustom
+              ? targetView.name
+              : buildMotusViewName(normalizedFilters);
+
+            if (
+              targetView &&
+              targetView.name === nextViewName &&
+              targetView.filterCount === nextFilterCount &&
+              targetView.filterSummary === nextFilterSummary &&
+              targetView.resultCount === resultCount &&
+              motusFiltersEqual(targetView.motusFilters, normalizedFilters)
+            ) return p;
+
+            return {
+              ...p,
+              views: p.views.map(v =>
+                v.id === viewId
+                  ? {
+                      ...v,
+                      name: nextViewName,
+                      filterCount: nextFilterCount,
+                      filterSummary: nextFilterSummary,
+                      motusFilters: normalizedFilters,
+                      resultCount,
+                    }
+                  : v
+              ),
+            };
+          }
+
+          if (
+            p.filterCount === nextFilterCount &&
+            p.filterSummary === nextFilterSummary &&
+            p.resultCount === resultCount &&
+            motusFiltersEqual(p.motusFilters, normalizedFilters)
+          ) return p;
+
+          return {
+            ...p,
+            filterCount: nextFilterCount,
+            filterSummary: nextFilterSummary,
+            motusFilters: normalizedFilters,
             resultCount,
           };
         });
@@ -1701,6 +1857,177 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     [activeLayer, layerMap]
   );
 
+  const createOrUpdateMotusFilteredView = useCallback(
+    (layerId: string, filters: MotusViewFilters, resultCount: number, targetViewId?: string) => {
+      const layer = layerMap.get(layerId);
+      if (!layer) return undefined;
+
+      const normalizedFilters: MotusViewFilters = {
+        selectedSpecies: filters.selectedSpecies?.trim() || undefined,
+        selectedTagId: filters.selectedTagId,
+        startDate: filters.startDate || undefined,
+        endDate: filters.endDate || undefined,
+        minHitCount: typeof filters.minHitCount === 'number' ? Math.max(0, Math.floor(filters.minHitCount)) : undefined,
+        minMotusFilter: typeof filters.minMotusFilter === 'number' ? filters.minMotusFilter : undefined,
+      };
+      const nextFilterCount = getMotusFilterCount(normalizedFilters);
+      const nextFilterSummary = buildMotusFilterSummary(normalizedFilters);
+      const newViewName = buildMotusViewName(normalizedFilters);
+      const newViewId = targetViewId || crypto.randomUUID();
+
+      const newView = {
+        id: newViewId,
+        name: newViewName,
+        isNameCustom: false,
+        isVisible: true,
+        filterCount: nextFilterCount,
+        filterSummary: nextFilterSummary,
+        motusFilters: normalizedFilters,
+        resultCount,
+      };
+
+      setPinnedLayers(prev => {
+        const target = prev.find(p => p.layerId === layerId);
+        if (!target) {
+          const newPinned: PinnedLayer = {
+            id: crypto.randomUUID(),
+            layerId,
+            name: layer.name,
+            isVisible: true,
+            isActive: activeLayer?.layerId === layerId,
+            filterCount: 0,
+            views: [newView],
+            order: 0,
+          };
+          return [newPinned, ...prev.map((p, i) => ({ ...p, order: i + 1 }))];
+        }
+
+        return prev.map(p => {
+          if (p.layerId !== layerId) return p;
+
+          if (p.views && p.views.length > 0) {
+            const hasTarget = !!targetViewId && p.views.some(v => v.id === targetViewId);
+            if (hasTarget) {
+              return {
+                ...p,
+                isVisible: true,
+                views: p.views.map(v => {
+                  if (v.id === targetViewId) {
+                    const nextName = v.isNameCustom ? v.name : newViewName;
+                    return {
+                      ...v,
+                      name: nextName,
+                      isVisible: true,
+                      filterCount: nextFilterCount,
+                      filterSummary: nextFilterSummary,
+                      motusFilters: normalizedFilters,
+                      resultCount,
+                    };
+                  }
+                  return { ...v, isVisible: false };
+                }),
+              };
+            }
+
+            return {
+              ...p,
+              isVisible: true,
+              views: [
+                ...p.views.map(v => ({ ...v, isVisible: false })),
+                newView,
+              ],
+            };
+          }
+
+          const existingFlatViewName = p.distinguisher || buildMotusViewName(
+            p.motusFilters || {
+              selectedSpecies: undefined,
+              selectedTagId: undefined,
+              startDate: undefined,
+              endDate: undefined,
+              minHitCount: undefined,
+              minMotusFilter: undefined,
+            }
+          );
+
+          const existingFlatView = {
+            id: crypto.randomUUID(),
+            name: existingFlatViewName,
+            isNameCustom: !!p.distinguisher,
+            isVisible: false,
+            filterCount: p.filterCount,
+            filterSummary: p.filterSummary,
+            inaturalistFilters: p.inaturalistFilters,
+            animlFilters: p.animlFilters,
+            dendraFilters: p.dendraFilters,
+            dataoneFilters: p.dataoneFilters,
+            gbifFilters: p.gbifFilters,
+            motusFilters: p.motusFilters,
+            resultCount: p.resultCount,
+          };
+
+          return {
+            ...p,
+            isVisible: true,
+            views: [existingFlatView, newView],
+            filterCount: 0,
+            filterSummary: undefined,
+            inaturalistFilters: { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined },
+            animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
+            dendraFilters: {
+              showActiveOnly: false,
+              selectedStationId: undefined,
+              selectedStationName: undefined,
+              selectedDatastreamId: undefined,
+              selectedDatastreamName: undefined,
+              startDate: undefined,
+              endDate: undefined,
+              aggregation: undefined,
+            },
+            dataoneFilters: {
+              searchText: undefined,
+              tncCategory: undefined,
+              startDate: undefined,
+              endDate: undefined,
+              author: undefined,
+              selectedDatasetId: undefined,
+            },
+            gbifFilters: {
+              searchText: undefined,
+              kingdom: undefined,
+              taxonomicClass: undefined,
+              family: undefined,
+              basisOfRecord: undefined,
+              datasetName: undefined,
+              startDate: undefined,
+              endDate: undefined,
+              selectedOccurrenceId: undefined,
+              selectedOccurrenceLabel: undefined,
+            },
+            motusFilters: {
+              selectedSpecies: undefined,
+              selectedTagId: undefined,
+              startDate: undefined,
+              endDate: undefined,
+              minHitCount: undefined,
+              minMotusFilter: undefined,
+            },
+            distinguisher: undefined,
+            resultCount: undefined,
+          };
+        });
+      });
+
+      setActiveLayer(prev =>
+        prev && prev.layerId === layerId
+          ? { ...prev, isPinned: true, viewId: newViewId, featureId: normalizedFilters.selectedTagId }
+          : prev
+      );
+      return newViewId;
+    },
+    [activeLayer, layerMap]
+  );
+
   const createOrUpdateDroneView = useCallback(
     (layerId: string, flight: DroneImageryMetadata, comparisonMode: 'single' | 'temporal' = 'single') => {
       const layer = layerMap.get(layerId);
@@ -1823,6 +2150,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         const isAnimlLayer = layerMap.get(p.layerId)?.dataSource === 'animl';
         const isDataOneLayer = layerMap.get(p.layerId)?.dataSource === 'dataone';
         const isGBIFLayer = layerMap.get(p.layerId)?.dataSource === 'gbif';
+        const isMotusLayer = layerMap.get(p.layerId)?.dataSource === 'motus';
         const isDroneLayer = p.layerId === 'dataset-193';
         if (isDroneLayer) return p;
         
@@ -1871,6 +2199,16 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                   endDate: undefined,
                   selectedOccurrenceId: undefined,
                   selectedOccurrenceLabel: undefined,
+                }
+              : undefined,
+            motusFilters: isMotusLayer
+              ? {
+                  selectedSpecies: undefined,
+                  selectedTagId: undefined,
+                  startDate: undefined,
+                  endDate: undefined,
+                  minHitCount: undefined,
+                  minMotusFilter: undefined,
                 }
               : undefined,
             droneView: undefined,
@@ -1924,6 +2262,17 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                 selectedOccurrenceLabel: undefined,
               }
             )
+            : isMotusLayer
+            ? buildMotusViewName(
+              p.motusFilters || {
+                selectedSpecies: undefined,
+                selectedTagId: undefined,
+                startDate: undefined,
+                endDate: undefined,
+                minHitCount: undefined,
+                minMotusFilter: undefined,
+              }
+            )
             : buildINaturalistViewName(
               p.inaturalistFilters || { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined }
             )
@@ -1940,6 +2289,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           dendraFilters: p.dendraFilters,
           dataoneFilters: p.dataoneFilters,
           gbifFilters: p.gbifFilters,
+          motusFilters: p.motusFilters,
           droneView: p.droneView,
           resultCount: p.resultCount,
         };
@@ -1985,6 +2335,16 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                 endDate: undefined,
                 selectedOccurrenceId: undefined,
                 selectedOccurrenceLabel: undefined,
+              }
+            : undefined,
+          motusFilters: isMotusLayer
+            ? {
+                selectedSpecies: undefined,
+                selectedTagId: undefined,
+                startDate: undefined,
+                endDate: undefined,
+                minHitCount: undefined,
+                minMotusFilter: undefined,
               }
             : undefined,
           droneView: undefined,
@@ -2035,6 +2395,16 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                 selectedOccurrenceLabel: undefined,
               }
             : undefined,
+          motusFilters: isMotusLayer
+            ? {
+                selectedSpecies: undefined,
+                selectedTagId: undefined,
+                startDate: undefined,
+                endDate: undefined,
+                minHitCount: undefined,
+                minMotusFilter: undefined,
+              }
+            : undefined,
           droneView: undefined,
           distinguisher: undefined,
           resultCount: undefined,
@@ -2075,6 +2445,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             dendraFilters: lastView.dendraFilters,
             dataoneFilters: lastView.dataoneFilters,
             gbifFilters: lastView.gbifFilters,
+            motusFilters: lastView.motusFilters,
             droneView: lastView.droneView,
             distinguisher: lastView.isNameCustom ? lastView.name : undefined,
             resultCount: lastView.resultCount,
@@ -2141,6 +2512,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         const isAnimlLayer = layerMap.get(p.layerId)?.dataSource === 'animl';
         const isDataOneLayer = layerMap.get(p.layerId)?.dataSource === 'dataone';
         const isGBIFLayer = layerMap.get(p.layerId)?.dataSource === 'gbif';
+        const isMotusLayer = layerMap.get(p.layerId)?.dataSource === 'motus';
         const isDroneLayer = p.layerId === 'dataset-193';
 
         const autoName = isDendraLayer
@@ -2184,6 +2556,17 @@ export function LayerProvider({ children }: { children: ReactNode }) {
               endDate: undefined,
               selectedOccurrenceId: undefined,
               selectedOccurrenceLabel: undefined,
+            }
+          )
+          : isMotusLayer
+          ? buildMotusViewName(
+            targetView.motusFilters || {
+              selectedSpecies: undefined,
+              selectedTagId: undefined,
+              startDate: undefined,
+              endDate: undefined,
+              minHitCount: undefined,
+              minMotusFilter: undefined,
             }
           )
           : isDroneLayer && targetView.droneView
@@ -2274,9 +2657,11 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         syncTNCArcGISFilters,
         syncDataOneFilters,
         syncGBIFFilters,
+        syncMotusFilters,
         createDendraFilteredView,
         createOrUpdateDataOneFilteredView,
         createOrUpdateGBIFFilteredView,
+        createOrUpdateMotusFilteredView,
         createOrUpdateDroneView,
         reorderLayers,
         createNewView,

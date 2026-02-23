@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { motusService, type MotusTaggedAnimalSummary } from '../../../../services/motusService';
 import { useLayers } from '../../../context/LayerContext';
@@ -31,15 +31,31 @@ export function MOTUSBrowseTab({ showBackToOverview = false, onBackToOverview }:
     setSelectedSpecies,
     setSelectedTagId,
   } = useMotusFilter();
-  const { activeLayer, activateLayer, pinLayer, unpinLayer, getPinnedByLayerId } = useLayers();
+  const {
+    activeLayer,
+    activateLayer,
+    pinLayer,
+    unpinLayer,
+    getPinnedByLayerId,
+    lastEditFiltersRequest,
+    lastFiltersClearedTimestamp,
+    syncMotusFilters,
+    createOrUpdateMotusFilteredView,
+  } = useLayers();
   const [taggedAnimals, setTaggedAnimals] = useState<MotusTaggedAnimalSummary[]>([]);
   const [taggedAnimalsLoading, setTaggedAnimalsLoading] = useState(false);
   const [selectedTagDetail, setSelectedTagDetail] = useState<Awaited<ReturnType<typeof motusService.getTaggedAnimalDetail>>>(null);
   const [tagDetailLoading, setTagDetailLoading] = useState(false);
   const [tagError, setTagError] = useState<string | null>(null);
+  const lastConsumedHydrateRef = useRef(0);
+  const lastConsumedClearRef = useRef(0);
+  const prevHydrateViewIdRef = useRef<string | undefined>(activeLayer?.viewId);
 
   const pinnedMotus = getPinnedByLayerId(MOTUS_PRIMARY_LAYER_ID);
   const isLayerPinned = !!pinnedMotus;
+  const isMotusLayerActive = !!activeLayer && (
+    activeLayer.layerId.startsWith('service-181-layer-') || activeLayer.layerId === 'dataset-181'
+  );
 
   useEffect(() => {
     warmCache();
@@ -104,6 +120,75 @@ export function MOTUSBrowseTab({ showBackToOverview = false, onBackToOverview }:
     };
   }, [selectedTagId, browseFilters, createLoadingScope]);
 
+  useEffect(() => {
+    if (!isMotusLayerActive) return;
+
+    const viewChanged = activeLayer?.viewId !== prevHydrateViewIdRef.current;
+    const editRequested = lastEditFiltersRequest > lastConsumedHydrateRef.current;
+    const clearRequested = lastFiltersClearedTimestamp > lastConsumedClearRef.current;
+    prevHydrateViewIdRef.current = activeLayer?.viewId;
+
+    if (!viewChanged && !editRequested && !clearRequested) return;
+    if (editRequested) lastConsumedHydrateRef.current = lastEditFiltersRequest;
+    if (clearRequested) lastConsumedClearRef.current = lastFiltersClearedTimestamp;
+    if (!pinnedMotus) return;
+
+    const sourceFilters = activeLayer?.viewId && pinnedMotus.views
+      ? pinnedMotus.views.find((view) => view.id === activeLayer.viewId)?.motusFilters
+      : pinnedMotus.motusFilters;
+    if (!sourceFilters) return;
+
+    setBrowseFilters({
+      startDate: sourceFilters.startDate ?? '',
+      endDate: sourceFilters.endDate ?? '',
+      minHitCount: sourceFilters.minHitCount ?? 1,
+      minMotusFilter: sourceFilters.minMotusFilter ?? 1,
+    });
+    setSelectedSpecies(sourceFilters.selectedSpecies ?? null);
+    setSelectedTagId(sourceFilters.selectedTagId ?? null);
+  }, [
+    isMotusLayerActive,
+    activeLayer?.viewId,
+    lastEditFiltersRequest,
+    lastFiltersClearedTimestamp,
+    pinnedMotus,
+    setBrowseFilters,
+    setSelectedSpecies,
+    setSelectedTagId,
+  ]);
+
+  useEffect(() => {
+    if (!isMotusLayerActive || !activeLayer) return;
+
+    const activeView = activeLayer.viewId && pinnedMotus?.views
+      ? pinnedMotus.views.find((view) => view.id === activeLayer.viewId)
+      : undefined;
+    if (activeView?.motusFilters?.selectedTagId != null) return;
+
+    syncMotusFilters(
+      activeLayer.layerId,
+      {
+        selectedSpecies: selectedSpecies ?? undefined,
+        selectedTagId: selectedTagId ?? undefined,
+        startDate: browseFilters.startDate || undefined,
+        endDate: browseFilters.endDate || undefined,
+        minHitCount: browseFilters.minHitCount,
+        minMotusFilter: browseFilters.minMotusFilter,
+      },
+      selectedTagId != null ? 1 : speciesSummaries.length,
+      activeLayer.viewId,
+    );
+  }, [
+    isMotusLayerActive,
+    activeLayer,
+    selectedSpecies,
+    selectedTagId,
+    browseFilters,
+    speciesSummaries.length,
+    pinnedMotus,
+    syncMotusFilters,
+  ]);
+
   const speciesItems = useMemo<MotusBrowseItem[]>(
     () =>
       speciesSummaries.map((species) => ({
@@ -148,6 +233,34 @@ export function MOTUSBrowseTab({ showBackToOverview = false, onBackToOverview }:
       return;
     }
     if (pinnedMotus) unpinLayer(pinnedMotus.id);
+  };
+
+  const saveCurrentView = (): string => {
+    const targetLayerId = isMotusLayerActive ? activeLayer!.layerId : MOTUS_PRIMARY_LAYER_ID;
+    if (!isLayerPinned) {
+      activateLayer(targetLayerId, activeLayer?.viewId, selectedTagId ?? undefined);
+      pinLayer(targetLayerId);
+    }
+
+    const savedViewId = createOrUpdateMotusFilteredView(
+      targetLayerId,
+      {
+        selectedSpecies: selectedSpecies ?? undefined,
+        selectedTagId: selectedTagId ?? undefined,
+        startDate: browseFilters.startDate || undefined,
+        endDate: browseFilters.endDate || undefined,
+        minHitCount: browseFilters.minHitCount,
+        minMotusFilter: browseFilters.minMotusFilter,
+      },
+      selectedTagId != null ? 1 : speciesSummaries.length,
+    );
+
+    if (!savedViewId) {
+      return 'Unable to save MOTUS view in Map Layers.';
+    }
+
+    activateLayer(targetLayerId, savedViewId, selectedTagId ?? undefined);
+    return 'Saved as a MOTUS child view in Map Layers.';
   };
 
   return (
@@ -327,6 +440,7 @@ export function MOTUSBrowseTab({ showBackToOverview = false, onBackToOverview }:
               isLayerPinned={isLayerPinned}
               onBack={() => setSelectedTagId(null)}
               onLoadOnMap={toggleLayerOnMap}
+              onSaveView={saveCurrentView}
               onChangeWindow={() => setSelectedTagId(null)}
             />
           )}
