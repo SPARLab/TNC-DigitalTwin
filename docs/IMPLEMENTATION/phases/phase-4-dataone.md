@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 3 / 18 tasks complete  
+**Progress:** 4 / 18 tasks complete  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-4-dataone-completed.md`  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
@@ -13,7 +13,7 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| D20-09 | ⚪ Not Started | Feb 20, 2026 | Filter DataOne map to latest dataset version only (deduplicate by latest) | Current flat table shows all versions; 878 deduplicated datasets but one dataset alone shows 700 rows due to versioning. Source: Dan Meeting Feb 20 |
+| D20-09 | 🟢 Complete | Feb 23, 2026 | Filter DataOne map to latest dataset version only (deduplicate by latest) | Implemented: Lite layer + dedupeDatasetsByDataoneId in getDatasetsForMapLayer/queryDatasets; prefers isLatestVersion and newest date. Verified visually. |
 | D20-B02 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Create dedicated DataOne point layer in ArcGIS data store (deduplicated, latest version only) with native clustering enabled | Mirrors what Dan did for GBIF. Will keep underlying versioned data table; new point layer is just latest spatial points. Source: Dan Meeting Feb 20 |
 | TF-13 | ⚪ Not Started | Feb 20, 2026 | Add loading indicator when DataOne layer is selected and map data is loading | High priority; no visual feedback during load leaves user uncertain if app is working. Source: Trisalyn QA Feb 20 |
 | TF-14 | ⚪ Not Started | Feb 20, 2026 | Render a specific map marker when "View on Map" is clicked on a dataset | High priority; currently highlights the group but doesn't drop a specific dot at the dataset location. Source: Trisalyn QA Feb 20 |
@@ -92,6 +92,16 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 ## Task Details
 
 *(Add new task details below. Completed tasks 4.1–4.12 are in the archive.)*
+
+---
+
+### D20-09: Filter DataOne Map to Latest Dataset Version Only ✅
+
+**Goal:** Show only the latest version of each dataset on the map (deduplicate by latest). Previously, the flat table showed all versions — 878 deduplicated datasets but one dataset alone could show 700 rows due to versioning.
+
+**Resolution (Feb 23, 2026):** Implementation was already in place. `getDatasetsForMapLayer` and `queryDatasets` both use the Lite layer (Layer 0, documented as latest-only) and apply `dedupeDatasetsByDataoneId`, which keeps one record per `dataone_id` and prefers `isLatestVersion` and newest `dateUploaded`. Map and browse list both show deduplicated datasets. Verified visually.
+
+**Files:** `src/services/dataOneService.ts` (dedupeDatasetsByDataoneId, getDatasetsForMapLayer, queryDatasets), `src/v2/dataSources/dataone/useMapBehavior.ts` (calls getDatasetsForMapLayer).
 
 ---
 
@@ -293,6 +303,7 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 23, 2026 | D20-09 marked complete. Map and browse already use Lite layer + dedupeDatasetsByDataoneId; one point per dataone_id, prefers isLatestVersion. Verified visually. | Assistant |
 | Feb 20, 2026 | CON-DONE-01 refinement: Fixed cluster↔dataset click navigation. Cluster click now always shows filtered list; dataset click always shows detail. Fixed selectedDataset not clearing, lastHandledFeatureIdRef race, count=1 aggregate silent no-op, tab switch from Overview, stale highlight rings. | Assistant |
 | Feb 20, 2026 | CON-DONE-02: marked complete. Auto-pan/zoom on dataset detail open; "View on Map" repurposed as "Recenter". Zoom 16 + cluster maxScale 12_000 so selected dataset breaks out of cluster and shows as dot. | Assistant |
 | Feb 20, 2026 | CON-DONE-16: final UX fix. Switched to continuous `view.watch('scale', ...)` with level-change guard; in-place `fixedBinLevel` mutation avoids full reduction rebuild flicker; `maxScale: 0` keeps bins visible during zoom. Bins now resize live when crossing thresholds without blink-out. | Assistant |

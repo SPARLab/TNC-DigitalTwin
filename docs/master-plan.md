@@ -35,7 +35,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 1 | iNaturalist | 🟢 Complete | 0 | `v2/inaturalist` | No |
 | 2 | ANiML | 🟢 Complete | 0 | `v2/animl` | No |
 | 3 | Dendra | 🟡 In Progress | 0 blocking | `v2/dendra` | No |
-| 4 | DataOne | 🟡 In Progress | 15 tasks | `v2/dataone` | No |
+| 4 | DataOne | 🟡 In Progress | 14 tasks | `v2/dataone` | No |
 | 5 | Export Builder | 🟡 In Progress | 1 task | `v2/export-builder` | No |
 | 6 | TNC ArcGIS Services | 🟡 In Progress | 8 tasks | `v2/tnc-arcgis` | No |
 | 7 | Polish & Consistency | ⚪ Not Started | 12+ tasks | `v2/polish` | No |
@@ -54,7 +54,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 1 | [phase-1-inaturalist.md](IMPLEMENTATION/phases/phase-1-inaturalist.md) | 0 |
 | 2 | [phase-2-animl.md](IMPLEMENTATION/phases/phase-2-animl.md) | ~4 tasks |
 | 3 | [phase-3-dendra.md](IMPLEMENTATION/phases/phase-3-dendra.md) | D20-06 ✅; D20-BL01–03 backlog; CON-DENDRA-08 |
-| 4 | [phase-4-dataone.md](IMPLEMENTATION/phases/phase-4-dataone.md) | CON-DONE-01/02/16 ✅; remaining: CON-DONE-03–11, CON-DONE-14, CON-DONE-15, D20-09, D20-B02, TF-13, TF-14 |
+| 4 | [phase-4-dataone.md](IMPLEMENTATION/phases/phase-4-dataone.md) | CON-DONE-01/02/16 ✅, D20-09 ✅; remaining: CON-DONE-03–11, CON-DONE-14, CON-DONE-15, D20-B02, TF-13, TF-14 |
 | 5 | [phase-5-export-builder.md](IMPLEMENTATION/phases/phase-5-export-builder.md) | + D20-14 (Dan meeting Feb 20) |
 | 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 13 tasks (+ D20-02, D20-10, D20-11, D20-B04, D20-B05 from Dan meeting Feb 20) |
 | 7 | [phase-7-polish.md](IMPLEMENTATION/phases/phase-7-polish.md) | 12+ tasks (+ D20-03, D20-04, D20-07, D20-13 from Dan meeting Feb 20; D20-01 ✅ done in Phase 0) |
@@ -314,6 +314,7 @@ When working on any phase:
 | Feb 20, 2026 | Phase 0 | **D20-01 complete.** Right sidebar collapse: extruded tab on left edge (PanelRightClose/Open), single margin-right animation, localStorage persistence, 300ms transition. Header X close and Collapse button removed. Implemented in V2App + RightSidebar. | Codex |
 | Feb 20, 2026 | Phase 10 | **TF-10 complete.** DroneDeploy browse project cards now use subtle gray default background (`bg-gray-50`) with darker gray hover (`bg-gray-100`) for project switcher visual polish. Phase 10 remaining updated to 0 (complete). | Codex |
 | Feb 20, 2026 | Docs | **Dan meeting tasks distributed to phase docs.** Extracted tasks from `extracted-tasks-dan-feedback-feb-20-2026.md` spread across Phase 3 (Dendra), 4 (DataOne), 5 (Export Builder), 6 (TNC ArcGIS), 7 (Polish), 9 (GBIF) by data source. D20-01 through D20-14, D20-B01–B05, D20-BL01–BL03 now tracked in respective phase Quick Task Summary tables. | Claude |
+| Feb 23, 2026 | Phase 4 | **D20-09 complete.** DataOne map deduplication verified — Lite layer + dedupeDatasetsByDataoneId already in place; one point per dataset (latest version). | Assistant |
 | Feb 20, 2026 | Phase 4 | **CON-DONE-02 complete.** Auto-pan/zoom on dataset detail open; "View on Map" repurposed as "Recenter". Zoom 16 + cluster maxScale 12_000 so selected dataset breaks out of cluster and shows as dot. Card click calls activateLayer for map sync. Next: CON-DONE-03. | Assistant |
 | Feb 20, 2026 | Phase 4 | **CON-DONE-16 complete.** Grid binning (FeatureReductionBinning): scale thresholds tuned (~1 level coarser); `view.watch('stationary', ...)` eliminates bin blink during wheel zoom; "Where to Fine-Tune" documented. Next: CON-DONE-02. | Assistant |
 | Feb 20, 2026 | Phase 4 | **CON-DONE-01 complete.** Cluster click populates sidebar; race condition fix (queryFeatures + populate-version guard) resolved count desync. **CON-DONE-16 added:** Switch from circular clustering to grid binning (FeatureReductionBinning) — next task. | Assistant |
