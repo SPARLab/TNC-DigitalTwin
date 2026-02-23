@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 25 tasks (CON-ARCGIS-01–17, 6.8, 6.11, 6.13, 6.17, 6.20, D20-02, D20-02a, D20-10, D20-11, TF-11, TF-13 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
+**Progress:** 26 tasks (CON-ARCGIS-01–17, 6.8, 6.11, 6.12, 6.13, 6.17, 6.20, D20-02, D20-02a, D20-10, D20-11, TF-11, TF-13 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry) ✅ complete  
@@ -57,7 +57,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **6.9** | ⚪ | — | Keyboard Navigation & ARIA | Arrow keys for expand/collapse, ARIA tree structure, focus management |
 | **6.10** | ⚪ | — | QA & Edge Cases | Single-layer services, empty results, malformed queries, schema fetch errors |
 | **6.11** | 🟢 Complete | Feb 23, 2026 | Capability-Aware Browse UX | Legend display moved out of right-sidebar Browse and into a floating map widget (bottom-right) for active TNC layers. Full legend header clickable for expand/collapse; collapsed state has rounded bottom-left and bottom-right corners; keyboard toggle (Enter/Space) for accessibility. |
-| **6.12** | 🟡 | Feb 16, 2026 | Terminology + CTA Realignment | Decision locked: remove right-sidebar pin actions for now; keep pinning in left sidebar + Map Layers widget only |
+| **6.12** | 🟢 Complete | Feb 23, 2026 | Terminology + CTA Realignment | Right-sidebar pin actions removed from TNCArcGISOverviewTab; pinning only in left sidebar + Map Layers widget. Inline pin icons and Pin/Unpin CTAs removed. |
 | **6.13** | 🟢 Complete | Feb 23, 2026 | Multi-Layer Service Discoverability | Search matches service + child names; parent auto-expands for child match; no blank category blocks; Coastal and Marine Data discoverable via category/search. Path context (Category > Service > Layer) deferred. |
 | **6.14** | 🟡 | Feb 16, 2026 | Service Reference + External Viewer | WIP: right-sidebar Browse focuses on source actions; legend controls live in floating map widget |
 | **6.17** | 🟢 Complete | Feb 19, 2026 | Generic Layer Table View (Feature Layers) | ArcGIS FeatureTable overlay on map; Browse shows row/column summary + Open Table Overlay |
@@ -415,10 +415,12 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - User requested removing right-sidebar pin entirely for this phase and revisiting later.
 
 **Acceptance Criteria:**
-- [ ] Right sidebar CTA text is capability-aware and non-ambiguous
-- [ ] Primary pinning affordance remains consistent with existing app patterns
-- [ ] No duplicate high-emphasis CTAs that compete for the same action
-- [ ] First-time users can identify where to pin within 5 seconds (heuristic walkthrough)
+- [x] Right sidebar CTA text is capability-aware and non-ambiguous
+- [x] Primary pinning affordance remains consistent with existing app patterns (left sidebar + Map Layers only)
+- [x] No duplicate high-emphasis CTAs that compete for the same action
+- [x] First-time users can identify where to pin within 5 seconds (heuristic walkthrough)
+
+**Implementation (Feb 23, 2026):** Removed all right-sidebar pin actions from `TNCArcGISOverviewTab.tsx`: inline pin icons in layer list, Pin/Unpin Layer CTAs. Pinning now only in left sidebar (`LayerRow`) and Map Layers widget. Visibility indicators (eye/eye-off) and pinned count display retained.
 
 **Estimated Time:** 3-5 hours
 
@@ -838,7 +840,8 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 | Feb 19, 2026 | CON-ARCGIS-15 | **In progress.** Root cause identified and patched: single-layer services now resolve to `/FeatureServer/0` (and `/MapServer` sublayer `0`) unless explicitly marked multi-layer; legend lookup now follows same layer-ID rule. Files: `src/v2/services/tncArcgisService.ts`, `src/v2/components/Map/layers/tncArcgisLayer.ts`. | Codex |
 | Feb 19, 2026 | CON-ARCGIS-15 | **Added.** Bug: fix feature service layer rendering — legend loads but layers (JLDP invasives ice plant mats, tree-dominated vegetation, oil seeps, most land cover) not drawing on map. | — |
 | Feb 19, 2026 | CON-ARCGIS-03, 6.17 | **Complete.** ArcGIS FeatureTable overlay for TNC layers. Browse "Inspect Current Layer" card with row/column summary + Open Table Overlay; hover-revealed Inspect on Overview layer rows; TNCArcGISTableOverlay + fallback FeatureLayer for MapServer layers. | — |
-| Feb 19, 2026 | CON-ARCGIS-14 | **Complete.** Unified Service Workspace: service/layer click auto-selects sublayer; map + Map Layers widget sync with resolved sublayer; right-sidebar layer list with amber active highlight, pin/eye icons, inline pin/unpin; "Inspect Current Layer" CTA. Files: ServiceGroup, useMapLayers, MapLayersWidget, TNCArcGISOverviewTab, LayerContext. | — |
+| Feb 23, 2026 | 6.12 | **Complete.** Terminology + CTA Realignment: removed right-sidebar pin actions from TNCArcGISOverviewTab (inline pin icons, Pin/Unpin CTAs). Pinning only in left sidebar + Map Layers widget per user decision. File: `TNCArcGISOverviewTab.tsx`. | — |
+| Feb 19, 2026 | CON-ARCGIS-14 | **Complete.** Unified Service Workspace: service/layer click auto-selects sublayer; map + Map Layers widget sync with resolved sublayer; right-sidebar layer list with amber active highlight, pin/eye icons, inline pin/unpin; "Inspect Current Layer" CTA. (Note: 6.12 later removed right-sidebar pin actions.) Files: ServiceGroup, useMapLayers, MapLayersWidget, TNCArcGISOverviewTab, LayerContext. | — |
 | Feb 19, 2026 | CON-ARCGIS-14 | Added task: Unified Service Workspace — service/layer click behavior, auto-select sublayer on service click, layer list state chips (pinned/visible counts). | — |
 | Feb 19, 2026 | CON-ARCGIS-10, 11, 12 | Implemented right sidebar hierarchy relabel (Feature Service, Current Layer), section rename to "Feature Service Overview", single scrollable layer list (dropdown + helper text removed). | — |
 | Feb 19, 2026 | CON-ARCGIS-01, 02, 04, 05, 6.20 | Marked complete. Added CON-ARCGIS-08–12 from user feedback: left sidebar scrollbar pill, row clipping fix, right sidebar relabeling, section rename, layer list simplification. | — |
