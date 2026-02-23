@@ -6,6 +6,7 @@ import { buildServiceUrl, fetchServiceDescription } from '../../../services/tncA
 import type { CatalogLayer } from '../../../types';
 
 type LayerKind = 'feature' | 'map-image' | 'imagery' | null;
+type SourceIframeStatus = 'idle' | 'loading' | 'ready' | 'blocked';
 
 interface TNCArcGISOverviewTabProps {
   loading: boolean;
@@ -63,6 +64,7 @@ export function TNCArcGISOverviewTab({
   } = useLayers();
   const { layerMap } = useCatalog();
   const [isSourceOverlayOpen, setIsSourceOverlayOpen] = useState(false);
+  const [sourceIframeStatus, setSourceIframeStatus] = useState<SourceIframeStatus>('idle');
   const activeCatalogLayer = activeLayer ? layerMap.get(activeLayer.layerId) : undefined;
   const targetLayer = useMemo(
     () => getTargetLayer(activeCatalogLayer, activeLayer?.selectedSubLayerId),
@@ -115,6 +117,19 @@ export function TNCArcGISOverviewTab({
   const renderStatusLabel = getRenderStatusLabel(loading, isLayerRendering, renderPhase, layerKind);
 
   useEffect(() => {
+    if (!isSourceOverlayOpen || !sourceUrl || sourceIframeStatus !== 'loading') return undefined;
+    // CSP/X-Frame-Options failures often do not emit a reliable iframe error event.
+    const timeoutId = window.setTimeout(() => {
+      setSourceIframeStatus((currentStatus) => (
+        currentStatus === 'loading' ? 'blocked' : currentStatus
+      ));
+    }, 4500);
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [isSourceOverlayOpen, sourceUrl, sourceIframeStatus]);
+
+  useEffect(() => {
     let cancelled = false;
     setResolvedDescription(catalogDescription);
 
@@ -156,6 +171,15 @@ export function TNCArcGISOverviewTab({
       return;
     }
     onBrowseClick();
+  };
+  const handleOpenSourceOverlay = () => {
+    if (!sourceUrl) return;
+    setSourceIframeStatus('loading');
+    setIsSourceOverlayOpen(true);
+  };
+  const handleCloseSourceOverlay = () => {
+    setIsSourceOverlayOpen(false);
+    setSourceIframeStatus('idle');
   };
 
   return (
@@ -346,7 +370,7 @@ export function TNCArcGISOverviewTab({
               <button
                 id="tnc-arcgis-overview-open-overlay-button"
                 type="button"
-                onClick={() => setIsSourceOverlayOpen(true)}
+                onClick={handleOpenSourceOverlay}
                 disabled={!sourceUrl}
                 className="rounded-md border border-gray-300 bg-white px-2 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -480,7 +504,7 @@ export function TNCArcGISOverviewTab({
               <button
                 id="tnc-arcgis-overview-open-overlay-button"
                 type="button"
-                onClick={() => setIsSourceOverlayOpen(true)}
+                onClick={handleOpenSourceOverlay}
                 disabled={!sourceUrl}
                 className="rounded-md border border-gray-300 bg-white px-2 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -512,7 +536,7 @@ export function TNCArcGISOverviewTab({
         <div
           id="tnc-arcgis-overview-source-overlay-backdrop"
           className="fixed inset-0 z-[100] bg-black/45 flex items-center justify-center p-4"
-          onClick={() => setIsSourceOverlayOpen(false)}
+          onClick={handleCloseSourceOverlay}
         >
           <div
             id="tnc-arcgis-overview-source-overlay-panel"
@@ -526,19 +550,67 @@ export function TNCArcGISOverviewTab({
               <button
                 id="tnc-arcgis-overview-source-overlay-close-button"
                 type="button"
-                onClick={() => setIsSourceOverlayOpen(false)}
+                onClick={handleCloseSourceOverlay}
                 className="p-1 rounded-md hover:bg-gray-100"
                 aria-label="Close source overlay"
               >
                 <X className="w-4 h-4 text-gray-600" />
               </button>
             </div>
-            <iframe
-              id="tnc-arcgis-overview-source-overlay-iframe"
-              src={sourceUrl}
-              title="TNC ArcGIS Source"
-              className="w-full h-full border-0"
-            />
+            {sourceIframeStatus === 'blocked' ? (
+              <div
+                id="tnc-arcgis-overview-source-overlay-fallback"
+                className="h-full flex flex-col items-center justify-center gap-3 p-6 text-center bg-slate-50"
+              >
+                <p id="tnc-arcgis-overview-source-overlay-fallback-title" className="text-sm font-semibold text-gray-900">
+                  Embedded preview is blocked by the source site.
+                </p>
+                <p id="tnc-arcgis-overview-source-overlay-fallback-copy" className="max-w-xl text-xs text-gray-600">
+                  This source likely disallows iframe embedding via browser security headers. Open it in a new tab to continue.
+                </p>
+                <div id="tnc-arcgis-overview-source-overlay-fallback-actions" className="flex items-center gap-2">
+                  <a
+                    id="tnc-arcgis-overview-source-overlay-fallback-new-tab-link"
+                    href={sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100 inline-flex items-center gap-1"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Open in New Tab
+                  </a>
+                  <button
+                    id="tnc-arcgis-overview-source-overlay-fallback-retry-button"
+                    type="button"
+                    onClick={() => setSourceIframeStatus('loading')}
+                    className="rounded-md border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100"
+                  >
+                    Retry Embed
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div id="tnc-arcgis-overview-source-overlay-iframe-shell" className="relative h-full">
+                {sourceIframeStatus === 'loading' && (
+                  <div
+                    id="tnc-arcgis-overview-source-overlay-loading-banner"
+                    className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full border border-slate-200 bg-white/95 px-3 py-1 text-xs text-slate-600 shadow-sm"
+                  >
+                    Loading source preview...
+                  </div>
+                )}
+                <iframe
+                  id="tnc-arcgis-overview-source-overlay-iframe"
+                  src={sourceUrl}
+                  title="TNC ArcGIS Source"
+                  onLoad={() => setSourceIframeStatus('ready')}
+                  onError={() => setSourceIframeStatus('blocked')}
+                  className={`w-full h-full border-0 transition-opacity ${
+                    sourceIframeStatus === 'ready' ? 'opacity-100' : 'opacity-60'
+                  }`}
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

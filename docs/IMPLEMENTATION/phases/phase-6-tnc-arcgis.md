@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 26 tasks (CON-ARCGIS-01–17, 6.8, 6.11, 6.12, 6.13, 6.17, 6.20, D20-02, D20-02a, D20-10, D20-11, TF-11, TF-13 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
+**Progress:** 27 tasks (CON-ARCGIS-01–17, 6.8, 6.11, 6.12, 6.13, 6.14, 6.17, 6.20, D20-02, D20-02a, D20-10, D20-11, TF-11, TF-13 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry) ✅ complete  
@@ -59,7 +59,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **6.11** | 🟢 Complete | Feb 23, 2026 | Capability-Aware Browse UX | Legend display moved out of right-sidebar Browse and into a floating map widget (bottom-right) for active TNC layers. Full legend header clickable for expand/collapse; collapsed state has rounded bottom-left and bottom-right corners; keyboard toggle (Enter/Space) for accessibility. |
 | **6.12** | 🟢 Complete | Feb 23, 2026 | Terminology + CTA Realignment | Right-sidebar pin actions removed from TNCArcGISOverviewTab; pinning only in left sidebar + Map Layers widget. Inline pin icons and Pin/Unpin CTAs removed. |
 | **6.13** | 🟢 Complete | Feb 23, 2026 | Multi-Layer Service Discoverability | Search matches service + child names; parent auto-expands for child match; no blank category blocks; Coastal and Marine Data discoverable via category/search. Path context (Category > Service > Layer) deferred. |
-| **6.14** | 🟡 | Feb 16, 2026 | Service Reference + External Viewer | WIP: right-sidebar Browse focuses on source actions; legend controls live in floating map widget |
+| **6.14** | 🟢 Complete | Feb 23, 2026 | Service Reference + External Viewer | Overview Source card + New Tab action + overlay iframe viewer with explicit blocked-embed fallback (CSP/X-Frame-Options) |
 | **6.17** | 🟢 Complete | Feb 19, 2026 | Generic Layer Table View (Feature Layers) | ArcGIS FeatureTable overlay on map; Browse shows row/column summary + Open Table Overlay |
 | **6.20** | 🟢 Complete | Feb 19, 2026 | Right Sidebar: Layer + Service Hierarchy Communication | Implemented via CON-ARCGIS-01/02 (Current Context block) |
 
@@ -467,10 +467,12 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - If iframe blocked, show graceful fallback with explanatory message.
 
 **Acceptance Criteria:**
-- [ ] Service reference card visible for TNC services
-- [ ] `Open in new tab` action present and functional
-- [ ] iframe fallback handles CSP/X-Frame-Options failures without breaking layout
-- [ ] Behavior mirrors legacy app expectations where possible
+- [x] Service reference card visible for TNC services
+- [x] `Open in new tab` action present and functional
+- [x] iframe fallback handles CSP/X-Frame-Options failures without breaking layout
+- [x] Behavior mirrors legacy app expectations where possible
+
+**Resolution (Feb 23, 2026):** Completed in `TNCArcGISOverviewTab`. Source card shows service URL context, supports direct handoff via New Tab, and opens an in-app overlay viewer. Overlay now includes explicit embed-failure handling: iframe load timeout + error path switch to a graceful fallback panel with explanation, `Open in New Tab`, and `Retry Embed` actions so layout remains stable when target sites block framing.
 
 **Estimated Time:** 3-5 hours
 
@@ -832,6 +834,7 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 23, 2026 | 6.14 | **Complete.** Added explicit iframe-block fallback for Source overlay viewer (timeout + error detection), with graceful fallback panel and `Open in New Tab` + `Retry Embed` actions. Updated task row/checklist to complete. Files: `src/v2/components/RightSidebar/TNCArcGIS/TNCArcGISOverviewTab.tsx`, `docs/IMPLEMENTATION/phases/phase-6-tnc-arcgis.md`. | Codex |
 | Feb 20, 2026 | TF-11 | **Complete.** Runtime fallback for non-zero FeatureServer layer IDs (schema, query, legend, map load). QA passed. | Codex |
 | Feb 20, 2026 | TF-11 | **In progress (scope expanded after QA screenshot).** Confirmed additional affected services where valid FeatureServer layer IDs are non-zero (`Shrub_Vegetation`=8, `Tree_Dominated_Vegetation`=7, `jldp_sensitive_vegcommunites`=3). Patched legend renderer fallback to retry with discovered valid layer IDs (instead of hard failing on `/0`) and fixed map-layer recovery guard to run even when only one static candidate exists. Files: `src/v2/services/tncArcgisService.ts`, `src/v2/components/Map/layers/tncArcgisLayer.ts`. | Codex |
 | Feb 20, 2026 | TF-11 | **In progress (investigation + hardening patch).** Confirmed Coastal_and_Marine FeatureServer exposes layers 2–21 (no layer 0). Added runtime fallback for layer-scoped schema/query requests: when a target layer URL fails, service metadata is fetched and requests retry across discovered layer IDs. Added map `FeatureLayer` load fallback to probe discovered service layer URLs after static candidates fail. Files: `src/v2/services/tncArcgisService.ts`, `src/v2/components/Map/layers/tncArcgisLayer.ts`. | Codex |
