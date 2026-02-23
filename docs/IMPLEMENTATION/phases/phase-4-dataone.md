@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 6 / 18 tasks complete  
+**Progress:** 7 / 16 tasks complete  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-4-dataone-completed.md`  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
@@ -19,9 +19,7 @@
 | CON-DONE-01 | 🟢 Complete | Feb 20, 2026 | Cluster click on map populates right sidebar with datasets at that location | Race condition fix applied; counts verified |
 | CON-DONE-16 | 🟢 Complete | Feb 20, 2026 | Switch from circular clustering to grid binning (FeatureReductionBinning) | Live scale watcher; in-place fixedBinLevel mutation; maxScale:0 keeps bins visible; "Where to Fine-Tune" doc'd |
 | CON-DONE-02 | 🟢 Complete | Feb 20, 2026 | Auto-pan/zoom when opening dataset detail; repurpose View on Map as Recenter | High priority; resolution applied |
-| CON-DONE-03 | ⚪ Not Started | Feb 18, 2026 | Cluster popup for scrolling individual datasets | Medium priority |
-| CON-DONE-04 | ⚪ Not Started | Feb 18, 2026 | Improve point dispersion as user zooms into clusters | Medium priority |
-| CON-DONE-05 | ⚪ Not Started | Feb 18, 2026 | Fix map vs sidebar count discrepancy (dedupe dataset versions) | High priority bug |
+| CON-DONE-05 | 🟢 Complete | Feb 23, 2026 | Fix map vs sidebar count discrepancy (dedupe dataset versions) | Resolved via D20-09 (dedupeDatasetsByDataoneId) + CON-DONE-01 race-condition fix |
 | CON-DONE-06 | ⚪ Not Started | Feb 18, 2026 | Save button: clearly distinguish saved vs unsaved state | High priority |
 | CON-DONE-07 | ⚪ Not Started | Feb 18, 2026 | Persist saved state when returning to already-saved dataset | High priority |
 | CON-DONE-08 | ⚪ Not Started | Feb 18, 2026 | Multi-select categories filter checklist | Medium priority |
@@ -350,6 +348,9 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 23, 2026 | CON-DONE-05 marked complete. Map vs sidebar count discrepancy resolved via D20-09 dedupe + CON-DONE-01 race-condition fix. | User |
+| Feb 23, 2026 | Removed CON-DONE-04 (improve point dispersion on zoom). | User |
+| Feb 23, 2026 | Removed CON-DONE-03 (cluster popup for scrolling datasets). Sidebar already shows datasets at cluster location. | User |
 | Feb 23, 2026 | TF-13 marked complete. DataONE map-loading indicator in browse tab + Map Layers eye-slot spinner; consistent with iNaturalist pattern. | Assistant |
 | Feb 23, 2026 | TF-13 update: wired DataONE map-loading into Map Layers widget eye-slot spinner using shared cache-status loading flow (consistent with existing row-level loading pattern). | Assistant |
 | Feb 23, 2026 | TF-13 started: added DataONE map-loading state (`mapLoading`) and browse-tab loading indicator ("Updating map markers...") wired to map marker refresh lifecycle. QA pending before complete. | Assistant |
