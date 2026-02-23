@@ -17,8 +17,8 @@
 | 11.3 | 🟢 Complete | Feb 20, 2026 | Implement species/tag browse + date window UI | Added live species/tag browse with date window, quality controls (`motus_filter`, `hit_count`), latest-window action, seasonal presets, and direct load-on-map flow |
 | 11.4 | 🟢 Complete | Feb 20, 2026 | Implement tagged animal detail view | Added tag detail metadata, deployment + detection windows, quality summary, attribution, methodology links, and load/remove map action |
 | 11.5 | 🟢 Complete | Feb 20, 2026 | Render MOTUS movement context on map | Added explicit MOTUS map layer + graphics overlay for receiver stations and inferred low-confidence legs when station inference is available, with clear confidence disclaimer fallback |
-| 11.6 | 🟡 In Progress | Feb 20, 2026 | Implement temporal navigation / playback | Time scrub and playback over detection windows |
-| 11.7 | 🟡 In Progress | Feb 20, 2026 | Implement legend and symbology controls | Explain stations, detections, inferred paths, and confidence state |
+| 11.6 | 🟡 In Progress | Feb 20, 2026 | Implement temporal navigation / playback | **On hold** — blocked until detection-to-station linkage fixed (see Data Blocker below) |
+| 11.7 | 🟡 In Progress | Feb 20, 2026 | Implement legend and symbology controls | **On hold** — blocked until detection-to-station linkage fixed (see Data Blocker below) |
 | 11.8 | ⚪ Not Started | — | Sync loading indicators | Same shared loading pattern as other data sources |
 | 11.9 | ⚪ Not Started | — | Wire Save View flow | Pin MOTUS layers, save product/date views to Map Layers |
 
@@ -27,6 +27,14 @@
 - 🟡 In Progress
 - 🟢 Complete
 - 🔴 Blocked
+
+---
+
+### Data Blocker (Feb 20, 2026)
+
+**Journey reconstruction is on hold until Dan fixes detection-to-station linkage.**
+
+Live audit of the ArcGIS FeatureServer showed **0% join coverage** between Tag Detections `node_num` and Receiver Stations / Station Deployments identifiers. Detections have timestamps and stations have coordinates, but the join key is missing or mismatched in the published service. Until a proper `node_num` → station mapping (or equivalent) is added, the app can only render context-only lines (deployment location → nearby stations), not time-ordered inferred journeys. See email to Dan for details.
 
 ---
 
@@ -304,7 +312,7 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 
 ## Open Questions
 
-- [ ] Do we want to enrich `Tag Detections` with explicit station/deployment join fields for deterministic path rendering?
+- [x] **Do we want to enrich `Tag Detections` with explicit station/deployment join fields for deterministic path rendering?** — **Yes, required.** Audit (Feb 20, 2026) confirmed 0% detection-to-station join coverage; Dan to fix.
 - [ ] Should first release prioritize species-level path density, per-tag timelines, or both?
 - [ ] What default quality thresholds should we enforce (`motus_filter`, minimum `hit_count`)?
 - [ ] Should we include off-preserve stations by default, or focus on Dangermond-centric movement context first?
@@ -316,6 +324,7 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 20, 2026 | 11.5–11.7 | Documented data blocker: 0% detection-to-station join coverage; journey reconstruction on hold until Dan fixes linkage. Tasks 11.6, 11.7 marked in-progress/on-hold | Codex |
 | Feb 20, 2026 | 11.3, 11.4, 11.5 | Implemented MOTUS species/tag browse filters (date + quality), tagged-animal detail panel, and map movement context (receiver station overlay + inferred leg rendering with confidence/disclaimer messaging) | Codex |
 | Feb 20, 2026 | 11.2 | Implemented MOTUS sidebar shell + adapter wiring (`motus` data source, registry integration, overview/browse list-detail scaffold, map behavior registration for MOTUS catalog layers) | Codex |
 | Feb 20, 2026 | 11.1 | Completed research: confirmed ArcGIS Wildlife Telemetry service, documented schema/counts, and added recommended inferred-path strategy with data-quality caveats | Codex |

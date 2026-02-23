@@ -42,7 +42,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 8 | Calflora | ⚪ Not Started | 9 tasks | `v2/calflora` | No |
 | 9 | GBIF | 🟡 In Progress | 2 tasks (9.8 ✅; D20-08 ✅, GBIF-HOSTED ✅, P9-GRIDBIN ✅, TF-09 ✅; D20-12 🟡 in progress; 9.9 deferred; 9.12 deferred to v2.1+) | `v2/gbif` | No |
 | 10 | DroneDeploy | 🟢 Complete | 0 tasks | `v2/dronedeploy` | No |
-| 11 | MOTUS | 🟡 In Progress | 4 tasks | `v2/motus` | No |
+| 11 | MOTUS | 🟡 In Progress | 4 tasks | `v2/motus` | **On hold** — journey reconstruction blocked until Dan fixes detection-to-station linkage (0% join coverage in audit) |
 
 **Status Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
 
@@ -60,7 +60,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 7 | [phase-7-polish.md](IMPLEMENTATION/phases/phase-7-polish.md) | 12+ tasks (+ D20-03, D20-04, D20-07, D20-13 from Dan meeting Feb 20; D20-01 ✅ done in Phase 0) |
 | 9 | [phase-9-gbif.md](IMPLEMENTATION/phases/phase-9-gbif.md) | 2 tasks (9.8 ✅; D20-12 🟡 in progress; + D20-B01, D20-B03, D20-12-FOLLOW optional; 9.9/9.12 deferred) |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) | 0 |
-| 11 | [phase-11-motus.md](IMPLEMENTATION/phases/phase-11-motus.md) | 4 (11.1–11.5 ✅) |
+| 11 | [phase-11-motus.md](IMPLEMENTATION/phases/phase-11-motus.md) | 4 (11.1–11.5 ✅; 11.6–11.7 on hold until data fix) |
 
 ---
 
@@ -140,6 +140,7 @@ Use these when merging branches that touch shared components.
 | Data source adapter pattern | ✅ Decided | Will + Claude | Feb 12 | Plugin architecture for data sources. Each source implements `DataSourceAdapter` interface. Enables parallel branch development with minimal merge conflicts. See `src/v2/dataSources/` |
 | Caching strategy | ✅ Decided | Will + Claude | Feb 12 | Lazy per-source caching. Each data source context has `warmCache()` method (idempotent). Cache warms on first pin or activation. Data persists while provider mounted. Eliminates eager page-load fetches. |
 | Dynamic layer registry from Data Catalog Service | ✅ Implemented | User + Claude | Feb 12 | `useCatalogRegistry.ts` fetches from Dan's Data Catalog FeatureServer (`Dangermond_Preserve_Data_Catalog`). ~90+ real datasets across 14 categories. Left sidebar populated from catalog. Layers without adapters show generic placeholder in right sidebar. **Task 0.9 complete — parallel branches unblocked.** See phase-0-foundation.md. |
+| MOTUS journey reconstruction blocked | 🔴 On Hold | Codex | Feb 20 | Live audit of Wildlife Telemetry FeatureServer showed 0% join coverage between Tag Detections `node_num` and Receiver Stations / Station Deployments. Journey reconstruction (11.6, 11.7) on hold until Dan fixes detection-to-station linkage. See phase-11-motus.md Data Blocker. |
 | Cross-layer filtered-view naming contract | ✅ Decided | User + Claude | Feb 13 | Manual rename behavior must persist across all layer types and custom right-sidebar views. Auto-naming is adapter-specific per data source. Shared widget/context rule: if `isNameCustom` is false, auto-name can update on filter sync; if true, never overwrite. Rollout can happen incrementally by branch (not required to block current merge). |
 
 ### Styling Decisions

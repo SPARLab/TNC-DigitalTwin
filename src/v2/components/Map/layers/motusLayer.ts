@@ -30,9 +30,9 @@ export function createMotusLayer(options: {
       type: 'simple',
       symbol: {
         type: 'simple-marker',
-        style: 'circle',
-        size: 7.5,
-        color: [22, 163, 74, 0.85],
+        style: 'diamond',
+        size: 8,
+        color: [30, 64, 175, 0.88],
         outline: {
           color: [255, 255, 255, 0.95],
           width: 1.2,

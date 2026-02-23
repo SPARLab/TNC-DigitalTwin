@@ -82,7 +82,9 @@ export function useMotusMapBehavior(
     overlay.removeAll();
 
     if (!hasMotusOnMap || selectedTagId == null) {
-      setMovementDisclaimer('Receiver stations are shown on the map. Inferred path legs appear only when station-to-station inference is valid.');
+      setMovementDisclaimer(
+        'Receiver stations are shown as green circles on the map. Inferred path legs appear only when station-to-station inference is valid.',
+      );
       return;
     }
 
@@ -104,9 +106,9 @@ export function useMotusMapBehavior(
             },
             symbol: {
               type: 'simple-marker',
-              style: 'diamond',
+              style: 'circle',
               size: 8,
-              color: [30, 64, 175, 0.9],
+              color: [22, 163, 74, 0.9],
               outline: {
                 color: [255, 255, 255, 0.9],
                 width: 1.1,
@@ -120,6 +122,7 @@ export function useMotusMapBehavior(
         }
 
         for (const leg of context.legs) {
+          const isContextLeg = leg.kind === 'context';
           overlay.add(new Graphic({
             geometry: {
               type: 'polyline',
@@ -130,18 +133,24 @@ export function useMotusMapBehavior(
             },
             attributes: {
               legId: leg.id,
+              legKind: leg.kind,
+              stepIndex: leg.stepIndex,
+              startDate: leg.startDate || 'Unknown',
+              endDate: leg.endDate || 'Unknown',
               confidence: leg.confidence,
               evidence: leg.evidence,
             },
             symbol: {
               type: 'simple-line',
-              color: [217, 119, 6, 0.85],
-              width: 2.2,
-              style: 'dash',
+              color: isContextLeg ? [75, 85, 99, 0.72] : [217, 119, 6, 0.85],
+              width: isContextLeg ? 1.8 : 2.2,
+              style: isContextLeg ? 'dot' : 'solid',
             },
             popupTemplate: {
-              title: 'Inferred movement leg',
-              content: '{evidence}',
+              title: isContextLeg ? 'Movement context line' : 'Inferred movement leg',
+              content: isContextLeg
+                ? '{evidence}'
+                : '<div><p>{evidence}</p><p><strong>Step:</strong> {stepIndex}</p><p><strong>Detection window:</strong> {startDate} to {endDate}</p></div>',
             },
           }));
         }
