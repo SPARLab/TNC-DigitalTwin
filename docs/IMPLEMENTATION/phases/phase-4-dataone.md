@@ -28,6 +28,7 @@
 | CON-DONE-11 | 🟢 Complete | Feb 23, 2026 | Saved indicator on browse cards (icon plus subtle highlight) | DatasetListView: BookmarkCheck icon + "Saved" badge; amber border/bg on card |
 | CON-DONE-15 | 🟢 Complete | Feb 23, 2026 | Spatial query: ensure draw/query tools filter DataONE datasets by extent | Verified working with SpatialQuerySection |
 | CON-DONE-14 | 🟢 Complete | Feb 23, 2026 | Search highlight: show matching keyword inside abstract snippet | DatasetListView: abstract snippet with case-insensitive phrase highlight; optional abstract on DataOneDataset; Layer 1 carries abstract when search active |
+| D20-B02 | ⚪ Not Started (Dan) | Feb 20, 2026 | Create dedicated DataOne point layer in ArcGIS data store (deduplicated, latest version only) with native clustering enabled | Backend task from Dan meeting. Frontend now dedupes latest version client-side; backend layer remains follow-up. |
 
 **Phase-5 handoff:** `CON-DONE-12` and `CON-DONE-13` (export behavior tasks) are tracked in `docs/IMPLEMENTATION/phases/phase-5-export-builder.md`.
 
@@ -484,6 +485,7 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 23, 2026 | Quick Task Summary sync: added D20-B02 (Dan backend follow-up) so phase progress reflects 15/16 accurately; CON-DONE-12/13 remain tracked in Phase 5 handoff. | Assistant |
 | Feb 23, 2026 | CON-DONE-15 marked complete. Spatial query (draw/query tools) filters DataONE datasets by extent; verified working with SpatialQuerySection. | User |
 | Feb 23, 2026 | CON-DONE-10 marked complete. File-type filter (CSV/TIF/Imagery/Other) checklist, client-side filtering from files_summary.by_ext, wired through browse/map/saved views. | Assistant |
 | Feb 23, 2026 | CON-DONE-09 marked complete. Search by title + abstract + keywords; Layer 1 used when searchText present; browse, map, count paths updated. | Assistant |

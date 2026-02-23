@@ -372,6 +372,7 @@ Record-level overlap with iNaturalist is still unquantified in this phase implem
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 23, 2026 | P9-GRIDBIN | Cross-phase sync note: DataOne merge conflict resolved; prior "blocked on DataOne merge" dependency no longer applies. Task remains complete in this phase. | Assistant |
 | Feb 16, 2026 | — | Created phase document | Will + Claude |
 | Feb 19, 2026 | 9.1-9.7 | Implemented GBIF ArcGIS integration: adapter override for `dataset-178`, overview/browse/detail UI, server-side filters/pagination, map click-to-detail behavior | Cursor |
 | Feb 19, 2026 | 9.10 | Fixed map rendering (explicit `gbifLayer.ts` + `dataset-178` in `createMapLayer`); added card thumbnails from `primary_image_url` | Cursor |
