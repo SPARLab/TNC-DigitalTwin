@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 5 / 18 tasks complete  
+**Progress:** 6 / 18 tasks complete  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-4-dataone-completed.md`  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
@@ -14,7 +14,7 @@
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
 | D20-09 | 🟢 Complete | Feb 23, 2026 | Filter DataOne map to latest dataset version only (deduplicate by latest) | Implemented: Lite layer + dedupeDatasetsByDataoneId in getDatasetsForMapLayer/queryDatasets; prefers isLatestVersion and newest date. Verified visually. |
-| TF-13 | ⚪ Not Started | Feb 20, 2026 | Add loading indicator when DataOne layer is selected and map data is loading | High priority; no visual feedback during load leaves user uncertain if app is working. Source: Trisalyn QA Feb 20 |
+| TF-13 | 🟢 Complete | Feb 23, 2026 | Add loading indicator when DataOne layer is selected and map data is loading | Implemented: map-loading scope in DataOneFilterContext; browse-tab RefreshLoadingRow ("Updating map markers..."); Map Layers eye-slot spinner via shared cache-status. Consistent with iNaturalist pattern. Source: Trisalyn QA Feb 20 |
 | TF-14 | 🟢 Complete | Feb 23, 2026 | Render a specific map marker when "View on Map" is clicked on a dataset | Implemented: highlightPoint draws a cyan ring at dataset coordinates; zoom 16 breaks clusters so individual point visible. Fallback marker at exact location when inside bin. Source: Trisalyn QA Feb 20 |
 | CON-DONE-01 | 🟢 Complete | Feb 20, 2026 | Cluster click on map populates right sidebar with datasets at that location | Race condition fix applied; counts verified |
 | CON-DONE-16 | 🟢 Complete | Feb 20, 2026 | Switch from circular clustering to grid binning (FeatureReductionBinning) | Live scale watcher; in-place fixedBinLevel mutation; maxScale:0 keeps bins visible; "Where to Fine-Tune" doc'd |
@@ -191,6 +191,31 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 ---
 
+### TF-13: Loading Indicator While DataONE Map Data Is Loading ✅
+
+**Goal:** Provide immediate visual feedback when DataONE is selected and map markers are being refreshed so users know the app is working.
+
+**Context:** QA feedback (Trisalyn, Feb 20, 2026) reported uncertainty during DataONE map loads because no loading state appears while marker data is being fetched and applied to the map layer.
+
+**Resolution (Feb 23, 2026):**
+- Added dedicated map-loading tracking in `DataOneFilterContext` (`mapLoading`, `createMapLoadingScope`)
+- Wired map loading scope into `useDataOneMapBehavior` around DataONE map refresh (`getDatasetsForMapLayer` + `populateDataOneLayer`)
+- Added browse-tab loading UI indicator using existing shared loading primitive:
+  - `RefreshLoadingRow` with message: "Updating map markers..."
+- Added Map Layers widget loading indicator support (eye-slot spinner) for DataONE map refreshes via shared cache-status loading path — consistent with iNaturalist and other data sources
+
+**Files:** `src/v2/context/DataOneFilterContext.tsx`, `src/v2/dataSources/dataone/useMapBehavior.ts`, `src/v2/components/RightSidebar/DataOne/DataOneBrowseTab.tsx`, `src/v2/dataSources/dataone/adapter.tsx`, `src/v2/components/FloatingWidgets/MapLayersWidget/MapLayersWidget.tsx`
+
+**Acceptance Criteria:**
+- [x] Selecting DataONE and triggering map refresh shows a visible loading indicator in sidebar while map markers are loading
+- [x] Indicator clears when map loading completes or request is cancelled
+- [x] Map Layers widget row for DataONE shows loading spinner while map markers are refreshing
+- [x] QA verified: indicator appears on initial DataONE activation, filter changes, and map-query-driven refreshes
+
+**Estimated Time:** 1–2 hours (complete)
+
+---
+
 ### TF-14: Render Specific Map Marker When Recenter Is Clicked ✅
 
 **Goal:** When the user clicks "Recenter" (formerly "View on Map") for a DataONE dataset, the map renders a specific marker at the dataset's exact location — not just a group/cluster highlight.
@@ -325,6 +350,9 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 23, 2026 | TF-13 marked complete. DataONE map-loading indicator in browse tab + Map Layers eye-slot spinner; consistent with iNaturalist pattern. | Assistant |
+| Feb 23, 2026 | TF-13 update: wired DataONE map-loading into Map Layers widget eye-slot spinner using shared cache-status loading flow (consistent with existing row-level loading pattern). | Assistant |
+| Feb 23, 2026 | TF-13 started: added DataONE map-loading state (`mapLoading`) and browse-tab loading indicator ("Updating map markers...") wired to map marker refresh lifecycle. QA pending before complete. | Assistant |
 | Feb 23, 2026 | TF-14 marked complete. Recenter/View on Map now renders a specific marker (highlightPoint cyan ring) at dataset coordinates; zoom 16 breaks clusters for visibility. | Assistant |
 | Feb 23, 2026 | D20-09 marked complete. Map and browse already use Lite layer + dedupeDatasetsByDataoneId; one point per dataone_id, prefers isLatestVersion. Verified visually. | Assistant |
 | Feb 20, 2026 | CON-DONE-01 refinement: Fixed cluster↔dataset click navigation. Cluster click now always shows filtered list; dataset click always shows detail. Fixed selectedDataset not clearing, lastHandledFeatureIdRef race, count=1 aggregate silent no-op, tab switch from Overview, stale highlight rings. | Assistant |

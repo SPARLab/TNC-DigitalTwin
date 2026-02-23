@@ -46,6 +46,7 @@ export function DataOneBrowseTab() {
   const {
     warmCache,
     createBrowseLoadingScope,
+    mapLoading,
     browseFilters,
     setBrowseFilters,
     aggregationMode,
@@ -574,6 +575,9 @@ export function DataOneBrowseTab() {
 
       {showRefreshLoading && (
         <RefreshLoadingRow id="dataone-refresh-loading" message="Refreshing datasets..." />
+      )}
+      {mapLoading && (
+        <RefreshLoadingRow id="dataone-map-refresh-loading" message="Updating map markers..." />
       )}
 
       {error && (

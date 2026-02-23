@@ -129,6 +129,7 @@ export function useDataOneMapBehavior(
     mapSelectionDataoneIds,
     setMapSelectionDataoneIds,
     setMapDatasetsCache,
+    createMapLoadingScope,
   } = useDataOneFilter();
   const { activateLayer, requestBrowseTab } = useLayers();
   const { viewRef, getSpatialPolygonForLayer } = useMap();
@@ -163,6 +164,7 @@ export function useDataOneMapBehavior(
 
     const abortController = new AbortController();
     const version = ++populateVersionRef.current;
+    const closeMapLoadingScope = createMapLoadingScope();
 
     const run = async () => {
       try {
@@ -195,12 +197,19 @@ export function useDataOneMapBehavior(
         if (!abortController.signal.aborted) {
           console.error('[DataONE Map] Failed to refresh map markers', error);
         }
+      } finally {
+        if (!abortController.signal.aborted) {
+          closeMapLoadingScope();
+        }
       }
     };
 
     void run();
-    return () => abortController.abort();
-  }, [isOnMap, dataLoaded, browseFilters, spatialPolygon, getManagedLayer, mapReady]);
+    return () => {
+      abortController.abort();
+      closeMapLoadingScope();
+    };
+  }, [isOnMap, dataLoaded, browseFilters, spatialPolygon, getManagedLayer, mapReady, createMapLoadingScope]);
 
   // Keep map aggregation mode (clusters vs bins) in sync with sidebar toggle.
   useEffect(() => {

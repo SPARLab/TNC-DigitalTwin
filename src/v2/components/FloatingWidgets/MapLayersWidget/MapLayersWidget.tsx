@@ -123,11 +123,14 @@ export function MapLayersWidget() {
     pinnedLayers.map((pinnedLayer) => {
       const catalogLayer = layerMap.get(pinnedLayer.layerId);
       const isDroneDeployLayer = pinnedLayer.layerId === 'dataset-193';
+      const isDataOneLayer = pinnedLayer.layerId === 'dataone-datasets';
       const cacheStatus = isDroneDeployLayer
         ? cacheStatusByDataSource.drone
         : (catalogLayer ? cacheStatusByDataSource[catalogLayer.dataSource] : null);
-      const isDroneDeploySource = isDroneDeployLayer || catalogLayer?.dataSource === 'drone';
-      const isSourceLoading = isDroneDeploySource
+      const isAlwaysLiveLoadingSource = isDroneDeployLayer
+        || isDataOneLayer
+        || catalogLayer?.dataSource === 'drone';
+      const isSourceLoading = isAlwaysLiveLoadingSource
         ? !!cacheStatus?.loading
         : (!!cacheStatus?.loading && !cacheStatus?.dataLoaded);
       return [pinnedLayer.layerId, isSourceLoading];
@@ -135,12 +138,14 @@ export function MapLayersWidget() {
   );
   const activeLayerIsDroneDeploy = concreteActiveLayer?.layerId === 'dataset-193'
     || concreteActiveLayer?.dataSource === 'drone';
+  const activeLayerIsDataOne = concreteActiveLayer?.layerId === 'dataone-datasets'
+    || concreteActiveLayer?.dataSource === 'dataone';
   const activeLayerCacheStatus = concreteActiveLayer
     ? (activeLayerIsDroneDeploy
       ? cacheStatusByDataSource.drone
       : cacheStatusByDataSource[concreteActiveLayer.dataSource])
     : null;
-  const activeLayerIsLoading = activeLayerIsDroneDeploy
+  const activeLayerIsLoading = activeLayerIsDroneDeploy || activeLayerIsDataOne
     ? !!activeLayerCacheStatus?.loading
     : (!!activeLayerCacheStatus?.loading && !activeLayerCacheStatus?.dataLoaded);
 
