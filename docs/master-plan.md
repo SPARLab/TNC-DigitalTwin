@@ -1,11 +1,21 @@
 # Master Development Plan — V2 Digital Catalog
 
 **Created:** January 23, 2026  
-**Last Updated:** February 24, 2026  
+**Last Updated:** February 23, 2026  
 **Target Deadline:** February 20, 2026  
 **Status:** 🟡 In Progress
 
 **📁 Completed tasks archived:** Per-phase archives in [docs/archive/phases/](archive/phases/) — one file per phase with task descriptions + completion timestamps.
+
+---
+
+## Quick Task Summary
+
+| ID | Status | Last Updated (Timestamp) | Task Description | Notes |
+|----|--------|---------------------------|------------------|-------|
+| MP-COUNT-01 | 🟢 Complete | Feb 23, 2026 | Normalize phase-level task counting in master tracker | Counts now use each phase's top summary/status table and separate active remaining from backlog/deferred/won't-do states. |
+| MP-COUNT-02 | 🟢 Complete | Feb 23, 2026 | Add explicit totals for completed vs left-to-do work | Added portfolio totals and per-phase breakdown so progress is numerically auditable at a glance. |
+| MP-COUNT-03 | 🟡 In Progress | Feb 23, 2026 | Keep counts synchronized whenever a phase task changes status | Update this table after each task closure in phase docs to prevent drift. |
 
 ---
 
@@ -29,38 +39,54 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ## Phase Status
 
-| Phase | Name | Status | Remaining | Branch | Blocking? |
-|-------|------|--------|-----------|--------|-----------|
-| 0 | Foundation | 🟢 Complete | 0 blocking | `v2/foundation` | No — parallel branches ready |
-| 1 | iNaturalist | 🟢 Complete | 0 | `v2/inaturalist` | No |
-| 2 | ANiML | 🟢 Complete | 0 | `v2/animl` | No |
-| 3 | Dendra | 🟡 In Progress | 0 blocking | `v2/dendra` | No |
-| 4 | DataOne | 🟡 In Progress | 1 task (backend) | `v2/dataone` | No |
-| 5 | Export Builder | 🟡 In Progress | 1 task | `v2/export-builder` | No |
-| 6 | TNC ArcGIS Services | 🟡 In Progress | 2 backlog tasks | `v2/tnc-arcgis` | No |
-| 7 | Polish & Consistency | ⚪ Not Started | 12+ tasks | `v2/polish` | No |
-| 8 | Calflora | ⚪ Not Started | 9 tasks | `v2/calflora` | No |
-| 9 | GBIF | 🟡 In Progress | 2 tasks (9.8 ✅; D20-08 ✅, GBIF-HOSTED ✅, P9-GRIDBIN ✅, TF-09 ✅; D20-12 🟡 in progress; 9.9 deferred; 9.12 deferred to v2.1+) | `v2/gbif` | No |
-| 10 | DroneDeploy | 🟢 Complete | 0 tasks | `v2/dronedeploy` | No |
-| 11 | MOTUS | 🟢 Complete | 0 tasks | `v2/motus` | No — Phase 11 complete (11.9 Save View flow shipped Feb 23) |
+### Portfolio Totals (Tracked Task Rows Across Phases)
+
+- **Complete:** 110
+- **Active remaining (Not Started + In Progress + Blocked):** 23
+- **Backlog (not in active scope):** 3
+- **Deferred:** 1
+- **Won't Do:** 2
+- **Total tracked rows:** 139
+
+### Per-Phase Task Counts
+
+| Phase | Name | Status | Complete | Active Remaining | Backlog | Deferred | Won't Do | Total Tracked | Branch |
+|-------|------|--------|----------|------------------|---------|----------|----------|---------------|--------|
+| 0 | Foundation | 🟢 Complete | 11 | 1 | 0 | 0 | 0 | 12 | `v2/foundation` |
+| 1 | iNaturalist | 🟢 Complete | 9 | 0 | 0 | 0 | 1 | 10 | `v2/inaturalist` |
+| 2 | ANiML | 🟢 Complete | 7 | 0 | 0 | 0 | 1 | 8 | `v2/animl` |
+| 3 | Dendra | 🟡 In Progress | 8 | 0 | 3 | 0 | 0 | 11 | `v2/dendra` |
+| 4 | DataOne | 🟡 In Progress | 15 | 1 | 0 | 0 | 0 | 16 | `v2/dataone` |
+| 5 | Export Builder | 🟡 In Progress | 0 | 5 | 0 | 0 | 0 | 5 | `v2/export-builder` |
+| 6 | TNC ArcGIS Services | 🟢 Complete | 32 | 0 | 0 | 0 | 0 | 32 | `v2/tnc-arcgis` |
+| 7 | Polish & Consistency | ⚪ Not Started | 1 | 4 | 0 | 0 | 0 | 5 | `v2/polish` |
+| 8 | Calflora | ⚪ Not Started | 0 | 9 | 0 | 0 | 0 | 9 | `v2/calflora` |
+| 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
+| 10 | DroneDeploy | 🟢 Complete | 4 | 0 | 0 | 0 | 0 | 4 | `v2/dronedeploy` |
+| 11 | MOTUS | 🟢 Complete | 9 | 0 | 0 | 0 | 0 | 9 | `v2/motus` |
 
 **Status Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
 
-**Remaining tasks by phase:** See phase docs for task details. This tracker shows counts only to minimize context load.
+**Counting rules (to avoid drift):**
+- `Active Remaining` = tasks marked ⚪, 🟡, or 🔴 in phase summary/status tables.
+- `Backlog` and `Deferred` are tracked separately from active remaining.
+- `Won't Do` is counted but excluded from "left to do."
+- Source of truth is each phase doc's top task summary/status table.
 
-| Phase | Doc | Remaining |
-|-------|-----|-----------|
-| 0 | [phase-0-foundation.md](IMPLEMENTATION/phases/phase-0-foundation.md) | 0.6 Map Feature Highlight (if pending); 0.9 ✅ complete |
-| 1 | [phase-1-inaturalist.md](IMPLEMENTATION/phases/phase-1-inaturalist.md) | 0 |
-| 2 | [phase-2-animl.md](IMPLEMENTATION/phases/phase-2-animl.md) | ~4 tasks |
-| 3 | [phase-3-dendra.md](IMPLEMENTATION/phases/phase-3-dendra.md) | D20-06 ✅; D20-BL01–03 backlog; CON-DENDRA-08 |
-| 4 | [phase-4-dataone.md](IMPLEMENTATION/phases/phase-4-dataone.md) | CON-DONE-01/02/05/06/07/08/09/10/11/14/15/16 ✅, D20-09 ✅, TF-13 ✅, TF-14 ✅; remaining: D20-B02 (backend task, Dan) |
-| 5 | [phase-5-export-builder.md](IMPLEMENTATION/phases/phase-5-export-builder.md) | + D20-14 (Dan meeting Feb 20) |
-| 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 2 backlog tasks (6.10 ✅ Feb 24; 6.8 ✅, 6.9 ✅, 6.11 ✅, 6.12 ✅, 6.13 ✅, 6.14 ✅ Feb 23, CON-ARCGIS-16 ✅, CON-ARCGIS-17 ✅ Feb 23; D20-02 ✅, D20-02a ✅, D20-10 ✅, D20-11 ✅, TF-11 ✅, TF-13 ✅; D20-B04, D20-B05) |
-| 7 | [phase-7-polish.md](IMPLEMENTATION/phases/phase-7-polish.md) | 12+ tasks (+ D20-03, D20-04, D20-07, D20-13 from Dan meeting Feb 20; D20-01 ✅ done in Phase 0) |
-| 9 | [phase-9-gbif.md](IMPLEMENTATION/phases/phase-9-gbif.md) | 2 tasks (9.8 ✅; D20-12 🟡 in progress; + D20-B01, D20-B03, D20-12-FOLLOW optional; 9.9/9.12 deferred) |
-| 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) | 0 |
-| 11 | [phase-11-motus.md](IMPLEMENTATION/phases/phase-11-motus.md) | 0 (11.1–11.9 ✅ complete) |
+| Phase | Doc |
+|-------|-----|
+| 0 | [phase-0-foundation.md](IMPLEMENTATION/phases/phase-0-foundation.md) |
+| 1 | [phase-1-inaturalist.md](IMPLEMENTATION/phases/phase-1-inaturalist.md) |
+| 2 | [phase-2-animl.md](IMPLEMENTATION/phases/phase-2-animl.md) |
+| 3 | [phase-3-dendra.md](IMPLEMENTATION/phases/phase-3-dendra.md) |
+| 4 | [phase-4-dataone.md](IMPLEMENTATION/phases/phase-4-dataone.md) |
+| 5 | [phase-5-export-builder.md](IMPLEMENTATION/phases/phase-5-export-builder.md) |
+| 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) |
+| 7 | [phase-7-polish.md](IMPLEMENTATION/phases/phase-7-polish.md) |
+| 8 | [phase-8-calflora.md](IMPLEMENTATION/phases/phase-8-calflora.md) |
+| 9 | [phase-9-gbif.md](IMPLEMENTATION/phases/phase-9-gbif.md) |
+| 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) |
+| 11 | [phase-11-motus.md](IMPLEMENTATION/phases/phase-11-motus.md) |
 
 ---
 
