@@ -36,7 +36,7 @@ function getFeatureLayerUrlCandidates(meta: NonNullable<CatalogLayer['catalogMet
   pushCandidate(preferredUrl);
 
   const serviceRootUrl = buildServiceRootUrl(meta).replace(/\/+$/, '');
-  if (meta.isMultiLayerService && Number.isInteger(meta.layerIdInService)) {
+  if (Number.isInteger(meta.layerIdInService)) {
     pushCandidate(`${serviceRootUrl}/${meta.layerIdInService}`);
   }
   pushCandidate(`${serviceRootUrl}/0`);
@@ -73,7 +73,7 @@ function attachFeatureLayerLoadFallback(
   layerName: string,
 ): void {
   if (candidates.length === 0) return;
-  void featureLayer.load().catch(async () => {
+  void featureLayer.load().catch(async (initialError) => {
     const parsedRootMatch = candidates[0].match(/^(.*\/FeatureServer)(?:\/\d+)?$/i);
     const discoveredCandidates = parsedRootMatch
       ? await fetchFeatureServiceLayerUrls(parsedRootMatch[1])
@@ -86,11 +86,19 @@ function attachFeatureLayerLoadFallback(
         await featureLayer.load();
         console.warn(`[TNCArcGIS] Recovered layer load via fallback URL: ${candidateUrl} (${layerName})`);
         return;
-      } catch {
+      } catch (recoveryError) {
+        if (import.meta.env.DEV) {
+          console.debug('[TNCArcGIS] Fallback candidate failed', {
+            layerName,
+            candidateUrl,
+            error: recoveryError,
+          });
+        }
         // Try the next candidate.
       }
     }
     console.error(`[TNCArcGIS] Failed to load FeatureLayer after URL fallbacks (${layerName})`, {
+      initialError,
       attemptedUrls: [candidates[0], ...recoveryCandidates],
     });
   });
