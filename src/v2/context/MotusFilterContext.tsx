@@ -32,7 +32,7 @@ interface MotusFilterContextValue {
 const DEFAULT_BROWSE_FILTERS: Required<MotusBrowseFilters> = {
   startDate: '',
   endDate: '',
-  minHitCount: 2,
+  minHitCount: 1,
   minMotusFilter: 1,
 };
 
@@ -47,7 +47,7 @@ export function MotusFilterProvider({ children }: { children: ReactNode }) {
   const [selectedSpecies, setSelectedSpecies] = useState<string | null>(null);
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
   const [movementDisclaimer, setMovementDisclaimer] = useState(
-    'Choose a preserve-linked tag to render its full inferred journey across receiver stations.',
+    'Choose a preserve-eligible tag to render its full inferred journey across receiver stations.',
   );
   const [playbackStepIndex, setPlaybackStepIndexState] = useState(0);
   const [playbackTransitionProgress, setPlaybackTransitionProgressState] = useState(0);

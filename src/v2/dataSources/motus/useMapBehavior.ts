@@ -272,13 +272,13 @@ export function useMotusMapBehavior(
     if (!hasMotusOnMap) {
       movementContextRef.current = null;
       overlay.removeAll();
-      setMovementDisclaimer('Choose a preserve-linked tag to render its full inferred journey across receiver stations.');
+      setMovementDisclaimer('Choose a preserve-eligible tag to render its full inferred journey across receiver stations.');
       setPlaybackStepLabels(['Journey start']);
       return;
     }
 
     if (selectedTagId == null) {
-      setMovementDisclaimer('Receiver stations are visible. Select a preserve-linked tag to render its full inferred journey.');
+      setMovementDisclaimer('Receiver stations are visible. Select a preserve-eligible tag to render its full inferred journey.');
       setPlaybackStepLabels(['Journey start']);
       void motusService.getReceiverStations()
         .then((stations) => {
@@ -286,7 +286,7 @@ export function useMotusMapBehavior(
           movementContextRef.current = {
             stations,
             legs: [],
-            disclaimer: 'Receiver stations are visible. Select a preserve-linked tag to render its full inferred journey.',
+            disclaimer: 'Receiver stations are visible. Select a preserve-eligible tag to render its full inferred journey.',
           };
           overlay.removeAll();
           for (const station of stations) {
@@ -320,7 +320,7 @@ export function useMotusMapBehavior(
         .catch((error) => {
           if (cancelled) return;
           console.error('[MOTUS] Failed to render receiver stations', error);
-          setMovementDisclaimer('Unable to load receiver stations. Select a preserve-linked tag to retry journey rendering.');
+          setMovementDisclaimer('Unable to load receiver stations. Select a preserve-eligible tag to retry journey rendering.');
         });
       return;
     }
@@ -337,7 +337,7 @@ export function useMotusMapBehavior(
         console.error('[MOTUS] Failed to render movement context', error);
         movementContextRef.current = null;
         overlay.removeAll();
-        setMovementDisclaimer('Unable to render journey for this preserve-linked tag. Receiver stations remain visible.');
+        setMovementDisclaimer('Unable to render journey for this preserve-eligible tag. Receiver stations remain visible.');
         setPlaybackStepLabels(['Journey start']);
       });
 

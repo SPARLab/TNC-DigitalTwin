@@ -280,18 +280,17 @@ async function getDangermondDeviceIds(signal?: AbortSignal): Promise<number[]> {
 }
 
 async function getPreserveLinkedTagIds(
-  filters: MotusBrowseFilters,
   candidateTagIds: number[] | undefined,
   signal?: AbortSignal,
 ): Promise<Set<number>> {
   const dangermondDeviceIds = await getDangermondDeviceIds(signal);
   if (dangermondDeviceIds.length === 0) return new Set<number>();
 
-  const where = buildDetectionWhereClause(
-    filters,
-    candidateTagIds && candidateTagIds.length > 0 ? candidateTagIds : undefined,
-    dangermondDeviceIds,
-  );
+  const clauses: string[] = ['1=1', `device_id IN (${dangermondDeviceIds.join(',')})`];
+  if (candidateTagIds && candidateTagIds.length > 0) {
+    clauses.push(`tag_id IN (${candidateTagIds.join(',')})`);
+  }
+  const where = clauses.join(' AND ');
 
   const json = await queryArcgis(
     TAG_DETECTIONS_TABLE_URL,
@@ -389,7 +388,6 @@ class MotusService {
       .slice(0, DEFAULT_MAX_SPECIES);
 
     const preserveLinkedTagIds = await getPreserveLinkedTagIds(
-      filters,
       candidateSpecies.flatMap((species) => species.tagIds),
       signal,
     );
@@ -408,7 +406,7 @@ class MotusService {
     );
 
     return withCounts
-      .filter((species) => species.detectionCount > 0 && species.tagCount > 0)
+      .filter((species) => species.tagCount > 0)
       .sort((a, b) => b.detectionCount - a.detectionCount || b.tagCount - a.tagCount);
   }
 
@@ -435,7 +433,7 @@ class MotusService {
     const tagIds = features
       .map((feature) => toFiniteNumber(feature.attributes?.tag_id))
       .filter((value): value is number => value != null);
-    const preserveLinkedTagIds = await getPreserveLinkedTagIds(filters, tagIds, signal);
+    const preserveLinkedTagIds = await getPreserveLinkedTagIds(tagIds, signal);
     const eligibleTagIds = tagIds.filter((tagId) => preserveLinkedTagIds.has(tagId));
     const countsByTag = await queryDetectionCountsByTagIds(eligibleTagIds, filters, undefined, signal);
 
@@ -470,12 +468,12 @@ class MotusService {
     }
 
     return Array.from(byTagId.values())
-      .filter((row) => row.detectionCount > 0 && preserveLinkedTagIds.has(row.tagId))
+      .filter((row) => preserveLinkedTagIds.has(row.tagId))
       .sort((a, b) => b.detectionCount - a.detectionCount || a.tagId - b.tagId);
   }
 
   async getTaggedAnimalDetail(tagId: number, filters: MotusBrowseFilters, signal?: AbortSignal): Promise<MotusTaggedAnimalDetail | null> {
-    const preserveLinkedTagIds = await getPreserveLinkedTagIds(filters, [tagId], signal);
+    const preserveLinkedTagIds = await getPreserveLinkedTagIds([tagId], signal);
     if (!preserveLinkedTagIds.has(tagId)) return null;
     const animalJson = await queryArcgis(
       TAGGED_ANIMALS_LAYER_URL,
@@ -566,16 +564,21 @@ class MotusService {
   }
 
   async getMovementContextForTag(tagId: number, filters: MotusBrowseFilters, signal?: AbortSignal): Promise<MotusMovementContext> {
-    const preserveLinkedTagIds = await getPreserveLinkedTagIds(filters, [tagId], signal);
+    const preserveLinkedTagIds = await getPreserveLinkedTagIds([tagId], signal);
     if (!preserveLinkedTagIds.has(tagId)) {
       return {
         stations: [],
         legs: [],
-        disclaimer: 'This tag has no preserve detections in the selected window, so journey rendering is disabled.',
+        disclaimer: 'This tag has never been detected by Dangermond preserve receivers, so journey rendering is disabled.',
       };
     }
 
-    const [stationsJson, deploymentsJson, detectionsJson] = await Promise.all([
+    const dangermondDeviceIds = await getDangermondDeviceIds(signal);
+
+    // Fetch filtered detections + unfiltered preserve detections in parallel so the
+    // Dangermond leg always renders even when its hit_count / motus_filter is below
+    // the browse thresholds.
+    const [stationsJson, deploymentsJson, detectionsJson, preserveDetectionsJson] = await Promise.all([
       queryArcgis(
         RECEIVER_STATIONS_LAYER_URL,
         {
@@ -610,6 +613,20 @@ class MotusService {
         },
         signal,
       ),
+      dangermondDeviceIds.length > 0
+        ? queryArcgis(
+            TAG_DETECTIONS_TABLE_URL,
+            {
+              where: `tag_id = ${tagId} AND device_id IN (${dangermondDeviceIds.join(',')})`,
+              outFields: 'device_id,ts_begin,ts_end',
+              returnGeometry: false,
+              orderByFields: 'ts_begin ASC',
+              resultRecordCount: 500,
+              f: 'json',
+            },
+            signal,
+          )
+        : Promise.resolve({ features: [] }),
     ]);
 
     const deploymentRows = Array.isArray(deploymentsJson.features) ? (deploymentsJson.features as ArcGISFeature[]) : [];
@@ -693,7 +710,23 @@ class MotusService {
         .station;
     };
 
-    const detections = Array.isArray(detectionsJson.features) ? (detectionsJson.features as ArcGISFeature[]) : [];
+    // Merge preserve detections into the filtered set so the Dangermond leg always
+    // appears even when quality thresholds would exclude it.
+    const filteredDetections = Array.isArray(detectionsJson.features) ? (detectionsJson.features as ArcGISFeature[]) : [];
+    const preserveDetections = Array.isArray(preserveDetectionsJson.features) ? (preserveDetectionsJson.features as ArcGISFeature[]) : [];
+    const seenDetectionKeys = new Set(
+      filteredDetections.map((f) => `${toFiniteNumber(f.attributes?.device_id)}_${toFiniteNumber(f.attributes?.ts_begin)}`),
+    );
+    const merged = [...filteredDetections];
+    for (const pd of preserveDetections) {
+      const key = `${toFiniteNumber(pd.attributes?.device_id)}_${toFiniteNumber(pd.attributes?.ts_begin)}`;
+      if (!seenDetectionKeys.has(key)) {
+        merged.push(pd);
+        seenDetectionKeys.add(key);
+      }
+    }
+    merged.sort((a, b) => (toFiniteNumber(a.attributes?.ts_begin) ?? 0) - (toFiniteNumber(b.attributes?.ts_begin) ?? 0));
+    const detections = merged;
     const inferredObservations: Array<{
       station: MotusStationPoint;
       tsBegin: number | null;
@@ -742,10 +775,10 @@ class MotusService {
     const matchedCount = matchedByDevice;
     const totalDetections = detections.length;
     const disclaimer = hasInferredLegs
-      ? `This tag is preserve-linked (detected at Dangermond) and journeys are inferred from all time-ordered receiver detections in the selected window (${matchedByDevice.toLocaleString()} mapped detections). Paths are inferred context, not exact flight trajectories.`
+      ? `This tag is preserve-eligible (detected at Dangermond at least once). Journeys are inferred from all time-ordered receiver detections in the selected window (${matchedByDevice.toLocaleString()} mapped detections). Paths are inferred context, not exact flight trajectories.`
       : totalDetections > 0
-        ? `This preserve-linked tag has detections in the selected window, but no station-to-station journey could be inferred. ${totalDetections.toLocaleString()} detections were evaluated; ${matchedCount.toLocaleString()} mapped to known receiver stations.`
-        : 'This preserve-linked tag has no detections in the selected window. Receiver stations are shown without path legs.';
+        ? `This preserve-eligible tag has detections in the selected window, but no station-to-station journey could be inferred. ${totalDetections.toLocaleString()} detections were evaluated; ${matchedCount.toLocaleString()} mapped to known receiver stations.`
+        : 'This preserve-eligible tag has no detections in the selected window. Receiver stations are shown without path legs.';
 
     return { stations, legs, disclaimer };
   }

@@ -328,7 +328,7 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 
 - [x] **Do we want to enrich `Tag Detections` with explicit station/deployment join fields for deterministic path rendering?** — **Resolved.** Using existing `device_id` (100% populated) to join detections to Station Deployments; time-ordered inferred legs now render for matching detections (Feb 23, 2026).
 - [ ] Should first release prioritize species-level path density, per-tag timelines, or both?
-- [ ] What default quality thresholds should we enforce (`motus_filter`, minimum `hit_count`)?
+- [x] What default quality thresholds should we enforce (`motus_filter`, minimum `hit_count`)? — **Resolved (Feb 23, 2026):** Default minHitCount=1, minMotusFilter=1 to surface more preserve-linked detections (e.g. single-hit Dangermond detections).
 - [x] Should we include off-preserve stations by default, or focus on Dangermond-centric movement context first? — **Resolved (Feb 23, 2026):** v2 defaults to Dangermond-centric interpretation only; do not render movement lines unless preserve-linked station inference exists.
 - [x] Do we want animation playback by detection time in v2, or static paths first then animation in v2.1? — **Resolved (Feb 23, 2026):** v2 includes animated journey playback with progressive leg drawing and directional arrowhead.
 
@@ -338,6 +338,7 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 23, 2026 | 11.3, 11.5 | Preserve eligibility made lifetime-based (all-time Dangermond detection); preserve detections always included in journey rendering regardless of quality filters so journey line connects to Dangermond dot; default minHitCount lowered from 2 to 1 | Cursor |
 | Feb 23, 2026 | 11.6 | Journey Playback refinements: progressive leg drawing between stations; single leading-edge arrow (no residual triangles at dots); correct arrow bearing via atan2(dx,dy) for ArcGIS marker rotation | Cursor |
 | Feb 23, 2026 | 11.6 | Implemented MOTUS Journey Playback widget as floating map controls (play/pause, step back/forward, speed presets, scrubber, current timestamp, start/latest), and wired map rendering to timeline step state so inferred movement legs animate progressively | Cursor |
 | Feb 23, 2026 | 11.5, 11.7 | Updated MOTUS map behavior so green receiver-station dots render persistently whenever MOTUS is active on the map; selecting a preserve-linked tag now adds inferred journey legs on top of this always-visible station context | Cursor |
