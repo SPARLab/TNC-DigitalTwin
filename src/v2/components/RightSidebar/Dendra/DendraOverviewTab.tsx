@@ -3,6 +3,11 @@
 // Shows sensor type description, station count, and key dataset stats.
 // ============================================================================
 
+import { useEffect, useState } from 'react';
+import { useCatalog } from '../../../context/CatalogContext';
+import { useLayers } from '../../../context/LayerContext';
+import { fetchServiceDescription } from '../../../services/tncArcgisService';
+
 interface DendraOverviewTabProps {
   stationCount: number;
   loading: boolean;
@@ -14,15 +19,47 @@ export function DendraOverviewTab({
   stationCount, loading, layerTitle, onBrowseClick,
 }: DendraOverviewTabProps) {
   const countDisplay = loading ? '...' : stationCount.toLocaleString();
+  const { activeLayer } = useLayers();
+  const { layerMap } = useCatalog();
+  const activeCatalogLayer = activeLayer?.dataSource === 'dendra'
+    ? layerMap.get(activeLayer.layerId)
+    : undefined;
+  const catalogDescription = activeCatalogLayer?.catalogMeta?.description?.trim() || '';
+  const [resolvedDescription, setResolvedDescription] = useState(catalogDescription);
+
+  useEffect(() => {
+    let cancelled = false;
+    setResolvedDescription(catalogDescription);
+
+    const serviceMeta = activeCatalogLayer?.catalogMeta;
+    if (!serviceMeta?.hasFeatureServer) return () => { cancelled = true; };
+
+    fetchServiceDescription(serviceMeta)
+      .then((serviceDescription) => {
+        if (cancelled || !serviceDescription) return;
+        setResolvedDescription(serviceDescription);
+      })
+      .catch(() => {
+        // Keep catalog/fallback description when metadata fetch fails.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeCatalogLayer, catalogDescription]);
 
   return (
     <div id="dendra-overview-tab" className="space-y-5">
       {/* Description */}
-      <p className="text-sm text-gray-600 leading-relaxed">
-        Real-time and historical sensor data from the Dangermond Preserve.
-        {layerTitle && (
-          <> This layer shows <strong>{layerTitle}</strong> with
-          station locations and associated datastream measurements.</>
+      <p id="dendra-overview-description" className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+        {resolvedDescription || (
+          <>
+            Real-time and historical sensor data from the Dangermond Preserve.
+            {layerTitle && (
+              <> This layer shows <strong>{layerTitle}</strong> with
+              station locations and associated datastream measurements.</>
+            )}
+          </>
         )}
       </p>
 

@@ -51,7 +51,7 @@
 | CON-ARCGIS-03 | ⚪ Not Started | Feb 18, 2026 | "See table" button: pop-up table view for layers/non-spatial tables | Dan Pt2 DP2-14; Medium |
 | CON-ARCGIS-04 | ⚪ Not Started | Feb 18, 2026 | Bidirectional sync: right sidebar layer selection ↔ left sidebar | Dan Pt2 DP2-15; Medium |
 | CON-ARCGIS-05 | ⚪ Not Started | Feb 18, 2026 | Fix iframe to show TNC user-friendly Hub page (not raw feature service) | Trisalyn T11; Medium |
-| CON-ARCGIS-06 | ⚪ Not Started | Feb 18, 2026 | Bug: Fix Union Pacific Railroad layer (layer ID 0 not found) | Dan Pt1 DP1-05; Medium |
+| CON-ARCGIS-06 | 🟢 Complete | Feb 20, 2026 | Bug: Fix Union Pacific Railroad layer (layer ID 0 not found) | Resolved by TF-11; Dan Pt1 DP1-05; Medium |
 | CON-ARCGIS-07 | ⚪ Not Started | Feb 18, 2026 | Design multi-layer feature service UX (pin for follow-up with Dan) | Dan Pt2 DP2-16; Low |
 | **— DataONE —** | | | | |
 | CON-DONE-01 | ⚪ Not Started | Feb 18, 2026 | Map cluster click → populate right sidebar with datasets at that location | Merged: DP2-01, T12; High |
@@ -485,9 +485,10 @@ The iframe currently shows the raw ArcGIS feature service page — not user-frie
 
 **Sources:** DP1-05 (Dan)  
 **Priority:** Medium  
-**Data Source:** TNC ArcGIS
+**Data Source:** TNC ArcGIS  
+**Status:** 🟢 Complete (Feb 20, 2026)
 
-Error: "ArcGIS error. The requested layer, layer ID 0, was not found." Affects Union Pacific Railroad feature service and possibly a few others. Investigate and fix.
+Error: "ArcGIS error. The requested layer, layer ID 0, was not found." Affects Union Pacific Railroad feature service and possibly a few others. **Resolved by TF-11:** Runtime fallback discovers valid layer IDs when single-row FeatureServer services don't expose layer 0.
 
 ---
 

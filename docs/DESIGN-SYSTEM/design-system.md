@@ -1,6 +1,6 @@
 # Design System - TNC Digital Catalog
 
-**Last Updated:** February 20, 2026 (BrowseBackButton D20-02; Dendra station display name normalization)  
+**Last Updated:** February 20, 2026 (D20-10 ArcGIS overview description; BrowseBackButton D20-02; Dendra station display name normalization)  
 **Purpose:** Single source of truth for styling decisions, component patterns, and design policies that affect multiple phases.
 
 ---
@@ -2006,6 +2006,7 @@ February 5, 2026
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 20, 2026 | **D20-10: ArcGIS Overview description source.** TNC ArcGIS and Dendra Overview tabs fetch description from ArcGIS item metadata (serviceItemId → snippet + description) when available; HTML normalized for line breaks; `whitespace-pre-line` for display. No per-layer descriptions in layer list. | Cursor |
 | Feb 19, 2026 | **Dendra Map Layers child labels (CON-DENDRA-04).** Dynamic labels: collapsed `N data streams, M stations`; expanded by station scope. Pin count badge: number + blue pin icon only. Documented in Components table and phase-3-dendra.md. | Cursor |
 | Feb 19, 2026 | **Dendra chart panel header typography.** Stream name bold; labels (Station:, Category:) regular; values semi-bold. Pipe separator between Station and Category. Documented in Components table and phase-3-dendra.md. | Cursor |
 | Feb 16, 2026 | **Task 34 complete.** Added shared loading primitives (`src/v2/components/shared/loading/`): `loadingTheme.ts`, `LoadingPrimitives.tsx` (EyeSlotLoadingSpinner, InlineLoadingRow, RefreshLoadingRow, MapCenterLoadingOverlay). Wired for iNaturalist, Dendra, ANiML. Single-point styling propagation. | Claude |

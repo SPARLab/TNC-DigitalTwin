@@ -1,18 +1,14 @@
-import { useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { ExternalLink, Eye, EyeOff, Pin, X } from 'lucide-react';
 import { useCatalog } from '../../../context/CatalogContext';
 import { useLayers } from '../../../context/LayerContext';
-import { buildServiceUrl } from '../../../services/tncArcgisService';
+import { buildServiceUrl, fetchServiceDescription } from '../../../services/tncArcgisService';
 import type { CatalogLayer } from '../../../types';
 
 interface TNCArcGISOverviewTabProps {
   loading: boolean;
   onBrowseClick: () => void;
   onInspectBrowseClick?: () => void;
-}
-
-function normalizeDescription(value: string | undefined): string {
-  return (value ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
 function getTargetLayer(activeLayer: CatalogLayer | undefined, selectedSubLayerId: string | undefined): CatalogLayer | null {
@@ -65,10 +61,11 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseCl
   );
   const isUnifiedServiceWorkspace = siblingLayers.length > 0;
 
-  const description = serviceContextLayer?.catalogMeta?.description || 'No description available yet.';
+  const catalogDescription = serviceContextLayer?.catalogMeta?.description?.trim() || '';
+  const [resolvedDescription, setResolvedDescription] = useState(catalogDescription);
+  const description = resolvedDescription || 'No description available yet.';
   const featureServiceName = serviceContextLayer?.name || activeCatalogLayer?.name || 'Unknown service';
   const currentLayerName = targetLayer?.name || activeCatalogLayer?.name || 'Unknown layer';
-  const normalizedServiceDescription = normalizeDescription(serviceContextLayer?.catalogMeta?.description);
   const servicePath = serviceContextLayer?.catalogMeta?.servicePath || 'Unknown service path';
   const serverBaseUrl = serviceContextLayer?.catalogMeta?.serverBaseUrl || 'Unknown host';
   const sourceLabel = `${serverBaseUrl}/${servicePath}`;
@@ -94,6 +91,27 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseCl
   const sourceUrl = useMemo(() => {
     return serviceSearchUrl || rawServiceUrl;
   }, [serviceSearchUrl, rawServiceUrl]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setResolvedDescription(catalogDescription);
+
+    const serviceMeta = serviceContextLayer?.catalogMeta;
+    if (!serviceMeta?.hasFeatureServer) return () => { cancelled = true; };
+
+    fetchServiceDescription(serviceMeta)
+      .then((serviceDescription) => {
+        if (cancelled || !serviceDescription) return;
+        setResolvedDescription(serviceDescription);
+      })
+      .catch(() => {
+        // Keep catalog description fallback when metadata fetch fails.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [serviceContextLayer, catalogDescription]);
 
   const formatLayerLabel = (layerName: string, layerIdInService?: number) => (
     typeof layerIdInService === 'number'
@@ -162,7 +180,7 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseCl
             <h3 id="tnc-arcgis-overview-title" className="text-sm font-semibold text-gray-900">
               Feature Service Overview
             </h3>
-            <p id="tnc-arcgis-overview-description" className="text-sm text-gray-600 leading-relaxed">
+            <p id="tnc-arcgis-overview-description" className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
               {description}
             </p>
           </div>
@@ -176,11 +194,6 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseCl
               className="max-h-56 overflow-y-auto space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-2"
             >
               {siblingLayers.map(layer => {
-                const layerDescription = layer.catalogMeta?.description;
-                const hasDistinctLayerDescription = !!(
-                  normalizeDescription(layerDescription)
-                  && normalizeDescription(layerDescription) !== normalizedServiceDescription
-                );
                 const isSelectedLayer = targetLayer?.id === layer.id;
 
                 return (
@@ -272,14 +285,6 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseCl
                           </span>
                         </div>
                       </div>
-                      {hasDistinctLayerDescription && (
-                        <p
-                          id={`tnc-arcgis-service-overview-layer-description-${layer.id}`}
-                          className="mt-1 text-xs text-gray-600 leading-relaxed"
-                        >
-                          {layerDescription}
-                        </p>
-                      )}
                     </button>
                   </li>
                 );
@@ -442,7 +447,7 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseCl
         <h3 id="tnc-arcgis-overview-title" className="text-sm font-semibold text-gray-900">
           Feature Service Overview
         </h3>
-        <p id="tnc-arcgis-overview-description" className="text-sm text-gray-600 leading-relaxed">
+        <p id="tnc-arcgis-overview-description" className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
           {description}
         </p>
       </div>

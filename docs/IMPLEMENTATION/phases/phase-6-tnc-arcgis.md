@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 14 / 22 tasks (CON-ARCGIS-01, 02, 03, 04, 05, 08, 09, 10, 11, 12, 14, 15, 6.17, 6.20 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
+**Progress:** 17 / 22 tasks (CON-ARCGIS-01, 02, 03, 04, 05, 06, 08, 09, 10, 11, 12, 13, 14, 15, 6.17, 6.20, D20-11 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry) ✅ complete  
@@ -30,19 +30,17 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| D20-02 | 🟢 Complete | Feb 20, 2026 | Add back button in right sidebar for ArcGIS feature service inspect/browse view | Shared `BrowseBackButton` (Dendra-style); layer context card (current layer + feature service, gray bg); Open Table Overlay above table snapshot; full field list (no truncation); Legend removed. Source: Dan Meeting Feb 20 |
-| D20-10 | ⚪ Not Started | Feb 20, 2026 | Replace static layer overview text with actual ArcGIS feature service description text | Apply to all ArcGIS feature service layers. Feature service already has proper descriptions set by Kelly. Source: Dan Meeting Feb 20 |
-| D20-11 | ⚪ Not Started | Feb 20, 2026 | Fix legend-as-filter functionality for TNC ArcGIS feature service layers | Clicking legend items should filter polygons; Amy flagged it's broken. Source: Dan Meeting Feb 20 |
-| D20-B04 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Reorder ArcGIS Enterprise layer categories per Amy's survey feedback | Order: Boundaries → Infrastructure → Species → Land Cover → Sensor Equipment → rest. Dan handling in layer management app. Source: Dan Meeting Feb 20 |
-| D20-B05 | ⚪ Not Started (Dan) | Feb 20, 2026 | **[Dan]** Re-categorize layer sub-buckets per Amy's feedback — all layers in own bucket, no nested sub-buckets | e.g., Fire has layers across nested sub-buckets; Amy wants them all in one flat bucket. Source: Dan Meeting Feb 20 |
-| TF-11 | ⚪ Not Started | Feb 20, 2026 | Fix intermittent "layer zero not found" error for Coastal Marine Data feature service in right sidebar/legend | High priority; intermittent, needs repro + investigation. Source: Trisalyn QA Feb 20 |
 | TF-12 | ⚪ Not Started | Feb 20, 2026 | Expand "Open Table Overlay" to all TNC ArcGIS feature service layers (currently only Oil Seeps) | Medium priority; Trisalyn reacted very positively — "this is how the GIS brain thinks." Source: Trisalyn QA Feb 20 |
+| D20-02 | 🟢 Complete | Feb 20, 2026 | Add back button in right sidebar for ArcGIS feature service inspect/browse view | Shared `BrowseBackButton` (Dendra-style); layer context card (current layer + feature service, gray bg); Open Table Overlay above table snapshot; full field list (no truncation); Legend removed. Source: Dan Meeting Feb 20 |
+| D20-10 | 🟢 Complete | Feb 20, 2026 | Replace static layer overview text with actual ArcGIS feature service description text | Overview tabs fetch ArcGIS item metadata via `serviceItemId` (snippet + description, Hub-style), then fall back to service/layer description. HTML normalized to preserve line breaks; no per-layer descriptions in layer list. TNC ArcGIS + Dendra. Source: Dan Meeting Feb 20 |
+| D20-11 | 🟢 Complete | Feb 20, 2026 | Fix legend-as-filter functionality for TNC ArcGIS feature service layers | Legend clicks sync to root TNC ArcGIS filter state; auto-pin on first legend interaction so filtering applies when layer was active but unpinned. Source: Dan Meeting Feb 20 |
+| TF-11 | 🟢 Complete | Feb 20, 2026 | Fix intermittent "layer zero not found" error for Coastal Marine Data feature service in right sidebar/legend | Root cause: multiple single-row FeatureServer services (Coastal starts at 2; Shrub at 8; Tree at 7; Sensitive vegetation at 3) do not expose layer `0`. Added runtime fallback to discovered valid layer IDs for schema/query, legend metadata, and map-layer load. QA passed. Source: Trisalyn QA Feb 20 |
 | CON-ARCGIS-01 | 🟢 Complete | Feb 19, 2026 | Right sidebar shows service overview and layer-specific info with progressive disclosure | Hierarchy context, layer selector, sync |
 | CON-ARCGIS-02 | 🟢 Complete | Feb 19, 2026 | Clarify feature service vs category hierarchy in left sidebar | Service/Layer badges, active-state styling |
 | CON-ARCGIS-03 | 🟢 Complete | Feb 19, 2026 | Add "See table" button to open tabular layer/table view | Implemented via 6.17: Browse "Open Table Overlay" + ArcGIS FeatureTable |
 | CON-ARCGIS-04 | 🟢 Complete | Feb 19, 2026 | Bidirectional sync between right sidebar layer selection and left sidebar | LayerContext + Overview selector |
 | CON-ARCGIS-05 | 🟢 Complete | Feb 19, 2026 | Fix iframe to show user-friendly TNC Hub page instead of raw service page | Hub search URL preferred; REST fallback |
-| CON-ARCGIS-06 | ⚪ Not Started | Feb 18, 2026 | Bug: fix Union Pacific Railroad layer (layer ID 0 not found) | Medium priority bug |
+| CON-ARCGIS-06 | 🟢 Complete | Feb 20, 2026 | Bug: fix Union Pacific Railroad layer (layer ID 0 not found) | Resolved by TF-11 runtime fallback for single-row services that don't expose layer 0 |
 | CON-ARCGIS-07 | ⚪ Not Started | Feb 18, 2026 | Design multi-layer feature service UX follow-up | Low priority / follow-up |
 | CON-ARCGIS-15 | 🟢 Complete | Feb 19, 2026 | Bug: fix feature service layer rendering — layers not drawing on map | Root cause: `renderer: undefined` in FeatureLayer constructor overrode service default; fixed via conditional spread so non-GBIF layers omit renderer/featureReduction and use service symbology |
 | **CON-ARCGIS-08** | 🟢 Complete | Feb 19, 2026 | Left sidebar: hover-visible scrollbar pill | Implemented: custom overlay thumb (no gutter); visible on scroll/hover |
@@ -50,7 +48,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **CON-ARCGIS-10** | 🟢 Complete | Feb 19, 2026 | Right sidebar: relabel hierarchy block | Feature Service (bold name); Current Layer; remove "Catalog: TNC ArcGIS…" |
 | **CON-ARCGIS-11** | 🟢 Complete | Feb 19, 2026 | Right sidebar: rename section to "Feature Service Overview" | Replace "TNC ArcGIS Service" with user-facing label |
 | **CON-ARCGIS-12** | 🟢 Complete | Feb 19, 2026 | Right sidebar: simplify layer list UX | Remove dropdown + helper text; single scrollable list (~5 rows); "N layers" header; highlight selected |
-| **CON-ARCGIS-13** | ⚪ | Feb 19, 2026 | Left sidebar: align feature service + child layer right edges | Feature service box and child layer boxes share same right margin as other layers (mr-1); child right edge aligns with parent; scrollbar overlay fits naturally |
+| **CON-ARCGIS-13** | 🟢 Complete | Feb 20, 2026 | Left sidebar: align feature service + child layer right edges | Feature service box and child layer boxes share same right margin as other layers (mr-1); child right edge aligns with parent; scrollbar overlay fits naturally |
 | **CON-ARCGIS-14** | 🟢 Complete | Feb 19, 2026 | Unified Service Workspace: service/layer click behavior + layer list state chips | Auto-select sublayer on service click; one right-sidebar layout; layer list header (N pinned • N visible); amber active highlight; pin/eye icons; inline pin/unpin; Map Layers widget sync |
 | **6.8** | ⚪ | — | Search Enhancement | Match service + layer names; expand parent service when layer matches |
 | **6.9** | ⚪ | — | Keyboard Navigation & ARIA | Arrow keys for expand/collapse, ARIA tree structure, focus management |
@@ -593,6 +591,8 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 
 **Goal:** Ensure feature service box and child layer boxes share the same right margin as other left-sidebar layers (e.g., Fire, Land Cover), so the overlay scrollbar fits naturally and visual alignment is consistent.
 
+**Status:** 🟢 Complete (Feb 20, 2026)
+
 **Context:** User feedback (Feb 19, 2026): Feature service rows (e.g., "Coastal and Marine") and their child layers should have right edges aligned with each other and with top-level layers. Child rows are indented from the left (correct); their right edge should align with the feature service box. Both should have the same distance from the right edge of the sidebar as other layers (mr-1 spacing where scrollbar overlay fits naturally).
 
 **Implementation:**
@@ -601,10 +601,10 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - Verify alignment with category headers and flat layer rows (e.g., "Wind Sensors", "Land Cover")
 
 **Acceptance Criteria:**
-- [ ] Feature service box right edge matches other layer row right edges (consistent mr-1)
-- [ ] Child layer boxes right edge aligns with feature service box right edge
-- [ ] Left indentation of children preserved; hierarchy clear
-- [ ] Overlay scrollbar fits naturally in right margin across all row types
+- [x] Feature service box right edge matches other layer row right edges (consistent mr-1)
+- [x] Child layer boxes right edge aligns with feature service box right edge
+- [x] Left indentation of children preserved; hierarchy clear
+- [x] Overlay scrollbar fits naturally in right margin across all row types
 
 **Estimated Time:** 30–45 min
 
@@ -731,6 +731,9 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 20, 2026 | TF-11 | **Complete.** Runtime fallback for non-zero FeatureServer layer IDs (schema, query, legend, map load). QA passed. | Codex |
+| Feb 20, 2026 | TF-11 | **In progress (scope expanded after QA screenshot).** Confirmed additional affected services where valid FeatureServer layer IDs are non-zero (`Shrub_Vegetation`=8, `Tree_Dominated_Vegetation`=7, `jldp_sensitive_vegcommunites`=3). Patched legend renderer fallback to retry with discovered valid layer IDs (instead of hard failing on `/0`) and fixed map-layer recovery guard to run even when only one static candidate exists. Files: `src/v2/services/tncArcgisService.ts`, `src/v2/components/Map/layers/tncArcgisLayer.ts`. | Codex |
+| Feb 20, 2026 | TF-11 | **In progress (investigation + hardening patch).** Confirmed Coastal_and_Marine FeatureServer exposes layers 2–21 (no layer 0). Added runtime fallback for layer-scoped schema/query requests: when a target layer URL fails, service metadata is fetched and requests retry across discovered layer IDs. Added map `FeatureLayer` load fallback to probe discovered service layer URLs after static candidates fail. Files: `src/v2/services/tncArcgisService.ts`, `src/v2/components/Map/layers/tncArcgisLayer.ts`. | Codex |
 | Feb 19, 2026 | CON-ARCGIS-15 | **Complete.** Root cause: `renderer: undefined` passed explicitly in FeatureLayer constructor overrode service default renderer for non-GBIF layers. Fixed via conditional spread so renderer/featureReduction omitted when not GBIF; ArcGIS auto-fetches service symbology. Removed diagnostic logging from useMapLayers. Files: `tncArcgisLayer.ts`, `useMapLayers.ts`. | Codex |
 | Feb 19, 2026 | CON-ARCGIS-15 | **In progress (handoff update).** Added FeatureLayer URL fallback loading in map layer factory and isolated table overlay lifecycle to dedicated FeatureLayer instances; regression still unresolved and requires fresh-window investigation with runtime map-layer diagnostics. Files: `src/v2/components/Map/layers/tncArcgisLayer.ts`, `src/v2/components/FloatingWidgets/TNCArcGISTableOverlay/TNCArcGISTableOverlay.tsx`. | Codex |
 | Feb 19, 2026 | CON-ARCGIS-15 | **In progress.** Root cause identified and patched: single-layer services now resolve to `/FeatureServer/0` (and `/MapServer` sublayer `0`) unless explicitly marked multi-layer; legend lookup now follows same layer-ID rule. Files: `src/v2/services/tncArcgisService.ts`, `src/v2/components/Map/layers/tncArcgisLayer.ts`. | Codex |

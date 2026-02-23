@@ -19,6 +19,8 @@ interface DatasetDetailViewProps {
   dataset: DataOneDataset;
   onBack: () => void;
   onSaveDatasetView?: (dataset: DataOneDataset) => string | void;
+  onUnsaveDatasetView?: () => void;
+  isDatasetSaved?: boolean;
   // eslint-disable-next-line no-unused-vars
   onKeywordClick?: (...args: [string]) => void;
   onVersionSelect?: (dataset: DataOneDataset) => void;
@@ -106,7 +108,7 @@ function formatVersionSummary(summary: DataOneVersionEntry['filesSummary']): str
   return extList.join(', ');
 }
 
-export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onKeywordClick, onVersionSelect }: DatasetDetailViewProps) {
+export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onUnsaveDatasetView, isDatasetSaved, onKeywordClick, onVersionSelect }: DatasetDetailViewProps) {
   const [details, setDetails] = useState<DataOneDatasetDetail | null>(null);
   const [fileInfoError, setFileInfoError] = useState<string | null>(null);
   const [remoteFileTypes, setRemoteFileTypes] = useState<string[]>([]);
@@ -115,7 +117,6 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onKeywor
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copiedState, setCopiedState] = useState<'idle' | 'doi' | 'cite'>('idle');
-  const [viewSaved, setViewSaved] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const [versionHistoryLoading, setVersionHistoryLoading] = useState(false);
@@ -162,7 +163,6 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onKeywor
     setRemoteFileTypes([]);
     setRemoteFileCount(null);
     setRemoteTotalSize(null);
-    setViewSaved(false);
     setSaveFeedback(null);
 
     void dataOneService.getDatasetDetails(dataset.dataoneId)
@@ -212,6 +212,12 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onKeywor
     return () => window.clearTimeout(timer);
   }, [copiedState]);
 
+  useEffect(() => {
+    if (!saveFeedback) return;
+    const timer = window.setTimeout(() => setSaveFeedback(null), 3000);
+    return () => window.clearTimeout(timer);
+  }, [saveFeedback]);
+
   const openDataOneUrl = buildDataOneUrl(dataset, details);
   const doi = extractDoi(dataset.dataoneId);
   const citationText = buildCitation(dataset, details);
@@ -237,10 +243,14 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onKeywor
   const totalFileCount = (details?.filesSummary || dataset.filesSummary)?.total ?? remoteFileCount ?? 0;
   const totalFileSize = (details?.filesSummary || dataset.filesSummary)?.sizeBytes ?? remoteTotalSize ?? details?.sizeBytes ?? null;
 
-  const handleSaveDatasetView = () => {
-    const feedback = onSaveDatasetView?.(dataset);
-    setViewSaved(true);
-    setSaveFeedback(feedback || 'Saved view in Map Layers.');
+  const handleSaveOrUnsave = () => {
+    if (isDatasetSaved) {
+      onUnsaveDatasetView?.();
+      setSaveFeedback('Unsaved. Showing all results for current filters.');
+    } else {
+      const feedback = onSaveDatasetView?.(dataset);
+      setSaveFeedback(feedback || 'Saved view in Map Layers.');
+    }
   };
 
   const handleCopyDoi = async () => {
@@ -403,13 +413,17 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onKeywor
               <button
                 id="dataone-detail-save-view-button"
                 type="button"
-                onClick={handleSaveDatasetView}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100"
+                onClick={handleSaveOrUnsave}
+                className={`inline-flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium ${
+                  isDatasetSaved
+                    ? 'border-rose-200 bg-rose-50 text-rose-800 hover:bg-rose-100'
+                    : 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100'
+                }`}
               >
                 <Save className="h-4 w-4" />
-                {viewSaved ? 'Dataset View Saved' : 'Save Dataset View'}
+                {isDatasetSaved ? 'Unsave Dataset View' : 'Save Dataset View'}
               </button>
-              {viewSaved && (
+              {saveFeedback && (
                 <p id="dataone-detail-save-view-feedback" className="text-xs text-emerald-700">
                   {saveFeedback}
                 </p>

@@ -129,8 +129,9 @@ export function useDataOneMapBehavior(
     mapSelectionDataoneIds,
     setMapSelectionDataoneIds,
     setMapDatasetsCache,
+    createMapLoadingScope,
   } = useDataOneFilter();
-  const { activateLayer } = useLayers();
+  const { activateLayer, requestBrowseTab } = useLayers();
   const { viewRef, getSpatialPolygonForLayer } = useMap();
   const spatialPolygon = getSpatialPolygonForLayer(LAYER_ID);
   const mapDatasetsByIdRef = useRef<Map<string, DataOneDataset>>(new Map());
@@ -163,12 +164,18 @@ export function useDataOneMapBehavior(
 
     const abortController = new AbortController();
     const version = ++populateVersionRef.current;
+    const closeMapLoadingScope = createMapLoadingScope();
 
     const run = async () => {
       try {
         const mapData = await dataOneService.getDatasetsForMapLayer({
           searchText: browseFilters.searchText || undefined,
-          tncCategory: browseFilters.tncCategory || undefined,
+          tncCategories: browseFilters.tncCategories.length > 0
+            ? browseFilters.tncCategories
+            : undefined,
+          fileTypes: browseFilters.fileTypes.length > 0
+            ? browseFilters.fileTypes
+            : undefined,
           startDate: browseFilters.startDate || undefined,
           endDate: browseFilters.endDate || undefined,
           author: browseFilters.author || undefined,
@@ -195,12 +202,19 @@ export function useDataOneMapBehavior(
         if (!abortController.signal.aborted) {
           console.error('[DataONE Map] Failed to refresh map markers', error);
         }
+      } finally {
+        if (!abortController.signal.aborted) {
+          closeMapLoadingScope();
+        }
       }
     };
 
     void run();
-    return () => abortController.abort();
-  }, [isOnMap, dataLoaded, browseFilters, spatialPolygon, getManagedLayer, mapReady]);
+    return () => {
+      abortController.abort();
+      closeMapLoadingScope();
+    };
+  }, [isOnMap, dataLoaded, browseFilters, spatialPolygon, getManagedLayer, mapReady, createMapLoadingScope]);
 
   // Keep map aggregation mode (clusters vs bins) in sync with sidebar toggle.
   useEffect(() => {
@@ -211,8 +225,8 @@ export function useDataOneMapBehavior(
     (dataOneLayer as any).featureReduction = buildDataOneFeatureReduction(aggregationMode);
   }, [isOnMap, aggregationMode, getManagedLayer, mapReady]);
 
-  // Dynamic binning: update fixedBinLevel by map scale while binning is active.
-  // Apply only when zoom settles to avoid bin "blink" while wheel-zooming.
+  // Dynamic binning: watch scale continuously and switch levels
+  // only when crossing a threshold (level change guard).
   useEffect(() => {
     if (!isOnMap) return;
     if (aggregationMode !== 'binning') return;
@@ -228,18 +242,20 @@ export function useDataOneMapBehavior(
       const level = getBinningLevelForScale(view.scale);
       if (level === lastAppliedLevel) return;
       lastAppliedLevel = level;
+      const reduction = (dataOneLayer as any).featureReduction;
+      // Prefer mutating the existing reduction to avoid full reduction rebuild flicker.
+      if (reduction?.type === 'binning') {
+        reduction.fixedBinLevel = level;
+        return;
+      }
       (dataOneLayer as any).featureReduction = buildDataOneFeatureReductionForScale('binning', view.scale);
     };
 
     applyIfLevelChanged();
-
-    const stationaryHandle = view.watch('stationary', (isStationary) => {
-      if (!isStationary) return;
-      applyIfLevelChanged();
-    });
+    const scaleHandle = view.watch('scale', () => applyIfLevelChanged());
 
     return () => {
-      stationaryHandle.remove();
+      scaleHandle.remove();
     };
   }, [isOnMap, aggregationMode, viewRef, getManagedLayer, mapReady]);
 
@@ -277,13 +293,29 @@ export function useDataOneMapBehavior(
         );
         if (!graphicHit) return;
 
+        // Always clear previous selection highlight before handling new click.
+        clearHighlight();
+
         const aggregateCount = getAggregateCount(graphicHit.graphic);
-        if (aggregateCount > 1) {
+
+        // Aggregate click (cluster/bin with ≥1 features).
+        // count=1 aggregates are still cluster/bin graphics without feature
+        // attributes like dataoneId, so they must go through cache resolution.
+        if (aggregateCount >= 1) {
           const dataoneIds = resolveAggregateMembersFromCache(
             graphicHit.graphic,
             mapDatasetsByIdRef.current,
           );
 
+          // Single-member aggregate: open dataset detail directly.
+          if (dataoneIds.length === 1) {
+            setMapSelectionDataoneIds(null);
+            activateLayer(LAYER_ID, undefined, dataoneIds[0]);
+            view.closePopup();
+            return;
+          }
+
+          // Multi-member aggregate: show filtered list in sidebar.
           if (dataoneIds.length > 0) {
             setMapSelectionDataoneIds(dataoneIds);
           } else {
@@ -291,6 +323,7 @@ export function useDataOneMapBehavior(
           }
 
           activateLayer(LAYER_ID, undefined, undefined);
+          requestBrowseTab();
           view.closePopup();
 
           if (graphicHit.graphic.geometry) {
@@ -304,11 +337,10 @@ export function useDataOneMapBehavior(
           return;
         }
 
-        // Single point click — open dataset detail directly.
+        // Single point click (non-aggregate feature) — open dataset detail.
         const dataoneId = graphicHit.graphic.attributes?.dataoneId as string | undefined;
         if (!dataoneId) return;
         setMapSelectionDataoneIds(null);
-        clearHighlight();
 
         if (!mapDatasetsByIdRef.current.has(dataoneId)) {
           const dataset = await dataOneService.getDatasetByDataoneId(dataoneId);
@@ -338,5 +370,5 @@ export function useDataOneMapBehavior(
       handler.remove();
       clearHighlight();
     };
-  }, [isOnMap, viewRef, activateLayer, getManagedLayer, setMapSelectionDataoneIds]);
+  }, [isOnMap, viewRef, activateLayer, requestBrowseTab, getManagedLayer, setMapSelectionDataoneIds]);
 }

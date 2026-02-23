@@ -145,6 +145,8 @@ export interface TNCArcGISViewFilters {
 export interface DataOneViewFilters {
   searchText?: string;
   tncCategory?: string;
+  tncCategories?: string[];
+  fileTypes?: Array<'csv' | 'tif' | 'imagery' | 'other'>;
   startDate?: string;
   endDate?: string;
   author?: string;

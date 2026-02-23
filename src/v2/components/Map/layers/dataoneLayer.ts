@@ -66,8 +66,8 @@ export function buildDataOneFeatureReductionForScale(
     return {
       type: 'binning',
       fixedBinLevel: dynamicBinLevel,
-      // Keep bins visible until very close zoom to avoid abrupt "252 -> 2 points" transitions.
-      maxScale: 3_000,
+      // Keep bins visible at all zoom levels to avoid rectangle drop-out during wheel navigation.
+      maxScale: 0,
       fields: [
         { name: 'aggregateCount', statisticType: 'count' },
       ],

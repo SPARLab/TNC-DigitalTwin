@@ -123,12 +123,16 @@ export function MapLayersWidget() {
     pinnedLayers.map((pinnedLayer) => {
       const catalogLayer = layerMap.get(pinnedLayer.layerId);
       const isDroneDeployLayer = pinnedLayer.layerId === 'dataset-193';
+      const isDataOneLayer = pinnedLayer.layerId === 'dataone-datasets';
       const cacheStatus = isDroneDeployLayer
         ? cacheStatusByDataSource.drone
         : (catalogLayer ? cacheStatusByDataSource[catalogLayer.dataSource] : null);
-      const isDroneDeploySource = isDroneDeployLayer || catalogLayer?.dataSource === 'drone';
-      const isMotusSource = catalogLayer?.dataSource === 'motus';
-      const isSourceLoading = (isDroneDeploySource || isMotusSource)
+      const isAlwaysLiveLoadingSource = isDroneDeployLayer
+        || isDataOneLayer
+        || catalogLayer?.dataSource === 'drone'
+        || catalogLayer?.dataSource === 'dataone'
+        || catalogLayer?.dataSource === 'motus';
+      const isSourceLoading = isAlwaysLiveLoadingSource
         ? !!cacheStatus?.loading
         : (!!cacheStatus?.loading && !cacheStatus?.dataLoaded);
       return [pinnedLayer.layerId, isSourceLoading];
@@ -137,12 +141,14 @@ export function MapLayersWidget() {
   const activeLayerIsDroneDeploy = concreteActiveLayer?.layerId === 'dataset-193'
     || concreteActiveLayer?.dataSource === 'drone';
   const activeLayerIsMotus = concreteActiveLayer?.dataSource === 'motus';
+  const activeLayerIsDataOne = concreteActiveLayer?.layerId === 'dataone-datasets'
+    || concreteActiveLayer?.dataSource === 'dataone';
   const activeLayerCacheStatus = concreteActiveLayer
     ? (activeLayerIsDroneDeploy
       ? cacheStatusByDataSource.drone
       : cacheStatusByDataSource[concreteActiveLayer.dataSource])
     : null;
-  const activeLayerIsLoading = (activeLayerIsDroneDeploy || activeLayerIsMotus)
+  const activeLayerIsLoading = activeLayerIsDroneDeploy || activeLayerIsDataOne || activeLayerIsMotus
     ? !!activeLayerCacheStatus?.loading
     : (!!activeLayerCacheStatus?.loading && !activeLayerCacheStatus?.dataLoaded);
 

@@ -23,8 +23,9 @@ function DataOneOverviewTabWithCache({ onBrowseClick }: OverviewTabProps) {
 }
 
 export function useDataOneCacheStatus(): CacheStatus {
-  const { loading, dataLoaded, warmCache } = useDataOneFilter();
-  return { loading, dataLoaded, warmCache };
+  const { loading, mapLoading, dataLoaded, warmCache } = useDataOneFilter();
+  // Match shared map-layers loading behavior: include background map marker refreshes.
+  return { loading: loading || mapLoading, dataLoaded, warmCache };
 }
 
 export const dataoneAdapter: DataSourceAdapter = {

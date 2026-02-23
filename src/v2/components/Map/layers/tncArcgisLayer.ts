@@ -44,14 +44,43 @@ function getFeatureLayerUrlCandidates(meta: NonNullable<CatalogLayer['catalogMet
   return candidates;
 }
 
+async function fetchFeatureServiceLayerUrls(serviceRootUrl: string): Promise<string[]> {
+  const normalizedRoot = serviceRootUrl.trim().replace(/\/+$/, '');
+  if (!normalizedRoot) return [];
+  try {
+    const response = await fetch(`${normalizedRoot}?f=json`);
+    if (!response.ok) return [];
+    const payload: unknown = await response.json();
+    if (!payload || typeof payload !== 'object') return [];
+    const rawLayers = (payload as { layers?: unknown }).layers;
+    if (!Array.isArray(rawLayers)) return [];
+    return rawLayers
+      .map((layer) => {
+        if (!layer || typeof layer !== 'object') return null;
+        const id = (layer as { id?: unknown }).id;
+        if (typeof id !== 'number' || !Number.isFinite(id)) return null;
+        return `${normalizedRoot}/${id}`;
+      })
+      .filter((url): url is string => !!url);
+  } catch {
+    return [];
+  }
+}
+
 function attachFeatureLayerLoadFallback(
   featureLayer: FeatureLayer,
   candidates: string[],
   layerName: string,
 ): void {
-  if (candidates.length <= 1) return;
+  if (candidates.length === 0) return;
   void featureLayer.load().catch(async () => {
-    for (const candidateUrl of candidates.slice(1)) {
+    const parsedRootMatch = candidates[0].match(/^(.*\/FeatureServer)(?:\/\d+)?$/i);
+    const discoveredCandidates = parsedRootMatch
+      ? await fetchFeatureServiceLayerUrls(parsedRootMatch[1])
+      : [];
+    const recoveryCandidates = [...new Set([...candidates.slice(1), ...discoveredCandidates])];
+
+    for (const candidateUrl of recoveryCandidates) {
       try {
         featureLayer.url = candidateUrl;
         await featureLayer.load();
@@ -62,7 +91,7 @@ function attachFeatureLayerLoadFallback(
       }
     }
     console.error(`[TNCArcGIS] Failed to load FeatureLayer after URL fallbacks (${layerName})`, {
-      attemptedUrls: candidates,
+      attemptedUrls: [candidates[0], ...recoveryCandidates],
     });
   });
 }

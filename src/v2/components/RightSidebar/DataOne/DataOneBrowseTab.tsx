@@ -34,6 +34,40 @@ const TNC_CATEGORY_OPTIONS = [
   'Research and Sensor Equipment',
 ] as const;
 
+const FILE_TYPE_OPTIONS = [
+  { value: 'csv', label: 'CSV' },
+  { value: 'tif', label: 'TIF' },
+  { value: 'imagery', label: 'Imagery' },
+  { value: 'other', label: 'Other' },
+] as const;
+
+function normalizeCategories(categories?: string[]): string[] {
+  if (!categories || categories.length === 0) return [];
+  const seen = new Set<string>();
+  for (const category of categories) {
+    const trimmed = category.trim();
+    if (!trimmed || seen.has(trimmed)) continue;
+    seen.add(trimmed);
+  }
+  return Array.from(seen);
+}
+
+function normalizeFileTypes(
+  fileTypes?: Array<'csv' | 'tif' | 'imagery' | 'other'>,
+): Array<'csv' | 'tif' | 'imagery' | 'other'> {
+  if (!fileTypes || fileTypes.length === 0) return [];
+  const allowed = new Set(['csv', 'tif', 'imagery', 'other'] as const);
+  const seen = new Set<'csv' | 'tif' | 'imagery' | 'other'>();
+  for (const fileType of fileTypes) {
+    if (allowed.has(fileType)) seen.add(fileType);
+  }
+  return Array.from(seen);
+}
+
+function categoryToId(category: string): string {
+  return category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
 function toStartDate(year: string): string | undefined {
   return year ? `${year}-01-01` : undefined;
 }
@@ -46,6 +80,7 @@ export function DataOneBrowseTab() {
   const {
     warmCache,
     createBrowseLoadingScope,
+    mapLoading,
     browseFilters,
     setBrowseFilters,
     aggregationMode,
@@ -65,7 +100,12 @@ export function DataOneBrowseTab() {
   } = useLayers();
   const [searchInput, setSearchInput] = useState(browseFilters.searchText);
   const [appliedSearchTerm, setAppliedSearchTerm] = useState(browseFilters.searchText);
-  const [selectedCategory, setSelectedCategory] = useState<string>(browseFilters.tncCategory || 'all');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
+    normalizeCategories(browseFilters.tncCategories),
+  );
+  const [selectedFileTypes, setSelectedFileTypes] = useState<
+    Array<'csv' | 'tif' | 'imagery' | 'other'>
+  >(normalizeFileTypes(browseFilters.fileTypes));
   const [startYear, setStartYear] = useState(browseFilters.startDate.slice(0, 4));
   const [endYear, setEndYear] = useState(browseFilters.endDate.slice(0, 4));
   const [authorFilter, setAuthorFilter] = useState(browseFilters.author);
@@ -96,12 +136,13 @@ export function DataOneBrowseTab() {
   useEffect(() => {
     setBrowseFilters({
       searchText: appliedSearchTerm,
-      tncCategory: selectedCategory === 'all' ? '' : selectedCategory,
+      tncCategories: selectedCategories,
+      fileTypes: selectedFileTypes,
       startDate: toStartDate(startYear) || '',
       endDate: toEndDate(endYear) || '',
       author: authorFilter.trim(),
     });
-  }, [appliedSearchTerm, selectedCategory, startYear, endYear, authorFilter, setBrowseFilters]);
+  }, [appliedSearchTerm, selectedCategories, selectedFileTypes, startYear, endYear, authorFilter, setBrowseFilters]);
 
   // Debounced text search (DFT-035)
   useEffect(() => {
@@ -122,7 +163,7 @@ export function DataOneBrowseTab() {
   // Reset pagination when filter/search controls change.
   useEffect(() => {
     setPage(0);
-  }, [appliedSearchTerm, selectedCategory, startYear, endYear, authorFilter]);
+  }, [appliedSearchTerm, selectedCategories, selectedFileTypes, startYear, endYear, authorFilter]);
 
   // When map-selection is active, resolve datasets entirely client-side from
   // the map behaviour's in-memory cache to avoid 414 URI-Too-Large errors.
@@ -170,7 +211,8 @@ export function DataOneBrowseTab() {
           pageSize: PAGE_SIZE,
           pageNumber: page,
           searchText: appliedSearchTerm || undefined,
-          tncCategory: selectedCategory === 'all' ? undefined : selectedCategory,
+          tncCategories: selectedCategories.length > 0 ? selectedCategories : undefined,
+          fileTypes: selectedFileTypes.length > 0 ? selectedFileTypes : undefined,
           startDate: toStartDate(startYear),
           endDate: toEndDate(endYear),
           author: authorFilter.trim() || undefined,
@@ -197,25 +239,36 @@ export function DataOneBrowseTab() {
       abortController.abort();
       closeLoadingScope();
     };
-  }, [mapSelectionIdSet, appliedSearchTerm, selectedCategory, startYear, endYear, authorFilter, page, createBrowseLoadingScope]);
+  }, [mapSelectionIdSet, appliedSearchTerm, selectedCategories, selectedFileTypes, startYear, endYear, authorFilter, page, createBrowseLoadingScope]);
+
+  // When featureId is cleared (cluster click, back navigation), return to list view.
+  useEffect(() => {
+    if (activeLayer?.layerId !== 'dataone-datasets') return;
+    if (activeLayer.featureId != null) return;
+    setSelectedDataset(null);
+    lastHandledFeatureIdRef.current = null;
+  }, [activeLayer?.layerId, activeLayer?.featureId]);
 
   // Map marker clicks set activeLayer.featureId. Ensure detail opens even when
   // the clicked dataset is not in the current paginated result set.
+  // Ref update is deferred to AFTER the fetch resolves so that if this effect
+  // re-runs (activeLayer object recreated by side effects), a cancelled fetch
+  // doesn't permanently block re-issuing the request.
   useEffect(() => {
     if (activeLayer?.layerId !== 'dataone-datasets' || !activeLayer.featureId) return;
     const featureId = String(activeLayer.featureId);
     if (lastHandledFeatureIdRef.current === featureId) return;
     if (selectedDataset?.dataoneId === featureId) return;
-    lastHandledFeatureIdRef.current = featureId;
 
     let cancelled = false;
     void dataOneService.getDatasetByDataoneId(featureId)
       .then((dataset) => {
-        if (!cancelled && dataset) setSelectedDataset(dataset);
+        if (!cancelled && dataset) {
+          lastHandledFeatureIdRef.current = featureId;
+          setSelectedDataset(dataset);
+        }
       })
-      .catch(() => {
-        // Map behavior already logs marker click issues; no duplicate UI noise here.
-      });
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -245,7 +298,10 @@ export function DataOneBrowseTab() {
     const nextSearch = sourceFilters.searchText || '';
     setSearchInput(nextSearch);
     setAppliedSearchTerm(nextSearch);
-    setSelectedCategory(sourceFilters.tncCategory || 'all');
+    setSelectedCategories(
+      normalizeCategories(sourceFilters.tncCategories || (sourceFilters.tncCategory ? [sourceFilters.tncCategory] : [])),
+    );
+    setSelectedFileTypes(normalizeFileTypes(sourceFilters.fileTypes));
     setStartYear(sourceFilters.startDate?.slice(0, 4) || '');
     setEndYear(sourceFilters.endDate?.slice(0, 4) || '');
     setAuthorFilter(sourceFilters.author || '');
@@ -291,12 +347,12 @@ export function DataOneBrowseTab() {
       activeLayer.layerId,
       {
         searchText: appliedSearchTerm || undefined,
-        tncCategory: selectedCategory === 'all' ? undefined : selectedCategory,
+        tncCategory: selectedCategories[0],
+        tncCategories: selectedCategories.length > 0 ? selectedCategories : undefined,
+        fileTypes: selectedFileTypes.length > 0 ? selectedFileTypes : undefined,
         startDate: toStartDate(startYear),
         endDate: toEndDate(endYear),
         author: authorFilter.trim() || undefined,
-        selectedDatasetId: selectedDataset?.dataoneId,
-        selectedDatasetTitle: selectedDataset?.title,
       },
       totalCount,
       activeLayer.viewId
@@ -306,21 +362,41 @@ export function DataOneBrowseTab() {
     activeLayer?.viewId,
     activeLayer?.isPinned,
     appliedSearchTerm,
-    selectedCategory,
+    selectedCategories,
+    selectedFileTypes,
     startYear,
     endYear,
     authorFilter,
-    selectedDataset?.dataoneId,
-    selectedDataset?.title,
     totalCount,
     getPinnedByLayerId,
     syncDataOneFilters,
   ]);
 
+  const currentViewSavedDatasetId = useMemo(() => {
+    if (activeLayer?.layerId !== 'dataone-datasets' || !activeLayer.viewId) return undefined;
+    const pinned = getPinnedByLayerId('dataone-datasets');
+    return pinned?.views?.find(v => v.id === activeLayer.viewId)?.dataoneFilters?.selectedDatasetId;
+  }, [activeLayer?.layerId, activeLayer?.viewId, getPinnedByLayerId]);
+
+  const savedDataoneIds = useMemo(() => {
+    const pinned = getPinnedByLayerId('dataone-datasets');
+    const ids = new Set<string>();
+    const rootSelectedDatasetId = pinned?.dataoneFilters?.selectedDatasetId;
+    if (rootSelectedDatasetId) ids.add(rootSelectedDatasetId);
+    for (const view of pinned?.views ?? []) {
+      const selectedDatasetId = view.dataoneFilters?.selectedDatasetId;
+      if (selectedDatasetId) ids.add(selectedDatasetId);
+    }
+    return ids;
+  }, [getPinnedByLayerId]);
+
   const handleSaveDatasetView = (dataset: DataOneDataset): string => {
     if (activeLayer?.layerId !== 'dataone-datasets') {
       return 'Unable to save view: DataONE layer is not active.';
     }
+
+    const currentViewIsAssigned = Boolean(currentViewSavedDatasetId);
+    const targetViewId = currentViewIsAssigned ? undefined : activeLayer.viewId;
 
     const savedViewId = createOrUpdateDataOneFilteredView(
       activeLayer.layerId,
@@ -328,7 +404,8 @@ export function DataOneBrowseTab() {
         selectedDatasetId: dataset.dataoneId,
         selectedDatasetTitle: dataset.title,
       },
-      1
+      1,
+      targetViewId
     );
 
     if (!savedViewId) {
@@ -336,7 +413,30 @@ export function DataOneBrowseTab() {
     }
 
     activateLayer(activeLayer.layerId, savedViewId, dataset.dataoneId);
-    return 'Saved as a new dataset child view in Map Layers.';
+    return currentViewIsAssigned
+      ? 'Created a new saved view in Map Layers.'
+      : 'Saved to current view in Map Layers.';
+  };
+
+  const handleUnsaveDatasetView = () => {
+    if (activeLayer?.layerId !== 'dataone-datasets' || !activeLayer.viewId || !selectedDataset) return;
+
+    createOrUpdateDataOneFilteredView(
+      activeLayer.layerId,
+      {
+        searchText: appliedSearchTerm || undefined,
+        tncCategory: selectedCategories[0],
+        tncCategories: selectedCategories.length > 0 ? selectedCategories : undefined,
+        fileTypes: selectedFileTypes.length > 0 ? selectedFileTypes : undefined,
+        startDate: toStartDate(startYear),
+        endDate: toEndDate(endYear),
+        author: authorFilter.trim() || undefined,
+      },
+      totalCount,
+      activeLayer.viewId
+    );
+
+    activateLayer(activeLayer.layerId, activeLayer.viewId, selectedDataset.dataoneId);
   };
 
   if (selectedDataset) {
@@ -344,6 +444,8 @@ export function DataOneBrowseTab() {
       <DatasetDetailView
         dataset={selectedDataset}
         onSaveDatasetView={handleSaveDatasetView}
+        onUnsaveDatasetView={handleUnsaveDatasetView}
+        isDatasetSaved={Boolean(selectedDataset && currentViewSavedDatasetId === selectedDataset.dataoneId)}
         onVersionSelect={(versionDataset) => {
           lastHandledFeatureIdRef.current = versionDataset.dataoneId;
           setSelectedDataset(versionDataset);
@@ -371,13 +473,20 @@ export function DataOneBrowseTab() {
   const showInitialLoading = loading && !hasStaleResults;
   const showRefreshLoading = loading && hasStaleResults;
   const hasAnyFilter = Boolean(
-    appliedSearchTerm || selectedCategory !== 'all' || startYear || endYear || authorFilter.trim() || mapSelectionDataoneIds?.length
+    appliedSearchTerm
+      || selectedCategories.length > 0
+      || selectedFileTypes.length > 0
+      || startYear
+      || endYear
+      || authorFilter.trim()
+      || mapSelectionDataoneIds?.length
   );
 
   const clearAllFilters = () => {
     setSearchInput('');
     setAppliedSearchTerm('');
-    setSelectedCategory('all');
+    setSelectedCategories([]);
+    setSelectedFileTypes([]);
     setStartYear('');
     setEndYear('');
     setAuthorFilter('');
@@ -440,7 +549,7 @@ export function DataOneBrowseTab() {
               setAppliedSearchTerm(trimmed.length >= MIN_SEARCH_CHARS ? trimmed : '');
               setPage(0);
             }}
-            placeholder="Search datasets by title..."
+            placeholder="Search title, abstract, or keywords..."
             className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-9 text-sm
                        placeholder:text-gray-400 focus:outline-none focus:border-gray-300
                        focus:shadow-[0_0_0_1px_rgba(107,114,128,0.3)]"
@@ -460,22 +569,138 @@ export function DataOneBrowseTab() {
           )}
         </div>
 
-        <div id="dataone-filter-grid" className="grid grid-cols-2 gap-2">
-          <select
-            id="dataone-category-filter"
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-sm text-gray-700
-                       focus:outline-none focus:border-gray-300 focus:shadow-[0_0_0_1px_rgba(107,114,128,0.3)]"
-          >
-            <option id="dataone-category-filter-option-all" value="all">All Categories</option>
-            {TNC_CATEGORY_OPTIONS.map((category) => (
-              <option id={`dataone-category-filter-option-${category}`} key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
+        <div id="dataone-category-checklist-section" className="space-y-1">
+          <div id="dataone-category-checklist-header" className="flex items-center justify-between">
+            <p id="dataone-category-checklist-label" className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
+              Categories
+            </p>
+          </div>
+          <div id="dataone-category-checklist-status-row" className="flex items-center justify-between">
+            <p id="dataone-category-checklist-count" className="text-[11px] text-gray-500">
+              {selectedCategories.length === 0
+                ? 'No category filter applied'
+                : `${selectedCategories.length} selected`}
+            </p>
+            <div id="dataone-category-checklist-actions" className="flex items-center gap-2">
+              <button
+                id="dataone-category-select-all-button"
+                type="button"
+                onClick={() => setSelectedCategories([...TNC_CATEGORY_OPTIONS])}
+                className="text-[11px] font-medium text-emerald-700 hover:text-emerald-800 disabled:cursor-not-allowed disabled:text-gray-400"
+                disabled={selectedCategories.length === TNC_CATEGORY_OPTIONS.length}
+              >
+                Select all
+              </button>
+              <button
+                id="dataone-category-clear-all-button"
+                type="button"
+                onClick={() => setSelectedCategories([])}
+                className="text-[11px] font-medium text-emerald-700 hover:text-emerald-800 disabled:cursor-not-allowed disabled:text-gray-400"
+                disabled={selectedCategories.length === 0}
+              >
+                Clear all
+              </button>
+            </div>
+          </div>
+          <div id="dataone-category-checklist" className="max-h-36 space-y-1 overflow-y-auto rounded-lg border border-gray-200 bg-white px-2.5 py-2">
+            {TNC_CATEGORY_OPTIONS.map((category) => {
+              const categorySlug = categoryToId(category);
+              const checkboxId = `dataone-category-checkbox-${categorySlug}`;
+              const isChecked = selectedCategories.includes(category);
+              return (
+                <label
+                  id={`dataone-category-option-${categorySlug}`}
+                  key={category}
+                  htmlFor={checkboxId}
+                  className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <input
+                    id={checkboxId}
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => {
+                      setSelectedCategories((prev) => {
+                        const next = prev.includes(category)
+                          ? prev.filter((item) => item !== category)
+                          : [...prev, category];
+                        return normalizeCategories(next);
+                      });
+                    }}
+                    className="h-3.5 w-3.5 rounded border-gray-300 text-emerald-700 focus:ring-emerald-600"
+                  />
+                  <span id={`dataone-category-option-label-${categorySlug}`}>{category}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
 
+        <div id="dataone-file-type-checklist-section" className="space-y-1">
+          <div id="dataone-file-type-checklist-header" className="flex items-center justify-between">
+            <p id="dataone-file-type-checklist-label" className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
+              File types
+            </p>
+          </div>
+          <div id="dataone-file-type-checklist-status-row" className="flex items-center justify-between">
+            <p id="dataone-file-type-checklist-count" className="text-[11px] text-gray-500">
+              {selectedFileTypes.length === 0
+                ? 'No file-type filter applied'
+                : `${selectedFileTypes.length} selected`}
+            </p>
+            <div id="dataone-file-type-checklist-actions" className="flex items-center gap-2">
+              <button
+                id="dataone-file-type-select-all-button"
+                type="button"
+                onClick={() => setSelectedFileTypes(FILE_TYPE_OPTIONS.map((option) => option.value))}
+                className="text-[11px] font-medium text-emerald-700 hover:text-emerald-800 disabled:cursor-not-allowed disabled:text-gray-400"
+                disabled={selectedFileTypes.length === FILE_TYPE_OPTIONS.length}
+              >
+                Select all
+              </button>
+              <button
+                id="dataone-file-type-clear-all-button"
+                type="button"
+                onClick={() => setSelectedFileTypes([])}
+                className="text-[11px] font-medium text-emerald-700 hover:text-emerald-800 disabled:cursor-not-allowed disabled:text-gray-400"
+                disabled={selectedFileTypes.length === 0}
+              >
+                Clear all
+              </button>
+            </div>
+          </div>
+          <div id="dataone-file-type-checklist" className="space-y-1 rounded-lg border border-gray-200 bg-white px-2.5 py-2">
+            {FILE_TYPE_OPTIONS.map((option) => {
+              const checkboxId = `dataone-file-type-checkbox-${option.value}`;
+              const isChecked = selectedFileTypes.includes(option.value);
+              return (
+                <label
+                  id={`dataone-file-type-option-${option.value}`}
+                  key={option.value}
+                  htmlFor={checkboxId}
+                  className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <input
+                    id={checkboxId}
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => {
+                      setSelectedFileTypes((prev) => {
+                        const next = prev.includes(option.value)
+                          ? prev.filter((item) => item !== option.value)
+                          : [...prev, option.value];
+                        return normalizeFileTypes(next);
+                      });
+                    }}
+                    className="h-3.5 w-3.5 rounded border-gray-300 text-emerald-700 focus:ring-emerald-600"
+                  />
+                  <span id={`dataone-file-type-option-label-${option.value}`}>{option.label}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+
+        <div id="dataone-filter-grid" className="grid grid-cols-2 gap-2">
           <input
             id="dataone-author-filter"
             type="text"
@@ -564,6 +789,9 @@ export function DataOneBrowseTab() {
       {showRefreshLoading && (
         <RefreshLoadingRow id="dataone-refresh-loading" message="Refreshing datasets..." />
       )}
+      {mapLoading && (
+        <RefreshLoadingRow id="dataone-map-refresh-loading" message="Updating map markers..." />
+      )}
 
       {error && (
         <div id="dataone-browse-error" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -576,6 +804,8 @@ export function DataOneBrowseTab() {
         <DatasetListView
           datasets={datasets}
           loading={showRefreshLoading}
+          savedDataoneIds={savedDataoneIds}
+          searchTerm={appliedSearchTerm}
           onViewDetail={(dataset) => {
             lastHandledFeatureIdRef.current = dataset.dataoneId;
             setSelectedDataset(dataset);

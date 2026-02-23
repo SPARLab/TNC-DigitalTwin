@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { useMemo, useState } from 'react';
-import { ChevronDown, ChevronUp, History, Link as LinkIcon, Loader2 } from 'lucide-react';
+import { BookmarkCheck, ChevronDown, ChevronUp, History, Link as LinkIcon, Loader2 } from 'lucide-react';
 import {
   dataOneService,
   type DataOneDataset,
@@ -13,6 +13,8 @@ import {
 interface DatasetListViewProps {
   datasets: DataOneDataset[];
   loading: boolean;
+  savedDataoneIds: Set<string>;
+  searchTerm?: string;
   onViewDetail: (dataset: DataOneDataset) => void;
 }
 
@@ -57,6 +59,71 @@ function getDescriptionSnippet(dataset: DataOneDataset): string {
   return `Dataset metadata for ${categoryText.toLowerCase()} studies${repositoryText}. Open details to view full abstract and coverage.`;
 }
 
+interface HighlightSegment {
+  text: string;
+  highlighted: boolean;
+}
+
+interface HighlightedSnippet {
+  segments: HighlightSegment[];
+  leadingEllipsis: boolean;
+  trailingEllipsis: boolean;
+}
+
+const SNIPPET_MAX_CHARS = 180;
+
+function buildHighlightedSnippet(abstract: string, rawSearchTerm?: string): HighlightedSnippet {
+  const normalizedAbstract = abstract.replace(/\s+/g, ' ').trim();
+  if (!normalizedAbstract) {
+    return { segments: [], leadingEllipsis: false, trailingEllipsis: false };
+  }
+
+  const trimmedSearchTerm = (rawSearchTerm || '').trim();
+  if (!trimmedSearchTerm) {
+    const excerpt = normalizedAbstract.slice(0, SNIPPET_MAX_CHARS);
+    return {
+      segments: [{ text: excerpt, highlighted: false }],
+      leadingEllipsis: false,
+      trailingEllipsis: excerpt.length < normalizedAbstract.length,
+    };
+  }
+
+  const lowerAbstract = normalizedAbstract.toLowerCase();
+  const lowerSearch = trimmedSearchTerm.toLowerCase();
+  const matchIndex = lowerAbstract.indexOf(lowerSearch);
+
+  if (matchIndex === -1) {
+    const excerpt = normalizedAbstract.slice(0, SNIPPET_MAX_CHARS);
+    return {
+      segments: [{ text: excerpt, highlighted: false }],
+      leadingEllipsis: false,
+      trailingEllipsis: excerpt.length < normalizedAbstract.length,
+    };
+  }
+
+  const contextChars = Math.max(0, Math.floor((SNIPPET_MAX_CHARS - trimmedSearchTerm.length) / 2));
+  const start = Math.max(0, matchIndex - contextChars);
+  const end = Math.min(normalizedAbstract.length, matchIndex + trimmedSearchTerm.length + contextChars);
+  const excerpt = normalizedAbstract.slice(start, end);
+
+  const matchStartInExcerpt = matchIndex - start;
+  const matchEndInExcerpt = matchStartInExcerpt + trimmedSearchTerm.length;
+  const before = excerpt.slice(0, matchStartInExcerpt);
+  const match = excerpt.slice(matchStartInExcerpt, matchEndInExcerpt);
+  const after = excerpt.slice(matchEndInExcerpt);
+
+  const segments: HighlightSegment[] = [];
+  if (before) segments.push({ text: before, highlighted: false });
+  if (match) segments.push({ text: match, highlighted: true });
+  if (after) segments.push({ text: after, highlighted: false });
+
+  return {
+    segments,
+    leadingEllipsis: start > 0,
+    trailingEllipsis: end < normalizedAbstract.length,
+  };
+}
+
 function formatAuthors(dataset: DataOneDataset): string {
   if (!dataset.authors || dataset.authors.length === 0) return 'Author not specified';
   if (dataset.authors.length <= 2) return dataset.authors.join(', ');
@@ -92,7 +159,7 @@ function formatVersionFileSummary(entry: DataOneVersionEntry): string | null {
   return extParts.join(', ');
 }
 
-export function DatasetListView({ datasets, loading, onViewDetail }: DatasetListViewProps) {
+export function DatasetListView({ datasets, loading, savedDataoneIds, searchTerm, onViewDetail }: DatasetListViewProps) {
   const [versionHistoryBySeries, setVersionHistoryBySeries] = useState<Record<string, VersionHistoryState>>({});
   const [loadingVersionId, setLoadingVersionId] = useState<string | null>(null);
 
@@ -188,6 +255,10 @@ export function DatasetListView({ datasets, loading, onViewDetail }: DatasetList
   return (
     <div id="dataone-dataset-list-view" className={`space-y-2 ${loading ? 'opacity-60' : ''}`}>
       {datasets.map((dataset) => {
+        const isSaved = savedDataoneIds.has(dataset.dataoneId);
+        const highlightedSnippet = dataset.abstract
+          ? buildHighlightedSnippet(dataset.abstract, searchTerm)
+          : null;
         const doi = getDoi(dataset);
         const fileSummary = formatFileTypes(dataset);
         const hasMultipleVersions = dataset.versionCount > 1;
@@ -198,7 +269,13 @@ export function DatasetListView({ datasets, loading, onViewDetail }: DatasetList
           : (versionState?.versions || []).slice(0, 3);
 
         return (
-          <article id={`dataone-dataset-wrapper-${dataset.id}`} key={dataset.id} className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+          <article
+            id={`dataone-dataset-wrapper-${dataset.id}`}
+            key={dataset.id}
+            className={`rounded-lg border overflow-hidden ${
+              isSaved ? 'border-amber-300 bg-amber-50/30' : 'border-gray-200 bg-white'
+            }`}
+          >
             <div
               id={`dataone-dataset-card-${dataset.id}`}
               role="button"
@@ -214,11 +291,28 @@ export function DatasetListView({ datasets, loading, onViewDetail }: DatasetList
                 event.preventDefault();
                 onViewDetail(dataset);
               }}
-              className="cursor-pointer p-3 transition-colors duration-150 hover:border-emerald-300 hover:bg-emerald-50/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1"
+              className={`cursor-pointer p-3 transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
+                isSaved
+                  ? 'hover:bg-amber-50/60 focus-visible:ring-amber-500'
+                  : 'hover:border-emerald-300 hover:bg-emerald-50/30 focus-visible:ring-emerald-500'
+              }`}
             >
-              <h3 id={`dataone-dataset-title-${dataset.id}`} className="text-sm font-semibold text-gray-900 line-clamp-2">
-                {dataset.title}
-              </h3>
+              <div id={`dataone-dataset-title-row-${dataset.id}`} className="flex items-start justify-between gap-2">
+                <h3 id={`dataone-dataset-title-${dataset.id}`} className="text-sm font-semibold text-gray-900 line-clamp-2">
+                  {dataset.title}
+                </h3>
+                {isSaved && (
+                  <span
+                    id={`dataone-dataset-saved-indicator-${dataset.id}`}
+                    className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800 shrink-0"
+                    aria-label="Saved dataset view"
+                    title="Saved in Map Layers"
+                  >
+                    <BookmarkCheck id={`dataone-dataset-saved-indicator-icon-${dataset.id}`} className="h-3 w-3" />
+                    Saved
+                  </span>
+                )}
+              </div>
               <p id={`dataone-dataset-authors-${dataset.id}`} className="mt-1 text-xs text-gray-600">
                 {formatAuthors(dataset)}
                 <span id={`dataone-dataset-year-inline-${dataset.id}`} className="mx-1 text-gray-300">
@@ -229,7 +323,30 @@ export function DatasetListView({ datasets, loading, onViewDetail }: DatasetList
                 </span>
               </p>
               <p id={`dataone-dataset-description-${dataset.id}`} className="mt-1.5 text-xs text-gray-500 line-clamp-2 leading-relaxed">
-                {getDescriptionSnippet(dataset)}
+                {highlightedSnippet && highlightedSnippet.segments.length > 0 ? (
+                  <>
+                    {highlightedSnippet.leadingEllipsis ? '... ' : ''}
+                    {highlightedSnippet.segments.map((segment, index) => (
+                      segment.highlighted ? (
+                        <mark
+                          id={`dataone-dataset-description-highlight-${dataset.id}-${index}`}
+                          key={`${dataset.id}-highlight-${index}`}
+                          className="rounded bg-amber-100 px-0.5 text-gray-900"
+                        >
+                          {segment.text}
+                        </mark>
+                      ) : (
+                        <span
+                          id={`dataone-dataset-description-segment-${dataset.id}-${index}`}
+                          key={`${dataset.id}-segment-${index}`}
+                        >
+                          {segment.text}
+                        </span>
+                      )
+                    ))}
+                    {highlightedSnippet.trailingEllipsis ? ' ...' : ''}
+                  </>
+                ) : getDescriptionSnippet(dataset)}
               </p>
 
               <div id={`dataone-dataset-meta-${dataset.id}`} className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-gray-500">
