@@ -3,6 +3,7 @@ import type Layer from '@arcgis/core/layers/Layer';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import Graphic from '@arcgis/core/Graphic';
+import Extent from '@arcgis/core/geometry/Extent';
 import type { ActiveLayer, PinnedLayer } from '../../types';
 import { useCatalog } from '../../context/CatalogContext';
 import { useMap } from '../../context/MapContext';
@@ -30,6 +31,7 @@ export function useMotusMapBehavior(
   } = useMotusFilter();
   const overlayRef = useRef<GraphicsLayer | null>(null);
   const movementContextRef = useRef<MotusMovementContext | null>(null);
+  const wasPlaybackPlayingRef = useRef(false);
 
   const hasMotusOnMap = pinnedLayers.some((layer) => layer.layerId.startsWith('service-181') || layer.layerId === 'dataset-181')
     || !!(activeLayer && (activeLayer.layerId.startsWith('service-181') || activeLayer.layerId === 'dataset-181'));
@@ -262,6 +264,63 @@ export function useMotusMapBehavior(
       );
     }
   }, [playbackStepIndex, playbackTransitionProgress, isPlaybackPlaying]);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) {
+      wasPlaybackPlayingRef.current = isPlaybackPlaying;
+      return;
+    }
+
+    const wasPlaying = wasPlaybackPlayingRef.current;
+    wasPlaybackPlayingRef.current = isPlaybackPlaying;
+
+    // Frame journey only when playback transitions from paused -> playing.
+    if (!isPlaybackPlaying || wasPlaying) return;
+
+    const context = movementContextRef.current;
+    if (!context || context.legs.length === 0) return;
+
+    const points = context.legs.flatMap((leg) => [leg.from, leg.to]);
+    if (points.length === 0) return;
+
+    const minLongitude = Math.min(...points.map((point) => point.longitude));
+    const maxLongitude = Math.max(...points.map((point) => point.longitude));
+    const minLatitude = Math.min(...points.map((point) => point.latitude));
+    const maxLatitude = Math.max(...points.map((point) => point.latitude));
+
+    if (
+      !Number.isFinite(minLongitude)
+      || !Number.isFinite(maxLongitude)
+      || !Number.isFinite(minLatitude)
+      || !Number.isFinite(maxLatitude)
+    ) {
+      return;
+    }
+
+    const lonSpan = maxLongitude - minLongitude;
+    const latSpan = maxLatitude - minLatitude;
+    const lonPadding = Math.max(0.01, lonSpan * 0.25);
+    const latPadding = Math.max(0.01, latSpan * 0.25);
+    const isSinglePointJourney = lonSpan < 0.0001 && latSpan < 0.0001;
+
+    const target = isSinglePointJourney
+      ? {
+          center: [minLongitude, minLatitude] as [number, number],
+          zoom: 10,
+        }
+      : new Extent({
+          xmin: minLongitude - lonPadding,
+          ymin: minLatitude - latPadding,
+          xmax: maxLongitude + lonPadding,
+          ymax: maxLatitude + latPadding,
+          spatialReference: { wkid: 4326 },
+        });
+
+    void view.goTo(target, { animate: true, duration: 900, easing: 'ease-in-out' }).catch(() => {
+      // Ignore interrupted goTo calls when users manually pan/zoom mid-animation.
+    });
+  }, [isPlaybackPlaying, viewRef]);
 
   useEffect(() => {
     const overlay = overlayRef.current;

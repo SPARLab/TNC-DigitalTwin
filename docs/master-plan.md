@@ -309,6 +309,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 23, 2026 | Phase 11 | **MOTUS UX polish.** Species card selected state (gray bg + stronger border) for wayfinding; playback auto-framing — map zooms/pans to journey station extent when Play is pressed. 3 tasks remaining (11.7 in progress; 11.8–11.9 not started). | Cursor |
 | Feb 23, 2026 | Phase 11 | **Task 11.6 complete.** MOTUS Journey Playback widget: floating map controls (play/pause, step, speed, scrubber), progressive leg drawing between stations, single leading-edge directional arrow, correct bearing. 3 tasks remaining. | Cursor |
 | Feb 23, 2026 | Phase 11 | **Task 11.5 enhanced; data blocker resolved.** MOTUS movement paths now use `device_id` to join detections to Station Deployments; time-ordered inferred legs render for matching detections (medium confidence when device-linked). Tasks 11.6, 11.7 unblocked. 4 tasks remaining. | Cursor |
 | Feb 20, 2026 | Phase 11 | **Tasks 11.3, 11.4, 11.5 complete.** MOTUS browse now supports species/tag + date/quality filtering with latest/season presets; tagged-animal detail shipped with deployment/detection summaries and attribution links; map behavior renders receiver-station context plus inferred low-confidence movement legs when station inference is possible. 4 tasks remaining. | Codex |

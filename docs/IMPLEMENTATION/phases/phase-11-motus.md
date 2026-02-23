@@ -14,10 +14,10 @@
 |----|--------|---------------------------|------------------|-------|
 | 11.1 | 🟢 Complete | Feb 20, 2026 | Research MOTUS data availability and service endpoints | Confirmed active ArcGIS FeatureServer (`Dangermond_Preserve_Wildlife_Telemetry`) and documented schema/limits for path rendering |
 | 11.2 | 🟢 Complete | Feb 20, 2026 | Create MOTUS right sidebar shell | Added MOTUS adapter + sidebar shell components (Overview/Browse, list/detail shell) and registry wiring |
-| 11.3 | 🟢 Complete | Feb 20, 2026 | Implement species/tag browse + date window UI | Added live species/tag browse with date window, quality controls (`motus_filter`, `hit_count`), latest-window action, seasonal presets, and direct load-on-map flow |
+| 11.3 | 🟢 Complete | Feb 23, 2026 | Implement species/tag browse + date window UI | Added live species/tag browse with date window, quality controls (`motus_filter`, `hit_count`), latest-window action, seasonal presets, direct load-on-map flow; **selected species card state** (gray bg + stronger border) for wayfinding |
 | 11.4 | 🟢 Complete | Feb 20, 2026 | Implement tagged animal detail view | Added tag detail metadata, deployment + detection windows, quality summary, attribution, methodology links, and load/remove map action |
 | 11.5 | 🟢 Complete | Feb 23, 2026 | Render MOTUS movement context on map | Added explicit MOTUS map layer + graphics overlay for receiver stations and inferred legs; **device_id linkage** (Feb 23) enables time-ordered station-to-station paths for detections matching known deployments; v2 now uses **Dangermond preserve-linked (`device_id`) detections only** for movement rendering; **context-only fallback lines removed** so no movement lines render unless preserve-linked station inference exists |
-| 11.6 | 🟢 Complete | Feb 23, 2026 | Implement Journey playback widget (temporal navigation / playback) | Floating map playback widget (scrubber, play/pause, step, speed, start/latest); progressive leg drawing between stations; single leading-edge directional arrow; correct bearing via atan2(dx,dy) |
+| 11.6 | 🟢 Complete | Feb 23, 2026 | Implement Journey playback widget (temporal navigation / playback) | Floating map playback widget (scrubber, play/pause, step, speed, start/latest); progressive leg drawing between stations; single leading-edge directional arrow; correct bearing via atan2(dx,dy); **playback auto-framing** — map zooms/pans to journey station extent when Play is pressed |
 | 11.7 | 🟡 In Progress | Feb 23, 2026 | Implement legend and symbology controls | Added first-pass in-sidebar legend for tagged animal marker, receiver station marker, and inferred movement legs; remaining: confidence split + detections-specific legend + dynamic updates |
 | 11.8 | ⚪ Not Started | — | Sync loading indicators | Same shared loading pattern as other data sources |
 | 11.9 | ⚪ Not Started | — | Wire Save View flow | Pin MOTUS layers, save product/date views to Map Layers |
@@ -320,7 +320,7 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 
 | Decision | Date | Rationale | Added to design-system.md? |
 |----------|------|-----------|---------------------------|
-| (none yet) | | | |
+| Add explicit selected state for species cards in MOTUS Browse (subtle neutral/gray background + stronger border) | Feb 23, 2026 | Improves figure-ground separation and wayfinding between "species list" and "tagged animals results", so users can immediately see which species is active | No (phase-local for now) |
 
 ---
 
@@ -338,6 +338,9 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 23, 2026 | 11.3 | Implemented selected species card state: ProductListView now accepts `selectedItemId`; active species card uses `bg-gray-100` + `border-gray-400`; `aria-pressed` for accessibility | Cursor |
+| Feb 23, 2026 | 11.6 | Playback auto-framing: when user presses Play, map zooms/pans to frame all journey leg stations (Extent with padding); single-point fallback centers at zoom 10; animated goTo with 900ms ease-in-out | Cursor |
+| Feb 23, 2026 | 11.3 (UX polish note) | Documented right-sidebar selected state requirement for species cards: active species should use a subtle gray background (plus stronger border) so current context is visually obvious while browsing tagged animals | Cursor |
 | Feb 23, 2026 | 11.3, 11.5 | Preserve eligibility made lifetime-based (all-time Dangermond detection); preserve detections always included in journey rendering regardless of quality filters so journey line connects to Dangermond dot; default minHitCount lowered from 2 to 1 | Cursor |
 | Feb 23, 2026 | 11.6 | Journey Playback refinements: progressive leg drawing between stations; single leading-edge arrow (no residual triangles at dots); correct arrow bearing via atan2(dx,dy) for ArcGIS marker rotation | Cursor |
 | Feb 23, 2026 | 11.6 | Implemented MOTUS Journey Playback widget as floating map controls (play/pause, step back/forward, speed presets, scrubber, current timestamp, start/latest), and wired map rendering to timeline step state so inferred movement legs animate progressively | Cursor |

@@ -108,6 +108,7 @@ export function MOTUSBrowseTab({ showBackToOverview = false, onBackToOverview }:
       })),
     [speciesSummaries],
   );
+  const selectedSpeciesItemId = selectedSpecies ? selectedSpecies.toLowerCase().replace(/\s+/g, '-') : null;
 
   const setLatestAvailableWindow = () => {
     const end = new Date();
@@ -252,6 +253,7 @@ export function MOTUSBrowseTab({ showBackToOverview = false, onBackToOverview }:
 
           <ProductListView
             items={speciesItems}
+            selectedItemId={selectedSpeciesItemId}
             onSelect={(item) => {
               setSelectedSpecies(item.title);
               setSelectedTagId(null);

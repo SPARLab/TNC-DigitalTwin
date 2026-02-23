@@ -10,9 +10,10 @@ export interface MotusBrowseItem {
 interface ProductListViewProps {
   items: MotusBrowseItem[];
   onSelect: (item: MotusBrowseItem) => void;
+  selectedItemId?: string | null;
 }
 
-export function ProductListView({ items, onSelect }: ProductListViewProps) {
+export function ProductListView({ items, onSelect, selectedItemId = null }: ProductListViewProps) {
   if (items.length === 0) {
     return (
       <div id="motus-list-empty-state" className="rounded-lg border border-dashed border-gray-300 p-5 text-center">
@@ -25,14 +26,25 @@ export function ProductListView({ items, onSelect }: ProductListViewProps) {
 
   return (
     <div id="motus-list-view" className="space-y-2">
-      {items.map((item) => (
-        <article id={`motus-list-card-${item.id}`} key={item.id} className="rounded-lg border border-gray-200 bg-white">
-          <button
-            id={`motus-list-card-button-${item.id}`}
-            type="button"
-            onClick={() => onSelect(item)}
-            className="w-full text-left px-3.5 py-3.5 hover:bg-gray-50 transition-colors"
+      {items.map((item) => {
+        const isSelected = selectedItemId === item.id;
+        return (
+          <article
+            id={`motus-list-card-${item.id}`}
+            key={item.id}
+            className={`rounded-lg border transition-colors ${
+              isSelected ? 'border-gray-400 bg-gray-100' : 'border-gray-200 bg-white'
+            }`}
           >
+            <button
+              id={`motus-list-card-button-${item.id}`}
+              type="button"
+              aria-pressed={isSelected}
+              onClick={() => onSelect(item)}
+              className={`w-full rounded-lg px-3.5 py-3.5 text-left transition-colors ${
+                isSelected ? 'bg-gray-100' : 'hover:bg-gray-50'
+              }`}
+            >
             <h3 id={`motus-list-card-title-${item.id}`} className="text-sm font-semibold text-gray-900">
               {item.title}
             </h3>
@@ -52,9 +64,10 @@ export function ProductListView({ items, onSelect }: ProductListViewProps) {
                 {item.notes}
               </span>
             </div>
-          </button>
-        </article>
-      ))}
+            </button>
+          </article>
+        );
+      })}
     </div>
   );
 }
