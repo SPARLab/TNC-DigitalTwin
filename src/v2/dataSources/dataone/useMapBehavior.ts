@@ -170,7 +170,9 @@ export function useDataOneMapBehavior(
       try {
         const mapData = await dataOneService.getDatasetsForMapLayer({
           searchText: browseFilters.searchText || undefined,
-          tncCategory: browseFilters.tncCategory || undefined,
+          tncCategories: browseFilters.tncCategories.length > 0
+            ? browseFilters.tncCategories
+            : undefined,
           startDate: browseFilters.startDate || undefined,
           endDate: browseFilters.endDate || undefined,
           author: browseFilters.author || undefined,

@@ -192,8 +192,16 @@ function buildDataOneFilterSummary(filters: DataOneViewFilters): string | undefi
   if (filters.searchText?.trim()) {
     parts.push(`Search: "${filters.searchText.trim()}"`);
   }
-  if (filters.tncCategory?.trim()) {
-    parts.push(`Category: ${filters.tncCategory.trim()}`);
+  const categories = (filters.tncCategories && filters.tncCategories.length > 0
+    ? filters.tncCategories
+    : (filters.tncCategory?.trim() ? [filters.tncCategory.trim()] : [])
+  ).filter(Boolean);
+  if (categories.length > 0) {
+    parts.push(
+      categories.length === 1
+        ? `Category: ${categories[0]}`
+        : `Categories: ${categories.slice(0, 2).join(', ')}${categories.length > 2 ? `, +${categories.length - 2} more` : ''}`,
+    );
   }
   if (filters.author?.trim()) {
     parts.push(`Author: ${filters.author.trim()}`);
@@ -208,7 +216,7 @@ function getDataOneFilterCount(filters: DataOneViewFilters): number {
   if (filters.selectedDatasetId) return 1;
   let count = 0;
   if (filters.searchText?.trim()) count += 1;
-  if (filters.tncCategory?.trim()) count += 1;
+  if ((filters.tncCategories && filters.tncCategories.length > 0) || filters.tncCategory?.trim()) count += 1;
   if (filters.author?.trim()) count += 1;
   if (filters.startDate || filters.endDate) count += 1;
   return count;
@@ -221,7 +229,13 @@ function buildDataOneViewName(filters: DataOneViewFilters): string {
   const searchPart = filters.searchText?.trim()
     ? `"${filters.searchText.trim()}"`
     : '';
-  const categoryPart = filters.tncCategory?.trim() || '';
+  const categories = (filters.tncCategories && filters.tncCategories.length > 0
+    ? filters.tncCategories
+    : (filters.tncCategory?.trim() ? [filters.tncCategory.trim()] : [])
+  ).filter(Boolean);
+  const categoryPart = categories.length > 0
+    ? (categories.length <= 2 ? categories.join(', ') : `${categories.slice(0, 2).join(', ')}, +${categories.length - 2} more`)
+    : '';
   const authorPart = filters.author?.trim() ? `Author: ${filters.author.trim()}` : '';
   const datePart = (filters.startDate || filters.endDate)
     ? `${filters.startDate || 'Any start'} to ${filters.endDate || 'Any end'}`
@@ -432,9 +446,18 @@ function dataOneFiltersEqual(
 ): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
+  const aCategories = (a.tncCategories && a.tncCategories.length > 0
+    ? a.tncCategories
+    : (a.tncCategory ? [a.tncCategory] : [])
+  ).map((value) => value.trim()).filter(Boolean);
+  const bCategories = (b.tncCategories && b.tncCategories.length > 0
+    ? b.tncCategories
+    : (b.tncCategory ? [b.tncCategory] : [])
+  ).map((value) => value.trim()).filter(Boolean);
+  if (aCategories.length !== bCategories.length) return false;
   return (
     (a.searchText || '') === (b.searchText || '') &&
-    (a.tncCategory || '') === (b.tncCategory || '') &&
+    aCategories.every((value, index) => value === bCategories[index]) &&
     (a.startDate || '') === (b.startDate || '') &&
     (a.endDate || '') === (b.endDate || '') &&
     (a.author || '') === (b.author || '') &&
@@ -677,6 +700,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                     dataoneFilters: {
                       searchText: undefined,
                       tncCategory: undefined,
+                      tncCategories: [],
                       startDate: undefined,
                       endDate: undefined,
                       author: undefined,
@@ -707,6 +731,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           dataoneFilters: {
             searchText: undefined,
             tncCategory: undefined,
+            tncCategories: [],
             startDate: undefined,
             endDate: undefined,
             author: undefined,
@@ -1012,7 +1037,10 @@ export function LayerProvider({ children }: { children: ReactNode }) {
 
           const normalizedFilters: DataOneViewFilters = {
             searchText: filters.searchText?.trim() || undefined,
-            tncCategory: filters.tncCategory?.trim() || undefined,
+            tncCategories: (filters.tncCategories || [])
+              .map((value) => value.trim())
+              .filter(Boolean),
+            tncCategory: filters.tncCategory?.trim() || filters.tncCategories?.[0]?.trim() || undefined,
             startDate: filters.startDate || undefined,
             endDate: filters.endDate || undefined,
             author: filters.author?.trim() || undefined,
@@ -1204,7 +1232,10 @@ export function LayerProvider({ children }: { children: ReactNode }) {
 
       const normalizedFilters: DataOneViewFilters = {
         searchText: filters.searchText?.trim() || undefined,
-        tncCategory: filters.tncCategory?.trim() || undefined,
+        tncCategories: (filters.tncCategories || [])
+          .map((value) => value.trim())
+          .filter(Boolean),
+        tncCategory: filters.tncCategory?.trim() || filters.tncCategories?.[0]?.trim() || undefined,
         startDate: filters.startDate || undefined,
         endDate: filters.endDate || undefined,
         author: filters.author?.trim() || undefined,
@@ -1303,6 +1334,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             dataoneFilters: {
               searchText: undefined,
               tncCategory: undefined,
+              tncCategories: [],
               startDate: undefined,
               endDate: undefined,
               author: undefined,
@@ -1475,6 +1507,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
               ? {
                   searchText: undefined,
                   tncCategory: undefined,
+                  tncCategories: [],
                   startDate: undefined,
                   endDate: undefined,
                   author: undefined,
@@ -1511,6 +1544,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
               p.dataoneFilters || {
                 searchText: undefined,
                 tncCategory: undefined,
+                tncCategories: [],
                 startDate: undefined,
                 endDate: undefined,
                 author: undefined,
@@ -1559,6 +1593,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             ? {
                 searchText: undefined,
                 tncCategory: undefined,
+                tncCategories: [],
                 startDate: undefined,
                 endDate: undefined,
                 author: undefined,
@@ -1593,6 +1628,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             ? {
                 searchText: undefined,
                 tncCategory: undefined,
+                tncCategories: [],
                 startDate: undefined,
                 endDate: undefined,
                 author: undefined,
@@ -1727,6 +1763,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             targetView.dataoneFilters || {
               searchText: undefined,
               tncCategory: undefined,
+              tncCategories: [],
               startDate: undefined,
               endDate: undefined,
               author: undefined,

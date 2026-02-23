@@ -191,6 +191,8 @@ export interface DataOneQueryOptions {
   usePreserveRadius?: boolean;
   /** Filter by TNC category */
   tncCategory?: string;
+  /** Filter by one or more TNC categories */
+  tncCategories?: string[];
   /** Optional request cancellation support */
   signal?: AbortSignal;
 }

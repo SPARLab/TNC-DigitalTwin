@@ -11,7 +11,7 @@ export type DataOneAggregationMode = 'cluster' | 'binning';
 
 export interface DataOneBrowseFilters {
   searchText: string;
-  tncCategory: string;
+  tncCategories: string[];
   startDate: string;
   endDate: string;
   author: string;
@@ -48,7 +48,7 @@ export function DataOneFilterProvider({ children }: { children: ReactNode }) {
   const [totalDatasetCount, setTotalDatasetCount] = useState(0);
   const [browseFilters, setBrowseFilters] = useState<DataOneBrowseFilters>({
     searchText: '',
-    tncCategory: '',
+    tncCategories: [],
     startDate: '',
     endDate: '',
     author: '',

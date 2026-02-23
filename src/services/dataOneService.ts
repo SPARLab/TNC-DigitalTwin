@@ -67,6 +67,18 @@ function parseTimestamp(timestamp: number | null): Date | null {
   return isNaN(date.getTime()) ? null : date;
 }
 
+function normalizeCategoryFilters(options: DataOneQueryOptions): string[] {
+  const normalized = new Set<string>();
+  if (options.tncCategory?.trim()) {
+    normalized.add(options.tncCategory.trim());
+  }
+  for (const category of options.tncCategories || []) {
+    const trimmed = category.trim();
+    if (trimmed) normalized.add(trimmed);
+  }
+  return Array.from(normalized);
+}
+
 /**
  * Parse files_summary JSON string
  * Format: {"total": 3, "by_ext": {"csv": 2, "pdf": 1}, "size_bytes": 22583}
@@ -252,10 +264,14 @@ function buildWhereClause(options: DataOneQueryOptions): string {
     conditions.push(`authors LIKE '%${author}%'`);
   }
 
-  // TNC category filter
-  if (options.tncCategory) {
-    const category = options.tncCategory.replace(/'/g, "''");
-    conditions.push(`(tnc_category = '${category}' OR tnc_categories LIKE '%${category}%')`);
+  // TNC category filters (single or multi-select)
+  const categories = normalizeCategoryFilters(options);
+  if (categories.length > 0) {
+    const categoryClauses = categories.map((value) => {
+      const category = value.replace(/'/g, "''");
+      return `(tnc_category = '${category}' OR tnc_categories LIKE '%${category}%')`;
+    });
+    conditions.push(`(${categoryClauses.join(' OR ')})`);
   }
 
   // Temporal filters using begin_date and end_date

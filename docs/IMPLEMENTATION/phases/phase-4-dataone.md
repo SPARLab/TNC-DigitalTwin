@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 9 / 16 tasks complete  
+**Progress:** 10 / 16 tasks complete  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-4-dataone-completed.md`  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
@@ -22,7 +22,7 @@
 | CON-DONE-05 | 🟢 Complete | Feb 23, 2026 | Fix map vs sidebar count discrepancy (dedupe dataset versions) | Resolved via D20-09 (dedupeDatasetsByDataoneId) + CON-DONE-01 race-condition fix |
 | CON-DONE-06 | 🟢 Complete | Feb 23, 2026 | Save button: clearly distinguish saved vs unsaved state | DatasetDetailView: "Save Dataset View" (amber) vs "Unsave Dataset View" (rose); driven by isDatasetSaved prop |
 | CON-DONE-07 | 🟢 Complete | Feb 23, 2026 | Persist saved state when returning to already-saved dataset | Save overwrites unassigned view; creates new child when assigned; unsave clears pin; first save pins to baseline (no extra "All Datasets" child) |
-| CON-DONE-08 | ⚪ Not Started | Feb 18, 2026 | Multi-select categories filter checklist | Medium priority |
+| CON-DONE-08 | 🟢 Complete | Feb 23, 2026 | Multi-select categories filter checklist | Replaced single-select dropdown with checkbox checklist; Select all / Clear all; tncCategories wired through browse, query, map, and saved views |
 | CON-DONE-09 | ⚪ Not Started | Feb 18, 2026 | Search by title and abstract/keywords | High priority |
 | CON-DONE-10 | ⚪ Not Started | Feb 18, 2026 | Filter by file type (CSV, TIF, imagery, and others) | Medium priority |
 | CON-DONE-11 | ⚪ Not Started | Feb 18, 2026 | Saved indicator on browse cards (icon plus subtle highlight) | Medium priority |
@@ -281,6 +281,31 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 ---
 
+### CON-DONE-08: Multi-Select Categories Filter Checklist ✅
+
+**Goal:** Replace the single-category dropdown with a multi-select checklist so users can filter DataONE datasets by one or more TNC categories.
+
+**Resolution (Feb 23, 2026):**
+- Replaced single-select dropdown with a scrollable checkbox checklist in `DataOneBrowseTab`
+- Added "Select all" and "Clear all" buttons on the same line as the status text ("No category filter applied" / "N selected")
+- Extended `DataOneBrowseFilters` and `DataOneViewFilters` to use `tncCategories: string[]` (with legacy `tncCategory` fallback for saved views)
+- Updated `dataOneService.buildWhereClause` to support OR-based category matching across multiple selections
+- Wired multi-category filters through browse query, map layer refresh, and LayerContext sync (filter summary, view naming, equality checks)
+- Empty selection = no category filter applied (shows all datasets)
+
+**Files:** `DataOneBrowseTab.tsx`, `DataOneFilterContext.tsx`, `dataOneService.ts`, `useMapBehavior.ts`, `LayerContext.tsx`, `src/v2/types/index.ts`, `src/types/dataone.ts`
+
+**Acceptance Criteria:**
+- [x] Categories shown as checkbox checklist with scrollable list
+- [x] Multi-select filters datasets by OR of selected categories (tnc_category or tnc_categories)
+- [x] Select all / Clear all buttons; status text on same row
+- [x] Map markers and browse list both respect multi-category filter
+- [x] Saved views and Map Layers sync correctly with category arrays
+
+**Estimated Time:** 2–3 hours
+
+---
+
 ### CON-DONE-02: Auto-Pan/Zoom When Opening Dataset Detail; Repurpose View on Map as Recenter
 
 **Goal:** When the user opens a DataONE dataset detail view (from browse card or map click), the map automatically pans and zooms to the dataset location. The former "View on Map" button is repurposed as "Recenter" for recoverability when the user has panned away.
@@ -392,6 +417,7 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 23, 2026 | CON-DONE-08 marked complete. Multi-select categories checklist; Select all / Clear all; tncCategories wired through browse, query, map, and saved views. | Assistant |
 | Feb 23, 2026 | CON-DONE-06 and CON-DONE-07 marked complete. Save/Unsave button state; overwrite vs new-child logic; first save pins to baseline; sync no longer writes selectedDatasetId. | Assistant |
 | Feb 23, 2026 | CON-DONE-05 marked complete. Map vs sidebar count discrepancy resolved via D20-09 dedupe + CON-DONE-01 race-condition fix. | User |
 | Feb 23, 2026 | Removed CON-DONE-04 (improve point dispersion on zoom). | User |

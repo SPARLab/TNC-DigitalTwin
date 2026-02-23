@@ -139,6 +139,7 @@ export interface TNCArcGISViewFilters {
 export interface DataOneViewFilters {
   searchText?: string;
   tncCategory?: string;
+  tncCategories?: string[];
   startDate?: string;
   endDate?: string;
   author?: string;

@@ -34,6 +34,21 @@ const TNC_CATEGORY_OPTIONS = [
   'Research and Sensor Equipment',
 ] as const;
 
+function normalizeCategories(categories?: string[]): string[] {
+  if (!categories || categories.length === 0) return [];
+  const seen = new Set<string>();
+  for (const category of categories) {
+    const trimmed = category.trim();
+    if (!trimmed || seen.has(trimmed)) continue;
+    seen.add(trimmed);
+  }
+  return Array.from(seen);
+}
+
+function categoryToId(category: string): string {
+  return category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
 function toStartDate(year: string): string | undefined {
   return year ? `${year}-01-01` : undefined;
 }
@@ -66,7 +81,9 @@ export function DataOneBrowseTab() {
   } = useLayers();
   const [searchInput, setSearchInput] = useState(browseFilters.searchText);
   const [appliedSearchTerm, setAppliedSearchTerm] = useState(browseFilters.searchText);
-  const [selectedCategory, setSelectedCategory] = useState<string>(browseFilters.tncCategory || 'all');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
+    normalizeCategories(browseFilters.tncCategories),
+  );
   const [startYear, setStartYear] = useState(browseFilters.startDate.slice(0, 4));
   const [endYear, setEndYear] = useState(browseFilters.endDate.slice(0, 4));
   const [authorFilter, setAuthorFilter] = useState(browseFilters.author);
@@ -97,12 +114,12 @@ export function DataOneBrowseTab() {
   useEffect(() => {
     setBrowseFilters({
       searchText: appliedSearchTerm,
-      tncCategory: selectedCategory === 'all' ? '' : selectedCategory,
+      tncCategories: selectedCategories,
       startDate: toStartDate(startYear) || '',
       endDate: toEndDate(endYear) || '',
       author: authorFilter.trim(),
     });
-  }, [appliedSearchTerm, selectedCategory, startYear, endYear, authorFilter, setBrowseFilters]);
+  }, [appliedSearchTerm, selectedCategories, startYear, endYear, authorFilter, setBrowseFilters]);
 
   // Debounced text search (DFT-035)
   useEffect(() => {
@@ -123,7 +140,7 @@ export function DataOneBrowseTab() {
   // Reset pagination when filter/search controls change.
   useEffect(() => {
     setPage(0);
-  }, [appliedSearchTerm, selectedCategory, startYear, endYear, authorFilter]);
+  }, [appliedSearchTerm, selectedCategories, startYear, endYear, authorFilter]);
 
   // When map-selection is active, resolve datasets entirely client-side from
   // the map behaviour's in-memory cache to avoid 414 URI-Too-Large errors.
@@ -171,7 +188,7 @@ export function DataOneBrowseTab() {
           pageSize: PAGE_SIZE,
           pageNumber: page,
           searchText: appliedSearchTerm || undefined,
-          tncCategory: selectedCategory === 'all' ? undefined : selectedCategory,
+          tncCategories: selectedCategories.length > 0 ? selectedCategories : undefined,
           startDate: toStartDate(startYear),
           endDate: toEndDate(endYear),
           author: authorFilter.trim() || undefined,
@@ -198,7 +215,7 @@ export function DataOneBrowseTab() {
       abortController.abort();
       closeLoadingScope();
     };
-  }, [mapSelectionIdSet, appliedSearchTerm, selectedCategory, startYear, endYear, authorFilter, page, createBrowseLoadingScope]);
+  }, [mapSelectionIdSet, appliedSearchTerm, selectedCategories, startYear, endYear, authorFilter, page, createBrowseLoadingScope]);
 
   // When featureId is cleared (cluster click, back navigation), return to list view.
   useEffect(() => {
@@ -257,7 +274,9 @@ export function DataOneBrowseTab() {
     const nextSearch = sourceFilters.searchText || '';
     setSearchInput(nextSearch);
     setAppliedSearchTerm(nextSearch);
-    setSelectedCategory(sourceFilters.tncCategory || 'all');
+    setSelectedCategories(
+      normalizeCategories(sourceFilters.tncCategories || (sourceFilters.tncCategory ? [sourceFilters.tncCategory] : [])),
+    );
     setStartYear(sourceFilters.startDate?.slice(0, 4) || '');
     setEndYear(sourceFilters.endDate?.slice(0, 4) || '');
     setAuthorFilter(sourceFilters.author || '');
@@ -303,7 +322,8 @@ export function DataOneBrowseTab() {
       activeLayer.layerId,
       {
         searchText: appliedSearchTerm || undefined,
-        tncCategory: selectedCategory === 'all' ? undefined : selectedCategory,
+        tncCategory: selectedCategories[0],
+        tncCategories: selectedCategories.length > 0 ? selectedCategories : undefined,
         startDate: toStartDate(startYear),
         endDate: toEndDate(endYear),
         author: authorFilter.trim() || undefined,
@@ -316,7 +336,7 @@ export function DataOneBrowseTab() {
     activeLayer?.viewId,
     activeLayer?.isPinned,
     appliedSearchTerm,
-    selectedCategory,
+    selectedCategories,
     startYear,
     endYear,
     authorFilter,
@@ -366,7 +386,8 @@ export function DataOneBrowseTab() {
       activeLayer.layerId,
       {
         searchText: appliedSearchTerm || undefined,
-        tncCategory: selectedCategory === 'all' ? undefined : selectedCategory,
+        tncCategory: selectedCategories[0],
+        tncCategories: selectedCategories.length > 0 ? selectedCategories : undefined,
         startDate: toStartDate(startYear),
         endDate: toEndDate(endYear),
         author: authorFilter.trim() || undefined,
@@ -412,13 +433,13 @@ export function DataOneBrowseTab() {
   const showInitialLoading = loading && !hasStaleResults;
   const showRefreshLoading = loading && hasStaleResults;
   const hasAnyFilter = Boolean(
-    appliedSearchTerm || selectedCategory !== 'all' || startYear || endYear || authorFilter.trim() || mapSelectionDataoneIds?.length
+    appliedSearchTerm || selectedCategories.length > 0 || startYear || endYear || authorFilter.trim() || mapSelectionDataoneIds?.length
   );
 
   const clearAllFilters = () => {
     setSearchInput('');
     setAppliedSearchTerm('');
-    setSelectedCategory('all');
+    setSelectedCategories([]);
     setStartYear('');
     setEndYear('');
     setAuthorFilter('');
@@ -501,22 +522,73 @@ export function DataOneBrowseTab() {
           )}
         </div>
 
-        <div id="dataone-filter-grid" className="grid grid-cols-2 gap-2">
-          <select
-            id="dataone-category-filter"
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-sm text-gray-700
-                       focus:outline-none focus:border-gray-300 focus:shadow-[0_0_0_1px_rgba(107,114,128,0.3)]"
-          >
-            <option id="dataone-category-filter-option-all" value="all">All Categories</option>
-            {TNC_CATEGORY_OPTIONS.map((category) => (
-              <option id={`dataone-category-filter-option-${category}`} key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
+        <div id="dataone-category-checklist-section" className="space-y-1">
+          <div id="dataone-category-checklist-header" className="flex items-center justify-between">
+            <p id="dataone-category-checklist-label" className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
+              Categories
+            </p>
+          </div>
+          <div id="dataone-category-checklist-status-row" className="flex items-center justify-between">
+            <p id="dataone-category-checklist-count" className="text-[11px] text-gray-500">
+              {selectedCategories.length === 0
+                ? 'No category filter applied'
+                : `${selectedCategories.length} selected`}
+            </p>
+            <div id="dataone-category-checklist-actions" className="flex items-center gap-2">
+              <button
+                id="dataone-category-select-all-button"
+                type="button"
+                onClick={() => setSelectedCategories([...TNC_CATEGORY_OPTIONS])}
+                className="text-[11px] font-medium text-emerald-700 hover:text-emerald-800 disabled:cursor-not-allowed disabled:text-gray-400"
+                disabled={selectedCategories.length === TNC_CATEGORY_OPTIONS.length}
+              >
+                Select all
+              </button>
+              <button
+                id="dataone-category-clear-all-button"
+                type="button"
+                onClick={() => setSelectedCategories([])}
+                className="text-[11px] font-medium text-emerald-700 hover:text-emerald-800 disabled:cursor-not-allowed disabled:text-gray-400"
+                disabled={selectedCategories.length === 0}
+              >
+                Clear all
+              </button>
+            </div>
+          </div>
+          <div id="dataone-category-checklist" className="max-h-36 space-y-1 overflow-y-auto rounded-lg border border-gray-200 bg-white px-2.5 py-2">
+            {TNC_CATEGORY_OPTIONS.map((category) => {
+              const categorySlug = categoryToId(category);
+              const checkboxId = `dataone-category-checkbox-${categorySlug}`;
+              const isChecked = selectedCategories.includes(category);
+              return (
+                <label
+                  id={`dataone-category-option-${categorySlug}`}
+                  key={category}
+                  htmlFor={checkboxId}
+                  className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <input
+                    id={checkboxId}
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => {
+                      setSelectedCategories((prev) => {
+                        const next = prev.includes(category)
+                          ? prev.filter((item) => item !== category)
+                          : [...prev, category];
+                        return normalizeCategories(next);
+                      });
+                    }}
+                    className="h-3.5 w-3.5 rounded border-gray-300 text-emerald-700 focus:ring-emerald-600"
+                  />
+                  <span id={`dataone-category-option-label-${categorySlug}`}>{category}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
 
+        <div id="dataone-filter-grid" className="grid grid-cols-2 gap-2">
           <input
             id="dataone-author-filter"
             type="text"
