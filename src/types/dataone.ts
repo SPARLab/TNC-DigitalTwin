@@ -166,7 +166,7 @@ export interface DataOneFileInfo {
  * Query options for DataONE service
  */
 export interface DataOneQueryOptions {
-  /** Text search (searches title) */
+  /** Text search (title on Lite; title + abstract + keywords on Latest when enabled) */
   searchText?: string;
   /** Filter by repository source (PISCO, LTER, etc.) */
   repository?: string;

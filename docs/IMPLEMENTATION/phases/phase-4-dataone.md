@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 10 / 16 tasks complete  
+**Progress:** 11 / 16 tasks complete  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-4-dataone-completed.md`  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
@@ -23,7 +23,7 @@
 | CON-DONE-06 | 🟢 Complete | Feb 23, 2026 | Save button: clearly distinguish saved vs unsaved state | DatasetDetailView: "Save Dataset View" (amber) vs "Unsave Dataset View" (rose); driven by isDatasetSaved prop |
 | CON-DONE-07 | 🟢 Complete | Feb 23, 2026 | Persist saved state when returning to already-saved dataset | Save overwrites unassigned view; creates new child when assigned; unsave clears pin; first save pins to baseline (no extra "All Datasets" child) |
 | CON-DONE-08 | 🟢 Complete | Feb 23, 2026 | Multi-select categories filter checklist | Replaced single-select dropdown with checkbox checklist; Select all / Clear all; tncCategories wired through browse, query, map, and saved views |
-| CON-DONE-09 | ⚪ Not Started | Feb 18, 2026 | Search by title and abstract/keywords | High priority |
+| CON-DONE-09 | 🟢 Complete | Feb 23, 2026 | Search by title and abstract/keywords | Layer 1 used when searchText present; title OR abstract OR keywords predicate; browse + map + count paths updated |
 | CON-DONE-10 | ⚪ Not Started | Feb 18, 2026 | Filter by file type (CSV, TIF, imagery, and others) | Medium priority |
 | CON-DONE-11 | ⚪ Not Started | Feb 18, 2026 | Saved indicator on browse cards (icon plus subtle highlight) | Medium priority |
 | CON-DONE-15 | ⚪ Not Started | Feb 19, 2026 | Spatial query: ensure draw/query tools filter DataONE datasets by extent | High priority; must work with SpatialQuerySection |
@@ -331,6 +331,32 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 ---
 
+### CON-DONE-09: Search by Title and Abstract/Keywords ✅
+
+**Goal:** DataONE browse search should match datasets by `title`, `abstract`, and `keywords` (not title-only).
+
+**Context:** Existing search used Layer 0 (Lite) and only applied `title LIKE ...`. Layer 0 does not include `abstract`/`keywords`, so users could not find datasets when the term existed only in those metadata fields.
+
+**Resolution (Feb 23, 2026):**
+- Added dynamic search-layer selection in `dataOneService`: when `searchText` is present, browse and map queries use Layer 1 (Latest); otherwise they continue using Layer 0 (Lite)
+- Expanded text predicate for search-enabled queries to:
+  - `title LIKE ... OR abstract LIKE ... OR keywords LIKE ...`
+- Kept non-search paths on Lite layer for performance and existing behavior parity
+- Updated DataONE browse search input placeholder text to communicate supported fields ("Search title, abstract, or keywords...")
+
+**Acceptance Criteria:**
+- [x] Entering a term found only in `abstract` returns matching datasets
+- [x] Entering a term found only in `keywords` returns matching datasets
+- [x] Existing title search behavior remains intact
+- [x] Map-layer query path respects the same search semantics when search text is applied
+- [x] QA pass confirmed
+
+**Files:** `src/services/dataOneService.ts`, `src/types/dataone.ts`, `src/v2/components/RightSidebar/DataOne/DataOneBrowseTab.tsx`
+
+**Estimated Time:** 2–4 hours
+
+---
+
 ### CON-DONE-15: Spatial Query for DataONE Datasets
 
 **Goal:** Ensure the spatial query (draw polygon/rectangle, query by extent) correctly filters DataONE datasets. When the user draws a query area on the map, DataONE browse results should be constrained to datasets whose spatial extent intersects the drawn area.
@@ -383,8 +409,8 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 ### Layer Usage Recommendation
 
-- **Layer 0 (`Lite`) for browse list + count queries:** fastest payload, includes core fields needed for cards/filtering.
-- **Layer 1 (`Latest`) for detail view:** includes abstract, keywords, authors, bbox fields, `data_url`, and richer metadata.
+- **Layer 0 (`Lite`) for browse list + count queries (no text search):** fastest payload, includes core fields needed for cards/filtering.
+- **Layer 1 (`Latest`) for text search and detail view:** when `searchText` is present, browse/count/map queries use Layer 1 to match title + abstract + keywords; also used for detail view (abstract, keywords, authors, bbox fields, `data_url`).
 - **Layer 2 (`AllVersions`) for version history only:** use when user explicitly requests historical versions.
 
 ---
@@ -417,6 +443,7 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 23, 2026 | CON-DONE-09 marked complete. Search by title + abstract + keywords; Layer 1 used when searchText present; browse, map, count paths updated. | Assistant |
 | Feb 23, 2026 | CON-DONE-08 marked complete. Multi-select categories checklist; Select all / Clear all; tncCategories wired through browse, query, map, and saved views. | Assistant |
 | Feb 23, 2026 | CON-DONE-06 and CON-DONE-07 marked complete. Save/Unsave button state; overwrite vs new-child logic; first save pins to baseline; sync no longer writes selectedDatasetId. | Assistant |
 | Feb 23, 2026 | CON-DONE-05 marked complete. Map vs sidebar count discrepancy resolved via D20-09 dedupe + CON-DONE-01 race-condition fix. | User |

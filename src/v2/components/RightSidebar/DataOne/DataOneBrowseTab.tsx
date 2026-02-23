@@ -502,7 +502,7 @@ export function DataOneBrowseTab() {
               setAppliedSearchTerm(trimmed.length >= MIN_SEARCH_CHARS ? trimmed : '');
               setPage(0);
             }}
-            placeholder="Search datasets by title..."
+            placeholder="Search title, abstract, or keywords..."
             className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-9 text-sm
                        placeholder:text-gray-400 focus:outline-none focus:border-gray-300
                        focus:shadow-[0_0_0_1px_rgba(107,114,128,0.3)]"

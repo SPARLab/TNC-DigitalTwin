@@ -35,7 +35,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 1 | iNaturalist | 🟢 Complete | 0 | `v2/inaturalist` | No |
 | 2 | ANiML | 🟢 Complete | 0 | `v2/animl` | No |
 | 3 | Dendra | 🟡 In Progress | 0 blocking | `v2/dendra` | No |
-| 4 | DataOne | 🟡 In Progress | 10 tasks | `v2/dataone` | No |
+| 4 | DataOne | 🟡 In Progress | 5 tasks | `v2/dataone` | No |
 | 5 | Export Builder | 🟡 In Progress | 1 task | `v2/export-builder` | No |
 | 6 | TNC ArcGIS Services | 🟡 In Progress | 8 tasks | `v2/tnc-arcgis` | No |
 | 7 | Polish & Consistency | ⚪ Not Started | 12+ tasks | `v2/polish` | No |
@@ -54,7 +54,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 1 | [phase-1-inaturalist.md](IMPLEMENTATION/phases/phase-1-inaturalist.md) | 0 |
 | 2 | [phase-2-animl.md](IMPLEMENTATION/phases/phase-2-animl.md) | ~4 tasks |
 | 3 | [phase-3-dendra.md](IMPLEMENTATION/phases/phase-3-dendra.md) | D20-06 ✅; D20-BL01–03 backlog; CON-DENDRA-08 |
-| 4 | [phase-4-dataone.md](IMPLEMENTATION/phases/phase-4-dataone.md) | CON-DONE-01/02/06/07/08/16 ✅, D20-09 ✅, TF-13 ✅, TF-14 ✅; remaining: CON-DONE-09–11, 14, 15, D20-B02 |
+| 4 | [phase-4-dataone.md](IMPLEMENTATION/phases/phase-4-dataone.md) | CON-DONE-01/02/06/07/08/09/16 ✅, D20-09 ✅, TF-13 ✅, TF-14 ✅; remaining: CON-DONE-10, 11, 14, 15, D20-B02 |
 | 5 | [phase-5-export-builder.md](IMPLEMENTATION/phases/phase-5-export-builder.md) | + D20-14 (Dan meeting Feb 20) |
 | 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 13 tasks (+ D20-02, D20-10, D20-11, D20-B04, D20-B05 from Dan meeting Feb 20) |
 | 7 | [phase-7-polish.md](IMPLEMENTATION/phases/phase-7-polish.md) | 12+ tasks (+ D20-03, D20-04, D20-07, D20-13 from Dan meeting Feb 20; D20-01 ✅ done in Phase 0) |
@@ -307,6 +307,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 23, 2026 | Phase 4 | **CON-DONE-09 complete.** DataONE search by title + abstract + keywords: when searchText present, queries use Layer 1 with OR predicate; browse placeholder updated. Phase 4: 11/16 tasks complete. | Assistant |
 | Feb 23, 2026 | Phase 4 | **TF-13 complete.** DataONE loading indicator: map-loading scope in DataOneFilterContext; browse-tab "Updating map markers..."; Map Layers eye-slot spinner via shared cache-status (consistent with iNaturalist). Phase 4: 6/18 tasks complete. | Assistant |
 | Feb 20, 2026 | Phase 9 | **D20-12 in progress.** media_json parsing, card/detail wiring, overlay scrollbar, dev debug panel. ~2.8k/323k rows have media; coworker may populate more. Optional follow-up: D20-12-FOLLOW "Has media only" filter. | Cursor |
 | Feb 20, 2026 | Phase 3 | **D20-06 complete.** Custom polygon draw tool for Dendra: suppressed station click during draw mode; synced sidebar station list with polygon filter so map markers and station cards match. Phase 3: 0 blocking tasks. | Cursor |

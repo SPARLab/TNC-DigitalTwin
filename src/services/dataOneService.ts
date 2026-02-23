@@ -79,6 +79,10 @@ function normalizeCategoryFilters(options: DataOneQueryOptions): string[] {
   return Array.from(normalized);
 }
 
+function shouldUseLatestLayerForSearch(options: DataOneQueryOptions): boolean {
+  return Boolean(options.searchText?.trim());
+}
+
 /**
  * Parse files_summary JSON string
  * Format: {"total": 3, "by_ext": {"csv": 2, "pdf": 1}, "size_bytes": 22583}
@@ -224,7 +228,7 @@ function fullRecordToDatasetDetail(record: DataOneFullRecord): DataOneDatasetDet
 /**
  * Build where clause for spatial filter using center_lat/center_lon
  */
-function buildWhereClause(options: DataOneQueryOptions): string {
+function buildWhereClause(options: DataOneQueryOptions, includeFullTextFields = false): string {
   const conditions: string[] = ['1=1'];
 
   // Apply 20-mile radius around preserve by default (using center point)
@@ -247,10 +251,16 @@ function buildWhereClause(options: DataOneQueryOptions): string {
     );
   }
 
-  // Text search on title (lite layer doesn't have keywords)
+  // Text search on title for Lite layer, and title/abstract/keywords for Latest layer.
   if (options.searchText) {
     const searchTerm = options.searchText.replace(/'/g, "''");
-    conditions.push(`title LIKE '%${searchTerm}%'`);
+    if (includeFullTextFields) {
+      conditions.push(
+        `(title LIKE '%${searchTerm}%' OR abstract LIKE '%${searchTerm}%' OR keywords LIKE '%${searchTerm}%')`
+      );
+    } else {
+      conditions.push(`title LIKE '%${searchTerm}%'`);
+    }
   }
 
   // Repository filter
@@ -290,7 +300,9 @@ class DataOneService {
    * Get total count of datasets matching filters (uses Lite layer)
    */
   async countDatasets(options: DataOneQueryOptions = {}): Promise<number> {
-    const whereClause = buildWhereClause(options);
+    const useLatestLayer = shouldUseLatestLayerForSearch(options);
+    const whereClause = buildWhereClause(options, useLatestLayer);
+    const countLayerUrl = useLatestLayer ? LATEST_LAYER_URL : LITE_LAYER_URL;
 
     const params = new URLSearchParams({
       where: whereClause,
@@ -298,7 +310,7 @@ class DataOneService {
       f: 'json',
     });
 
-    const url = `${LITE_LAYER_URL}/query?${params}`;
+    const url = `${countLayerUrl}/query?${params}`;
     const response = await fetch(url, { signal: options.signal });
 
     if (!response.ok) {
@@ -324,7 +336,9 @@ class DataOneService {
     const pageNumber = options.pageNumber || 0;
     const offset = pageNumber * pageSize;
 
-    const whereClause = buildWhereClause(options);
+    const useLatestLayer = shouldUseLatestLayerForSearch(options);
+    const whereClause = buildWhereClause(options, useLatestLayer);
+    const queryLayerUrl = useLatestLayer ? LATEST_LAYER_URL : LITE_LAYER_URL;
 
     // First get total count
     const totalCount = await this.countDatasets(options);
@@ -340,7 +354,7 @@ class DataOneService {
       f: 'json',
     });
 
-    const url = `${LITE_LAYER_URL}/query?${params}`;
+    const url = `${queryLayerUrl}/query?${params}`;
     const response = await fetch(url, { signal: options.signal });
 
     if (!response.ok) {
@@ -530,7 +544,9 @@ class DataOneService {
    * Returns Lite-layer records with center coordinates and filter metadata.
    */
   async getDatasetsForMapLayer(options: DataOneQueryOptions = {}): Promise<DataOneDataset[]> {
-    const whereClause = buildWhereClause(options);
+    const useLatestLayer = shouldUseLatestLayerForSearch(options);
+    const whereClause = buildWhereClause(options, useLatestLayer);
+    const queryLayerUrl = useLatestLayer ? LATEST_LAYER_URL : LITE_LAYER_URL;
 
     const params = new URLSearchParams({
       where: whereClause,
@@ -541,7 +557,7 @@ class DataOneService {
       f: 'json',
     });
 
-    const url = `${LITE_LAYER_URL}/query?${params}`;
+    const url = `${queryLayerUrl}/query?${params}`;
     const response = await fetch(url, { signal: options.signal });
 
     if (!response.ok) {
