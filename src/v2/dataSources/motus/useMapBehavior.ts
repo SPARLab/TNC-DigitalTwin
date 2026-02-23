@@ -6,7 +6,7 @@ import Graphic from '@arcgis/core/Graphic';
 import type { ActiveLayer, PinnedLayer } from '../../types';
 import { useCatalog } from '../../context/CatalogContext';
 import { useMap } from '../../context/MapContext';
-import { motusService } from '../../../services/motusService';
+import { motusService, type MotusMovementContext } from '../../../services/motusService';
 import { useMotusFilter } from '../../context/MotusFilterContext';
 import { createMotusLayer, MOTUS_TAGGED_ANIMALS_LAYER_ID } from '../../components/Map/layers/motusLayer';
 import { registerTNCArcGISLayer } from '../../components/Map/layers';
@@ -23,8 +23,13 @@ export function useMotusMapBehavior(
     selectedTagId,
     browseFilters,
     setMovementDisclaimer,
+    playbackStepIndex,
+    playbackTransitionProgress,
+    isPlaybackPlaying,
+    setPlaybackStepLabels,
   } = useMotusFilter();
   const overlayRef = useRef<GraphicsLayer | null>(null);
+  const movementContextRef = useRef<MotusMovementContext | null>(null);
 
   const hasMotusOnMap = pinnedLayers.some((layer) => layer.layerId.startsWith('service-181') || layer.layerId === 'dataset-181')
     || !!(activeLayer && (activeLayer.layerId.startsWith('service-181') || activeLayer.layerId === 'dataset-181'));
@@ -88,54 +93,229 @@ export function useMotusMapBehavior(
   }, [viewRef, hasMotusOnMap, selectedTagId]);
 
   useEffect(() => {
-    const view = viewRef.current;
     const overlay = overlayRef.current;
-    if (!view || !overlay) return;
+    if (!overlay) return;
+
+    const context = movementContextRef.current;
+    overlay.removeAll();
+    if (!context) return;
+
+    for (const station of context.stations) {
+      overlay.add(new Graphic({
+        geometry: {
+          type: 'point',
+          longitude: station.longitude,
+          latitude: station.latitude,
+        },
+        attributes: {
+          stationId: station.stationId,
+          stationName: station.name,
+        },
+        symbol: {
+          type: 'simple-marker',
+          style: 'circle',
+          size: 8,
+          color: [22, 163, 74, 0.9],
+          outline: {
+            color: [255, 255, 255, 0.9],
+            width: 1.1,
+          },
+        },
+        popupTemplate: {
+          title: '{stationName}',
+          content: 'Receiver station context for inferred MOTUS movement.',
+        },
+      }));
+    }
+
+    const drawLeg = (
+      fromLongitude: number,
+      fromLatitude: number,
+      toLongitude: number,
+      toLatitude: number,
+      attributes: Record<string, unknown>,
+    ) => {
+      overlay.add(new Graphic({
+        geometry: {
+          type: 'polyline',
+          paths: [[
+            [fromLongitude, fromLatitude],
+            [toLongitude, toLatitude],
+          ]],
+        },
+        attributes,
+        symbol: {
+          type: 'simple-line',
+          color: [217, 119, 6, 0.9],
+          width: 2.4,
+          style: 'solid',
+        },
+        popupTemplate: {
+          title: 'Inferred movement leg',
+          content: '<div><p>{evidence}</p><p><strong>Step:</strong> {stepIndex}</p><p><strong>Detection window:</strong> {startDate} to {endDate}</p></div>',
+        },
+      }));
+    };
+
+    const drawArrowhead = (
+      fromLongitude: number,
+      fromLatitude: number,
+      tipLongitude: number,
+      tipLatitude: number,
+      attributes: Record<string, unknown>,
+    ) => {
+      const dx = tipLongitude - fromLongitude;
+      const dy = tipLatitude - fromLatitude;
+      const angle = (Math.atan2(dx, dy) * 180) / Math.PI;
+      overlay.add(new Graphic({
+        geometry: {
+          type: 'point',
+          longitude: tipLongitude,
+          latitude: tipLatitude,
+        },
+        attributes,
+        symbol: {
+          type: 'simple-marker',
+          style: 'triangle',
+          size: 10,
+          angle,
+          color: [217, 119, 6, 0.95],
+          outline: {
+            color: [255, 255, 255, 0.9],
+            width: 0.9,
+          },
+        },
+      }));
+    };
+
+    const visibleLegCount = Math.max(0, Math.min(context.legs.length, playbackStepIndex));
+    const completedLegs = context.legs.slice(0, visibleLegCount);
+
+    for (const leg of completedLegs) {
+      drawLeg(
+        leg.from.longitude,
+        leg.from.latitude,
+        leg.to.longitude,
+        leg.to.latitude,
+        {
+          legId: leg.id,
+          legKind: leg.kind,
+          stepIndex: leg.stepIndex,
+          startDate: leg.startDate || 'Unknown',
+          endDate: leg.endDate || 'Unknown',
+          confidence: leg.confidence,
+          evidence: leg.evidence,
+        },
+      );
+    }
+
+    const activeLeg = context.legs[playbackStepIndex];
+    const isDrawingPartial = isPlaybackPlaying
+      && !!activeLeg
+      && playbackTransitionProgress > 0
+      && playbackTransitionProgress < 1;
+
+    if (activeLeg && isDrawingPartial) {
+      const partialLongitude = activeLeg.from.longitude
+        + ((activeLeg.to.longitude - activeLeg.from.longitude) * playbackTransitionProgress);
+      const partialLatitude = activeLeg.from.latitude
+        + ((activeLeg.to.latitude - activeLeg.from.latitude) * playbackTransitionProgress);
+      const activeAttributes = {
+        legId: activeLeg.id,
+        legKind: activeLeg.kind,
+        stepIndex: activeLeg.stepIndex,
+        startDate: activeLeg.startDate || 'Unknown',
+        endDate: activeLeg.endDate || 'Unknown',
+        confidence: activeLeg.confidence,
+        evidence: activeLeg.evidence,
+      };
+      drawLeg(
+        activeLeg.from.longitude,
+        activeLeg.from.latitude,
+        partialLongitude,
+        partialLatitude,
+        activeAttributes,
+      );
+      drawArrowhead(
+        activeLeg.from.longitude,
+        activeLeg.from.latitude,
+        partialLongitude,
+        partialLatitude,
+        activeAttributes,
+      );
+    } else if (completedLegs.length > 0) {
+      const lastLeg = completedLegs[completedLegs.length - 1];
+      drawArrowhead(
+        lastLeg.from.longitude,
+        lastLeg.from.latitude,
+        lastLeg.to.longitude,
+        lastLeg.to.latitude,
+        {
+          legId: lastLeg.id,
+          legKind: lastLeg.kind,
+          stepIndex: lastLeg.stepIndex,
+          startDate: lastLeg.startDate || 'Unknown',
+          endDate: lastLeg.endDate || 'Unknown',
+          confidence: lastLeg.confidence,
+          evidence: lastLeg.evidence,
+        },
+      );
+    }
+  }, [playbackStepIndex, playbackTransitionProgress, isPlaybackPlaying]);
+
+  useEffect(() => {
+    const overlay = overlayRef.current;
+    if (!overlay) return;
 
     let cancelled = false;
-    overlay.removeAll();
 
     if (!hasMotusOnMap) {
+      movementContextRef.current = null;
+      overlay.removeAll();
       setMovementDisclaimer('Choose a preserve-linked tag to render its full inferred journey across receiver stations.');
+      setPlaybackStepLabels(['Journey start']);
       return;
     }
 
-    const renderStations = (stations: Array<{ stationId: number | null; name: string; latitude: number; longitude: number }>) => {
-      for (const station of stations) {
-        overlay.add(new Graphic({
-          geometry: {
-            type: 'point',
-            longitude: station.longitude,
-            latitude: station.latitude,
-          },
-          attributes: {
-            stationId: station.stationId,
-            stationName: station.name,
-          },
-          symbol: {
-            type: 'simple-marker',
-            style: 'circle',
-            size: 8,
-            color: [22, 163, 74, 0.9],
-            outline: {
-              color: [255, 255, 255, 0.9],
-              width: 1.1,
-            },
-          },
-          popupTemplate: {
-            title: '{stationName}',
-            content: 'Receiver station context for inferred MOTUS movement.',
-          },
-        }));
-      }
-    };
-
     if (selectedTagId == null) {
       setMovementDisclaimer('Receiver stations are visible. Select a preserve-linked tag to render its full inferred journey.');
+      setPlaybackStepLabels(['Journey start']);
       void motusService.getReceiverStations()
         .then((stations) => {
           if (cancelled) return;
-          renderStations(stations);
+          movementContextRef.current = {
+            stations,
+            legs: [],
+            disclaimer: 'Receiver stations are visible. Select a preserve-linked tag to render its full inferred journey.',
+          };
+          overlay.removeAll();
+          for (const station of stations) {
+            overlay.add(new Graphic({
+              geometry: {
+                type: 'point',
+                longitude: station.longitude,
+                latitude: station.latitude,
+              },
+              attributes: {
+                stationId: station.stationId,
+                stationName: station.name,
+              },
+              symbol: {
+                type: 'simple-marker',
+                style: 'circle',
+                size: 8,
+                color: [22, 163, 74, 0.9],
+                outline: {
+                  color: [255, 255, 255, 0.9],
+                  width: 1.1,
+                },
+              },
+              popupTemplate: {
+                title: '{stationName}',
+                content: 'Receiver station context for inferred MOTUS movement.',
+              },
+            }));
+          }
         })
         .catch((error) => {
           if (cancelled) return;
@@ -148,48 +328,21 @@ export function useMotusMapBehavior(
     void motusService.getMovementContextForTag(selectedTagId, browseFilters)
       .then((context) => {
         if (cancelled) return;
+        movementContextRef.current = context;
         setMovementDisclaimer(context.disclaimer);
-        renderStations(context.stations);
-
-        for (const leg of context.legs) {
-          overlay.add(new Graphic({
-            geometry: {
-              type: 'polyline',
-              paths: [[
-                [leg.from.longitude, leg.from.latitude],
-                [leg.to.longitude, leg.to.latitude],
-              ]],
-            },
-            attributes: {
-              legId: leg.id,
-              legKind: leg.kind,
-              stepIndex: leg.stepIndex,
-              startDate: leg.startDate || 'Unknown',
-              endDate: leg.endDate || 'Unknown',
-              confidence: leg.confidence,
-              evidence: leg.evidence,
-            },
-            symbol: {
-              type: 'simple-line',
-              color: [217, 119, 6, 0.85],
-              width: 2.2,
-              style: 'solid',
-            },
-            popupTemplate: {
-              title: 'Inferred movement leg',
-              content: '<div><p>{evidence}</p><p><strong>Step:</strong> {stepIndex}</p><p><strong>Detection window:</strong> {startDate} to {endDate}</p></div>',
-            },
-          }));
-        }
+        setPlaybackStepLabels(['Journey start', ...context.legs.map((leg) => leg.endDate || leg.startDate || `Step ${leg.stepIndex}`)]);
       })
       .catch((error) => {
         if (cancelled) return;
         console.error('[MOTUS] Failed to render movement context', error);
+        movementContextRef.current = null;
+        overlay.removeAll();
         setMovementDisclaimer('Unable to render journey for this preserve-linked tag. Receiver stations remain visible.');
+        setPlaybackStepLabels(['Journey start']);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [viewRef, hasMotusOnMap, selectedTagId, browseFilters, setMovementDisclaimer]);
+  }, [viewRef, hasMotusOnMap, selectedTagId, browseFilters, setMovementDisclaimer, setPlaybackStepLabels]);
 }

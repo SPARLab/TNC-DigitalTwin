@@ -1,7 +1,7 @@
 # Phase 11: MOTUS Wildlife Telemetry
 
 **Status:** 🟡 In Progress  
-**Progress:** 5 / 9 tasks  
+**Progress:** 6 / 9 tasks  
 **Branch:** `v2/motus`  
 **Depends On:** Phase 0 (Foundation); Phase 10 (DroneDeploy) recommended first — shares time-series interaction patterns  
 **Owner:** TBD
@@ -17,7 +17,7 @@
 | 11.3 | 🟢 Complete | Feb 20, 2026 | Implement species/tag browse + date window UI | Added live species/tag browse with date window, quality controls (`motus_filter`, `hit_count`), latest-window action, seasonal presets, and direct load-on-map flow |
 | 11.4 | 🟢 Complete | Feb 20, 2026 | Implement tagged animal detail view | Added tag detail metadata, deployment + detection windows, quality summary, attribution, methodology links, and load/remove map action |
 | 11.5 | 🟢 Complete | Feb 23, 2026 | Render MOTUS movement context on map | Added explicit MOTUS map layer + graphics overlay for receiver stations and inferred legs; **device_id linkage** (Feb 23) enables time-ordered station-to-station paths for detections matching known deployments; v2 now uses **Dangermond preserve-linked (`device_id`) detections only** for movement rendering; **context-only fallback lines removed** so no movement lines render unless preserve-linked station inference exists |
-| 11.6 | 🟡 In Progress | Feb 23, 2026 | Implement temporal navigation / playback | **Unblocked** — device_id linkage now available; ready for implementation |
+| 11.6 | 🟢 Complete | Feb 23, 2026 | Implement Journey playback widget (temporal navigation / playback) | Floating map playback widget (scrubber, play/pause, step, speed, start/latest); progressive leg drawing between stations; single leading-edge directional arrow; correct bearing via atan2(dx,dy) |
 | 11.7 | 🟡 In Progress | Feb 23, 2026 | Implement legend and symbology controls | Added first-pass in-sidebar legend for tagged animal marker, receiver station marker, and inferred movement legs; remaining: confidence split + detections-specific legend + dynamic updates |
 | 11.8 | ⚪ Not Started | — | Sync loading indicators | Same shared loading pattern as other data sources |
 | 11.9 | ⚪ Not Started | — | Wire Save View flow | Pin MOTUS layers, save product/date views to Map Layers |
@@ -193,12 +193,26 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 
 **Goal:** Navigate through telemetry detections over time. This is the core value proposition for MOTUS.
 
+**Journey Playback Widget (MVP):**
+- Place a floating "Journey playback" widget over the map (similar interaction footprint to other map widgets)
+- Controls:
+  - Play/Pause
+  - Step Back / Step Forward
+  - Speed (0.5x, 1x, 2x, 4x)
+  - Timeline scrubber with current timestamp label
+  - "Jump to start" / "Jump to latest"
+- Scope to currently active MOTUS selection (species + tag + date window + quality filters)
+- Preserve-focused defaults: only animate preserve-linked detections already validated by `device_id` join logic
+
 **Acceptance Criteria:**
-- [ ] Time slider widget for scrubbing through available detection windows
-- [ ] Play/pause animation for detection sequence
-- [ ] Speed control for animation
-- [ ] Current date label prominently displayed
-- [ ] Works with selected species/tag filters
+- [ ] Floating "Journey playback" widget is visible when a MOTUS view is active on map
+- [ ] Time slider/scrubber navigates available detection windows in chronological order
+- [ ] Play/Pause animates the detection sequence and updates the map in-place
+- [ ] Speed control supports at least 4 speeds (0.5x, 1x, 2x, 4x)
+- [ ] Current timestamp label remains visible during scrub and playback
+- [ ] Step controls (previous/next detection window) support manual frame-by-frame analysis
+- [ ] Playback state is synchronized with selected species/tag/date/quality filters
+- [ ] Clear empty-state copy shown when selected filters produce no playable sequence
 - [ ] Optional: "Compare two windows" split-view (reuse shared temporal components if built)
 
 **Reference:** ArcGIS TimeSlider widget, shared temporal patterns from DroneDeploy
@@ -316,7 +330,7 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 - [ ] Should first release prioritize species-level path density, per-tag timelines, or both?
 - [ ] What default quality thresholds should we enforce (`motus_filter`, minimum `hit_count`)?
 - [x] Should we include off-preserve stations by default, or focus on Dangermond-centric movement context first? — **Resolved (Feb 23, 2026):** v2 defaults to Dangermond-centric interpretation only; do not render movement lines unless preserve-linked station inference exists.
-- [ ] Do we want animation playback by detection time in v2, or static paths first then animation in v2.1?
+- [x] Do we want animation playback by detection time in v2, or static paths first then animation in v2.1? — **Resolved (Feb 23, 2026):** v2 includes animated journey playback with progressive leg drawing and directional arrowhead.
 
 ---
 
@@ -324,6 +338,8 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 23, 2026 | 11.6 | Journey Playback refinements: progressive leg drawing between stations; single leading-edge arrow (no residual triangles at dots); correct arrow bearing via atan2(dx,dy) for ArcGIS marker rotation | Cursor |
+| Feb 23, 2026 | 11.6 | Implemented MOTUS Journey Playback widget as floating map controls (play/pause, step back/forward, speed presets, scrubber, current timestamp, start/latest), and wired map rendering to timeline step state so inferred movement legs animate progressively | Cursor |
 | Feb 23, 2026 | 11.5, 11.7 | Updated MOTUS map behavior so green receiver-station dots render persistently whenever MOTUS is active on the map; selecting a preserve-linked tag now adds inferred journey legs on top of this always-visible station context | Cursor |
 | Feb 23, 2026 | 11.7 | Moved MOTUS map legend from tagged animal detail panel into a floating map widget (adapter legend slot) so symbology guidance stays visible over the map while exploring journeys | Cursor |
 | Feb 23, 2026 | 11.3, 11.5 | Updated MOTUS journey model to "preserve-touch eligibility + full journey rendering": tags/species are eligible only if they have at least one Dangermond preserve detection in the current filter window, but once eligible, map rendering uses all mapped receiver detections for that tag to show full inferred movement context | Cursor |

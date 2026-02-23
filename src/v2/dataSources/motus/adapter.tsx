@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { MOTUSBrowseTab } from '../../components/RightSidebar/MOTUS/MOTUSBrowseTab';
 import { MOTUSOverviewTab } from '../../components/RightSidebar/MOTUS/MOTUSOverviewTab';
 import { MOTUSLegendWidget } from '../../components/FloatingWidgets/MOTUSLegendWidget/MOTUSLegendWidget';
+import { MOTUSJourneyPlaybackWidget } from '../../components/FloatingWidgets/MOTUSJourneyPlaybackWidget/MOTUSJourneyPlaybackWidget';
 import { MotusFilterProvider, useMotusFilter } from '../../context/MotusFilterContext';
 import type { CacheStatus, DataSourceAdapter, OverviewTabProps } from '../types';
 
@@ -30,5 +31,6 @@ export const motusAdapter: DataSourceAdapter = {
   OverviewTab: MOTUSOverviewTabWithCache,
   BrowseTab: MOTUSBrowseTab,
   LegendWidget: MOTUSLegendWidget,
+  FloatingPanel: MOTUSJourneyPlaybackWidget,
   CacheProvider: MotusFilterProvider,
 };

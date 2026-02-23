@@ -10,12 +10,23 @@ interface MotusFilterContextValue {
   selectedSpecies: string | null;
   selectedTagId: number | null;
   movementDisclaimer: string;
+  playbackStepIndex: number;
+  playbackTransitionProgress: number;
+  playbackStepLabels: string[];
+  playbackSpeed: 0.5 | 1 | 2 | 4;
+  isPlaybackPlaying: boolean;
+  hasJourneyPlaybackData: boolean;
   warmCache: () => void;
   refreshSpeciesSummaries: () => Promise<void>;
   setBrowseFilters: (next: Partial<MotusBrowseFilters>) => void;
   setSelectedSpecies: (species: string | null) => void;
   setSelectedTagId: (tagId: number | null) => void;
   setMovementDisclaimer: (message: string) => void;
+  setPlaybackStepIndex: (index: number) => void;
+  setPlaybackTransitionProgress: (progress: number) => void;
+  setPlaybackStepLabels: (labels: string[]) => void;
+  setPlaybackSpeed: (speed: 0.5 | 1 | 2 | 4) => void;
+  setIsPlaybackPlaying: (playing: boolean) => void;
 }
 
 const DEFAULT_BROWSE_FILTERS: Required<MotusBrowseFilters> = {
@@ -38,6 +49,11 @@ export function MotusFilterProvider({ children }: { children: ReactNode }) {
   const [movementDisclaimer, setMovementDisclaimer] = useState(
     'Choose a preserve-linked tag to render its full inferred journey across receiver stations.',
   );
+  const [playbackStepIndex, setPlaybackStepIndexState] = useState(0);
+  const [playbackTransitionProgress, setPlaybackTransitionProgressState] = useState(0);
+  const [playbackStepLabels, setPlaybackStepLabelsState] = useState<string[]>(['Journey start']);
+  const [playbackSpeed, setPlaybackSpeedState] = useState<0.5 | 1 | 2 | 4>(1);
+  const [isPlaybackPlaying, setIsPlaybackPlaying] = useState(false);
   const inFlightRef = useRef(false);
 
   const refreshSpeciesSummaries = useCallback(async () => {
@@ -72,6 +88,31 @@ export function MotusFilterProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const setPlaybackStepIndex = useCallback((index: number) => {
+    setPlaybackStepIndexState((previous) => {
+      const maxIndex = Math.max(0, playbackStepLabels.length - 1);
+      if (!Number.isFinite(index)) return previous;
+      return Math.max(0, Math.min(maxIndex, Math.floor(index)));
+    });
+  }, [playbackStepLabels.length]);
+
+  const setPlaybackTransitionProgress = useCallback((progress: number) => {
+    if (!Number.isFinite(progress)) return;
+    setPlaybackTransitionProgressState(Math.max(0, Math.min(1, progress)));
+  }, []);
+
+  const setPlaybackStepLabels = useCallback((labels: string[]) => {
+    const normalized = labels.length > 0 ? labels : ['Journey start'];
+    setPlaybackStepLabelsState(normalized);
+    setPlaybackStepIndexState(Math.max(0, normalized.length - 1));
+    setPlaybackTransitionProgressState(0);
+    setIsPlaybackPlaying(false);
+  }, []);
+
+  const setPlaybackSpeed = useCallback((speed: 0.5 | 1 | 2 | 4) => {
+    setPlaybackSpeedState(speed);
+  }, []);
+
   const value = useMemo<MotusFilterContextValue>(
     () => ({
       loading,
@@ -82,12 +123,23 @@ export function MotusFilterProvider({ children }: { children: ReactNode }) {
       selectedSpecies,
       selectedTagId,
       movementDisclaimer,
+      playbackStepIndex,
+      playbackTransitionProgress,
+      playbackStepLabels,
+      playbackSpeed,
+      isPlaybackPlaying,
+      hasJourneyPlaybackData: playbackStepLabels.length > 1,
       warmCache,
       refreshSpeciesSummaries,
       setBrowseFilters,
       setSelectedSpecies,
       setSelectedTagId,
       setMovementDisclaimer,
+      setPlaybackStepIndex,
+      setPlaybackTransitionProgress,
+      setPlaybackStepLabels,
+      setPlaybackSpeed,
+      setIsPlaybackPlaying,
     }),
     [
       loading,
@@ -98,9 +150,18 @@ export function MotusFilterProvider({ children }: { children: ReactNode }) {
       selectedSpecies,
       selectedTagId,
       movementDisclaimer,
+      playbackStepIndex,
+      playbackTransitionProgress,
+      playbackStepLabels,
+      playbackSpeed,
+      isPlaybackPlaying,
       warmCache,
       refreshSpeciesSummaries,
       setBrowseFilters,
+      setPlaybackSpeed,
+      setPlaybackStepIndex,
+      setPlaybackTransitionProgress,
+      setPlaybackStepLabels,
     ],
   );
 
