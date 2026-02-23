@@ -3,6 +3,7 @@ import { AlertCircle } from 'lucide-react';
 import { motusService, type MotusTaggedAnimalSummary } from '../../../../services/motusService';
 import { useLayers } from '../../../context/LayerContext';
 import { useMotusFilter } from '../../../context/MotusFilterContext';
+import { InlineLoadingRow, RefreshLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { ProductDetailView } from './ProductDetailView';
 import { ProductListView, type MotusBrowseItem } from './ProductListView';
 
@@ -24,6 +25,7 @@ export function MOTUSBrowseTab({ showBackToOverview = false, onBackToOverview }:
     selectedTagId,
     movementDisclaimer,
     warmCache,
+    createLoadingScope,
     refreshSpeciesSummaries,
     setBrowseFilters,
     setSelectedSpecies,
@@ -56,6 +58,7 @@ export function MOTUSBrowseTab({ showBackToOverview = false, onBackToOverview }:
       return;
     }
     let cancelled = false;
+    const closeLoadingScope = createLoadingScope();
     setTaggedAnimalsLoading(true);
     setTagError(null);
     void motusService.getTaggedAnimalsForSpecies(selectedSpecies, browseFilters)
@@ -67,11 +70,13 @@ export function MOTUSBrowseTab({ showBackToOverview = false, onBackToOverview }:
       })
       .finally(() => {
         if (!cancelled) setTaggedAnimalsLoading(false);
+        closeLoadingScope();
       });
     return () => {
       cancelled = true;
+      closeLoadingScope();
     };
-  }, [selectedSpecies, browseFilters, setSelectedTagId]);
+  }, [selectedSpecies, browseFilters, setSelectedTagId, createLoadingScope]);
 
   useEffect(() => {
     if (selectedTagId == null) {
@@ -79,6 +84,7 @@ export function MOTUSBrowseTab({ showBackToOverview = false, onBackToOverview }:
       return;
     }
     let cancelled = false;
+    const closeLoadingScope = createLoadingScope();
     setTagDetailLoading(true);
     setTagError(null);
     void motusService.getTaggedAnimalDetail(selectedTagId, browseFilters)
@@ -90,11 +96,13 @@ export function MOTUSBrowseTab({ showBackToOverview = false, onBackToOverview }:
       })
       .finally(() => {
         if (!cancelled) setTagDetailLoading(false);
+        closeLoadingScope();
       });
     return () => {
       cancelled = true;
+      closeLoadingScope();
     };
-  }, [selectedTagId, browseFilters]);
+  }, [selectedTagId, browseFilters, createLoadingScope]);
 
   const speciesItems = useMemo<MotusBrowseItem[]>(
     () =>
@@ -109,6 +117,8 @@ export function MOTUSBrowseTab({ showBackToOverview = false, onBackToOverview }:
     [speciesSummaries],
   );
   const selectedSpeciesItemId = selectedSpecies ? selectedSpecies.toLowerCase().replace(/\s+/g, '-') : null;
+  const showInitialLoading = loading && !dataLoaded;
+  const showRefreshLoading = loading && dataLoaded;
 
   const setLatestAvailableWindow = () => {
     const end = new Date();
@@ -245,10 +255,11 @@ export function MOTUSBrowseTab({ showBackToOverview = false, onBackToOverview }:
             </div>
           )}
 
-          {loading && (
-            <p id="motus-species-loading" className="text-xs text-gray-500">
-              Loading species and detection summaries...
-            </p>
+          {showInitialLoading && (
+            <InlineLoadingRow id="motus-species-initial-loading" message="Loading species and detection summaries..." />
+          )}
+          {showRefreshLoading && (
+            <RefreshLoadingRow id="motus-species-refresh-loading" message="Refreshing telemetry results..." />
           )}
 
           <ProductListView
@@ -266,7 +277,7 @@ export function MOTUSBrowseTab({ showBackToOverview = false, onBackToOverview }:
                 Tagged animals in {selectedSpecies}
               </h3>
               {taggedAnimalsLoading ? (
-                <p id="motus-tag-list-loading" className="text-xs text-gray-500">Loading tagged animals...</p>
+                <InlineLoadingRow id="motus-tag-list-loading" message="Loading tagged animals..." />
               ) : (
                 <div id="motus-tag-list" className="max-h-56 overflow-y-auto space-y-1">
                   {taggedAnimals.map((animal) => (
@@ -301,9 +312,7 @@ export function MOTUSBrowseTab({ showBackToOverview = false, onBackToOverview }:
       ) : (
         <>
           {tagDetailLoading && (
-            <p id="motus-tag-detail-loading" className="text-xs text-gray-500">
-              Loading tagged animal detail...
-            </p>
+            <InlineLoadingRow id="motus-tag-detail-loading" message="Loading tagged animal detail..." />
           )}
           {tagError && (
             <div id="motus-tag-detail-error" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">

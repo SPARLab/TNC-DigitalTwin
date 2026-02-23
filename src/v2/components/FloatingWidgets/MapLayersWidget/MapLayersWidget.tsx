@@ -127,7 +127,8 @@ export function MapLayersWidget() {
         ? cacheStatusByDataSource.drone
         : (catalogLayer ? cacheStatusByDataSource[catalogLayer.dataSource] : null);
       const isDroneDeploySource = isDroneDeployLayer || catalogLayer?.dataSource === 'drone';
-      const isSourceLoading = isDroneDeploySource
+      const isMotusSource = catalogLayer?.dataSource === 'motus';
+      const isSourceLoading = (isDroneDeploySource || isMotusSource)
         ? !!cacheStatus?.loading
         : (!!cacheStatus?.loading && !cacheStatus?.dataLoaded);
       return [pinnedLayer.layerId, isSourceLoading];
@@ -135,12 +136,13 @@ export function MapLayersWidget() {
   );
   const activeLayerIsDroneDeploy = concreteActiveLayer?.layerId === 'dataset-193'
     || concreteActiveLayer?.dataSource === 'drone';
+  const activeLayerIsMotus = concreteActiveLayer?.dataSource === 'motus';
   const activeLayerCacheStatus = concreteActiveLayer
     ? (activeLayerIsDroneDeploy
       ? cacheStatusByDataSource.drone
       : cacheStatusByDataSource[concreteActiveLayer.dataSource])
     : null;
-  const activeLayerIsLoading = activeLayerIsDroneDeploy
+  const activeLayerIsLoading = (activeLayerIsDroneDeploy || activeLayerIsMotus)
     ? !!activeLayerCacheStatus?.loading
     : (!!activeLayerCacheStatus?.loading && !activeLayerCacheStatus?.dataLoaded);
 

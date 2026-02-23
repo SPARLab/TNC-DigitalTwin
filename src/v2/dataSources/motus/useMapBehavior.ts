@@ -28,6 +28,7 @@ export function useMotusMapBehavior(
     playbackTransitionProgress,
     isPlaybackPlaying,
     setPlaybackStepLabels,
+    createLoadingScope,
   } = useMotusFilter();
   const overlayRef = useRef<GraphicsLayer | null>(null);
   const movementContextRef = useRef<MotusMovementContext | null>(null);
@@ -339,6 +340,7 @@ export function useMotusMapBehavior(
     if (selectedTagId == null) {
       setMovementDisclaimer('Receiver stations are visible. Select a preserve-eligible tag to render its full inferred journey.');
       setPlaybackStepLabels(['Journey start']);
+      const closeLoadingScope = createLoadingScope();
       void motusService.getReceiverStations()
         .then((stations) => {
           if (cancelled) return;
@@ -380,10 +382,17 @@ export function useMotusMapBehavior(
           if (cancelled) return;
           console.error('[MOTUS] Failed to render receiver stations', error);
           setMovementDisclaimer('Unable to load receiver stations. Select a preserve-eligible tag to retry journey rendering.');
+        })
+        .finally(() => {
+          closeLoadingScope();
         });
-      return;
+      return () => {
+        cancelled = true;
+        closeLoadingScope();
+      };
     }
 
+    const closeLoadingScope = createLoadingScope();
     void motusService.getMovementContextForTag(selectedTagId, browseFilters)
       .then((context) => {
         if (cancelled) return;
@@ -398,10 +407,22 @@ export function useMotusMapBehavior(
         overlay.removeAll();
         setMovementDisclaimer('Unable to render journey for this preserve-eligible tag. Receiver stations remain visible.');
         setPlaybackStepLabels(['Journey start']);
+      })
+      .finally(() => {
+        closeLoadingScope();
       });
 
     return () => {
       cancelled = true;
+      closeLoadingScope();
     };
-  }, [viewRef, hasMotusOnMap, selectedTagId, browseFilters, setMovementDisclaimer, setPlaybackStepLabels]);
+  }, [
+    viewRef,
+    hasMotusOnMap,
+    selectedTagId,
+    browseFilters,
+    setMovementDisclaimer,
+    setPlaybackStepLabels,
+    createLoadingScope,
+  ]);
 }

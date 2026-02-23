@@ -17,6 +17,7 @@ interface MotusFilterContextValue {
   isPlaybackPlaying: boolean;
   hasJourneyPlaybackData: boolean;
   warmCache: () => void;
+  createLoadingScope: () => () => void;
   refreshSpeciesSummaries: () => Promise<void>;
   setBrowseFilters: (next: Partial<MotusBrowseFilters>) => void;
   setSelectedSpecies: (species: string | null) => void;
@@ -39,7 +40,8 @@ const DEFAULT_BROWSE_FILTERS: Required<MotusBrowseFilters> = {
 const MotusFilterContext = createContext<MotusFilterContextValue | null>(null);
 
 export function MotusFilterProvider({ children }: { children: ReactNode }) {
-  const [loading, setLoading] = useState(false);
+  const [isWarmLoading, setIsWarmLoading] = useState(false);
+  const [loadScopeCount, setLoadScopeCount] = useState(0);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [speciesSummaries, setSpeciesSummaries] = useState<MotusSpeciesSummary[]>([]);
@@ -55,11 +57,23 @@ export function MotusFilterProvider({ children }: { children: ReactNode }) {
   const [playbackSpeed, setPlaybackSpeedState] = useState<0.5 | 1 | 2 | 4>(1);
   const [isPlaybackPlaying, setIsPlaybackPlaying] = useState(false);
   const inFlightRef = useRef(false);
+  const loading = isWarmLoading || loadScopeCount > 0;
+
+  const createLoadingScope = useCallback(() => {
+    let closed = false;
+    setLoadScopeCount((prev) => prev + 1);
+
+    return () => {
+      if (closed) return;
+      closed = true;
+      setLoadScopeCount((prev) => Math.max(0, prev - 1));
+    };
+  }, []);
 
   const refreshSpeciesSummaries = useCallback(async () => {
     if (inFlightRef.current) return;
     inFlightRef.current = true;
-    setLoading(true);
+    setIsWarmLoading(true);
     setError(null);
     try {
       const summaries = await motusService.getSpeciesSummaries(browseFilters);
@@ -70,7 +84,7 @@ export function MotusFilterProvider({ children }: { children: ReactNode }) {
       setError(message);
     } finally {
       inFlightRef.current = false;
-      setLoading(false);
+      setIsWarmLoading(false);
     }
   }, [browseFilters]);
 
@@ -130,6 +144,7 @@ export function MotusFilterProvider({ children }: { children: ReactNode }) {
       isPlaybackPlaying,
       hasJourneyPlaybackData: playbackStepLabels.length > 1,
       warmCache,
+      createLoadingScope,
       refreshSpeciesSummaries,
       setBrowseFilters,
       setSelectedSpecies,
@@ -156,6 +171,7 @@ export function MotusFilterProvider({ children }: { children: ReactNode }) {
       playbackSpeed,
       isPlaybackPlaying,
       warmCache,
+      createLoadingScope,
       refreshSpeciesSummaries,
       setBrowseFilters,
       setPlaybackSpeed,

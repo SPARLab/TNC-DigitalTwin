@@ -1,7 +1,7 @@
 # Phase 11: MOTUS Wildlife Telemetry
 
 **Status:** 🟡 In Progress  
-**Progress:** 6 / 9 tasks  
+**Progress:** 8 / 9 tasks  
 **Branch:** `v2/motus`  
 **Depends On:** Phase 0 (Foundation); Phase 10 (DroneDeploy) recommended first — shares time-series interaction patterns  
 **Owner:** TBD
@@ -18,8 +18,8 @@
 | 11.4 | 🟢 Complete | Feb 20, 2026 | Implement tagged animal detail view | Added tag detail metadata, deployment + detection windows, quality summary, attribution, methodology links, and load/remove map action |
 | 11.5 | 🟢 Complete | Feb 23, 2026 | Render MOTUS movement context on map | Added explicit MOTUS map layer + graphics overlay for receiver stations and inferred legs; **device_id linkage** (Feb 23) enables time-ordered station-to-station paths for detections matching known deployments; v2 now uses **Dangermond preserve-linked (`device_id`) detections only** for movement rendering; **context-only fallback lines removed** so no movement lines render unless preserve-linked station inference exists |
 | 11.6 | 🟢 Complete | Feb 23, 2026 | Implement Journey playback widget (temporal navigation / playback) | Floating map playback widget (scrubber, play/pause, step, speed, start/latest); progressive leg drawing between stations; single leading-edge directional arrow; correct bearing via atan2(dx,dy); **playback auto-framing** — map zooms/pans to journey station extent when Play is pressed |
-| 11.7 | 🟡 In Progress | Feb 23, 2026 | Implement legend and symbology controls | Added first-pass in-sidebar legend for tagged animal marker, receiver station marker, and inferred movement legs; remaining: confidence split + detections-specific legend + dynamic updates |
-| 11.8 | ⚪ Not Started | — | Sync loading indicators | Same shared loading pattern as other data sources |
+| 11.7 | 🟢 Complete | Feb 23, 2026 | Implement legend and symbology controls | First-pass in-sidebar legend for tagged animal marker, receiver station marker, and inferred movement legs; moved to floating map widget (adapter legend slot). Deferred: confidence split, detections-specific legend, dynamic updates |
+| 11.8 | 🟢 Complete | Feb 23, 2026 | Sync loading indicators | MOTUS loading now flows through shared adapter status: Map Layers eye-slot spinner tracks telemetry/path fetches and Browse uses shared loading primitives (`InlineLoadingRow`, `RefreshLoadingRow`) for species/tag/detail queries |
 | 11.9 | ⚪ Not Started | — | Wire Save View flow | Pin MOTUS layers, save product/date views to Map Layers |
 
 **Status Legend:**
@@ -226,12 +226,14 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 **Goal:** MOTUS movement views need clear symbology so inferred paths and confidence are interpretable.
 
 **Acceptance Criteria:**
-- [ ] Legend for station points, deployment points, detections, and inferred path legs
-- [ ] Confidence legend (high-confidence vs inferred/low-confidence segments)
-- [ ] Legend auto-updates when species/tag filters change
-- [ ] Optional: color by species or by recency
-- [ ] Legend position: floating widget or within right sidebar
-- [ ] Accessible: values labeled, contrast sufficient
+- [x] Legend for station points, deployment points, detections, and inferred path legs
+- [ ] Confidence legend (high-confidence vs inferred/low-confidence segments) — deferred
+- [ ] Legend auto-updates when species/tag filters change — deferred
+- [ ] Optional: color by species or by recency — deferred
+- [x] Legend position: floating widget or within right sidebar (floating map widget via adapter legend slot)
+- [x] Accessible: values labeled, contrast sufficient
+
+**Implementation (Feb 23, 2026):** First-pass legend shows tagged animal marker, receiver station marker, and inferred movement legs. Legend moved from tagged animal detail panel into floating map widget so symbology stays visible over the map while exploring journeys. Confidence split, detections-specific legend, and dynamic filter-driven updates deferred to future iteration.
 
 ---
 
@@ -240,10 +242,10 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 **Goal:** Loading indicators for telemetry query + path rendering.
 
 **Acceptance Criteria:**
-- [ ] MOTUS adapter exposes `loading` via registry
-- [ ] Map Layers widget shows spinner while detections/paths load
-- [ ] Right sidebar shows loading state during species/tag queries
-- [ ] Uses shared loading primitives
+- [x] MOTUS adapter exposes `loading` via registry
+- [x] Map Layers widget shows spinner while detections/paths load
+- [x] Right sidebar shows loading state during species/tag queries
+- [x] Uses shared loading primitives
 
 ---
 
@@ -338,6 +340,8 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 23, 2026 | 11.8 | Synced MOTUS loading with shared patterns: context loading scopes now cover species/tag/detail + movement/station fetches, Browse switched to shared loading primitives, and Map Layers MOTUS row now shows eye-slot spinner while telemetry/path requests are in flight | Cursor |
+| Feb 23, 2026 | 11.7 | Marked complete: first-pass legend (tagged animal, receiver station, inferred legs) in floating map widget; confidence split, detections legend, dynamic updates deferred | Cursor |
 | Feb 23, 2026 | 11.3 | Implemented selected species card state: ProductListView now accepts `selectedItemId`; active species card uses `bg-gray-100` + `border-gray-400`; `aria-pressed` for accessibility | Cursor |
 | Feb 23, 2026 | 11.6 | Playback auto-framing: when user presses Play, map zooms/pans to frame all journey leg stations (Extent with padding); single-point fallback centers at zoom 10; animated goTo with 900ms ease-in-out | Cursor |
 | Feb 23, 2026 | 11.3 (UX polish note) | Documented right-sidebar selected state requirement for species cards: active species should use a subtle gray background (plus stronger border) so current context is visually obvious while browsing tagged animals | Cursor |
