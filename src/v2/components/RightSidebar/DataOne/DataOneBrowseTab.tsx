@@ -307,8 +307,6 @@ export function DataOneBrowseTab() {
         startDate: toStartDate(startYear),
         endDate: toEndDate(endYear),
         author: authorFilter.trim() || undefined,
-        selectedDatasetId: selectedDataset?.dataoneId,
-        selectedDatasetTitle: selectedDataset?.title,
       },
       totalCount,
       activeLayer.viewId
@@ -322,17 +320,24 @@ export function DataOneBrowseTab() {
     startYear,
     endYear,
     authorFilter,
-    selectedDataset?.dataoneId,
-    selectedDataset?.title,
     totalCount,
     getPinnedByLayerId,
     syncDataOneFilters,
   ]);
 
+  const currentViewSavedDatasetId = useMemo(() => {
+    if (activeLayer?.layerId !== 'dataone-datasets' || !activeLayer.viewId) return undefined;
+    const pinned = getPinnedByLayerId('dataone-datasets');
+    return pinned?.views?.find(v => v.id === activeLayer.viewId)?.dataoneFilters?.selectedDatasetId;
+  }, [activeLayer?.layerId, activeLayer?.viewId, getPinnedByLayerId]);
+
   const handleSaveDatasetView = (dataset: DataOneDataset): string => {
     if (activeLayer?.layerId !== 'dataone-datasets') {
       return 'Unable to save view: DataONE layer is not active.';
     }
+
+    const currentViewIsAssigned = Boolean(currentViewSavedDatasetId);
+    const targetViewId = currentViewIsAssigned ? undefined : activeLayer.viewId;
 
     const savedViewId = createOrUpdateDataOneFilteredView(
       activeLayer.layerId,
@@ -340,7 +345,8 @@ export function DataOneBrowseTab() {
         selectedDatasetId: dataset.dataoneId,
         selectedDatasetTitle: dataset.title,
       },
-      1
+      1,
+      targetViewId
     );
 
     if (!savedViewId) {
@@ -348,7 +354,28 @@ export function DataOneBrowseTab() {
     }
 
     activateLayer(activeLayer.layerId, savedViewId, dataset.dataoneId);
-    return 'Saved as a new dataset child view in Map Layers.';
+    return currentViewIsAssigned
+      ? 'Created a new saved view in Map Layers.'
+      : 'Saved to current view in Map Layers.';
+  };
+
+  const handleUnsaveDatasetView = () => {
+    if (activeLayer?.layerId !== 'dataone-datasets' || !activeLayer.viewId || !selectedDataset) return;
+
+    createOrUpdateDataOneFilteredView(
+      activeLayer.layerId,
+      {
+        searchText: appliedSearchTerm || undefined,
+        tncCategory: selectedCategory === 'all' ? undefined : selectedCategory,
+        startDate: toStartDate(startYear),
+        endDate: toEndDate(endYear),
+        author: authorFilter.trim() || undefined,
+      },
+      totalCount,
+      activeLayer.viewId
+    );
+
+    activateLayer(activeLayer.layerId, activeLayer.viewId, selectedDataset.dataoneId);
   };
 
   if (selectedDataset) {
@@ -356,6 +383,8 @@ export function DataOneBrowseTab() {
       <DatasetDetailView
         dataset={selectedDataset}
         onSaveDatasetView={handleSaveDatasetView}
+        onUnsaveDatasetView={handleUnsaveDatasetView}
+        isDatasetSaved={Boolean(selectedDataset && currentViewSavedDatasetId === selectedDataset.dataoneId)}
         onVersionSelect={(versionDataset) => {
           lastHandledFeatureIdRef.current = versionDataset.dataoneId;
           setSelectedDataset(versionDataset);

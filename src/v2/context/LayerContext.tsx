@@ -1280,35 +1280,12 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             };
           }
 
-          const existingFlatViewName = p.distinguisher || buildDataOneViewName(
-            p.dataoneFilters || {
-              searchText: undefined,
-              tncCategory: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              author: undefined,
-              selectedDatasetId: undefined,
-            }
-          );
-
-          const existingFlatView = {
-            id: crypto.randomUUID(),
-            name: existingFlatViewName,
-            isNameCustom: !!p.distinguisher,
-            isVisible: false,
-            filterCount: p.filterCount,
-            filterSummary: p.filterSummary,
-            inaturalistFilters: p.inaturalistFilters,
-            animlFilters: p.animlFilters,
-            dendraFilters: p.dendraFilters,
-            dataoneFilters: p.dataoneFilters,
-            resultCount: p.resultCount,
-          };
-
           return {
             ...p,
             isVisible: true,
-            views: [existingFlatView, newView],
+            // First DataONE save should reuse the current baseline view rather than
+            // creating an extra "All Datasets" child view.
+            views: [newView],
             filterCount: 0,
             filterSummary: undefined,
             inaturalistFilters: { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined },

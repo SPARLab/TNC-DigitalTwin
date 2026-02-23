@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 7 / 16 tasks complete  
+**Progress:** 9 / 16 tasks complete  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-4-dataone-completed.md`  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
@@ -20,8 +20,8 @@
 | CON-DONE-16 | 🟢 Complete | Feb 20, 2026 | Switch from circular clustering to grid binning (FeatureReductionBinning) | Live scale watcher; in-place fixedBinLevel mutation; maxScale:0 keeps bins visible; "Where to Fine-Tune" doc'd |
 | CON-DONE-02 | 🟢 Complete | Feb 20, 2026 | Auto-pan/zoom when opening dataset detail; repurpose View on Map as Recenter | High priority; resolution applied |
 | CON-DONE-05 | 🟢 Complete | Feb 23, 2026 | Fix map vs sidebar count discrepancy (dedupe dataset versions) | Resolved via D20-09 (dedupeDatasetsByDataoneId) + CON-DONE-01 race-condition fix |
-| CON-DONE-06 | ⚪ Not Started | Feb 18, 2026 | Save button: clearly distinguish saved vs unsaved state | High priority |
-| CON-DONE-07 | ⚪ Not Started | Feb 18, 2026 | Persist saved state when returning to already-saved dataset | High priority |
+| CON-DONE-06 | 🟢 Complete | Feb 23, 2026 | Save button: clearly distinguish saved vs unsaved state | DatasetDetailView: "Save Dataset View" (amber) vs "Unsave Dataset View" (rose); driven by isDatasetSaved prop |
+| CON-DONE-07 | 🟢 Complete | Feb 23, 2026 | Persist saved state when returning to already-saved dataset | Save overwrites unassigned view; creates new child when assigned; unsave clears pin; first save pins to baseline (no extra "All Datasets" child) |
 | CON-DONE-08 | ⚪ Not Started | Feb 18, 2026 | Multi-select categories filter checklist | Medium priority |
 | CON-DONE-09 | ⚪ Not Started | Feb 18, 2026 | Search by title and abstract/keywords | High priority |
 | CON-DONE-10 | ⚪ Not Started | Feb 18, 2026 | Filter by file type (CSV, TIF, imagery, and others) | Medium priority |
@@ -237,6 +237,50 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 ---
 
+### CON-DONE-06: Save Button — Clearly Distinguish Saved vs Unsaved State ✅
+
+**Goal:** The sidebar Save button should clearly indicate whether the current filtered child view has a saved dataset. When viewing an already-saved dataset, show "Unsave Dataset View" instead of "Save Dataset View."
+
+**Resolution (Feb 23, 2026):**
+- `DatasetDetailView` receives `isDatasetSaved` and `onUnsaveDatasetView` props from `DataOneBrowseTab`
+- Button shows "Save Dataset View" (amber) when unassigned; "Unsave Dataset View" (rose) when the current child view has this dataset pinned
+- `currentViewSavedDatasetId` memo in DataOneBrowseTab derives saved state from pinned layer view's `dataoneFilters.selectedDatasetId`
+- Sync effect no longer writes `selectedDatasetId`/`selectedDatasetTitle` — only explicit Save/Unsave handlers do
+
+**Files:** `DatasetDetailView.tsx`, `DataOneBrowseTab.tsx`
+
+**Acceptance Criteria:**
+- [x] Clicking a saved child view in Map Layers shows "Unsave Dataset View" in sidebar
+- [x] Clicking Unsave clears the pin; button reverts to "Save Dataset View"
+- [x] Child view name reverts to filter-based label (e.g., result count) after unsave
+
+**Estimated Time:** 2–3 hours
+
+---
+
+### CON-DONE-07: Persist Saved State When Returning to Already-Saved Dataset ✅
+
+**Goal:** When the user returns to a filtered child view that has a saved dataset, the sidebar should reflect that state. Save should overwrite the current view when unassigned; create a new child view when the current view is already assigned.
+
+**Resolution (Feb 23, 2026):**
+- **Save on unassigned view:** Reuses current child view (passes `targetViewId` to `createOrUpdateDataOneFilteredView`)
+- **Save on assigned view:** Creates new child view (no `targetViewId`)
+- **First save from baseline:** Creates a single saved child view (no extra "All Datasets" sibling) — LayerContext no-views branch now initializes with `[newView]` only
+- **Unsave:** Clears `selectedDatasetId` from current view; next save overwrites that view
+- Sync effect does not write dataset assignment fields; only Save/Unsave handlers do
+
+**Files:** `DataOneBrowseTab.tsx`, `LayerContext.tsx`
+
+**Acceptance Criteria:**
+- [x] Save on unassigned view overwrites current view
+- [x] Save on assigned view creates new child view and navigates to it
+- [x] First save pins to baseline without creating duplicate "All Datasets" child
+- [x] Unsave → browse other datasets → Save overwrites the unsaved view
+
+**Estimated Time:** 2–3 hours
+
+---
+
 ### CON-DONE-02: Auto-Pan/Zoom When Opening Dataset Detail; Repurpose View on Map as Recenter
 
 **Goal:** When the user opens a DataONE dataset detail view (from browse card or map click), the map automatically pans and zooms to the dataset location. The former "View on Map" button is repurposed as "Recenter" for recoverability when the user has panned away.
@@ -348,6 +392,7 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 23, 2026 | CON-DONE-06 and CON-DONE-07 marked complete. Save/Unsave button state; overwrite vs new-child logic; first save pins to baseline; sync no longer writes selectedDatasetId. | Assistant |
 | Feb 23, 2026 | CON-DONE-05 marked complete. Map vs sidebar count discrepancy resolved via D20-09 dedupe + CON-DONE-01 race-condition fix. | User |
 | Feb 23, 2026 | Removed CON-DONE-04 (improve point dispersion on zoom). | User |
 | Feb 23, 2026 | Removed CON-DONE-03 (cluster popup for scrolling datasets). Sidebar already shows datasets at cluster location. | User |
