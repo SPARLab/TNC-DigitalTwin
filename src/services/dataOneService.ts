@@ -83,6 +83,63 @@ function shouldUseLatestLayerForSearch(options: DataOneQueryOptions): boolean {
   return Boolean(options.searchText?.trim());
 }
 
+function normalizeFileTypeFilters(
+  options: DataOneQueryOptions,
+): Array<'csv' | 'tif' | 'imagery' | 'other'> {
+  const allowed = new Set(['csv', 'tif', 'imagery', 'other'] as const);
+  const normalized = new Set<'csv' | 'tif' | 'imagery' | 'other'>();
+  for (const value of options.fileTypes || []) {
+    if (allowed.has(value)) normalized.add(value);
+  }
+  return Array.from(normalized);
+}
+
+function normalizeExtension(ext: string): string {
+  return ext.trim().toLowerCase().replace(/^\./, '');
+}
+
+const TIF_EXTENSIONS = new Set(['tif', 'tiff', 'geotif', 'geotiff']);
+const IMAGERY_EXTENSIONS = new Set([
+  'jpg',
+  'jpeg',
+  'png',
+  'gif',
+  'bmp',
+  'webp',
+  'jp2',
+  'j2k',
+  'img',
+  'sid',
+]);
+
+function datasetMatchesFileTypeFilters(
+  dataset: DataOneDataset,
+  selectedFilters: Array<'csv' | 'tif' | 'imagery' | 'other'>,
+): boolean {
+  if (selectedFilters.length === 0) return true;
+  const byExtension = dataset.filesSummary?.byExtension;
+  if (!byExtension) return false;
+
+  const extensions = Object.keys(byExtension)
+    .map(normalizeExtension)
+    .filter(Boolean);
+  if (extensions.length === 0) return false;
+
+  const hasCsv = extensions.includes('csv');
+  const hasTif = extensions.some((ext) => TIF_EXTENSIONS.has(ext));
+  const hasImagery = extensions.some((ext) => IMAGERY_EXTENSIONS.has(ext) && !TIF_EXTENSIONS.has(ext));
+  const hasOther = extensions.some(
+    (ext) => ext !== 'csv' && !TIF_EXTENSIONS.has(ext) && !IMAGERY_EXTENSIONS.has(ext),
+  );
+
+  return selectedFilters.some((filterType) => {
+    if (filterType === 'csv') return hasCsv;
+    if (filterType === 'tif') return hasTif;
+    if (filterType === 'imagery') return hasImagery;
+    return hasOther;
+  });
+}
+
 /**
  * Parse files_summary JSON string
  * Format: {"total": 3, "by_ext": {"csv": 2, "pdf": 1}, "size_bytes": 22583}
@@ -296,10 +353,53 @@ function buildWhereClause(options: DataOneQueryOptions, includeFullTextFields = 
 }
 
 class DataOneService {
+  private async queryAllDatasetsForClientFiltering(
+    options: DataOneQueryOptions = {},
+  ): Promise<DataOneDataset[]> {
+    const useLatestLayer = shouldUseLatestLayerForSearch(options);
+    const whereClause = buildWhereClause(options, useLatestLayer);
+    const queryLayerUrl = useLatestLayer ? LATEST_LAYER_URL : LITE_LAYER_URL;
+
+    const params = new URLSearchParams({
+      where: whereClause,
+      outFields: '*',
+      returnGeometry: 'false',
+      orderByFields: 'date_uploaded DESC',
+      resultRecordCount: '5000',
+      f: 'json',
+    });
+
+    const url = `${queryLayerUrl}/query?${params}`;
+    const response = await fetch(url, { signal: options.signal });
+    if (!response.ok) {
+      throw new Error(`Failed to query DataONE datasets: ${response.statusText}`);
+    }
+
+    const data: DataOneArcGISResponse = await response.json();
+    if (data.error) {
+      throw new Error(`DataONE API error: ${data.error.message || 'Unknown error'}`);
+    }
+    if (!data.features) return [];
+
+    const datasets = dedupeDatasetsByDataoneId(
+      data.features.map((feature) => liteRecordToDataset(feature.attributes as DataOneLiteRecord)),
+    );
+
+    const fileTypeFilters = normalizeFileTypeFilters(options);
+    if (fileTypeFilters.length === 0) return datasets;
+    return datasets.filter((dataset) => datasetMatchesFileTypeFilters(dataset, fileTypeFilters));
+  }
+
   /**
    * Get total count of datasets matching filters (uses Lite layer)
    */
   async countDatasets(options: DataOneQueryOptions = {}): Promise<number> {
+    const fileTypeFilters = normalizeFileTypeFilters(options);
+    if (fileTypeFilters.length > 0) {
+      const clientFiltered = await this.queryAllDatasetsForClientFiltering(options);
+      return clientFiltered.length;
+    }
+
     const useLatestLayer = shouldUseLatestLayerForSearch(options);
     const whereClause = buildWhereClause(options, useLatestLayer);
     const countLayerUrl = useLatestLayer ? LATEST_LAYER_URL : LITE_LAYER_URL;
@@ -335,6 +435,20 @@ class DataOneService {
     const pageSize = options.pageSize || 20;
     const pageNumber = options.pageNumber || 0;
     const offset = pageNumber * pageSize;
+    const fileTypeFilters = normalizeFileTypeFilters(options);
+
+    if (fileTypeFilters.length > 0) {
+      const clientFiltered = await this.queryAllDatasetsForClientFiltering(options);
+      const totalCount = clientFiltered.length;
+      const datasets = clientFiltered.slice(offset, offset + pageSize);
+      return {
+        datasets,
+        totalCount,
+        pageSize,
+        pageNumber,
+        totalPages: Math.ceil(totalCount / pageSize),
+      };
+    }
 
     const useLatestLayer = shouldUseLatestLayerForSearch(options);
     const whereClause = buildWhereClause(options, useLatestLayer);
@@ -544,34 +658,8 @@ class DataOneService {
    * Returns Lite-layer records with center coordinates and filter metadata.
    */
   async getDatasetsForMapLayer(options: DataOneQueryOptions = {}): Promise<DataOneDataset[]> {
-    const useLatestLayer = shouldUseLatestLayerForSearch(options);
-    const whereClause = buildWhereClause(options, useLatestLayer);
-    const queryLayerUrl = useLatestLayer ? LATEST_LAYER_URL : LITE_LAYER_URL;
-
-    const params = new URLSearchParams({
-      where: whereClause,
-      outFields: '*',
-      returnGeometry: 'false',
-      orderByFields: 'date_uploaded DESC',
-      resultRecordCount: '5000',
-      f: 'json',
-    });
-
-    const url = `${queryLayerUrl}/query?${params}`;
-    const response = await fetch(url, { signal: options.signal });
-
-    if (!response.ok) {
-      throw new Error(`Failed to get DataONE map layer datasets: ${response.statusText}`);
-    }
-
-    const data: DataOneArcGISResponse = await response.json();
-    if (data.error || !data.features) return [];
-
-    return dedupeDatasetsByDataoneId(
-      data.features
-        .map((feature) => liteRecordToDataset(feature.attributes as DataOneLiteRecord))
-        .filter((dataset) => dataset.centerLat != null && dataset.centerLon != null)
-    );
+    const datasets = await this.queryAllDatasetsForClientFiltering(options);
+    return datasets.filter((dataset) => dataset.centerLat != null && dataset.centerLon != null);
   }
 
   /**

@@ -34,6 +34,13 @@ const TNC_CATEGORY_OPTIONS = [
   'Research and Sensor Equipment',
 ] as const;
 
+const FILE_TYPE_OPTIONS = [
+  { value: 'csv', label: 'CSV' },
+  { value: 'tif', label: 'TIF' },
+  { value: 'imagery', label: 'Imagery' },
+  { value: 'other', label: 'Other' },
+] as const;
+
 function normalizeCategories(categories?: string[]): string[] {
   if (!categories || categories.length === 0) return [];
   const seen = new Set<string>();
@@ -41,6 +48,18 @@ function normalizeCategories(categories?: string[]): string[] {
     const trimmed = category.trim();
     if (!trimmed || seen.has(trimmed)) continue;
     seen.add(trimmed);
+  }
+  return Array.from(seen);
+}
+
+function normalizeFileTypes(
+  fileTypes?: Array<'csv' | 'tif' | 'imagery' | 'other'>,
+): Array<'csv' | 'tif' | 'imagery' | 'other'> {
+  if (!fileTypes || fileTypes.length === 0) return [];
+  const allowed = new Set(['csv', 'tif', 'imagery', 'other'] as const);
+  const seen = new Set<'csv' | 'tif' | 'imagery' | 'other'>();
+  for (const fileType of fileTypes) {
+    if (allowed.has(fileType)) seen.add(fileType);
   }
   return Array.from(seen);
 }
@@ -84,6 +103,9 @@ export function DataOneBrowseTab() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
     normalizeCategories(browseFilters.tncCategories),
   );
+  const [selectedFileTypes, setSelectedFileTypes] = useState<
+    Array<'csv' | 'tif' | 'imagery' | 'other'>
+  >(normalizeFileTypes(browseFilters.fileTypes));
   const [startYear, setStartYear] = useState(browseFilters.startDate.slice(0, 4));
   const [endYear, setEndYear] = useState(browseFilters.endDate.slice(0, 4));
   const [authorFilter, setAuthorFilter] = useState(browseFilters.author);
@@ -115,11 +137,12 @@ export function DataOneBrowseTab() {
     setBrowseFilters({
       searchText: appliedSearchTerm,
       tncCategories: selectedCategories,
+      fileTypes: selectedFileTypes,
       startDate: toStartDate(startYear) || '',
       endDate: toEndDate(endYear) || '',
       author: authorFilter.trim(),
     });
-  }, [appliedSearchTerm, selectedCategories, startYear, endYear, authorFilter, setBrowseFilters]);
+  }, [appliedSearchTerm, selectedCategories, selectedFileTypes, startYear, endYear, authorFilter, setBrowseFilters]);
 
   // Debounced text search (DFT-035)
   useEffect(() => {
@@ -140,7 +163,7 @@ export function DataOneBrowseTab() {
   // Reset pagination when filter/search controls change.
   useEffect(() => {
     setPage(0);
-  }, [appliedSearchTerm, selectedCategories, startYear, endYear, authorFilter]);
+  }, [appliedSearchTerm, selectedCategories, selectedFileTypes, startYear, endYear, authorFilter]);
 
   // When map-selection is active, resolve datasets entirely client-side from
   // the map behaviour's in-memory cache to avoid 414 URI-Too-Large errors.
@@ -189,6 +212,7 @@ export function DataOneBrowseTab() {
           pageNumber: page,
           searchText: appliedSearchTerm || undefined,
           tncCategories: selectedCategories.length > 0 ? selectedCategories : undefined,
+          fileTypes: selectedFileTypes.length > 0 ? selectedFileTypes : undefined,
           startDate: toStartDate(startYear),
           endDate: toEndDate(endYear),
           author: authorFilter.trim() || undefined,
@@ -215,7 +239,7 @@ export function DataOneBrowseTab() {
       abortController.abort();
       closeLoadingScope();
     };
-  }, [mapSelectionIdSet, appliedSearchTerm, selectedCategories, startYear, endYear, authorFilter, page, createBrowseLoadingScope]);
+  }, [mapSelectionIdSet, appliedSearchTerm, selectedCategories, selectedFileTypes, startYear, endYear, authorFilter, page, createBrowseLoadingScope]);
 
   // When featureId is cleared (cluster click, back navigation), return to list view.
   useEffect(() => {
@@ -277,6 +301,7 @@ export function DataOneBrowseTab() {
     setSelectedCategories(
       normalizeCategories(sourceFilters.tncCategories || (sourceFilters.tncCategory ? [sourceFilters.tncCategory] : [])),
     );
+    setSelectedFileTypes(normalizeFileTypes(sourceFilters.fileTypes));
     setStartYear(sourceFilters.startDate?.slice(0, 4) || '');
     setEndYear(sourceFilters.endDate?.slice(0, 4) || '');
     setAuthorFilter(sourceFilters.author || '');
@@ -324,6 +349,7 @@ export function DataOneBrowseTab() {
         searchText: appliedSearchTerm || undefined,
         tncCategory: selectedCategories[0],
         tncCategories: selectedCategories.length > 0 ? selectedCategories : undefined,
+        fileTypes: selectedFileTypes.length > 0 ? selectedFileTypes : undefined,
         startDate: toStartDate(startYear),
         endDate: toEndDate(endYear),
         author: authorFilter.trim() || undefined,
@@ -337,6 +363,7 @@ export function DataOneBrowseTab() {
     activeLayer?.isPinned,
     appliedSearchTerm,
     selectedCategories,
+    selectedFileTypes,
     startYear,
     endYear,
     authorFilter,
@@ -388,6 +415,7 @@ export function DataOneBrowseTab() {
         searchText: appliedSearchTerm || undefined,
         tncCategory: selectedCategories[0],
         tncCategories: selectedCategories.length > 0 ? selectedCategories : undefined,
+        fileTypes: selectedFileTypes.length > 0 ? selectedFileTypes : undefined,
         startDate: toStartDate(startYear),
         endDate: toEndDate(endYear),
         author: authorFilter.trim() || undefined,
@@ -433,13 +461,20 @@ export function DataOneBrowseTab() {
   const showInitialLoading = loading && !hasStaleResults;
   const showRefreshLoading = loading && hasStaleResults;
   const hasAnyFilter = Boolean(
-    appliedSearchTerm || selectedCategories.length > 0 || startYear || endYear || authorFilter.trim() || mapSelectionDataoneIds?.length
+    appliedSearchTerm
+      || selectedCategories.length > 0
+      || selectedFileTypes.length > 0
+      || startYear
+      || endYear
+      || authorFilter.trim()
+      || mapSelectionDataoneIds?.length
   );
 
   const clearAllFilters = () => {
     setSearchInput('');
     setAppliedSearchTerm('');
     setSelectedCategories([]);
+    setSelectedFileTypes([]);
     setStartYear('');
     setEndYear('');
     setAuthorFilter('');
@@ -582,6 +617,71 @@ export function DataOneBrowseTab() {
                     className="h-3.5 w-3.5 rounded border-gray-300 text-emerald-700 focus:ring-emerald-600"
                   />
                   <span id={`dataone-category-option-label-${categorySlug}`}>{category}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+
+        <div id="dataone-file-type-checklist-section" className="space-y-1">
+          <div id="dataone-file-type-checklist-header" className="flex items-center justify-between">
+            <p id="dataone-file-type-checklist-label" className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
+              File types
+            </p>
+          </div>
+          <div id="dataone-file-type-checklist-status-row" className="flex items-center justify-between">
+            <p id="dataone-file-type-checklist-count" className="text-[11px] text-gray-500">
+              {selectedFileTypes.length === 0
+                ? 'No file-type filter applied'
+                : `${selectedFileTypes.length} selected`}
+            </p>
+            <div id="dataone-file-type-checklist-actions" className="flex items-center gap-2">
+              <button
+                id="dataone-file-type-select-all-button"
+                type="button"
+                onClick={() => setSelectedFileTypes(FILE_TYPE_OPTIONS.map((option) => option.value))}
+                className="text-[11px] font-medium text-emerald-700 hover:text-emerald-800 disabled:cursor-not-allowed disabled:text-gray-400"
+                disabled={selectedFileTypes.length === FILE_TYPE_OPTIONS.length}
+              >
+                Select all
+              </button>
+              <button
+                id="dataone-file-type-clear-all-button"
+                type="button"
+                onClick={() => setSelectedFileTypes([])}
+                className="text-[11px] font-medium text-emerald-700 hover:text-emerald-800 disabled:cursor-not-allowed disabled:text-gray-400"
+                disabled={selectedFileTypes.length === 0}
+              >
+                Clear all
+              </button>
+            </div>
+          </div>
+          <div id="dataone-file-type-checklist" className="space-y-1 rounded-lg border border-gray-200 bg-white px-2.5 py-2">
+            {FILE_TYPE_OPTIONS.map((option) => {
+              const checkboxId = `dataone-file-type-checkbox-${option.value}`;
+              const isChecked = selectedFileTypes.includes(option.value);
+              return (
+                <label
+                  id={`dataone-file-type-option-${option.value}`}
+                  key={option.value}
+                  htmlFor={checkboxId}
+                  className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <input
+                    id={checkboxId}
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => {
+                      setSelectedFileTypes((prev) => {
+                        const next = prev.includes(option.value)
+                          ? prev.filter((item) => item !== option.value)
+                          : [...prev, option.value];
+                        return normalizeFileTypes(next);
+                      });
+                    }}
+                    className="h-3.5 w-3.5 rounded border-gray-300 text-emerald-700 focus:ring-emerald-600"
+                  />
+                  <span id={`dataone-file-type-option-label-${option.value}`}>{option.label}</span>
                 </label>
               );
             })}

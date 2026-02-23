@@ -12,6 +12,7 @@ export type DataOneAggregationMode = 'cluster' | 'binning';
 export interface DataOneBrowseFilters {
   searchText: string;
   tncCategories: string[];
+  fileTypes: Array<'csv' | 'tif' | 'imagery' | 'other'>;
   startDate: string;
   endDate: string;
   author: string;
@@ -49,6 +50,7 @@ export function DataOneFilterProvider({ children }: { children: ReactNode }) {
   const [browseFilters, setBrowseFilters] = useState<DataOneBrowseFilters>({
     searchText: '',
     tncCategories: [],
+    fileTypes: [],
     startDate: '',
     endDate: '',
     author: '',

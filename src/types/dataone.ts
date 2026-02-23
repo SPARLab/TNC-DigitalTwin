@@ -193,6 +193,8 @@ export interface DataOneQueryOptions {
   tncCategory?: string;
   /** Filter by one or more TNC categories */
   tncCategories?: string[];
+  /** Filter by one or more file-type buckets (csv/tif/imagery/other) */
+  fileTypes?: Array<'csv' | 'tif' | 'imagery' | 'other'>;
   /** Optional request cancellation support */
   signal?: AbortSignal;
 }

@@ -203,6 +203,19 @@ function buildDataOneFilterSummary(filters: DataOneViewFilters): string | undefi
         : `Categories: ${categories.slice(0, 2).join(', ')}${categories.length > 2 ? `, +${categories.length - 2} more` : ''}`,
     );
   }
+  if (filters.fileTypes && filters.fileTypes.length > 0) {
+    const labels = filters.fileTypes.map((value) => {
+      if (value === 'csv') return 'CSV';
+      if (value === 'tif') return 'TIF';
+      if (value === 'imagery') return 'Imagery';
+      return 'Other';
+    });
+    parts.push(
+      labels.length === 1
+        ? `File type: ${labels[0]}`
+        : `File types: ${labels.join(', ')}`,
+    );
+  }
   if (filters.author?.trim()) {
     parts.push(`Author: ${filters.author.trim()}`);
   }
@@ -217,6 +230,7 @@ function getDataOneFilterCount(filters: DataOneViewFilters): number {
   let count = 0;
   if (filters.searchText?.trim()) count += 1;
   if ((filters.tncCategories && filters.tncCategories.length > 0) || filters.tncCategory?.trim()) count += 1;
+  if (filters.fileTypes && filters.fileTypes.length > 0) count += 1;
   if (filters.author?.trim()) count += 1;
   if (filters.startDate || filters.endDate) count += 1;
   return count;
@@ -236,11 +250,19 @@ function buildDataOneViewName(filters: DataOneViewFilters): string {
   const categoryPart = categories.length > 0
     ? (categories.length <= 2 ? categories.join(', ') : `${categories.slice(0, 2).join(', ')}, +${categories.length - 2} more`)
     : '';
+  const fileTypePart = filters.fileTypes && filters.fileTypes.length > 0
+    ? `Files: ${filters.fileTypes.map((value) => {
+      if (value === 'csv') return 'CSV';
+      if (value === 'tif') return 'TIF';
+      if (value === 'imagery') return 'Imagery';
+      return 'Other';
+    }).join(', ')}`
+    : '';
   const authorPart = filters.author?.trim() ? `Author: ${filters.author.trim()}` : '';
   const datePart = (filters.startDate || filters.endDate)
     ? `${filters.startDate || 'Any start'} to ${filters.endDate || 'Any end'}`
     : '';
-  const nonDate = [searchPart, categoryPart, authorPart].filter(Boolean).join(' • ');
+  const nonDate = [searchPart, categoryPart, fileTypePart, authorPart].filter(Boolean).join(' • ');
   if (nonDate && datePart) return `${nonDate} (${datePart})`;
   if (nonDate) return nonDate;
   if (datePart) return `Date: ${datePart}`;
@@ -454,10 +476,14 @@ function dataOneFiltersEqual(
     ? b.tncCategories
     : (b.tncCategory ? [b.tncCategory] : [])
   ).map((value) => value.trim()).filter(Boolean);
+  const aFileTypes = (a.fileTypes || []).map((value) => value.trim()).filter(Boolean);
+  const bFileTypes = (b.fileTypes || []).map((value) => value.trim()).filter(Boolean);
   if (aCategories.length !== bCategories.length) return false;
+  if (aFileTypes.length !== bFileTypes.length) return false;
   return (
     (a.searchText || '') === (b.searchText || '') &&
     aCategories.every((value, index) => value === bCategories[index]) &&
+    aFileTypes.every((value, index) => value === bFileTypes[index]) &&
     (a.startDate || '') === (b.startDate || '') &&
     (a.endDate || '') === (b.endDate || '') &&
     (a.author || '') === (b.author || '') &&
@@ -701,6 +727,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                       searchText: undefined,
                       tncCategory: undefined,
                       tncCategories: [],
+                      fileTypes: [],
                       startDate: undefined,
                       endDate: undefined,
                       author: undefined,
@@ -732,6 +759,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             searchText: undefined,
             tncCategory: undefined,
             tncCategories: [],
+            fileTypes: [],
             startDate: undefined,
             endDate: undefined,
             author: undefined,
@@ -1041,6 +1069,9 @@ export function LayerProvider({ children }: { children: ReactNode }) {
               .map((value) => value.trim())
               .filter(Boolean),
             tncCategory: filters.tncCategory?.trim() || filters.tncCategories?.[0]?.trim() || undefined,
+            fileTypes: (filters.fileTypes || [])
+              .map((value) => value.trim())
+              .filter(Boolean) as Array<'csv' | 'tif' | 'imagery' | 'other'>,
             startDate: filters.startDate || undefined,
             endDate: filters.endDate || undefined,
             author: filters.author?.trim() || undefined,
@@ -1236,6 +1267,9 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           .map((value) => value.trim())
           .filter(Boolean),
         tncCategory: filters.tncCategory?.trim() || filters.tncCategories?.[0]?.trim() || undefined,
+        fileTypes: (filters.fileTypes || [])
+          .map((value) => value.trim())
+          .filter(Boolean) as Array<'csv' | 'tif' | 'imagery' | 'other'>,
         startDate: filters.startDate || undefined,
         endDate: filters.endDate || undefined,
         author: filters.author?.trim() || undefined,
@@ -1335,6 +1369,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
               searchText: undefined,
               tncCategory: undefined,
               tncCategories: [],
+              fileTypes: [],
               startDate: undefined,
               endDate: undefined,
               author: undefined,
@@ -1508,6 +1543,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                   searchText: undefined,
                   tncCategory: undefined,
                   tncCategories: [],
+                  fileTypes: [],
                   startDate: undefined,
                   endDate: undefined,
                   author: undefined,
@@ -1545,6 +1581,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                 searchText: undefined,
                 tncCategory: undefined,
                 tncCategories: [],
+                fileTypes: [],
                 startDate: undefined,
                 endDate: undefined,
                 author: undefined,
@@ -1594,6 +1631,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                 searchText: undefined,
                 tncCategory: undefined,
                 tncCategories: [],
+                fileTypes: [],
                 startDate: undefined,
                 endDate: undefined,
                 author: undefined,
@@ -1629,6 +1667,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                 searchText: undefined,
                 tncCategory: undefined,
                 tncCategories: [],
+                fileTypes: [],
                 startDate: undefined,
                 endDate: undefined,
                 author: undefined,
@@ -1764,6 +1803,7 @@ export function LayerProvider({ children }: { children: ReactNode }) {
               searchText: undefined,
               tncCategory: undefined,
               tncCategories: [],
+              fileTypes: [],
               startDate: undefined,
               endDate: undefined,
               author: undefined,

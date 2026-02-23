@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 11 / 16 tasks complete  
+**Progress:** 12 / 16 tasks complete  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-4-dataone-completed.md`  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
@@ -24,7 +24,7 @@
 | CON-DONE-07 | 🟢 Complete | Feb 23, 2026 | Persist saved state when returning to already-saved dataset | Save overwrites unassigned view; creates new child when assigned; unsave clears pin; first save pins to baseline (no extra "All Datasets" child) |
 | CON-DONE-08 | 🟢 Complete | Feb 23, 2026 | Multi-select categories filter checklist | Replaced single-select dropdown with checkbox checklist; Select all / Clear all; tncCategories wired through browse, query, map, and saved views |
 | CON-DONE-09 | 🟢 Complete | Feb 23, 2026 | Search by title and abstract/keywords | Layer 1 used when searchText present; title OR abstract OR keywords predicate; browse + map + count paths updated |
-| CON-DONE-10 | ⚪ Not Started | Feb 18, 2026 | Filter by file type (CSV, TIF, imagery, and others) | Medium priority |
+| CON-DONE-10 | 🟢 Complete | Feb 23, 2026 | Filter by file type (CSV, TIF, imagery, and others) | File-type checklist (CSV/TIF/Imagery/Other) with Select all/Clear all; client-side filtering from files_summary.by_ext; wired through browse, map, saved views |
 | CON-DONE-11 | ⚪ Not Started | Feb 18, 2026 | Saved indicator on browse cards (icon plus subtle highlight) | Medium priority |
 | CON-DONE-15 | ⚪ Not Started | Feb 19, 2026 | Spatial query: ensure draw/query tools filter DataONE datasets by extent | High priority; must work with SpatialQuerySection |
 | CON-DONE-14 | ⚪ Not Started | Feb 18, 2026 | Search highlight: show matching keyword inside abstract snippet | Low / nice-to-have |
@@ -357,6 +357,30 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 ---
 
+### CON-DONE-10: Filter by File Type (CSV, TIF, Imagery, Other) ✅
+
+**Goal:** Allow users to filter DataONE datasets by file-type buckets (`CSV`, `TIF`, `Imagery`, `Other`) using the `files_summary.by_ext` metadata.
+
+**Resolution (Feb 23, 2026):**
+- File-type checklist in `DataOneBrowseTab` with Select all / Clear all (mirrors category filter pattern)
+- `fileTypes` wired through `DataOneFilterContext`, `DataOneViewFilters`, LayerContext sync, view naming, filter summary, and filter count
+- Browse queries, map refresh, and saved views all respect file-type filters
+- Service-level matching in `dataOneService`: parses `files_summary.by_ext`, buckets extensions (csv, tif/tiff/geotiff, imagery types, other), applies client-side filtering and pagination when file-type filters are active
+
+**Files:** `DataOneBrowseTab.tsx`, `DataOneFilterContext.tsx`, `dataOneService.ts`, `useMapBehavior.ts`, `LayerContext.tsx`, `src/types/dataone.ts`, `src/v2/types/index.ts`
+
+**Acceptance Criteria:**
+- [x] User can select one or more file-type buckets (CSV, TIF, Imagery, Other)
+- [x] Browse list updates to include datasets matching any selected bucket
+- [x] Result count and pagination reflect file-type-filtered results
+- [x] Map markers respect selected file-type buckets
+- [x] Saved views persist and restore file-type filter selections
+- [x] Metadata-only datasets (no files_summary) excluded when file-type filter active
+
+**Estimated Time:** 2–4 hours
+
+---
+
 ### CON-DONE-15: Spatial Query for DataONE Datasets
 
 **Goal:** Ensure the spatial query (draw polygon/rectangle, query by extent) correctly filters DataONE datasets. When the user draws a query area on the map, DataONE browse results should be constrained to datasets whose spatial extent intersects the drawn area.
@@ -443,6 +467,7 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 23, 2026 | CON-DONE-10 marked complete. File-type filter (CSV/TIF/Imagery/Other) checklist, client-side filtering from files_summary.by_ext, wired through browse/map/saved views. | Assistant |
 | Feb 23, 2026 | CON-DONE-09 marked complete. Search by title + abstract + keywords; Layer 1 used when searchText present; browse, map, count paths updated. | Assistant |
 | Feb 23, 2026 | CON-DONE-08 marked complete. Multi-select categories checklist; Select all / Clear all; tncCategories wired through browse, query, map, and saved views. | Assistant |
 | Feb 23, 2026 | CON-DONE-06 and CON-DONE-07 marked complete. Save/Unsave button state; overwrite vs new-child logic; first save pins to baseline; sync no longer writes selectedDatasetId. | Assistant |

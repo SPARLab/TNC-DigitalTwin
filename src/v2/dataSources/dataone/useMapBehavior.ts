@@ -173,6 +173,9 @@ export function useDataOneMapBehavior(
           tncCategories: browseFilters.tncCategories.length > 0
             ? browseFilters.tncCategories
             : undefined,
+          fileTypes: browseFilters.fileTypes.length > 0
+            ? browseFilters.fileTypes
+            : undefined,
           startDate: browseFilters.startDate || undefined,
           endDate: browseFilters.endDate || undefined,
           author: browseFilters.author || undefined,
