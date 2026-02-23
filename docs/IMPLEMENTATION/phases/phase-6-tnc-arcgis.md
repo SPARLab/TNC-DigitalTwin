@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 23 / 24 tasks (CON-ARCGIS-01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 16, 17, 6.8, 6.17, 6.20, D20-02, D20-02a, D20-11, TF-13 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
+**Progress:** 24 / 24 tasks (CON-ARCGIS-01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 16, 17, 6.8, 6.11, 6.17, 6.20, D20-02, D20-02a, D20-11, TF-13 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry) ✅ complete  
@@ -56,7 +56,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **6.8** | 🟢 Complete | Feb 23, 2026 | Search Enhancement | Match service + layer names; expand parent service when layer matches; highlight matched text. Parent service IDs included when child matches; auto-expand on child match. |
 | **6.9** | ⚪ | — | Keyboard Navigation & ARIA | Arrow keys for expand/collapse, ARIA tree structure, focus management |
 | **6.10** | ⚪ | — | QA & Edge Cases | Single-layer services, empty results, malformed queries, schema fetch errors |
-| **6.11** | 🟡 | Feb 16, 2026 | Capability-Aware Browse UX | Legend display moved out of right-sidebar Browse and into a floating map widget (bottom-right) for active TNC layers |
+| **6.11** | 🟢 Complete | Feb 23, 2026 | Capability-Aware Browse UX | Legend display moved out of right-sidebar Browse and into a floating map widget (bottom-right) for active TNC layers. Full legend header clickable for expand/collapse; collapsed state has rounded bottom-left and bottom-right corners; keyboard toggle (Enter/Space) for accessibility. |
 | **6.12** | 🟡 | Feb 16, 2026 | Terminology + CTA Realignment | Decision locked: remove right-sidebar pin actions for now; keep pinning in left sidebar + Map Layers widget only |
 | **6.13** | 🟡 | Feb 16, 2026 | Multi-Layer Service Discoverability | In progress: stable left-sidebar scrollbar gutter; service-group spacing refinements retained |
 | **6.14** | 🟡 | Feb 16, 2026 | Service Reference + External Viewer | WIP: right-sidebar Browse focuses on source actions; legend controls live in floating map widget |
@@ -368,9 +368,11 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 
 ---
 
-### 6.11: Capability-Aware Browse UX (Feedback Pivot)
+### 6.11: Capability-Aware Browse UX (Feedback Pivot) ✅ Complete Feb 23, 2026
 
 **Goal:** Avoid showing SQL-style filtering UI for layer types where it does not match user mental models.
+
+**Implementation Notes (Feb 23, 2026):** Floating legend widget UX polish: entire header bar is clickable for expand/collapse (not just chevron); collapsed state uses `rounded-lg` so bottom-left and bottom-right corners are rounded; keyboard toggle (Enter/Space) with `role="button"` and `aria-expanded` for accessibility; Select All/Clear All buttons use `stopPropagation` so they do not trigger collapse.
 
 **Problem (User Feedback):**
 - Image-focused layers currently show field/operator/value query builder, which feels incorrect and confusing.
