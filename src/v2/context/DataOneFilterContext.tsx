@@ -11,7 +11,8 @@ export type DataOneAggregationMode = 'cluster' | 'binning';
 
 export interface DataOneBrowseFilters {
   searchText: string;
-  tncCategory: string;
+  tncCategories: string[];
+  fileTypes: Array<'csv' | 'tif' | 'imagery' | 'other'>;
   startDate: string;
   endDate: string;
   author: string;
@@ -19,6 +20,7 @@ export interface DataOneBrowseFilters {
 
 interface DataOneFilterContextValue {
   loading: boolean;
+  mapLoading: boolean;
   dataLoaded: boolean;
   error: string | null;
   totalDatasetCount: number;
@@ -33,6 +35,7 @@ interface DataOneFilterContextValue {
   setMapSelectionDataoneIds: (next: string[] | null) => void;
   setMapDatasetsCache: (next: Map<string, DataOneDataset>) => void;
   createBrowseLoadingScope: () => () => void;
+  createMapLoadingScope: () => () => void;
 }
 
 const DataOneFilterContext = createContext<DataOneFilterContextValue | null>(null);
@@ -40,12 +43,14 @@ const DataOneFilterContext = createContext<DataOneFilterContextValue | null>(nul
 export function DataOneFilterProvider({ children }: { children: ReactNode }) {
   const [isWarmLoading, setIsWarmLoading] = useState(false);
   const [browseLoadCount, setBrowseLoadCount] = useState(0);
+  const [mapLoadCount, setMapLoadCount] = useState(0);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [totalDatasetCount, setTotalDatasetCount] = useState(0);
   const [browseFilters, setBrowseFilters] = useState<DataOneBrowseFilters>({
     searchText: '',
-    tncCategory: '',
+    tncCategories: [],
+    fileTypes: [],
     startDate: '',
     endDate: '',
     author: '',
@@ -55,6 +60,7 @@ export function DataOneFilterProvider({ children }: { children: ReactNode }) {
   const [mapDatasetsCache, setMapDatasetsCache] = useState<Map<string, DataOneDataset>>(new Map());
   const inFlightRef = useRef(false);
   const loading = isWarmLoading || browseLoadCount > 0;
+  const mapLoading = mapLoadCount > 0;
 
   const warmCache = useCallback(() => {
     if (inFlightRef.current || dataLoaded) return;
@@ -88,6 +94,17 @@ export function DataOneFilterProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const createMapLoadingScope = useCallback(() => {
+    let closed = false;
+    setMapLoadCount((prev) => prev + 1);
+
+    return () => {
+      if (closed) return;
+      closed = true;
+      setMapLoadCount((prev) => Math.max(0, prev - 1));
+    };
+  }, []);
+
   const handleSetBrowseFilters = useCallback((next: DataOneBrowseFilters) => {
     setBrowseFilters(next);
   }, []);
@@ -96,6 +113,7 @@ export function DataOneFilterProvider({ children }: { children: ReactNode }) {
     <DataOneFilterContext.Provider
       value={{
         loading,
+        mapLoading,
         dataLoaded,
         error,
         totalDatasetCount,
@@ -109,6 +127,7 @@ export function DataOneFilterProvider({ children }: { children: ReactNode }) {
         setMapSelectionDataoneIds,
         setMapDatasetsCache,
         createBrowseLoadingScope,
+        createMapLoadingScope,
       }}
     >
       {children}

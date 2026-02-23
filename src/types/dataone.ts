@@ -112,6 +112,8 @@ export interface DataOneDataset {
   authors?: string[];
   // External URL for metadata-only datasets (e.g., PANGAEA links)
   externalUrl: string | null;
+  // Optional abstract available from full-metadata layers (Layer 1/2)
+  abstract?: string | null;
   // Whether this is a metadata-only record (no files, just a pointer to external source)
   isMetadataOnly: boolean;
 }
@@ -166,7 +168,7 @@ export interface DataOneFileInfo {
  * Query options for DataONE service
  */
 export interface DataOneQueryOptions {
-  /** Text search (searches title) */
+  /** Text search (title on Lite; title + abstract + keywords on Latest when enabled) */
   searchText?: string;
   /** Filter by repository source (PISCO, LTER, etc.) */
   repository?: string;
@@ -191,6 +193,10 @@ export interface DataOneQueryOptions {
   usePreserveRadius?: boolean;
   /** Filter by TNC category */
   tncCategory?: string;
+  /** Filter by one or more TNC categories */
+  tncCategories?: string[];
+  /** Filter by one or more file-type buckets (csv/tif/imagery/other) */
+  fileTypes?: Array<'csv' | 'tif' | 'imagery' | 'other'>;
   /** Optional request cancellation support */
   signal?: AbortSignal;
 }

@@ -109,6 +109,10 @@ interface LayerContextValue {
   lastEditFiltersRequest: number;
   requestEditFilters: () => void;
 
+  // Generic Browse tab switch (e.g. cluster click when user is on Overview)
+  lastBrowseTabRequest: number;
+  requestBrowseTab: () => void;
+
   // Filters cleared → hydrate Browse tab with empty state
   lastFiltersClearedTimestamp: number;
 
@@ -201,8 +205,29 @@ function buildDataOneFilterSummary(filters: DataOneViewFilters): string | undefi
   if (filters.searchText?.trim()) {
     parts.push(`Search: "${filters.searchText.trim()}"`);
   }
-  if (filters.tncCategory?.trim()) {
-    parts.push(`Category: ${filters.tncCategory.trim()}`);
+  const categories = (filters.tncCategories && filters.tncCategories.length > 0
+    ? filters.tncCategories
+    : (filters.tncCategory?.trim() ? [filters.tncCategory.trim()] : [])
+  ).filter(Boolean);
+  if (categories.length > 0) {
+    parts.push(
+      categories.length === 1
+        ? `Category: ${categories[0]}`
+        : `Categories: ${categories.slice(0, 2).join(', ')}${categories.length > 2 ? `, +${categories.length - 2} more` : ''}`,
+    );
+  }
+  if (filters.fileTypes && filters.fileTypes.length > 0) {
+    const labels = filters.fileTypes.map((value) => {
+      if (value === 'csv') return 'CSV';
+      if (value === 'tif') return 'TIF';
+      if (value === 'imagery') return 'Imagery';
+      return 'Other';
+    });
+    parts.push(
+      labels.length === 1
+        ? `File type: ${labels[0]}`
+        : `File types: ${labels.join(', ')}`,
+    );
   }
   if (filters.author?.trim()) {
     parts.push(`Author: ${filters.author.trim()}`);
@@ -217,7 +242,8 @@ function getDataOneFilterCount(filters: DataOneViewFilters): number {
   if (filters.selectedDatasetId) return 1;
   let count = 0;
   if (filters.searchText?.trim()) count += 1;
-  if (filters.tncCategory?.trim()) count += 1;
+  if ((filters.tncCategories && filters.tncCategories.length > 0) || filters.tncCategory?.trim()) count += 1;
+  if (filters.fileTypes && filters.fileTypes.length > 0) count += 1;
   if (filters.author?.trim()) count += 1;
   if (filters.startDate || filters.endDate) count += 1;
   return count;
@@ -230,12 +256,26 @@ function buildDataOneViewName(filters: DataOneViewFilters): string {
   const searchPart = filters.searchText?.trim()
     ? `"${filters.searchText.trim()}"`
     : '';
-  const categoryPart = filters.tncCategory?.trim() || '';
+  const categories = (filters.tncCategories && filters.tncCategories.length > 0
+    ? filters.tncCategories
+    : (filters.tncCategory?.trim() ? [filters.tncCategory.trim()] : [])
+  ).filter(Boolean);
+  const categoryPart = categories.length > 0
+    ? (categories.length <= 2 ? categories.join(', ') : `${categories.slice(0, 2).join(', ')}, +${categories.length - 2} more`)
+    : '';
+  const fileTypePart = filters.fileTypes && filters.fileTypes.length > 0
+    ? `Files: ${filters.fileTypes.map((value) => {
+      if (value === 'csv') return 'CSV';
+      if (value === 'tif') return 'TIF';
+      if (value === 'imagery') return 'Imagery';
+      return 'Other';
+    }).join(', ')}`
+    : '';
   const authorPart = filters.author?.trim() ? `Author: ${filters.author.trim()}` : '';
   const datePart = (filters.startDate || filters.endDate)
     ? `${filters.startDate || 'Any start'} to ${filters.endDate || 'Any end'}`
     : '';
-  const nonDate = [searchPart, categoryPart, authorPart].filter(Boolean).join(' • ');
+  const nonDate = [searchPart, categoryPart, fileTypePart, authorPart].filter(Boolean).join(' • ');
   if (nonDate && datePart) return `${nonDate} (${datePart})`;
   if (nonDate) return nonDate;
   if (datePart) return `Date: ${datePart}`;
@@ -499,9 +539,22 @@ function dataOneFiltersEqual(
 ): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
+  const aCategories = (a.tncCategories && a.tncCategories.length > 0
+    ? a.tncCategories
+    : (a.tncCategory ? [a.tncCategory] : [])
+  ).map((value) => value.trim()).filter(Boolean);
+  const bCategories = (b.tncCategories && b.tncCategories.length > 0
+    ? b.tncCategories
+    : (b.tncCategory ? [b.tncCategory] : [])
+  ).map((value) => value.trim()).filter(Boolean);
+  const aFileTypes = (a.fileTypes || []).map((value) => value.trim()).filter(Boolean);
+  const bFileTypes = (b.fileTypes || []).map((value) => value.trim()).filter(Boolean);
+  if (aCategories.length !== bCategories.length) return false;
+  if (aFileTypes.length !== bFileTypes.length) return false;
   return (
     (a.searchText || '') === (b.searchText || '') &&
-    (a.tncCategory || '') === (b.tncCategory || '') &&
+    aCategories.every((value, index) => value === bCategories[index]) &&
+    aFileTypes.every((value, index) => value === bFileTypes[index]) &&
     (a.startDate || '') === (b.startDate || '') &&
     (a.endDate || '') === (b.endDate || '') &&
     (a.author || '') === (b.author || '') &&
@@ -591,6 +644,9 @@ export function LayerProvider({ children }: { children: ReactNode }) {
 
   const [lastEditFiltersRequest, setLastEditFiltersRequest] = useState(0);
   const requestEditFilters = useCallback(() => setLastEditFiltersRequest(Date.now()), []);
+
+  const [lastBrowseTabRequest, setLastBrowseTabRequest] = useState(0);
+  const requestBrowseTab = useCallback(() => setLastBrowseTabRequest(Date.now()), []);
 
   const [lastFiltersClearedTimestamp, setLastFiltersClearedTimestamp] = useState(0);
 
@@ -761,6 +817,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
                     dataoneFilters: {
                       searchText: undefined,
                       tncCategory: undefined,
+                      tncCategories: [],
+                      fileTypes: [],
                       startDate: undefined,
                       endDate: undefined,
                       author: undefined,
@@ -803,6 +861,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
           dataoneFilters: {
             searchText: undefined,
             tncCategory: undefined,
+            tncCategories: [],
+            fileTypes: [],
             startDate: undefined,
             endDate: undefined,
             author: undefined,
@@ -1120,7 +1180,13 @@ export function LayerProvider({ children }: { children: ReactNode }) {
 
           const normalizedFilters: DataOneViewFilters = {
             searchText: filters.searchText?.trim() || undefined,
-            tncCategory: filters.tncCategory?.trim() || undefined,
+            tncCategories: (filters.tncCategories || [])
+              .map((value) => value.trim())
+              .filter(Boolean),
+            tncCategory: filters.tncCategory?.trim() || filters.tncCategories?.[0]?.trim() || undefined,
+            fileTypes: (filters.fileTypes || [])
+              .map((value) => value.trim())
+              .filter(Boolean) as Array<'csv' | 'tif' | 'imagery' | 'other'>,
             startDate: filters.startDate || undefined,
             endDate: filters.endDate || undefined,
             author: filters.author?.trim() || undefined,
@@ -1388,7 +1454,13 @@ export function LayerProvider({ children }: { children: ReactNode }) {
 
       const normalizedFilters: DataOneViewFilters = {
         searchText: filters.searchText?.trim() || undefined,
-        tncCategory: filters.tncCategory?.trim() || undefined,
+        tncCategories: (filters.tncCategories || [])
+          .map((value) => value.trim())
+          .filter(Boolean),
+        tncCategory: filters.tncCategory?.trim() || filters.tncCategories?.[0]?.trim() || undefined,
+        fileTypes: (filters.fileTypes || [])
+          .map((value) => value.trim())
+          .filter(Boolean) as Array<'csv' | 'tif' | 'imagery' | 'other'>,
         startDate: filters.startDate || undefined,
         endDate: filters.endDate || undefined,
         author: filters.author?.trim() || undefined,
@@ -1464,35 +1536,12 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             };
           }
 
-          const existingFlatViewName = p.distinguisher || buildDataOneViewName(
-            p.dataoneFilters || {
-              searchText: undefined,
-              tncCategory: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              author: undefined,
-              selectedDatasetId: undefined,
-            }
-          );
-
-          const existingFlatView = {
-            id: crypto.randomUUID(),
-            name: existingFlatViewName,
-            isNameCustom: !!p.distinguisher,
-            isVisible: false,
-            filterCount: p.filterCount,
-            filterSummary: p.filterSummary,
-            inaturalistFilters: p.inaturalistFilters,
-            animlFilters: p.animlFilters,
-            dendraFilters: p.dendraFilters,
-            dataoneFilters: p.dataoneFilters,
-            resultCount: p.resultCount,
-          };
-
           return {
             ...p,
             isVisible: true,
-            views: [existingFlatView, newView],
+            // First DataONE save should reuse the current baseline view rather than
+            // creating an extra "All Datasets" child view.
+            views: [newView],
             filterCount: 0,
             filterSummary: undefined,
             inaturalistFilters: { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined },
@@ -1510,6 +1559,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             dataoneFilters: {
               searchText: undefined,
               tncCategory: undefined,
+              tncCategories: [],
+              fileTypes: [],
               startDate: undefined,
               endDate: undefined,
               author: undefined,
@@ -1853,6 +1904,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
               ? {
                   searchText: undefined,
                   tncCategory: undefined,
+                  tncCategories: [],
+                  fileTypes: [],
                   startDate: undefined,
                   endDate: undefined,
                   author: undefined,
@@ -1903,6 +1956,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
               p.dataoneFilters || {
                 searchText: undefined,
                 tncCategory: undefined,
+                tncCategories: [],
+                fileTypes: [],
                 startDate: undefined,
                 endDate: undefined,
                 author: undefined,
@@ -1967,6 +2022,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             ? {
                 searchText: undefined,
                 tncCategory: undefined,
+                tncCategories: [],
+                fileTypes: [],
                 startDate: undefined,
                 endDate: undefined,
                 author: undefined,
@@ -2015,6 +2072,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             ? {
                 searchText: undefined,
                 tncCategory: undefined,
+                tncCategories: [],
+                fileTypes: [],
                 startDate: undefined,
                 endDate: undefined,
                 author: undefined,
@@ -2165,6 +2224,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
             targetView.dataoneFilters || {
               searchText: undefined,
               tncCategory: undefined,
+              tncCategories: [],
+              fileTypes: [],
               startDate: undefined,
               endDate: undefined,
               author: undefined,
@@ -2284,6 +2345,8 @@ export function LayerProvider({ children }: { children: ReactNode }) {
         renameView,
         lastEditFiltersRequest,
         requestEditFilters,
+        lastBrowseTabRequest,
+        requestBrowseTab,
         lastFiltersClearedTimestamp,
         isLayerPinned,
         isLayerVisible,
