@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type Layer from '@arcgis/core/layers/Layer';
+import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import Graphic from '@arcgis/core/Graphic';
 import type { ActiveLayer, PinnedLayer } from '../../types';
@@ -67,9 +68,22 @@ export function useMotusMapBehavior(
     }
 
     // Add a stable tagged-animals layer if the managed map flow has not yet instantiated one.
+    const selectedTagWhere = selectedTagId != null ? `tag_id = ${selectedTagId}` : '1=0';
     if (!map.findLayerById(`v2-${MOTUS_TAGGED_ANIMALS_LAYER_ID}`)) {
-      const motusLayer = createMotusLayer({ id: `v2-${MOTUS_TAGGED_ANIMALS_LAYER_ID}`, visible: true });
+      const motusLayer = createMotusLayer({
+        id: `v2-${MOTUS_TAGGED_ANIMALS_LAYER_ID}`,
+        visible: selectedTagId != null,
+        whereClause: selectedTagWhere,
+      });
       map.add(motusLayer);
+    }
+
+    for (const layerId of [`v2-${MOTUS_TAGGED_ANIMALS_LAYER_ID}`, MOTUS_TAGGED_ANIMALS_LAYER_ID]) {
+      const existingLayer = map.findLayerById(layerId);
+      if (existingLayer?.type !== 'feature') continue;
+      const featureLayer = existingLayer as FeatureLayer;
+      featureLayer.definitionExpression = selectedTagWhere;
+      featureLayer.visible = selectedTagId != null;
     }
   }, [viewRef, hasMotusOnMap, selectedTagId]);
 
@@ -81,10 +95,53 @@ export function useMotusMapBehavior(
     let cancelled = false;
     overlay.removeAll();
 
-    if (!hasMotusOnMap || selectedTagId == null) {
-      setMovementDisclaimer(
-        'Receiver stations are shown as green circles on the map. Inferred path legs appear only when station-to-station inference is valid.',
-      );
+    if (!hasMotusOnMap) {
+      setMovementDisclaimer('Choose a preserve-linked tag to render its full inferred journey across receiver stations.');
+      return;
+    }
+
+    const renderStations = (stations: Array<{ stationId: number | null; name: string; latitude: number; longitude: number }>) => {
+      for (const station of stations) {
+        overlay.add(new Graphic({
+          geometry: {
+            type: 'point',
+            longitude: station.longitude,
+            latitude: station.latitude,
+          },
+          attributes: {
+            stationId: station.stationId,
+            stationName: station.name,
+          },
+          symbol: {
+            type: 'simple-marker',
+            style: 'circle',
+            size: 8,
+            color: [22, 163, 74, 0.9],
+            outline: {
+              color: [255, 255, 255, 0.9],
+              width: 1.1,
+            },
+          },
+          popupTemplate: {
+            title: '{stationName}',
+            content: 'Receiver station context for inferred MOTUS movement.',
+          },
+        }));
+      }
+    };
+
+    if (selectedTagId == null) {
+      setMovementDisclaimer('Receiver stations are visible. Select a preserve-linked tag to render its full inferred journey.');
+      void motusService.getReceiverStations()
+        .then((stations) => {
+          if (cancelled) return;
+          renderStations(stations);
+        })
+        .catch((error) => {
+          if (cancelled) return;
+          console.error('[MOTUS] Failed to render receiver stations', error);
+          setMovementDisclaimer('Unable to load receiver stations. Select a preserve-linked tag to retry journey rendering.');
+        });
       return;
     }
 
@@ -92,37 +149,9 @@ export function useMotusMapBehavior(
       .then((context) => {
         if (cancelled) return;
         setMovementDisclaimer(context.disclaimer);
-
-        for (const station of context.stations) {
-          overlay.add(new Graphic({
-            geometry: {
-              type: 'point',
-              longitude: station.longitude,
-              latitude: station.latitude,
-            },
-            attributes: {
-              stationId: station.stationId,
-              stationName: station.name,
-            },
-            symbol: {
-              type: 'simple-marker',
-              style: 'circle',
-              size: 8,
-              color: [22, 163, 74, 0.9],
-              outline: {
-                color: [255, 255, 255, 0.9],
-                width: 1.1,
-              },
-            },
-            popupTemplate: {
-              title: '{stationName}',
-              content: 'Receiver station context for inferred MOTUS movement.',
-            },
-          }));
-        }
+        renderStations(context.stations);
 
         for (const leg of context.legs) {
-          const isContextLeg = leg.kind === 'context';
           overlay.add(new Graphic({
             geometry: {
               type: 'polyline',
@@ -142,15 +171,13 @@ export function useMotusMapBehavior(
             },
             symbol: {
               type: 'simple-line',
-              color: isContextLeg ? [75, 85, 99, 0.72] : [217, 119, 6, 0.85],
-              width: isContextLeg ? 1.8 : 2.2,
-              style: isContextLeg ? 'dot' : 'solid',
+              color: [217, 119, 6, 0.85],
+              width: 2.2,
+              style: 'solid',
             },
             popupTemplate: {
-              title: isContextLeg ? 'Movement context line' : 'Inferred movement leg',
-              content: isContextLeg
-                ? '{evidence}'
-                : '<div><p>{evidence}</p><p><strong>Step:</strong> {stepIndex}</p><p><strong>Detection window:</strong> {startDate} to {endDate}</p></div>',
+              title: 'Inferred movement leg',
+              content: '<div><p>{evidence}</p><p><strong>Step:</strong> {stepIndex}</p><p><strong>Detection window:</strong> {startDate} to {endDate}</p></div>',
             },
           }));
         }
@@ -158,7 +185,7 @@ export function useMotusMapBehavior(
       .catch((error) => {
         if (cancelled) return;
         console.error('[MOTUS] Failed to render movement context', error);
-        setMovementDisclaimer('Unable to infer movement paths for this selection. Receiver stations remain visible.');
+        setMovementDisclaimer('Unable to render journey for this preserve-linked tag. Receiver stations remain visible.');
       });
 
     return () => {

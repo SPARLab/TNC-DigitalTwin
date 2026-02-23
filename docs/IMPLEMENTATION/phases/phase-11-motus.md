@@ -16,9 +16,9 @@
 | 11.2 | 🟢 Complete | Feb 20, 2026 | Create MOTUS right sidebar shell | Added MOTUS adapter + sidebar shell components (Overview/Browse, list/detail shell) and registry wiring |
 | 11.3 | 🟢 Complete | Feb 20, 2026 | Implement species/tag browse + date window UI | Added live species/tag browse with date window, quality controls (`motus_filter`, `hit_count`), latest-window action, seasonal presets, and direct load-on-map flow |
 | 11.4 | 🟢 Complete | Feb 20, 2026 | Implement tagged animal detail view | Added tag detail metadata, deployment + detection windows, quality summary, attribution, methodology links, and load/remove map action |
-| 11.5 | 🟢 Complete | Feb 23, 2026 | Render MOTUS movement context on map | Added explicit MOTUS map layer + graphics overlay for receiver stations and inferred legs; **device_id linkage** (Feb 23) enables time-ordered station-to-station paths for detections matching known deployments; medium-confidence legs when both endpoints are device-linked; node_num fallback retained |
+| 11.5 | 🟢 Complete | Feb 23, 2026 | Render MOTUS movement context on map | Added explicit MOTUS map layer + graphics overlay for receiver stations and inferred legs; **device_id linkage** (Feb 23) enables time-ordered station-to-station paths for detections matching known deployments; v2 now uses **Dangermond preserve-linked (`device_id`) detections only** for movement rendering; **context-only fallback lines removed** so no movement lines render unless preserve-linked station inference exists |
 | 11.6 | 🟡 In Progress | Feb 23, 2026 | Implement temporal navigation / playback | **Unblocked** — device_id linkage now available; ready for implementation |
-| 11.7 | 🟡 In Progress | Feb 23, 2026 | Implement legend and symbology controls | **Unblocked** — device_id linkage now available; ready for implementation |
+| 11.7 | 🟡 In Progress | Feb 23, 2026 | Implement legend and symbology controls | Added first-pass in-sidebar legend for tagged animal marker, receiver station marker, and inferred movement legs; remaining: confidence split + detections-specific legend + dynamic updates |
 | 11.8 | ⚪ Not Started | — | Sync loading indicators | Same shared loading pattern as other data sources |
 | 11.9 | ⚪ Not Started | — | Wire Save View flow | Pin MOTUS layers, save product/date views to Map Layers |
 
@@ -315,7 +315,7 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 - [x] **Do we want to enrich `Tag Detections` with explicit station/deployment join fields for deterministic path rendering?** — **Resolved.** Using existing `device_id` (100% populated) to join detections to Station Deployments; time-ordered inferred legs now render for matching detections (Feb 23, 2026).
 - [ ] Should first release prioritize species-level path density, per-tag timelines, or both?
 - [ ] What default quality thresholds should we enforce (`motus_filter`, minimum `hit_count`)?
-- [ ] Should we include off-preserve stations by default, or focus on Dangermond-centric movement context first?
+- [x] Should we include off-preserve stations by default, or focus on Dangermond-centric movement context first? — **Resolved (Feb 23, 2026):** v2 defaults to Dangermond-centric interpretation only; do not render movement lines unless preserve-linked station inference exists.
 - [ ] Do we want animation playback by detection time in v2, or static paths first then animation in v2.1?
 
 ---
@@ -324,6 +324,12 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 23, 2026 | 11.5, 11.7 | Updated MOTUS map behavior so green receiver-station dots render persistently whenever MOTUS is active on the map; selecting a preserve-linked tag now adds inferred journey legs on top of this always-visible station context | Cursor |
+| Feb 23, 2026 | 11.7 | Moved MOTUS map legend from tagged animal detail panel into a floating map widget (adapter legend slot) so symbology guidance stays visible over the map while exploring journeys | Cursor |
+| Feb 23, 2026 | 11.3, 11.5 | Updated MOTUS journey model to "preserve-touch eligibility + full journey rendering": tags/species are eligible only if they have at least one Dangermond preserve detection in the current filter window, but once eligible, map rendering uses all mapped receiver detections for that tag to show full inferred movement context | Cursor |
+| Feb 23, 2026 | 11.3, 11.5 | Added strict preserve-interaction gating: Dangermond device IDs now derived from deployments that fall inside the Dangermond preserve boundary polygon; species and tag browse lists now show only tags with preserve-linked detections (>0), preventing non-interacting tags from appearing | Cursor |
+| Feb 23, 2026 | 11.5 | Tightened movement inference to preserve-linked `device_id` detections only (removed node-based fallback for map movement), and aligned species/tag detection counts to preserve-linked detections for browse/detail consistency | Cursor |
+| Feb 23, 2026 | 11.5, 11.7 | Removed context-only fallback movement lines that could imply flights without preserve-linked detections; updated movement disclaimer copy to preserve-linked language; added first-pass MOTUS map legend in tagged animal detail view (tag marker, receiver station marker, inferred movement leg) | Cursor |
 | Feb 23, 2026 | 11.5 | Implemented device_id-based station linkage for MOTUS movement paths; detections join to Station Deployments via device_id (100% populated); time-ordered inferred legs render with medium confidence when both endpoints device-linked; node_num fallback retained. Data blocker resolved; 11.6, 11.7 unblocked | Cursor |
 | Feb 20, 2026 | 11.5–11.7 | Documented data blocker: 0% detection-to-station join coverage; journey reconstruction on hold until Dan fixes linkage. Tasks 11.6, 11.7 marked in-progress/on-hold | Codex |
 | Feb 20, 2026 | 11.3, 11.4, 11.5 | Implemented MOTUS species/tag browse filters (date + quality), tagged-animal detail panel, and map movement context (receiver station overlay + inferred leg rendering with confidence/disclaimer messaging) | Codex |

@@ -36,7 +36,7 @@ export function MotusFilterProvider({ children }: { children: ReactNode }) {
   const [selectedSpecies, setSelectedSpecies] = useState<string | null>(null);
   const [selectedTagId, setSelectedTagId] = useState<number | null>(null);
   const [movementDisclaimer, setMovementDisclaimer] = useState(
-    'Receiver stations are shown as green circles on the map. Inferred path legs appear only when station-to-station inference is valid.',
+    'Choose a preserve-linked tag to render its full inferred journey across receiver stations.',
   );
   const inFlightRef = useRef(false);
 

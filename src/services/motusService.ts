@@ -76,7 +76,7 @@ export interface MotusMovementContext {
 }
 
 type ArcGISFeature = { attributes?: Record<string, unknown> };
-type ObservationSource = 'device_id' | 'node_num';
+type BoundaryPolygon = [number, number][];
 
 function escapeSql(value: string): string {
   return value.replace(/'/g, "''");
@@ -109,60 +109,22 @@ function toTimestamp(value: unknown): number | null {
   return value;
 }
 
-function normalizeNodeToken(value: string): string {
-  return value.trim().toLowerCase().replace(/^0x/, '').replace(/^0+/, '');
-}
-
-function buildLookupKeysFromNumeric(value: number): string[] {
-  if (!Number.isFinite(value)) return [];
-  const asInt = Math.floor(Math.abs(value));
-  const decimal = normalizeNodeToken(String(asInt));
-  const hex = normalizeNodeToken(asInt.toString(16));
-  return Array.from(new Set([decimal, hex].filter(Boolean)));
-}
-
-function buildLookupKeysFromSerial(serial: string): string[] {
-  const cleaned = serial.toLowerCase().replace(/[^a-f0-9]/g, '');
-  if (!cleaned) return [];
-  const suffixes = [6, 8, 10, 12]
-    .filter((length) => cleaned.length >= length)
-    .map((length) => cleaned.slice(-length));
-  return Array.from(new Set([cleaned, ...suffixes].map(normalizeNodeToken).filter(Boolean)));
-}
-
-function buildDetectionNodeCandidates(nodeRaw: string): string[] {
-  const normalized = normalizeNodeToken(nodeRaw);
-  if (!normalized) return [];
-  const candidates = new Set<string>([normalized]);
-
-  if (/^[0-9a-f]+$/.test(normalized)) {
-    const asHex = Number.parseInt(normalized, 16);
-    if (Number.isFinite(asHex)) candidates.add(normalizeNodeToken(String(asHex)));
-  }
-
-  if (/^[0-9]+$/.test(normalized)) {
-    const asDecimal = Number.parseInt(normalized, 10);
-    if (Number.isFinite(asDecimal)) candidates.add(normalizeNodeToken(asDecimal.toString(16)));
-  }
-
-  return Array.from(candidates);
-}
-
 function toIntegerKey(value: unknown): string | null {
   const parsed = toFiniteNumber(value);
   if (parsed == null) return null;
   return String(Math.floor(Math.abs(parsed)));
 }
 
-function estimateDistanceKm(from: { latitude: number; longitude: number }, to: { latitude: number; longitude: number }): number {
-  const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
-  const earthRadiusKm = 6371;
-  const dLat = toRadians(to.latitude - from.latitude);
-  const dLon = toRadians(to.longitude - from.longitude);
-  const lat1 = toRadians(from.latitude);
-  const lat2 = toRadians(to.latitude);
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
-  return 2 * earthRadiusKm * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+function pointInPolygon(longitude: number, latitude: number, polygon: BoundaryPolygon): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
+    const [xi, yi] = polygon[i];
+    const [xj, yj] = polygon[j];
+    const intersects = ((yi > latitude) !== (yj > latitude))
+      && (longitude < ((xj - xi) * (latitude - yi)) / ((yj - yi) || Number.EPSILON) + xi);
+    if (intersects) inside = !inside;
+  }
+  return inside;
 }
 
 async function queryArcgis(
@@ -187,9 +149,10 @@ async function queryArcgis(
   return json as Record<string, unknown>;
 }
 
-function buildDetectionWhereClause(filters: MotusBrowseFilters, tagIds?: number[]): string {
+function buildDetectionWhereClause(filters: MotusBrowseFilters, tagIds?: number[], deviceIds?: number[]): string {
   const clauses: string[] = ['1=1'];
   if (tagIds && tagIds.length > 0) clauses.push(`tag_id IN (${tagIds.join(',')})`);
+  if (deviceIds && deviceIds.length > 0) clauses.push(`device_id IN (${deviceIds.join(',')})`);
   if (filters.startDate) clauses.push(`ts_begin >= DATE '${escapeSql(filters.startDate)}'`);
   if (filters.endDate) clauses.push(`ts_end <= DATE '${escapeSql(filters.endDate)}'`);
   if (typeof filters.minHitCount === 'number') clauses.push(`hit_count >= ${Math.max(0, Math.floor(filters.minHitCount))}`);
@@ -205,29 +168,19 @@ function chunk<T>(values: T[], chunkSize: number): T[][] {
   return chunks;
 }
 
-async function queryDetectionCountByTagIds(tagIds: number[], filters: MotusBrowseFilters): Promise<number> {
-  if (tagIds.length === 0) return 0;
-  const where = buildDetectionWhereClause(filters, tagIds);
-  const json = await queryArcgis(TAG_DETECTIONS_TABLE_URL, {
-    where,
-    returnCountOnly: true,
-    returnGeometry: false,
-    f: 'json',
-  });
-  return typeof json.count === 'number' ? json.count : 0;
-}
-
 async function queryDetectionCountsByTagIds(
   tagIds: number[],
   filters: MotusBrowseFilters,
+  deviceIds?: number[],
   signal?: AbortSignal,
 ): Promise<Map<number, number>> {
   const result = new Map<number, number>();
   if (tagIds.length === 0) return result;
+  if (deviceIds && deviceIds.length === 0) return result;
 
   const chunks = chunk(tagIds, CHUNK_SIZE);
   for (const tagChunk of chunks) {
-    const where = buildDetectionWhereClause(filters, tagChunk);
+    const where = buildDetectionWhereClause(filters, tagChunk, deviceIds);
     const json = await queryArcgis(
       TAG_DETECTIONS_TABLE_URL,
       {
@@ -259,7 +212,144 @@ async function queryDetectionCountsByTagIds(
   return result;
 }
 
+async function queryDetectionCountByTagIds(
+  tagIds: number[],
+  filters: MotusBrowseFilters,
+  deviceIds?: number[],
+  signal?: AbortSignal,
+): Promise<number> {
+  if (tagIds.length === 0) return 0;
+  const counts = await queryDetectionCountsByTagIds(tagIds, filters, deviceIds, signal);
+  return Array.from(counts.values()).reduce((sum, count) => sum + count, 0);
+}
+
+let cachedDangermondDeviceIds: number[] | null = null;
+let cachedDangermondBoundaryPolygon: BoundaryPolygon | null = null;
+
+async function getDangermondBoundaryPolygon(signal?: AbortSignal): Promise<BoundaryPolygon> {
+  if (cachedDangermondBoundaryPolygon) return cachedDangermondBoundaryPolygon;
+  const response = await fetch('/dangermond-preserve-boundary.geojson', { signal });
+  if (!response.ok) {
+    throw new Error(`Failed to load Dangermond preserve boundary: ${response.status} ${response.statusText}`);
+  }
+  const json = await response.json() as {
+    features?: Array<{ geometry?: { type?: string; coordinates?: unknown } }>;
+  };
+  const firstFeature = Array.isArray(json.features) ? json.features[0] : undefined;
+  const coordinates = firstFeature?.geometry?.coordinates;
+  const polygon = Array.isArray(coordinates) && Array.isArray(coordinates[0])
+    ? (coordinates[0] as BoundaryPolygon)
+    : [];
+  if (polygon.length < 3) {
+    throw new Error('Dangermond preserve boundary polygon is missing or invalid.');
+  }
+  cachedDangermondBoundaryPolygon = polygon;
+  return polygon;
+}
+
+async function getDangermondDeviceIds(signal?: AbortSignal): Promise<number[]> {
+  if (cachedDangermondDeviceIds) return cachedDangermondDeviceIds;
+  const boundary = await getDangermondBoundaryPolygon(signal);
+  const json = await queryArcgis(
+    STATION_DEPLOYMENTS_LAYER_URL,
+    {
+      where: '1=1',
+      outFields: 'device_id,latitude,longitude',
+      returnGeometry: false,
+      resultRecordCount: 2000,
+      f: 'json',
+    },
+    signal,
+  );
+  const features = Array.isArray(json.features) ? (json.features as ArcGISFeature[]) : [];
+  const unique = Array.from(
+    new Set(
+      features
+        .filter((feature) => {
+          const latitude = toFiniteNumber(feature.attributes?.latitude);
+          const longitude = toFiniteNumber(feature.attributes?.longitude);
+          if (latitude == null || longitude == null) return false;
+          return pointInPolygon(longitude, latitude, boundary);
+        })
+        .map((feature) => toFiniteNumber(feature.attributes?.device_id))
+        .filter((value): value is number => value != null),
+    ),
+  ).sort((a, b) => a - b);
+  cachedDangermondDeviceIds = unique;
+  return unique;
+}
+
+async function getPreserveLinkedTagIds(
+  filters: MotusBrowseFilters,
+  candidateTagIds: number[] | undefined,
+  signal?: AbortSignal,
+): Promise<Set<number>> {
+  const dangermondDeviceIds = await getDangermondDeviceIds(signal);
+  if (dangermondDeviceIds.length === 0) return new Set<number>();
+
+  const where = buildDetectionWhereClause(
+    filters,
+    candidateTagIds && candidateTagIds.length > 0 ? candidateTagIds : undefined,
+    dangermondDeviceIds,
+  );
+
+  const json = await queryArcgis(
+    TAG_DETECTIONS_TABLE_URL,
+    {
+      where,
+      outStatistics: JSON.stringify([
+        { statisticType: 'count', onStatisticField: 'id', outStatisticFieldName: 'detection_count' },
+      ]),
+      groupByFieldsForStatistics: 'tag_id',
+      returnGeometry: false,
+      resultRecordCount: 2000,
+      f: 'json',
+    },
+    signal,
+  );
+
+  const features = Array.isArray(json.features) ? (json.features as ArcGISFeature[]) : [];
+  const preserveLinkedTagIds = new Set<number>();
+  for (const feature of features) {
+    const tagId = toFiniteNumber(feature.attributes?.tag_id);
+    const detectionCount = toFiniteNumber(feature.attributes?.detection_count) || 0;
+    if (tagId != null && detectionCount > 0) preserveLinkedTagIds.add(tagId);
+  }
+
+  return preserveLinkedTagIds;
+}
+
 class MotusService {
+  async getReceiverStations(signal?: AbortSignal): Promise<MotusStationPoint[]> {
+    const stationsJson = await queryArcgis(
+      RECEIVER_STATIONS_LAYER_URL,
+      {
+        where: '1=1',
+        outFields: 'id,station_id,station_name,site_name,latitude,longitude',
+        returnGeometry: false,
+        resultRecordCount: 200,
+        f: 'json',
+      },
+      signal,
+    );
+
+    const stationRows = Array.isArray(stationsJson.features) ? (stationsJson.features as ArcGISFeature[]) : [];
+    const stations: MotusStationPoint[] = [];
+    for (const feature of stationRows) {
+      const latitude = toFiniteNumber(feature.attributes?.latitude);
+      const longitude = toFiniteNumber(feature.attributes?.longitude);
+      if (latitude == null || longitude == null) continue;
+      stations.push({
+        id: toFiniteNumber(feature.attributes?.id) || stations.length + 1,
+        stationId: toFiniteNumber(feature.attributes?.station_id),
+        name: toSafeString(feature.attributes?.station_name) || toSafeString(feature.attributes?.site_name) || 'Receiver station',
+        latitude,
+        longitude,
+      });
+    }
+    return stations;
+  }
+
   async getSpeciesSummaries(filters: MotusBrowseFilters, signal?: AbortSignal): Promise<MotusSpeciesSummary[]> {
     const taggedJson = await queryArcgis(
       TAGGED_ANIMALS_LAYER_URL,
@@ -298,19 +388,28 @@ class MotusService {
       .sort((a, b) => a.speciesEnglish.localeCompare(b.speciesEnglish))
       .slice(0, DEFAULT_MAX_SPECIES);
 
+    const preserveLinkedTagIds = await getPreserveLinkedTagIds(
+      filters,
+      candidateSpecies.flatMap((species) => species.tagIds),
+      signal,
+    );
+
     const withCounts = await Promise.all(
       candidateSpecies.map(async (species) => {
-        const detectionCount = await queryDetectionCountByTagIds(species.tagIds, filters);
+        const eligibleTagIds = species.tagIds.filter((tagId) => preserveLinkedTagIds.has(tagId));
+        const detectionCount = await queryDetectionCountByTagIds(eligibleTagIds, filters, undefined, signal);
         return {
           speciesEnglish: species.speciesEnglish,
           speciesScientific: species.speciesScientific,
-          tagCount: species.tagIds.length,
+          tagCount: eligibleTagIds.length,
           detectionCount,
         };
       }),
     );
 
-    return withCounts.sort((a, b) => b.detectionCount - a.detectionCount || b.tagCount - a.tagCount);
+    return withCounts
+      .filter((species) => species.detectionCount > 0 && species.tagCount > 0)
+      .sort((a, b) => b.detectionCount - a.detectionCount || b.tagCount - a.tagCount);
   }
 
   async getTaggedAnimalsForSpecies(
@@ -336,7 +435,9 @@ class MotusService {
     const tagIds = features
       .map((feature) => toFiniteNumber(feature.attributes?.tag_id))
       .filter((value): value is number => value != null);
-    const countsByTag = await queryDetectionCountsByTagIds(tagIds, filters, signal);
+    const preserveLinkedTagIds = await getPreserveLinkedTagIds(filters, tagIds, signal);
+    const eligibleTagIds = tagIds.filter((tagId) => preserveLinkedTagIds.has(tagId));
+    const countsByTag = await queryDetectionCountsByTagIds(eligibleTagIds, filters, undefined, signal);
 
     const byTagId = new Map<number, MotusTaggedAnimalSummary>();
     for (const feature of features) {
@@ -369,10 +470,13 @@ class MotusService {
     }
 
     return Array.from(byTagId.values())
+      .filter((row) => row.detectionCount > 0 && preserveLinkedTagIds.has(row.tagId))
       .sort((a, b) => b.detectionCount - a.detectionCount || a.tagId - b.tagId);
   }
 
   async getTaggedAnimalDetail(tagId: number, filters: MotusBrowseFilters, signal?: AbortSignal): Promise<MotusTaggedAnimalDetail | null> {
+    const preserveLinkedTagIds = await getPreserveLinkedTagIds(filters, [tagId], signal);
+    if (!preserveLinkedTagIds.has(tagId)) return null;
     const animalJson = await queryArcgis(
       TAGGED_ANIMALS_LAYER_URL,
       {
@@ -462,7 +566,16 @@ class MotusService {
   }
 
   async getMovementContextForTag(tagId: number, filters: MotusBrowseFilters, signal?: AbortSignal): Promise<MotusMovementContext> {
-    const [stationsJson, deploymentsJson, detectionsJson, tagAnchorJson] = await Promise.all([
+    const preserveLinkedTagIds = await getPreserveLinkedTagIds(filters, [tagId], signal);
+    if (!preserveLinkedTagIds.has(tagId)) {
+      return {
+        stations: [],
+        legs: [],
+        disclaimer: 'This tag has no preserve detections in the selected window, so journey rendering is disabled.',
+      };
+    }
+
+    const [stationsJson, deploymentsJson, detectionsJson] = await Promise.all([
       queryArcgis(
         RECEIVER_STATIONS_LAYER_URL,
         {
@@ -489,7 +602,7 @@ class MotusService {
         TAG_DETECTIONS_TABLE_URL,
         {
           where: buildDetectionWhereClause(filters, [tagId]),
-          outFields: 'node_num,device_id,antenna,ts_begin,ts_end',
+          outFields: 'device_id,ts_begin,ts_end',
           returnGeometry: false,
           orderByFields: 'ts_begin ASC',
           resultRecordCount: 2000,
@@ -497,24 +610,15 @@ class MotusService {
         },
         signal,
       ),
-      queryArcgis(
-        TAGGED_ANIMALS_LAYER_URL,
-        {
-          where: `tag_id = ${tagId}`,
-          outFields: 'latitude,longitude',
-          returnGeometry: false,
-          resultRecordCount: 1,
-          f: 'json',
-        },
-        signal,
-      ),
     ]);
 
+    const deploymentRows = Array.isArray(deploymentsJson.features) ? (deploymentsJson.features as ArcGISFeature[]) : [];
     const stations: MotusStationPoint[] = [];
     const byStationId = new Map<number, MotusStationPoint>();
     const stationRows = Array.isArray(stationsJson.features) ? (stationsJson.features as ArcGISFeature[]) : [];
     for (const feature of stationRows) {
       const stationId = toFiniteNumber(feature.attributes?.station_id);
+      if (stationId == null) continue;
       const latitude = toFiniteNumber(feature.attributes?.latitude);
       const longitude = toFiniteNumber(feature.attributes?.longitude);
       if (latitude == null || longitude == null) continue;
@@ -529,8 +633,6 @@ class MotusService {
       if (stationId != null) byStationId.set(stationId, station);
     }
 
-    const deploymentRows = Array.isArray(deploymentsJson.features) ? (deploymentsJson.features as ArcGISFeature[]) : [];
-    const deploymentNodeKeysByStation = new Map<number, Set<string>>();
     const deploymentRowsByDevice = new Map<
       string,
       Array<{ station: MotusStationPoint; tsStart: number | null; tsEnd: number | null }>
@@ -538,22 +640,6 @@ class MotusService {
     for (const feature of deploymentRows) {
       const stationId = toFiniteNumber(feature.attributes?.station_id);
       if (stationId == null) continue;
-
-      const keys = new Set<string>();
-      const deviceId = toFiniteNumber(feature.attributes?.device_id);
-      if (deviceId != null) {
-        for (const key of buildLookupKeysFromNumeric(deviceId)) keys.add(key);
-      }
-      const serial = toSafeString(feature.attributes?.serial_number);
-      if (serial) {
-        for (const key of buildLookupKeysFromSerial(serial)) keys.add(key);
-      }
-      if (keys.size > 0) {
-        const existing = deploymentNodeKeysByStation.get(stationId) || new Set<string>();
-        for (const key of keys) existing.add(key);
-        deploymentNodeKeysByStation.set(stationId, existing);
-      }
-
       if (byStationId.has(stationId)) continue;
       const latitude = toFiniteNumber(feature.attributes?.latitude);
       const longitude = toFiniteNumber(feature.attributes?.longitude);
@@ -608,63 +694,28 @@ class MotusService {
     };
 
     const detections = Array.isArray(detectionsJson.features) ? (detectionsJson.features as ArcGISFeature[]) : [];
-    const stationByNode = new Map<string, MotusStationPoint>();
-    for (const station of stations) {
-      if (station.stationId != null) {
-        for (const key of buildLookupKeysFromNumeric(station.stationId)) {
-          stationByNode.set(key, station);
-        }
-      }
-      stationByNode.set(station.name.toLowerCase().replace(/\s+/g, ''), station);
-    }
-    for (const [stationId, keys] of deploymentNodeKeysByStation.entries()) {
-      const station = byStationId.get(stationId);
-      if (!station) continue;
-      for (const key of keys) stationByNode.set(key, station);
-    }
-
     const inferredObservations: Array<{
       station: MotusStationPoint;
       tsBegin: number | null;
       tsEnd: number | null;
-      source: ObservationSource;
     }> = [];
-    const uniqueNodeIds = new Set<string>();
     let matchedByDevice = 0;
-    let matchedByNode = 0;
     for (const detection of detections) {
       const tsBegin = toFiniteNumber(detection.attributes?.ts_begin);
       const tsEnd = toFiniteNumber(detection.attributes?.ts_end);
       const stationByDevice = resolveStationFromDevice(detection.attributes?.device_id, tsBegin, tsEnd);
-
-      let matchedStation: MotusStationPoint | null = stationByDevice;
-      let source: ObservationSource = 'device_id';
-      const nodeNumRaw = toSafeString(detection.attributes?.node_num);
-      if (!matchedStation && nodeNumRaw) {
-        const candidates = buildDetectionNodeCandidates(nodeNumRaw);
-        if (candidates.length > 0) {
-          uniqueNodeIds.add(candidates[0]);
-          matchedStation = candidates
-            .map((key) => stationByNode.get(key))
-            .find((station): station is MotusStationPoint => !!station) || null;
-          source = 'node_num';
-        }
-      }
+      const matchedStation = stationByDevice;
       if (!matchedStation) continue;
 
       const previous = inferredObservations[inferredObservations.length - 1];
       if (!previous || previous.station.id !== matchedStation.id) {
-        inferredObservations.push({ station: matchedStation, tsBegin, tsEnd, source });
+        inferredObservations.push({ station: matchedStation, tsBegin, tsEnd });
       } else {
         previous.tsEnd = Math.max(previous.tsEnd ?? 0, tsEnd ?? 0) || previous.tsEnd;
         previous.tsBegin = previous.tsBegin ?? tsBegin;
-        if (previous.source === 'node_num' && source === 'device_id') {
-          previous.source = 'device_id';
-        }
       }
 
-      if (source === 'device_id') matchedByDevice += 1;
-      else matchedByNode += 1;
+      matchedByDevice += 1;
     }
 
     const legs: MotusInferredLeg[] = [];
@@ -672,12 +723,8 @@ class MotusService {
       const fromObservation = inferredObservations[index - 1];
       const toObservation = inferredObservations[index];
       if (fromObservation.station.id === toObservation.station.id) continue;
-      const confidence = fromObservation.source === 'device_id' && toObservation.source === 'device_id'
-        ? 'medium'
-        : 'low';
-      const evidence = confidence === 'medium'
-        ? 'Time-ordered station transition inferred from sequential detections linked via receiver device_id (medium confidence; still not an exact flight trajectory).'
-        : 'Time-ordered station transition inferred from sequential detections (low confidence; not exact flight trajectory).';
+      const confidence: MotusInferredLeg['confidence'] = 'medium';
+      const evidence = 'Time-ordered station transition inferred from sequential detections linked via receiver device_id (medium confidence; still not an exact flight trajectory).';
       legs.push({
         id: `motus-leg-${tagId}-${index}`,
         from: fromObservation.station,
@@ -691,53 +738,14 @@ class MotusService {
       });
     }
 
-    if (legs.length === 0) {
-      const anchorFeature = Array.isArray(tagAnchorJson.features) ? (tagAnchorJson.features as ArcGISFeature[])[0] : undefined;
-      const anchorLatitude = toFiniteNumber(anchorFeature?.attributes?.latitude);
-      const anchorLongitude = toFiniteNumber(anchorFeature?.attributes?.longitude);
-
-      if (anchorLatitude != null && anchorLongitude != null && stations.length > 0) {
-        const anchorPoint: MotusStationPoint = {
-          id: -1,
-          stationId: null,
-          name: 'Tag deployment location',
-          latitude: anchorLatitude,
-          longitude: anchorLongitude,
-        };
-
-        const nearbyStations = [...stations]
-          .sort((a, b) => estimateDistanceKm(anchorPoint, a) - estimateDistanceKm(anchorPoint, b))
-          .slice(0, Math.min(6, stations.length));
-
-        for (let index = 0; index < nearbyStations.length; index += 1) {
-          const station = nearbyStations[index];
-          legs.push({
-            id: `motus-context-leg-${tagId}-${index + 1}`,
-            from: anchorPoint,
-            to: station,
-            kind: 'context',
-            stepIndex: index + 1,
-            startDate: null,
-            endDate: null,
-            confidence: 'low',
-            evidence: 'Context line from deployment location to nearby receiver station. This is not an inferred flight path.',
-          });
-        }
-      }
-    }
-
     const hasInferredLegs = legs.some((leg) => leg.kind === 'inferred');
-    const matchedCount = matchedByDevice + matchedByNode;
+    const matchedCount = matchedByDevice;
     const totalDetections = detections.length;
     const disclaimer = hasInferredLegs
-      ? matchedByDevice > 0
-        ? `Movement legs are inferred from time-ordered detections using receiver device linkage where available (${matchedByDevice.toLocaleString()} device-linked detections${matchedByNode > 0 ? `, ${matchedByNode.toLocaleString()} node-based fallback` : ''}). Paths are inferred context, not exact flight trajectories.`
-        : 'Movement legs are inferred from detections and should be treated as low-confidence shortest-path context.'
-      : legs.length > 0
-        ? 'Direct station-to-station inference was unavailable. Lines shown are context-only links from tag deployment location to nearby receiver stations; they illustrate receiver network context, not reconstructed flight paths.'
-      : uniqueNodeIds.size > 0 || totalDetections > 0
-        ? `No valid station-to-station inference available for this selection. ${totalDetections.toLocaleString()} detections were evaluated; ${matchedCount.toLocaleString()} mapped to known stations in this service.`
-        : 'No valid station-to-station inference available for this selection. Receiver stations are shown without path legs.';
+      ? `This tag is preserve-linked (detected at Dangermond) and journeys are inferred from all time-ordered receiver detections in the selected window (${matchedByDevice.toLocaleString()} mapped detections). Paths are inferred context, not exact flight trajectories.`
+      : totalDetections > 0
+        ? `This preserve-linked tag has detections in the selected window, but no station-to-station journey could be inferred. ${totalDetections.toLocaleString()} detections were evaluated; ${matchedCount.toLocaleString()} mapped to known receiver stations.`
+        : 'This preserve-linked tag has no detections in the selected window. Receiver stations are shown without path legs.';
 
     return { stations, legs, disclaimer };
   }

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { MOTUSBrowseTab } from '../../components/RightSidebar/MOTUS/MOTUSBrowseTab';
 import { MOTUSOverviewTab } from '../../components/RightSidebar/MOTUS/MOTUSOverviewTab';
+import { MOTUSLegendWidget } from '../../components/FloatingWidgets/MOTUSLegendWidget/MOTUSLegendWidget';
 import { MotusFilterProvider, useMotusFilter } from '../../context/MotusFilterContext';
 import type { CacheStatus, DataSourceAdapter, OverviewTabProps } from '../types';
 
@@ -28,5 +29,6 @@ export const motusAdapter: DataSourceAdapter = {
   layerIds: ['dataset-181', 'service-181', 'service-181-layer-0', 'service-181-layer-1', 'service-181-layer-2'],
   OverviewTab: MOTUSOverviewTabWithCache,
   BrowseTab: MOTUSBrowseTab,
+  LegendWidget: MOTUSLegendWidget,
   CacheProvider: MotusFilterProvider,
 };
