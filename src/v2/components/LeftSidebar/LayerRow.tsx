@@ -3,7 +3,7 @@
 // States: default, active, pinned-visible, pinned-hidden, active+pinned
 // ============================================================================
 
-import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { ChevronDown, ChevronRight, Eye, EyeOff, Pin } from 'lucide-react';
 import { useLayers } from '../../context/LayerContext';
 import { useCatalog } from '../../context/CatalogContext';
@@ -17,6 +17,7 @@ interface LayerRowProps {
   ariaLevel?: number;
   controlsOnly?: boolean;
   indented?: boolean;
+  onAnnounce?: (message: string) => void;
 }
 
 function toDomSafeId(input: string): string {
@@ -58,6 +59,7 @@ export function LayerRow({
   ariaLevel = 2,
   controlsOnly = false,
   indented = false,
+  onAnnounce,
 }: LayerRowProps) {
   const [isProjectsExpanded, setIsProjectsExpanded] = useState(false);
   const [projects, setProjects] = useState<DroneImageryProject[] | null>(null);
@@ -104,6 +106,13 @@ export function LayerRow({
     if (isDroneDeployOrthomosaicsLayer) setIsProjectsExpanded(true);
   };
 
+  const handleRowKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleClick();
+    }
+  };
+
   const flightCount = useMemo(
     () => projects?.reduce((sum, project) => sum + project.imageryLayers.length, 0) ?? 0,
     [projects]
@@ -121,8 +130,10 @@ export function LayerRow({
     e.stopPropagation();
     if (isPinned && pinned) {
       unpinLayer(pinned.id);
+      onAnnounce?.(`${name} layer unpinned`);
     } else {
       pinLayer(layerId);
+      onAnnounce?.(`${name} layer pinned`);
     }
   };
 
@@ -203,19 +214,23 @@ export function LayerRow({
         role="treeitem"
         aria-level={ariaLevel}
         aria-current={isActive ? 'true' : undefined}
+        data-left-sidebar-tree-row="true"
         tabIndex={controlsOnly ? -1 : 0}
         onClick={handleClick}
-        onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && handleClick()}
+        onKeyDown={handleRowKeyDown}
         className={`group min-w-0 flex items-center gap-1.5 py-2 px-3 cursor-pointer
                     text-sm rounded-lg transition-all duration-200 ${indented ? 'ml-4 mr-0' : 'ml-1 mr-1'} ${activeClasses}
-                    ${controlsOnly ? 'cursor-default' : 'cursor-pointer'}`}
+                    ${controlsOnly ? 'cursor-default' : 'cursor-pointer'}
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1`}
       >
         {isPinned && (
           <button
             id={`layer-eye-${layerId}`}
+            type="button"
             onClick={handleEyeClick}
+            aria-label={isVisible ? `Hide ${name} on map` : `Show ${name} on map`}
             title={isVisible ? 'Hide on map' : 'Show on map'}
-            className="flex-shrink-0 p-0.5 rounded hover:bg-gray-100 transition-colors"
+            className="flex-shrink-0 p-0.5 rounded hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
           >
             {isVisible ? (
               <Eye className="w-4 h-4 text-gray-700" />
@@ -242,9 +257,10 @@ export function LayerRow({
         {isDroneDeployOrthomosaicsLayer && (
           <button
             id={`drone-parent-expand-toggle-${layerId}`}
+            type="button"
             onClick={handleProjectsExpandToggle}
             title={isProjectsExpanded ? 'Collapse DroneDeploy projects' : 'Expand DroneDeploy projects'}
-            className="flex-shrink-0 p-0.5 rounded hover:bg-gray-100 transition-colors"
+            className="flex-shrink-0 p-0.5 rounded hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
             aria-expanded={isProjectsExpanded}
           >
             {isProjectsExpanded ? (
@@ -258,18 +274,22 @@ export function LayerRow({
         {!isServiceContainer && isPinned ? (
           <button
             id={`layer-unpin-${layerId}`}
+            type="button"
             onClick={handlePinClick}
+            aria-label={`Unpin ${name}`}
             title="Unpin layer"
-            className="flex-shrink-0 p-0.5 rounded transition-colors"
+            className="flex-shrink-0 p-0.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
           >
             <Pin className="w-4 h-4 text-blue-500 fill-blue-500 hover:text-blue-600 hover:fill-blue-600" />
           </button>
         ) : !isServiceContainer ? (
           <button
             id={`layer-pin-${layerId}`}
+            type="button"
             onClick={handlePinClick}
+            aria-label={`Pin ${name}`}
             title="Pin layer"
-            className="flex-shrink-0 p-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+            className="flex-shrink-0 p-0.5 rounded opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
           >
             <Pin className="w-4 h-4 text-gray-300 hover:text-gray-500" />
           </button>
@@ -304,6 +324,7 @@ export function LayerRow({
               <p>Failed to load DroneDeploy projects: {projectsError}</p>
               <button
                 id={`drone-projects-retry-${layerId}`}
+                type="button"
                 onClick={handleProjectsRetry}
                 className="text-[11px] px-2 py-1 rounded border border-red-200 bg-red-50 hover:bg-red-100 transition-colors"
               >
@@ -334,6 +355,7 @@ export function LayerRow({
                     <div key={project.projectName} id={`drone-project-group-${projectId}`}>
                       <button
                         id={`drone-project-select-${projectId}`}
+                        type="button"
                         onClick={e => handleProjectSelect(e, project)}
                         className={`w-full flex items-center gap-1.5 px-2 py-1.5 text-left transition-colors
                           ${isSelectedProject ? 'bg-amber-100 text-gray-900' : 'hover:bg-slate-100 text-gray-800'}`}

@@ -10,6 +10,7 @@ interface ServiceGroupProps {
   isExpanded: boolean;
   highlightQuery?: string;
   ariaLevel?: number;
+  onAnnounce?: (message: string) => void;
   onToggleExpand: () => void;
 }
 
@@ -40,16 +41,27 @@ export function ServiceGroup({
   isExpanded,
   highlightQuery,
   ariaLevel = 2,
+  onAnnounce,
   onToggleExpand,
 }: ServiceGroupProps) {
   const { activeLayer, activateLayer } = useLayers();
   const isActiveService = activeLayer?.layerId === service.id && !!activeLayer.isService;
+  const childrenGroupId = `service-group-children-${service.id}`;
+
+  const announceExpandState = (expanded: boolean) => {
+    if (expanded) {
+      onAnnounce?.(`${service.name} service expanded, ${layers.length} layers`);
+      return;
+    }
+    onAnnounce?.(`${service.name} service collapsed`);
+  };
 
   const handleHeaderClick = () => {
     // Prioritize toggle semantics so repeated clicks always expand/collapse.
     // Avoid re-activating on collapse, which can trigger auto-expand effects upstream.
     if (isExpanded) {
       onToggleExpand();
+      announceExpandState(false);
       return;
     }
 
@@ -61,17 +73,20 @@ export function ServiceGroup({
     })();
     activateLayer(service.id, undefined, undefined, selectedSubLayerId);
     onToggleExpand();
+    announceExpandState(true);
   };
 
   const handleHeaderKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
     if (event.key === 'ArrowRight' && !isExpanded) {
       event.preventDefault();
       onToggleExpand();
+      announceExpandState(true);
       return;
     }
     if (event.key === 'ArrowLeft' && isExpanded) {
       event.preventDefault();
       onToggleExpand();
+      announceExpandState(false);
       return;
     }
     if (event.key === 'Enter' || event.key === ' ') {
@@ -81,7 +96,7 @@ export function ServiceGroup({
   };
 
   return (
-    <div id={`service-group-${service.id}`} role="group" className="space-y-1">
+    <div id={`service-group-${service.id}`} className="space-y-1">
       <div
         id={`service-group-row-${service.id}`}
         className={`mx-1 min-w-0 flex items-center gap-2 py-1.5 px-1 rounded-lg border transition-colors
@@ -98,10 +113,12 @@ export function ServiceGroup({
           type="button"
           role="treeitem"
           aria-expanded={isExpanded}
+          aria-controls={childrenGroupId}
           aria-level={ariaLevel}
+          data-left-sidebar-tree-row="true"
           onClick={handleHeaderClick}
           onKeyDown={handleHeaderKeyDown}
-          className="w-full min-w-0 flex items-center gap-2 py-1 px-2 text-sm text-gray-800 font-medium rounded-md"
+          className="w-full min-w-0 flex items-center gap-2 py-1 px-2 text-sm text-gray-800 font-medium rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1"
         >
           {isExpanded ? (
             <ChevronDown id={`service-group-caret-${service.id}`} className="w-4 h-4 text-gray-600 flex-shrink-0" />
@@ -128,7 +145,7 @@ export function ServiceGroup({
       </div>
 
       <div
-        id={`service-group-children-${service.id}`}
+        id={childrenGroupId}
         role="group"
         className="grid transition-all duration-300 ease-out"
         style={{
@@ -145,6 +162,7 @@ export function ServiceGroup({
                 name={layer.name}
                 indented
                 ariaLevel={ariaLevel + 1}
+                onAnnounce={onAnnounce}
               />
             ))}
           </div>

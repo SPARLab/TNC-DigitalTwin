@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 27 tasks (CON-ARCGIS-01–17, 6.8, 6.11, 6.12, 6.13, 6.14, 6.17, 6.20, D20-02, D20-02a, D20-10, D20-11, TF-11, TF-13 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
+**Progress:** 28 tasks (CON-ARCGIS-01–17, 6.8, 6.10, 6.11, 6.12, 6.13, 6.14, 6.17, 6.20, D20-02, D20-02a, D20-10, D20-11, TF-11, TF-13 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry) ✅ complete  
@@ -55,7 +55,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **CON-ARCGIS-14** | 🟢 Complete | Feb 19, 2026 | Unified Service Workspace: service/layer click behavior + layer list state chips | Auto-select sublayer on service click; one right-sidebar layout; layer list header (N pinned • N visible); amber active highlight; pin/eye icons; inline pin/unpin; Map Layers widget sync |
 | **6.8** | 🟢 Complete | Feb 23, 2026 | Search Enhancement | Match service + layer names; expand parent service when layer matches; highlight matched text. Parent service IDs included when child matches; auto-expand on child match. |
 | **6.9** | ⚪ | — | Keyboard Navigation & ARIA | Arrow keys for expand/collapse, ARIA tree structure, focus management |
-| **6.10** | ⚪ | — | QA & Edge Cases | Single-layer services, empty results, malformed queries, schema fetch errors |
+| **6.10** | 🟢 Complete | Feb 24, 2026 | QA & Edge Cases | Manual UI checklist completed; single-layer services, empty results, malformed queries, schema fetch errors verified |
 | **6.11** | 🟢 Complete | Feb 23, 2026 | Capability-Aware Browse UX | Legend display moved out of right-sidebar Browse and into a floating map widget (bottom-right) for active TNC layers. Full legend header clickable for expand/collapse; collapsed state has rounded bottom-left and bottom-right corners; keyboard toggle (Enter/Space) for accessibility. |
 | **6.12** | 🟢 Complete | Feb 23, 2026 | Terminology + CTA Realignment | Right-sidebar pin actions removed from TNCArcGISOverviewTab; pinning only in left sidebar + Map Layers widget. Inline pin icons and Pin/Unpin CTAs removed. |
 | **6.13** | 🟢 Complete | Feb 23, 2026 | Multi-Layer Service Discoverability | Search matches service + child names; parent auto-expands for child match; no blank category blocks; Coastal and Marine Data discoverable via category/search. Path context (Category > Service > Layer) deferred. |
@@ -331,11 +331,13 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 
 ---
 
-### 6.10: QA & Edge Cases
+### 6.10: QA & Edge Cases ✅ Complete Feb 24, 2026
 
 **Goal:** Test edge cases and error states.
 
-**Test Scenarios:**
+**Completion Notes:** Manual UI checklist executed. No automated test framework added; checklist below serves as repeatable QA reference.
+
+**Manual UI Checklist (QA Reference):**
 
 | Scenario | Expected Behavior |
 |----------|-------------------|
@@ -358,11 +360,11 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - Empty results: Not an error — show "0 features match" (allow user to adjust filters)
 
 **Acceptance Criteria:**
-- [ ] All edge cases tested and handled gracefully
-- [ ] Error messages are actionable (e.g., "Retry", "Edit Query")
-- [ ] No crashes from malformed data
-- [ ] Performance acceptable with 10+ layers in service
-- [ ] Single-layer services work correctly (flat pattern)
+- [x] All edge cases tested and handled gracefully (manual checklist)
+- [x] Error messages are actionable (e.g., "Retry", "Edit Query")
+- [x] No crashes from malformed data
+- [x] Performance acceptable with 10+ layers in service
+- [x] Single-layer services work correctly (flat pattern)
 
 **Estimated Time:** 4-6 hours
 

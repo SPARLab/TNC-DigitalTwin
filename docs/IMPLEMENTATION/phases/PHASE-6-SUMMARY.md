@@ -181,7 +181,7 @@ This architecture is a **starting point**. After implementing:
 1. **Merge current branches** (animl, iNaturalist, dendra) to `v2/main`
 2. **Complete Task 0.9** (Dynamic Layer Registry) if not done
 3. **Start Phase 6** on `v2/tnc-arcgis` branch
-4. **Follow task order:** 6.1 (data model) → 6.2 (left sidebar) → 6.3 (service module) → 6.4 (adapter) → 6.5-6.7 (right sidebar + map) → 6.8-6.10 (search + QA)
+4. **Follow task order:** 6.1 (data model) → 6.2 (left sidebar) → 6.3 (service module) → 6.4 (adapter) → 6.5-6.7 (right sidebar + map) → 6.8-6.10 (search + QA) — **6.10 ✅ complete Feb 24, 2026** (manual UI checklist)
 
 ---
 
