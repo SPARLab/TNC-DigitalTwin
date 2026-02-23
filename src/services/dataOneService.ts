@@ -217,6 +217,10 @@ function liteRecordToDataset(record: DataOneLiteRecord): DataOneDataset {
   const filesSummary = parseFilesSummary(record.files_summary);
   // Metadata-only if no files_summary or total is 0
   const isMetadataOnly = !filesSummary || filesSummary.total === 0;
+  const abstractValue =
+    'abstract' in record && typeof record.abstract === 'string'
+      ? record.abstract
+      : null;
   
   return {
     id: record.objectid,
@@ -249,6 +253,7 @@ function liteRecordToDataset(record: DataOneLiteRecord): DataOneDataset {
     authors: parseDelimitedList(record.authors),
     // External URL for metadata-only datasets
     externalUrl: record.external_url,
+    abstract: abstractValue,
     isMetadataOnly,
   };
 }

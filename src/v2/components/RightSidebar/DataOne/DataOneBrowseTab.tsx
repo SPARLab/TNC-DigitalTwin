@@ -378,6 +378,18 @@ export function DataOneBrowseTab() {
     return pinned?.views?.find(v => v.id === activeLayer.viewId)?.dataoneFilters?.selectedDatasetId;
   }, [activeLayer?.layerId, activeLayer?.viewId, getPinnedByLayerId]);
 
+  const savedDataoneIds = useMemo(() => {
+    const pinned = getPinnedByLayerId('dataone-datasets');
+    const ids = new Set<string>();
+    const rootSelectedDatasetId = pinned?.dataoneFilters?.selectedDatasetId;
+    if (rootSelectedDatasetId) ids.add(rootSelectedDatasetId);
+    for (const view of pinned?.views ?? []) {
+      const selectedDatasetId = view.dataoneFilters?.selectedDatasetId;
+      if (selectedDatasetId) ids.add(selectedDatasetId);
+    }
+    return ids;
+  }, [getPinnedByLayerId]);
+
   const handleSaveDatasetView = (dataset: DataOneDataset): string => {
     if (activeLayer?.layerId !== 'dataone-datasets') {
       return 'Unable to save view: DataONE layer is not active.';
@@ -792,6 +804,8 @@ export function DataOneBrowseTab() {
         <DatasetListView
           datasets={datasets}
           loading={showRefreshLoading}
+          savedDataoneIds={savedDataoneIds}
+          searchTerm={appliedSearchTerm}
           onViewDetail={(dataset) => {
             lastHandledFeatureIdRef.current = dataset.dataoneId;
             setSelectedDataset(dataset);

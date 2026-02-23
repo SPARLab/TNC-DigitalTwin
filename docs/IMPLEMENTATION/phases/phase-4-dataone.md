@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 12 / 16 tasks complete  
+**Progress:** 14 / 16 tasks complete  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-4-dataone-completed.md`  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
@@ -26,8 +26,8 @@
 | CON-DONE-09 | 🟢 Complete | Feb 23, 2026 | Search by title and abstract/keywords | Layer 1 used when searchText present; title OR abstract OR keywords predicate; browse + map + count paths updated |
 | CON-DONE-10 | 🟢 Complete | Feb 23, 2026 | Filter by file type (CSV, TIF, imagery, and others) | File-type checklist (CSV/TIF/Imagery/Other) with Select all/Clear all; client-side filtering from files_summary.by_ext; wired through browse, map, saved views |
 | CON-DONE-11 | ⚪ Not Started | Feb 18, 2026 | Saved indicator on browse cards (icon plus subtle highlight) | Medium priority |
-| CON-DONE-15 | ⚪ Not Started | Feb 19, 2026 | Spatial query: ensure draw/query tools filter DataONE datasets by extent | High priority; must work with SpatialQuerySection |
-| CON-DONE-14 | ⚪ Not Started | Feb 18, 2026 | Search highlight: show matching keyword inside abstract snippet | Low / nice-to-have |
+| CON-DONE-15 | 🟢 Complete | Feb 23, 2026 | Spatial query: ensure draw/query tools filter DataONE datasets by extent | Verified working with SpatialQuerySection |
+| CON-DONE-14 | 🟢 Complete | Feb 23, 2026 | Search highlight: show matching keyword inside abstract snippet | DatasetListView: abstract snippet with case-insensitive phrase highlight; optional abstract on DataOneDataset; Layer 1 carries abstract when search active |
 
 **Phase-5 handoff:** `CON-DONE-12` and `CON-DONE-13` (export behavior tasks) are tracked in `docs/IMPLEMENTATION/phases/phase-5-export-builder.md`.
 
@@ -381,23 +381,40 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 ---
 
-### CON-DONE-15: Spatial Query for DataONE Datasets
+### CON-DONE-14: Search Highlight — Show Matching Keyword Inside Abstract Snippet ✅
+
+**Goal:** When search returns results, highlight the matching keyword in the abstract snippet on browse cards (Google-style). Improves scanability and feedback (visibility of system status).
+
+**Resolution (Feb 23, 2026):**
+- Added optional `abstract` field to `DataOneDataset`; `liteRecordToDataset` carries abstract when Layer 1 (Latest) returns it during search
+- `DatasetListView` receives `searchTerm` from `DataOneBrowseTab`; when abstract exists, renders contextual snippet (~180 chars) with case-insensitive phrase match highlighted via `<mark>` (Tailwind `bg-amber-100`)
+- `buildHighlightedSnippet` extracts window around first match; leading/trailing ellipses when clipped
+- Fallback to generic description text when no abstract; no highlight marks when search term empty
+
+**Files:** `src/types/dataone.ts`, `src/services/dataOneService.ts`, `src/v2/components/RightSidebar/DataOne/DatasetListView.tsx`, `src/v2/components/RightSidebar/DataOne/DataOneBrowseTab.tsx`, `DatasetListView.test.tsx`
+
+**Acceptance Criteria:**
+- [x] Search results show abstract snippet when available
+- [x] Matching phrase highlighted in snippet (case-insensitive)
+- [x] Fallback text when no abstract; no highlight when search empty
+
+**Estimated Time:** 1–2 hours
+
+---
+
+### CON-DONE-15: Spatial Query for DataONE Datasets ✅
 
 **Goal:** Ensure the spatial query (draw polygon/rectangle, query by extent) correctly filters DataONE datasets. When the user draws a query area on the map, DataONE browse results should be constrained to datasets whose spatial extent intersects the drawn area.
 
+**Resolution (Feb 23, 2026):** Verified working. Draw/query tools filter DataONE datasets by extent; integrates with SpatialQuerySection.
+
 **Context:** The app has a `SpatialQuerySection` component used for spatial filtering. DataONE datasets have `center_lat`/`center_lon` and/or `north_bound`/`south_bound`/`east_bound`/`west_bound` fields. The spatial query must apply to DataONE when that data source is active.
 
-**Implementation Notes:**
-- Integrate with existing `SpatialQuerySection` / spatial query context
-- Use DataONE Feature Service `query` with `geometry` and `geometryType` params to filter by drawn extent
-- Ensure cluster map and browse list both respect the spatial filter
-- Clear spatial filter when user clears the draw or switches data sources
-
 **Acceptance Criteria:**
-- [ ] Drawing a polygon/rectangle on map filters DataONE datasets to those intersecting the extent
-- [ ] Browse list and cluster map both reflect the spatial filter
-- [ ] Clearing the spatial query restores full dataset list
-- [ ] Works with DataONE Layer 0 (Lite) and Layer 1 (Latest) as appropriate
+- [x] Drawing a polygon/rectangle on map filters DataONE datasets to those intersecting the extent
+- [x] Browse list and cluster map both reflect the spatial filter
+- [x] Clearing the spatial query restores full dataset list
+- [x] Works with DataONE Layer 0 (Lite) and Layer 1 (Latest) as appropriate
 
 **Estimated Time:** 4–6 hours
 
@@ -467,6 +484,7 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 23, 2026 | CON-DONE-15 marked complete. Spatial query (draw/query tools) filters DataONE datasets by extent; verified working with SpatialQuerySection. | User |
 | Feb 23, 2026 | CON-DONE-10 marked complete. File-type filter (CSV/TIF/Imagery/Other) checklist, client-side filtering from files_summary.by_ext, wired through browse/map/saved views. | Assistant |
 | Feb 23, 2026 | CON-DONE-09 marked complete. Search by title + abstract + keywords; Layer 1 used when searchText present; browse, map, count paths updated. | Assistant |
 | Feb 23, 2026 | CON-DONE-08 marked complete. Multi-select categories checklist; Select all / Clear all; tncCategories wired through browse, query, map, and saved views. | Assistant |

@@ -112,6 +112,8 @@ export interface DataOneDataset {
   authors?: string[];
   // External URL for metadata-only datasets (e.g., PANGAEA links)
   externalUrl: string | null;
+  // Optional abstract available from full-metadata layers (Layer 1/2)
+  abstract?: string | null;
   // Whether this is a metadata-only record (no files, just a pointer to external source)
   isMetadataOnly: boolean;
 }
