@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 24 / 24 tasks (CON-ARCGIS-01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 16, 17, 6.8, 6.11, 6.17, 6.20, D20-02, D20-02a, D20-11, TF-13 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
+**Progress:** 25 tasks (CON-ARCGIS-01–17, 6.8, 6.11, 6.13, 6.17, 6.20, D20-02, D20-02a, D20-10, D20-11, TF-11, TF-13 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry) ✅ complete  
@@ -58,7 +58,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **6.10** | ⚪ | — | QA & Edge Cases | Single-layer services, empty results, malformed queries, schema fetch errors |
 | **6.11** | 🟢 Complete | Feb 23, 2026 | Capability-Aware Browse UX | Legend display moved out of right-sidebar Browse and into a floating map widget (bottom-right) for active TNC layers. Full legend header clickable for expand/collapse; collapsed state has rounded bottom-left and bottom-right corners; keyboard toggle (Enter/Space) for accessibility. |
 | **6.12** | 🟡 | Feb 16, 2026 | Terminology + CTA Realignment | Decision locked: remove right-sidebar pin actions for now; keep pinning in left sidebar + Map Layers widget only |
-| **6.13** | 🟡 | Feb 16, 2026 | Multi-Layer Service Discoverability | In progress: stable left-sidebar scrollbar gutter; service-group spacing refinements retained |
+| **6.13** | 🟢 Complete | Feb 23, 2026 | Multi-Layer Service Discoverability | Search matches service + child names; parent auto-expands for child match; no blank category blocks; Coastal and Marine Data discoverable via category/search. Path context (Category > Service > Layer) deferred. |
 | **6.14** | 🟡 | Feb 16, 2026 | Service Reference + External Viewer | WIP: right-sidebar Browse focuses on source actions; legend controls live in floating map widget |
 | **6.17** | 🟢 Complete | Feb 19, 2026 | Generic Layer Table View (Feature Layers) | ArcGIS FeatureTable overlay on map; Browse shows row/column summary + Open Table Overlay |
 | **6.20** | 🟢 Complete | Feb 19, 2026 | Right Sidebar: Layer + Service Hierarchy Communication | Implemented via CON-ARCGIS-01/02 (Current Context block) |
@@ -439,17 +439,12 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 - Ensure service-parent rows are never hidden when any child matches.
 
 **Acceptance Criteria:**
-- [ ] Search works for both service and child-layer names
-- [ ] Parent service auto-expands for child match
-- [ ] No blank category blocks during service/child filtered states
-- [ ] "Coastal and Marine Data" (and peers) are discoverable via category OR search
+- [x] Search works for both service and child-layer names
+- [x] Parent service auto-expands for child match
+- [x] No blank category blocks during service/child filtered states
+- [x] "Coastal and Marine Data" (and peers) are discoverable via category OR search
 
-**Status Update (Feb 16, 2026 15:28 PST):**
-- ✅ Service containers are now visually identified (`Service`) and treated as non-pinnable.
-- ✅ Service containers no longer follow normal Active/Pin map-layer behavior.
-- ⚠️ **Not complete yet:** clicking `Coastal and Marine Data` does not consistently render discovered child layer rows in the left sidebar.
-- ⚠️ Current behavior still relies on right-sidebar "Available Layers" list for visibility of discovered children in this case.
-- 🎯 Remaining requirement: service click in left sidebar must reveal concrete child layer rows there; selecting child rows should drive normal Active -> Pin -> Pinned flow.
+**Resolution (Feb 23, 2026):** Core acceptance criteria met. LeftSidebar search iterates `allLayersInCategory` by name; `searchAutoExpandServiceIds` passed to CategoryGroup → ServiceGroup; categories with 0 matches hidden. TF-13 fixed multi-layer discovery (Coastal_and_Marine, DP_COASTAL, etc.). ServiceGroup renders child rows when expanded; CON-ARCGIS-17 handles expand/collapse. Path context (Category > Service > Layer) deferred — not implemented.
 
 **Estimated Time:** 4-6 hours
 

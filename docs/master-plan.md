@@ -37,7 +37,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 3 | Dendra | 🟡 In Progress | 0 blocking | `v2/dendra` | No |
 | 4 | DataOne | 🟡 In Progress | 15 tasks | `v2/dataone` | No |
 | 5 | Export Builder | 🟡 In Progress | 1 task | `v2/export-builder` | No |
-| 6 | TNC ArcGIS Services | 🟡 In Progress | 5 tasks | `v2/tnc-arcgis` | No |
+| 6 | TNC ArcGIS Services | 🟡 In Progress | 4 tasks | `v2/tnc-arcgis` | No |
 | 7 | Polish & Consistency | ⚪ Not Started | 12+ tasks | `v2/polish` | No |
 | 8 | Calflora | ⚪ Not Started | 9 tasks | `v2/calflora` | No |
 | 9 | GBIF | 🟡 In Progress | 5 tasks (D20-08 ✅, GBIF-HOSTED ✅; D20-12 🟡 in progress; P9-GRIDBIN high priority; 9.8/9.9 deferred; 9.12 deferred to v2.1+) | `v2/gbif` | No |
@@ -56,7 +56,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 3 | [phase-3-dendra.md](IMPLEMENTATION/phases/phase-3-dendra.md) | D20-06 ✅; D20-BL01–03 backlog; CON-DENDRA-08 |
 | 4 | [phase-4-dataone.md](IMPLEMENTATION/phases/phase-4-dataone.md) | CON-DONE-01/02/16 ✅; remaining: CON-DONE-03–11, CON-DONE-14, CON-DONE-15, D20-09, D20-B02, TF-13, TF-14 |
 | 5 | [phase-5-export-builder.md](IMPLEMENTATION/phases/phase-5-export-builder.md) | + D20-14 (Dan meeting Feb 20) |
-| 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 5 tasks (6.8 ✅, 6.11 ✅ Feb 23, CON-ARCGIS-16 ✅, CON-ARCGIS-17 ✅ Feb 23; D20-02 ✅, D20-02a ✅, D20-10 ✅, D20-11 ✅, TF-11 ✅, TF-13 ✅; D20-B04, D20-B05 from Dan meeting Feb 20) |
+| 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 4 tasks (6.8 ✅, 6.11 ✅, 6.13 ✅ Feb 23, CON-ARCGIS-16 ✅, CON-ARCGIS-17 ✅ Feb 23; D20-02 ✅, D20-02a ✅, D20-10 ✅, D20-11 ✅, TF-11 ✅, TF-13 ✅; 6.12, 6.14, D20-B04, D20-B05) |
 | 7 | [phase-7-polish.md](IMPLEMENTATION/phases/phase-7-polish.md) | 12+ tasks (+ D20-03, D20-04, D20-07, D20-13 from Dan meeting Feb 20; D20-01 ✅ done in Phase 0) |
 | 9 | [phase-9-gbif.md](IMPLEMENTATION/phases/phase-9-gbif.md) | 5 tasks (D20-08 ✅, GBIF-HOSTED ✅; D20-12 🟡 in progress; P9-GRIDBIN high priority; + D20-B01, D20-B03, D20-12-FOLLOW optional) |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) | 0 |
