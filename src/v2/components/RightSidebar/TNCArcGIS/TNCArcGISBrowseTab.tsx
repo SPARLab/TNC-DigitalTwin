@@ -31,6 +31,9 @@ export function TNCArcGISBrowseTab({ showBackToOverview = false, onBackToOvervie
     tableOverlayLayerId,
     isTableOverlayOpen,
     closeTableOverlay,
+    isLayerRendering,
+    renderPhase,
+    layerKind,
   } = useTNCArcGIS();
   const [rowCount, setRowCount] = useState<number | null>(null);
   const [summaryError, setSummaryError] = useState<string | null>(null);
@@ -69,6 +72,14 @@ export function TNCArcGISBrowseTab({ showBackToOverview = false, onBackToOvervie
   const isCurrentLayerTableOpen = isTableOverlayOpen && tableOverlayLayerId === targetLayer?.id;
   const featureServiceName = serviceContextLayer?.name || activeCatalogLayer?.name || 'Unknown service';
   const currentLayerName = targetLayer?.name || activeCatalogLayer?.name || 'Unknown layer';
+  const isImg = layerKind === 'imagery';
+  const renderStatusText = isLayerRendering
+    ? renderPhase === 'fetching-data'
+      ? (isImg ? 'Fetching imagery...' : 'Fetching features...')
+      : renderPhase === 'rendering-features'
+        ? 'Rendering features...'
+        : 'Updating map view...'
+    : 'Map ready';
 
   useEffect(() => {
     let cancelled = false;
@@ -157,6 +168,18 @@ export function TNCArcGISBrowseTab({ showBackToOverview = false, onBackToOvervie
             </dd>
           </div>
         </dl>
+        <div id="tnc-arcgis-browse-layer-render-status-row" className="mt-2 flex items-center justify-end">
+          <span
+            id="tnc-arcgis-browse-layer-render-status-pill"
+            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+              isLayerRendering
+                ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+            }`}
+          >
+            {renderStatusText}
+          </span>
+        </div>
       </div>
 
       {/* Open Table Overlay action — positioned between context and snapshot */}

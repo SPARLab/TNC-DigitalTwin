@@ -5,8 +5,13 @@ import { useLayers } from '../../../context/LayerContext';
 import { buildServiceUrl, fetchServiceDescription } from '../../../services/tncArcgisService';
 import type { CatalogLayer } from '../../../types';
 
+type LayerKind = 'feature' | 'map-image' | 'imagery' | null;
+
 interface TNCArcGISOverviewTabProps {
   loading: boolean;
+  isLayerRendering: boolean;
+  renderPhase: 'idle' | 'fetching-data' | 'rendering-features' | 'updating-view';
+  layerKind: LayerKind;
   onBrowseClick: () => void;
   onInspectBrowseClick?: () => void;
 }
@@ -25,7 +30,28 @@ function getTargetLayer(activeLayer: CatalogLayer | undefined, selectedSubLayerI
   return siblings.find(layer => layer.id === selectedSubLayerId) ?? siblings[0] ?? null;
 }
 
-export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseClick }: TNCArcGISOverviewTabProps) {
+function getRenderStatusLabel(
+  loading: boolean,
+  isLayerRendering: boolean,
+  renderPhase: 'idle' | 'fetching-data' | 'rendering-features' | 'updating-view',
+  layerKind: LayerKind,
+): string {
+  if (loading) return 'Loading metadata...';
+  if (!isLayerRendering) return 'Ready';
+  const isImg = layerKind === 'imagery';
+  if (renderPhase === 'fetching-data') return isImg ? 'Fetching imagery...' : 'Fetching features...';
+  if (renderPhase === 'rendering-features') return 'Rendering features...';
+  return 'Updating map view...';
+}
+
+export function TNCArcGISOverviewTab({
+  loading,
+  isLayerRendering,
+  renderPhase,
+  layerKind,
+  onBrowseClick,
+  onInspectBrowseClick,
+}: TNCArcGISOverviewTabProps) {
   const {
     activeLayer,
     activateLayer,
@@ -91,6 +117,7 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseCl
   const sourceUrl = useMemo(() => {
     return serviceSearchUrl || rawServiceUrl;
   }, [serviceSearchUrl, rawServiceUrl]);
+  const renderStatusLabel = getRenderStatusLabel(loading, isLayerRendering, renderPhase, layerKind);
 
   useEffect(() => {
     let cancelled = false;
@@ -300,7 +327,7 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseCl
               </dd>
               <dt id="tnc-arcgis-overview-type-label" className="text-gray-500">Status</dt>
               <dd id="tnc-arcgis-overview-type-value" className="text-gray-900 font-medium text-right">
-                {loading ? 'Loading metadata...' : 'Ready'}
+                {renderStatusLabel}
               </dd>
             </dl>
           </div>
@@ -460,7 +487,7 @@ export function TNCArcGISOverviewTab({ loading, onBrowseClick, onInspectBrowseCl
           </dd>
           <dt id="tnc-arcgis-overview-type-label" className="text-gray-500">Status</dt>
           <dd id="tnc-arcgis-overview-type-value" className="text-gray-900 font-medium text-right">
-            {loading ? 'Loading metadata...' : 'Ready'}
+            {renderStatusLabel}
           </dd>
         </dl>
       </div>

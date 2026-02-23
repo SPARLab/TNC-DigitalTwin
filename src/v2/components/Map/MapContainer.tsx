@@ -51,9 +51,10 @@ export function MapContainer() {
   const showLoadingOverlay = !!activeLayer
     && (cacheStatus?.loading ?? false)
     && ((adapter?.id === 'drone') || !(cacheStatus?.dataLoaded ?? false));
-  const loadingOverlayMessage = (adapter?.id ?? activeLayer?.dataSource) === 'animl'
+  const defaultLoadingOverlayMessage = (adapter?.id ?? activeLayer?.dataSource) === 'animl'
     ? 'Loading camera trap data...'
     : (adapter?.id === 'drone' ? 'Loading drone imagery...' : `Loading ${activeLayer?.name ?? 'data'}...`);
+  const loadingOverlayMessage = cacheStatus?.loadingMessage ?? defaultLoadingOverlayMessage;
 
   // Sync pinned/active layers with ArcGIS layers
   useMapLayers();

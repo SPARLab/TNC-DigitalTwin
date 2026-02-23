@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 20 / 23 tasks (CON-ARCGIS-01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 6.17, 6.20, D20-02, D20-02a, D20-11, TF-13 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
+**Progress:** 21 / 24 tasks (CON-ARCGIS-01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 6.17, 6.20, D20-02, D20-02a, D20-11, TF-13, CON-ARCGIS-16 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry) ✅ complete  
@@ -30,6 +30,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
+| CON-ARCGIS-16 | 🟢 Complete | Feb 23, 2026 | Sync loading indicators (Map Layers ↔ right sidebar) per Task 34 / DFT-018 | TNC ArcGIS adapter exposes `isLayerRendering` via `useTNCArcGISCacheStatus`; Map Layers widget shows EyeSlotLoadingSpinner during layer fetch/render. Right sidebar shows phase-based status (Fetching imagery/features…, Rendering features…, Ready). Uses `layerView.updating` and `FeatureLayerView.dataUpdating`; imagery layers go straight to Ready once `updating` clears. |
 | TF-13 | 🟢 Complete | Feb 20, 2026 | Implement multi-layer service detection improvements from CON-ARCGIS-07 audit | Removed top-12 discovery cap in `useCatalogRegistry`; all eligible single-row FeatureServer candidates now discovered. Dev-mode classification logging added. All 12+ multi-layer services (incl. Coastal and Marine, DP_COASTAL) get service-container UX. |
 | CON-ARCGIS-07 | 🟢 Complete | Feb 20, 2026 | Ensure proper detection of multi-layer feature services vs single-layer ones | Audit complete; implementation captured in TF-13 |
 | D20-02 | 🟢 Complete | Feb 20, 2026 | Add back button in right sidebar for ArcGIS feature service inspect/browse view | Shared `BrowseBackButton` (Dendra-style); layer context card (current layer + feature service, gray bg); Open Table Overlay above table snapshot; full field list (no truncation); Legend removed. Source: Dan Meeting Feb 20 |
@@ -133,6 +134,21 @@ Confirmed multi-layer examples:
 - [x] Add dev-mode logging for service classification (`single` / `multi` / `unreadable`) for QA.
 
 **Files:** `src/v2/hooks/useCatalogRegistry.ts`
+
+---
+
+## CON-ARCGIS-16: Loading Indicators (Sync Map Layers ↔ Right Sidebar)
+
+**Task:** Align TNC ArcGIS loading indicators with Task 34 / DFT-018 (Unified loading indicator strategy). Same anatomy as iNaturalist, ANiML, GBIF, Dendra.
+
+**Implementation (complete Feb 23, 2026):**
+
+- [x] `TNCArcGISContext` tracks `layerView.updating`, `FeatureLayerView.dataUpdating`, and `view.updating` via `reactiveUtils.watch`; derives `isLayerRendering` and `renderPhase` (fetching-data, rendering-features, updating-view, idle).
+- [x] `useTNCArcGISCacheStatus` includes `isLayerRendering` in its `loading` / `dataLoaded` signals so the Map Layers widget shows `EyeSlotLoadingSpinner` during layer fetch/render.
+- [x] Right sidebar Overview and Browse tabs show phase-based status (Fetching imagery…, Fetching features…, Rendering features…, Ready).
+- [x] Imagery layers (e.g., USA Annual NLCD Land Cover): `layerView.updating` aligns with when imagery is visually rendered; no extended compositing phase.
+
+**Files:** `src/v2/context/TNCArcGISContext.tsx`, `src/v2/dataSources/tnc-arcgis/adapter.tsx`, `src/v2/components/RightSidebar/TNCArcGIS/TNCArcGISOverviewTab.tsx`, `src/v2/components/RightSidebar/TNCArcGIS/TNCArcGISBrowseTab.tsx`
 
 ---
 
