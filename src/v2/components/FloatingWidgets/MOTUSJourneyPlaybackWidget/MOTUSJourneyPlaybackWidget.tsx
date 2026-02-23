@@ -23,11 +23,13 @@ export function MOTUSJourneyPlaybackWidget() {
     playbackTransitionProgress,
     playbackStepLabels,
     playbackSpeed,
+    playbackDirectionMarkerMode,
     isPlaybackPlaying,
     hasJourneyPlaybackData,
     setPlaybackStepIndex,
     setPlaybackTransitionProgress,
     setPlaybackSpeed,
+    setPlaybackDirectionMarkerMode,
     setIsPlaybackPlaying,
   } = useMotusFilter();
 
@@ -116,9 +118,41 @@ export function MOTUSJourneyPlaybackWidget() {
       aria-label="MOTUS journey playback controls"
     >
       <div id="motus-journey-playback-widget-header" className="border-b border-gray-200 bg-gray-50 px-4 py-3">
-        <h3 id="motus-journey-playback-widget-title" className="text-sm font-semibold text-gray-900">
-          Journey playback
-        </h3>
+        <div id="motus-journey-playback-widget-title-row" className="flex items-center justify-between gap-3">
+          <h3 id="motus-journey-playback-widget-title" className="text-sm font-semibold text-gray-900">
+            Journey playback
+          </h3>
+          <div id="motus-journey-playback-widget-direction-marker-options" className="flex items-center gap-1">
+            <button
+              id="motus-journey-playback-widget-direction-marker-arrow-button"
+              type="button"
+              onClick={() => setPlaybackDirectionMarkerMode('arrow')}
+              className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                playbackDirectionMarkerMode === 'arrow'
+                  ? 'bg-emerald-700 text-white'
+                  : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-100'
+              }`}
+              aria-pressed={playbackDirectionMarkerMode === 'arrow'}
+              aria-label="Use arrow direction marker"
+            >
+              Arrow
+            </button>
+            <button
+              id="motus-journey-playback-widget-direction-marker-bird-button"
+              type="button"
+              onClick={() => setPlaybackDirectionMarkerMode('bird')}
+              className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                playbackDirectionMarkerMode === 'bird'
+                  ? 'bg-emerald-700 text-white'
+                  : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-100'
+              }`}
+              aria-pressed={playbackDirectionMarkerMode === 'bird'}
+              aria-label="Use bird direction marker"
+            >
+              Bird
+            </button>
+          </div>
+        </div>
         <p id="motus-journey-playback-widget-subtitle" className="mt-0.5 text-xs text-gray-600">
           {selectedTagId == null
             ? 'Select a tagged animal to animate its inferred movement sequence.'

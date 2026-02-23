@@ -14,6 +14,7 @@ interface MotusFilterContextValue {
   playbackTransitionProgress: number;
   playbackStepLabels: string[];
   playbackSpeed: 0.5 | 1 | 2 | 4;
+  playbackDirectionMarkerMode: 'arrow' | 'bird';
   isPlaybackPlaying: boolean;
   hasJourneyPlaybackData: boolean;
   warmCache: () => void;
@@ -27,6 +28,7 @@ interface MotusFilterContextValue {
   setPlaybackTransitionProgress: (progress: number) => void;
   setPlaybackStepLabels: (labels: string[]) => void;
   setPlaybackSpeed: (speed: 0.5 | 1 | 2 | 4) => void;
+  setPlaybackDirectionMarkerMode: (mode: 'arrow' | 'bird') => void;
   setIsPlaybackPlaying: (playing: boolean) => void;
 }
 
@@ -55,6 +57,7 @@ export function MotusFilterProvider({ children }: { children: ReactNode }) {
   const [playbackTransitionProgress, setPlaybackTransitionProgressState] = useState(0);
   const [playbackStepLabels, setPlaybackStepLabelsState] = useState<string[]>(['Journey start']);
   const [playbackSpeed, setPlaybackSpeedState] = useState<0.5 | 1 | 2 | 4>(1);
+  const [playbackDirectionMarkerMode, setPlaybackDirectionMarkerModeState] = useState<'arrow' | 'bird'>('arrow');
   const [isPlaybackPlaying, setIsPlaybackPlaying] = useState(false);
   const inFlightRef = useRef(false);
   const loading = isWarmLoading || loadScopeCount > 0;
@@ -127,6 +130,10 @@ export function MotusFilterProvider({ children }: { children: ReactNode }) {
     setPlaybackSpeedState(speed);
   }, []);
 
+  const setPlaybackDirectionMarkerMode = useCallback((mode: 'arrow' | 'bird') => {
+    setPlaybackDirectionMarkerModeState(mode);
+  }, []);
+
   const value = useMemo<MotusFilterContextValue>(
     () => ({
       loading,
@@ -141,6 +148,7 @@ export function MotusFilterProvider({ children }: { children: ReactNode }) {
       playbackTransitionProgress,
       playbackStepLabels,
       playbackSpeed,
+      playbackDirectionMarkerMode,
       isPlaybackPlaying,
       hasJourneyPlaybackData: playbackStepLabels.length > 1,
       warmCache,
@@ -154,6 +162,7 @@ export function MotusFilterProvider({ children }: { children: ReactNode }) {
       setPlaybackTransitionProgress,
       setPlaybackStepLabels,
       setPlaybackSpeed,
+      setPlaybackDirectionMarkerMode,
       setIsPlaybackPlaying,
     }),
     [
@@ -169,12 +178,14 @@ export function MotusFilterProvider({ children }: { children: ReactNode }) {
       playbackTransitionProgress,
       playbackStepLabels,
       playbackSpeed,
+      playbackDirectionMarkerMode,
       isPlaybackPlaying,
       warmCache,
       createLoadingScope,
       refreshSpeciesSummaries,
       setBrowseFilters,
       setPlaybackSpeed,
+      setPlaybackDirectionMarkerMode,
       setPlaybackStepIndex,
       setPlaybackTransitionProgress,
       setPlaybackStepLabels,

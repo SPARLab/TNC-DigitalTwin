@@ -12,6 +12,19 @@ import { useMotusFilter } from '../../context/MotusFilterContext';
 import { createMotusLayer, MOTUS_TAGGED_ANIMALS_LAYER_ID } from '../../components/Map/layers/motusLayer';
 import { registerTNCArcGISLayer } from '../../components/Map/layers';
 
+const FLYING_BIRD_SVG = [
+  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">',
+  '<path d="M16 7h.01" />',
+  '<path d="M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20" />',
+  '<path d="m20 7 2 .5-2 .5" />',
+  '<path d="M10 18v3" />',
+  '<path d="M14 17.75V21" />',
+  '<path d="M7 18a6 6 0 0 0 3.84-10.61" />',
+  '</svg>',
+].join('');
+
+const FLYING_BIRD_MARKER_URL = `data:image/svg+xml;utf8,${encodeURIComponent(FLYING_BIRD_SVG)}`;
+
 export function useMotusMapBehavior(
   getManagedLayer: (layerId: string) => Layer | undefined,
   pinnedLayers: PinnedLayer[],
@@ -28,6 +41,7 @@ export function useMotusMapBehavior(
     playbackTransitionProgress,
     isPlaybackPlaying,
     setPlaybackStepLabels,
+    playbackDirectionMarkerMode,
     createLoadingScope,
   } = useMotusFilter();
   const overlayRef = useRef<GraphicsLayer | null>(null);
@@ -160,7 +174,7 @@ export function useMotusMapBehavior(
       }));
     };
 
-    const drawArrowhead = (
+    const drawDirectionMarker = (
       fromLongitude: number,
       fromLatitude: number,
       tipLongitude: number,
@@ -170,6 +184,24 @@ export function useMotusMapBehavior(
       const dx = tipLongitude - fromLongitude;
       const dy = tipLatitude - fromLatitude;
       const angle = (Math.atan2(dx, dy) * 180) / Math.PI;
+      const symbol = playbackDirectionMarkerMode === 'bird'
+        ? {
+            type: 'picture-marker' as const,
+            url: FLYING_BIRD_MARKER_URL,
+            width: '20px',
+            height: '20px',
+          }
+        : {
+            type: 'simple-marker' as const,
+            style: 'triangle' as const,
+            size: 10,
+            angle,
+            color: [217, 119, 6, 0.95] as [number, number, number, number],
+            outline: {
+              color: [255, 255, 255, 0.9] as [number, number, number, number],
+              width: 0.9,
+            },
+          };
       overlay.add(new Graphic({
         geometry: {
           type: 'point',
@@ -177,17 +209,7 @@ export function useMotusMapBehavior(
           latitude: tipLatitude,
         },
         attributes,
-        symbol: {
-          type: 'simple-marker',
-          style: 'triangle',
-          size: 10,
-          angle,
-          color: [217, 119, 6, 0.95],
-          outline: {
-            color: [255, 255, 255, 0.9],
-            width: 0.9,
-          },
-        },
+        symbol,
       }));
     };
 
@@ -239,7 +261,7 @@ export function useMotusMapBehavior(
         partialLatitude,
         activeAttributes,
       );
-      drawArrowhead(
+      drawDirectionMarker(
         activeLeg.from.longitude,
         activeLeg.from.latitude,
         partialLongitude,
@@ -248,7 +270,7 @@ export function useMotusMapBehavior(
       );
     } else if (completedLegs.length > 0) {
       const lastLeg = completedLegs[completedLegs.length - 1];
-      drawArrowhead(
+      drawDirectionMarker(
         lastLeg.from.longitude,
         lastLeg.from.latitude,
         lastLeg.to.longitude,
@@ -264,7 +286,7 @@ export function useMotusMapBehavior(
         },
       );
     }
-  }, [playbackStepIndex, playbackTransitionProgress, isPlaybackPlaying]);
+  }, [playbackStepIndex, playbackTransitionProgress, isPlaybackPlaying, playbackDirectionMarkerMode]);
 
   useEffect(() => {
     const view = viewRef.current;
