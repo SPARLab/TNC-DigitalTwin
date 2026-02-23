@@ -46,6 +46,13 @@ export function ServiceGroup({
   const isActiveService = activeLayer?.layerId === service.id && !!activeLayer.isService;
 
   const handleHeaderClick = () => {
+    // Prioritize toggle semantics so repeated clicks always expand/collapse.
+    // Avoid re-activating on collapse, which can trigger auto-expand effects upstream.
+    if (isExpanded) {
+      onToggleExpand();
+      return;
+    }
+
     const selectedSubLayerId = (() => {
       if (isActiveService) return activeLayer?.selectedSubLayerId;
       const activeLayerIsChildOfService = !!activeLayer && layers.some(layer => layer.id === activeLayer.layerId);

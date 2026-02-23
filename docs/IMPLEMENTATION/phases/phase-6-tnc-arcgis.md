@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 22 / 24 tasks (CON-ARCGIS-01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 6.8, 6.17, 6.20, D20-02, D20-02a, D20-11, TF-13, CON-ARCGIS-16 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
+**Progress:** 23 / 24 tasks (CON-ARCGIS-01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 16, 17, 6.8, 6.17, 6.20, D20-02, D20-02a, D20-11, TF-13 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry) ✅ complete  
@@ -30,6 +30,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
+| CON-ARCGIS-17 | 🟢 Complete | Feb 23, 2026 | Left sidebar: feature service expand/collapse toggle on repeated clicks | ServiceGroup: when already expanded, click collapses immediately (no re-activation); when collapsed, click expands and activates. Fixes prior behavior where collapse was blocked by auto-expand side effects. |
 | CON-ARCGIS-16 | 🟢 Complete | Feb 23, 2026 | Sync loading indicators (Map Layers ↔ right sidebar) per Task 34 / DFT-018 | TNC ArcGIS adapter exposes `isLayerRendering` via `useTNCArcGISCacheStatus`; Map Layers widget shows EyeSlotLoadingSpinner during layer fetch/render. Right sidebar shows phase-based status (Fetching imagery/features…, Rendering features…, Ready). Uses `layerView.updating` and `FeatureLayerView.dataUpdating`; imagery layers go straight to Ready once `updating` clears. |
 | TF-13 | 🟢 Complete | Feb 20, 2026 | Implement multi-layer service detection improvements from CON-ARCGIS-07 audit | Removed top-12 discovery cap in `useCatalogRegistry`; all eligible single-row FeatureServer candidates now discovered. Dev-mode classification logging added. All 12+ multi-layer services (incl. Coastal and Marine, DP_COASTAL) get service-container UX. |
 | CON-ARCGIS-07 | 🟢 Complete | Feb 20, 2026 | Ensure proper detection of multi-layer feature services vs single-layer ones | Audit complete; implementation captured in TF-13 |
@@ -155,6 +156,19 @@ Confirmed multi-layer examples:
 
 ---
 
+## CON-ARCGIS-17: Feature Service Expand/Collapse Toggle (Left Sidebar)
+
+**Task:** Make feature service rows in the left sidebar toggle expand/collapse on repeated clicks. First click expands; second click collapses.
+
+**Implementation (complete Feb 23, 2026):**
+
+- [x] `ServiceGroup.handleHeaderClick`: when `isExpanded`, short-circuit to `onToggleExpand()` only (no re-activation), avoiding upstream auto-expand effects that prevented collapse.
+- [x] When collapsed, click still expands and activates service as before.
+
+**Files:** `src/v2/components/LeftSidebar/ServiceGroup.tsx`
+
+---
+
 ## Architecture Overview
 
 ### Data Model Hierarchy
@@ -177,7 +191,7 @@ TNC FeatureService (e.g., "Wetlands")
 
 **Multi-layer TNC service (collapsible group):**
 ```
-│ 📊 Wetlands (3)                [▼]    │ ← Click = activate service (show overview)
+│ 📊 Wetlands (3)                [▼]    │ ← Click = expand/collapse toggle; when collapsed, click also activates
 │      □ Polygons                [🔵👁] │ ← Pin/eye only (not activation target)
 │      □ Points                  [  👁] │
 │      □ Transects               [  👁] │
