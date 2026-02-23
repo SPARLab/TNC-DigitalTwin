@@ -42,7 +42,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 8 | Calflora | ⚪ Not Started | 9 tasks | `v2/calflora` | No |
 | 9 | GBIF | 🟡 In Progress | 2 tasks (9.8 ✅; D20-08 ✅, GBIF-HOSTED ✅, P9-GRIDBIN ✅, TF-09 ✅; D20-12 🟡 in progress; 9.9 deferred; 9.12 deferred to v2.1+) | `v2/gbif` | No |
 | 10 | DroneDeploy | 🟢 Complete | 0 tasks | `v2/dronedeploy` | No |
-| 11 | MOTUS | 🟡 In Progress | 4 tasks | `v2/motus` | **On hold** — journey reconstruction blocked until Dan fixes detection-to-station linkage (0% join coverage in audit) |
+| 11 | MOTUS | 🟡 In Progress | 4 tasks | `v2/motus` | No — device_id linkage implemented (Feb 23); 11.6, 11.7 unblocked |
 
 **Status Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
 
@@ -60,7 +60,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 7 | [phase-7-polish.md](IMPLEMENTATION/phases/phase-7-polish.md) | 12+ tasks (+ D20-03, D20-04, D20-07, D20-13 from Dan meeting Feb 20; D20-01 ✅ done in Phase 0) |
 | 9 | [phase-9-gbif.md](IMPLEMENTATION/phases/phase-9-gbif.md) | 2 tasks (9.8 ✅; D20-12 🟡 in progress; + D20-B01, D20-B03, D20-12-FOLLOW optional; 9.9/9.12 deferred) |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) | 0 |
-| 11 | [phase-11-motus.md](IMPLEMENTATION/phases/phase-11-motus.md) | 4 (11.1–11.5 ✅; 11.6–11.7 on hold until data fix) |
+| 11 | [phase-11-motus.md](IMPLEMENTATION/phases/phase-11-motus.md) | 4 (11.1–11.5 ✅; 11.6–11.7 unblocked; 11.8–11.9 not started) |
 
 ---
 
@@ -309,6 +309,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 23, 2026 | Phase 11 | **Task 11.5 enhanced; data blocker resolved.** MOTUS movement paths now use `device_id` to join detections to Station Deployments; time-ordered inferred legs render for matching detections (medium confidence when device-linked). Tasks 11.6, 11.7 unblocked. 4 tasks remaining. | Cursor |
 | Feb 20, 2026 | Phase 11 | **Tasks 11.3, 11.4, 11.5 complete.** MOTUS browse now supports species/tag + date/quality filtering with latest/season presets; tagged-animal detail shipped with deployment/detection summaries and attribution links; map behavior renders receiver-station context plus inferred low-confidence movement legs when station inference is possible. 4 tasks remaining. | Codex |
 | Feb 20, 2026 | Phase 11 | **Tasks 11.1, 11.2 complete.** MOTUS Wildlife Telemetry: research done (ArcGIS service documented, path-rendering strategy); sidebar shell shipped (adapter, Overview/Browse tabs, list/detail scaffold, registry wiring). 7 tasks remaining. | Cursor |
 | Feb 20, 2026 | Phase 9 | **D20-12 in progress.** media_json parsing, card/detail wiring, overlay scrollbar, dev debug panel. ~2.8k/323k rows have media; coworker may populate more. Optional follow-up: D20-12-FOLLOW "Has media only" filter. | Cursor |

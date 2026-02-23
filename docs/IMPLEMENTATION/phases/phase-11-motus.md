@@ -16,9 +16,9 @@
 | 11.2 | 🟢 Complete | Feb 20, 2026 | Create MOTUS right sidebar shell | Added MOTUS adapter + sidebar shell components (Overview/Browse, list/detail shell) and registry wiring |
 | 11.3 | 🟢 Complete | Feb 20, 2026 | Implement species/tag browse + date window UI | Added live species/tag browse with date window, quality controls (`motus_filter`, `hit_count`), latest-window action, seasonal presets, and direct load-on-map flow |
 | 11.4 | 🟢 Complete | Feb 20, 2026 | Implement tagged animal detail view | Added tag detail metadata, deployment + detection windows, quality summary, attribution, methodology links, and load/remove map action |
-| 11.5 | 🟢 Complete | Feb 20, 2026 | Render MOTUS movement context on map | Added explicit MOTUS map layer + graphics overlay for receiver stations and inferred low-confidence legs when station inference is available, with clear confidence disclaimer fallback |
-| 11.6 | 🟡 In Progress | Feb 20, 2026 | Implement temporal navigation / playback | **On hold** — blocked until detection-to-station linkage fixed (see Data Blocker below) |
-| 11.7 | 🟡 In Progress | Feb 20, 2026 | Implement legend and symbology controls | **On hold** — blocked until detection-to-station linkage fixed (see Data Blocker below) |
+| 11.5 | 🟢 Complete | Feb 23, 2026 | Render MOTUS movement context on map | Added explicit MOTUS map layer + graphics overlay for receiver stations and inferred legs; **device_id linkage** (Feb 23) enables time-ordered station-to-station paths for detections matching known deployments; medium-confidence legs when both endpoints are device-linked; node_num fallback retained |
+| 11.6 | 🟡 In Progress | Feb 23, 2026 | Implement temporal navigation / playback | **Unblocked** — device_id linkage now available; ready for implementation |
+| 11.7 | 🟡 In Progress | Feb 23, 2026 | Implement legend and symbology controls | **Unblocked** — device_id linkage now available; ready for implementation |
 | 11.8 | ⚪ Not Started | — | Sync loading indicators | Same shared loading pattern as other data sources |
 | 11.9 | ⚪ Not Started | — | Wire Save View flow | Pin MOTUS layers, save product/date views to Map Layers |
 
@@ -30,11 +30,11 @@
 
 ---
 
-### Data Blocker (Feb 20, 2026)
+### Data Blocker — Resolved (Feb 23, 2026)
 
-**Journey reconstruction is on hold until Dan fixes detection-to-station linkage.**
+**Journey reconstruction unblocked via `device_id` linkage.**
 
-Live audit of the ArcGIS FeatureServer showed **0% join coverage** between Tag Detections `node_num` and Receiver Stations / Station Deployments identifiers. Detections have timestamps and stations have coordinates, but the join key is missing or mismatched in the published service. Until a proper `node_num` → station mapping (or equivalent) is added, the app can only render context-only lines (deployment location → nearby stations), not time-ordered inferred journeys. See email to Dan for details.
+The original blocker (0% join coverage between Tag Detections `node_num` and Receiver Stations) was resolved by using **Tag Detections `device_id`** to join to Station Deployments. All detections have `device_id`; detections whose `device_id` matches a known deployment can now be mapped to station coordinates for time-ordered inferred legs. Coverage depends on deployment data (e.g. ~33% of all detections match Dangermond deployments; tags with detections at those stations render full inferred paths). Tasks 11.6 and 11.7 are unblocked.
 
 ---
 
@@ -53,7 +53,7 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 - Active ArcGIS service exists at `https://dangermondpreserve-spatial.com/server/rest/services/Dangermond_Preserve_Wildlife_Telemetry/FeatureServer`
 - Service contains 3 point layers (`Tagged Animals`, `Station Deployments`, `Receiver Stations`) and 1 table (`Tag Detections`)
 - Current volumes: 228 tagged animals, 17 station deployments, 12 receiver stations, 546,499 detection rows
-- Key implementation implication: detections table currently has no geometry and no explicit station foreign key field for direct polyline construction
+- Key implementation implication: detections table has no geometry; **device_id** (100% populated) joins to Station Deployments for station coordinates — used for time-ordered inferred path legs (Feb 23, 2026)
 
 ### Key Characteristics
 
@@ -262,7 +262,7 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 | Tagged Animals (id=0) | Feature Layer | `ts_start` / `ts_end` per tag | Point | 228 records; species and deployment metadata |
 | Station Deployments (id=1) | Feature Layer | `ts_start` / `ts_end` per deployment | Point | 17 records; includes status and receiver/device fields |
 | Receiver Stations (id=2) | Feature Layer | Station lifecycle | Point | 12 records; station identity/location |
-| Tag Detections (id=3) | Table | `ts_begin` / `ts_end` per run | None | 546,499 records; includes `tag_id`, `run_id`, `hit_count`, `motus_filter`, `antenna` |
+| Tag Detections (id=3) | Table | `ts_begin` / `ts_end` per run | None | 546,499 records; includes `tag_id`, `device_id`, `run_id`, `hit_count`, `motus_filter`, `antenna` — **device_id** used for station linkage (Feb 23) |
 
 ### Query/Loading Performance
 | Operation | Avg Time | Notes |
@@ -312,7 +312,7 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 
 ## Open Questions
 
-- [x] **Do we want to enrich `Tag Detections` with explicit station/deployment join fields for deterministic path rendering?** — **Yes, required.** Audit (Feb 20, 2026) confirmed 0% detection-to-station join coverage; Dan to fix.
+- [x] **Do we want to enrich `Tag Detections` with explicit station/deployment join fields for deterministic path rendering?** — **Resolved.** Using existing `device_id` (100% populated) to join detections to Station Deployments; time-ordered inferred legs now render for matching detections (Feb 23, 2026).
 - [ ] Should first release prioritize species-level path density, per-tag timelines, or both?
 - [ ] What default quality thresholds should we enforce (`motus_filter`, minimum `hit_count`)?
 - [ ] Should we include off-preserve stations by default, or focus on Dangermond-centric movement context first?
@@ -324,6 +324,7 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 23, 2026 | 11.5 | Implemented device_id-based station linkage for MOTUS movement paths; detections join to Station Deployments via device_id (100% populated); time-ordered inferred legs render with medium confidence when both endpoints device-linked; node_num fallback retained. Data blocker resolved; 11.6, 11.7 unblocked | Cursor |
 | Feb 20, 2026 | 11.5–11.7 | Documented data blocker: 0% detection-to-station join coverage; journey reconstruction on hold until Dan fixes linkage. Tasks 11.6, 11.7 marked in-progress/on-hold | Codex |
 | Feb 20, 2026 | 11.3, 11.4, 11.5 | Implemented MOTUS species/tag browse filters (date + quality), tagged-animal detail panel, and map movement context (receiver station overlay + inferred leg rendering with confidence/disclaimer messaging) | Codex |
 | Feb 20, 2026 | 11.2 | Implemented MOTUS sidebar shell + adapter wiring (`motus` data source, registry integration, overview/browse list-detail scaffold, map behavior registration for MOTUS catalog layers) | Codex |

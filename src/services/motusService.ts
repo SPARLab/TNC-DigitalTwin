@@ -76,6 +76,7 @@ export interface MotusMovementContext {
 }
 
 type ArcGISFeature = { attributes?: Record<string, unknown> };
+type ObservationSource = 'device_id' | 'node_num';
 
 function escapeSql(value: string): string {
   return value.replace(/'/g, "''");
@@ -101,6 +102,11 @@ function toSafeString(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
   return trimmed ? trimmed : null;
+}
+
+function toTimestamp(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  return value;
 }
 
 function normalizeNodeToken(value: string): string {
@@ -140,6 +146,12 @@ function buildDetectionNodeCandidates(nodeRaw: string): string[] {
   }
 
   return Array.from(candidates);
+}
+
+function toIntegerKey(value: unknown): string | null {
+  const parsed = toFiniteNumber(value);
+  if (parsed == null) return null;
+  return String(Math.floor(Math.abs(parsed)));
 }
 
 function estimateDistanceKm(from: { latitude: number; longitude: number }, to: { latitude: number; longitude: number }): number {
@@ -466,7 +478,7 @@ class MotusService {
         STATION_DEPLOYMENTS_LAYER_URL,
         {
           where: '1=1',
-          outFields: 'id,station_id,name,latitude,longitude,device_id,serial_number',
+          outFields: 'id,station_id,name,latitude,longitude,device_id,serial_number,ts_start,ts_end',
           returnGeometry: false,
           resultRecordCount: 500,
           f: 'json',
@@ -477,7 +489,7 @@ class MotusService {
         TAG_DETECTIONS_TABLE_URL,
         {
           where: buildDetectionWhereClause(filters, [tagId]),
-          outFields: 'node_num,antenna,ts_begin,ts_end',
+          outFields: 'node_num,device_id,antenna,ts_begin,ts_end',
           returnGeometry: false,
           orderByFields: 'ts_begin ASC',
           resultRecordCount: 2000,
@@ -519,6 +531,10 @@ class MotusService {
 
     const deploymentRows = Array.isArray(deploymentsJson.features) ? (deploymentsJson.features as ArcGISFeature[]) : [];
     const deploymentNodeKeysByStation = new Map<number, Set<string>>();
+    const deploymentRowsByDevice = new Map<
+      string,
+      Array<{ station: MotusStationPoint; tsStart: number | null; tsEnd: number | null }>
+    >();
     for (const feature of deploymentRows) {
       const stationId = toFiniteNumber(feature.attributes?.station_id);
       if (stationId == null) continue;
@@ -553,6 +569,44 @@ class MotusService {
       byStationId.set(stationId, fallbackStation);
     }
 
+    for (const feature of deploymentRows) {
+      const stationId = toFiniteNumber(feature.attributes?.station_id);
+      const deviceKey = toIntegerKey(feature.attributes?.device_id);
+      if (stationId == null || !deviceKey) continue;
+      const station = byStationId.get(stationId);
+      if (!station) continue;
+      const existing = deploymentRowsByDevice.get(deviceKey) || [];
+      existing.push({
+        station,
+        tsStart: toTimestamp(feature.attributes?.ts_start),
+        tsEnd: toTimestamp(feature.attributes?.ts_end),
+      });
+      deploymentRowsByDevice.set(deviceKey, existing);
+    }
+
+    const resolveStationFromDevice = (deviceId: unknown, tsBegin: number | null, tsEnd: number | null): MotusStationPoint | null => {
+      const key = toIntegerKey(deviceId);
+      if (!key) return null;
+      const candidates = deploymentRowsByDevice.get(key);
+      if (!candidates || candidates.length === 0) return null;
+      if (candidates.length === 1) return candidates[0].station;
+
+      const targetTs = tsBegin ?? tsEnd;
+      if (targetTs == null) return candidates[0].station;
+
+      const activeCandidates = candidates.filter((candidate) => {
+        const startsBefore = candidate.tsStart == null || targetTs >= candidate.tsStart;
+        const endsAfter = candidate.tsEnd == null || targetTs <= candidate.tsEnd;
+        return startsBefore && endsAfter;
+      });
+      if (activeCandidates.length === 1) return activeCandidates[0].station;
+      if (activeCandidates.length > 1) return activeCandidates[0].station;
+
+      return [...candidates]
+        .sort((a, b) => (b.tsStart ?? Number.NEGATIVE_INFINITY) - (a.tsStart ?? Number.NEGATIVE_INFINITY))[0]
+        .station;
+    };
+
     const detections = Array.isArray(detectionsJson.features) ? (detectionsJson.features as ArcGISFeature[]) : [];
     const stationByNode = new Map<string, MotusStationPoint>();
     for (const station of stations) {
@@ -573,28 +627,44 @@ class MotusService {
       station: MotusStationPoint;
       tsBegin: number | null;
       tsEnd: number | null;
+      source: ObservationSource;
     }> = [];
     const uniqueNodeIds = new Set<string>();
+    let matchedByDevice = 0;
+    let matchedByNode = 0;
     for (const detection of detections) {
-      const nodeNumRaw = toSafeString(detection.attributes?.node_num);
-      if (!nodeNumRaw) continue;
-      const candidates = buildDetectionNodeCandidates(nodeNumRaw);
-      if (candidates.length === 0) continue;
-      uniqueNodeIds.add(candidates[0]);
-      const match = candidates
-        .map((key) => stationByNode.get(key))
-        .find((station): station is MotusStationPoint => !!station);
-      if (!match) continue;
-
       const tsBegin = toFiniteNumber(detection.attributes?.ts_begin);
       const tsEnd = toFiniteNumber(detection.attributes?.ts_end);
+      const stationByDevice = resolveStationFromDevice(detection.attributes?.device_id, tsBegin, tsEnd);
+
+      let matchedStation: MotusStationPoint | null = stationByDevice;
+      let source: ObservationSource = 'device_id';
+      const nodeNumRaw = toSafeString(detection.attributes?.node_num);
+      if (!matchedStation && nodeNumRaw) {
+        const candidates = buildDetectionNodeCandidates(nodeNumRaw);
+        if (candidates.length > 0) {
+          uniqueNodeIds.add(candidates[0]);
+          matchedStation = candidates
+            .map((key) => stationByNode.get(key))
+            .find((station): station is MotusStationPoint => !!station) || null;
+          source = 'node_num';
+        }
+      }
+      if (!matchedStation) continue;
+
       const previous = inferredObservations[inferredObservations.length - 1];
-      if (!previous || previous.station.id !== match.id) {
-        inferredObservations.push({ station: match, tsBegin, tsEnd });
+      if (!previous || previous.station.id !== matchedStation.id) {
+        inferredObservations.push({ station: matchedStation, tsBegin, tsEnd, source });
       } else {
         previous.tsEnd = Math.max(previous.tsEnd ?? 0, tsEnd ?? 0) || previous.tsEnd;
         previous.tsBegin = previous.tsBegin ?? tsBegin;
+        if (previous.source === 'node_num' && source === 'device_id') {
+          previous.source = 'device_id';
+        }
       }
+
+      if (source === 'device_id') matchedByDevice += 1;
+      else matchedByNode += 1;
     }
 
     const legs: MotusInferredLeg[] = [];
@@ -602,6 +672,12 @@ class MotusService {
       const fromObservation = inferredObservations[index - 1];
       const toObservation = inferredObservations[index];
       if (fromObservation.station.id === toObservation.station.id) continue;
+      const confidence = fromObservation.source === 'device_id' && toObservation.source === 'device_id'
+        ? 'medium'
+        : 'low';
+      const evidence = confidence === 'medium'
+        ? 'Time-ordered station transition inferred from sequential detections linked via receiver device_id (medium confidence; still not an exact flight trajectory).'
+        : 'Time-ordered station transition inferred from sequential detections (low confidence; not exact flight trajectory).';
       legs.push({
         id: `motus-leg-${tagId}-${index}`,
         from: fromObservation.station,
@@ -610,8 +686,8 @@ class MotusService {
         stepIndex: index,
         startDate: toIsoDate(fromObservation.tsBegin ?? fromObservation.tsEnd),
         endDate: toIsoDate(toObservation.tsBegin ?? toObservation.tsEnd),
-        confidence: 'low',
-        evidence: 'Time-ordered station transition inferred from sequential detections (low confidence; not exact flight trajectory).',
+        confidence,
+        evidence,
       });
     }
 
@@ -651,12 +727,16 @@ class MotusService {
     }
 
     const hasInferredLegs = legs.some((leg) => leg.kind === 'inferred');
+    const matchedCount = matchedByDevice + matchedByNode;
+    const totalDetections = detections.length;
     const disclaimer = hasInferredLegs
-      ? 'Movement legs are inferred from detections and should be treated as low-confidence shortest-path context.'
+      ? matchedByDevice > 0
+        ? `Movement legs are inferred from time-ordered detections using receiver device linkage where available (${matchedByDevice.toLocaleString()} device-linked detections${matchedByNode > 0 ? `, ${matchedByNode.toLocaleString()} node-based fallback` : ''}). Paths are inferred context, not exact flight trajectories.`
+        : 'Movement legs are inferred from detections and should be treated as low-confidence shortest-path context.'
       : legs.length > 0
         ? 'Direct station-to-station inference was unavailable. Lines shown are context-only links from tag deployment location to nearby receiver stations; they illustrate receiver network context, not reconstructed flight paths.'
-      : uniqueNodeIds.size > 0
-        ? `No valid station-to-station inference available for this selection. ${uniqueNodeIds.size.toLocaleString()} receiver node IDs were detected, but none mapped to receiver stations in this service, so stations are shown without path legs.`
+      : uniqueNodeIds.size > 0 || totalDetections > 0
+        ? `No valid station-to-station inference available for this selection. ${totalDetections.toLocaleString()} detections were evaluated; ${matchedCount.toLocaleString()} mapped to known stations in this service.`
         : 'No valid station-to-station inference available for this selection. Receiver stations are shown without path legs.';
 
     return { stations, legs, disclaimer };
