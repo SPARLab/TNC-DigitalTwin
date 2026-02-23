@@ -13,6 +13,7 @@ import { fetchDroneImageryByProject, type DroneImageryProject } from '../../../s
 interface LayerRowProps {
   layerId: string;
   name: string;
+  highlightQuery?: string;
   ariaLevel?: number;
   controlsOnly?: boolean;
   indented?: boolean;
@@ -29,9 +30,31 @@ function pickProjectDefaultFlight(project: DroneImageryProject) {
   return project.imageryLayers[0] ?? project.imageryLayers[project.imageryLayers.length - 1];
 }
 
+function renderHighlightedText(text: string, query?: string) {
+  if (!query || query.length < 2) return text;
+  const lowerText = text.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+  const matchStart = lowerText.indexOf(lowerQuery);
+  if (matchStart === -1) return text;
+
+  const matchEnd = matchStart + query.length;
+  const before = text.slice(0, matchStart);
+  const matched = text.slice(matchStart, matchEnd);
+  const after = text.slice(matchEnd);
+
+  return (
+    <>
+      {before}
+      <mark className="bg-amber-200 text-inherit rounded px-0.5">{matched}</mark>
+      {after}
+    </>
+  );
+}
+
 export function LayerRow({
   layerId,
   name,
+  highlightQuery,
   ariaLevel = 2,
   controlsOnly = false,
   indented = false,
@@ -203,7 +226,7 @@ export function LayerRow({
         )}
 
         <span className={`truncate min-w-0 flex-1 ${textColor} ${isActive ? 'font-semibold' : ''}`}>
-          {name}
+          {renderHighlightedText(name, highlightQuery)}
         </span>
 
         {catalogLayer?.catalogMeta?.parentServiceId && (

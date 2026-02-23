@@ -60,7 +60,8 @@ interface ArcGISServiceLayer {
   name: string;
 }
 
-const SERVICE_DISCOVERY_TIMEOUT_MS = 1200;
+const SERVICE_DISCOVERY_TIMEOUT_MS = 3000;
+const SERVICE_DISCOVERY_RETRY_TIMEOUT_MS = 5000;
 
 // ── Hook return type ─────────────────────────────────────────────────────────
 
@@ -126,29 +127,29 @@ function buildFeatureServiceMetadataUrl(d: RawDataset): string | null {
   return `${base}/${path}/FeatureServer?f=json`;
 }
 
-async function fetchFeatureServiceLayers(d: RawDataset): Promise<ArcGISServiceLayer[]> {
-  const metadataUrl = buildFeatureServiceMetadataUrl(d);
-  if (!metadataUrl) return [];
-
+async function fetchFeatureServiceLayersWithTimeout(
+  metadataUrl: string,
+  timeoutMs: number,
+): Promise<{ layers: ArcGISServiceLayer[]; timedOut: boolean }> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), SERVICE_DISCOVERY_TIMEOUT_MS);
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   let res: Response;
   try {
     res = await fetch(metadataUrl, { signal: controller.signal });
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
-      return [];
+      return { layers: [], timedOut: true };
     }
     console.warn('[CatalogRegistry] Feature service discovery failed (network):', error);
-    return [];
+    return { layers: [], timedOut: false };
   } finally {
     clearTimeout(timeoutId);
   }
 
   if (!res.ok) {
     console.warn(`[CatalogRegistry] Feature service discovery failed: HTTP ${res.status}`);
-    return [];
+    return { layers: [], timedOut: false };
   }
 
   let json: unknown;
@@ -156,26 +157,45 @@ async function fetchFeatureServiceLayers(d: RawDataset): Promise<ArcGISServiceLa
     json = await res.json();
   } catch (error) {
     console.warn('[CatalogRegistry] Feature service discovery failed (malformed JSON):', error);
-    return [];
+    return { layers: [], timedOut: false };
   }
 
-  if (!json || typeof json !== 'object') return [];
+  if (!json || typeof json !== 'object') return { layers: [], timedOut: false };
   const layers = (json as { layers?: unknown }).layers;
-  if (!Array.isArray(layers)) return [];
+  if (!Array.isArray(layers)) return { layers: [], timedOut: false };
 
-  return layers
-    .map((layer): ArcGISServiceLayer | null => {
-      if (!layer || typeof layer !== 'object') return null;
-      const id = (layer as { id?: unknown }).id;
-      const name = (layer as { name?: unknown }).name;
-      if (typeof id !== 'number' || !Number.isFinite(id)) return null;
-      return {
-        id,
-        name: typeof name === 'string' && name.trim() ? name.trim() : `Layer ${id}`,
-      };
-    })
-    .filter((layer): layer is ArcGISServiceLayer => !!layer)
-    .sort((a, b) => a.id - b.id);
+  return {
+    layers: layers
+      .map((layer): ArcGISServiceLayer | null => {
+        if (!layer || typeof layer !== 'object') return null;
+        const id = (layer as { id?: unknown }).id;
+        const name = (layer as { name?: unknown }).name;
+        if (typeof id !== 'number' || !Number.isFinite(id)) return null;
+        return {
+          id,
+          name: typeof name === 'string' && name.trim() ? name.trim() : `Layer ${id}`,
+        };
+      })
+      .filter((layer): layer is ArcGISServiceLayer => !!layer)
+      .sort((a, b) => a.id - b.id),
+    timedOut: false,
+  };
+}
+
+async function fetchFeatureServiceLayers(d: RawDataset): Promise<ArcGISServiceLayer[]> {
+  const metadataUrl = buildFeatureServiceMetadataUrl(d);
+  if (!metadataUrl) return [];
+
+  const firstAttempt = await fetchFeatureServiceLayersWithTimeout(metadataUrl, SERVICE_DISCOVERY_TIMEOUT_MS);
+  if (firstAttempt.layers.length > 0 || !firstAttempt.timedOut) {
+    return firstAttempt.layers;
+  }
+
+  if (import.meta.env.DEV) {
+    console.info('[CatalogRegistry] Retrying timed out feature service discovery once:', metadataUrl);
+  }
+  const retryAttempt = await fetchFeatureServiceLayersWithTimeout(metadataUrl, SERVICE_DISCOVERY_RETRY_TIMEOUT_MS);
+  return retryAttempt.layers;
 }
 
 function logServiceDiscoveryResults(
@@ -284,10 +304,12 @@ export function useCatalogRegistry(): CatalogRegistryState {
           if (d.is_visible === 0) return false;
           if (detectDataSource(d) !== 'tnc-arcgis') return false;
           if (d.has_feature_server !== 1) return false;
-          if (d.layer_id !== null) return false;
           const serviceKey = serviceKeyForDataset(d);
           if (!serviceKey) return false;
           const grouped = serviceGroups.get(serviceKey) ?? [];
+          // Discover all single-row FeatureServer services, even when layer_id
+          // is populated. Some true multi-layer services (e.g. Coastal_and_Marine)
+          // are represented in catalog as one row with a non-zero layer_id.
           return grouped.length === 1;
         });
 

@@ -8,14 +8,37 @@ interface ServiceGroupProps {
   service: CatalogLayer;
   layers: CatalogLayer[];
   isExpanded: boolean;
+  highlightQuery?: string;
   ariaLevel?: number;
   onToggleExpand: () => void;
+}
+
+function renderHighlightedText(text: string, query?: string) {
+  if (!query || query.length < 2) return text;
+  const lowerText = text.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+  const matchStart = lowerText.indexOf(lowerQuery);
+  if (matchStart === -1) return text;
+
+  const matchEnd = matchStart + query.length;
+  const before = text.slice(0, matchStart);
+  const matched = text.slice(matchStart, matchEnd);
+  const after = text.slice(matchEnd);
+
+  return (
+    <>
+      {before}
+      <mark className="bg-amber-200 text-inherit rounded px-0.5">{matched}</mark>
+      {after}
+    </>
+  );
 }
 
 export function ServiceGroup({
   service,
   layers,
   isExpanded,
+  highlightQuery,
   ariaLevel = 2,
   onToggleExpand,
 }: ServiceGroupProps) {
@@ -78,7 +101,9 @@ export function ServiceGroup({
           ) : (
             <ChevronRight id={`service-group-caret-${service.id}`} className="w-4 h-4 text-gray-600 flex-shrink-0" />
           )}
-          <span className="truncate flex-1 min-w-0 text-left">{service.name}</span>
+          <span className="truncate flex-1 min-w-0 text-left">
+            {renderHighlightedText(service.name, highlightQuery)}
+          </span>
           <span
             id={`service-group-count-${service.id}`}
             className="text-xs text-gray-600 bg-white border border-gray-200 rounded-full px-1.5 py-0.5 flex-shrink-0"

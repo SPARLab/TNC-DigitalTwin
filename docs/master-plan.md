@@ -1,7 +1,7 @@
 # Master Development Plan — V2 Digital Catalog
 
 **Created:** January 23, 2026  
-**Last Updated:** February 20, 2026  
+**Last Updated:** February 23, 2026  
 **Target Deadline:** February 20, 2026  
 **Status:** 🟡 In Progress
 
@@ -37,7 +37,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 3 | Dendra | 🟡 In Progress | 0 blocking | `v2/dendra` | No |
 | 4 | DataOne | 🟡 In Progress | 15 tasks | `v2/dataone` | No |
 | 5 | Export Builder | 🟡 In Progress | 1 task | `v2/export-builder` | No |
-| 6 | TNC ArcGIS Services | 🟡 In Progress | 7 tasks | `v2/tnc-arcgis` | No |
+| 6 | TNC ArcGIS Services | 🟡 In Progress | 6 tasks | `v2/tnc-arcgis` | No |
 | 7 | Polish & Consistency | ⚪ Not Started | 12+ tasks | `v2/polish` | No |
 | 8 | Calflora | ⚪ Not Started | 9 tasks | `v2/calflora` | No |
 | 9 | GBIF | 🟡 In Progress | 5 tasks (D20-08 ✅, GBIF-HOSTED ✅; D20-12 🟡 in progress; P9-GRIDBIN high priority; 9.8/9.9 deferred; 9.12 deferred to v2.1+) | `v2/gbif` | No |
@@ -56,7 +56,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 3 | [phase-3-dendra.md](IMPLEMENTATION/phases/phase-3-dendra.md) | D20-06 ✅; D20-BL01–03 backlog; CON-DENDRA-08 |
 | 4 | [phase-4-dataone.md](IMPLEMENTATION/phases/phase-4-dataone.md) | CON-DONE-01/02/16 ✅; remaining: CON-DONE-03–11, CON-DONE-14, CON-DONE-15, D20-09, D20-B02, TF-13, TF-14 |
 | 5 | [phase-5-export-builder.md](IMPLEMENTATION/phases/phase-5-export-builder.md) | + D20-14 (Dan meeting Feb 20) |
-| 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 8 tasks (+ D20-02 ✅, D20-02a ✅, D20-10 ✅, D20-11 ✅, TF-11 ✅, TF-13 ✅; D20-B04, D20-B05 from Dan meeting Feb 20) |
+| 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 7 tasks (6.8 ✅ Feb 23; discovery timeout + layer_id fix; D20-02 ✅, D20-02a ✅, D20-10 ✅, D20-11 ✅, TF-11 ✅, TF-13 ✅; D20-B04, D20-B05 from Dan meeting Feb 20) |
 | 7 | [phase-7-polish.md](IMPLEMENTATION/phases/phase-7-polish.md) | 12+ tasks (+ D20-03, D20-04, D20-07, D20-13 from Dan meeting Feb 20; D20-01 ✅ done in Phase 0) |
 | 9 | [phase-9-gbif.md](IMPLEMENTATION/phases/phase-9-gbif.md) | 5 tasks (D20-08 ✅, GBIF-HOSTED ✅; D20-12 🟡 in progress; P9-GRIDBIN high priority; + D20-B01, D20-B03, D20-12-FOLLOW optional) |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) | 0 |
@@ -307,6 +307,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 23, 2026 | Phase 6 | **6.8 complete + discovery regression fix.** Search Enhancement: match service + layer names; auto-expand parent when child matches; highlight matched text. Discovery fix: Coastal/Marine was rendering as single-layer due to (1) 1200ms timeout too short; (2) `layer_id !== null` excluding candidates. Increased timeout to 3s + 5s retry; removed layer_id gate. Phase 6: 22/24 tasks, 6 remaining. | Cursor |
 | Feb 20, 2026 | Phase 6 | **TF-13 complete.** Multi-layer service detection: removed top-12 discovery cap in `useCatalogRegistry`; all eligible single-row FeatureServer candidates now discovered; dev-mode classification logging added. Coastal and Marine, DP_COASTAL, and all 12+ multi-layer services get service-container UX. Phase 6: 19/23 tasks, 7 remaining. | — |
 | Feb 20, 2026 | Phase 6 | **CON-ARCGIS-06, CON-ARCGIS-13 complete.** CON-ARCGIS-06 (Union Pacific Railroad layer ID 0) resolved by TF-11 runtime fallback. CON-ARCGIS-13: left sidebar feature service + child layer right-edge alignment (mr-1, scrollbar overlay). Phase 6: 17/22 tasks. | — |
 | Feb 20, 2026 | Phase 6 | **TF-11 complete.** Fix "layer zero not found" for TNC ArcGIS FeatureServer layers (Shrub, Tree, Sensitive Vegetation, Coastal Marine, etc.). Runtime fallback discovers valid layer IDs when initial URL fails. QA passed. | Claude |

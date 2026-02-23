@@ -12,6 +12,11 @@ import { Search } from 'lucide-react';
 import type { Category, CatalogLayer } from '../../types';
 import { InlineLoadingRow } from '../shared/loading/LoadingPrimitives';
 
+interface SearchState {
+  filteredLayerIds: Set<string>;
+  autoExpandServiceIds: Set<string>;
+}
+
 /** Recursively collect all layers from a category and its subcategories. */
 function allLayersInCategory(cat: Category): CatalogLayer[] {
   const layers = [...cat.layers];
@@ -83,21 +88,32 @@ export function LeftSidebar() {
     };
   }, [updateScrollThumb]);
 
-  // Compute filtered layer IDs when search is active
-  const filteredLayerIds = useMemo(() => {
+  // Compute filtered layer IDs when search is active.
+  // If a child layer matches, also include + auto-expand the parent service.
+  const searchState = useMemo<SearchState | undefined>(() => {
     if (searchQuery.length < 2) return undefined;
     const q = searchQuery.toLowerCase();
     const ids = new Set<string>();
+    const autoExpandServiceIds = new Set<string>();
     for (const cat of categories) {
       for (const layer of allLayersInCategory(cat)) {
         if (layer.name.toLowerCase().includes(q)) {
           ids.add(layer.id);
+          const parentServiceId = layer.catalogMeta?.parentServiceId;
+          if (parentServiceId) {
+            ids.add(parentServiceId);
+            autoExpandServiceIds.add(parentServiceId);
+          }
         }
       }
     }
-    return ids;
+    return {
+      filteredLayerIds: ids,
+      autoExpandServiceIds,
+    };
   }, [searchQuery, categories]);
 
+  const filteredLayerIds = searchState?.filteredLayerIds;
   const hasResults = !filteredLayerIds || filteredLayerIds.size > 0;
 
   return (
@@ -140,6 +156,8 @@ export function LeftSidebar() {
                 key={cat.id}
                 category={cat}
                 filteredLayerIds={filteredLayerIds}
+                searchQuery={searchQuery.length >= 2 ? searchQuery : undefined}
+                searchAutoExpandServiceIds={searchState?.autoExpandServiceIds}
               />
             ))
           )}

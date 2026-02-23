@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
 **Status:** 🟡 In Progress  
-**Progress:** 21 / 24 tasks (CON-ARCGIS-01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 6.17, 6.20, D20-02, D20-02a, D20-11, TF-13, CON-ARCGIS-16 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
+**Progress:** 22 / 24 tasks (CON-ARCGIS-01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 6.8, 6.17, 6.20, D20-02, D20-02a, D20-11, TF-13, CON-ARCGIS-16 complete; 6.1–6.7, 6.15, 6.16, 6.18, 6.19 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry) ✅ complete  
@@ -52,7 +52,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **CON-ARCGIS-12** | 🟢 Complete | Feb 19, 2026 | Right sidebar: simplify layer list UX | Remove dropdown + helper text; single scrollable list (~5 rows); "N layers" header; highlight selected |
 | **CON-ARCGIS-13** | 🟢 Complete | Feb 20, 2026 | Left sidebar: align feature service + child layer right edges | Feature service box and child layer boxes share same right margin as other layers (mr-1); child right edge aligns with parent; scrollbar overlay fits naturally |
 | **CON-ARCGIS-14** | 🟢 Complete | Feb 19, 2026 | Unified Service Workspace: service/layer click behavior + layer list state chips | Auto-select sublayer on service click; one right-sidebar layout; layer list header (N pinned • N visible); amber active highlight; pin/eye icons; inline pin/unpin; Map Layers widget sync |
-| **6.8** | ⚪ | — | Search Enhancement | Match service + layer names; expand parent service when layer matches |
+| **6.8** | 🟢 Complete | Feb 23, 2026 | Search Enhancement | Match service + layer names; expand parent service when layer matches; highlight matched text. Parent service IDs included when child matches; auto-expand on child match. |
 | **6.9** | ⚪ | — | Keyboard Navigation & ARIA | Arrow keys for expand/collapse, ARIA tree structure, focus management |
 | **6.10** | ⚪ | — | QA & Edge Cases | Single-layer services, empty results, malformed queries, schema fetch errors |
 | **6.11** | 🟡 | Feb 16, 2026 | Capability-Aware Browse UX | Legend display moved out of right-sidebar Browse and into a floating map widget (bottom-right) for active TNC layers |
@@ -80,7 +80,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 ### Current Codepath Findings
 
 - `useCatalogRegistry` treats every visible TNC ArcGIS dataset row as its own service key today (catalog currently has one row per service path).
-- Runtime discovery is attempted for all visible single-row, `layer_id = null` FeatureServer rows (cap removed Feb 20, 2026 per TF-13).
+- Runtime discovery is attempted for all visible single-row FeatureServer rows (cap removed Feb 20 per TF-13; `layer_id !== null` gate removed Feb 23 so services like Coastal_and_Marine with layer_id=2 are discovered).
 - Service-container UX logic already exists once a service is classified as multi-layer:
   - left sidebar: service rows are non-pinnable containers, child rows are pinnable layers.
   - right sidebar Browse: resolves target layer from selected child when active row is a service parent.
@@ -101,10 +101,11 @@ Confirmed multi-layer examples:
 - `NWS_Watches_Warnings_v1`: **11 layers**, IDs **1..12**
 - `Wild_Coast_Project_WebMap_WFL1`: **6 layers**, IDs **1..6**
 
-### Risk / Gap
+### Risk / Gap (resolved Feb 23, 2026)
 
-- Because discovery is capped to top-priority 12 candidates, some true multi-layer services can still render as single-layer rows depending on ordering and naming.
-- This creates inconsistent service-container vs layer-target UX across otherwise similar ArcGIS FeatureServices.
+- ~~Because discovery is capped to top-priority 12 candidates~~ — cap removed Feb 20.
+- ~~Timeout (1200ms) too short for slow services~~ — increased to 3s + 5s retry Feb 23.
+- ~~`layer_id !== null` excluded Coastal_and_Marine~~ — gate removed Feb 23.
 
 ### Recommended Next Step (implementation)
 
@@ -132,6 +133,8 @@ Confirmed multi-layer examples:
 - [x] Remove `MAX_SERVICE_DISCOVERY_CANDIDATES` cap in `useCatalogRegistry.ts` so all eligible visible single-row FeatureServer candidates are discovered.
 - [x] Verify service-container UX for all 12 multi-layer services — left sidebar shows Service/Layer badges; right sidebar Browse resolves target layer correctly.
 - [x] Add dev-mode logging for service classification (`single` / `multi` / `unreadable`) for QA.
+
+**Follow-up fixes (Feb 23, 2026):** Discovery regression caused Coastal and Marine to render as single-layer. Root causes: (1) `SERVICE_DISCOVERY_TIMEOUT_MS` (1200ms) too short — Coastal_and_Marine metadata fetch ~1.4s; (2) candidate filter excluded rows with `layer_id !== null`, so Coastal (layer_id=2) never entered discovery. Fixes: timeout 3s + 5s retry on timeout-only; remove `layer_id !== null` gate so single-row services with non-zero layer_id are discovered.
 
 **Files:** `src/v2/hooks/useCatalogRegistry.ts`
 
@@ -252,13 +255,13 @@ function searchLayers(query: string, categories: Category[]): SearchResult[] {
 ```
 
 **Acceptance Criteria:**
-- [ ] Search matches service names
-- [ ] Search matches layer names within services
-- [ ] Matching layers auto-expand parent service
-- [ ] Highlight matched text in results
-- [ ] Clear search restores collapsed state
+- [x] Search matches service names
+- [x] Search matches layer names within services
+- [x] Matching layers auto-expand parent service
+- [x] Highlight matched text in results
+- [x] Clear search restores collapsed state
 
-**Estimated Time:** 2-3 hours
+**Implementation (complete Feb 23, 2026):** LeftSidebar `filteredLayerIds` now includes parent service IDs when child layers match; `searchAutoExpandServiceIds` drives CategoryGroup/ServiceGroup expansion; `renderHighlightedText` in ServiceGroup and LayerRow highlights matches with amber `<mark>`.
 
 ---
 

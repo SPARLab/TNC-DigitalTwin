@@ -15,6 +15,8 @@ import { ServiceGroup } from './ServiceGroup';
 interface CategoryGroupProps {
   category: Category;
   filteredLayerIds?: Set<string>;
+  searchQuery?: string;
+  searchAutoExpandServiceIds?: Set<string>;
   /** Render at subcategory depth (indented, no outer border) */
   isSubcategory?: boolean;
 }
@@ -37,7 +39,13 @@ function visibleLayers(layers: CatalogLayer[], filter?: Set<string>): CatalogLay
   return filter ? layers.filter(l => filter.has(l.id)) : layers;
 }
 
-export function CategoryGroup({ category, filteredLayerIds, isSubcategory }: CategoryGroupProps) {
+export function CategoryGroup({
+  category,
+  filteredLayerIds,
+  searchQuery,
+  searchAutoExpandServiceIds,
+  isSubcategory
+}: CategoryGroupProps) {
   const { activeLayer } = useLayers();
   const [isExpanded, setIsExpanded] = useState(false);
   const [expandedServiceIds, setExpandedServiceIds] = useState<Set<string>>(new Set());
@@ -178,14 +186,20 @@ export function CategoryGroup({ category, filteredLayerIds, isSubcategory }: Cat
                       key={layer.id}
                       service={layer}
                       layers={serviceLayers}
-                      isExpanded={expandedServiceIds.has(layer.id)}
+                      isExpanded={expandedServiceIds.has(layer.id) || !!searchAutoExpandServiceIds?.has(layer.id)}
+                      highlightQuery={searchQuery}
                       onToggleExpand={() => toggleServiceExpand(layer.id)}
                     />
                   );
                 }
 
                 return (
-                  <LayerRow key={layer.id} layerId={layer.id} name={layer.name} />
+                  <LayerRow
+                    key={layer.id}
+                    layerId={layer.id}
+                    name={layer.name}
+                    highlightQuery={searchQuery}
+                  />
                 );
               })}
             </div>
@@ -197,6 +211,8 @@ export function CategoryGroup({ category, filteredLayerIds, isSubcategory }: Cat
               key={sub.id}
               category={sub}
               filteredLayerIds={filteredLayerIds}
+              searchQuery={searchQuery}
+              searchAutoExpandServiceIds={searchAutoExpandServiceIds}
               isSubcategory
             />
           ))}
