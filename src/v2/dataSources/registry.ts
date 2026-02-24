@@ -26,6 +26,8 @@ import { tncArcgisAdapter, useTNCArcGISCacheStatus } from './tnc-arcgis/adapter'
 import { useTNCArcGISMapBehavior } from './tnc-arcgis/useMapBehavior';
 import { dataoneAdapter, useDataOneCacheStatus } from './dataone/adapter';
 import { useDataOneMapBehavior } from './dataone/useMapBehavior';
+import { calfloraAdapter, useCalFloraCacheStatus } from './calflora/adapter';
+import { useCalFloraMapBehavior } from './calflora/useMapBehavior';
 import { dronedeployAdapter, useDroneDeployCacheStatus } from './dronedeploy/adapter';
 import { useDroneDeployMapBehavior } from './dronedeploy/useMapBehavior';
 import { gbifAdapter, useGBIFCacheStatus } from './gbif/adapter';
@@ -42,6 +44,7 @@ const ADAPTER_MAP: Record<string, DataSourceAdapter> = {
   'tnc-arcgis': tncArcgisAdapter,
   motus: motusAdapter,
   dataone: dataoneAdapter,
+  calflora: calfloraAdapter,
   drone: dronedeployAdapter,
 };
 
@@ -78,6 +81,7 @@ export function useAllMapBehaviors(
   useTNCArcGISMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
   useMotusMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
   useDataOneMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
+  useCalFloraMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
   useDroneDeployMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
   useGBIFMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
 }
@@ -94,6 +98,7 @@ export function useActiveCacheStatus(dataSource: string | undefined): CacheStatu
   const tncArcgis = useTNCArcGISCacheStatus();
   const motus = useMotusCacheStatus();
   const dataone = useDataOneCacheStatus();
+  const calflora = useCalFloraCacheStatus();
   const dronedeploy = useDroneDeployCacheStatus();
   const gbif = useGBIFCacheStatus();
 
@@ -104,6 +109,7 @@ export function useActiveCacheStatus(dataSource: string | undefined): CacheStatu
     case 'tnc-arcgis': return tncArcgis;
     case 'motus': return motus;
     case 'dataone': return dataone;
+    case 'calflora': return calflora;
     case 'drone': return dronedeploy;
     case 'gbif': return gbif;
     default: return null;
@@ -121,6 +127,7 @@ export function useCacheStatusByDataSource(): Record<string, CacheStatus> {
   const tncArcgis = useTNCArcGISCacheStatus();
   const motus = useMotusCacheStatus();
   const dataone = useDataOneCacheStatus();
+  const calflora = useCalFloraCacheStatus();
   const dronedeploy = useDroneDeployCacheStatus();
   const gbif = useGBIFCacheStatus();
 
@@ -131,6 +138,7 @@ export function useCacheStatusByDataSource(): Record<string, CacheStatus> {
     'tnc-arcgis': tncArcgis,
     motus,
     dataone,
+    calflora,
     drone: dronedeploy,
     gbif,
   };

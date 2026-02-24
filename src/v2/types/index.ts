@@ -32,6 +32,7 @@ export type DataSource =
   | 'inaturalist'
   | 'animl'
   | 'dendra'
+  | 'calflora'
   | 'dataone'
   | 'gbif'
   | 'ebird'
@@ -64,6 +65,7 @@ export interface PinnedLayer {
   dendraFilters?: DendraViewFilters;
   tncArcgisFilters?: TNCArcGISViewFilters;
   dataoneFilters?: DataOneViewFilters;
+  calfloraFilters?: CalFloraViewFilters;
   gbifFilters?: GBIFViewFilters;
   motusFilters?: MotusViewFilters;
   droneView?: DroneViewState;
@@ -87,6 +89,7 @@ export interface PinnedLayerView {
   dendraFilters?: DendraViewFilters;
   tncArcgisFilters?: TNCArcGISViewFilters;
   dataoneFilters?: DataOneViewFilters;
+  calfloraFilters?: CalFloraViewFilters;
   gbifFilters?: GBIFViewFilters;
   motusFilters?: MotusViewFilters;
   droneView?: DroneViewState;
@@ -152,6 +155,17 @@ export interface DataOneViewFilters {
   author?: string;
   selectedDatasetId?: string;
   selectedDatasetTitle?: string;
+}
+
+/** CalFlora filter + detail state stored per pinned layer/view */
+export interface CalFloraViewFilters {
+  searchText?: string;
+  county?: string;
+  startDate?: string;
+  endDate?: string;
+  hasPhoto?: boolean;
+  selectedObservationId?: number;
+  selectedObservationLabel?: string;
 }
 
 /** GBIF filter + detail state stored per pinned layer/view */

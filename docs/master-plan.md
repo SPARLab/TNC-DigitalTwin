@@ -39,7 +39,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 5 | Export Builder | 🟡 In Progress | 1 task | `v2/export-builder` | No |
 | 6 | TNC ArcGIS Services | 🟡 In Progress | 2 backlog tasks | `v2/tnc-arcgis` | No |
 | 7 | Polish & Consistency | ⚪ Not Started | 12+ tasks | `v2/polish` | No |
-| 8 | Calflora | ⚪ Not Started | 9 tasks | `v2/calflora` | No |
+| 8 | Calflora | 🟡 In Progress | 1 task (8.9 v1 audit) | `v2/calflora` | No |
 | 9 | GBIF | 🟡 In Progress | 2 tasks (9.8 ✅; D20-08 ✅, GBIF-HOSTED ✅, P9-GRIDBIN ✅, TF-09 ✅; D20-12 🟡 in progress; 9.9 deferred; 9.12 deferred to v2.1+) | `v2/gbif` | No |
 | 10 | DroneDeploy | 🟢 Complete | 0 tasks | `v2/dronedeploy` | No |
 | 11 | MOTUS | 🟢 Complete | 0 tasks | `v2/motus` | No — Phase 11 complete (11.9 Save View flow shipped Feb 23) |
@@ -58,6 +58,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 5 | [phase-5-export-builder.md](IMPLEMENTATION/phases/phase-5-export-builder.md) | + D20-14 (Dan meeting Feb 20) |
 | 6 | [phase-6-tnc-arcgis.md](IMPLEMENTATION/phases/phase-6-tnc-arcgis.md) | 2 backlog tasks (6.10 ✅ Feb 24; 6.8 ✅, 6.9 ✅, 6.11 ✅, 6.12 ✅, 6.13 ✅, 6.14 ✅ Feb 23, CON-ARCGIS-16 ✅, CON-ARCGIS-17 ✅ Feb 23; D20-02 ✅, D20-02a ✅, D20-10 ✅, D20-11 ✅, TF-11 ✅, TF-13 ✅; D20-B04, D20-B05) |
 | 7 | [phase-7-polish.md](IMPLEMENTATION/phases/phase-7-polish.md) | 12+ tasks (+ D20-03, D20-04, D20-07, D20-13 from Dan meeting Feb 20; D20-01 ✅ done in Phase 0) |
+| 8 | [phase-8-calflora.md](IMPLEMENTATION/phases/phase-8-calflora.md) | 1 task (8.1–8.8 ✅ complete; 8.9 v1 audit remaining) |
 | 9 | [phase-9-gbif.md](IMPLEMENTATION/phases/phase-9-gbif.md) | 2 tasks (9.8 ✅; D20-12 🟡 in progress; + D20-B01, D20-B03, D20-12-FOLLOW optional; 9.9/9.12 deferred) |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) | 0 |
 | 11 | [phase-11-motus.md](IMPLEMENTATION/phases/phase-11-motus.md) | 0 (11.1–11.9 ✅ complete) |

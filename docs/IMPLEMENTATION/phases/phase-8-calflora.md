@@ -1,7 +1,7 @@
 # Phase 8: Calflora Plant Observations
 
-**Status:** ⚪ Not Started  
-**Progress:** 0 / 9 tasks  
+**Status:** 🟡 In Progress  
+**Progress:** 8 / 9 tasks  
 **Branch:** `v2/calflora`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -12,14 +12,14 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| 8.1 | ⚪ Not Started | — | Query CalFlora service to understand v2 attributes | v1 service exists at `calFloraService.ts`; need to audit fields for v2 card/detail anatomy |
-| 8.2 | ⚪ Not Started | — | Create CalFlora right sidebar shell | Adapter, Overview/Browse/Export tabs, DatasetListView, DetailView |
-| 8.3 | ⚪ Not Started | — | Implement search and filter UI | Text search (species name), native status filter, family filter, date range, Cal-IPC rating |
-| 8.4 | ⚪ Not Started | — | Implement observation list with cards | Card anatomy: species name, common name, native status badge, family, location, date, Cal-IPC rating |
-| 8.5 | ⚪ Not Started | — | Implement observation detail view | Full observation metadata, photo (if available), spatial coverage, external links |
-| 8.6 | ⚪ Not Started | — | Sync loading indicators (Map Layers ↔ map center ↔ right sidebar) | Same shared loading pattern as iNaturalist/DataONE |
-| 8.7 | ⚪ Not Started | — | Render CalFlora observations as map markers | Point geometry from `location` field, filter-synced, click-to-detail |
-| 8.8 | ⚪ Not Started | — | Wire Save View flow in detail | Save filtered view as child in Map Layers, restore on reactivation |
+| 8.1 | 🟢 Complete | 2026-02-23 11:05 PT | Query CalFlora service to understand v2 attributes | Live FeatureServer audited. 81 records. No native status/family/Cal-IPC fields; taxonomy currently available only as `plant` text. Query timings and field inventory documented in Service Analysis. |
+| 8.2 | 🟢 Complete | 2026-02-23 12:45 PT | Create CalFlora right sidebar shell | Adapter, Overview/Browse tabs, ObservationListView, ObservationDetailView, map layer, marker click-to-detail. DFT-041: no Export tab (global modal). |
+| 8.3 | 🟢 Complete | 2026-02-23 12:45 PT | Implement search and filter UI | Text search (plant), county, date range, has photo. Native status/family/Cal-IPC deferred — service lacks these fields. |
+| 8.4 | 🟢 Complete | 2026-02-23 12:45 PT | Implement observation list with cards | Cards show plant, county, date, photo badge. Pagination 20/page. Native status badge deferred (service lacks field). |
+| 8.5 | 🟢 Complete | 2026-02-23 12:45 PT | Implement observation detail view | Back nav, plant name, county, date, observer, elevation, coordinates, notes, external CalFlora link, View on Map, Save View. |
+| 8.6 | 🟢 Complete | 2026-02-23 12:45 PT | Sync loading indicators (Map Layers ↔ map center ↔ right sidebar) | useCalFloraCacheStatus in registry; shared LoadingPrimitives; createBrowseLoadingScope. |
+| 8.7 | 🟢 Complete | 2026-02-23 12:45 PT | Render CalFlora observations as map markers | calFloraLayer.ts, IMPLEMENTED_LAYERS, useCalFloraMapBehavior, filter-synced, click-to-detail. |
+| 8.8 | 🟢 Complete | 2026-02-23 12:45 PT | Wire Save View flow in detail | syncCalFloraFilters + createOrUpdateCalFloraFilteredView; Save View creates child views; hydrate filters + selected observation on view switch. |
 | 8.9 | ⚪ Not Started | — | Port and validate v1 CalFlora features | Audit v1 CalFloraSidebar/CalFloraDetailsSidebar for any features that need v2 parity |
 
 **Status Legend:**
@@ -247,12 +247,29 @@ Append `?f=json` to inspect fields and metadata.
 ### Observation Attributes
 | Attribute | Type | Useful For | Notes |
 |-----------|------|------------|-------|
-| (to be documented in 8.1) | | | |
+| `objectid` | OID | stable feature id | Used for detail routing and map click sync |
+| `id` | string | external link key | Maps to `https://www.calflora.org/occ/entry/{id}.html` |
+| `plant` | string | search + card title | Primary taxonomy field (species text) |
+| `county` | string | county filter + card metadata | Currently always `Santa Barbara` in dataset |
+| `date_` | string (`YYYY-MM-DD`) | date-range filtering + sort | Stored as string, not ArcGIS Date type |
+| `photo` | string | "Has photo" filter + detail media | 31 / 81 records currently have non-empty value |
+| `observer` | string | detail metadata | Good coverage in recent records |
+| `elevation` | string | detail metadata | Mostly empty in current sample |
+| `associated_species` | string | detail metadata | Optional contextual species notes |
+| `habitat` | string | detail metadata | Optional habitat notes |
+| `notes` | string | detail metadata | Optional free text |
+| `citation` | string | detail metadata | Optional citation text |
+| `location_quality` | string | detail metadata | e.g., `high` |
+| geometry (`x`,`y`) | point | map rendering + "View on map" | Works with `outSR=4326` in v2 queries |
 
 ### Query Performance
 | Query Type | Avg Response Time | Notes |
 |------------|-------------------|-------|
-| (to be documented in 8.1) | | |
+| `returnCountOnly` (`where=1=1`) | ~164 ms | Total observations = 81 |
+| page query (20 records) | ~141 ms | `orderByFields=date_ DESC, objectid DESC` |
+| text search (`plant` LIKE `%QUERCUS%`) | ~142 ms | Returns 1 match in current dataset |
+| photo-only count | ~136 ms | 31 records with non-empty `photo` |
+| date range count (`date_ >= '2020-01-01'`) | ~134 ms | 38 records in sample date window |
 
 ---
 
@@ -262,7 +279,8 @@ Append `?f=json` to inspect fields and metadata.
 
 | Decision | Date | Rationale |
 |----------|------|-----------|
-| (none yet) | | |
+| CalFlora v2 first pass uses `plant` as primary taxonomy field | Feb 23, 2026 | Service lacks normalized family/native status/Cal-IPC attributes; implementation should avoid fabricating taxonomy fields and instead expose available data reliably. |
+| CalFlora Browse tab includes `search + county + date + has photo` for MVP | Feb 23, 2026 | These are the highest-signal fields available directly from service without brittle client-side inference. |
 
 ### Styling Decisions
 
@@ -285,4 +303,7 @@ Append `?f=json` to inspect fields and metadata.
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 23, 2026 | 8.2–8.8 | Marked complete. Full CalFlora vertical slice shipped: sidebar shell, search/filter UI (plant, county, date, has photo), observation cards, detail view, loading sync, map markers, Save View flow. Native status/family/Cal-IPC deferred (service lacks fields). | Cursor |
+| Feb 23, 2026 | 8.8 | Added first-pass CalFlora Save View flow: `syncCalFloraFilters` + `createOrUpdateCalFloraFilteredView` in `LayerContext`; CalFlora Browse hydrates filters from active child view and Save View in detail now creates/selects child views. | Cursor |
+| Feb 23, 2026 | 8.1, 8.2 | Completed live service audit (field schema + performance baseline) and shipped initial v2 CalFlora vertical slice: external layer registration, adapter/provider wiring, Overview + Browse tabs, observation list/detail, map markers, marker click-to-detail sync. | Cursor |
 | Feb 16, 2026 | — | Created phase document | Will + Claude |

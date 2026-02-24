@@ -12,6 +12,7 @@ import { createDendraLayer } from './dendraLayer';
 import { createAnimlLayer } from './animlLayer';
 import { createTNCArcGISLayer } from './tncArcgisLayer';
 import { createDataOneLayer } from './dataoneLayer';
+import { createCalFloraLayer } from './calFloraLayer';
 import { createDroneDeployLayer } from './droneDeployLayer';
 import { createGBIFLayer } from './gbifLayer';
 import { createMotusLayer, MOTUS_TAGGED_ANIMALS_LAYER_ID } from './motusLayer';
@@ -22,6 +23,7 @@ export const IMPLEMENTED_LAYERS = new Set([
   'animl-camera-traps',
   'preserve-boundary',
   'dataone-datasets',
+  'calflora-observations',
   'dataset-178',
   'dataset-215',
   'dataset-193',
@@ -74,6 +76,9 @@ export function createMapLayer(layerId: string, options: {
 
     case 'dataone-datasets':
       return createDataOneLayer({ id: `v2-${layerId}`, ...options });
+
+    case 'calflora-observations':
+      return createCalFloraLayer({ id: `v2-${layerId}`, ...options });
 
     case 'dataset-178':
       return createGBIFLayer({ id: `v2-${layerId}`, ...options });
