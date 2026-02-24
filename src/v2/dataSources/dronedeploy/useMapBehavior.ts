@@ -4,6 +4,7 @@ import GroupLayer from '@arcgis/core/layers/GroupLayer';
 import type Layer from '@arcgis/core/layers/Layer';
 import WMTSLayer from '@arcgis/core/layers/WMTSLayer';
 import type MapView from '@arcgis/core/views/MapView';
+import type SceneView from '@arcgis/core/views/SceneView';
 import { useLayers } from '../../context/LayerContext';
 import { useMap } from '../../context/MapContext';
 import { useDroneDeploy } from '../../context/DroneDeployContext';
@@ -42,7 +43,7 @@ function pickDefaultFlightIdForProject(
   return fallback?.id ?? null;
 }
 
-async function flyToFlightExtent(view: MapView, rings?: number[][][]): Promise<void> {
+async function flyToFlightExtent(view: MapView | SceneView, rings?: number[][][]): Promise<void> {
   const extent = extentFromRings(rings);
   if (!extent) return;
   await view.goTo(extent.expand(1.25), { duration: 700 });

@@ -23,7 +23,7 @@ const MAP_LAYER_ID = 'v2-dataone-datasets';
  * ArcGIS popup on it so the native light-blue selection highlight appears.
  */
 async function openPopupForDataoneFeature(
-  view: __esri.MapView,
+  view: __esri.MapView | __esri.SceneView,
   dataoneId: string,
 ): Promise<void> {
   const mapLayer = view.map?.findLayerById(MAP_LAYER_ID) as FeatureLayer | undefined;

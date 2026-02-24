@@ -20,7 +20,7 @@ function getSamplingModuloForScale(scale: number): number {
   return 1;
 }
 
-function buildViewportWhereClause(view: __esri.MapView): string | null {
+function buildViewportWhereClause(view: __esri.MapView | __esri.SceneView): string | null {
   const extent = view.extent?.clone();
   if (!extent) return null;
 

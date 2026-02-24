@@ -8,6 +8,7 @@ import Point from '@arcgis/core/geometry/Point';
 import Polygon from '@arcgis/core/geometry/Polygon';
 import Graphic from '@arcgis/core/Graphic';
 import type MapView from '@arcgis/core/views/MapView';
+import type SceneView from '@arcgis/core/views/SceneView';
 import type GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import type SketchViewModel from '@arcgis/core/widgets/Sketch/SketchViewModel';
 import * as webMercatorUtils from '@arcgis/core/geometry/support/webMercatorUtils';
@@ -17,6 +18,8 @@ import {
   type SpatialPolygon,
 } from '../utils/spatialQuery';
 import { useLayers } from './LayerContext';
+
+export type ViewMode = '2d' | '3d';
 
 interface Toast {
   id: string;
@@ -30,8 +33,12 @@ interface DataOnePreviewState {
 }
 
 interface MapContextValue {
-  /** Ref to the ArcGIS MapView (null until map initializes) */
-  viewRef: React.MutableRefObject<MapView | null>;
+  /** Ref to the ArcGIS MapView or SceneView (null until map initializes) */
+  viewRef: React.MutableRefObject<MapView | SceneView | null>;
+  /** Current view mode: '2d' (MapView) or '3d' (SceneView) */
+  viewMode: ViewMode;
+  /** Toggle between 2D and 3D view modes */
+  toggleViewMode: () => void;
   /** Ref to the highlight graphics layer */
   highlightLayerRef: React.MutableRefObject<GraphicsLayer | null>;
   /** Increments when the map view is ready (triggers re-render in dependents) */
@@ -91,7 +98,8 @@ const SPATIAL_QUERY_POLYGON_SYMBOL = {
 
 export function MapProvider({ children }: { children: ReactNode }) {
   const { activeLayer } = useLayers();
-  const viewRef = useRef<MapView | null>(null);
+  const viewRef = useRef<MapView | SceneView | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('2d');
   const highlightLayerRef = useRef<GraphicsLayer | null>(null);
   const spatialQueryLayerRef = useRef<GraphicsLayer | null>(null);
   const spatialSketchViewModelRef = useRef<SketchViewModel | null>(null);
@@ -102,6 +110,7 @@ export function MapProvider({ children }: { children: ReactNode }) {
   const spatialPolygonsByLayerIdRef = useRef<Record<string, SpatialPolygon>>({});
   const [isSpatialQueryDrawing, setIsSpatialQueryDrawing] = useState(false);
   const setMapReady = useCallback(() => setMapReadyState(n => n + 1), []);
+  const toggleViewMode = useCallback(() => setViewMode(m => (m === '2d' ? '3d' : '2d')), []);
   const spatialPolygon = activeLayer?.layerId ? (spatialPolygonsByLayerId[activeLayer.layerId] ?? null) : null;
 
   const getSpatialPolygonForLayer = useCallback((layerId: string) => {
@@ -266,7 +275,7 @@ export function MapProvider({ children }: { children: ReactNode }) {
   return (
     <MapContext.Provider
       value={{
-        viewRef, highlightLayerRef,
+        viewRef, viewMode, toggleViewMode, highlightLayerRef,
         mapReady, setMapReady,
         highlightPoint, clearHighlight,
         showToast, toasts, dismissToast,

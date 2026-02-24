@@ -1,6 +1,6 @@
 # Design System - TNC Digital Catalog
 
-**Last Updated:** February 20, 2026 (D20-10 ArcGIS overview description; BrowseBackButton D20-02; Dendra station display name normalization)  
+**Last Updated:** February 24, 2026 (ViewModeToggle 2D/3D map toggle; D20-10 ArcGIS overview; BrowseBackButton D20-02)  
 **Purpose:** Single source of truth for styling decisions, component patterns, and design policies that affect multiple phases.
 
 ---
@@ -90,6 +90,25 @@ Consider binary collapse toggle (hide/show sidebar entirely) as future enhanceme
 - **Target Audience (DFT-011):** Researchers at workstations, not mobile users
 
 **Decision Date:** February 3, 2026
+
+### Map View Mode Toggle (2D / 3D)
+
+**Policy:** Map supports 2D (MapView) and 3D (SceneView) modes with a floating toggle button. All data source layers drape automatically onto terrain in 3D; LiDAR PointCloudLayer loads in 3D only.
+
+**Component:** `ViewModeToggle` — `src/v2/components/Map/ViewModeToggle.tsx`
+
+**Specification:**
+| Property | Value |
+|----------|-------|
+| Position | Bottom-left (`bottom-6 left-6`), `z-40` |
+| Label | Action-oriented: shows "3D" when in 2D (click to switch), "2D" when in 3D |
+| Icon | Globe (2D mode) / Map (3D mode) from Lucide |
+| Styling | `rounded-lg border border-gray-300 bg-white shadow-lg`, hover: `bg-gray-50` |
+| Title | "Switch to 3D view" / "Switch to 2D view" |
+
+**Rationale:** Bottom-left avoids Map Layers widget (top-left) and legend widgets (bottom-right). Action-oriented label (shows destination) follows Norman's affordance principle. No per-data-source code required — all layers work in both modes via ArcGIS SDK.
+
+**Implementation Date:** February 24, 2026
 
 ---
 
@@ -2007,6 +2026,7 @@ February 5, 2026
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 24, 2026 | **Map View Mode Toggle (2D/3D).** ViewModeToggle component: bottom-left floating button, action-oriented label ("3D" when in 2D, "2D" when in 3D), Globe/Map icons. MapContainer supports MapView/SceneView; all layers drape on terrain in 3D; LiDAR PointCloudLayer in 3D only. Documented in Layout Specifications. | Cursor |
 | Feb 20, 2026 | **D20-10: ArcGIS Overview description source.** TNC ArcGIS and Dendra Overview tabs fetch description from ArcGIS item metadata (serviceItemId → snippet + description) when available; HTML normalized for line breaks; `whitespace-pre-line` for display. No per-layer descriptions in layer list. | Cursor |
 | Feb 19, 2026 | **Dendra Map Layers child labels (CON-DENDRA-04).** Dynamic labels: collapsed `N data streams, M stations`; expanded by station scope. Pin count badge: number + blue pin icon only. Documented in Components table and phase-3-dendra.md. | Cursor |
 | Feb 24, 2026 | **Dendra chart panel sizing & placement (D24-01).** Initial size 560–760×380–500; separate bottom margin (32px) for placement ~1–2rem from map bottom; time slider data shadow restored, spacing tuned. Documented in Components table and phase-3-dendra.md. | Cursor |

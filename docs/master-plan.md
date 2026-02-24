@@ -128,8 +128,8 @@ Phase 0: Foundation
                                                                                         └──► Phase 7: Polish
 ```
 
-**Future Phase (not yet scoped):**
-- **LiDAR** — deferred to last; may require 3D world projection for all 2D layers
+**Completed Map Enhancement (Feb 2026):**
+- **2D/3D View Mode Toggle** — Implemented. MapContainer supports MapView (2D) and SceneView (3D) with toggle button (bottom-left). All 2D layers drape automatically onto terrain in 3D mode. LiDAR PointCloudLayer loads in 3D only. Camera position preserved across toggles. See `MapContext.viewMode`, `ViewModeToggle`, `MapContainer`.
 
 **Parallelization:**
 - Phases 1-6, 8-9 can be worked on simultaneously (different Cursor windows, different branches) — **ACTIVE; Task 0.9 complete**
@@ -178,6 +178,7 @@ Use these when merging branches that touch shared components.
 | Data source adapter pattern | ✅ Decided | Will + Claude | Feb 12 | Plugin architecture for data sources. Each source implements `DataSourceAdapter` interface. Enables parallel branch development with minimal merge conflicts. See `src/v2/dataSources/` |
 | Caching strategy | ✅ Decided | Will + Claude | Feb 12 | Lazy per-source caching. Each data source context has `warmCache()` method (idempotent). Cache warms on first pin or activation. Data persists while provider mounted. Eliminates eager page-load fetches. |
 | Dynamic layer registry from Data Catalog Service | ✅ Implemented | User + Claude | Feb 12 | `useCatalogRegistry.ts` fetches from Dan's Data Catalog FeatureServer (`Dangermond_Preserve_Data_Catalog`). ~90+ real datasets across 14 categories. Left sidebar populated from catalog. Layers without adapters show generic placeholder in right sidebar. **Task 0.9 complete — parallel branches unblocked.** See phase-0-foundation.md. |
+| 2D/3D view mode toggle | ✅ Implemented | Cursor | Feb 24 | MapContainer conditionally creates MapView or SceneView based on `MapContext.viewMode`. Toggle button (ViewModeToggle) at bottom-left. All data source layers drape onto terrain in 3D; LiDAR PointCloudLayer loads in 3D only. Camera position preserved across toggles. Zero per-source code required. See `MapContext`, `MapContainer`, `ViewModeToggle`. |
 | MOTUS journey reconstruction blocked | 🔴 On Hold | Codex | Feb 20 | Live audit of Wildlife Telemetry FeatureServer showed 0% join coverage between Tag Detections `node_num` and Receiver Stations / Station Deployments. Journey reconstruction (11.6, 11.7) on hold until Dan fixes detection-to-station linkage. See phase-11-motus.md Data Blocker. |
 | Cross-layer filtered-view naming contract | ✅ Decided | User + Claude | Feb 13 | Manual rename behavior must persist across all layer types and custom right-sidebar views. Auto-naming is adapter-specific per data source. Shared widget/context rule: if `isNameCustom` is false, auto-name can update on filter sync; if true, never overwrite. Rollout can happen incrementally by branch (not required to block current merge). |
 
@@ -347,6 +348,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 24, 2026 | Map | **2D/3D view mode toggle complete.** MapContainer supports MapView/SceneView toggle; ViewModeToggle button bottom-left; all layers drape on terrain in 3D; LiDAR PointCloudLayer in 3D only; camera preserved across toggles. Cross-phase architectural decision documented. | Cursor |
 | Feb 24, 2026 | Phase 3 | **D24-01 complete.** Dendra chart panel UX polish: larger initial size, bottom inset (~1–2rem from map edge), time slider data shadow restored, x-axis/slider spacing tuned. Phase 3: 9/12 tasks complete. | Cursor |
 | Feb 24, 2026 | Phase 1 | **TF-06 complete.** iNaturalist species filter: taxa selected + all species checked now shows results (removed requiresSpeciesSelection gating). Select All/Clear All text-only styling with gray when inactive; styled `|` separator in Filter Taxa, Filter Species, and legend. Phase 1: 10/11 tasks complete. | Cursor |
 | Feb 23, 2026 | Phase 4 | **DataONE Save View + Map Layers sync refinements.** Save Dataset View auto-pins when unpinned; persists current filters + selected dataset. Map Layers child-view click passes featureId explicitly; sync effect resolves DataONE featureId only when view changes (preserves Back-to-list). Cluster click: removed custom highlight; safe auto-zoom when cluster stays visible. | Assistant |

@@ -1,7 +1,7 @@
 // ============================================================================
-// MapContainer — ArcGIS MapView centered on Jack & Laura Dangermond Preserve
-// Renders floating widgets (MapLayersWidget) on top.
-// Uses data source registry for legend widgets and loading overlays —
+// MapContainer — ArcGIS MapView / SceneView for Dangermond Preserve
+// Supports 2D (MapView) and 3D (SceneView) toggle. Renders floating widgets
+// on top. Uses data source registry for legend widgets and loading overlays —
 // no data-source-specific imports needed in this file.
 // ============================================================================
 
@@ -9,12 +9,13 @@ import { useEffect, useRef, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 import Map from '@arcgis/core/Map';
 import MapView from '@arcgis/core/views/MapView';
+import SceneView from '@arcgis/core/views/SceneView';
+import ElevationLayer from '@arcgis/core/layers/ElevationLayer';
+import PointCloudLayer from '@arcgis/core/layers/PointCloudLayer';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import SketchViewModel from '@arcgis/core/widgets/Sketch/SketchViewModel';
 import { MapLayersWidget } from '../FloatingWidgets/MapLayersWidget/MapLayersWidget';
-// NOTE: BookmarkedItemsWidget disabled per Feb 11 design decision.
-// Saved Items merged into Map Layers. Code preserved for CSS/animation reuse.
-// import { BookmarkedItemsWidget } from '../FloatingWidgets/BookmarkedItemsWidget/BookmarkedItemsWidget';
+import { ViewModeToggle } from './ViewModeToggle';
 import { useMap } from '../../context/MapContext';
 import { useLayers } from '../../context/LayerContext';
 import { useMapLayers } from './useMapLayers';
@@ -27,10 +28,19 @@ import { DendraTimeSeriesPanel } from '../FloatingWidgets/DendraTimeSeriesPanel/
 const PRESERVE_CENTER: [number, number] = [-120.47, 34.47];
 const INITIAL_ZOOM = 12;
 
+/** Saved camera state for smooth 2D ↔ 3D transitions */
+interface SavedViewState {
+  center: [number, number];
+  zoom: number;
+  tilt?: number;
+  heading?: number;
+}
+
 export function MapContainer() {
   const mapDivRef = useRef<HTMLDivElement>(null);
   const {
     viewRef,
+    viewMode,
     highlightLayerRef,
     spatialQueryLayerRef,
     spatialSketchViewModelRef,
@@ -40,6 +50,10 @@ export function MapContainer() {
   } = useMap();
   const { activeLayer } = useLayers();
   const [previewStatus, setPreviewStatus] = useState<'loading' | 'loaded' | 'error' | 'blocked'>('loading');
+  const savedViewStateRef = useRef<SavedViewState>({
+    center: PRESERVE_CENTER,
+    zoom: INITIAL_ZOOM,
+  });
 
   // Adapter lookup supports layer-specific overrides (for example, DroneDeploy dataset-193).
   const adapter = getAdapterForActiveLayer(activeLayer ?? null);
@@ -59,34 +73,85 @@ export function MapContainer() {
   // Sync pinned/active layers with ArcGIS layers
   useMapLayers();
 
-  // Initialize ArcGIS Map + MapView
+  // Initialize ArcGIS Map + View — re-runs when viewMode changes (2D ↔ 3D)
   useEffect(() => {
     if (!mapDivRef.current) return;
 
-    const map = new Map({ basemap: 'topo-vector' });
+    // Capture position from outgoing view before destroying it
+    const prev = viewRef.current;
+    if (prev?.center) {
+      const { longitude, latitude } = prev.center;
+      savedViewStateRef.current = {
+        center: [longitude ?? PRESERVE_CENTER[0], latitude ?? PRESERVE_CENTER[1]],
+        zoom: prev.zoom ?? INITIAL_ZOOM,
+        tilt: (prev as SceneView).camera?.tilt,
+        heading: (prev as SceneView).camera?.heading,
+      };
+    }
 
-    // Graphics layer for bookmark hover highlights (task 0.6)
+    const is3D = viewMode === '3d';
+    const saved = savedViewStateRef.current;
+
+    const map = new Map({
+      basemap: is3D ? 'satellite' : 'topo-vector',
+      ...(is3D && { ground: 'world-elevation' }),
+    });
+
+    if (is3D) {
+      map.ground.layers.add(new ElevationLayer({
+        url: 'https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer',
+      }));
+
+      map.add(new PointCloudLayer({
+        url: 'https://tiles.arcgis.com/tiles/6DIQcwlPy8knb6sg/arcgis/rest/services/All_Aeroptic_ColorizedPointCloud/SceneServer',
+        title: 'Dangermond Preserve LiDAR Point Cloud',
+        renderer: {
+          type: 'point-cloud-rgb',
+          field: 'RGB',
+          pointSizeAlgorithm: { type: 'fixed-size', useRealWorldSymbolSizes: false, size: 3 },
+        } as __esri.PointCloudRendererProperties,
+        elevationInfo: { mode: 'absolute-height' },
+      }));
+    }
+
     const highlightLayer = new GraphicsLayer({ id: 'v2-highlight-layer' });
     map.add(highlightLayer);
     highlightLayerRef.current = highlightLayer;
 
-    // Graphics layer for right-sidebar-driven spatial query polygons (CON-GL-01/02)
     const spatialQueryLayer = new GraphicsLayer({ id: 'v2-spatial-query-layer' });
     map.add(spatialQueryLayer);
     spatialQueryLayerRef.current = spatialQueryLayer;
 
-    const view = new MapView({
-      container: mapDivRef.current,
-      map,
-      center: PRESERVE_CENTER,
-      zoom: INITIAL_ZOOM,
-      ui: { components: ['attribution'] },
-    });
+    const view = is3D
+      ? new SceneView({
+          container: mapDivRef.current,
+          map,
+          camera: {
+            position: { x: saved.center[0], y: saved.center[1], z: 2000 },
+            tilt: saved.tilt ?? 60,
+            heading: saved.heading ?? 0,
+          },
+          qualityProfile: 'high',
+          environment: {
+            atmosphereEnabled: true,
+            lighting: { date: new Date(), directShadowsEnabled: true },
+          },
+          ui: { components: ['attribution', 'navigation-toggle', 'compass', 'zoom'] },
+          padding: { top: 52, right: 8, bottom: 8, left: 8 },
+        })
+      : new MapView({
+          container: mapDivRef.current,
+          map,
+          center: saved.center,
+          zoom: saved.zoom,
+          ui: { components: ['attribution', 'compass', 'zoom'] },
+          padding: { top: 52, right: 8, bottom: 8, left: 8 },
+        });
 
     viewRef.current = view;
 
     spatialSketchViewModelRef.current = new SketchViewModel({
-      view,
+      view: view as MapView,
       layer: spatialQueryLayer,
       polygonSymbol: {
         type: 'simple-fill',
@@ -101,8 +166,11 @@ export function MapContainer() {
       },
     });
 
-    // Signal map ready once the view finishes loading
     view.when(() => {
+      if (view.ui.find('zoom')) view.ui.move('zoom', 'top-right');
+      if (view.ui.find('compass')) view.ui.move('compass', 'top-right');
+      if (view.ui.find('navigation-toggle')) view.ui.move('navigation-toggle', 'top-right');
+      if (view.ui.find('attribution')) view.ui.move('attribution', 'top-right');
       if (view.popup) {
         view.popup.dockEnabled = false;
       }
@@ -110,6 +178,17 @@ export function MapContainer() {
     });
 
     return () => {
+      // Snapshot position before teardown
+      const outgoing = viewRef.current;
+      if (outgoing?.center) {
+        const { longitude, latitude } = outgoing.center;
+        savedViewStateRef.current = {
+          center: [longitude ?? PRESERVE_CENTER[0], latitude ?? PRESERVE_CENTER[1]],
+          zoom: outgoing.zoom ?? INITIAL_ZOOM,
+          tilt: (outgoing as SceneView).camera?.tilt,
+          heading: (outgoing as SceneView).camera?.heading,
+        };
+      }
       viewRef.current = null;
       highlightLayerRef.current = null;
       spatialQueryLayerRef.current = null;
@@ -117,7 +196,7 @@ export function MapContainer() {
       spatialSketchViewModelRef.current = null;
       view.destroy();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [viewMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!dataOnePreview) return;
@@ -219,9 +298,11 @@ export function MapContainer() {
         </div>
       )}
 
+      {/* 2D / 3D toggle */}
+      <ViewModeToggle />
+
       {/* Floating widgets overlay */}
       <MapLayersWidget />
-      {/* BookmarkedItemsWidget removed — Feb 11 design decision: unified into Map Layers */}
 
       {/* Legend widget — only for the ACTIVE layer's data source */}
       {LegendWidget && <LegendWidget />}
