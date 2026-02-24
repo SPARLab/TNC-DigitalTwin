@@ -7,6 +7,18 @@
 
 **📁 Completed tasks archived:** Per-phase archives in [docs/archive/phases/](archive/phases/) — one file per phase with task descriptions + completion timestamps.
 
+### Progress Meter
+
+| Metric | Value |
+|--------|-------|
+| **Active scope** | 118 / 133 complete (**89%**) |
+| **Active remaining** | 15 tasks |
+| **Phases complete** | 6 of 12 (0, 1, 2, 6, 10, 11) |
+
+```
+████████████████████████████████████████░░░░░  89%
+```
+
 ---
 
 ## Quick Task Summary

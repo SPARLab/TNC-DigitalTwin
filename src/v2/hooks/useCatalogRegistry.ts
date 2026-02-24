@@ -55,6 +55,16 @@ interface RawJunction {
   category_id: number;
 }
 
+interface RawServiceLayerRow {
+  id: number;
+  dataset_id: number;
+  layer_id: number | null;
+  layer_name: string | null;
+  is_table: number | null;
+  is_visible: number | null;
+  display_order: number | null;
+}
+
 interface ArcGISServiceLayer {
   id: number;
   name: string;
@@ -62,6 +72,7 @@ interface ArcGISServiceLayer {
 
 const SERVICE_DISCOVERY_TIMEOUT_MS = 3000;
 const SERVICE_DISCOVERY_RETRY_TIMEOUT_MS = 5000;
+const BLOCKING_DISCOVERY_HOST_ALLOWLIST = ['dangermondpreserve-spatial.com'];
 
 // ── Hook return type ─────────────────────────────────────────────────────────
 
@@ -125,6 +136,21 @@ function buildFeatureServiceMetadataUrl(d: RawDataset): string | null {
   const path = d.service_path.trim().replace(/^\/+/, '').replace(/\/+$/, '');
   if (!base || !path) return null;
   return `${base}/${path}/FeatureServer?f=json`;
+}
+
+function shouldRunBlockingDiscovery(d: RawDataset): boolean {
+  const base = d.server_base_url?.trim();
+  if (!base) return false;
+
+  try {
+    const host = new URL(base).hostname.toLowerCase();
+    return BLOCKING_DISCOVERY_HOST_ALLOWLIST.some((allowedHost) => {
+      const allowed = allowedHost.toLowerCase();
+      return host === allowed || host.endsWith(`.${allowed}`);
+    });
+  } catch {
+    return false;
+  }
 }
 
 async function fetchFeatureServiceLayersWithTimeout(
@@ -198,8 +224,41 @@ async function fetchFeatureServiceLayers(d: RawDataset): Promise<ArcGISServiceLa
   return retryAttempt.layers;
 }
 
+function buildCatalogServiceLayerMap(rawLayers: RawServiceLayerRow[]): Map<number, ArcGISServiceLayer[]> {
+  const byDatasetId = new Map<number, ArcGISServiceLayer[]>();
+
+  for (const row of rawLayers) {
+    if (row.is_visible === 0) continue;
+    if (row.is_table === 1) continue;
+    if (typeof row.dataset_id !== 'number' || !Number.isFinite(row.dataset_id)) continue;
+    if (typeof row.layer_id !== 'number' || !Number.isFinite(row.layer_id)) continue;
+
+    const layers = byDatasetId.get(row.dataset_id) ?? [];
+    layers.push({
+      id: row.layer_id,
+      name: row.layer_name?.trim() || `Layer ${row.layer_id}`,
+    });
+    byDatasetId.set(row.dataset_id, layers);
+  }
+
+  for (const [datasetId, layers] of byDatasetId) {
+    layers.sort((a, b) => a.id - b.id);
+    const deduped: ArcGISServiceLayer[] = [];
+    const seen = new Set<number>();
+    for (const layer of layers) {
+      if (seen.has(layer.id)) continue;
+      seen.add(layer.id);
+      deduped.push(layer);
+    }
+    byDatasetId.set(datasetId, deduped);
+  }
+
+  return byDatasetId;
+}
+
 function logServiceDiscoveryResults(
   candidates: RawDataset[],
+  catalogLayersByDatasetId: Map<number, ArcGISServiceLayer[]>,
   discoveredLayersByServiceKey: Map<string, ArcGISServiceLayer[]>,
 ): void {
   if (!import.meta.env.DEV) return;
@@ -214,7 +273,7 @@ function logServiceDiscoveryResults(
     if (!serviceKey || seenServiceKeys.has(serviceKey)) continue;
     seenServiceKeys.add(serviceKey);
 
-    const discoveredLayers = discoveredLayersByServiceKey.get(serviceKey) ?? [];
+    const discoveredLayers = catalogLayersByDatasetId.get(d.id) ?? discoveredLayersByServiceKey.get(serviceKey) ?? [];
     if (discoveredLayers.length > 1) {
       multi += 1;
       continue;
@@ -288,6 +347,10 @@ export function useCatalogRegistry(): CatalogRegistryState {
           queryTable<RawDataset>(1),
           queryTable<RawJunction>(2),
         ]);
+        const rawServiceLayers = await queryTable<RawServiceLayerRow>(3).catch((error) => {
+          console.warn('[CatalogRegistry] Layers table (3) unavailable; falling back to service metadata discovery only.', error);
+          return [] as RawServiceLayerRow[];
+        });
 
         if (cancelled) return;
 
@@ -303,6 +366,7 @@ export function useCatalogRegistry(): CatalogRegistryState {
         const datasetById = new Map<number, RawDataset>();
         for (const d of rawDatasets) datasetById.set(d.id, d);
         const serviceGroups = detectMultiLayerServices(rawDatasets);
+        const catalogLayersByDatasetId = buildCatalogServiceLayerMap(rawServiceLayers);
 
         // Discover ArcGIS sublayers when catalog rows represent only a service
         // container (single row + missing layer_id). This keeps large services
@@ -330,16 +394,25 @@ export function useCatalogRegistry(): CatalogRegistryState {
             return a.display_order - b.display_order;
           });
 
+        const unresolvedDiscoveryCandidates = prioritizedDiscoveryCandidates.filter(
+          (d) =>
+            (catalogLayersByDatasetId.get(d.id)?.length ?? 0) === 0
+            && shouldRunBlockingDiscovery(d),
+        );
         const discoveredLayersByServiceKey = new Map<string, ArcGISServiceLayer[]>();
         await Promise.all(
-          prioritizedDiscoveryCandidates.map(async (d) => {
+          unresolvedDiscoveryCandidates.map(async (d) => {
             const serviceKey = serviceKeyForDataset(d);
             if (!serviceKey || discoveredLayersByServiceKey.has(serviceKey)) return;
             const layers = await fetchFeatureServiceLayers(d);
             discoveredLayersByServiceKey.set(serviceKey, layers);
           }),
         );
-        logServiceDiscoveryResults(prioritizedDiscoveryCandidates, discoveredLayersByServiceKey);
+        logServiceDiscoveryResults(
+          prioritizedDiscoveryCandidates,
+          catalogLayersByDatasetId,
+          discoveredLayersByServiceKey,
+        );
 
         // ── Create CatalogLayer for every visible dataset ────────────────
         const allLayers = new Map<string, CatalogLayer>();
@@ -395,7 +468,7 @@ export function useCatalogRegistry(): CatalogRegistryState {
               .sort((a, b) => a.display_order - b.display_order);
 
             if (serviceRows.length <= 1) {
-              const discoveredLayers = discoveredLayersByServiceKey.get(serviceKey) ?? [];
+              const discoveredLayers = catalogLayersByDatasetId.get(d.id) ?? discoveredLayersByServiceKey.get(serviceKey) ?? [];
               if (discoveredLayers.length > 1) {
                 const serviceDatasetId = d.id;
                 const serviceId = toServiceLayerId(serviceDatasetId);
