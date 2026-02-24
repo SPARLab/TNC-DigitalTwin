@@ -49,7 +49,7 @@ export function DendraTimeSeriesPanel() {
 }
 
 const MIN_PANEL_WIDTH = 420;
-const MIN_PANEL_HEIGHT = 320;
+const MIN_PANEL_HEIGHT = 360;
 const MINIMIZED_WIDTH = 420;
 const MINIMIZED_HEIGHT = 58;
 
@@ -230,12 +230,12 @@ function ChartPanel({ panelId }: { panelId: string }) {
         },
       },
       grid: {
-        left: '12%', right: '4%', top: '8%', bottom: '22%',
+        left: '8%', right: '4%', top: '8%', bottom: '18%',
       },
       dataZoom: [
         {
           type: 'slider', show: true, xAxisIndex: [0],
-          start: 0, end: 100, height: 30, bottom: 16,
+          start: 0, end: 100, height: 24, bottom: 16,
           borderColor: '#99f6e4', fillerColor: 'rgba(20, 184, 166, 0.12)',
           handleStyle: { color: '#14b8a6', borderColor: '#14b8a6' },
           showDataShadow: true, showDetail: false,
@@ -247,7 +247,7 @@ function ChartPanel({ panelId }: { panelId: string }) {
         axisLine: { lineStyle: { color: '#94a3b8' } },
         axisLabel: {
           formatter: (v: string) => new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          rotate: 0, fontSize: 11, color: '#475569',
+          rotate: 0, margin: 6, fontSize: 11, color: '#475569',
         },
       },
       yAxis: {

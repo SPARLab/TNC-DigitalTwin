@@ -162,15 +162,17 @@ function getMapBounds() {
 
 function buildInitialPanelRect(index: number): Pick<DendraChartPanelState, 'x' | 'y' | 'width' | 'height'> {
   const bounds = getMapBounds();
-  const margin = 12;
+  const horizontalMargin = 12;
+  const topMargin = 12;
+  const bottomMargin = 30;
   const gap = 12;
-  const width = Math.max(480, Math.min(620, bounds.width - margin * 2));
-  const height = Math.max(320, Math.min(380, bounds.height - margin * 2));
-  const columns = Math.max(1, Math.floor((bounds.width - margin * 2 + gap) / (width + gap)));
+  const width = Math.max(560, Math.min(760, bounds.width - horizontalMargin * 2));
+  const height = Math.max(380, Math.min(500, bounds.height - topMargin - bottomMargin));
+  const columns = Math.max(1, Math.floor((bounds.width - horizontalMargin * 2 + gap) / (width + gap)));
   const col = index % columns;
   const row = Math.floor(index / columns);
-  const x = Math.max(margin, bounds.width - width - margin - col * (width + gap));
-  const y = Math.max(margin, bounds.height - height - margin - row * (height + gap));
+  const x = Math.max(horizontalMargin, bounds.width - width - horizontalMargin - col * (width + gap));
+  const y = Math.max(topMargin, bounds.height - height - bottomMargin - row * (height + gap));
   return { x, y, width, height };
 }
 

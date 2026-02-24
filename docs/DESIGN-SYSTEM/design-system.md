@@ -936,6 +936,7 @@ interface FeatureDetailCardProps {
 | Component | Decision | Status | Date | Details |
 |-----------|----------|--------|------|---------|
 | Dendra chart panel header | ✅ Decided | Feb 19 | Phase 3 | Stream name bold; labels (Station:, Category:) regular; values (station, category) semi-bold. Pipe separator. See phase-3-dendra.md Styling Decisions. |
+| Dendra chart panel sizing & placement | ✅ Decided | Feb 24 | Phase 3 | Initial size 560–760×380–500; bottom margin 32px (~1–2rem from map edge); time slider with data shadow, grid.bottom 18%, slider bottom 12. See phase-3-dendra.md CON-DENDRA-02. |
 | Dendra Map Layers child labels | ✅ Decided | Feb 19 | Phase 3 | Collapsed: `N data streams, M stations`; expanded: `N data streams from <Station>` (single) or `N data streams from M stations` (multiple). Pin count badge: number + blue pin icon only (no "pins" text). See phase-3-dendra.md CON-DENDRA-04. |
 | Right sidebar header | ⚪ TBD | - | |
 | Card component | ⚪ TBD | - | |
@@ -2008,6 +2009,7 @@ February 5, 2026
 |------|--------|-----|
 | Feb 20, 2026 | **D20-10: ArcGIS Overview description source.** TNC ArcGIS and Dendra Overview tabs fetch description from ArcGIS item metadata (serviceItemId → snippet + description) when available; HTML normalized for line breaks; `whitespace-pre-line` for display. No per-layer descriptions in layer list. | Cursor |
 | Feb 19, 2026 | **Dendra Map Layers child labels (CON-DENDRA-04).** Dynamic labels: collapsed `N data streams, M stations`; expanded by station scope. Pin count badge: number + blue pin icon only. Documented in Components table and phase-3-dendra.md. | Cursor |
+| Feb 24, 2026 | **Dendra chart panel sizing & placement (D24-01).** Initial size 560–760×380–500; separate bottom margin (32px) for placement ~1–2rem from map bottom; time slider data shadow restored, spacing tuned. Documented in Components table and phase-3-dendra.md. | Cursor |
 | Feb 19, 2026 | **Dendra chart panel header typography.** Stream name bold; labels (Station:, Category:) regular; values semi-bold. Pipe separator between Station and Category. Documented in Components table and phase-3-dendra.md. | Cursor |
 | Feb 16, 2026 | **Task 34 complete.** Added shared loading primitives (`src/v2/components/shared/loading/`): `loadingTheme.ts`, `LoadingPrimitives.tsx` (EyeSlotLoadingSpinner, InlineLoadingRow, RefreshLoadingRow, MapCenterLoadingOverlay). Wired for iNaturalist, Dendra, ANiML. Single-point styling propagation. | Claude |
 | Feb 20, 2026 | Dendra station display names: strip `dangermond_` prefix for map popup, sidebar, chart panels. Shared `formatStationDisplayName()` in `dendraStationService.ts`. TF-07 (Trisalyn QA). | Claude |

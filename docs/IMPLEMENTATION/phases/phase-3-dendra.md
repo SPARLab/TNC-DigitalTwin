@@ -1,12 +1,12 @@
 # Phase 3: Dendra Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 4 / 5 tasks (completed tasks 3.1–3.9 archived Feb 18, 2026)  
+**Progress:** 5 / 6 tasks (completed tasks 3.1–3.9 archived Feb 18, 2026)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-3-dendra-completed.md`  
 **Branch:** `v2/dendra`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD  
-**Last Updated:** February 20, 2026
+**Last Updated:** February 24, 2026
 
 ---
 
@@ -25,6 +25,7 @@
 | CON-DENDRA-02 | 🟢 Complete | Feb 19, 2026 | Multiple time series charts side-by-side; draggable/resizable/minimizable within map area bounds | High priority |
 | CON-DENDRA-03 | 🟢 Complete | Feb 19, 2026 | Multi-stream selection across stations with stream-name filtering and no reset requirement | High priority |
 | CON-DENDRA-04 | 🟢 Complete | Feb 19, 2026 | Surface pinned-stream counts/icons across Map Layers, stream rows, and station cards | Dynamic labels, chart close fix, sync across views |
+| D24-01 | 🟢 Complete | Feb 24, 2026 | Dendra chart panel UX polish: larger initial size, slider spacing, bottom inset | Initial draw ~1–2rem from map bottom; slider data shadow restored; x-axis/slider spacing tuned |
 
 **Phase-5 handoff:** `CON-DENDRA-05` (Export Builder UX refinement) is tracked in `docs/IMPLEMENTATION/phases/phase-5-export-builder.md`.
 
@@ -136,6 +137,12 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 **Chart labeling:**
 - Header shows datastream name; subtitle shows Station + Category (source layer name) for multi-chart disambiguation.
+
+**Chart panel UX polish (Feb 24, 2026):**
+- **Initial size:** Default panel dimensions increased (width 560–760, height 380–500) so charts open at a readable size; user can still shrink manually.
+- **Initial placement:** `buildInitialPanelRect` uses separate `bottomMargin` (32px) so new panels open ~1–2rem above the map bottom edge; right inset unchanged.
+- **Time slider:** ECharts `dataZoom` slider keeps `showDataShadow: true` for rise/fall preview; `grid.bottom` 18%, slider `bottom` 12, `height` 24 for clear visibility without clipping; x-axis label `margin` 6 for compact spacing.
+- **Minimum resize height:** `MIN_PANEL_HEIGHT` 360 so resized panels remain usable.
 
 **Files touched:** DendraContext.tsx, DendraTimeSeriesPanel.tsx, StationDetailView.tsx, MapContainer.tsx, dendra adapter (FloatingPanel removed from adapter).
 
@@ -290,6 +297,7 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 24, 2026 | D24-01 | **Complete.** Dendra chart panel UX polish: larger initial size (560–760×380–500), separate bottom margin for initial placement (~1–2rem from map bottom), time slider data shadow restored, x-axis/slider spacing tuned, slider bottom margin to avoid clipping. See CON-DENDRA-02 Implementation Notes. | Cursor |
 | Feb 20, 2026 | D20-06 | **Complete.** Custom polygon draw tool for Dendra: (1) station click handler suppressed during draw mode; (2) sidebar station list synced with polygon filter so map and list match. See D20-06 Implementation Notes. | Cursor |
 | Feb 20, 2026 | D20-06 | **Continue.** Added sidebar spatial synchronization for Dendra station list: station cards now apply the same custom polygon filter used on map markers, then apply stream-name filtering on top. | Cursor |
 | Feb 20, 2026 | D20-06 | **Started.** Guarded Dendra map click station-activation flow during spatial polygon draw mode (`isSpatialQueryDrawing`) to avoid draw interruption from hit-test/popup/goTo interactions. | Cursor |
