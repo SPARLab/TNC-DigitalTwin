@@ -12,8 +12,39 @@ import {
   type DataOneVersionEntry,
 } from '../../../../services/dataOneService';
 import Extent from '@arcgis/core/geometry/Extent';
+import type FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { useMap } from '../../../context/MapContext';
+
+const MAP_LAYER_ID = 'v2-dataone-datasets';
+
+/**
+ * Query the DataONE map layer for a feature matching `dataoneId` and open the
+ * ArcGIS popup on it so the native light-blue selection highlight appears.
+ */
+async function openPopupForDataoneFeature(
+  view: __esri.MapView,
+  dataoneId: string,
+): Promise<void> {
+  const mapLayer = view.map?.findLayerById(MAP_LAYER_ID) as FeatureLayer | undefined;
+  if (!mapLayer) return;
+
+  const escapedId = dataoneId.replace(/'/g, "''");
+  const result = await mapLayer.queryFeatures({
+    where: `dataoneId = '${escapedId}'`,
+    outFields: ['*'],
+    returnGeometry: true,
+    num: 1,
+  });
+
+  const feature = result.features[0];
+  if (!feature) return;
+
+  view.openPopup({
+    features: [feature],
+    location: feature.geometry?.type === 'point' ? (feature.geometry as __esri.Point) : undefined,
+  });
+}
 
 interface DatasetDetailViewProps {
   dataset: DataOneDataset;
@@ -123,21 +154,25 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onUnsave
   const [versionHistoryError, setVersionHistoryError] = useState<string | null>(null);
   const [versionEntries, setVersionEntries] = useState<DataOneVersionEntry[]>([]);
   const [loadingVersionId, setLoadingVersionId] = useState<string | null>(null);
-  const { viewRef, highlightPoint, showToast, openDataOnePreview } = useMap();
+  const { viewRef, showToast, openDataOnePreview } = useMap();
   const lastPannedDatasetIdRef = useRef<string | null>(null);
 
   // Auto-pan/zoom when opening dataset detail (CON-DONE-02)
+  // After camera settles, open popup on the map feature for native ArcGIS highlight.
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;
     if (lastPannedDatasetIdRef.current === dataset.dataoneId) return;
 
+    let cancelled = false;
+
     const centerLon = dataset.centerLon;
     const centerLat = dataset.centerLat;
     if (Number.isFinite(centerLon) && Number.isFinite(centerLat)) {
       lastPannedDatasetIdRef.current = dataset.dataoneId;
-      void view.goTo({ center: [centerLon as number, centerLat as number], zoom: 16 }, { duration: 800 });
-      highlightPoint(centerLon as number, centerLat as number);
+      void view.goTo({ center: [centerLon as number, centerLat as number], zoom: 16 }, { duration: 800 })
+        .then(() => { if (!cancelled) return openPopupForDataoneFeature(view, dataset.dataoneId); })
+        .catch(() => {});
       return;
     }
 
@@ -151,9 +186,13 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onUnsave
         ymax: bounds.north,
         spatialReference: { wkid: 4326 },
       });
-      void view.goTo(extent.expand(1.2), { duration: 800 });
+      void view.goTo(extent.expand(1.2), { duration: 800 })
+        .then(() => { if (!cancelled) return openPopupForDataoneFeature(view, dataset.dataoneId); })
+        .catch(() => {});
     }
-  }, [dataset.dataoneId, dataset.centerLon, dataset.centerLat, details, viewRef, highlightPoint]);
+
+    return () => { cancelled = true; };
+  }, [dataset.dataoneId, dataset.centerLon, dataset.centerLat, details, viewRef]);
 
   useEffect(() => {
     let cancelled = false;
@@ -292,7 +331,7 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onUnsave
     if (Number.isFinite(centerLon) && Number.isFinite(centerLat)) {
       try {
         await view.goTo({ center: [centerLon as number, centerLat as number], zoom: 16 }, { duration: 800 });
-        highlightPoint(centerLon as number, centerLat as number);
+        await openPopupForDataoneFeature(view, dataset.dataoneId);
         showToast('Centered map on dataset location', 'info');
       } catch {
         showToast('Could not focus map on dataset', 'warning');
@@ -311,6 +350,7 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onUnsave
           spatialReference: { wkid: 4326 },
         });
         await view.goTo(extent.expand(1.2), { duration: 800 });
+        await openPopupForDataoneFeature(view, dataset.dataoneId);
         showToast('Centered map on dataset spatial extent', 'info');
       } catch {
         showToast('Could not focus map on dataset extent', 'warning');

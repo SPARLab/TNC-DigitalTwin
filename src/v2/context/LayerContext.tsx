@@ -2948,9 +2948,14 @@ export function LayerProvider({ children }: { children: ReactNode }) {
       return pinned.views[0];
     })();
 
-    const nextFeatureId = activeLayer.layerId === 'dataset-193'
-      ? nextActiveView?.droneView?.flightId
-      : activeLayer.featureId;
+    const viewIsChanging = nextActiveView != null && activeLayer.viewId !== nextActiveView.id;
+    const nextFeatureId = (() => {
+      if (activeLayer.layerId === 'dataset-193') return nextActiveView?.droneView?.flightId;
+      if (activeLayer.layerId === 'dataone-datasets' && viewIsChanging) {
+        return nextActiveView?.dataoneFilters?.selectedDatasetId;
+      }
+      return activeLayer.featureId;
+    })();
 
     if (
       nextActiveView &&

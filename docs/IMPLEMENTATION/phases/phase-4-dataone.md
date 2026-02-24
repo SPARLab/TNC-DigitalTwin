@@ -15,7 +15,7 @@
 |----|--------|---------------------------|------------------|-------|
 | D20-09 | 🟢 Complete | Feb 23, 2026 | Filter DataOne map to latest dataset version only (deduplicate by latest) | Implemented: Lite layer + dedupeDatasetsByDataoneId in getDatasetsForMapLayer/queryDatasets; prefers isLatestVersion and newest date. Verified visually. |
 | TF-13 | 🟢 Complete | Feb 23, 2026 | Add loading indicator when DataOne layer is selected and map data is loading | Implemented: map-loading scope in DataOneFilterContext; browse-tab RefreshLoadingRow ("Updating map markers..."); Map Layers eye-slot spinner via shared cache-status. Consistent with iNaturalist pattern. Source: Trisalyn QA Feb 20 |
-| TF-14 | 🟢 Complete | Feb 23, 2026 | Render a specific map marker when "View on Map" is clicked on a dataset | Implemented: highlightPoint draws a cyan ring at dataset coordinates; zoom 16 breaks clusters so individual point visible. Fallback marker at exact location when inside bin. Source: Trisalyn QA Feb 20 |
+| TF-14 | 🟢 Complete | Feb 23, 2026 | Render a specific map marker when "View on Map" is clicked on a dataset | ArcGIS native popup highlight: query feature by dataoneId, open popup on it for light-blue selection. Detail open + Recenter both trigger. Map Layers saved-dataset click also focuses + popup. Source: Trisalyn QA Feb 20 |
 | CON-DONE-01 | 🟢 Complete | Feb 20, 2026 | Cluster click on map populates right sidebar with datasets at that location | Race condition fix applied; counts verified |
 | CON-DONE-16 | 🟢 Complete | Feb 20, 2026 | Switch from circular clustering to grid binning (FeatureReductionBinning) | Live scale watcher; in-place fixedBinLevel mutation; maxScale:0 keeps bins visible; "Where to Fine-Tune" doc'd |
 | CON-DONE-02 | 🟢 Complete | Feb 20, 2026 | Auto-pan/zoom when opening dataset detail; repurpose View on Map as Recenter | High priority; resolution applied |
@@ -111,9 +111,15 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 
 **Implementation Notes (Feb 20, 2026):**
 - Added map-selection flow for cluster clicks (`mapSelectionDataoneIds`) so cluster clicks drive sidebar filtering
-- Added visual synchronization aid: blue highlight ring on selected cluster
 - Preserved single-point click behavior: clicking a non-cluster marker opens dataset detail directly
 - Moved large-cluster sidebar filtering to client-side cache matching (to avoid 414 URI Too Large when cluster selections are very large)
+
+**Refinements (Feb 23, 2026):**
+- Removed custom cluster highlight ring; rely on ArcGIS native highlight only
+- Cluster click auto-zoom: only zoom when cluster can stay visible (scale guard vs cluster maxScale); otherwise center without zoom
+
+**Cluster + Saved Dataset View Fix (Feb 23, 2026):**
+- When in a filtered child view with saved dataset, clicking back to datasets list then zooming out and clicking a cluster used to snap to saved dataset detail. Fixed: cluster click preserves current DataOne viewId, pan-only (no zoom), and filters sidebar list without restoring saved dataset detail.
 
 **Cluster↔Dataset Navigation Fix (Feb 20, 2026):**
 - Fixed bug where cluster → dataset → cluster → dataset left second dataset click not opening detail
@@ -222,17 +228,18 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 **Context:** Per Trisalyn QA (Feb 20, 2026), the map was highlighting the general group area but not dropping a specific dot at the dataset location. Will's note: "We need to make sure that we're actually drawing a map marker when we click on View on Map because it looks like we are highlighting the group but we're not highlighting the specific dot location for this dataset."
 
 **Resolution (Feb 23, 2026):**
-- `DatasetDetailView` `handleRecenter` and auto-pan effect both call `highlightPoint(centerLon, centerLat)` from MapContext
-- MapContext `highlightPoint` draws a cyan ring marker at the exact dataset coordinates on the highlight graphics layer
+- `DatasetDetailView` `handleRecenter` and auto-pan effect both trigger ArcGIS native highlight via `openPopupForDataoneFeature`
+- Helper queries the DataONE FeatureLayer for the matching graphic by `dataoneId`, then calls `view.openPopup({ features: [feature] })` so ArcGIS applies its light-blue selection highlight
 - Zoom level 16 (center case) breaks cluster grouping so the individual DataONE point is visible; extent case uses bounds
-- When the dataset is inside a bin/cluster, the highlight ring serves as a fallback marker at the exact location
+- Map Layers widget: clicking a saved dataset child view pans/zooms to the marker and opens popup (effect in `useMapBehavior.ts`)
 
-**Files:** `src/v2/components/RightSidebar/DataOne/DatasetDetailView.tsx`, `src/v2/context/MapContext.tsx`
+**Files:** `src/v2/components/RightSidebar/DataOne/DatasetDetailView.tsx`, `src/v2/dataSources/dataone/useMapBehavior.ts`
 
 **Acceptance Criteria:**
 - [x] Clicking Recenter renders a visible marker at the dataset's exact coordinates
 - [x] Marker is identifiable even when the underlying feature is aggregated in a cluster/bin
 - [x] Auto-pan on detail open also shows the marker
+- [x] Native ArcGIS light-blue highlight appears on detail view entry and Recenter (no custom overlay ring)
 
 **Estimated Time:** 1–2 hours
 
@@ -270,7 +277,13 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 - **Unsave:** Clears `selectedDatasetId` from current view; next save overwrites that view
 - Sync effect does not write dataset assignment fields; only Save/Unsave handlers do
 
-**Files:** `DataOneBrowseTab.tsx`, `LayerContext.tsx`
+**Refinements (Feb 23, 2026):**
+- Save Dataset View now auto-pins DataONE layer when unpinned (ensures Map Layers sync works)
+- Save persists current browse filters (search, categories, file types, dates, author) plus selected dataset
+- Map Layers child-view click: MapLayersWidget passes `selectedDatasetId` as featureId; sync effect resolves DataONE featureId only when view actually changes (preserves Back-to-list)
+- Fix: avoid resolving featureId in activateLayer for DataONE (broke Back-to-list); explicit pass from widget + guarded sync effect
+
+**Files:** `DataOneBrowseTab.tsx`, `LayerContext.tsx`, `MapLayersWidget.tsx`, `useMapBehavior.ts`
 
 **Acceptance Criteria:**
 - [x] Save on unassigned view overwrites current view
@@ -321,6 +334,9 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 - `dataoneLayer.ts`: Cluster `maxScale: 12_000` so clustering turns off at close zoom; selected dataset resolves to a visible dot
 - Renamed "View on Map" button to "Recenter"; handler `handleRecenter` shows toast on manual recenter
 - Card click in browse list now calls `activateLayer` with dataset ID for map/sidebar sync
+
+**Refinements (Feb 23, 2026):**
+- After camera settles, `openPopupForDataoneFeature` queries the DataONE layer for the selected dataset's graphic and opens ArcGIS popup so native light-blue highlight appears on detail open and Recenter.
 
 **Acceptance Criteria:**
 - [x] Opening dataset detail (card click or map point click) auto-pans/zooms map to dataset location
@@ -485,6 +501,8 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 23, 2026 | **DataONE native ArcGIS highlight + cluster/saved-view fix.** Replaced custom cyan ring with ArcGIS popup highlight: `openPopupForDataoneFeature` in DatasetDetailView (detail open, Recenter) and useMapBehavior (Map Layers saved-dataset click). Cluster click: preserve viewId when coming from saved dataset view; pan-only (no zoom) so sidebar filters without snapping to saved detail. | Assistant |
+| Feb 23, 2026 | **DataONE Save View + Map Layers sync refinements.** Save Dataset View: auto-pin when unpinned; persist current browse filters + selected dataset. Map Layers child-view click: explicit featureId pass from MapLayersWidget; sync effect resolves DataONE featureId only when view changes (preserves Back-to-list). Cluster click: removed custom highlight ring; safe auto-zoom (only when cluster stays visible). | Assistant |
 | Feb 23, 2026 | Quick Task Summary sync: added D20-B02 (Dan backend follow-up) so phase progress reflects 15/16 accurately; CON-DONE-12/13 remain tracked in Phase 5 handoff. | Assistant |
 | Feb 23, 2026 | CON-DONE-15 marked complete. Spatial query (draw/query tools) filters DataONE datasets by extent; verified working with SpatialQuerySection. | User |
 | Feb 23, 2026 | CON-DONE-10 marked complete. File-type filter (CSV/TIF/Imagery/Other) checklist, client-side filtering from files_summary.by_ext, wired through browse/map/saved views. | Assistant |

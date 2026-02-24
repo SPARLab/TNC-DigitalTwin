@@ -6,12 +6,10 @@
 // ============================================================================
 
 import { useEffect, useRef } from 'react';
-import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
 import Polygon from '@arcgis/core/geometry/Polygon';
 import Extent from '@arcgis/core/geometry/Extent';
 import * as geometryEngine from '@arcgis/core/geometry/geometryEngine';
-import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
 import type Layer from '@arcgis/core/layers/Layer';
 import type FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import type { DataOneDataset } from '../../../types/dataone';
@@ -26,16 +24,6 @@ import { isPointInsideSpatialPolygon } from '../../utils/spatialQuery';
 const LAYER_ID = 'dataone-datasets';
 const MAP_LAYER_ID = 'v2-dataone-datasets';
 const MAX_MAP_SELECTION_IDS = 2000;
-
-const CLUSTER_HIGHLIGHT_SYMBOL = new SimpleMarkerSymbol({
-  style: 'circle',
-  size: 62,
-  color: [59, 130, 246, 0.10],  // blue-500 @ 10% fill
-  outline: {
-    color: [59, 130, 246, 0.80], // blue-500 @ 80%
-    width: 2.5,
-  },
-});
 
 function getAggregateCount(graphic: __esri.Graphic): number {
   const attrs = graphic.attributes ?? {};
@@ -126,17 +114,16 @@ export function useDataOneMapBehavior(
     dataLoaded,
     browseFilters,
     aggregationMode,
-    mapSelectionDataoneIds,
     setMapSelectionDataoneIds,
     setMapDatasetsCache,
     createMapLoadingScope,
   } = useDataOneFilter();
-  const { activateLayer, requestBrowseTab } = useLayers();
+  const { activateLayer, requestBrowseTab, getPinnedByLayerId } = useLayers();
   const { viewRef, getSpatialPolygonForLayer } = useMap();
   const spatialPolygon = getSpatialPolygonForLayer(LAYER_ID);
   const mapDatasetsByIdRef = useRef<Map<string, DataOneDataset>>(new Map());
-  const highlightGraphicRef = useRef<__esri.Graphic | null>(null);
   const populateVersionRef = useRef(0);
+  const lastPopupSelectionKeyRef = useRef<string | null>(null);
 
   const isPinned = pinnedLayers.some((p) => p.layerId === LAYER_ID);
   const isActive = activeLayer?.layerId === LAYER_ID;
@@ -145,15 +132,6 @@ export function useDataOneMapBehavior(
   useEffect(() => {
     if (isOnMap) warmCache();
   }, [isOnMap, warmCache]);
-
-  // Clear the map highlight ring when the sidebar map-selection filter is dismissed.
-  useEffect(() => {
-    if (mapSelectionDataoneIds != null) return;
-    const view = viewRef.current;
-    if (!view || !highlightGraphicRef.current) return;
-    view.graphics.remove(highlightGraphicRef.current);
-    highlightGraphicRef.current = null;
-  }, [mapSelectionDataoneIds, viewRef]);
 
   // Re-query map points whenever DataONE browse filters change.
   useEffect(() => {
@@ -264,25 +242,7 @@ export function useDataOneMapBehavior(
     if (!isOnMap) return;
     const view = viewRef.current;
     if (!view) return;
-    const mapLayer = getManagedLayer(LAYER_ID) as FeatureLayer | undefined;
-    if (!mapLayer) return;
-
-    function clearHighlight() {
-      if (highlightGraphicRef.current) {
-        view!.graphics.remove(highlightGraphicRef.current);
-        highlightGraphicRef.current = null;
-      }
-    }
-
-    function showHighlight(geometry: __esri.Geometry) {
-      clearHighlight();
-      const ring = new Graphic({
-        geometry,
-        symbol: CLUSTER_HIGHLIGHT_SYMBOL,
-      });
-      view!.graphics.add(ring);
-      highlightGraphicRef.current = ring;
-    }
+    if (!getManagedLayer(LAYER_ID)) return;
 
     const handler = view.on('click', async (event) => {
       try {
@@ -292,9 +252,6 @@ export function useDataOneMapBehavior(
             result.type === 'graphic' && result.graphic.layer?.id === MAP_LAYER_ID,
         );
         if (!graphicHit) return;
-
-        // Always clear previous selection highlight before handling new click.
-        clearHighlight();
 
         const aggregateCount = getAggregateCount(graphicHit.graphic);
 
@@ -322,17 +279,17 @@ export function useDataOneMapBehavior(
             setMapSelectionDataoneIds(null);
           }
 
-          activateLayer(LAYER_ID, undefined, undefined);
+          const currentDataOneViewId = activeLayer?.layerId === LAYER_ID
+            ? activeLayer.viewId
+            : undefined;
+          activateLayer(LAYER_ID, currentDataOneViewId, undefined);
           requestBrowseTab();
           view.closePopup();
 
-          if (graphicHit.graphic.geometry) {
-            showHighlight(graphicHit.graphic.geometry);
-          }
-
+          // Aggregate click should re-center to the selected group without
+          // changing zoom level, so users can continue manual exploration.
           void view.goTo({
             target: graphicHit.graphic.geometry,
-            zoom: (view.zoom ?? 8) + 2,
           }, { duration: 450 });
           return;
         }
@@ -368,7 +325,72 @@ export function useDataOneMapBehavior(
 
     return () => {
       handler.remove();
-      clearHighlight();
     };
-  }, [isOnMap, viewRef, activateLayer, requestBrowseTab, getManagedLayer, setMapSelectionDataoneIds]);
+  }, [isOnMap, viewRef, activeLayer, activateLayer, requestBrowseTab, getManagedLayer, setMapSelectionDataoneIds]);
+
+  // When a saved DataONE child view (single dataset) is activated from Map Layers,
+  // focus the marker and open ArcGIS popup so native highlight is shown.
+  useEffect(() => {
+    if (!isOnMap) return;
+    if (activeLayer?.layerId !== LAYER_ID || !activeLayer.featureId || !activeLayer.viewId) return;
+    const view = viewRef.current;
+    if (!view) return;
+
+    const pinned = getPinnedByLayerId(LAYER_ID);
+    const activeView = pinned?.views?.find((viewEntry) => viewEntry.id === activeLayer.viewId);
+    const selectedDatasetId = activeView?.dataoneFilters?.selectedDatasetId;
+    const featureId = String(activeLayer.featureId);
+    if (!selectedDatasetId || selectedDatasetId !== featureId) return;
+
+    const selectionKey = `${activeLayer.viewId}:${featureId}`;
+    if (lastPopupSelectionKeyRef.current === selectionKey) return;
+
+    const mapLayer = getManagedLayer(LAYER_ID) as FeatureLayer | undefined;
+    if (!mapLayer) return;
+
+    let cancelled = false;
+    const escapedDataoneId = featureId.replace(/'/g, "''");
+
+    void mapLayer.queryFeatures({
+      where: `dataoneId = '${escapedDataoneId}'`,
+      outFields: ['*'],
+      returnGeometry: true,
+      num: 1,
+    })
+      .then(async (result) => {
+        if (cancelled) return;
+        const feature = result.features[0];
+        if (!feature) return;
+
+        const geometry = feature.geometry;
+        if (geometry?.type === 'point') {
+          const point = geometry as Point;
+          await view.goTo(
+            { center: [point.longitude, point.latitude], zoom: Math.max(view.zoom ?? 8, 14) },
+            { duration: 700 },
+          ).catch(() => {});
+          if (cancelled) return;
+          view.openPopup({
+            features: [feature],
+            location: point,
+          });
+          lastPopupSelectionKeyRef.current = selectionKey;
+          return;
+        }
+
+        if (geometry) {
+          await view.goTo({ target: geometry }, { duration: 700 }).catch(() => {});
+          if (cancelled) return;
+          view.openPopup({ features: [feature] });
+          lastPopupSelectionKeyRef.current = selectionKey;
+        }
+      })
+      .catch((error) => {
+        console.error('[DataONE View Activation] Failed to focus selected dataset feature', error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOnMap, activeLayer, viewRef, getManagedLayer, getPinnedByLayerId]);
 }
