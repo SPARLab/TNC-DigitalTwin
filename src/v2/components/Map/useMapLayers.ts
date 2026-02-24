@@ -56,6 +56,7 @@ export function useMapLayers() {
   const { layerMap } = useCatalog();
   const managedLayersRef = useRef<Map<string, Layer>>(new Map());
   const warnedLayersRef = useRef<Set<string>>(new Set());
+  const lastMapRef = useRef<__esri.Map | null>(null);
   const concreteActiveLayerId = getConcreteActiveLayerId(activeLayer, layerMap);
   const concreteActiveLayerName = concreteActiveLayerId
     ? (layerMap.get(concreteActiveLayerId)?.name ?? activeLayer?.name ?? 'Layer')
@@ -75,6 +76,14 @@ export function useMapLayers() {
     if (!view?.map) return;
 
     const map = view.map;
+
+    // Detect view recreation (2D↔3D toggle): old layers are orphaned on destroyed map
+    if (map !== lastMapRef.current) {
+      managedLayersRef.current.clear();
+      warnedLayersRef.current.clear();
+      lastMapRef.current = map;
+    }
+
     const managed = managedLayersRef.current;
     const pinnedByLayerId = new Map(pinnedLayers.map(p => [p.layerId, p]));
 
