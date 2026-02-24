@@ -10,7 +10,6 @@ import { ObservationListView } from './ObservationListView';
 import { ObservationDetailView } from './ObservationDetailView';
 
 const CALFLORA_LAYER_ID = 'calflora-observations';
-const CALFLORA_MAP_LAYER_ID = `v2-${CALFLORA_LAYER_ID}`;
 const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 450;
 const MIN_SEARCH_CHARS = 2;
@@ -289,24 +288,16 @@ export function CalFloraBrowseTab() {
     return 'Saved as a new CalFlora child view in Map Layers.';
   };
 
-  const viewObservationOnMap = (observation: CalFloraObservation) => {
-    if (!observation.coordinates) return;
+  const viewObservationOnMap = async (observation: CalFloraObservation) => {
     const view = viewRef.current;
     if (!view) return;
     activateLayer(CALFLORA_LAYER_ID, activeLayer?.viewId, observation.objectId);
-    void view.goTo({ center: observation.coordinates, zoom: 14 }, { duration: 650 });
-    const map = view.map;
-    if (!map) return;
-    const layer = map.findLayerById(CALFLORA_MAP_LAYER_ID);
-    if (!layer) return;
-    void view.openPopup({
-      location: {
-        type: 'point',
-        longitude: observation.coordinates[0],
-        latitude: observation.coordinates[1],
-      },
-      features: [],
-    });
+    if (!observation.coordinates) return;
+    try {
+      await view.goTo({ center: observation.coordinates, zoom: 14 }, { duration: 650 });
+    } catch {
+      // Ignore interrupted map navigation so sidebar interactions stay responsive.
+    }
   };
 
   if (selectedObservation) {
@@ -445,9 +436,8 @@ export function CalFloraBrowseTab() {
             observations={observations}
             onOpenDetail={(observation) => {
               setSelectedObservation(observation);
-              activateLayer(CALFLORA_LAYER_ID, activeLayer?.viewId, observation.objectId);
+              void viewObservationOnMap(observation);
             }}
-            onViewOnMap={viewObservationOnMap}
           />
         </div>
       )}
