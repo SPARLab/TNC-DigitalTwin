@@ -41,8 +41,8 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 110
-- **Active remaining (Not Started + In Progress + Blocked):** 23
+- **Complete:** 118
+- **Active remaining (Not Started + In Progress + Blocked):** 15
 - **Backlog (not in active scope):** 3
 - **Deferred:** 1
 - **Won't Do:** 2
@@ -60,7 +60,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 5 | Export Builder | 🟡 In Progress | 0 | 5 | 0 | 0 | 0 | 5 | `v2/export-builder` |
 | 6 | TNC ArcGIS Services | 🟢 Complete | 32 | 0 | 0 | 0 | 0 | 32 | `v2/tnc-arcgis` |
 | 7 | Polish & Consistency | ⚪ Not Started | 1 | 4 | 0 | 0 | 0 | 5 | `v2/polish` |
-| 8 | Calflora | ⚪ Not Started | 0 | 9 | 0 | 0 | 0 | 9 | `v2/calflora` |
+| 8 | Calflora | 🟡 In Progress | 8 | 1 | 0 | 0 | 0 | 9 | `v2/calflora` |
 | 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
 | 10 | DroneDeploy | 🟢 Complete | 4 | 0 | 0 | 0 | 0 | 4 | `v2/dronedeploy` |
 | 11 | MOTUS | 🟢 Complete | 9 | 0 | 0 | 0 | 0 | 9 | `v2/motus` |
