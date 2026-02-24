@@ -1,11 +1,11 @@
 # Phase 1: iNaturalist Right Sidebar
 
 **Status:** 🟢 Complete  
-**Progress:** 6 / 7 tasks complete (1 won't do, 1 in progress)  
+**Progress:** 10 / 11 tasks complete (1 won't do)  
 **Branch:** `v2/inaturalist`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD  
-**Last Updated:** February 20, 2026
+**Last Updated:** February 24, 2026
 
 ---
 
@@ -27,11 +27,12 @@
 | CON-INAT-04 | 🚫 Won't Do | Feb 19, 2026 | Investigate reptile observations appearing in ocean (scrambling vs bug) | Not a product bug; iNaturalist intentionally obfuscates coordinates for sensitive/endangered species. Source: AF-08. |
 | CON-INAT-06 | 🟢 Complete | Feb 19, 2026 | Species/taxa ordering: common species higher, with editable sort order | Done: species list defaults to count sort (common higher), toggle to A-Z; implemented in CON-INAT-01. Source: T15. |
 | CON-INAT-07 | 🟢 Complete | Feb 19, 2026 | Edit filters widget collapsible; results in scrollable section filling remaining viewport height | Done: EditFiltersCard now collapsible with chevron toggle; results region uses flex layout with scrollable observation cards container filling remaining viewport height. |
+| TF-06 | 🟢 Complete | Feb 24, 2026 | Species filter bug: taxa selected + all species checked showed no results; Select All/Clear All styling; styled separators | Done: removed requiresSpeciesSelection gating so empty species = all selected; text-only bulk actions with gray Select All when inactive; added `|` separator in Filter Taxa and legend. |
 
 **Phase-5 handoff:** `CON-INAT-05` (Export Builder cart inversion) is tracked in `docs/IMPLEMENTATION/phases/phase-5-export-builder.md` to avoid cross-branch conflicts.
 
 **Active tasks remaining:** 0  
-**Recently completed:** TF-05 (taxa legend CSS expand/collapse animation), TF-04 (map/sidebar taxon filter sync), TF-03 (remove gray/opacity from unselected filter rows), TF-01 (min height for image results), CON-INAT-07 (collapsible filters + scrollable results). Archived tasks: `docs/archive/phases/phase-1-inaturalist-completed.md`
+**Recently completed:** TF-06 (species filter default-all-selected fix, Select All/Clear All text styling, separators), TF-05 (taxa legend CSS expand/collapse animation), TF-04 (map/sidebar taxon filter sync). Archived tasks: `docs/archive/phases/phase-1-inaturalist-completed.md`
 
 ---
 
@@ -91,6 +92,7 @@ TBD
 | Common/Latin toggle dropped | Feb 19, 2026 | Decided against explicit toggle; species list shows common name primary + scientific secondary (dual-line). | No |
 | Top species search removed; "Filter Taxa" label | Feb 19, 2026 | Redundant with species search inside Filter Species dropdown. Section renamed from "Filter Observations" to "Filter Taxa" for hierarchy clarity. | No |
 | EditFiltersCard collapsible; results header matches ANIML | Feb 19, 2026 | CON-INAT-07: Added `collapsible` prop to `EditFiltersCard` (grid-template-rows animation). Results header uses plain gray "Observations / x–y of N" pattern (identical to ANIML ImageList header). Pagination uses `bg-gray-100 hover:bg-gray-200 rounded-md` pill buttons. Removed "Tip: filter via legend widget" text from filter section. | No |
+| Select All / Clear All text-only; gray when inactive; styled separator | Feb 24, 2026 | TF-06: Bulk actions in Filter Taxa, Filter Species, and legend use colored text (emerald when actionable, gray when inactive). Gray `|` separator between Select All and Clear All in all three locations. No pill/button backgrounds. | No |
 
 ---
 
@@ -106,6 +108,7 @@ TBD
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 24, 2026 | TF-06 | **Complete.** Species filter bug: selecting taxa with all species checked showed no results until individual species toggled. Removed `requiresSpeciesSelection` gating so empty species selection = all selected (matches map layer and useINaturalistObservations). Select All/Clear All reverted to text-only styling; Select All gray when already active, Clear All emerald when actionable. Added styled `|` separator between Select All and Clear All in Filter Taxa, Filter Species, and legend widget. | — |
 | Feb 20, 2026 | TF-05 | **Complete.** Added `grid-template-rows` CSS transition (200ms ease-in-out) to taxa legend expand/collapse. Content wrapper animates between `grid-rows-[1fr]` and `grid-rows-[0fr]`; inner div uses `overflow-hidden` to clip during animation. `border-b` on header is now conditional on `isExpanded` to avoid phantom bottom border when collapsed. | — |
 | Feb 20, 2026 | TF-04 | **Complete.** Fixed map/right-sidebar desync: removed global species reset from shared `toggleTaxon`; legend and sidebar taxon clicks now both apply taxa filter immediately without blanking map. Species filter remains independent; combined taxa + species filtering syncs correctly. | — |
  | Feb 20, 2026 | TF-03 | **Complete.** Removed `opacity-60` and `text-gray-500` from unselected filter rows in both Filter Taxa and Filter Species dropdowns. Unselected items now use `bg-white hover:bg-gray-50` + `text-gray-700`; the checkbox alone conveys selection state. Same fix applied to Taxa dropdown for parity. | — |

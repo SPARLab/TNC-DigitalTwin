@@ -1,7 +1,7 @@
 # Master Development Plan — V2 Digital Catalog
 
 **Created:** January 23, 2026  
-**Last Updated:** February 23, 2026  
+**Last Updated:** February 24, 2026  
 **Target Deadline:** February 20, 2026  
 **Status:** 🟡 In Progress
 
@@ -11,7 +11,7 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 118 / 133 complete (**89%**) |
+| **Active scope** | 119 / 134 complete (**89%**) |
 | **Active remaining** | 15 tasks |
 | **Phases complete** | 6 of 12 (0, 1, 2, 6, 10, 11) |
 
@@ -53,19 +53,19 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 118
+- **Complete:** 119
 - **Active remaining (Not Started + In Progress + Blocked):** 15
 - **Backlog (not in active scope):** 3
 - **Deferred:** 1
 - **Won't Do:** 2
-- **Total tracked rows:** 139
+- **Total tracked rows:** 140
 
 ### Per-Phase Task Counts
 
 | Phase | Name | Status | Complete | Active Remaining | Backlog | Deferred | Won't Do | Total Tracked | Branch |
 |-------|------|--------|----------|------------------|---------|----------|----------|---------------|--------|
 | 0 | Foundation | 🟢 Complete | 11 | 1 | 0 | 0 | 0 | 12 | `v2/foundation` |
-| 1 | iNaturalist | 🟢 Complete | 9 | 0 | 0 | 0 | 1 | 10 | `v2/inaturalist` |
+| 1 | iNaturalist | 🟢 Complete | 10 | 0 | 0 | 0 | 1 | 11 | `v2/inaturalist` |
 | 2 | ANiML | 🟢 Complete | 7 | 0 | 0 | 0 | 1 | 8 | `v2/animl` |
 | 3 | Dendra | 🟡 In Progress | 8 | 0 | 3 | 0 | 0 | 11 | `v2/dendra` |
 | 4 | DataOne | 🟡 In Progress | 15 | 1 | 0 | 0 | 0 | 16 | `v2/dataone` |
@@ -347,6 +347,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 24, 2026 | Phase 1 | **TF-06 complete.** iNaturalist species filter: taxa selected + all species checked now shows results (removed requiresSpeciesSelection gating). Select All/Clear All text-only styling with gray when inactive; styled `|` separator in Filter Taxa, Filter Species, and legend. Phase 1: 10/11 tasks complete. | Cursor |
 | Feb 23, 2026 | Phase 4 | **DataONE Save View + Map Layers sync refinements.** Save Dataset View auto-pins when unpinned; persists current filters + selected dataset. Map Layers child-view click passes featureId explicitly; sync effect resolves DataONE featureId only when view changes (preserves Back-to-list). Cluster click: removed custom highlight; safe auto-zoom when cluster stays visible. | Assistant |
 | Feb 23, 2026 | Phase 4 | **DataOne doc sync after merge.** Master plan remaining count aligned to phase doc: only D20-B02 backend task remains in Phase 4; CON-DONE-12/13 remain Phase 5 handoff tasks. | Assistant |
 | Feb 23, 2026 | Phase 4 | **CON-DONE-10 complete.** DataONE file-type filter (CSV/TIF/Imagery/Other): checklist UI, client-side filtering from files_summary.by_ext, wired through browse/map/saved views. Phase 4: 12/16 tasks complete. | Assistant |

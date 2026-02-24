@@ -80,6 +80,7 @@ export function INaturalistLegendWidget() {
               >
                 Select All
               </button>
+              <span id="inat-legend-actions-divider" className="text-gray-300 text-xs select-none">|</span>
               <button
                 id="inat-legend-clear-all"
                 onClick={clearAll}

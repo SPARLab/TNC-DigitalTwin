@@ -116,8 +116,8 @@ export function INaturalistBrowseTab() {
 
   const hasTaxaFilter = selectedTaxa.size > 0;
   const hasSpeciesFilter = selectedSpecies.size > 0 || excludeAllSpecies;
-  const hasExplicitSpeciesSelection = selectedSpecies.size > 0;
-  const requiresSpeciesSelection = hasTaxaFilter && !hasExplicitSpeciesSelection;
+  const isAllSpeciesSelected = !excludeAllSpecies && selectedSpecies.size === 0;
+  const isNoSpeciesSelected = excludeAllSpecies;
   const hasFilter = hasTaxaFilter || hasSpeciesFilter;
   const filterCount = hasTaxaFilter ? selectedTaxa.size : TAXON_CATEGORIES.length;
   const speciesFilterCount = hasSpeciesFilter ? selectedSpecies.size : speciesOptions.length;
@@ -261,6 +261,7 @@ export function INaturalistBrowseTab() {
                 >
                   Select All
                 </button>
+                <span id="inat-filter-actions-divider" className="text-gray-300 text-xs select-none">|</span>
                 <button
                   id="inat-filter-clear-all"
                   onClick={clearAll}
@@ -370,7 +371,12 @@ export function INaturalistBrowseTab() {
                     <button
                       id="inat-species-select-all"
                       onClick={selectAllSpecies}
-                      className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+                      disabled={isAllSpeciesSelected}
+                      className={`text-xs font-medium transition-colors ${
+                        isAllSpeciesSelected
+                          ? 'text-gray-400 cursor-not-allowed'
+                          : 'text-emerald-600 hover:text-emerald-700'
+                      }`}
                     >
                       Select All
                     </button>
@@ -378,7 +384,12 @@ export function INaturalistBrowseTab() {
                     <button
                       id="inat-species-clear-all"
                       onClick={clearAllSpecies}
-                      className="text-xs text-gray-500 hover:text-gray-700 font-medium"
+                      disabled={isNoSpeciesSelected}
+                      className={`text-xs font-medium transition-colors ${
+                        isNoSpeciesSelected
+                          ? 'text-gray-400 cursor-not-allowed'
+                          : 'text-emerald-600 hover:text-emerald-700'
+                      }`}
                     >
                       Clear All
                     </button>
@@ -530,16 +541,7 @@ export function INaturalistBrowseTab() {
           </div>
         )}
 
-        {requiresSpeciesSelection && !error && !showInitialLoading && (
-          <div
-            id="inat-species-selection-required-message"
-            className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800"
-          >
-            Select one or more species to view observations for the selected taxa.
-          </div>
-        )}
-
-        {!error && !showInitialLoading && !requiresSpeciesSelection && (
+        {!error && !showInitialLoading && (
           <div
             id="inat-results-count-row"
             className={`flex items-center justify-between py-1 px-1 ${showRefreshLoading ? 'opacity-80' : ''}`}
@@ -554,7 +556,7 @@ export function INaturalistBrowseTab() {
         )}
 
         {/* Scrollable observation cards container */}
-        {!error && !showInitialLoading && !requiresSpeciesSelection && (
+        {!error && !showInitialLoading && (
           <div id="inat-observation-cards-wrapper" className="flex-1 min-h-0 flex flex-col">
             <div id="inat-observation-cards" className={`flex-1 min-h-[400px] overflow-y-auto space-y-2 ${showRefreshLoading ? 'opacity-60' : ''}`}>
               {observations.map(obs => (
