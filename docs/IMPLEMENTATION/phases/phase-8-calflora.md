@@ -18,7 +18,7 @@
 | 8.4 | 🟢 Complete | 2026-02-23 12:45 PT | Implement observation list with cards | Cards show plant, county, date, and inline photo thumbnail when available. Card click now drives async map pan/zoom + marker focus. Pagination 20/page. Native status badge deferred (service lacks field). |
 | 8.5 | 🟢 Complete | 2026-02-23 12:45 PT | Implement observation detail view | Back nav, plant name, county, date, observer, elevation, coordinates, notes, external CalFlora link, Save View. |
 | 8.6 | 🟢 Complete | 2026-02-23 12:45 PT | Sync loading indicators (Map Layers ↔ map center ↔ right sidebar) | useCalFloraCacheStatus in registry; shared LoadingPrimitives; createBrowseLoadingScope. |
-| 8.7 | 🟢 Complete | 2026-02-23 12:45 PT | Render CalFlora observations as map markers | calFloraLayer.ts, IMPLEMENTED_LAYERS, useCalFloraMapBehavior, filter-synced, click-to-detail. |
+| 8.7 | 🟢 Complete | 2026-02-23 16:30 PT | Render CalFlora observations as map markers | calFloraLayer.ts, IMPLEMENTED_LAYERS, useCalFloraMapBehavior, filter-synced, click-to-detail, CalFlora map legend widget, ArcGIS popup on marker click, casing-safe objectId extraction. |
 | 8.8 | 🟢 Complete | 2026-02-23 12:45 PT | Wire Save View flow in detail | syncCalFloraFilters + createOrUpdateCalFloraFilteredView; Save View creates child views; hydrate filters + selected observation on view switch. |
 | 8.9 | ⚪ Not Started | — | Port and validate v1 CalFlora features | Audit v1 CalFloraSidebar/CalFloraDetailsSidebar for any features that need v2 parity |
 
@@ -208,6 +208,7 @@ Append `?f=json` to inspect fields and metadata.
 - [ ] Respect sidebar filters — only show matching observations
 - [ ] Color-code markers by native status (or configurable symbology)
 - [ ] Map click on marker opens observation detail in right sidebar
+- [ ] ArcGIS popup/tooltip on marker click (plant, county, date)
 - [ ] Clustering for dense areas (optional)
 
 ---
@@ -303,6 +304,7 @@ Append `?f=json` to inspect fields and metadata.
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 23, 2026 | 8.4, 8.7 | UX polish: card photo thumbnails; removed list-level "View on map" (card click drives async map pan/zoom); CalFlora map legend widget; ArcGIS popup on marker click; casing-safe objectId extraction for map→detail sync. | Cursor |
 | Feb 23, 2026 | 8.2–8.8 | Marked complete. Full CalFlora vertical slice shipped: sidebar shell, search/filter UI (plant, county, date, has photo), observation cards, detail view, loading sync, map markers, Save View flow. Native status/family/Cal-IPC deferred (service lacks fields). | Cursor |
 | Feb 23, 2026 | 8.8 | Added first-pass CalFlora Save View flow: `syncCalFloraFilters` + `createOrUpdateCalFloraFilteredView` in `LayerContext`; CalFlora Browse hydrates filters from active child view and Save View in detail now creates/selects child views. | Cursor |
 | Feb 23, 2026 | 8.1, 8.2 | Completed live service audit (field schema + performance baseline) and shipped initial v2 CalFlora vertical slice: external layer registration, adapter/provider wiring, Overview + Browse tabs, observation list/detail, map markers, marker click-to-detail sync. | Cursor |

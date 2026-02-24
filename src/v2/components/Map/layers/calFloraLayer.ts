@@ -33,5 +33,17 @@ export function createCalFloraLayer(options: {
         },
       },
     },
+    popupTemplate: {
+      title: '{plant}',
+      content: [
+        {
+          type: 'fields',
+          fieldInfos: [
+            { fieldName: 'county', label: 'County' },
+            { fieldName: 'date_', label: 'Observation Date' },
+          ],
+        },
+      ],
+    },
   });
 }

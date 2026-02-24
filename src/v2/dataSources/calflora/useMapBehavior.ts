@@ -9,6 +9,15 @@ import { useMap } from '../../context/MapContext';
 
 const CALFLORA_LAYER_ID = 'calflora-observations';
 
+function toObjectId(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) return value;
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  }
+  return null;
+}
+
 export function useCalFloraMapBehavior(
   getManagedLayer: (layerId: string) => Layer | undefined,
   pinnedLayers: PinnedLayer[],
@@ -61,9 +70,23 @@ export function useCalFloraMapBehavior(
         });
         if (!graphicHit) return;
 
-        const objectIdValue = graphicHit.graphic.attributes?.objectid;
-        const objectId = typeof objectIdValue === 'number' ? objectIdValue : Number(objectIdValue);
+        const attributes = graphicHit.graphic.attributes as Record<string, unknown> | undefined;
+        const layer = graphicHit.graphic.layer as FeatureLayer | undefined;
+        const objectIdField = layer?.objectIdField;
+
+        const objectId = toObjectId(
+          (objectIdField && attributes ? attributes[objectIdField] : undefined)
+          ?? attributes?.objectid
+          ?? attributes?.OBJECTID
+          ?? attributes?.ObjectId
+          ?? attributes?.objectId
+        );
         if (!objectId) return;
+        view.openPopup({
+          features: [graphicHit.graphic],
+          location: event.mapPoint ?? graphicHit.graphic.geometry,
+          updateLocationEnabled: true,
+        });
         const nextViewId = activeLayer?.layerId === CALFLORA_LAYER_ID ? activeLayer.viewId : undefined;
         activateLayer(CALFLORA_LAYER_ID, nextViewId, objectId);
       } catch (error) {

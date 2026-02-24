@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { CalFloraFilterProvider, useCalFloraFilter } from '../../context/CalFloraFilterContext';
 import { CalFloraOverviewTab } from '../../components/RightSidebar/CalFlora/CalFloraOverviewTab';
 import { CalFloraBrowseTab } from '../../components/RightSidebar/CalFlora/CalFloraBrowseTab';
+import { CalFloraLegendWidget } from '../../components/FloatingWidgets/CalFloraLegendWidget/CalFloraLegendWidget';
 import type { CacheStatus, DataSourceAdapter, OverviewTabProps } from '../types';
 
 function CalFloraOverviewWithCache({ onBrowseClick }: OverviewTabProps) {
@@ -30,5 +31,6 @@ export const calfloraAdapter: DataSourceAdapter = {
   layerIds: ['calflora-observations'],
   OverviewTab: CalFloraOverviewWithCache,
   BrowseTab: CalFloraBrowseTab,
+  LegendWidget: CalFloraLegendWidget,
   CacheProvider: CalFloraFilterProvider,
 };
