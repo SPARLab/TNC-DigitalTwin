@@ -118,11 +118,12 @@ export function useDataOneMapBehavior(
     setMapDatasetsCache,
     createMapLoadingScope,
   } = useDataOneFilter();
-  const { activateLayer, requestBrowseTab } = useLayers();
+  const { activateLayer, requestBrowseTab, getPinnedByLayerId } = useLayers();
   const { viewRef, getSpatialPolygonForLayer } = useMap();
   const spatialPolygon = getSpatialPolygonForLayer(LAYER_ID);
   const mapDatasetsByIdRef = useRef<Map<string, DataOneDataset>>(new Map());
   const populateVersionRef = useRef(0);
+  const lastPopupSelectionKeyRef = useRef<string | null>(null);
 
   const isPinned = pinnedLayers.some((p) => p.layerId === LAYER_ID);
   const isActive = activeLayer?.layerId === LAYER_ID;
@@ -241,8 +242,7 @@ export function useDataOneMapBehavior(
     if (!isOnMap) return;
     const view = viewRef.current;
     if (!view) return;
-    const mapLayer = getManagedLayer(LAYER_ID) as FeatureLayer | undefined;
-    if (!mapLayer) return;
+    if (!getManagedLayer(LAYER_ID)) return;
 
     const handler = view.on('click', async (event) => {
       try {
@@ -279,33 +279,17 @@ export function useDataOneMapBehavior(
             setMapSelectionDataoneIds(null);
           }
 
-          activateLayer(LAYER_ID, undefined, undefined);
+          const currentDataOneViewId = activeLayer?.layerId === LAYER_ID
+            ? activeLayer.viewId
+            : undefined;
+          activateLayer(LAYER_ID, currentDataOneViewId, undefined);
           requestBrowseTab();
           view.closePopup();
 
-          const currentScale = view.scale;
-          const currentZoom = view.zoom ?? 8;
-          const clusterMaxScale = (() => {
-            const reduction = (mapLayer as any).featureReduction;
-            if (reduction?.type !== 'cluster') return undefined;
-            const maxScaleValue = Number(reduction.maxScale);
-            return Number.isFinite(maxScaleValue) && maxScaleValue > 0 ? maxScaleValue : undefined;
-          })();
-
-          const canSafelyZoomCluster =
-            currentScale != null
-            && Number.isFinite(currentScale)
-            && clusterMaxScale != null
-            && currentScale > clusterMaxScale * 1.35;
-
-          const targetScale = canSafelyZoomCluster
-            ? Math.max(currentScale * 0.7, clusterMaxScale! * 1.15)
-            : currentScale;
-
+          // Aggregate click should re-center to the selected group without
+          // changing zoom level, so users can continue manual exploration.
           void view.goTo({
             target: graphicHit.graphic.geometry,
-            zoom: canSafelyZoomCluster ? currentZoom + 1 : currentZoom,
-            scale: targetScale,
           }, { duration: 450 });
           return;
         }
@@ -342,5 +326,71 @@ export function useDataOneMapBehavior(
     return () => {
       handler.remove();
     };
-  }, [isOnMap, viewRef, activateLayer, requestBrowseTab, getManagedLayer, setMapSelectionDataoneIds]);
+  }, [isOnMap, viewRef, activeLayer, activateLayer, requestBrowseTab, getManagedLayer, setMapSelectionDataoneIds]);
+
+  // When a saved DataONE child view (single dataset) is activated from Map Layers,
+  // focus the marker and open ArcGIS popup so native highlight is shown.
+  useEffect(() => {
+    if (!isOnMap) return;
+    if (activeLayer?.layerId !== LAYER_ID || !activeLayer.featureId || !activeLayer.viewId) return;
+    const view = viewRef.current;
+    if (!view) return;
+
+    const pinned = getPinnedByLayerId(LAYER_ID);
+    const activeView = pinned?.views?.find((viewEntry) => viewEntry.id === activeLayer.viewId);
+    const selectedDatasetId = activeView?.dataoneFilters?.selectedDatasetId;
+    const featureId = String(activeLayer.featureId);
+    if (!selectedDatasetId || selectedDatasetId !== featureId) return;
+
+    const selectionKey = `${activeLayer.viewId}:${featureId}`;
+    if (lastPopupSelectionKeyRef.current === selectionKey) return;
+
+    const mapLayer = getManagedLayer(LAYER_ID) as FeatureLayer | undefined;
+    if (!mapLayer) return;
+
+    let cancelled = false;
+    const escapedDataoneId = featureId.replace(/'/g, "''");
+
+    void mapLayer.queryFeatures({
+      where: `dataoneId = '${escapedDataoneId}'`,
+      outFields: ['*'],
+      returnGeometry: true,
+      num: 1,
+    })
+      .then(async (result) => {
+        if (cancelled) return;
+        const feature = result.features[0];
+        if (!feature) return;
+
+        const geometry = feature.geometry;
+        if (geometry?.type === 'point') {
+          const point = geometry as Point;
+          await view.goTo(
+            { center: [point.longitude, point.latitude], zoom: Math.max(view.zoom ?? 8, 14) },
+            { duration: 700 },
+          ).catch(() => {});
+          if (cancelled) return;
+          view.openPopup({
+            features: [feature],
+            location: point,
+          });
+          lastPopupSelectionKeyRef.current = selectionKey;
+          return;
+        }
+
+        if (geometry) {
+          await view.goTo({ target: geometry }, { duration: 700 }).catch(() => {});
+          if (cancelled) return;
+          view.openPopup({ features: [feature] });
+          lastPopupSelectionKeyRef.current = selectionKey;
+        }
+      })
+      .catch((error) => {
+        console.error('[DataONE View Activation] Failed to focus selected dataset feature', error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOnMap, activeLayer, viewRef, getManagedLayer, getPinnedByLayerId]);
 }
