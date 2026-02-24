@@ -21,7 +21,7 @@ import { useLayers } from '../../context/LayerContext';
 import { useMapLayers } from './useMapLayers';
 import { getAdapterForActiveLayer, useActiveCacheStatus } from '../../dataSources/registry';
 import { MapToasts } from './MapToasts';
-import { MapCenterLoadingOverlay } from '../shared/loading/LoadingPrimitives';
+import { MapCenterLoadingOverlay, MapRefreshPill } from '../shared/loading/LoadingPrimitives';
 import { DendraTimeSeriesPanel } from '../FloatingWidgets/DendraTimeSeriesPanel/DendraTimeSeriesPanel';
 
 /** Dangermond Preserve center coordinates */
@@ -60,8 +60,9 @@ export function MapContainer() {
   const LegendWidget = adapter?.LegendWidget;
   const FloatingPanel = adapter?.FloatingPanel;
 
-  // Cache/loading status for the active data source (generic loading overlay)
+  // Cache/loading status for the active data source
   const cacheStatus = useActiveCacheStatus(adapter?.id ?? activeLayer?.dataSource);
+  // Full overlay only on first load (data not yet loaded)
   const showLoadingOverlay = !!activeLayer
     && (cacheStatus?.loading ?? false)
     && ((adapter?.id === 'drone') || !(cacheStatus?.dataLoaded ?? false));
@@ -69,6 +70,9 @@ export function MapContainer() {
     ? 'Loading camera trap data...'
     : (adapter?.id === 'drone' ? 'Loading drone imagery...' : `Loading ${activeLayer?.name ?? 'data'}...`);
   const loadingOverlayMessage = cacheStatus?.loadingMessage ?? defaultLoadingOverlayMessage;
+  // Subtle bottom-left pill for subsequent re-renders (pan/zoom)
+  const showRefreshPill = !showLoadingOverlay && (cacheStatus?.isRefreshing ?? false);
+  const refreshPillMessage = cacheStatus?.refreshMessage ?? 'Updating...';
 
   // Sync pinned/active layers with ArcGIS layers
   useMapLayers();
@@ -313,12 +317,17 @@ export function MapContainer() {
       {/* Dendra charts persist independently of active layer adapter */}
       <DendraTimeSeriesPanel />
 
-      {/* Loading overlay — shown when active data source is fetching */}
+      {/* Full overlay — first load only (data not yet cached) */}
       {showLoadingOverlay && (
         <MapCenterLoadingOverlay
           id="map-loading-overlay"
           message={loadingOverlayMessage}
         />
+      )}
+
+      {/* Subtle pill — subsequent re-renders during pan/zoom */}
+      {showRefreshPill && (
+        <MapRefreshPill id="map-refresh-pill" message={refreshPillMessage} />
       )}
 
       {/* Toast notifications (layer not implemented, etc.) */}

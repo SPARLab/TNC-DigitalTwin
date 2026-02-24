@@ -17,4 +17,7 @@ export const loadingTheme = {
   mapOverlayCard: 'bg-white px-4 py-3 rounded-lg shadow-md flex items-center gap-2',
   mapOverlaySpinner: 'w-5 h-5 animate-spin text-blue-600',
   mapOverlayText: 'text-sm text-gray-700 font-medium',
+  mapRefreshPill: 'absolute bottom-4 left-4 z-20 flex items-center gap-1.5 rounded-lg bg-white/90 px-3 py-1.5 shadow-md border border-gray-200 pointer-events-none',
+  mapRefreshSpinner: 'w-3.5 h-3.5 animate-spin text-gray-500',
+  mapRefreshText: 'text-xs text-gray-600',
 } as const;

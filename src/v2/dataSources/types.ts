@@ -27,6 +27,10 @@ export interface CacheStatus {
   dataLoaded: boolean;
   /** Optional source-specific message for center map loading overlay. */
   loadingMessage?: string;
+  /** True when the layer is re-rendering (pan/zoom) after initial data load. */
+  isRefreshing?: boolean;
+  /** Message for the subtle bottom-left refresh indicator (pan/zoom re-renders). */
+  refreshMessage?: string;
   /** Trigger data fetch. Idempotent — no-op if already loaded or in-flight. */
   warmCache: () => void;
 }

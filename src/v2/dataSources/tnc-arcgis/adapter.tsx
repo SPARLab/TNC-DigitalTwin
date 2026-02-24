@@ -35,10 +35,15 @@ function TNCArcGISOverviewWithCache({ onBrowseClick }: OverviewTabProps) {
 
 export function useTNCArcGISCacheStatus(): CacheStatus {
   const { loading, dataLoaded, warmCache, isLayerRendering, renderPhase, layerKind } = useTNCArcGIS();
+  const isFirstLoad = !dataLoaded;
+  const isRefreshing = dataLoaded && isLayerRendering;
+  const message = isLayerRendering ? getTNCArcGISLoadingMessage(layerKind, renderPhase) : undefined;
   return {
-    loading: loading || isLayerRendering,
-    dataLoaded: dataLoaded && !isLayerRendering,
-    loadingMessage: isLayerRendering ? getTNCArcGISLoadingMessage(layerKind, renderPhase) : undefined,
+    loading: loading || (isFirstLoad && isLayerRendering),
+    dataLoaded,
+    loadingMessage: isFirstLoad ? message : undefined,
+    isRefreshing,
+    refreshMessage: isRefreshing ? message : undefined,
     warmCache,
   };
 }
