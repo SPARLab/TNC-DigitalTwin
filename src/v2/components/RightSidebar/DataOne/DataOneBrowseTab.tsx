@@ -92,6 +92,7 @@ export function DataOneBrowseTab() {
   const {
     activeLayer,
     activateLayer,
+    pinLayer,
     lastEditFiltersRequest,
     lastFiltersClearedTimestamp,
     getPinnedByLayerId,
@@ -395,16 +396,28 @@ export function DataOneBrowseTab() {
       return 'Unable to save view: DataONE layer is not active.';
     }
 
+    const pinnedDataOneLayer = getPinnedByLayerId(activeLayer.layerId);
+    if (!pinnedDataOneLayer) {
+      pinLayer(activeLayer.layerId);
+    }
+
     const currentViewIsAssigned = Boolean(currentViewSavedDatasetId);
     const targetViewId = currentViewIsAssigned ? undefined : activeLayer.viewId;
 
     const savedViewId = createOrUpdateDataOneFilteredView(
       activeLayer.layerId,
       {
+        searchText: appliedSearchTerm || undefined,
+        tncCategory: selectedCategories[0],
+        tncCategories: selectedCategories.length > 0 ? selectedCategories : undefined,
+        fileTypes: selectedFileTypes.length > 0 ? selectedFileTypes : undefined,
+        startDate: toStartDate(startYear),
+        endDate: toEndDate(endYear),
+        author: authorFilter.trim() || undefined,
         selectedDatasetId: dataset.dataoneId,
         selectedDatasetTitle: dataset.title,
       },
-      1,
+      totalCount,
       targetViewId
     );
 

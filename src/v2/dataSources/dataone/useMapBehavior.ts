@@ -6,12 +6,10 @@
 // ============================================================================
 
 import { useEffect, useRef } from 'react';
-import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
 import Polygon from '@arcgis/core/geometry/Polygon';
 import Extent from '@arcgis/core/geometry/Extent';
 import * as geometryEngine from '@arcgis/core/geometry/geometryEngine';
-import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
 import type Layer from '@arcgis/core/layers/Layer';
 import type FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import type { DataOneDataset } from '../../../types/dataone';
@@ -26,16 +24,6 @@ import { isPointInsideSpatialPolygon } from '../../utils/spatialQuery';
 const LAYER_ID = 'dataone-datasets';
 const MAP_LAYER_ID = 'v2-dataone-datasets';
 const MAX_MAP_SELECTION_IDS = 2000;
-
-const CLUSTER_HIGHLIGHT_SYMBOL = new SimpleMarkerSymbol({
-  style: 'circle',
-  size: 62,
-  color: [59, 130, 246, 0.10],  // blue-500 @ 10% fill
-  outline: {
-    color: [59, 130, 246, 0.80], // blue-500 @ 80%
-    width: 2.5,
-  },
-});
 
 function getAggregateCount(graphic: __esri.Graphic): number {
   const attrs = graphic.attributes ?? {};
@@ -126,7 +114,6 @@ export function useDataOneMapBehavior(
     dataLoaded,
     browseFilters,
     aggregationMode,
-    mapSelectionDataoneIds,
     setMapSelectionDataoneIds,
     setMapDatasetsCache,
     createMapLoadingScope,
@@ -135,7 +122,6 @@ export function useDataOneMapBehavior(
   const { viewRef, getSpatialPolygonForLayer } = useMap();
   const spatialPolygon = getSpatialPolygonForLayer(LAYER_ID);
   const mapDatasetsByIdRef = useRef<Map<string, DataOneDataset>>(new Map());
-  const highlightGraphicRef = useRef<__esri.Graphic | null>(null);
   const populateVersionRef = useRef(0);
 
   const isPinned = pinnedLayers.some((p) => p.layerId === LAYER_ID);
@@ -145,15 +131,6 @@ export function useDataOneMapBehavior(
   useEffect(() => {
     if (isOnMap) warmCache();
   }, [isOnMap, warmCache]);
-
-  // Clear the map highlight ring when the sidebar map-selection filter is dismissed.
-  useEffect(() => {
-    if (mapSelectionDataoneIds != null) return;
-    const view = viewRef.current;
-    if (!view || !highlightGraphicRef.current) return;
-    view.graphics.remove(highlightGraphicRef.current);
-    highlightGraphicRef.current = null;
-  }, [mapSelectionDataoneIds, viewRef]);
 
   // Re-query map points whenever DataONE browse filters change.
   useEffect(() => {
@@ -267,23 +244,6 @@ export function useDataOneMapBehavior(
     const mapLayer = getManagedLayer(LAYER_ID) as FeatureLayer | undefined;
     if (!mapLayer) return;
 
-    function clearHighlight() {
-      if (highlightGraphicRef.current) {
-        view!.graphics.remove(highlightGraphicRef.current);
-        highlightGraphicRef.current = null;
-      }
-    }
-
-    function showHighlight(geometry: __esri.Geometry) {
-      clearHighlight();
-      const ring = new Graphic({
-        geometry,
-        symbol: CLUSTER_HIGHLIGHT_SYMBOL,
-      });
-      view!.graphics.add(ring);
-      highlightGraphicRef.current = ring;
-    }
-
     const handler = view.on('click', async (event) => {
       try {
         const response = await view.hitTest(event);
@@ -292,9 +252,6 @@ export function useDataOneMapBehavior(
             result.type === 'graphic' && result.graphic.layer?.id === MAP_LAYER_ID,
         );
         if (!graphicHit) return;
-
-        // Always clear previous selection highlight before handling new click.
-        clearHighlight();
 
         const aggregateCount = getAggregateCount(graphicHit.graphic);
 
@@ -326,13 +283,29 @@ export function useDataOneMapBehavior(
           requestBrowseTab();
           view.closePopup();
 
-          if (graphicHit.graphic.geometry) {
-            showHighlight(graphicHit.graphic.geometry);
-          }
+          const currentScale = view.scale;
+          const currentZoom = view.zoom ?? 8;
+          const clusterMaxScale = (() => {
+            const reduction = (mapLayer as any).featureReduction;
+            if (reduction?.type !== 'cluster') return undefined;
+            const maxScaleValue = Number(reduction.maxScale);
+            return Number.isFinite(maxScaleValue) && maxScaleValue > 0 ? maxScaleValue : undefined;
+          })();
+
+          const canSafelyZoomCluster =
+            currentScale != null
+            && Number.isFinite(currentScale)
+            && clusterMaxScale != null
+            && currentScale > clusterMaxScale * 1.35;
+
+          const targetScale = canSafelyZoomCluster
+            ? Math.max(currentScale * 0.7, clusterMaxScale! * 1.15)
+            : currentScale;
 
           void view.goTo({
             target: graphicHit.graphic.geometry,
-            zoom: (view.zoom ?? 8) + 2,
+            zoom: canSafelyZoomCluster ? currentZoom + 1 : currentZoom,
+            scale: targetScale,
           }, { duration: 450 });
           return;
         }
@@ -368,7 +341,6 @@ export function useDataOneMapBehavior(
 
     return () => {
       handler.remove();
-      clearHighlight();
     };
   }, [isOnMap, viewRef, activateLayer, requestBrowseTab, getManagedLayer, setMapSelectionDataoneIds]);
 }

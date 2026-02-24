@@ -275,7 +275,14 @@ export function MapLayersWidget() {
               onRemove={unpinLayer}
               onReorder={reorderLayers}
               onActivate={activateLayer}
-              onActivateView={(layerId, viewId) => activateLayer(layerId, viewId)}
+              onActivateView={(layerId, viewId) => {
+                const pinned = pinnedLayers.find(p => p.layerId === layerId);
+                const view = viewId ? pinned?.views?.find(v => v.id === viewId) : undefined;
+                const featureId = layerId === 'dataone-datasets'
+                  ? view?.dataoneFilters?.selectedDatasetId
+                  : undefined;
+                activateLayer(layerId, viewId, featureId);
+              }}
               onEditFilters={handleEditFilters}
               onClearFilters={handleClearFilters}
               onToggleChildView={toggleChildVisibility}

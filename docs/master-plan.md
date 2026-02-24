@@ -309,6 +309,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 23, 2026 | Phase 4 | **DataONE Save View + Map Layers sync refinements.** Save Dataset View auto-pins when unpinned; persists current filters + selected dataset. Map Layers child-view click passes featureId explicitly; sync effect resolves DataONE featureId only when view changes (preserves Back-to-list). Cluster click: removed custom highlight; safe auto-zoom when cluster stays visible. | Assistant |
 | Feb 23, 2026 | Phase 4 | **DataOne doc sync after merge.** Master plan remaining count aligned to phase doc: only D20-B02 backend task remains in Phase 4; CON-DONE-12/13 remain Phase 5 handoff tasks. | Assistant |
 | Feb 23, 2026 | Phase 4 | **CON-DONE-10 complete.** DataONE file-type filter (CSV/TIF/Imagery/Other): checklist UI, client-side filtering from files_summary.by_ext, wired through browse/map/saved views. Phase 4: 12/16 tasks complete. | Assistant |
 | Feb 23, 2026 | Phase 4 | **CON-DONE-09 complete.** DataONE search by title + abstract + keywords: when searchText present, queries use Layer 1 with OR predicate; browse placeholder updated. Phase 4: 11/16 tasks complete. | Assistant |

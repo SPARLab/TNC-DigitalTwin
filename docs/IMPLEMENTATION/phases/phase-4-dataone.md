@@ -111,9 +111,12 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 
 **Implementation Notes (Feb 20, 2026):**
 - Added map-selection flow for cluster clicks (`mapSelectionDataoneIds`) so cluster clicks drive sidebar filtering
-- Added visual synchronization aid: blue highlight ring on selected cluster
 - Preserved single-point click behavior: clicking a non-cluster marker opens dataset detail directly
 - Moved large-cluster sidebar filtering to client-side cache matching (to avoid 414 URI Too Large when cluster selections are very large)
+
+**Refinements (Feb 23, 2026):**
+- Removed custom cluster highlight ring; rely on ArcGIS native highlight only
+- Cluster click auto-zoom: only zoom when cluster can stay visible (scale guard vs cluster maxScale); otherwise center without zoom
 
 **Cluster↔Dataset Navigation Fix (Feb 20, 2026):**
 - Fixed bug where cluster → dataset → cluster → dataset left second dataset click not opening detail
@@ -270,7 +273,13 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 - **Unsave:** Clears `selectedDatasetId` from current view; next save overwrites that view
 - Sync effect does not write dataset assignment fields; only Save/Unsave handlers do
 
-**Files:** `DataOneBrowseTab.tsx`, `LayerContext.tsx`
+**Refinements (Feb 23, 2026):**
+- Save Dataset View now auto-pins DataONE layer when unpinned (ensures Map Layers sync works)
+- Save persists current browse filters (search, categories, file types, dates, author) plus selected dataset
+- Map Layers child-view click: MapLayersWidget passes `selectedDatasetId` as featureId; sync effect resolves DataONE featureId only when view actually changes (preserves Back-to-list)
+- Fix: avoid resolving featureId in activateLayer for DataONE (broke Back-to-list); explicit pass from widget + guarded sync effect
+
+**Files:** `DataOneBrowseTab.tsx`, `LayerContext.tsx`, `MapLayersWidget.tsx`, `useMapBehavior.ts`
 
 **Acceptance Criteria:**
 - [x] Save on unassigned view overwrites current view
@@ -485,6 +494,7 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 23, 2026 | **DataONE Save View + Map Layers sync refinements.** Save Dataset View: auto-pin when unpinned; persist current browse filters + selected dataset. Map Layers child-view click: explicit featureId pass from MapLayersWidget; sync effect resolves DataONE featureId only when view changes (preserves Back-to-list). Cluster click: removed custom highlight ring; safe auto-zoom (only when cluster stays visible). | Assistant |
 | Feb 23, 2026 | Quick Task Summary sync: added D20-B02 (Dan backend follow-up) so phase progress reflects 15/16 accurately; CON-DONE-12/13 remain tracked in Phase 5 handoff. | Assistant |
 | Feb 23, 2026 | CON-DONE-15 marked complete. Spatial query (draw/query tools) filters DataONE datasets by extent; verified working with SpatialQuerySection. | User |
 | Feb 23, 2026 | CON-DONE-10 marked complete. File-type filter (CSV/TIF/Imagery/Other) checklist, client-side filtering from files_summary.by_ext, wired through browse/map/saved views. | Assistant |
