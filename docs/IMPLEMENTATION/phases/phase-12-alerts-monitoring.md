@@ -1,7 +1,7 @@
 # Phase 12: Alerts and Monitoring
 
-**Status:** ⚪ Not Started  
-**Progress:** 0 / 8 tasks  
+**Status:** 🟡 In Progress  
+**Progress:** 3 / 8 tasks  
 **Branch:** `v2/alerts-monitoring`  
 **Depends On:** Phase 0 (Foundation); Phase 2 (ANiML); Phase 4 (DataONE); Phase 1 (iNaturalist)  
 **Owner:** TBD
@@ -12,9 +12,9 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| 12.1 | ⚪ Not Started | Feb 25, 2026 | Define alert taxonomy and mock payload schema | Standardize alert types: camera novelty, water threshold breach, iNaturalist range anomaly |
-| 12.2 | ⚪ Not Started | Feb 25, 2026 | Add header notification bell and badge shell | Bell icon in app header with unread count badge and clear empty state |
-| 12.3 | ⚪ Not Started | Feb 25, 2026 | Build alerts panel mock-up (list + detail) | Right-side panel or popover with severity, source, time, and quick actions |
+| 12.1 | 🟢 Complete | Feb 25, 2026 09:46 AM | Define alert taxonomy and mock payload schema | Added normalized alert types + severity defaults + seed payloads in `src/v2/alerts/` |
+| 12.2 | 🟢 Complete | Feb 25, 2026 09:46 AM | Add header notification bell and badge shell | Added header bell + unread badge shell in `V2Header` with static unread count and zero-badge state |
+| 12.3 | 🟢 Complete | Feb 25, 2026 10:01 AM | Build alerts panel mock-up (list + detail) | Added bell dropdown panel with mocked list/detail views, relative timestamps, and quick actions |
 | 12.4 | ⚪ Not Started | Feb 25, 2026 | Mock camera trap novelty alerts | Simulate detections for previously unseen species from camera traps |
 | 12.5 | ⚪ Not Started | Feb 25, 2026 | Mock water-level threshold alerts | Simulate values outside expected min/max ranges and severity tiers |
 | 12.6 | ⚪ Not Started | Feb 25, 2026 | Mock iNaturalist out-of-range alerts | Simulate observations outside expected species range envelope |
@@ -110,14 +110,18 @@ Define a shared mock schema so all three sources render through one UI:
 **Goal:** Align alert categories, severities, and fields so all mock events use one rendering contract.
 
 **Acceptance Criteria:**
-- [ ] Three alert types are documented and represented in TypeScript types/interfaces
-- [ ] Severity mapping rules are documented per alert type
-- [ ] Example payloads exist for each type
-- [ ] UI components can consume one normalized alert shape
+- [x] Three alert types are documented and represented in TypeScript types/interfaces
+- [x] Severity mapping rules are documented per alert type
+- [x] Example payloads exist for each type
+- [x] UI components can consume one normalized alert shape
 
 **Out of Scope:**
 - Real backend event ingestion
 - Persistent storage beyond local/session mock state
+
+**Implementation Notes (Feb 25, 2026):**
+- Added `src/v2/alerts/types.ts` with `AlertEvent` normalized schema + taxonomy unions and `DEFAULT_SEVERITY_BY_TYPE`.
+- Added `src/v2/alerts/mockAlerts.ts` with representative payloads for camera novelty, water threshold breach, and iNaturalist range anomaly.
 
 ---
 
@@ -126,13 +130,14 @@ Define a shared mock schema so all three sources render through one UI:
 **Goal:** Introduce a bell icon in the app header that indicates unread alert count.
 
 **Acceptance Criteria:**
-- [ ] Bell icon appears in header and matches design system spacing
-- [ ] Unread badge count shown when unread > 0
-- [ ] Zero state does not display numeric badge
-- [ ] Button has keyboard and screen-reader support
+- [x] Bell icon appears in header and matches design system spacing
+- [x] Unread badge count shown when unread > 0
+- [x] Zero state does not display numeric badge
+- [x] Button has keyboard and screen-reader support
 
 **Implementation Notes:**
 - Start with static count, then wire to mock store in Task 12.7.
+- Added bell + badge shell in `src/v2/components/Header/V2Header.tsx` using static unread count derived from `MOCK_ALERTS`.
 
 ---
 
@@ -141,15 +146,19 @@ Define a shared mock schema so all three sources render through one UI:
 **Goal:** Provide a usable panel for browsing and triaging alerts.
 
 **Acceptance Criteria:**
-- [ ] Bell click opens and closes panel consistently
-- [ ] List displays source, severity, title, and relative time
-- [ ] Selecting an alert reveals expanded detail text and key metadata
-- [ ] Empty state copy is clear and non-blocking
-- [ ] Mobile and narrow widths remain readable
+- [x] Bell click opens and closes panel consistently
+- [x] List displays source, severity, title, and relative time
+- [x] Selecting an alert reveals expanded detail text and key metadata
+- [x] Empty state copy is clear and non-blocking
+- [x] Mobile and narrow widths remain readable
 
 **UI Notes:**
 - Keep list row design compact and scannable.
 - Use clear color/token mapping for severity states.
+
+**Implementation Notes (Feb 25, 2026):**
+- Implemented dropdown/panel in `src/v2/components/Header/V2Header.tsx` with list + detail split, relative timestamps, and severity pills.
+- Added mock quick actions (`Mark read`, `Mark all read`, `View source` placeholder), unread indicators, keyboard Escape close, and outside-click close behavior.
 
 ---
 

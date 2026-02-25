@@ -1,7 +1,7 @@
 # Master Development Plan — V2 Digital Catalog
 
 **Created:** January 23, 2026  
-**Last Updated:** February 24, 2026  
+**Last Updated:** February 25, 2026  
 **Target Deadline:** February 20, 2026  
 **Status:** 🟡 In Progress
 
@@ -11,12 +11,12 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 120 / 135 complete (**89%**) |
-| **Active remaining** | 15 tasks |
-| **Phases complete** | 6 of 12 (0, 1, 2, 6, 10, 11) |
+| **Active scope** | 123 / 143 complete (**86%**) |
+| **Active remaining** | 20 tasks |
+| **Phases complete** | 6 of 13 (0, 1, 2, 6, 10, 11) |
 
 ```
-████████████████████████████████████████░░░░░  89%
+██████████████████████████████████████░░░░░░  86%
 ```
 
 ---
@@ -53,12 +53,12 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 120
-- **Active remaining (Not Started + In Progress + Blocked):** 15
+- **Complete:** 123
+- **Active remaining (Not Started + In Progress + Blocked):** 20
 - **Backlog (not in active scope):** 3
 - **Deferred:** 1
 - **Won't Do:** 2
-- **Total tracked rows:** 141
+- **Total tracked rows:** 149
 
 ### Per-Phase Task Counts
 
@@ -76,6 +76,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
 | 10 | DroneDeploy | 🟢 Complete | 4 | 0 | 0 | 0 | 0 | 4 | `v2/dronedeploy` |
 | 11 | MOTUS | 🟢 Complete | 9 | 0 | 0 | 0 | 0 | 9 | `v2/motus` |
+| 12 | Alerts & Monitoring | 🟡 In Progress | 3 | 5 | 0 | 0 | 0 | 8 | `v2/alerts-monitoring` |
 
 **Status Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
 
@@ -99,6 +100,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 9 | [phase-9-gbif.md](IMPLEMENTATION/phases/phase-9-gbif.md) |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) |
 | 11 | [phase-11-motus.md](IMPLEMENTATION/phases/phase-11-motus.md) |
+| 12 | [phase-12-alerts-monitoring.md](IMPLEMENTATION/phases/phase-12-alerts-monitoring.md) |
 
 ---
 
@@ -138,6 +140,7 @@ Phase 0: Foundation
 - Each phase has its own branch, merged to `v2/main` when complete
 - Phase 5 requires all data sources to be functional
 - Phase 7 is the final consistency pass
+- Phase 12 (Alerts & Monitoring) depends on Phase 0, 1, 2, 4; can run in parallel with Phase 7
 
 ---
 
@@ -347,6 +350,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 25, 2026 | Phase 12 | **Tasks 12.1–12.3 complete.** Alert taxonomy and mock payload schema; header notification bell and badge shell; alerts dropdown panel with list + detail, severity pills, relative timestamps, and quick actions (Mark read, Mark all read, View source placeholder). Phase 12: 3/8 tasks complete. | Cursor |
 | Feb 24, 2026 | Phase 3 | **D24-01 complete.** Dendra chart panel UX polish: larger initial size, bottom inset (~1–2rem from map edge), time slider data shadow restored, x-axis/slider spacing tuned. Phase 3: 9/12 tasks complete. | Cursor |
 | Feb 24, 2026 | Phase 1 | **TF-06 complete.** iNaturalist species filter: taxa selected + all species checked now shows results (removed requiresSpeciesSelection gating). Select All/Clear All text-only styling with gray when inactive; styled `|` separator in Filter Taxa, Filter Species, and legend. Phase 1: 10/11 tasks complete. | Cursor |
 | Feb 23, 2026 | Phase 4 | **DataONE Save View + Map Layers sync refinements.** Save Dataset View auto-pins when unpinned; persists current filters + selected dataset. Map Layers child-view click passes featureId explicitly; sync effect resolves DataONE featureId only when view changes (preserves Back-to-list). Cluster click: removed custom highlight; safe auto-zoom when cluster stays visible. | Assistant |
