@@ -18,7 +18,7 @@ export function ExportSummary({ layers }: ExportSummaryProps) {
   return (
     <section
       id="export-builder-summary-section"
-      className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+      className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
       aria-labelledby="export-builder-summary-title"
     >
       <h3 id="export-builder-summary-title" className="text-sm font-semibold text-slate-800">
@@ -65,7 +65,9 @@ export function ExportSummary({ layers }: ExportSummaryProps) {
             </span>
             <span id="export-builder-summary-total-value" className="text-sm font-bold text-emerald-800">
               {hasUnavailableEstimates
-                ? `~${formatEstimatedSize(totalEstimatedBytes)} + unknown`
+                ? (totalEstimatedBytes > 0
+                    ? `~${formatEstimatedSize(totalEstimatedBytes)} + pending`
+                    : 'Estimate pending')
                 : `~${formatEstimatedSize(totalEstimatedBytes)}`}
             </span>
           </div>
