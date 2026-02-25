@@ -5,15 +5,8 @@
 // no data-source-specific imports needed in this file.
 // ============================================================================
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { ExternalLink } from 'lucide-react';
-import Map from '@arcgis/core/Map';
-import MapView from '@arcgis/core/views/MapView';
-import SceneView from '@arcgis/core/views/SceneView';
-import ElevationLayer from '@arcgis/core/layers/ElevationLayer';
-import PointCloudLayer from '@arcgis/core/layers/PointCloudLayer';
-import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
-import SketchViewModel from '@arcgis/core/widgets/Sketch/SketchViewModel';
 import { MapLayersWidget } from '../FloatingWidgets/MapLayersWidget/MapLayersWidget';
 import { ViewModeToggle } from './ViewModeToggle';
 import { useMap } from '../../context/MapContext';
@@ -23,18 +16,8 @@ import { getAdapterForActiveLayer, useActiveCacheStatus } from '../../dataSource
 import { MapToasts } from './MapToasts';
 import { MapCenterLoadingOverlay, MapRefreshPill } from '../shared/loading/LoadingPrimitives';
 import { DendraTimeSeriesPanel } from '../FloatingWidgets/DendraTimeSeriesPanel/DendraTimeSeriesPanel';
-
-/** Dangermond Preserve center coordinates */
-const PRESERVE_CENTER: [number, number] = [-120.47, 34.47];
-const INITIAL_ZOOM = 12;
-
-/** Saved camera state for smooth 2D ↔ 3D transitions */
-interface SavedViewState {
-  center: [number, number];
-  zoom: number;
-  tilt?: number;
-  heading?: number;
-}
+import { useArcgisViewLifecycle } from './internal/useArcgisViewLifecycle';
+import { useDataOnePreviewStatus } from './internal/useDataOnePreviewStatus';
 
 export function MapContainer() {
   const mapDivRef = useRef<HTMLDivElement>(null);
@@ -49,11 +32,7 @@ export function MapContainer() {
     closeDataOnePreview,
   } = useMap();
   const { activeLayer } = useLayers();
-  const [previewStatus, setPreviewStatus] = useState<'loading' | 'loaded' | 'error' | 'blocked'>('loading');
-  const savedViewStateRef = useRef<SavedViewState>({
-    center: PRESERVE_CENTER,
-    zoom: INITIAL_ZOOM,
-  });
+  const { previewStatus, markPreviewLoaded, markPreviewErrored } = useDataOnePreviewStatus(dataOnePreview);
 
   // Adapter lookup supports layer-specific overrides (for example, DroneDeploy dataset-193).
   const adapter = getAdapterForActiveLayer(activeLayer ?? null);
@@ -77,140 +56,15 @@ export function MapContainer() {
   // Sync pinned/active layers with ArcGIS layers
   useMapLayers();
 
-  // Initialize ArcGIS Map + View — re-runs when viewMode changes (2D ↔ 3D)
-  useEffect(() => {
-    if (!mapDivRef.current) return;
-
-    // Capture position from outgoing view before destroying it
-    const prev = viewRef.current;
-    if (prev?.center) {
-      const { longitude, latitude } = prev.center;
-      savedViewStateRef.current = {
-        center: [longitude ?? PRESERVE_CENTER[0], latitude ?? PRESERVE_CENTER[1]],
-        zoom: prev.zoom ?? INITIAL_ZOOM,
-        tilt: (prev as SceneView).camera?.tilt,
-        heading: (prev as SceneView).camera?.heading,
-      };
-    }
-
-    const is3D = viewMode === '3d';
-    const saved = savedViewStateRef.current;
-
-    const map = new Map({
-      basemap: is3D ? 'satellite' : 'topo-vector',
-      ...(is3D && { ground: 'world-elevation' }),
-    });
-
-    if (is3D) {
-      map.ground.layers.add(new ElevationLayer({
-        url: 'https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer',
-      }));
-
-      map.add(new PointCloudLayer({
-        url: 'https://tiles.arcgis.com/tiles/6DIQcwlPy8knb6sg/arcgis/rest/services/All_Aeroptic_ColorizedPointCloud/SceneServer',
-        title: 'Dangermond Preserve LiDAR Point Cloud',
-        renderer: {
-          type: 'point-cloud-rgb',
-          field: 'RGB',
-          pointSizeAlgorithm: { type: 'fixed-size', useRealWorldSymbolSizes: false, size: 3 },
-        } as __esri.PointCloudRendererProperties,
-        elevationInfo: { mode: 'absolute-height' },
-      }));
-    }
-
-    const highlightLayer = new GraphicsLayer({ id: 'v2-highlight-layer' });
-    map.add(highlightLayer);
-    highlightLayerRef.current = highlightLayer;
-
-    const spatialQueryLayer = new GraphicsLayer({ id: 'v2-spatial-query-layer' });
-    map.add(spatialQueryLayer);
-    spatialQueryLayerRef.current = spatialQueryLayer;
-
-    const view = is3D
-      ? new SceneView({
-          container: mapDivRef.current,
-          map,
-          camera: {
-            position: { x: saved.center[0], y: saved.center[1], z: 2000 },
-            tilt: saved.tilt ?? 60,
-            heading: saved.heading ?? 0,
-          },
-          qualityProfile: 'high',
-          environment: {
-            atmosphereEnabled: true,
-            lighting: { date: new Date(), directShadowsEnabled: true },
-          },
-          ui: { components: ['attribution', 'navigation-toggle', 'compass', 'zoom'] },
-          padding: { top: 52, right: 8, bottom: 8, left: 8 },
-        })
-      : new MapView({
-          container: mapDivRef.current,
-          map,
-          center: saved.center,
-          zoom: saved.zoom,
-          ui: { components: ['attribution', 'compass', 'zoom'] },
-          padding: { top: 52, right: 8, bottom: 8, left: 8 },
-        });
-
-    viewRef.current = view;
-
-    spatialSketchViewModelRef.current = new SketchViewModel({
-      view: view as MapView,
-      layer: spatialQueryLayer,
-      polygonSymbol: {
-        type: 'simple-fill',
-        color: [46, 125, 50, 0.14],
-        outline: {
-          color: [46, 125, 50, 0.95],
-          width: 2,
-        },
-      },
-      defaultUpdateOptions: {
-        tool: 'reshape',
-      },
-    });
-
-    view.when(() => {
-      if (view.ui.find('zoom')) view.ui.move('zoom', 'top-right');
-      if (view.ui.find('compass')) view.ui.move('compass', 'top-right');
-      if (view.ui.find('navigation-toggle')) view.ui.move('navigation-toggle', 'top-right');
-      if (view.ui.find('attribution')) view.ui.move('attribution', 'top-right');
-      if (view.popup) {
-        view.popup.dockEnabled = false;
-        view.popup.autoOpenEnabled = false;
-      }
-      setMapReady();
-    });
-
-    return () => {
-      // Snapshot position before teardown
-      const outgoing = viewRef.current;
-      if (outgoing?.center) {
-        const { longitude, latitude } = outgoing.center;
-        savedViewStateRef.current = {
-          center: [longitude ?? PRESERVE_CENTER[0], latitude ?? PRESERVE_CENTER[1]],
-          zoom: outgoing.zoom ?? INITIAL_ZOOM,
-          tilt: (outgoing as SceneView).camera?.tilt,
-          heading: (outgoing as SceneView).camera?.heading,
-        };
-      }
-      viewRef.current = null;
-      highlightLayerRef.current = null;
-      spatialQueryLayerRef.current = null;
-      spatialSketchViewModelRef.current?.destroy();
-      spatialSketchViewModelRef.current = null;
-      view.destroy();
-    };
-  }, [viewMode]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (!dataOnePreview) return;
-    setPreviewStatus('loading');
-    const timeoutId = window.setTimeout(() => {
-      setPreviewStatus((current) => (current === 'loading' ? 'blocked' : current));
-    }, 9000);
-    return () => window.clearTimeout(timeoutId);
-  }, [dataOnePreview]);
+  useArcgisViewLifecycle({
+    mapDivRef,
+    viewRef,
+    viewMode,
+    highlightLayerRef,
+    spatialQueryLayerRef,
+    spatialSketchViewModelRef,
+    setMapReady,
+  });
 
   const handleOpenPreviewInNewTab = () => {
     if (!dataOnePreview?.url) return;
@@ -295,8 +149,8 @@ export function MapContainer() {
                 className={`h-full w-full rounded-md border border-gray-300 bg-white ${previewStatus === 'error' || previewStatus === 'blocked' ? 'hidden' : 'block'}`}
                 loading="lazy"
                 referrerPolicy="no-referrer"
-                onLoad={() => setPreviewStatus('loaded')}
-                onError={() => setPreviewStatus('error')}
+                onLoad={markPreviewLoaded}
+                onError={markPreviewErrored}
               />
             </div>
           </section>

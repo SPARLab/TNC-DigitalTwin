@@ -10,45 +10,16 @@
 //   - Removed from map when neither pinned nor active
 // ============================================================================
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type Layer from '@arcgis/core/layers/Layer';
 import { useLayers } from '../../context/LayerContext';
 import { useMap } from '../../context/MapContext';
 import { useCatalog } from '../../context/CatalogContext';
-import { createMapLayer, IMPLEMENTED_LAYERS } from './layers';
+import { IMPLEMENTED_LAYERS } from './layers';
 import { useAllMapBehaviors } from '../../dataSources/registry';
-import type { ActiveLayer, CatalogLayer } from '../../types';
-
-type DefinitionExpressionLayer = Layer & { definitionExpression?: string };
-type MapImageSublayerLike = { definitionExpression?: string };
-type MapImageLayerLike = Layer & {
-  sublayers?: { getItemAt?: (index: number) => MapImageSublayerLike | undefined } | MapImageSublayerLike[];
-};
-
-function normalizeWhereClause(whereClause?: string): string {
-  const normalized = whereClause?.trim();
-  return normalized ? normalized : '1=1';
-}
-
-function getFirstMapImageSublayer(layer: Layer): MapImageSublayerLike | undefined {
-  const mapImageLayer = layer as MapImageLayerLike;
-  const sublayers = mapImageLayer.sublayers;
-  if (!sublayers) return undefined;
-  if (Array.isArray(sublayers)) return sublayers[0];
-  if (typeof sublayers.getItemAt === 'function') return sublayers.getItemAt(0);
-  return undefined;
-}
-
-function getConcreteActiveLayerId(activeLayer: ActiveLayer | null, layerMap: Map<string, CatalogLayer>): string | null {
-  if (!activeLayer) return null;
-  if (!activeLayer.isService) return activeLayer.layerId;
-  const serviceLayer = layerMap.get(activeLayer.layerId);
-  const siblingLayers = serviceLayer?.catalogMeta?.siblingLayers ?? [];
-  if (activeLayer.selectedSubLayerId && siblingLayers.some(sibling => sibling.id === activeLayer.selectedSubLayerId)) {
-    return activeLayer.selectedSubLayerId;
-  }
-  return siblingLayers[0]?.id ?? null;
-}
+import { getConcreteActiveLayerId } from './mapLayers/internal/mapLayerSyncHelpers';
+import { useMapLayerMembershipSync } from './mapLayers/internal/useMapLayerMembershipSync';
+import { useMapLayerPresentationSync } from './mapLayers/internal/useMapLayerPresentationSync';
 
 export function useMapLayers() {
   const { pinnedLayers, activeLayer, getLayerOpacity } = useLayers();
@@ -69,138 +40,28 @@ export function useMapLayers() {
   );
 
   // ── Core effects (declared BEFORE adapter hooks — run order matters) ───────
+  useMapLayerMembershipSync({
+    pinnedLayers,
+    concreteActiveLayerId,
+    concreteActiveLayerName,
+    getLayerOpacity,
+    viewRef,
+    mapReady,
+    showToast,
+    managedLayersRef,
+    warnedLayersRef,
+    lastMapRef,
+  });
 
-  // Sync layers on map: pinned layers + active layer (if not already pinned)
-  useEffect(() => {
-    const view = viewRef.current;
-    if (!view?.map) return;
-
-    const map = view.map;
-
-    // Detect view recreation (2D↔3D toggle): old layers are orphaned on destroyed map
-    if (map !== lastMapRef.current) {
-      managedLayersRef.current.clear();
-      warnedLayersRef.current.clear();
-      lastMapRef.current = map;
-    }
-
-    const managed = managedLayersRef.current;
-    const pinnedByLayerId = new Map(pinnedLayers.map(p => [p.layerId, p]));
-
-    // Build map of layerIds that should currently be on the ArcGIS map
-    const shouldBeOnMap = new Map<string, { name: string; visible: boolean }>();
-    for (const p of pinnedLayers) {
-      shouldBeOnMap.set(p.layerId, { name: p.name, visible: p.isVisible });
-    }
-    // Active but not pinned → always visible (DFT-021: clicking makes active AND visible)
-    if (concreteActiveLayerId && concreteActiveLayerName && !shouldBeOnMap.has(concreteActiveLayerId)) {
-      shouldBeOnMap.set(concreteActiveLayerId, { name: concreteActiveLayerName, visible: true });
-    }
-
-    // Remove layers that should no longer be on the map
-    for (const [layerId, arcLayer] of managed.entries()) {
-      if (!shouldBeOnMap.has(layerId)) {
-        map.remove(arcLayer);
-        managed.delete(layerId);
-        warnedLayersRef.current.delete(layerId);
-      }
-    }
-
-    // Add layers that should be on the map but aren't yet
-    for (const [layerId, { name, visible }] of shouldBeOnMap) {
-      if (managed.has(layerId)) continue;
-
-      const tncWhereClause = pinnedByLayerId.get(layerId)?.tncArcgisFilters?.whereClause;
-      const pinnedOpacity = pinnedByLayerId.get(layerId)?.opacity;
-      const layerOpacity = typeof pinnedOpacity === 'number' ? pinnedOpacity : getLayerOpacity(layerId);
-      const arcLayer = createMapLayer(layerId, {
-        visible,
-        whereClause: tncWhereClause,
-      });
-
-      if (!arcLayer) {
-        if (!warnedLayersRef.current.has(layerId)) {
-          warnedLayersRef.current.add(layerId);
-          showToast(`"${name}" — layer not implemented yet`, 'warning');
-        }
-        continue;
-      }
-
-      arcLayer.opacity = Math.min(1, Math.max(0, layerOpacity));
-      map.add(arcLayer);
-      managed.set(layerId, arcLayer);
-    }
-  }, [pinnedLayers, concreteActiveLayerId, concreteActiveLayerName, getLayerOpacity, viewRef, mapReady, showToast]);
-
-  // Sync visibility: pinned layers use eye toggle; active-only always visible
-  useEffect(() => {
-    const managed = managedLayersRef.current;
-    for (const pinned of pinnedLayers) {
-      const arcLayer = managed.get(pinned.layerId);
-      if (arcLayer) {
-        arcLayer.visible = pinned.isVisible;
-        arcLayer.opacity = Math.min(1, Math.max(0, pinned.opacity ?? 1));
-      }
-    }
-    // Active but not pinned: ensure visible
-    if (concreteActiveLayerId) {
-      const isPinned = pinnedLayers.some(p => p.layerId === concreteActiveLayerId);
-      if (!isPinned) {
-        const arcLayer = managed.get(concreteActiveLayerId);
-        if (arcLayer) {
-          arcLayer.visible = true;
-          arcLayer.opacity = Math.min(1, Math.max(0, getLayerOpacity(concreteActiveLayerId)));
-        }
-      }
-    }
-  }, [pinnedLayers, concreteActiveLayerId, getLayerOpacity]);
-
-  // Sync TNC ArcGIS filter updates to map layer definitionExpression.
-  useEffect(() => {
-    const managed = managedLayersRef.current;
-    for (const pinned of pinnedLayers) {
-      const catalogLayer = layerMap.get(pinned.layerId);
-      if (catalogLayer?.dataSource !== 'tnc-arcgis') continue;
-
-      const arcLayer = managed.get(pinned.layerId);
-      if (!arcLayer) continue;
-
-      const whereClause = normalizeWhereClause(pinned.tncArcgisFilters?.whereClause);
-      const featureLayer = arcLayer as DefinitionExpressionLayer;
-      if (typeof featureLayer.definitionExpression === 'string') {
-        if (featureLayer.definitionExpression !== whereClause) {
-          featureLayer.definitionExpression = whereClause;
-        }
-        continue;
-      }
-
-      const firstSublayer = getFirstMapImageSublayer(arcLayer);
-      if (
-        firstSublayer &&
-        typeof firstSublayer.definitionExpression === 'string' &&
-        firstSublayer.definitionExpression !== whereClause
-      ) {
-        firstSublayer.definitionExpression = whereClause;
-      }
-    }
-  }, [pinnedLayers, layerMap]);
-
-  // Keep ArcGIS map draw order in sync with Map Layers widget order.
-  useEffect(() => {
-    const view = viewRef.current;
-    if (!view?.map) return;
-
-    const map = view.map;
-    const managed = managedLayersRef.current;
-    const pinnedArcLayers = pinnedLayers
-      .map((pinned) => managed.get(pinned.layerId))
-      .filter((layer): layer is Layer => !!layer);
-
-    // Move from bottom-most pinned row to top-most so row[0] ends up on top.
-    for (let i = pinnedArcLayers.length - 1; i >= 0; i -= 1) {
-      map.reorder(pinnedArcLayers[i], map.layers.length - 1);
-    }
-  }, [pinnedLayers, viewRef, mapReady]);
+  useMapLayerPresentationSync({
+    pinnedLayers,
+    concreteActiveLayerId,
+    getLayerOpacity,
+    layerMap,
+    viewRef,
+    mapReady,
+    managedLayersRef,
+  });
 
   // Toast for activating unimplemented layers (browsing, not yet pinned)
   useEffect(() => {

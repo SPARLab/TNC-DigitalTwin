@@ -1,7 +1,7 @@
 # Phase 12: AI Refactor Readiness
 
 **Status:** 🟡 In Progress  
-**Progress:** 3 / 12 tasks complete  
+**Progress:** 4 / 12 tasks complete  
 **Branch:** `v2/refactor-ai-readiness`  
 **Depends On:** Existing V2 implementation stability (Phases 0-11)  
 **Owner:** TBD
@@ -15,7 +15,7 @@
 | REF-01 | 🟢 Complete | Feb 25, 2026 | Extract `LayerContext` filter helper builders/counts/equality logic into dedicated utility modules | Extracted to `utils/layerFilterBuilders.ts` and `utils/layerFilterEquality.ts`; public API unchanged. |
 | REF-02 | 🟢 Complete | Feb 25, 2026 | Split `LayerContext` into focused internal modules (core state/actions, per-source sync actions, view lifecycle actions) | Extracted source-sync, filtered-view, core-state/actions, and view-lifecycle internal hooks; `useLayers()` contract unchanged. |
 | REF-03 | 🟢 Complete | Feb 25, 2026 | Split `src/v2/V2App.tsx` into app shell, route composition, and provider composition files | Extracted to `app/V2AppProviders.tsx`, `app/V2AppRoutes.tsx`, and `app/V2AppShell.tsx`; zero UI behavior changes. |
-| REF-04 | ⚪ Not Started | Feb 25, 2026 17:20 PT | Split V2 map container modules by responsibility (`src/v2/components/Map/MapContainer.tsx` + `useMapLayers.ts`) | Medium-size files; focus on effect ownership and map lifecycle readability over aggressive file-count expansion. |
+| REF-04 | 🟢 Complete | Feb 25, 2026 | Split V2 map container modules by responsibility (`src/v2/components/Map/MapContainer.tsx` + `useMapLayers.ts`) | Extracted map view lifecycle + DataONE preview-state hooks and split map-layer sync into membership/presentation internal hooks; behavior preserved. |
 | REF-05 | ⚪ Not Started | Feb 25, 2026 17:20 PT | Decompose V2-critical data/service paths (V2 call sites for ANiML/DataONE/TNC ArcGIS) into client/query/normalizer modules | Prioritize high-coupling paths (`src/v2/services/tncArcgisService.ts`, DataONE/ANiML call sites); extraction-only, preserve API surface. |
 | REF-06 | ⚪ Not Started | Feb 25, 2026 17:20 PT | Refactor V2 DataONE right-sidebar browse/detail flow into orchestration + focused child components | Target complexity hotspots (`DataOneBrowseTab`, `DatasetDetailView`) rather than line count alone. |
 | REF-07 | ⚪ Not Started | Feb 24, 2026 16:30 PT | Create shared browse-tab primitives for repeated patterns (search/filter/pagination/detail handoff) | Apply incrementally to avoid cross-source regressions. |
@@ -67,7 +67,7 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | REF-01 | Extract LayerContext helper utilities | 🟢 Complete | | Foundation task for REF-02. |
 | REF-02 | Split LayerContext internal modules | 🟢 Complete | | Core provider now orchestrates extracted source-sync, filtered-view, core-state/actions, and view lifecycle modules with stable `useLayers()` API. |
 | REF-03 | Split V2App shell/routes/providers | 🟢 Complete | | Extracted to `app/V2AppProviders.tsx`, `app/V2AppRoutes.tsx`, `app/V2AppShell.tsx`; V2App now orchestrates state + composition only. |
-| REF-04 | Split V2 map container modules by responsibility | ⚪ Not Started | | Target `MapContainer` + `useMapLayers`; keep V2 map interactions behavior stable. |
+| REF-04 | Split V2 map container modules by responsibility | 🟢 Complete | | Extracted map lifecycle/preview logic into internal hooks and split layer sync effects into membership + presentation hooks with stable behavior. |
 | REF-05 | Decompose V2-critical service/data paths into modules | ⚪ Not Started | | Prioritize `src/v2/services/tncArcgisService.ts` and V2 adapters/contexts that consume shared services; optimize for lower AI context load at call sites. |
 | REF-06 | Refactor V2 DataONE browse/detail components | ⚪ Not Started | | Use orchestration + presentational split in `src/v2/components/RightSidebar/DataOne/`. |
 | REF-07 | Build shared browse primitives | ⚪ Not Started | | Apply across data sources gradually. |
@@ -123,3 +123,4 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | Feb 25, 2026 | REF-03 | Complete. Split V2App into providers, routes, and shell; scope clarified to V2-only (legacy App.tsx not in scope). Phase 12: 3/12 tasks complete. | Cursor |
 | Feb 25, 2026 | Phase scope alignment | Updated REF-04..REF-12 wording to V2-only targets; removed legacy `src/components/*` scope from Phase 12 and added explicit V2 scope guardrail | Cursor |
 | Feb 25, 2026 | V2 sizing calibration | Added V2 sizing baseline (no 1k-2k files), shifted emphasis from raw line count to complexity/coupling hotspots, adjusted REF-11 guardrail notes, and reordered post-REF-06 execution priority | Cursor |
+| Feb 25, 2026 | REF-04 | Complete. Split `MapContainer` lifecycle/state concerns into internal hooks (`useArcgisViewLifecycle`, `useDataOnePreviewStatus`) and decomposed `useMapLayers` effect ownership into membership/presentation internal hooks while preserving external behavior. | Cursor |
