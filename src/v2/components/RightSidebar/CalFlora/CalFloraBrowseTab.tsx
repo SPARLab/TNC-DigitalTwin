@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertCircle, Camera, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
+import { AlertCircle, Camera, Search, X } from 'lucide-react';
 import { calfloraV2Service, type CalFloraObservation } from '../../../../services/calfloraV2Service';
 import { useCalFloraFilter } from '../../../context/CalFloraFilterContext';
 import { useLayers } from '../../../context/LayerContext';
@@ -8,10 +8,11 @@ import { EditFiltersCard } from '../shared/EditFiltersCard';
 import { InlineLoadingRow, RefreshLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { ObservationListView } from './ObservationListView';
 import { ObservationDetailView } from './ObservationDetailView';
+import { BrowsePaginationControls } from '../shared/BrowsePaginationControls';
+import { useBrowseSearchInput } from '../shared/useBrowseSearchInput';
 
 const CALFLORA_LAYER_ID = 'calflora-observations';
 const PAGE_SIZE = 20;
-const SEARCH_DEBOUNCE_MS = 450;
 const MIN_SEARCH_CHARS = 2;
 
 export function CalFloraBrowseTab() {
@@ -32,8 +33,17 @@ export function CalFloraBrowseTab() {
     createOrUpdateCalFloraFilteredView,
   } = useLayers();
   const { viewRef } = useMap();
-  const [searchInput, setSearchInput] = useState(browseFilters.searchText || '');
-  const [appliedSearchText, setAppliedSearchText] = useState(browseFilters.searchText || '');
+  const {
+    searchInput,
+    appliedSearchTerm: appliedSearchText,
+    setSearchInput,
+    setAppliedSearchTerm: setAppliedSearchText,
+    clearSearch,
+  } = useBrowseSearchInput({
+    initialSearchTerm: browseFilters.searchText || '',
+    minSearchChars: MIN_SEARCH_CHARS,
+    debounceMs: 450,
+  });
   const [county, setCounty] = useState(browseFilters.county || '');
   const [startDate, setStartDate] = useState(browseFilters.startDate || '');
   const [endDate, setEndDate] = useState(browseFilters.endDate || '');
@@ -52,21 +62,6 @@ export function CalFloraBrowseTab() {
   useEffect(() => {
     warmCache();
   }, [warmCache]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      const trimmed = searchInput.trim();
-      if (!trimmed) {
-        setAppliedSearchText('');
-      } else if (trimmed.length >= MIN_SEARCH_CHARS) {
-        setAppliedSearchText(trimmed);
-      } else {
-        setAppliedSearchText('');
-      }
-    }, SEARCH_DEBOUNCE_MS);
-
-    return () => window.clearTimeout(timer);
-  }, [searchInput]);
 
   useEffect(() => {
     setPage(0);
@@ -252,8 +247,7 @@ export function CalFloraBrowseTab() {
   );
 
   const clearAllFilters = () => {
-    setSearchInput('');
-    setAppliedSearchText('');
+    clearSearch();
     setCounty('');
     setStartDate('');
     setEndDate('');
@@ -339,10 +333,7 @@ export function CalFloraBrowseTab() {
             <button
               id="calflora-search-clear-button"
               type="button"
-              onClick={() => {
-                setSearchInput('');
-                setAppliedSearchText('');
-              }}
+              onClick={clearSearch}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               aria-label="Clear search"
             >
@@ -459,31 +450,13 @@ export function CalFloraBrowseTab() {
       )}
 
       {!showInitialLoading && totalPages > 1 && (
-        <div id="calflora-pagination" className="flex items-center justify-between border-t border-gray-100 pt-2">
-          <button
-            id="calflora-pagination-prev"
-            type="button"
-            onClick={() => setPage((prev) => Math.max(0, prev - 1))}
-            disabled={page <= 0}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-600 hover:text-gray-900 disabled:text-gray-300 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft id="calflora-pagination-prev-icon" className="h-3.5 w-3.5" />
-            Previous
-          </button>
-          <span id="calflora-pagination-label" className="text-xs text-gray-500">
-            Page {page + 1} of {totalPages}
-          </span>
-          <button
-            id="calflora-pagination-next"
-            type="button"
-            onClick={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
-            disabled={page >= totalPages - 1}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-600 hover:text-gray-900 disabled:text-gray-300 disabled:cursor-not-allowed"
-          >
-            Next
-            <ChevronRight id="calflora-pagination-next-icon" className="h-3.5 w-3.5" />
-          </button>
-        </div>
+        <BrowsePaginationControls
+          idPrefix="calflora"
+          page={page}
+          totalPages={totalPages}
+          onPrevious={() => setPage((prev) => Math.max(0, prev - 1))}
+          onNext={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
+        />
       )}
     </div>
   );

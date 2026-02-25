@@ -7,9 +7,10 @@
 // ============================================================================
 
 import { useState, useEffect, useCallback } from 'react';
-import { Camera, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Camera } from 'lucide-react';
 import type { AnimlImageLabel } from '../../../../services/animlService';
 import { ImageExpandedView } from './ImageExpandedView';
+import { BrowsePaginationControls } from '../shared/BrowsePaginationControls';
 
 interface ImageListProps {
   images: AnimlImageLabel[];
@@ -217,35 +218,18 @@ export function ImageList({
         })}
       </div>
 
-      <div id="animl-image-pagination" className="flex items-center justify-between border-t border-gray-100 pt-2">
-        <button
-          id="animl-pagination-prev"
-          onClick={onPrevPage}
-          disabled={currentPage <= 1}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium
-                     text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors
-                     disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <ChevronLeft className="w-3.5 h-3.5" />
-          Prev Page
-        </button>
-
-        <span id="animl-pagination-indicator" className="text-xs text-gray-500 tabular-nums">
-          Page {currentPage} of {totalPages}
-        </span>
-
-        <button
-          id="animl-pagination-next"
-          onClick={onNextPage}
-          disabled={currentPage >= totalPages}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium
-                     text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors
-                     disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Next Page
-          <ChevronRight className="w-3.5 h-3.5" />
-        </button>
-      </div>
+      <BrowsePaginationControls
+        idPrefix="animl"
+        page={currentPage}
+        totalPages={totalPages}
+        isOneBased
+        onPrevious={onPrevPage}
+        onNext={onNextPage}
+        previousLabel="Prev Page"
+        nextLabel="Next Page"
+        buttonClassName="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        labelClassName="text-xs text-gray-500 tabular-nums"
+      />
     </div>
   );
 }

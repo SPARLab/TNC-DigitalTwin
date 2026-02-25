@@ -10,7 +10,7 @@
 // ============================================================================
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, AlertCircle, ChevronDown, Search, X, Calendar } from 'lucide-react';
+import { AlertCircle, ChevronDown, Search, X, Calendar } from 'lucide-react';
 import {
   useINaturalistObservations,
   TAXON_CATEGORIES,
@@ -25,6 +25,7 @@ import { INaturalistDetailView } from './INaturalistDetailView';
 import { InlineLoadingRow, RefreshLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { SpatialQuerySection } from '../shared/SpatialQuerySection';
 import { EditFiltersCard } from '../shared/EditFiltersCard';
+import { BrowsePaginationControls } from '../shared/BrowsePaginationControls';
 
 export function INaturalistBrowseTab() {
   const {
@@ -580,33 +581,18 @@ export function INaturalistBrowseTab() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div id="inat-pagination" className="flex items-center justify-between border-t border-gray-100 pt-2">
-                <button
-                  id="inat-pagination-prev"
-                  onClick={() => goToPage(page - 1)}
-                  disabled={page <= 1}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium
-                             text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors
-                             disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                  Prev Page
-                </button>
-                <span id="inat-pagination-indicator" className="text-xs text-gray-500 tabular-nums">
-                  Page {page} of {totalPages}
-                </span>
-                <button
-                  id="inat-pagination-next"
-                  onClick={() => goToPage(page + 1)}
-                  disabled={page >= totalPages}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium
-                             text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors
-                             disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next Page
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
+              <BrowsePaginationControls
+                idPrefix="inat"
+                page={page}
+                totalPages={totalPages}
+                isOneBased
+                onPrevious={() => goToPage(page - 1)}
+                onNext={() => goToPage(page + 1)}
+                previousLabel="Prev Page"
+                nextLabel="Next Page"
+                buttonClassName="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                labelClassName="text-xs text-gray-500 tabular-nums"
+              />
             )}
           </div>
         )}

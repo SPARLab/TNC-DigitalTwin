@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertCircle, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
+import { AlertCircle, Search, X } from 'lucide-react';
 import { gbifService, type GBIFOccurrence } from '../../../../services/gbifService';
 import { useGBIFFilter } from '../../../context/GBIFFilterContext';
 import { useLayers } from '../../../context/LayerContext';
@@ -8,9 +8,10 @@ import { EditFiltersCard } from '../shared/EditFiltersCard';
 import { InlineLoadingRow, RefreshLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { GBIFOccurrenceCard } from './GBIFOccurrenceCard';
 import { GBIFOccurrenceDetailView } from './GBIFOccurrenceDetailView';
+import { BrowsePaginationControls } from '../shared/BrowsePaginationControls';
+import { useBrowseSearchInput } from '../shared/useBrowseSearchInput';
 
 const PAGE_SIZE = 20;
-const SEARCH_DEBOUNCE_MS = 450;
 const MIN_SEARCH_CHARS = 2;
 const GBIF_LAYER_IDS = new Set(['dataset-178', 'dataset-215']);
 const DEFAULT_GBIF_LAYER_ID = 'dataset-215';
@@ -38,8 +39,17 @@ export function GBIFBrowseTab() {
   const activeGbifLayerId =
     activeLayer && GBIF_LAYER_IDS.has(activeLayer.layerId) ? activeLayer.layerId : DEFAULT_GBIF_LAYER_ID;
   const activeGbifMapLayerId = `v2-${activeGbifLayerId}`;
-  const [searchInput, setSearchInput] = useState(browseFilters.searchText || '');
-  const [appliedSearchTerm, setAppliedSearchTerm] = useState(browseFilters.searchText || '');
+  const {
+    searchInput,
+    appliedSearchTerm,
+    setSearchInput,
+    setAppliedSearchTerm,
+    clearSearch,
+  } = useBrowseSearchInput({
+    initialSearchTerm: browseFilters.searchText || '',
+    minSearchChars: MIN_SEARCH_CHARS,
+    debounceMs: 450,
+  });
   const [kingdom, setKingdom] = useState(browseFilters.kingdom || '');
   const [family, setFamily] = useState(browseFilters.family || '');
   const [basisOfRecord, setBasisOfRecord] = useState(browseFilters.basisOfRecord || '');
@@ -60,20 +70,6 @@ export function GBIFBrowseTab() {
   useEffect(() => {
     warmCache();
   }, [warmCache]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      const trimmed = searchInput.trim();
-      if (trimmed.length === 0) {
-        setAppliedSearchTerm('');
-      } else if (trimmed.length >= MIN_SEARCH_CHARS) {
-        setAppliedSearchTerm(trimmed);
-      } else {
-        setAppliedSearchTerm('');
-      }
-    }, SEARCH_DEBOUNCE_MS);
-    return () => window.clearTimeout(timer);
-  }, [searchInput]);
 
   useEffect(() => {
     setPage(0);
@@ -418,10 +414,7 @@ export function GBIFBrowseTab() {
           {searchInput && (
             <button
               id="gbif-search-clear-button"
-              onClick={() => {
-                setSearchInput('');
-                setAppliedSearchTerm('');
-              }}
+              onClick={clearSearch}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               aria-label="Clear search"
             >
@@ -516,29 +509,13 @@ export function GBIFBrowseTab() {
       )}
 
       {!showInitialLoading && totalPages > 1 && (
-        <div id="gbif-pagination" className="flex items-center justify-between border-t border-gray-100 pt-2">
-          <button
-            id="gbif-pagination-prev"
-            onClick={() => setPage((prev) => Math.max(0, prev - 1))}
-            disabled={page <= 0}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-600 hover:text-gray-900 disabled:text-gray-300 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft id="gbif-pagination-prev-icon" className="h-3.5 w-3.5" />
-            Previous
-          </button>
-          <span id="gbif-pagination-label" className="text-xs text-gray-500">
-            Page {page + 1} of {totalPages}
-          </span>
-          <button
-            id="gbif-pagination-next"
-            onClick={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
-            disabled={page >= totalPages - 1}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-600 hover:text-gray-900 disabled:text-gray-300 disabled:cursor-not-allowed"
-          >
-            Next
-            <ChevronRight id="gbif-pagination-next-icon" className="h-3.5 w-3.5" />
-          </button>
-        </div>
+        <BrowsePaginationControls
+          idPrefix="gbif"
+          page={page}
+          totalPages={totalPages}
+          onPrevious={() => setPage((prev) => Math.max(0, prev - 1))}
+          onNext={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
+        />
       )}
     </div>
   );

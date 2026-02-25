@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { dataOneService, type DataOneDataset } from '../../../../services/dataOneService';
 import { useDataOneFilter } from '../../../context/DataOneFilterContext';
 import { useLayers } from '../../../context/LayerContext';
+import { useBrowseSearchInput } from '../shared/useBrowseSearchInput';
 
 const PAGE_SIZE = 20;
-const SEARCH_DEBOUNCE_MS = 500;
 export const MIN_SEARCH_CHARS = 2;
 
 export const TNC_CATEGORY_OPTIONS = [
@@ -84,8 +84,18 @@ export function useDataOneBrowseOrchestrator() {
     syncDataOneFilters,
     createOrUpdateDataOneFilteredView,
   } = useLayers();
-  const [searchInput, setSearchInput] = useState(browseFilters.searchText);
-  const [appliedSearchTerm, setAppliedSearchTerm] = useState(browseFilters.searchText);
+  const {
+    searchInput,
+    appliedSearchTerm,
+    setSearchInput,
+    setAppliedSearchTerm,
+    runSearchNow: applySearchImmediately,
+    clearSearch,
+  } = useBrowseSearchInput({
+    initialSearchTerm: browseFilters.searchText,
+    minSearchChars: MIN_SEARCH_CHARS,
+    debounceMs: 500,
+  });
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
     normalizeCategories(browseFilters.tncCategories),
   );
@@ -137,22 +147,6 @@ export function useDataOneBrowseOrchestrator() {
     authorFilter,
     setBrowseFilters,
   ]);
-
-  // Debounced text search (DFT-035)
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      const trimmed = searchInput.trim();
-      if (trimmed.length === 0) {
-        setAppliedSearchTerm('');
-      } else if (trimmed.length >= MIN_SEARCH_CHARS) {
-        setAppliedSearchTerm(trimmed);
-      } else {
-        setAppliedSearchTerm('');
-      }
-    }, SEARCH_DEBOUNCE_MS);
-
-    return () => window.clearTimeout(timer);
-  }, [searchInput]);
 
   // Reset pagination when filter/search controls change.
   useEffect(() => {
@@ -421,14 +415,8 @@ export function useDataOneBrowseOrchestrator() {
   };
 
   const runSearchNow = () => {
-    const trimmed = searchInput.trim();
-    setAppliedSearchTerm(trimmed.length >= MIN_SEARCH_CHARS ? trimmed : '');
+    applySearchImmediately();
     setPage(0);
-  };
-
-  const clearSearch = () => {
-    setSearchInput('');
-    setAppliedSearchTerm('');
   };
 
   const selectAllCategories = () => {

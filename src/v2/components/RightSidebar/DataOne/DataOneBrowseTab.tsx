@@ -3,12 +3,13 @@
 // Orchestration is extracted into useDataOneBrowseOrchestrator.
 // ============================================================================
 
-import { Search, X, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, X, AlertCircle } from 'lucide-react';
 import { InlineLoadingRow, RefreshLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { DatasetListView } from './DatasetListView';
 import { DatasetDetailView } from './DatasetDetailView';
 import { SpatialQuerySection } from '../shared/SpatialQuerySection';
 import { EditFiltersCard } from '../shared/EditFiltersCard';
+import { BrowsePaginationControls } from '../shared/BrowsePaginationControls';
 import {
   FILE_TYPE_OPTIONS,
   MIN_SEARCH_CHARS,
@@ -390,33 +391,13 @@ export function DataOneBrowseTab() {
       )}
 
       {!showInitialLoading && totalPages > 1 && (
-        <div id="dataone-pagination" className="flex items-center justify-between border-t border-gray-100 pt-2">
-          <button
-            id="dataone-pagination-prev"
-            onClick={() => setPage((prev) => Math.max(0, prev - 1))}
-            disabled={page <= 0}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-600 hover:text-gray-900
-                       disabled:text-gray-300 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft id="dataone-pagination-prev-icon" className="h-3.5 w-3.5" />
-            Previous
-          </button>
-
-          <span id="dataone-pagination-label" className="text-xs text-gray-500">
-            Page {page + 1} of {Math.max(totalPages, 1)}
-          </span>
-
-          <button
-            id="dataone-pagination-next"
-            onClick={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
-            disabled={page >= totalPages - 1}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-600 hover:text-gray-900
-                       disabled:text-gray-300 disabled:cursor-not-allowed"
-          >
-            Next
-            <ChevronRight id="dataone-pagination-next-icon" className="h-3.5 w-3.5" />
-          </button>
-        </div>
+        <BrowsePaginationControls
+          idPrefix="dataone"
+          page={page}
+          totalPages={totalPages}
+          onPrevious={() => setPage((prev) => Math.max(0, prev - 1))}
+          onNext={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
+        />
       )}
     </div>
   );
