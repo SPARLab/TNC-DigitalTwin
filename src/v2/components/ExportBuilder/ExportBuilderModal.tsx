@@ -11,6 +11,11 @@ import {
   downloadLinksTextFile,
   generateShareableLinks,
 } from './exportActions';
+import {
+  copyCodeToClipboard,
+  downloadCodeTextFile,
+  generateCodeBundle,
+} from './codegen';
 import type {
   ExportActionLayer,
   ExportFormatOption,
@@ -172,7 +177,7 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
   const { layerMap } = useCatalog();
   const [layerExportState, setLayerExportState] = useState<Record<string, LayerExportState>>({});
   const [isProcessing, setIsProcessing] = useState(false);
-  const [processingAction, setProcessingAction] = useState<'zip' | 'links' | null>(null);
+  const [processingAction, setProcessingAction] = useState<'zip' | 'links' | 'python' | 'r' | null>(null);
   const [feedback, setFeedback] = useState<ExportFeedback | null>(null);
 
   const pinnedLayerCount = pinnedLayers.length;
@@ -258,7 +263,7 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
           isActive: view.isActive,
           querySummary: view.querySummary,
           filteredResultCount: view.filteredResultCount,
-          queryDefinition: state?.includeQueryDefinition ? view.queryDefinition : undefined,
+          queryDefinition: view.queryDefinition,
         }));
         const viewEstimates = selectedViews.map((view) => estimateBytesForSelection(
           dataSource,
@@ -298,6 +303,21 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
     )),
     [exportActionLayers],
   );
+
+  const selectedCodegenLayers = useMemo(
+    () => exportActionLayers
+      .filter((layer) => layer.selectedViews.length > 0)
+      .map((layer) => ({
+        ...layer,
+        selectedViews: layer.selectedViews.filter((view) => Boolean(view.queryDefinition)),
+      }))
+      .filter((layer) => (
+        (layer.dataSource === 'inaturalist' || layer.dataSource === 'dendra') && layer.selectedViews.length > 0
+      )),
+    [exportActionLayers],
+  );
+
+  const hasCodegenSelections = selectedCodegenLayers.length > 0;
 
   const handleGenerateLinks = async () => {
     if (selectedLayers.length === 0) {
@@ -357,6 +377,43 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       setFeedback({ type: 'error', message: `Could not create ZIP export: ${message}` });
+    } finally {
+      setIsProcessing(false);
+      setProcessingAction(null);
+    }
+  };
+
+  const handleGenerateCode = async (language: 'python' | 'r') => {
+    if (selectedCodegenLayers.length === 0) {
+      setFeedback({
+        type: 'error',
+        message: 'Select at least one iNaturalist or Dendra view with query state before generating code.',
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    setProcessingAction(language);
+    setFeedback(null);
+
+    try {
+      const bundle = generateCodeBundle(language, selectedCodegenLayers, window.location.href);
+      const clipboardCopied = await copyCodeToClipboard(bundle.snippet);
+      downloadCodeTextFile(bundle.fileName, bundle.snippet);
+
+      const languageLabel = language === 'python' ? 'Python' : 'R';
+      const skippedNote = bundle.skippedCount > 0
+        ? ` ${bundle.skippedCount} view(s) were skipped.`
+        : '';
+      setFeedback({
+        type: 'success',
+        message: clipboardCopied
+          ? `${languageLabel} code generated for ${bundle.generatedCount} view(s). Copied to clipboard and downloaded.${skippedNote}`
+          : `${languageLabel} code generated for ${bundle.generatedCount} view(s). Downloaded.${skippedNote}`,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      setFeedback({ type: 'error', message: `Could not generate code: ${message}` });
     } finally {
       setIsProcessing(false);
       setProcessingAction(null);
@@ -437,7 +494,7 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
                 id="export-builder-context-strip-chip-export"
                 className="text-base font-medium text-slate-700"
               >
-                3. Generate links or ZIP
+                3. Generate code, links, or ZIP
               </span>
             </div>
           </div>
@@ -577,6 +634,12 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
 
         <ExportBuilderFooter
           onCancel={onClose}
+          onGeneratePythonCode={() => {
+            void handleGenerateCode('python');
+          }}
+          onGenerateRCode={() => {
+            void handleGenerateCode('r');
+          }}
           onGenerateLinks={() => {
             void handleGenerateLinks();
           }}
@@ -586,6 +649,7 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
           isProcessing={isProcessing}
           processingAction={processingAction}
           hasSelections={hasSelections}
+          hasCodegenSelections={hasCodegenSelections}
         />
       </div>
     </div>
