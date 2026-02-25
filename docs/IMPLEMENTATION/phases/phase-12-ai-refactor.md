@@ -13,7 +13,7 @@
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
 | REF-01 | 🟢 Complete | Feb 25, 2026 | Extract `LayerContext` filter helper builders/counts/equality logic into dedicated utility modules | Extracted to `utils/layerFilterBuilders.ts` and `utils/layerFilterEquality.ts`; public API unchanged. |
-| REF-02 | ⚪ Not Started | Feb 24, 2026 16:30 PT | Split `LayerContext` into focused internal modules (core state/actions, per-source sync actions, view lifecycle actions) | Keep `useLayers()` contract stable for consumers. |
+| REF-02 | 🟡 In Progress | Feb 25, 2026 | Split `LayerContext` into focused internal modules (core state/actions, per-source sync actions, view lifecycle actions) | Extracted source-sync, filtered-view, and view-lifecycle internal hooks; `useLayers()` contract unchanged. |
 | REF-03 | ⚪ Not Started | Feb 24, 2026 16:30 PT | Split `src/App.tsx` into app shell, route composition, and provider composition files | Zero UI behavior changes; readability-first decomposition. |
 | REF-04 | ⚪ Not Started | Feb 24, 2026 16:30 PT | Split `src/components/MapView.tsx` by responsibility (view lifecycle, interactions, overlays/tools) | Minimize merge risk via extraction-first approach. |
 | REF-05 | ⚪ Not Started | Feb 24, 2026 16:30 PT | Decompose high-complexity services (`animlService`, `dataOneService`, `tncArcGISService`) into client/query/normalizer modules | Focus on testable pure helpers and smaller call paths. |
@@ -52,7 +52,7 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
 | REF-01 | Extract LayerContext helper utilities | 🟢 Complete | | Foundation task for REF-02. |
-| REF-02 | Split LayerContext internal modules | ⚪ Not Started | | Highest impact for AI maintainability. |
+| REF-02 | Split LayerContext internal modules | 🟡 In Progress | | Source-sync + filtered-view + view lifecycle hooks extracted; core provider remains as orchestrator. |
 | REF-03 | Split App shell/routes/providers | ⚪ Not Started | | Keep routing behavior unchanged. |
 | REF-04 | Split MapView by responsibility | ⚪ Not Started | | Keep map interactions behavior stable. |
 | REF-05 | Decompose large services into modules | ⚪ Not Started | | Improves debugging and test isolation. |
@@ -103,3 +103,5 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 |------|------|--------|-----|
 | Feb 24, 2026 | Phase setup | Created phase document and initial 12-task AI refactor backlog | Codex |
 | Feb 25, 2026 | REF-01 | Extracted LayerContext filter builders/counts/equality into `utils/layerFilterBuilders.ts` and `utils/layerFilterEquality.ts`; preserved public API | Cursor |
+| Feb 25, 2026 | REF-02 | Started internal module split for `LayerContext`: extracted `useLayerSourceSyncActions` and `useLayerViewLifecycleActions`, rewired provider to compose internal hooks while keeping `useLayers()` stable | Cursor |
+| Feb 25, 2026 | REF-02 | Continued split by extracting filtered view creation/update actions into `useLayerFilteredViewActions`; provider now composes three internal action hooks while preserving public API | Cursor |
