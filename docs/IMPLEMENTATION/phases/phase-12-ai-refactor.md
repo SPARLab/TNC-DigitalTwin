@@ -1,7 +1,7 @@
 # Phase 12: AI Refactor Readiness
 
 **Status:** 🟡 In Progress  
-**Progress:** 12 / 13 tasks complete  
+**Progress:** 11 / 12 tasks complete  
 **Branch:** `v2/refactor-ai-readiness`  
 **Depends On:** Existing V2 implementation stability (Phases 0-11)  
 **Owner:** TBD
@@ -33,7 +33,7 @@
 | REF-08C | 🟢 Complete | Feb 25, 2026 | Apply the same detail-view split pattern to remaining right-sidebar hotspots | Extracted `TNCArcGISOverviewTab` render sections into `TNCArcGISOverviewSections.tsx` (context, description, layer list, metadata, opacity, inspect action, source card, overlay); behavior and DOM ids preserved. |
 | REF-08D | 🟢 Complete | Feb 25, 2026 | Run targeted smoke checks for map↔sidebar detail flows after each extraction | Manual checklist executed; back nav, recenter, save/pin, selection retention validated for DataONE, Dendra, TNC ArcGIS. |
 | REF-09 | 🟢 Complete | Feb 25, 2026 18:35 PT | Narrow large V2 contexts (`src/v2/context/MapContext.tsx`, `src/v2/context/DendraContext.tsx`) into focused hooks/modules | Extracted internal hooks under `mapContext/internal` and `dendraContext/internal`; preserved `MapProvider`/`useMap` and `DendraProvider`/`useDendra` APIs. |
-| REF-10 | ⚪ Not Started | Feb 25, 2026 17:05 PT | Extract shared V2 filter/default state factories used across contexts and browse views | Remove duplicated reset/default object literals in `src/v2/context` + `src/v2/components/RightSidebar`. |
+| REF-10 | 🟢 Complete | Feb 25, 2026 | Extract shared V2 filter/default state factories used across contexts and browse views | Extracted `layerFilterDefaults.ts` and `browseFilterDefaults.ts`; adopted across LayerContext internals, filter contexts, and browse reset flows; behavior preserved. |
 | REF-11 | ⚪ Not Started | Feb 25, 2026 17:05 PT | Add lightweight file-size guardrail script and thresholds for V2 AI-friendly maintenance | Start as warning-only; prioritize `src/v2/**/*` thresholds first. |
 | REF-12 | ⚪ Not Started | Feb 25, 2026 17:05 PT | Define and document V2 refactor completion criteria + QA checklist for extraction-only changes | Include smoke-test checklist for V2 map/sidebar/filter/view flows. |
 | REF-13 | 🟢 Complete | Feb 25, 2026 12:24 PT | Resolve V2 MOTUS 3D journey playback regression (stations render, inferred flight legs do not) | Fixed: SceneView now renders journey legs with 3D-native `line-3d` symbols (2D path preserved), plus finite-coordinate leg guards + diagnostic logging. User-verified: 3D playback animation is rendering correctly. |
@@ -95,7 +95,7 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | REF-08C | Apply detail-view split pattern to remaining right-sidebar hotspots | 🟢 Complete | | Extracted `TNCArcGISOverviewTab` into `TNCArcGISOverviewSections.tsx`; behavior preserved. |
 | REF-08D | Run targeted smoke checks for map↔sidebar detail flows after each extraction | 🟢 Complete | | Manual checklist executed; back nav, recenter, save/pin, selection retention validated for DataONE, Dendra, TNC ArcGIS. |
 | REF-09 | Narrow large V2 context modules | 🟢 Complete | | Extracted map toast/preview/spatial-query and Dendra cache/filter/chart internal hooks; consumer APIs preserved. |
-| REF-10 | Extract shared V2 filter/default factories | ⚪ Not Started | | Reduces duplicated reset logic in V2 contexts + browse views. |
+| REF-10 | Extract shared V2 filter/default factories | 🟢 Complete | | Extracted `context/utils/{layerFilterDefaults,browseFilterDefaults}.ts`; replaced duplicated literals in LayerContext internals and adopted in DataONE/GBIF/CalFlora/MOTUS + Dendra; APIs unchanged. |
 | REF-11 | Add V2 file-size guardrail script | ⚪ Not Started | | Warning-only initially; calibrate to V2 reality (for example, warn at 800+ lines, review at 950+), no CI blocking. |
 | REF-12 | Add V2 extraction QA checklist | ⚪ Not Started | | Required before phase completion; cover V2-specific flows. |
 | REF-13 | Resolve V2 MOTUS 3D journey playback regression | 🟢 Complete | | Resolved by switching 3D journey legs to SceneView-native `line-3d` symbols while preserving 2D line rendering; added invalid-coordinate draw guards and retained debug probes in `useMotusMapBehavior.ts`. User validated that 3D journey animation now renders. |
@@ -198,5 +198,7 @@ Use this checklist for post-extraction validation of map↔sidebar detail flows:
 | Feb 25, 2026 | REF-04 follow-up | Fixed MOTUS 3D journey playback regression by re-triggering overlay redraw on map view re-initialization and movement-context updates in `src/v2/dataSources/motus/useMapBehavior.ts`; keeps station + journey legs synchronized after 2D↔3D toggles. | Cursor |
 | Feb 25, 2026 | REF-04 follow-up | Added MOTUS journey debug logging and 3D line visibility hardening (`polyline` `spatialReference` + `relative-to-ground` elevation offsets) in `src/v2/dataSources/motus/useMapBehavior.ts` to diagnose/mitigate SceneView line rendering gaps while preserving behavior in 2D. | Cursor |
 | Feb 25, 2026 | REF-13 | Added in-progress dedicated regression task for MOTUS 3D journey playback and expanded debug probes in `src/v2/dataSources/motus/useMapBehavior.ts` to explicitly log `legCount`, `polylineCount`, `overlayGraphicCount`, overlay-on-map status, and SceneView `layerView` state (`suspended`/`visible`/`updating`) to confirm/disprove rendering-visibility vs draw-pipeline hypotheses. | Cursor |
-| Feb 25, 2026 | REF-10 prep | Documented REF-10 smoke checklist (reset fidelity, no stale carryover, view hydration, save correctness) for use when filter/default factory extraction is implemented. REF-10 implementation remains not started. | Cursor |
+| Feb 25, 2026 | REF-10 prep | Documented REF-10 smoke checklist (reset fidelity, no stale carryover, view hydration, save correctness) for use when filter/default factory extraction is implemented. | Cursor |
+| Feb 25, 2026 | REF-10 | Started extraction of shared filter/default factories: added `context/utils/{layerFilterDefaults,browseFilterDefaults}.ts`, replaced duplicated reset/default literals in LayerContext internals, and adopted browse defaults in DataONE/GBIF/CalFlora/MOTUS + Dendra save flow without API changes. | Cursor |
+| Feb 25, 2026 | REF-10 | Complete. Extracted shared filter/default factories; adopted across LayerContext internals, filter contexts, and browse reset flows. Phase 12: 11/12 tasks complete. | Cursor |
 | Feb 25, 2026 | REF-09 | Complete. Split `MapContext` into internal toast/preview/spatial-query hooks (`mapContext/internal/`) and `DendraContext` into internal cache/filter/chart hooks + chart transforms/types (`dendraContext/internal/`); preserved `MapProvider`/`useMap` and `DendraProvider`/`useDendra` consumer APIs. Phase 12: 12/13 tasks complete. | Cursor |

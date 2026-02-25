@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import { gbifService, type GBIFFilters } from '../../services/gbifService';
+import { createDefaultGBIFBrowseFilters } from './utils/browseFilterDefaults';
 
 export type GBIFAggregationMode = 'cluster' | 'binning';
 
@@ -35,16 +36,7 @@ interface GBIFFilterContextValue {
   createBrowseLoadingScope: () => () => void;
 }
 
-const DEFAULT_FILTERS: GBIFBrowseFilters = {
-  searchText: '',
-  kingdom: '',
-  taxonomicClass: '',
-  family: '',
-  basisOfRecord: '',
-  datasetName: '',
-  startDate: '',
-  endDate: '',
-};
+const DEFAULT_FILTERS: GBIFBrowseFilters = createDefaultGBIFBrowseFilters();
 
 const DEFAULT_FILTER_OPTIONS: GBIFFilterOptions = {
   kingdoms: [],

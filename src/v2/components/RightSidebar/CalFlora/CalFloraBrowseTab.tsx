@@ -4,6 +4,7 @@ import { calfloraV2Service, type CalFloraObservation } from '../../../../service
 import { useCalFloraFilter } from '../../../context/CalFloraFilterContext';
 import { useLayers } from '../../../context/LayerContext';
 import { useMap } from '../../../context/MapContext';
+import { createDefaultCalFloraBrowseFilters } from '../../../context/utils/browseFilterDefaults';
 import { EditFiltersCard } from '../shared/EditFiltersCard';
 import { InlineLoadingRow, RefreshLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { ObservationListView } from './ObservationListView';
@@ -254,11 +255,12 @@ export function CalFloraBrowseTab() {
   );
 
   const clearAllFilters = () => {
+    const defaults = createDefaultCalFloraBrowseFilters();
     clearSearch();
-    setCounty('');
-    setStartDate('');
-    setEndDate('');
-    setHasPhoto(false);
+    setCounty(defaults.county);
+    setStartDate(defaults.startDate);
+    setEndDate(defaults.endDate);
+    setHasPhoto(defaults.hasPhoto);
     setPage(0);
   };
 

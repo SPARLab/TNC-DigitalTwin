@@ -28,6 +28,15 @@ import {
   getGBIFFilterCount,
   getMotusFilterCount,
 } from '../../utils/layerFilterBuilders';
+import {
+  createDefaultAnimlViewFilters,
+  createDefaultCalFloraViewFilters,
+  createDefaultDataOneViewFilters,
+  createDefaultDendraViewFilters,
+  createDefaultGBIFViewFilters,
+  createDefaultINaturalistViewFilters,
+  createDefaultMotusViewFilters,
+} from '../../utils/layerFilterDefaults';
 
 type SetPinnedLayers = React.Dispatch<React.SetStateAction<PinnedLayer[]>>;
 type SetActiveLayer = React.Dispatch<React.SetStateAction<ActiveLayer | null>>;
@@ -107,16 +116,7 @@ export function useLayerFilteredViewActions({
           }
 
           const existingFlatViewName = p.distinguisher || buildDendraViewName(
-            p.dendraFilters || {
-              showActiveOnly: false,
-              selectedStationId: undefined,
-              selectedStationName: undefined,
-              selectedDatastreamId: undefined,
-              selectedDatastreamName: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              aggregation: undefined,
-            }
+            p.dendraFilters || createDefaultDendraViewFilters()
           );
 
           const existingFlatView = {
@@ -137,22 +137,8 @@ export function useLayerFilteredViewActions({
             views: [existingFlatView, newView],
             filterCount: 0,
             filterSummary: undefined,
-            inaturalistFilters: {
-              selectedTaxa: [],
-              selectedSpecies: [],
-              startDate: undefined,
-              endDate: undefined,
-            },
-            dendraFilters: {
-              showActiveOnly: false,
-              selectedStationId: undefined,
-              selectedStationName: undefined,
-              selectedDatastreamId: undefined,
-              selectedDatastreamName: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              aggregation: undefined,
-            },
+            inaturalistFilters: createDefaultINaturalistViewFilters(),
+            dendraFilters: createDefaultDendraViewFilters(),
             distinguisher: undefined,
             resultCount: undefined,
           };
@@ -257,28 +243,10 @@ export function useLayerFilteredViewActions({
             views: [newView],
             filterCount: 0,
             filterSummary: undefined,
-            inaturalistFilters: { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined },
-            animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
-            dendraFilters: {
-              showActiveOnly: false,
-              selectedStationId: undefined,
-              selectedStationName: undefined,
-              selectedDatastreamId: undefined,
-              selectedDatastreamName: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              aggregation: undefined,
-            },
-            dataoneFilters: {
-              searchText: undefined,
-              tncCategory: undefined,
-              tncCategories: [],
-              fileTypes: [],
-              startDate: undefined,
-              endDate: undefined,
-              author: undefined,
-              selectedDatasetId: undefined,
-            },
+            inaturalistFilters: createDefaultINaturalistViewFilters(),
+            animlFilters: createDefaultAnimlViewFilters(),
+            dendraFilters: createDefaultDendraViewFilters(),
+            dataoneFilters: createDefaultDataOneViewFilters(),
             distinguisher: undefined,
             resultCount: undefined,
           };
@@ -376,15 +344,7 @@ export function useLayerFilteredViewActions({
           }
 
           const existingFlatViewName = p.distinguisher || buildCalFloraViewName(
-            p.calfloraFilters || {
-              searchText: undefined,
-              county: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              hasPhoto: false,
-              selectedObservationId: undefined,
-              selectedObservationLabel: undefined,
-            }
+            p.calfloraFilters || createDefaultCalFloraViewFilters()
           );
 
           const existingFlatView = {
@@ -409,47 +369,12 @@ export function useLayerFilteredViewActions({
             views: [existingFlatView, newView],
             filterCount: 0,
             filterSummary: undefined,
-            inaturalistFilters: { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined },
-            animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
-            dendraFilters: {
-              showActiveOnly: false,
-              selectedStationId: undefined,
-              selectedStationName: undefined,
-              selectedDatastreamId: undefined,
-              selectedDatastreamName: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              aggregation: undefined,
-            },
-            dataoneFilters: {
-              searchText: undefined,
-              tncCategory: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              author: undefined,
-              selectedDatasetId: undefined,
-            },
-            calfloraFilters: {
-              searchText: undefined,
-              county: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              hasPhoto: false,
-              selectedObservationId: undefined,
-              selectedObservationLabel: undefined,
-            },
-            gbifFilters: {
-              searchText: undefined,
-              kingdom: undefined,
-              taxonomicClass: undefined,
-              family: undefined,
-              basisOfRecord: undefined,
-              datasetName: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              selectedOccurrenceId: undefined,
-              selectedOccurrenceLabel: undefined,
-            },
+            inaturalistFilters: createDefaultINaturalistViewFilters(),
+            animlFilters: createDefaultAnimlViewFilters(),
+            dendraFilters: createDefaultDendraViewFilters(),
+            dataoneFilters: createDefaultDataOneViewFilters(),
+            calfloraFilters: createDefaultCalFloraViewFilters(),
+            gbifFilters: createDefaultGBIFViewFilters(),
             distinguisher: undefined,
             resultCount: undefined,
           };
@@ -550,18 +475,7 @@ export function useLayerFilteredViewActions({
           }
 
           const existingFlatViewName = p.distinguisher || buildGBIFViewName(
-            p.gbifFilters || {
-              searchText: undefined,
-              kingdom: undefined,
-              taxonomicClass: undefined,
-              family: undefined,
-              basisOfRecord: undefined,
-              datasetName: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              selectedOccurrenceId: undefined,
-              selectedOccurrenceLabel: undefined,
-            }
+            p.gbifFilters || createDefaultGBIFViewFilters()
           );
 
           const existingFlatView = {
@@ -586,47 +500,12 @@ export function useLayerFilteredViewActions({
             views: [existingFlatView, newView],
             filterCount: 0,
             filterSummary: undefined,
-            inaturalistFilters: { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined },
-            animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
-            dendraFilters: {
-              showActiveOnly: false,
-              selectedStationId: undefined,
-              selectedStationName: undefined,
-              selectedDatastreamId: undefined,
-              selectedDatastreamName: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              aggregation: undefined,
-            },
-            dataoneFilters: {
-              searchText: undefined,
-              tncCategory: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              author: undefined,
-              selectedDatasetId: undefined,
-            },
-            calfloraFilters: {
-              searchText: undefined,
-              county: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              hasPhoto: false,
-              selectedObservationId: undefined,
-              selectedObservationLabel: undefined,
-            },
-            gbifFilters: {
-              searchText: undefined,
-              kingdom: undefined,
-              taxonomicClass: undefined,
-              family: undefined,
-              basisOfRecord: undefined,
-              datasetName: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              selectedOccurrenceId: undefined,
-              selectedOccurrenceLabel: undefined,
-            },
+            inaturalistFilters: createDefaultINaturalistViewFilters(),
+            animlFilters: createDefaultAnimlViewFilters(),
+            dendraFilters: createDefaultDendraViewFilters(),
+            dataoneFilters: createDefaultDataOneViewFilters(),
+            calfloraFilters: createDefaultCalFloraViewFilters(),
+            gbifFilters: createDefaultGBIFViewFilters(),
             distinguisher: undefined,
             resultCount: undefined,
           };
@@ -724,14 +603,7 @@ export function useLayerFilteredViewActions({
           }
 
           const existingFlatViewName = p.distinguisher || buildMotusViewName(
-            p.motusFilters || {
-              selectedSpecies: undefined,
-              selectedTagId: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              minHitCount: undefined,
-              minMotusFilter: undefined,
-            }
+            p.motusFilters || createDefaultMotusViewFilters()
           );
 
           const existingFlatView = {
@@ -757,55 +629,13 @@ export function useLayerFilteredViewActions({
             views: [existingFlatView, newView],
             filterCount: 0,
             filterSummary: undefined,
-            inaturalistFilters: { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined },
-            animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
-            dendraFilters: {
-              showActiveOnly: false,
-              selectedStationId: undefined,
-              selectedStationName: undefined,
-              selectedDatastreamId: undefined,
-              selectedDatastreamName: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              aggregation: undefined,
-            },
-            dataoneFilters: {
-              searchText: undefined,
-              tncCategory: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              author: undefined,
-              selectedDatasetId: undefined,
-            },
-            calfloraFilters: {
-              searchText: undefined,
-              county: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              hasPhoto: false,
-              selectedObservationId: undefined,
-              selectedObservationLabel: undefined,
-            },
-            gbifFilters: {
-              searchText: undefined,
-              kingdom: undefined,
-              taxonomicClass: undefined,
-              family: undefined,
-              basisOfRecord: undefined,
-              datasetName: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              selectedOccurrenceId: undefined,
-              selectedOccurrenceLabel: undefined,
-            },
-            motusFilters: {
-              selectedSpecies: undefined,
-              selectedTagId: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              minHitCount: undefined,
-              minMotusFilter: undefined,
-            },
+            inaturalistFilters: createDefaultINaturalistViewFilters(),
+            animlFilters: createDefaultAnimlViewFilters(),
+            dendraFilters: createDefaultDendraViewFilters(),
+            dataoneFilters: createDefaultDataOneViewFilters(),
+            calfloraFilters: createDefaultCalFloraViewFilters(),
+            gbifFilters: createDefaultGBIFViewFilters(),
+            motusFilters: createDefaultMotusViewFilters(),
             distinguisher: undefined,
             resultCount: undefined,
           };
@@ -901,8 +731,8 @@ export function useLayerFilteredViewActions({
             views: [{ id: targetViewId, ...baseView }],
             filterCount: 0,
             filterSummary: undefined,
-            inaturalistFilters: { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined },
-            animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
+            inaturalistFilters: createDefaultINaturalistViewFilters(),
+            animlFilters: createDefaultAnimlViewFilters(),
             dendraFilters: undefined,
             dataoneFilters: undefined,
             calfloraFilters: undefined,

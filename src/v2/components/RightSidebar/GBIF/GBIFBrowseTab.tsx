@@ -4,6 +4,7 @@ import { gbifService, type GBIFOccurrence } from '../../../../services/gbifServi
 import { useGBIFFilter } from '../../../context/GBIFFilterContext';
 import { useLayers } from '../../../context/LayerContext';
 import { useMap } from '../../../context/MapContext';
+import { createDefaultGBIFBrowseFilters } from '../../../context/utils/browseFilterDefaults';
 import { EditFiltersCard } from '../shared/EditFiltersCard';
 import { InlineLoadingRow, RefreshLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { GBIFOccurrenceCard } from './GBIFOccurrenceCard';
@@ -316,14 +317,15 @@ export function GBIFBrowseTab() {
   };
 
   const clearAllFilters = () => {
+    const defaults = createDefaultGBIFBrowseFilters();
     setSearchInput('');
-    setAppliedSearchTerm('');
-    setKingdom('');
-    setFamily('');
-    setBasisOfRecord('');
-    setDatasetName('');
-    setStartDate('');
-    setEndDate('');
+    setAppliedSearchTerm(defaults.searchText);
+    setKingdom(defaults.kingdom);
+    setFamily(defaults.family);
+    setBasisOfRecord(defaults.basisOfRecord);
+    setDatasetName(defaults.datasetName);
+    setStartDate(defaults.startDate);
+    setEndDate(defaults.endDate);
     setPage(0);
   };
 

@@ -3,6 +3,7 @@ import { AlertCircle } from 'lucide-react';
 import { motusService, type MotusTaggedAnimalSummary } from '../../../../services/motusService';
 import { useLayers } from '../../../context/LayerContext';
 import { useMotusFilter } from '../../../context/MotusFilterContext';
+import { createDefaultMotusBrowseFilters } from '../../../context/utils/browseFilterDefaults';
 import { InlineLoadingRow, RefreshLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { ProductDetailView } from './ProductDetailView';
 import { ProductListView, type MotusBrowseItem } from './ProductListView';
@@ -138,11 +139,12 @@ export function MOTUSBrowseTab({ showBackToOverview = false, onBackToOverview }:
       : pinnedMotus.motusFilters;
     if (!sourceFilters) return;
 
+    const defaults = createDefaultMotusBrowseFilters();
     setBrowseFilters({
-      startDate: sourceFilters.startDate ?? '',
-      endDate: sourceFilters.endDate ?? '',
-      minHitCount: sourceFilters.minHitCount ?? 1,
-      minMotusFilter: sourceFilters.minMotusFilter ?? 1,
+      startDate: sourceFilters.startDate ?? defaults.startDate,
+      endDate: sourceFilters.endDate ?? defaults.endDate,
+      minHitCount: sourceFilters.minHitCount ?? defaults.minHitCount,
+      minMotusFilter: sourceFilters.minMotusFilter ?? defaults.minMotusFilter,
     });
     setSelectedSpecies(sourceFilters.selectedSpecies ?? null);
     setSelectedTagId(sourceFilters.selectedTagId ?? null);

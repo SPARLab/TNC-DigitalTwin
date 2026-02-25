@@ -10,6 +10,7 @@ import type { DendraStation, DendraSummary } from '../../../services/dendraStati
 import { formatStationDisplayName } from '../../../services/dendraStationService';
 import { useDendra } from '../../../context/DendraContext';
 import { useLayers } from '../../../context/LayerContext';
+import { createDefaultDendraViewFilters } from '../../../context/utils/layerFilterDefaults';
 import { useStationDetailState } from './useStationDetailState';
 import { StationCrossStationToolsSection } from './StationCrossStationToolsSection';
 import { StationHeaderCard } from './StationHeaderCard';
@@ -155,14 +156,10 @@ export function StationDetailView({
     ensurePinnedLayer();
 
     const filters = {
+      ...createDefaultDendraViewFilters(),
       showActiveOnly,
       selectedStationId: station.station_id,
       selectedStationName: displayName,
-      selectedDatastreamId: undefined,
-      selectedDatastreamName: undefined,
-      startDate: undefined,
-      endDate: undefined,
-      aggregation: undefined,
     };
     syncDendraFilters(activeLayer.layerId, filters, filteredStations.length, activeLayer.viewId);
     setSaveMessage('Updated current view in Map Layers.');

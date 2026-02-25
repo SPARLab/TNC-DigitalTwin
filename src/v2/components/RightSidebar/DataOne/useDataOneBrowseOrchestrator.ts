@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { dataOneService, type DataOneDataset } from '../../../../services/dataOneService';
 import { useDataOneFilter } from '../../../context/DataOneFilterContext';
 import { useLayers } from '../../../context/LayerContext';
+import { createDefaultDataOneBrowseFilters } from '../../../context/utils/browseFilterDefaults';
 import { useBrowseSearchInput } from '../shared/useBrowseSearchInput';
 import { closeBrowseDetail, openBrowseDetail } from '../shared/browseDetailHandoff';
 import {
@@ -408,13 +409,14 @@ export function useDataOneBrowseOrchestrator() {
   );
 
   const clearAllFilters = () => {
+    const defaults = createDefaultDataOneBrowseFilters();
     setSearchInput('');
-    setAppliedSearchTerm('');
-    setSelectedCategories([]);
-    setSelectedFileTypes([]);
-    setStartYear('');
-    setEndYear('');
-    setAuthorFilter('');
+    setAppliedSearchTerm(defaults.searchText);
+    setSelectedCategories(defaults.tncCategories);
+    setSelectedFileTypes(defaults.fileTypes);
+    setStartYear(defaults.startDate.slice(0, 4));
+    setEndYear(defaults.endDate.slice(0, 4));
+    setAuthorFilter(defaults.author);
     setMapSelectionDataoneIds(null);
     setPage(0);
   };

@@ -11,6 +11,15 @@ import {
   buildINaturalistViewName,
   buildMotusViewName,
 } from '../../utils/layerFilterBuilders';
+import {
+  createDefaultAnimlViewFilters,
+  createDefaultCalFloraViewFilters,
+  createDefaultDataOneViewFilters,
+  createDefaultDendraViewFilters,
+  createDefaultGBIFViewFilters,
+  createDefaultINaturalistViewFilters,
+  createDefaultMotusViewFilters,
+} from '../../utils/layerFilterDefaults';
 
 const DRONE_LAYER_ID = 'dataset-193';
 
@@ -61,67 +70,13 @@ export function useLayerViewLifecycleActions({
             isNameCustom: false,
             isVisible: false,
             filterCount: 0,
-            inaturalistFilters: { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined },
-            animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
-            dendraFilters: isDendraLayer
-              ? {
-                  showActiveOnly: false,
-                  selectedStationId: undefined,
-                  selectedStationName: undefined,
-                  selectedDatastreamId: undefined,
-                  selectedDatastreamName: undefined,
-                  startDate: undefined,
-                  endDate: undefined,
-                  aggregation: undefined,
-                }
-              : undefined,
-            dataoneFilters: isDataOneLayer
-              ? {
-                  searchText: undefined,
-                  tncCategory: undefined,
-                  tncCategories: [],
-                  fileTypes: [],
-                  startDate: undefined,
-                  endDate: undefined,
-                  author: undefined,
-                  selectedDatasetId: undefined,
-                }
-              : undefined,
-            calfloraFilters: isCalFloraLayer
-              ? {
-                  searchText: undefined,
-                  county: undefined,
-                  startDate: undefined,
-                  endDate: undefined,
-                  hasPhoto: false,
-                  selectedObservationId: undefined,
-                  selectedObservationLabel: undefined,
-                }
-              : undefined,
-            gbifFilters: isGBIFLayer
-              ? {
-                  searchText: undefined,
-                  kingdom: undefined,
-                  taxonomicClass: undefined,
-                  family: undefined,
-                  basisOfRecord: undefined,
-                  datasetName: undefined,
-                  startDate: undefined,
-                  endDate: undefined,
-                  selectedOccurrenceId: undefined,
-                  selectedOccurrenceLabel: undefined,
-                }
-              : undefined,
-            motusFilters: isMotusLayer
-              ? {
-                  selectedSpecies: undefined,
-                  selectedTagId: undefined,
-                  startDate: undefined,
-                  endDate: undefined,
-                  minHitCount: undefined,
-                  minMotusFilter: undefined,
-                }
-              : undefined,
+            inaturalistFilters: createDefaultINaturalistViewFilters(),
+            animlFilters: createDefaultAnimlViewFilters(),
+            dendraFilters: isDendraLayer ? createDefaultDendraViewFilters() : undefined,
+            dataoneFilters: isDataOneLayer ? createDefaultDataOneViewFilters() : undefined,
+            calfloraFilters: isCalFloraLayer ? createDefaultCalFloraViewFilters() : undefined,
+            gbifFilters: isGBIFLayer ? createDefaultGBIFViewFilters() : undefined,
+            motusFilters: isMotusLayer ? createDefaultMotusViewFilters() : undefined,
             droneView: undefined,
           };
           nextActiveViewRef.current = { layerId: p.layerId, viewId: newViewId };
@@ -131,74 +86,30 @@ export function useLayerViewLifecycleActions({
         const view1Name = p.distinguisher || (
           isDendraLayer
             ? buildDendraViewName(
-                p.dendraFilters || {
-                  showActiveOnly: false,
-                  selectedStationId: undefined,
-                  selectedStationName: undefined,
-                  selectedDatastreamId: undefined,
-                  selectedDatastreamName: undefined,
-                  startDate: undefined,
-                  endDate: undefined,
-                  aggregation: undefined,
-                }
+                p.dendraFilters || createDefaultDendraViewFilters()
               )
             : isAnimlLayer
             ? buildAnimlViewName(
-              p.animlFilters || { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined }
+              p.animlFilters || createDefaultAnimlViewFilters()
             )
             : isDataOneLayer
             ? buildDataOneViewName(
-              p.dataoneFilters || {
-                searchText: undefined,
-                tncCategory: undefined,
-                tncCategories: [],
-                fileTypes: [],
-                startDate: undefined,
-                endDate: undefined,
-                author: undefined,
-                selectedDatasetId: undefined,
-              }
+              p.dataoneFilters || createDefaultDataOneViewFilters()
             )
             : isCalFloraLayer
             ? buildCalFloraViewName(
-              p.calfloraFilters || {
-                searchText: undefined,
-                county: undefined,
-                startDate: undefined,
-                endDate: undefined,
-                hasPhoto: false,
-                selectedObservationId: undefined,
-                selectedObservationLabel: undefined,
-              }
+              p.calfloraFilters || createDefaultCalFloraViewFilters()
             )
             : isGBIFLayer
             ? buildGBIFViewName(
-              p.gbifFilters || {
-                searchText: undefined,
-                kingdom: undefined,
-                taxonomicClass: undefined,
-                family: undefined,
-                basisOfRecord: undefined,
-                datasetName: undefined,
-                startDate: undefined,
-                endDate: undefined,
-                selectedOccurrenceId: undefined,
-                selectedOccurrenceLabel: undefined,
-              }
+              p.gbifFilters || createDefaultGBIFViewFilters()
             )
             : isMotusLayer
             ? buildMotusViewName(
-              p.motusFilters || {
-                selectedSpecies: undefined,
-                selectedTagId: undefined,
-                startDate: undefined,
-                endDate: undefined,
-                minHitCount: undefined,
-                minMotusFilter: undefined,
-              }
+              p.motusFilters || createDefaultMotusViewFilters()
             )
             : buildINaturalistViewName(
-              p.inaturalistFilters || { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined }
+              p.inaturalistFilters || createDefaultINaturalistViewFilters()
             )
         );
         const view1 = {
@@ -224,67 +135,13 @@ export function useLayerViewLifecycleActions({
           isNameCustom: false,
           isVisible: false,
           filterCount: 0,
-          inaturalistFilters: { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined },
-          animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
-          dendraFilters: isDendraLayer
-            ? {
-                showActiveOnly: false,
-                selectedStationId: undefined,
-                selectedStationName: undefined,
-                selectedDatastreamId: undefined,
-                selectedDatastreamName: undefined,
-                startDate: undefined,
-                endDate: undefined,
-                aggregation: undefined,
-              }
-            : undefined,
-          dataoneFilters: isDataOneLayer
-            ? {
-                searchText: undefined,
-                tncCategory: undefined,
-                tncCategories: [],
-                fileTypes: [],
-                startDate: undefined,
-                endDate: undefined,
-                author: undefined,
-                selectedDatasetId: undefined,
-              }
-            : undefined,
-          calfloraFilters: isCalFloraLayer
-            ? {
-                searchText: undefined,
-                county: undefined,
-                startDate: undefined,
-                endDate: undefined,
-                hasPhoto: false,
-                selectedObservationId: undefined,
-                selectedObservationLabel: undefined,
-              }
-            : undefined,
-          gbifFilters: isGBIFLayer
-            ? {
-                searchText: undefined,
-                kingdom: undefined,
-                taxonomicClass: undefined,
-                family: undefined,
-                basisOfRecord: undefined,
-                datasetName: undefined,
-                startDate: undefined,
-                endDate: undefined,
-                selectedOccurrenceId: undefined,
-                selectedOccurrenceLabel: undefined,
-              }
-            : undefined,
-          motusFilters: isMotusLayer
-            ? {
-                selectedSpecies: undefined,
-                selectedTagId: undefined,
-                startDate: undefined,
-                endDate: undefined,
-                minHitCount: undefined,
-                minMotusFilter: undefined,
-              }
-            : undefined,
+          inaturalistFilters: createDefaultINaturalistViewFilters(),
+          animlFilters: createDefaultAnimlViewFilters(),
+          dendraFilters: isDendraLayer ? createDefaultDendraViewFilters() : undefined,
+          dataoneFilters: isDataOneLayer ? createDefaultDataOneViewFilters() : undefined,
+          calfloraFilters: isCalFloraLayer ? createDefaultCalFloraViewFilters() : undefined,
+          gbifFilters: isGBIFLayer ? createDefaultGBIFViewFilters() : undefined,
+          motusFilters: isMotusLayer ? createDefaultMotusViewFilters() : undefined,
           droneView: undefined,
         };
         nextActiveViewRef.current = { layerId: p.layerId, viewId: view2.id };
@@ -294,67 +151,13 @@ export function useLayerViewLifecycleActions({
           views: [view1, view2],
           filterCount: 0,
           filterSummary: undefined,
-          inaturalistFilters: { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined },
-          animlFilters: { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined },
-          dendraFilters: isDendraLayer
-            ? {
-                showActiveOnly: false,
-                selectedStationId: undefined,
-                selectedStationName: undefined,
-                selectedDatastreamId: undefined,
-                selectedDatastreamName: undefined,
-                startDate: undefined,
-                endDate: undefined,
-                aggregation: undefined,
-              }
-            : undefined,
-          dataoneFilters: isDataOneLayer
-            ? {
-                searchText: undefined,
-                tncCategory: undefined,
-                tncCategories: [],
-                fileTypes: [],
-                startDate: undefined,
-                endDate: undefined,
-                author: undefined,
-                selectedDatasetId: undefined,
-              }
-            : undefined,
-          calfloraFilters: isCalFloraLayer
-            ? {
-                searchText: undefined,
-                county: undefined,
-                startDate: undefined,
-                endDate: undefined,
-                hasPhoto: false,
-                selectedObservationId: undefined,
-                selectedObservationLabel: undefined,
-              }
-            : undefined,
-          gbifFilters: isGBIFLayer
-            ? {
-                searchText: undefined,
-                kingdom: undefined,
-                taxonomicClass: undefined,
-                family: undefined,
-                basisOfRecord: undefined,
-                datasetName: undefined,
-                startDate: undefined,
-                endDate: undefined,
-                selectedOccurrenceId: undefined,
-                selectedOccurrenceLabel: undefined,
-              }
-            : undefined,
-          motusFilters: isMotusLayer
-            ? {
-                selectedSpecies: undefined,
-                selectedTagId: undefined,
-                startDate: undefined,
-                endDate: undefined,
-                minHitCount: undefined,
-                minMotusFilter: undefined,
-              }
-            : undefined,
+          inaturalistFilters: createDefaultINaturalistViewFilters(),
+          animlFilters: createDefaultAnimlViewFilters(),
+          dendraFilters: isDendraLayer ? createDefaultDendraViewFilters() : undefined,
+          dataoneFilters: isDataOneLayer ? createDefaultDataOneViewFilters() : undefined,
+          calfloraFilters: isCalFloraLayer ? createDefaultCalFloraViewFilters() : undefined,
+          gbifFilters: isGBIFLayer ? createDefaultGBIFViewFilters() : undefined,
+          motusFilters: isMotusLayer ? createDefaultMotusViewFilters() : undefined,
           droneView: undefined,
           distinguisher: undefined,
           resultCount: undefined,
@@ -426,71 +229,27 @@ export function useLayerViewLifecycleActions({
 
         const autoName = isDendraLayer
           ? buildDendraViewName(
-              targetView.dendraFilters || {
-                showActiveOnly: false,
-                selectedStationId: undefined,
-                selectedStationName: undefined,
-                selectedDatastreamId: undefined,
-                selectedDatastreamName: undefined,
-                startDate: undefined,
-                endDate: undefined,
-                aggregation: undefined,
-              }
+              targetView.dendraFilters || createDefaultDendraViewFilters()
             )
           : isAnimlLayer
           ? buildAnimlViewName(
-            targetView.animlFilters || { selectedAnimals: [], selectedCameras: [], startDate: undefined, endDate: undefined }
+            targetView.animlFilters || createDefaultAnimlViewFilters()
           )
           : isDataOneLayer
           ? buildDataOneViewName(
-            targetView.dataoneFilters || {
-              searchText: undefined,
-              tncCategory: undefined,
-              tncCategories: [],
-              fileTypes: [],
-              startDate: undefined,
-              endDate: undefined,
-              author: undefined,
-              selectedDatasetId: undefined,
-            }
+            targetView.dataoneFilters || createDefaultDataOneViewFilters()
           )
           : isCalFloraLayer
           ? buildCalFloraViewName(
-            targetView.calfloraFilters || {
-              searchText: undefined,
-              county: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              hasPhoto: false,
-              selectedObservationId: undefined,
-              selectedObservationLabel: undefined,
-            }
+            targetView.calfloraFilters || createDefaultCalFloraViewFilters()
           )
           : isGBIFLayer
           ? buildGBIFViewName(
-            targetView.gbifFilters || {
-              searchText: undefined,
-              kingdom: undefined,
-              taxonomicClass: undefined,
-              family: undefined,
-              basisOfRecord: undefined,
-              datasetName: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              selectedOccurrenceId: undefined,
-              selectedOccurrenceLabel: undefined,
-            }
+            targetView.gbifFilters || createDefaultGBIFViewFilters()
           )
           : isMotusLayer
           ? buildMotusViewName(
-            targetView.motusFilters || {
-              selectedSpecies: undefined,
-              selectedTagId: undefined,
-              startDate: undefined,
-              endDate: undefined,
-              minHitCount: undefined,
-              minMotusFilter: undefined,
-            }
+            targetView.motusFilters || createDefaultMotusViewFilters()
           )
           : isDroneLayer && targetView.droneView
           ? buildDroneViewName({
@@ -504,7 +263,7 @@ export function useLayerViewLifecycleActions({
               recordType: 'plan',
             } as DroneImageryMetadata)
           : buildINaturalistViewName(
-            targetView.inaturalistFilters || { selectedTaxa: [], selectedSpecies: [], startDate: undefined, endDate: undefined }
+            targetView.inaturalistFilters || createDefaultINaturalistViewFilters()
           );
         const nextName = trimmedName || autoName;
         const nextIsCustom = trimmedName.length > 0;
