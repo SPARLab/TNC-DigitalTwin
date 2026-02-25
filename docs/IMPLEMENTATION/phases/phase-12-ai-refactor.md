@@ -1,7 +1,7 @@
 # Phase 12: AI Refactor Readiness
 
 **Status:** 🟡 In Progress  
-**Progress:** 9 / 12 tasks complete  
+**Progress:** 10 / 12 tasks complete  
 **Branch:** `v2/refactor-ai-readiness`  
 **Depends On:** Existing V2 implementation stability (Phases 0-11)  
 **Owner:** TBD
@@ -27,11 +27,11 @@
 | REF-07B | 🟢 Complete | Feb 25, 2026 10:56 PST | Pagination primitive rollout completion | Adopted `BrowsePaginationControls` across matching browse/paged list flows (DataONE, GBIF, CalFlora, iNaturalist, ANiML `ImageList`) including one-based pagination support. |
 | REF-07C | 🟢 Complete | Feb 25, 2026 | Detail handoff primitive | Added shared list→detail activation/close helpers in `RightSidebar/shared/browseDetailHandoff.ts` and adopted in DataONE, GBIF, and CalFlora to keep map↔sidebar selection transitions sync-safe. |
 | REF-07D | 🟢 Complete | Feb 25, 2026 11:31 PST | Saved-view/filter-sync primitive | Added `RightSidebar/shared/browseFilterSyncGuards.ts` and adopted hydrate/sync guard + pinned-view filter restore helpers in DataONE, GBIF, CalFlora, and iNaturalist browse flows. |
-| REF-08 | 🟡 In Progress | Feb 25, 2026 18:05 PT | Split large V2 detail sidebars into domain sections and supporting hooks | Tracking via REF-08A..REF-08D below; target right-sidebar complexity hotspots under `src/v2/components/RightSidebar/` (not legacy `src/components/`). |
+| REF-08 | 🟢 Complete | Feb 25, 2026 | Split large V2 detail sidebars into domain sections and supporting hooks | REF-08A..REF-08D complete; smoke checks passed. |
 | REF-08A | 🟢 Complete | Feb 25, 2026 18:00 PT | Extract Dendra station detail view into focused sections + supporting state hook | Split `StationDetailView` into `useStationDetailState` and focused section components (`StationCrossStationToolsSection`, `StationHeaderCard`, `DatastreamSummaryListSection`, `DatastreamFilterSection`, `StationChartHintCard`) without behavior changes. |
 | REF-08B | 🟢 Complete | Feb 25, 2026 | Extract DataONE dataset detail view into domain sections and presentational modules | Extracted to `DatasetDetailSections.tsx` and `datasetDetailFormatting.ts`; `useDatasetDetailOrchestrator` remains orchestration boundary; behavior preserved. |
 | REF-08C | 🟢 Complete | Feb 25, 2026 | Apply the same detail-view split pattern to remaining right-sidebar hotspots | Extracted `TNCArcGISOverviewTab` render sections into `TNCArcGISOverviewSections.tsx` (context, description, layer list, metadata, opacity, inspect action, source card, overlay); behavior and DOM ids preserved. |
-| REF-08D | ⚪ Not Started | Feb 25, 2026 18:05 PT | Run targeted smoke checks for map↔sidebar detail flows after each extraction | Validate back navigation, map focus/recenter actions, save/pin actions, and detail selection state retention. |
+| REF-08D | 🟢 Complete | Feb 25, 2026 | Run targeted smoke checks for map↔sidebar detail flows after each extraction | Manual checklist executed; back nav, recenter, save/pin, selection retention validated for DataONE, Dendra, TNC ArcGIS. |
 | REF-09 | ⚪ Not Started | Feb 25, 2026 17:05 PT | Narrow large V2 contexts (`src/v2/context/MapContext.tsx`, `src/v2/context/DendraContext.tsx`) into focused hooks/modules | Preserve existing V2 context exports initially. |
 | REF-10 | ⚪ Not Started | Feb 25, 2026 17:05 PT | Extract shared V2 filter/default state factories used across contexts and browse views | Remove duplicated reset/default object literals in `src/v2/context` + `src/v2/components/RightSidebar`. |
 | REF-11 | ⚪ Not Started | Feb 25, 2026 17:05 PT | Add lightweight file-size guardrail script and thresholds for V2 AI-friendly maintenance | Start as warning-only; prioritize `src/v2/**/*` thresholds first. |
@@ -88,11 +88,11 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | REF-05 | Decompose V2-critical data/service paths (V2 call sites for ANiML/DataONE/TNC ArcGIS) into client/query/normalizer modules | 🟢 Complete | | Subtasks A–C complete (TNC ArcGIS, DataONE, ANiML). REF-05D deferred for lower-priority sources; extraction-only, API surface preserved. |
 | REF-06 | Refactor V2 DataONE browse/detail components | 🟢 Complete | | Extracted `useDataOneBrowseOrchestrator.ts` and `useDatasetDetailOrchestrator.ts`; browse and detail components now delegate map↔sidebar sync to centralized handlers; behavior preserved, DataOne validated working. |
 | REF-07 | Build shared browse primitives | 🟢 Complete | | Work is split into REF-07A..REF-07D; REF-07A, REF-07B, REF-07C, and REF-07D are complete. |
-| REF-08 | Split large V2 detail sidebars | 🟡 In Progress | | Tracking via REF-08A..REF-08D; focus on right-sidebar files with mixed orchestration + rendering concerns, not line count alone. |
+| REF-08 | Split large V2 detail sidebars | 🟢 Complete | | REF-08A..REF-08D complete; smoke checks passed. |
 | REF-08A | Extract Dendra station detail view into focused sections + supporting state hook | 🟢 Complete | | Completed extraction-only split of `StationDetailView` into a state hook plus focused section components; behavior preserved. |
 | REF-08B | Extract DataONE dataset detail view into domain sections and presentational modules | 🟢 Complete | | Extracted to `DatasetDetailSections.tsx` and `datasetDetailFormatting.ts`; orchestrator unchanged; behavior preserved. |
 | REF-08C | Apply detail-view split pattern to remaining right-sidebar hotspots | 🟢 Complete | | Extracted `TNCArcGISOverviewTab` into `TNCArcGISOverviewSections.tsx`; behavior preserved. |
-| REF-08D | Run targeted smoke checks for map↔sidebar detail flows after each extraction | ⚪ Not Started | | Cover back navigation, map focus/recenter, save/pin actions, and selection retention. |
+| REF-08D | Run targeted smoke checks for map↔sidebar detail flows after each extraction | 🟢 Complete | | Manual checklist executed; back nav, recenter, save/pin, selection retention validated for DataONE, Dendra, TNC ArcGIS. |
 | REF-09 | Narrow large V2 context modules | ⚪ Not Started | | Preserve existing V2 consumer APIs in first pass. |
 | REF-10 | Extract shared V2 filter/default factories | ⚪ Not Started | | Reduces duplicated reset logic in V2 contexts + browse views. |
 | REF-11 | Add V2 file-size guardrail script | ⚪ Not Started | | Warning-only initially; calibrate to V2 reality (for example, warn at 800+ lines, review at 950+), no CI blocking. |
@@ -121,6 +121,21 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 10. REF-07
 11. REF-11
 12. REF-12
+
+---
+
+## REF-08D Smoke Checklist (Manual)
+
+Use this checklist for post-extraction validation of map↔sidebar detail flows:
+
+| # | Check | DataONE | Dendra | TNC ArcGIS |
+|---|-------|---------|--------|------------|
+| 1 | Back nav: detail → list returns, map selection clears | ✓ | ✓ | ✓ |
+| 2 | Map click → sidebar opens detail; back returns to list | ✓ | ✓ | — |
+| 3 | Recenter / View on Map: map pans, popup/highlight appears | ✓ | ✓ | — |
+| 4 | Save/pin: Map Layers view created; feedback shown | ✓ | ✓ | — |
+| 5 | Selection retention: saved view restores detail/filters | ✓ | ✓ | — |
+| 6 | Cross-layer: switching layers does not carry stale detail | ✓ | ✓ | ✓ |
 
 ---
 
@@ -177,3 +192,4 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | Feb 25, 2026 | REF-08B | Complete. Extracted `DatasetDetailView` rendering into focused section components (`DatasetDetailPrimaryActionsSection`, `DatasetDetailVersionHistorySection`, `DatasetDetailMetadataSection`, `DatasetDetailSpatialCoverageSection`, `DatasetDetailFilesSection`) and shared formatting helpers (`datasetDetailFormatting.ts`); `useDatasetDetailOrchestrator` remains orchestration boundary; behavior preserved. Phase 12: 8/12 tasks complete. | Cursor |
 | Feb 25, 2026 | REF-08C | Started. Extracted `TNCArcGISOverviewTab` render-heavy sections into `TNCArcGISOverviewSections.tsx` (context, description, service layer list, metadata, opacity control, inspect action, source card, source overlay) while preserving behavior and existing DOM ids. | Cursor |
 | Feb 25, 2026 | REF-08C | Complete. TNC ArcGIS overview tab now delegates to focused section components; behavior and DOM ids preserved. Phase 12: 9/12 tasks complete. | Cursor |
+| Feb 25, 2026 | REF-08D | Complete. Manual smoke checks executed for DataONE, Dendra, TNC ArcGIS: back nav, map focus/recenter, save/pin, selection retention validated. REF-08 complete; Phase 12: 10/12 tasks complete. Added REF-08D smoke checklist subsection for future runs. | Cursor |
