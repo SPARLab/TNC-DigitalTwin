@@ -11,12 +11,12 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 122 / 138 complete (**88%**) |
-| **Active remaining** | 16 tasks |
-| **Phases complete** | 6 of 13 (0, 1, 2, 6, 10, 11) |
+| **Active scope** | 123 / 138 complete (**89%**) |
+| **Active remaining** | 15 tasks |
+| **Phases complete** | 7 of 13 (0, 1, 2, 6, 10, 11, 12) |
 
 ```
-████████████████████████████████████████░░░░░  88%
+█████████████████████████████████████████░░░░  89%
 ```
 
 ---
@@ -53,8 +53,8 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 122
-- **Active remaining (Not Started + In Progress + Blocked):** 16
+- **Complete:** 123
+- **Active remaining (Not Started + In Progress + Blocked):** 15
 - **Backlog (not in active scope):** 3
 - **Deferred:** 1
 - **Won't Do:** 2
@@ -76,7 +76,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
 | 10 | DroneDeploy | 🟢 Complete | 4 | 0 | 0 | 0 | 0 | 4 | `v2/dronedeploy` |
 | 11 | MOTUS | 🟢 Complete | 9 | 0 | 0 | 0 | 0 | 9 | `v2/motus` |
-| 12 | Export Code Generation | 🟡 In Progress | 2 | 1 | 0 | 0 | 0 | 3 | `v2/export-code-generation` |
+| 12 | Export Code Generation | 🟢 Complete | 3 | 0 | 0 | 0 | 0 | 3 | `v2/export-code-generation` |
 
 **Status Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
 
@@ -349,6 +349,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 25, 2026 | Phase 12 | **12.3 complete. Phase 12 complete.** Export Builder UX validation: principled review fixes (layer card figure-ground, Export outputs container, step indicator, success feedback, scrollbar hover-only overlay, semantic naming, size text). design-system.md updated. | Cursor |
 | Feb 24, 2026 | Phase 3 | **D24-01 complete.** Dendra chart panel UX polish: larger initial size, bottom inset (~1–2rem from map edge), time slider data shadow restored, x-axis/slider spacing tuned. Phase 3: 9/12 tasks complete. | Cursor |
 | Feb 24, 2026 | Phase 1 | **TF-06 complete.** iNaturalist species filter: taxa selected + all species checked now shows results (removed requiresSpeciesSelection gating). Select All/Clear All text-only styling with gray when inactive; styled `|` separator in Filter Taxa, Filter Species, and legend. Phase 1: 10/11 tasks complete. | Cursor |
 | Feb 23, 2026 | Phase 4 | **DataONE Save View + Map Layers sync refinements.** Save Dataset View auto-pins when unpinned; persists current filters + selected dataset. Map Layers child-view click passes featureId explicitly; sync effect resolves DataONE featureId only when view changes (preserves Back-to-list). Cluster click: removed custom highlight; safe auto-zoom when cluster stays visible. | Assistant |

@@ -1,7 +1,7 @@
 # Phase 12: Export Code Generation (Python + R)
 
-**Status:** 🟡 In Progress  
-**Progress:** 2 / 3 tasks  
+**Status:** 🟢 Complete  
+**Progress:** 3 / 3 tasks  
 **Branch:** `v2/export-code-generation`  
 **Depends On:** Phase 5 (Export Builder modal/actions)  
 **Owner:** TBD
@@ -38,7 +38,7 @@ Demonstrate the forward direction of Export Builder by generating copy/paste-rea
 |----|--------|---------------------------|------------------|-------|
 | 12.1 | 🟢 Complete | Feb 25, 2026 | Define export code-generation contract for Export Builder | Contract in doc; types, mappers, templates, module boundaries implemented |
 | 12.2 | 🟢 Complete | Feb 25, 2026 | Implement iNaturalist + Dendra Python/R snippet generation | Per-layer codegen, Dangermond bbox, smooth animation, error-only feedback |
-| 12.3 | ⚪ Not Started | Feb 25, 2026 | Validate UX and quality for demo readiness | Ensure copy/download flows work, snippets are readable, and add targeted tests |
+| 12.3 | 🟢 Complete | Feb 25, 2026 | Validate UX and quality for demo readiness | UI review fixes: layer card figure-ground, scrollbar, step indicator, success feedback, semantic naming |
 
 ---
 
@@ -48,7 +48,7 @@ Demonstrate the forward direction of Export Builder by generating copy/paste-rea
 |----|------|--------|----------|-------|
 | 12.1 | Define code-generation contract and template architecture | 🟢 Complete | | Contract narrow to iNaturalist + Dendra for MVP |
 | 12.2 | Build Python/R generators for iNaturalist and Dendra | 🟢 Complete | | Per-layer UI, pandas/readr-first snippets |
-| 12.3 | Integrate UI actions + testing + demo verification | ⚪ Not Started | | Include fallback behavior for unsupported formats/data sources |
+| 12.3 | Integrate UI actions + testing + demo verification | 🟢 Complete | | UX validation: principled review fixes, overlay scrollbar, transient success feedback |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -171,7 +171,9 @@ Use `view.queryDefinition` as the canonical source of filter state and keep mapp
 
 | Decision | Date | Rationale | Added to design-system.md? |
 |----------|------|-----------|---------------------------|
-| (none yet) | | | |
+| Export Builder scroll area: hover-only overlay scrollbar, no track, `scrollbar-gutter: stable` | Feb 25, 2026 | Avoids content shift; thumb appears on hover; no visible track per user request | Yes |
+| Layer card figure-ground: `bg-slate-50` ground, white cards with `shadow-sm` | Feb 25, 2026 | Layer cards (export targets) stand out as figures; Gestalt Common Region | Yes |
+| "Import code" → "Code generation"; "Size unavailable" → "Estimate pending" / em-dash | Feb 25, 2026 | Resolves export/import semantic contradiction; reduces repetitive negative copy | Yes |
 
 ---
 
@@ -190,3 +192,5 @@ Use `view.queryDefinition` as the canonical source of filter state and keep mapp
 | Feb 25, 2026 | 12.2 | Added smooth expand/collapse animation for per-layer generated code preview panel in Export Builder | Codex |
 | Feb 25, 2026 | 12.2 | Suppressed success toasts in Export Builder; feedback banner now appears only for errors | Codex |
 | Feb 25, 2026 | 12.1, 12.2 | Marked tasks complete; 12.3 (UX validation + tests) remains | Codex |
+| Feb 25, 2026 | 12.3 | UI/UX principled review fixes: layer card figure-ground, Export outputs container, step indicator, success feedback, scrollbar (hover-only overlay, no track), semantic naming, size text | Codex |
+| Feb 25, 2026 | 12.3 | Marked task complete; Phase 12 complete | Codex |

@@ -497,7 +497,10 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
           onClose={onClose}
         />
 
-        <div id="export-builder-content-scroll-area" className="flex-1 overflow-y-auto bg-slate-50 px-6 py-5">
+        <div
+          id="export-builder-content-scroll-area"
+          className="scroll-area-export-builder flex-1 bg-slate-50 px-6 py-5"
+        >
           {feedback ? (
             <div
               id="export-builder-feedback-banner"
