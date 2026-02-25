@@ -1,7 +1,7 @@
 # Phase 12: AI Refactor Readiness
 
 **Status:** 🟡 In Progress  
-**Progress:** 10 / 12 tasks complete  
+**Progress:** 11 / 13 tasks complete  
 **Branch:** `v2/refactor-ai-readiness`  
 **Depends On:** Existing V2 implementation stability (Phases 0-11)  
 **Owner:** TBD
@@ -36,6 +36,7 @@
 | REF-10 | ⚪ Not Started | Feb 25, 2026 17:05 PT | Extract shared V2 filter/default state factories used across contexts and browse views | Remove duplicated reset/default object literals in `src/v2/context` + `src/v2/components/RightSidebar`. |
 | REF-11 | ⚪ Not Started | Feb 25, 2026 17:05 PT | Add lightweight file-size guardrail script and thresholds for V2 AI-friendly maintenance | Start as warning-only; prioritize `src/v2/**/*` thresholds first. |
 | REF-12 | ⚪ Not Started | Feb 25, 2026 17:05 PT | Define and document V2 refactor completion criteria + QA checklist for extraction-only changes | Include smoke-test checklist for V2 map/sidebar/filter/view flows. |
+| REF-13 | 🟢 Complete | Feb 25, 2026 12:24 PT | Resolve V2 MOTUS 3D journey playback regression (stations render, inferred flight legs do not) | Fixed: SceneView now renders journey legs with 3D-native `line-3d` symbols (2D path preserved), plus finite-coordinate leg guards + diagnostic logging. User-verified: 3D playback animation is rendering correctly. |
 
 ---
 
@@ -97,6 +98,7 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | REF-10 | Extract shared V2 filter/default factories | ⚪ Not Started | | Reduces duplicated reset logic in V2 contexts + browse views. |
 | REF-11 | Add V2 file-size guardrail script | ⚪ Not Started | | Warning-only initially; calibrate to V2 reality (for example, warn at 800+ lines, review at 950+), no CI blocking. |
 | REF-12 | Add V2 extraction QA checklist | ⚪ Not Started | | Required before phase completion; cover V2-specific flows. |
+| REF-13 | Resolve V2 MOTUS 3D journey playback regression | 🟢 Complete | | Resolved by switching 3D journey legs to SceneView-native `line-3d` symbols while preserving 2D line rendering; added invalid-coordinate draw guards and retained debug probes in `useMotusMapBehavior.ts`. User validated that 3D journey animation now renders. |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -193,3 +195,6 @@ Use this checklist for post-extraction validation of map↔sidebar detail flows:
 | Feb 25, 2026 | REF-08C | Started. Extracted `TNCArcGISOverviewTab` render-heavy sections into `TNCArcGISOverviewSections.tsx` (context, description, service layer list, metadata, opacity control, inspect action, source card, source overlay) while preserving behavior and existing DOM ids. | Cursor |
 | Feb 25, 2026 | REF-08C | Complete. TNC ArcGIS overview tab now delegates to focused section components; behavior and DOM ids preserved. Phase 12: 9/12 tasks complete. | Cursor |
 | Feb 25, 2026 | REF-08D | Complete. Manual smoke checks executed for DataONE, Dendra, TNC ArcGIS: back nav, map focus/recenter, save/pin, selection retention validated. REF-08 complete; Phase 12: 10/12 tasks complete. Added REF-08D smoke checklist subsection for future runs. | Cursor |
+| Feb 25, 2026 | REF-04 follow-up | Fixed MOTUS 3D journey playback regression by re-triggering overlay redraw on map view re-initialization and movement-context updates in `src/v2/dataSources/motus/useMapBehavior.ts`; keeps station + journey legs synchronized after 2D↔3D toggles. | Cursor |
+| Feb 25, 2026 | REF-04 follow-up | Added MOTUS journey debug logging and 3D line visibility hardening (`polyline` `spatialReference` + `relative-to-ground` elevation offsets) in `src/v2/dataSources/motus/useMapBehavior.ts` to diagnose/mitigate SceneView line rendering gaps while preserving behavior in 2D. | Cursor |
+| Feb 25, 2026 | REF-13 | Added in-progress dedicated regression task for MOTUS 3D journey playback and expanded debug probes in `src/v2/dataSources/motus/useMapBehavior.ts` to explicitly log `legCount`, `polylineCount`, `overlayGraphicCount`, overlay-on-map status, and SceneView `layerView` state (`suspended`/`visible`/`updating`) to confirm/disprove rendering-visibility vs draw-pipeline hypotheses. | Cursor |
