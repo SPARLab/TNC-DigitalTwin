@@ -353,6 +353,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 25, 2026 | Phase 12 | **REF-05 complete.** Decomposed V2-critical service paths into client/query/normalizer modules: tncArcgis, dataone, animl. REF-05D deferred for lower-priority sources. Phase 12: 5/12 tasks complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-04 complete.** MapContainer + useMapLayers split into focused internal hooks (useArcgisViewLifecycle, useDataOnePreviewStatus, useMapLayerMembershipSync, useMapLayerPresentationSync). Phase 12: 4/12 tasks complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-03 complete.** V2App split into app/V2AppProviders.tsx, app/V2AppRoutes.tsx, app/V2AppShell.tsx; zero UI behavior changes. Phase 12: 3/12 tasks complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-02 complete.** LayerContext split into internal modules: useLayerCoreActions, useLayerSourceSyncActions, useLayerFilteredViewActions, useLayerViewLifecycleActions. Public useLayers() API preserved. Phase 12: 2/12 tasks complete. | Cursor |

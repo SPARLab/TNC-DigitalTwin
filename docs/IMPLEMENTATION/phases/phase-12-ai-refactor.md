@@ -1,7 +1,7 @@
 # Phase 12: AI Refactor Readiness
 
 **Status:** 🟡 In Progress  
-**Progress:** 4 / 12 tasks complete  
+**Progress:** 5 / 12 tasks complete  
 **Branch:** `v2/refactor-ai-readiness`  
 **Depends On:** Existing V2 implementation stability (Phases 0-11)  
 **Owner:** TBD
@@ -16,7 +16,7 @@
 | REF-02 | 🟢 Complete | Feb 25, 2026 | Split `LayerContext` into focused internal modules (core state/actions, per-source sync actions, view lifecycle actions) | Extracted source-sync, filtered-view, core-state/actions, and view-lifecycle internal hooks; `useLayers()` contract unchanged. |
 | REF-03 | 🟢 Complete | Feb 25, 2026 | Split `src/v2/V2App.tsx` into app shell, route composition, and provider composition files | Extracted to `app/V2AppProviders.tsx`, `app/V2AppRoutes.tsx`, and `app/V2AppShell.tsx`; zero UI behavior changes. |
 | REF-04 | 🟢 Complete | Feb 25, 2026 | Split V2 map container modules by responsibility (`src/v2/components/Map/MapContainer.tsx` + `useMapLayers.ts`) | Extracted map view lifecycle + DataONE preview-state hooks and split map-layer sync into membership/presentation internal hooks; behavior preserved. |
-| REF-05 | ⚪ Not Started | Feb 25, 2026 17:20 PT | Decompose V2-critical data/service paths (V2 call sites for ANiML/DataONE/TNC ArcGIS) into client/query/normalizer modules | Prioritize high-coupling paths (`src/v2/services/tncArcgisService.ts`, DataONE/ANiML call sites); extraction-only, preserve API surface. |
+| REF-05 | 🟢 Complete | Feb 25, 2026 | Decompose V2-critical data/service paths (V2 call sites for ANiML/DataONE/TNC ArcGIS) into client/query/normalizer modules | Subtasks A–C complete (TNC ArcGIS, DataONE, ANiML); REF-05D deferred for lower-priority sources; API surface preserved. |
 | REF-06 | ⚪ Not Started | Feb 25, 2026 17:20 PT | Refactor V2 DataONE right-sidebar browse/detail flow into orchestration + focused child components | Target complexity hotspots (`DataOneBrowseTab`, `DatasetDetailView`) rather than line count alone. |
 | REF-07 | ⚪ Not Started | Feb 24, 2026 16:30 PT | Create shared browse-tab primitives for repeated patterns (search/filter/pagination/detail handoff) | Apply incrementally to avoid cross-source regressions. |
 | REF-08 | ⚪ Not Started | Feb 25, 2026 17:20 PT | Split large V2 detail sidebars into domain sections and supporting hooks | Target right-sidebar complexity hotspots under `src/v2/components/RightSidebar/` (not legacy `src/components/`). |
@@ -24,6 +24,17 @@
 | REF-10 | ⚪ Not Started | Feb 25, 2026 17:05 PT | Extract shared V2 filter/default state factories used across contexts and browse views | Remove duplicated reset/default object literals in `src/v2/context` + `src/v2/components/RightSidebar`. |
 | REF-11 | ⚪ Not Started | Feb 25, 2026 17:05 PT | Add lightweight file-size guardrail script and thresholds for V2 AI-friendly maintenance | Start as warning-only; prioritize `src/v2/**/*` thresholds first. |
 | REF-12 | ⚪ Not Started | Feb 25, 2026 17:05 PT | Define and document V2 refactor completion criteria + QA checklist for extraction-only changes | Include smoke-test checklist for V2 map/sidebar/filter/view flows. |
+
+---
+
+## REF-05 Subtask Summary
+
+| ID | Status | Last Updated (Timestamp) | Task Description | Notes |
+|----|--------|---------------------------|------------------|-------|
+| REF-05A | 🟢 Complete | Feb 25, 2026 10:09 PST | Extract TNC ArcGIS shared helpers into client/query/normalizer modules | Added `src/v2/services/tncArcgis/{client,queries,normalizers}.ts` and rewired `src/v2/services/tncArcgisService.ts` with stable exports. |
+| REF-05B | 🟢 Complete | Feb 25, 2026 10:16 PST | Extract DataONE service query/filter/normalizer/client helpers into dedicated modules | Added `src/services/dataone/{client,queries,normalizers}.ts` and rewired `src/services/dataOneService.ts` without changing consumer API. |
+| REF-05C | 🟢 Complete | Feb 25, 2026 10:16 PST | Extract ANiML retry/network client helpers into dedicated modules | Added `src/services/animl/client.ts` and rewired `src/services/animlService.ts` to use extracted retry client. |
+| REF-05D | ⏸ Deferred | Feb 25, 2026 | Evaluate and extract remaining service paths only where coupling justifies split | Deferred; next-pass candidates: `inaturalist`, `dendra`, `motus`, `calflora`, `drone`, `gbif`; extraction-only and backward compatible. |
 
 ---
 
@@ -68,7 +79,7 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | REF-02 | Split LayerContext internal modules | 🟢 Complete | | Core provider now orchestrates extracted source-sync, filtered-view, core-state/actions, and view lifecycle modules with stable `useLayers()` API. |
 | REF-03 | Split V2App shell/routes/providers | 🟢 Complete | | Extracted to `app/V2AppProviders.tsx`, `app/V2AppRoutes.tsx`, `app/V2AppShell.tsx`; V2App now orchestrates state + composition only. |
 | REF-04 | Split V2 map container modules by responsibility | 🟢 Complete | | Extracted map lifecycle/preview logic into internal hooks and split layer sync effects into membership + presentation hooks with stable behavior. |
-| REF-05 | Decompose V2-critical service/data paths into modules | ⚪ Not Started | | Prioritize `src/v2/services/tncArcgisService.ts` and V2 adapters/contexts that consume shared services; optimize for lower AI context load at call sites. |
+| REF-05 | Decompose V2-critical data/service paths (V2 call sites for ANiML/DataONE/TNC ArcGIS) into client/query/normalizer modules | 🟢 Complete | | Subtasks A–C complete (TNC ArcGIS, DataONE, ANiML). REF-05D deferred for lower-priority sources; extraction-only, API surface preserved. |
 | REF-06 | Refactor V2 DataONE browse/detail components | ⚪ Not Started | | Use orchestration + presentational split in `src/v2/components/RightSidebar/DataOne/`. |
 | REF-07 | Build shared browse primitives | ⚪ Not Started | | Apply across data sources gradually. |
 | REF-08 | Split large V2 detail sidebars | ⚪ Not Started | | Focus on right-sidebar files with mixed orchestration + rendering concerns, not line count alone. |
@@ -81,6 +92,7 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 - ⚪ Not Started
 - 🟡 In Progress
 - 🟢 Complete
+- ⏸ Deferred
 - 🔴 Blocked
 
 ---
@@ -124,3 +136,7 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | Feb 25, 2026 | Phase scope alignment | Updated REF-04..REF-12 wording to V2-only targets; removed legacy `src/components/*` scope from Phase 12 and added explicit V2 scope guardrail | Cursor |
 | Feb 25, 2026 | V2 sizing calibration | Added V2 sizing baseline (no 1k-2k files), shifted emphasis from raw line count to complexity/coupling hotspots, adjusted REF-11 guardrail notes, and reordered post-REF-06 execution priority | Cursor |
 | Feb 25, 2026 | REF-04 | Complete. Split `MapContainer` lifecycle/state concerns into internal hooks (`useArcgisViewLifecycle`, `useDataOnePreviewStatus`) and decomposed `useMapLayers` effect ownership into membership/presentation internal hooks while preserving external behavior. | Cursor |
+| Feb 25, 2026 | REF-05 | Started extraction-only decomposition of `src/v2/services/tncArcgisService.ts` by moving shared ArcGIS HTTP/error parsing, fallback query resolution, and description/html normalization into `src/v2/services/tncArcgis/{client,queries,normalizers}.ts` while preserving existing exports/call sites. | Cursor |
+| Feb 25, 2026 | REF-05 | Continued extraction-only service decomposition by moving DataONE query/filter/network helpers into `src/services/dataone/{client,queries,normalizers}.ts` and extracting ANiML retry fetch logic into `src/services/animl/client.ts`; updated existing services to consume new modules without changing external APIs. | Cursor |
+| Feb 25, 2026 | REF-05 | Broke REF-05 into subtasks REF-05A..REF-05D and marked completion state: A-C complete (TNC ArcGIS/DataONE/ANiML), D pending for remaining lower-priority service paths. | Cursor |
+| Feb 25, 2026 | REF-05 | Complete. Subtasks A–C done (tncArcgis, dataone, animl client/query/normalizer extraction); REF-05D deferred. Phase 12: 5/12 tasks complete. | Cursor |

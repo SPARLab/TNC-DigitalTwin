@@ -1,4 +1,7 @@
 import type { CatalogLayer } from '../types';
+import { fetchArcGisJson, isObject } from './tncArcgis/client';
+import { normalizeArcGisDescription, normalizeArcGisHtmlText } from './tncArcgis/normalizers';
+import { runWithFeatureLayerFallback } from './tncArcgis/queries';
 
 export interface LayerSchema {
   fields: Array<Record<string, unknown>>;
@@ -32,37 +35,6 @@ export interface ArcGISLayerLegend {
   rendererType: 'simple' | 'uniqueValue' | 'classBreaks';
   filterField?: string;
   items: ArcGISLegendItem[];
-}
-
-function normalizeArcGisDescription(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const normalized = value
-    .replace(/\r\n/g, '\n')
-    .replace(/[ \t]+\n/g, '\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .split('\n')
-    .map(line => line.replace(/[ \t]{2,}/g, ' ').trim())
-    .join('\n')
-    .trim();
-  return normalized || null;
-}
-
-function normalizeArcGisHtmlText(value: unknown): string | null {
-  if (typeof value !== 'string' || !value.trim()) return null;
-  if (!/[<>]/.test(value)) return normalizeArcGisDescription(value);
-  const htmlWithLineBreaks = value
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/(p|div|section|article|li|h[1-6]|tr)>/gi, '\n')
-    .replace(/<li[^>]*>/gi, '- ');
-  const stripped = htmlWithLineBreaks.replace(/<[^>]+>/g, ' ');
-  const decoded = stripped
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&#39;/gi, "'")
-    .replace(/&quot;/gi, '"');
-  return normalizeArcGisDescription(decoded);
 }
 
 function getPortalCandidatesFromServiceUrl(serviceRootUrl: string): string[] {
@@ -105,21 +77,6 @@ async function fetchArcGisItemDescription(serviceRootUrl: string, serviceItemId:
   }
 
   return null;
-}
-
-interface ArcGISResponseError {
-  message?: string;
-  details?: unknown;
-}
-
-interface ArcGISJsonWithError {
-  error?: ArcGISResponseError;
-}
-
-const serviceLayerIdCache = new Map<string, number[]>();
-
-function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
 }
 
 function toCssRgba(color: unknown): string | undefined {
@@ -295,120 +252,6 @@ function sanitizeArcGisBaseUrl(serverBaseUrl: string): string {
   }
 
   return /\/rest\/services$/i.test(trimmed) ? trimmed : `${trimmed}/rest/services`;
-}
-
-function getArcGISErrorMessage(payload: unknown): string | null {
-  if (!isObject(payload)) return null;
-  const maybeError = (payload as ArcGISJsonWithError).error;
-  if (!isObject(maybeError)) return null;
-
-  const message = typeof maybeError.message === 'string' ? maybeError.message : 'Unknown ArcGIS error';
-  const details = Array.isArray(maybeError.details)
-    ? maybeError.details.filter(detail => typeof detail === 'string').join(' ')
-    : '';
-
-  return details ? `${message} ${details}` : message;
-}
-
-async function fetchArcGisJson(url: string, operation: string): Promise<Record<string, unknown>> {
-  let response: Response;
-  try {
-    response = await fetch(url);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown network error';
-    throw new Error(`${operation}: network failure (${message})`);
-  }
-
-  if (!response.ok) {
-    throw new Error(`${operation}: HTTP ${response.status}`);
-  }
-
-  let json: unknown;
-  try {
-    json = await response.json();
-  } catch {
-    throw new Error(`${operation}: malformed JSON response`);
-  }
-
-  if (!isObject(json)) {
-    throw new Error(`${operation}: malformed response payload`);
-  }
-
-  const arcgisError = getArcGISErrorMessage(json);
-  if (arcgisError) {
-    throw new Error(`ArcGIS error: ${arcgisError}`);
-  }
-
-  return json;
-}
-
-function parseFeatureServiceLayerUrl(url: string): { serviceRootUrl: string; layerId: number | null } | null {
-  const normalized = url.trim().replace(/\/+$/, '');
-  if (!normalized) return null;
-  const match = normalized.match(/^(.*\/FeatureServer)(?:\/(\d+))?$/i);
-  if (!match) return null;
-  const root = match[1];
-  const layerId = match[2] ? Number(match[2]) : null;
-  if (layerId !== null && !Number.isFinite(layerId)) return { serviceRootUrl: root, layerId: null };
-  return { serviceRootUrl: root, layerId };
-}
-
-async function fetchServiceLayerIds(serviceRootUrl: string): Promise<number[]> {
-  const normalizedRoot = serviceRootUrl.trim().replace(/\/+$/, '');
-  if (!normalizedRoot) return [];
-  const cached = serviceLayerIdCache.get(normalizedRoot);
-  if (cached) return cached;
-
-  const serviceJson = await fetchArcGisJson(
-    `${normalizedRoot}?f=json`,
-    'Feature service metadata fetch failed',
-  );
-  const rawLayers = serviceJson.layers;
-  if (!Array.isArray(rawLayers)) {
-    serviceLayerIdCache.set(normalizedRoot, []);
-    return [];
-  }
-  const layerIds = rawLayers
-    .map((layer) => (isObject(layer) && typeof layer.id === 'number' && Number.isFinite(layer.id) ? layer.id : null))
-    .filter((id): id is number => id !== null)
-    .sort((a, b) => a - b);
-  serviceLayerIdCache.set(normalizedRoot, layerIds);
-  return layerIds;
-}
-
-async function runWithFeatureLayerFallback(
-  url: string,
-  operation: string,
-  execute: (resolvedUrl: string) => Promise<Record<string, unknown>>,
-): Promise<Record<string, unknown>> {
-  const normalizedUrl = url.trim().replace(/\/+$/, '');
-  try {
-    return await execute(normalizedUrl);
-  } catch (error) {
-    const parsed = parseFeatureServiceLayerUrl(normalizedUrl);
-    if (!parsed) throw error;
-
-    let layerIds: number[] = [];
-    try {
-      layerIds = await fetchServiceLayerIds(parsed.serviceRootUrl);
-    } catch {
-      throw error;
-    }
-
-    const fallbackUrls = layerIds
-      .map((id) => `${parsed.serviceRootUrl}/${id}`)
-      .filter((candidateUrl) => candidateUrl !== normalizedUrl);
-
-    for (const fallbackUrl of fallbackUrls) {
-      try {
-        return await execute(fallbackUrl);
-      } catch {
-        // Try next candidate layer URL.
-      }
-    }
-
-    throw error;
-  }
 }
 
 /** Build full service URL from catalog metadata */
@@ -635,15 +478,11 @@ export async function fetchLayerLegend(meta: CatalogLayer['catalogMeta']): Promi
   // Strategy 2: Fallback to layer metadata renderer (V1 behavior).
   const initialLayerResourceUrl = buildServiceUrl(meta).replace(/\/+$/, '');
   let resolvedLayerResourceUrl = initialLayerResourceUrl;
-  const layerJson = await runWithFeatureLayerFallback(
-    initialLayerResourceUrl,
-    'Layer metadata fetch failed',
-    async (resolvedUrl) => {
+  const layerJson = await runWithFeatureLayerFallback(initialLayerResourceUrl, async (resolvedUrl) => {
       resolvedLayerResourceUrl = resolvedUrl.replace(/\/+$/, '');
       const layerUrl = `${resolvedLayerResourceUrl}?f=json`;
       return fetchArcGisJson(layerUrl, 'Layer metadata fetch failed');
-    },
-  );
+    });
   return parseRendererLegend(layerJson, targetLayerId, resolvedLayerResourceUrl);
 }
 
@@ -679,7 +518,7 @@ export async function fetchServiceDescription(meta: CatalogLayer['catalogMeta'])
 
 /** Fetch layer schema (fields, extent, geometry type) */
 export async function fetchLayerSchema(url: string): Promise<LayerSchema> {
-  const json = await runWithFeatureLayerFallback(url, 'Schema fetch failed', async (resolvedUrl) => {
+  const json = await runWithFeatureLayerFallback(url, async (resolvedUrl) => {
     const endpoint = `${resolvedUrl}?f=json`;
     return fetchArcGisJson(endpoint, 'Schema fetch failed');
   });
@@ -717,7 +556,7 @@ export async function queryFeatures(
     f: 'json',
   });
 
-  const json = await runWithFeatureLayerFallback(url, 'Query failed', async (resolvedUrl) => {
+  const json = await runWithFeatureLayerFallback(url, async (resolvedUrl) => {
     const endpoint = `${resolvedUrl}/query?${params.toString()}`;
     return fetchArcGisJson(endpoint, 'Query failed');
   });
