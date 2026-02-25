@@ -1,7 +1,7 @@
 # Phase 12: AI Refactor Readiness
 
-**Status:** 🟢 Complete  
-**Progress:** 12 / 13 tasks complete (REF-12 deferred)  
+**Status:** 🟡 In Progress  
+**Progress:** 12 / 14 tasks complete (REF-12 deferred; REF-14 added)  
 **Branch:** `v2/refactor-ai-readiness`  
 **Depends On:** Existing V2 implementation stability (Phases 0-11)  
 **Owner:** TBD
@@ -37,6 +37,7 @@
 | REF-11 | 🟢 Complete | Feb 25, 2026 | Add lightweight file-size guardrail script and thresholds for V2 AI-friendly maintenance | Added `scripts/v2/check-file-size-guardrail.mjs`; `npm run guard:v2-file-size`; WARN ≥800, REVIEW ≥950; warning-only, exits 0. |
 | REF-12 | ⏸ Deferred | Feb 25, 2026 17:05 PT | Define and document V2 refactor completion criteria + QA checklist for extraction-only changes | Deferred; focus on high-impact work first; revisit when solidifying smoke criteria. |
 | REF-13 | 🟢 Complete | Feb 25, 2026 | Resolve V2 MOTUS 3D journey playback regression (stations render, inferred flight legs do not) | Fixed: recreate MOTUS overlay GraphicsLayer on 2D↔3D map swap (SceneView cannot create layerview for stale 2D-origin layer); view-mode redraw trigger + 3D-safe direction marker fallback. User-verified. |
+| REF-14 | ⚪ Not Started | Feb 25, 2026 | Ensure all layers (active or pinned+visible) render reliably across 2D↔3D toggles | User requirement: polygons, imagery, and other layer content must remain visible regardless of toggle count. See REF-14 context below for REF-13 discovery. |
 
 ---
 
@@ -99,6 +100,7 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | REF-11 | Add V2 file-size guardrail script | 🟢 Complete | | Added `scripts/v2/check-file-size-guardrail.mjs`; `npm run guard:v2-file-size`; WARN ≥800, REVIEW ≥950; warning-only, exits 0. |
 | REF-12 | Add V2 extraction QA checklist | ⏸ Deferred | | Deferred; revisit when ready to solidify smoke criteria. |
 | REF-13 | Resolve V2 MOTUS 3D journey playback regression | 🟢 Complete | | Fixed by recreating overlay layer on map/view replacement (2D↔3D); view-mode redraw trigger; 3D-safe direction marker (triangle fallback). User-verified. |
+| REF-14 | Ensure all layers render across 2D↔3D toggles | ⚪ Not Started | | Active or pinned+visible layers (polygons, imagery, etc.) must remain visible regardless of toggle count. See REF-14 context subsection. |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -123,6 +125,31 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 10. REF-07
 11. REF-11
 12. REF-12
+13. REF-14
+
+---
+
+## REF-14: 2D↔3D Layer Render Reliability — Context for Next Chat
+
+**User requirement:** For any layer that is active or pinned with visibility on, polygons and imagery must render on the map regardless of how many times the user toggles between 2D and 3D.
+
+**Discovery from REF-13 (MOTUS fix):**
+
+1. **Map/view replacement:** `useArcgisViewLifecycle` creates a **new Map instance** when `viewMode` changes. The previous Map and View are destroyed. Layers on the old map are orphaned.
+
+2. **Re-attach vs recreate:** Re-adding the *same* layer instance to the new map can fail. For MOTUS, SceneView reported `Failed to create layerview for layer ... of type 'graphics'` when we tried to `map.add(overlayRef.current)` with a GraphicsLayer that had been created and used in the prior MapView. ArcGIS appears to bind layer instances to the map/view context in which they were created.
+
+3. **Working fix for MOTUS:** Destroy the old overlay, create a **new** GraphicsLayer, add it to the new map, then redraw graphics. Key trigger: `!map.findLayerById(overlayRef.current.id)` — overlay is not on the current map, so we recreate instead of reattach.
+
+4. **Other layer types:** The central layer flow (`createMapLayer`, `useMapLayers`) may behave differently—layers could be re-created by the factory each render, or there could be caching. Data sources that add their own overlays (GraphicsLayers, etc.) are the most likely to need the recreate-on-map-swap pattern. FeatureLayers, ImageryLayers, and other ArcGIS service layers may need auditing.
+
+5. **Relevant files:**
+   - `src/v2/components/Map/internal/useArcgisViewLifecycle.ts` — creates/destroys Map+View on `viewMode` change
+   - `src/v2/dataSources/motus/useMapBehavior.ts` — REF-13 fix: overlay recreate pattern
+   - `src/v2/components/Map/MapContainer.tsx` + `useMapLayers` — central layer add/remove
+   - Per-data-source map behavior hooks under `src/v2/dataSources/*/`
+
+**Suggested approach:** Audit all paths that add layers to the map; identify any that hold layer refs across view-mode changes; apply recreate-not-reattach where layers are reused across map swaps.
 
 ---
 
@@ -206,3 +233,4 @@ Use this checklist for post-extraction validation of map↔sidebar detail flows:
 | Feb 25, 2026 | REF-12 | Deferred. Completion criteria + smoke-test checklist task deferred to focus on high-impact work; revisit when ready to solidify smoke criteria. Phase 12 active scope complete (12/12). | Cursor |
 | Feb 25, 2026 | REF-13 | Reopened after user reported MOTUS 3D journey-leg playback regression recurrence. Updated phase status/progress and reset REF-13 to In Progress pending root-cause fix hardening. | Cursor |
 | Feb 25, 2026 | REF-13 | Complete. Root cause: SceneView fails to create layerview for GraphicsLayer instance created in 2D when map/view is replaced on 2D→3D toggle. Fix: destroy and recreate overlay layer on map swap; add view-mode redraw trigger; use 3D-safe direction marker (triangle) in SceneView. User-verified. Phase 12: 12/13 tasks complete. | Cursor |
+| Feb 25, 2026 | REF-14 | Added. User requirement: all layers (active or pinned+visible) must render reliably across 2D↔3D toggles regardless of toggle count. Documented REF-13 discovery (recreate-not-reattach pattern, map/view replacement lifecycle) in REF-14 context subsection for next chat. | Cursor |
