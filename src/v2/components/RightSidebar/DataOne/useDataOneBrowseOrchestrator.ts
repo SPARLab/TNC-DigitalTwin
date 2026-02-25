@@ -4,6 +4,11 @@ import { useDataOneFilter } from '../../../context/DataOneFilterContext';
 import { useLayers } from '../../../context/LayerContext';
 import { useBrowseSearchInput } from '../shared/useBrowseSearchInput';
 import { closeBrowseDetail, openBrowseDetail } from '../shared/browseDetailHandoff';
+import {
+  getPinnedActiveView,
+  getPinnedFiltersForActiveView,
+  shouldHydrateBrowseFilters,
+} from '../shared/browseFilterSyncGuards';
 
 const PAGE_SIZE = 20;
 export const MIN_SEARCH_CHARS = 2;
@@ -273,22 +278,25 @@ export function useDataOneBrowseOrchestrator() {
   useEffect(() => {
     if (activeLayer?.layerId !== 'dataone-datasets') return;
 
-    const viewChanged = activeLayer.viewId !== prevHydrateViewIdRef.current;
-    const editRequested = lastEditFiltersRequest > lastConsumedHydrateRef.current;
-    const clearRequested = lastFiltersClearedTimestamp > lastConsumedClearRef.current;
-    prevHydrateViewIdRef.current = activeLayer.viewId;
+    if (
+      !shouldHydrateBrowseFilters({
+        activeViewId: activeLayer.viewId,
+        lastEditFiltersRequest,
+        lastFiltersClearedTimestamp,
+        lastConsumedHydrateRef,
+        lastConsumedClearRef,
+        prevHydrateViewIdRef,
+      })
+    ) {
+      return;
+    }
 
-    if (!viewChanged && !editRequested && !clearRequested) return;
-    if (editRequested) lastConsumedHydrateRef.current = lastEditFiltersRequest;
-    if (clearRequested) lastConsumedClearRef.current = lastFiltersClearedTimestamp;
-
-    const pinned = getPinnedByLayerId(activeLayer.layerId);
-    if (!pinned) return;
-
-    const sourceFilters =
-      activeLayer.viewId && pinned.views
-        ? pinned.views.find((v) => v.id === activeLayer.viewId)?.dataoneFilters
-        : pinned.dataoneFilters;
+    const sourceFilters = getPinnedFiltersForActiveView({
+      activeLayer,
+      getPinnedByLayerId,
+      getRootFilters: (pinned) => pinned.dataoneFilters,
+      getViewFilters: (view) => view.dataoneFilters,
+    });
     if (!sourceFilters) return;
 
     const nextSearch = sourceFilters.searchText || '';
@@ -332,11 +340,7 @@ export function useDataOneBrowseOrchestrator() {
   // Keep Map Layers metadata synced to current DataONE filters/detail selection.
   useEffect(() => {
     if (activeLayer?.layerId !== 'dataone-datasets') return;
-    const pinned = getPinnedByLayerId(activeLayer.layerId);
-    const activeView =
-      activeLayer.viewId && pinned?.views
-        ? pinned.views.find((view) => view.id === activeLayer.viewId)
-        : undefined;
+    const activeView = getPinnedActiveView(activeLayer, getPinnedByLayerId);
 
     // Saved dataset child views are snapshots and should not be overwritten
     // while users keep browsing other datasets in detail/list flow.

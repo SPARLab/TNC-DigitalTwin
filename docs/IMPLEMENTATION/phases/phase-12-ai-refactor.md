@@ -1,7 +1,7 @@
 # Phase 12: AI Refactor Readiness
 
 **Status:** 🟡 In Progress  
-**Progress:** 6 / 12 tasks complete  
+**Progress:** 7 / 12 tasks complete  
 **Branch:** `v2/refactor-ai-readiness`  
 **Depends On:** Existing V2 implementation stability (Phases 0-11)  
 **Owner:** TBD
@@ -18,7 +18,7 @@
 | REF-04 | 🟢 Complete | Feb 25, 2026 | Split V2 map container modules by responsibility (`src/v2/components/Map/MapContainer.tsx` + `useMapLayers.ts`) | Extracted map view lifecycle + DataONE preview-state hooks and split map-layer sync into membership/presentation internal hooks; behavior preserved. |
 | REF-05 | 🟢 Complete | Feb 25, 2026 | Decompose V2-critical data/service paths (V2 call sites for ANiML/DataONE/TNC ArcGIS) into client/query/normalizer modules | Subtasks A–C complete (TNC ArcGIS, DataONE, ANiML); REF-05D deferred for lower-priority sources; API surface preserved. |
 | REF-06 | 🟢 Complete | Feb 25, 2026 | Refactor V2 DataONE right-sidebar browse/detail flow into orchestration + focused child components | Extracted `useDataOneBrowseOrchestrator` and `useDatasetDetailOrchestrator`; `DataOneBrowseTab` and `DatasetDetailView` now primarily render UI; map↔sidebar sync transitions centralized for easier debugging. |
-| REF-07 | 🟡 In Progress | Feb 25, 2026 | Create shared browse-tab primitives for repeated patterns (search/filter/pagination/detail handoff) | Subtasks REF-07A, REF-07B, and REF-07C are complete; REF-07D remains (saved-view/filter-sync guards). QA is intentionally handled per task and not tracked as REF-07E here. |
+| REF-07 | 🟢 Complete | Feb 25, 2026 | Create shared browse-tab primitives for repeated patterns (search/filter/pagination/detail handoff) | Subtasks REF-07A, REF-07B, REF-07C, and REF-07D are complete. QA is intentionally handled per task and not tracked as REF-07E here. |
 | REF-08 | ⚪ Not Started | Feb 25, 2026 17:20 PT | Split large V2 detail sidebars into domain sections and supporting hooks | Target right-sidebar complexity hotspots under `src/v2/components/RightSidebar/` (not legacy `src/components/`). |
 | REF-09 | ⚪ Not Started | Feb 25, 2026 17:05 PT | Narrow large V2 contexts (`src/v2/context/MapContext.tsx`, `src/v2/context/DendraContext.tsx`) into focused hooks/modules | Preserve existing V2 context exports initially. |
 | REF-10 | ⚪ Not Started | Feb 25, 2026 17:05 PT | Extract shared V2 filter/default state factories used across contexts and browse views | Remove duplicated reset/default object literals in `src/v2/context` + `src/v2/components/RightSidebar`. |
@@ -45,7 +45,7 @@
 | REF-07A | 🟢 Complete | Feb 25, 2026 10:56 PST | Search primitive rollout completion | Adopted `useBrowseSearchInput` in browse flows where debounced text search duplication existed (DataONE, GBIF, CalFlora). |
 | REF-07B | 🟢 Complete | Feb 25, 2026 10:56 PST | Pagination primitive rollout completion | Adopted `BrowsePaginationControls` across matching browse/paged list flows (DataONE, GBIF, CalFlora, iNaturalist, ANiML `ImageList`) including one-based pagination support. |
 | REF-07C | 🟢 Complete | Feb 25, 2026 | Detail handoff primitive | Added shared list→detail activation/close helpers in `RightSidebar/shared/browseDetailHandoff.ts` and adopted in DataONE, GBIF, and CalFlora to keep map↔sidebar selection transitions sync-safe. |
-| REF-07D | ⚪ Not Started | Feb 25, 2026 10:56 PST | Saved-view/filter-sync primitive | Extract shared hydrate/sync guard patterns (`lastEditFiltersRequest`, clear guards, pinned-view restore). |
+| REF-07D | 🟢 Complete | Feb 25, 2026 11:31 PST | Saved-view/filter-sync primitive | Added `RightSidebar/shared/browseFilterSyncGuards.ts` and adopted hydrate/sync guard + pinned-view filter restore helpers in DataONE, GBIF, CalFlora, and iNaturalist browse flows. |
 
 **Out of Scope for REF-07 tracking:** QA + stabilization (`REF-07E`) is intentionally not tracked here because QA is handled per task.
 
@@ -94,7 +94,7 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | REF-04 | Split V2 map container modules by responsibility | 🟢 Complete | | Extracted map lifecycle/preview logic into internal hooks and split layer sync effects into membership + presentation hooks with stable behavior. |
 | REF-05 | Decompose V2-critical data/service paths (V2 call sites for ANiML/DataONE/TNC ArcGIS) into client/query/normalizer modules | 🟢 Complete | | Subtasks A–C complete (TNC ArcGIS, DataONE, ANiML). REF-05D deferred for lower-priority sources; extraction-only, API surface preserved. |
 | REF-06 | Refactor V2 DataONE browse/detail components | 🟢 Complete | | Extracted `useDataOneBrowseOrchestrator.ts` and `useDatasetDetailOrchestrator.ts`; browse and detail components now delegate map↔sidebar sync to centralized handlers; behavior preserved, DataOne validated working. |
-| REF-07 | Build shared browse primitives | 🟡 In Progress | | Work is split into REF-07A..REF-07D; REF-07A, REF-07B, and REF-07C are complete, while REF-07D is pending. |
+| REF-07 | Build shared browse primitives | 🟢 Complete | | Work is split into REF-07A..REF-07D; REF-07A, REF-07B, REF-07C, and REF-07D are complete. |
 | REF-08 | Split large V2 detail sidebars | ⚪ Not Started | | Focus on right-sidebar files with mixed orchestration + rendering concerns, not line count alone. |
 | REF-09 | Narrow large V2 context modules | ⚪ Not Started | | Preserve existing V2 consumer APIs in first pass. |
 | REF-10 | Extract shared V2 filter/default factories | ⚪ Not Started | | Reduces duplicated reset logic in V2 contexts + browse views. |
@@ -173,3 +173,5 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | Feb 25, 2026 | REF-07 planning | Split REF-07 into explicit subtasks REF-07A..REF-07D and documented that QA/stabilization is intentionally handled per task (not tracked as REF-07E in this phase doc). | Cursor |
 | Feb 25, 2026 | REF-07 planning | Clarified completion split: REF-07A (search rollout) and REF-07B (pagination rollout) marked complete; REF-07C/REF-07D remain for shared detail-handoff and saved-view/filter-sync guard primitives. | Cursor |
 | Feb 25, 2026 | REF-07C | Complete. Extracted shared detail-handoff primitives (`openBrowseDetail` / `closeBrowseDetail`) under `RightSidebar/shared` and adopted them in DataONE, GBIF, and CalFlora browse flows with map↔sidebar sync-safe defaults. | Cursor |
+| Feb 25, 2026 | REF-07D | Complete. Added shared saved-view/filter-sync guard helpers in `RightSidebar/shared/browseFilterSyncGuards.ts` and adopted them in DataONE, GBIF, CalFlora, and iNaturalist browse flows to centralize hydrate triggers + pinned-view filter restore logic without behavior changes. | Cursor |
+| Feb 25, 2026 | REF-07D | Fixed invalid optional-chain assignment in `browseDetailHandoff.ts` (`lastHandledFeatureIdRef?.current = ...` → explicit null check) that caused Vite/esbuild compile failure. | Cursor |

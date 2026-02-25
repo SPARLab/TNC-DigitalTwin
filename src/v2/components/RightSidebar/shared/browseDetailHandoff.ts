@@ -32,7 +32,9 @@ export function openBrowseDetail<TItem, TLayerId extends string = string>({
   lastHandledFeatureIdRef,
 }: BrowseDetailHandoffInput<TItem, TLayerId>): void {
   const featureId = getItemFeatureId(item);
-  lastHandledFeatureIdRef?.current = String(featureId);
+  if (lastHandledFeatureIdRef) {
+    lastHandledFeatureIdRef.current = String(featureId);
+  }
   setSelectedItem(item);
 
   // Sync map and sidebar only when this browse tab owns the active layer.

@@ -26,6 +26,7 @@ import { InlineLoadingRow, RefreshLoadingRow } from '../../shared/loading/Loadin
 import { SpatialQuerySection } from '../shared/SpatialQuerySection';
 import { EditFiltersCard } from '../shared/EditFiltersCard';
 import { BrowsePaginationControls } from '../shared/BrowsePaginationControls';
+import { getPinnedFiltersForActiveView, shouldHydrateBrowseFilters } from '../shared/browseFilterSyncGuards';
 
 export function INaturalistBrowseTab() {
   const {
@@ -174,22 +175,26 @@ export function INaturalistBrowseTab() {
   useEffect(() => {
     if (activeLayer?.layerId !== 'inaturalist-obs') return;
 
-    const viewChanged = activeLayer.viewId !== prevHydrateViewIdRef.current;
-    const editRequested = lastEditFiltersRequest > lastConsumedHydrateRef.current;
-    const clearRequested = lastFiltersClearedTimestamp > lastConsumedClearRef.current;
-    prevHydrateViewIdRef.current = activeLayer.viewId;
-
     // Only hydrate on explicit triggers — not on every dependency change
-    if (!viewChanged && !editRequested && !clearRequested) return;
-    if (editRequested) lastConsumedHydrateRef.current = lastEditFiltersRequest;
-    if (clearRequested) lastConsumedClearRef.current = lastFiltersClearedTimestamp;
+    if (
+      !shouldHydrateBrowseFilters({
+        activeViewId: activeLayer.viewId,
+        lastEditFiltersRequest,
+        lastFiltersClearedTimestamp,
+        lastConsumedHydrateRef,
+        lastConsumedClearRef,
+        prevHydrateViewIdRef,
+      })
+    ) {
+      return;
+    }
 
-    const pinned = getPinnedByLayerId(activeLayer.layerId);
-    if (!pinned) return;
-
-    const sourceFilters = activeLayer.viewId && pinned.views
-      ? pinned.views.find(v => v.id === activeLayer.viewId)?.inaturalistFilters
-      : pinned.inaturalistFilters;
+    const sourceFilters = getPinnedFiltersForActiveView({
+      activeLayer,
+      getPinnedByLayerId,
+      getRootFilters: (pinned) => pinned.inaturalistFilters,
+      getViewFilters: (view) => view.inaturalistFilters,
+    });
     if (!sourceFilters) return;
 
     setSelectedTaxa(new Set(sourceFilters.selectedTaxa));

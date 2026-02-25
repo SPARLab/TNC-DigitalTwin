@@ -11,6 +11,11 @@ import { ObservationDetailView } from './ObservationDetailView';
 import { BrowsePaginationControls } from '../shared/BrowsePaginationControls';
 import { useBrowseSearchInput } from '../shared/useBrowseSearchInput';
 import { closeBrowseDetail, openBrowseDetail } from '../shared/browseDetailHandoff';
+import {
+  getPinnedActiveView,
+  getPinnedFiltersForActiveView,
+  shouldHydrateBrowseFilters,
+} from '../shared/browseFilterSyncGuards';
 
 const CALFLORA_LAYER_ID = 'calflora-observations';
 const PAGE_SIZE = 20;
@@ -150,21 +155,25 @@ export function CalFloraBrowseTab() {
   useEffect(() => {
     if (!activeLayer || activeLayer.layerId !== CALFLORA_LAYER_ID) return;
 
-    const viewChanged = activeLayer.viewId !== prevHydrateViewIdRef.current;
-    const editRequested = lastEditFiltersRequest > lastConsumedHydrateRef.current;
-    const clearRequested = lastFiltersClearedTimestamp > lastConsumedClearRef.current;
-    prevHydrateViewIdRef.current = activeLayer.viewId;
+    if (
+      !shouldHydrateBrowseFilters({
+        activeViewId: activeLayer.viewId,
+        lastEditFiltersRequest,
+        lastFiltersClearedTimestamp,
+        lastConsumedHydrateRef,
+        lastConsumedClearRef,
+        prevHydrateViewIdRef,
+      })
+    ) {
+      return;
+    }
 
-    if (!viewChanged && !editRequested && !clearRequested) return;
-    if (editRequested) lastConsumedHydrateRef.current = lastEditFiltersRequest;
-    if (clearRequested) lastConsumedClearRef.current = lastFiltersClearedTimestamp;
-
-    const pinned = getPinnedByLayerId(activeLayer.layerId);
-    if (!pinned) return;
-
-    const sourceFilters = activeLayer.viewId && pinned.views
-      ? pinned.views.find(v => v.id === activeLayer.viewId)?.calfloraFilters
-      : pinned.calfloraFilters;
+    const sourceFilters = getPinnedFiltersForActiveView({
+      activeLayer,
+      getPinnedByLayerId,
+      getRootFilters: (pinned) => pinned.calfloraFilters,
+      getViewFilters: (view) => view.calfloraFilters,
+    });
     if (!sourceFilters) return;
 
     const nextSearch = sourceFilters.searchText || '';
@@ -201,10 +210,7 @@ export function CalFloraBrowseTab() {
 
   useEffect(() => {
     if (!activeLayer || activeLayer.layerId !== CALFLORA_LAYER_ID) return;
-    const pinned = getPinnedByLayerId(activeLayer.layerId);
-    const activeView = activeLayer.viewId && pinned?.views
-      ? pinned.views.find((view) => view.id === activeLayer.viewId)
-      : undefined;
+    const activeView = getPinnedActiveView(activeLayer, getPinnedByLayerId);
 
     if (activeView?.calfloraFilters?.selectedObservationId) return;
 

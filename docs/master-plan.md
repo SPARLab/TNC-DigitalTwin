@@ -11,12 +11,12 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 125 / 147 complete (**85%**) |
-| **Active remaining** | 22 tasks |
+| **Active scope** | 126 / 147 complete (**86%**) |
+| **Active remaining** | 21 tasks |
 | **Phases complete** | 6 of 13 (0, 1, 2, 6, 10, 11) |
 
 ```
-██████████████████████████████████████░░░░░░  85%
+██████████████████████████████████████░░░░░░  86%
 ```
 
 ---
@@ -53,8 +53,8 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 125
-- **Active remaining (Not Started + In Progress + Blocked):** 22
+- **Complete:** 126
+- **Active remaining (Not Started + In Progress + Blocked):** 21
 - **Backlog (not in active scope):** 3
 - **Deferred:** 1
 - **Won't Do:** 2
@@ -76,7 +76,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
 | 10 | DroneDeploy | 🟢 Complete | 4 | 0 | 0 | 0 | 0 | 4 | `v2/dronedeploy` |
 | 11 | MOTUS | 🟢 Complete | 9 | 0 | 0 | 0 | 0 | 9 | `v2/motus` |
-| 12 | AI Refactor Readiness | 🟡 In Progress | 6 | 6 | 0 | 0 | 0 | 12 | `v2/refactor-ai-readiness` |
+| 12 | AI Refactor Readiness | 🟡 In Progress | 7 | 5 | 0 | 0 | 0 | 12 | `v2/refactor-ai-readiness` |
 
 **Status Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
 
@@ -180,6 +180,7 @@ Use these when merging branches that touch shared components.
 | Map container + layer sync split | ✅ Implemented | Cursor | Feb 25 | REF-04: `MapContainer` lifecycle extracted to `useArcgisViewLifecycle`, DataONE preview state to `useDataOnePreviewStatus`; `useMapLayers` decomposed into `useMapLayerMembershipSync` and `useMapLayerPresentationSync` with shared helpers. Behavior preserved. |
 | DataONE browse/detail orchestration split | ✅ Implemented | Cursor | Feb 25 | REF-06: DataONE right-sidebar browse/detail flow refactored into `useDataOneBrowseOrchestrator` and `useDatasetDetailOrchestrator`; `DataOneBrowseTab` and `DatasetDetailView` now primarily render UI; map↔sidebar sync transitions centralized for easier debugging. Pattern portable to other map/layers/sidebar flows. |
 | Shared browse detail handoff primitives | ✅ Implemented | Cursor | Feb 25 | REF-07C: Extracted `openBrowseDetail` / `closeBrowseDetail` under `RightSidebar/shared/browseDetailHandoff.ts`; adopted in DataONE, GBIF, CalFlora browse flows. Map↔sidebar sync-safe defaults (layer-id check before activateLayer). |
+| Saved-view/filter-sync guard primitives | ✅ Implemented | Cursor | Feb 25 | REF-07D: Extracted `shouldHydrateBrowseFilters`, `getPinnedFiltersForActiveView`, `getPinnedActiveView` under `RightSidebar/shared/browseFilterSyncGuards.ts`; adopted in DataONE, GBIF, CalFlora, iNaturalist browse flows. Centralizes hydrate triggers and pinned-view filter restore without behavior changes. |
 | State management for bookmarks | ✅ Decided | Will | Feb 11 | DFT-046: Saved Items widget merged into Map Layers. `BookmarkContext` disabled. |
 | Data source adapter pattern | ✅ Decided | Will + Claude | Feb 12 | Plugin architecture for data sources. Each source implements `DataSourceAdapter` interface. Enables parallel branch development with minimal merge conflicts. See `src/v2/dataSources/` |
 | Caching strategy | ✅ Decided | Will + Claude | Feb 12 | Lazy per-source caching. Each data source context has `warmCache()` method (idempotent). Cache warms on first pin or activation. Data persists while provider mounted. Eliminates eager page-load fetches. |
@@ -355,6 +356,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 25, 2026 | Phase 12 | **REF-07D complete.** Extracted saved-view/filter-sync guard primitives (`shouldHydrateBrowseFilters`, `getPinnedFiltersForActiveView`, `getPinnedActiveView`) under `RightSidebar/shared/browseFilterSyncGuards.ts`; adopted in DataONE, GBIF, CalFlora, iNaturalist browse flows. Fixed invalid optional-chain assignment in `browseDetailHandoff.ts`. REF-07 complete; Phase 12: 7/12 tasks complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-07C complete.** Extracted shared detail-handoff primitives (`openBrowseDetail` / `closeBrowseDetail`) under `RightSidebar/shared/browseDetailHandoff.ts`; adopted in DataONE, GBIF, CalFlora browse flows with map↔sidebar sync-safe defaults. REF-07 subtask; REF-07D remains. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-06 complete.** Refactored DataONE right-sidebar browse/detail flow into orchestration hooks (`useDataOneBrowseOrchestrator`, `useDatasetDetailOrchestrator`); map↔sidebar sync centralized for easier debugging. User validated DataOne working. Phase 12: 6/12 tasks complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-05 complete.** Decomposed V2-critical service paths into client/query/normalizer modules: tncArcgis, dataone, animl. REF-05D deferred for lower-priority sources. Phase 12: 5/12 tasks complete. | Cursor |
