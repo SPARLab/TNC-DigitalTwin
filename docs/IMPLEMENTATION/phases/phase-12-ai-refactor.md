@@ -1,7 +1,7 @@
 # Phase 12: AI Refactor Readiness
 
 **Status:** 🟡 In Progress  
-**Progress:** 2 / 12 tasks complete  
+**Progress:** 3 / 12 tasks complete  
 **Branch:** `v2/refactor-ai-readiness`  
 **Depends On:** Existing V2 implementation stability (Phases 0-11)  
 **Owner:** TBD
@@ -14,7 +14,7 @@
 |----|--------|---------------------------|------------------|-------|
 | REF-01 | 🟢 Complete | Feb 25, 2026 | Extract `LayerContext` filter helper builders/counts/equality logic into dedicated utility modules | Extracted to `utils/layerFilterBuilders.ts` and `utils/layerFilterEquality.ts`; public API unchanged. |
 | REF-02 | 🟢 Complete | Feb 25, 2026 | Split `LayerContext` into focused internal modules (core state/actions, per-source sync actions, view lifecycle actions) | Extracted source-sync, filtered-view, core-state/actions, and view-lifecycle internal hooks; `useLayers()` contract unchanged. |
-| REF-03 | ⚪ Not Started | Feb 24, 2026 16:30 PT | Split `src/App.tsx` into app shell, route composition, and provider composition files | Zero UI behavior changes; readability-first decomposition. |
+| REF-03 | 🟢 Complete | Feb 25, 2026 | Split `src/v2/V2App.tsx` into app shell, route composition, and provider composition files | Extracted to `app/V2AppProviders.tsx`, `app/V2AppRoutes.tsx`, and `app/V2AppShell.tsx`; zero UI behavior changes. |
 | REF-04 | ⚪ Not Started | Feb 24, 2026 16:30 PT | Split `src/components/MapView.tsx` by responsibility (view lifecycle, interactions, overlays/tools) | Minimize merge risk via extraction-first approach. |
 | REF-05 | ⚪ Not Started | Feb 24, 2026 16:30 PT | Decompose high-complexity services (`animlService`, `dataOneService`, `tncArcGISService`) into client/query/normalizer modules | Focus on testable pure helpers and smaller call paths. |
 | REF-06 | ⚪ Not Started | Feb 24, 2026 16:30 PT | Refactor DataOne right-sidebar browse/detail flow into orchestration + focused child components | Start with `DataOneBrowseTab` and `DatasetDetailView`. |
@@ -53,7 +53,7 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 |----|------|--------|----------|-------|
 | REF-01 | Extract LayerContext helper utilities | 🟢 Complete | | Foundation task for REF-02. |
 | REF-02 | Split LayerContext internal modules | 🟢 Complete | | Core provider now orchestrates extracted source-sync, filtered-view, core-state/actions, and view lifecycle modules with stable `useLayers()` API. |
-| REF-03 | Split App shell/routes/providers | ⚪ Not Started | | Keep routing behavior unchanged. |
+| REF-03 | Split V2App shell/routes/providers | 🟢 Complete | | Extracted to `app/V2AppProviders.tsx`, `app/V2AppRoutes.tsx`, `app/V2AppShell.tsx`; V2App now orchestrates state + composition only. |
 | REF-04 | Split MapView by responsibility | ⚪ Not Started | | Keep map interactions behavior stable. |
 | REF-05 | Decompose large services into modules | ⚪ Not Started | | Improves debugging and test isolation. |
 | REF-06 | Refactor DataOne browse/detail components | ⚪ Not Started | | Use orchestration + presentational split. |
@@ -106,3 +106,5 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | Feb 25, 2026 | REF-02 | Started internal module split for `LayerContext`: extracted `useLayerSourceSyncActions` and `useLayerViewLifecycleActions`, rewired provider to compose internal hooks while keeping `useLayers()` stable | Cursor |
 | Feb 25, 2026 | REF-02 | Continued split by extracting filtered view creation/update actions into `useLayerFilteredViewActions`; provider now composes three internal action hooks while preserving public API | Cursor |
 | Feb 25, 2026 | REF-02 | Finalized split by extracting remaining core state/actions into `useLayerCoreActions`; `LayerContext` now acts as an orchestrator with stable consumer contract | Cursor |
+| Feb 25, 2026 | REF-03 | Started extraction-first decomposition by splitting `src/v2/V2App.tsx` into focused app modules: `app/V2AppProviders.tsx`, `app/V2AppRoutes.tsx`, and `app/V2AppShell.tsx`; behavior preserved | Cursor |
+| Feb 25, 2026 | REF-03 | Complete. Split V2App into providers, routes, and shell; scope clarified to V2-only (legacy App.tsx not in scope). Phase 12: 3/12 tasks complete. | Cursor |
