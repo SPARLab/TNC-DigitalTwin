@@ -10,6 +10,7 @@ import { ObservationListView } from './ObservationListView';
 import { ObservationDetailView } from './ObservationDetailView';
 import { BrowsePaginationControls } from '../shared/BrowsePaginationControls';
 import { useBrowseSearchInput } from '../shared/useBrowseSearchInput';
+import { closeBrowseDetail, openBrowseDetail } from '../shared/browseDetailHandoff';
 
 const CALFLORA_LAYER_ID = 'calflora-observations';
 const PAGE_SIZE = 20;
@@ -299,10 +300,12 @@ export function CalFloraBrowseTab() {
       <ObservationDetailView
         observation={selectedObservation}
         onBack={() => {
-          setSelectedObservation(null);
-          if (activeLayer?.layerId === CALFLORA_LAYER_ID) {
-            activateLayer(CALFLORA_LAYER_ID, activeLayer.viewId, undefined);
-          }
+          closeBrowseDetail({
+            activeLayer,
+            activateLayer,
+            setSelectedItem: setSelectedObservation,
+            layerId: CALFLORA_LAYER_ID,
+          });
         }}
         onViewOnMap={viewObservationOnMap}
         onSaveView={handleSaveObservationView}
@@ -426,7 +429,15 @@ export function CalFloraBrowseTab() {
           <ObservationListView
             observations={observations}
             onOpenDetail={(observation) => {
-              setSelectedObservation(observation);
+              openBrowseDetail({
+                item: observation,
+                activeLayer,
+                activateLayer,
+                setSelectedItem: setSelectedObservation,
+                getItemFeatureId: (item) => item.objectId,
+                layerId: CALFLORA_LAYER_ID,
+                lastHandledFeatureIdRef,
+              });
               void viewObservationOnMap(observation);
             }}
           />

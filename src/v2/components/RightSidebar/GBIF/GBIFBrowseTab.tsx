@@ -10,6 +10,7 @@ import { GBIFOccurrenceCard } from './GBIFOccurrenceCard';
 import { GBIFOccurrenceDetailView } from './GBIFOccurrenceDetailView';
 import { BrowsePaginationControls } from '../shared/BrowsePaginationControls';
 import { useBrowseSearchInput } from '../shared/useBrowseSearchInput';
+import { closeBrowseDetail, openBrowseDetail } from '../shared/browseDetailHandoff';
 
 const PAGE_SIZE = 20;
 const MIN_SEARCH_CHARS = 2;
@@ -348,10 +349,12 @@ export function GBIFBrowseTab() {
         occurrence={selectedOccurrence}
         onSaveView={handleSaveOccurrenceView}
         onBack={() => {
-          setSelectedOccurrence(null);
-          if (activeLayer?.layerId && GBIF_LAYER_IDS.has(activeLayer.layerId)) {
-            activateLayer(activeLayer.layerId, activeLayer.viewId, undefined);
-          }
+          closeBrowseDetail({
+            activeLayer,
+            activateLayer,
+            setSelectedItem: setSelectedOccurrence,
+            layerId: activeGbifLayerId,
+          });
         }}
         onViewOnMap={() => viewOccurrenceOnMap(selectedOccurrence)}
       />
@@ -484,8 +487,15 @@ export function GBIFBrowseTab() {
               key={occurrence.id}
               occurrence={occurrence}
               onViewDetail={() => {
-                setSelectedOccurrence(occurrence);
-                activateLayer(activeGbifLayerId, activeLayer?.viewId, occurrence.id);
+                openBrowseDetail({
+                  item: occurrence,
+                  activeLayer,
+                  activateLayer,
+                  setSelectedItem: setSelectedOccurrence,
+                  getItemFeatureId: (item) => item.id,
+                  layerId: activeGbifLayerId,
+                  lastHandledFeatureIdRef,
+                });
               }}
               onViewOnMap={() => viewOccurrenceOnMap(occurrence)}
             />

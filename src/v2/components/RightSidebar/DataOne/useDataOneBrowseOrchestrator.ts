@@ -3,6 +3,7 @@ import { dataOneService, type DataOneDataset } from '../../../../services/dataOn
 import { useDataOneFilter } from '../../../context/DataOneFilterContext';
 import { useLayers } from '../../../context/LayerContext';
 import { useBrowseSearchInput } from '../shared/useBrowseSearchInput';
+import { closeBrowseDetail, openBrowseDetail } from '../shared/browseDetailHandoff';
 
 const PAGE_SIZE = 20;
 export const MIN_SEARCH_CHARS = 2;
@@ -455,11 +456,15 @@ export function useDataOneBrowseOrchestrator() {
 
   // Single point for list -> detail activation keeps map+sidebar sync consistent.
   const openDatasetDetail = (dataset: DataOneDataset) => {
-    lastHandledFeatureIdRef.current = dataset.dataoneId;
-    setSelectedDataset(dataset);
-    if (activeLayer?.layerId === 'dataone-datasets') {
-      activateLayer('dataone-datasets', activeLayer.viewId, dataset.dataoneId);
-    }
+    openBrowseDetail({
+      item: dataset,
+      activeLayer,
+      activateLayer,
+      setSelectedItem: setSelectedDataset,
+      getItemFeatureId: (item) => item.dataoneId,
+      layerId: 'dataone-datasets',
+      lastHandledFeatureIdRef,
+    });
   };
 
   const handleSaveDatasetView = (dataset: DataOneDataset): string => {
@@ -524,18 +529,26 @@ export function useDataOneBrowseOrchestrator() {
   };
 
   const closeDatasetDetail = () => {
-    setSelectedDataset(null);
-    if (activeLayer?.layerId === 'dataone-datasets') {
-      activateLayer('dataone-datasets', activeLayer.viewId, undefined);
-    }
+    closeBrowseDetail({
+      activeLayer,
+      activateLayer,
+      setSelectedItem: setSelectedDataset,
+      layerId: 'dataone-datasets',
+      lastHandledFeatureIdRef,
+      clearLastHandledFeatureId: true,
+    });
   };
 
   const selectDatasetVersion = (versionDataset: DataOneDataset) => {
-    lastHandledFeatureIdRef.current = versionDataset.dataoneId;
-    setSelectedDataset(versionDataset);
-    if (activeLayer?.layerId === 'dataone-datasets') {
-      activateLayer('dataone-datasets', activeLayer.viewId, versionDataset.dataoneId);
-    }
+    openBrowseDetail({
+      item: versionDataset,
+      activeLayer,
+      activateLayer,
+      setSelectedItem: setSelectedDataset,
+      getItemFeatureId: (item) => item.dataoneId,
+      layerId: 'dataone-datasets',
+      lastHandledFeatureIdRef,
+    });
   };
 
   const applyKeywordSearch = (keyword: string) => {
