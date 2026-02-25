@@ -18,7 +18,7 @@
 | REF-04 | 🟢 Complete | Feb 25, 2026 | Split V2 map container modules by responsibility (`src/v2/components/Map/MapContainer.tsx` + `useMapLayers.ts`) | Extracted map view lifecycle + DataONE preview-state hooks and split map-layer sync into membership/presentation internal hooks; behavior preserved. |
 | REF-05 | 🟢 Complete | Feb 25, 2026 | Decompose V2-critical data/service paths (V2 call sites for ANiML/DataONE/TNC ArcGIS) into client/query/normalizer modules | Subtasks A–C complete (TNC ArcGIS, DataONE, ANiML); REF-05D deferred for lower-priority sources; API surface preserved. |
 | REF-06 | 🟢 Complete | Feb 25, 2026 | Refactor V2 DataONE right-sidebar browse/detail flow into orchestration + focused child components | Extracted `useDataOneBrowseOrchestrator` and `useDatasetDetailOrchestrator`; `DataOneBrowseTab` and `DatasetDetailView` now primarily render UI; map↔sidebar sync transitions centralized for easier debugging. |
-| REF-07 | 🟡 In Progress | Feb 25, 2026 10:56 PST | Create shared browse-tab primitives for repeated patterns (search/filter/pagination/detail handoff) | Scoped into subtasks REF-07A..REF-07D (search, pagination, detail handoff, saved-view sync guards). QA is intentionally handled per task and not tracked as REF-07E here. |
+| REF-07 | 🟡 In Progress | Feb 25, 2026 10:56 PST | Create shared browse-tab primitives for repeated patterns (search/filter/pagination/detail handoff) | Subtasks REF-07A and REF-07B are complete; REF-07C and REF-07D remain (detail handoff + saved-view/filter-sync guards). QA is intentionally handled per task and not tracked as REF-07E here. |
 | REF-08 | ⚪ Not Started | Feb 25, 2026 17:20 PT | Split large V2 detail sidebars into domain sections and supporting hooks | Target right-sidebar complexity hotspots under `src/v2/components/RightSidebar/` (not legacy `src/components/`). |
 | REF-09 | ⚪ Not Started | Feb 25, 2026 17:05 PT | Narrow large V2 contexts (`src/v2/context/MapContext.tsx`, `src/v2/context/DendraContext.tsx`) into focused hooks/modules | Preserve existing V2 context exports initially. |
 | REF-10 | ⚪ Not Started | Feb 25, 2026 17:05 PT | Extract shared V2 filter/default state factories used across contexts and browse views | Remove duplicated reset/default object literals in `src/v2/context` + `src/v2/components/RightSidebar`. |
@@ -42,8 +42,8 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| REF-07A | 🟡 In Progress | Feb 25, 2026 10:56 PST | Search primitive rollout completion | Continue adopting `useBrowseSearchInput` where debounced search duplication still exists. |
-| REF-07B | 🟡 In Progress | Feb 25, 2026 10:56 PST | Pagination primitive rollout completion | Continue replacing custom pagination UIs with `BrowsePaginationControls` where behavior matches. |
+| REF-07A | 🟢 Complete | Feb 25, 2026 10:56 PST | Search primitive rollout completion | Adopted `useBrowseSearchInput` in browse flows where debounced text search duplication existed (DataONE, GBIF, CalFlora). |
+| REF-07B | 🟢 Complete | Feb 25, 2026 10:56 PST | Pagination primitive rollout completion | Adopted `BrowsePaginationControls` across matching browse/paged list flows (DataONE, GBIF, CalFlora, iNaturalist, ANiML `ImageList`) including one-based pagination support. |
 | REF-07C | ⚪ Not Started | Feb 25, 2026 10:56 PST | Detail handoff primitive | Extract shared list→detail activation/close helpers with map↔sidebar sync-safe defaults. |
 | REF-07D | ⚪ Not Started | Feb 25, 2026 10:56 PST | Saved-view/filter-sync primitive | Extract shared hydrate/sync guard patterns (`lastEditFiltersRequest`, clear guards, pinned-view restore). |
 
@@ -94,7 +94,7 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | REF-04 | Split V2 map container modules by responsibility | 🟢 Complete | | Extracted map lifecycle/preview logic into internal hooks and split layer sync effects into membership + presentation hooks with stable behavior. |
 | REF-05 | Decompose V2-critical data/service paths (V2 call sites for ANiML/DataONE/TNC ArcGIS) into client/query/normalizer modules | 🟢 Complete | | Subtasks A–C complete (TNC ArcGIS, DataONE, ANiML). REF-05D deferred for lower-priority sources; extraction-only, API surface preserved. |
 | REF-06 | Refactor V2 DataONE browse/detail components | 🟢 Complete | | Extracted `useDataOneBrowseOrchestrator.ts` and `useDatasetDetailOrchestrator.ts`; browse and detail components now delegate map↔sidebar sync to centralized handlers; behavior preserved, DataOne validated working. |
-| REF-07 | Build shared browse primitives | 🟡 In Progress | | Work is split into REF-07A..REF-07D; search/pagination rollout is in progress and detail-handoff + saved-view sync primitives are pending. |
+| REF-07 | Build shared browse primitives | 🟡 In Progress | | Work is split into REF-07A..REF-07D; REF-07A and REF-07B are complete, while REF-07C and REF-07D are pending. |
 | REF-08 | Split large V2 detail sidebars | ⚪ Not Started | | Focus on right-sidebar files with mixed orchestration + rendering concerns, not line count alone. |
 | REF-09 | Narrow large V2 context modules | ⚪ Not Started | | Preserve existing V2 consumer APIs in first pass. |
 | REF-10 | Extract shared V2 filter/default factories | ⚪ Not Started | | Reduces duplicated reset logic in V2 contexts + browse views. |
@@ -171,3 +171,4 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | Feb 25, 2026 | REF-07 | Continued incremental rollout by adopting the same shared browse primitives in `CalFloraBrowseTab` (debounced search + pagination controls) while preserving existing filter and detail behaviors. | Cursor |
 | Feb 25, 2026 | REF-07 | Extended shared pagination adoption to one-based browse UIs by adding optional indexing/style props in `BrowsePaginationControls`, then applying it to `INaturalistBrowseTab` and `ANiML/ImageList` without changing paging behavior. | Cursor |
 | Feb 25, 2026 | REF-07 planning | Split REF-07 into explicit subtasks REF-07A..REF-07D and documented that QA/stabilization is intentionally handled per task (not tracked as REF-07E in this phase doc). | Cursor |
+| Feb 25, 2026 | REF-07 planning | Clarified completion split: REF-07A (search rollout) and REF-07B (pagination rollout) marked complete; REF-07C/REF-07D remain for shared detail-handoff and saved-view/filter-sync guard primitives. | Cursor |
