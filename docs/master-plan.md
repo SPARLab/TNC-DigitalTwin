@@ -1,7 +1,7 @@
 # Master Development Plan — V2 Digital Catalog
 
 **Created:** January 23, 2026  
-**Last Updated:** February 24, 2026  
+**Last Updated:** February 25, 2026  
 **Target Deadline:** February 20, 2026  
 **Status:** 🟡 In Progress
 
@@ -11,12 +11,12 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 120 / 135 complete (**89%**) |
-| **Active remaining** | 15 tasks |
-| **Phases complete** | 6 of 12 (0, 1, 2, 6, 10, 11) |
+| **Active scope** | 122 / 147 complete (**83%**) |
+| **Active remaining** | 25 tasks |
+| **Phases complete** | 6 of 13 (0, 1, 2, 6, 10, 11) |
 
 ```
-████████████████████████████████████████░░░░░  89%
+████████████████████████████████████░░░░░░░░  83%
 ```
 
 ---
@@ -53,12 +53,12 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 120
-- **Active remaining (Not Started + In Progress + Blocked):** 15
+- **Complete:** 122
+- **Active remaining (Not Started + In Progress + Blocked):** 25
 - **Backlog (not in active scope):** 3
 - **Deferred:** 1
 - **Won't Do:** 2
-- **Total tracked rows:** 141
+- **Total tracked rows:** 153
 
 ### Per-Phase Task Counts
 
@@ -76,6 +76,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
 | 10 | DroneDeploy | 🟢 Complete | 4 | 0 | 0 | 0 | 0 | 4 | `v2/dronedeploy` |
 | 11 | MOTUS | 🟢 Complete | 9 | 0 | 0 | 0 | 0 | 9 | `v2/motus` |
+| 12 | AI Refactor Readiness | 🟡 In Progress | 2 | 10 | 0 | 0 | 0 | 12 | `v2/refactor-ai-readiness` |
 
 **Status Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
 
@@ -174,6 +175,7 @@ Use these when merging branches that touch shared components.
 |----------|--------|---------|------|---------|
 | Code structure (v2/ folder approach) | ✅ Decided | Will | Jan 23 | See "Code Structure" section below |
 | State management for pinned layers | ✅ Decided | Will | Feb 12 | React Context API (`LayerContext`) with undo stack. See `src/v2/context/LayerContext.tsx` |
+| LayerContext internal module split | ✅ Implemented | Cursor | Feb 25 | REF-02: `LayerContext` split into focused internal hooks under `src/v2/context/layerContext/internal/` — `useLayerCoreActions`, `useLayerSourceSyncActions`, `useLayerFilteredViewActions`, `useLayerViewLifecycleActions`. Public `useLayers()` API unchanged. |
 | State management for bookmarks | ✅ Decided | Will | Feb 11 | DFT-046: Saved Items widget merged into Map Layers. `BookmarkContext` disabled. |
 | Data source adapter pattern | ✅ Decided | Will + Claude | Feb 12 | Plugin architecture for data sources. Each source implements `DataSourceAdapter` interface. Enables parallel branch development with minimal merge conflicts. See `src/v2/dataSources/` |
 | Caching strategy | ✅ Decided | Will + Claude | Feb 12 | Lazy per-source caching. Each data source context has `warmCache()` method (idempotent). Cache warms on first pin or activation. Data persists while provider mounted. Eliminates eager page-load fetches. |
@@ -339,6 +341,7 @@ When working on any phase:
 - **Phase 9:** `docs/IMPLEMENTATION/phases/phase-9-gbif.md`
 - **Phase 10:** `docs/IMPLEMENTATION/phases/phase-10-dronedeploy.md`
 - **Phase 11:** `docs/IMPLEMENTATION/phases/phase-11-motus.md`
+- **Phase 12:** `docs/IMPLEMENTATION/phases/phase-12-ai-refactor.md`
 
 ---
 
@@ -348,6 +351,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 25, 2026 | Phase 12 | **REF-02 complete.** LayerContext split into internal modules: useLayerCoreActions, useLayerSourceSyncActions, useLayerFilteredViewActions, useLayerViewLifecycleActions. Public useLayers() API preserved. Phase 12: 2/12 tasks complete. | Cursor |
 | Feb 24, 2026 | Map | **2D/3D view mode toggle complete.** MapContainer supports MapView/SceneView toggle; ViewModeToggle button bottom-left; all layers drape on terrain in 3D; LiDAR PointCloudLayer in 3D only; camera preserved across toggles. Cross-phase architectural decision documented. | Cursor |
 | Feb 24, 2026 | Phase 3 | **D24-01 complete.** Dendra chart panel UX polish: larger initial size, bottom inset (~1–2rem from map edge), time slider data shadow restored, x-axis/slider spacing tuned. Phase 3: 9/12 tasks complete. | Cursor |
 | Feb 24, 2026 | Phase 1 | **TF-06 complete.** iNaturalist species filter: taxa selected + all species checked now shows results (removed requiresSpeciesSelection gating). Select All/Clear All text-only styling with gray when inactive; styled `|` separator in Filter Taxa, Filter Species, and legend. Phase 1: 10/11 tasks complete. | Cursor |
