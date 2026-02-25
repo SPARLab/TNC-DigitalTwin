@@ -11,8 +11,8 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 128 / 147 complete (**87%**) |
-| **Active remaining** | 19 tasks |
+| **Active scope** | 129 / 147 complete (**88%**) |
+| **Active remaining** | 18 tasks |
 | **Phases complete** | 6 of 13 (0, 1, 2, 6, 10, 11) |
 
 ```
@@ -53,8 +53,8 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 128
-- **Active remaining (Not Started + In Progress + Blocked):** 19
+- **Complete:** 129
+- **Active remaining (Not Started + In Progress + Blocked):** 18
 - **Backlog (not in active scope):** 3
 - **Deferred:** 1
 - **Won't Do:** 2
@@ -76,7 +76,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
 | 10 | DroneDeploy | 🟢 Complete | 4 | 0 | 0 | 0 | 0 | 4 | `v2/dronedeploy` |
 | 11 | MOTUS | 🟢 Complete | 9 | 0 | 0 | 0 | 0 | 9 | `v2/motus` |
-| 12 | AI Refactor Readiness | 🟡 In Progress | 9 | 3 | 0 | 0 | 0 | 12 | `v2/refactor-ai-readiness` |
+| 12 | AI Refactor Readiness | 🟡 In Progress | 10 | 2 | 0 | 0 | 0 | 12 | `v2/refactor-ai-readiness` |
 
 **Status Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
 
