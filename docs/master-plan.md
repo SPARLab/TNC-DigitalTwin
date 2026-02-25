@@ -11,8 +11,8 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 130 / 147 complete (**88%**) |
-| **Active remaining** | 17 tasks |
+| **Active scope** | 131 / 147 complete (**89%**) |
+| **Active remaining** | 16 tasks |
 | **Phases complete** | 6 of 13 (0, 1, 2, 6, 10, 11) |
 
 ```
@@ -53,8 +53,8 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 130
-- **Active remaining (Not Started + In Progress + Blocked):** 17
+- **Complete:** 131
+- **Active remaining (Not Started + In Progress + Blocked):** 16
 - **Backlog (not in active scope):** 3
 - **Deferred:** 1
 - **Won't Do:** 2
@@ -76,7 +76,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
 | 10 | DroneDeploy | 🟢 Complete | 4 | 0 | 0 | 0 | 0 | 4 | `v2/dronedeploy` |
 | 11 | MOTUS | 🟢 Complete | 9 | 0 | 0 | 0 | 0 | 9 | `v2/motus` |
-| 12 | AI Refactor Readiness | 🟡 In Progress | 11 | 1 | 0 | 0 | 0 | 12 | `v2/refactor-ai-readiness` |
+| 12 | AI Refactor Readiness | 🟡 In Progress | 12 | 1 | 0 | 0 | 0 | 13 | `v2/refactor-ai-readiness` |
 
 **Status Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
 
@@ -359,6 +359,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 25, 2026 | Phase 12 | **REF-11 complete.** Added V2 file-size guardrail script (`scripts/v2/check-file-size-guardrail.mjs`); `npm run guard:v2-file-size`; WARN ≥800, REVIEW ≥950 lines; warning-only, exits 0. Phase 12: 12/13 tasks complete; REF-12 remains. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-10 complete.** Extracted shared filter/default factories (`layerFilterDefaults.ts`, `browseFilterDefaults.ts`); adopted across LayerContext internals, filter contexts, and browse reset flows. Phase 12: 11/12 tasks complete; REF-11 remains. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-08D complete.** Manual smoke checks executed for map↔sidebar detail flows (DataONE, Dendra, TNC ArcGIS): back nav, recenter, save/pin, selection retention validated. REF-08 complete; Phase 12: 10/12 tasks complete. Smoke checklist added to phase doc. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-08C complete.** Extracted TNC ArcGIS `TNCArcGISOverviewTab` render sections into `TNCArcGISOverviewSections.tsx` (context, description, layer list, metadata, opacity, inspect action, source card, overlay); behavior and DOM ids preserved. Phase 12: 9/12 tasks complete; REF-08D remains. | Cursor |
