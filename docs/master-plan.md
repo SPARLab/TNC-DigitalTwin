@@ -11,12 +11,12 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 127 / 147 complete (**86%**) |
-| **Active remaining** | 20 tasks |
+| **Active scope** | 128 / 147 complete (**87%**) |
+| **Active remaining** | 19 tasks |
 | **Phases complete** | 6 of 13 (0, 1, 2, 6, 10, 11) |
 
 ```
-██████████████████████████████████████░░░░░░  86%
+███████████████████████████████████████░░░░░  87%
 ```
 
 ---
@@ -53,8 +53,8 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 127
-- **Active remaining (Not Started + In Progress + Blocked):** 20
+- **Complete:** 128
+- **Active remaining (Not Started + In Progress + Blocked):** 19
 - **Backlog (not in active scope):** 3
 - **Deferred:** 1
 - **Won't Do:** 2
@@ -76,7 +76,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
 | 10 | DroneDeploy | 🟢 Complete | 4 | 0 | 0 | 0 | 0 | 4 | `v2/dronedeploy` |
 | 11 | MOTUS | 🟢 Complete | 9 | 0 | 0 | 0 | 0 | 9 | `v2/motus` |
-| 12 | AI Refactor Readiness | 🟡 In Progress | 8 | 4 | 0 | 0 | 0 | 12 | `v2/refactor-ai-readiness` |
+| 12 | AI Refactor Readiness | 🟡 In Progress | 9 | 3 | 0 | 0 | 0 | 12 | `v2/refactor-ai-readiness` |
 
 **Status Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
 
@@ -358,6 +358,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 25, 2026 | Phase 12 | **REF-08C complete.** Extracted TNC ArcGIS `TNCArcGISOverviewTab` render sections into `TNCArcGISOverviewSections.tsx` (context, description, layer list, metadata, opacity, inspect action, source card, overlay); behavior and DOM ids preserved. Phase 12: 9/12 tasks complete; REF-08D remains. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-08B complete.** Extracted DataONE `DatasetDetailView` into `DatasetDetailSections.tsx` (PrimaryActions, VersionHistory, Metadata, SpatialCoverage, Files) and `datasetDetailFormatting.ts`; `useDatasetDetailOrchestrator` remains orchestration boundary; behavior preserved. Phase 12: 8/12 tasks complete; REF-08C–REF-08D remain. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-08A complete.** Extracted Dendra `StationDetailView` into `useStationDetailState` and focused section components (StationCrossStationToolsSection, StationHeaderCard, DatastreamSummaryListSection, DatastreamFilterSection, StationChartHintCard); behavior preserved. REF-08 subtask; REF-08B–REF-08D remain. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-07D complete.** Extracted saved-view/filter-sync guard primitives (`shouldHydrateBrowseFilters`, `getPinnedFiltersForActiveView`, `getPinnedActiveView`) under `RightSidebar/shared/browseFilterSyncGuards.ts`; adopted in DataONE, GBIF, CalFlora, iNaturalist browse flows. Fixed invalid optional-chain assignment in `browseDetailHandoff.ts`. REF-07 complete; Phase 12: 7/12 tasks complete. | Cursor |
