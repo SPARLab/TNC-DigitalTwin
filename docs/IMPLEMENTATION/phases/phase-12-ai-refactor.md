@@ -36,7 +36,7 @@
 | REF-10 | 🟢 Complete | Feb 25, 2026 | Extract shared V2 filter/default state factories used across contexts and browse views | Extracted `layerFilterDefaults.ts` and `browseFilterDefaults.ts`; adopted across LayerContext internals, filter contexts, and browse reset flows; behavior preserved. |
 | REF-11 | 🟢 Complete | Feb 25, 2026 | Add lightweight file-size guardrail script and thresholds for V2 AI-friendly maintenance | Added `scripts/v2/check-file-size-guardrail.mjs`; `npm run guard:v2-file-size`; WARN ≥800, REVIEW ≥950; warning-only, exits 0. |
 | REF-12 | ⏸ Deferred | Feb 25, 2026 17:05 PT | Define and document V2 refactor completion criteria + QA checklist for extraction-only changes | Deferred; focus on high-impact work first; revisit when solidifying smoke criteria. |
-| REF-13 | 🟢 Complete | Feb 25, 2026 12:24 PT | Resolve V2 MOTUS 3D journey playback regression (stations render, inferred flight legs do not) | Fixed: SceneView now renders journey legs with 3D-native `line-3d` symbols (2D path preserved), plus finite-coordinate leg guards + diagnostic logging. User-verified: 3D playback animation is rendering correctly. |
+| REF-13 | 🟢 Complete | Feb 25, 2026 | Resolve V2 MOTUS 3D journey playback regression (stations render, inferred flight legs do not) | Fixed: recreate MOTUS overlay GraphicsLayer on 2D↔3D map swap (SceneView cannot create layerview for stale 2D-origin layer); view-mode redraw trigger + 3D-safe direction marker fallback. User-verified. |
 
 ---
 
@@ -98,7 +98,7 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | REF-10 | Extract shared V2 filter/default factories | 🟢 Complete | | Extracted `context/utils/{layerFilterDefaults,browseFilterDefaults}.ts`; replaced duplicated literals in LayerContext internals and adopted in DataONE/GBIF/CalFlora/MOTUS + Dendra; APIs unchanged. |
 | REF-11 | Add V2 file-size guardrail script | 🟢 Complete | | Added `scripts/v2/check-file-size-guardrail.mjs`; `npm run guard:v2-file-size`; WARN ≥800, REVIEW ≥950; warning-only, exits 0. |
 | REF-12 | Add V2 extraction QA checklist | ⏸ Deferred | | Deferred; revisit when ready to solidify smoke criteria. |
-| REF-13 | Resolve V2 MOTUS 3D journey playback regression | 🟢 Complete | | Resolved by switching 3D journey legs to SceneView-native `line-3d` symbols while preserving 2D line rendering; added invalid-coordinate draw guards and retained debug probes in `useMotusMapBehavior.ts`. User validated that 3D journey animation now renders. |
+| REF-13 | Resolve V2 MOTUS 3D journey playback regression | 🟢 Complete | | Fixed by recreating overlay layer on map/view replacement (2D↔3D); view-mode redraw trigger; 3D-safe direction marker (triangle fallback). User-verified. |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -204,3 +204,5 @@ Use this checklist for post-extraction validation of map↔sidebar detail flows:
 | Feb 25, 2026 | REF-09 | Complete. Split `MapContext` into internal toast/preview/spatial-query hooks (`mapContext/internal/`) and `DendraContext` into internal cache/filter/chart hooks + chart transforms/types (`dendraContext/internal/`); preserved `MapProvider`/`useMap` and `DendraProvider`/`useDendra` consumer APIs. Phase 12: 12/13 tasks complete. | Cursor |
 | Feb 25, 2026 | REF-11 | Complete. Added `scripts/v2/check-file-size-guardrail.mjs` and `npm run guard:v2-file-size`; scans `src/v2/**/*`, WARN ≥800 lines, REVIEW ≥950; warning-only, always exits 0. Phase 12: 12/13 tasks complete; REF-12 remains. | Cursor |
 | Feb 25, 2026 | REF-12 | Deferred. Completion criteria + smoke-test checklist task deferred to focus on high-impact work; revisit when ready to solidify smoke criteria. Phase 12 active scope complete (12/12). | Cursor |
+| Feb 25, 2026 | REF-13 | Reopened after user reported MOTUS 3D journey-leg playback regression recurrence. Updated phase status/progress and reset REF-13 to In Progress pending root-cause fix hardening. | Cursor |
+| Feb 25, 2026 | REF-13 | Complete. Root cause: SceneView fails to create layerview for GraphicsLayer instance created in 2D when map/view is replaced on 2D→3D toggle. Fix: destroy and recreate overlay layer on map swap; add view-mode redraw trigger; use 3D-safe direction marker (triangle) in SceneView. User-verified. Phase 12: 12/13 tasks complete. | Cursor |

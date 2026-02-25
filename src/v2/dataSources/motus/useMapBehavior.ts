@@ -24,7 +24,10 @@ const FLYING_BIRD_SVG = [
 ].join('');
 
 const FLYING_BIRD_MARKER_URL = `data:image/svg+xml;utf8,${encodeURIComponent(FLYING_BIRD_SVG)}`;
-const MOTUS_DEBUG_LOG_PREFIX = '[MOTUS Journey]';
+const createMovementOverlayLayer = () => new GraphicsLayer({
+  id: 'v2-motus-inferred-movement-overlay',
+  listMode: 'hide',
+});
 
 export function useMotusMapBehavior(
   getManagedLayer: (layerId: string) => Layer | undefined,
@@ -33,7 +36,7 @@ export function useMotusMapBehavior(
   mapReady: number,
 ) {
   const { layerMap } = useCatalog();
-  const { viewRef } = useMap();
+  const { viewRef, viewMode } = useMap();
   const {
     selectedTagId,
     browseFilters,
@@ -73,6 +76,10 @@ export function useMotusMapBehavior(
   }
 
   useEffect(() => {
+    setMovementRenderVersion((version) => version + 1);
+  }, [viewMode, mapReady, selectedTagId, viewRef]);
+
+  useEffect(() => {
     const view = viewRef.current;
     if (!view?.map) return;
     if (!hasMotusOnMap && !selectedTagId) {
@@ -82,22 +89,19 @@ export function useMotusMapBehavior(
 
     const map = view.map;
     if (!overlayRef.current) {
-      overlayRef.current = new GraphicsLayer({
-        id: 'v2-motus-inferred-movement-overlay',
-        listMode: 'hide',
-      });
+      overlayRef.current = createMovementOverlayLayer();
       map.add(overlayRef.current);
-      console.debug(`${MOTUS_DEBUG_LOG_PREFIX} created overlay`, {
-        viewType: view.type,
-        mapReady,
-      });
       setMovementRenderVersion((version) => version + 1);
     } else if (!map.findLayerById(overlayRef.current.id)) {
+      // Recreate overlay when map/view is replaced (2D<->3D). Reusing a stale
+      // GraphicsLayer instance from the previous view can fail SceneView layerview creation.
+      try {
+        overlayRef.current.destroy();
+      } catch {
+        // Best effort cleanup; continue with fresh layer allocation.
+      }
+      overlayRef.current = createMovementOverlayLayer();
       map.add(overlayRef.current);
-      console.debug(`${MOTUS_DEBUG_LOG_PREFIX} re-attached overlay`, {
-        viewType: view.type,
-        mapReady,
-      });
       setMovementRenderVersion((version) => version + 1);
     }
 
@@ -124,30 +128,10 @@ export function useMotusMapBehavior(
   useEffect(() => {
     const overlay = overlayRef.current;
     if (!overlay) return;
-    const viewType = viewRef.current?.type ?? 'unknown';
 
     const context = movementContextRef.current;
     overlay.removeAll();
-    if (!context) {
-      console.debug(`${MOTUS_DEBUG_LOG_PREFIX} draw skipped (no movement context)`, {
-        viewType,
-        mapReady,
-        playbackStepIndex,
-        playbackTransitionProgress,
-      });
-      return;
-    }
-    console.debug(`${MOTUS_DEBUG_LOG_PREFIX} drawing movement overlay`, {
-      viewType,
-      selectedTagId,
-      stations: context.stations.length,
-      legs: context.legs.length,
-      playbackStepIndex,
-      playbackTransitionProgress,
-      isPlaybackPlaying,
-      movementRenderVersion,
-      mapReady,
-    });
+    if (!context) return;
 
     for (const station of context.stations) {
       overlay.add(new Graphic({
@@ -186,20 +170,13 @@ export function useMotusMapBehavior(
     ) => {
       const hasFiniteCoordinates = [fromLongitude, fromLatitude, toLongitude, toLatitude]
         .every((value) => Number.isFinite(value));
-      if (!hasFiniteCoordinates) {
-        console.debug(`${MOTUS_DEBUG_LOG_PREFIX} skipped leg draw (invalid coordinates)`, {
-          viewType,
-          fromLongitude,
-          fromLatitude,
-          toLongitude,
-          toLatitude,
-          attributes,
-        });
-        return;
-      }
+      if (!hasFiniteCoordinates) return;
+      const hasMovement = Math.abs(toLongitude - fromLongitude) > 0.0000001
+        || Math.abs(toLatitude - fromLatitude) > 0.0000001;
+      if (!hasMovement) return;
 
-      const legOffsetMeters = viewType === '3d' ? 18 : 12;
-      const legSymbol = viewType === '3d'
+      const legOffsetMeters = viewMode === '3d' ? 18 : 12;
+      const legSymbol = viewMode === '3d'
         ? {
             type: 'line-3d' as const,
             symbolLayers: [{
@@ -251,7 +228,8 @@ export function useMotusMapBehavior(
       const dx = tipLongitude - fromLongitude;
       const dy = tipLatitude - fromLatitude;
       const angle = (Math.atan2(dx, dy) * 180) / Math.PI;
-      const symbol = playbackDirectionMarkerMode === 'bird'
+      const shouldUseBirdMarker = playbackDirectionMarkerMode === 'bird' && viewMode !== '3d';
+      const symbol = shouldUseBirdMarker
         ? {
             type: 'picture-marker' as const,
             url: FLYING_BIRD_MARKER_URL,
@@ -357,25 +335,8 @@ export function useMotusMapBehavior(
         },
       );
     }
-    const graphics = overlay.graphics.toArray();
-    const polylineCount = graphics.filter((graphic) => graphic.geometry?.type === 'polyline').length;
-    const pointCount = graphics.filter((graphic) => graphic.geometry?.type === 'point').length;
-    const map = viewRef.current?.map;
-    const isOverlayOnMap = !!(map && map.findLayerById(overlay.id));
-    console.debug(`${MOTUS_DEBUG_LOG_PREFIX} draw complete`, {
-      viewType,
-      completedLegs: completedLegs.length,
-      overlayGraphicCount: overlay.graphics.length,
-      polylineCount,
-      pointCount,
-      isOverlayOnMap,
-      overlayVisible: overlay.visible,
-      viewScale: viewRef.current?.scale,
-      viewZoom: viewRef.current?.zoom,
-      hasActiveLeg: !!activeLeg,
-      isDrawingPartial,
-    });
   }, [
+    viewMode,
     playbackStepIndex,
     playbackTransitionProgress,
     isPlaybackPlaying,
@@ -413,9 +374,7 @@ export function useMotusMapBehavior(
       || !Number.isFinite(maxLongitude)
       || !Number.isFinite(minLatitude)
       || !Number.isFinite(maxLatitude)
-    ) {
-      return;
-    }
+    ) return;
 
     const lonSpan = maxLongitude - minLongitude;
     const latSpan = maxLatitude - minLatitude;
@@ -441,43 +400,6 @@ export function useMotusMapBehavior(
     });
   }, [isPlaybackPlaying, viewRef]);
 
-  // Debug probe: verify SceneView can produce a LayerView for overlay and whether it is suspended/hidden.
-  useEffect(() => {
-    const view = viewRef.current;
-    const overlay = overlayRef.current;
-    if (!view || !overlay || view.type !== '3d') return;
-
-    let cancelled = false;
-    void view.whenLayerView(overlay)
-      .then((layerView) => {
-        if (cancelled) return;
-        const debugLayerView = layerView as unknown as {
-          suspended?: boolean;
-          visible?: boolean;
-          updating?: boolean;
-        };
-        console.debug(`${MOTUS_DEBUG_LOG_PREFIX} SceneView layerView status`, {
-          selectedTagId,
-          suspended: debugLayerView.suspended,
-          visible: debugLayerView.visible,
-          updating: debugLayerView.updating,
-          overlayVisible: overlay.visible,
-          overlayGraphicCount: overlay.graphics.length,
-        });
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        console.debug(`${MOTUS_DEBUG_LOG_PREFIX} SceneView layerView unavailable`, {
-          selectedTagId,
-          error,
-        });
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [viewRef, mapReady, movementRenderVersion, selectedTagId]);
-
   useEffect(() => {
     const overlay = overlayRef.current;
     if (!overlay) return;
@@ -500,10 +422,6 @@ export function useMotusMapBehavior(
       void motusService.getReceiverStations()
         .then((stations) => {
           if (cancelled) return;
-          console.debug(`${MOTUS_DEBUG_LOG_PREFIX} loaded receiver stations`, {
-            viewType: viewRef.current?.type ?? 'unknown',
-            stationCount: stations.length,
-          });
           movementContextRef.current = {
             stations,
             legs: [],
@@ -529,13 +447,6 @@ export function useMotusMapBehavior(
     void motusService.getMovementContextForTag(selectedTagId, browseFilters)
       .then((context) => {
         if (cancelled) return;
-        console.debug(`${MOTUS_DEBUG_LOG_PREFIX} loaded movement context`, {
-          viewType: viewRef.current?.type ?? 'unknown',
-          selectedTagId,
-          stationCount: context.stations.length,
-          legCount: context.legs.length,
-          disclaimer: context.disclaimer,
-        });
         movementContextRef.current = context;
         setMovementRenderVersion((version) => version + 1);
         setMovementDisclaimer(context.disclaimer);
@@ -544,10 +455,6 @@ export function useMotusMapBehavior(
       .catch((error) => {
         if (cancelled) return;
         console.error('[MOTUS] Failed to render movement context', error);
-        console.debug(`${MOTUS_DEBUG_LOG_PREFIX} movement context failed`, {
-          viewType: viewRef.current?.type ?? 'unknown',
-          selectedTagId,
-        });
         movementContextRef.current = null;
         overlay.removeAll();
         setMovementRenderVersion((version) => version + 1);
@@ -571,5 +478,6 @@ export function useMotusMapBehavior(
     setPlaybackStepLabels,
     createLoadingScope,
     mapReady,
+    viewMode,
   ]);
 }
