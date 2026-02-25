@@ -2,7 +2,11 @@
 // DataONE Map Behavior — Manages FeatureLayer population from DataONE filters.
 // Layer is "on map" when PINNED or ACTIVE. Map clicks open dataset detail.
 // Aggregate clicks (cluster/bin) resolve members from in-memory cache.
-// applyEdits-populated FeatureLayers don't support aggregateIds queries.
+//
+// 3D (SceneView): client-side FeatureLayers populated via applyEdits are not
+// reliably hit-testable in SceneView. A companion GraphicsLayer overlay
+// (same pattern as Dendra sensors) is added in 3D for rendering + clicks.
+// The FeatureLayer is hidden in 3D; the overlay handles all interaction.
 // ============================================================================
 
 import { useEffect, useRef } from 'react';
@@ -12,18 +16,37 @@ import Extent from '@arcgis/core/geometry/Extent';
 import * as geometryEngine from '@arcgis/core/geometry/geometryEngine';
 import type Layer from '@arcgis/core/layers/Layer';
 import type FeatureLayer from '@arcgis/core/layers/FeatureLayer';
+import type GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import type { DataOneDataset } from '../../../types/dataone';
 import { dataOneService } from '../../../services/dataOneService';
 import { useDataOneFilter } from '../../context/DataOneFilterContext';
 import { useLayers } from '../../context/LayerContext';
 import { useMap } from '../../context/MapContext';
-import { buildDataOneFeatureReduction, buildDataOneFeatureReductionForScale, getBinningLevelForScale, populateDataOneLayer } from '../../components/Map/layers/dataoneLayer';
+import {
+  buildDataOneFeatureReduction,
+  buildDataOneFeatureReductionForScale,
+  getBinningLevelForScale,
+  populateDataOneLayer,
+  createDataOneOverlay,
+  populateDataOneOverlay,
+} from '../../components/Map/layers/dataoneLayer';
 import type { PinnedLayer, ActiveLayer } from '../../types';
 import { isPointInsideSpatialPolygon } from '../../utils/spatialQuery';
 
 const LAYER_ID = 'dataone-datasets';
-const MAP_LAYER_ID = 'v2-dataone-datasets';
 const MAX_MAP_SELECTION_IDS = 2000;
+
+/**
+ * Identify DataONE graphic hits — works on both the FeatureLayer (2D clusters)
+ * and the GraphicsLayer overlay (3D individual dots).
+ */
+function isDataOneGraphicHit(result: __esri.ViewHit): result is __esri.GraphicHit {
+  if (result.type !== 'graphic') return false;
+  const g = result.graphic;
+  if (typeof g.attributes?.dataoneId === 'string') return true;
+  const layerId = String(g.layer?.id ?? '').replace(/^v2-/, '');
+  return layerId === LAYER_ID;
+}
 
 function getAggregateCount(graphic: __esri.Graphic): number {
   const attrs = graphic.attributes ?? {};
@@ -124,6 +147,7 @@ export function useDataOneMapBehavior(
   const mapDatasetsByIdRef = useRef<Map<string, DataOneDataset>>(new Map());
   const populateVersionRef = useRef(0);
   const lastPopupSelectionKeyRef = useRef<string | null>(null);
+  const overlayRef = useRef<GraphicsLayer | null>(null);
 
   const isPinned = pinnedLayers.some((p) => p.layerId === LAYER_ID);
   const isActive = activeLayer?.layerId === LAYER_ID;
@@ -132,6 +156,40 @@ export function useDataOneMapBehavior(
   useEffect(() => {
     if (isOnMap) warmCache();
   }, [isOnMap, warmCache]);
+
+  // ── 3D overlay lifecycle: create/destroy GraphicsLayer for SceneView ─────
+  // In 3D the FeatureLayer is hidden and a GraphicsLayer takes over rendering
+  // and click detection (same pattern as Dendra sensor layers).
+  useEffect(() => {
+    if (!isOnMap) return;
+    const view = viewRef.current;
+    const arcLayer = getManagedLayer(LAYER_ID);
+    if (!view || !arcLayer) return;
+    const dataOneLayer = arcLayer as FeatureLayer;
+
+    if (view.type === '3d') {
+      dataOneLayer.visible = false;
+      (dataOneLayer as any).featureReduction = null;
+
+      const overlay = createDataOneOverlay();
+      view.map.add(overlay);
+      overlayRef.current = overlay;
+
+      // Seed overlay from current cache so dots appear immediately
+      const datasets = Array.from(mapDatasetsByIdRef.current.values());
+      if (datasets.length > 0) populateDataOneOverlay(overlay, datasets);
+
+      return () => {
+        try { view.map?.remove(overlay); } catch { /* view may be destroyed */ }
+        overlayRef.current = null;
+      };
+    }
+
+    // 2D: ensure FeatureLayer is visible + has correct feature reduction
+    dataOneLayer.visible = true;
+    (dataOneLayer as any).featureReduction = buildDataOneFeatureReduction(aggregationMode);
+    overlayRef.current = null;
+  }, [isOnMap, aggregationMode, getManagedLayer, mapReady, viewRef]);
 
   // Re-query map points whenever DataONE browse filters change.
   useEffect(() => {
@@ -175,7 +233,12 @@ export function useDataOneMapBehavior(
         }
         mapDatasetsByIdRef.current = byId;
         setMapDatasetsCache(byId);
+
         await populateDataOneLayer(dataOneLayer, spatiallyFilteredMapData);
+
+        // Keep 3D overlay in sync when data refreshes
+        const overlay = overlayRef.current;
+        if (overlay) populateDataOneOverlay(overlay, spatiallyFilteredMapData);
       } catch (error) {
         if (!abortController.signal.aborted) {
           console.error('[DataONE Map] Failed to refresh map markers', error);
@@ -194,22 +257,13 @@ export function useDataOneMapBehavior(
     };
   }, [isOnMap, dataLoaded, browseFilters, spatialPolygon, getManagedLayer, mapReady, createMapLoadingScope]);
 
-  // Keep map aggregation mode (clusters vs bins) in sync with sidebar toggle.
-  useEffect(() => {
-    if (!isOnMap) return;
-    const arcLayer = getManagedLayer(LAYER_ID);
-    if (!arcLayer) return;
-    const dataOneLayer = arcLayer as FeatureLayer;
-    (dataOneLayer as any).featureReduction = buildDataOneFeatureReduction(aggregationMode);
-  }, [isOnMap, aggregationMode, getManagedLayer, mapReady]);
-
   // Dynamic binning: watch scale continuously and switch levels
-  // only when crossing a threshold (level change guard).
+  // only when crossing a threshold (level change guard). 2D only.
   useEffect(() => {
     if (!isOnMap) return;
     if (aggregationMode !== 'binning') return;
     const view = viewRef.current;
-    if (!view) return;
+    if (!view || view.type === '3d') return;
     const arcLayer = getManagedLayer(LAYER_ID);
     if (!arcLayer) return;
     const dataOneLayer = arcLayer as FeatureLayer;
@@ -221,7 +275,6 @@ export function useDataOneMapBehavior(
       if (level === lastAppliedLevel) return;
       lastAppliedLevel = level;
       const reduction = (dataOneLayer as any).featureReduction;
-      // Prefer mutating the existing reduction to avoid full reduction rebuild flicker.
       if (reduction?.type === 'binning') {
         reduction.fixedBinLevel = level;
         return;
@@ -238,41 +291,43 @@ export function useDataOneMapBehavior(
   }, [isOnMap, aggregationMode, viewRef, getManagedLayer, mapReady]);
 
   // Map click handler: activate DataONE and open dataset detail or aggregate list.
+  // 3D: hitTest against the GraphicsLayer overlay (reliable, like Dendra).
+  // 2D: hitTest against the FeatureLayer (supports cluster/bin detection).
   useEffect(() => {
     if (!isOnMap) return;
     const view = viewRef.current;
     if (!view) return;
-    if (!getManagedLayer(LAYER_ID)) return;
+    const dataOneLayer = getManagedLayer(LAYER_ID) as FeatureLayer | undefined;
+    if (!dataOneLayer) return;
 
     const handler = view.on('click', async (event) => {
       try {
-        const response = await view.hitTest(event);
-        const graphicHit = response.results.find(
-          (result): result is __esri.GraphicHit =>
-            result.type === 'graphic' && result.graphic.layer?.id === MAP_LAYER_ID,
-        );
+        // In 3D, target the overlay GraphicsLayer; in 2D, target the FeatureLayer.
+        const overlay = overlayRef.current;
+        const hitTarget = (view.type === '3d' && overlay) ? overlay : dataOneLayer;
+        const response = await view.hitTest(event, { include: [hitTarget] });
+        const graphicHit = response.results.find(isDataOneGraphicHit);
         if (!graphicHit) return;
 
         const aggregateCount = getAggregateCount(graphicHit.graphic);
 
-        // Aggregate click (cluster/bin with ≥1 features).
-        // count=1 aggregates are still cluster/bin graphics without feature
-        // attributes like dataoneId, so they must go through cache resolution.
+        // Aggregate click (cluster/bin with ≥1 features) — 2D only.
         if (aggregateCount >= 1) {
           const dataoneIds = resolveAggregateMembersFromCache(
             graphicHit.graphic,
             mapDatasetsByIdRef.current,
           );
 
-          // Single-member aggregate: open dataset detail directly.
           if (dataoneIds.length === 1) {
             setMapSelectionDataoneIds(null);
-            activateLayer(LAYER_ID, undefined, dataoneIds[0]);
+            const currentDataOneViewId = activeLayer?.layerId === LAYER_ID
+              ? activeLayer.viewId
+              : undefined;
+            activateLayer(LAYER_ID, currentDataOneViewId, dataoneIds[0]);
             view.closePopup();
             return;
           }
 
-          // Multi-member aggregate: show filtered list in sidebar.
           if (dataoneIds.length > 0) {
             setMapSelectionDataoneIds(dataoneIds);
           } else {
@@ -286,15 +341,13 @@ export function useDataOneMapBehavior(
           requestBrowseTab();
           view.closePopup();
 
-          // Aggregate click should re-center to the selected group without
-          // changing zoom level, so users can continue manual exploration.
           void view.goTo({
             target: graphicHit.graphic.geometry,
           }, { duration: 450 });
           return;
         }
 
-        // Single point click (non-aggregate feature) — open dataset detail.
+        // Single point click — open dataset detail.
         const dataoneId = graphicHit.graphic.attributes?.dataoneId as string | undefined;
         if (!dataoneId) return;
         setMapSelectionDataoneIds(null);
@@ -303,20 +356,22 @@ export function useDataOneMapBehavior(
           const dataset = await dataOneService.getDatasetByDataoneId(dataoneId);
           if (dataset) mapDatasetsByIdRef.current.set(dataoneId, dataset);
         }
-        activateLayer(LAYER_ID, undefined, dataoneId);
+        const currentDataOneViewId = activeLayer?.layerId === LAYER_ID
+          ? activeLayer.viewId
+          : undefined;
+        activateLayer(LAYER_ID, currentDataOneViewId, dataoneId);
 
         view.closePopup();
 
+        // Open ArcGIS popup on the clicked graphic for visual highlight
         const geometry = graphicHit.graphic.geometry;
         if (geometry?.type === 'point') {
           const point = geometry as Point;
           void view.goTo(
-            {
-              center: [point.longitude, point.latitude],
-              zoom: Math.max(view.zoom ?? 8, 10),
-            },
+            { center: [point.longitude, point.latitude], zoom: Math.max(view.zoom ?? 8, 10) },
             { duration: 600 },
           );
+          view.openPopup({ features: [graphicHit.graphic], location: point });
         }
       } catch (error) {
         console.error('[DataONE Map Click] Error handling marker click', error);
@@ -326,7 +381,7 @@ export function useDataOneMapBehavior(
     return () => {
       handler.remove();
     };
-  }, [isOnMap, viewRef, activeLayer, activateLayer, requestBrowseTab, getManagedLayer, setMapSelectionDataoneIds]);
+  }, [isOnMap, viewRef, activeLayer, activateLayer, requestBrowseTab, getManagedLayer, setMapSelectionDataoneIds, mapReady]);
 
   // When a saved DataONE child view (single dataset) is activated from Map Layers,
   // focus the marker and open ArcGIS popup so native highlight is shown.
@@ -392,5 +447,5 @@ export function useDataOneMapBehavior(
     return () => {
       cancelled = true;
     };
-  }, [isOnMap, activeLayer, viewRef, getManagedLayer, getPinnedByLayerId]);
+  }, [isOnMap, activeLayer, viewRef, getManagedLayer, getPinnedByLayerId, mapReady]);
 }

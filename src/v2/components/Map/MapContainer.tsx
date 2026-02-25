@@ -177,6 +177,7 @@ export function MapContainer() {
       if (view.ui.find('attribution')) view.ui.move('attribution', 'top-right');
       if (view.popup) {
         view.popup.dockEnabled = false;
+        view.popup.autoOpenEnabled = false;
       }
       setMapReady();
     });

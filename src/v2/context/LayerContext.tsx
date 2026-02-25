@@ -2952,6 +2952,9 @@ export function LayerProvider({ children }: { children: ReactNode }) {
     const nextFeatureId = (() => {
       if (activeLayer.layerId === 'dataset-193') return nextActiveView?.droneView?.flightId;
       if (activeLayer.layerId === 'dataone-datasets' && viewIsChanging) {
+        // Preserve explicit map-click selection when a view-id realignment
+        // happens in the same render cycle.
+        if (activeLayer.featureId != null) return activeLayer.featureId;
         return nextActiveView?.dataoneFilters?.selectedDatasetId;
       }
       return activeLayer.featureId;
