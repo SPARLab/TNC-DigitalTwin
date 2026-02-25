@@ -11,6 +11,7 @@ import type { ViewMode } from '../../../context/MapContext';
 const PRESERVE_CENTER: [number, number] = [-120.47, 34.47];
 const INITIAL_ZOOM = 12;
 const DEFAULT_SCALE = 250000;
+export const V2_LIDAR_LAYER_ID = 'v2-lidar-point-cloud-layer';
 
 interface SavedViewState {
   center: [number, number];
@@ -28,6 +29,7 @@ interface UseArcgisViewLifecycleParams {
   highlightLayerRef: MutableRefObject<GraphicsLayer | null>;
   spatialQueryLayerRef: MutableRefObject<GraphicsLayer | null>;
   spatialSketchViewModelRef: MutableRefObject<SketchViewModel | null>;
+  isLidarVisible: boolean;
   setMapReady: () => void;
 }
 
@@ -38,6 +40,7 @@ export function useArcgisViewLifecycle({
   highlightLayerRef,
   spatialQueryLayerRef,
   spatialSketchViewModelRef,
+  isLidarVisible,
   setMapReady,
 }: UseArcgisViewLifecycleParams) {
   const getScaleConversionFactor = (latitude: number): number => {
@@ -140,8 +143,10 @@ export function useArcgisViewLifecycle({
       }));
 
       map.add(new PointCloudLayer({
+        id: V2_LIDAR_LAYER_ID,
         url: 'https://tiles.arcgis.com/tiles/6DIQcwlPy8knb6sg/arcgis/rest/services/All_Aeroptic_ColorizedPointCloud/SceneServer',
         title: 'Dangermond Preserve LiDAR Point Cloud',
+        visible: isLidarVisible,
         renderer: {
           type: 'point-cloud-rgb',
           field: 'RGB',
@@ -171,7 +176,7 @@ export function useArcgisViewLifecycle({
             lighting: { date: new Date(), directShadowsEnabled: true },
           },
           ui: { components: ['attribution', 'navigation-toggle', 'compass', 'zoom'] },
-          padding: { top: 52, right: 8, bottom: 8, left: 8 },
+          padding: { top: 52, right: 0, bottom: 0, left: 0 },
         })
       : new MapView({
           container: mapDivRef.current,
@@ -179,7 +184,7 @@ export function useArcgisViewLifecycle({
           center: saved.center,
           scale: targetScale,
           ui: { components: ['attribution', 'compass', 'zoom'] },
-          padding: { top: 52, right: 8, bottom: 8, left: 8 },
+          padding: { top: 52, right: 0, bottom: 0, left: 0 },
         });
 
     viewRef.current = view;
@@ -204,7 +209,6 @@ export function useArcgisViewLifecycle({
       if (view.ui.find('zoom')) view.ui.move('zoom', 'top-right');
       if (view.ui.find('compass')) view.ui.move('compass', 'top-right');
       if (view.ui.find('navigation-toggle')) view.ui.move('navigation-toggle', 'top-right');
-      if (view.ui.find('attribution')) view.ui.move('attribution', 'top-right');
       if (view.popup) {
         view.popup.dockEnabled = false;
       }
@@ -223,4 +227,14 @@ export function useArcgisViewLifecycle({
       view.destroy();
     };
   }, [viewMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view || view.type !== '3d') return;
+    const map = view.map;
+    if (!map) return;
+    const lidarLayer = map.findLayerById(V2_LIDAR_LAYER_ID) as PointCloudLayer | null;
+    if (!lidarLayer) return;
+    lidarLayer.visible = isLidarVisible;
+  }, [isLidarVisible, viewMode, viewRef]);
 }
