@@ -10,12 +10,15 @@ import type { ViewMode } from '../../../context/MapContext';
 
 const PRESERVE_CENTER: [number, number] = [-120.47, 34.47];
 const INITIAL_ZOOM = 12;
+const DEFAULT_SCALE = 250000;
 
 interface SavedViewState {
   center: [number, number];
+  scale: number;
   zoom: number;
-  tilt?: number;
-  heading?: number;
+  tilt: number;
+  heading: number;
+  sourceMode: ViewMode;
 }
 
 interface UseArcgisViewLifecycleParams {
@@ -37,27 +40,95 @@ export function useArcgisViewLifecycle({
   spatialSketchViewModelRef,
   setMapReady,
 }: UseArcgisViewLifecycleParams) {
+  const getScaleConversionFactor = (latitude: number): number => {
+    const factor = Math.cos((latitude * Math.PI) / 180);
+    // Keep conversion numerically stable if latitude is near the poles.
+    return Math.max(0.01, factor);
+  };
+
+  const getScaleForTargetMode = (
+    captured: SavedViewState,
+    targetMode: ViewMode,
+  ): number => {
+    const latitude = captured.center[1];
+    const conversionFactor = getScaleConversionFactor(latitude);
+
+    if (captured.sourceMode === targetMode) {
+      return captured.scale;
+    }
+
+    if (captured.sourceMode === '2d' && targetMode === '3d') {
+      // ArcGIS guidance: shrink scale for 2D -> 3D to match ground distance.
+      return captured.scale * conversionFactor;
+    }
+
+    // In practice this app over-zooms out when applying inverse conversion.
+    // Preserve raw scale for 3D -> 2D to keep parity at higher extents.
+    return captured.scale;
+  };
+
+  const captureViewState = (view: MapView | SceneView | null): SavedViewState => {
+    if (!view?.center) {
+      return {
+        center: PRESERVE_CENTER,
+        scale: DEFAULT_SCALE,
+        zoom: INITIAL_ZOOM,
+        tilt: 0,
+        heading: 0,
+        sourceMode: '2d',
+      };
+    }
+
+    const { longitude, latitude } = view.center;
+    const center: [number, number] = [
+      longitude ?? PRESERVE_CENTER[0],
+      latitude ?? PRESERVE_CENTER[1],
+    ];
+    const scale = view.scale ?? DEFAULT_SCALE;
+    const zoom = view.zoom ?? INITIAL_ZOOM;
+
+    if (view.type === '3d') {
+      return {
+        center,
+        scale,
+        zoom,
+        tilt: view.camera?.tilt ?? 0,
+        heading: view.camera?.heading ?? 0,
+        sourceMode: '3d',
+      };
+    }
+
+    return {
+      center,
+      scale,
+      zoom,
+      tilt: 0, // MapView is always top-down; preserve this for 2D -> 3D transitions.
+      heading: view.rotation ?? 0,
+      sourceMode: '2d',
+    };
+  };
+
   const savedViewStateRef = useRef<SavedViewState>({
     center: PRESERVE_CENTER,
+    scale: DEFAULT_SCALE,
     zoom: INITIAL_ZOOM,
+    tilt: 0,
+    heading: 0,
+    sourceMode: '2d',
   });
 
   useEffect(() => {
     if (!mapDivRef.current) return;
 
     const previousView = viewRef.current;
-    if (previousView?.center) {
-      const { longitude, latitude } = previousView.center;
-      savedViewStateRef.current = {
-        center: [longitude ?? PRESERVE_CENTER[0], latitude ?? PRESERVE_CENTER[1]],
-        zoom: previousView.zoom ?? INITIAL_ZOOM,
-        tilt: (previousView as SceneView).camera?.tilt,
-        heading: (previousView as SceneView).camera?.heading,
-      };
+    if (previousView) {
+      savedViewStateRef.current = captureViewState(previousView);
     }
 
     const is3D = viewMode === '3d';
     const saved = savedViewStateRef.current;
+    const targetMode: ViewMode = is3D ? '3d' : '2d';
+    const targetScale = getScaleForTargetMode(saved, targetMode);
     const map = new Map({
       basemap: is3D ? 'satellite' : 'topo-vector',
       ...(is3D && { ground: 'world-elevation' }),
@@ -92,11 +163,8 @@ export function useArcgisViewLifecycle({
       ? new SceneView({
           container: mapDivRef.current,
           map,
-          camera: {
-            position: { x: saved.center[0], y: saved.center[1], z: 2000 },
-            tilt: saved.tilt ?? 60,
-            heading: saved.heading ?? 0,
-          },
+          center: saved.center,
+          scale: targetScale,
           qualityProfile: 'high',
           environment: {
             atmosphereEnabled: true,
@@ -109,7 +177,7 @@ export function useArcgisViewLifecycle({
           container: mapDivRef.current,
           map,
           center: saved.center,
-          zoom: saved.zoom,
+          scale: targetScale,
           ui: { components: ['attribution', 'compass', 'zoom'] },
           padding: { top: 52, right: 8, bottom: 8, left: 8 },
         });
@@ -139,22 +207,13 @@ export function useArcgisViewLifecycle({
       if (view.ui.find('attribution')) view.ui.move('attribution', 'top-right');
       if (view.popup) {
         view.popup.dockEnabled = false;
-        view.popup.autoOpenEnabled = false;
       }
       setMapReady();
     });
 
     return () => {
-      const outgoingView = viewRef.current;
-      if (outgoingView?.center) {
-        const { longitude, latitude } = outgoingView.center;
-        savedViewStateRef.current = {
-          center: [longitude ?? PRESERVE_CENTER[0], latitude ?? PRESERVE_CENTER[1]],
-          zoom: outgoingView.zoom ?? INITIAL_ZOOM,
-          tilt: (outgoingView as SceneView).camera?.tilt,
-          heading: (outgoingView as SceneView).camera?.heading,
-        };
-      }
+      const outgoingView = view;
+      savedViewStateRef.current = captureViewState(outgoingView);
 
       viewRef.current = null;
       highlightLayerRef.current = null;

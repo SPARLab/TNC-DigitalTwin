@@ -11,8 +11,8 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 131 / 147 complete (**89%**) |
-| **Active remaining** | 16 tasks |
+| **Active scope** | 132 / 148 complete (**89%**) |
+| **Active remaining** | 15 tasks |
 | **Phases complete** | 7 of 13 (0, 1, 2, 6, 10, 11, 12) |
 
 ```
@@ -53,8 +53,8 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 131
-- **Active remaining (Not Started + In Progress + Blocked):** 15
+- **Complete:** 132
+- **Active remaining (Not Started + In Progress + Blocked):** 14
 - **Backlog (not in active scope):** 3
 - **Deferred:** 2
 - **Won't Do:** 2
@@ -76,7 +76,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
 | 10 | DroneDeploy | 🟢 Complete | 4 | 0 | 0 | 0 | 0 | 4 | `v2/dronedeploy` |
 | 11 | MOTUS | 🟢 Complete | 9 | 0 | 0 | 0 | 0 | 9 | `v2/motus` |
-| 12 | AI Refactor Readiness | 🟢 Complete | 12 | 0 | 0 | 0 | 1 | 13 | `v2/refactor-ai-readiness` |
+| 12 | AI Refactor Readiness | 🟢 Complete | 15 | 0 | 0 | 0 | 1 | 16 | `v2/refactor-ai-readiness` |
 
 **Status Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
 
@@ -130,7 +130,7 @@ Phase 0: Foundation
 ```
 
 **Completed Map Enhancement (Feb 2026):**
-- **2D/3D View Mode Toggle** — Implemented. MapContainer supports MapView (2D) and SceneView (3D) with toggle button (bottom-left). All 2D layers drape automatically onto terrain in 3D mode. LiDAR PointCloudLayer loads in 3D only. Camera position preserved across toggles. See `MapContext.viewMode`, `ViewModeToggle`, `MapContainer`.
+- **2D/3D View Mode Toggle** — Implemented. MapContainer supports MapView (2D) and SceneView (3D) with toggle button (bottom-left). All 2D layers drape automatically onto terrain in 3D mode. LiDAR PointCloudLayer loads in 3D only. Camera position and zoom preserved across toggles via `useArcgisViewLifecycle` (center+scale capture, 2D→3D latitude scale conversion, lifecycle fix). See `MapContext.viewMode`, `ViewModeToggle`, `MapContainer`, REF-15.
 
 **Parallelization:**
 - Phases 1-6, 8-9 can be worked on simultaneously (different Cursor windows, different branches) — **ACTIVE; Task 0.9 complete**
@@ -188,7 +188,7 @@ Use these when merging branches that touch shared components.
 | Data source adapter pattern | ✅ Decided | Will + Claude | Feb 12 | Plugin architecture for data sources. Each source implements `DataSourceAdapter` interface. Enables parallel branch development with minimal merge conflicts. See `src/v2/dataSources/` |
 | Caching strategy | ✅ Decided | Will + Claude | Feb 12 | Lazy per-source caching. Each data source context has `warmCache()` method (idempotent). Cache warms on first pin or activation. Data persists while provider mounted. Eliminates eager page-load fetches. |
 | Dynamic layer registry from Data Catalog Service | ✅ Implemented | User + Claude | Feb 12 | `useCatalogRegistry.ts` fetches from Dan's Data Catalog FeatureServer (`Dangermond_Preserve_Data_Catalog`). ~90+ real datasets across 14 categories. Left sidebar populated from catalog. Layers without adapters show generic placeholder in right sidebar. **Task 0.9 complete — parallel branches unblocked.** See phase-0-foundation.md. |
-| 2D/3D view mode toggle | ✅ Implemented | Cursor | Feb 24 | MapContainer conditionally creates MapView or SceneView based on `MapContext.viewMode`. Toggle button (ViewModeToggle) at bottom-left. All data source layers drape onto terrain in 3D; LiDAR PointCloudLayer loads in 3D only. Camera position preserved across toggles. Zero per-source code required. See `MapContext`, `MapContainer`, `ViewModeToggle`. |
+| 2D/3D view mode toggle | ✅ Implemented | Cursor | Feb 24 | MapContainer conditionally creates MapView or SceneView based on `MapContext.viewMode`. Toggle button (ViewModeToggle) at bottom-left. All data source layers drape onto terrain in 3D; LiDAR PointCloudLayer loads in 3D only. Camera position and zoom preserved across toggles (REF-15: center+scale capture, 2D→3D latitude scale conversion, lifecycle fix). Zero per-source code required. See `MapContext`, `MapContainer`, `ViewModeToggle`, `useArcgisViewLifecycle`. |
 | MOTUS journey reconstruction blocked | 🔴 On Hold | Codex | Feb 20 | Live audit of Wildlife Telemetry FeatureServer showed 0% join coverage between Tag Detections `node_num` and Receiver Stations / Station Deployments. Journey reconstruction (11.6, 11.7) on hold until Dan fixes detection-to-station linkage. See phase-11-motus.md Data Blocker. |
 | Cross-layer filtered-view naming contract | ✅ Decided | User + Claude | Feb 13 | Manual rename behavior must persist across all layer types and custom right-sidebar views. Auto-naming is adapter-specific per data source. Shared widget/context rule: if `isNameCustom` is false, auto-name can update on filter sync; if true, never overwrite. Rollout can happen incrementally by branch (not required to block current merge). |
 
@@ -359,6 +359,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 25, 2026 | Phase 12 | **REF-15 complete.** Camera preservation across 2D↔3D: capture center+scale from outgoing view; 2D→3D latitude scale conversion; 3D→2D raw scale; lifecycle fix to persist from local view before destroy. User-verified. Phase 12: 15/19 tracked items complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-14 complete.** 2D↔3D layer render reliability: REF-14A (DroneDeploy WMTS rebind on map swap) implemented and user-validated. REF-14B/C/D deferred for future sessions. Phase 12: 14/18 tracked items complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-13 complete.** MOTUS 3D journey playback regression fixed: recreate overlay GraphicsLayer on 2D↔3D map swap (SceneView cannot create layerview for stale 2D-origin layer); view-mode redraw trigger; 3D-safe direction marker (triangle fallback). User-verified. Phase 12: 12/13 tasks complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-12 deferred.** Completion criteria + smoke-test checklist task deferred to focus on high-impact work; revisit when ready to solidify smoke criteria. Phase 12 active scope complete (12/12); 1 deferred. | Cursor |
