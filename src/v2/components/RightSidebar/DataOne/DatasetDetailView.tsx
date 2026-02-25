@@ -4,14 +4,20 @@
 // ============================================================================
 
 import { useMemo } from 'react';
-import { ArrowLeft, ChevronDown, ChevronUp, Copy, ExternalLink, FileText, History as HistoryIcon, Loader2, MapPin, Quote, Save } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import {
   type DataOneDataset,
-  type DataOneDatasetDetail,
-  type DataOneVersionEntry,
 } from '../../../../services/dataOneService';
 import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { useDatasetDetailOrchestrator } from './useDatasetDetailOrchestrator';
+import {
+  DatasetDetailFilesSection,
+  DatasetDetailMetadataSection,
+  DatasetDetailPrimaryActionsSection,
+  DatasetDetailSpatialCoverageSection,
+  DatasetDetailVersionHistorySection,
+} from './DatasetDetailSections';
+import { describeFileType } from './datasetDetailFormatting';
 
 interface DatasetDetailViewProps {
   dataset: DataOneDataset;
@@ -26,68 +32,15 @@ interface DatasetDetailViewProps {
   onVersionSelect?: (dataset: DataOneDataset) => void;
 }
 
-function formatDate(value: Date | null | undefined): string {
-  if (!value) return 'Unknown';
-  return value.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-}
-
-function formatDateRange(beginDate: Date | null | undefined, endDate: Date | null | undefined): string {
-  if (!beginDate && !endDate) return 'Not specified';
-  if (beginDate && endDate) {
-    const beginYear = beginDate.getFullYear();
-    const endYear = endDate.getFullYear();
-    return beginYear === endYear ? String(beginYear) : `${beginYear} to ${endYear}`;
-  }
-  if (beginDate) return `From ${beginDate.getFullYear()}`;
-  return `Until ${endDate?.getFullYear() ?? 'Unknown'}`;
-}
-
-function formatFileSize(bytes: number | null | undefined): string {
-  if (!bytes || bytes <= 0) return 'Size unavailable';
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  let size = bytes;
-  let unitIndex = 0;
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size /= 1024;
-    unitIndex += 1;
-  }
-  return `${size.toFixed(size >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
-}
-
-function formatBoundingBox(details: DataOneDatasetDetail | null): string {
-  const coverage = details?.spatialCoverage;
-  if (!coverage) return 'Not specified';
-  const { north, south, east, west } = coverage;
-  if ([north, south, east, west].some((value) => value == null)) {
-    return 'Not specified';
-  }
-  return `${south!.toFixed(2)} to ${north!.toFixed(2)} lat, ${west!.toFixed(2)} to ${east!.toFixed(2)} lon`;
-}
-
-function describeFileType(ext: string): string {
-  const normalized = ext.toLowerCase();
-  if (normalized === 'csv') return 'Tabular data for analysis and reuse.';
-  if (normalized === 'tsv') return 'Delimiter-separated tabular records.';
-  if (normalized === 'json') return 'Structured machine-readable metadata or records.';
-  if (normalized === 'xml') return 'Structured metadata or schema-based exchange format.';
-  if (normalized === 'pdf') return 'Documentation, reports, or published methods.';
-  if (normalized === 'zip') return 'Compressed package of one or more resources.';
-  if (normalized === 'nc') return 'NetCDF scientific array data.';
-  if (normalized === 'txt') return 'Plain-text notes, logs, or supplementary details.';
-  return 'Research dataset files included in this package.';
-}
-
-function formatVersionSummary(summary: DataOneVersionEntry['filesSummary']): string | null {
-  if (!summary || summary.total <= 0) return null;
-  const extList = Object.entries(summary.byExtension)
-    .sort(([, left], [, right]) => right - left)
-    .slice(0, 3)
-    .map(([ext, count]) => `${count} ${ext.toUpperCase()}`);
-  if (extList.length === 0) return `${summary.total} files`;
-  return extList.join(', ');
-}
-
-export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onUnsaveDatasetView, isDatasetSaved, onKeywordClick, onVersionSelect }: DatasetDetailViewProps) {
+export function DatasetDetailView({
+  dataset,
+  onBack,
+  onSaveDatasetView,
+  onUnsaveDatasetView,
+  isDatasetSaved,
+  onKeywordClick,
+  onVersionSelect,
+}: DatasetDetailViewProps) {
   const {
     citationText,
     copiedState,
@@ -150,7 +103,7 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onUnsave
         onClick={onBack}
         className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 hover:text-emerald-800"
       >
-        <ArrowLeft className="h-4 w-4" />
+        <ArrowLeft id="dataone-detail-back-button-icon" className="h-4 w-4" />
         Back to Datasets
       </button>
 
@@ -175,69 +128,18 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onUnsave
 
       {!loading && !error && (
         <div id="dataone-detail-content" className="space-y-4 text-sm text-gray-700">
-          {(openDataOneUrl || doi) && (
-            <section id="dataone-detail-primary-actions-section" className="space-y-2">
-              {openDataOneUrl && (
-                <div id="dataone-detail-open-mode-button-row" className="flex flex-col gap-2">
-                  <button
-                    id="dataone-detail-open-new-tab-button"
-                    type="button"
-                    onClick={handleOpenInNewTab}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-800"
-                  >
-                    Open in DataONE (New Tab)
-                    <ExternalLink className="h-4 w-4" />
-                  </button>
-                  <button
-                    id="dataone-detail-open-in-app-button"
-                    type="button"
-                    onClick={handleOpenInApp}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100"
-                  >
-                    Open in DataONE (In App)
-                  </button>
-                </div>
-              )}
-              <button
-                id="dataone-detail-save-view-button"
-                type="button"
-                onClick={handleSaveOrUnsave}
-                className={`inline-flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium ${
-                  isDatasetSaved
-                    ? 'border-rose-200 bg-rose-50 text-rose-800 hover:bg-rose-100'
-                    : 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100'
-                }`}
-              >
-                <Save className="h-4 w-4" />
-                {isDatasetSaved ? 'Unsave Dataset View' : 'Save Dataset View'}
-              </button>
-              {saveFeedback && (
-                <p id="dataone-detail-save-view-feedback" className="text-xs text-emerald-700">
-                  {saveFeedback}
-                </p>
-              )}
-              <div id="dataone-detail-secondary-actions-row" className="grid grid-cols-2 gap-2">
-                <button
-                  id="dataone-detail-copy-doi-button"
-                  type="button"
-                  onClick={() => { void handleCopyDoi(); }}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                  {copiedState === 'doi' ? 'DOI Copied' : 'Copy DOI'}
-                </button>
-                <button
-                  id="dataone-detail-copy-citation-button"
-                  type="button"
-                  onClick={() => { void handleCopyCitation(); }}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  <Quote className="h-3.5 w-3.5" />
-                  {copiedState === 'cite' ? 'Citation Copied' : 'Cite'}
-                </button>
-              </div>
-            </section>
-          )}
+          <DatasetDetailPrimaryActionsSection
+            copiedState={copiedState}
+            doi={doi}
+            isDatasetSaved={isDatasetSaved}
+            openDataOneUrl={openDataOneUrl}
+            saveFeedback={saveFeedback}
+            onCopyCitation={handleCopyCitation}
+            onCopyDoi={handleCopyDoi}
+            onOpenInApp={handleOpenInApp}
+            onOpenInNewTab={handleOpenInNewTab}
+            onSaveOrUnsave={handleSaveOrUnsave}
+          />
 
           {details?.abstract && (
             <section id="dataone-detail-abstract-section">
@@ -246,159 +148,20 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onUnsave
             </section>
           )}
 
-          {dataset.versionCount > 1 && (
-            <section id="dataone-detail-version-history-section" className="rounded-lg border border-gray-200 overflow-hidden">
-              <button
-                id="dataone-detail-version-history-toggle"
-                type="button"
-                onClick={() => { void toggleVersionHistory(); }}
-                className="flex w-full items-center justify-between bg-gray-50 p-3 text-left hover:bg-gray-100 transition-colors"
-              >
-                <span id="dataone-detail-version-history-toggle-label" className="inline-flex items-center gap-2">
-                  <HistoryIcon className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-gray-700">Version History ({dataset.versionCount} versions)</span>
-                </span>
-                {versionHistoryOpen ? (
-                  <ChevronUp id="dataone-detail-version-history-toggle-up" className="h-4 w-4 text-gray-400" />
-                ) : (
-                  <ChevronDown id="dataone-detail-version-history-toggle-down" className="h-4 w-4 text-gray-400" />
-                )}
-              </button>
+          <DatasetDetailVersionHistorySection
+            dataset={dataset}
+            loadingVersionId={loadingVersionId}
+            versionEntries={versionEntries}
+            versionHistoryError={versionHistoryError}
+            versionHistoryLoading={versionHistoryLoading}
+            versionHistoryOpen={versionHistoryOpen}
+            onSelectVersion={handleSelectVersion}
+            onToggleVersionHistory={toggleVersionHistory}
+          />
 
-              {versionHistoryOpen && (
-                <div id="dataone-detail-version-history-panel" className="border-t border-gray-200 bg-white p-3">
-                  {versionHistoryLoading ? (
-                    <div id="dataone-detail-version-history-loading" className="flex items-center gap-2 text-sm text-gray-500">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Loading versions...
-                    </div>
-                  ) : versionHistoryError ? (
-                    <p id="dataone-detail-version-history-error" className="text-sm text-red-700">
-                      {versionHistoryError}
-                    </p>
-                  ) : versionEntries.length > 0 ? (
-                    <div id="dataone-detail-version-history-list" className="space-y-2">
-                      {versionEntries.map((entry, index) => {
-                        const isLatest = index === 0;
-                        const isCurrent = entry.dataoneId === dataset.dataoneId;
-                        const versionNumber = versionEntries.length - index;
-                        const summary = formatVersionSummary(entry.filesSummary);
-                        const hasDifferentFiles = Boolean(
-                          dataset.filesSummary &&
-                          entry.filesSummary &&
-                          (dataset.filesSummary.total !== entry.filesSummary.total ||
-                           dataset.filesSummary.sizeBytes !== entry.filesSummary.sizeBytes)
-                        );
-                        const selectingThisEntry = loadingVersionId === entry.dataoneId;
+          <DatasetDetailMetadataSection dataset={dataset} />
 
-                        return (
-                          <div
-                            id={`dataone-detail-version-entry-${entry.dataoneId}`}
-                            key={entry.dataoneId}
-                            className={`rounded-lg border p-2 ${
-                              isCurrent
-                                ? 'bg-emerald-50 border-emerald-200'
-                                : 'bg-white border-gray-100 hover:border-gray-200'
-                            }`}
-                          >
-                            <div id={`dataone-detail-version-entry-header-${entry.dataoneId}`} className="mb-1 flex items-center justify-between">
-                              <div id={`dataone-detail-version-entry-labels-${entry.dataoneId}`} className="flex items-center gap-2">
-                                <span className={`text-sm font-medium ${isCurrent ? 'text-emerald-700' : 'text-gray-700'}`}>
-                                  v{versionNumber}
-                                </span>
-                                {isLatest && (
-                                  <span
-                                    id={`dataone-detail-version-entry-latest-${entry.dataoneId}`}
-                                    className="rounded bg-emerald-100 px-1.5 py-0.5 text-xs text-emerald-700"
-                                  >
-                                    latest
-                                  </span>
-                                )}
-                                {isCurrent && (
-                                  <span
-                                    id={`dataone-detail-version-entry-current-${entry.dataoneId}`}
-                                    className="rounded bg-blue-100 px-1.5 py-0.5 text-xs text-blue-700"
-                                  >
-                                    current
-                                  </span>
-                                )}
-                              </div>
-                              <span id={`dataone-detail-version-entry-date-${entry.dataoneId}`} className="text-xs text-gray-500">
-                                {formatDate(entry.dateUploaded)}
-                              </span>
-                            </div>
-
-                            {summary && (
-                              <p
-                                id={`dataone-detail-version-entry-summary-${entry.dataoneId}`}
-                                className={`text-xs ${hasDifferentFiles ? 'text-amber-600 font-medium' : 'text-gray-500'}`}
-                              >
-                                {summary}
-                                {hasDifferentFiles ? ' ←' : ''}
-                              </p>
-                            )}
-
-                            {!isCurrent && (
-                              <button
-                                id={`dataone-detail-version-entry-view-button-${entry.dataoneId}`}
-                                type="button"
-                                disabled={selectingThisEntry}
-                                onClick={() => { void handleSelectVersion(entry); }}
-                                className="mt-2 text-xs text-emerald-700 hover:underline disabled:opacity-60"
-                              >
-                                {selectingThisEntry ? 'Loading version...' : 'View this version →'}
-                              </button>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p id="dataone-detail-version-history-empty" className="text-sm text-gray-500">
-                      No version history available.
-                    </p>
-                  )}
-                </div>
-              )}
-            </section>
-          )}
-
-          <section id="dataone-detail-metadata-section" className="rounded bg-slate-50 p-3">
-            <dl id="dataone-detail-metadata-grid" className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
-              <dt id="dataone-detail-uploaded-label" className="text-gray-500">Uploaded</dt>
-              <dd id="dataone-detail-uploaded-value" className="text-right text-gray-800">{formatDate(dataset.dateUploaded)}</dd>
-              <dt id="dataone-detail-version-count-label" className="text-gray-500">Versions</dt>
-              <dd id="dataone-detail-version-count-value" className="text-right text-gray-800">
-                {dataset.versionCount} version{dataset.versionCount === 1 ? '' : 's'}
-              </dd>
-              <dt id="dataone-detail-temporal-label" className="text-gray-500">Temporal coverage</dt>
-              <dd id="dataone-detail-temporal-value" className="text-right text-gray-800">
-                {formatDateRange(dataset.temporalCoverage.beginDate, dataset.temporalCoverage.endDate)}
-              </dd>
-              <dt id="dataone-detail-category-label" className="text-gray-500">Primary category</dt>
-              <dd id="dataone-detail-category-value" className="text-right text-gray-800">{dataset.tncCategory || 'Unspecified'}</dd>
-            </dl>
-          </section>
-
-          <section id="dataone-detail-spatial-section" className="space-y-2 rounded border border-gray-200 bg-white p-3">
-            <div id="dataone-detail-spatial-header" className="flex items-center justify-between">
-              <h4 id="dataone-detail-spatial-label" className="inline-flex items-center gap-1.5 font-semibold text-gray-900">
-                <MapPin className="h-4 w-4" />
-                Spatial Coverage
-              </h4>
-              <button
-                id="dataone-detail-recenter-button"
-                type="button"
-                onClick={() => { void handleRecenter(); }}
-                className="text-xs font-medium text-emerald-700 hover:text-emerald-800"
-              >
-                Recenter
-              </button>
-            </div>
-            <p id="dataone-detail-spatial-value" className="text-xs text-gray-600">
-              {formatBoundingBox(details)}
-            </p>
-          </section>
+          <DatasetDetailSpatialCoverageSection details={details} onRecenter={handleRecenter} />
 
           {details?.authors && details.authors.length > 0 && (
             <section id="dataone-detail-authors-section">
@@ -407,45 +170,12 @@ export function DatasetDetailView({ dataset, onBack, onSaveDatasetView, onUnsave
             </section>
           )}
 
-          <section id="dataone-detail-files-section" className="space-y-2">
-            <h4 id="dataone-detail-files-label" className="inline-flex items-center gap-1.5 font-semibold text-gray-900">
-              <FileText className="h-4 w-4" />
-              Files
-            </h4>
-            <p id="dataone-detail-files-summary" className="text-xs text-gray-600">
-              {totalFileCount > 0 ? `${totalFileCount} files` : 'File count unavailable'}
-              {' • '}
-              {formatFileSize(totalFileSize)}
-            </p>
-            {fileRows.length > 0 ? (
-              <div id="dataone-detail-files-list" className="space-y-1">
-                {fileRows.map((fileRow, index) => (
-                  <div
-                    id={`dataone-detail-file-row-${index}`}
-                    key={`${fileRow.ext}-${index}`}
-                    className="rounded border border-gray-100 bg-slate-50 px-2.5 py-2"
-                  >
-                    <p id={`dataone-detail-file-row-title-${index}`} className="text-xs font-semibold text-gray-800">
-                      {fileRow.ext}
-                      {fileRow.count != null ? ` (${fileRow.count})` : ''}
-                    </p>
-                    <p id={`dataone-detail-file-row-description-${index}`} className="text-xs text-gray-600">
-                      {fileRow.description}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p id="dataone-detail-files-empty" className="text-xs text-gray-500">
-                No file details were returned for this dataset.
-              </p>
-            )}
-            {fileInfoError && (
-              <p id="dataone-detail-files-error" className="text-xs text-amber-700">
-                Additional file details unavailable: {fileInfoError}
-              </p>
-            )}
-          </section>
+          <DatasetDetailFilesSection
+            fileInfoError={fileInfoError}
+            fileRows={fileRows}
+            totalFileCount={totalFileCount}
+            totalFileSize={totalFileSize}
+          />
 
           {details?.keywords && details.keywords.length > 0 && (
             <section id="dataone-detail-keywords-section" className="space-y-2">

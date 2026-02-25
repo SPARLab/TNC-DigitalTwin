@@ -1,7 +1,7 @@
 # Phase 12: AI Refactor Readiness
 
 **Status:** 🟡 In Progress  
-**Progress:** 7 / 12 tasks complete  
+**Progress:** 8 / 12 tasks complete  
 **Branch:** `v2/refactor-ai-readiness`  
 **Depends On:** Existing V2 implementation stability (Phases 0-11)  
 **Owner:** TBD
@@ -29,7 +29,7 @@
 | REF-07D | 🟢 Complete | Feb 25, 2026 11:31 PST | Saved-view/filter-sync primitive | Added `RightSidebar/shared/browseFilterSyncGuards.ts` and adopted hydrate/sync guard + pinned-view filter restore helpers in DataONE, GBIF, CalFlora, and iNaturalist browse flows. |
 | REF-08 | 🟡 In Progress | Feb 25, 2026 18:05 PT | Split large V2 detail sidebars into domain sections and supporting hooks | Tracking via REF-08A..REF-08D below; target right-sidebar complexity hotspots under `src/v2/components/RightSidebar/` (not legacy `src/components/`). |
 | REF-08A | 🟢 Complete | Feb 25, 2026 18:00 PT | Extract Dendra station detail view into focused sections + supporting state hook | Split `StationDetailView` into `useStationDetailState` and focused section components (`StationCrossStationToolsSection`, `StationHeaderCard`, `DatastreamSummaryListSection`, `DatastreamFilterSection`, `StationChartHintCard`) without behavior changes. |
-| REF-08B | ⚪ Not Started | Feb 25, 2026 18:05 PT | Extract DataONE dataset detail view into domain sections and presentational modules | Keep `useDatasetDetailOrchestrator` as orchestration boundary; split rendering-heavy blocks into focused section components. |
+| REF-08B | 🟢 Complete | Feb 25, 2026 | Extract DataONE dataset detail view into domain sections and presentational modules | Extracted to `DatasetDetailSections.tsx` and `datasetDetailFormatting.ts`; `useDatasetDetailOrchestrator` remains orchestration boundary; behavior preserved. |
 | REF-08C | ⚪ Not Started | Feb 25, 2026 18:05 PT | Apply the same detail-view split pattern to remaining right-sidebar hotspots | Prioritize largest mixed-responsibility detail views (for example TNC ArcGIS overview/detail-heavy panels) based on coupling and edit-risk. |
 | REF-08D | ⚪ Not Started | Feb 25, 2026 18:05 PT | Run targeted smoke checks for map↔sidebar detail flows after each extraction | Validate back navigation, map focus/recenter actions, save/pin actions, and detail selection state retention. |
 | REF-09 | ⚪ Not Started | Feb 25, 2026 17:05 PT | Narrow large V2 contexts (`src/v2/context/MapContext.tsx`, `src/v2/context/DendraContext.tsx`) into focused hooks/modules | Preserve existing V2 context exports initially. |
@@ -90,7 +90,7 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | REF-07 | Build shared browse primitives | 🟢 Complete | | Work is split into REF-07A..REF-07D; REF-07A, REF-07B, REF-07C, and REF-07D are complete. |
 | REF-08 | Split large V2 detail sidebars | 🟡 In Progress | | Tracking via REF-08A..REF-08D; focus on right-sidebar files with mixed orchestration + rendering concerns, not line count alone. |
 | REF-08A | Extract Dendra station detail view into focused sections + supporting state hook | 🟢 Complete | | Completed extraction-only split of `StationDetailView` into a state hook plus focused section components; behavior preserved. |
-| REF-08B | Extract DataONE dataset detail view into domain sections and presentational modules | ⚪ Not Started | | Keep `useDatasetDetailOrchestrator` as the orchestration boundary. |
+| REF-08B | Extract DataONE dataset detail view into domain sections and presentational modules | 🟢 Complete | | Extracted to `DatasetDetailSections.tsx` and `datasetDetailFormatting.ts`; orchestrator unchanged; behavior preserved. |
 | REF-08C | Apply detail-view split pattern to remaining right-sidebar hotspots | ⚪ Not Started | | Prioritize by coupling/edit-risk rather than line count alone. |
 | REF-08D | Run targeted smoke checks for map↔sidebar detail flows after each extraction | ⚪ Not Started | | Cover back navigation, map focus/recenter, save/pin actions, and selection retention. |
 | REF-09 | Narrow large V2 context modules | ⚪ Not Started | | Preserve existing V2 consumer APIs in first pass. |
@@ -174,3 +174,4 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | Feb 25, 2026 | REF-07D | Fixed invalid optional-chain assignment in `browseDetailHandoff.ts` (`lastHandledFeatureIdRef?.current = ...` → explicit null check) that caused Vite/esbuild compile failure. | Cursor |
 | Feb 25, 2026 | REF-08 planning | Broke REF-08 into explicit subtasks REF-08A..REF-08D directly in Quick Task Summary and Task Status tables (no separate subsection), and set REF-08 to In Progress. | Cursor |
 | Feb 25, 2026 | REF-08A | Complete. Extracted `StationDetailView` into `useStationDetailState` and focused section components (`StationCrossStationToolsSection`, `StationHeaderCard`, `DatastreamSummaryListSection`, `DatastreamFilterSection`, `StationChartHintCard`); behavior preserved, DOM ids unchanged. | Cursor |
+| Feb 25, 2026 | REF-08B | Complete. Extracted `DatasetDetailView` rendering into focused section components (`DatasetDetailPrimaryActionsSection`, `DatasetDetailVersionHistorySection`, `DatasetDetailMetadataSection`, `DatasetDetailSpatialCoverageSection`, `DatasetDetailFilesSection`) and shared formatting helpers (`datasetDetailFormatting.ts`); `useDatasetDetailOrchestrator` remains orchestration boundary; behavior preserved. Phase 12: 8/12 tasks complete. | Cursor |
