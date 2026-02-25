@@ -43,6 +43,11 @@ export interface CodegenBundleResult {
   fileExtension: 'py' | 'R';
   fileName: string;
   snippet: string;
+  sourceBlocks: Array<{
+    dataSource: DataSource;
+    snippet: string;
+    generatedCount: number;
+  }>;
   generatedAtIso: string;
   generatedCount: number;
   skippedCount: number;

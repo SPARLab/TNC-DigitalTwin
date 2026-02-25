@@ -1,4 +1,4 @@
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Code2, Copy, FileCode2, Loader2 } from 'lucide-react';
 import type { DataSource } from '../../types';
 import type { ExportFormatOption } from './types';
 import { formatEstimatedSize } from './utils/sizeEstimator';
@@ -14,6 +14,19 @@ interface LayerExportSectionProps {
   layerEstimatedBytes?: number;
   isLayerEstimateUnavailable: boolean;
   showLargeExportWarning: boolean;
+  isCodegenSupported: boolean;
+  canGenerateLayerCode: boolean;
+  codegenUnsupportedMessage?: string;
+  isCodegenProcessing: boolean;
+  codegenProcessingLanguage: 'python' | 'r' | null;
+  // eslint-disable-next-line no-unused-vars
+  onGenerateLayerCode: (language: 'python' | 'r') => void;
+  onCopyLayerCode: () => void;
+  generatedLayerCode?: {
+    language: 'python' | 'r';
+    snippet: string;
+    generatedCount: number;
+  };
   // eslint-disable-next-line no-unused-vars
   onToggleFormat: (formatId: string) => void;
   // eslint-disable-next-line no-unused-vars
@@ -63,6 +76,14 @@ export function LayerExportSection({
   layerEstimatedBytes,
   isLayerEstimateUnavailable,
   showLargeExportWarning,
+  isCodegenSupported,
+  canGenerateLayerCode,
+  codegenUnsupportedMessage,
+  isCodegenProcessing,
+  codegenProcessingLanguage,
+  onGenerateLayerCode,
+  onCopyLayerCode,
+  generatedLayerCode,
   onToggleFormat,
   onToggleView,
   onToggleIncludeQueryDefinition,
@@ -236,6 +257,97 @@ export function LayerExportSection({
           </p>
         </div>
       ) : null}
+
+      <div id={`export-builder-layer-codegen-section-${layerId}`} className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3">
+        <div id={`export-builder-layer-codegen-header-${layerId}`} className="flex items-center justify-between gap-2">
+          <p id={`export-builder-layer-codegen-title-${layerId}`} className="text-xs font-semibold text-slate-700">
+            Import code
+          </p>
+          <div id={`export-builder-layer-codegen-actions-${layerId}`} className="flex items-center gap-2">
+            <button
+              id={`export-builder-layer-codegen-python-button-${layerId}`}
+              type="button"
+              disabled={!isCodegenSupported || !canGenerateLayerCode || isCodegenProcessing}
+              onClick={() => onGenerateLayerCode('python')}
+              className="flex items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isCodegenProcessing && codegenProcessingLanguage === 'python' ? (
+                <Loader2 id={`export-builder-layer-codegen-python-spinner-${layerId}`} className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Code2 id={`export-builder-layer-codegen-python-icon-${layerId}`} className="h-3.5 w-3.5" />
+              )}
+              Get Python Code
+            </button>
+
+            <button
+              id={`export-builder-layer-codegen-r-button-${layerId}`}
+              type="button"
+              disabled={!isCodegenSupported || !canGenerateLayerCode || isCodegenProcessing}
+              onClick={() => onGenerateLayerCode('r')}
+              className="flex items-center gap-1.5 rounded-md border border-teal-300 bg-teal-50 px-2.5 py-1.5 text-xs font-semibold text-teal-800 transition-colors hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isCodegenProcessing && codegenProcessingLanguage === 'r' ? (
+                <Loader2 id={`export-builder-layer-codegen-r-spinner-${layerId}`} className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <FileCode2 id={`export-builder-layer-codegen-r-icon-${layerId}`} className="h-3.5 w-3.5" />
+              )}
+              Get R Code
+            </button>
+          </div>
+        </div>
+
+        {!isCodegenSupported ? (
+          <p id={`export-builder-layer-codegen-unsupported-${layerId}`} className="mt-2 text-[11px] text-slate-600">
+            {codegenUnsupportedMessage || 'Code generation for this data source is coming soon.'}
+          </p>
+        ) : !canGenerateLayerCode ? (
+          <p id={`export-builder-layer-codegen-no-views-${layerId}`} className="mt-2 text-[11px] text-slate-600">
+            Select at least one view above to generate layer code.
+          </p>
+        ) : null}
+
+        <div
+          id={`export-builder-layer-codegen-preview-animator-${layerId}`}
+          className={`grid transition-all duration-300 ease-out ${
+            generatedLayerCode
+              ? 'mt-3 grid-rows-[1fr] opacity-100'
+              : 'mt-0 grid-rows-[0fr] opacity-0'
+          }`}
+          aria-hidden={!generatedLayerCode}
+        >
+          <div
+            id={`export-builder-layer-codegen-preview-overflow-${layerId}`}
+            className="min-h-0 overflow-hidden"
+          >
+            {generatedLayerCode ? (
+              <div id={`export-builder-layer-codegen-preview-${layerId}`}>
+                <div id={`export-builder-layer-codegen-preview-header-${layerId}`} className="mb-2 flex items-center justify-between gap-2">
+                  <p id={`export-builder-layer-codegen-preview-title-${layerId}`} className="text-[11px] font-semibold text-slate-700">
+                    {generatedLayerCode.language === 'python' ? 'Python' : 'R'} preview ({generatedLayerCode.generatedCount} view{generatedLayerCode.generatedCount === 1 ? '' : 's'})
+                  </p>
+                  <button
+                    id={`export-builder-layer-codegen-copy-button-${layerId}`}
+                    type="button"
+                    onClick={onCopyLayerCode}
+                    className="flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+                  >
+                    <Copy id={`export-builder-layer-codegen-copy-icon-${layerId}`} className="h-3 w-3" />
+                    Copy
+                  </button>
+                </div>
+                <pre
+                  id={`export-builder-layer-codegen-pre-${layerId}`}
+                  className="max-h-64 overflow-auto rounded-md bg-slate-950 p-3 text-[11px] leading-5 text-emerald-100"
+                >
+                  <code id={`export-builder-layer-codegen-code-${layerId}`}>
+                    {generatedLayerCode.snippet}
+                  </code>
+                </pre>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
     </section>
   );
 }

@@ -1,4 +1,5 @@
 import type { ExportActionLayer } from '../types';
+import type { DataSource } from '../../../types';
 import { mapCodegenRequest } from './mappers';
 import { renderPythonSnippet } from './pythonTemplates';
 import { renderRSnippet } from './rTemplates';
@@ -22,15 +23,26 @@ function languageFileExtension(language: ExportCodeLanguage): 'py' | 'R' {
   return language === 'python' ? 'py' : 'R';
 }
 
-function downloadBlob(blob: Blob, filename: string): void {
-  const objectUrl = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = objectUrl;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  document.body.removeChild(anchor);
-  URL.revokeObjectURL(objectUrl);
+function buildSourceBlockSnippet(
+  sourceUrl: string,
+  generatedAtIso: string,
+  dataSource: DataSource,
+  items: Array<Extract<ExportCodegenResult, { ok: true }>>,
+): string {
+  const snippets = items.map((result) => [
+    '# ------------------------------------------------------------',
+    `# ${result.title}`,
+    result.snippet,
+  ].join('\n'));
+
+  return [
+    '# V2 Export Builder code block',
+    `# Data source: ${dataSource}`,
+    `# Generated at: ${generatedAtIso}`,
+    `# Source URL: ${sourceUrl}`,
+    '',
+    snippets.join('\n\n'),
+  ].join('\n');
 }
 
 export function generateExportCode(request: ExportCodegenRequest): ExportCodegenResult {
@@ -76,7 +88,7 @@ export function generateCodeBundle(
   sourceUrl: string,
 ): CodegenBundleResult {
   const generatedAtIso = new Date().toISOString();
-  const successes: ExportCodegenResult[] = [];
+  const results: ExportCodegenResult[] = [];
   const skippedMessages: string[] = [];
 
   for (const layer of layers) {
@@ -88,34 +100,33 @@ export function generateCodeBundle(
         generatedAtIso,
         sourceUrl,
       });
-      successes.push(result);
+      results.push(result);
       if (!result.ok) {
         skippedMessages.push(`${layer.layerName} / ${view.viewName}: ${result.message}`);
       }
     }
   }
 
-  const snippets = successes
+  const successResults = results
     .filter((result): result is Extract<ExportCodegenResult, { ok: true }> => result.ok)
-    .map((result) => [
-      language === 'python'
-        ? '# ------------------------------------------------------------'
-        : '# ------------------------------------------------------------',
-      `# ${result.title}`,
-      result.snippet,
-    ].join('\n'));
+    .sort((a, b) => a.metadata.dataSource.localeCompare(b.metadata.dataSource));
+
+  const sourceToResults = new Map<DataSource, Array<Extract<ExportCodegenResult, { ok: true }>>>();
+  for (const result of successResults) {
+    const existing = sourceToResults.get(result.metadata.dataSource) ?? [];
+    existing.push(result);
+    sourceToResults.set(result.metadata.dataSource, existing);
+  }
+
+  const sourceBlocks = Array.from(sourceToResults.entries()).map(([dataSource, items]) => ({
+    dataSource,
+    snippet: buildSourceBlockSnippet(sourceUrl, generatedAtIso, dataSource, items),
+    generatedCount: items.length,
+  }));
 
   const extension = languageFileExtension(language);
-  const snippet = snippets.length > 0
-    ? [
-      language === 'python'
-        ? '# V2 Export Builder code bundle'
-        : '# V2 Export Builder code bundle',
-      `# Generated at: ${generatedAtIso}`,
-      `# Source URL: ${sourceUrl}`,
-      '',
-      snippets.join('\n\n'),
-    ].join('\n')
+  const snippet = sourceBlocks.length > 0
+    ? sourceBlocks.map((block) => block.snippet).join('\n\n')
     : language === 'python'
       ? '# No supported selections found for Python code generation.'
       : '# No supported selections found for R code generation.';
@@ -125,8 +136,9 @@ export function generateCodeBundle(
     fileExtension: extension,
     fileName: `v2-export-code-${generatedAtIso.replace(/[:.]/g, '-')}.${extension}`,
     snippet,
+    sourceBlocks,
     generatedAtIso,
-    generatedCount: snippets.length,
+    generatedCount: successResults.length,
     skippedCount: skippedMessages.length,
     skippedReasons: skippedMessages,
   };
@@ -147,6 +159,13 @@ export async function copyCodeToClipboard(code: string): Promise<boolean> {
 
 export function downloadCodeTextFile(fileName: string, code: string): void {
   const blob = new Blob([code], { type: 'text/plain;charset=utf-8;' });
-  downloadBlob(blob, fileName);
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = objectUrl;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(objectUrl);
 }
 

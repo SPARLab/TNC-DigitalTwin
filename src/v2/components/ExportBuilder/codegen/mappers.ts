@@ -48,12 +48,6 @@ export function mapCodegenRequest(request: ExportCodegenRequest): MappedCodegenP
   }
 
   const queryDefinition = request.view.queryDefinition;
-  if (!queryDefinition) {
-    return {
-      reason: 'MISSING_QUERY_DEFINITION',
-      message: 'Missing query definition for selected view. Enable query state capture before generating code.',
-    };
-  }
 
   const base = {
     dataSource: request.layer.dataSource,
@@ -66,31 +60,23 @@ export function mapCodegenRequest(request: ExportCodegenRequest): MappedCodegenP
   };
 
   if (request.layer.dataSource === 'inaturalist') {
-    if (!queryDefinition.inaturalistFilters) {
-      return {
-        reason: 'MISSING_QUERY_DEFINITION',
-        message: 'Missing iNaturalist filter payload for selected view.',
-      };
-    }
-
     return {
       ...base,
       dataSource: 'inaturalist',
-      filters: queryDefinition.inaturalistFilters,
-    };
-  }
-
-  if (!queryDefinition.dendraFilters) {
-    return {
-      reason: 'MISSING_QUERY_DEFINITION',
-      message: 'Missing Dendra filter payload for selected view.',
+      filters: queryDefinition?.inaturalistFilters ?? {
+        selectedTaxa: [],
+        selectedSpecies: [],
+        excludeAllSpecies: false,
+      },
     };
   }
 
   return {
     ...base,
     dataSource: 'dendra',
-    filters: queryDefinition.dendraFilters,
+    filters: queryDefinition?.dendraFilters ?? {
+      showActiveOnly: false,
+    },
   };
 }
 

@@ -17,6 +17,11 @@ function asRNullableNumber(value?: number): string {
 
 function renderINaturalistParams(payload: MappedINaturalistPayload): string[] {
   return [
+    '  # Dangermond Preserve expanded search bounds',
+    '  swlat = 34.35,',
+    '  swlng = -120.55,',
+    '  nelat = 34.62,',
+    '  nelng = -120.30,',
     `  taxon_name = ${asRStringArray(payload.filters.selectedTaxa)},`,
     `  species_guess = ${asRStringArray(payload.filters.selectedSpecies)},`,
     `  d1 = ${asRNullableString(payload.filters.startDate)},`,

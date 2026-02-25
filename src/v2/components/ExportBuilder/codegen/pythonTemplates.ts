@@ -14,10 +14,15 @@ function asPythonNullableNumber(value?: number): string {
 
 function renderINaturalistParams(payload: MappedINaturalistPayload): string[] {
   return [
+    "    # Dangermond Preserve expanded search bounds",
+    "    'swlat': 34.35,",
+    "    'swlng': -120.55,",
+    "    'nelat': 34.62,",
+    "    'nelng': -120.30,",
     `    'taxon_name': ${asPythonStringArray(payload.filters.selectedTaxa)},`,
     `    'species_guess': ${asPythonStringArray(payload.filters.selectedSpecies)},`,
     `    'd1': ${asPythonNullableString(payload.filters.startDate)},`,
-    `    'd2': ${asPythonNullableString(payload.filters.endDate)}`,
+    `    'd2': ${asPythonNullableString(payload.filters.endDate)},`,
     `    'per_page': 200,`,
     `    'quality_grade': ${payload.filters.excludeAllSpecies ? "'any'" : "'research'"},`,
     '    # Remove empty params before request',

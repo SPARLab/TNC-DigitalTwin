@@ -1,7 +1,7 @@
 # Phase 12: Export Code Generation (Python + R)
 
 **Status:** 🟡 In Progress  
-**Progress:** 0 / 3 tasks  
+**Progress:** 2 / 3 tasks  
 **Branch:** `v2/export-code-generation`  
 **Depends On:** Phase 5 (Export Builder modal/actions)  
 **Owner:** TBD
@@ -36,8 +36,8 @@ Demonstrate the forward direction of Export Builder by generating copy/paste-rea
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| 12.1 | 🟡 In Progress | Feb 25, 2026 | Define export code-generation contract for Export Builder | Contract draft added in this doc (types, payload mapping, unsupported-source behavior) |
-| 12.2 | 🟡 In Progress | Feb 25, 2026 | Implement iNaturalist + Dendra Python/R snippet generation | Codegen modules added and footer actions wired; pending UX validation and tests |
+| 12.1 | 🟢 Complete | Feb 25, 2026 | Define export code-generation contract for Export Builder | Contract in doc; types, mappers, templates, module boundaries implemented |
+| 12.2 | 🟢 Complete | Feb 25, 2026 | Implement iNaturalist + Dendra Python/R snippet generation | Per-layer codegen, Dangermond bbox, smooth animation, error-only feedback |
 | 12.3 | ⚪ Not Started | Feb 25, 2026 | Validate UX and quality for demo readiness | Ensure copy/download flows work, snippets are readable, and add targeted tests |
 
 ---
@@ -46,8 +46,8 @@ Demonstrate the forward direction of Export Builder by generating copy/paste-rea
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
-| 12.1 | Define code-generation contract and template architecture | 🟡 In Progress | | Keep contract narrow to iNaturalist + Dendra for MVP |
-| 12.2 | Build Python/R generators for iNaturalist and Dendra | 🟡 In Progress | | Prefer pandas/readr-first snippets; no SDK lock-in for MVP |
+| 12.1 | Define code-generation contract and template architecture | 🟢 Complete | | Contract narrow to iNaturalist + Dendra for MVP |
+| 12.2 | Build Python/R generators for iNaturalist and Dendra | 🟢 Complete | | Per-layer UI, pandas/readr-first snippets |
 | 12.3 | Integrate UI actions + testing + demo verification | ⚪ Not Started | | Include fallback behavior for unsupported formats/data sources |
 
 **Status Legend:**
@@ -182,3 +182,11 @@ Use `view.queryDefinition` as the canonical source of filter state and keep mapp
 | Feb 25, 2026 | - | Created Phase 12 document for Export Code Generation MVP (iNaturalist + Dendra, Python + R) | Codex |
 | Feb 25, 2026 | 12.1 | Marked task in progress and added draft code-generation contract (types, payload mapping, guardrails, module boundaries) | Codex |
 | Feb 25, 2026 | 12.2 | Added codegen modules (`codegen/`) and wired Export Builder footer actions for "Get Python Code" and "Get R Code" with source guardrails | Codex |
+| Feb 25, 2026 | 12.2 | Updated code-generation UX to render generated Python/R in a modal code block with explicit copy action instead of auto-downloading files | Codex |
+| Feb 25, 2026 | 12.2 | Updated iNaturalist templates to include Dangermond expanded bbox params and fixed Python params syntax comma issue | Codex |
+| Feb 25, 2026 | 12.2 | Updated preview UX to render separate code blocks per data source with per-block copy actions plus a copy-all action | Codex |
+| Feb 25, 2026 | 12.2 | Moved code actions into each layer section so Python/R generation and preview are per-layer (instead of one master bundle panel) | Codex |
+| Feb 25, 2026 | 12.2 | Fixed per-layer codegen bug: selected views with no explicit filter payload now generate using source defaults instead of blocking with query-state error | Codex |
+| Feb 25, 2026 | 12.2 | Added smooth expand/collapse animation for per-layer generated code preview panel in Export Builder | Codex |
+| Feb 25, 2026 | 12.2 | Suppressed success toasts in Export Builder; feedback banner now appears only for errors | Codex |
+| Feb 25, 2026 | 12.1, 12.2 | Marked tasks complete; 12.3 (UX validation + tests) remains | Codex |

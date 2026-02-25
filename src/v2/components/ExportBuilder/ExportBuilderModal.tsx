@@ -13,7 +13,6 @@ import {
 } from './exportActions';
 import {
   copyCodeToClipboard,
-  downloadCodeTextFile,
   generateCodeBundle,
 } from './codegen';
 import type {
@@ -40,6 +39,12 @@ interface LayerExportState {
 interface ExportFeedback {
   type: 'success' | 'error';
   message: string;
+}
+
+interface GeneratedCodePreview {
+  language: 'python' | 'r';
+  snippet: string;
+  generatedCount: number;
 }
 
 function getFormatOptionsByDataSource(dataSource: DataSource): ExportFormatOption[] {
@@ -101,6 +106,25 @@ function getViewDisplayName(view: PinnedLayerView, index: number): string {
     return nextName;
   }
   return `Filtered View ${index + 1}`;
+}
+
+function formatDataSourceLabel(dataSource: DataSource): string {
+  switch (dataSource) {
+    case 'inaturalist':
+      return 'iNaturalist';
+    case 'dendra':
+      return 'Dendra';
+    case 'dataone':
+      return 'DataONE';
+    case 'tnc-arcgis':
+      return 'TNC ArcGIS';
+    default:
+      return dataSource;
+  }
+}
+
+function isLayerCodegenSupported(dataSource: DataSource): boolean {
+  return dataSource === 'inaturalist' || dataSource === 'dendra';
 }
 
 function buildQueryDefinition(
@@ -177,8 +201,11 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
   const { layerMap } = useCatalog();
   const [layerExportState, setLayerExportState] = useState<Record<string, LayerExportState>>({});
   const [isProcessing, setIsProcessing] = useState(false);
-  const [processingAction, setProcessingAction] = useState<'zip' | 'links' | 'python' | 'r' | null>(null);
+  const [processingAction, setProcessingAction] = useState<'zip' | 'links' | null>(null);
+  const [codegenProcessingLayerId, setCodegenProcessingLayerId] = useState<string | null>(null);
+  const [codegenProcessingLanguage, setCodegenProcessingLanguage] = useState<'python' | 'r' | null>(null);
   const [feedback, setFeedback] = useState<ExportFeedback | null>(null);
+  const [generatedLayerCodeById, setGeneratedLayerCodeById] = useState<Record<string, GeneratedCodePreview>>({});
 
   const pinnedLayerCount = pinnedLayers.length;
   const layerDataSourceById = useMemo<Record<string, DataSource>>(
@@ -242,6 +269,9 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
       setFeedback(null);
       setIsProcessing(false);
       setProcessingAction(null);
+      setCodegenProcessingLayerId(null);
+      setCodegenProcessingLanguage(null);
+      setGeneratedLayerCodeById({});
     }
   }, [isOpen]);
 
@@ -304,21 +334,6 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
     [exportActionLayers],
   );
 
-  const selectedCodegenLayers = useMemo(
-    () => exportActionLayers
-      .filter((layer) => layer.selectedViews.length > 0)
-      .map((layer) => ({
-        ...layer,
-        selectedViews: layer.selectedViews.filter((view) => Boolean(view.queryDefinition)),
-      }))
-      .filter((layer) => (
-        (layer.dataSource === 'inaturalist' || layer.dataSource === 'dendra') && layer.selectedViews.length > 0
-      )),
-    [exportActionLayers],
-  );
-
-  const hasCodegenSelections = selectedCodegenLayers.length > 0;
-
   const handleGenerateLinks = async () => {
     if (selectedLayers.length === 0) {
       setFeedback({ type: 'error', message: 'Select at least one export format before generating links.' });
@@ -343,12 +358,9 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
       }
 
       downloadLinksTextFile(linksText);
-      setFeedback({
-        type: 'success',
-        message: clipboardCopied
-          ? `Generated ${manifest.totalLayers} layer link set(s). Links copied and text file downloaded.`
-          : `Generated ${manifest.totalLayers} layer link set(s). Links text file downloaded.`,
-      });
+      void manifest;
+      void clipboardCopied;
+      setFeedback(null);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       setFeedback({ type: 'error', message: `Could not generate links: ${message}` });
@@ -370,10 +382,8 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
 
     try {
       const generatedAt = await createAndDownloadExportZip(selectedLayers);
-      setFeedback({
-        type: 'success',
-        message: `ZIP package created (${selectedLayers.length} layers, ${generatedAt}).`,
-      });
+      void generatedAt;
+      setFeedback(null);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       setFeedback({ type: 'error', message: `Could not create ZIP export: ${message}` });
@@ -383,41 +393,76 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
     }
   };
 
-  const handleGenerateCode = async (language: 'python' | 'r') => {
-    if (selectedCodegenLayers.length === 0) {
+  const handleGenerateLayerCode = async (layerId: string, language: 'python' | 'r') => {
+    const layer = exportActionLayers.find((item) => item.pinnedLayerId === layerId);
+    if (!layer) {
       setFeedback({
         type: 'error',
-        message: 'Select at least one iNaturalist or Dendra view with query state before generating code.',
+        message: 'Layer not found for code generation.',
       });
       return;
     }
 
-    setIsProcessing(true);
-    setProcessingAction(language);
+    if (!isLayerCodegenSupported(layer.dataSource)) {
+      setFeedback({
+        type: 'error',
+        message: `${formatDataSourceLabel(layer.dataSource)} code generation is coming soon.`,
+      });
+      return;
+    }
+
+    const layerWithSelectedViews: ExportActionLayer = {
+      ...layer,
+      selectedViews: layer.selectedViews,
+    };
+    if (layerWithSelectedViews.selectedViews.length === 0) {
+      setFeedback({
+        type: 'error',
+        message: `Select at least one view for ${layer.layerName}.`,
+      });
+      return;
+    }
+
+    setCodegenProcessingLayerId(layerId);
+    setCodegenProcessingLanguage(language);
     setFeedback(null);
 
     try {
-      const bundle = generateCodeBundle(language, selectedCodegenLayers, window.location.href);
-      const clipboardCopied = await copyCodeToClipboard(bundle.snippet);
-      downloadCodeTextFile(bundle.fileName, bundle.snippet);
-
-      const languageLabel = language === 'python' ? 'Python' : 'R';
-      const skippedNote = bundle.skippedCount > 0
-        ? ` ${bundle.skippedCount} view(s) were skipped.`
-        : '';
-      setFeedback({
-        type: 'success',
-        message: clipboardCopied
-          ? `${languageLabel} code generated for ${bundle.generatedCount} view(s). Copied to clipboard and downloaded.${skippedNote}`
-          : `${languageLabel} code generated for ${bundle.generatedCount} view(s). Downloaded.${skippedNote}`,
-      });
+      const bundle = generateCodeBundle(language, [layerWithSelectedViews], window.location.href);
+      setGeneratedLayerCodeById((previous) => ({
+        ...previous,
+        [layerId]: {
+          language,
+          snippet: bundle.snippet,
+          generatedCount: bundle.generatedCount,
+        },
+      }));
+      setFeedback(null);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      setFeedback({ type: 'error', message: `Could not generate code: ${message}` });
+      setFeedback({ type: 'error', message: `Could not generate code for ${layer.layerName}: ${message}` });
     } finally {
-      setIsProcessing(false);
-      setProcessingAction(null);
+      setCodegenProcessingLayerId(null);
+      setCodegenProcessingLanguage(null);
     }
+  };
+
+  const handleCopyLayerCode = async (layerId: string) => {
+    const preview = generatedLayerCodeById[layerId];
+    if (!preview) {
+      return;
+    }
+
+    const copied = await copyCodeToClipboard(preview.snippet);
+    if (copied) {
+      setFeedback(null);
+      return;
+    }
+
+    setFeedback({
+      type: 'error',
+      message: 'Clipboard copy failed. Select the code text and copy manually.',
+    });
   };
 
   if (!isOpen) {
@@ -556,6 +601,22 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
                       layerEstimatedBytes={layerEstimatedBytes}
                       isLayerEstimateUnavailable={isLayerEstimateUnavailable}
                       showLargeExportWarning={showLargeExportWarning}
+                      isCodegenSupported={isLayerCodegenSupported(dataSource)}
+                      canGenerateLayerCode={selectedViewItems.length > 0}
+                      codegenUnsupportedMessage={`${formatDataSourceLabel(dataSource)} code generation is coming soon.`}
+                      isCodegenProcessing={
+                        codegenProcessingLayerId === layer.id && codegenProcessingLanguage !== null
+                      }
+                      codegenProcessingLanguage={
+                        codegenProcessingLayerId === layer.id ? codegenProcessingLanguage : null
+                      }
+                      onGenerateLayerCode={(language) => {
+                        void handleGenerateLayerCode(layer.id, language);
+                      }}
+                      onCopyLayerCode={() => {
+                        void handleCopyLayerCode(layer.id);
+                      }}
+                      generatedLayerCode={generatedLayerCodeById[layer.id]}
                       onToggleView={(viewId) => {
                         setLayerExportState((previous) => {
                           const fallbackViews = getLayerViewModels(layer, dataSource);
@@ -630,16 +691,11 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
           <div id="export-builder-summary-container" className="mt-4">
             <ExportSummary layers={exportActionLayers} />
           </div>
+
         </div>
 
         <ExportBuilderFooter
           onCancel={onClose}
-          onGeneratePythonCode={() => {
-            void handleGenerateCode('python');
-          }}
-          onGenerateRCode={() => {
-            void handleGenerateCode('r');
-          }}
           onGenerateLinks={() => {
             void handleGenerateLinks();
           }}
@@ -649,7 +705,6 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
           isProcessing={isProcessing}
           processingAction={processingAction}
           hasSelections={hasSelections}
-          hasCodegenSelections={hasCodegenSelections}
         />
       </div>
     </div>
