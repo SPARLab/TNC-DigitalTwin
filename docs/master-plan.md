@@ -11,12 +11,12 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 120 / 135 complete (**89%**) |
-| **Active remaining** | 15 tasks |
-| **Phases complete** | 6 of 12 (0, 1, 2, 6, 10, 11) |
+| **Active scope** | 120 / 138 complete (**87%**) |
+| **Active remaining** | 18 tasks |
+| **Phases complete** | 6 of 13 (0, 1, 2, 6, 10, 11) |
 
 ```
-████████████████████████████████████████░░░░░  89%
+███████████████████████████████████████░░░░░░  87%
 ```
 
 ---
@@ -54,11 +54,11 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
 - **Complete:** 120
-- **Active remaining (Not Started + In Progress + Blocked):** 15
+- **Active remaining (Not Started + In Progress + Blocked):** 18
 - **Backlog (not in active scope):** 3
 - **Deferred:** 1
 - **Won't Do:** 2
-- **Total tracked rows:** 141
+- **Total tracked rows:** 144
 
 ### Per-Phase Task Counts
 
@@ -76,6 +76,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
 | 10 | DroneDeploy | 🟢 Complete | 4 | 0 | 0 | 0 | 0 | 4 | `v2/dronedeploy` |
 | 11 | MOTUS | 🟢 Complete | 9 | 0 | 0 | 0 | 0 | 9 | `v2/motus` |
+| 12 | Export Code Generation | 🟡 In Progress | 0 | 3 | 0 | 0 | 0 | 3 | `v2/export-code-generation` |
 
 **Status Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
 
@@ -99,6 +100,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 9 | [phase-9-gbif.md](IMPLEMENTATION/phases/phase-9-gbif.md) |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) |
 | 11 | [phase-11-motus.md](IMPLEMENTATION/phases/phase-11-motus.md) |
+| 12 | [phase-12-export-code-generation.md](IMPLEMENTATION/phases/phase-12-export-code-generation.md) |
 
 ---
 
