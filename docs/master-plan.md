@@ -11,12 +11,12 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 124 / 147 complete (**84%**) |
-| **Active remaining** | 23 tasks |
+| **Active scope** | 125 / 147 complete (**85%**) |
+| **Active remaining** | 22 tasks |
 | **Phases complete** | 6 of 13 (0, 1, 2, 6, 10, 11) |
 
 ```
-█████████████████████████████████████░░░░░░░  84%
+██████████████████████████████████████░░░░░░  85%
 ```
 
 ---
@@ -53,8 +53,8 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 124
-- **Active remaining (Not Started + In Progress + Blocked):** 23
+- **Complete:** 125
+- **Active remaining (Not Started + In Progress + Blocked):** 22
 - **Backlog (not in active scope):** 3
 - **Deferred:** 1
 - **Won't Do:** 2
@@ -76,7 +76,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
 | 10 | DroneDeploy | 🟢 Complete | 4 | 0 | 0 | 0 | 0 | 4 | `v2/dronedeploy` |
 | 11 | MOTUS | 🟢 Complete | 9 | 0 | 0 | 0 | 0 | 9 | `v2/motus` |
-| 12 | AI Refactor Readiness | 🟡 In Progress | 4 | 8 | 0 | 0 | 0 | 12 | `v2/refactor-ai-readiness` |
+| 12 | AI Refactor Readiness | 🟡 In Progress | 6 | 6 | 0 | 0 | 0 | 12 | `v2/refactor-ai-readiness` |
 
 **Status Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
 
@@ -178,6 +178,7 @@ Use these when merging branches that touch shared components.
 | LayerContext internal module split | ✅ Implemented | Cursor | Feb 25 | REF-02: `LayerContext` split into focused internal hooks under `src/v2/context/layerContext/internal/` — `useLayerCoreActions`, `useLayerSourceSyncActions`, `useLayerFilteredViewActions`, `useLayerViewLifecycleActions`. Public `useLayers()` API unchanged. |
 | V2App composition split | ✅ Implemented | Cursor | Feb 25 | REF-03: `V2App.tsx` split into `app/V2AppProviders.tsx`, `app/V2AppRoutes.tsx`, `app/V2AppShell.tsx`. Provider nesting, route composition, and layout shell separated for readability; zero UI behavior changes. |
 | Map container + layer sync split | ✅ Implemented | Cursor | Feb 25 | REF-04: `MapContainer` lifecycle extracted to `useArcgisViewLifecycle`, DataONE preview state to `useDataOnePreviewStatus`; `useMapLayers` decomposed into `useMapLayerMembershipSync` and `useMapLayerPresentationSync` with shared helpers. Behavior preserved. |
+| DataONE browse/detail orchestration split | ✅ Implemented | Cursor | Feb 25 | REF-06: DataONE right-sidebar browse/detail flow refactored into `useDataOneBrowseOrchestrator` and `useDatasetDetailOrchestrator`; `DataOneBrowseTab` and `DatasetDetailView` now primarily render UI; map↔sidebar sync transitions centralized for easier debugging. Pattern portable to other map/layers/sidebar flows. |
 | State management for bookmarks | ✅ Decided | Will | Feb 11 | DFT-046: Saved Items widget merged into Map Layers. `BookmarkContext` disabled. |
 | Data source adapter pattern | ✅ Decided | Will + Claude | Feb 12 | Plugin architecture for data sources. Each source implements `DataSourceAdapter` interface. Enables parallel branch development with minimal merge conflicts. See `src/v2/dataSources/` |
 | Caching strategy | ✅ Decided | Will + Claude | Feb 12 | Lazy per-source caching. Each data source context has `warmCache()` method (idempotent). Cache warms on first pin or activation. Data persists while provider mounted. Eliminates eager page-load fetches. |
@@ -353,6 +354,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 25, 2026 | Phase 12 | **REF-06 complete.** Refactored DataONE right-sidebar browse/detail flow into orchestration hooks (`useDataOneBrowseOrchestrator`, `useDatasetDetailOrchestrator`); map↔sidebar sync centralized for easier debugging. User validated DataOne working. Phase 12: 6/12 tasks complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-05 complete.** Decomposed V2-critical service paths into client/query/normalizer modules: tncArcgis, dataone, animl. REF-05D deferred for lower-priority sources. Phase 12: 5/12 tasks complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-04 complete.** MapContainer + useMapLayers split into focused internal hooks (useArcgisViewLifecycle, useDataOnePreviewStatus, useMapLayerMembershipSync, useMapLayerPresentationSync). Phase 12: 4/12 tasks complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-03 complete.** V2App split into app/V2AppProviders.tsx, app/V2AppRoutes.tsx, app/V2AppShell.tsx; zero UI behavior changes. Phase 12: 3/12 tasks complete. | Cursor |

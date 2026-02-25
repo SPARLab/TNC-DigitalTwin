@@ -1,7 +1,7 @@
 # Phase 12: AI Refactor Readiness
 
 **Status:** 🟡 In Progress  
-**Progress:** 5 / 12 tasks complete  
+**Progress:** 6 / 12 tasks complete  
 **Branch:** `v2/refactor-ai-readiness`  
 **Depends On:** Existing V2 implementation stability (Phases 0-11)  
 **Owner:** TBD
@@ -17,7 +17,7 @@
 | REF-03 | 🟢 Complete | Feb 25, 2026 | Split `src/v2/V2App.tsx` into app shell, route composition, and provider composition files | Extracted to `app/V2AppProviders.tsx`, `app/V2AppRoutes.tsx`, and `app/V2AppShell.tsx`; zero UI behavior changes. |
 | REF-04 | 🟢 Complete | Feb 25, 2026 | Split V2 map container modules by responsibility (`src/v2/components/Map/MapContainer.tsx` + `useMapLayers.ts`) | Extracted map view lifecycle + DataONE preview-state hooks and split map-layer sync into membership/presentation internal hooks; behavior preserved. |
 | REF-05 | 🟢 Complete | Feb 25, 2026 | Decompose V2-critical data/service paths (V2 call sites for ANiML/DataONE/TNC ArcGIS) into client/query/normalizer modules | Subtasks A–C complete (TNC ArcGIS, DataONE, ANiML); REF-05D deferred for lower-priority sources; API surface preserved. |
-| REF-06 | ⚪ Not Started | Feb 25, 2026 17:20 PT | Refactor V2 DataONE right-sidebar browse/detail flow into orchestration + focused child components | Target complexity hotspots (`DataOneBrowseTab`, `DatasetDetailView`) rather than line count alone. |
+| REF-06 | 🟢 Complete | Feb 25, 2026 | Refactor V2 DataONE right-sidebar browse/detail flow into orchestration + focused child components | Extracted `useDataOneBrowseOrchestrator` and `useDatasetDetailOrchestrator`; `DataOneBrowseTab` and `DatasetDetailView` now primarily render UI; map↔sidebar sync transitions centralized for easier debugging. |
 | REF-07 | ⚪ Not Started | Feb 24, 2026 16:30 PT | Create shared browse-tab primitives for repeated patterns (search/filter/pagination/detail handoff) | Apply incrementally to avoid cross-source regressions. |
 | REF-08 | ⚪ Not Started | Feb 25, 2026 17:20 PT | Split large V2 detail sidebars into domain sections and supporting hooks | Target right-sidebar complexity hotspots under `src/v2/components/RightSidebar/` (not legacy `src/components/`). |
 | REF-09 | ⚪ Not Started | Feb 25, 2026 17:05 PT | Narrow large V2 contexts (`src/v2/context/MapContext.tsx`, `src/v2/context/DendraContext.tsx`) into focused hooks/modules | Preserve existing V2 context exports initially. |
@@ -80,7 +80,7 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | REF-03 | Split V2App shell/routes/providers | 🟢 Complete | | Extracted to `app/V2AppProviders.tsx`, `app/V2AppRoutes.tsx`, `app/V2AppShell.tsx`; V2App now orchestrates state + composition only. |
 | REF-04 | Split V2 map container modules by responsibility | 🟢 Complete | | Extracted map lifecycle/preview logic into internal hooks and split layer sync effects into membership + presentation hooks with stable behavior. |
 | REF-05 | Decompose V2-critical data/service paths (V2 call sites for ANiML/DataONE/TNC ArcGIS) into client/query/normalizer modules | 🟢 Complete | | Subtasks A–C complete (TNC ArcGIS, DataONE, ANiML). REF-05D deferred for lower-priority sources; extraction-only, API surface preserved. |
-| REF-06 | Refactor V2 DataONE browse/detail components | ⚪ Not Started | | Use orchestration + presentational split in `src/v2/components/RightSidebar/DataOne/`. |
+| REF-06 | Refactor V2 DataONE browse/detail components | 🟢 Complete | | Extracted `useDataOneBrowseOrchestrator.ts` and `useDatasetDetailOrchestrator.ts`; browse and detail components now delegate map↔sidebar sync to centralized handlers; behavior preserved, DataOne validated working. |
 | REF-07 | Build shared browse primitives | ⚪ Not Started | | Apply across data sources gradually. |
 | REF-08 | Split large V2 detail sidebars | ⚪ Not Started | | Focus on right-sidebar files with mixed orchestration + rendering concerns, not line count alone. |
 | REF-09 | Narrow large V2 context modules | ⚪ Not Started | | Preserve existing V2 consumer APIs in first pass. |
@@ -114,6 +114,16 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 
 ---
 
+## REF-06 Stability Focus
+
+- Historical pain point: map interaction and right-sidebar synchronization required repeated iterations and was difficult to debug.
+- Refactor objective: isolate orchestration state transitions (selection, preview, detail handoff, reset/close, layer-driven updates) from presentational rendering so bugs have a single ownership boundary.
+- Immediate target components: `DataOneBrowseTab` and `DatasetDetailView`.
+- Pattern to carry into adjacent hotspots: map area + map layers widget + right-sidebar interaction flows should follow the same orchestrator-first split.
+- Validation expectation: add/execute smoke checks for map click/hover, dataset focus changes, sidebar open/close, and layer visibility toggles to confirm synchronization remains stable.
+
+---
+
 ## Open Questions
 
 - [ ] Should file-size thresholds differ for code vs docs vs test helpers?
@@ -140,3 +150,7 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | Feb 25, 2026 | REF-05 | Continued extraction-only service decomposition by moving DataONE query/filter/network helpers into `src/services/dataone/{client,queries,normalizers}.ts` and extracting ANiML retry fetch logic into `src/services/animl/client.ts`; updated existing services to consume new modules without changing external APIs. | Cursor |
 | Feb 25, 2026 | REF-05 | Broke REF-05 into subtasks REF-05A..REF-05D and marked completion state: A-C complete (TNC ArcGIS/DataONE/ANiML), D pending for remaining lower-priority service paths. | Cursor |
 | Feb 25, 2026 | REF-05 | Complete. Subtasks A–C done (tncArcgis, dataone, animl client/query/normalizer extraction); REF-05D deferred. Phase 12: 5/12 tasks complete. | Cursor |
+| Feb 25, 2026 | REF-06 planning clarity | Elevated REF-06 notes to explicitly prioritize map↔right-sidebar synchronization stability, added orchestrator-first scope and validation expectations, and documented portability of this pattern to map area/layers/sidebar interaction hotspots. | Cursor |
+| Feb 25, 2026 | REF-06 | Started implementation by extracting browse/detail orchestration and map-layer synchronization logic from `DataOneBrowseTab` into `useDataOneBrowseOrchestrator.ts`; rewired tab rendering to orchestrator handlers while preserving UI structure and behavior intent. | Cursor |
+| Feb 25, 2026 | REF-06 | Continued implementation by extracting `DatasetDetailView` orchestration (details/file-info loading, version-history, map focus/recenter, save/copy/open actions) into `useDatasetDetailOrchestrator.ts`; detail component now primarily renders UI from orchestrator state. | Cursor |
+| Feb 25, 2026 | REF-06 | Complete. DataOne browse/detail flow refactored into orchestration hooks; user validated DataOne working. Phase 12: 6/12 tasks complete. | Cursor |
