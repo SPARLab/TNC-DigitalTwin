@@ -141,6 +141,23 @@ Use this checklist for post-extraction validation of map↔sidebar detail flows:
 
 ---
 
+## REF-10 Smoke Checklist (Manual)
+
+Use this checklist when validating filter/default factory extraction. Focus on **reset fidelity** and **no stale carryover** — ensure extraction did not change behavior.
+
+| # | Check | DataONE | GBIF | CalFlora | MOTUS | Dendra |
+|---|-------|---------|------|----------|-------|--------|
+| 1 | Clear all filters → all fields reset to baseline (empty search, empty selections, default toggles) | | | | | |
+| 2 | Switch layer/view → no prior-source filter carryover | | | | | |
+| 3 | Map click → detail opens; back → list; clear/close → selection resets | | | | | |
+| 4 | Saved view hydration → correct filter snapshot; clear filters → true empty state | | | | | |
+| 5 | Save/update view → correct filters stored; custom names preserved | | | | | |
+| 6 | Filter count badges and result counts reflect current filters after reset/edit | | | | | |
+
+**Red flags (fail if seen):** Reset leaves one field populated; `''`/`undefined` semantics changed; view switch edits wrong view; filter count mismatch.
+
+---
+
 ## REF-06 Stability Focus
 
 - Historical pain point: map interaction and right-sidebar synchronization required repeated iterations and was difficult to debug.
@@ -198,3 +215,4 @@ Use this checklist for post-extraction validation of map↔sidebar detail flows:
 | Feb 25, 2026 | REF-04 follow-up | Fixed MOTUS 3D journey playback regression by re-triggering overlay redraw on map view re-initialization and movement-context updates in `src/v2/dataSources/motus/useMapBehavior.ts`; keeps station + journey legs synchronized after 2D↔3D toggles. | Cursor |
 | Feb 25, 2026 | REF-04 follow-up | Added MOTUS journey debug logging and 3D line visibility hardening (`polyline` `spatialReference` + `relative-to-ground` elevation offsets) in `src/v2/dataSources/motus/useMapBehavior.ts` to diagnose/mitigate SceneView line rendering gaps while preserving behavior in 2D. | Cursor |
 | Feb 25, 2026 | REF-13 | Added in-progress dedicated regression task for MOTUS 3D journey playback and expanded debug probes in `src/v2/dataSources/motus/useMapBehavior.ts` to explicitly log `legCount`, `polylineCount`, `overlayGraphicCount`, overlay-on-map status, and SceneView `layerView` state (`suspended`/`visible`/`updating`) to confirm/disprove rendering-visibility vs draw-pipeline hypotheses. | Cursor |
+| Feb 25, 2026 | REF-10 prep | Documented REF-10 smoke checklist (reset fidelity, no stale carryover, view hydration, save correctness) for use when filter/default factory extraction is implemented. REF-10 implementation remains not started. | Cursor |
