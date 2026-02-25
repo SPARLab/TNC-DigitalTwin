@@ -1,7 +1,7 @@
 # Phase 12: AI Refactor Readiness
 
 **Status:** 🟡 In Progress  
-**Progress:** 15 / 19 tracked items complete (REF-12 deferred; REF-14 complete; REF-15 complete)  
+**Progress:** 16 / 19 tracked items complete (REF-12 deferred; REF-14B complete; REF-14C/D deferred)  
 **Branch:** `v2/refactor-ai-readiness`  
 **Depends On:** Existing V2 implementation stability (Phases 0-11)  
 **Owner:** TBD
@@ -37,9 +37,9 @@
 | REF-11 | 🟢 Complete | Feb 25, 2026 | Add lightweight file-size guardrail script and thresholds for V2 AI-friendly maintenance | Added `scripts/v2/check-file-size-guardrail.mjs`; `npm run guard:v2-file-size`; WARN ≥800, REVIEW ≥950; warning-only, exits 0. |
 | REF-12 | ⏸ Deferred | Feb 25, 2026 17:05 PT | Define and document V2 refactor completion criteria + QA checklist for extraction-only changes | Deferred; focus on high-impact work first; revisit when solidifying smoke criteria. |
 | REF-13 | 🟢 Complete | Feb 25, 2026 | Resolve V2 MOTUS 3D journey playback regression (stations render, inferred flight legs do not) | Fixed: recreate MOTUS overlay GraphicsLayer on 2D↔3D map swap (SceneView cannot create layerview for stale 2D-origin layer); view-mode redraw trigger + 3D-safe direction marker fallback. User-verified. |
-| REF-14 | 🟢 Complete | Feb 25, 2026 | Ensure all layers (active or pinned+visible) render reliably across 2D↔3D toggles | REF-14A done (DroneDeploy WMTS rebind on map swap). REF-14B/C/D deferred for future sessions. |
+| REF-14 | 🟢 Complete | Feb 25, 2026 | Ensure all layers (active or pinned+visible) render reliably across 2D↔3D toggles | REF-14A + REF-14B done. REF-14C/D deferred for future sessions. |
 | REF-14A | 🟢 Complete | Feb 25, 2026 | Fix DroneDeploy imagery persistence across 2D↔3D map replacement | Detect parent `GroupLayer` replacement and recreate/rebind cached WMTS layers instead of reusing stale map-bound instances. |
-| REF-14B | ⏸ Deferred | Feb 25, 2026 | Audit all per-source map behaviors for stale layer refs across map swaps | Validate DataONE/Dendra/MOTUS/GBIF/CalFlora/iNaturalist/TNC ArcGIS behaviors; apply recreate-not-reattach where refs survive map replacement. |
+| REF-14B | 🟢 Complete | Feb 25, 2026 | Audit all per-source map behaviors for stale layer refs across map swaps | iNaturalist + ANiML GraphicsLayer repopulation on map swap; Dendra/GBIF/CalFlora/iNaturalist/ANiML map handlers rebind on `mapReady`. User-verified. |
 | REF-14C | ⏸ Deferred | Feb 25, 2026 | Add manual smoke matrix for repeated 2D↔3D toggles across representative layer types | Cover polygons, imagery, service layers, and graphics overlays in active and pinned+visible states. |
 | REF-14D | ⏸ Deferred | Feb 25, 2026 | Final hardening + cleanup for any discovered toggle regressions | Resolve residual stale-layer edge cases and update REF-14 notes before marking complete. |
 | REF-15 | 🟢 Complete | Feb 25, 2026 | Preserve camera (zoom, position, angle) across 2D↔3D view-mode switches | Capture center+scale from outgoing view; 2D→3D: latitude scale conversion; 3D→2D: raw scale; lifecycle fix to persist from local view before destroy. User-verified. |
@@ -105,9 +105,9 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | REF-11 | Add V2 file-size guardrail script | 🟢 Complete | | Added `scripts/v2/check-file-size-guardrail.mjs`; `npm run guard:v2-file-size`; WARN ≥800, REVIEW ≥950; warning-only, exits 0. |
 | REF-12 | Add V2 extraction QA checklist | ⏸ Deferred | | Deferred; revisit when ready to solidify smoke criteria. |
 | REF-13 | Resolve V2 MOTUS 3D journey playback regression | 🟢 Complete | | Fixed by recreating overlay layer on map/view replacement (2D↔3D); view-mode redraw trigger; 3D-safe direction marker (triangle fallback). User-verified. |
-| REF-14 | Ensure all layers render across 2D↔3D toggles | 🟢 Complete | | REF-14A done (DroneDeploy WMTS rebind on map swap). REF-14B/C/D deferred for future sessions. |
+| REF-14 | Ensure all layers render across 2D↔3D toggles | 🟢 Complete | | REF-14A + REF-14B done. REF-14C/D deferred for future sessions. |
 | REF-14A | Fix DroneDeploy imagery persistence across map swaps | 🟢 Complete | | Implemented parent GroupLayer swap detection and WMTS rebind/recreate path to avoid stale imagery layer refs after 2D↔3D toggles. |
-| REF-14B | Audit per-source map behaviors for stale layer refs | ⏸ Deferred | | Audit each `src/v2/dataSources/*/useMapBehavior.ts` for map-bound layer ref reuse; apply recreate-not-reattach when needed. |
+| REF-14B | Audit per-source map behaviors for stale layer refs | 🟢 Complete | | iNaturalist + ANiML GraphicsLayer repopulation on map swap; Dendra/GBIF/CalFlora/iNaturalist/ANiML click/watch effects rebind on `mapReady`. User-verified. |
 | REF-14C | Add repeated-toggle smoke matrix | ⏸ Deferred | | Define manual matrix that verifies active + pinned-visible rendering across polygons, imagery, service layers, and graphics overlays. |
 | REF-14D | Final hardening and closeout | ⏸ Deferred | | Address remaining regressions from REF-14B/REF-14C and finalize documentation to close REF-14. |
 | REF-15 | Preserve camera across 2D↔3D view-mode switches | 🟢 Complete | | Implemented in `useArcgisViewLifecycle.ts`: capture center+scale from outgoing view; 2D→3D latitude scale conversion; 3D→2D raw scale; lifecycle fix to persist from local view before destroy. User-verified. |
@@ -266,6 +266,10 @@ Use this checklist for post-extraction validation of map↔sidebar detail flows:
 | Feb 25, 2026 | REF-14 | Started implementation. Fixed DroneDeploy imagery reliability regression across 2D↔3D toggles by detecting managed GroupLayer replacement and recreating/rebinding cached WMTS layers instead of reusing stale layer instances from the previous map. | Cursor |
 | Feb 25, 2026 | REF-14 planning | Split REF-14 into explicit subtasks REF-14A..REF-14D to support parallel chat execution (implementation slice, full audit, smoke matrix, hardening/closeout). Marked REF-14A complete and REF-14B in progress. | Cursor |
 | Feb 25, 2026 | REF-14 | Complete. REF-14A (DroneDeploy WMTS rebind on map swap) implemented and user-validated. REF-14B/C/D deferred for future sessions. Phase 12: 14/18 tracked items complete. | Cursor |
+| Feb 25, 2026 | REF-14B | Started per-source stale-layer audit. Fixed iNaturalist GraphicsLayer stale population across 2D↔3D swaps by repopulating when the managed layer instance changes after map replacement. | Cursor |
+| Feb 25, 2026 | REF-14B | Continued audit hardening. Added `mapReady` effect dependencies so Dendra/GBIF/CalFlora/iNaturalist map click/watch handlers rebind to the newly created view after 2D↔3D swaps (prevents stale handlers tied to destroyed views). | Cursor |
+| Feb 25, 2026 | REF-14B | Addressed ANiML camera traps 2D↔3D regression: repopulate GraphicsLayer when map swap replaces the managed layer instance and rebind click handler on `mapReady` so marker interactions stay active after repeated toggles. | Cursor |
+| Feb 25, 2026 | REF-14B | Complete. Per-source stale-layer audit done; iNaturalist + ANiML repopulation on map swap; Dendra/GBIF/CalFlora/iNaturalist/ANiML handler rebinding on `mapReady`. User-verified. Phase 12: 16/19 tracked items complete. | Cursor |
 | Feb 25, 2026 | REF-15 | Added. User requirement: preserve camera across 2D↔3D switches. 2D→3D: keep zoom, position, angle. 3D→2D: keep zoom and position; set camera straight down (nadir). | Cursor |
 | Feb 25, 2026 | REF-15 | Started implementation. Updated `useArcgisViewLifecycle.ts` to capture center/zoom/heading/tilt from outgoing view, remove fixed SceneView camera z/tilt defaults, restore center/zoom on 2D↔3D swaps, and normalize 2D→3D tilt to top-down. Pending manual toggle validation. | Cursor |
 | Feb 25, 2026 | REF-15 | Applied ArcGIS sample guidance for zoom parity: preserve `scale` across modes with latitude conversion factor (`2d→3d: scale * cos(lat)`, `3d→2d: scale / cos(lat)`) to better align perceived zoom between MapView and SceneView. | Cursor |

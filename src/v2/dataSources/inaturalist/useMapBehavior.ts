@@ -37,6 +37,7 @@ export function useINaturalistMapBehavior(
   const { viewRef, getSpatialPolygonForLayer } = useMap();
   const spatialPolygon = getSpatialPolygonForLayer(LAYER_ID);
   const populatedRef = useRef(false);
+  const populatedLayerRef = useRef<GraphicsLayer | null>(null);
 
   const isPinned = pinnedLayers.some(p => p.layerId === LAYER_ID);
   const isActive = activeLayer?.layerId === LAYER_ID;
@@ -49,20 +50,26 @@ export function useINaturalistMapBehavior(
 
   // Reset populated flag when layer is removed from map entirely
   useEffect(() => {
-    if (!isOnMap) populatedRef.current = false;
+    if (!isOnMap) {
+      populatedRef.current = false;
+      populatedLayerRef.current = null;
+    }
   }, [isOnMap]);
 
   // Populate GraphicsLayer when data arrives AND layer exists on map.
   // Declaration order: fires AFTER useMapLayers' add-layer effect,
   // so getManagedLayer() returns the layer added in the same render cycle.
   useEffect(() => {
-    if (!isOnMap || !dataLoaded || populatedRef.current) return;
+    if (!isOnMap || !dataLoaded) return;
     const arcLayer = getManagedLayer(LAYER_ID);
     if (!arcLayer || !(arcLayer instanceof GraphicsLayer)) return;
+    const hasMapSwapLayerReplacement = populatedLayerRef.current !== arcLayer;
+    if (populatedRef.current && !hasMapSwapLayerReplacement) return;
 
     populateINaturalistLayer(arcLayer, allObservations);
     filterINaturalistLayer(arcLayer, { selectedTaxa, selectedSpecies, excludeAllSpecies, startDate, endDate, spatialPolygon });
     populatedRef.current = true;
+    populatedLayerRef.current = arcLayer;
   }, [isOnMap, dataLoaded, allObservations, selectedTaxa, selectedSpecies, excludeAllSpecies, startDate, endDate, spatialPolygon, getManagedLayer, mapReady]);
 
   // Update filter when selectedTaxa changes (instant local visibility toggle)
@@ -111,5 +118,5 @@ export function useINaturalistMapBehavior(
     });
 
     return () => handler.remove();
-  }, [isOnMap, dataLoaded, viewRef, activateLayer]);
+  }, [isOnMap, dataLoaded, viewRef, activateLayer, mapReady]);
 }

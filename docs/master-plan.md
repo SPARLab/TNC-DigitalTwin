@@ -359,6 +359,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 25, 2026 | Phase 12 | **REF-14B complete.** Per-source stale-layer audit: iNaturalist + ANiML GraphicsLayer repopulation on map swap; Dendra/GBIF/CalFlora/iNaturalist/ANiML map handlers rebind on `mapReady` after 2D↔3D toggles. User-verified. Phase 12: 16/19 tracked items complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-15 complete.** Camera preservation across 2D↔3D: capture center+scale from outgoing view; 2D→3D latitude scale conversion; 3D→2D raw scale; lifecycle fix to persist from local view before destroy. User-verified. Phase 12: 15/19 tracked items complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-14 complete.** 2D↔3D layer render reliability: REF-14A (DroneDeploy WMTS rebind on map swap) implemented and user-validated. REF-14B/C/D deferred for future sessions. Phase 12: 14/18 tracked items complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-13 complete.** MOTUS 3D journey playback regression fixed: recreate overlay GraphicsLayer on 2D↔3D map swap (SceneView cannot create layerview for stale 2D-origin layer); view-mode redraw trigger; 3D-safe direction marker (triangle fallback). User-verified. Phase 12: 12/13 tasks complete. | Cursor |
