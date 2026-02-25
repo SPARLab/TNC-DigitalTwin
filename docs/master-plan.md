@@ -359,6 +359,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 25, 2026 | Phase 12 | **REF-14 complete.** 2D↔3D layer render reliability: REF-14A (DroneDeploy WMTS rebind on map swap) implemented and user-validated. REF-14B/C/D deferred for future sessions. Phase 12: 14/18 tracked items complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-13 complete.** MOTUS 3D journey playback regression fixed: recreate overlay GraphicsLayer on 2D↔3D map swap (SceneView cannot create layerview for stale 2D-origin layer); view-mode redraw trigger; 3D-safe direction marker (triangle fallback). User-verified. Phase 12: 12/13 tasks complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-12 deferred.** Completion criteria + smoke-test checklist task deferred to focus on high-impact work; revisit when ready to solidify smoke criteria. Phase 12 active scope complete (12/12); 1 deferred. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-11 complete.** Added V2 file-size guardrail script (`scripts/v2/check-file-size-guardrail.mjs`); `npm run guard:v2-file-size`; WARN ≥800, REVIEW ≥950 lines; warning-only, exits 0. Phase 12: 12/13 tasks complete; REF-12 remains. | Cursor |

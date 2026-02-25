@@ -1,7 +1,7 @@
 # Phase 12: AI Refactor Readiness
 
 **Status:** 🟡 In Progress  
-**Progress:** 12 / 14 tasks complete (REF-12 deferred; REF-14 added)  
+**Progress:** 14 / 18 tracked items complete (REF-12 deferred; REF-14 complete)  
 **Branch:** `v2/refactor-ai-readiness`  
 **Depends On:** Existing V2 implementation stability (Phases 0-11)  
 **Owner:** TBD
@@ -37,7 +37,11 @@
 | REF-11 | 🟢 Complete | Feb 25, 2026 | Add lightweight file-size guardrail script and thresholds for V2 AI-friendly maintenance | Added `scripts/v2/check-file-size-guardrail.mjs`; `npm run guard:v2-file-size`; WARN ≥800, REVIEW ≥950; warning-only, exits 0. |
 | REF-12 | ⏸ Deferred | Feb 25, 2026 17:05 PT | Define and document V2 refactor completion criteria + QA checklist for extraction-only changes | Deferred; focus on high-impact work first; revisit when solidifying smoke criteria. |
 | REF-13 | 🟢 Complete | Feb 25, 2026 | Resolve V2 MOTUS 3D journey playback regression (stations render, inferred flight legs do not) | Fixed: recreate MOTUS overlay GraphicsLayer on 2D↔3D map swap (SceneView cannot create layerview for stale 2D-origin layer); view-mode redraw trigger + 3D-safe direction marker fallback. User-verified. |
-| REF-14 | ⚪ Not Started | Feb 25, 2026 | Ensure all layers (active or pinned+visible) render reliably across 2D↔3D toggles | User requirement: polygons, imagery, and other layer content must remain visible regardless of toggle count. See REF-14 context below for REF-13 discovery. |
+| REF-14 | 🟢 Complete | Feb 25, 2026 | Ensure all layers (active or pinned+visible) render reliably across 2D↔3D toggles | REF-14A done (DroneDeploy WMTS rebind on map swap). REF-14B/C/D deferred for future sessions. |
+| REF-14A | 🟢 Complete | Feb 25, 2026 | Fix DroneDeploy imagery persistence across 2D↔3D map replacement | Detect parent `GroupLayer` replacement and recreate/rebind cached WMTS layers instead of reusing stale map-bound instances. |
+| REF-14B | ⏸ Deferred | Feb 25, 2026 | Audit all per-source map behaviors for stale layer refs across map swaps | Validate DataONE/Dendra/MOTUS/GBIF/CalFlora/iNaturalist/TNC ArcGIS behaviors; apply recreate-not-reattach where refs survive map replacement. |
+| REF-14C | ⏸ Deferred | Feb 25, 2026 | Add manual smoke matrix for repeated 2D↔3D toggles across representative layer types | Cover polygons, imagery, service layers, and graphics overlays in active and pinned+visible states. |
+| REF-14D | ⏸ Deferred | Feb 25, 2026 | Final hardening + cleanup for any discovered toggle regressions | Resolve residual stale-layer edge cases and update REF-14 notes before marking complete. |
 
 ---
 
@@ -100,7 +104,11 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | REF-11 | Add V2 file-size guardrail script | 🟢 Complete | | Added `scripts/v2/check-file-size-guardrail.mjs`; `npm run guard:v2-file-size`; WARN ≥800, REVIEW ≥950; warning-only, exits 0. |
 | REF-12 | Add V2 extraction QA checklist | ⏸ Deferred | | Deferred; revisit when ready to solidify smoke criteria. |
 | REF-13 | Resolve V2 MOTUS 3D journey playback regression | 🟢 Complete | | Fixed by recreating overlay layer on map/view replacement (2D↔3D); view-mode redraw trigger; 3D-safe direction marker (triangle fallback). User-verified. |
-| REF-14 | Ensure all layers render across 2D↔3D toggles | ⚪ Not Started | | Active or pinned+visible layers (polygons, imagery, etc.) must remain visible regardless of toggle count. See REF-14 context subsection. |
+| REF-14 | Ensure all layers render across 2D↔3D toggles | 🟢 Complete | | REF-14A done (DroneDeploy WMTS rebind on map swap). REF-14B/C/D deferred for future sessions. |
+| REF-14A | Fix DroneDeploy imagery persistence across map swaps | 🟢 Complete | | Implemented parent GroupLayer swap detection and WMTS rebind/recreate path to avoid stale imagery layer refs after 2D↔3D toggles. |
+| REF-14B | Audit per-source map behaviors for stale layer refs | ⏸ Deferred | | Audit each `src/v2/dataSources/*/useMapBehavior.ts` for map-bound layer ref reuse; apply recreate-not-reattach when needed. |
+| REF-14C | Add repeated-toggle smoke matrix | ⏸ Deferred | | Define manual matrix that verifies active + pinned-visible rendering across polygons, imagery, service layers, and graphics overlays. |
+| REF-14D | Final hardening and closeout | ⏸ Deferred | | Address remaining regressions from REF-14B/REF-14C and finalize documentation to close REF-14. |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -125,7 +133,10 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 10. REF-07
 11. REF-11
 12. REF-12
-13. REF-14
+13. REF-14A
+14. REF-14B
+15. REF-14C
+16. REF-14D
 
 ---
 
@@ -234,3 +245,6 @@ Use this checklist for post-extraction validation of map↔sidebar detail flows:
 | Feb 25, 2026 | REF-13 | Reopened after user reported MOTUS 3D journey-leg playback regression recurrence. Updated phase status/progress and reset REF-13 to In Progress pending root-cause fix hardening. | Cursor |
 | Feb 25, 2026 | REF-13 | Complete. Root cause: SceneView fails to create layerview for GraphicsLayer instance created in 2D when map/view is replaced on 2D→3D toggle. Fix: destroy and recreate overlay layer on map swap; add view-mode redraw trigger; use 3D-safe direction marker (triangle) in SceneView. User-verified. Phase 12: 12/13 tasks complete. | Cursor |
 | Feb 25, 2026 | REF-14 | Added. User requirement: all layers (active or pinned+visible) must render reliably across 2D↔3D toggles regardless of toggle count. Documented REF-13 discovery (recreate-not-reattach pattern, map/view replacement lifecycle) in REF-14 context subsection for next chat. | Cursor |
+| Feb 25, 2026 | REF-14 | Started implementation. Fixed DroneDeploy imagery reliability regression across 2D↔3D toggles by detecting managed GroupLayer replacement and recreating/rebinding cached WMTS layers instead of reusing stale layer instances from the previous map. | Cursor |
+| Feb 25, 2026 | REF-14 planning | Split REF-14 into explicit subtasks REF-14A..REF-14D to support parallel chat execution (implementation slice, full audit, smoke matrix, hardening/closeout). Marked REF-14A complete and REF-14B in progress. | Cursor |
+| Feb 25, 2026 | REF-14 | Complete. REF-14A (DroneDeploy WMTS rebind on map swap) implemented and user-validated. REF-14B/C/D deferred for future sessions. Phase 12: 14/18 tracked items complete. | Cursor |

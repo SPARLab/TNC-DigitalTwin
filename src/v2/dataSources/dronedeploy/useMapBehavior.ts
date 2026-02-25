@@ -74,6 +74,7 @@ export function useDroneDeployMapBehavior(
   const { activateLayer } = useLayers();
   const { viewRef, showToast } = useMap();
   const loadedArcLayersRef = useRef<Map<number, WMTSLayer>>(new Map());
+  const lastParentLayerRef = useRef<GroupLayer | null>(null);
   const failedFlightIdsRef = useRef<Set<number>>(new Set());
   const isHandlingMapReadyRef = useRef(false);
   const lastRequestedFlyToFlightIdRef = useRef<number | null>(null);
@@ -169,12 +170,22 @@ export function useDroneDeployMapBehavior(
         setFlightLoading(flightId, false);
       }
       loadedArcLayersRef.current.clear();
+      lastParentLayerRef.current = null;
       return;
     }
     const parent = getManagedLayer(LAYER_ID);
     if (!parent || !(parent instanceof GroupLayer)) return;
 
     const byFlightId = loadedArcLayersRef.current;
+    if (lastParentLayerRef.current !== parent) {
+      // Map swaps (2D<->3D) recreate managed GroupLayer instances. Any cached
+      // WMTSLayer refs belong to the old parent and must be recreated.
+      for (const flightId of byFlightId.keys()) {
+        setFlightLoading(flightId, false);
+      }
+      byFlightId.clear();
+      lastParentLayerRef.current = parent;
+    }
     const desiredFlightIds = loadedFlightIds;
     const desired = new Set<number>(desiredFlightIds);
 
@@ -188,8 +199,14 @@ export function useDroneDeployMapBehavior(
     for (const flightId of desired) {
       if (byFlightId.has(flightId)) {
         const layer = byFlightId.get(flightId);
-        if (layer) layer.opacity = opacityByFlightId[flightId] ?? 0.8;
-        continue;
+        if (layer) {
+          const attachedToCurrentParent = !!parent.findLayerById(layer.id);
+          if (attachedToCurrentParent) {
+            layer.opacity = opacityByFlightId[flightId] ?? 0.8;
+            continue;
+          }
+          byFlightId.delete(flightId);
+        }
       }
 
       const flight = getFlightById(flightId);
