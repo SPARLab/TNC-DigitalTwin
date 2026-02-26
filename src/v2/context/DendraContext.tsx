@@ -5,6 +5,9 @@
 // MULTI-SERVICE: Caches per-service URL so switching between Dendra layers
 // (e.g., Weather Stations → Rain Gauges) is instant after first fetch.
 //
+// PROGRESSIVE: Warm cache loads stations only (map markers). Summaries are
+// fetched per-station on demand when the user drills into a station.
+//
 // The context reads the active layer from LayerContext and the service URL
 // from CatalogContext to determine which per-type service to query.
 //
@@ -40,7 +43,9 @@ interface DendraContextValue {
   loading: boolean;
   error: string | null;
   dataLoaded: boolean;
+  stationSummaryLoading: number | null;
   warmCache: () => void;
+  loadStationSummaries: (stationId: number) => void;
   showActiveOnly: boolean;
   toggleActiveOnly: () => void;
   setShowActiveOnly: (next: boolean) => void;
@@ -70,12 +75,15 @@ export function DendraProvider({ children }: { children: ReactNode }) {
   const { layerMap } = useCatalog();
 
   const {
-    currentData,
+    stations,
+    allSummaries,
     loading,
     error,
     dataLoaded,
+    stationSummaryLoading,
     serviceInfo,
     warmCache,
+    loadStationSummaries,
   } = useDendraServiceCache({ activeLayer, layerMap });
 
   const {
@@ -83,7 +91,7 @@ export function DendraProvider({ children }: { children: ReactNode }) {
     toggleActiveOnly,
     setShowActiveOnly,
     filteredStations,
-  } = useDendraStationFilters(currentData.stations);
+  } = useDendraStationFilters(stations);
 
   const {
     chartPanels,
@@ -101,15 +109,17 @@ export function DendraProvider({ children }: { children: ReactNode }) {
   });
 
   const value = useMemo<DendraContextValue>(() => ({
-    stations: currentData.stations,
-    summaries: currentData.summaries,
-    stationCount: currentData.stations.length,
+    stations,
+    summaries: allSummaries,
+    stationCount: stations.length,
     activeLayerTitle: serviceInfo?.title ?? null,
     activeServiceUrl: serviceInfo?.url ?? null,
     loading,
     error,
     dataLoaded,
+    stationSummaryLoading,
     warmCache,
+    loadStationSummaries,
     showActiveOnly,
     toggleActiveOnly,
     setShowActiveOnly,
@@ -123,12 +133,15 @@ export function DendraProvider({ children }: { children: ReactNode }) {
     setChartPanelRect,
     bringChartToFront,
   }), [
-    currentData,
+    stations,
+    allSummaries,
     serviceInfo,
     loading,
     error,
     dataLoaded,
+    stationSummaryLoading,
     warmCache,
+    loadStationSummaries,
     showActiveOnly,
     toggleActiveOnly,
     setShowActiveOnly,

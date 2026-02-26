@@ -50,12 +50,6 @@ export interface DendraTimeSeriesPoint {
   value: number;
 }
 
-/** Combined payload returned by fetchServiceData */
-export interface DendraServiceData {
-  stations: DendraStation[];
-  summaries: DendraSummary[];
-}
-
 // ── ArcGIS response types ────────────────────────────────────────────────────
 
 interface ArcGISFeature<T> {
@@ -81,8 +75,25 @@ export function buildServiceUrl(serverBaseUrl: string, servicePath: string): str
 }
 
 /** Generic ArcGIS table/layer query */
-async function queryTable<T>(serviceUrl: string, tableIndex: number): Promise<T[]> {
-  const url = `${serviceUrl}/${tableIndex}/query?where=1=1&outFields=*&f=json`;
+async function queryTable<T>(
+  serviceUrl: string,
+  tableIndex: number,
+  options?: {
+    where?: string;
+    outFields?: string[];
+    returnGeometry?: boolean;
+  },
+): Promise<T[]> {
+  const params = new URLSearchParams({
+    where: options?.where ?? '1=1',
+    outFields: options?.outFields?.join(',') ?? '*',
+    f: 'json',
+  });
+  if (typeof options?.returnGeometry === 'boolean') {
+    params.set('returnGeometry', String(options.returnGeometry));
+  }
+
+  const url = `${serviceUrl}/${tableIndex}/query?${params.toString()}`;
   console.log(`[Dendra Query] Requesting: ${url}`);
   const res = await fetch(url);
   if (!res.ok) {
@@ -102,38 +113,52 @@ async function queryTable<T>(serviceUrl: string, tableIndex: number): Promise<T[
 
 /** Fetch stations (Layer 0) from a Dendra sensor service */
 export async function fetchStations(serviceUrl: string): Promise<DendraStation[]> {
-  return queryTable<DendraStation>(serviceUrl, 0);
+  return queryTable<DendraStation>(serviceUrl, 0, {
+    outFields: [
+      'station_id',
+      'dendra_st_id',
+      'station_name',
+      'station_description',
+      'latitude',
+      'longitude',
+      'elevation',
+      'time_zone',
+      'is_active',
+      'sensor_id',
+      'sensor_name',
+      'sensor_thing_type_id',
+      'datastream_count',
+    ],
+    returnGeometry: false,
+  });
 }
 
-/** Fetch datastream summaries (Table 2) from a Dendra sensor service */
-export async function fetchSummaries(serviceUrl: string): Promise<DendraSummary[]> {
-  return queryTable<DendraSummary>(serviceUrl, 2);
-}
+const SUMMARY_OUT_FIELDS = [
+  'datastream_id',
+  'dendra_ds_id',
+  'datastream_name',
+  'variable',
+  'unit',
+  'station_id',
+  'station_name',
+  'total_records',
+  'first_reading_time',
+  'last_reading_time',
+  'min_value',
+  'max_value',
+  'avg_value',
+];
 
-/**
- * Fetch both stations and summaries in parallel.
- * This is the primary entry point for the DendraContext warmCache.
- */
-export async function fetchServiceData(serviceUrl: string): Promise<DendraServiceData> {
-  try {
-    const stationsPromise = fetchStations(serviceUrl);
-    const summariesPromise = fetchSummaries(serviceUrl).catch(error => {
-      console.warn('[Dendra Summary] Table 2 query failed; continuing with stations only:', error);
-      return [] as DendraSummary[];
-    });
-    const [stations, summaries] = await Promise.all([stationsPromise, summariesPromise]);
-    return { stations, summaries };
-  } catch (error) {
-    throw error;
-  }
-}
-
-/** Get summaries for a specific station */
-export function getSummariesForStation(
-  summaries: DendraSummary[],
+/** Fetch summaries for a single station (on-demand drill-down query) */
+export async function fetchSummariesForStation(
+  serviceUrl: string,
   stationId: number,
-): DendraSummary[] {
-  return summaries.filter(s => s.station_id === stationId);
+): Promise<DendraSummary[]> {
+  return queryTable<DendraSummary>(serviceUrl, 2, {
+    where: `station_id=${stationId}`,
+    outFields: SUMMARY_OUT_FIELDS,
+    returnGeometry: false,
+  });
 }
 
 // ── Time Series (via legacy v0 service) ──────────────────────────────────────
@@ -180,6 +205,16 @@ export interface TimeSeriesResult {
   datastreamName: string;
 }
 
+export interface DendraTimeSeriesQueryOptions {
+  startDate?: string;
+  endDate?: string;
+}
+
+function toArcGisDateLiteral(date: string, useDayEnd: boolean): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  return `${date} ${useDayEnd ? '23:59:59' : '00:00:00'}`;
+}
+
 /**
  * Fetch time-series data for a specific datastream.
  *
@@ -193,6 +228,7 @@ export async function fetchTimeSeries(
   _stationId: number,
   datastreamName: string,
   dendraDsId: string,
+  options?: DendraTimeSeriesQueryOptions,
 ): Promise<TimeSeriesResult> {
   console.log(`[Dendra TimeSeries] Resolving dendra_ds_id "${dendraDsId}" → v0 datastream...`);
 
@@ -202,28 +238,66 @@ export async function fetchTimeSeries(
   // Some legacy datastreams have long stretches of null values. If we query
   // oldest-first without a value filter, ArcGIS can return a 2000-row window
   // containing only nulls, which renders as an empty chart despite counts.
-  const where = `datastream_id=${v0DsId} AND value IS NOT NULL`;
-  const url =
-    `${V0_BASE}/4/query?where=${encodeURIComponent(where)}` +
-    `&outFields=timestamp_utc,value` +
-    `&orderByFields=timestamp_utc DESC` +
-    `&resultRecordCount=2000` +
-    `&f=json`;
+  const whereParts = [`datastream_id=${v0DsId}`, 'value IS NOT NULL'];
+  const startLiteral = options?.startDate ? toArcGisDateLiteral(options.startDate, false) : null;
+  const endLiteral = options?.endDate ? toArcGisDateLiteral(options.endDate, true) : null;
+  if (startLiteral) whereParts.push(`timestamp_utc >= DATE '${startLiteral}'`);
+  if (endLiteral) whereParts.push(`timestamp_utc <= DATE '${endLiteral}'`);
+  const where = whereParts.join(' AND ');
 
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Dendra time series query failed: HTTP ${res.status}`);
+  const hasServerDateBounds = Boolean(startLiteral || endLiteral);
+  const parsePoints = (features: { attributes: { timestamp_utc: number; value: number } }[]) =>
+    features
+      .map((feature) => ({
+        timestamp: feature.attributes.timestamp_utc,
+        value: Number(feature.attributes.value),
+      }))
+      .filter((point) => point.timestamp != null && Number.isFinite(point.value));
 
-  const json = await res.json();
-  if (json.error) throw new Error(`Dendra time series error: ${json.error.message}`);
+  let points: DendraTimeSeriesPoint[];
 
-  const features: { attributes: { timestamp_utc: number; value: number } }[] = json.features ?? [];
-  const points = features
-    .map(f => ({
-      timestamp: f.attributes.timestamp_utc,
-      value: Number(f.attributes.value),
-    }))
-    .filter(p => p.timestamp != null && Number.isFinite(p.value))
-    .reverse(); // Keep chart timeline left→right (oldest→newest)
+  if (!hasServerDateBounds) {
+    // Legacy fallback for unconstrained chart opens: get most recent 2000 points.
+    const url =
+      `${V0_BASE}/4/query?where=${encodeURIComponent(where)}` +
+      `&outFields=timestamp_utc,value` +
+      `&orderByFields=timestamp_utc DESC` +
+      `&resultRecordCount=2000` +
+      `&f=json`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Dendra time series query failed: HTTP ${res.status}`);
+    const json = await res.json();
+    if (json.error) throw new Error(`Dendra time series error: ${json.error.message}`);
+    const features: { attributes: { timestamp_utc: number; value: number } }[] = json.features ?? [];
+    points = parsePoints(features).reverse();
+  } else {
+    // For explicit date windows, page through full result set in ascending order.
+    const batchSize = 2000;
+    const batches: DendraTimeSeriesPoint[] = [];
+    let offset = 0;
+
+    while (true) {
+      const url =
+        `${V0_BASE}/4/query?where=${encodeURIComponent(where)}` +
+        `&outFields=timestamp_utc,value` +
+        `&orderByFields=timestamp_utc ASC` +
+        `&resultRecordCount=${batchSize}` +
+        `&resultOffset=${offset}` +
+        `&f=json`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Dendra time series query failed: HTTP ${res.status}`);
+      const json = await res.json();
+      if (json.error) throw new Error(`Dendra time series error: ${json.error.message}`);
+      const features: { attributes: { timestamp_utc: number; value: number } }[] = json.features ?? [];
+      if (features.length === 0) break;
+
+      batches.push(...parsePoints(features));
+      if (features.length < batchSize) break;
+      offset += batchSize;
+    }
+
+    points = batches;
+  }
 
   console.log(`[Dendra TimeSeries] Got ${points.length} points for "${datastreamName}"`);
   return { points, datastreamName };

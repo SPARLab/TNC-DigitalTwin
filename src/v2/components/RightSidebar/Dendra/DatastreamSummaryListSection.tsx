@@ -1,10 +1,11 @@
-import { Activity, BarChart3, Calendar, Pin, TrendingDown, TrendingUp } from 'lucide-react';
+import { Activity, BarChart3, Calendar, Loader2, Pin, TrendingDown, TrendingUp } from 'lucide-react';
 import type { DendraSummary } from '../../../services/dendraStationService';
 import { formatTimestamp, formatValue } from '../../../services/dendraStationService';
 
 interface DatastreamSummaryListSectionProps {
   filteredSummaries: DendraSummary[];
   totalSummaries: number;
+  isLoading: boolean;
   normalizedStreamNameFilter: string;
   selectedDatastreamId: number | null;
   pinnedDatastreamIds: Set<number>;
@@ -15,24 +16,45 @@ interface DatastreamSummaryListSectionProps {
 export function DatastreamSummaryListSection({
   filteredSummaries,
   totalSummaries,
+  isLoading,
   normalizedStreamNameFilter,
   selectedDatastreamId,
   pinnedDatastreamIds,
   onViewChart,
   onTogglePin,
 }: DatastreamSummaryListSectionProps) {
+  const isLoadingWithoutData = isLoading && filteredSummaries.length === 0;
+
   return (
     <div id="dendra-datastream-summaries">
-      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-        Datastreams ({filteredSummaries.length}{normalizedStreamNameFilter ? ` of ${totalSummaries}` : ''})
-      </h4>
+      <div id="dendra-datastream-summaries-header" className="mb-2 flex items-center justify-between gap-2">
+        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          Datastreams ({isLoadingWithoutData ? 'loading...' : `${filteredSummaries.length}${normalizedStreamNameFilter ? ` of ${totalSummaries}` : ''}`})
+        </h4>
+        {isLoadingWithoutData && (
+          <span id="dendra-datastream-summaries-loading-indicator" className="inline-flex items-center gap-1 text-[11px] text-gray-400">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Loading
+          </span>
+        )}
+      </div>
 
       {filteredSummaries.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-4">
-          {normalizedStreamNameFilter
-            ? 'No datastreams match this stream name filter.'
-            : 'No datastream summaries available.'}
-        </p>
+        isLoadingWithoutData ? (
+          <div
+            id="dendra-datastream-summaries-loading-message"
+            className="flex items-center justify-center gap-2 py-4 text-sm text-gray-500"
+          >
+            <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+            <span>Loading datastream summaries...</span>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400 text-center py-4">
+            {normalizedStreamNameFilter
+              ? 'No datastreams match this stream name filter.'
+              : 'No datastream summaries available.'}
+          </p>
+        )
       ) : (
         <div className="space-y-2">
           {filteredSummaries.map((summary) => (

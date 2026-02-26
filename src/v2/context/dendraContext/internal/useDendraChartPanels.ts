@@ -26,6 +26,61 @@ export function useDendraChartPanels({
 }: UseDendraChartPanelsParams) {
   const [chartPanels, setChartPanels] = useState<DendraChartPanelState[]>([]);
   const nextChartZIndexRef = useRef(20);
+  const requestVersionRef = useRef<Map<string, number>>(new Map());
+
+  const requestPanelData = useCallback((
+    panelId: string,
+    panel: Pick<DendraChartPanelState, 'station' | 'summary' | 'sourceServiceUrl'>,
+    filter: DendraChartFilter,
+  ) => {
+    if (!panel.station || !panel.summary) return;
+
+    const nextVersion = (requestVersionRef.current.get(panelId) ?? 0) + 1;
+    requestVersionRef.current.set(panelId, nextVersion);
+    setChartPanels((prev) => prev.map((candidate) => (
+      candidate.id === panelId
+        ? { ...candidate, loading: true, error: null }
+        : candidate
+    )));
+
+    fetchTimeSeries(
+      panel.sourceServiceUrl,
+      panel.station.station_id,
+      panel.summary.datastream_name,
+      panel.summary.dendra_ds_id,
+      {
+        startDate: filter.startDate || undefined,
+        endDate: filter.endDate || undefined,
+      },
+    )
+      .then((result) => {
+        if (requestVersionRef.current.get(panelId) !== nextVersion) return;
+        setChartPanels((prev) => prev.map((candidate) => (
+          candidate.id === panelId
+            ? {
+              ...candidate,
+              rawData: result.points,
+              data: applyChartFilter(result.points, filter),
+              loading: false,
+              error: null,
+            }
+            : candidate
+        )));
+      })
+      .catch((err) => {
+        if (requestVersionRef.current.get(panelId) !== nextVersion) return;
+        console.error('[Dendra Chart] ❌ Time series fetch failed:', err);
+        setChartPanels((prev) => prev.map((candidate) => (
+          candidate.id === panelId
+            ? {
+              ...candidate,
+              loading: false,
+              error: err instanceof Error ? err.message : 'Failed to load time series',
+            }
+            : candidate
+        )));
+      });
+  }, []);
 
   const openChart = useCallback((station: DendraStation, summary: DendraSummary) => {
     if (!activeServiceUrl) return;
@@ -62,6 +117,7 @@ export function useDendraChartPanels({
       height: panelRect.height,
       zIndex: nextZ,
       sourceLayerId: activeLayer.layerId,
+      sourceServiceUrl: activeServiceUrl,
       sourceViewId: resolvedSourceViewId,
       sourceLayerName: activeLayer.name,
       minimized: false,
@@ -76,53 +132,49 @@ export function useDendraChartPanels({
 
     setChartPanels((prev) => [...prev, newPanel]);
 
-    fetchTimeSeries(activeServiceUrl, station.station_id, summary.datastream_name, summary.dendra_ds_id)
-      .then((result) => {
-        const startDate = result.points.length > 0 ? toDateInputValue(result.points[0].timestamp) : '';
-        const endDate = result.points.length > 0 ? toDateInputValue(result.points[result.points.length - 1].timestamp) : '';
-        const filter: DendraChartFilter = {
-          startDate,
-          endDate,
-          aggregation: 'hourly',
-        };
-        const filteredPoints = applyChartFilter(result.points, filter);
-        setChartPanels((prev) => prev.map((panel) => (
-          panel.id === panelId
-            ? {
-              ...panel,
-              rawData: result.points,
-              data: filteredPoints,
-              filter,
-              loading: false,
-            }
-            : panel
-        )));
-      })
-      .catch((err) => {
-        console.error('[Dendra Chart] ❌ Time series fetch failed:', err);
-        setChartPanels((prev) => prev.map((panel) => (
-          panel.id === panelId
-            ? {
-              ...panel,
-              loading: false,
-              error: err instanceof Error ? err.message : 'Failed to load time series',
-            }
-            : panel
-        )));
-      });
-  }, [activeServiceUrl, chartPanels, activeLayer, pinnedLayers]);
+    const summaryStartDate = summary.first_reading_time ? toDateInputValue(summary.first_reading_time) : '';
+    const summaryEndDate = summary.last_reading_time ? toDateInputValue(summary.last_reading_time) : '';
+    const filter: DendraChartFilter = {
+      startDate: summaryStartDate,
+      endDate: summaryEndDate,
+      aggregation: 'hourly',
+    };
+
+    setChartPanels((prev) => prev.map((panel) => (
+      panel.id === panelId
+        ? { ...panel, filter }
+        : panel
+    )));
+    requestPanelData(panelId, newPanel, filter);
+  }, [activeServiceUrl, chartPanels, activeLayer, pinnedLayers, requestPanelData]);
 
   const setChartFilter = useCallback((panelId: string, partial: Partial<DendraChartFilter>) => {
-    setChartPanels((prev) => prev.map((panel) => {
-      if (panel.id !== panelId) return panel;
-      const nextFilter: DendraChartFilter = { ...panel.filter, ...partial };
-      return {
-        ...panel,
-        filter: nextFilter,
-        data: applyChartFilter(panel.rawData, nextFilter),
-      };
-    }));
-  }, []);
+    const panel = chartPanels.find((candidate) => candidate.id === panelId);
+    if (!panel) return;
+
+    const nextFilter: DendraChartFilter = { ...panel.filter, ...partial };
+    const hasDatePatch = Object.prototype.hasOwnProperty.call(partial, 'startDate')
+      || Object.prototype.hasOwnProperty.call(partial, 'endDate');
+    const startChanged = partial.startDate !== undefined && partial.startDate !== panel.filter.startDate;
+    const endChanged = partial.endDate !== undefined && partial.endDate !== panel.filter.endDate;
+    const shouldRefetch = hasDatePatch && (startChanged || endChanged);
+
+    setChartPanels((prev) => prev.map((candidate) => (
+      candidate.id === panelId
+        ? {
+          ...candidate,
+          filter: nextFilter,
+          data: shouldRefetch ? candidate.data : applyChartFilter(candidate.rawData, nextFilter),
+          loading: shouldRefetch ? true : candidate.loading,
+          error: shouldRefetch ? null : candidate.error,
+        }
+        : candidate
+    )));
+
+    if (shouldRefetch) {
+      requestPanelData(panelId, panel, nextFilter);
+    }
+  }, [chartPanels, requestPanelData]);
 
   const closeChart = useCallback((panelId: string) => {
     setChartPanels((prev) => prev.filter((panel) => panel.id !== panelId));
