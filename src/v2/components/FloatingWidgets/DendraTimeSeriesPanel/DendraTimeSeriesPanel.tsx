@@ -9,7 +9,7 @@
 import { useEffect, useRef, useMemo, useCallback, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import * as echarts from 'echarts';
 import {
-  Minus, X, ChevronUp, Activity, Maximize2,
+  ChevronDown, ChevronRight, X, Activity,
   TrendingDown, TrendingUp, Loader2,
   Download, BarChart3,
 } from 'lucide-react';
@@ -430,7 +430,7 @@ function ChartPanel({ panelId }: { panelId: string }) {
               className="p-1.5 hover:bg-teal-100 rounded-lg transition-colors"
               title="Expand"
             >
-              <Maximize2 className="w-4 h-4 text-slate-500" />
+              <ChevronRight className="w-4 h-4 text-slate-500" />
             </button>
             <button
               id={`dendra-chart-close-${safePanelId}`}
@@ -495,7 +495,7 @@ function ChartPanel({ panelId }: { panelId: string }) {
             className="p-1.5 hover:bg-teal-100 rounded-lg transition-colors"
             title="Minimize"
           >
-            <Minus className="w-4 h-4 text-slate-500" />
+            <ChevronDown className="w-4 h-4 text-slate-500" />
           </button>
           <button
             id={`dendra-chart-close-${safePanelId}`}
@@ -539,7 +539,7 @@ function ChartPanel({ panelId }: { panelId: string }) {
         {data.length > 0 && (
           <div className="flex gap-4 h-full">
             {/* Chart area */}
-            <div className="flex-1 min-w-0 h-full">
+            <div className="flex-1 min-w-0 h-full min-h-0 flex flex-col">
               <div
                 id={`dendra-chart-range-status-${safePanelId}`}
                 className="mb-2 inline-flex items-center gap-2 rounded-md border border-teal-200 bg-teal-50 px-2 py-1 text-xs text-teal-700"
@@ -552,7 +552,7 @@ function ChartPanel({ panelId }: { panelId: string }) {
               <div
                 id={`dendra-echarts-${safePanelId}`}
                 ref={chartRef}
-                className="w-full h-full rounded-lg border border-slate-300/80 bg-white/70"
+                className="w-full flex-1 min-h-0 rounded-lg border border-slate-300/80 bg-white/70"
               />
             </div>
 
@@ -580,41 +580,20 @@ function ChartPanel({ panelId }: { panelId: string }) {
                   value={stats.count.toLocaleString()}
                   icon={<BarChart3 className="w-3 h-3 text-slate-400" />}
                 />
-
-                {/* Actions */}
-                <div className="mt-auto pt-1.5 space-y-1">
-                  <button
-                    id={`dendra-chart-export-csv-${safePanelId}`}
-                    onClick={handleExportCSV}
-                    className="w-full text-[10px] bg-white/90 hover:bg-white text-slate-700
-                               border border-slate-300 font-medium py-1.5 px-2 rounded-lg
-                               flex items-center justify-center gap-1 transition-colors"
-                  >
-                    <Download className="w-3 h-3" />
-                    Export CSV
-                  </button>
-                </div>
+                <button
+                  id={`dendra-chart-export-csv-${safePanelId}`}
+                  onClick={handleExportCSV}
+                  className="w-full text-[10px] bg-white/90 hover:bg-white text-slate-700
+                             border border-slate-300 font-medium py-1.5 px-2 rounded-lg
+                             flex items-center justify-center gap-1 transition-colors"
+                >
+                  <Download className="w-3 h-3" />
+                  Export CSV
+                </button>
               </div>
             )}
           </div>
         )}
-      </div>
-
-      {/* Footer */}
-      <div
-        id={`dendra-chart-footer-${safePanelId}`}
-        className="px-4 py-1.5 border-t border-slate-200/60 bg-slate-50/55 rounded-b-xl
-                   flex items-center justify-end"
-      >
-        <button
-          id={`dendra-chart-minimize-footer-${safePanelId}`}
-          onClick={() => toggleMinimizeChart(panel.id)}
-          className="text-[10px] text-teal-600 hover:text-teal-700 font-medium
-                     flex items-center gap-0.5"
-        >
-          <ChevronUp className="w-3 h-3" />
-          Minimize
-        </button>
       </div>
 
       <div

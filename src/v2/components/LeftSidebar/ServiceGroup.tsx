@@ -126,7 +126,7 @@ export function ServiceGroup({
               ? 'border-amber-300 bg-amber-50 shadow-sm'
               : isExpanded
               ? 'border-amber-300 bg-amber-50'
-              : 'border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-gray-300'
+              : 'border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300'
           }`}
       >
         <button
@@ -175,7 +175,7 @@ export function ServiceGroup({
         }}
       >
         <div className="overflow-hidden">
-          <div id={`service-group-children-inner-${service.id}`} className="pl-2 pr-1 space-y-1 pt-1">
+          <div id={`service-group-children-inner-${service.id}`} className="pl-2 pr-1 space-y-1 pt-1 bg-white">
             {layers.map(layer => (
               <LayerRow
                 key={layer.id}
