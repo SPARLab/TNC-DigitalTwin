@@ -1,5 +1,7 @@
 # Extracted Tasks: Trisalyn Feedback — Feb 20, 2026
 
+> **📁 ARCHIVED** — Feb 25, 2026. Moved to `docs/feedback/archive/meeting-notes-feb-17-20-2026/`
+
 **Meeting Date:** Feb 20, 2026  
 **Source Transcript:** Trisalyn Feedback Feb 20 at 8_52 AM.txt  
 **Participants:** Trisalyn (QA reviewer), Will  

@@ -1,5 +1,7 @@
 # Extracted Tasks: Dan Meeting — Feb 20, 2026
 
+> **📁 ARCHIVED** — Feb 25, 2026. Moved to `docs/feedback/archive/meeting-notes-feb-17-20-2026/`
+
 **Meeting Date:** Feb 20, 2026  
 **Source Transcript:** Dan Meeting & Feedback Feb 20 at 11_02 AM.txt  
 **Participants:** Dan (ArcGIS Enterprise backend), Will  

@@ -2,10 +2,53 @@
 
 **Sources:** Amy Feedback (1:34 PM) · Dan Pt 1 (1:00 PM) · Dan Pt 2 (3:17 PM) · Trisalyn (10:33 AM)  
 **Consolidated by:** Will  
-**Last Updated:** Feb 18, 2026
+**Last Updated:** Feb 25, 2026  
+**Status:** 📁 **ARCHIVED** — Moved to `docs/feedback/archive/meeting-notes-feb-17-20-2026/` (Feb 25, 2026)
 
 > **How to use this document:**  
 > The Quick Task Summary below lists all deduplicated tasks. Tasks marked 🔴 **CONFLICT** require your manual resolution before implementation — see the [Conflicts to Resolve](#conflicts-to-resolve) section. All other tasks are ready to hand to a new chat window.
+
+---
+
+## Completed Tasks Summary (as of Feb 25, 2026)
+
+The following consolidated tasks were **properly completed** and are tracked in phase docs (`docs/IMPLEMENTATION/phases/`):
+
+| Consolidated ID | Status | Phase Doc | Notes |
+|-----------------|--------|-----------|-------|
+| **— iNaturalist —** | | | |
+| CON-INAT-01 | 🟢 Complete | phase-1-inaturalist.md | Species-level filtering |
+| CON-INAT-02 | 🟢 Complete | phase-1-inaturalist.md | Species hierarchy flow (taxa → species → observations) |
+| CON-INAT-03 | 🟢 Complete | phase-1-inaturalist.md | Result count in right sidebar |
+| CON-INAT-04 | 🚫 Won't Do | phase-1-inaturalist.md | Reptiles in ocean — iNaturalist intentional obfuscation, not a bug |
+| CON-INAT-06 | 🟢 Complete | phase-1-inaturalist.md | Species ordering (common higher, editable sort) |
+| **— ANiML —** | | | |
+| CON-ANIML-01 | 🟢 Complete | phase-2-animl.md | Map click camera → sidebar sync + images |
+| CON-ANIML-02 | ⚫ Won't Do | phase-2-animl.md | Rename Mountain lion → Puma (deferred; taxonomy decision) |
+| CON-ANIML-03 | 🟢 Complete | phase-2-animl.md | Sort cameras by result count |
+| **— Dendra —** | | | |
+| CON-DENDRA-01 | 🟢 Complete | phase-3-dendra.md | Map click station → sidebar sync |
+| CON-DENDRA-02 | 🟢 Complete | phase-3-dendra.md | Multiple time series charts side-by-side (draggable/resizable) |
+| CON-DENDRA-03 | 🟢 Complete | phase-3-dendra.md | Multi-stream selection, no reset required |
+| CON-DENDRA-04 | 🟢 Complete | phase-3-dendra.md | Pinned-stream visibility across Map Layers, sidebar, station cards |
+| **— DroneDeploy —** | | | |
+| CON-DRONE-01 | 🟢 Complete | phase-10-dronedeploy.md | Bug: drone imagery toggle between flights |
+| CON-DRONE-02 | 🟢 Complete | phase-10-dronedeploy.md | Simplify project flights UI (name + date default, expand for metadata) |
+| **— TNC ArcGIS —** | | | |
+| CON-ARCGIS-06 | 🟢 Complete | phase-6-tnc-arcgis.md | Bug: Union Pacific Railroad layer ID 0 (resolved by TF-11) |
+| **— DataONE —** | | | |
+| CON-DONE-01 | 🟢 Complete | phase-4-dataone.md | Map cluster click → populate right sidebar |
+| CON-DONE-02 | 🟢 Complete | phase-4-dataone.md | Auto-zoom on dataset detail; View on Map repurposed as Recenter |
+| CON-DONE-05 | 🟢 Complete | phase-4-dataone.md | Map vs sidebar count discrepancy (dedupe versions) |
+| CON-DONE-06 | 🟢 Complete | phase-4-dataone.md | Save button: saved vs unsaved state |
+| CON-DONE-07 | 🟢 Complete | phase-4-dataone.md | Persist saved state when returning |
+| CON-DONE-08 | 🟢 Complete | phase-4-dataone.md | Multi-select categories filter |
+| CON-DONE-09 | 🟢 Complete | phase-4-dataone.md | Search by title and abstract/keywords |
+| CON-DONE-10 | 🟢 Complete | phase-4-dataone.md | Filter by file type |
+| CON-DONE-11 | 🟢 Complete | phase-4-dataone.md | Saved indicator on browse cards |
+| CON-DONE-14 | 🟢 Complete | phase-4-dataone.md | Search result highlight (keyword in abstract) |
+
+**Not yet completed:** CON-GL-01 through CON-GL-08, CON-INAT-05, CON-DENDRA-05 through CON-DENDRA-08, CON-ARCGIS-01 through CON-ARCGIS-05 and CON-ARCGIS-07, CON-DONE-03, CON-DONE-04, CON-DONE-12, CON-DONE-13. See phase docs for current status.
 
 ---
 

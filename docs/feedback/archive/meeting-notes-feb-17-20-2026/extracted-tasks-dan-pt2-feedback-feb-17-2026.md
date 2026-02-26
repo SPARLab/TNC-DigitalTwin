@@ -1,5 +1,7 @@
 # Extracted Tasks: Dan Pt 2 Feedback — Feb 17, 2026
 
+> **📁 ARCHIVED** — Feb 25, 2026. Moved to `docs/feedback/archive/meeting-notes-feb-17-20-2026/`
+
 **Meeting Date:** Feb 17, 2026, 3:17 PM  
 **Source Transcript:** Dan Feedback Pt 2 Feb 17 at 3_17 PM.txt  
 **Participants:** Dan (feedback), Will (demo), Trislin (assignee)  
