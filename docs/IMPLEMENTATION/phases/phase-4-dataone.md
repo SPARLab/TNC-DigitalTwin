@@ -144,6 +144,7 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 25, 2026 | **DataONE 3D marker highlight refinement.** Removed custom dark-blue selection ring outline; rely on ArcGIS native popup highlight (light blue circle) only. User feedback: keep the billboarded light-blue circle, remove the darker outline. | Assistant |
 | Feb 25, 2026 | **Archived** Task Details (D20-09, CON-DONE-01–17, TF-13, TF-14) to `docs/archive/phases/phase-4-dataone-completed.md`. Phase doc trimmed. | — |
 | Feb 24, 2026 | CON-DONE-17 marked complete. QA confirmed: 3D icon rendering and marker click behavior now work as expected; 2D behavior unchanged. Phase progress updated to 16/17. | Assistant |
 | Feb 24, 2026 | CON-DONE-17 fix v3: GraphicsLayer overlay for 3D (Dendra pattern). FeatureLayer hidden in SceneView; overlay handles rendering + hitTest + popup. Click handler swaps `include` target between FeatureLayer (2D) and overlay (3D). Removed coordinate fallback and PointSymbol3D (no longer needed). QA pending. | Assistant |
