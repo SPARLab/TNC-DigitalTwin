@@ -194,13 +194,19 @@ body {
 
 /* -----------------------------------------------------------------------------
    ANiML image results scroll area
-   - Always-visible subtle scrollbar so users can detect scrollability quickly.
-   - Uses stable gutter to prevent content shift.
+   - Overlay scrollbar thumb auto-hides when idle.
+   - Thumb appears on hover/focus-within to preserve affordance without clutter.
+   - Stable gutter prevents content shift when scrollbar state changes.
    ----------------------------------------------------------------------------- */
 .scroll-area-animl-images {
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: rgba(107, 114, 128, 0.55) rgba(229, 231, 235, 0.7);
+  scrollbar-color: transparent transparent;
+}
+
+.scroll-area-animl-images:hover,
+.scroll-area-animl-images:focus-within {
+  scrollbar-color: rgba(148, 163, 184, 0.75) transparent;
 }
 
 .scroll-area-animl-images::-webkit-scrollbar {
@@ -208,18 +214,25 @@ body {
 }
 
 .scroll-area-animl-images::-webkit-scrollbar-track {
-  background: rgba(243, 244, 246, 0.9);
-  border-radius: 9999px;
+  background: transparent;
 }
 
 .scroll-area-animl-images::-webkit-scrollbar-thumb {
-  background-color: rgba(107, 114, 128, 0.55);
-  border: 2px solid rgba(243, 244, 246, 0.9);
+  background-color: transparent;
+  background-clip: padding-box;
+  border: 3px solid transparent;
   border-radius: 9999px;
+  transition: background-color 0.2s ease;
 }
 
-.scroll-area-animl-images::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(75, 85, 99, 0.75);
+.scroll-area-animl-images:hover::-webkit-scrollbar-thumb,
+.scroll-area-animl-images:focus-within::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.75);
+}
+
+.scroll-area-animl-images:hover::-webkit-scrollbar-thumb:hover,
+.scroll-area-animl-images:focus-within::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.85);
 }
 
 /* -----------------------------------------------------------------------------

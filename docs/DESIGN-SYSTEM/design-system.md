@@ -405,12 +405,15 @@ Update ETA dynamically as queries complete.
 - **Figures:** Layer cards and Export summary use `bg-white shadow-sm` to stand out as the primary export targets.
 - **Nested sections:** "Filtered views" and "Export outputs" use `rounded-lg border border-slate-200 bg-slate-50` for consistent enclosure (Gestalt Similarity).
 
-### Scroll Area (`.scroll-area-export-builder`)
+### Scroll Area (Overlay Pattern)
+
+Shared auto-hiding overlay scrollbar pattern used for content-heavy scroll regions:
 
 - **Hover-only thumb:** Scrollbar thumb is transparent by default; appears on `:hover` / `:focus-within` of the scroll container.
 - **No track:** Track is always transparent (no visible scroll track).
 - **Stable layout:** `scrollbar-gutter: stable` prevents content shift when scrollbar appears.
-- **Implementation:** CSS class in `src/index.css`; applied to `#export-builder-content-scroll-area`.
+
+**Implementations:** `.scroll-area-export-builder` (Export Builder modal), `.scroll-area-animl-images` (ANiML image results). CSS in `src/index.css`.
 
 ### Semantic Naming
 
