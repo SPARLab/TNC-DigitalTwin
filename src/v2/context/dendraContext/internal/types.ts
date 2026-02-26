@@ -30,5 +30,6 @@ export interface DendraChartPanelState {
   data: DendraTimeSeriesPoint[];
   filter: DendraChartFilter;
   loading: boolean;
+  progressiveLoading: boolean;
   error: string | null;
 }

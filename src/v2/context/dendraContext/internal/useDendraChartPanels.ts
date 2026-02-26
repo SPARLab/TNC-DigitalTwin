@@ -27,6 +27,28 @@ export function useDendraChartPanels({
   const [chartPanels, setChartPanels] = useState<DendraChartPanelState[]>([]);
   const nextChartZIndexRef = useRef(20);
   const requestVersionRef = useRef<Map<string, number>>(new Map());
+  const INITIAL_RENDER_DAYS = 30;
+  const BACKFILL_CHUNK_DAYS = 120;
+
+  const parseDateUtc = (date: string): number | null => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+    return Date.parse(`${date}T00:00:00.000Z`);
+  };
+
+  const toDateUtc = (epochMs: number): string => new Date(epochMs).toISOString().slice(0, 10);
+
+  const mergePoints = (
+    base: DendraChartPanelState['rawData'],
+    extra: DendraChartPanelState['rawData'],
+  ): DendraChartPanelState['rawData'] => {
+    if (extra.length === 0) return base;
+    const map = new Map<number, number>();
+    for (const point of base) map.set(point.timestamp, point.value);
+    for (const point of extra) map.set(point.timestamp, point.value);
+    return Array.from(map.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([timestamp, value]) => ({ timestamp, value }));
+  };
 
   const requestPanelData = useCallback((
     panelId: string,
@@ -39,9 +61,18 @@ export function useDendraChartPanels({
     requestVersionRef.current.set(panelId, nextVersion);
     setChartPanels((prev) => prev.map((candidate) => (
       candidate.id === panelId
-        ? { ...candidate, loading: true, error: null }
+        ? { ...candidate, loading: true, progressiveLoading: false, error: null }
         : candidate
     )));
+
+    const rangeStartMs = filter.startDate ? parseDateUtc(filter.startDate) : null;
+    const rangeEndMs = filter.endDate ? parseDateUtc(filter.endDate) : null;
+    const canProgressivelyBackfill = rangeStartMs != null && rangeEndMs != null && rangeEndMs >= rangeStartMs;
+    const initialStartMs = canProgressivelyBackfill
+      ? Math.max(rangeStartMs, rangeEndMs - (INITIAL_RENDER_DAYS - 1) * 24 * 60 * 60 * 1000)
+      : null;
+    const initialStartDate = initialStartMs != null ? toDateUtc(initialStartMs) : filter.startDate;
+    const initialEndDate = filter.endDate;
 
     fetchTimeSeries(
       panel.sourceServiceUrl,
@@ -49,12 +80,18 @@ export function useDendraChartPanels({
       panel.summary.datastream_name,
       panel.summary.dendra_ds_id,
       {
-        startDate: filter.startDate || undefined,
-        endDate: filter.endDate || undefined,
+        startDate: initialStartDate || undefined,
+        endDate: initialEndDate || undefined,
       },
     )
       .then((result) => {
         if (requestVersionRef.current.get(panelId) !== nextVersion) return;
+        const shouldBackfill =
+          canProgressivelyBackfill
+          && initialStartMs != null
+          && rangeStartMs != null
+          && initialStartMs > rangeStartMs;
+
         setChartPanels((prev) => prev.map((candidate) => (
           candidate.id === panelId
             ? {
@@ -62,10 +99,65 @@ export function useDendraChartPanels({
               rawData: result.points,
               data: applyChartFilter(result.points, filter),
               loading: false,
+              progressiveLoading: shouldBackfill,
               error: null,
             }
             : candidate
         )));
+
+        if (!shouldBackfill || initialStartMs == null || rangeStartMs == null) return;
+
+        let cursorEndMs = initialStartMs - 24 * 60 * 60 * 1000;
+        const backfill = async () => {
+          while (cursorEndMs >= rangeStartMs) {
+            if (requestVersionRef.current.get(panelId) !== nextVersion) return;
+            const chunkStartMs = Math.max(
+              rangeStartMs,
+              cursorEndMs - (BACKFILL_CHUNK_DAYS - 1) * 24 * 60 * 60 * 1000,
+            );
+            const chunkStartDate = toDateUtc(chunkStartMs);
+            const chunkEndDate = toDateUtc(cursorEndMs);
+
+            try {
+              const chunk = await fetchTimeSeries(
+                panel.sourceServiceUrl,
+                panel.station.station_id,
+                panel.summary.datastream_name,
+                panel.summary.dendra_ds_id,
+                {
+                  startDate: chunkStartDate,
+                  endDate: chunkEndDate,
+                },
+              );
+              if (requestVersionRef.current.get(panelId) !== nextVersion) return;
+              setChartPanels((prev) => prev.map((candidate) => {
+                if (candidate.id !== panelId) return candidate;
+                const mergedRaw = mergePoints(candidate.rawData, chunk.points);
+                return {
+                  ...candidate,
+                  rawData: mergedRaw,
+                  data: applyChartFilter(mergedRaw, candidate.filter),
+                  progressiveLoading: true,
+                };
+              }));
+            } catch (err) {
+              if (requestVersionRef.current.get(panelId) !== nextVersion) return;
+              console.warn('[Dendra Chart] ⚠️ Progressive backfill chunk failed:', err);
+              break;
+            }
+
+            cursorEndMs = chunkStartMs - 24 * 60 * 60 * 1000;
+          }
+
+          if (requestVersionRef.current.get(panelId) !== nextVersion) return;
+          setChartPanels((prev) => prev.map((candidate) => (
+            candidate.id === panelId
+              ? { ...candidate, progressiveLoading: false }
+              : candidate
+          )));
+        };
+
+        void backfill();
       })
       .catch((err) => {
         if (requestVersionRef.current.get(panelId) !== nextVersion) return;
@@ -75,6 +167,7 @@ export function useDendraChartPanels({
             ? {
               ...candidate,
               loading: false,
+              progressiveLoading: false,
               error: err instanceof Error ? err.message : 'Failed to load time series',
             }
             : candidate
@@ -127,6 +220,7 @@ export function useDendraChartPanels({
       data: [],
       filter: DEFAULT_CHART_FILTER,
       loading: true,
+      progressiveLoading: false,
       error: null,
     };
 
@@ -166,6 +260,7 @@ export function useDendraChartPanels({
           filter: nextFilter,
           data: shouldRefetch ? candidate.data : applyChartFilter(candidate.rawData, nextFilter),
           loading: shouldRefetch ? true : candidate.loading,
+          progressiveLoading: shouldRefetch ? false : candidate.progressiveLoading,
           error: shouldRefetch ? null : candidate.error,
         }
         : candidate

@@ -91,6 +91,12 @@ function ChartPanel({ panelId }: { panelId: string }) {
   const chartLabel = summary?.datastream_name ?? '';
   const categoryLabel = panel.sourceLayerName;
   const safePanelId = panel.id.replace(/[^a-zA-Z0-9-_]/g, '-');
+  const loadedRangeLabel = data.length > 0
+    ? `${formatTimestamp(data[0].timestamp)} — ${formatTimestamp(data[data.length - 1].timestamp)}`
+    : null;
+  const topRangeLabel = panel.progressiveLoading
+    ? `Loading older data... currently showing ${loadedRangeLabel ?? 'partial range'}`
+    : `${loadedRangeLabel ?? (summary ? `${formatTimestamp(summary.first_reading_time)} — ${formatTimestamp(summary.last_reading_time)}` : '—')}`;
 
   const handleDragStart = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     if ((event.target as HTMLElement).closest('button')) return;
@@ -444,7 +450,7 @@ function ChartPanel({ panelId }: { panelId: string }) {
       {/* Content */}
       <div id={`dendra-chart-content-${safePanelId}`} className="flex-1 min-h-0 p-4 bg-white/45">
         {/* Loading */}
-        {panel.loading && (
+        {panel.loading && data.length === 0 && (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-teal-500 mr-2" />
             <span className="text-sm text-slate-500">Loading time series data...</span>
@@ -468,10 +474,19 @@ function ChartPanel({ panelId }: { panelId: string }) {
         )}
 
         {/* Chart + Stats */}
-        {!panel.loading && data.length > 0 && (
+        {data.length > 0 && (
           <div className="flex gap-4 h-full">
             {/* Chart area */}
             <div className="flex-1 min-w-0 h-full">
+              <div
+                id={`dendra-chart-range-status-${safePanelId}`}
+                className="mb-2 inline-flex items-center gap-2 rounded-md border border-teal-200 bg-teal-50 px-2 py-1 text-xs text-teal-700"
+              >
+                {panel.progressiveLoading && (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-teal-600" />
+                )}
+                <span id={`dendra-chart-range-status-text-${safePanelId}`}>{topRangeLabel}</span>
+              </div>
               <div
                 id={`dendra-echarts-${safePanelId}`}
                 ref={chartRef}
@@ -527,12 +542,8 @@ function ChartPanel({ panelId }: { panelId: string }) {
       <div
         id={`dendra-chart-footer-${safePanelId}`}
         className="px-4 py-1.5 border-t border-slate-200/60 bg-slate-50/55 rounded-b-xl
-                   flex items-center justify-between"
+                   flex items-center justify-end"
       >
-        <span className="text-[10px] text-slate-700">
-          Data from Dendra •{' '}
-          {summary ? `${formatTimestamp(summary.first_reading_time)} — ${formatTimestamp(summary.last_reading_time)}` : ''}
-        </span>
         <button
           id={`dendra-chart-minimize-footer-${safePanelId}`}
           onClick={() => toggleMinimizeChart(panel.id)}

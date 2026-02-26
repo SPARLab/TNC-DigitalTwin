@@ -2,7 +2,7 @@
 
 **Source:** User feedback (transcript/verbal)  
 **Consolidated by:** Will  
-**Last Updated:** Feb 25, 2026  
+**Last Updated:** Feb 26, 2026  
 **Status:** Active — Distribution to phase docs complete
 
 > **How to use this document:**  
@@ -19,7 +19,7 @@
 | CON-FEB25-02 | ⚪ Not Started | Feb 25, 2026 | Add thin white outline around all map icons (including emoji map icons) | Some icons are hard to see against the map background. Improves visibility across all layers. |
 | CON-FEB25-03 | ⚪ Not Started | Feb 25, 2026 | Collapsable Edit Filters component across all layers | Cam traps (ANiML) should have collapsible Edit Filters section like iNaturalist. Ensure Edit Filters can be collapsed in all data sources. |
 | **— Dendra —** | | | | |
-| CON-FEB25-04 | 🟢 Complete | Feb 25, 2026 | Dendra layers load too slow — review query patterns | Query alignment, on-demand per-station summaries, loading UI polish. See phase-3-dendra.md. |
+| CON-FEB25-04 | 🟢 Complete | Feb 26, 2026 | Dendra layers load too slow — review query patterns | Query alignment, on-demand per-station summaries, loading UI polish, progressive time-series loading. See phase-3-dendra.md. |
 | **— TNC ArcGIS / Left Sidebar —** | | | | |
 | CON-FEB25-05 | ⚪ Not Started | Feb 25, 2026 | Visually differentiate category, subcategory, and feature service in left sidebar | Category dropdown styling is same as subcategory or feature service. Need distinct visual treatment for: (1) category, (2) subcategory, (3) feature service group. |
 | **— Performance —** | | | | |
@@ -81,7 +81,7 @@
 
 **Desired behavior:** Review the document Dan will send and ensure we're using the correct query patterns for Dendra layer loading. Optimize queries if needed.
 
-**Completed (Feb 25, 2026):** Aligned with coworker brief. Implemented: query alignment (server-side date windows, lean outFields), on-demand per-station summaries, loading UI polish. See `docs/IMPLEMENTATION/phases/phase-3-dendra.md` CON-FEB25-04 Investigation Notes.
+**Completed (Feb 26, 2026):** Aligned with coworker brief. Implemented: query alignment (server-side date windows, lean outFields), on-demand per-station summaries, loading UI polish, progressive time-series loading (30-day initial + 120-day backfill chunks). See `docs/IMPLEMENTATION/phases/phase-3-dendra.md` CON-FEB25-04 Investigation Notes.
 
 ---
 
@@ -129,5 +129,6 @@
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 26, 2026 | CON-FEB25-04: progressive time-series loading (30-day initial, 120-day backfill); top badge shows loading/range status; footer simplified. | Cursor |
 | Feb 25, 2026 | CON-FEB25-04 marked complete. Query alignment, on-demand per-station summaries, loading UI polish. | Cursor |
 | Feb 25, 2026 | Created consolidated feedback document with 6 tasks; distributed to phase docs; master-plan phase counts updated | Will |
