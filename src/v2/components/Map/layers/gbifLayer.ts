@@ -16,14 +16,14 @@ const GBIF_FEATURE_SERVER_URL =
  */
 const OUT_FIELDS = ['id'];
 
-const BIN_FILL_SYMBOL: __esri.SimpleFillSymbolProperties = {
+const BIN_FILL_SYMBOL = {
   type: 'simple-fill',
   color: [34, 197, 94, 0.55],
   outline: {
     color: [255, 255, 255, 0.45],
     width: 0.75,
   },
-};
+} as __esri.SimpleFillSymbolProperties & { type: 'simple-fill' };
 
 export function getGBIFBinningLevelForScale(scale: number | null | undefined): number {
   if (!scale || !Number.isFinite(scale)) return 3;
@@ -71,7 +71,7 @@ function buildGBIFClusterFeatureReduction(): __esri.FeatureReductionClusterPrope
         labelPlacement: 'center-center',
       },
     ],
-  };
+  } as __esri.FeatureReductionClusterProperties;
 }
 
 function buildGBIFBinningFeatureReductionForScale(
@@ -100,7 +100,7 @@ function buildGBIFBinningFeatureReductionForScale(
             { value: 500, color: [22, 163, 74, 0.85] },
             { value: 2000, color: [21, 128, 61, 0.90] },
           ],
-        },
+        } as __esri.ColorVariableProperties,
       ],
     },
     labelingInfo: [
@@ -132,7 +132,7 @@ function buildGBIFBinningFeatureReductionForScale(
       title: '{aggregateCount} occurrences in this area',
       content: 'Zoom in to inspect individual GBIF occurrences, then click a point to open details.',
     },
-  };
+  } as __esri.FeatureReductionBinningProperties;
 }
 
 export function buildGBIFFeatureReductionForScale(
@@ -170,6 +170,6 @@ export function createGBIFLayer(options: {
         },
       },
     },
-    featureReduction: buildGBIFFeatureReductionForScale('binning'),
+    featureReduction: buildGBIFFeatureReductionForScale('binning') as any,
   });
 }

@@ -68,7 +68,7 @@ export function useCalFloraMapBehavior(
           const layerId = String(result.graphic.layer?.id ?? '').replace(/^v2-/, '');
           return layerId === CALFLORA_LAYER_ID;
         });
-        if (!graphicHit) return;
+        if (!graphicHit || graphicHit.type !== 'graphic') return;
 
         const attributes = graphicHit.graphic.attributes as Record<string, unknown> | undefined;
         const layer = graphicHit.graphic.layer as FeatureLayer | undefined;

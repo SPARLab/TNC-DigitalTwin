@@ -254,11 +254,13 @@ class GBIFService {
     const countJson = await countPromise;
     const occurrences = (dataJson.features ?? []).map(toOccurrence);
     if (import.meta.env.DEV) {
-      const pageRowsWithRawMediaJson = occurrences.filter((occurrence) => {
+      const pageRowsWithRawMediaJson = occurrences.filter((occurrence: GBIFOccurrence) => {
         const raw = occurrence.mediaJson?.trim() ?? '';
         return raw.length > 0 && raw !== '[]';
       }).length;
-      const pageRowsWithParsedImageUrls = occurrences.filter((occurrence) => occurrence.mediaUrls.length > 0).length;
+      const pageRowsWithParsedImageUrls = occurrences.filter(
+        (occurrence: GBIFOccurrence) => occurrence.mediaUrls.length > 0,
+      ).length;
       // Dev-only breadcrumb to quickly confirm if a browse page is expected to show thumbnails.
       console.debug('[GBIF queryOccurrences]', {
         page: options.page,

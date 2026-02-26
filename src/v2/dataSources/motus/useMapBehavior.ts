@@ -215,7 +215,7 @@ export function useMotusMapBehavior(
           title: 'Inferred movement leg',
           content: '<div><p>{evidence}</p><p><strong>Step:</strong> {stepIndex}</p><p><strong>Detection window:</strong> {startDate} to {endDate}</p></div>',
         },
-      }));
+      } as any));
     };
 
     const drawDirectionMarker = (
@@ -259,7 +259,7 @@ export function useMotusMapBehavior(
           offset: 16,
         },
         symbol,
-      }));
+      } as any));
     };
 
     const visibleLegCount = Math.max(0, Math.min(context.legs.length, playbackStepIndex));

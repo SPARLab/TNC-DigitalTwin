@@ -143,10 +143,9 @@ export function useAnimlMapBehavior(
       try {
         const response = await view.hitTest(event);
         const graphicHit = response.results.find(
-          (result): result is __esri.GraphicHit =>
-            result.type === 'graphic' && result.graphic.layer?.id === MAP_LAYER_ID,
+          (result) => result.type === 'graphic' && result.graphic.layer?.id === MAP_LAYER_ID,
         );
-        if (!graphicHit) return;
+        if (!graphicHit || graphicHit.type !== 'graphic') return;
 
         const deploymentId = Number(graphicHit.graphic.attributes?.id);
         if (!Number.isFinite(deploymentId)) return;

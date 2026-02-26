@@ -40,7 +40,7 @@ const MAX_MAP_SELECTION_IDS = 2000;
  * Identify DataONE graphic hits — works on both the FeatureLayer (2D clusters)
  * and the GraphicsLayer overlay (3D individual dots).
  */
-function isDataOneGraphicHit(result: __esri.ViewHit): result is __esri.GraphicHit {
+function isDataOneGraphicHit(result: __esri.MapViewViewHit): result is __esri.MapViewGraphicHit {
   if (result.type !== 'graphic') return false;
   const g = result.graphic;
   if (typeof g.attributes?.dataoneId === 'string') return true;
@@ -168,11 +168,13 @@ export function useDataOneMapBehavior(
     const dataOneLayer = arcLayer as FeatureLayer;
 
     if (view.type === '3d') {
+      const map = view.map;
+      if (!map) return;
       dataOneLayer.visible = false;
       (dataOneLayer as any).featureReduction = null;
 
       const overlay = createDataOneOverlay();
-      view.map.add(overlay);
+      map.add(overlay);
       overlayRef.current = overlay;
 
       // Seed overlay from current cache so dots appear immediately
@@ -307,7 +309,7 @@ export function useDataOneMapBehavior(
         const hitTarget = (view.type === '3d' && overlay) ? overlay : dataOneLayer;
         const response = await view.hitTest(event, { include: [hitTarget] });
         const graphicHit = response.results.find(isDataOneGraphicHit);
-        if (!graphicHit) return;
+        if (!graphicHit || graphicHit.type !== 'graphic') return;
 
         const aggregateCount = getAggregateCount(graphicHit.graphic);
 

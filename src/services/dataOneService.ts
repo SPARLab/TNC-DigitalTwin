@@ -237,7 +237,8 @@ class DataOneService {
       throw new Error(`DataONE API error: ${data.error.message || 'Unknown error'}`);
     }
     
-    return data.count || 0;
+    const count = (data as { count?: unknown }).count;
+    return typeof count === 'number' && Number.isFinite(count) ? count : 0;
   }
 
   /**

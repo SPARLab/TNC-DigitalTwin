@@ -101,13 +101,13 @@ export function useDendraMapBehavior(
       try {
         const response = await view.hitTest(event);
         const graphicHit = response.results.find(
-          (result): result is __esri.GraphicHit =>
+          (result) =>
             result.type === 'graphic'
             && typeof result.graphic.layer?.id === 'string'
             && result.graphic.layer.id.startsWith('v2-')
             && isDendraLayer(result.graphic.layer.id.slice(3)),
         );
-        if (!graphicHit) return;
+        if (!graphicHit || graphicHit.type !== 'graphic') return;
 
         const stationId = graphicHit.graphic.attributes?.station_id as number | undefined;
         if (stationId == null) return;

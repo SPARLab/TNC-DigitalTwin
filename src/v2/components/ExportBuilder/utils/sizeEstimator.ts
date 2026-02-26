@@ -19,6 +19,15 @@ export const SIZE_ESTIMATE_BYTES_PER_ITEM: Record<DataSource, Record<string, num
     links: 1200,
     files: 5_000_000,
   },
+  calflora: {
+    metadata: 550,
+  },
+  motus: {
+    metadata: 900,
+  },
+  gbif: {
+    metadata: 700,
+  },
   'tnc-arcgis': {
     metadata: 800,
   },

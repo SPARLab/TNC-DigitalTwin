@@ -23,6 +23,10 @@ interface ResolvedLayerFeatureMatch {
   cameraLabelHint?: string;
 }
 
+function hasPointCoordinates(point: __esri.Point): point is __esri.Point & { longitude: number; latitude: number } {
+  return Number.isFinite(point.longitude) && Number.isFinite(point.latitude);
+}
+
 export function V2Header({ onOpenExportBuilder }: V2HeaderProps) {
   const { pinnedLayers, activateLayer, requestBrowseTab } = useLayers();
   const { viewRef, highlightPoint, showToast } = useMap();
@@ -224,6 +228,12 @@ export function V2Header({ onOpenExportBuilder }: V2HeaderProps) {
 
     if (exactMatch) {
       const point = exactMatch.geometry as __esri.Point;
+      if (!hasPointCoordinates(point)) {
+        return {
+          longitude: fallbackLongitude,
+          latitude: fallbackLatitude,
+        };
+      }
       const attrs = exactMatch.attributes ?? {};
       const resolvedFeatureId = alert.type === 'camera_novelty'
         ? attrs.id
@@ -243,6 +253,8 @@ export function V2Header({ onOpenExportBuilder }: V2HeaderProps) {
     const closestGraphic = candidates.reduce((closest, candidate) => {
       const candidatePoint = candidate.geometry as __esri.Point;
       const closestPoint = closest.geometry as __esri.Point;
+      if (!hasPointCoordinates(candidatePoint)) return closest;
+      if (!hasPointCoordinates(closestPoint)) return candidate;
       const candidateDistSq =
         (candidatePoint.longitude - fallbackLongitude) ** 2
         + (candidatePoint.latitude - fallbackLatitude) ** 2;
@@ -253,6 +265,12 @@ export function V2Header({ onOpenExportBuilder }: V2HeaderProps) {
     }, candidates[0]);
 
     const point = closestGraphic.geometry as __esri.Point;
+    if (!hasPointCoordinates(point)) {
+      return {
+        longitude: fallbackLongitude,
+        latitude: fallbackLatitude,
+      };
+    }
     const attrs = closestGraphic.attributes ?? {};
     const resolvedFeatureId = alert.type === 'camera_novelty'
       ? attrs.id

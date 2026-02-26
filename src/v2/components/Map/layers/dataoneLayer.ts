@@ -120,7 +120,7 @@ export function buildDataOneFeatureReductionForScale(
           },
         ],
       },
-    };
+    } as __esri.FeatureReductionBinningProperties;
   }
 
   return {
@@ -153,7 +153,7 @@ export function buildDataOneFeatureReductionForScale(
       title: '{cluster_count} datasets in this area',
       content: 'Zoom in to inspect individual datasets, then click a point to open dataset details.',
     },
-  };
+  } as __esri.FeatureReductionClusterProperties;
 }
 
 /** Create an empty FeatureLayer for DataONE datasets. */

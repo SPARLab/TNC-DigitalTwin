@@ -90,12 +90,12 @@ export function useINaturalistMapBehavior(
       try {
         const response = await view.hitTest(event);
         const graphicHit = response.results.find(
-          (result): result is __esri.GraphicHit => 
-            result.type === 'graphic' && 
-            result.graphic.layer?.id === MAP_LAYER_ID
+          (result) =>
+            result.type === 'graphic'
+            && result.graphic.layer?.id === MAP_LAYER_ID,
         );
 
-        if (graphicHit) {
+        if (graphicHit && graphicHit.type === 'graphic') {
           const observationId = graphicHit.graphic.attributes?.id;
           if (observationId) {
             // Activate layer with the observation ID to auto-open detail view

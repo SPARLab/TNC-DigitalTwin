@@ -136,7 +136,7 @@ export function useGBIFMapBehavior(
     if (!targetLayerId) return;
     const layer = getManagedLayer(targetLayerId) as FeatureLayer | undefined;
     if (!layer) return;
-    layer.featureReduction = buildGBIFFeatureReductionForScale(aggregationMode);
+    layer.featureReduction = buildGBIFFeatureReductionForScale(aggregationMode) as any;
   }, [isOnMap, targetLayerId, aggregationMode, getManagedLayer]);
 
   useEffect(() => {
@@ -152,7 +152,7 @@ export function useGBIFMapBehavior(
       const level = getGBIFBinningLevelForScale(view.scale);
       if (level === lastAppliedLevel) return;
       lastAppliedLevel = level;
-      layer.featureReduction = buildGBIFFeatureReductionForScale('binning', view.scale);
+      layer.featureReduction = buildGBIFFeatureReductionForScale('binning', view.scale) as any;
     };
 
     applyIfLevelChanged();
@@ -172,12 +172,12 @@ export function useGBIFMapBehavior(
       try {
         const response = await view.hitTest(event);
         const graphicHit = response.results.find(
-          (result): result is __esri.GraphicHit =>
-            result.type === 'graphic' &&
-            typeof result.graphic.layer?.id === 'string' &&
-            GBIF_LAYER_IDS.has(result.graphic.layer.id.replace(/^v2-/, '')),
+          (result) =>
+            result.type === 'graphic'
+            && typeof result.graphic.layer?.id === 'string'
+            && GBIF_LAYER_IDS.has(result.graphic.layer.id.replace(/^v2-/, '')),
         );
-        if (!graphicHit) return;
+        if (!graphicHit || graphicHit.type !== 'graphic') return;
 
         const occurrenceId = graphicHit.graphic.attributes?.id as number | undefined;
         if (!occurrenceId) return;
