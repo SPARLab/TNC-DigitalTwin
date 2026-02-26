@@ -6,7 +6,7 @@
 **Branch:** `v2/dendra`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD  
-**Last Updated:** February 25, 2026
+**Last Updated:** February 26, 2026
 
 ---
 
@@ -14,11 +14,12 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
+| D26-01 | 🟢 Complete | Feb 26, 2026 | Auto-adjust y-axis limits when time slider changes zoom range | Frontend complete: y-axis min/max recalculates from currently visible slider window, preventing anomaly-driven flattening in zoomed views. Backend anomaly removal tracked separately. |
 | CON-DENDRA-08 | ⚪ Not Started | Feb 25, 2026 | Collect feedback from Dendra power users | Intake from consolidated feedback. |
 | D20-BL01 | 🔵 Backlog | Feb 20, 2026 | Plot multiple time series data streams on the same floating chart widget | e.g., wind speed avg + wind speed max overlaid. Needs UX design thought. Source: Dan Meeting Feb 20 |
 | D20-BL02 | 🔵 Backlog | Feb 20, 2026 | Plot same data stream across multiple stations on the same chart for comparison | e.g., wind speed at Oak State, Sutter, and Team data streams simultaneously. Source: Dan Meeting Feb 20 |
 | D20-BL03 | 🔵 Backlog | Feb 20, 2026 | Real-time weather-style sensor overlays on the map — wind direction arrows, rain gauge icons, temperature readings | Dan's idea: show live sensor readings inline on map. More "live dashboard" feel. Source: Dan Meeting Feb 20 |
-| CON-FEB25-04 | 🟢 Complete | Feb 25, 2026 | Dendra layers load too slow — review query patterns per Dan's document | Query alignment + on-demand per-station summaries + loading UI polish. Source: consolidated-tasks-feb-25-2026.md |
+| CON-FEB25-04 | 🟢 Complete | Feb 26, 2026 | Dendra layers load too slow — review query patterns per Dan's document | Query alignment + on-demand per-station summaries + loading UI polish + progressive time-series loading. Source: consolidated-tasks-feb-25-2026.md |
 
 **Archived completed tasks:** `D20-05`, `D20-06`, `TF-06`, `TF-07`, `CON-DENDRA-01`, `CON-DENDRA-02`, `CON-DENDRA-03`, `CON-DENDRA-04`, and `D24-01` moved to `docs/archive/phases/phase-3-dendra-completed.md` on Feb 25, 2026.
 
@@ -62,8 +63,9 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
+| D26-01 | Auto-adjust y-axis limits when time slider changes zoom range | 🟢 Complete | | Frontend complete in `DendraTimeSeriesPanel`: y-axis rescaled from visible data on dataZoom events |
 | CON-DENDRA-08 | Collect feedback from Dendra power users | ⚪ Not Started | | Intake from consolidated feedback |
-| CON-FEB25-04 | Dendra layers load too slow — review query patterns per Dan's document | 🟢 Complete | | Query alignment, on-demand per-station summaries, loading UI polish. See CON-FEB25-04 Investigation Notes. |
+| CON-FEB25-04 | Dendra layers load too slow — review query patterns per Dan's document | 🟢 Complete | | Query alignment, on-demand per-station summaries, loading UI polish, progressive time-series loading. See CON-FEB25-04 Investigation Notes. |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -95,6 +97,29 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 - Explicit "Stations" header with count above station cards to clarify result set vs filter section.
 
 *Add new task details below as you define them.*
+
+### D26-01 Scope Notes (Feb 26, 2026)
+
+**Problem framing:**
+- When the user changes the start and end time using the time slider widget, the y-axis limits stay fixed to the full dataset range.
+- Anomalous readings (e.g., electrical failure causing wind speed of -5,000) dominate the scale, so normal fluctuations in a zoomed section appear as a flat line.
+
+**Two-part fix (backend tracked separately):**
+1. **Backend:** Remove anomalous data at source (handled separately; ignore for this task).
+2. **Frontend:** Automatically adjust y-axis min/max based on the *visible* data range when the time slider changes. When zooming to a section that excludes anomalies, the chart should recalculate y-axis limits from the visible datapoints so lines show proper variation instead of appearing flat.
+
+**Acceptance criteria draft:**
+- Change time slider start/end to zoom into a subsection of the chart.
+- Y-axis limits update to fit the min/max of the visible data in that subsection.
+- If the zoomed subsection excludes anomalous spikes (e.g., -5,000), normal fluctuations (e.g., 0–15 mph wind) are visible with appropriate scale, not flattened.
+
+### D26-01 Implementation Notes (Feb 26, 2026)
+
+**Implemented frontend y-axis rescaling:**
+- Added visible-range y-axis bounds calculation in `src/v2/components/FloatingWidgets/DendraTimeSeriesPanel/DendraTimeSeriesPanel.tsx`.
+- Hooked into ECharts `datazoom` events so each slider adjustment recomputes y-axis `min`/`max` from only the currently visible portion of the series.
+- Preserved a small dynamic padding around the visible min/max for readability; includes a minimum fallback padding for flat-value windows.
+- Result: zooming into normal periods no longer appears as a flat line when outlier anomalies exist elsewhere in the full dataset.
 
 ### CON-DENDRA-02 Scope Notes (Feb 19, 2026)
 
@@ -251,6 +276,12 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 - `DatastreamSummaryListSection` now accepts `isLoading`; shows "Datastreams (loading...)" + spinner + "Loading datastream summaries..." with blue spinner when summaries are in flight.
 - Removed duplicate top-level loading row in `DendraBrowseTab`.
 
+**Progressive time-series loading (Feb 26 follow-up):**
+- Large datastreams (e.g., 244k points) no longer block chart render. Initial fetch loads last 30 days only; chart paints immediately.
+- Background backfill fetches older chunks (120-day windows) and appends to `rawData`; chart re-renders as each chunk arrives.
+- Added `progressiveLoading` panel state; top badge shows "Loading older data... currently showing X — Y" during backfill, then "Showing data range: X — Y" when complete.
+- Removed redundant footer range text; footer now only shows minimize control.
+
 ---
 
 ## Service Analysis
@@ -325,6 +356,8 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 26, 2026 | D26-01 | **Complete.** Frontend y-axis autoscaling implemented in `DendraTimeSeriesPanel`: on `dataZoom` changes, chart recomputes y-axis min/max from only the visible slider window so outliers outside the zoomed range no longer flatten normal variability. Backend anomaly removal tracked separately. | Cursor |
+| Feb 26, 2026 | CON-FEB25-04 | **Complete.** Progressive time-series loading: initial 30-day window for fast chart paint, background backfill in 120-day chunks; top badge shows loading/range status; removed redundant footer range text. | Cursor |
 | Feb 25, 2026 | CON-FEB25-04 | **Complete.** Loading UI polish: in-section datastream loading state (blue spinner + "Loading datastream summaries...") instead of conflicting "0" message. | Cursor |
 | Feb 25, 2026 | CON-FEB25-04 | **Continue.** On-demand per-station summaries: eliminated bulk summary fetch, warm cache loads stations only, summaries fetched per-station on drill-down (~18 rows vs ~1,350 bulk). Graceful stream-name filter for unloaded stations. | Cursor |
 | Feb 25, 2026 | CON-FEB25-04 | **Continue.** Implemented query-alignment fixes: server-side date-window chart queries + paged range fetch, chart refetch on date-range edits, warm-cache `outFields` allow-lists, and summary-based date input bounds in station detail. | Cursor |

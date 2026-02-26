@@ -9,7 +9,7 @@
 import { useEffect, useRef, useMemo, useCallback, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import * as echarts from 'echarts';
 import {
-  Minus, X, ChevronUp, Activity, Maximize2,
+  ChevronDown, ChevronRight, X, Activity,
   TrendingDown, TrendingUp, Loader2,
   Download, BarChart3,
 } from 'lucide-react';
@@ -57,6 +57,39 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
+function getYAxisBoundsForVisibleRange(
+  values: number[],
+  startPercent: number,
+  endPercent: number,
+): { min: number; max: number } | null {
+  if (values.length === 0) return null;
+
+  const maxIndex = values.length - 1;
+  const startIndex = clamp(Math.floor((startPercent / 100) * maxIndex), 0, maxIndex);
+  const endIndex = clamp(Math.ceil((endPercent / 100) * maxIndex), 0, maxIndex);
+  const sliceStart = Math.min(startIndex, endIndex);
+  const sliceEnd = Math.max(startIndex, endIndex);
+
+  let localMin = Infinity;
+  let localMax = -Infinity;
+  for (let i = sliceStart; i <= sliceEnd; i++) {
+    const value = values[i];
+    if (value < localMin) localMin = value;
+    if (value > localMax) localMax = value;
+  }
+  if (!Number.isFinite(localMin) || !Number.isFinite(localMax)) return null;
+
+  const range = localMax - localMin;
+  const padding = range === 0
+    ? Math.max(Math.abs(localMax) * 0.05, 1)
+    : range * 0.05;
+
+  return {
+    min: localMin - padding,
+    max: localMax + padding,
+  };
+}
+
 function getMapBounds() {
   const mapContainer = document.getElementById('map-container');
   const width = mapContainer?.clientWidth ?? window.innerWidth;
@@ -91,6 +124,12 @@ function ChartPanel({ panelId }: { panelId: string }) {
   const chartLabel = summary?.datastream_name ?? '';
   const categoryLabel = panel.sourceLayerName;
   const safePanelId = panel.id.replace(/[^a-zA-Z0-9-_]/g, '-');
+  const loadedRangeLabel = data.length > 0
+    ? `${formatTimestamp(data[0].timestamp)} — ${formatTimestamp(data[data.length - 1].timestamp)}`
+    : null;
+  const topRangeLabel = panel.progressiveLoading
+    ? `Loading older data... currently showing ${loadedRangeLabel ?? 'partial range'}`
+    : `${loadedRangeLabel ?? (summary ? `${formatTimestamp(summary.first_reading_time)} — ${formatTimestamp(summary.last_reading_time)}` : '—')}`;
 
   const handleDragStart = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     if ((event.target as HTMLElement).closest('button')) return;
@@ -273,8 +312,37 @@ function ChartPanel({ panelId }: { panelId: string }) {
       }],
     };
 
-    chartInstanceRef.current.setOption(option, { notMerge: true });
-    chartInstanceRef.current.resize();
+    const chart = chartInstanceRef.current;
+    chart.setOption(option, { notMerge: true });
+
+    // Recompute y-axis bounds from only the currently visible dataZoom window.
+    // This prevents historical anomalies from flattening normal zoomed-in trends.
+    const syncVisibleYAxis = () => {
+      const currentOption = chart.getOption() as unknown as {
+        dataZoom?: Array<{ start?: number; end?: number }>;
+      };
+      const firstZoom = currentOption.dataZoom?.[0];
+      const start = typeof firstZoom?.start === 'number' ? firstZoom.start : 0;
+      const end = typeof firstZoom?.end === 'number' ? firstZoom.end : 100;
+      const nextBounds = getYAxisBoundsForVisibleRange(values, start, end);
+      if (!nextBounds) return;
+
+      chart.setOption({
+        yAxis: {
+          min: nextBounds.min,
+          max: nextBounds.max,
+        },
+      });
+    };
+
+    chart.off('datazoom');
+    chart.on('datazoom', syncVisibleYAxis);
+    syncVisibleYAxis();
+    chart.resize();
+
+    return () => {
+      chart.off('datazoom', syncVisibleYAxis);
+    };
   }, [data, summary, stats, panel.minimized]);
 
   // Resize handler
@@ -362,7 +430,7 @@ function ChartPanel({ panelId }: { panelId: string }) {
               className="p-1.5 hover:bg-teal-100 rounded-lg transition-colors"
               title="Expand"
             >
-              <Maximize2 className="w-4 h-4 text-slate-500" />
+              <ChevronRight className="w-4 h-4 text-slate-500" />
             </button>
             <button
               id={`dendra-chart-close-${safePanelId}`}
@@ -427,7 +495,7 @@ function ChartPanel({ panelId }: { panelId: string }) {
             className="p-1.5 hover:bg-teal-100 rounded-lg transition-colors"
             title="Minimize"
           >
-            <Minus className="w-4 h-4 text-slate-500" />
+            <ChevronDown className="w-4 h-4 text-slate-500" />
           </button>
           <button
             id={`dendra-chart-close-${safePanelId}`}
@@ -444,7 +512,7 @@ function ChartPanel({ panelId }: { panelId: string }) {
       {/* Content */}
       <div id={`dendra-chart-content-${safePanelId}`} className="flex-1 min-h-0 p-4 bg-white/45">
         {/* Loading */}
-        {panel.loading && (
+        {panel.loading && data.length === 0 && (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-teal-500 mr-2" />
             <span className="text-sm text-slate-500">Loading time series data...</span>
@@ -468,14 +536,23 @@ function ChartPanel({ panelId }: { panelId: string }) {
         )}
 
         {/* Chart + Stats */}
-        {!panel.loading && data.length > 0 && (
+        {data.length > 0 && (
           <div className="flex gap-4 h-full">
             {/* Chart area */}
-            <div className="flex-1 min-w-0 h-full">
+            <div className="flex-1 min-w-0 h-full min-h-0 flex flex-col">
+              <div
+                id={`dendra-chart-range-status-${safePanelId}`}
+                className="mb-2 inline-flex items-center gap-2 rounded-md border border-teal-200 bg-teal-50 px-2 py-1 text-xs text-teal-700"
+              >
+                {panel.progressiveLoading && (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-teal-600" />
+                )}
+                <span id={`dendra-chart-range-status-text-${safePanelId}`}>{topRangeLabel}</span>
+              </div>
               <div
                 id={`dendra-echarts-${safePanelId}`}
                 ref={chartRef}
-                className="w-full h-full rounded-lg border border-slate-300/80 bg-white/70"
+                className="w-full flex-1 min-h-0 rounded-lg border border-slate-300/80 bg-white/70"
               />
             </div>
 
@@ -503,45 +580,20 @@ function ChartPanel({ panelId }: { panelId: string }) {
                   value={stats.count.toLocaleString()}
                   icon={<BarChart3 className="w-3 h-3 text-slate-400" />}
                 />
-
-                {/* Actions */}
-                <div className="mt-auto pt-1.5 space-y-1">
-                  <button
-                    id={`dendra-chart-export-csv-${safePanelId}`}
-                    onClick={handleExportCSV}
-                    className="w-full text-[10px] bg-white/90 hover:bg-white text-slate-700
-                               border border-slate-300 font-medium py-1.5 px-2 rounded-lg
-                               flex items-center justify-center gap-1 transition-colors"
-                  >
-                    <Download className="w-3 h-3" />
-                    Export CSV
-                  </button>
-                </div>
+                <button
+                  id={`dendra-chart-export-csv-${safePanelId}`}
+                  onClick={handleExportCSV}
+                  className="w-full text-[10px] bg-white/90 hover:bg-white text-slate-700
+                             border border-slate-300 font-medium py-1.5 px-2 rounded-lg
+                             flex items-center justify-center gap-1 transition-colors"
+                >
+                  <Download className="w-3 h-3" />
+                  Export CSV
+                </button>
               </div>
             )}
           </div>
         )}
-      </div>
-
-      {/* Footer */}
-      <div
-        id={`dendra-chart-footer-${safePanelId}`}
-        className="px-4 py-1.5 border-t border-slate-200/60 bg-slate-50/55 rounded-b-xl
-                   flex items-center justify-between"
-      >
-        <span className="text-[10px] text-slate-700">
-          Data from Dendra •{' '}
-          {summary ? `${formatTimestamp(summary.first_reading_time)} — ${formatTimestamp(summary.last_reading_time)}` : ''}
-        </span>
-        <button
-          id={`dendra-chart-minimize-footer-${safePanelId}`}
-          onClick={() => toggleMinimizeChart(panel.id)}
-          className="text-[10px] text-teal-600 hover:text-teal-700 font-medium
-                     flex items-center gap-0.5"
-        >
-          <ChevronUp className="w-3 h-3" />
-          Minimize
-        </button>
       </div>
 
       <div
