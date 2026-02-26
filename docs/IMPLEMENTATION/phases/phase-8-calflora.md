@@ -1,7 +1,7 @@
 # Phase 8: Calflora Plant Observations
 
 **Status:** 🟡 In Progress  
-**Progress:** 8 / 9 tasks  
+**Progress:** 1 active task remaining (8 completed tasks archived)  
 **Branch:** `v2/calflora`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -12,15 +12,9 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| 8.1 | 🟢 Complete | 2026-02-23 11:05 PT | Query CalFlora service to understand v2 attributes | Live FeatureServer audited. 81 records. No native status/family/Cal-IPC fields; taxonomy currently available only as `plant` text. Query timings and field inventory documented in Service Analysis. |
-| 8.2 | 🟢 Complete | 2026-02-23 12:45 PT | Create CalFlora right sidebar shell | Adapter, Overview/Browse tabs, ObservationListView, ObservationDetailView, map layer, marker click-to-detail. DFT-041: no Export tab (global modal). |
-| 8.3 | 🟢 Complete | 2026-02-23 12:45 PT | Implement search and filter UI | Text search (plant), county, date range, has photo. Native status/family/Cal-IPC deferred — service lacks these fields. |
-| 8.4 | 🟢 Complete | 2026-02-23 12:45 PT | Implement observation list with cards | Cards show plant, county, date, and inline photo thumbnail when available. Card click now drives async map pan/zoom + marker focus. Pagination 20/page. Native status badge deferred (service lacks field). |
-| 8.5 | 🟢 Complete | 2026-02-23 12:45 PT | Implement observation detail view | Back nav, plant name, county, date, observer, elevation, coordinates, notes, external CalFlora link, Save View. |
-| 8.6 | 🟢 Complete | 2026-02-23 12:45 PT | Sync loading indicators (Map Layers ↔ map center ↔ right sidebar) | useCalFloraCacheStatus in registry; shared LoadingPrimitives; createBrowseLoadingScope. |
-| 8.7 | 🟢 Complete | 2026-02-23 16:30 PT | Render CalFlora observations as map markers | calFloraLayer.ts, IMPLEMENTED_LAYERS, useCalFloraMapBehavior, filter-synced, click-to-detail, CalFlora map legend widget, ArcGIS popup on marker click, casing-safe objectId extraction. |
-| 8.8 | 🟢 Complete | 2026-02-23 12:45 PT | Wire Save View flow in detail | syncCalFloraFilters + createOrUpdateCalFloraFilteredView; Save View creates child views; hydrate filters + selected observation on view switch. |
 | 8.9 | ⚪ Not Started | — | Port and validate v1 CalFlora features | Audit v1 CalFloraSidebar/CalFloraDetailsSidebar for any features that need v2 parity |
+
+**Archived completed tasks:** `8.1` through `8.8` moved to `docs/archive/phases/phase-8-calflora-completed.md` on Feb 25, 2026.
 
 **Status Legend:**
 - ⚪ Not Started

@@ -12,14 +12,12 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| 12.1 | 🟢 Complete | Feb 25, 2026 09:46 AM | Define alert taxonomy and mock payload schema | Added normalized alert types + severity defaults + seed payloads in `src/v2/alerts/` |
-| 12.2 | 🟢 Complete | Feb 25, 2026 09:46 AM | Add header notification bell and badge shell | Added header bell + unread badge shell in `V2Header` with static unread count and zero-badge state |
-| 12.3 | 🟢 Complete | Feb 25, 2026 10:01 AM | Build alerts panel mock-up (list + detail) | Added bell dropdown panel with mocked list/detail views, relative timestamps, and quick actions |
-| 12.4 | 🟢 Complete | Feb 25, 2026 | Mock camera trap novelty alerts | Live data integration, View source→detail navigation (ANiML/Dendra/iNaturalist), exact feature matching, bug fixes |
 | 12.5 | ⚪ Not Started | Feb 25, 2026 | Mock water-level threshold alerts | Simulate values outside expected min/max ranges and severity tiers |
 | 12.6 | ⚪ Not Started | Feb 25, 2026 | Mock iNaturalist out-of-range alerts | Simulate observations outside expected species range envelope |
 | 12.7 | ⚪ Not Started | Feb 25, 2026 | Alert state handling (read/unread, dedupe, sort) | Add deterministic client-side store for demo reliability |
 | 12.8 | ⚪ Not Started | Feb 25, 2026 | QA + UX polish + handoff notes | Validate interaction quality, accessibility, and future backend integration points |
+
+**Archived completed tasks:** `12.1`, `12.2`, `12.3`, and `12.4` moved to `docs/archive/phases/phase-12-alerts-monitoring-completed.md` on Feb 25, 2026.
 
 **Status Legend:**
 - ⚪ Not Started

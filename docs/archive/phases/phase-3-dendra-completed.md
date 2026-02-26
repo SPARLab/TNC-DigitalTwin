@@ -26,6 +26,22 @@
 
 ---
 
+## Additional Archived Tasks (Feb 25, 2026)
+
+| ID | Status | Last Updated (Timestamp) | Task Description | Notes |
+|----|--------|---------------------------|------------------|-------|
+| D20-05 | 🟢 Complete | Feb 20, 2026 | Investigate and fix Dendra browser popup asking for device access | Removed stray localhost ingest debug `fetch()` calls; V2-wide scan found no permission API usage in app code. |
+| D20-06 | 🟢 Complete | Feb 20, 2026 | Verify and fix custom polygon draw tool for Dendra | Suppressed station click during draw mode; synced sidebar list with polygon filter. |
+| TF-06 | 🟢 Complete | Feb 20, 2026 | Rename left sidebar group from "Sensor Equipment" to "Field Sensors" | Implemented via `CATEGORY_DISPLAY_NAME_OVERRIDE` in layer registry. |
+| TF-07 | 🟢 Complete | Feb 20, 2026 12:30 PM | Remove `dangermond_` prefix from Dendra station tooltip titles | Normalized station display names via shared formatter. |
+| CON-DENDRA-01 | 🟢 Complete | Feb 19, 2026 | Map click on station syncs to right sidebar and opens station | Map-first sync behavior implemented. |
+| CON-DENDRA-02 | 🟢 Complete | Feb 19, 2026 | Multiple time series charts side-by-side; draggable/resizable/minimizable | Multi-panel chart UX complete. |
+| CON-DENDRA-03 | 🟢 Complete | Feb 19, 2026 | Multi-stream selection across stations with stream-name filtering and no reset | Cross-station selection flow complete. |
+| CON-DENDRA-04 | 🟢 Complete | Feb 19, 2026 | Surface pinned-stream counts/icons across map layers and station cards | Dynamic pin/count labels synced across views. |
+| D24-01 | 🟢 Complete | Feb 24, 2026 | Dendra chart panel UX polish | Larger initial size, bottom inset, slider visibility/spacing updates. |
+
+---
+
 ## Task Details (Archived)
 
 ### 3.1: Query Dendra Service to Understand Attributes

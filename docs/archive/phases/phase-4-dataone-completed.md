@@ -24,6 +24,29 @@
 
 ---
 
+## Additional Archived Tasks (Feb 25, 2026)
+
+| ID | Status | Last Updated (Timestamp) | Task Description | Notes |
+|----|--------|---------------------------|------------------|-------|
+| D20-09 | 🟢 Complete | Feb 23, 2026 | Filter DataOne map to latest dataset version only (deduplicate by latest) | Lite layer + dedupe logic verified. |
+| TF-13 | 🟢 Complete | Feb 23, 2026 | Add loading indicator when DataOne layer is selected and map data is loading | Shared loading pattern applied across widget/map/sidebar. |
+| TF-14 | 🟢 Complete | Feb 23, 2026 | Render a specific map marker when "View on Map" is clicked | Popup-highlight focus behavior wired to detail + saved-view flows. |
+| CON-DONE-01 | 🟢 Complete | Feb 20, 2026 | Cluster click on map populates right sidebar with datasets at that location | Race-condition and cluster/list sync fixes complete. |
+| CON-DONE-16 | 🟢 Complete | Feb 20, 2026 | Switch from circular clustering to grid binning | Aggregation mode + scale watcher implemented. |
+| CON-DONE-02 | 🟢 Complete | Feb 20, 2026 | Auto-pan/zoom when opening dataset detail; repurpose View on Map as Recenter | Recenter behavior finalized. |
+| CON-DONE-05 | 🟢 Complete | Feb 23, 2026 | Fix map vs sidebar count discrepancy | Resolved through dedupe and populate race-condition fixes. |
+| CON-DONE-06 | 🟢 Complete | Feb 23, 2026 | Save button: clearly distinguish saved vs unsaved state | Detail view save/unsave states now explicit. |
+| CON-DONE-07 | 🟢 Complete | Feb 23, 2026 | Persist saved state when returning to already-saved dataset | Save/update flow stable with no duplicate baseline child. |
+| CON-DONE-08 | 🟢 Complete | Feb 23, 2026 | Multi-select categories filter checklist | Multi-select category filter with select-all/clear-all. |
+| CON-DONE-09 | 🟢 Complete | Feb 23, 2026 | Search by title and abstract/keywords | Search predicates extended to Layer 1 abstract/keywords. |
+| CON-DONE-10 | 🟢 Complete | Feb 23, 2026 | Filter by file type (CSV/TIF/Imagery/Other) | File-type checklist wired across browse/map/saved views. |
+| CON-DONE-11 | 🟢 Complete | Feb 23, 2026 | Saved indicator on browse cards | Saved badge + subtle card highlight applied. |
+| CON-DONE-14 | 🟢 Complete | Feb 23, 2026 | Search highlight in abstract snippets | Matching phrases highlighted in browse cards. |
+| CON-DONE-15 | 🟢 Complete | Feb 23, 2026 | Spatial query filters DataONE datasets by extent | Polygon filters verified in DataONE flows. |
+| CON-DONE-17 | 🟢 Complete | Feb 24, 2026 | Synchronize DataONE map-click behavior between 2D and 3D | 3D overlay pattern + click/detail parity completed. |
+
+---
+
 ## Task Details
 
 ### 4.1: Query DataOne Service to Understand Attributes

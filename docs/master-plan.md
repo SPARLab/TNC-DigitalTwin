@@ -1,7 +1,7 @@
 # Master Development Plan — V2 Digital Catalog
 
 **Created:** January 23, 2026  
-**Last Updated:** February 25, 2026  
+**Last Updated:** February 25, 2026 (sync pass)  
 **Target Deadline:** February 20, 2026  
 **Status:** 🟡 In Progress
 
@@ -11,12 +11,12 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 124 / 143 complete (**87%**) |
-| **Active remaining** | 19 tasks |
+| **Active scope** | 125 / 145 complete (**86%**) |
+| **Active remaining** | 20 tasks |
 | **Phases complete** | 6 of 13 (0, 1, 2, 6, 10, 11) |
 
 ```
-██████████████████████████████████████░░░░░░  87%
+█████████████████████████████████████░░░░░░░  86%
 ```
 
 ---
@@ -53,12 +53,12 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 124
-- **Active remaining (Not Started + In Progress + Blocked):** 19
+- **Complete:** 125
+- **Active remaining (Not Started + In Progress + Blocked):** 20
 - **Backlog (not in active scope):** 3
-- **Deferred:** 2
+- **Deferred:** 1
 - **Won't Do:** 2
-- **Total tracked rows:** 149
+- **Total tracked rows:** 151
 
 ### Per-Phase Task Counts
 
@@ -68,7 +68,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 1 | iNaturalist | 🟢 Complete | 10 | 0 | 0 | 0 | 1 | 11 | `v2/inaturalist` |
 | 2 | ANiML | 🟢 Complete | 7 | 0 | 0 | 0 | 1 | 8 | `v2/animl` |
 | 3 | Dendra | 🟡 In Progress | 9 | 1 | 3 | 0 | 0 | 13 | `v2/dendra` |
-| 4 | DataOne | 🟡 In Progress | 15 | 1 | 0 | 0 | 0 | 16 | `v2/dataone` |
+| 4 | DataOne | 🟡 In Progress | 16 | 1 | 0 | 0 | 0 | 17 | `v2/dataone` |
 | 5 | Export Builder | 🟡 In Progress | 0 | 5 | 0 | 0 | 0 | 5 | `v2/export-builder` |
 | 6 | TNC ArcGIS Services | 🟢 Complete | 32 | 0 | 0 | 0 | 0 | 32 | `v2/tnc-arcgis` |
 | 7 | Polish & Consistency | ⚪ Not Started | 1 | 4 | 0 | 0 | 0 | 5 | `v2/polish` |
@@ -84,7 +84,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 - `Active Remaining` = tasks marked ⚪, 🟡, or 🔴 in phase summary/status tables.
 - `Backlog` and `Deferred` are tracked separately from active remaining.
 - `Won't Do` is counted but excluded from "left to do."
-- Source of truth is each phase doc's top task summary/status table.
+- Source of truth is each phase doc's top task summary/status table plus archived phase task docs under `docs/archive/phases/` when completed rows have been moved out of active phase trackers.
 
 | Phase | Doc |
 |-------|-----|
@@ -351,7 +351,7 @@ When working on any phase:
 - **Phase 9:** `docs/IMPLEMENTATION/phases/phase-9-gbif.md`
 - **Phase 10:** `docs/IMPLEMENTATION/phases/phase-10-dronedeploy.md`
 - **Phase 11:** `docs/IMPLEMENTATION/phases/phase-11-motus.md`
-- **Phase 12:** `docs/IMPLEMENTATION/phases/phase-12-ai-refactor.md`
+- **Phase 12:** `docs/IMPLEMENTATION/phases/phase-12-alerts-monitoring.md`
 
 ---
 

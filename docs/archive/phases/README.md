@@ -15,9 +15,12 @@
 | 4 | [phase-4-dataone-completed.md](phase-4-dataone-completed.md) | Complete |
 | 5 | [phase-5-export-builder-completed.md](phase-5-export-builder-completed.md) | Complete |
 | 6 | [phase-6-tnc-arcgis-completed.md](phase-6-tnc-arcgis-completed.md) | Partial |
+| 8 | [phase-8-calflora-completed.md](phase-8-calflora-completed.md) | Partial |
+| 9 | [phase-9-gbif-completed.md](phase-9-gbif-completed.md) | Partial |
 | 10 | [phase-10-dronedeploy-completed.md](phase-10-dronedeploy-completed.md) | Partial |
+| 12 | [phase-12-alerts-monitoring-completed.md](phase-12-alerts-monitoring-completed.md) | Partial |
 
-**Phases 7, 8, 9, 11:** No completed tasks yet.
+**Phases 7, 11:** No completed-task archive file yet.
 
 ---
 

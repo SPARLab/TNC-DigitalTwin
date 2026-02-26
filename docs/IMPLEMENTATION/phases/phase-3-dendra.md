@@ -1,8 +1,8 @@
 # Phase 3: Dendra Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 5 / 6 tasks (completed tasks 3.1–3.9 archived Feb 18, 2026)  
-**Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-3-dendra-completed.md`  
+**Progress:** 1 active task remaining (+3 backlog; completed work archived)  
+**Last Archived:** Feb 25, 2026 — see `docs/archive/phases/phase-3-dendra-completed.md`  
 **Branch:** `v2/dendra`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD  
@@ -14,18 +14,12 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| D20-05 | 🟢 Complete | Feb 20, 2026 | Investigate and fix Dendra browser popup asking for device access | Removed stray localhost ingest debug `fetch()` calls from Dendra service/context code; V2-wide scan found no camera/mic/geolocation permission API usage in app code. Source: Dan Meeting Feb 20 |
-| D20-06 | 🟢 Complete | Feb 20, 2026 | Verify and fix custom polygon draw tool for Dendra | Suppressed station click during draw mode; synced sidebar station list with polygon filter so map and list match. Source: Dan Meeting Feb 20 |
+| CON-DENDRA-08 | ⚪ Not Started | Feb 25, 2026 | Collect feedback from Dendra power users | Intake from consolidated feedback. |
 | D20-BL01 | 🔵 Backlog | Feb 20, 2026 | Plot multiple time series data streams on the same floating chart widget | e.g., wind speed avg + wind speed max overlaid. Needs UX design thought. Source: Dan Meeting Feb 20 |
 | D20-BL02 | 🔵 Backlog | Feb 20, 2026 | Plot same data stream across multiple stations on the same chart for comparison | e.g., wind speed at Oak State, Sutter, and Team data streams simultaneously. Source: Dan Meeting Feb 20 |
 | D20-BL03 | 🔵 Backlog | Feb 20, 2026 | Real-time weather-style sensor overlays on the map — wind direction arrows, rain gauge icons, temperature readings | Dan's idea: show live sensor readings inline on map. More "live dashboard" feel. Source: Dan Meeting Feb 20 |
-| TF-06 | 🟢 Complete | Feb 20, 2026 | Rename left sidebar group from "Sensor Equipment" to "Field Sensors" | Implemented via CATEGORY_DISPLAY_NAME_OVERRIDE in layerRegistry; left sidebar now shows "Field Sensors". Trisalyn QA Feb 20 |
-| TF-07 | 🟢 Complete | Feb 20, 2026 12:30 PM | Remove "dangermond_" prefix from Dendra station tooltip titles (tooltip says "dangermond_Oaks", sidebar says "Oaks") | Fixed by normalizing station display names (`formatStationDisplayName`) and using sanitized value in map popup title + Dendra UI surfaces. Source: Trisalyn QA Feb 20 |
-| CON-DENDRA-01 | 🟢 Complete | Feb 19, 2026 | Map click on station syncs to right sidebar and opens station | High priority; map-first |
-| CON-DENDRA-02 | 🟢 Complete | Feb 19, 2026 | Multiple time series charts side-by-side; draggable/resizable/minimizable within map area bounds | High priority |
-| CON-DENDRA-03 | 🟢 Complete | Feb 19, 2026 | Multi-stream selection across stations with stream-name filtering and no reset requirement | High priority |
-| CON-DENDRA-04 | 🟢 Complete | Feb 19, 2026 | Surface pinned-stream counts/icons across Map Layers, stream rows, and station cards | Dynamic labels, chart close fix, sync across views |
-| D24-01 | 🟢 Complete | Feb 24, 2026 | Dendra chart panel UX polish: larger initial size, slider spacing, bottom inset | Initial draw ~1–2rem from map bottom; slider data shadow restored; x-axis/slider spacing tuned |
+
+**Archived completed tasks:** `D20-05`, `D20-06`, `TF-06`, `TF-07`, `CON-DENDRA-01`, `CON-DENDRA-02`, `CON-DENDRA-03`, `CON-DENDRA-04`, and `D24-01` moved to `docs/archive/phases/phase-3-dendra-completed.md` on Feb 25, 2026.
 
 **Phase-5 handoff:** `CON-DENDRA-05` (Export Builder UX refinement) is tracked in `docs/IMPLEMENTATION/phases/phase-5-export-builder.md`.
 
@@ -67,10 +61,6 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
-| CON-DENDRA-01 | Map click station -> sidebar station sync | 🟢 Complete | | Two-way sync, flash, Edit Filters fix, Stations header |
-| CON-DENDRA-02 | Multi-chart compare (draggable/resizable/minimizable, map-constrained) | 🟢 Complete | | See Task Details |
-| CON-DENDRA-03 | Multi-stream cross-station selection UX | 🟢 Complete | | Stream-name filtering, in-detail station switcher, no reset requirement |
-| CON-DENDRA-04 | Pinned-stream visibility and count cues across map/sidebar | 🟢 Complete | | See Task Details |
 | CON-DENDRA-08 | Collect feedback from Dendra power users | ⚪ Not Started | | Intake from consolidated feedback |
 
 **Status Legend:**

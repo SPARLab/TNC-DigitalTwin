@@ -1,7 +1,7 @@
 # Phase 5: Export Builder
 
 **Status:** 🟡 In Progress  
-**Progress:** 0 / 4 tasks (completed tasks 5.1–5.10 archived)  
+**Progress:** 0 / 5 tasks (completed tasks 5.1–5.10 archived)  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-5-export-builder-completed.md`  
 **Branch:** `v2/export-builder`  
 **Depends On:** Phases 1-4 (all data sources)  

@@ -2,7 +2,7 @@
 
 **Status:** 🟡 In Progress  
 **Progress:** 16 / 17 tasks complete  
-**Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-4-dataone-completed.md`  
+**Last Archived:** Feb 25, 2026 — see `docs/archive/phases/phase-4-dataone-completed.md`  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -13,23 +13,9 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| D20-09 | 🟢 Complete | Feb 23, 2026 | Filter DataOne map to latest dataset version only (deduplicate by latest) | Implemented: Lite layer + dedupeDatasetsByDataoneId in getDatasetsForMapLayer/queryDatasets; prefers isLatestVersion and newest date. Verified visually. |
-| TF-13 | 🟢 Complete | Feb 23, 2026 | Add loading indicator when DataOne layer is selected and map data is loading | Implemented: map-loading scope in DataOneFilterContext; browse-tab RefreshLoadingRow ("Updating map markers..."); Map Layers eye-slot spinner via shared cache-status. Consistent with iNaturalist pattern. Source: Trisalyn QA Feb 20 |
-| TF-14 | 🟢 Complete | Feb 23, 2026 | Render a specific map marker when "View on Map" is clicked on a dataset | ArcGIS native popup highlight: query feature by dataoneId, open popup on it for light-blue selection. Detail open + Recenter both trigger. Map Layers saved-dataset click also focuses + popup. Source: Trisalyn QA Feb 20 |
-| CON-DONE-01 | 🟢 Complete | Feb 20, 2026 | Cluster click on map populates right sidebar with datasets at that location | Race condition fix applied; counts verified |
-| CON-DONE-16 | 🟢 Complete | Feb 20, 2026 | Switch from circular clustering to grid binning (FeatureReductionBinning) | Live scale watcher; in-place fixedBinLevel mutation; maxScale:0 keeps bins visible; "Where to Fine-Tune" doc'd |
-| CON-DONE-02 | 🟢 Complete | Feb 20, 2026 | Auto-pan/zoom when opening dataset detail; repurpose View on Map as Recenter | High priority; resolution applied |
-| CON-DONE-05 | 🟢 Complete | Feb 23, 2026 | Fix map vs sidebar count discrepancy (dedupe dataset versions) | Resolved via D20-09 (dedupeDatasetsByDataoneId) + CON-DONE-01 race-condition fix |
-| CON-DONE-06 | 🟢 Complete | Feb 23, 2026 | Save button: clearly distinguish saved vs unsaved state | DatasetDetailView: "Save Dataset View" (amber) vs "Unsave Dataset View" (rose); driven by isDatasetSaved prop |
-| CON-DONE-07 | 🟢 Complete | Feb 23, 2026 | Persist saved state when returning to already-saved dataset | Save overwrites unassigned view; creates new child when assigned; unsave clears pin; first save pins to baseline (no extra "All Datasets" child) |
-| CON-DONE-08 | 🟢 Complete | Feb 23, 2026 | Multi-select categories filter checklist | Replaced single-select dropdown with checkbox checklist; Select all / Clear all; tncCategories wired through browse, query, map, and saved views |
-| CON-DONE-09 | 🟢 Complete | Feb 23, 2026 | Search by title and abstract/keywords | Layer 1 used when searchText present; title OR abstract OR keywords predicate; browse + map + count paths updated |
-| CON-DONE-10 | 🟢 Complete | Feb 23, 2026 | Filter by file type (CSV, TIF, imagery, and others) | File-type checklist (CSV/TIF/Imagery/Other) with Select all/Clear all; client-side filtering from files_summary.by_ext; wired through browse, map, saved views |
-| CON-DONE-11 | 🟢 Complete | Feb 23, 2026 | Saved indicator on browse cards (icon plus subtle highlight) | DatasetListView: BookmarkCheck icon + "Saved" badge; amber border/bg on card |
-| CON-DONE-15 | 🟢 Complete | Feb 23, 2026 | Spatial query: ensure draw/query tools filter DataONE datasets by extent | Verified working with SpatialQuerySection |
-| CON-DONE-14 | 🟢 Complete | Feb 23, 2026 | Search highlight: show matching keyword inside abstract snippet | DatasetListView: abstract snippet with case-insensitive phrase highlight; optional abstract on DataOneDataset; Layer 1 carries abstract when search active |
 | D20-B02 | ⚪ Not Started (Dan) | Feb 20, 2026 | Create dedicated DataOne point layer in ArcGIS data store (deduplicated, latest version only) with native clustering enabled | Backend task from Dan meeting. Frontend now dedupes latest version client-side; backend layer remains follow-up. |
-| CON-DONE-17 | 🟢 Complete | Feb 24, 2026 | Synchronize DataONE map-click behavior between 2D and 3D, and restore preferred dataset dot rendering style | Completed: 3D now uses companion GraphicsLayer overlay (Dendra pattern) for rendering + clicks. FeatureLayer hidden in 3D. 2D behavior unchanged. |
+
+**Archived completed tasks:** `D20-09`, `TF-13`, `TF-14`, `CON-DONE-01`, `CON-DONE-16`, `CON-DONE-02`, `CON-DONE-05`, `CON-DONE-06`, `CON-DONE-07`, `CON-DONE-08`, `CON-DONE-09`, `CON-DONE-10`, `CON-DONE-11`, `CON-DONE-15`, `CON-DONE-14`, and `CON-DONE-17` moved to `docs/archive/phases/phase-4-dataone-completed.md` on Feb 25, 2026.
 
 **Phase-5 handoff:** `CON-DONE-12` and `CON-DONE-13` (export behavior tasks) are tracked in `docs/IMPLEMENTATION/phases/phase-5-export-builder.md`.
 
