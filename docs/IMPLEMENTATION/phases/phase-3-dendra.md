@@ -18,6 +18,7 @@
 | D20-BL01 | 🔵 Backlog | Feb 20, 2026 | Plot multiple time series data streams on the same floating chart widget | e.g., wind speed avg + wind speed max overlaid. Needs UX design thought. Source: Dan Meeting Feb 20 |
 | D20-BL02 | 🔵 Backlog | Feb 20, 2026 | Plot same data stream across multiple stations on the same chart for comparison | e.g., wind speed at Oak State, Sutter, and Team data streams simultaneously. Source: Dan Meeting Feb 20 |
 | D20-BL03 | 🔵 Backlog | Feb 20, 2026 | Real-time weather-style sensor overlays on the map — wind direction arrows, rain gauge icons, temperature readings | Dan's idea: show live sensor readings inline on map. More "live dashboard" feel. Source: Dan Meeting Feb 20 |
+| CON-FEB25-04 | ⚪ Not Started | Feb 25, 2026 | Dendra layers load too slow — review query patterns per Dan's document | Awaiting doc from Dan. Ensure correct query patterns for layer loading. Source: consolidated-tasks-feb-25-2026.md |
 
 **Archived completed tasks:** `D20-05`, `D20-06`, `TF-06`, `TF-07`, `CON-DENDRA-01`, `CON-DENDRA-02`, `CON-DENDRA-03`, `CON-DENDRA-04`, and `D24-01` moved to `docs/archive/phases/phase-3-dendra-completed.md` on Feb 25, 2026.
 
@@ -62,6 +63,7 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
 | CON-DENDRA-08 | Collect feedback from Dendra power users | ⚪ Not Started | | Intake from consolidated feedback |
+| CON-FEB25-04 | Dendra layers load too slow — review query patterns per Dan's document | ⚪ Not Started | | Awaiting doc from Dan. Source: consolidated-tasks-feb-25-2026.md |
 
 **Status Legend:**
 - ⚪ Not Started

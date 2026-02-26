@@ -62,6 +62,7 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 | **6.14** | 🟢 Complete | Feb 23, 2026 | Service Reference + External Viewer | Overview Source card + New Tab action + overlay iframe viewer with explicit blocked-embed fallback (CSP/X-Frame-Options) |
 | **6.17** | 🟢 Complete | Feb 19, 2026 | Generic Layer Table View (Feature Layers) | ArcGIS FeatureTable overlay on map; Browse shows row/column summary + Open Table Overlay |
 | **6.20** | 🟢 Complete | Feb 19, 2026 | Right Sidebar: Layer + Service Hierarchy Communication | Implemented via CON-ARCGIS-01/02 (Current Context block) |
+| CON-FEB25-05 | ⚪ Not Started | Feb 25, 2026 | Visually differentiate category, subcategory, and feature service in left sidebar | Category/subcategory/feature service share same styling; need distinct visual treatment. Source: consolidated-tasks-feb-25-2026.md |
 
 *Completed tasks 6.1–6.7, 6.15, 6.16, 6.18, 6.19 have been archived. See `docs/archive/phases/phase-6-tnc-arcgis-completed.md`.*
 

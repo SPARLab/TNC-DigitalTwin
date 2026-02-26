@@ -34,6 +34,10 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | D20-04 | ⚪ Not Started | Feb 20, 2026 | Replace +/- symbols in Map Layers accordion with chevron (V / >) symbols | Plus/minus is not a clear expand/collapse affordance; chevron communicates directionality better. Source: Dan Meeting Feb 20 |
 | D20-07 | ⚪ Not Started | Feb 20, 2026 | Verify custom polygon draw tool is working consistently across all data sources | iNaturalist and ANiML confirmed working; Dendra suspected broken; audit the rest. Source: Dan Meeting Feb 20 |
 | D20-13 | ⚪ Not Started | Feb 20, 2026 | Add collapse button to left sidebar (lower priority) | Nice-to-have for full map exploration. Lower priority than right sidebar. Source: Dan Meeting Feb 20 |
+| CON-FEB25-01 | ⚪ Not Started | Feb 25, 2026 | Map marker click: when zoomed in, pan/center only; when zoomed out, pan and zoom in | Replicate across all map markers. If zoom past default (e.g., 5), center only; if zoomed out, zoom in. Source: consolidated-tasks-feb-25-2026.md |
+| CON-FEB25-02 | ⚪ Not Started | Feb 25, 2026 | Add thin white outline around all map icons (including emoji) | Icons hard to see against map background. Source: consolidated-tasks-feb-25-2026.md |
+| CON-FEB25-03 | ⚪ Not Started | Feb 25, 2026 | Collapsable Edit Filters component across all layers | ANiML/cam traps and others should match iNaturalist collapsible pattern. Source: consolidated-tasks-feb-25-2026.md |
+| CON-FEB25-06 | ⚪ Not Started | Feb 25, 2026 | Analyze code for performance bottlenecks — low FPS in 3D view with iNaturalist | Scan for degradation; recommend/implement fixes. Extends 7.6. Source: consolidated-tasks-feb-25-2026.md |
 
 ## Task Status
 
@@ -58,6 +62,10 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | 7.6 | Performance audit | ⚪ Not Started | | |
 | 7.7 | Accessibility check | ⚪ Not Started | | |
 | 7.8 | Enhance map tooltips (post-v2.0) | ⚪ Not Started | | DFT-032 future enhancement |
+| CON-FEB25-01 | Map marker click: when zoomed in, pan/center only; when zoomed out, pan and zoom in | ⚪ Not Started | | Replicate across all map markers. Source: consolidated-tasks-feb-25-2026.md |
+| CON-FEB25-02 | Add thin white outline around all map icons (including emoji) | ⚪ Not Started | | Icons hard to see against map background. Source: consolidated-tasks-feb-25-2026.md |
+| CON-FEB25-03 | Collapsable Edit Filters component across all layers | ⚪ Not Started | | ANiML/cam traps and others match iNaturalist pattern. Source: consolidated-tasks-feb-25-2026.md |
+| CON-FEB25-06 | Analyze code for performance bottlenecks — low FPS in 3D view with iNaturalist | ⚪ Not Started | | Extends 7.6. Source: consolidated-tasks-feb-25-2026.md |
 | (more TBD) | | | | |
 
 **Status Legend:**

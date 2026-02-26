@@ -11,12 +11,12 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 125 / 145 complete (**86%**) |
-| **Active remaining** | 20 tasks |
+| **Active scope** | 125 / 151 complete (**83%**) |
+| **Active remaining** | 26 tasks |
 | **Phases complete** | 6 of 13 (0, 1, 2, 6, 10, 11) |
 
 ```
-█████████████████████████████████████░░░░░░░  86%
+██████████████████████████████████░░░░░░░░░  83%
 ```
 
 ---
@@ -54,11 +54,11 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
 - **Complete:** 125
-- **Active remaining (Not Started + In Progress + Blocked):** 20
+- **Active remaining (Not Started + In Progress + Blocked):** 26
 - **Backlog (not in active scope):** 3
 - **Deferred:** 1
 - **Won't Do:** 2
-- **Total tracked rows:** 151
+- **Total tracked rows:** 157
 
 ### Per-Phase Task Counts
 
@@ -67,11 +67,11 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 0 | Foundation | 🟢 Complete | 11 | 1 | 0 | 0 | 0 | 12 | `v2/foundation` |
 | 1 | iNaturalist | 🟢 Complete | 10 | 0 | 0 | 0 | 1 | 11 | `v2/inaturalist` |
 | 2 | ANiML | 🟢 Complete | 7 | 0 | 0 | 0 | 1 | 8 | `v2/animl` |
-| 3 | Dendra | 🟡 In Progress | 9 | 1 | 3 | 0 | 0 | 13 | `v2/dendra` |
+| 3 | Dendra | 🟡 In Progress | 9 | 2 | 3 | 0 | 0 | 14 | `v2/dendra` |
 | 4 | DataOne | 🟡 In Progress | 16 | 1 | 0 | 0 | 0 | 17 | `v2/dataone` |
 | 5 | Export Builder | 🟡 In Progress | 0 | 5 | 0 | 0 | 0 | 5 | `v2/export-builder` |
-| 6 | TNC ArcGIS Services | 🟢 Complete | 32 | 0 | 0 | 0 | 0 | 32 | `v2/tnc-arcgis` |
-| 7 | Polish & Consistency | ⚪ Not Started | 1 | 4 | 0 | 0 | 0 | 5 | `v2/polish` |
+| 6 | TNC ArcGIS Services | 🟡 In Progress | 32 | 1 | 0 | 0 | 0 | 33 | `v2/tnc-arcgis` |
+| 7 | Polish & Consistency | ⚪ Not Started | 1 | 8 | 0 | 0 | 0 | 9 | `v2/polish` |
 | 8 | Calflora | 🟡 In Progress | 8 | 1 | 0 | 0 | 0 | 9 | `v2/calflora` |
 | 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
 | 10 | DroneDeploy | 🟢 Complete | 4 | 0 | 0 | 0 | 0 | 4 | `v2/dronedeploy` |
@@ -363,6 +363,7 @@ When working on any phase:
 |------|-------|--------|-----|
 | Feb 25, 2026 | Phase 12 | **Task 12.4 complete.** Mock camera trap novelty alerts with live data integration: View source navigates to ANiML camera/image, Dendra station/datastream, iNaturalist observation. Event-driven `ALERT_NAVIGATION_INTENT_EVENT`; exact feature ID matching; mule deer replaced with iNaturalist Ash-throated Flycatcher. Bug fixes: focusStationOnMap order, null checks, HMR sync. Phase 12: 4/8 tasks complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **Tasks 12.1–12.3 complete.** Alert taxonomy and mock payload schema; header notification bell and badge shell; alerts dropdown panel with list + detail, severity pills, relative timestamps, and quick actions (Mark read, Mark all read, View source placeholder). Phase 12: 3/8 tasks complete. | Cursor |
+| Feb 25, 2026 | Docs | **Consolidated feedback Feb 25 distributed.** Created `docs/feedback/consolidated-tasks-feb-25-2026.md` with 6 tasks (CON-FEB25-01 through 06). Distributed to phase-7-polish (4), phase-3-dendra (1), phase-6-tnc-arcgis (1). Master plan phase counts updated. | Cursor |
 | Feb 25, 2026 | Phase 12 | **12.3 complete. Phase 12 complete.** Export Builder UX validation: principled review fixes (layer card figure-ground, Export outputs container, step indicator, success feedback, scrollbar hover-only overlay, semantic naming, size text). design-system.md updated. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-14B complete.** Per-source stale-layer audit: iNaturalist + ANiML GraphicsLayer repopulation on map swap; Dendra/GBIF/CalFlora/iNaturalist/ANiML map handlers rebind on `mapReady` after 2D↔3D toggles. User-verified. Phase 12: 16/19 tracked items complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-15 complete.** Camera preservation across 2D↔3D: capture center+scale from outgoing view; 2D→3D latitude scale conversion; 3D→2D raw scale; lifecycle fix to persist from local view before destroy. User-verified. Phase 12: 15/19 tracked items complete. | Cursor |
