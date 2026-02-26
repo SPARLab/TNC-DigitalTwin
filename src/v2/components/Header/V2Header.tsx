@@ -343,7 +343,7 @@ export function V2Header({ onOpenExportBuilder }: V2HeaderProps) {
       id="v2-header"
       className="h-12 flex items-center justify-between px-4
                  bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-600
-                 border-b border-emerald-900/20 flex-shrink-0"
+                 border-b border-emerald-900/20 flex-shrink-0 relative z-[90]"
     >
       {/* Left: branding */}
       <div className="flex items-center gap-3">
@@ -395,7 +395,7 @@ export function V2Header({ onOpenExportBuilder }: V2HeaderProps) {
               id="alerts-dropdown-panel"
               role="menu"
               aria-label="Alerts dropdown panel"
-              className="absolute right-0 top-12 z-30 w-[25rem] max-w-[90vw] rounded-xl overflow-hidden
+              className="absolute right-0 top-12 z-[100] w-[25rem] max-w-[90vw] rounded-xl overflow-hidden
                          border border-emerald-900/25 bg-emerald-900/95 backdrop-blur
                          shadow-xl shadow-emerald-950/35"
             >
@@ -438,7 +438,7 @@ export function V2Header({ onOpenExportBuilder }: V2HeaderProps) {
                 <div id="alerts-dropdown-content" className="grid grid-cols-1 md:grid-cols-[1.1fr_1fr]">
                   <ul
                     id="alerts-dropdown-list"
-                    className="max-h-80 overflow-y-auto border-b md:border-b-0 md:border-r border-emerald-700/60"
+                    className="scroll-area-export-builder max-h-80 border-b md:border-b-0 md:border-r border-emerald-700/60"
                   >
                     {sortedAlerts.map((alert) => {
                       const isSelected = selectedAlert?.id === alert.id;
