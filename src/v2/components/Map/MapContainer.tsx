@@ -8,7 +8,7 @@
 import { useRef } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { MapLayersWidget } from '../FloatingWidgets/MapLayersWidget/MapLayersWidget';
-import { ViewModeToggle } from './ViewModeToggle';
+import { MapControlRail } from './MapControlRail';
 import { useMap } from '../../context/MapContext';
 import { useLayers } from '../../context/LayerContext';
 import { useMapLayers } from './useMapLayers';
@@ -27,6 +27,7 @@ export function MapContainer() {
     highlightLayerRef,
     spatialQueryLayerRef,
     spatialSketchViewModelRef,
+    isLidarVisible,
     setMapReady,
     dataOnePreview,
     closeDataOnePreview,
@@ -63,6 +64,7 @@ export function MapContainer() {
     highlightLayerRef,
     spatialQueryLayerRef,
     spatialSketchViewModelRef,
+    isLidarVisible,
     setMapReady,
   });
 
@@ -157,8 +159,8 @@ export function MapContainer() {
         </div>
       )}
 
-      {/* 2D / 3D toggle */}
-      <ViewModeToggle />
+      {/* Unified map control rail (view mode, LiDAR, zoom, compass) */}
+      <MapControlRail />
 
       {/* Floating widgets overlay */}
       <MapLayersWidget />

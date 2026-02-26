@@ -175,7 +175,7 @@ export function useArcgisViewLifecycle({
             atmosphereEnabled: true,
             lighting: { date: new Date(), directShadowsEnabled: true },
           },
-          ui: { components: ['attribution', 'navigation-toggle', 'compass', 'zoom'] },
+          ui: { components: ['attribution'] },
           padding: { top: 52, right: 0, bottom: 0, left: 0 },
         })
       : new MapView({
@@ -183,7 +183,7 @@ export function useArcgisViewLifecycle({
           map,
           center: saved.center,
           scale: targetScale,
-          ui: { components: ['attribution', 'compass', 'zoom'] },
+          ui: { components: ['attribution'] },
           padding: { top: 52, right: 0, bottom: 0, left: 0 },
         });
 
@@ -206,9 +206,6 @@ export function useArcgisViewLifecycle({
     });
 
     view.when(() => {
-      if (view.ui.find('zoom')) view.ui.move('zoom', 'top-right');
-      if (view.ui.find('compass')) view.ui.move('compass', 'top-right');
-      if (view.ui.find('navigation-toggle')) view.ui.move('navigation-toggle', 'top-right');
       if (view.popup) {
         view.popup.dockEnabled = false;
       }

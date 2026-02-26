@@ -1,7 +1,7 @@
 # Phase 12: AI Refactor Readiness
 
 **Status:** 🟡 In Progress  
-**Progress:** 16 / 20 tracked items complete (REF-12 deferred; REF-14B complete; REF-14C/D deferred; REF-16 not started)  
+**Progress:** 17 / 20 tracked items complete (REF-12 deferred; REF-14B complete; REF-14C/D deferred; REF-16 complete)  
 **Branch:** `v2/refactor-ai-readiness`  
 **Depends On:** Existing V2 implementation stability (Phases 0-11)  
 **Owner:** TBD
@@ -43,7 +43,7 @@
 | REF-14C | ⏸ Deferred | Feb 25, 2026 | Add manual smoke matrix for repeated 2D↔3D toggles across representative layer types | Cover polygons, imagery, service layers, and graphics overlays in active and pinned+visible states. |
 | REF-14D | ⏸ Deferred | Feb 25, 2026 | Final hardening + cleanup for any discovered toggle regressions | Resolve residual stale-layer edge cases and update REF-14 notes before marking complete. |
 | REF-15 | 🟢 Complete | Feb 25, 2026 | Preserve camera (zoom, position, angle) across 2D↔3D view-mode switches | Capture center+scale from outgoing view; 2D→3D: latitude scale conversion; 3D→2D: raw scale; lifecycle fix to persist from local view before destroy. User-verified. |
-| REF-16 | ⚪ Not Started | — | Add floating toggle button to show/hide LiDAR (PointCloudLayer) in 3D mode | Floating button; toggles PointCloudLayer visibility. Future: support multiple LiDAR layers. |
+| REF-16 | 🟢 Complete | Feb 25, 2026 | Add floating toggle button to show/hide LiDAR (PointCloudLayer) in 3D mode | Unified `MapControlRail`: 2D/3D text toggle, LiDAR icon, zoom +/−, compass. All buttons 32×32. Future: support multiple LiDAR layers. |
 
 ---
 
@@ -112,7 +112,7 @@ Reduce large, mixed-responsibility files so AI assistants can make safer, more p
 | REF-14C | Add repeated-toggle smoke matrix | ⏸ Deferred | | Define manual matrix that verifies active + pinned-visible rendering across polygons, imagery, service layers, and graphics overlays. |
 | REF-14D | Final hardening and closeout | ⏸ Deferred | | Address remaining regressions from REF-14B/REF-14C and finalize documentation to close REF-14. |
 | REF-15 | Preserve camera across 2D↔3D view-mode switches | 🟢 Complete | | Implemented in `useArcgisViewLifecycle.ts`: capture center+scale from outgoing view; 2D→3D latitude scale conversion; 3D→2D raw scale; lifecycle fix to persist from local view before destroy. User-verified. |
-| REF-16 | Add floating LiDAR toggle button | ⚪ Not Started | | Floating button toggles PointCloudLayer visibility in 3D mode. Future: support multiple LiDAR layers. |
+| REF-16 | Add floating LiDAR toggle button | 🟢 Complete | | Unified `MapControlRail` replaces ArcGIS built-in controls; LiDAR toggle + view mode + zoom + compass in one stack; all buttons 32×32. Future: support multiple LiDAR layers. |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -279,3 +279,4 @@ Use this checklist for post-extraction validation of map↔sidebar detail flows:
 | Feb 25, 2026 | REF-15 | Tuned parity after manual feedback: keep `2d→3d` latitude scale conversion, but preserve raw scale for `3d→2d` (no inverse conversion) to prevent slight zoom-out drift at higher extents. | Cursor |
 | Feb 25, 2026 | REF-15 | Complete. Camera preservation across 2D↔3D: capture center+scale from outgoing view; 2D→3D latitude scale conversion; 3D→2D raw scale; lifecycle fix to persist from local view before destroy. User-verified. Phase 12: 15/19 tracked items complete. | Cursor |
 | Feb 25, 2026 | REF-16 | Added. Add floating toggle button to show/hide LiDAR (PointCloudLayer) in 3D mode. Future: support multiple LiDAR layers. | Cursor |
+| Feb 25, 2026 | REF-16 | Complete. Replaced ArcGIS built-in zoom/compass/nav controls with unified `MapControlRail`; 2D/3D text toggle, LiDAR icon (3D only), zoom +/−, compass; all buttons 32×32. User-verified. Phase 12: 17/20 tracked items complete. | Cursor |

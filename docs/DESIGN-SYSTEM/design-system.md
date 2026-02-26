@@ -1,6 +1,6 @@
 # Design System - TNC Digital Catalog
 
-**Last Updated:** February 24, 2026 (ViewModeToggle 2D/3D map toggle; D20-10 ArcGIS overview; BrowseBackButton D20-02)  
+**Last Updated:** February 25, 2026 (MapControlRail unified map controls; D20-10 ArcGIS overview; BrowseBackButton D20-02)  
 **Purpose:** Single source of truth for styling decisions, component patterns, and design policies that affect multiple phases.
 
 ---
@@ -93,22 +93,22 @@ Consider binary collapse toggle (hide/show sidebar entirely) as future enhanceme
 
 ### Map View Mode Toggle (2D / 3D)
 
-**Policy:** Map supports 2D (MapView) and 3D (SceneView) modes with a floating toggle button. All data source layers drape automatically onto terrain in 3D; LiDAR PointCloudLayer loads in 3D only.
+**Policy:** Map supports 2D (MapView) and 3D (SceneView) modes with a unified control rail. All data source layers drape automatically onto terrain in 3D; LiDAR PointCloudLayer loads in 3D only.
 
-**Component:** `ViewModeToggle` — `src/v2/components/Map/ViewModeToggle.tsx`
+**Component:** `MapControlRail` — `src/v2/components/Map/MapControlRail.tsx`
 
 **Specification:**
 | Property | Value |
 |----------|-------|
-| Position | Bottom-left (`bottom-6 left-6`), `z-40` |
+| Position | Top-right (`right-4 top-4`), `z-40` |
+| Controls | 2D/3D text toggle, LiDAR visibility (3D only), zoom +/−, compass (reset north) |
 | Label | Action-oriented: shows "3D" when in 2D (click to switch), "2D" when in 3D |
-| Icon | Globe (2D mode) / Map (3D mode) from Lucide |
-| Styling | `rounded-lg border border-gray-300 bg-white shadow-lg`, hover: `bg-gray-50` |
-| Title | "Switch to 3D view" / "Switch to 2D view" |
+| Button size | All buttons 32×32 via `.map-control-btn` token |
+| Styling | `border border-gray-300 bg-white`, shadow, hover: `bg-gray-50` |
 
-**Rationale:** Bottom-left avoids Map Layers widget (top-left) and legend widgets (bottom-right). Action-oriented label (shows destination) follows Norman's affordance principle. No per-data-source code required — all layers work in both modes via ArcGIS SDK.
+**Rationale:** Unified rail replaces ArcGIS built-in zoom/compass/nav controls for consistent sizing and visual hierarchy. Action-oriented label (shows destination) follows Norman's affordance principle. No per-data-source code required — all layers work in both modes via ArcGIS SDK.
 
-**Implementation Date:** February 24, 2026
+**Implementation Date:** February 24, 2026; REF-16 unified rail: February 25, 2026
 
 ---
 
@@ -2026,6 +2026,7 @@ February 5, 2026
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 25, 2026 | **REF-16: MapControlRail.** Unified right-rail map controls: 2D/3D text toggle, LiDAR visibility (3D only), zoom +/−, compass; all buttons 32×32. Replaces ArcGIS built-in zoom/compass/nav widgets. Documented in Map View Mode Toggle. | Cursor |
 | Feb 24, 2026 | **Map View Mode Toggle (2D/3D).** ViewModeToggle component: bottom-left floating button, action-oriented label ("3D" when in 2D, "2D" when in 3D), Globe/Map icons. MapContainer supports MapView/SceneView; all layers drape on terrain in 3D; LiDAR PointCloudLayer in 3D only. Documented in Layout Specifications. | Cursor |
 | Feb 20, 2026 | **D20-10: ArcGIS Overview description source.** TNC ArcGIS and Dendra Overview tabs fetch description from ArcGIS item metadata (serviceItemId → snippet + description) when available; HTML normalized for line breaks; `whitespace-pre-line` for display. No per-layer descriptions in layer list. | Cursor |
 | Feb 19, 2026 | **Dendra Map Layers child labels (CON-DENDRA-04).** Dynamic labels: collapsed `N data streams, M stations`; expanded by station scope. Pin count badge: number + blue pin icon only. Documented in Components table and phase-3-dendra.md. | Cursor |

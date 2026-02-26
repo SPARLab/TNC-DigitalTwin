@@ -25,6 +25,10 @@ interface MapContextValue {
   viewMode: ViewMode;
   /** Toggle between 2D and 3D view modes */
   toggleViewMode: () => void;
+  /** Visibility state for 3D LiDAR point cloud layer */
+  isLidarVisible: boolean;
+  /** Toggle LiDAR point cloud layer visibility */
+  toggleLidarVisibility: () => void;
   /** Ref to the highlight graphics layer */
   highlightLayerRef: MutableRefObject<GraphicsLayer | null>;
   /** Increments when the map view is ready (triggers re-render in dependents) */
@@ -77,12 +81,14 @@ export function MapProvider({ children }: { children: ReactNode }) {
   const { activeLayer } = useLayers();
   const viewRef = useRef<MapView | SceneView | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('2d');
+  const [isLidarVisible, setIsLidarVisible] = useState(true);
   const highlightLayerRef = useRef<GraphicsLayer | null>(null);
   const spatialQueryLayerRef = useRef<GraphicsLayer | null>(null);
   const spatialSketchViewModelRef = useRef<SketchViewModel | null>(null);
   const [mapReady, setMapReadyState] = useState(0);
   const setMapReady = useCallback(() => setMapReadyState(n => n + 1), []);
   const toggleViewMode = useCallback(() => setViewMode(m => (m === '2d' ? '3d' : '2d')), []);
+  const toggleLidarVisibility = useCallback(() => setIsLidarVisible(v => !v), []);
   const { toasts, showToast, dismissToast } = useMapToastState();
   const { dataOnePreview, openDataOnePreview, closeDataOnePreview } = useDataOnePreviewState();
   const {
@@ -117,7 +123,7 @@ export function MapProvider({ children }: { children: ReactNode }) {
   return (
     <MapContext.Provider
       value={{
-        viewRef, viewMode, toggleViewMode, highlightLayerRef,
+        viewRef, viewMode, toggleViewMode, isLidarVisible, toggleLidarVisibility, highlightLayerRef,
         mapReady, setMapReady,
         highlightPoint, clearHighlight,
         showToast, toasts, dismissToast,
