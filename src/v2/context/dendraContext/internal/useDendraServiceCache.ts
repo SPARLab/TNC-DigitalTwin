@@ -1,10 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ActiveLayer, CatalogLayer } from '../../../types';
 import {
-  fetchServiceData,
+  fetchStations,
+  fetchSummariesForStation,
   buildServiceUrl,
-  type DendraServiceData,
+  type DendraStation,
+  type DendraSummary,
 } from '../../../services/dendraStationService';
+
+interface StationCacheEntry {
+  stations: DendraStation[];
+  summariesByStation: Map<number, DendraSummary[]>;
+}
 
 interface UseDendraServiceCacheParams {
   activeLayer: ActiveLayer | null;
@@ -12,12 +19,15 @@ interface UseDendraServiceCacheParams {
 }
 
 export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServiceCacheParams) {
-  const cacheRef = useRef<Map<string, DendraServiceData>>(new Map());
+  const cacheRef = useRef<Map<string, StationCacheEntry>>(new Map());
   const fetchingRef = useRef<Set<string>>(new Set());
-  const [currentData, setCurrentData] = useState<DendraServiceData>({ stations: [], summaries: [] });
+  const summaryFetchingRef = useRef<Set<string>>(new Set());
+  const [stations, setStations] = useState<DendraStation[]>([]);
+  const [summariesByStation, setSummariesByStation] = useState<Map<number, DendraSummary[]>>(new Map());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [stationSummaryLoading, setStationSummaryLoading] = useState<number | null>(null);
 
   const serviceInfo = useMemo(() => {
     if (!activeLayer || activeLayer.dataSource !== 'dendra') return null;
@@ -30,23 +40,28 @@ export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServic
     };
   }, [activeLayer, layerMap]);
 
+  // Sync state from cache when active service changes
   useEffect(() => {
     if (!serviceInfo) {
       setDataLoaded(false);
-      setCurrentData({ stations: [], summaries: [] });
+      setStations([]);
+      setSummariesByStation(new Map());
       return;
     }
     const cached = cacheRef.current.get(serviceInfo.url);
     if (cached) {
-      setCurrentData(cached);
+      setStations(cached.stations);
+      setSummariesByStation(new Map(cached.summariesByStation));
       setDataLoaded(true);
       setError(null);
     } else {
       setDataLoaded(false);
-      setCurrentData({ stations: [], summaries: [] });
+      setStations([]);
+      setSummariesByStation(new Map());
     }
   }, [serviceInfo]);
 
+  // Warm cache: fetch stations only — map markers render immediately.
   const warmCache = useCallback(() => {
     if (!serviceInfo) return;
     const { url } = serviceInfo;
@@ -58,34 +73,88 @@ export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServic
     setError(null);
 
     const startTime = performance.now();
-    console.log(`[Dendra Cache] 🔥 Warming cache for ${url}`);
+    console.log(`[Dendra Cache] 🔥 Warming cache for ${url} (stations only)`);
 
-    fetchServiceData(url)
-      .then((data) => {
+    fetchStations(url)
+      .then((loadedStations) => {
         const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
-        console.log(
-          `[Dendra Cache] ✅ Loaded ${data.stations.length} stations + ${data.summaries.length} summaries in ${elapsed}s`,
-        );
-        cacheRef.current.set(url, data);
+        console.log(`[Dendra Cache] ✅ ${loadedStations.length} stations in ${elapsed}s`);
+
+        cacheRef.current.set(url, { stations: loadedStations, summariesByStation: new Map() });
         fetchingRef.current.delete(url);
-        setCurrentData(data);
+        setStations(loadedStations);
         setDataLoaded(true);
         setLoading(false);
       })
       .catch((err) => {
-        console.error('[Dendra Cache] ❌ Fetch failed:', err);
+        console.error('[Dendra Cache] ❌ Station fetch failed:', err);
         fetchingRef.current.delete(url);
         setError(err instanceof Error ? err.message : 'Failed to load Dendra stations');
         setLoading(false);
       });
   }, [serviceInfo]);
 
+  // On-demand: fetch summaries for a single station when user drills in.
+  const loadStationSummaries = useCallback((stationId: number) => {
+    if (!serviceInfo) return;
+    const { url } = serviceInfo;
+    const cacheKey = `${url}::${stationId}`;
+
+    // Already cached?
+    const entry = cacheRef.current.get(url);
+    if (entry?.summariesByStation.has(stationId)) return;
+
+    // Already fetching?
+    if (summaryFetchingRef.current.has(cacheKey)) return;
+    summaryFetchingRef.current.add(cacheKey);
+    setStationSummaryLoading(stationId);
+
+    const startTime = performance.now();
+    console.log(`[Dendra Cache] 📡 Fetching summaries for station ${stationId}...`);
+
+    fetchSummariesForStation(url, stationId)
+      .then((summaries) => {
+        const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+        console.log(`[Dendra Cache] ✅ ${summaries.length} summaries for station ${stationId} in ${elapsed}s`);
+
+        summaryFetchingRef.current.delete(cacheKey);
+        const current = cacheRef.current.get(url);
+        if (current) {
+          current.summariesByStation.set(stationId, summaries);
+        }
+        setSummariesByStation((prev) => {
+          const next = new Map(prev);
+          next.set(stationId, summaries);
+          return next;
+        });
+        setStationSummaryLoading((prev) => (prev === stationId ? null : prev));
+      })
+      .catch((err) => {
+        console.warn(`[Dendra Cache] ⚠️ Summaries fetch failed for station ${stationId}:`, err);
+        summaryFetchingRef.current.delete(cacheKey);
+        setStationSummaryLoading((prev) => (prev === stationId ? null : prev));
+      });
+  }, [serviceInfo]);
+
+  // Flatten summariesByStation into a single array for backward compat with useSummariesByStation()
+  const allSummaries = useMemo(() => {
+    const result: DendraSummary[] = [];
+    for (const list of summariesByStation.values()) {
+      result.push(...list);
+    }
+    return result;
+  }, [summariesByStation]);
+
   return {
-    currentData,
+    stations,
+    allSummaries,
+    summariesByStation,
     loading,
     error,
     dataLoaded,
+    stationSummaryLoading,
     serviceInfo,
     warmCache,
+    loadStationSummaries,
   };
 }

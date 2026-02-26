@@ -1,12 +1,12 @@
 # Phase 3: Dendra Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 1 active task remaining (+3 backlog; completed work archived)  
+**Progress:** 1 active task remaining (+3 backlog; CON-FEB25-04 complete Feb 25)  
 **Last Archived:** Feb 25, 2026 — see `docs/archive/phases/phase-3-dendra-completed.md`  
 **Branch:** `v2/dendra`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD  
-**Last Updated:** February 24, 2026
+**Last Updated:** February 25, 2026
 
 ---
 
@@ -18,7 +18,7 @@
 | D20-BL01 | 🔵 Backlog | Feb 20, 2026 | Plot multiple time series data streams on the same floating chart widget | e.g., wind speed avg + wind speed max overlaid. Needs UX design thought. Source: Dan Meeting Feb 20 |
 | D20-BL02 | 🔵 Backlog | Feb 20, 2026 | Plot same data stream across multiple stations on the same chart for comparison | e.g., wind speed at Oak State, Sutter, and Team data streams simultaneously. Source: Dan Meeting Feb 20 |
 | D20-BL03 | 🔵 Backlog | Feb 20, 2026 | Real-time weather-style sensor overlays on the map — wind direction arrows, rain gauge icons, temperature readings | Dan's idea: show live sensor readings inline on map. More "live dashboard" feel. Source: Dan Meeting Feb 20 |
-| CON-FEB25-04 | ⚪ Not Started | Feb 25, 2026 | Dendra layers load too slow — review query patterns per Dan's document | Awaiting doc from Dan. Ensure correct query patterns for layer loading. Source: consolidated-tasks-feb-25-2026.md |
+| CON-FEB25-04 | 🟢 Complete | Feb 25, 2026 | Dendra layers load too slow — review query patterns per Dan's document | Query alignment + on-demand per-station summaries + loading UI polish. Source: consolidated-tasks-feb-25-2026.md |
 
 **Archived completed tasks:** `D20-05`, `D20-06`, `TF-06`, `TF-07`, `CON-DENDRA-01`, `CON-DENDRA-02`, `CON-DENDRA-03`, `CON-DENDRA-04`, and `D24-01` moved to `docs/archive/phases/phase-3-dendra-completed.md` on Feb 25, 2026.
 
@@ -63,7 +63,7 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 | ID | Task | Status | Assignee | Notes |
 |----|------|--------|----------|-------|
 | CON-DENDRA-08 | Collect feedback from Dendra power users | ⚪ Not Started | | Intake from consolidated feedback |
-| CON-FEB25-04 | Dendra layers load too slow — review query patterns per Dan's document | ⚪ Not Started | | Awaiting doc from Dan. Source: consolidated-tasks-feb-25-2026.md |
+| CON-FEB25-04 | Dendra layers load too slow — review query patterns per Dan's document | 🟢 Complete | | Query alignment, on-demand per-station summaries, loading UI polish. See CON-FEB25-04 Investigation Notes. |
 
 **Status Legend:**
 - ⚪ Not Started
@@ -215,6 +215,42 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 1. **Draw-mode guard:** `src/v2/dataSources/dendra/useMapBehavior.ts` — Dendra station click handler no-ops while `isSpatialQueryDrawing` is true so map clicks stay dedicated to Sketch polygon vertex placement/finish.
 2. **Sidebar sync:** `src/v2/components/RightSidebar/Dendra/DendraBrowseTab.tsx` — Station cards now apply the same polygon containment filter used on map markers; stream-name filtering runs on top of the spatially filtered result. Counts (e.g., "1 of 3") reflect the polygon-filtered set.
 
+### CON-FEB25-04 Investigation Notes (Feb 25, 2026)
+
+**Task start:**
+- Began query-pattern audit using coworker brief (`Backend Coworker Brief: Data Source Requirements`) and current V2 Dendra service code.
+
+**Current implementation observed:**
+- Initial layer warm-cache does two full-table ArcGIS queries per active Dendra service (`Layer 0` stations + `Table 2` summaries) using `where=1=1&outFields=*`.
+- Datastream chart fetch uses legacy v0 bridge query (`Table 3` resolve by `dendra_ds_id`, then `Table 4` datapoints) and always requests the most recent 2000 points (`orderByFields=timestamp_utc DESC&resultRecordCount=2000`).
+- Date range and aggregation selectors are applied client-side after fetch (raw/hourly/daily/weekly transforms), not pushed down into backend query parameters.
+
+**Mismatch vs brief query patterns:**
+- Brief calls for time-range-specific server queries (7 days, 30 days, 1 year, all time) and corresponding aggregation options; current implementation does not issue time-bounded server queries for chart load.
+- Brief expects efficient "latest reading per sensor" retrieval for summary badges; current warm-cache relies on summary table payload and does not use a dedicated latest-reading query path.
+- Full-row `outFields=*` on warm-cache is broader than required for initial browse rendering and likely contributes to layer load latency.
+
+**What was implemented (same day follow-up):**
+- Added server-side time-window query support for Dendra chart datapoints in `src/v2/services/dendraStationService.ts` using ArcGIS date predicates in `where` for `startDate` / `endDate`.
+- Updated chart filter flow in `src/v2/context/dendraContext/internal/useDendraChartPanels.ts` so date range changes trigger backend re-query (instead of only client-side slicing), while aggregation remains client-side.
+- Added request-version guarding per chart panel to avoid stale async responses overwriting newer filter results.
+- Reduced warm-cache payload shape by replacing `outFields=*` with explicit field allow-lists for stations and summaries, with `returnGeometry=false` on those table/layer fetches.
+- Updated date-input bounds in `src/v2/components/RightSidebar/Dendra/StationDetailView.tsx` to use summary-level first/last reading times so users can request broader ranges than the currently loaded chart payload.
+
+**On-demand per-station summaries (third follow-up):**
+- Eliminated bulk summary fetch entirely. Warm cache now loads stations only → map markers appear in <1s.
+- Added `fetchSummariesForStation(serviceUrl, stationId)` to `dendraStationService.ts` — queries Table 2 with `WHERE station_id=X` (~18 rows per station vs ~1,350 bulk).
+- Rewrote `useDendraServiceCache.ts` with per-station summary cache (Map<stationId, summaries>). Summaries fetched on demand when user drills into a station, cached so revisits are instant.
+- `DendraBrowseTab` triggers `loadStationSummaries(stationId)` on station selection (click or map marker).
+- Stream-name filter gracefully passes through stations whose summaries haven't been loaded yet (benefit of the doubt).
+- Removed unused `fetchSummaries()`, `fetchServiceData()`, `getSummariesForStation()`, and `DendraServiceData` type.
+- Station cards continue to use `station.datastream_count` as fallback for count display.
+
+**Loading UI polish (completion):**
+- Replaced conflicting "Datastreams (0)" + "Loading datastream details..." with in-section loading state.
+- `DatastreamSummaryListSection` now accepts `isLoading`; shows "Datastreams (loading...)" + spinner + "Loading datastream summaries..." with blue spinner when summaries are in flight.
+- Removed duplicate top-level loading row in `DendraBrowseTab`.
+
 ---
 
 ## Service Analysis
@@ -289,6 +325,10 @@ Implement the Dendra sensor browse experience in the right sidebar. This data so
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 25, 2026 | CON-FEB25-04 | **Complete.** Loading UI polish: in-section datastream loading state (blue spinner + "Loading datastream summaries...") instead of conflicting "0" message. | Cursor |
+| Feb 25, 2026 | CON-FEB25-04 | **Continue.** On-demand per-station summaries: eliminated bulk summary fetch, warm cache loads stations only, summaries fetched per-station on drill-down (~18 rows vs ~1,350 bulk). Graceful stream-name filter for unloaded stations. | Cursor |
+| Feb 25, 2026 | CON-FEB25-04 | **Continue.** Implemented query-alignment fixes: server-side date-window chart queries + paged range fetch, chart refetch on date-range edits, warm-cache `outFields` allow-lists, and summary-based date input bounds in station detail. | Cursor |
+| Feb 25, 2026 | CON-FEB25-04 | **Started.** Query-pattern audit against coworker brief: identified current mismatches (time-windowed server queries missing, heavy `outFields=*` warm-cache usage, chart fetch fixed to latest 2000 points). Added implementation direction notes. | Cursor |
 | Feb 24, 2026 | D24-01 | **Complete.** Dendra chart panel UX polish: larger initial size (560–760×380–500), separate bottom margin for initial placement (~1–2rem from map bottom), time slider data shadow restored, x-axis/slider spacing tuned, slider bottom margin to avoid clipping. See CON-DENDRA-02 Implementation Notes. | Cursor |
 | Feb 20, 2026 | D20-06 | **Complete.** Custom polygon draw tool for Dendra: (1) station click handler suppressed during draw mode; (2) sidebar station list synced with polygon filter so map and list match. See D20-06 Implementation Notes. | Cursor |
 | Feb 20, 2026 | D20-06 | **Continue.** Added sidebar spatial synchronization for Dendra station list: station cards now apply the same custom polygon filter used on map markers, then apply stream-name filtering on top. | Cursor |

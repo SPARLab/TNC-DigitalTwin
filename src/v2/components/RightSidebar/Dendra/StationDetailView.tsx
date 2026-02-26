@@ -58,6 +58,7 @@ export function StationDetailView({
     closeChart,
     showActiveOnly,
     filteredStations,
+    stationSummaryLoading,
   } = useDendra();
   const { activeLayer, pinLayer, getPinnedByLayerId, syncDendraFilters, createDendraFilteredView } = useLayers();
   const effectiveActiveViewId = useMemo(() => {
@@ -132,11 +133,11 @@ export function StationDetailView({
 
   const chartMatchesSelectedDatastream = Boolean(selectedChartPanel);
 
-  const chartMinDate = selectedChartPanel && selectedChartPanel.rawData.length > 0
-    ? new Date(selectedChartPanel.rawData[0].timestamp).toISOString().slice(0, 10)
+  const chartMinDate = selectedSummary?.first_reading_time
+    ? new Date(selectedSummary.first_reading_time).toISOString().slice(0, 10)
     : undefined;
-  const chartMaxDate = selectedChartPanel && selectedChartPanel.rawData.length > 0
-    ? new Date(selectedChartPanel.rawData[selectedChartPanel.rawData.length - 1].timestamp).toISOString().slice(0, 10)
+  const chartMaxDate = selectedSummary?.last_reading_time
+    ? new Date(selectedSummary.last_reading_time).toISOString().slice(0, 10)
     : undefined;
 
   const handleSelectDatastream = (summary: DendraSummary) => {
@@ -253,6 +254,7 @@ export function StationDetailView({
       <DatastreamSummaryListSection
         filteredSummaries={filteredSummaries}
         totalSummaries={summaries.length}
+        isLoading={stationSummaryLoading === station.station_id}
         normalizedStreamNameFilter={normalizedStreamNameFilter}
         selectedDatastreamId={selectedDatastreamId}
         pinnedDatastreamIds={pinnedDatastreamIdsInActiveView}

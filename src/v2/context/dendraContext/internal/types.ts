@@ -20,6 +20,7 @@ export interface DendraChartPanelState {
   height: number;
   zIndex: number;
   sourceLayerId: string;
+  sourceServiceUrl: string;
   sourceViewId?: string;
   sourceLayerName: string;
   minimized: boolean;
