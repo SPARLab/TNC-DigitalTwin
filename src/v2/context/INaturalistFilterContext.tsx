@@ -16,6 +16,7 @@ import {
 export interface INatObservation {
   id: number;
   uuid: string;
+  taxonId: number | null;
   commonName: string | null;
   scientificName: string;
   speciesName: string;
@@ -88,6 +89,7 @@ function transformObservation(obs: TNCArcGISObservation): INatObservation {
   return {
     id: obs.observation_id,
     uuid: obs.observation_uuid,
+    taxonId: obs.taxon_id ?? null,
     commonName: obs.common_name || null,
     scientificName: obs.scientific_name,
     speciesName,

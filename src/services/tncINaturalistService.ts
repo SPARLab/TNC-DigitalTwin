@@ -327,7 +327,7 @@ class TNCArcGISService {
 
         const params: TNCArcGISQueryOptions = {
           where: whereClause,
-          outFields: 'OBJECTID,observation_id,observation_uuid,scientific_name,common_name,taxon_category_name,observed_on,user_name,taxon_kingdom_name,taxon_phylum_name,taxon_class_name,taxon_order_name,taxon_family_name,taxon_genus_name,taxon_species_name,image_url,image_license',
+          outFields: 'OBJECTID,observation_id,observation_uuid,taxon_id,scientific_name,common_name,taxon_category_name,observed_on,user_name,taxon_kingdom_name,taxon_phylum_name,taxon_class_name,taxon_order_name,taxon_family_name,taxon_genus_name,taxon_species_name,image_url,image_license',
           returnGeometry: true,
           f: 'json',
           resultRecordCount: currentPageSize,

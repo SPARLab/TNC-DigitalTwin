@@ -11,7 +11,7 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 160 / 184 complete (**87%**) |
+| **Active scope** | 161 / 184 complete (**87%**) |
 | **Active remaining** | 24 tasks |
 | **Phases complete** | 7 of 15 (0, 1, 2, 10, 11, 12b) |
 
@@ -56,8 +56,8 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 160
-- **Active remaining (Not Started + In Progress + Blocked):** 24
+- **Complete:** 161
+- **Active remaining (Not Started + In Progress + Blocked):** 23
 - **Backlog (not in active scope):** 3
 - **Deferred:** 5
 - **Won't Do:** 2
@@ -68,7 +68,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | Phase | Name | Status | Complete | Active Remaining | Backlog | Deferred | Won't Do | Total Tracked | Branch |
 |-------|------|--------|----------|------------------|---------|----------|----------|---------------|--------|
 | 0 | Foundation | 🟢 Complete | 11 | 1 | 0 | 0 | 0 | 12 | `v2/foundation` |
-| 1 | iNaturalist | 🟢 Complete | 10 | 0 | 0 | 0 | 1 | 11 | `v2/inaturalist` |
+| 1 | iNaturalist | 🟢 Complete | 11 | 0 | 0 | 0 | 1 | 12 | `v2/inaturalist` |
 | 2 | ANiML | 🟢 Complete | 7 | 0 | 0 | 0 | 1 | 8 | `v2/animl` |
 | 3 | Dendra | 🟡 In Progress | 11 | 1 | 3 | 0 | 0 | 14 | `v2/dendra` |
 | 4 | DataOne | 🟡 In Progress | 16 | 1 | 0 | 0 | 0 | 17 | `v2/dataone` |
@@ -372,6 +372,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 26, 2026 | Phase 1 | **CON-INAT-08 complete.** iNaturalist threatened/sensitive tracking: taxon API lookup, EN-style conservation badge beside species name, severity-based status mapping, obscured-coordinate warning, metadata spacing. Phase 1: 11 complete, 12 total (1 won't do). Portfolio: 161/184. | Cursor |
 | Feb 26, 2026 | Phase 3 | **D26-01 complete.** Dendra chart y-axis auto-adjusts when time slider changes zoom range — recalculates min/max from visible data so zoomed sections (excluding anomalies) show proper scale instead of flat lines. Phase 3: 11 complete, 1 active remaining. | Cursor |
 | Feb 25, 2026 | Phase 7 | **CON-FEB25-01 complete.** Map marker click smart zoom: DataONE zoom-out edge case fixed. Root cause: `useDatasetDetailOrchestrator.ts` overrode smart zoom with hardcoded `zoom: 16`; replaced with `goToMarkerWithSmartZoom({ defaultZoomLevel: 16 })`. Phase 7: 2/9 tasks complete. | Cursor |
 | Feb 25, 2026 | Phase 3 | **CON-FEB25-04 complete.** Dendra query alignment, on-demand per-station summaries, loading UI polish. Phase 3: 10 complete, 1 active remaining. Portfolio: 159/184 complete. | Cursor |

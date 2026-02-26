@@ -1,11 +1,11 @@
 # Phase 1: iNaturalist Right Sidebar
 
 **Status:** 🟢 Complete  
-**Progress:** 10 / 11 tasks complete (1 won't do)  
+**Progress:** 11 / 12 tasks complete (1 won't do)  
 **Branch:** `v2/inaturalist`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD  
-**Last Updated:** February 24, 2026
+**Last Updated:** February 26, 2026
 
 ---
 
@@ -17,7 +17,7 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| — | — | — | *No active tasks* | Phase complete |
+| CON-INAT-08 | ✅ Complete | Feb 26, 2026 | Track threatened/sensitive iNaturalist taxa and flag coordinate obfuscation risk | Taxon API lookup, EN-style badge, severity mapping, obscured-coordinate warning, metadata spacing |
 
 *All completed tasks (TF-01, TF-05, TF-03, TF-04, CON-INAT-01 through CON-INAT-07, TF-06; CON-INAT-04 Won't Do) archived. See `docs/archive/phases/phase-1-inaturalist-completed.md`.*
 
@@ -72,6 +72,7 @@ TBD
 
 | Decision | Date | Rationale |
 |----------|------|-----------|
+| CON-INAT-08: Taxon-level threatened status + conservation badge in detail view | Feb 26, 2026 | ArcGIS iNaturalist view does not expose geoprivacy/endangered fields. Added iNaturalist taxon API (`/v1/taxa/:id?place_id=14`), severity-based badge (EN/VU/NT) beside species name, geoprivacy `obscured`/`private` → approximate-location warning, and metadata label-value spacing. |
 | TF-04: Taxon toggle no longer resets species | Feb 20, 2026 | Shared `toggleTaxon` previously set `excludeAllSpecies=true` and cleared `selectedSpecies`, causing map to blank when filtering by taxa (legend or sidebar). Removed side-effect so taxa filter applies immediately; species filter remains independent. Legend and sidebar now behave consistently. |
 
 ### Styling Decisions
@@ -82,6 +83,7 @@ TBD
 | Top species search removed; "Filter Taxa" label | Feb 19, 2026 | Redundant with species search inside Filter Species dropdown. Section renamed from "Filter Observations" to "Filter Taxa" for hierarchy clarity. | No |
 | EditFiltersCard collapsible; results header matches ANIML | Feb 19, 2026 | CON-INAT-07: Added `collapsible` prop to `EditFiltersCard` (grid-template-rows animation). Results header uses plain gray "Observations / x–y of N" pattern (identical to ANIML ImageList header). Pagination uses `bg-gray-100 hover:bg-gray-200 rounded-md` pill buttons. Removed "Tip: filter via legend widget" text from filter section. | No |
 | Select All / Clear All text-only; gray when inactive; styled separator | Feb 24, 2026 | TF-06: Bulk actions in Filter Taxa, Filter Species, and legend use colored text (emerald when actionable, gray when inactive). Gray `|` separator between Select All and Clear All in all three locations. No pill/button backgrounds. | No |
+| Conservation badge (EN/VU/NT) + metadata label-value spacing | Feb 26, 2026 | CON-INAT-08: Red badge for CR/EN, amber for VU/NT beside species name; severity-based status mapping from mixed iNaturalist schemes; MetaRow label column w-24, gap-3 for readability. | No |
 
 ---
 
@@ -97,6 +99,7 @@ TBD
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 26, 2026 | CON-INAT-08 | **Complete.** Threatened/sensitive tracking: `taxon_id` in ArcGIS fetch; iNaturalist taxon API (`/v1/taxa/:id` with `place_id=14`); severity-based badge (EN/VU/NT) beside species name; geoprivacy `obscured`/`private` → approximate-location warning; metadata label-value spacing (w-24, gap-3). | — |
 | Feb 25, 2026 | — | **Archived** all completed tasks (TF-01, TF-05, TF-03, TF-04, CON-INAT-01–07, TF-06; CON-INAT-04 Won't Do) to `docs/archive/phases/phase-1-inaturalist-completed.md`. | — |
 | Feb 24, 2026 | TF-06 | **Complete.** Species filter bug: selecting taxa with all species checked showed no results until individual species toggled. Removed `requiresSpeciesSelection` gating so empty species selection = all selected (matches map layer and useINaturalistObservations). Select All/Clear All reverted to text-only styling; Select All gray when already active, Clear All emerald when actionable. Added styled `|` separator between Select All and Clear All in Filter Taxa, Filter Species, and legend widget. | — |
 | Feb 20, 2026 | TF-05 | **Complete.** Added `grid-template-rows` CSS transition (200ms ease-in-out) to taxa legend expand/collapse. Content wrapper animates between `grid-rows-[1fr]` and `grid-rows-[0fr]`; inner div uses `overflow-hidden` to clip during animation. `border-b` on header is now conditional on `isExpanded` to avoid phantom bottom border when collapsed. | — |
