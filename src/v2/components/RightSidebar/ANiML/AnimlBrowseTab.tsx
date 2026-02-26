@@ -20,6 +20,11 @@ import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { SpatialQuerySection } from '../shared/SpatialQuerySection';
 import { EditFiltersCard } from '../shared/EditFiltersCard';
 import { isPointInsideSpatialPolygon } from '../../../utils/spatialQuery';
+import {
+  ALERT_NAVIGATION_INTENT_EVENT,
+  getLatestAlertNavigationIntent,
+  type AlertNavigationIntent,
+} from '../../../alerts/navigationIntent';
 
 const PAGE_SIZE = 20;
 const FETCH_DEBOUNCE_MS = 300;
@@ -56,7 +61,7 @@ export function AnimlBrowseTab() {
     filteredImageCount, focusDeployment, clearFocusedDeployment,
   } = useAnimlFilter();
   const { activeLayer, lastEditFiltersRequest, getPinnedByLayerId, syncAnimlFilters } = useLayers();
-  const { getSpatialPolygonForLayer } = useMap();
+  const { getSpatialPolygonForLayer, viewRef, highlightPoint } = useMap();
 
   // Image fetch state (local to browse tab)
   const [images, setImages] = useState<AnimlImageLabel[]>([]);
@@ -65,6 +70,8 @@ export function AnimlBrowseTab() {
   const [currentPage, setCurrentPage] = useState(1);
   const [speciesSortMode, setSpeciesSortMode] = useState<SpeciesSortMode>('count');
   const [manualRetryNonce, setManualRetryNonce] = useState(0);
+  const [pendingAlertIntent, setPendingAlertIntent] = useState<AlertNavigationIntent | null>(null);
+  const [openFirstImageSignal, setOpenFirstImageSignal] = useState(0);
 
   // ── Hydrate Browse filters (ONE-SHOT, not continuous) ───────────────────
   const lastConsumedHydrateRef = useRef(0);
@@ -96,6 +103,25 @@ export function AnimlBrowseTab() {
     setDateRange(sourceFilters.startDate || null, sourceFilters.endDate || null);
   }, [activeLayer?.layerId, activeLayer?.viewId, lastEditFiltersRequest, getPinnedByLayerId, setSelectedAnimals, setSelectedCameras, setDateRange]);
 
+  useEffect(() => {
+    const handleIntent = (event: Event) => {
+      const customEvent = event as CustomEvent<AlertNavigationIntent>;
+      const detail = customEvent.detail;
+      if (!detail || detail.targetLayerId !== 'animl-camera-traps') return;
+      setPendingAlertIntent(detail);
+    };
+
+    window.addEventListener(ALERT_NAVIGATION_INTENT_EVENT, handleIntent as EventListener);
+    const latestIntent = getLatestAlertNavigationIntent();
+    if (latestIntent && latestIntent.targetLayerId === 'animl-camera-traps') {
+      setPendingAlertIntent(latestIntent);
+    }
+
+    return () => {
+      window.removeEventListener(ALERT_NAVIGATION_INTENT_EVENT, handleIntent as EventListener);
+    };
+  }, []);
+
   // Map-click flow: selecting a camera marker sets Browse to that camera and
   // immediately triggers image loading for map-first interaction.
   useEffect(() => {
@@ -115,6 +141,63 @@ export function AnimlBrowseTab() {
     setSelectedCameras(new Set([deploymentId]));
     focusDeployment(deploymentId);
   }, [activeLayer?.layerId, activeLayer?.featureId, setSelectedCameras, focusDeployment]);
+
+  useEffect(() => {
+    if (!pendingAlertIntent) return;
+    if (activeLayer?.layerId !== 'animl-camera-traps') return;
+    if (!dataLoaded || deployments.length === 0) return;
+
+    const normalizedCameraHint = pendingAlertIntent.cameraLabelHint?.trim().toLowerCase() ?? '';
+    const targetDeployment = normalizedCameraHint
+      ? deployments.find((deployment) => deployment.name.toLowerCase().includes(normalizedCameraHint))
+      : deployments[0];
+    if (!targetDeployment) return;
+
+    setSelectedCameras(new Set([targetDeployment.id]));
+    focusDeployment(targetDeployment.id);
+
+    const normalizedSpeciesHint = pendingAlertIntent.speciesNameHint?.trim().toLowerCase() ?? '';
+    if (normalizedSpeciesHint) {
+      const matchingSpecies = animalTags.find(
+        (tag) => tag.label.toLowerCase() === normalizedSpeciesHint
+          || tag.label.toLowerCase().includes(normalizedSpeciesHint),
+      );
+      if (matchingSpecies) {
+        setSelectedAnimals(new Set([matchingSpecies.label]));
+      }
+    }
+
+    if (pendingAlertIntent.openImageDetail) {
+      setOpenFirstImageSignal(Date.now());
+    }
+
+    const coordinates = targetDeployment.geometry?.coordinates;
+    if (coordinates && coordinates.length >= 2) {
+      const [longitude, latitude] = coordinates;
+      highlightPoint(longitude, latitude);
+      const view = viewRef.current;
+      if (view) {
+        void view.goTo(
+          { center: [longitude, latitude], zoom: Math.max(view.zoom ?? 8, 13) },
+          { duration: 700 },
+        ).catch(() => {});
+      }
+    }
+
+    setCurrentPage(1);
+    setPendingAlertIntent(null);
+  }, [
+    pendingAlertIntent,
+    activeLayer?.layerId,
+    dataLoaded,
+    deployments,
+    animalTags,
+    setSelectedCameras,
+    focusDeployment,
+    setSelectedAnimals,
+    highlightPoint,
+    viewRef,
+  ]);
 
   // ── Build filter section items ──────────────────────────────────────────
 
@@ -537,6 +620,7 @@ export function AnimlBrowseTab() {
               expandToFill
               showCameraName
               onImageFocus={(image) => focusDeployment(image.deployment_id)}
+              openFirstImageSignal={openFirstImageSignal}
             />
           </div>
         )}

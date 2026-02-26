@@ -11,12 +11,12 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 123 / 143 complete (**86%**) |
-| **Active remaining** | 20 tasks |
+| **Active scope** | 124 / 143 complete (**87%**) |
+| **Active remaining** | 19 tasks |
 | **Phases complete** | 6 of 13 (0, 1, 2, 6, 10, 11) |
 
 ```
-██████████████████████████████████████░░░░░░  86%
+██████████████████████████████████████░░░░░░  87%
 ```
 
 ---
@@ -53,8 +53,8 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 123
-- **Active remaining (Not Started + In Progress + Blocked):** 20
+- **Complete:** 124
+- **Active remaining (Not Started + In Progress + Blocked):** 19
 - **Backlog (not in active scope):** 3
 - **Deferred:** 1
 - **Won't Do:** 2
@@ -76,7 +76,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
 | 10 | DroneDeploy | 🟢 Complete | 4 | 0 | 0 | 0 | 0 | 4 | `v2/dronedeploy` |
 | 11 | MOTUS | 🟢 Complete | 9 | 0 | 0 | 0 | 0 | 9 | `v2/motus` |
-| 12 | Alerts & Monitoring | 🟡 In Progress | 3 | 5 | 0 | 0 | 0 | 8 | `v2/alerts-monitoring` |
+| 12 | Alerts & Monitoring | 🟡 In Progress | 4 | 4 | 0 | 0 | 0 | 8 | `v2/alerts-monitoring` |
 
 **Status Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
 
@@ -350,6 +350,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 25, 2026 | Phase 12 | **Task 12.4 complete.** Mock camera trap novelty alerts with live data integration: View source navigates to ANiML camera/image, Dendra station/datastream, iNaturalist observation. Event-driven `ALERT_NAVIGATION_INTENT_EVENT`; exact feature ID matching; mule deer replaced with iNaturalist Ash-throated Flycatcher. Bug fixes: focusStationOnMap order, null checks, HMR sync. Phase 12: 4/8 tasks complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **Tasks 12.1–12.3 complete.** Alert taxonomy and mock payload schema; header notification bell and badge shell; alerts dropdown panel with list + detail, severity pills, relative timestamps, and quick actions (Mark read, Mark all read, View source placeholder). Phase 12: 3/8 tasks complete. | Cursor |
 | Feb 24, 2026 | Phase 3 | **D24-01 complete.** Dendra chart panel UX polish: larger initial size, bottom inset (~1–2rem from map edge), time slider data shadow restored, x-axis/slider spacing tuned. Phase 3: 9/12 tasks complete. | Cursor |
 | Feb 24, 2026 | Phase 1 | **TF-06 complete.** iNaturalist species filter: taxa selected + all species checked now shows results (removed requiresSpeciesSelection gating). Select All/Clear All text-only styling with gray when inactive; styled `|` separator in Filter Taxa, Filter Species, and legend. Phase 1: 10/11 tasks complete. | Cursor |

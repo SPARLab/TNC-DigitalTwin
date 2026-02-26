@@ -1,7 +1,7 @@
 # Phase 12: Alerts and Monitoring
 
 **Status:** 🟡 In Progress  
-**Progress:** 3 / 8 tasks  
+**Progress:** 4 / 8 tasks  
 **Branch:** `v2/alerts-monitoring`  
 **Depends On:** Phase 0 (Foundation); Phase 2 (ANiML); Phase 4 (DataONE); Phase 1 (iNaturalist)  
 **Owner:** TBD
@@ -15,7 +15,7 @@
 | 12.1 | 🟢 Complete | Feb 25, 2026 09:46 AM | Define alert taxonomy and mock payload schema | Added normalized alert types + severity defaults + seed payloads in `src/v2/alerts/` |
 | 12.2 | 🟢 Complete | Feb 25, 2026 09:46 AM | Add header notification bell and badge shell | Added header bell + unread badge shell in `V2Header` with static unread count and zero-badge state |
 | 12.3 | 🟢 Complete | Feb 25, 2026 10:01 AM | Build alerts panel mock-up (list + detail) | Added bell dropdown panel with mocked list/detail views, relative timestamps, and quick actions |
-| 12.4 | ⚪ Not Started | Feb 25, 2026 | Mock camera trap novelty alerts | Simulate detections for previously unseen species from camera traps |
+| 12.4 | 🟢 Complete | Feb 25, 2026 | Mock camera trap novelty alerts | Live data integration, View source→detail navigation (ANiML/Dendra/iNaturalist), exact feature matching, bug fixes |
 | 12.5 | ⚪ Not Started | Feb 25, 2026 | Mock water-level threshold alerts | Simulate values outside expected min/max ranges and severity tiers |
 | 12.6 | ⚪ Not Started | Feb 25, 2026 | Mock iNaturalist out-of-range alerts | Simulate observations outside expected species range envelope |
 | 12.7 | ⚪ Not Started | Feb 25, 2026 | Alert state handling (read/unread, dedupe, sort) | Add deterministic client-side store for demo reliability |
@@ -167,13 +167,23 @@ Define a shared mock schema so all three sources render through one UI:
 **Goal:** Simulate camera-based novelty events that are meaningful for monitoring workflows.
 
 **Acceptance Criteria:**
-- [ ] Mock event includes camera/site context and species name
-- [ ] Alert title clearly communicates novelty condition
-- [ ] Detail includes confidence and last-seen context when available
-- [ ] Severity defaults to `warning` (or configurable)
+- [x] Mock event includes camera/site context and species name
+- [x] Alert title clearly communicates novelty condition
+- [x] Detail includes confidence and last-seen context when available
+- [x] Severity defaults to `warning` (or configurable)
 
 **Example Alert:**
 - "New camera-trap species detected at Ramajal East: Gray Fox (first detection in 90 days)."
+
+**Implementation Notes (Feb 25, 2026):**
+- Added `buildCameraNoveltyAlert` in `src/v2/alerts/mockAlerts.ts` with deterministic scenario inputs and configurable severity/status.
+- Added `CAMERA_NOVELTY_ALERTS` mock set (including with/without prior site detection context) and merged it into `MOCK_ALERTS`.
+- Extended `AlertMetrics` in `src/v2/alerts/types.ts` with camera novelty metadata (`speciesName`, `cameraLabel`, `lastSeenDaysAgo`) and `navigationTarget` (layerId, coordinates, featureId, datastreamNameHint).
+- Updated `src/v2/components/Header/V2Header.tsx` detail view to render camera novelty metadata: species, camera label, confidence percentage, and last-seen context.
+- Added alert `navigationTarget` metadata and wired `View source` to activate the relevant layer, center the map, and navigate to the corresponding detail view in the right sidebar (camera/image for ANiML, station/datastream for Dendra, observation for iNaturalist).
+- Event-driven navigation: `ALERT_NAVIGATION_INTENT_EVENT` in `src/v2/alerts/navigationIntent.ts` decouples header from sidebar; `AnimlBrowseTab`, `DendraBrowseTab` listen and open detail views.
+- Mock alert seeds reference real queried records from live feature services (ANiML deployment, Dendra water monitor, iNaturalist observation). Mule deer alert replaced with iNaturalist Ash-throated Flycatcher.
+- Bug fixes: `resolveFeatureMatchFromLayer` prioritizes exact `featureId`/`sourceEntityId` match over closest-graphic fallback (fixes wrong-camera navigation); `focusStationOnMap` declaration order in DendraBrowseTab; null checks for `view.map`/`findLayerById` in async flow; HMR state sync via `useEffect` rehydration of alerts from `MOCK_ALERTS`.
 
 ---
 

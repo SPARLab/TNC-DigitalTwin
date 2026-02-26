@@ -1,60 +1,143 @@
-import type { AlertEvent } from './types';
+import type { AlertEvent, AlertSeverity } from './types';
+
+interface CameraNoveltyScenario {
+  id: string;
+  cameraId: string;
+  cameraLabel: string;
+  locationLabel: string;
+  speciesName: string;
+  detectedAt: string;
+  confidence: number;
+  lastSeenDaysAgo?: number;
+  deploymentId?: number;
+  longitude?: number;
+  latitude?: number;
+  severity?: AlertSeverity;
+  status?: AlertEvent['status'];
+}
+
+const formatConfidencePercent = (confidence: number): string => {
+  return `${Math.round(confidence * 100)}%`;
+};
+
+const getLastSeenContextText = (lastSeenDaysAgo?: number): string => {
+  if (typeof lastSeenDaysAgo === 'number') {
+    return `first detection in ${lastSeenDaysAgo} days`;
+  }
+  return 'no prior detection in site profile';
+};
+
+export const buildCameraNoveltyAlert = ({
+  id,
+  cameraId,
+  cameraLabel,
+  locationLabel,
+  speciesName,
+  detectedAt,
+  confidence,
+  lastSeenDaysAgo,
+  deploymentId,
+  longitude,
+  latitude,
+  severity = 'warning',
+  status = 'unread',
+}: CameraNoveltyScenario): AlertEvent => {
+  const lastSeenContext = getLastSeenContextText(lastSeenDaysAgo);
+  const confidenceText = formatConfidencePercent(confidence);
+
+  return {
+    id,
+    type: 'camera_novelty',
+    severity,
+    title: `New camera-trap species detected at ${locationLabel}: ${speciesName}`,
+    description: `${cameraLabel} flagged ${speciesName} with ${confidenceText} model confidence (${lastSeenContext}).`,
+    source: 'ANiML',
+    sourceEntityId: cameraId,
+    detectedAt,
+    status,
+    locationLabel,
+    metrics: {
+      confidence,
+      speciesName,
+      cameraLabel,
+      lastSeenDaysAgo,
+      navigationTarget: {
+        layerId: 'animl-camera-traps',
+        featureId: deploymentId,
+        longitude: longitude ?? -120.1272,
+        latitude: latitude ?? 34.7017,
+      },
+    },
+  };
+};
+
+export const CAMERA_NOVELTY_ALERTS: AlertEvent[] = [
+  buildCameraNoveltyAlert({
+    id: 'alert-camera-mesa-ridge-20260225-004',
+    cameraId: '63487c5f938eb167e7ebe55c',
+    cameraLabel: 'TNC_Ridgetec_Governments_Bluff',
+    locationLabel: 'Governments Bluff',
+    speciesName: 'Long-tailed Weasel',
+    detectedAt: '2026-02-25T05:48:00.000Z',
+    confidence: 0.84,
+    deploymentId: 4,
+    longitude: -120.45180368381465,
+    latitude: 34.44243012831281,
+  }),
+];
 
 /**
  * Phase 12.1 seed payloads for UI development and behavior testing.
  */
 export const MOCK_ALERTS: AlertEvent[] = [
+  ...CAMERA_NOVELTY_ALERTS,
   {
-    id: 'alert-camera-ramajal-east-20260224-001',
-    type: 'camera_novelty',
-    severity: 'warning',
-    title: 'New camera-trap species detected: Gray Fox',
-    description:
-      'Ramajal East camera reported Gray Fox as a first detection in the last 90 days.',
-    source: 'ANiML',
-    sourceEntityId: 'camera-ramajal-east',
-    detectedAt: '2026-02-24T18:32:00.000Z',
-    status: 'unread',
-    locationLabel: 'Ramajal East',
-    metrics: {
-      confidence: 0.92,
-    },
-  },
-  {
-    id: 'alert-water-san-antonio-20260225-002',
+    id: 'alert-water-wood-canyon-20260225-002',
     type: 'water_threshold',
     severity: 'critical',
-    title: 'Water level high at San Antonio Creek sensor',
+    title: 'Water monitor anomaly at Dangermond Wood Canyon',
     description:
-      'Observed water level is 2.3 m, exceeding expected range of 0.8-1.6 m.',
+      'Ranchbot Well Water Temperature recorded 9.41 (range observed: -6 to 140) in the latest datastream summary.',
     source: 'Water Sensor',
-    sourceEntityId: 'station-san-antonio-creek',
-    detectedAt: '2026-02-25T08:10:00.000Z',
+    sourceEntityId: 'station-54',
+    detectedAt: '2026-02-25T00:54:49.000Z',
     status: 'unread',
-    locationLabel: 'San Antonio Creek',
+    locationLabel: 'Dangermond Wood Canyon',
     metrics: {
-      observedValue: 2.3,
+      observedValue: 9.409934640522875,
       expectedRange: {
-        min: 0.8,
-        max: 1.6,
-        unit: 'm',
+        min: -6,
+        max: 140,
+        unit: 'reported range',
+      },
+      navigationTarget: {
+        layerId: 'dataset-186',
+        longitude: -120.43884731689691,
+        latitude: 34.48332855715733,
+        featureId: 54,
+        datastreamNameHint: 'Ranchbot Well Water Temperature',
       },
     },
   },
   {
-    id: 'alert-inat-dry-zone-20260223-003',
+    id: 'alert-inat-ash-throated-flycatcher-20260225-003',
     type: 'inat_range_anomaly',
-    severity: 'info',
-    title: 'Out-of-range iNaturalist observation flagged',
+    severity: 'warning',
+    title: 'Out-of-range iNaturalist observation: Ash-throated Flycatcher',
     description:
-      'California newt observation appears outside the species expected range envelope.',
+      'Myiarchus cinerascens observation from iNaturalist appears outside the expected preserve range envelope.',
     source: 'iNaturalist',
-    sourceEntityId: 'inat-obs-9923411',
-    detectedAt: '2026-02-23T14:05:00.000Z',
-    status: 'read',
-    locationLabel: 'Dry-Zone Sector C',
+    sourceEntityId: 'db97e94f-6bdd-40ff-8bef-735ad1aa29a7',
+    detectedAt: '2026-02-25T11:10:00.000Z',
+    status: 'unread',
+    locationLabel: 'Dangermond Preserve (expanded extent)',
     metrics: {
-      confidence: 0.68,
+      confidence: 0.74,
+      navigationTarget: {
+        layerId: 'inaturalist-obs',
+        longitude: -120.43910333299999,
+        latitude: 34.57427500000006,
+      },
     },
   },
 ];

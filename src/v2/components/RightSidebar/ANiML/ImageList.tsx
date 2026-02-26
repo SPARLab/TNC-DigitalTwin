@@ -6,7 +6,7 @@
 // with arrow key navigation.
 // ============================================================================
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Camera, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { AnimlImageLabel } from '../../../../services/animlService';
 import { ImageExpandedView } from './ImageExpandedView';
@@ -25,6 +25,8 @@ interface ImageListProps {
   showCameraName?: boolean;
   /** Called when an image becomes active (clicked or navigated in expanded view). */
   onImageFocus?: (image: AnimlImageLabel) => void;
+  /** When this signal changes, auto-open the first image in expanded view. */
+  openFirstImageSignal?: number;
 }
 
 export function ImageList({
@@ -38,10 +40,12 @@ export function ImageList({
   expandToFill = false,
   showCameraName = false,
   onImageFocus,
+  openFirstImageSignal,
 }: ImageListProps) {
   // Expanded image state: null = list view, number = index into `images`
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [pendingPageJump, setPendingPageJump] = useState<'next' | 'prev' | null>(null);
+  const lastHandledOpenFirstSignalRef = useRef<number | undefined>(undefined);
 
   const handleImageClick = useCallback((index: number) => {
     const image = images[index];
@@ -111,6 +115,15 @@ export function ImageList({
     const focused = images[Math.min(expandedIndex, images.length - 1)];
     if (focused) onImageFocus?.(focused);
   }, [expandedIndex, images, pendingPageJump, onImageFocus]);
+
+  useEffect(() => {
+    if (!openFirstImageSignal || images.length === 0) return;
+    if (lastHandledOpenFirstSignalRef.current === openFirstImageSignal) return;
+    lastHandledOpenFirstSignalRef.current = openFirstImageSignal;
+    onImageFocus?.(images[0]);
+    setPendingPageJump(null);
+    setExpandedIndex(0);
+  }, [openFirstImageSignal, images, onImageFocus]);
 
   if (images.length === 0) {
     return (

@@ -23,6 +23,8 @@ interface StationDetailViewProps {
   onStreamNameFilterChange: (value: string) => void;
   matchingStations: DendraStation[];
   onSelectStation: (station: DendraStation) => void;
+  autoSelectDatastreamSignal?: number;
+  autoSelectDatastreamNameHint?: string;
 }
 
 export function StationDetailView({
@@ -36,6 +38,8 @@ export function StationDetailView({
   onStreamNameFilterChange,
   matchingStations,
   onSelectStation,
+  autoSelectDatastreamSignal = 0,
+  autoSelectDatastreamNameHint = '',
 }: StationDetailViewProps) {
   const isActive = station.is_active === 1;
   const displayName = formatStationDisplayName(station.station_name);
@@ -44,6 +48,7 @@ export function StationDetailView({
   const [isHeaderFlashing, setIsHeaderFlashing] = useState(false);
   const prevStationIdRef = useRef<number>(station.station_id);
   const lastSelectedDatastreamNameRef = useRef<string>('');
+  const lastHandledAutoSelectSignalRef = useRef(0);
   const flashStartTimeoutRef = useRef<number | null>(null);
   const flashEndTimeoutRef = useRef<number | null>(null);
   const {
@@ -110,6 +115,23 @@ export function StationDetailView({
     () => filteredSummaries.find(summary => summary.datastream_id === selectedDatastreamId) ?? null,
     [filteredSummaries, selectedDatastreamId],
   );
+
+  useEffect(() => {
+    if (!autoSelectDatastreamSignal) return;
+    if (lastHandledAutoSelectSignalRef.current === autoSelectDatastreamSignal) return;
+    if (filteredSummaries.length === 0) return;
+
+    const normalizedNameHint = autoSelectDatastreamNameHint.trim().toLowerCase();
+    const match = normalizedNameHint
+      ? filteredSummaries.find((summary) => summary.datastream_name.toLowerCase().includes(normalizedNameHint))
+      : filteredSummaries[0];
+    if (!match) return;
+
+    lastHandledAutoSelectSignalRef.current = autoSelectDatastreamSignal;
+    setSelectedDatastreamId(match.datastream_id);
+    onViewChart?.(match);
+    setSaveMessage(null);
+  }, [autoSelectDatastreamSignal, autoSelectDatastreamNameHint, filteredSummaries, onViewChart]);
 
   const pinnedDatastreamIdsInActiveView = useMemo(() => {
     const ids = new Set<number>();

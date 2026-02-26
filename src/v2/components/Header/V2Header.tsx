@@ -7,14 +7,26 @@ import { Bell, ShoppingCart } from 'lucide-react';
 import type { AlertEvent } from '../../alerts/types';
 import { MOCK_ALERTS } from '../../alerts/mockAlerts';
 import { useLayers } from '../../context/LayerContext';
+import { useMap } from '../../context/MapContext';
+import { useCatalog } from '../../context/CatalogContext';
+import { publishAlertNavigationIntent } from '../../alerts/navigationIntent';
 // NOTE: useBookmarks removed — Saved Items widget merged into Map Layers (Feb 11 decision)
 
 interface V2HeaderProps {
   onOpenExportBuilder?: () => void;
 }
 
+interface ResolvedLayerFeatureMatch {
+  featureId?: string | number;
+  longitude: number;
+  latitude: number;
+  cameraLabelHint?: string;
+}
+
 export function V2Header({ onOpenExportBuilder }: V2HeaderProps) {
-  const { pinnedLayers } = useLayers();
+  const { pinnedLayers, activateLayer, requestBrowseTab } = useLayers();
+  const { viewRef, highlightPoint, showToast } = useMap();
+  const { layerMap } = useCatalog();
   const cartCount = pinnedLayers.length;
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
   const [alerts, setAlerts] = useState<AlertEvent[]>(MOCK_ALERTS);
@@ -65,6 +77,18 @@ export function V2Header({ onOpenExportBuilder }: V2HeaderProps) {
     };
   }, [isAlertsOpen]);
 
+  // Keep local alert state aligned with seed payload changes during development/HMR.
+  // Preserves read/unread status where IDs still exist and drops removed legacy alerts.
+  useEffect(() => {
+    setAlerts((previousAlerts) => {
+      const statusById = new Map(previousAlerts.map((alert) => [alert.id, alert.status]));
+      return MOCK_ALERTS.map((alert) => ({
+        ...alert,
+        status: statusById.get(alert.id) ?? alert.status,
+      }));
+    });
+  }, []);
+
   const openAndFocusAlerts = () => {
     if (sortedAlerts.length > 0 && !selectedAlertId) {
       setSelectedAlertId(sortedAlerts[0].id);
@@ -102,6 +126,13 @@ export function V2Header({ onOpenExportBuilder }: V2HeaderProps) {
     return `${diffDays}d ago`;
   };
 
+  const formatConfidencePercent = (confidence?: number) => {
+    if (typeof confidence !== 'number') {
+      return null;
+    }
+    return `${Math.round(confidence * 100)}%`;
+  };
+
   const getSeverityPillClasses = (severity: AlertEvent['severity']) => {
     if (severity === 'critical') {
       return 'bg-rose-500/25 text-rose-100 border border-rose-300/40';
@@ -110,6 +141,201 @@ export function V2Header({ onOpenExportBuilder }: V2HeaderProps) {
       return 'bg-amber-400/20 text-amber-100 border border-amber-300/35';
     }
     return 'bg-sky-500/20 text-sky-100 border border-sky-300/35';
+  };
+
+  const resolveTargetLayerId = (alert: AlertEvent): string | null => {
+    const configuredLayerId = alert.metrics?.navigationTarget?.layerId;
+    if (configuredLayerId && layerMap.has(configuredLayerId)) {
+      return configuredLayerId;
+    }
+
+    if (alert.type === 'water_threshold') {
+      const dendraLayer = [...layerMap.values()].find((layer) => layer.dataSource === 'dendra');
+      if (dendraLayer) {
+        return dendraLayer.id;
+      }
+    }
+
+    if (alert.type === 'camera_novelty' && layerMap.has('animl-camera-traps')) {
+      return 'animl-camera-traps';
+    }
+    if (alert.type === 'inat_range_anomaly' && layerMap.has('inaturalist-obs')) {
+      return 'inaturalist-obs';
+    }
+
+    return configuredLayerId ?? null;
+  };
+
+  const waitForMapLayer = async (mapLayerId: string): Promise<__esri.Layer | null> => {
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      const currentView = viewRef.current;
+      const map = currentView?.map;
+      if (!currentView || !map) return null;
+      const layer = map.findLayerById(mapLayerId);
+      if (layer) return layer;
+      // Layer attachment can lag one render after activateLayer.
+      await new Promise((resolve) => setTimeout(resolve, 120));
+    }
+    return null;
+  };
+
+  const resolveFeatureMatchFromLayer = async (
+    alert: AlertEvent,
+    targetLayerId: string,
+    fallbackLongitude: number,
+    fallbackLatitude: number,
+  ): Promise<ResolvedLayerFeatureMatch> => {
+    const mapLayerId = `v2-${targetLayerId}`;
+    const layer = await waitForMapLayer(mapLayerId);
+    if (!layer || layer.type !== 'graphics') {
+      return {
+        longitude: fallbackLongitude,
+        latitude: fallbackLatitude,
+      };
+    }
+
+    const graphicsLayer = layer as __esri.GraphicsLayer;
+    const candidates = graphicsLayer.graphics.toArray().filter((graphic) => {
+      const geometry = graphic.geometry;
+      return graphic.visible && geometry?.type === 'point';
+    });
+    if (candidates.length === 0) {
+      return {
+        longitude: fallbackLongitude,
+        latitude: fallbackLatitude,
+      };
+    }
+
+    const navigationFeatureId = alert.metrics?.navigationTarget?.featureId;
+    const exactMatch = candidates.find((candidate) => {
+      const attrs = candidate.attributes ?? {};
+      if (alert.type === 'camera_novelty') {
+        if (navigationFeatureId != null && Number(attrs.id) === Number(navigationFeatureId)) return true;
+        if (typeof alert.sourceEntityId === 'string' && attrs.animl_dp_id === alert.sourceEntityId) return true;
+      }
+      if (alert.type === 'water_threshold') {
+        return navigationFeatureId != null && Number(attrs.station_id) === Number(navigationFeatureId);
+      }
+      if (alert.type === 'inat_range_anomaly') {
+        return navigationFeatureId != null && attrs.id === navigationFeatureId;
+      }
+      return false;
+    });
+
+    if (exactMatch) {
+      const point = exactMatch.geometry as __esri.Point;
+      const attrs = exactMatch.attributes ?? {};
+      const resolvedFeatureId = alert.type === 'camera_novelty'
+        ? attrs.id
+        : alert.type === 'water_threshold'
+          ? attrs.station_id
+          : alert.type === 'inat_range_anomaly'
+            ? attrs.id
+            : undefined;
+      return {
+        featureId: resolvedFeatureId,
+        longitude: point.longitude,
+        latitude: point.latitude,
+        cameraLabelHint: typeof attrs.name === 'string' ? attrs.name : undefined,
+      };
+    }
+
+    const closestGraphic = candidates.reduce((closest, candidate) => {
+      const candidatePoint = candidate.geometry as __esri.Point;
+      const closestPoint = closest.geometry as __esri.Point;
+      const candidateDistSq =
+        (candidatePoint.longitude - fallbackLongitude) ** 2
+        + (candidatePoint.latitude - fallbackLatitude) ** 2;
+      const closestDistSq =
+        (closestPoint.longitude - fallbackLongitude) ** 2
+        + (closestPoint.latitude - fallbackLatitude) ** 2;
+      return candidateDistSq < closestDistSq ? candidate : closest;
+    }, candidates[0]);
+
+    const point = closestGraphic.geometry as __esri.Point;
+    const attrs = closestGraphic.attributes ?? {};
+    const resolvedFeatureId = alert.type === 'camera_novelty'
+      ? attrs.id
+      : alert.type === 'water_threshold'
+        ? attrs.station_id
+        : alert.type === 'inat_range_anomaly'
+          ? attrs.id
+          : undefined;
+    const cameraLabelHint = typeof attrs.name === 'string' ? attrs.name : undefined;
+
+    return {
+      featureId: resolvedFeatureId,
+      longitude: point.longitude,
+      latitude: point.latitude,
+      cameraLabelHint,
+    };
+  };
+
+  const viewAlertSource = async (alert: AlertEvent) => {
+    const navigationTarget = alert.metrics?.navigationTarget;
+    if (!navigationTarget) {
+      showToast('This alert does not have map navigation metadata.', 'warning');
+      return;
+    }
+
+    const resolvedLayerId = resolveTargetLayerId(alert);
+    if (!resolvedLayerId) {
+      showToast('Unable to resolve a source layer for this alert.', 'warning');
+      return;
+    }
+
+    activateLayer(resolvedLayerId, undefined, navigationTarget.featureId);
+    requestBrowseTab();
+
+    const initialView = viewRef.current;
+    if (!initialView?.map) {
+      showToast('Map is still loading. Try again in a moment.', 'warning');
+      return;
+    }
+
+    const matchedFeature = await resolveFeatureMatchFromLayer(
+      alert,
+      resolvedLayerId,
+      navigationTarget.longitude,
+      navigationTarget.latitude,
+    );
+    const resolvedFeatureId = matchedFeature.featureId ?? navigationTarget.featureId;
+
+    if (resolvedFeatureId != null) {
+      activateLayer(resolvedLayerId, undefined, resolvedFeatureId);
+    }
+
+    const currentView = viewRef.current;
+    if (!currentView?.map) return;
+
+    highlightPoint(matchedFeature.longitude, matchedFeature.latitude);
+    void currentView
+      .goTo(
+        {
+          center: [matchedFeature.longitude, matchedFeature.latitude],
+          zoom: Math.max(currentView.zoom ?? 8, 13),
+        },
+        { duration: 800 },
+      )
+      .catch(() => {
+        // Ignore goTo interruptions from rapid user interactions.
+      });
+
+    publishAlertNavigationIntent({
+      alertId: alert.id,
+      alertType: alert.type,
+      targetLayerId: resolvedLayerId,
+      cameraLabelHint: matchedFeature.cameraLabelHint ?? alert.metrics?.cameraLabel,
+      speciesNameHint: alert.metrics?.speciesName,
+      datastreamNameHint:
+        alert.metrics?.navigationTarget?.datastreamNameHint
+        ?? (alert.type === 'water_threshold' ? 'water' : undefined),
+      openImageDetail: alert.type === 'camera_novelty',
+    });
+
+    setSelectedAlertId(alert.id);
+    markAlertRead(alert.id);
+    setIsAlertsOpen(false);
   };
 
   return (
@@ -289,6 +515,30 @@ export function V2Header({ onOpenExportBuilder }: V2HeaderProps) {
                           {selectedAlert.source}
                           {selectedAlert.locationLabel ? ` • ${selectedAlert.locationLabel}` : ''}
                         </p>
+                        {selectedAlert.type === 'camera_novelty' && (
+                          <div id="alerts-detail-camera-novelty-meta" className="mt-2 space-y-1">
+                            {selectedAlert.metrics?.speciesName && (
+                              <p id="alerts-detail-species-name" className="text-[11px] text-emerald-100/95">
+                                Species: {selectedAlert.metrics.speciesName}
+                              </p>
+                            )}
+                            {selectedAlert.metrics?.cameraLabel && (
+                              <p id="alerts-detail-camera-label" className="text-[11px] text-emerald-100/95">
+                                Camera: {selectedAlert.metrics.cameraLabel}
+                              </p>
+                            )}
+                            {formatConfidencePercent(selectedAlert.metrics?.confidence) && (
+                              <p id="alerts-detail-confidence" className="text-[11px] text-emerald-100/95">
+                                Confidence: {formatConfidencePercent(selectedAlert.metrics?.confidence)}
+                              </p>
+                            )}
+                            <p id="alerts-detail-last-seen-context" className="text-[11px] text-emerald-100/95">
+                              {typeof selectedAlert.metrics?.lastSeenDaysAgo === 'number'
+                                ? `Last seen at this site: ${selectedAlert.metrics.lastSeenDaysAgo} days ago`
+                                : 'Last seen at this site: no prior detection in profile'}
+                            </p>
+                          </div>
+                        )}
                         <div id="alerts-detail-actions" className="mt-3 flex items-center gap-3">
                           <button
                             id="alerts-detail-mark-read-button"
@@ -302,8 +552,10 @@ export function V2Header({ onOpenExportBuilder }: V2HeaderProps) {
                           <button
                             id="alerts-detail-view-source-button"
                             type="button"
-                            className="text-xs text-emerald-200 hover:text-white"
-                            title="Placeholder action for source navigation"
+                            onClick={() => viewAlertSource(selectedAlert)}
+                            disabled={!selectedAlert.metrics?.navigationTarget}
+                            className="text-xs text-emerald-200 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                            title="Open related layer and center map on this alert"
                           >
                             View source
                           </button>

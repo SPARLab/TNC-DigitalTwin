@@ -14,10 +14,26 @@ export interface AlertMetricRange {
   unit: string;
 }
 
+export interface AlertNavigationTarget {
+  layerId: string;
+  longitude: number;
+  latitude: number;
+  /**
+   * Optional source feature identifier used by sidebars that open detail state
+   * from LayerContext active feature selection.
+   */
+  featureId?: string | number;
+  datastreamNameHint?: string;
+}
+
 export interface AlertMetrics {
   observedValue?: number;
   expectedRange?: AlertMetricRange;
   confidence?: number;
+  speciesName?: string;
+  cameraLabel?: string;
+  lastSeenDaysAgo?: number;
+  navigationTarget?: AlertNavigationTarget;
 }
 
 /**

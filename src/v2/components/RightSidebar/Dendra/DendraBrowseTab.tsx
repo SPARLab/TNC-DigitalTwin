@@ -16,6 +16,11 @@ import { isPointInsideSpatialPolygon } from '../../../utils/spatialQuery';
 import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { SpatialQuerySection } from '../shared/SpatialQuerySection';
 import { EditFiltersCard } from '../shared/EditFiltersCard';
+import {
+  ALERT_NAVIGATION_INTENT_EVENT,
+  getLatestAlertNavigationIntent,
+  type AlertNavigationIntent,
+} from '../../../alerts/navigationIntent';
 
 export function DendraBrowseTab() {
   const {
@@ -30,6 +35,9 @@ export function DendraBrowseTab() {
   const [selectedStation, setSelectedStation] = useState<DendraStation | null>(null);
   const [stationHeaderFlashSignal, setStationHeaderFlashSignal] = useState(0);
   const [streamNameFilter, setStreamNameFilter] = useState('');
+  const [pendingAlertIntent, setPendingAlertIntent] = useState<AlertNavigationIntent | null>(null);
+  const [datastreamAutoSelectSignal, setDatastreamAutoSelectSignal] = useState(0);
+  const [datastreamAutoSelectNameHint, setDatastreamAutoSelectNameHint] = useState('');
 
   // Map interactions
   const { highlightPoint, clearHighlight, viewRef, getSpatialPolygonForLayer } = useMap();
@@ -72,6 +80,25 @@ export function DendraBrowseTab() {
     getPinnedByLayerId,
     setShowActiveOnly,
   ]);
+
+  useEffect(() => {
+    const handleIntent = (event: Event) => {
+      const customEvent = event as CustomEvent<AlertNavigationIntent>;
+      const detail = customEvent.detail;
+      if (!detail || detail.alertType !== 'water_threshold') return;
+      setPendingAlertIntent(detail);
+    };
+
+    window.addEventListener(ALERT_NAVIGATION_INTENT_EVENT, handleIntent as EventListener);
+    const latestIntent = getLatestAlertNavigationIntent();
+    if (latestIntent && latestIntent.alertType === 'water_threshold') {
+      setPendingAlertIntent(latestIntent);
+    }
+
+    return () => {
+      window.removeEventListener(ALERT_NAVIGATION_INTENT_EVENT, handleIntent as EventListener);
+    };
+  }, []);
 
   // Open station detail when map click sets featureId on the active Dendra layer.
   useEffect(() => {
@@ -118,6 +145,55 @@ export function DendraBrowseTab() {
 
     setTimeout(clearHighlight, 5000);
   }, [activeLayer, highlightPoint, clearHighlight, viewRef]);
+
+  useEffect(() => {
+    if (!pendingAlertIntent) return;
+    if (activeLayer?.dataSource !== 'dendra') return;
+    if (!dataLoaded || filteredStations.length === 0) return;
+
+    const normalizedDatastreamHint = pendingAlertIntent.datastreamNameHint?.trim().toLowerCase() ?? '';
+    let targetStation: DendraStation | undefined;
+    let targetSummary: DendraSummary | undefined;
+
+    for (const station of filteredStations) {
+      const stationSummaries = summariesByStation.get(station.station_id) ?? [];
+      if (stationSummaries.length === 0) continue;
+      const summaryMatch = normalizedDatastreamHint
+        ? stationSummaries.find((summary) =>
+          summary.datastream_name.toLowerCase().includes(normalizedDatastreamHint))
+        : stationSummaries[0];
+      if (!summaryMatch) continue;
+      targetStation = station;
+      targetSummary = summaryMatch;
+      break;
+    }
+
+    if (!targetStation) {
+      setPendingAlertIntent(null);
+      return;
+    }
+
+    setSelectedStation(targetStation);
+    activateLayer(activeLayer.layerId, activeLayer.viewId, targetStation.station_id);
+    setStationHeaderFlashSignal(Date.now());
+    void focusStationOnMap(targetStation);
+
+    if (targetSummary) {
+      setDatastreamAutoSelectNameHint(targetSummary.datastream_name);
+      setDatastreamAutoSelectSignal(Date.now());
+      setStreamNameFilter(targetSummary.datastream_name);
+    }
+
+    setPendingAlertIntent(null);
+  }, [
+    pendingAlertIntent,
+    activeLayer,
+    dataLoaded,
+    filteredStations,
+    summariesByStation,
+    activateLayer,
+    focusStationOnMap,
+  ]);
 
   const handleViewOnMap = useCallback((station: DendraStation) => {
     void focusStationOnMap(station);
@@ -219,6 +295,8 @@ export function DendraBrowseTab() {
         onStreamNameFilterChange={handleStreamNameFilterChange}
         matchingStations={filteredStationsByStream}
         onSelectStation={handleSelectStation}
+        autoSelectDatastreamSignal={datastreamAutoSelectSignal}
+        autoSelectDatastreamNameHint={datastreamAutoSelectNameHint}
       />
     );
   }
