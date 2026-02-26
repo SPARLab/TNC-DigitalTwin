@@ -107,56 +107,90 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Hover-only scrollbar - appears on hover/scroll, fades when idle */
-#dendra-list-container {
+/* -----------------------------------------------------------------------------
+   Global overlay scrollbar pattern
+   - Applies to app containers using Tailwind overflow utility classes.
+   - Thumb is hidden when idle, appears on hover/focus-within.
+   - Transparent track keeps the scrollbar visually lightweight.
+   ----------------------------------------------------------------------------- */
+[class*='overflow-y-auto'],
+[class*='overflow-auto'],
+[class*='overflow-y-scroll'],
+[class*='overflow-scroll'] {
   scrollbar-width: thin;
-  scrollbar-color: transparent transparent; /* Hidden by default */
-  transition: scrollbar-color 0.3s ease;
+  scrollbar-color: transparent transparent;
 }
 
-#dendra-list-container:hover,
-#dendra-list-container:focus-within {
-  scrollbar-color: rgba(156, 163, 175, 0.6) transparent; /* Show on hover */
+[class*='overflow-y-auto']:hover,
+[class*='overflow-y-auto']:focus-within,
+[class*='overflow-auto']:hover,
+[class*='overflow-auto']:focus-within,
+[class*='overflow-y-scroll']:hover,
+[class*='overflow-y-scroll']:focus-within,
+[class*='overflow-scroll']:hover,
+[class*='overflow-scroll']:focus-within {
+  scrollbar-color: rgba(148, 163, 184, 0.75) transparent;
 }
 
-/* Webkit browsers (Chrome, Safari, Edge) */
-#dendra-list-container::-webkit-scrollbar {
+[class*='overflow-y-auto']::-webkit-scrollbar,
+[class*='overflow-auto']::-webkit-scrollbar,
+[class*='overflow-y-scroll']::-webkit-scrollbar,
+[class*='overflow-scroll']::-webkit-scrollbar {
   width: 10px;
+  height: 10px;
 }
 
-#dendra-list-container::-webkit-scrollbar-track {
+[class*='overflow-y-auto']::-webkit-scrollbar-track,
+[class*='overflow-auto']::-webkit-scrollbar-track,
+[class*='overflow-y-scroll']::-webkit-scrollbar-track,
+[class*='overflow-scroll']::-webkit-scrollbar-track {
   background: transparent;
 }
 
-#dendra-list-container::-webkit-scrollbar-thumb {
-  background-color: transparent; /* Hidden by default */
+[class*='overflow-y-auto']::-webkit-scrollbar-thumb,
+[class*='overflow-auto']::-webkit-scrollbar-thumb,
+[class*='overflow-y-scroll']::-webkit-scrollbar-thumb,
+[class*='overflow-scroll']::-webkit-scrollbar-thumb {
+  background-color: transparent;
   background-clip: padding-box;
   border: 3px solid transparent;
-  border-radius: 5px;
-  transition: background-color 0.3s ease;
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
 }
 
-#dendra-list-container:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.6); /* Show on hover */
+[class*='overflow-y-auto']:hover::-webkit-scrollbar-thumb,
+[class*='overflow-y-auto']:focus-within::-webkit-scrollbar-thumb,
+[class*='overflow-auto']:hover::-webkit-scrollbar-thumb,
+[class*='overflow-auto']:focus-within::-webkit-scrollbar-thumb,
+[class*='overflow-y-scroll']:hover::-webkit-scrollbar-thumb,
+[class*='overflow-y-scroll']:focus-within::-webkit-scrollbar-thumb,
+[class*='overflow-scroll']:hover::-webkit-scrollbar-thumb,
+[class*='overflow-scroll']:focus-within::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.75);
 }
 
-#dendra-list-container::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(107, 114, 128, 0.8); /* Darker when directly hovering thumb */
+[class*='overflow-y-auto']:hover::-webkit-scrollbar-thumb:hover,
+[class*='overflow-y-auto']:focus-within::-webkit-scrollbar-thumb:hover,
+[class*='overflow-auto']:hover::-webkit-scrollbar-thumb:hover,
+[class*='overflow-auto']:focus-within::-webkit-scrollbar-thumb:hover,
+[class*='overflow-y-scroll']:hover::-webkit-scrollbar-thumb:hover,
+[class*='overflow-y-scroll']:focus-within::-webkit-scrollbar-thumb:hover,
+[class*='overflow-scroll']:hover::-webkit-scrollbar-thumb:hover,
+[class*='overflow-scroll']:focus-within::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.85);
 }
 
 /* -----------------------------------------------------------------------------
    Floating widget scroll areas (Map Layers)
-   - Completely hidden scrollbar for clean, minimal appearance
-   - Scrolling still works perfectly with mouse/trackpad
-   - Content uses full width at all times
+   - Uses the same auto-hiding overlay thumb pattern as the rest of the app.
+   - Keeps widget scroll affordance visible on hover/focus.
    ----------------------------------------------------------------------------- */
 .scroll-area-widget {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-gutter: stable;
 }
 
 .scroll-area-widget::-webkit-scrollbar {
-  display: none; /* Chrome/Safari/Opera */
+  width: 10px;
 }
 
 /* -----------------------------------------------------------------------------
@@ -165,15 +199,16 @@ body {
    - Custom overlay thumb is rendered in RightSidebar.tsx.
    ----------------------------------------------------------------------------- */
 .scroll-area-right-sidebar {
-  scrollbar-width: none; /* Firefox */
+  scrollbar-width: none !important; /* Firefox */
+  scrollbar-color: transparent transparent !important;
   -ms-overflow-style: none; /* IE/Edge legacy */
 }
 
 /* Webkit (Chrome, Safari, Edge) */
 .scroll-area-right-sidebar::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-  display: none;
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
 }
 
 /* -----------------------------------------------------------------------------
@@ -182,25 +217,32 @@ body {
    - Custom overlay thumb is rendered in LeftSidebar.tsx.
    ----------------------------------------------------------------------------- */
 .scroll-area-left-sidebar {
-  scrollbar-width: none; /* Firefox */
+  scrollbar-width: none !important; /* Firefox */
+  scrollbar-color: transparent transparent !important;
   -ms-overflow-style: none; /* IE/Edge legacy */
 }
 
 .scroll-area-left-sidebar::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-  display: none;
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
 }
 
 /* -----------------------------------------------------------------------------
    ANiML image results scroll area
-   - Always-visible subtle scrollbar so users can detect scrollability quickly.
-   - Uses stable gutter to prevent content shift.
+   - Overlay scrollbar thumb auto-hides when idle.
+   - Thumb appears on hover/focus-within to preserve affordance without clutter.
+   - Stable gutter prevents content shift when scrollbar state changes.
    ----------------------------------------------------------------------------- */
 .scroll-area-animl-images {
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: rgba(107, 114, 128, 0.55) rgba(229, 231, 235, 0.7);
+  scrollbar-color: transparent transparent;
+}
+
+.scroll-area-animl-images:hover,
+.scroll-area-animl-images:focus-within {
+  scrollbar-color: rgba(148, 163, 184, 0.75) transparent;
 }
 
 .scroll-area-animl-images::-webkit-scrollbar {
@@ -208,18 +250,25 @@ body {
 }
 
 .scroll-area-animl-images::-webkit-scrollbar-track {
-  background: rgba(243, 244, 246, 0.9);
-  border-radius: 9999px;
+  background: transparent;
 }
 
 .scroll-area-animl-images::-webkit-scrollbar-thumb {
-  background-color: rgba(107, 114, 128, 0.55);
-  border: 2px solid rgba(243, 244, 246, 0.9);
+  background-color: transparent;
+  background-clip: padding-box;
+  border: 3px solid transparent;
   border-radius: 9999px;
+  transition: background-color 0.2s ease;
 }
 
-.scroll-area-animl-images::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(75, 85, 99, 0.75);
+.scroll-area-animl-images:hover::-webkit-scrollbar-thumb,
+.scroll-area-animl-images:focus-within::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.75);
+}
+
+.scroll-area-animl-images:hover::-webkit-scrollbar-thumb:hover,
+.scroll-area-animl-images:focus-within::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.85);
 }
 
 /* -----------------------------------------------------------------------------

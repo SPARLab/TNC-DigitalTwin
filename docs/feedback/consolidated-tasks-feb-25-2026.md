@@ -69,6 +69,8 @@
 
 **Desired behavior:** Edit Filters component should be collapsible in all data sources, matching the iNaturalist pattern (CON-INAT-07).
 
+**Completed (Feb 26, 2026):** Applied `collapsible defaultExpanded` to EditFiltersCard in ANiML, Dendra, DataONE, GBIF, CalFlora browse tabs. iNaturalist already had it. See `docs/IMPLEMENTATION/phases/phase-7-polish.md` CON-FEB25-03.
+
 ---
 
 ### CON-FEB25-04 — Dendra Loads Too Slow (Query Pattern Review)
@@ -129,6 +131,7 @@
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 26, 2026 | CON-FEB25-03 complete. Collapsable Edit Filters applied to ANiML, Dendra, DataONE, GBIF, CalFlora. | Cursor |
 | Feb 26, 2026 | CON-FEB25-04: progressive time-series loading (30-day initial, 120-day backfill); top badge shows loading/range status; footer simplified. | Cursor |
 | Feb 25, 2026 | CON-FEB25-04 marked complete. Query alignment, on-demand per-station summaries, loading UI polish. | Cursor |
 | Feb 25, 2026 | Created consolidated feedback document with 6 tasks; distributed to phase docs; master-plan phase counts updated | Will |

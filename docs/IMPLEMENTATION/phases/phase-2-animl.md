@@ -89,7 +89,8 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 |----|--------|---------------------------|------------------|-------|
 | — | — | — | *No active tasks* | Phase complete |
 
-*All completed tasks (TF-01, CON-ANIML-01 through CON-ANIML-06, 2.18; CON-ANIML-02 Won't Do) archived. See `docs/archive/phases/phase-2-animl-completed.md`.*
+*All completed tasks (TF-01, CON-ANIML-01 through CON-ANIML-06, 2.18; CON-ANIML-02 Won't Do) archived. See `docs/archive/phases/phase-2-animl-completed.md`.*  
+*Dev backlog: ANIML-DEV-01 complete (auto-hiding overlay scrollbar for image results).*
 
 **Status Legend:**
 - ⚪ Not Started
@@ -105,6 +106,12 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | ID | Last Updated (Timestamp) | Backlog Item | Notes |
 |----|---------------------------|--------------|-------|
 | ANIML-BACKLOG-01 | Feb 19, 2026 | Resolve species label policy for Puma vs Mountain Lion terminology | Current frontend uses ANiML labels as-is. "Puma" may be semantically weaker for some users than "Mountain Lion." Requires stakeholder decision on display taxonomy and whether normalization belongs upstream, in a shared mapping layer, or only in UX copy/help text. |
+
+## Dev Backlog
+
+| ID | Status | Last Updated (Timestamp) | Task Description | Notes |
+|----|--------|---------------------------|------------------|-------|
+| ANIML-DEV-01 | 🟢 Complete | Feb 26, 2026 | Auto-hiding overlay scrollbar for ANiML image results | `.scroll-area-animl-images` in `src/index.css`: thumb hidden when idle, reveals on hover/focus-within; transparent track; `scrollbar-gutter: stable`. QA passed. |
 
 ## Task Details
 
@@ -161,7 +168,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 | Decision | Date | Rationale | Added to design-system.md? |
 |----------|------|-----------|---------------------------|
-| (none yet) | | | |
+| DFT-050: ANiML image results use auto-hiding overlay scrollbar | Feb 26, 2026 | Thumb hidden when idle; reveals on hover/focus-within. Transparent track. Reduces visual clutter while preserving scroll affordance. Matches Export Builder pattern. | Yes (scroll area patterns) |
 
 ### Caching Decision
 
@@ -194,6 +201,11 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 26, 2026 | ANIML-DEV-01 | **Session complete.** Left sidebar row spacing polish (phase-0): padding-based indentation, removed right-edge whitespace. Scrollbar overlay opt-out for left/right sidebars to prevent layout regression. | — |
+| Feb 26, 2026 | ANIML-DEV-01 | **Follow-up polish.** Extended auto-hiding overlay scrollbar pattern app-wide via global overflow utility selectors in `src/index.css` so legend/list scroll areas share consistent behavior. | — |
+| Feb 26, 2026 | ANIML-DEV-01 | **Complete.** Auto-hiding overlay scrollbar for ANiML image results. `.scroll-area-animl-images`: thumb hidden idle, reveals on hover/focus-within; transparent track; stable gutter. DFT-050. | — |
+| Feb 26, 2026 | ANIML-DEV-01 | Started implementation: `.scroll-area-animl-images` now uses auto-hiding overlay scrollbar styling (hidden idle thumb, hover/focus reveal, transparent track). | Will + GPT |
+| Feb 26, 2026 | ANIML-DEV-01 | Added Dev Backlog: auto-hiding overlay scrollbar for ANiML image results. | — |
 | Feb 25, 2026 | — | **Archived** all completed tasks (TF-01, CON-ANIML-01–06, 2.18; CON-ANIML-02 Won't Do) to `docs/archive/phases/phase-2-animl-completed.md`. Trimmed Task Details. | — |
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 | Feb 2, 2026 | 2.2 | Added landing cards entry point (DFT-003c) and Overview tab as default (DFT-006) | Will + Claude |

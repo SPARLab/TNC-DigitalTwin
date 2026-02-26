@@ -11,12 +11,12 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 161 / 184 complete (**87%**) |
-| **Active remaining** | 24 tasks |
+| **Active scope** | 162 / 184 complete (**88%**) |
+| **Active remaining** | 22 tasks |
 | **Phases complete** | 7 of 15 (0, 1, 2, 10, 11, 12b) |
 
 ```
-█████████████████████████████████████░░░░░  87%
+██████████████████████████████████████░░░░  88%
 ```
 
 ---
@@ -56,8 +56,8 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 161
-- **Active remaining (Not Started + In Progress + Blocked):** 23
+- **Complete:** 162
+- **Active remaining (Not Started + In Progress + Blocked):** 22
 - **Backlog (not in active scope):** 3
 - **Deferred:** 5
 - **Won't Do:** 2
@@ -74,7 +74,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 4 | DataOne | 🟡 In Progress | 16 | 1 | 0 | 0 | 0 | 17 | `v2/dataone` |
 | 5 | Export Builder | 🟡 In Progress | 10 | 5 | 0 | 0 | 0 | 15 | `v2/export-builder` |
 | 6 | TNC ArcGIS Services | 🟡 In Progress | 44 | 1 | 0 | 0 | 0 | 45 | `v2/tnc-arcgis` |
-| 7 | Polish & Consistency | 🟡 In Progress | 3 | 6 | 0 | 0 | 0 | 9 | `v2/polish` |
+| 7 | Polish & Consistency | 🟡 In Progress | 4 | 5 | 0 | 0 | 0 | 9 | `v2/polish` |
 | 8 | Calflora | 🟡 In Progress | 8 | 1 | 0 | 0 | 0 | 9 | `v2/calflora` |
 | 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
 | 10 | DroneDeploy | 🟢 Complete | 14 | 0 | 0 | 0 | 0 | 14 | `v2/dronedeploy` |
@@ -372,7 +372,8 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
-| Feb 26, 2026 | Phase 1 | **CON-INAT-08 complete.** iNaturalist threatened/sensitive tracking: taxon API lookup, EN-style conservation badge beside species name, severity-based status mapping, obscured-coordinate warning, metadata spacing. Phase 1: 11 complete, 12 total (1 won't do). Portfolio: 161/184. | Cursor |
+| Feb 26, 2026 | Phase 1 | **CON-INAT-08 complete.** iNaturalist threatened/sensitive tracking: taxon API lookup, EN-style conservation badge beside species name, severity-based status mapping, obscured-coordinate warning, metadata spacing. Phase 1: 11 complete, 12 total (1 won't do). | Cursor |
+| Feb 26, 2026 | Phase 7 | **CON-FEB25-03 complete.** Collapsable Edit Filters: applied `collapsible defaultExpanded` to EditFiltersCard in ANiML, Dendra, DataONE, GBIF, CalFlora browse tabs; iNaturalist already had it. Phase 7: 4/9 tasks complete. Portfolio: 162/184. | Cursor |
 | Feb 26, 2026 | Phase 3 | **D26-01 complete.** Dendra chart y-axis auto-adjusts when time slider changes zoom range — recalculates min/max from visible data so zoomed sections (excluding anomalies) show proper scale instead of flat lines. Phase 3: 11 complete, 1 active remaining. | Cursor |
 | Feb 25, 2026 | Phase 7 | **CON-FEB25-01 complete.** Map marker click smart zoom: DataONE zoom-out edge case fixed. Root cause: `useDatasetDetailOrchestrator.ts` overrode smart zoom with hardcoded `zoom: 16`; replaced with `goToMarkerWithSmartZoom({ defaultZoomLevel: 16 })`. Phase 7: 2/9 tasks complete. | Cursor |
 | Feb 25, 2026 | Phase 3 | **CON-FEB25-04 complete.** Dendra query alignment, on-demand per-station summaries, loading UI polish. Phase 3: 10 complete, 1 active remaining. Portfolio: 159/184 complete. | Cursor |

@@ -211,7 +211,7 @@ export function CategoryGroup({
         <div className="overflow-hidden">
           {/* Direct layers in this category */}
           {directLayers.length > 0 && (
-            <div className={`bg-slate-100 py-1.5 space-y-1 ${isSubcategory ? 'ml-3 mr-1' : 'ml-1 mr-1'}`}>
+            <div className={`bg-slate-100 py-1.5 space-y-1 ${isSubcategory ? 'pl-3 pr-1' : 'pl-1 pr-1'}`}>
               {directLayers.map(layer => {
                 if (layer.catalogMeta?.parentServiceId) return null;
 

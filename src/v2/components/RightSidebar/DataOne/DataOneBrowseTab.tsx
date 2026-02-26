@@ -88,7 +88,7 @@ export function DataOneBrowseTab() {
         Showing {datasets.length} of {totalCount} datasets.
       </div>
 
-      <EditFiltersCard id="dataone-edit-filters-card">
+      <EditFiltersCard id="dataone-edit-filters-card" collapsible defaultExpanded>
         <div id="dataone-aggregation-toggle-section" className="space-y-1">
           <p id="dataone-aggregation-toggle-label" className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
             Map aggregation
