@@ -362,6 +362,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 25, 2026 | Docs | **Phase 12 AI Refactor archive.** Archived 28 completed tasks (REF-01 through REF-16, excluding deferred REF-05D, REF-12, REF-14C, REF-14D) to `docs/archive/phases/phase-12-ai-refactor-completed.md`. Phase doc trimmed to 4 deferred tasks only. | — |
 | Feb 25, 2026 | Docs | **Archived completed tasks** in phase-0, phase-1, phase-2, phase-4, phase-6. Moved completed task rows to `docs/archive/phases/`; trimmed phase docs to active tasks only; replaced Task Details with archive references. Phase docs now scannable for remaining work. | Cursor |
 | Feb 25, 2026 | Phase 12 | **Task 12.4 complete.** Mock camera trap novelty alerts with live data integration: View source navigates to ANiML camera/image, Dendra station/datastream, iNaturalist observation. Event-driven `ALERT_NAVIGATION_INTENT_EVENT`; exact feature ID matching; mule deer replaced with iNaturalist Ash-throated Flycatcher. Bug fixes: focusStationOnMap order, null checks, HMR sync. Phase 12: 4/8 tasks complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **Tasks 12.1–12.3 complete.** Alert taxonomy and mock payload schema; header notification bell and badge shell; alerts dropdown panel with list + detail, severity pills, relative timestamps, and quick actions (Mark read, Mark all read, View source placeholder). Phase 12: 3/8 tasks complete. | Cursor |
