@@ -11,12 +11,12 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 159 / 184 complete (**86%**) |
-| **Active remaining** | 25 tasks |
+| **Active scope** | 160 / 184 complete (**87%**) |
+| **Active remaining** | 24 tasks |
 | **Phases complete** | 7 of 15 (0, 1, 2, 10, 11, 12b) |
 
 ```
-████████████████████████████████████░░░░░░  86%
+█████████████████████████████████████░░░░░  87%
 ```
 
 ---
@@ -56,8 +56,8 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 159
-- **Active remaining (Not Started + In Progress + Blocked):** 25
+- **Complete:** 160
+- **Active remaining (Not Started + In Progress + Blocked):** 24
 - **Backlog (not in active scope):** 3
 - **Deferred:** 5
 - **Won't Do:** 2
@@ -74,7 +74,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 4 | DataOne | 🟡 In Progress | 16 | 1 | 0 | 0 | 0 | 17 | `v2/dataone` |
 | 5 | Export Builder | 🟡 In Progress | 10 | 5 | 0 | 0 | 0 | 15 | `v2/export-builder` |
 | 6 | TNC ArcGIS Services | 🟡 In Progress | 44 | 1 | 0 | 0 | 0 | 45 | `v2/tnc-arcgis` |
-| 7 | Polish & Consistency | 🟡 In Progress | 2 | 7 | 0 | 0 | 0 | 9 | `v2/polish` |
+| 7 | Polish & Consistency | 🟡 In Progress | 3 | 6 | 0 | 0 | 0 | 9 | `v2/polish` |
 | 8 | Calflora | 🟡 In Progress | 8 | 1 | 0 | 0 | 0 | 9 | `v2/calflora` |
 | 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
 | 10 | DroneDeploy | 🟢 Complete | 14 | 0 | 0 | 0 | 0 | 14 | `v2/dronedeploy` |

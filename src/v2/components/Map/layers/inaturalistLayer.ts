@@ -9,8 +9,10 @@ import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
 import PictureMarkerSymbol from '@arcgis/core/symbols/PictureMarkerSymbol';
 import { getTaxonEmoji, emojiToDataUri } from './taxonConfig';
+import { ENABLE_3D_ICON_WHITE_HALO } from './iconHaloConfig';
 import type { INatObservation } from '../../../context/INaturalistFilterContext';
 import { isPointInsideSpatialPolygon, type SpatialPolygon } from '../../../utils/spatialQuery';
+import type { ViewMode } from '../../../context/MapContext';
 
 /** Create an empty GraphicsLayer for iNaturalist observations */
 export function createINaturalistLayer(options: {
@@ -27,8 +29,10 @@ export function createINaturalistLayer(options: {
 export function populateINaturalistLayer(
   layer: GraphicsLayer,
   observations: INatObservation[],
+  viewMode: ViewMode = '2d',
 ): void {
   layer.removeAll();
+  const is3DView = viewMode === '3d' && ENABLE_3D_ICON_WHITE_HALO;
 
   const graphics = observations.map(obs => new Graphic({
     geometry: new Point({
@@ -36,7 +40,7 @@ export function populateINaturalistLayer(
       latitude: obs.coordinates[1],
     }),
     symbol: new PictureMarkerSymbol({
-      url: emojiToDataUri(getTaxonEmoji(obs.taxonCategory)),
+      url: emojiToDataUri(getTaxonEmoji(obs.taxonCategory), { withWhiteHalo: is3DView }),
       width: '24px',
       height: '24px',
     }),

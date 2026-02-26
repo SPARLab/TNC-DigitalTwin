@@ -16,7 +16,7 @@
 |----|--------|---------------------------|------------------|-------|
 | **— Cross-Cutting / Map Behavior —** | | | | |
 | CON-FEB25-01 | 🟢 Complete | Feb 25, 2026 | Map marker click zoom behavior: when zoomed in, pan/center only; when zoomed out, pan and zoom in | Implemented across iNaturalist, ANiML, Dendra, DataONE, CalFlora, GBIF. DataONE zoom-out edge case fixed: `useDatasetDetailOrchestrator.ts` was overriding smart zoom with hardcoded `zoom: 16`; replaced with `goToMarkerWithSmartZoom`. |
-| CON-FEB25-02 | ⚪ Not Started | Feb 25, 2026 | Add thin white outline around all map icons (including emoji map icons) | Some icons are hard to see against the map background. Improves visibility across all layers. |
+| CON-FEB25-02 | 🟢 Complete | Feb 25, 2026 | Add thin white outline around all map icons (including emoji map icons) | Implemented as a 3D-only toggle (iNaturalist emoji + ANiML camera symbols). Currently disabled by default; 2D unchanged. |
 | CON-FEB25-03 | ⚪ Not Started | Feb 25, 2026 | Collapsable Edit Filters component across all layers | Cam traps (ANiML) should have collapsible Edit Filters section like iNaturalist. Ensure Edit Filters can be collapsed in all data sources. |
 | **— Dendra —** | | | | |
 | CON-FEB25-04 | ⚪ Not Started | Feb 25, 2026 | Dendra layers load too slow — review query patterns | Dan will send a document. Review and ensure we're using the right query patterns for Dendra layer loading. |
@@ -131,3 +131,5 @@
 |------|--------|-----|
 | Feb 25, 2026 | Created consolidated feedback document with 6 tasks; distributed to phase docs; master-plan phase counts updated | Will |
 | Feb 25, 2026 | CON-FEB25-01 marked complete. Root cause: useDatasetDetailOrchestrator hardcoded zoom: 16; fixed with goToMarkerWithSmartZoom | Will + Claude |
+| Feb 25, 2026 | CON-FEB25-02 marked complete. 3D-only thin white halo added to iNaturalist emoji markers and ANiML camera symbols; 2D unchanged | Codex |
+| Feb 25, 2026 | CON-FEB25-02 default changed: halo now disabled by default and retained behind a single toggle for quick re-enable | Codex |

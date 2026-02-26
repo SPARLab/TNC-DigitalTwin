@@ -11,6 +11,8 @@ import Point from '@arcgis/core/geometry/Point';
 import PictureMarkerSymbol from '@arcgis/core/symbols/PictureMarkerSymbol';
 import type { AnimlDeployment } from '../../../../services/animlService';
 import { isPointInsideSpatialPolygon, type SpatialPolygon } from '../../../utils/spatialQuery';
+import type { ViewMode } from '../../../context/MapContext';
+import { ENABLE_3D_ICON_WHITE_HALO } from './iconHaloConfig';
 
 const CAMERA_STROKE = '#1f2937';
 const CAMERA_MUTED_STROKE = '#64748b';
@@ -20,9 +22,11 @@ const CAMERA_BASE_SYMBOL_SIZE = '28px';
 const CAMERA_BADGED_SYMBOL_SIZE = '72px';
 const CAMERA_MUTED_SYMBOL_SIZE = '40px';
 const MAX_BADGE_DISPLAY = 999;
-const cameraBadgeSymbolCache = new Map<number, PictureMarkerSymbol>();
-let baseCameraSymbol: PictureMarkerSymbol | null = null;
-let mutedCameraSymbol: PictureMarkerSymbol | null = null;
+const cameraBadgeSymbolCache = new Map<string, PictureMarkerSymbol>();
+let baseCameraSymbol2D: PictureMarkerSymbol | null = null;
+let baseCameraSymbol3D: PictureMarkerSymbol | null = null;
+let mutedCameraSymbol2D: PictureMarkerSymbol | null = null;
+let mutedCameraSymbol3D: PictureMarkerSymbol | null = null;
 
 function getBadgeText(count: number): string {
   if (count > MAX_BADGE_DISPLAY) return `${MAX_BADGE_DISPLAY}+`;
@@ -39,27 +43,40 @@ function buildCameraGlyph(options: {
   size: number;
   stroke: string;
   opacity?: number;
+  withWhiteHalo?: boolean;
 }): string {
-  const { x, y, size, stroke, opacity = 1 } = options;
+  const { x, y, size, stroke, opacity = 1, withWhiteHalo = false } = options;
   const scale = size / 24;
-  return `
-    <g transform="translate(${x} ${y}) scale(${scale})" fill="none" stroke="${stroke}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="${opacity}">
+  const glyphShapes = `
       <rect x="4" y="6" width="16" height="12" rx="2" ry="2" />
       <circle cx="12" cy="12" r="3" />
       <line x1="8" y1="18" x2="6" y2="22" />
       <line x1="12" y1="18" x2="12" y2="22" />
       <line x1="16" y1="18" x2="18" y2="22" />
       <rect x="15" y="7" width="3" height="2" rx="0.5" />
+  `.trim();
+  const haloGroup = withWhiteHalo
+    ? `
+    <g transform="translate(${x} ${y}) scale(${scale})" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" opacity="${opacity}">
+      ${glyphShapes}
+    </g>
+  `.trim()
+    : '';
+  return `
+    ${haloGroup}
+    <g transform="translate(${x} ${y}) scale(${scale})" fill="none" stroke="${stroke}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="${opacity}">
+      ${glyphShapes}
     </g>
   `.trim();
 }
 
-function buildBaseCameraSvg(): string {
+function buildBaseCameraSvg(withWhiteHalo: boolean): string {
   const cameraGlyph = buildCameraGlyph({
     x: 2,
     y: 1,
     size: 24,
     stroke: CAMERA_STROKE,
+    withWhiteHalo,
   });
   return `
     <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">
@@ -68,7 +85,7 @@ function buildBaseCameraSvg(): string {
   `.trim();
 }
 
-function buildCameraBadgeSvg(count: number): string {
+function buildCameraBadgeSvg(count: number, withWhiteHalo: boolean): string {
   const badgeText = getBadgeText(count);
   const badgeFontSize = badgeText.length >= 4 ? 16 : 18;
   const badgeHeight = 34;
@@ -86,6 +103,7 @@ function buildCameraBadgeSvg(count: number): string {
     y: 20,
     size: 42,
     stroke: CAMERA_STROKE,
+    withWhiteHalo,
   });
   return `
     <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
@@ -116,38 +134,47 @@ function buildCameraBadgeSvg(count: number): string {
   `.trim();
 }
 
-function getBaseCameraSymbol(): PictureMarkerSymbol {
-  if (!baseCameraSymbol) {
-    baseCameraSymbol = new PictureMarkerSymbol({
-      url: toSvgDataUri(buildBaseCameraSvg()),
+function getBaseCameraSymbol(withWhiteHalo = false): PictureMarkerSymbol {
+  if (withWhiteHalo && !baseCameraSymbol3D) {
+    baseCameraSymbol3D = new PictureMarkerSymbol({
+      url: toSvgDataUri(buildBaseCameraSvg(true)),
       width: CAMERA_BASE_SYMBOL_SIZE,
       height: CAMERA_BASE_SYMBOL_SIZE,
     });
   }
-  return baseCameraSymbol.clone();
+  if (!withWhiteHalo && !baseCameraSymbol2D) {
+    baseCameraSymbol2D = new PictureMarkerSymbol({
+      url: toSvgDataUri(buildBaseCameraSvg(false)),
+      width: CAMERA_BASE_SYMBOL_SIZE,
+      height: CAMERA_BASE_SYMBOL_SIZE,
+    });
+  }
+  return (withWhiteHalo ? baseCameraSymbol3D : baseCameraSymbol2D)!.clone();
 }
 
-function getBadgedCameraSymbol(count: number): PictureMarkerSymbol {
-  const cached = cameraBadgeSymbolCache.get(count);
+function getBadgedCameraSymbol(count: number, withWhiteHalo = false): PictureMarkerSymbol {
+  const cacheKey = `${withWhiteHalo ? '3d' : '2d'}-${count}`;
+  const cached = cameraBadgeSymbolCache.get(cacheKey);
   if (cached) return cached.clone();
 
-  const svg = buildCameraBadgeSvg(count);
+  const svg = buildCameraBadgeSvg(count, withWhiteHalo);
   const symbol = new PictureMarkerSymbol({
     url: toSvgDataUri(svg),
     width: CAMERA_BADGED_SYMBOL_SIZE,
     height: CAMERA_BADGED_SYMBOL_SIZE,
   });
-  cameraBadgeSymbolCache.set(count, symbol);
+  cameraBadgeSymbolCache.set(cacheKey, symbol);
   return symbol.clone();
 }
 
-function buildMutedCameraSvg(): string {
+function buildMutedCameraSvg(withWhiteHalo: boolean): string {
   const cameraGlyph = buildCameraGlyph({
     x: 24,
     y: 21,
     size: 36,
     stroke: CAMERA_MUTED_STROKE,
     opacity: 0.7,
+    withWhiteHalo,
   });
   return `
     <svg xmlns="http://www.w3.org/2000/svg" width="84" height="84" viewBox="0 0 84 84">
@@ -156,16 +183,24 @@ function buildMutedCameraSvg(): string {
   `.trim();
 }
 
-function getMutedCameraSymbol(): PictureMarkerSymbol {
-  if (!mutedCameraSymbol) {
-    const svg = buildMutedCameraSvg();
-    mutedCameraSymbol = new PictureMarkerSymbol({
+function getMutedCameraSymbol(withWhiteHalo = false): PictureMarkerSymbol {
+  if (withWhiteHalo && !mutedCameraSymbol3D) {
+    const svg = buildMutedCameraSvg(true);
+    mutedCameraSymbol3D = new PictureMarkerSymbol({
       url: toSvgDataUri(svg),
       width: CAMERA_MUTED_SYMBOL_SIZE,
       height: CAMERA_MUTED_SYMBOL_SIZE,
     });
   }
-  return mutedCameraSymbol.clone();
+  if (!withWhiteHalo && !mutedCameraSymbol2D) {
+    const svg = buildMutedCameraSvg(false);
+    mutedCameraSymbol2D = new PictureMarkerSymbol({
+      url: toSvgDataUri(svg),
+      width: CAMERA_MUTED_SYMBOL_SIZE,
+      height: CAMERA_MUTED_SYMBOL_SIZE,
+    });
+  }
+  return (withWhiteHalo ? mutedCameraSymbol3D : mutedCameraSymbol2D)!.clone();
 }
 
 /** Create an empty GraphicsLayer for ANiML camera traps */
@@ -183,8 +218,10 @@ export function createAnimlLayer(options: {
 export function populateAnimlLayer(
   layer: GraphicsLayer,
   deployments: AnimlDeployment[],
+  options: { viewMode?: ViewMode } = {},
 ): void {
   layer.removeAll();
+  const withWhiteHalo = options.viewMode === '3d' && ENABLE_3D_ICON_WHITE_HALO;
 
   const graphics = deployments
     .filter(dep => dep.geometry?.coordinates)
@@ -193,7 +230,7 @@ export function populateAnimlLayer(
         longitude: dep.geometry!.coordinates[0],
         latitude: dep.geometry!.coordinates[1],
       }),
-      symbol: getBaseCameraSymbol(),
+      symbol: getBaseCameraSymbol(withWhiteHalo),
       attributes: {
         id: dep.id,
         animl_dp_id: dep.animl_dp_id,
@@ -269,23 +306,25 @@ export function updateAnimlCameraBadges(
   options: {
     hasActiveFilter: boolean;
     getCountForDeployment: (deploymentId: number) => number | null;
+    viewMode?: ViewMode;
   },
 ): void {
-  const { hasActiveFilter, getCountForDeployment } = options;
+  const { hasActiveFilter, getCountForDeployment, viewMode = '2d' } = options;
+  const withWhiteHalo = viewMode === '3d' && ENABLE_3D_ICON_WHITE_HALO;
 
   for (const graphic of layer.graphics.toArray()) {
     const deploymentId = Number(graphic.attributes?.id);
     if (!Number.isFinite(deploymentId)) continue;
 
     if (!hasActiveFilter) {
-      graphic.symbol = getBaseCameraSymbol();
+      graphic.symbol = getBaseCameraSymbol(withWhiteHalo);
       continue;
     }
 
     const count = getCountForDeployment(deploymentId) ?? 0;
     graphic.symbol = count > 0
-      ? getBadgedCameraSymbol(count)
-      : getMutedCameraSymbol();
+      ? getBadgedCameraSymbol(count, withWhiteHalo)
+      : getMutedCameraSymbol(withWhiteHalo);
   }
 }
 

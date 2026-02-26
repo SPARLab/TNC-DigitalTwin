@@ -1,7 +1,7 @@
 # Phase 7: Polish & Consistency
 
 **Status:** 🟡 In Progress  
-**Progress:** 2 / 9 tasks  
+**Progress:** 3 / 9 tasks  
 **Branch:** `v2/polish`  
 **Depends On:** Phases 0-6 (all complete)  
 **Owner:** TBD
@@ -35,7 +35,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | D20-07 | ⚪ Not Started | Feb 20, 2026 | Verify custom polygon draw tool is working consistently across all data sources | iNaturalist and ANiML confirmed working; Dendra suspected broken; audit the rest. Source: Dan Meeting Feb 20 |
 | D20-13 | ⚪ Not Started | Feb 20, 2026 | Add collapse button to left sidebar (lower priority) | Nice-to-have for full map exploration. Lower priority than right sidebar. Source: Dan Meeting Feb 20 |
 | CON-FEB25-01 | 🟢 Complete | Feb 25, 2026 | Map marker click: when zoomed in, pan/center only; when zoomed out, pan and zoom in | Implemented across iNaturalist, ANiML, Dendra, DataONE, CalFlora, and GBIF marker clicks. DataONE zoom-out edge case fixed: root cause was `useDatasetDetailOrchestrator.ts` overriding smart zoom with hardcoded `zoom: 16`. Source: consolidated-tasks-feb-25-2026.md |
-| CON-FEB25-02 | ⚪ Not Started | Feb 25, 2026 | Add thin white outline around all map icons (including emoji) | Icons hard to see against map background. Source: consolidated-tasks-feb-25-2026.md |
+| CON-FEB25-02 | 🟢 Complete | Feb 25, 2026 | Add thin white outline around all map icons (including emoji) | Implemented as a 3D-only toggle (iNaturalist emoji + ANiML camera symbols). Currently disabled by default; 2D unchanged. Source: consolidated-tasks-feb-25-2026.md |
 | CON-FEB25-03 | ⚪ Not Started | Feb 25, 2026 | Collapsable Edit Filters component across all layers | ANiML/cam traps and others should match iNaturalist collapsible pattern. Source: consolidated-tasks-feb-25-2026.md |
 | CON-FEB25-06 | ⚪ Not Started | Feb 25, 2026 | Analyze code for performance bottlenecks — low FPS in 3D view with iNaturalist | Scan for degradation; recommend/implement fixes. Extends 7.6. Source: consolidated-tasks-feb-25-2026.md |
 
@@ -63,7 +63,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | 7.7 | Accessibility check | ⚪ Not Started | | |
 | 7.8 | Enhance map tooltips (post-v2.0) | ⚪ Not Started | | DFT-032 future enhancement |
 | CON-FEB25-01 | Map marker click: when zoomed in, pan/center only; when zoomed out, pan and zoom in | 🟢 Complete | Codex | Shared smart goTo helper wired across all data sources. DataONE zoom-out edge case resolved: `useDatasetDetailOrchestrator.ts` was overriding smart zoom with hardcoded `zoom: 16`; replaced with `goToMarkerWithSmartZoom({ defaultZoomLevel: 16 })`. Source: consolidated-tasks-feb-25-2026.md |
-| CON-FEB25-02 | Add thin white outline around all map icons (including emoji) | ⚪ Not Started | | Icons hard to see against map background. Source: consolidated-tasks-feb-25-2026.md |
+| CON-FEB25-02 | Add thin white outline around all map icons (including emoji) | 🟢 Complete | Codex | 3D-only thin white halo added to iNaturalist emoji markers and ANiML camera symbols as a toggle. Currently disabled by default; 2D unchanged. Source: consolidated-tasks-feb-25-2026.md |
 | CON-FEB25-03 | Collapsable Edit Filters component across all layers | ⚪ Not Started | | ANiML/cam traps and others match iNaturalist pattern. Source: consolidated-tasks-feb-25-2026.md |
 | CON-FEB25-06 | Analyze code for performance bottlenecks — low FPS in 3D view with iNaturalist | ⚪ Not Started | | Extends 7.6. Source: consolidated-tasks-feb-25-2026.md |
 | (more TBD) | | | | |
@@ -330,4 +330,6 @@ This confirmed hypothesis #1 from the investigation: "A non-click DataONE effect
 | Feb 25, 2026 | CON-FEB25-01 | Implemented shared marker click navigation behavior: zoom only when below default threshold, otherwise center-only. Applied to iNaturalist, ANiML, Dendra, DataONE, CalFlora, and GBIF with 2D/3D support | Codex |
 | Feb 25, 2026 | CON-FEB25-01 | Re-opened task as in progress due to DataONE zoom-out edge case when already zoomed in. Documented attempted fixes and remaining hypotheses for targeted debugging | Codex |
 | Feb 25, 2026 | CON-FEB25-01 | Resolved DataONE zoom-out edge case: root cause was `useDatasetDetailOrchestrator.ts` overriding smart zoom with hardcoded `zoom: 16`. Replaced with `goToMarkerWithSmartZoom({ defaultZoomLevel: 16 })` | Will + Claude |
+| Feb 25, 2026 | CON-FEB25-02 | Added thin white icon halo in 3D view only so markers are legible against satellite terrain. Applied to iNaturalist emoji symbols and ANiML camera symbols; 2D icon styling unchanged | Codex |
+| Feb 25, 2026 | CON-FEB25-02 | Updated 3D icon halo to be disabled by default while keeping implementation behind a single toggle (`iconHaloConfig.ts`) for quick re-enable | Codex |
 

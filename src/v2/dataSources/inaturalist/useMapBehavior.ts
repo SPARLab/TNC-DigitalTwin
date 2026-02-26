@@ -35,7 +35,7 @@ export function useINaturalistMapBehavior(
 ) {
   const { selectedTaxa, selectedSpecies, excludeAllSpecies, startDate, endDate, allObservations, dataLoaded, warmCache } = useINaturalistFilter();
   const { activateLayer } = useLayers();
-  const { viewRef, getSpatialPolygonForLayer } = useMap();
+  const { viewRef, viewMode, getSpatialPolygonForLayer } = useMap();
   const spatialPolygon = getSpatialPolygonForLayer(LAYER_ID);
   const populatedRef = useRef(false);
   const populatedLayerRef = useRef<GraphicsLayer | null>(null);
@@ -67,11 +67,11 @@ export function useINaturalistMapBehavior(
     const hasMapSwapLayerReplacement = populatedLayerRef.current !== arcLayer;
     if (populatedRef.current && !hasMapSwapLayerReplacement) return;
 
-    populateINaturalistLayer(arcLayer, allObservations);
+    populateINaturalistLayer(arcLayer, allObservations, viewMode);
     filterINaturalistLayer(arcLayer, { selectedTaxa, selectedSpecies, excludeAllSpecies, startDate, endDate, spatialPolygon });
     populatedRef.current = true;
     populatedLayerRef.current = arcLayer;
-  }, [isOnMap, dataLoaded, allObservations, selectedTaxa, selectedSpecies, excludeAllSpecies, startDate, endDate, spatialPolygon, getManagedLayer, mapReady]);
+  }, [isOnMap, dataLoaded, allObservations, selectedTaxa, selectedSpecies, excludeAllSpecies, startDate, endDate, spatialPolygon, getManagedLayer, mapReady, viewMode]);
 
   // Update filter when selectedTaxa changes (instant local visibility toggle)
   useEffect(() => {

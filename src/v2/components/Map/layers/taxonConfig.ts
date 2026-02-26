@@ -10,6 +10,10 @@ export interface TaxonInfo {
   color: string;      // Hex color for legend dot
 }
 
+interface EmojiDataUriOptions {
+  withWhiteHalo?: boolean;
+}
+
 /** All taxon categories with emoji, label, and color */
 export const TAXON_CONFIG: TaxonInfo[] = [
   { value: 'Aves',            label: 'Birds',      emoji: '🐦', color: '#4A90E2' },
@@ -42,9 +46,13 @@ export function getTaxonColor(category: string): string {
  * Convert an emoji to an SVG data URI for use as an ArcGIS PictureMarkerSymbol.
  * Renders the emoji centered in a 28x28 SVG.
  */
-export function emojiToDataUri(emoji: string): string {
+export function emojiToDataUri(emoji: string, options: EmojiDataUriOptions = {}): string {
+  const { withWhiteHalo = false } = options;
+  const haloStyle = withWhiteHalo
+    ? 'text-shadow: -1px 0 #ffffff, 0 1px #ffffff, 1px 0 #ffffff, 0 -1px #ffffff;'
+    : '';
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">
-    <text x="14" y="14" text-anchor="middle" dominant-baseline="central" font-size="20" font-family="Arial, sans-serif">${emoji}</text>
+    <text x="14" y="14" text-anchor="middle" dominant-baseline="central" font-size="20" font-family="Arial, sans-serif" style="${haloStyle}">${emoji}</text>
   </svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }

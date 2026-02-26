@@ -44,7 +44,7 @@ export function useAnimlMapBehavior(
     focusedDeploymentId,
   } = useAnimlFilter();
   const { activateLayer } = useLayers();
-  const { viewRef, getSpatialPolygonForLayer } = useMap();
+  const { viewRef, viewMode, getSpatialPolygonForLayer } = useMap();
   const spatialPolygon = getSpatialPolygonForLayer(LAYER_ID);
   const populatedRef = useRef(false);
   const populatedLayerRef = useRef<GraphicsLayer | null>(null);
@@ -78,7 +78,7 @@ export function useAnimlMapBehavior(
     const hasMapSwapLayerReplacement = populatedLayerRef.current !== arcLayer;
     if (populatedRef.current && !hasMapSwapLayerReplacement) return;
 
-    populateAnimlLayer(arcLayer, deployments);
+    populateAnimlLayer(arcLayer, deployments, { viewMode });
     filterAnimlLayer(arcLayer, selectedAnimals, undefined, spatialPolygon);
     updateAnimlCameraBadges(arcLayer, {
       hasActiveFilter: shouldShowBadges,
@@ -87,6 +87,7 @@ export function useAnimlMapBehavior(
         if (hasCameraFilter && !selectedCameras.has(deploymentId)) return 0;
         return getFilteredCountForDeployment(deploymentId);
       },
+      viewMode,
     });
     populatedRef.current = true;
     populatedLayerRef.current = arcLayer;
@@ -103,6 +104,7 @@ export function useAnimlMapBehavior(
     spatialPolygon,
     getManagedLayer,
     mapReady,
+    viewMode,
   ]);
 
   // Update filter when selectedAnimals changes (instant local visibility toggle)
@@ -125,6 +127,7 @@ export function useAnimlMapBehavior(
         if (hasCameraFilter && !selectedCameras.has(deploymentId)) return 0;
         return getFilteredCountForDeployment(deploymentId);
       },
+      viewMode,
     });
   }, [
     shouldShowBadges,
@@ -132,6 +135,7 @@ export function useAnimlMapBehavior(
     selectedCameras,
     getFilteredCountForDeployment,
     getManagedLayer,
+    viewMode,
   ]);
 
   // Map click handler: clicking a camera marker opens ANiML browse for that camera.
