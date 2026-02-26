@@ -57,6 +57,39 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
+function getYAxisBoundsForVisibleRange(
+  values: number[],
+  startPercent: number,
+  endPercent: number,
+): { min: number; max: number } | null {
+  if (values.length === 0) return null;
+
+  const maxIndex = values.length - 1;
+  const startIndex = clamp(Math.floor((startPercent / 100) * maxIndex), 0, maxIndex);
+  const endIndex = clamp(Math.ceil((endPercent / 100) * maxIndex), 0, maxIndex);
+  const sliceStart = Math.min(startIndex, endIndex);
+  const sliceEnd = Math.max(startIndex, endIndex);
+
+  let localMin = Infinity;
+  let localMax = -Infinity;
+  for (let i = sliceStart; i <= sliceEnd; i++) {
+    const value = values[i];
+    if (value < localMin) localMin = value;
+    if (value > localMax) localMax = value;
+  }
+  if (!Number.isFinite(localMin) || !Number.isFinite(localMax)) return null;
+
+  const range = localMax - localMin;
+  const padding = range === 0
+    ? Math.max(Math.abs(localMax) * 0.05, 1)
+    : range * 0.05;
+
+  return {
+    min: localMin - padding,
+    max: localMax + padding,
+  };
+}
+
 function getMapBounds() {
   const mapContainer = document.getElementById('map-container');
   const width = mapContainer?.clientWidth ?? window.innerWidth;
@@ -279,8 +312,37 @@ function ChartPanel({ panelId }: { panelId: string }) {
       }],
     };
 
-    chartInstanceRef.current.setOption(option, { notMerge: true });
-    chartInstanceRef.current.resize();
+    const chart = chartInstanceRef.current;
+    chart.setOption(option, { notMerge: true });
+
+    // Recompute y-axis bounds from only the currently visible dataZoom window.
+    // This prevents historical anomalies from flattening normal zoomed-in trends.
+    const syncVisibleYAxis = () => {
+      const currentOption = chart.getOption() as unknown as {
+        dataZoom?: Array<{ start?: number; end?: number }>;
+      };
+      const firstZoom = currentOption.dataZoom?.[0];
+      const start = typeof firstZoom?.start === 'number' ? firstZoom.start : 0;
+      const end = typeof firstZoom?.end === 'number' ? firstZoom.end : 100;
+      const nextBounds = getYAxisBoundsForVisibleRange(values, start, end);
+      if (!nextBounds) return;
+
+      chart.setOption({
+        yAxis: {
+          min: nextBounds.min,
+          max: nextBounds.max,
+        },
+      });
+    };
+
+    chart.off('datazoom');
+    chart.on('datazoom', syncVisibleYAxis);
+    syncVisibleYAxis();
+    chart.resize();
+
+    return () => {
+      chart.off('datazoom', syncVisibleYAxis);
+    };
   }, [data, summary, stats, panel.minimized]);
 
   // Resize handler
