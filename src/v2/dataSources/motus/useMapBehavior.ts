@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type Layer from '@arcgis/core/layers/Layer';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
@@ -24,15 +24,19 @@ const FLYING_BIRD_SVG = [
 ].join('');
 
 const FLYING_BIRD_MARKER_URL = `data:image/svg+xml;utf8,${encodeURIComponent(FLYING_BIRD_SVG)}`;
+const createMovementOverlayLayer = () => new GraphicsLayer({
+  id: 'v2-motus-inferred-movement-overlay',
+  listMode: 'hide',
+});
 
 export function useMotusMapBehavior(
   getManagedLayer: (layerId: string) => Layer | undefined,
   pinnedLayers: PinnedLayer[],
   activeLayer: ActiveLayer | null,
-  _mapReady: number,
+  mapReady: number,
 ) {
   const { layerMap } = useCatalog();
-  const { viewRef } = useMap();
+  const { viewRef, viewMode } = useMap();
   const {
     selectedTagId,
     browseFilters,
@@ -47,6 +51,7 @@ export function useMotusMapBehavior(
   const overlayRef = useRef<GraphicsLayer | null>(null);
   const movementContextRef = useRef<MotusMovementContext | null>(null);
   const wasPlaybackPlayingRef = useRef(false);
+  const [movementRenderVersion, setMovementRenderVersion] = useState(0);
 
   const hasMotusOnMap = pinnedLayers.some((layer) => layer.layerId.startsWith('service-181') || layer.layerId === 'dataset-181')
     || !!(activeLayer && (activeLayer.layerId.startsWith('service-181') || activeLayer.layerId === 'dataset-181'));
@@ -71,6 +76,10 @@ export function useMotusMapBehavior(
   }
 
   useEffect(() => {
+    setMovementRenderVersion((version) => version + 1);
+  }, [viewMode, mapReady, selectedTagId, viewRef]);
+
+  useEffect(() => {
     const view = viewRef.current;
     if (!view?.map) return;
     if (!hasMotusOnMap && !selectedTagId) {
@@ -80,13 +89,20 @@ export function useMotusMapBehavior(
 
     const map = view.map;
     if (!overlayRef.current) {
-      overlayRef.current = new GraphicsLayer({
-        id: 'v2-motus-inferred-movement-overlay',
-        listMode: 'hide',
-      });
+      overlayRef.current = createMovementOverlayLayer();
       map.add(overlayRef.current);
+      setMovementRenderVersion((version) => version + 1);
     } else if (!map.findLayerById(overlayRef.current.id)) {
+      // Recreate overlay when map/view is replaced (2D<->3D). Reusing a stale
+      // GraphicsLayer instance from the previous view can fail SceneView layerview creation.
+      try {
+        overlayRef.current.destroy();
+      } catch {
+        // Best effort cleanup; continue with fresh layer allocation.
+      }
+      overlayRef.current = createMovementOverlayLayer();
       map.add(overlayRef.current);
+      setMovementRenderVersion((version) => version + 1);
     }
 
     // Add a stable tagged-animals layer if the managed map flow has not yet instantiated one.
@@ -107,7 +123,7 @@ export function useMotusMapBehavior(
       featureLayer.definitionExpression = selectedTagWhere;
       featureLayer.visible = selectedTagId != null;
     }
-  }, [viewRef, hasMotusOnMap, selectedTagId]);
+  }, [viewRef, hasMotusOnMap, selectedTagId, mapReady]);
 
   useEffect(() => {
     const overlay = overlayRef.current;
@@ -152,6 +168,34 @@ export function useMotusMapBehavior(
       toLatitude: number,
       attributes: Record<string, unknown>,
     ) => {
+      const hasFiniteCoordinates = [fromLongitude, fromLatitude, toLongitude, toLatitude]
+        .every((value) => Number.isFinite(value));
+      if (!hasFiniteCoordinates) return;
+      const hasMovement = Math.abs(toLongitude - fromLongitude) > 0.0000001
+        || Math.abs(toLatitude - fromLatitude) > 0.0000001;
+      if (!hasMovement) return;
+
+      const legOffsetMeters = viewMode === '3d' ? 18 : 12;
+      const legSymbol = viewMode === '3d'
+        ? {
+            type: 'line-3d' as const,
+            symbolLayers: [{
+              type: 'line' as const,
+              size: 2.6,
+              material: {
+                color: [217, 119, 6, 0.95] as [number, number, number, number],
+              },
+              cap: 'round' as const,
+              join: 'round' as const,
+            }],
+          }
+        : {
+            type: 'simple-line' as const,
+            color: [217, 119, 6, 0.9] as [number, number, number, number],
+            width: 2.4,
+            style: 'solid' as const,
+          };
+
       overlay.add(new Graphic({
         geometry: {
           type: 'polyline',
@@ -159,14 +203,14 @@ export function useMotusMapBehavior(
             [fromLongitude, fromLatitude],
             [toLongitude, toLatitude],
           ]],
+          spatialReference: { wkid: 4326 },
         },
         attributes,
-        symbol: {
-          type: 'simple-line',
-          color: [217, 119, 6, 0.9],
-          width: 2.4,
-          style: 'solid',
+        elevationInfo: {
+          mode: 'relative-to-ground',
+          offset: legOffsetMeters,
         },
+        symbol: legSymbol,
         popupTemplate: {
           title: 'Inferred movement leg',
           content: '<div><p>{evidence}</p><p><strong>Step:</strong> {stepIndex}</p><p><strong>Detection window:</strong> {startDate} to {endDate}</p></div>',
@@ -184,7 +228,8 @@ export function useMotusMapBehavior(
       const dx = tipLongitude - fromLongitude;
       const dy = tipLatitude - fromLatitude;
       const angle = (Math.atan2(dx, dy) * 180) / Math.PI;
-      const symbol = playbackDirectionMarkerMode === 'bird'
+      const shouldUseBirdMarker = playbackDirectionMarkerMode === 'bird' && viewMode !== '3d';
+      const symbol = shouldUseBirdMarker
         ? {
             type: 'picture-marker' as const,
             url: FLYING_BIRD_MARKER_URL,
@@ -209,6 +254,10 @@ export function useMotusMapBehavior(
           latitude: tipLatitude,
         },
         attributes,
+        elevationInfo: {
+          mode: 'relative-to-ground',
+          offset: 16,
+        },
         symbol,
       }));
     };
@@ -286,7 +335,15 @@ export function useMotusMapBehavior(
         },
       );
     }
-  }, [playbackStepIndex, playbackTransitionProgress, isPlaybackPlaying, playbackDirectionMarkerMode]);
+  }, [
+    viewMode,
+    playbackStepIndex,
+    playbackTransitionProgress,
+    isPlaybackPlaying,
+    playbackDirectionMarkerMode,
+    movementRenderVersion,
+    mapReady,
+  ]);
 
   useEffect(() => {
     const view = viewRef.current;
@@ -317,9 +374,7 @@ export function useMotusMapBehavior(
       || !Number.isFinite(maxLongitude)
       || !Number.isFinite(minLatitude)
       || !Number.isFinite(maxLatitude)
-    ) {
-      return;
-    }
+    ) return;
 
     const lonSpan = maxLongitude - minLongitude;
     const latSpan = maxLatitude - minLatitude;
@@ -354,6 +409,7 @@ export function useMotusMapBehavior(
     if (!hasMotusOnMap) {
       movementContextRef.current = null;
       overlay.removeAll();
+      setMovementRenderVersion((version) => version + 1);
       setMovementDisclaimer('Choose a preserve-eligible tag to render its full inferred journey across receiver stations.');
       setPlaybackStepLabels(['Journey start']);
       return;
@@ -371,34 +427,7 @@ export function useMotusMapBehavior(
             legs: [],
             disclaimer: 'Receiver stations are visible. Select a preserve-eligible tag to render its full inferred journey.',
           };
-          overlay.removeAll();
-          for (const station of stations) {
-            overlay.add(new Graphic({
-              geometry: {
-                type: 'point',
-                longitude: station.longitude,
-                latitude: station.latitude,
-              },
-              attributes: {
-                stationId: station.stationId,
-                stationName: station.name,
-              },
-              symbol: {
-                type: 'simple-marker',
-                style: 'circle',
-                size: 8,
-                color: [22, 163, 74, 0.9],
-                outline: {
-                  color: [255, 255, 255, 0.9],
-                  width: 1.1,
-                },
-              },
-              popupTemplate: {
-                title: '{stationName}',
-                content: 'Receiver station context for inferred MOTUS movement.',
-              },
-            }));
-          }
+          setMovementRenderVersion((version) => version + 1);
         })
         .catch((error) => {
           if (cancelled) return;
@@ -419,6 +448,7 @@ export function useMotusMapBehavior(
       .then((context) => {
         if (cancelled) return;
         movementContextRef.current = context;
+        setMovementRenderVersion((version) => version + 1);
         setMovementDisclaimer(context.disclaimer);
         setPlaybackStepLabels(['Journey start', ...context.legs.map((leg) => leg.endDate || leg.startDate || `Step ${leg.stepIndex}`)]);
       })
@@ -427,6 +457,7 @@ export function useMotusMapBehavior(
         console.error('[MOTUS] Failed to render movement context', error);
         movementContextRef.current = null;
         overlay.removeAll();
+        setMovementRenderVersion((version) => version + 1);
         setMovementDisclaimer('Unable to render journey for this preserve-eligible tag. Receiver stations remain visible.');
         setPlaybackStepLabels(['Journey start']);
       })
@@ -446,5 +477,7 @@ export function useMotusMapBehavior(
     setMovementDisclaimer,
     setPlaybackStepLabels,
     createLoadingScope,
+    mapReady,
+    viewMode,
   ]);
 }

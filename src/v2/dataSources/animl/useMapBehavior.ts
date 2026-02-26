@@ -46,6 +46,7 @@ export function useAnimlMapBehavior(
   const { viewRef, getSpatialPolygonForLayer } = useMap();
   const spatialPolygon = getSpatialPolygonForLayer(LAYER_ID);
   const populatedRef = useRef(false);
+  const populatedLayerRef = useRef<GraphicsLayer | null>(null);
   const highlightHandleRef = useRef<__esri.Handle | null>(null);
   const shouldShowBadges = hasAnyFilter && !(!!spatialPolygon && selectedAnimals.size === 0);
 
@@ -62,6 +63,7 @@ export function useAnimlMapBehavior(
   useEffect(() => {
     if (!isOnMap) {
       populatedRef.current = false;
+      populatedLayerRef.current = null;
       highlightHandleRef.current?.remove();
       highlightHandleRef.current = null;
     }
@@ -69,9 +71,11 @@ export function useAnimlMapBehavior(
 
   // Populate GraphicsLayer when data arrives AND layer exists on map.
   useEffect(() => {
-    if (!isOnMap || !dataLoaded || populatedRef.current) return;
+    if (!isOnMap || !dataLoaded) return;
     const arcLayer = getManagedLayer(LAYER_ID);
     if (!arcLayer || !(arcLayer instanceof GraphicsLayer)) return;
+    const hasMapSwapLayerReplacement = populatedLayerRef.current !== arcLayer;
+    if (populatedRef.current && !hasMapSwapLayerReplacement) return;
 
     populateAnimlLayer(arcLayer, deployments);
     filterAnimlLayer(arcLayer, selectedAnimals, undefined, spatialPolygon);
@@ -84,6 +88,7 @@ export function useAnimlMapBehavior(
       },
     });
     populatedRef.current = true;
+    populatedLayerRef.current = arcLayer;
   }, [
     isOnMap,
     dataLoaded,
@@ -165,7 +170,7 @@ export function useAnimlMapBehavior(
     });
 
     return () => handler.remove();
-  }, [isOnMap, dataLoaded, viewRef, activateLayer]);
+  }, [isOnMap, dataLoaded, viewRef, activateLayer, mapReady]);
 
   // Native ArcGIS highlight for camera selected from image interactions.
   useEffect(() => {

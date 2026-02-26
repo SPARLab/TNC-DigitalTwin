@@ -144,5 +144,5 @@ export function useDendraMapBehavior(
     });
 
     return () => handler.remove();
-  }, [hasAnyDendraOnMap, dataLoaded, viewRef, activateLayer, highlightPoint, clearHighlight, layerMap, isSpatialQueryDrawing]);
+  }, [hasAnyDendraOnMap, dataLoaded, viewRef, activateLayer, highlightPoint, clearHighlight, layerMap, isSpatialQueryDrawing, mapReady]);
 }

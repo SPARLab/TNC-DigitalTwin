@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import { calfloraV2Service, type CalFloraBrowseFilters } from '../../services/calfloraV2Service';
+import { createDefaultCalFloraBrowseFilters } from './utils/browseFilterDefaults';
 
 interface CalFloraFilterContextValue {
   loading: boolean;
@@ -15,13 +16,7 @@ interface CalFloraFilterContextValue {
   createBrowseLoadingScope: () => () => void;
 }
 
-const DEFAULT_FILTERS: CalFloraBrowseFilters = {
-  searchText: '',
-  county: '',
-  startDate: '',
-  endDate: '',
-  hasPhoto: false,
-};
+const DEFAULT_FILTERS: CalFloraBrowseFilters = createDefaultCalFloraBrowseFilters();
 
 const CalFloraFilterContext = createContext<CalFloraFilterContextValue | null>(null);
 

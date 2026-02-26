@@ -11,6 +11,10 @@ import {
   downloadLinksTextFile,
   generateShareableLinks,
 } from './exportActions';
+import {
+  copyCodeToClipboard,
+  generateCodeBundle,
+} from './codegen';
 import type {
   ExportActionLayer,
   ExportFormatOption,
@@ -35,6 +39,12 @@ interface LayerExportState {
 interface ExportFeedback {
   type: 'success' | 'error';
   message: string;
+}
+
+interface GeneratedCodePreview {
+  language: 'python' | 'r';
+  snippet: string;
+  generatedCount: number;
 }
 
 function getFormatOptionsByDataSource(dataSource: DataSource): ExportFormatOption[] {
@@ -96,6 +106,25 @@ function getViewDisplayName(view: PinnedLayerView, index: number): string {
     return nextName;
   }
   return `Filtered View ${index + 1}`;
+}
+
+function formatDataSourceLabel(dataSource: DataSource): string {
+  switch (dataSource) {
+    case 'inaturalist':
+      return 'iNaturalist';
+    case 'dendra':
+      return 'Dendra';
+    case 'dataone':
+      return 'DataONE';
+    case 'tnc-arcgis':
+      return 'TNC ArcGIS';
+    default:
+      return dataSource;
+  }
+}
+
+function isLayerCodegenSupported(dataSource: DataSource): boolean {
+  return dataSource === 'inaturalist' || dataSource === 'dendra';
 }
 
 function buildQueryDefinition(
@@ -173,7 +202,11 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
   const [layerExportState, setLayerExportState] = useState<Record<string, LayerExportState>>({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingAction, setProcessingAction] = useState<'zip' | 'links' | null>(null);
+  const [codegenProcessingLayerId, setCodegenProcessingLayerId] = useState<string | null>(null);
+  const [codegenProcessingLanguage, setCodegenProcessingLanguage] = useState<'python' | 'r' | null>(null);
   const [feedback, setFeedback] = useState<ExportFeedback | null>(null);
+  const [generatedLayerCodeById, setGeneratedLayerCodeById] = useState<Record<string, GeneratedCodePreview>>({});
+  const [lastSuccessAction, setLastSuccessAction] = useState<'zip' | 'links' | null>(null);
 
   const pinnedLayerCount = pinnedLayers.length;
   const layerDataSourceById = useMemo<Record<string, DataSource>>(
@@ -237,6 +270,10 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
       setFeedback(null);
       setIsProcessing(false);
       setProcessingAction(null);
+      setCodegenProcessingLayerId(null);
+      setCodegenProcessingLanguage(null);
+      setGeneratedLayerCodeById({});
+      setLastSuccessAction(null);
     }
   }, [isOpen]);
 
@@ -258,7 +295,7 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
           isActive: view.isActive,
           querySummary: view.querySummary,
           filteredResultCount: view.filteredResultCount,
-          queryDefinition: state?.includeQueryDefinition ? view.queryDefinition : undefined,
+          queryDefinition: view.queryDefinition,
         }));
         const viewEstimates = selectedViews.map((view) => estimateBytesForSelection(
           dataSource,
@@ -323,12 +360,11 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
       }
 
       downloadLinksTextFile(linksText);
-      setFeedback({
-        type: 'success',
-        message: clipboardCopied
-          ? `Generated ${manifest.totalLayers} layer link set(s). Links copied and text file downloaded.`
-          : `Generated ${manifest.totalLayers} layer link set(s). Links text file downloaded.`,
-      });
+      void manifest;
+      void clipboardCopied;
+      setFeedback(null);
+      setLastSuccessAction('links');
+      setTimeout(() => setLastSuccessAction(null), 2500);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       setFeedback({ type: 'error', message: `Could not generate links: ${message}` });
@@ -350,10 +386,10 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
 
     try {
       const generatedAt = await createAndDownloadExportZip(selectedLayers);
-      setFeedback({
-        type: 'success',
-        message: `ZIP package created (${selectedLayers.length} layers, ${generatedAt}).`,
-      });
+      void generatedAt;
+      setFeedback(null);
+      setLastSuccessAction('zip');
+      setTimeout(() => setLastSuccessAction(null), 2500);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       setFeedback({ type: 'error', message: `Could not create ZIP export: ${message}` });
@@ -361,6 +397,78 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
       setIsProcessing(false);
       setProcessingAction(null);
     }
+  };
+
+  const handleGenerateLayerCode = async (layerId: string, language: 'python' | 'r') => {
+    const layer = exportActionLayers.find((item) => item.pinnedLayerId === layerId);
+    if (!layer) {
+      setFeedback({
+        type: 'error',
+        message: 'Layer not found for code generation.',
+      });
+      return;
+    }
+
+    if (!isLayerCodegenSupported(layer.dataSource)) {
+      setFeedback({
+        type: 'error',
+        message: `${formatDataSourceLabel(layer.dataSource)} code generation is coming soon.`,
+      });
+      return;
+    }
+
+    const layerWithSelectedViews: ExportActionLayer = {
+      ...layer,
+      selectedViews: layer.selectedViews,
+    };
+    if (layerWithSelectedViews.selectedViews.length === 0) {
+      setFeedback({
+        type: 'error',
+        message: `Select at least one view for ${layer.layerName}.`,
+      });
+      return;
+    }
+
+    setCodegenProcessingLayerId(layerId);
+    setCodegenProcessingLanguage(language);
+    setFeedback(null);
+
+    try {
+      const bundle = generateCodeBundle(language, [layerWithSelectedViews], window.location.href);
+      setGeneratedLayerCodeById((previous) => ({
+        ...previous,
+        [layerId]: {
+          language,
+          snippet: bundle.snippet,
+          generatedCount: bundle.generatedCount,
+        },
+      }));
+      setFeedback(null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      setFeedback({ type: 'error', message: `Could not generate code for ${layer.layerName}: ${message}` });
+    } finally {
+      setCodegenProcessingLayerId(null);
+      setCodegenProcessingLanguage(null);
+    }
+  };
+
+  const handleCopyLayerCode = async (layerId: string) => {
+    const preview = generatedLayerCodeById[layerId];
+    if (!preview) {
+      return;
+    }
+
+    const copied = await copyCodeToClipboard(preview.snippet);
+    if (copied) {
+      setFeedback(null);
+      return;
+    }
+
+    setFeedback({
+      type: 'error',
+      message: 'Clipboard copy failed. Select the code text and copy manually.',
+    });
   };
 
   if (!isOpen) {
@@ -389,7 +497,10 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
           onClose={onClose}
         />
 
-        <div id="export-builder-content-scroll-area" className="flex-1 overflow-y-auto px-6 py-5">
+        <div
+          id="export-builder-content-scroll-area"
+          className="scroll-area-export-builder flex-1 bg-slate-50 px-6 py-5"
+        >
           {feedback ? (
             <div
               id="export-builder-feedback-banner"
@@ -405,39 +516,39 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
             </div>
           ) : null}
 
-          <div id="export-builder-context-strip" className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-            <div id="export-builder-context-strip-row" className="flex flex-wrap items-center gap-2">
+          <div id="export-builder-context-strip" className="px-1">
+            <div id="export-builder-context-strip-row" className="flex flex-wrap items-center gap-2 text-base">
               <span
                 id="export-builder-context-strip-chip-views"
-                className="text-base font-semibold text-slate-800"
+                className="font-semibold text-slate-800"
               >
-                1. Select filtered views
+                1. Select views
               </span>
               <span
                 id="export-builder-context-strip-arrow-1"
-                className="text-base font-bold text-slate-500"
+                className="font-bold text-slate-500"
                 aria-hidden="true"
               >
-                &gt;
+                &rarr;
               </span>
               <span
                 id="export-builder-context-strip-chip-outputs"
-                className="text-base font-medium text-slate-700"
+                className="font-medium text-slate-700"
               >
                 2. Choose outputs
               </span>
               <span
                 id="export-builder-context-strip-arrow-2"
-                className="text-base font-bold text-slate-500"
+                className="font-bold text-slate-500"
                 aria-hidden="true"
               >
-                &gt;
+                &rarr;
               </span>
               <span
                 id="export-builder-context-strip-chip-export"
-                className="text-base font-medium text-slate-700"
+                className="font-medium text-slate-700"
               >
-                3. Generate links or ZIP
+                3. Export
               </span>
             </div>
           </div>
@@ -450,7 +561,7 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
 
           <div id="export-builder-layer-sections" className="mt-4 space-y-4">
             {pinnedLayers.length === 0 ? (
-              <div id="export-builder-empty-layer-sections" className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4">
+              <div id="export-builder-empty-layer-sections" className="rounded-xl border border-dashed border-slate-300 bg-white p-4">
                 <p id="export-builder-empty-layer-sections-copy" className="text-sm text-slate-600">
                   No pinned layers yet. Pin a layer to start building an export package.
                 </p>
@@ -499,6 +610,22 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
                       layerEstimatedBytes={layerEstimatedBytes}
                       isLayerEstimateUnavailable={isLayerEstimateUnavailable}
                       showLargeExportWarning={showLargeExportWarning}
+                      isCodegenSupported={isLayerCodegenSupported(dataSource)}
+                      canGenerateLayerCode={selectedViewItems.length > 0}
+                      codegenUnsupportedMessage={`${formatDataSourceLabel(dataSource)} code generation is coming soon.`}
+                      isCodegenProcessing={
+                        codegenProcessingLayerId === layer.id && codegenProcessingLanguage !== null
+                      }
+                      codegenProcessingLanguage={
+                        codegenProcessingLayerId === layer.id ? codegenProcessingLanguage : null
+                      }
+                      onGenerateLayerCode={(language) => {
+                        void handleGenerateLayerCode(layer.id, language);
+                      }}
+                      onCopyLayerCode={() => {
+                        void handleCopyLayerCode(layer.id);
+                      }}
+                      generatedLayerCode={generatedLayerCodeById[layer.id]}
                       onToggleView={(viewId) => {
                         setLayerExportState((previous) => {
                           const fallbackViews = getLayerViewModels(layer, dataSource);
@@ -573,6 +700,7 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
           <div id="export-builder-summary-container" className="mt-4">
             <ExportSummary layers={exportActionLayers} />
           </div>
+
         </div>
 
         <ExportBuilderFooter
@@ -586,6 +714,7 @@ export function ExportBuilderModal({ isOpen, onClose }: ExportBuilderModalProps)
           isProcessing={isProcessing}
           processingAction={processingAction}
           hasSelections={hasSelections}
+          lastSuccessAction={lastSuccessAction}
         />
       </div>
     </div>

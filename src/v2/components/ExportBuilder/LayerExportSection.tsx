@@ -1,4 +1,5 @@
-import { AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
+import { AlertTriangle, Check, Code2, Copy, FileCode2, Loader2 } from 'lucide-react';
 import type { DataSource } from '../../types';
 import type { ExportFormatOption } from './types';
 import { formatEstimatedSize } from './utils/sizeEstimator';
@@ -14,6 +15,19 @@ interface LayerExportSectionProps {
   layerEstimatedBytes?: number;
   isLayerEstimateUnavailable: boolean;
   showLargeExportWarning: boolean;
+  isCodegenSupported: boolean;
+  canGenerateLayerCode: boolean;
+  codegenUnsupportedMessage?: string;
+  isCodegenProcessing: boolean;
+  codegenProcessingLanguage: 'python' | 'r' | null;
+  // eslint-disable-next-line no-unused-vars
+  onGenerateLayerCode: (language: 'python' | 'r') => void;
+  onCopyLayerCode: () => void;
+  generatedLayerCode?: {
+    language: 'python' | 'r';
+    snippet: string;
+    generatedCount: number;
+  };
   // eslint-disable-next-line no-unused-vars
   onToggleFormat: (formatId: string) => void;
   // eslint-disable-next-line no-unused-vars
@@ -63,14 +77,23 @@ export function LayerExportSection({
   layerEstimatedBytes,
   isLayerEstimateUnavailable,
   showLargeExportWarning,
+  isCodegenSupported,
+  canGenerateLayerCode,
+  codegenUnsupportedMessage,
+  isCodegenProcessing,
+  codegenProcessingLanguage,
+  onGenerateLayerCode,
+  onCopyLayerCode,
+  generatedLayerCode,
   onToggleFormat,
   onToggleView,
   onToggleIncludeQueryDefinition,
 }: LayerExportSectionProps) {
   const selectedViewCount = views.filter((view) => view.isSelected).length;
+  const [copied, setCopied] = useState(false);
 
   return (
-    <section id={`export-builder-layer-section-${layerId}`} className="rounded-xl border border-slate-200 bg-white p-5">
+    <section id={`export-builder-layer-section-${layerId}`} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <div id={`export-builder-layer-section-header-${layerId}`} className="flex items-start justify-between gap-3">
         <div id={`export-builder-layer-section-title-wrap-${layerId}`} className="space-y-1">
           <h3 id={`export-builder-layer-title-${layerId}`} className="text-sm font-bold text-slate-800">
@@ -138,9 +161,9 @@ export function LayerExportSection({
                     ) : null}
                   </label>
 
-                  <span id={`export-builder-view-size-${layerId}-${view.viewId}`} className="text-[11px] font-medium text-slate-600">
+                  <span id={`export-builder-view-size-${layerId}-${view.viewId}`} className="text-[11px] font-medium text-slate-400">
                     {view.isEstimateUnavailable
-                      ? 'Size unavailable'
+                      ? '\u2014'
                       : `~${formatEstimatedSize(view.estimatedBytes || 0)}`}
                   </span>
                 </div>
@@ -160,7 +183,7 @@ export function LayerExportSection({
         </ul>
       </div>
 
-      <div id={`export-builder-layer-format-section-${layerId}`} className="mt-3">
+      <div id={`export-builder-layer-format-section-${layerId}`} className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
         <p id={`export-builder-layer-format-title-${layerId}`} className="mb-2 text-xs font-semibold text-slate-700">
           Export outputs
         </p>
@@ -216,7 +239,7 @@ export function LayerExportSection({
           Layer estimate
         </span>
         <span id={`export-builder-layer-subtotal-value-${layerId}`} className="text-sm font-bold text-slate-700">
-          {isLayerEstimateUnavailable ? 'Size unavailable' : `~${formatEstimatedSize(layerEstimatedBytes || 0)}`}
+          {isLayerEstimateUnavailable ? 'Estimate pending' : `~${formatEstimatedSize(layerEstimatedBytes || 0)}`}
         </span>
       </div>
 
@@ -236,6 +259,109 @@ export function LayerExportSection({
           </p>
         </div>
       ) : null}
+
+      <div id={`export-builder-layer-codegen-section-${layerId}`} className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3">
+        <div id={`export-builder-layer-codegen-header-${layerId}`} className="flex items-center justify-between gap-2">
+          <p id={`export-builder-layer-codegen-title-${layerId}`} className="text-xs font-semibold text-slate-700">
+            Code generation
+          </p>
+          <div id={`export-builder-layer-codegen-actions-${layerId}`} className="flex items-center gap-2">
+            <button
+              id={`export-builder-layer-codegen-python-button-${layerId}`}
+              type="button"
+              disabled={!isCodegenSupported || !canGenerateLayerCode || isCodegenProcessing}
+              onClick={() => onGenerateLayerCode('python')}
+              className="flex items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isCodegenProcessing && codegenProcessingLanguage === 'python' ? (
+                <Loader2 id={`export-builder-layer-codegen-python-spinner-${layerId}`} className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Code2 id={`export-builder-layer-codegen-python-icon-${layerId}`} className="h-3.5 w-3.5" />
+              )}
+              Get Python Code
+            </button>
+
+            <button
+              id={`export-builder-layer-codegen-r-button-${layerId}`}
+              type="button"
+              disabled={!isCodegenSupported || !canGenerateLayerCode || isCodegenProcessing}
+              onClick={() => onGenerateLayerCode('r')}
+              className="flex items-center gap-1.5 rounded-md border border-teal-300 bg-teal-50 px-2.5 py-1.5 text-xs font-semibold text-teal-800 transition-colors hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isCodegenProcessing && codegenProcessingLanguage === 'r' ? (
+                <Loader2 id={`export-builder-layer-codegen-r-spinner-${layerId}`} className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <FileCode2 id={`export-builder-layer-codegen-r-icon-${layerId}`} className="h-3.5 w-3.5" />
+              )}
+              Get R Code
+            </button>
+          </div>
+        </div>
+
+        {!isCodegenSupported ? (
+          <p id={`export-builder-layer-codegen-unsupported-${layerId}`} className="mt-2 text-[11px] text-slate-600">
+            {codegenUnsupportedMessage || 'Code generation for this data source is coming soon.'}
+          </p>
+        ) : !canGenerateLayerCode ? (
+          <p id={`export-builder-layer-codegen-no-views-${layerId}`} className="mt-2 text-[11px] text-slate-600">
+            Select at least one view above to generate layer code.
+          </p>
+        ) : null}
+
+        <div
+          id={`export-builder-layer-codegen-preview-animator-${layerId}`}
+          className={`grid transition-all duration-300 ease-out ${
+            generatedLayerCode
+              ? 'mt-3 grid-rows-[1fr] opacity-100'
+              : 'mt-0 grid-rows-[0fr] opacity-0'
+          }`}
+          aria-hidden={!generatedLayerCode}
+        >
+          <div
+            id={`export-builder-layer-codegen-preview-overflow-${layerId}`}
+            className="min-h-0 overflow-hidden"
+          >
+            {generatedLayerCode ? (
+              <div id={`export-builder-layer-codegen-preview-${layerId}`}>
+                <div id={`export-builder-layer-codegen-preview-header-${layerId}`} className="mb-2 flex items-center justify-between gap-2">
+                  <p id={`export-builder-layer-codegen-preview-title-${layerId}`} className="text-[11px] font-semibold text-slate-700">
+                    {generatedLayerCode.language === 'python' ? 'Python' : 'R'} preview ({generatedLayerCode.generatedCount} view{generatedLayerCode.generatedCount === 1 ? '' : 's'})
+                  </p>
+                  <button
+                    id={`export-builder-layer-codegen-copy-button-${layerId}`}
+                    type="button"
+                    onClick={() => {
+                      onCopyLayerCode();
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className={`flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold transition-colors ${
+                      copied
+                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    {copied ? (
+                      <Check id={`export-builder-layer-codegen-copy-check-${layerId}`} className="h-3 w-3" />
+                    ) : (
+                      <Copy id={`export-builder-layer-codegen-copy-icon-${layerId}`} className="h-3 w-3" />
+                    )}
+                    {copied ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+                <pre
+                  id={`export-builder-layer-codegen-pre-${layerId}`}
+                  className="max-h-64 overflow-auto rounded-md bg-slate-950 p-3 text-[11px] leading-5 text-emerald-100"
+                >
+                  <code id={`export-builder-layer-codegen-code-${layerId}`}>
+                    {generatedLayerCode.snippet}
+                  </code>
+                </pre>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
     </section>
   );
 }

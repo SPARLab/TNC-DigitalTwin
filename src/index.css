@@ -222,6 +222,45 @@ body {
   background-color: rgba(75, 85, 99, 0.75);
 }
 
+/* -----------------------------------------------------------------------------
+   Export Builder modal content scroll area
+   - Thumb appears only when hovering/focused within the scroll area
+   - No visible scroll track
+   - Stable gutter avoids content shifting when scrollbar appears
+   ----------------------------------------------------------------------------- */
+.scroll-area-export-builder {
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent; /* Hidden by default */
+}
+
+.scroll-area-export-builder:hover,
+.scroll-area-export-builder:focus-within {
+  scrollbar-color: rgba(148, 163, 184, 0.75) transparent;
+}
+
+.scroll-area-export-builder::-webkit-scrollbar {
+  width: 10px;
+}
+
+.scroll-area-export-builder::-webkit-scrollbar-track {
+  background: transparent; /* No track */
+}
+
+.scroll-area-export-builder::-webkit-scrollbar-thumb {
+  background-color: transparent; /* Hidden by default */
+  background-clip: padding-box;
+  border: 3px solid transparent;
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+
+.scroll-area-export-builder:hover::-webkit-scrollbar-thumb,
+.scroll-area-export-builder:focus-within::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.75);
+}
+
 /* Remove blue outline on ArcGIS map view click (ArcGIS CSS variables) */
 .esri-view {
   --esri-view-outline: none !important;
@@ -235,6 +274,7 @@ body {
 .esri-view:active {
   outline: none !important;
 }
+
 
 /* ArcGIS Popup Styling - Match app design with rounded corners and proper spacing */
 
@@ -266,6 +306,18 @@ body {
 .esri-popup__content {
   padding-left: 16px !important;
   padding-right: 16px !important;
+}
+
+/* -----------------------------------------------------------------------------
+   V2 map control rail — shared button token
+   All right-rail map controls use this class for identical sizing/shape.
+   ----------------------------------------------------------------------------- */
+#map-container .map-control-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  border: 1px solid rgb(209 213 219); /* gray-300 */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
 /* Sequential yellow border highlight animation for filter buttons */

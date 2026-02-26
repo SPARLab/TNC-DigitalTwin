@@ -12,202 +12,39 @@
 // ============================================================================
 
 import {
-  createContext, useContext, useState, useCallback,
-  useEffect, useMemo, useRef,
+  createContext,
+  useContext,
+  useMemo,
   type ReactNode,
 } from 'react';
 import { useLayers } from './LayerContext';
 import { useCatalog } from './CatalogContext';
-import {
-  fetchServiceData, fetchTimeSeries, buildServiceUrl,
-  type DendraStation, type DendraSummary, type DendraServiceData,
-  type DendraTimeSeriesPoint,
-} from '../services/dendraStationService';
+import type { DendraStation, DendraSummary } from '../services/dendraStationService';
+import { useDendraServiceCache } from './dendraContext/internal/useDendraServiceCache';
+import { useDendraStationFilters } from './dendraContext/internal/useDendraStationFilters';
+import { useDendraChartPanels } from './dendraContext/internal/useDendraChartPanels';
+import type { DendraChartFilter, DendraChartPanelState } from './dendraContext/internal/types';
 
-// ── Chart state ──────────────────────────────────────────────────────────────
-
-export type DendraAggregation = 'hourly' | 'daily' | 'weekly';
-
-export interface DendraChartFilter {
-  startDate: string; // YYYY-MM-DD
-  endDate: string;   // YYYY-MM-DD
-  aggregation: DendraAggregation;
-}
-
-export interface DendraChartPanelState {
-  /** Stable panel id */
-  id: string;
-  /** Panel placement in map container coordinates */
-  x: number;
-  y: number;
-  /** Panel dimensions in px */
-  width: number;
-  height: number;
-  /** z-index stacking order */
-  zIndex: number;
-  /** Source Dendra layer id */
-  sourceLayerId: string;
-  /** Source child view id, if any */
-  sourceViewId?: string;
-  /** Source layer label shown in panel copy */
-  sourceLayerName: string;
-  /** Whether the panel is minimized to a bar */
-  minimized: boolean;
-  /** Station being charted */
-  station: DendraStation | null;
-  /** Datastream summary being charted */
-  summary: DendraSummary | null;
-  /** Full fetched time series before Level 3 filters */
-  rawData: DendraTimeSeriesPoint[];
-  /** Time series data points */
-  data: DendraTimeSeriesPoint[];
-  /** Active Level 3 filter for chart rendering */
-  filter: DendraChartFilter;
-  /** Loading state for time series fetch */
-  loading: boolean;
-  /** Error message if fetch failed */
-  error: string | null;
-}
-
-const DEFAULT_CHART_FILTER: DendraChartFilter = {
-  startDate: '',
-  endDate: '',
-  aggregation: 'hourly',
-};
-
-function toDateInputValue(epochMs: number): string {
-  return new Date(epochMs).toISOString().slice(0, 10);
-}
-
-function startOfUtcDay(date: string): number {
-  return Date.parse(`${date}T00:00:00.000Z`);
-}
-
-function endOfUtcDay(date: string): number {
-  return Date.parse(`${date}T23:59:59.999Z`);
-}
-
-function startOfUtcHour(epochMs: number): number {
-  const d = new Date(epochMs);
-  d.setUTCMinutes(0, 0, 0);
-  return d.getTime();
-}
-
-function startOfUtcWeek(epochMs: number): number {
-  const d = new Date(epochMs);
-  const dayOffset = (d.getUTCDay() + 6) % 7; // Monday = 0
-  d.setUTCHours(0, 0, 0, 0);
-  d.setUTCDate(d.getUTCDate() - dayOffset);
-  return d.getTime();
-}
-
-function aggregatePoints(
-  points: DendraTimeSeriesPoint[],
-  aggregation: DendraAggregation,
-): DendraTimeSeriesPoint[] {
-  if (points.length === 0) return [];
-
-  const buckets = new Map<number, { sum: number; count: number }>();
-
-  for (const point of points) {
-    const bucketTs =
-      aggregation === 'weekly'
-        ? startOfUtcWeek(point.timestamp)
-        : aggregation === 'daily'
-          ? startOfUtcDay(toDateInputValue(point.timestamp))
-          : startOfUtcHour(point.timestamp);
-
-    const current = buckets.get(bucketTs);
-    if (current) {
-      current.sum += point.value;
-      current.count += 1;
-    } else {
-      buckets.set(bucketTs, { sum: point.value, count: 1 });
-    }
-  }
-
-  return Array.from(buckets.entries())
-    .sort(([a], [b]) => a - b)
-    .map(([timestamp, acc]) => ({
-      timestamp,
-      value: acc.sum / acc.count,
-    }));
-}
-
-function applyChartFilter(
-  rawData: DendraTimeSeriesPoint[],
-  filter: DendraChartFilter,
-): DendraTimeSeriesPoint[] {
-  if (rawData.length === 0) return [];
-
-  const startTs = filter.startDate ? startOfUtcDay(filter.startDate) : Number.NEGATIVE_INFINITY;
-  const endTs = filter.endDate ? endOfUtcDay(filter.endDate) : Number.POSITIVE_INFINITY;
-
-  const inRange = rawData.filter(point => point.timestamp >= startTs && point.timestamp <= endTs);
-  return aggregatePoints(inRange, filter.aggregation);
-}
-
-function getMapBounds() {
-  if (typeof document === 'undefined') {
-    return { width: 1280, height: 720 };
-  }
-  const mapContainer = document.getElementById('map-container');
-  const width = mapContainer?.clientWidth ?? window.innerWidth;
-  const height = mapContainer?.clientHeight ?? window.innerHeight;
-  return {
-    width: Math.max(640, width),
-    height: Math.max(480, height),
-  };
-}
-
-function buildInitialPanelRect(index: number): Pick<DendraChartPanelState, 'x' | 'y' | 'width' | 'height'> {
-  const bounds = getMapBounds();
-  const horizontalMargin = 12;
-  const topMargin = 12;
-  const bottomMargin = 30;
-  const gap = 12;
-  const width = Math.max(560, Math.min(760, bounds.width - horizontalMargin * 2));
-  const height = Math.max(380, Math.min(500, bounds.height - topMargin - bottomMargin));
-  const columns = Math.max(1, Math.floor((bounds.width - horizontalMargin * 2 + gap) / (width + gap)));
-  const col = index % columns;
-  const row = Math.floor(index / columns);
-  const x = Math.max(horizontalMargin, bounds.width - width - horizontalMargin - col * (width + gap));
-  const y = Math.max(topMargin, bounds.height - height - bottomMargin - row * (height + gap));
-  return { x, y, width, height };
-}
-
-// ── Context value ────────────────────────────────────────────────────────────
+export type {
+  DendraAggregation,
+  DendraChartFilter,
+  DendraChartPanelState,
+} from './dendraContext/internal/types';
 
 interface DendraContextValue {
-  /** Stations for the currently active Dendra layer */
   stations: DendraStation[];
-  /** Datastream summaries for the active Dendra layer */
   summaries: DendraSummary[];
-  /** Total station count for the active layer */
   stationCount: number;
-  /** Display title of the active Dendra layer */
   activeLayerTitle: string | null;
-  /** The resolved FeatureServer URL for the active layer */
   activeServiceUrl: string | null;
-
-  // Loading state
   loading: boolean;
   error: string | null;
   dataLoaded: boolean;
-
-  // Cache lifecycle
-  /** Trigger data fetch for the current active Dendra layer. Idempotent. */
   warmCache: () => void;
-
-  // Filter state
   showActiveOnly: boolean;
   toggleActiveOnly: () => void;
   setShowActiveOnly: (next: boolean) => void;
-
-  /** Filtered stations (respects showActiveOnly filter) */
   filteredStations: DendraStation[];
-
-  // Chart state (floating time series panel)
   chartPanels: DendraChartPanelState[];
   getChartPanel: (
     stationId: number,
@@ -228,278 +65,40 @@ interface DendraContextValue {
 
 const DendraCtx = createContext<DendraContextValue | null>(null);
 
-// ── Provider ─────────────────────────────────────────────────────────────────
-
 export function DendraProvider({ children }: { children: ReactNode }) {
   const { activeLayer, pinnedLayers } = useLayers();
   const { layerMap } = useCatalog();
 
-  // Per-service cache: serviceUrl → { stations, summaries }
-  const cacheRef = useRef<Map<string, DendraServiceData>>(new Map());
-  const fetchingRef = useRef<Set<string>>(new Set());
+  const {
+    currentData,
+    loading,
+    error,
+    dataLoaded,
+    serviceInfo,
+    warmCache,
+  } = useDendraServiceCache({ activeLayer, layerMap });
 
-  // Current displayed data
-  const [currentData, setCurrentData] = useState<DendraServiceData>({ stations: [], summaries: [] });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [dataLoaded, setDataLoaded] = useState(false);
+  const {
+    showActiveOnly,
+    toggleActiveOnly,
+    setShowActiveOnly,
+    filteredStations,
+  } = useDendraStationFilters(currentData.stations);
 
-  // Filter state
-  const [showActiveOnly, setShowActiveOnly] = useState(false);
-
-  // Chart state (floating time series panel)
-  const [chartPanels, setChartPanels] = useState<DendraChartPanelState[]>([]);
-  const nextChartZIndexRef = useRef(20);
-
-  // Derive service URL from active Dendra layer's catalog metadata
-  const serviceInfo = useMemo(() => {
-    if (!activeLayer || activeLayer.dataSource !== 'dendra') return null;
-    const layer = layerMap.get(activeLayer.layerId);
-    if (!layer?.catalogMeta) return null;
-    const { serverBaseUrl, servicePath } = layer.catalogMeta;
-    return {
-      url: buildServiceUrl(serverBaseUrl, servicePath),
-      title: layer.name,
-    };
-  }, [activeLayer, layerMap]);
-
-  // When active Dendra layer changes, check cache and update displayed data
-  useEffect(() => {
-    if (!serviceInfo) {
-      // No active Dendra layer — reset
-      setDataLoaded(false);
-      setCurrentData({ stations: [], summaries: [] });
-      return;
-    }
-    const cached = cacheRef.current.get(serviceInfo.url);
-    if (cached) {
-      setCurrentData(cached);
-      setDataLoaded(true);
-      setError(null);
-    } else {
-      setDataLoaded(false);
-      setCurrentData({ stations: [], summaries: [] });
-    }
-  }, [serviceInfo]);
-
-  // warmCache — fetch data for the current active Dendra layer
-  const warmCache = useCallback(() => {
-    if (!serviceInfo) return;
-    const { url } = serviceInfo;
-
-    // Already cached or in-flight
-    if (cacheRef.current.has(url) || fetchingRef.current.has(url)) {
-      return;
-    }
-
-    fetchingRef.current.add(url);
-    setLoading(true);
-    setError(null);
-
-    const startTime = performance.now();
-    console.log(`[Dendra Cache] 🔥 Warming cache for ${url}`);
-
-    fetchServiceData(url)
-      .then(data => {
-        const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
-        console.log(
-          `[Dendra Cache] ✅ Loaded ${data.stations.length} stations + ${data.summaries.length} summaries in ${elapsed}s`,
-        );
-        cacheRef.current.set(url, data);
-        fetchingRef.current.delete(url);
-
-        // Only update displayed data if this is still the active service
-        setCurrentData(prev => {
-          // Check if we're still on the same service
-          return prev === data ? prev : data;
-        });
-        setCurrentData(data);
-        setDataLoaded(true);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('[Dendra Cache] ❌ Fetch failed:', err);
-        fetchingRef.current.delete(url);
-        setError(err instanceof Error ? err.message : 'Failed to load Dendra stations');
-        setLoading(false);
-      });
-  }, [serviceInfo]);
-
-  // Toggle active-only filter
-  const toggleActiveOnly = useCallback(() => {
-    setShowActiveOnly(prev => !prev);
-  }, []);
-
-  const setShowActiveOnlyFilter = useCallback((next: boolean) => {
-    setShowActiveOnly(next);
-  }, []);
-
-  // ── Chart actions ────────────────────────────────────────────────────────
-
-  const openChart = useCallback((station: DendraStation, summary: DendraSummary) => {
-    if (!serviceInfo) return;
-    if (!activeLayer || activeLayer.dataSource !== 'dendra') return;
-    const resolvedSourceViewId = activeLayer.viewId
-      ?? pinnedLayers.find((pinned) => pinned.layerId === activeLayer.layerId)
-        ?.views?.find((view) => view.isVisible)?.id;
-
-    const existingPanel = chartPanels.find(panel =>
-      panel.station?.station_id === station.station_id
-      && panel.summary?.datastream_id === summary.datastream_id
-      && panel.sourceLayerId === activeLayer.layerId
-      && panel.sourceViewId === resolvedSourceViewId
-    );
-    if (existingPanel) {
-      const nextZ = ++nextChartZIndexRef.current;
-      setChartPanels(prev => prev.map(panel => (
-        panel.id === existingPanel.id
-          ? { ...panel, minimized: false, zIndex: nextZ }
-          : panel
-      )));
-      return;
-    }
-
-    const panelId = `${station.station_id}-${summary.datastream_id}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    const panelRect = buildInitialPanelRect(chartPanels.length);
-    const nextZ = ++nextChartZIndexRef.current;
-    const newPanel: DendraChartPanelState = {
-      id: panelId,
-      x: panelRect.x,
-      y: panelRect.y,
-      width: panelRect.width,
-      height: panelRect.height,
-      zIndex: nextZ,
-      sourceLayerId: activeLayer.layerId,
-      sourceViewId: resolvedSourceViewId,
-      sourceLayerName: activeLayer.name,
-      minimized: false,
-      station,
-      summary,
-      rawData: [],
-      data: [],
-      filter: DEFAULT_CHART_FILTER,
-      loading: true,
-      error: null,
-    };
-
-    setChartPanels(prev => [...prev, newPanel]);
-
-    fetchTimeSeries(serviceInfo.url, station.station_id, summary.datastream_name, summary.dendra_ds_id)
-      .then(result => {
-        const startDate = result.points.length > 0 ? toDateInputValue(result.points[0].timestamp) : '';
-        const endDate = result.points.length > 0 ? toDateInputValue(result.points[result.points.length - 1].timestamp) : '';
-        const filter: DendraChartFilter = {
-          startDate,
-          endDate,
-          aggregation: 'hourly',
-        };
-        const filteredPoints = applyChartFilter(result.points, filter);
-        setChartPanels(prev => prev.map(panel => (
-          panel.id === panelId
-            ? {
-              ...panel,
-              rawData: result.points,
-              data: filteredPoints,
-              filter,
-              loading: false,
-            }
-            : panel
-        )));
-      })
-      .catch(err => {
-        console.error('[Dendra Chart] ❌ Time series fetch failed:', err);
-        setChartPanels(prev => prev.map(panel => (
-          panel.id === panelId
-            ? {
-              ...panel,
-              loading: false,
-              error: err instanceof Error ? err.message : 'Failed to load time series',
-            }
-            : panel
-        )));
-      });
-  }, [serviceInfo, chartPanels, activeLayer, pinnedLayers]);
-
-  const setChartFilter = useCallback((panelId: string, partial: Partial<DendraChartFilter>) => {
-    setChartPanels(prev => prev.map(panel => {
-      if (panel.id !== panelId) return panel;
-      const nextFilter: DendraChartFilter = { ...panel.filter, ...partial };
-      return {
-        ...panel,
-        filter: nextFilter,
-        data: applyChartFilter(panel.rawData, nextFilter),
-      };
-    }));
-  }, []);
-
-  const closeChart = useCallback((panelId: string) => {
-    setChartPanels(prev => prev.filter(panel => panel.id !== panelId));
-  }, []);
-
-  const toggleMinimizeChart = useCallback((panelId: string) => {
-    const nextZ = ++nextChartZIndexRef.current;
-    setChartPanels(prev => prev.map(panel => (
-      panel.id === panelId
-        ? { ...panel, minimized: !panel.minimized, zIndex: nextZ }
-        : panel
-    )));
-  }, []);
-
-  const setChartPanelRect = useCallback((
-    panelId: string,
-    rect: Partial<Pick<DendraChartPanelState, 'x' | 'y' | 'width' | 'height'>>,
-  ) => {
-    setChartPanels(prev => prev.map(panel => (
-      panel.id === panelId
-        ? { ...panel, ...rect }
-        : panel
-    )));
-  }, []);
-
-  const bringChartToFront = useCallback((panelId: string) => {
-    const nextZ = ++nextChartZIndexRef.current;
-    setChartPanels(prev => prev.map(panel => (
-      panel.id === panelId
-        ? { ...panel, zIndex: nextZ }
-        : panel
-    )));
-  }, []);
-
-  const getChartPanel = useCallback((
-    stationId: number,
-    datastreamId: number,
-    sourceLayerId?: string,
-    sourceViewId?: string,
-  ) => {
-    const matches = chartPanels.filter(panel =>
-      panel.station?.station_id === stationId
-      && panel.summary?.datastream_id === datastreamId
-    );
-    const sourceMatches = sourceLayerId
-      ? matches.filter(panel =>
-        panel.sourceLayerId === sourceLayerId
-        && (sourceViewId == null || panel.sourceViewId === sourceViewId)
-      )
-      : matches;
-    if (sourceMatches.length === 0) return null;
-    return sourceMatches.reduce((top, panel) => (panel.zIndex > top.zIndex ? panel : top), sourceMatches[0]);
-  }, [chartPanels]);
-
-  // Persist charts for pinned layers, but clear orphaned unpinned charts when
-  // their source layer is no longer the active Dendra layer.
-  useEffect(() => {
-    setChartPanels(prev => prev.filter((panel) => {
-      const pinned = pinnedLayers.find(p => p.layerId === panel.sourceLayerId);
-      if (pinned) return true;
-      return activeLayer?.dataSource === 'dendra' && activeLayer.layerId === panel.sourceLayerId;
-    }));
-  }, [pinnedLayers, activeLayer?.dataSource, activeLayer?.layerId]);
-
-  // Filtered stations
-  const filteredStations = useMemo(() => {
-    if (!showActiveOnly) return currentData.stations;
-    return currentData.stations.filter(s => s.is_active === 1);
-  }, [currentData.stations, showActiveOnly]);
+  const {
+    chartPanels,
+    getChartPanel,
+    openChart,
+    setChartFilter,
+    closeChart,
+    toggleMinimizeChart,
+    setChartPanelRect,
+    bringChartToFront,
+  } = useDendraChartPanels({
+    activeLayer,
+    pinnedLayers,
+    activeServiceUrl: serviceInfo?.url ?? null,
+  });
 
   const value = useMemo<DendraContextValue>(() => ({
     stations: currentData.stations,
@@ -513,7 +112,7 @@ export function DendraProvider({ children }: { children: ReactNode }) {
     warmCache,
     showActiveOnly,
     toggleActiveOnly,
-    setShowActiveOnly: setShowActiveOnlyFilter,
+    setShowActiveOnly,
     filteredStations,
     chartPanels,
     getChartPanel,
@@ -524,16 +123,28 @@ export function DendraProvider({ children }: { children: ReactNode }) {
     setChartPanelRect,
     bringChartToFront,
   }), [
-    currentData, serviceInfo, loading, error, dataLoaded,
-    warmCache, showActiveOnly, toggleActiveOnly, setShowActiveOnlyFilter, filteredStations,
-    chartPanels, getChartPanel, openChart, setChartFilter, closeChart, toggleMinimizeChart,
-    setChartPanelRect, bringChartToFront,
+    currentData,
+    serviceInfo,
+    loading,
+    error,
+    dataLoaded,
+    warmCache,
+    showActiveOnly,
+    toggleActiveOnly,
+    setShowActiveOnly,
+    filteredStations,
+    chartPanels,
+    getChartPanel,
+    openChart,
+    setChartFilter,
+    closeChart,
+    toggleMinimizeChart,
+    setChartPanelRect,
+    bringChartToFront,
   ]);
 
   return <DendraCtx.Provider value={value}>{children}</DendraCtx.Provider>;
 }
-
-// ── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useDendra(): DendraContextValue {
   const ctx = useContext(DendraCtx);
@@ -541,18 +152,14 @@ export function useDendra(): DendraContextValue {
   return ctx;
 }
 
-/**
- * Convenience: get summaries grouped by station_id.
- * Returns a Map for O(1) lookup in station cards.
- */
 export function useSummariesByStation(): Map<number, DendraSummary[]> {
   const { summaries } = useDendra();
   return useMemo(() => {
     const map = new Map<number, DendraSummary[]>();
-    for (const s of summaries) {
-      const arr = map.get(s.station_id) ?? [];
-      arr.push(s);
-      map.set(s.station_id, arr);
+    for (const summary of summaries) {
+      const list = map.get(summary.station_id) ?? [];
+      list.push(summary);
+      map.set(summary.station_id, list);
     }
     return map;
   }, [summaries]);

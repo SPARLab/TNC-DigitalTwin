@@ -22,7 +22,7 @@ export function useCalFloraMapBehavior(
   getManagedLayer: (layerId: string) => Layer | undefined,
   pinnedLayers: PinnedLayer[],
   activeLayer: ActiveLayer | null,
-  _mapReady: number,
+  mapReady: number,
 ) {
   const { browseFilters, warmCache } = useCalFloraFilter();
   const { activateLayer } = useLayers();
@@ -95,5 +95,5 @@ export function useCalFloraMapBehavior(
     });
 
     return () => handler.remove();
-  }, [isOnMap, viewRef, activateLayer, activeLayer?.layerId, activeLayer?.viewId]);
+  }, [isOnMap, viewRef, activateLayer, activeLayer?.layerId, activeLayer?.viewId, mapReady]);
 }

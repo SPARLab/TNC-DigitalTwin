@@ -6,6 +6,7 @@
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
 import { dataOneService } from '../../services/dataOneService';
 import type { DataOneDataset } from '../../types/dataone';
+import { createDefaultDataOneBrowseFilters } from './utils/browseFilterDefaults';
 
 export type DataOneAggregationMode = 'cluster' | 'binning';
 
@@ -47,14 +48,7 @@ export function DataOneFilterProvider({ children }: { children: ReactNode }) {
   const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [totalDatasetCount, setTotalDatasetCount] = useState(0);
-  const [browseFilters, setBrowseFilters] = useState<DataOneBrowseFilters>({
-    searchText: '',
-    tncCategories: [],
-    fileTypes: [],
-    startDate: '',
-    endDate: '',
-    author: '',
-  });
+  const [browseFilters, setBrowseFilters] = useState<DataOneBrowseFilters>(createDefaultDataOneBrowseFilters());
   const [aggregationMode, setAggregationMode] = useState<DataOneAggregationMode>('cluster');
   const [mapSelectionDataoneIds, setMapSelectionDataoneIds] = useState<string[] | null>(null);
   const [mapDatasetsCache, setMapDatasetsCache] = useState<Map<string, DataOneDataset>>(new Map());

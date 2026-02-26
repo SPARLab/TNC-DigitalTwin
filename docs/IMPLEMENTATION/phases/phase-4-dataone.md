@@ -1,7 +1,7 @@
 # Phase 4: DataOne Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 15 / 16 tasks complete  
+**Progress:** 16 / 17 tasks complete  
 **Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-4-dataone-completed.md`  
 **Branch:** `v2/dataone`  
 **Depends On:** Phase 0 (Foundation)  
@@ -29,6 +29,7 @@
 | CON-DONE-15 | 🟢 Complete | Feb 23, 2026 | Spatial query: ensure draw/query tools filter DataONE datasets by extent | Verified working with SpatialQuerySection |
 | CON-DONE-14 | 🟢 Complete | Feb 23, 2026 | Search highlight: show matching keyword inside abstract snippet | DatasetListView: abstract snippet with case-insensitive phrase highlight; optional abstract on DataOneDataset; Layer 1 carries abstract when search active |
 | D20-B02 | ⚪ Not Started (Dan) | Feb 20, 2026 | Create dedicated DataOne point layer in ArcGIS data store (deduplicated, latest version only) with native clustering enabled | Backend task from Dan meeting. Frontend now dedupes latest version client-side; backend layer remains follow-up. |
+| CON-DONE-17 | 🟢 Complete | Feb 24, 2026 | Synchronize DataONE map-click behavior between 2D and 3D, and restore preferred dataset dot rendering style | Completed: 3D now uses companion GraphicsLayer overlay (Dendra pattern) for rendering + clicks. FeatureLayer hidden in 3D. 2D behavior unchanged. |
 
 **Phase-5 handoff:** `CON-DONE-12` and `CON-DONE-13` (export behavior tasks) are tracked in `docs/IMPLEMENTATION/phases/phase-5-export-builder.md`.
 
@@ -100,6 +101,65 @@ Append `?f=json` to any URL to get ArcGIS REST metadata (layers, fields, types).
 **Resolution (Feb 23, 2026):** Implementation was already in place. `getDatasetsForMapLayer` and `queryDatasets` both use the Lite layer (Layer 0, documented as latest-only) and apply `dedupeDatasetsByDataoneId`, which keeps one record per `dataone_id` and prefers `isLatestVersion` and newest `dateUploaded`. Map and browse list both show deduplicated datasets. Verified visually.
 
 **Files:** `src/services/dataOneService.ts` (dedupeDatasetsByDataoneId, getDatasetsForMapLayer, queryDatasets), `src/v2/dataSources/dataone/useMapBehavior.ts` (calls getDatasetsForMapLayer).
+
+---
+
+### CON-DONE-17: Synchronize 2D/3D Marker Click Behavior + Restore Preferred Dot Rendering
+
+**Goal:** Ensure DataONE marker clicks behave identically in 2D and 3D: clicking a marker must open the matching dataset detail view in the right sidebar. Also restore the previously preferred dataset dot rendering style.
+
+**Final Outcome (Feb 24, 2026):**
+- 2D (`MapView`) marker click behavior remains unchanged.
+- 3D (`SceneView`) marker click now consistently opens the matching DataONE detail view.
+- 3D dot rendering now matches the preferred circular style by using a companion `GraphicsLayer` pattern aligned with Dendra.
+
+**What Was Attempted In This Chat (for handoff):**
+- Updated DataONE map click handling in `src/v2/dataSources/dataone/useMapBehavior.ts`:
+  - Added `mapReady` to click/focus effects so handlers rebind after 2D/3D toggle view recreation.
+  - Preserved active DataONE `viewId` on point and single-member aggregate clicks.
+  - Added SceneView-oriented hit matching fallback (`dataoneId` attribute check).
+  - Added 3D guard logic for feature reduction (set `featureReduction = null` in 3D).
+- Updated active-layer sync in `src/v2/context/LayerContext.tsx`:
+  - Preserved explicit map-click `featureId` during DataONE view realignment to avoid losing detail intent.
+- Updated DataONE layer/map config:
+  - `src/v2/components/Map/layers/dataoneLayer.ts`: added `elevationInfo: { mode: 'on-the-ground' }`.
+  - `src/v2/components/Map/MapContainer.tsx`: set `view.popup.autoOpenEnabled = false`.
+
+**Observed Outcome (Window 1):**
+- 3D marker clicks still did not open DataONE detail.
+- User requested reverting the new dot rendering style while continuing 3D interaction debugging.
+
+**Window 2 Investigation & Fix (Feb 24, 2026):**
+
+*Root cause analysis:* Compared DataONE (client-side FeatureLayer via `source: []` + `applyEdits`) with all other data sources. Every other layer that supports clicks uses either **server-hosted FeatureLayers** (CalFlora, GBIF) or **GraphicsLayers** (iNaturalist, Dendra). DataONE is the only **client-side FeatureLayer**. SceneView's hitTest pipeline does not reliably detect features in client-side FeatureLayers — even with `hitTest({ include: [layer] })`. Additionally, SceneView auto-converts 2D `SimpleMarkerSymbol` to 3D billboards which produced "weird" dot rendering.
+
+*Attempt 1 (`hitTest({ include })` only):* User confirmed 2D still works, but 3D click still broken and dots rendered oddly.
+
+*Attempt 2 (coordinate fallback + PointSymbol3D):* User reported: sidebar syncs correctly in 3D, but dots render weirdly and no visual feedback on map click. Coordinate fallback worked but bypassed ArcGIS rendering/popup.
+
+*Attempt 3 (current — GraphicsLayer overlay, Dendra pattern):*
+1. **3D rendering + click: companion GraphicsLayer** — In SceneView, a `GraphicsLayer` overlay (same pattern as Dendra sensor layers) is created with per-graphic `SimpleMarkerSymbol` dots. The FeatureLayer is hidden (`visible = false`). The overlay handles all rendering and click detection natively — `hitTest` on a `GraphicsLayer` works reliably in SceneView. Popup highlight also works natively via `view.openPopup({ features: [hit.graphic] })`.
+2. **2D completely unchanged** — FeatureLayer + clustering/binning + hitTest works as before.
+3. **Overlay lifecycle** — Created/destroyed by the aggregation-mode effect based on `view.type`. Populate effect keeps overlay in sync when data refreshes.
+4. **Removed per-graphic symbol from FeatureLayer** — FeatureLayer renderer handles symbology; per-graphic symbol was dead code.
+5. **Files:** `dataoneLayer.ts` (added `createDataOneOverlay`, `populateDataOneOverlay`), `useMapBehavior.ts` (overlay lifecycle + 3D hit target swap).
+
+*Retained from Window 1 (correct changes):*
+- `elevationInfo: { mode: 'on-the-ground' }` — explicit ground-clamping for 3D
+- `featureReduction = null` in SceneView — clustering/binning not supported in 3D
+- `isDataOneGraphicHit` attribute fallback — safety net for hitTest in case it works
+- `mapReady` in effect deps — ensures click handler re-registers after 2D↔3D toggle
+- `view.popup.autoOpenEnabled = false` — prevents auto-popup interference
+- viewId preservation on `activateLayer` calls
+- featureId preservation in LayerContext view realignment
+
+**Acceptance Criteria:**
+- [x] Clicking a DataONE marker in 3D opens the matching detail view in right sidebar every time.
+- [x] Clicking a DataONE marker in 2D behavior remains unchanged.
+- [x] DataONE dataset dot rendering matches user-preferred prior style.
+- [x] No regression in cluster/bin click behavior, saved-view behavior, or Recenter/popup highlight behavior.
+
+**Estimated Time:** 2–4 hours (complete)
 
 ---
 
@@ -501,6 +561,11 @@ ArcGIS `fixedBinLevel` reference: level 1 = largest bins, level 9 = smallest. Lo
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 24, 2026 | CON-DONE-17 marked complete. QA confirmed: 3D icon rendering and marker click behavior now work as expected; 2D behavior unchanged. Phase progress updated to 16/17. | Assistant |
+| Feb 24, 2026 | CON-DONE-17 fix v3: GraphicsLayer overlay for 3D (Dendra pattern). FeatureLayer hidden in SceneView; overlay handles rendering + hitTest + popup. Click handler swaps `include` target between FeatureLayer (2D) and overlay (3D). Removed coordinate fallback and PointSymbol3D (no longer needed). QA pending. | Assistant |
+| Feb 24, 2026 | CON-DONE-17 fix v2: screen-distance coordinate fallback + PointSymbol3D renderer. User reported: sidebar syncs but dots render weirdly, no map visual feedback on click. | Assistant |
+| Feb 24, 2026 | CON-DONE-17 fix v1: `hitTest({ include: [layer] })` for SceneView click detection; removed per-graphic `symbol` from `populateDataOneLayer`. User reported: 2D works, 3D still broken, dots look weird. | Assistant |
+| Feb 24, 2026 | Added CON-DONE-17 for 2D/3D DataONE marker-click synchronization + dot-rendering revert request. Documented attempted fixes and next-window handoff steps after unresolved 3D detail-open regression. Updated progress to 15/17. | Assistant |
 | Feb 23, 2026 | **DataONE native ArcGIS highlight + cluster/saved-view fix.** Replaced custom cyan ring with ArcGIS popup highlight: `openPopupForDataoneFeature` in DatasetDetailView (detail open, Recenter) and useMapBehavior (Map Layers saved-dataset click). Cluster click: preserve viewId when coming from saved dataset view; pan-only (no zoom) so sidebar filters without snapping to saved detail. | Assistant |
 | Feb 23, 2026 | **DataONE Save View + Map Layers sync refinements.** Save Dataset View: auto-pin when unpinned; persist current browse filters + selected dataset. Map Layers child-view click: explicit featureId pass from MapLayersWidget; sync effect resolves DataONE featureId only when view changes (preserves Back-to-list). Cluster click: removed custom highlight ring; safe auto-zoom (only when cluster stays visible). | Assistant |
 | Feb 23, 2026 | Quick Task Summary sync: added D20-B02 (Dan backend follow-up) so phase progress reflects 15/16 accurately; CON-DONE-12/13 remain tracked in Phase 5 handoff. | Assistant |

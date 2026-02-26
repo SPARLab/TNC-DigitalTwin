@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import { motusService, type MotusBrowseFilters, type MotusSpeciesSummary } from '../../services/motusService';
+import { createDefaultMotusBrowseFilters } from './utils/browseFilterDefaults';
 
 interface MotusFilterContextValue {
   loading: boolean;
@@ -32,12 +33,7 @@ interface MotusFilterContextValue {
   setIsPlaybackPlaying: (playing: boolean) => void;
 }
 
-const DEFAULT_BROWSE_FILTERS: Required<MotusBrowseFilters> = {
-  startDate: '',
-  endDate: '',
-  minHitCount: 1,
-  minMotusFilter: 1,
-};
+const DEFAULT_BROWSE_FILTERS: Required<MotusBrowseFilters> = createDefaultMotusBrowseFilters();
 
 const MotusFilterContext = createContext<MotusFilterContextValue | null>(null);
 

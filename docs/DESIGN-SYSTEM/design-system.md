@@ -1,6 +1,6 @@
 # Design System - TNC Digital Catalog
 
-**Last Updated:** February 20, 2026 (D20-10 ArcGIS overview description; BrowseBackButton D20-02; Dendra station display name normalization)  
+**Last Updated:** February 25, 2026 (MapControlRail unified map controls; D20-10 ArcGIS overview; BrowseBackButton D20-02; Export Builder Modal: scroll area, figure-ground, semantic naming)  
 **Purpose:** Single source of truth for styling decisions, component patterns, and design policies that affect multiple phases.
 
 ---
@@ -90,6 +90,25 @@ Consider binary collapse toggle (hide/show sidebar entirely) as future enhanceme
 - **Target Audience (DFT-011):** Researchers at workstations, not mobile users
 
 **Decision Date:** February 3, 2026
+
+### Map View Mode Toggle (2D / 3D)
+
+**Policy:** Map supports 2D (MapView) and 3D (SceneView) modes with a unified control rail. All data source layers drape automatically onto terrain in 3D; LiDAR PointCloudLayer loads in 3D only.
+
+**Component:** `MapControlRail` — `src/v2/components/Map/MapControlRail.tsx`
+
+**Specification:**
+| Property | Value |
+|----------|-------|
+| Position | Top-right (`right-4 top-4`), `z-40` |
+| Controls | 2D/3D text toggle, LiDAR visibility (3D only), zoom +/−, compass (reset north) |
+| Label | Action-oriented: shows "3D" when in 2D (click to switch), "2D" when in 3D |
+| Button size | All buttons 32×32 via `.map-control-btn` token |
+| Styling | `border border-gray-300 bg-white`, shadow, hover: `bg-gray-50` |
+
+**Rationale:** Unified rail replaces ArcGIS built-in zoom/compass/nav controls for consistent sizing and visual hierarchy. Action-oriented label (shows destination) follows Norman's affordance principle. No per-data-source code required — all layers work in both modes via ArcGIS SDK.
+
+**Implementation Date:** February 24, 2026; REF-16 unified rail: February 25, 2026
 
 ---
 
@@ -373,6 +392,32 @@ Update ETA dynamically as queries complete.
 | Gestalt: Proximity/Similarity | ✅ | Indicator colocates with the component being updated |
 | Shneiderman: User control and freedom | 🟡 | Strong for refresh; first-load map overlay is intentionally blocking |
 | WCAG (Perceivable/Operable) | 🟡 | Requires ARIA status text and contrast checks during implementation |
+
+---
+
+## Export Builder Modal (Phase 12)
+
+**Policy:** Export Builder modal uses a clear figure-ground hierarchy and overlay scrollbar for demo-ready UX.
+
+### Visual Hierarchy (Figure-Ground)
+
+- **Ground:** Scroll area uses `bg-slate-50` so layer cards and summary card read as distinct figures.
+- **Figures:** Layer cards and Export summary use `bg-white shadow-sm` to stand out as the primary export targets.
+- **Nested sections:** "Filtered views" and "Export outputs" use `rounded-lg border border-slate-200 bg-slate-50` for consistent enclosure (Gestalt Similarity).
+
+### Scroll Area (`.scroll-area-export-builder`)
+
+- **Hover-only thumb:** Scrollbar thumb is transparent by default; appears on `:hover` / `:focus-within` of the scroll container.
+- **No track:** Track is always transparent (no visible scroll track).
+- **Stable layout:** `scrollbar-gutter: stable` prevents content shift when scrollbar appears.
+- **Implementation:** CSS class in `src/index.css`; applied to `#export-builder-content-scroll-area`.
+
+### Semantic Naming
+
+- "Import code" → "Code generation" (avoids export/import contradiction).
+- "Size unavailable" → "Estimate pending" at layer/summary level; em-dash at view level when unavailable.
+
+**Decision Date:** February 25, 2026
 
 ---
 
@@ -2007,6 +2052,8 @@ February 5, 2026
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 25, 2026 | **REF-16: MapControlRail.** Unified right-rail map controls: 2D/3D text toggle, LiDAR visibility (3D only), zoom +/−, compass; all buttons 32×32. Replaces ArcGIS built-in zoom/compass/nav widgets. Documented in Map View Mode Toggle. | Cursor |
+| Feb 24, 2026 | **Map View Mode Toggle (2D/3D).** ViewModeToggle component: bottom-left floating button, action-oriented label ("3D" when in 2D, "2D" when in 3D), Globe/Map icons. MapContainer supports MapView/SceneView; all layers drape on terrain in 3D; LiDAR PointCloudLayer in 3D only. Documented in Layout Specifications. | Cursor |
 | Feb 20, 2026 | **D20-10: ArcGIS Overview description source.** TNC ArcGIS and Dendra Overview tabs fetch description from ArcGIS item metadata (serviceItemId → snippet + description) when available; HTML normalized for line breaks; `whitespace-pre-line` for display. No per-layer descriptions in layer list. | Cursor |
 | Feb 19, 2026 | **Dendra Map Layers child labels (CON-DENDRA-04).** Dynamic labels: collapsed `N data streams, M stations`; expanded by station scope. Pin count badge: number + blue pin icon only. Documented in Components table and phase-3-dendra.md. | Cursor |
 | Feb 24, 2026 | **Dendra chart panel sizing & placement (D24-01).** Initial size 560–760×380–500; separate bottom margin (32px) for placement ~1–2rem from map bottom; time slider data shadow restored, spacing tuned. Documented in Components table and phase-3-dendra.md. | Cursor |

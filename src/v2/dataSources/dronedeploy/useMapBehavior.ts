@@ -4,6 +4,7 @@ import GroupLayer from '@arcgis/core/layers/GroupLayer';
 import type Layer from '@arcgis/core/layers/Layer';
 import WMTSLayer from '@arcgis/core/layers/WMTSLayer';
 import type MapView from '@arcgis/core/views/MapView';
+import type SceneView from '@arcgis/core/views/SceneView';
 import { useLayers } from '../../context/LayerContext';
 import { useMap } from '../../context/MapContext';
 import { useDroneDeploy } from '../../context/DroneDeployContext';
@@ -42,7 +43,7 @@ function pickDefaultFlightIdForProject(
   return fallback?.id ?? null;
 }
 
-async function flyToFlightExtent(view: MapView, rings?: number[][][]): Promise<void> {
+async function flyToFlightExtent(view: MapView | SceneView, rings?: number[][][]): Promise<void> {
   const extent = extentFromRings(rings);
   if (!extent) return;
   await view.goTo(extent.expand(1.25), { duration: 700 });
@@ -73,6 +74,7 @@ export function useDroneDeployMapBehavior(
   const { activateLayer } = useLayers();
   const { viewRef, showToast } = useMap();
   const loadedArcLayersRef = useRef<Map<number, WMTSLayer>>(new Map());
+  const lastParentLayerRef = useRef<GroupLayer | null>(null);
   const failedFlightIdsRef = useRef<Set<number>>(new Set());
   const isHandlingMapReadyRef = useRef(false);
   const lastRequestedFlyToFlightIdRef = useRef<number | null>(null);
@@ -168,12 +170,22 @@ export function useDroneDeployMapBehavior(
         setFlightLoading(flightId, false);
       }
       loadedArcLayersRef.current.clear();
+      lastParentLayerRef.current = null;
       return;
     }
     const parent = getManagedLayer(LAYER_ID);
     if (!parent || !(parent instanceof GroupLayer)) return;
 
     const byFlightId = loadedArcLayersRef.current;
+    if (lastParentLayerRef.current !== parent) {
+      // Map swaps (2D<->3D) recreate managed GroupLayer instances. Any cached
+      // WMTSLayer refs belong to the old parent and must be recreated.
+      for (const flightId of byFlightId.keys()) {
+        setFlightLoading(flightId, false);
+      }
+      byFlightId.clear();
+      lastParentLayerRef.current = parent;
+    }
     const desiredFlightIds = loadedFlightIds;
     const desired = new Set<number>(desiredFlightIds);
 
@@ -187,8 +199,14 @@ export function useDroneDeployMapBehavior(
     for (const flightId of desired) {
       if (byFlightId.has(flightId)) {
         const layer = byFlightId.get(flightId);
-        if (layer) layer.opacity = opacityByFlightId[flightId] ?? 0.8;
-        continue;
+        if (layer) {
+          const attachedToCurrentParent = !!parent.findLayerById(layer.id);
+          if (attachedToCurrentParent) {
+            layer.opacity = opacityByFlightId[flightId] ?? 0.8;
+            continue;
+          }
+          byFlightId.delete(flightId);
+        }
       }
 
       const flight = getFlightById(flightId);

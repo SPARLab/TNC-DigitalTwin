@@ -1,9 +1,14 @@
 // ============================================================================
 // DataONE Map Layer — FeatureLayer populated from DataONE dataset centers.
 // Supports toggling ArcGIS feature reduction between clusters and bins.
+//
+// In SceneView (3D) the client-side FeatureLayer isn't reliably hit-testable,
+// so useMapBehavior adds a companion GraphicsLayer overlay for rendering and
+// clicks. populateDataOneOverlay() follows the same pattern as Dendra layers.
 // ============================================================================
 
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
+import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import Graphic from '@arcgis/core/Graphic';
 import Point from '@arcgis/core/geometry/Point';
 import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
@@ -171,6 +176,7 @@ export function createDataOneLayer(options: {
     ],
     geometryType: 'point',
     spatialReference: { wkid: 4326 },
+    elevationInfo: { mode: 'on-the-ground' },
     renderer: new SimpleRenderer({
       symbol: DEFAULT_MARKER_SYMBOL,
     }),
@@ -206,7 +212,6 @@ export async function populateDataOneLayer(
         longitude: dataset.centerLon as number,
         latitude: dataset.centerLat as number,
       }),
-      symbol: DEFAULT_MARKER_SYMBOL.clone(),
       attributes: {
         ObjectID: dataset.id,
         datasetId: dataset.id,
@@ -230,4 +235,42 @@ export async function populateDataOneLayer(
     ...(deleteFeatures.length > 0 ? { deleteFeatures } : {}),
     addFeatures: graphics,
   });
+}
+
+// ── 3D overlay (GraphicsLayer — same pattern as Dendra) ──────────────────────
+
+const OVERLAY_LAYER_ID = 'v2-dataone-3d-overlay';
+
+/** Create the GraphicsLayer used as a 3D click + render overlay. */
+export function createDataOneOverlay(): GraphicsLayer {
+  return new GraphicsLayer({ id: OVERLAY_LAYER_ID, title: 'DataONE 3D Overlay' });
+}
+
+/** Populate the 3D overlay with per-graphic symbols (like Dendra pattern). */
+export function populateDataOneOverlay(
+  layer: GraphicsLayer,
+  datasets: DataOneDataset[],
+): void {
+  layer.removeAll();
+
+  const graphics = datasets
+    .filter((d) => Number.isFinite(d.centerLon) && Number.isFinite(d.centerLat))
+    .map((d) => new Graphic({
+      geometry: new Point({ longitude: d.centerLon as number, latitude: d.centerLat as number }),
+      symbol: DEFAULT_MARKER_SYMBOL,
+      attributes: {
+        dataoneId: d.dataoneId,
+        title: d.title,
+        category: d.tncCategory,
+      },
+      popupTemplate: {
+        title: '{title}',
+        content: [{ type: 'fields', fieldInfos: [
+          { fieldName: 'dataoneId', label: 'DataONE ID' },
+          { fieldName: 'category', label: 'Category' },
+        ] }],
+      } as __esri.PopupTemplateProperties,
+    }));
+
+  layer.addMany(graphics);
 }

@@ -16,11 +16,25 @@ import type {
   DataOneDatasetDetail,
   DataOneQueryOptions,
   DataOneQueryResponse,
-  DataOneArcGISResponse,
   DataOneFileInfo,
   DataOneVersionEntry,
   FilesSummary,
 } from '../types/dataone';
+import { fetchArcGisResponse, fetchJson } from './dataone/client';
+import {
+  datasetMatchesFileTypeFilters,
+  normalizeFileTypeFilters,
+  parseDelimitedList,
+  parseFilesSummary,
+  parseTimestamp,
+} from './dataone/normalizers';
+import {
+  ALL_VERSIONS_LAYER_URL,
+  buildWhereClause,
+  LATEST_LAYER_URL,
+  LITE_LAYER_URL,
+  shouldUseLatestLayerForSearch,
+} from './dataone/queries';
 
 // Re-export types for consumers
 export type {
@@ -33,131 +47,6 @@ export type {
   FilesSummary,
 };
 
-// ArcGIS Feature Service endpoints (new consolidated service)
-const BASE_SERVICE_URL =
-  'https://dangermondpreserve-spatial.com/server/rest/services/Hosted/DataONE_Datasets/FeatureServer';
-const LITE_LAYER_URL = `${BASE_SERVICE_URL}/0`;      // Fast list loading, no abstracts
-const LATEST_LAYER_URL = `${BASE_SERVICE_URL}/1`;    // Full metadata, latest versions only
-const ALL_VERSIONS_LAYER_URL = `${BASE_SERVICE_URL}/2`; // All versions for history
-
-// Dangermond Preserve center coordinates for default radius filter
-// Calculated from actual preserve bounds: W -120.498, E -120.357, S 34.415, N 34.570
-const PRESERVE_CENTER = {
-  lat: 34.4925,
-  lng: -120.4275,
-};
-
-// ~20 miles in degrees (approximate)
-const RADIUS_DEGREES = 0.29;
-
-/**
- * Parse comma/semicolon-delimited string into array
- */
-function parseDelimitedList(str: string | null | undefined): string[] {
-  if (!str) return [];
-  return str.split(/[;,]/).map((s) => s.trim()).filter(Boolean);
-}
-
-/**
- * Parse Unix timestamp (milliseconds) to Date object
- */
-function parseTimestamp(timestamp: number | null): Date | null {
-  if (timestamp === null) return null;
-  const date = new Date(timestamp);
-  return isNaN(date.getTime()) ? null : date;
-}
-
-function normalizeCategoryFilters(options: DataOneQueryOptions): string[] {
-  const normalized = new Set<string>();
-  if (options.tncCategory?.trim()) {
-    normalized.add(options.tncCategory.trim());
-  }
-  for (const category of options.tncCategories || []) {
-    const trimmed = category.trim();
-    if (trimmed) normalized.add(trimmed);
-  }
-  return Array.from(normalized);
-}
-
-function shouldUseLatestLayerForSearch(options: DataOneQueryOptions): boolean {
-  return Boolean(options.searchText?.trim());
-}
-
-function normalizeFileTypeFilters(
-  options: DataOneQueryOptions,
-): Array<'csv' | 'tif' | 'imagery' | 'other'> {
-  const allowed = new Set(['csv', 'tif', 'imagery', 'other'] as const);
-  const normalized = new Set<'csv' | 'tif' | 'imagery' | 'other'>();
-  for (const value of options.fileTypes || []) {
-    if (allowed.has(value)) normalized.add(value);
-  }
-  return Array.from(normalized);
-}
-
-function normalizeExtension(ext: string): string {
-  return ext.trim().toLowerCase().replace(/^\./, '');
-}
-
-const TIF_EXTENSIONS = new Set(['tif', 'tiff', 'geotif', 'geotiff']);
-const IMAGERY_EXTENSIONS = new Set([
-  'jpg',
-  'jpeg',
-  'png',
-  'gif',
-  'bmp',
-  'webp',
-  'jp2',
-  'j2k',
-  'img',
-  'sid',
-]);
-
-function datasetMatchesFileTypeFilters(
-  dataset: DataOneDataset,
-  selectedFilters: Array<'csv' | 'tif' | 'imagery' | 'other'>,
-): boolean {
-  if (selectedFilters.length === 0) return true;
-  const byExtension = dataset.filesSummary?.byExtension;
-  if (!byExtension) return false;
-
-  const extensions = Object.keys(byExtension)
-    .map(normalizeExtension)
-    .filter(Boolean);
-  if (extensions.length === 0) return false;
-
-  const hasCsv = extensions.includes('csv');
-  const hasTif = extensions.some((ext) => TIF_EXTENSIONS.has(ext));
-  const hasImagery = extensions.some((ext) => IMAGERY_EXTENSIONS.has(ext) && !TIF_EXTENSIONS.has(ext));
-  const hasOther = extensions.some(
-    (ext) => ext !== 'csv' && !TIF_EXTENSIONS.has(ext) && !IMAGERY_EXTENSIONS.has(ext),
-  );
-
-  return selectedFilters.some((filterType) => {
-    if (filterType === 'csv') return hasCsv;
-    if (filterType === 'tif') return hasTif;
-    if (filterType === 'imagery') return hasImagery;
-    return hasOther;
-  });
-}
-
-/**
- * Parse files_summary JSON string
- * Format: {"total": 3, "by_ext": {"csv": 2, "pdf": 1}, "size_bytes": 22583}
- */
-function parseFilesSummary(jsonStr: string | null): FilesSummary | null {
-  if (!jsonStr) return null;
-  try {
-    const parsed = JSON.parse(jsonStr);
-    return {
-      total: parsed.total || 0,
-      byExtension: parsed.by_ext || {},
-      sizeBytes: parsed.size_bytes || 0,
-    };
-  } catch {
-    console.warn('Failed to parse files_summary:', jsonStr);
-    return null;
-  }
-}
 
 /**
  * De-duplicate datasets by dataone_id.
@@ -287,76 +176,6 @@ function fullRecordToDatasetDetail(record: DataOneFullRecord): DataOneDatasetDet
   };
 }
 
-/**
- * Build where clause for spatial filter using center_lat/center_lon
- */
-function buildWhereClause(options: DataOneQueryOptions, includeFullTextFields = false): string {
-  const conditions: string[] = ['1=1'];
-
-  // Apply 20-mile radius around preserve by default (using center point)
-  if (options.usePreserveRadius !== false && !options.spatialExtent) {
-    const north = PRESERVE_CENTER.lat + RADIUS_DEGREES;
-    const south = PRESERVE_CENTER.lat - RADIUS_DEGREES;
-    const east = PRESERVE_CENTER.lng + RADIUS_DEGREES;
-    const west = PRESERVE_CENTER.lng - RADIUS_DEGREES;
-
-    // Filter by center_lat and center_lon being within our search area
-    conditions.push(
-      `(center_lat >= ${south} AND center_lat <= ${north} AND ` +
-        `center_lon >= ${west} AND center_lon <= ${east})`
-    );
-  } else if (options.spatialExtent) {
-    const { xmin, ymin, xmax, ymax } = options.spatialExtent;
-    conditions.push(
-      `(center_lat >= ${ymin} AND center_lat <= ${ymax} AND ` +
-        `center_lon >= ${xmin} AND center_lon <= ${xmax})`
-    );
-  }
-
-  // Text search on title for Lite layer, and title/abstract/keywords for Latest layer.
-  if (options.searchText) {
-    const searchTerm = options.searchText.replace(/'/g, "''");
-    if (includeFullTextFields) {
-      conditions.push(
-        `(title LIKE '%${searchTerm}%' OR abstract LIKE '%${searchTerm}%' OR keywords LIKE '%${searchTerm}%')`
-      );
-    } else {
-      conditions.push(`title LIKE '%${searchTerm}%'`);
-    }
-  }
-
-  // Repository filter
-  if (options.repository) {
-    conditions.push(`datasource = '${options.repository}'`);
-  }
-
-  // Optional author filter (field is present in current service schema)
-  if (options.author) {
-    const author = options.author.replace(/'/g, "''");
-    conditions.push(`authors LIKE '%${author}%'`);
-  }
-
-  // TNC category filters (single or multi-select)
-  const categories = normalizeCategoryFilters(options);
-  if (categories.length > 0) {
-    const categoryClauses = categories.map((value) => {
-      const category = value.replace(/'/g, "''");
-      return `(tnc_category = '${category}' OR tnc_categories LIKE '%${category}%')`;
-    });
-    conditions.push(`(${categoryClauses.join(' OR ')})`);
-  }
-
-  // Temporal filters using begin_date and end_date
-  if (options.startDate) {
-    conditions.push(`end_date >= '${options.startDate}'`);
-  }
-  if (options.endDate) {
-    conditions.push(`begin_date <= '${options.endDate}'`);
-  }
-
-  return conditions.join(' AND ');
-}
-
 class DataOneService {
   private async queryAllDatasetsForClientFiltering(
     options: DataOneQueryOptions = {},
@@ -375,12 +194,7 @@ class DataOneService {
     });
 
     const url = `${queryLayerUrl}/query?${params}`;
-    const response = await fetch(url, { signal: options.signal });
-    if (!response.ok) {
-      throw new Error(`Failed to query DataONE datasets: ${response.statusText}`);
-    }
-
-    const data: DataOneArcGISResponse = await response.json();
+    const data = await fetchArcGisResponse(url, 'Failed to query DataONE datasets', options.signal);
     if (data.error) {
       throw new Error(`DataONE API error: ${data.error.message || 'Unknown error'}`);
     }
@@ -416,13 +230,7 @@ class DataOneService {
     });
 
     const url = `${countLayerUrl}/query?${params}`;
-    const response = await fetch(url, { signal: options.signal });
-
-    if (!response.ok) {
-      throw new Error(`Failed to count DataONE datasets: ${response.statusText}`);
-    }
-
-    const data = await response.json();
+    const data = await fetchArcGisResponse(url, 'Failed to count DataONE datasets', options.signal);
     
     // Check for API-level error
     if (data.error) {
@@ -474,13 +282,7 @@ class DataOneService {
     });
 
     const url = `${queryLayerUrl}/query?${params}`;
-    const response = await fetch(url, { signal: options.signal });
-
-    if (!response.ok) {
-      throw new Error(`Failed to query DataONE datasets: ${response.statusText}`);
-    }
-
-    const data: DataOneArcGISResponse = await response.json();
+    const data = await fetchArcGisResponse(url, 'Failed to query DataONE datasets', options.signal);
 
     // Guard against API error or undefined features
     if (data.error) {
@@ -515,13 +317,7 @@ class DataOneService {
     });
 
     const url = `${LATEST_LAYER_URL}/query?${params}`;
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`Failed to get DataONE dataset details: ${response.statusText}`);
-    }
-
-    const data: DataOneArcGISResponse = await response.json();
+    const data = await fetchArcGisResponse(url, 'Failed to get DataONE dataset details');
 
     if (data.error) {
       throw new Error(`DataONE API error: ${data.error.message || 'Unknown error'}`);
@@ -546,13 +342,7 @@ class DataOneService {
     });
 
     const url = `${ALL_VERSIONS_LAYER_URL}/query?${params}`;
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`Failed to get version details: ${response.statusText}`);
-    }
-
-    const data: DataOneArcGISResponse = await response.json();
+    const data = await fetchArcGisResponse(url, 'Failed to get version details');
 
     if (data.error) {
       throw new Error(`DataONE API error: ${data.error.message || 'Unknown error'}`);
@@ -581,13 +371,7 @@ class DataOneService {
     });
 
     const url = `${ALL_VERSIONS_LAYER_URL}/query?${params}`;
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`Failed to get version history: ${response.statusText}`);
-    }
-
-    const data: DataOneArcGISResponse = await response.json();
+    const data = await fetchArcGisResponse(url, 'Failed to get version history');
 
     if (data.error) {
       throw new Error(`DataONE API error: ${data.error.message || 'Unknown error'}`);
@@ -631,13 +415,7 @@ class DataOneService {
     });
 
     const url = `${LITE_LAYER_URL}/query?${params}`;
-    const response = await fetch(url, { signal: options.signal });
-
-    if (!response.ok) {
-      throw new Error(`Failed to get DataONE map data: ${response.statusText}`);
-    }
-
-    const data: DataOneArcGISResponse = await response.json();
+    const data = await fetchArcGisResponse(url, 'Failed to get DataONE map data', options.signal);
 
     if (data.error || !data.features) {
       return [];
@@ -682,12 +460,7 @@ class DataOneService {
     });
 
     const url = `${LITE_LAYER_URL}/query?${params}`;
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch DataONE dataset by id: ${response.statusText}`);
-    }
-
-    const data: DataOneArcGISResponse = await response.json();
+    const data = await fetchArcGisResponse(url, 'Failed to fetch DataONE dataset by id');
     if (data.error || !data.features || data.features.length === 0) return null;
     return liteRecordToDataset(data.features[0].attributes as DataOneLiteRecord);
   }
@@ -705,13 +478,7 @@ class DataOneService {
     });
 
     const url = `${LITE_LAYER_URL}/query?${params}`;
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`Failed to get DataONE repositories: ${response.statusText}`);
-    }
-
-    const data: DataOneArcGISResponse = await response.json();
+    const data = await fetchArcGisResponse(url, 'Failed to get DataONE repositories');
 
     if (data.error || !data.features) {
       return [];
@@ -741,13 +508,9 @@ class DataOneService {
       });
       const url = `https://cn.dataone.org/cn/v2/query/solr/?${params.toString()}`;
 
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        throw new Error(`DataONE API error: ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      const data = await fetchJson(url, 'DataONE API error') as {
+        response?: { docs?: Array<{ formatId?: string; size?: number }> };
+      };
       const docs = data.response?.docs || [];
 
       // Extract file types and sizes
@@ -820,13 +583,7 @@ class DataOneService {
     });
 
     const url = `${LITE_LAYER_URL}/query?${params}`;
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`Failed to get DataONE GeoJSON: ${response.statusText}`);
-    }
-
-    const data: DataOneArcGISResponse = await response.json();
+    const data = await fetchArcGisResponse(url, 'Failed to get DataONE GeoJSON');
 
     if (data.error || !data.features) {
       return { type: 'FeatureCollection', features: [] };

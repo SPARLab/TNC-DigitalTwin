@@ -20,7 +20,7 @@ function getSamplingModuloForScale(scale: number): number {
   return 1;
 }
 
-function buildViewportWhereClause(view: __esri.MapView): string | null {
+function buildViewportWhereClause(view: __esri.MapView | __esri.SceneView): string | null {
   const extent = view.extent?.clone();
   if (!extent) return null;
 
@@ -73,7 +73,7 @@ export function useGBIFMapBehavior(
   getManagedLayer: (layerId: string) => Layer | undefined,
   pinnedLayers: PinnedLayer[],
   activeLayer: ActiveLayer | null,
-  _mapReady: number,
+  mapReady: number,
 ) {
   const { browseFilters, aggregationMode, warmCache } = useGBIFFilter();
   const { activateLayer } = useLayers();
@@ -129,7 +129,7 @@ export function useGBIFMapBehavior(
     });
 
     return () => stationaryHandle.remove();
-  }, [isOnMap, targetLayerId, browseFilters, getManagedLayer, viewRef]);
+  }, [isOnMap, targetLayerId, browseFilters, getManagedLayer, viewRef, mapReady]);
 
   useEffect(() => {
     if (!isOnMap) return;
@@ -161,7 +161,7 @@ export function useGBIFMapBehavior(
       applyIfLevelChanged();
     });
     return () => stationaryHandle.remove();
-  }, [isOnMap, targetLayerId, aggregationMode, getManagedLayer, viewRef]);
+  }, [isOnMap, targetLayerId, aggregationMode, getManagedLayer, viewRef, mapReady]);
 
   useEffect(() => {
     if (!isOnMap) return;
@@ -193,5 +193,5 @@ export function useGBIFMapBehavior(
     });
 
     return () => handler.remove();
-  }, [isOnMap, viewRef, activateLayer, activeLayer]);
+  }, [isOnMap, viewRef, activateLayer, activeLayer, mapReady]);
 }

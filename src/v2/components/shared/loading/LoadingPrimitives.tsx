@@ -71,3 +71,18 @@ export function MapCenterLoadingOverlay({ id, message }: MapCenterLoadingOverlay
     </div>
   );
 }
+
+interface MapRefreshPillProps {
+  id: string;
+  message: string;
+}
+
+/** Subtle bottom-left pill for re-render status during pan/zoom (not first load). */
+export function MapRefreshPill({ id, message }: MapRefreshPillProps) {
+  return (
+    <div id={id} className={loadingTheme.mapRefreshPill}>
+      <Loader2 id={`${id}-spinner`} className={loadingTheme.mapRefreshSpinner} />
+      <span id={`${id}-text`} className={loadingTheme.mapRefreshText}>{message}</span>
+    </div>
+  );
+}

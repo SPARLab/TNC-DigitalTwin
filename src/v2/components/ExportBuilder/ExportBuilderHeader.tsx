@@ -27,7 +27,7 @@ export function ExportBuilderHeader({
             Export Builder
           </h2>
           <p id="export-builder-subtitle" className="text-xs text-slate-600">
-            Select views and outputs, then generate links or download a ZIP package.
+            Select views and outputs, then generate code, links, or a ZIP package.
           </p>
           <div id="export-builder-counts-row" className="flex items-center gap-2">
             <span

@@ -1,53 +1,48 @@
 // ============================================================================
-// MapContainer — ArcGIS MapView centered on Jack & Laura Dangermond Preserve
-// Renders floating widgets (MapLayersWidget) on top.
-// Uses data source registry for legend widgets and loading overlays —
+// MapContainer — ArcGIS MapView / SceneView for Dangermond Preserve
+// Supports 2D (MapView) and 3D (SceneView) toggle. Renders floating widgets
+// on top. Uses data source registry for legend widgets and loading overlays —
 // no data-source-specific imports needed in this file.
 // ============================================================================
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { ExternalLink } from 'lucide-react';
-import Map from '@arcgis/core/Map';
-import MapView from '@arcgis/core/views/MapView';
-import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
-import SketchViewModel from '@arcgis/core/widgets/Sketch/SketchViewModel';
 import { MapLayersWidget } from '../FloatingWidgets/MapLayersWidget/MapLayersWidget';
-// NOTE: BookmarkedItemsWidget disabled per Feb 11 design decision.
-// Saved Items merged into Map Layers. Code preserved for CSS/animation reuse.
-// import { BookmarkedItemsWidget } from '../FloatingWidgets/BookmarkedItemsWidget/BookmarkedItemsWidget';
+import { MapControlRail } from './MapControlRail';
 import { useMap } from '../../context/MapContext';
 import { useLayers } from '../../context/LayerContext';
 import { useMapLayers } from './useMapLayers';
 import { getAdapterForActiveLayer, useActiveCacheStatus } from '../../dataSources/registry';
 import { MapToasts } from './MapToasts';
-import { MapCenterLoadingOverlay } from '../shared/loading/LoadingPrimitives';
+import { MapCenterLoadingOverlay, MapRefreshPill } from '../shared/loading/LoadingPrimitives';
 import { DendraTimeSeriesPanel } from '../FloatingWidgets/DendraTimeSeriesPanel/DendraTimeSeriesPanel';
-
-/** Dangermond Preserve center coordinates */
-const PRESERVE_CENTER: [number, number] = [-120.47, 34.47];
-const INITIAL_ZOOM = 12;
+import { useArcgisViewLifecycle } from './internal/useArcgisViewLifecycle';
+import { useDataOnePreviewStatus } from './internal/useDataOnePreviewStatus';
 
 export function MapContainer() {
   const mapDivRef = useRef<HTMLDivElement>(null);
   const {
     viewRef,
+    viewMode,
     highlightLayerRef,
     spatialQueryLayerRef,
     spatialSketchViewModelRef,
+    isLidarVisible,
     setMapReady,
     dataOnePreview,
     closeDataOnePreview,
   } = useMap();
   const { activeLayer } = useLayers();
-  const [previewStatus, setPreviewStatus] = useState<'loading' | 'loaded' | 'error' | 'blocked'>('loading');
+  const { previewStatus, markPreviewLoaded, markPreviewErrored } = useDataOnePreviewStatus(dataOnePreview);
 
   // Adapter lookup supports layer-specific overrides (for example, DroneDeploy dataset-193).
   const adapter = getAdapterForActiveLayer(activeLayer ?? null);
   const LegendWidget = adapter?.LegendWidget;
   const FloatingPanel = adapter?.FloatingPanel;
 
-  // Cache/loading status for the active data source (generic loading overlay)
+  // Cache/loading status for the active data source
   const cacheStatus = useActiveCacheStatus(adapter?.id ?? activeLayer?.dataSource);
+  // Full overlay only on first load (data not yet loaded)
   const showLoadingOverlay = !!activeLayer
     && (cacheStatus?.loading ?? false)
     && ((adapter?.id === 'drone') || !(cacheStatus?.dataLoaded ?? false));
@@ -55,78 +50,23 @@ export function MapContainer() {
     ? 'Loading camera trap data...'
     : (adapter?.id === 'drone' ? 'Loading drone imagery...' : `Loading ${activeLayer?.name ?? 'data'}...`);
   const loadingOverlayMessage = cacheStatus?.loadingMessage ?? defaultLoadingOverlayMessage;
+  // Subtle bottom-left pill for subsequent re-renders (pan/zoom)
+  const showRefreshPill = !showLoadingOverlay && (cacheStatus?.isRefreshing ?? false);
+  const refreshPillMessage = cacheStatus?.refreshMessage ?? 'Updating...';
 
   // Sync pinned/active layers with ArcGIS layers
   useMapLayers();
 
-  // Initialize ArcGIS Map + MapView
-  useEffect(() => {
-    if (!mapDivRef.current) return;
-
-    const map = new Map({ basemap: 'topo-vector' });
-
-    // Graphics layer for bookmark hover highlights (task 0.6)
-    const highlightLayer = new GraphicsLayer({ id: 'v2-highlight-layer' });
-    map.add(highlightLayer);
-    highlightLayerRef.current = highlightLayer;
-
-    // Graphics layer for right-sidebar-driven spatial query polygons (CON-GL-01/02)
-    const spatialQueryLayer = new GraphicsLayer({ id: 'v2-spatial-query-layer' });
-    map.add(spatialQueryLayer);
-    spatialQueryLayerRef.current = spatialQueryLayer;
-
-    const view = new MapView({
-      container: mapDivRef.current,
-      map,
-      center: PRESERVE_CENTER,
-      zoom: INITIAL_ZOOM,
-      ui: { components: ['attribution'] },
-    });
-
-    viewRef.current = view;
-
-    spatialSketchViewModelRef.current = new SketchViewModel({
-      view,
-      layer: spatialQueryLayer,
-      polygonSymbol: {
-        type: 'simple-fill',
-        color: [46, 125, 50, 0.14],
-        outline: {
-          color: [46, 125, 50, 0.95],
-          width: 2,
-        },
-      },
-      defaultUpdateOptions: {
-        tool: 'reshape',
-      },
-    });
-
-    // Signal map ready once the view finishes loading
-    view.when(() => {
-      if (view.popup) {
-        view.popup.dockEnabled = false;
-      }
-      setMapReady();
-    });
-
-    return () => {
-      viewRef.current = null;
-      highlightLayerRef.current = null;
-      spatialQueryLayerRef.current = null;
-      spatialSketchViewModelRef.current?.destroy();
-      spatialSketchViewModelRef.current = null;
-      view.destroy();
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (!dataOnePreview) return;
-    setPreviewStatus('loading');
-    const timeoutId = window.setTimeout(() => {
-      setPreviewStatus((current) => (current === 'loading' ? 'blocked' : current));
-    }, 9000);
-    return () => window.clearTimeout(timeoutId);
-  }, [dataOnePreview]);
+  useArcgisViewLifecycle({
+    mapDivRef,
+    viewRef,
+    viewMode,
+    highlightLayerRef,
+    spatialQueryLayerRef,
+    spatialSketchViewModelRef,
+    isLidarVisible,
+    setMapReady,
+  });
 
   const handleOpenPreviewInNewTab = () => {
     if (!dataOnePreview?.url) return;
@@ -211,17 +151,19 @@ export function MapContainer() {
                 className={`h-full w-full rounded-md border border-gray-300 bg-white ${previewStatus === 'error' || previewStatus === 'blocked' ? 'hidden' : 'block'}`}
                 loading="lazy"
                 referrerPolicy="no-referrer"
-                onLoad={() => setPreviewStatus('loaded')}
-                onError={() => setPreviewStatus('error')}
+                onLoad={markPreviewLoaded}
+                onError={markPreviewErrored}
               />
             </div>
           </section>
         </div>
       )}
 
+      {/* Unified map control rail (view mode, LiDAR, zoom, compass) */}
+      <MapControlRail />
+
       {/* Floating widgets overlay */}
       <MapLayersWidget />
-      {/* BookmarkedItemsWidget removed — Feb 11 design decision: unified into Map Layers */}
 
       {/* Legend widget — only for the ACTIVE layer's data source */}
       {LegendWidget && <LegendWidget />}
@@ -232,12 +174,17 @@ export function MapContainer() {
       {/* Dendra charts persist independently of active layer adapter */}
       <DendraTimeSeriesPanel />
 
-      {/* Loading overlay — shown when active data source is fetching */}
+      {/* Full overlay — first load only (data not yet cached) */}
       {showLoadingOverlay && (
         <MapCenterLoadingOverlay
           id="map-loading-overlay"
           message={loadingOverlayMessage}
         />
+      )}
+
+      {/* Subtle pill — subsequent re-renders during pan/zoom */}
+      {showRefreshPill && (
+        <MapRefreshPill id="map-refresh-pill" message={refreshPillMessage} />
       )}
 
       {/* Toast notifications (layer not implemented, etc.) */}

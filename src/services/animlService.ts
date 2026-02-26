@@ -1,4 +1,5 @@
 import { getCachedOrFetch, CacheTTL } from './cacheService';
+import { fetchWithRetry } from './animl/client';
 
 export interface AnimlDeployment {
   id: number;
@@ -120,39 +121,6 @@ class AnimlService {
   // Full URLs for convenience
   private readonly deduplicatedServiceUrl = 'https://dangermondpreserve-spatial.com/server/rest/services/Animl/MapServer/3';
   private readonly flattenedServiceUrl = 'https://dangermondpreserve-spatial.com/server/rest/services/Animl/MapServer/4';
-
-  /**
-   * Fetch with retry logic to handle flaky server responses
-   * Uses exponential backoff: 500ms, 1000ms, 2000ms
-   * @param url - URL to fetch
-   * @param maxRetries - Number of retries (default 3)
-   * @param signal - Optional AbortSignal for cancellation
-   */
-  private async fetchWithRetry(url: string, maxRetries = 3, signal?: AbortSignal): Promise<Response> {
-    let lastError: Error = new Error('Unknown error');
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      // Check if already aborted before attempting
-      if (signal?.aborted) {
-        throw new DOMException('Request aborted', 'AbortError');
-      }
-      try {
-        const response = await fetch(url, { signal });
-        if (response.ok) return response;
-        
-        // If not ok, treat as error and retry
-        lastError = new Error(`HTTP ${response.status}: ${response.statusText}`);
-      } catch (error) {
-        lastError = error as Error;
-        console.warn(`⚠️ Fetch attempt ${attempt}/${maxRetries} failed:`, lastError.message);
-        
-        if (attempt < maxRetries) {
-          // Exponential backoff: 500ms, 1000ms, 2000ms
-          await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, attempt - 1)));
-        }
-      }
-    }
-    throw lastError;
-  }
 
   /**
    * Query deployments (camera traps) from the FeatureServer
@@ -314,7 +282,7 @@ class AnimlService {
     const queryUrl = `${this.deduplicatedServiceUrl}/query`;
     const fullUrl = `${queryUrl}?${new URLSearchParams(params)}`;
     
-    const response = await this.fetchWithRetry(fullUrl, 3, signal);
+    const response = await fetchWithRetry(fullUrl, 3, signal);
     if (!response.ok) {
       throw new Error(`Failed to get unique image count for deployment ${deploymentId}`);
     }
@@ -366,7 +334,7 @@ class AnimlService {
     const queryUrl = `${this.flattenedServiceUrl}/query`;
     const fullUrl = `${queryUrl}?${new URLSearchParams(params)}`;
     
-    const response = await this.fetchWithRetry(fullUrl, 3, signal);
+    const response = await fetchWithRetry(fullUrl, 3, signal);
     if (!response.ok) {
       throw new Error(`Failed to get distinct labels for deployment ${deploymentId}`);
     }
@@ -423,7 +391,7 @@ class AnimlService {
     const queryUrl = `${this.flattenedServiceUrl}/query`;
     const fullUrl = `${queryUrl}?${new URLSearchParams(params)}`;
     
-    const response = await this.fetchWithRetry(fullUrl, 3, signal);
+    const response = await fetchWithRetry(fullUrl, 3, signal);
     if (!response.ok) {
       throw new Error(`Failed to get count for ${label} at deployment ${deploymentId}`);
     }
