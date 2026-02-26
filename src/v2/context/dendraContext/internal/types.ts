@@ -20,6 +20,7 @@ export interface DendraChartPanelState {
   height: number;
   zIndex: number;
   sourceLayerId: string;
+  sourceServiceUrl: string;
   sourceViewId?: string;
   sourceLayerName: string;
   minimized: boolean;
@@ -29,5 +30,6 @@ export interface DendraChartPanelState {
   data: DendraTimeSeriesPoint[];
   filter: DendraChartFilter;
   loading: boolean;
+  progressiveLoading: boolean;
   error: string | null;
 }

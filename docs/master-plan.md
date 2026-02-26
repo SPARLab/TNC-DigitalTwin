@@ -1,7 +1,7 @@
 # Master Development Plan — V2 Digital Catalog
 
 **Created:** January 23, 2026  
-**Last Updated:** February 25, 2026 (sync pass)  
+**Last Updated:** February 26, 2026 (sync pass)  
 **Target Deadline:** February 20, 2026  
 **Status:** 🟡 In Progress
 
@@ -70,7 +70,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 0 | Foundation | 🟢 Complete | 11 | 1 | 0 | 0 | 0 | 12 | `v2/foundation` |
 | 1 | iNaturalist | 🟢 Complete | 10 | 0 | 0 | 0 | 1 | 11 | `v2/inaturalist` |
 | 2 | ANiML | 🟢 Complete | 7 | 0 | 0 | 0 | 1 | 8 | `v2/animl` |
-| 3 | Dendra | 🟡 In Progress | 9 | 2 | 3 | 0 | 0 | 14 | `v2/dendra` |
+| 3 | Dendra | 🟡 In Progress | 11 | 1 | 3 | 0 | 0 | 14 | `v2/dendra` |
 | 4 | DataOne | 🟡 In Progress | 16 | 1 | 0 | 0 | 0 | 17 | `v2/dataone` |
 | 5 | Export Builder | 🟡 In Progress | 10 | 5 | 0 | 0 | 0 | 15 | `v2/export-builder` |
 | 6 | TNC ArcGIS Services | 🟡 In Progress | 44 | 1 | 0 | 0 | 0 | 45 | `v2/tnc-arcgis` |
@@ -372,7 +372,9 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 26, 2026 | Phase 3 | **D26-01 complete.** Dendra chart y-axis auto-adjusts when time slider changes zoom range — recalculates min/max from visible data so zoomed sections (excluding anomalies) show proper scale instead of flat lines. Phase 3: 11 complete, 1 active remaining. | Cursor |
 | Feb 25, 2026 | Phase 7 | **CON-FEB25-01 complete.** Map marker click smart zoom: DataONE zoom-out edge case fixed. Root cause: `useDatasetDetailOrchestrator.ts` overrode smart zoom with hardcoded `zoom: 16`; replaced with `goToMarkerWithSmartZoom({ defaultZoomLevel: 16 })`. Phase 7: 2/9 tasks complete. | Cursor |
+| Feb 25, 2026 | Phase 3 | **CON-FEB25-04 complete.** Dendra query alignment, on-demand per-station summaries, loading UI polish. Phase 3: 10 complete, 1 active remaining. Portfolio: 159/184 complete. | Cursor |
 | Feb 25, 2026 | Master | **Sync with all phase docs.** Added Phase 12b (Export Code Generation, complete) and 12c (AI Refactor Readiness, 4 deferred); updated Phase 5 (10 complete from archive) and Phase 6 (44 complete from archive); Phase Documents table now lists all 15 phase docs; portfolio totals recalculated. | Cursor |
 | Feb 25, 2026 | Docs | **Phase 10 DroneDeploy archive.** Archived completed tasks (10.1–10.11, CON-DRONE-01, CON-DRONE-02, TF-10) to `docs/archive/phases/phase-10-dronedeploy-completed.md`. Phase doc trimmed. | — |
 | Feb 25, 2026 | Docs | **Phase 11 MOTUS archive.** Archived completed tasks (11.1–11.9) to `docs/archive/phases/phase-11-motus-completed.md`. Phase doc trimmed; MOTUS blocker marked resolved. | — |

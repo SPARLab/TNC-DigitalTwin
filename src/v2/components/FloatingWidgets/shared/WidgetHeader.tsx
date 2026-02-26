@@ -2,7 +2,7 @@
 // WidgetHeader — Title + undo + collapse/close buttons (DFT-031)
 // ============================================================================
 
-import { Minus, Plus, X, Undo2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, X, Undo2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 interface WidgetHeaderProps {
@@ -70,13 +70,14 @@ export function WidgetHeader({
           <Undo2 className="w-4 h-4" />
         </button>
 
-        {/* Collapse toggle */}
+        {/* Collapse toggle — caret (>) when collapsed, (V) when expanded */}
         <button
+          id={`${title.replace(/\s/g, '-').toLowerCase()}-collapse-toggle`}
           onClick={onToggleCollapse}
           className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
           title={isCollapsed ? 'Expand' : 'Collapse'}
         >
-          {isCollapsed ? <Plus className="w-4 h-4" /> : <Minus className="w-4 h-4" />}
+          {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
 
         {/* Optional close button */}

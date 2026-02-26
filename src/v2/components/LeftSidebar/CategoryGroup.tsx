@@ -161,11 +161,11 @@ export function CategoryGroup({
     });
   }, [activeLayer, directLayers, isServiceParent]);
 
-  // Styling varies by depth
+  // Styling varies by depth — category darkest, subcategory medium, for visual hierarchy
   const headerBgClasses = isSubcategory
-    ? 'bg-gray-100 hover:bg-gray-200'
-    : 'bg-slate-100 hover:bg-slate-200';
-  const borderClasses = isSubcategory ? '' : 'border-b border-gray-300';
+    ? 'bg-slate-200 hover:bg-slate-300'
+    : 'bg-slate-300 hover:bg-slate-400';
+  const borderClasses = isSubcategory ? '' : 'border-b border-slate-400';
 
   // Keep hook call order stable; conditionally render only after hooks run.
   if (shouldHideForSearch) return null;
@@ -211,7 +211,7 @@ export function CategoryGroup({
         <div className="overflow-hidden">
           {/* Direct layers in this category */}
           {directLayers.length > 0 && (
-            <div className={`bg-gray-50/50 py-1.5 space-y-1 ${isSubcategory ? 'ml-3 mr-1' : 'ml-1 mr-1'}`}>
+            <div className={`bg-slate-100 py-1.5 space-y-1 ${isSubcategory ? 'ml-3 mr-1' : 'ml-1 mr-1'}`}>
               {directLayers.map(layer => {
                 if (layer.catalogMeta?.parentServiceId) return null;
 

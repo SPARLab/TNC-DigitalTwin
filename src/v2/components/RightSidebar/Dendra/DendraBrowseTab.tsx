@@ -26,7 +26,7 @@ export function DendraBrowseTab() {
   const {
     filteredStations, loading, error, dataLoaded,
     showActiveOnly, toggleActiveOnly, setShowActiveOnly, stationCount,
-    openChart, chartPanels,
+    openChart, chartPanels, loadStationSummaries,
   } = useDendra();
   const { activeLayer, activateLayer, lastEditFiltersRequest, getPinnedByLayerId } = useLayers();
   const summariesByStation = useSummariesByStation();
@@ -112,8 +112,9 @@ export function DendraBrowseTab() {
     if (station) {
       setSelectedStation((prev) => (prev?.station_id === station.station_id ? prev : station));
       setStationHeaderFlashSignal(Date.now());
+      loadStationSummaries(stationId);
     }
-  }, [activeLayer, filteredStations]);
+  }, [activeLayer, filteredStations, loadStationSummaries]);
 
   const focusStationOnMap = useCallback(async (station: DendraStation) => {
     highlightPoint(station.longitude, station.latitude);
@@ -201,11 +202,12 @@ export function DendraBrowseTab() {
 
   const handleSelectStation = useCallback((station: DendraStation) => {
     setSelectedStation(station);
+    loadStationSummaries(station.station_id);
     if (activeLayer?.dataSource === 'dendra') {
       activateLayer(activeLayer.layerId, activeLayer.viewId, station.station_id);
     }
     void focusStationOnMap(station);
-  }, [activeLayer, activateLayer, focusStationOnMap]);
+  }, [activeLayer, activateLayer, focusStationOnMap, loadStationSummaries]);
 
   const handleBackToStations = useCallback(() => {
     setSelectedStation(null);
@@ -237,7 +239,8 @@ export function DendraBrowseTab() {
   const filteredStationsByStream = useMemo(() => {
     if (!normalizedStreamNameFilter) return filteredStationsBySpatial;
     return filteredStationsBySpatial.filter((station) => {
-      const stationSummaries = summariesByStation.get(station.station_id) ?? [];
+      const stationSummaries = summariesByStation.get(station.station_id);
+      if (!stationSummaries) return true; // summaries not yet loaded — keep visible
       return stationSummaries.some((summary) =>
         summary.datastream_name.toLowerCase().includes(normalizedStreamNameFilter),
       );

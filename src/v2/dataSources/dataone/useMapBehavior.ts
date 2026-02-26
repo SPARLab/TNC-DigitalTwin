@@ -383,7 +383,6 @@ export function useDataOneMapBehavior(
 
         view.closePopup();
 
-        // Open ArcGIS popup on the clicked graphic for visual highlight
         const geometry = graphicHit.graphic.geometry;
         if (geometry?.type === 'point') {
           const point = geometry as Point;
@@ -449,10 +448,7 @@ export function useDataOneMapBehavior(
             duration: 700,
           });
           if (cancelled) return;
-          view.openPopup({
-            features: [feature],
-            location: point,
-          });
+          view.openPopup({ features: [feature], location: point });
           lastPopupSelectionKeyRef.current = selectionKey;
           return;
         }
