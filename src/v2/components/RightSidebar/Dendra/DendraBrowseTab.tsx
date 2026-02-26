@@ -309,7 +309,7 @@ export function DendraBrowseTab() {
 
   return (
     <div id="dendra-browse-tab" className="space-y-3">
-      <EditFiltersCard id="dendra-edit-filters-card">
+      <EditFiltersCard id="dendra-edit-filters-card" collapsible defaultExpanded>
         {/* Filter section */}
         <div id="dendra-filter-section" className="rounded-lg border border-emerald-100 bg-white p-3 space-y-2">
           <div className="flex items-center justify-between">

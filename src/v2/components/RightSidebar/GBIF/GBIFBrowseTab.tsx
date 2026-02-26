@@ -375,7 +375,7 @@ export function GBIFBrowseTab() {
         Showing {occurrences.length} of {totalCount} occurrences.
       </div>
 
-      <EditFiltersCard id="gbif-edit-filters-card">
+      <EditFiltersCard id="gbif-edit-filters-card" collapsible defaultExpanded>
         <div id="gbif-aggregation-toggle-section" className="space-y-1">
           <p id="gbif-aggregation-toggle-label" className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
             Map aggregation

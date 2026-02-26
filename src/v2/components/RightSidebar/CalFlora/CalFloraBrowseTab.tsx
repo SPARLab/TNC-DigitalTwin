@@ -327,7 +327,7 @@ export function CalFloraBrowseTab() {
         Showing {observations.length} of {totalCount} observations.
       </div>
 
-      <EditFiltersCard id="calflora-edit-filters-card">
+      <EditFiltersCard id="calflora-edit-filters-card" collapsible defaultExpanded>
         <div id="calflora-search-row" className="relative">
           <Search id="calflora-search-icon" className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input

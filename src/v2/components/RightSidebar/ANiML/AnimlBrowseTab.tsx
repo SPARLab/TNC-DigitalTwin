@@ -473,7 +473,7 @@ export function AnimlBrowseTab() {
 
   return (
     <div id="animl-browse-tab" className="h-full min-h-0 flex flex-col gap-3">
-      <EditFiltersCard id="animl-edit-filters-card">
+      <EditFiltersCard id="animl-edit-filters-card" collapsible defaultExpanded>
         {/* Date range filter — above species and cameras */}
         <DateFilterSection
           id="animl-filter-date"

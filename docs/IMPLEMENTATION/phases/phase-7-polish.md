@@ -1,7 +1,7 @@
 # Phase 7: Polish & Consistency
 
-**Status:** ⚪ Not Started  
-**Progress:** 0 / ? tasks (TBD after other phases)  
+**Status:** 🟡 In Progress  
+**Progress:** 2 / 9 tasks (D20-01, CON-FEB25-03 complete)  
 **Branch:** `v2/polish`  
 **Depends On:** Phases 0-6 (all complete)  
 **Owner:** TBD
@@ -36,7 +36,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | D20-13 | ⚪ Not Started | Feb 20, 2026 | Add collapse button to left sidebar (lower priority) | Nice-to-have for full map exploration. Lower priority than right sidebar. Source: Dan Meeting Feb 20 |
 | CON-FEB25-01 | ⚪ Not Started | Feb 25, 2026 | Map marker click: when zoomed in, pan/center only; when zoomed out, pan and zoom in | Replicate across all map markers. If zoom past default (e.g., 5), center only; if zoomed out, zoom in. Source: consolidated-tasks-feb-25-2026.md |
 | CON-FEB25-02 | ⚪ Not Started | Feb 25, 2026 | Add thin white outline around all map icons (including emoji) | Icons hard to see against map background. Source: consolidated-tasks-feb-25-2026.md |
-| CON-FEB25-03 | ⚪ Not Started | Feb 25, 2026 | Collapsable Edit Filters component across all layers | ANiML/cam traps and others should match iNaturalist collapsible pattern. Source: consolidated-tasks-feb-25-2026.md |
+| CON-FEB25-03 | 🟢 Complete | Feb 26, 2026 | Collapsable Edit Filters component across all layers | ANiML, Dendra, DataONE, GBIF, CalFlora now use `collapsible defaultExpanded` on EditFiltersCard; iNaturalist already had it. |
 | CON-FEB25-06 | ⚪ Not Started | Feb 25, 2026 | Analyze code for performance bottlenecks — low FPS in 3D view with iNaturalist | Scan for degradation; recommend/implement fixes. Extends 7.6. Source: consolidated-tasks-feb-25-2026.md |
 
 ## Task Status
@@ -64,7 +64,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | 7.8 | Enhance map tooltips (post-v2.0) | ⚪ Not Started | | DFT-032 future enhancement |
 | CON-FEB25-01 | Map marker click: when zoomed in, pan/center only; when zoomed out, pan and zoom in | ⚪ Not Started | | Replicate across all map markers. Source: consolidated-tasks-feb-25-2026.md |
 | CON-FEB25-02 | Add thin white outline around all map icons (including emoji) | ⚪ Not Started | | Icons hard to see against map background. Source: consolidated-tasks-feb-25-2026.md |
-| CON-FEB25-03 | Collapsable Edit Filters component across all layers | ⚪ Not Started | | ANiML/cam traps and others match iNaturalist pattern. Source: consolidated-tasks-feb-25-2026.md |
+| CON-FEB25-03 | Collapsable Edit Filters component across all layers | 🟢 Complete | | ANiML, Dendra, DataONE, GBIF, CalFlora now match iNaturalist collapsible pattern. Feb 26, 2026. |
 | CON-FEB25-06 | Analyze code for performance bottlenecks — low FPS in 3D view with iNaturalist | ⚪ Not Started | | Extends 7.6. Source: consolidated-tasks-feb-25-2026.md |
 | (more TBD) | | | | |
 
@@ -303,6 +303,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | Date | Task | Change | By |
 |------|------|--------|-----|
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
+| Feb 26, 2026 | CON-FEB25-03 | Collapsable Edit Filters — applied `collapsible defaultExpanded` to EditFiltersCard in ANiML, Dendra, DataONE, GBIF, CalFlora browse tabs | Cursor |
 | Feb 3, 2026 | 7.1, 7.2 | Added TNC brand integration tasks (fonts + theme variants). Resolved DFT-008, DFT-009 | Will + Claude |
 | Feb 3, 2026 | 7.7 | Updated accessibility check with DFT-017 baseline principles. Added specific testing checklist and tools | Will + Claude |
 | Feb 4, 2026 | 7.8 | Added map tooltip enhancement task for post-v2.0 (DFT-032 future enhancement). v2.0 ships with minimal tooltips, enhancements based on teammate feedback | Will + Claude |
