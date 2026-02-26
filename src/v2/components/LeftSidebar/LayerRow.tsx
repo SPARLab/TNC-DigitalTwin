@@ -226,7 +226,7 @@ export function LayerRow({
         onClick={handleClick}
         onKeyDown={handleRowKeyDown}
         className={`group min-w-0 flex items-center gap-1.5 py-2 px-3 cursor-pointer
-                    text-sm rounded-lg transition-all duration-200 ${indented ? 'ml-4 mr-0' : 'ml-1 mr-1'} ${activeClasses}
+                    text-sm rounded-lg transition-all duration-200 ${indented ? 'ml-4 mr-0' : 'ml-1 mr-0'} ${activeClasses}
                     ${controlsOnly ? 'cursor-default' : 'cursor-pointer'}
                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1`}
       >

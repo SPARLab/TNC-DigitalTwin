@@ -201,6 +201,8 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 26, 2026 | ANIML-DEV-01 | **Session complete.** Left sidebar row spacing polish (phase-0): padding-based indentation, removed right-edge whitespace. Scrollbar overlay opt-out for left/right sidebars to prevent layout regression. | — |
+| Feb 26, 2026 | ANIML-DEV-01 | **Follow-up polish.** Extended auto-hiding overlay scrollbar pattern app-wide via global overflow utility selectors in `src/index.css` so legend/list scroll areas share consistent behavior. | — |
 | Feb 26, 2026 | ANIML-DEV-01 | **Complete.** Auto-hiding overlay scrollbar for ANiML image results. `.scroll-area-animl-images`: thumb hidden idle, reveals on hover/focus-within; transparent track; stable gutter. DFT-050. | — |
 | Feb 26, 2026 | ANIML-DEV-01 | Started implementation: `.scroll-area-animl-images` now uses auto-hiding overlay scrollbar styling (hidden idle thumb, hover/focus reveal, transparent track). | Will + GPT |
 | Feb 26, 2026 | ANIML-DEV-01 | Added Dev Backlog: auto-hiding overlay scrollbar for ANiML image results. | — |

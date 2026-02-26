@@ -407,13 +407,15 @@ Update ETA dynamically as queries complete.
 
 ### Scroll Area (Overlay Pattern)
 
-Shared auto-hiding overlay scrollbar pattern used for content-heavy scroll regions:
+Shared auto-hiding overlay scrollbar pattern used across app scroll regions:
 
 - **Hover-only thumb:** Scrollbar thumb is transparent by default; appears on `:hover` / `:focus-within` of the scroll container.
 - **No track:** Track is always transparent (no visible scroll track).
 - **Stable layout:** `scrollbar-gutter: stable` prevents content shift when scrollbar appears.
 
-**Implementations:** `.scroll-area-export-builder` (Export Builder modal), `.scroll-area-animl-images` (ANiML image results). CSS in `src/index.css`.
+**Global implementation:** CSS in `src/index.css` targets containers using overflow utility classes (`overflow-y-auto`, `overflow-auto`, `overflow-y-scroll`, `overflow-scroll`), so legends and sidebar lists inherit the same behavior by default.
+
+**Named implementations:** `.scroll-area-export-builder` (Export Builder modal), `.scroll-area-animl-images` (ANiML image results), `.scroll-area-widget` (floating widgets).
 
 ### Semantic Naming
 
@@ -1813,6 +1815,8 @@ Images benefit from continuous browsing (researchers scan visually). "Load More"
 | Layer count badge | `text-xs text-gray-400 ml-auto` |
 | Layer row (inactive) | `py-1.5 px-3 pl-9 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 cursor-pointer rounded-sm` |
 | Layer row (active) | `py-1.5 px-3 pl-9 text-sm font-semibold text-gray-900 bg-emerald-50 border-l-2 border-emerald-600 rounded-sm` |
+| Row container (category) | `pl-1 pr-1` — padding-based indentation; content flush to right edge |
+| Row container (subcategory) | `pl-3 pr-1` — deeper indent for nested items |
 
 **Behavior:**
 - Click category header: toggle expand/collapse (chevron rotates)
