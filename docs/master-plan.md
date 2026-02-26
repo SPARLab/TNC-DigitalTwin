@@ -26,6 +26,7 @@
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
 | MP-ARCHIVE-01 | 🟢 Complete | Feb 25, 2026 | Archive completed tasks in phase docs (0, 1, 2, 4, 6) | Moved completed rows to `docs/archive/phases/`; trimmed phase docs; Task Details replaced with archive refs. |
+| MP-ARCHIVE-02 | 🟢 Complete | Feb 25, 2026 | Archive completed tasks in Phase 11 (MOTUS) | Moved 11.1–11.9 to `docs/archive/phases/phase-11-motus-completed.md`; phase doc trimmed; MOTUS blocker marked resolved. |
 | MP-COUNT-01 | 🟢 Complete | Feb 23, 2026 | Normalize phase-level task counting in master tracker | Counts now use each phase's top summary/status table and separate active remaining from backlog/deferred/won't-do states. |
 | MP-COUNT-02 | 🟢 Complete | Feb 23, 2026 | Add explicit totals for completed vs left-to-do work | Added portfolio totals and per-phase breakdown so progress is numerically auditable at a glance. |
 | MP-COUNT-03 | 🟡 In Progress | Feb 23, 2026 | Keep counts synchronized whenever a phase task changes status | Update this table after each task closure in phase docs to prevent drift. |
@@ -192,7 +193,7 @@ Use these when merging branches that touch shared components.
 | Caching strategy | ✅ Decided | Will + Claude | Feb 12 | Lazy per-source caching. Each data source context has `warmCache()` method (idempotent). Cache warms on first pin or activation. Data persists while provider mounted. Eliminates eager page-load fetches. |
 | Dynamic layer registry from Data Catalog Service | ✅ Implemented | User + Claude | Feb 12 | `useCatalogRegistry.ts` fetches from Dan's Data Catalog FeatureServer (`Dangermond_Preserve_Data_Catalog`). ~90+ real datasets across 14 categories. Left sidebar populated from catalog. Layers without adapters show generic placeholder in right sidebar. **Task 0.9 complete — parallel branches unblocked.** See phase-0-foundation.md. |
 | 2D/3D view mode toggle | ✅ Implemented | Cursor | Feb 24 | MapContainer conditionally creates MapView or SceneView based on `MapContext.viewMode`. Unified `MapControlRail` (top-right): 2D/3D text toggle, LiDAR visibility (3D only), zoom +/−, compass; all buttons 32×32. All data source layers drape onto terrain in 3D; LiDAR PointCloudLayer loads in 3D only. Camera preserved across toggles (REF-15). REF-16: LiDAR toggle + custom control rail. See `MapContext`, `MapContainer`, `MapControlRail`, `useArcgisViewLifecycle`. |
-| MOTUS journey reconstruction blocked | 🔴 On Hold | Codex | Feb 20 | Live audit of Wildlife Telemetry FeatureServer showed 0% join coverage between Tag Detections `node_num` and Receiver Stations / Station Deployments. Journey reconstruction (11.6, 11.7) on hold until Dan fixes detection-to-station linkage. See phase-11-motus.md Data Blocker. |
+| MOTUS journey reconstruction blocked | ✅ Resolved | Cursor | Feb 23 | Resolved via `device_id` linkage: Tag Detections join to Station Deployments via `device_id` (100% populated); time-ordered inferred legs now render for matching detections. Phase 11 complete. See phase-11-motus.md and `docs/archive/phases/phase-11-motus-completed.md`. |
 | Cross-layer filtered-view naming contract | ✅ Decided | User + Claude | Feb 13 | Manual rename behavior must persist across all layer types and custom right-sidebar views. Auto-naming is adapter-specific per data source. Shared widget/context rule: if `isNameCustom` is false, auto-name can update on filter sync; if true, never overwrite. Rollout can happen incrementally by branch (not required to block current merge). |
 
 ### Styling Decisions
@@ -362,6 +363,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 25, 2026 | Docs | **Phase 11 MOTUS archive.** Archived completed tasks (11.1–11.9) to `docs/archive/phases/phase-11-motus-completed.md`. Phase doc trimmed; MOTUS blocker marked resolved. | — |
 | Feb 25, 2026 | Docs | **Phase 12 AI Refactor archive.** Archived 28 completed tasks (REF-01 through REF-16, excluding deferred REF-05D, REF-12, REF-14C, REF-14D) to `docs/archive/phases/phase-12-ai-refactor-completed.md`. Phase doc trimmed to 4 deferred tasks only. | — |
 | Feb 25, 2026 | Docs | **Archived completed tasks** in phase-0, phase-1, phase-2, phase-4, phase-6. Moved completed task rows to `docs/archive/phases/`; trimmed phase docs to active tasks only; replaced Task Details with archive references. Phase docs now scannable for remaining work. | Cursor |
 | Feb 25, 2026 | Phase 12 | **Task 12.4 complete.** Mock camera trap novelty alerts with live data integration: View source navigates to ANiML camera/image, Dendra station/datastream, iNaturalist observation. Event-driven `ALERT_NAVIGATION_INTENT_EVENT`; exact feature ID matching; mule deer replaced with iNaturalist Ash-throated Flycatcher. Bug fixes: focusStationOnMap order, null checks, HMR sync. Phase 12: 4/8 tasks complete. | Cursor |
