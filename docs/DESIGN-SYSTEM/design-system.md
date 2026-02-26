@@ -1,6 +1,6 @@
 # Design System - TNC Digital Catalog
 
-**Last Updated:** February 25, 2026 (MapControlRail unified map controls; D20-10 ArcGIS overview; BrowseBackButton D20-02)  
+**Last Updated:** February 25, 2026 (MapControlRail unified map controls; D20-10 ArcGIS overview; BrowseBackButton D20-02; Export Builder Modal: scroll area, figure-ground, semantic naming)  
 **Purpose:** Single source of truth for styling decisions, component patterns, and design policies that affect multiple phases.
 
 ---
@@ -392,6 +392,32 @@ Update ETA dynamically as queries complete.
 | Gestalt: Proximity/Similarity | ✅ | Indicator colocates with the component being updated |
 | Shneiderman: User control and freedom | 🟡 | Strong for refresh; first-load map overlay is intentionally blocking |
 | WCAG (Perceivable/Operable) | 🟡 | Requires ARIA status text and contrast checks during implementation |
+
+---
+
+## Export Builder Modal (Phase 12)
+
+**Policy:** Export Builder modal uses a clear figure-ground hierarchy and overlay scrollbar for demo-ready UX.
+
+### Visual Hierarchy (Figure-Ground)
+
+- **Ground:** Scroll area uses `bg-slate-50` so layer cards and summary card read as distinct figures.
+- **Figures:** Layer cards and Export summary use `bg-white shadow-sm` to stand out as the primary export targets.
+- **Nested sections:** "Filtered views" and "Export outputs" use `rounded-lg border border-slate-200 bg-slate-50` for consistent enclosure (Gestalt Similarity).
+
+### Scroll Area (`.scroll-area-export-builder`)
+
+- **Hover-only thumb:** Scrollbar thumb is transparent by default; appears on `:hover` / `:focus-within` of the scroll container.
+- **No track:** Track is always transparent (no visible scroll track).
+- **Stable layout:** `scrollbar-gutter: stable` prevents content shift when scrollbar appears.
+- **Implementation:** CSS class in `src/index.css`; applied to `#export-builder-content-scroll-area`.
+
+### Semantic Naming
+
+- "Import code" → "Code generation" (avoids export/import contradiction).
+- "Size unavailable" → "Estimate pending" at layer/summary level; em-dash at view level when unavailable.
+
+**Decision Date:** February 25, 2026
 
 ---
 

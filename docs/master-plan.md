@@ -11,12 +11,12 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 132 / 148 complete (**89%**) |
+| **Active scope** | 123 / 138 complete (**89%**) |
 | **Active remaining** | 15 tasks |
 | **Phases complete** | 7 of 13 (0, 1, 2, 6, 10, 11, 12) |
 
 ```
-███████████████████████████████████████░░░░░  87%
+█████████████████████████████████████████░░░░  89%
 ```
 
 ---
@@ -53,12 +53,12 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 132
-- **Active remaining (Not Started + In Progress + Blocked):** 14
+- **Complete:** 123
+- **Active remaining (Not Started + In Progress + Blocked):** 15
 - **Backlog (not in active scope):** 3
 - **Deferred:** 2
 - **Won't Do:** 2
-- **Total tracked rows:** 153
+- **Total tracked rows:** 144
 
 ### Per-Phase Task Counts
 
@@ -76,7 +76,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
 | 10 | DroneDeploy | 🟢 Complete | 4 | 0 | 0 | 0 | 0 | 4 | `v2/dronedeploy` |
 | 11 | MOTUS | 🟢 Complete | 9 | 0 | 0 | 0 | 0 | 9 | `v2/motus` |
-| 12 | AI Refactor Readiness | 🟢 Complete | 15 | 0 | 0 | 0 | 1 | 16 | `v2/refactor-ai-readiness` |
+| 12 | Export Code Generation | 🟢 Complete | 3 | 0 | 0 | 0 | 0 | 3 | `v2/export-code-generation` |
 
 **Status Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
 
@@ -100,6 +100,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 9 | [phase-9-gbif.md](IMPLEMENTATION/phases/phase-9-gbif.md) |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) |
 | 11 | [phase-11-motus.md](IMPLEMENTATION/phases/phase-11-motus.md) |
+| 12 | [phase-12-export-code-generation.md](IMPLEMENTATION/phases/phase-12-export-code-generation.md) |
 
 ---
 
@@ -359,6 +360,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 25, 2026 | Phase 12 | **12.3 complete. Phase 12 complete.** Export Builder UX validation: principled review fixes (layer card figure-ground, Export outputs container, step indicator, success feedback, scrollbar hover-only overlay, semantic naming, size text). design-system.md updated. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-14B complete.** Per-source stale-layer audit: iNaturalist + ANiML GraphicsLayer repopulation on map swap; Dendra/GBIF/CalFlora/iNaturalist/ANiML map handlers rebind on `mapReady` after 2D↔3D toggles. User-verified. Phase 12: 16/19 tracked items complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-15 complete.** Camera preservation across 2D↔3D: capture center+scale from outgoing view; 2D→3D latitude scale conversion; 3D→2D raw scale; lifecycle fix to persist from local view before destroy. User-verified. Phase 12: 15/19 tracked items complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **REF-14 complete.** 2D↔3D layer render reliability: REF-14A (DroneDeploy WMTS rebind on map swap) implemented and user-validated. REF-14B/C/D deferred for future sessions. Phase 12: 14/18 tracked items complete. | Cursor |
