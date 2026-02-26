@@ -22,6 +22,7 @@ import { dataOneService } from '../../../services/dataOneService';
 import { useDataOneFilter } from '../../context/DataOneFilterContext';
 import { useLayers } from '../../context/LayerContext';
 import { useMap } from '../../context/MapContext';
+import { goToMarkerWithSmartZoom } from '../../utils/mapMarkerNavigation';
 import {
   buildDataOneFeatureReduction,
   buildDataOneFeatureReductionForScale,
@@ -343,9 +344,26 @@ export function useDataOneMapBehavior(
           requestBrowseTab();
           view.closePopup();
 
-          void view.goTo({
-            target: graphicHit.graphic.geometry,
-          }, { duration: 450 });
+          const aggregateGeometry = graphicHit.graphic.geometry;
+          if (aggregateGeometry?.type === 'point') {
+            const aggPoint = aggregateGeometry as Point;
+            void goToMarkerWithSmartZoom({
+              view,
+              longitude: aggPoint.longitude,
+              latitude: aggPoint.latitude,
+              duration: 450,
+            });
+          } else if (aggregateGeometry) {
+            const centroid = aggregateGeometry.extent?.center;
+            if (centroid) {
+              void goToMarkerWithSmartZoom({
+                view,
+                longitude: centroid.longitude,
+                latitude: centroid.latitude,
+                duration: 450,
+              });
+            }
+          }
           return;
         }
 
@@ -369,10 +387,12 @@ export function useDataOneMapBehavior(
         const geometry = graphicHit.graphic.geometry;
         if (geometry?.type === 'point') {
           const point = geometry as Point;
-          void view.goTo(
-            { center: [point.longitude, point.latitude], zoom: Math.max(view.zoom ?? 8, 10) },
-            { duration: 600 },
-          );
+          void goToMarkerWithSmartZoom({
+            view,
+            longitude: point.longitude,
+            latitude: point.latitude,
+            duration: 600,
+          });
           view.openPopup({ features: [graphicHit.graphic], location: point });
         }
       } catch (error) {
@@ -422,10 +442,12 @@ export function useDataOneMapBehavior(
         const geometry = feature.geometry;
         if (geometry?.type === 'point') {
           const point = geometry as Point;
-          await view.goTo(
-            { center: [point.longitude, point.latitude], zoom: Math.max(view.zoom ?? 8, 14) },
-            { duration: 700 },
-          ).catch(() => {});
+          await goToMarkerWithSmartZoom({
+            view,
+            longitude: point.longitude,
+            latitude: point.latitude,
+            duration: 700,
+          });
           if (cancelled) return;
           view.openPopup({
             features: [feature],
@@ -436,7 +458,15 @@ export function useDataOneMapBehavior(
         }
 
         if (geometry) {
-          await view.goTo({ target: geometry }, { duration: 700 }).catch(() => {});
+          const centroid = geometry.extent?.center;
+          if (centroid) {
+            await goToMarkerWithSmartZoom({
+              view,
+              longitude: centroid.longitude,
+              latitude: centroid.latitude,
+              duration: 700,
+            });
+          }
           if (cancelled) return;
           view.openPopup({ features: [feature] });
           lastPopupSelectionKeyRef.current = selectionKey;

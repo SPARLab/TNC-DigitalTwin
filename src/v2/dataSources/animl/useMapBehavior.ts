@@ -21,6 +21,7 @@ import {
   getAnimlCameraGraphicByDeploymentId,
 } from '../../components/Map/layers/animlLayer';
 import type { PinnedLayer, ActiveLayer } from '../../types';
+import { goToMarkerWithSmartZoom } from '../../utils/mapMarkerNavigation';
 
 const LAYER_ID = 'animl-camera-traps';
 const MAP_LAYER_ID = 'v2-animl-camera-traps';
@@ -155,13 +156,12 @@ export function useAnimlMapBehavior(
         const geometry = graphicHit.graphic.geometry;
         if (geometry?.type === 'point') {
           const point = geometry as Point;
-          void view.goTo(
-            {
-              center: [point.longitude, point.latitude],
-              zoom: Math.max(view.zoom ?? 8, 10),
-            },
-            { duration: 600 },
-          );
+          void goToMarkerWithSmartZoom({
+            view,
+            longitude: point.longitude,
+            latitude: point.latitude,
+            duration: 600,
+          });
         }
       } catch (error) {
         console.error('[ANiML Map Click] Error handling marker click:', error);

@@ -11,6 +11,7 @@ import {
   type DataOneVersionEntry,
 } from '../../../../services/dataOneService';
 import { useMap } from '../../../context/MapContext';
+import { goToMarkerWithSmartZoom } from '../../../utils/mapMarkerNavigation';
 
 const MAP_LAYER_ID = 'v2-dataone-datasets';
 
@@ -111,8 +112,13 @@ export function useDatasetDetailOrchestrator({
     const centerLat = dataset.centerLat;
     if (Number.isFinite(centerLon) && Number.isFinite(centerLat)) {
       lastPannedDatasetIdRef.current = dataset.dataoneId;
-      void view
-        .goTo({ center: [centerLon as number, centerLat as number], zoom: 16 }, { duration: 800 })
+      void goToMarkerWithSmartZoom({
+        view,
+        longitude: centerLon as number,
+        latitude: centerLat as number,
+        duration: 800,
+        defaultZoomLevel: 16,
+      })
         .then(() => {
           if (!cancelled) return openPopupForDataoneFeature(view, dataset.dataoneId);
           return undefined;
@@ -264,7 +270,13 @@ export function useDatasetDetailOrchestrator({
 
     if (Number.isFinite(centerLon) && Number.isFinite(centerLat)) {
       try {
-        await view.goTo({ center: [centerLon as number, centerLat as number], zoom: 16 }, { duration: 800 });
+        await goToMarkerWithSmartZoom({
+          view,
+          longitude: centerLon as number,
+          latitude: centerLat as number,
+          duration: 800,
+          defaultZoomLevel: 16,
+        });
         await openPopupForDataoneFeature(view, dataset.dataoneId);
         showToast('Centered map on dataset location', 'info');
       } catch {

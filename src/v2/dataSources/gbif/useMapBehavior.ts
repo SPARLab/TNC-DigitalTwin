@@ -8,6 +8,7 @@ import { useLayers } from '../../context/LayerContext';
 import { gbifService } from '../../../services/gbifService';
 import { useMap } from '../../context/MapContext';
 import { buildGBIFFeatureReductionForScale, getGBIFBinningLevelForScale } from '../../components/Map/layers/gbifLayer';
+import { goToMarkerWithSmartZoom } from '../../utils/mapMarkerNavigation';
 
 const GBIF_LAYER_IDS = new Set(['dataset-178', 'dataset-215']);
 
@@ -187,6 +188,17 @@ export function useGBIFMapBehavior(
           ? activeLayer.viewId
           : undefined;
         activateLayer(gbifLayerId, nextViewId, occurrenceId);
+
+        const geometry = graphicHit.graphic.geometry;
+        if (geometry?.type === 'point') {
+          const point = geometry as __esri.Point;
+          void goToMarkerWithSmartZoom({
+            view,
+            longitude: point.longitude,
+            latitude: point.latitude,
+            duration: 600,
+          });
+        }
       } catch (error) {
         console.error('[GBIF Map Click] Failed to handle marker click', error);
       }

@@ -22,6 +22,7 @@ import {
   filterINaturalistLayer,
 } from '../../components/Map/layers/inaturalistLayer';
 import type { PinnedLayer, ActiveLayer } from '../../types';
+import { goToMarkerWithSmartZoom } from '../../utils/mapMarkerNavigation';
 
 const LAYER_ID = 'inaturalist-obs';
 const MAP_LAYER_ID = 'v2-inaturalist-obs'; // Actual ArcGIS layer ID (with v2- prefix)
@@ -101,14 +102,16 @@ export function useINaturalistMapBehavior(
             // Activate layer with the observation ID to auto-open detail view
             activateLayer(LAYER_ID, undefined, observationId);
 
-            // Zoom to the observation
+            // Pan to marker and only zoom when currently zoomed out.
             const geometry = graphicHit.graphic.geometry;
             if (geometry && geometry.type === 'point') {
               const point = geometry as Point;
-              view.goTo({
-                center: [point.longitude, point.latitude],
-                zoom: 15,
-              }, { duration: 800 });
+              void goToMarkerWithSmartZoom({
+                view,
+                longitude: point.longitude,
+                latitude: point.latitude,
+                duration: 800,
+              });
             }
           }
         }

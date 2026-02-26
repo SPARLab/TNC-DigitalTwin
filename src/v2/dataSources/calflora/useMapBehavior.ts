@@ -6,6 +6,7 @@ import { useCalFloraFilter } from '../../context/CalFloraFilterContext';
 import { useLayers } from '../../context/LayerContext';
 import { calfloraV2Service } from '../../../services/calfloraV2Service';
 import { useMap } from '../../context/MapContext';
+import { goToMarkerWithSmartZoom } from '../../utils/mapMarkerNavigation';
 
 const CALFLORA_LAYER_ID = 'calflora-observations';
 
@@ -82,6 +83,16 @@ export function useCalFloraMapBehavior(
           ?? attributes?.objectId
         );
         if (!objectId) return;
+        const geometry = graphicHit.graphic.geometry;
+        if (geometry?.type === 'point') {
+          const point = geometry as __esri.Point;
+          void goToMarkerWithSmartZoom({
+            view,
+            longitude: point.longitude,
+            latitude: point.latitude,
+            duration: 600,
+          });
+        }
         view.openPopup({
           features: [graphicHit.graphic],
           location: event.mapPoint ?? graphicHit.graphic.geometry,

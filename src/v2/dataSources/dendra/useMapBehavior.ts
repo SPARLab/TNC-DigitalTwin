@@ -16,6 +16,7 @@ import { useMap } from '../../context/MapContext';
 import { populateDendraLayer, filterDendraLayer } from '../../components/Map/layers/dendraLayer';
 import { registerDendraLayerId, isDendraLayer } from '../../components/Map/layers';
 import type { PinnedLayer, ActiveLayer } from '../../types';
+import { goToMarkerWithSmartZoom } from '../../utils/mapMarkerNavigation';
 
 export function useDendraMapBehavior(
   getManagedLayer: (layerId: string) => Layer | undefined,
@@ -126,11 +127,11 @@ export function useDendraMapBehavior(
           const point = geometry as __esri.Point;
           if (typeof point.longitude !== 'number' || typeof point.latitude !== 'number') return;
           highlightPoint(point.longitude, point.latitude);
-          void view.goTo(
-            { center: [point.longitude, point.latitude], zoom: 15 },
-            { duration: 800 },
-          ).catch(() => {
-            // Ignore goTo interruptions from rapid user interactions.
+          void goToMarkerWithSmartZoom({
+            view,
+            longitude: point.longitude,
+            latitude: point.latitude,
+            duration: 800,
           });
           view.openPopup({
             features: [graphicHit.graphic],

@@ -15,7 +15,7 @@
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
 | **— Cross-Cutting / Map Behavior —** | | | | |
-| CON-FEB25-01 | ⚪ Not Started | Feb 25, 2026 | Map marker click zoom behavior: when zoomed in, pan/center only; when zoomed out, pan and zoom in | If camera zoom level is past default (e.g., zoom 5), clicking a marker should center the camera on the marker but NOT zoom in further. When zoomed out (e.g., level 2), clicking should pan and zoom in. Replicate across all map markers (iNaturalist, ANiML, Dendra, DataONE, etc.). |
+| CON-FEB25-01 | 🟢 Complete | Feb 25, 2026 | Map marker click zoom behavior: when zoomed in, pan/center only; when zoomed out, pan and zoom in | Implemented across iNaturalist, ANiML, Dendra, DataONE, CalFlora, GBIF. DataONE zoom-out edge case fixed: `useDatasetDetailOrchestrator.ts` was overriding smart zoom with hardcoded `zoom: 16`; replaced with `goToMarkerWithSmartZoom`. |
 | CON-FEB25-02 | ⚪ Not Started | Feb 25, 2026 | Add thin white outline around all map icons (including emoji map icons) | Some icons are hard to see against the map background. Improves visibility across all layers. |
 | CON-FEB25-03 | ⚪ Not Started | Feb 25, 2026 | Collapsable Edit Filters component across all layers | Cam traps (ANiML) should have collapsible Edit Filters section like iNaturalist. Ensure Edit Filters can be collapsed in all data sources. |
 | **— Dendra —** | | | | |
@@ -130,3 +130,4 @@
 | Date | Change | By |
 |------|--------|-----|
 | Feb 25, 2026 | Created consolidated feedback document with 6 tasks; distributed to phase docs; master-plan phase counts updated | Will |
+| Feb 25, 2026 | CON-FEB25-01 marked complete. Root cause: useDatasetDetailOrchestrator hardcoded zoom: 16; fixed with goToMarkerWithSmartZoom | Will + Claude |

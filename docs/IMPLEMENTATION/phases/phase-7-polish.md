@@ -1,7 +1,7 @@
 # Phase 7: Polish & Consistency
 
-**Status:** ⚪ Not Started  
-**Progress:** 0 / ? tasks (TBD after other phases)  
+**Status:** 🟡 In Progress  
+**Progress:** 2 / 9 tasks  
 **Branch:** `v2/polish`  
 **Depends On:** Phases 0-6 (all complete)  
 **Owner:** TBD
@@ -34,7 +34,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | D20-04 | ⚪ Not Started | Feb 20, 2026 | Replace +/- symbols in Map Layers accordion with chevron (V / >) symbols | Plus/minus is not a clear expand/collapse affordance; chevron communicates directionality better. Source: Dan Meeting Feb 20 |
 | D20-07 | ⚪ Not Started | Feb 20, 2026 | Verify custom polygon draw tool is working consistently across all data sources | iNaturalist and ANiML confirmed working; Dendra suspected broken; audit the rest. Source: Dan Meeting Feb 20 |
 | D20-13 | ⚪ Not Started | Feb 20, 2026 | Add collapse button to left sidebar (lower priority) | Nice-to-have for full map exploration. Lower priority than right sidebar. Source: Dan Meeting Feb 20 |
-| CON-FEB25-01 | ⚪ Not Started | Feb 25, 2026 | Map marker click: when zoomed in, pan/center only; when zoomed out, pan and zoom in | Replicate across all map markers. If zoom past default (e.g., 5), center only; if zoomed out, zoom in. Source: consolidated-tasks-feb-25-2026.md |
+| CON-FEB25-01 | 🟢 Complete | Feb 25, 2026 | Map marker click: when zoomed in, pan/center only; when zoomed out, pan and zoom in | Implemented across iNaturalist, ANiML, Dendra, DataONE, CalFlora, and GBIF marker clicks. DataONE zoom-out edge case fixed: root cause was `useDatasetDetailOrchestrator.ts` overriding smart zoom with hardcoded `zoom: 16`. Source: consolidated-tasks-feb-25-2026.md |
 | CON-FEB25-02 | ⚪ Not Started | Feb 25, 2026 | Add thin white outline around all map icons (including emoji) | Icons hard to see against map background. Source: consolidated-tasks-feb-25-2026.md |
 | CON-FEB25-03 | ⚪ Not Started | Feb 25, 2026 | Collapsable Edit Filters component across all layers | ANiML/cam traps and others should match iNaturalist collapsible pattern. Source: consolidated-tasks-feb-25-2026.md |
 | CON-FEB25-06 | ⚪ Not Started | Feb 25, 2026 | Analyze code for performance bottlenecks — low FPS in 3D view with iNaturalist | Scan for degradation; recommend/implement fixes. Extends 7.6. Source: consolidated-tasks-feb-25-2026.md |
@@ -62,7 +62,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | 7.6 | Performance audit | ⚪ Not Started | | |
 | 7.7 | Accessibility check | ⚪ Not Started | | |
 | 7.8 | Enhance map tooltips (post-v2.0) | ⚪ Not Started | | DFT-032 future enhancement |
-| CON-FEB25-01 | Map marker click: when zoomed in, pan/center only; when zoomed out, pan and zoom in | ⚪ Not Started | | Replicate across all map markers. Source: consolidated-tasks-feb-25-2026.md |
+| CON-FEB25-01 | Map marker click: when zoomed in, pan/center only; when zoomed out, pan and zoom in | 🟢 Complete | Codex | Shared smart goTo helper wired across all data sources. DataONE zoom-out edge case resolved: `useDatasetDetailOrchestrator.ts` was overriding smart zoom with hardcoded `zoom: 16`; replaced with `goToMarkerWithSmartZoom({ defaultZoomLevel: 16 })`. Source: consolidated-tasks-feb-25-2026.md |
 | CON-FEB25-02 | Add thin white outline around all map icons (including emoji) | ⚪ Not Started | | Icons hard to see against map background. Source: consolidated-tasks-feb-25-2026.md |
 | CON-FEB25-03 | Collapsable Edit Filters component across all layers | ⚪ Not Started | | ANiML/cam traps and others match iNaturalist pattern. Source: consolidated-tasks-feb-25-2026.md |
 | CON-FEB25-06 | Analyze code for performance bottlenecks — low FPS in 3D view with iNaturalist | ⚪ Not Started | | Extends 7.6. Source: consolidated-tasks-feb-25-2026.md |
@@ -282,6 +282,27 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 
 ---
 
+### CON-FEB25-01: Investigation Notes (DataONE zoom-out edge case) — RESOLVED
+
+**Status:** Fixed. Root cause identified and resolved.
+
+**Root cause:** `useDatasetDetailOrchestrator.ts` (right sidebar) had an auto-pan effect that fired whenever a new dataset was opened. It called `view.goTo({ center: [...], zoom: 16 })` with a **hardcoded `zoom: 16`**. When a user clicked a DataONE marker at zoom level > 16, the sequence was:
+1. `useMapBehavior.ts` click handler → `goToMarkerWithSmartZoom` (correctly preserves zoom)
+2. React re-renders → DatasetDetail mounts → orchestrator fires `goTo({ zoom: 16 })` → zooms OUT
+
+This confirmed hypothesis #1 from the investigation: "A non-click DataONE effect may still run after selection and invoke map navigation that changes scale."
+
+**Fix:** Replaced both the auto-pan effect and `handleRecenter` in `useDatasetDetailOrchestrator.ts` with `goToMarkerWithSmartZoom({ defaultZoomLevel: 16 })`. This preserves the zoom-in-close behavior for datasets opened from the sidebar list (zoom to 16 if currently below 16) while preventing zoom-out when already closer (at or above 16, keep current zoom).
+
+**What was tried (prior to root cause discovery):**
+- Added shared marker navigation helper (`src/v2/utils/mapMarkerNavigation.ts`) and applied to iNaturalist, ANiML, Dendra, DataONE, CalFlora, and GBIF.
+- Implemented threshold logic (`defaultZoomLevel = 5`): zoom only when current zoom is below threshold; otherwise center-only.
+- Updated helper to preserve existing zoom/scale during center-only moves.
+- Updated DataONE-specific click paths in `useMapBehavior.ts` to use helper.
+- Hardened SceneView zoom detection by rejecting invalid/transition values.
+
+---
+
 ## Discovered Issues
 
 > Add issues discovered during other phases that need fixing in polish.
@@ -306,4 +327,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | Feb 3, 2026 | 7.1, 7.2 | Added TNC brand integration tasks (fonts + theme variants). Resolved DFT-008, DFT-009 | Will + Claude |
 | Feb 3, 2026 | 7.7 | Updated accessibility check with DFT-017 baseline principles. Added specific testing checklist and tools | Will + Claude |
 | Feb 4, 2026 | 7.8 | Added map tooltip enhancement task for post-v2.0 (DFT-032 future enhancement). v2.0 ships with minimal tooltips, enhancements based on teammate feedback | Will + Claude |
+| Feb 25, 2026 | CON-FEB25-01 | Implemented shared marker click navigation behavior: zoom only when below default threshold, otherwise center-only. Applied to iNaturalist, ANiML, Dendra, DataONE, CalFlora, and GBIF with 2D/3D support | Codex |
+| Feb 25, 2026 | CON-FEB25-01 | Re-opened task as in progress due to DataONE zoom-out edge case when already zoomed in. Documented attempted fixes and remaining hypotheses for targeted debugging | Codex |
+| Feb 25, 2026 | CON-FEB25-01 | Resolved DataONE zoom-out edge case: root cause was `useDatasetDetailOrchestrator.ts` overriding smart zoom with hardcoded `zoom: 16`. Replaced with `goToMarkerWithSmartZoom({ defaultZoomLevel: 16 })` | Will + Claude |
 
