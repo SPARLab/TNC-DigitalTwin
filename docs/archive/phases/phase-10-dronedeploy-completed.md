@@ -1,7 +1,7 @@
 # Phase 10: DroneDeploy — Archived Completed Tasks
 
-**Last Updated:** February 18, 2026  
-**Purpose:** Archive of completed Phase 10 tasks (10.1–10.6, 10.8–10.11). Full phase doc: `docs/IMPLEMENTATION/phases/phase-10-dronedeploy.md`
+**Last Updated:** February 25, 2026  
+**Purpose:** Archive of completed Phase 10 tasks (10.1–10.11, CON-DRONE-01, CON-DRONE-02, TF-10). Full phase doc: `docs/IMPLEMENTATION/phases/phase-10-dronedeploy.md`
 
 ---
 
@@ -15,10 +15,14 @@
 | 10.4 | ✅ | Feb 16, 2026 23:18 PST | Implement project browse UI (compact project cards) | Browse projects as compact card-only list (project name, flight count, date range, WMTS summary) with click-through into project detail |
 | 10.5 | ✅ | Feb 16, 2026 20:12 PST | Implement flight detail view | Full metadata panel, load/remove and fly-to actions, image collection + portal links, TIF link, opacity slider for loaded layers |
 | 10.6 | ✅ | Feb 16, 2026 20:12 PST | Load WMTS imagery layers on map | WMTS loading via `wmts_item_id` into DroneDeploy group layer with multi-flight support, default 80% opacity, fly-to handling, registry wiring |
+| 10.7 | ✅ | Feb 19, 2026 | Render flight footprints as map polygons | Skipped / not implementing per user decision — flight footprint polygons will not be built |
 | 10.8 | ✅ | Feb 16, 2026 19:05 PST | Implement layer opacity and visibility controls | Per-flight visibility toggles, draw-order up/down for overlapping WMTS, compact one-row action buttons in project detail card |
 | 10.9 | ✅ | Feb 16, 2026 22:15 PST | Implement temporal comparison UI | On-map temporal carousel via active-layer adapter override (`dataset-193`), v1-style carousel button/dot styling, carousel selection synced to right-sidebar flight detail, auto fly-to on selection |
 | 10.10 | ✅ | Feb 16, 2026 23:40 PST | Sync loading indicators | Drone loading covers metadata + WMTS tile lifecycle with shared loading primitives and Map Layers eye-slot spinners |
 | 10.11 | ✅ | Feb 16, 2026 23:40 PST | Wire Save View flow | Save View creates/reuses DroneDeploy child views in Map Layers; child activation rehydrates correct WMTS flight |
+| CON-DRONE-01 | ✅ | Feb 19, 2026 | Bug: drone imagery does not change when toggling between flights | Fixed: single-flight replacement, auto-load default, WMTS 404 fallback |
+| CON-DRONE-02 | ✅ | Feb 19, 2026 | Simplify project flights UI: default name/date, expand for metadata | Card click syncs map + toggles metadata; caret-only disclosure; animated expand/collapse |
+| TF-10 | ✅ | Feb 20, 2026 | Add gray background to DroneDeploy project cards | Project cards use `bg-gray-50` default, `bg-gray-100` hover in project switcher view |
 
 ---
 
@@ -83,6 +87,30 @@
 **Goal:** Save drone imagery configurations to Map Layers widget.
 
 **Implementation:** Pin creates DroneDeploy parent layer in Map Layers. Individual loaded flights appear as child views. Selecting saved child view re-loads that specific WMTS layer. Comparison mode state optionally saveable. Follows shared child-view conventions from LayerContext (droneView.flightId).
+
+### 10.7: Render Flight Footprints as Map Polygons
+
+**Goal:** Show drone flight coverage areas on the map as clickable polygon outlines.
+
+**Implementation:** Skipped per user decision. Flight footprint polygons will not be built.
+
+### CON-DRONE-01: Fix Flight Toggle Imagery Switching
+
+**Goal:** Ensure map imagery reliably updates when users toggle between flights in DroneDeploy project detail.
+
+**Implementation:** Single-flight replacement semantics (new selection unloads old imagery); default to first valid flight for carousel alignment; auto-load default flight when Orthomosaics activates; map-level activation guardrails; WMTS 404 fallback to alternate flight in same project with user toast. Files: DroneDeploySidebar.tsx, LayerRow.tsx, useMapBehavior.ts.
+
+### CON-DRONE-02: Simplify Project Flights UI
+
+**Goal:** Reduce visual clutter in project detail flight lists via progressive disclosure.
+
+**Implementation:** Collapsed default: flight name + capture date only. Expanded: secondary metadata (WMTS/plan IDs, links, geometry). Card click syncs map imagery selection and toggles metadata panel. Top-right caret indicates expand/collapse. Removed Selected label, Visible/Hidden button, up/down reorder controls. 200ms ease-out expand/collapse transition. Files: FlightDetailView.tsx, DroneDeploySidebar.tsx.
+
+### TF-10: Project Card Background Polish
+
+**Goal:** Improve visual separation in DroneDeploy project switcher view.
+
+**Implementation:** Project cards use `bg-gray-50` default with `bg-gray-100` hover. File: ProjectListView.tsx. Source: Trisalyn QA Feb 20.
 
 ---
 

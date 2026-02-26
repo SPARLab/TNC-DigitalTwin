@@ -11,7 +11,7 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 125 / 151 complete (**83%**) |
+| **Active scope** | 135 / 161 complete (**84%**) |
 | **Active remaining** | 26 tasks |
 | **Phases complete** | 6 of 13 (0, 1, 2, 6, 10, 11) |
 
@@ -55,12 +55,12 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 125
+- **Complete:** 135
 - **Active remaining (Not Started + In Progress + Blocked):** 26
 - **Backlog (not in active scope):** 3
 - **Deferred:** 1
 - **Won't Do:** 2
-- **Total tracked rows:** 157
+- **Total tracked rows:** 167
 
 ### Per-Phase Task Counts
 
@@ -76,7 +76,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 7 | Polish & Consistency | ⚪ Not Started | 1 | 8 | 0 | 0 | 0 | 9 | `v2/polish` |
 | 8 | Calflora | 🟡 In Progress | 8 | 1 | 0 | 0 | 0 | 9 | `v2/calflora` |
 | 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
-| 10 | DroneDeploy | 🟢 Complete | 4 | 0 | 0 | 0 | 0 | 4 | `v2/dronedeploy` |
+| 10 | DroneDeploy | 🟢 Complete | 14 | 0 | 0 | 0 | 0 | 14 | `v2/dronedeploy` |
 | 11 | MOTUS | 🟢 Complete | 9 | 0 | 0 | 0 | 0 | 9 | `v2/motus` |
 | 12 | Alerts & Monitoring | 🟡 In Progress | 4 | 4 | 0 | 0 | 0 | 8 | `v2/alerts-monitoring` |
 
@@ -363,6 +363,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 25, 2026 | Docs | **Phase 10 DroneDeploy archive.** Archived completed tasks (10.1–10.11, CON-DRONE-01, CON-DRONE-02, TF-10) to `docs/archive/phases/phase-10-dronedeploy-completed.md`. Phase doc trimmed. | — |
 | Feb 25, 2026 | Docs | **Phase 11 MOTUS archive.** Archived completed tasks (11.1–11.9) to `docs/archive/phases/phase-11-motus-completed.md`. Phase doc trimmed; MOTUS blocker marked resolved. | — |
 | Feb 25, 2026 | Docs | **Phase 12 AI Refactor archive.** Archived 28 completed tasks (REF-01 through REF-16, excluding deferred REF-05D, REF-12, REF-14C, REF-14D) to `docs/archive/phases/phase-12-ai-refactor-completed.md`. Phase doc trimmed to 4 deferred tasks only. | — |
 | Feb 25, 2026 | Docs | **Archived completed tasks** in phase-0, phase-1, phase-2, phase-4, phase-6. Moved completed task rows to `docs/archive/phases/`; trimmed phase docs to active tasks only; replaced Task Details with archive references. Phase docs now scannable for remaining work. | Cursor |

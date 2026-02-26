@@ -1,8 +1,8 @@
 # Phase 10: DroneDeploy Imagery
 
 **Status:** 🟢 Complete  
-**Progress:** 4 / 4 tasks (completed tasks 10.1–10.6, 10.8–10.11 archived; CON-DRONE-01, CON-DRONE-02, 10.7, TF-10 complete)  
-**Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-10-dronedeploy-completed.md`  
+**Progress:** 14 / 14 tasks (completed tasks archived)  
+**Last Archived:** Feb 25, 2026 — see `docs/archive/phases/phase-10-dronedeploy-completed.md`  
 **Branch:** `v2/dronedeploy`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -11,12 +11,9 @@
 
 ## Quick Task Summary
 
-| ID | Status | Last Updated (Timestamp) | Task Description | Notes |
-|----|--------|---------------------------|------------------|-------|
-| TF-10 | 🟢 Complete | Feb 20, 2026 | Add gray background to DroneDeploy project cards | Implemented in `ProjectListView`: project cards now use gray default background (`bg-gray-50`) with slightly darker hover state (`bg-gray-100`) for visual polish in project switcher view. Source: Trisalyn QA Feb 20 |
-| CON-DRONE-01 | 🟢 Complete | Feb 19, 2026 | Bug: drone imagery does not change when toggling between flights | Fixed: single-flight replacement, auto-load default, WMTS 404 fallback |
-| CON-DRONE-02 | 🟢 Complete | Feb 19, 2026 | Simplify project flights UI: default name/date, expand for metadata | Card click syncs map + toggles metadata; caret-only disclosure; animated expand/collapse |
-| 10.7 | 🟢 Complete | Feb 19, 2026 | Render flight footprints as map polygons | Skipped / not implementing per user decision |
+*Completed tasks (10.1–10.11, CON-DRONE-01, CON-DRONE-02, TF-10) archived. See `docs/archive/phases/phase-10-dronedeploy-completed.md`.*
+
+**Archived completed tasks:** `10.1`, `10.2`, `10.3`, `10.4`, `10.5`, `10.6`, `10.7`, `10.8`, `10.9`, `10.10`, `10.11`, `CON-DRONE-01`, `CON-DRONE-02`, and `TF-10` moved to `docs/archive/phases/phase-10-dronedeploy-completed.md` on Feb 25, 2026.
 
 **Status Legend:**
 - ⚪ Not Started
@@ -120,100 +117,7 @@ Implement the DroneDeploy drone imagery browse experience in the right sidebar. 
 
 ---
 
-## Task Details
-
-### CON-DRONE-01: Fix Flight Toggle Imagery Switching
-
-**Goal:** Ensure map imagery reliably updates when users toggle between flights in DroneDeploy project detail.
-
-**Acceptance Criteria:**
-- [x] Toggling a flight to visible also activates that flight (`activeLayer.featureId`) and updates selected flight context
-- [x] Toggling a different flight visibly changes map imagery to the newly selected flight
-- [x] Toggling off the currently selected flight cleanly falls back to another visible flight (or clears selection if none)
-- [x] Pinned child view visibility and loaded WMTS state stay in sync
-- [x] Manual validation completed for project detail flight list + temporal carousel interaction
-
-**Implementation Notes (Feb 19, 2026):**
-- Started fix in `DroneDeploySidebar`: flight visibility toggle now routes through map activation/view sync flow instead of only flipping loaded IDs.
-- Updated project open + flight select handlers to use `createOrUpdateDroneView(...)` so active view selection is deterministic.
-- Updated default flight selection to prefer the first valid flight (oldest-first list order) to align with expected first-dot carousel behavior.
-- Updated map behavior to auto-load the default flight when DroneDeploy Orthomosaics is activated, so imagery appears without an extra click.
-- Updated selection semantics to single-flight replacement (new selection unloads old flight), matching v1 behavior.
-- Runtime finding: some DroneDeploy WMTS plans are returning repeated tile `404` responses (`public-tiles.dronedeploy.com`), which can still prevent imagery draw even when client selection logic is correct.
-- Added map-level activation guardrails: when a flight becomes active (including carousel-driven activation), force-load only that flight and unload previous flights; if selected flight WMTS fails with `404`, auto-fallback to another valid flight in the same project when available.
-
-**Resolution (Feb 19, 2026):** Task complete. Flight toggle, project switch, and carousel selection now enforce single-flight loaded state; old imagery is unloaded before new imagery loads. WMTS 404 failures trigger same-project fallback with user toast.
-
----
-
-### CON-DRONE-02: Simplify Project Flights UI (Default Name/Date + Expand for Metadata)
-
-**Goal:** Reduce visual clutter in project detail flight lists by showing only the most decision-critical info by default (flight name + capture date), with metadata/actions available via progressive disclosure.
-
-**Current Friction (Observed):**
-- Flight rows currently surface too many secondary fields at once, increasing scan time when users compare flights in the same project.
-- Important selection cues (which flight/date to load) compete with lower-priority metadata.
-- Right sidebar density makes it harder to quickly pivot between dates during temporal exploration.
-
-**Design Direction (Progressive Disclosure):**
-- **Collapsed (default) flight row:** show `plan_name` and formatted `date_captured` only.
-- **Expanded flight row:** reveal secondary metadata (e.g., last updated, IDs, collection/download links, geometry/extent details) and non-primary actions.
-- Preserve current high-priority controls for map behavior (select/visibility toggle) with clear affordances in collapsed state.
-
-**Principle Check (UI/UX):**
-
-| Principle | Why It Matters Here | Proposed Direction Fit |
-|----------|----------------------|------------------------|
-| Hick's Law (Cognitive) | Fewer visible choices/details lowers decision latency | ✅ |
-| Nielsen: Aesthetic & Minimalist Design | Remove non-essential information from default view | ✅ |
-| Recognition over Recall | Keep key identifier/date visible at all times | ✅ |
-| Gestalt: Proximity/Common Region | Group advanced metadata in expandable region | ✅ |
-| Norman: Signifiers & Feedback | Expand/collapse affordance must be explicit and stateful | 🟡 (depends on implementation polish) |
-| Accessibility (POUR) | Expand interaction must be keyboard/screen-reader clear | 🟡 (must be validated) |
-
-**Acceptance Criteria:**
-- [x] In project detail flight list, each flight row defaults to a compact summary (name + date only)
-- [x] Secondary metadata is hidden by default and appears only when the row is expanded
-- [x] Expanded/collapsed state is visually obvious and keyboard operable
-- [x] Card click syncs selected flight to map imagery and toggles metadata expansion (per user feedback: removed per-row visibility button)
-- [x] Temporal comparison workflows are not slowed by the new disclosure pattern
-- [x] Empty/missing metadata fields render gracefully in expanded content
-- [x] Animated expand/collapse transition; removed in-card up/down draw-order controls per user feedback
-
-**Resolution (Feb 19, 2026):** Task complete. Flight cards show name + date by default; clicking a card selects that flight (loads imagery on map) and toggles its metadata panel. Top-right caret indicates expand/collapse state. Removed redundant "Selected" label, "Visible/Hidden" button, and up/down reorder arrows from card UI. CSS transition (200ms ease-out) applied to metadata panels. Files: FlightDetailView.tsx, DroneDeploySidebar.tsx.
-
-**Implementation Plan (Start Here):**
-1. **Row anatomy audit:** identify current flight-row fields/actions rendered in `DroneDeploySidebar` (and related row components/hooks).
-2. **Define compact schema:** lock default-visible fields to `plan_name` + formatted capture date; confirm fallback labels for null/empty values.
-3. **Add disclosure state:** implement per-flight expand/collapse state keyed by stable flight ID.
-4. **Move secondary content:** relocate non-primary metadata/actions into expandable panel content area.
-5. **Accessibility pass:** ensure disclosure control has clear label, state (`aria-expanded`), focus order, and keyboard toggle behavior.
-6. **Manual QA pass:** verify scanability + selection speed across projects and no regressions in visibility/activation/pin flows.
-
-**Out of Scope (for this task):**
-- Changing flight sort/filter semantics
-- Redesigning carousel behavior
-- Introducing new metadata fields from service that are not already used in UI
-
-**Notes (Feb 19, 2026):**
-- Begin with readability-first implementation: concise collapsed rows, low-surprise expansion behavior.
-- Prefer keeping metadata rendering logic centralized to avoid duplicate formatting paths between collapsed and expanded states.
-
----
-
-### 10.7: Render Flight Footprints as Map Polygons
-
-**Goal:** Show drone flight coverage areas on the map as clickable polygon outlines, separate from the actual imagery layers.
-
-**Resolution (Feb 19, 2026):** Task marked complete without implementation. Skipped per user decision — flight footprint polygons will not be built.
-
-**Acceptance Criteria (not implemented):**
-- [ ] Parse `plan_geometry` WKT POLYGON into ArcGIS geometry
-- [ ] Render flight footprints as semi-transparent polygon outlines on map
-- [ ] Color-code by project or by recency
-- [ ] Map click on footprint polygon → activate DroneDeploy + open flight detail
-- [ ] Footprints visible when DroneDeploy is active, even before imagery is loaded
-- [ ] Create `useDroneDeployMapBehavior` hook
+*Completed task details (10.1–10.11, CON-DRONE-01, CON-DRONE-02, TF-10) archived. See `docs/archive/phases/phase-10-dronedeploy-completed.md`.*
 
 ---
 
@@ -305,6 +209,7 @@ Validated with sample `wmts_item_id` values from live records.
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 25, 2026 | — | **Archived** completed tasks (10.1–10.11, CON-DRONE-01, CON-DRONE-02, TF-10) to `docs/archive/phases/phase-10-dronedeploy-completed.md`. Phase doc trimmed. | — |
 | Feb 20, 2026 | TF-10 | **Completed project card background polish:** DroneDeploy browse project cards now use a subtle gray default background (`bg-gray-50`) with a darker gray hover (`bg-gray-100`) to improve visual separation in the project switcher view. File: ProjectListView.tsx | Codex |
 | Feb 16, 2026 | 10.3 | **Left-sidebar project click loads imagery:** LayerRow project select now calls DroneDeploy context (setFlightLoaded, setSelectedFlightId, requestFlyToFlight) so WMTS tiles load on map when selecting a project from left sidebar; previously only right-sidebar project/flight clicks triggered load. Also: Browse tab gating uses adapter.id; default flight prefers valid WMTS; merge conflicts resolved. Files: LayerRow.tsx, RightSidebar.tsx, DroneDeploySidebar.tsx, useMapBehavior.ts | Claude |
 | Feb 16, 2026 | 10.3 | DroneDeploy left sidebar UX refinements: row click anywhere on DroneDeploy layer auto-expands projects panel (no chevron-only click); 300ms CSS transition for smooth expand/collapse animation (max-height + opacity). Files: LayerRow.tsx | Claude |
