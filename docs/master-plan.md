@@ -11,12 +11,12 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 135 / 161 complete (**84%**) |
+| **Active scope** | 158 / 184 complete (**86%**) |
 | **Active remaining** | 26 tasks |
-| **Phases complete** | 6 of 13 (0, 1, 2, 6, 10, 11) |
+| **Phases complete** | 7 of 15 (0, 1, 2, 10, 11, 12b) |
 
 ```
-██████████████████████████████████░░░░░░░░░  83%
+████████████████████████████████████░░░░░░  86%
 ```
 
 ---
@@ -30,6 +30,7 @@
 | MP-COUNT-01 | 🟢 Complete | Feb 23, 2026 | Normalize phase-level task counting in master tracker | Counts now use each phase's top summary/status table and separate active remaining from backlog/deferred/won't-do states. |
 | MP-COUNT-02 | 🟢 Complete | Feb 23, 2026 | Add explicit totals for completed vs left-to-do work | Added portfolio totals and per-phase breakdown so progress is numerically auditable at a glance. |
 | MP-COUNT-03 | 🟡 In Progress | Feb 23, 2026 | Keep counts synchronized whenever a phase task changes status | Update this table after each task closure in phase docs to prevent drift. |
+| MP-SYNC-01 | 🟢 Complete | Feb 25, 2026 | Sync master plan with all phase docs (Phase 12 sub-phases, Phase 5/6 counts) | Added 12b Export Code Gen, 12c AI Refactor; corrected Phase 5 (10 complete), Phase 6 (44 complete); portfolio totals updated. |
 
 ---
 
@@ -55,12 +56,12 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 135
+- **Complete:** 158
 - **Active remaining (Not Started + In Progress + Blocked):** 26
 - **Backlog (not in active scope):** 3
-- **Deferred:** 1
+- **Deferred:** 5
 - **Won't Do:** 2
-- **Total tracked rows:** 167
+- **Total tracked rows:** 194
 
 ### Per-Phase Task Counts
 
@@ -71,14 +72,16 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 2 | ANiML | 🟢 Complete | 7 | 0 | 0 | 0 | 1 | 8 | `v2/animl` |
 | 3 | Dendra | 🟡 In Progress | 9 | 2 | 3 | 0 | 0 | 14 | `v2/dendra` |
 | 4 | DataOne | 🟡 In Progress | 16 | 1 | 0 | 0 | 0 | 17 | `v2/dataone` |
-| 5 | Export Builder | 🟡 In Progress | 0 | 5 | 0 | 0 | 0 | 5 | `v2/export-builder` |
-| 6 | TNC ArcGIS Services | 🟡 In Progress | 32 | 1 | 0 | 0 | 0 | 33 | `v2/tnc-arcgis` |
+| 5 | Export Builder | 🟡 In Progress | 10 | 5 | 0 | 0 | 0 | 15 | `v2/export-builder` |
+| 6 | TNC ArcGIS Services | 🟡 In Progress | 44 | 1 | 0 | 0 | 0 | 45 | `v2/tnc-arcgis` |
 | 7 | Polish & Consistency | ⚪ Not Started | 1 | 8 | 0 | 0 | 0 | 9 | `v2/polish` |
 | 8 | Calflora | 🟡 In Progress | 8 | 1 | 0 | 0 | 0 | 9 | `v2/calflora` |
 | 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
 | 10 | DroneDeploy | 🟢 Complete | 14 | 0 | 0 | 0 | 0 | 14 | `v2/dronedeploy` |
 | 11 | MOTUS | 🟢 Complete | 9 | 0 | 0 | 0 | 0 | 9 | `v2/motus` |
-| 12 | Alerts & Monitoring | 🟡 In Progress | 4 | 4 | 0 | 0 | 0 | 8 | `v2/alerts-monitoring` |
+| 12a | Alerts & Monitoring | 🟡 In Progress | 4 | 4 | 0 | 0 | 0 | 8 | `v2/alerts-monitoring` |
+| 12b | Export Code Generation | 🟢 Complete | 3 | 0 | 0 | 0 | 0 | 3 | `v2/export-code-generation` |
+| 12c | AI Refactor Readiness | 🟡 In Progress | 16 | 0 | 0 | 4 | 0 | 20 | `v2/refactor-ai-readiness` |
 
 **Status Legend:** ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
 
@@ -102,7 +105,9 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 9 | [phase-9-gbif.md](IMPLEMENTATION/phases/phase-9-gbif.md) |
 | 10 | [phase-10-dronedeploy.md](IMPLEMENTATION/phases/phase-10-dronedeploy.md) |
 | 11 | [phase-11-motus.md](IMPLEMENTATION/phases/phase-11-motus.md) |
-| 12 | [phase-12-alerts-monitoring.md](IMPLEMENTATION/phases/phase-12-alerts-monitoring.md) |
+| 12a | [phase-12-alerts-monitoring.md](IMPLEMENTATION/phases/phase-12-alerts-monitoring.md) |
+| 12b | [phase-12-export-code-generation.md](IMPLEMENTATION/phases/phase-12-export-code-generation.md) |
+| 12c | [phase-12-ai-refactor.md](IMPLEMENTATION/phases/phase-12-ai-refactor.md) |
 
 ---
 
@@ -142,7 +147,9 @@ Phase 0: Foundation
 - Each phase has its own branch, merged to `v2/main` when complete
 - Phase 5 requires all data sources to be functional
 - Phase 7 is the final consistency pass
-- Phase 12 (Alerts & Monitoring) depends on Phase 0, 1, 2, 4; can run in parallel with Phase 7
+- Phase 12a (Alerts & Monitoring) depends on Phase 0, 1, 2, 4; can run in parallel with Phase 7
+- Phase 12b (Export Code Generation) depends on Phase 5; complete
+- Phase 12c (AI Refactor Readiness) depends on Phases 0–11; active scope complete, 4 deferred
 
 ---
 
@@ -353,7 +360,9 @@ When working on any phase:
 - **Phase 9:** `docs/IMPLEMENTATION/phases/phase-9-gbif.md`
 - **Phase 10:** `docs/IMPLEMENTATION/phases/phase-10-dronedeploy.md`
 - **Phase 11:** `docs/IMPLEMENTATION/phases/phase-11-motus.md`
-- **Phase 12:** `docs/IMPLEMENTATION/phases/phase-12-alerts-monitoring.md`
+- **Phase 12a:** `docs/IMPLEMENTATION/phases/phase-12-alerts-monitoring.md`
+- **Phase 12b:** `docs/IMPLEMENTATION/phases/phase-12-export-code-generation.md`
+- **Phase 12c:** `docs/IMPLEMENTATION/phases/phase-12-ai-refactor.md`
 
 ---
 
@@ -363,6 +372,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 25, 2026 | Master | **Sync with all phase docs.** Added Phase 12b (Export Code Generation, complete) and 12c (AI Refactor Readiness, 4 deferred); updated Phase 5 (10 complete from archive) and Phase 6 (44 complete from archive); Phase Documents table now lists all 15 phase docs; portfolio totals recalculated. | Cursor |
 | Feb 25, 2026 | Docs | **Phase 10 DroneDeploy archive.** Archived completed tasks (10.1–10.11, CON-DRONE-01, CON-DRONE-02, TF-10) to `docs/archive/phases/phase-10-dronedeploy-completed.md`. Phase doc trimmed. | — |
 | Feb 25, 2026 | Docs | **Phase 11 MOTUS archive.** Archived completed tasks (11.1–11.9) to `docs/archive/phases/phase-11-motus-completed.md`. Phase doc trimmed; MOTUS blocker marked resolved. | — |
 | Feb 25, 2026 | Docs | **Phase 12 AI Refactor archive.** Archived 28 completed tasks (REF-01 through REF-16, excluding deferred REF-05D, REF-12, REF-14C, REF-14D) to `docs/archive/phases/phase-12-ai-refactor-completed.md`. Phase doc trimmed to 4 deferred tasks only. | — |
