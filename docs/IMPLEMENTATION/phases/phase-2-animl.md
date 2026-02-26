@@ -1,8 +1,8 @@
 # Phase 2: ANiML Right Sidebar
 
 **Status:** 🟢 Complete  
-**Progress:** 6 / 7 tasks (completed tasks 2.1–2.17, 2.18 archived)  
-**Last Archived:** Feb 18, 2026 — see `docs/archive/phases/phase-2-animl-completed.md`  
+**Progress:** Phase complete; all tasks archived  
+**Last Archived:** Feb 25, 2026 — see `docs/archive/phases/phase-2-animl-completed.md`  
 **Branch:** `v2/animl`  
 **Depends On:** Phase 0 (Foundation) — Data Source Adapter Pattern ✅ Complete  
 **Owner:** TBD
@@ -87,29 +87,9 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| TF-01 | 🟢 Complete | Feb 20, 2026 | Set minimum height for image results in Browse tab (~150px) so user doesn't need to collapse filters to scroll | Follow-up tuning: `#animl-image-list-scrollable` now enforces `min-h-[300px]` (prevents zero-height collapse at browser zoom), non-collapsible `EditFiltersCard` uses `overflow-visible`, and right-sidebar scrollbar uses hover-only styling without stable gutter reservation to avoid content shift. Source: Trisalyn QA Feb 20 |
-| CON-ANIML-01 | 🟢 Complete | Feb 19, 2026 | Map click on camera trap auto-selects sidebar camera and shows images | Map click + sidebar sync; spatial-query camera auto-select/prioritization; QA passed |
-| CON-ANIML-02 | ⚫ Won't Do | Feb 19, 2026 | Rename "Mountain lion" to "Puma" | Deferred: current label comes from ANiML source data; taxonomy decision needed |
-| CON-ANIML-03 | 🟢 Complete | Feb 19, 2026 | Sort cameras by result count (data-rich first, zero-data last) | Comparator in AnimlBrowseTab; zero-result cameras sink to bottom |
-| CON-ANIML-04 | 🟢 Complete | Feb 19, 2026 | Add explicit "Remove Polygon" CTA in spatial query panel | Replaced tiny header Clear action with explicit button-style Remove Polygon CTA |
-| CON-ANIML-05 | 🟢 Complete | Feb 19, 2026 | Improve map badge UI for large counts (e.g., 999+) | Dynamic pill badge, white outline, extra padding for 999+; no clipping; QA passed |
-| CON-ANIML-06 | 🟢 Complete | Feb 19, 2026 | Add Retry button when image labels API error occurs (e.g. 503) | Auto-retry (429/502/503/504 backoff) + manual Retry button; QA passed |
-| 2.18 | 🟢 Complete | Feb 19, 2026 | Synchronize matching images results with map/layer counts | Server-side image pagination; shared filteredImageCount for map, layer badge, and browse totals; QA passed |
+| — | — | — | *No active tasks* | Phase complete |
 
-## Task Status
-
-| ID | Task | Status | Assignee | Notes |
-|----|------|--------|----------|-------|
-| CON-ANIML-01 | Map click camera -> sidebar sync + images | 🟢 Complete | | Map click handler + browse camera auto-select + spatial polygon camera auto-selection; QA passed |
-| CON-ANIML-02 | Rename Mountain lion label to Puma | ⚫ Won't Do | | Deferred to backlog: requires taxonomy/product decision (ANiML source label governance) |
-| CON-ANIML-03 | Sort cameras by result count descending | 🟢 Complete | | Data-rich first, zero-data last; preserves spatial-polygon priority |
-| CON-ANIML-04 | Add explicit "Remove Polygon" CTA in spatial query panel | 🟢 Complete | | Replaced tiny "Clear" text action with explicit Remove Polygon button in SpatialQuerySection |
-| CON-ANIML-05 | Improve map camera badge legibility for high counts (999+) | 🟢 Complete | | Dynamic pill badge with white outline; extra padding for 999+; no clipping; QA passed |
-| CON-ANIML-06 | Add Retry button when image labels API error occurs | 🟢 Complete | | Auto retry (429/502/503/504) + manual Retry button in `AnimlBrowseTab`; QA passed |
-| 2.18 | Synchronize matching images results with map/layer counts | 🟢 Complete | | Server-side image pagination; shared filteredImageCount for map, layer badge, and browse totals; QA passed |
-| TF-01 | Min height + scrollbar for ANiML Browse image results | 🟢 Complete | | `#animl-image-list-scrollable` min-h-[300px]; EditFiltersCard overflow-visible; right-sidebar hover-only overlay scrollbar. Trisalyn QA Feb 20. |
-
-*Completed tasks 2.1–2.17 have been archived. See `docs/archive/phases/phase-2-animl-completed.md`.*
+*All completed tasks (TF-01, CON-ANIML-01 through CON-ANIML-06, 2.18; CON-ANIML-02 Won't Do) archived. See `docs/archive/phases/phase-2-animl-completed.md`.*
 
 **Status Legend:**
 - ⚪ Not Started
@@ -128,60 +108,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 ## Task Details
 
-### TF-01: Minimum Image Result Height + Overlay Scrollbar (ANiML Browse)
-
-**Goal:** Prevent the image results area from collapsing to zero height when the user zooms the browser (e.g., Cmd+zoom in Chrome), and ensure the right sidebar scrollbar overlays content (no horizontal shift).
-
-**Problem:** At high zoom levels, `#animl-image-list-scrollable` collapsed to zero height. Users had to collapse filter sections to scroll images. The stable scrollbar gutter also pushed content left when the scrollbar appeared.
-
-**Acceptance Criteria:**
-- [x] `#animl-image-list-scrollable` enforces `min-h-[300px]` so results area never collapses
-- [x] EditFiltersCard (non-collapsible) grows to fit children (`overflow-visible`)
-- [x] Right-sidebar scrollbar appears on hover, overlays content (no gutter reservation)
-
-**Implementation Notes (Feb 20, 2026):**
-- `ImageList.tsx`: `animl-image-list-scrollable` uses `min-h-[300px]` in both expandToFill and non-fill modes
-- `EditFiltersCard.tsx`: Conditional overflow — `overflow-visible` when not collapsible
-- `index.css`: `.scroll-area-right-sidebar` — removed `scrollbar-gutter: stable`; `scrollbar-width: none` by default, `thin` on hover/focus-within
-
-**Source:** Trisalyn QA Feb 20. Same fix applies to iNaturalist (TF-01-INAT).
-
----
-
-### CON-ANIML-06: Add Retry Button When Image Labels API Error Occurs
-
-**Goal:** When the image labels API fails (e.g. 503 "User couldn't access this resource 'animl.mapserver'"), show a Retry button so users can re-attempt the request without reloading the page.
-
-**Problem:** AnimlBrowseTab displays an error message when `queryImageLabelsCached` fails, but the only recovery path is a full page reload.
-
-**Acceptance Criteria:**
-- [x] When image fetch fails, error UI includes a visible "Retry" button
-- [x] Clicking Retry re-runs the same query (same filters: species, cameras, date range)
-- [x] No full page reload required
-
-**Implementation Notes (Feb 19, 2026):**
-- Added automatic retry for retryable HTTP failures (`429`, `502`, `503`, `504`) with short backoff delays before surfacing error state.
-- Added explicit Retry CTA in image error state to re-run the same `queryImageLabelsCached` request without reloading the app.
-
-**Notes:** Error originates from `AnimlBrowseTab.tsx` useEffect that calls `animlService.queryImageLabelsCached`. Add `imgError` state handling and a Retry CTA that clears error and re-triggers the fetch (e.g. via a retry counter in deps or explicit refetch callback).
-
----
-
-### 2.18: Synchronize Matching Images Results with Map/Layer Counts
-
-**Goal:** Ensure the map, map layer badge, and matching images section all display the same result count for a given filter selection.
-
-**Problem:** When selecting species (e.g. Coyote) and camera (e.g. Big Kojo), the map may show 605 results while the matching images section and map layer badge show only 200. These three sources of truth are out of sync.
-
-**Acceptance Criteria:**
-- [x] Map result count matches matching images count
-- [x] Map layer badge count matches matching images count
-- [x] All three use the same underlying query/aggregation logic (or explicitly document why counts may differ, e.g. pagination cap)
-
-**Implementation Notes (Feb 19, 2026):**
-- Switched AnimlBrowseTab image fetch to server-side pagination (`maxResults: PAGE_SIZE`, `resultOffset`) instead of capped 200-result client-side pagination.
-- Browse "matching images" total, Map Layers widget result count, and map camera badges now all derive from `filteredImageCount` (AnimlFilterContext countLookups).
-- Filter changes reset pagination to page 1; page bounds clamp when totals change.
+*Completed task details archived. See `docs/archive/phases/phase-2-animl-completed.md`.*
 
 ---
 
@@ -267,6 +194,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 25, 2026 | — | **Archived** all completed tasks (TF-01, CON-ANIML-01–06, 2.18; CON-ANIML-02 Won't Do) to `docs/archive/phases/phase-2-animl-completed.md`. Trimmed Task Details. | — |
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 | Feb 2, 2026 | 2.2 | Added landing cards entry point (DFT-003c) and Overview tab as default (DFT-006) | Will + Claude |
 | Feb 3, 2026 | 2.5 | Added numbered badge map visualization (DFT-012) with progressive disclosure integration | Will + Claude |

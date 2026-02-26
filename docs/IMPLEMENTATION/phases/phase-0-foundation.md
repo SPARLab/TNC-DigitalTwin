@@ -30,20 +30,9 @@ Set up the V2 application shell, routing, state management, and shared component
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| CON-GL-01 | 🟢 Complete | Feb 18, 2026 (implemented) | Implement spatial queries (custom polygon draw) across all layers | Shared map sketch draw + polygon filter wired across iNaturalist, ANiML, Dendra, and DataONE map behaviors |
-| CON-GL-02 | 🟢 Complete | Feb 19, 2026 | Spatial filter UI in right sidebar under date range | Shared SpatialQuerySection (Draw/Redraw/Remove); matches filter-section card styling; present in iNaturalist, ANiML, Dendra, DataOne Browse tabs |
-| CON-GL-02a | 🟢 Complete | Feb 18, 2026 (implemented) | Per-layer spatial polygons | Spatial query state now stores one polygon per layer ID; each data source applies its own stored polygon for filtering |
-| CON-GL-02b | 🟢 Complete | Feb 18, 2026 (implemented) | Hide polygon when layer inactive; keep filter | Map now renders only the active layer polygon while inactive layer polygons remain stored and continue filtering their respective layers |
-| CON-GL-04 | 🟢 Complete | Feb 18, 2026 (implemented) | Allow multiple expanded layers in Map Layers widget | Map Layers now supports multi-expand (open one row no longer collapses others); active-layer auto-expand adds to existing expanded set |
-| CON-GL-05 | 🟢 Complete | Feb 18, 2026 (implemented) | Edit Filters visual feedback linking widget to right sidebar | Edit Filters click now triggers a brief darker-green flash on the Browse "Edit Filters" card only |
-| CON-GL-06 | 🟢 Complete | Feb 18, 2026 (implemented) | Add "Edit Filters" section header in right sidebar | Added shared green "Edit Filters" card wrapper around filter controls across Browse tabs (iNaturalist, ANiML, Dendra, DataONE) |
-| CON-GL-07 | 🟢 Complete | Feb 18, 2026 (implemented) | Fix map and sidebar filter sync drift bug | Added active-view reconciliation in `LayerContext` to keep sidebar filters bound to the currently visible/valid child view |
-| CON-GL-08 | 🟢 Complete | Feb 18, 2026 (implemented) | Guide user to filter panel when "New View" is clicked | New View now auto-activates the created child view and triggers Edit Filters guidance to open/hydrate Browse filters |
-| 0.9 | 🟢 Complete | Feb 19, 2026 | Dynamic Layer Registry from Data Catalog Service | `useCatalogRegistry` fetches from Dangermond_Preserve_Data_Catalog FeatureServer; left sidebar populated dynamically; layers without adapters show generic placeholder in right sidebar |
-| D20-01 | 🟢 Complete | Feb 20, 2026 | Add collapse button to right sidebar — default open, stays collapsed until user manually re-expands | Extruded tab on left edge; single margin-right animation; localStorage persistence; no auto-reopen. Source: Dan feedback Feb 20. |
 | TF-12 | ⚪ Not Started | Feb 20, 2026 | Expand "Open Table Overlay" to all TNC ArcGIS feature service layers (currently only Oil Seeps) | Medium priority; Trisalyn reacted very positively — "this is how the GIS brain thinks." Source: Trisalyn QA Feb 20 |
 
-**Note:** Tasks `0.1` through `0.7` appear to be already implemented and are intentionally removed from active tracking.
+*Completed tasks (CON-GL-01 through CON-GL-08, 0.9, D20-01) archived. See `docs/archive/phases/phase-0-foundation-completed.md`.*
 
 ## Backlog (Nice to Have / v2)
 
@@ -53,17 +42,7 @@ Set up the V2 application shell, routing, state management, and shared component
 
 ## Task Status
 
-| ID | Task | Status | Assignee | Notes |
-|----|------|--------|----------|-------|
-| CON-GL-01 | Spatial queries across all layers | 🟢 Complete | Claude | Right-sidebar controls now trigger map polygon draw mode; polygon filters active/pinned map layers in implemented data sources |
-| CON-GL-02 | Spatial filter controls in right sidebar | 🟢 Complete | Claude | Shared SpatialQuerySection: Draw/Redraw + Remove buttons; matches filter-section card styling; present in iNaturalist, ANiML, Dendra, DataOne Browse tabs |
-| CON-GL-04 | Multiple expanded map layers | 🟢 Complete | Claude | Multi-expand implemented in `PinnedLayersSection` using a Set of expanded row IDs |
-| CON-GL-05 | Edit Filters visual link feedback | 🟢 Complete | Claude | Edit Filters navigation now causes a short darker-green flash on the Browse "Edit Filters" section only |
-| CON-GL-06 | "Edit Filters" section header | 🟢 Complete | Claude | Browse filter controls now live inside a shared green "Edit Filters" card wrapper across implemented data sources |
-| CON-GL-07 | Map/sidebar filter sync bug fix | 🟢 Complete | Codex | Added central active-view reconciliation in `LayerContext` so child-view visibility/removal cannot leave sidebar bound to a stale view ID |
-| CON-GL-08 | Auto-open or guide to filters on New View | 🟢 Complete | Codex | New view creation now activates the created view and fires `requestEditFilters()` so users are guided to filters immediately |
-| 0.9 | Dynamic Layer Registry from Data Catalog Service | 🟢 Complete | — | `useCatalogRegistry.ts` fetches categories/datasets from Dangermond_Preserve_Data_Catalog; CatalogContext exposes to LeftSidebar; layerRegistry.ts provides icon mapping + external layers only |
-| D20-01 | Right sidebar collapse button | 🟢 Complete | Codex | V2App: extruded tab on sidebar left edge (PanelRightClose/Open icons), single margin-right animation for sync, localStorage persistence, 300ms transition. Header Collapse button removed; X close removed. |
+*Completed tasks archived. See `docs/archive/phases/phase-0-foundation-completed.md`.*
 
 **Status Legend:**
 - ⚪ Not Started
@@ -674,6 +653,7 @@ interface Bookmark {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 25, 2026 | — | **Archived** completed tasks (CON-GL-01–08, 0.9, D20-01) to `docs/archive/phases/phase-0-foundation-completed.md`. | — |
 | Feb 20, 2026 | D20-01 | Added right sidebar collapse button task from Dan feedback. Default open; manual collapse only; no auto-reopen. Phase-0 is appropriate (app-wide layout). | Will |
 | Feb 19, 2026 | CON-GL-02 | **Draw Custom Polygon refinements.** Removed "No polygon drawn..." status text. Added expand/collapse (chevron) for visual consistency with Date Range, Species, Cameras; expanded by default. Documented styling standard in phase-0. | Will + Claude |
 | Feb 19, 2026 | 0.9 | Documented Task 0.9 (Dynamic Layer Registry) as complete. Implementation in `useCatalogRegistry.ts` + `CatalogContext.tsx`; left sidebar populated from Data Catalog FeatureServer. Parallel branches unblocked. | Claude |

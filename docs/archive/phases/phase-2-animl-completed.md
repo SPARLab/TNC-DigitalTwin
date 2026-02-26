@@ -1,7 +1,7 @@
 # Phase 2: ANiML — Archived Completed Tasks
 
-**Last Updated:** February 18, 2026  
-**Purpose:** Archive of completed Phase 2 tasks (2.1–2.17). Full phase doc: `docs/IMPLEMENTATION/phases/phase-2-animl.md`
+**Last Updated:** February 25, 2026  
+**Purpose:** Archive of completed Phase 2 tasks. Full phase doc: `docs/IMPLEMENTATION/phases/phase-2-animl.md`
 
 ---
 
@@ -9,6 +9,14 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|--------------------------|-----------------|-------|
+| TF-01 | ✅ | Feb 20, 2026 | Min height + scrollbar for ANiML Browse image results | min-h-[300px]; EditFiltersCard overflow-visible; hover-only scrollbar |
+| CON-ANIML-01 | ✅ | Feb 19, 2026 | Map click on camera trap auto-selects sidebar camera | Map click + sidebar sync; spatial-query camera auto-select |
+| CON-ANIML-02 | ⚫ Won't Do | Feb 19, 2026 | Rename "Mountain lion" to "Puma" | Deferred: taxonomy decision needed |
+| CON-ANIML-03 | ✅ | Feb 19, 2026 | Sort cameras by result count (data-rich first) | Zero-result cameras sink to bottom |
+| CON-ANIML-04 | ✅ | Feb 19, 2026 | Add explicit "Remove Polygon" CTA | Replaced tiny Clear with button-style Remove Polygon |
+| CON-ANIML-05 | ✅ | Feb 19, 2026 | Improve map badge UI for large counts (999+) | Dynamic pill badge; white outline; no clipping |
+| CON-ANIML-06 | ✅ | Feb 19, 2026 | Add Retry button when image labels API error | Auto-retry + manual Retry button |
+| 2.18 | ✅ | Feb 19, 2026 | Sync matching images with map/layer counts | Server-side pagination; shared filteredImageCount |
 | 2.1 | ✅ | Feb 12, 2026 | Query ANiML service to understand attributes | animlService.ts (1,512 lines) documents attributes |
 | 2.2 | ✅ | Feb 12, 2026 | Create ANiML adapter, context, map layer, sidebar shell | AnimlFilterContext, adapter, map layer, sidebar tabs, legend widget |
 | 2.3 | ✅ | Feb 13, 2026 | Design decision: Browse tab interaction flow | DFT-043–047; expandable filter sections, multi-select |

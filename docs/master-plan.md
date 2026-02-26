@@ -25,6 +25,7 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
+| MP-ARCHIVE-01 | 🟢 Complete | Feb 25, 2026 | Archive completed tasks in phase docs (0, 1, 2, 4, 6) | Moved completed rows to `docs/archive/phases/`; trimmed phase docs; Task Details replaced with archive refs. |
 | MP-COUNT-01 | 🟢 Complete | Feb 23, 2026 | Normalize phase-level task counting in master tracker | Counts now use each phase's top summary/status table and separate active remaining from backlog/deferred/won't-do states. |
 | MP-COUNT-02 | 🟢 Complete | Feb 23, 2026 | Add explicit totals for completed vs left-to-do work | Added portfolio totals and per-phase breakdown so progress is numerically auditable at a glance. |
 | MP-COUNT-03 | 🟡 In Progress | Feb 23, 2026 | Keep counts synchronized whenever a phase task changes status | Update this table after each task closure in phase docs to prevent drift. |
@@ -361,6 +362,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 25, 2026 | Docs | **Archived completed tasks** in phase-0, phase-1, phase-2, phase-4, phase-6. Moved completed task rows to `docs/archive/phases/`; trimmed phase docs to active tasks only; replaced Task Details with archive references. Phase docs now scannable for remaining work. | Cursor |
 | Feb 25, 2026 | Phase 12 | **Task 12.4 complete.** Mock camera trap novelty alerts with live data integration: View source navigates to ANiML camera/image, Dendra station/datastream, iNaturalist observation. Event-driven `ALERT_NAVIGATION_INTENT_EVENT`; exact feature ID matching; mule deer replaced with iNaturalist Ash-throated Flycatcher. Bug fixes: focusStationOnMap order, null checks, HMR sync. Phase 12: 4/8 tasks complete. | Cursor |
 | Feb 25, 2026 | Phase 12 | **Tasks 12.1–12.3 complete.** Alert taxonomy and mock payload schema; header notification bell and badge shell; alerts dropdown panel with list + detail, severity pills, relative timestamps, and quick actions (Mark read, Mark all read, View source placeholder). Phase 12: 3/8 tasks complete. | Cursor |
 | Feb 25, 2026 | Docs | **Consolidated feedback Feb 25 distributed.** Created `docs/feedback/consolidated-tasks-feb-25-2026.md` with 6 tasks (CON-FEB25-01 through 06). Distributed to phase-7-polish (4), phase-3-dendra (1), phase-6-tnc-arcgis (1). Master plan phase counts updated. | Cursor |

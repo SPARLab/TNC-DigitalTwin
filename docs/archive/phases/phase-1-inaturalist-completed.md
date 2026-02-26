@@ -1,6 +1,6 @@
 # Phase 1: iNaturalist — Archived Tasks (Full)
 
-**Archived:** February 18, 2026  
+**Archived:** February 25, 2026  
 **Purpose:** Complete archive of all Phase 1 iNaturalist tasks. Preserved to make room for new iNaturalist tasks in the phase document.
 
 ---
@@ -9,6 +9,17 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|--------------------------|-----------------|-------|
+| TF-01 | ✅ | Feb 20, 2026 | Min height for image results in Browse tab (~150px) | min-h-[400px] on inat-observation-cards |
+| TF-05 | ✅ | Feb 20, 2026 | iNaturalist taxa legend UX: caret right, header clickable, rounded corners | grid-template-rows animation |
+| TF-03 | ✅ | Feb 20, 2026 | Don't gray out species options in Filter Species dropdown | Removed opacity-60; unselected use bg-white |
+| TF-04 | ✅ | Feb 20, 2026 | Fix map/right-sidebar desync: taxon in legend + species filter | Removed global species reset from toggleTaxon |
+| CON-INAT-01 | ✅ | Feb 19, 2026 | Add species-level filtering (taxa only → taxa + species) | Full scientific names, species search, count sort |
+| CON-INAT-02 | ✅ | Feb 19, 2026 | Species hierarchy flow: taxa → species → observations | "Filter Taxa" label; redundant search removed |
+| CON-INAT-03 | ✅ | Feb 19, 2026 | Show result count in right sidebar | "92 observations" live count |
+| CON-INAT-04 | 🚫 Won't Do | Feb 19, 2026 | Reptile observations in ocean (scrambling vs bug) | iNaturalist coordinate obfuscation; not app bug |
+| CON-INAT-06 | ✅ | Feb 19, 2026 | Species/taxa ordering: common higher, editable sort | Count sort default, A-Z toggle |
+| CON-INAT-07 | ✅ | Feb 19, 2026 | Edit filters collapsible; results scrollable | EditFiltersCard collapsible; flex layout |
+| TF-06 | ✅ | Feb 24, 2026 | Species filter bug: taxa + all species = no results | Removed requiresSpeciesSelection; Select All/Clear All styling |
 | 1.1 | ✅ | Feb 11, 2026 | Query iNaturalist service to understand attributes | Completed during Task 13 |
 | 1.2 | ✅ | Feb 13, 2026 | Create iNaturalist right sidebar shell | INaturalistBrowseTab, OverviewTab, DetailView |
 | 1.3 | ✅ | Feb 13, 2026 | Implement filter UI (taxon, species, date, etc.) | Taxa filter, date range, search bar |

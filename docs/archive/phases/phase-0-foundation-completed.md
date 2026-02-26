@@ -1,6 +1,6 @@
 # Phase 0: Foundation — Archived Completed Tasks
 
-**Last Updated:** February 18, 2026  
+**Last Updated:** February 25, 2026  
 **Purpose:** Archive of completed Phase 0 tasks. Add new completions here with timestamp.
 
 ---
@@ -9,6 +9,17 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|--------------------------|-----------------|-------|
+| CON-GL-01 | ✅ | Feb 18, 2026 | Spatial queries (custom polygon draw) across all layers | Shared map sketch + polygon filter |
+| CON-GL-02 | ✅ | Feb 19, 2026 | Spatial filter UI in right sidebar under date range | Shared SpatialQuerySection |
+| CON-GL-02a | ✅ | Feb 18, 2026 | Per-layer spatial polygons | One polygon per layer ID |
+| CON-GL-02b | ✅ | Feb 18, 2026 | Hide polygon when layer inactive; keep filter | Inactive polygons stored, continue filtering |
+| CON-GL-04 | ✅ | Feb 18, 2026 | Multiple expanded layers in Map Layers widget | Multi-expand; active-layer auto-expand |
+| CON-GL-05 | ✅ | Feb 18, 2026 | Edit Filters visual feedback linking widget to right sidebar | Brief darker-green flash on Browse card |
+| CON-GL-06 | ✅ | Feb 18, 2026 | "Edit Filters" section header in right sidebar | Shared green card wrapper |
+| CON-GL-07 | ✅ | Feb 18, 2026 | Fix map and sidebar filter sync drift bug | Active-view reconciliation in LayerContext |
+| CON-GL-08 | ✅ | Feb 18, 2026 | Guide user to filter panel when "New View" is clicked | Auto-activates + Edit Filters guidance |
+| 0.9 | ✅ | Feb 19, 2026 | Dynamic Layer Registry from Data Catalog Service | useCatalogRegistry; left sidebar dynamic |
+| D20-01 | ✅ | Feb 20, 2026 | Right sidebar collapse button | Extruded tab; localStorage persistence |
 | 0.1–0.7 | ✅ | Feb 6, 2026 | App shell, router, sidebars, Map Layers widget, state management | Core shell |
 | 0.4 | ✅ | Feb 12, 2026 | Map Container — ArcGIS WebMap integration | Real ArcGIS map + GraphicsLayer |
 | 0.5 | ✅ | Feb 10, 2026 | Drag-and-Drop Reorder — Pinned layers | Within Map Layers widget |
