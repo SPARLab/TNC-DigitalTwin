@@ -660,9 +660,20 @@ export function useCatalogRegistry(): CatalogRegistryState {
         // ── Inject synthetic external layers ─────────────────────────────
         for (const ext of EXTERNAL_LAYERS) {
           allLayers.set(ext.id, ext);
-          const cat = categories.find(c => c.id === ext.categoryId);
-          if (cat) {
-            cat.layers.push(ext);
+          const topLevel = categories.find(c => c.id === ext.categoryId);
+          if (topLevel) {
+            topLevel.layers.push(ext);
+            continue;
+          }
+
+          // External layers may target subcategories (for example,
+          // Observations under Species). Handle one-level nested placement.
+          for (const parent of categories) {
+            const sub = parent.subcategories?.find(s => s.id === ext.categoryId);
+            if (sub) {
+              sub.layers.push(ext);
+              break;
+            }
           }
         }
 

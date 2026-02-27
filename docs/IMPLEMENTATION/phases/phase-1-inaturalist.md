@@ -1,7 +1,7 @@
 # Phase 1: iNaturalist Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 12 / 16 tasks complete (1 won't do, 3 remaining)  
+**Progress:** 13 / 16 tasks complete (1 won't do, 2 remaining)  
 **Branch:** `v2/inaturalist`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD  
@@ -19,7 +19,7 @@
 |----|--------|---------------------------|------------------|-------|
 | CON-INAT-08 | ✅ Complete | Feb 26, 2026 | Track threatened/sensitive iNaturalist taxa and flag coordinate obfuscation risk | Taxon API lookup, EN-style badge, severity mapping, obscured-coordinate warning, metadata spacing |
 | CON-INAT-09 | ✅ Complete | Feb 27, 2026 | Add scrolling to Edit Filters widget — Filter Species options inaccessible when Filter Taxa expanded | max-h-[52vh] scroll region; auto-hiding overlay scrollbar (scroll-area-right-sidebar pattern) so Filter Species reachable when Filter Taxa expanded. |
-| CON-INAT-10 | ⚪ Not Started | Feb 27, 2026 | Move iNaturalist Observations, Camera Traps (ANiML) from Species to Observations category | Left sidebar: change categoryId in layerRegistry. CalFlora excluded (removed per CON-INAT-11). |
+| CON-INAT-10 | ✅ Complete | Feb 27, 2026 | Move iNaturalist Observations, Camera Traps (ANiML) from Species to Observations category | Left sidebar: categoryId 38→63 in layerRegistry; useCatalogRegistry subcategory injection for Observations (id 63). CalFlora excluded per CON-INAT-11. |
 | CON-INAT-11 | ⚪ Not Started | Feb 27, 2026 | Remove CalFlora layer from catalog for now | Licensing ambiguity re: displaying raw data and making it downloadable. CalFlora ToS review suggests hosting data is compliant; some images may not be public domain — add follow-up task to filter those out later. |
 | CON-INAT-12 | ⚪ Not Started | Feb 27, 2026 | Add Land Cover "Other" subcategory for three floaters | Clean up Land Cover category by grouping uncategorized/floaters into an "Other" subcategory. |
 
@@ -104,6 +104,7 @@ TBD
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 27, 2026 | CON-INAT-10 | **Complete.** iNaturalist Observations and Camera Traps (ANiML) moved from Species to Observations: `layerRegistry` categoryId 38→63; `useCatalogRegistry` external-layer injection extended to support subcategory targets (Observations id 63 under Species). CalFlora unchanged per CON-INAT-11. | — |
 | Feb 27, 2026 | CON-INAT-09 | **Complete.** Edit Filters scroll region: max-h-[52vh] overflow-y-auto; custom overlay scrollbar (scroll-area-right-sidebar pattern) so Filter Species remains accessible when Filter Taxa expanded; thumb auto-hides when idle, reappears on hover/scroll. | — |
 | Feb 27, 2026 | — | **New tasks added.** CON-INAT-09: Edit Filters widget scrolling (Filter Species inaccessible when Filter Taxa expanded). CON-INAT-10: Move iNaturalist, ANiML, CalFlora layers from Species to Observations. CON-INAT-11: Remove CalFlora for now (licensing ambiguity; follow-up: filter non–public-domain images). CON-INAT-12: Land Cover "Other" subcategory for three floaters. | — |
 | Feb 26, 2026 | CON-INAT-08 | **Complete.** Threatened/sensitive tracking: `taxon_id` in ArcGIS fetch; iNaturalist taxon API (`/v1/taxa/:id` with `place_id=14`); severity-based badge (EN/VU/NT) beside species name; geoprivacy `obscured`/`private` → approximate-location warning; metadata label-value spacing (w-24, gap-3). | — |

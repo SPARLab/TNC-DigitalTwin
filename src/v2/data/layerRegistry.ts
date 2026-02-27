@@ -64,14 +64,14 @@ export const EXTERNAL_LAYERS: CatalogLayer[] = [
   {
     id: 'inaturalist-obs',
     name: 'iNaturalist Observations',
-    categoryId: '38', // Species
+    categoryId: '63', // Observations (subcategory under Species)
     dataSource: 'inaturalist',
     icon: 'Leaf',
   },
   {
     id: 'animl-camera-traps',
     name: 'Camera Traps (ANiML)',
-    categoryId: '38',
+    categoryId: '63',
     dataSource: 'animl',
     icon: 'Camera',
   },
