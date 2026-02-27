@@ -1,7 +1,7 @@
 # Phase 6: TNC ArcGIS Feature Services
 
-**Status:** 🟡 In Progress  
-**Progress:** 1 active task (CON-FEB25-05); 44 completed tasks archived  
+**Status:** 🟢 Complete  
+**Progress:** 0 active tasks; 45 completed tasks (CON-FEB25-05 complete Feb 26)  
 **Last Archived:** Feb 25, 2026 — see `docs/archive/phases/phase-6-tnc-arcgis-completed.md`  
 **Branch:** `v2/tnc-arcgis`  
 **Depends On:** Phase 0 (Foundation) — Task 0.9 (Dynamic Layer Registry) ✅ complete  
@@ -30,9 +30,9 @@ Create a generic adapter for TNC ArcGIS Feature Services and Map/Image Services 
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
-| CON-FEB25-05 | ⚪ Not Started | Feb 25, 2026 | Visually differentiate category, subcategory, and feature service in left sidebar | Category/subcategory/feature service share same styling; need distinct visual treatment. Source: consolidated-tasks-feb-25-2026.md |
+| CON-FEB25-05 | 🟢 Complete | Feb 27, 2026 | Visually differentiate category, subcategory, and feature service in left sidebar | Tiered backgrounds, Service→Group rename, header-only hover, layer row hover border. Polish: right-edge divider as structural layer; only hovered rows overlay divider. |
 
-*All completed tasks (6.1–6.20, CON-ARCGIS-01–17, D20-02, D20-02a, D20-10, D20-11, TF-11, TF-13) archived. See `docs/archive/phases/phase-6-tnc-arcgis-completed.md`.*
+*All completed tasks (6.1–6.20, CON-ARCGIS-01–17, CON-FEB25-05, D20-02, D20-02a, D20-10, D20-11, TF-11, TF-13) archived. See `docs/archive/phases/phase-6-tnc-arcgis-completed.md`.*
 
 **Status Legend:**  
 ⚪ Not Started | 🟡 In Progress | 🟢 Complete | 🔴 Blocked
@@ -269,6 +269,8 @@ TNC FeatureService (e.g., "Wetlands")
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 27, 2026 | CON-FEB25-05 | **Polish.** Right-edge divider as absolute structural layer (z-10); only hovered category/subcategory/group rows overlay it (hover:z-[20]). Divider visible by default; hovered row border/shadow paints over divider. Files: LeftSidebar.tsx, CategoryGroup.tsx, ServiceGroup.tsx. | Cursor |
+| Feb 26, 2026 | CON-FEB25-05 | **Complete.** Left sidebar hierarchy styling: tiered backgrounds (category slate-200, subcategory slate-100, children slate-50); "Service"→"Group" rename for multi-layer feature services; header-only hover (bg+border) scoped to header div (no bleed into expanded content); layer row hover border gray-400. Files: CategoryGroup.tsx, ServiceGroup.tsx, LayerRow.tsx. | Cursor |
 | Feb 25, 2026 | — | **Archived** all completed tasks (6.8–6.20, CON-ARCGIS-01–17, D20-02, D20-02a, D20-10, D20-11, TF-11, TF-13) to `docs/archive/phases/phase-6-tnc-arcgis-completed.md`. Trimmed Task Details from phase doc. | — |
 | Feb 23, 2026 | 6.14 | **Complete.** Added explicit iframe-block fallback for Source overlay viewer (timeout + error detection), with graceful fallback panel and `Open in New Tab` + `Retry Embed` actions. Updated task row/checklist to complete. Files: `src/v2/components/RightSidebar/TNCArcGIS/TNCArcGISOverviewTab.tsx`, `docs/IMPLEMENTATION/phases/phase-6-tnc-arcgis.md`. | Codex |
 | Feb 20, 2026 | TF-11 | **Complete.** Runtime fallback for non-zero FeatureServer layer IDs (schema, query, legend, map load). QA passed. | Codex |

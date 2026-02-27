@@ -175,86 +175,94 @@ export function LeftSidebar() {
     <aside
       id="left-sidebar"
       aria-label="Layer browser"
-      className="w-[280px] flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full overflow-hidden"
+      className="relative w-[280px] flex-shrink-0 bg-white flex flex-col h-full overflow-hidden"
     >
-      <SearchBar onSearch={handleSearch} />
-      <div id="left-sidebar-live-region" className="sr-only" aria-live="polite" aria-atomic="true">
-        {liveMessage}
-      </div>
+      <div
+        id="left-sidebar-right-divider"
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 right-0 w-px bg-gray-200 z-10"
+      />
 
-      <div id="left-sidebar-scroll-wrap" className="relative flex-1 overflow-hidden group">
-        <div
-          id="left-sidebar-scroll-area"
-          ref={scrollAreaRef}
-          onScroll={handleScroll}
-          className={`h-full overflow-y-auto scroll-area-left-sidebar${isScrolling ? ' is-scrolling' : ''}`}
-        >
-          {/* Loading skeleton */}
-          {loading && (
-            <InlineLoadingRow
-              id="catalog-loading"
-              message="Loading data catalog..."
-              containerClassName="flex items-center justify-center py-16 text-gray-400"
-            />
-          )}
+      <div id="left-sidebar-content" className="relative flex h-full flex-col">
+        <SearchBar onSearch={handleSearch} />
+        <div id="left-sidebar-live-region" className="sr-only" aria-live="polite" aria-atomic="true">
+          {liveMessage}
+        </div>
 
-          {/* Error state */}
-          {error && !loading && (
-            <div id="catalog-error" className="flex flex-col items-center justify-center text-center px-6 py-12">
-              <p className="text-sm font-medium text-red-600">Failed to load catalog</p>
-              <p className="text-xs text-gray-500 mt-1">{error}</p>
-            </div>
-          )}
+        <div id="left-sidebar-scroll-wrap" className="relative flex-1 overflow-hidden group">
+          <div
+            id="left-sidebar-scroll-area"
+            ref={scrollAreaRef}
+            onScroll={handleScroll}
+            className={`h-full overflow-y-auto scroll-area-left-sidebar${isScrolling ? ' is-scrolling' : ''}`}
+          >
+            {/* Loading skeleton */}
+            {loading && (
+              <InlineLoadingRow
+                id="catalog-loading"
+                message="Loading data catalog..."
+                containerClassName="flex items-center justify-center py-16 text-gray-400"
+              />
+            )}
 
-          {/* Category tree */}
-          {!loading && !error && hasResults && (
+            {/* Error state */}
+            {error && !loading && (
+              <div id="catalog-error" className="flex flex-col items-center justify-center text-center px-6 py-12">
+                <p className="text-sm font-medium text-red-600">Failed to load catalog</p>
+                <p className="text-xs text-gray-500 mt-1">{error}</p>
+              </div>
+            )}
+
+            {/* Category tree */}
+            {!loading && !error && hasResults && (
+              <div
+                id="left-sidebar-tree"
+                role="tree"
+                aria-label="Data catalog layers"
+                onKeyDownCapture={handleTreeKeyDownCapture}
+              >
+                {categories.map(cat => (
+                  <CategoryGroup
+                    key={cat.id}
+                    category={cat}
+                    filteredLayerIds={filteredLayerIds}
+                    searchQuery={searchQuery.length >= 2 ? searchQuery : undefined}
+                    searchAutoExpandServiceIds={searchState?.autoExpandServiceIds}
+                    onAnnounce={announce}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Empty search results */}
+            {!loading && !error && !hasResults && (
+              <div className="flex flex-col items-center justify-center text-center px-6 py-12">
+                <Search className="w-12 h-12 text-gray-300 mb-3" />
+                <p className="text-sm font-medium text-gray-700">
+                  No layers match &ldquo;{searchQuery}&rdquo;.
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Try a different search term.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {scrollThumbHeight > 0 && (
             <div
-              id="left-sidebar-tree"
-              role="tree"
-              aria-label="Data catalog layers"
-              onKeyDownCapture={handleTreeKeyDownCapture}
+              id="left-sidebar-scrollbar-overlay"
+              className="pointer-events-none absolute inset-y-1 right-0.5 w-2"
             >
-              {categories.map(cat => (
-                <CategoryGroup
-                  key={cat.id}
-                  category={cat}
-                  filteredLayerIds={filteredLayerIds}
-                  searchQuery={searchQuery.length >= 2 ? searchQuery : undefined}
-                  searchAutoExpandServiceIds={searchState?.autoExpandServiceIds}
-                  onAnnounce={announce}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Empty search results */}
-          {!loading && !error && !hasResults && (
-            <div className="flex flex-col items-center justify-center text-center px-6 py-12">
-              <Search className="w-12 h-12 text-gray-300 mb-3" />
-              <p className="text-sm font-medium text-gray-700">
-                No layers match &ldquo;{searchQuery}&rdquo;.
-              </p>
-              <p className="text-sm text-gray-500 mt-1">
-                Try a different search term.
-              </p>
+              <div
+                id="left-sidebar-scrollbar-thumb"
+                className={`absolute right-0 w-1.5 rounded-full bg-gray-500/55 transition-opacity duration-200 ${
+                  isScrolling ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                }`}
+                style={{ top: scrollThumbTop, height: scrollThumbHeight }}
+              />
             </div>
           )}
         </div>
-
-        {scrollThumbHeight > 0 && (
-          <div
-            id="left-sidebar-scrollbar-overlay"
-            className="pointer-events-none absolute inset-y-1 right-0.5 w-2"
-          >
-            <div
-              id="left-sidebar-scrollbar-thumb"
-              className={`absolute right-0 w-1.5 rounded-full bg-gray-500/55 transition-opacity duration-200 ${
-                isScrolling ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-              }`}
-              style={{ top: scrollThumbTop, height: scrollThumbHeight }}
-            />
-          </div>
-        )}
       </div>
     </aside>
   );

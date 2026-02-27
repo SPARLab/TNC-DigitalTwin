@@ -1,6 +1,6 @@
 # Design System - TNC Digital Catalog
 
-**Last Updated:** February 25, 2026 (MapControlRail unified map controls; D20-10 ArcGIS overview; BrowseBackButton D20-02; Export Builder Modal: scroll area, figure-ground, semantic naming)  
+**Last Updated:** February 27, 2026 (Left sidebar right-edge divider: structural layer, hover-only overlay — CON-FEB25-05 polish)  
 **Purpose:** Single source of truth for styling decisions, component patterns, and design policies that affect multiple phases.
 
 ---
@@ -2056,6 +2056,8 @@ February 5, 2026
 | Feb 24, 2026 | **Map View Mode Toggle (2D/3D).** ViewModeToggle component: bottom-left floating button, action-oriented label ("3D" when in 2D, "2D" when in 3D), Globe/Map icons. MapContainer supports MapView/SceneView; all layers drape on terrain in 3D; LiDAR PointCloudLayer in 3D only. Documented in Layout Specifications. | Cursor |
 | Feb 20, 2026 | **D20-10: ArcGIS Overview description source.** TNC ArcGIS and Dendra Overview tabs fetch description from ArcGIS item metadata (serviceItemId → snippet + description) when available; HTML normalized for line breaks; `whitespace-pre-line` for display. No per-layer descriptions in layer list. | Cursor |
 | Feb 19, 2026 | **Dendra Map Layers child labels (CON-DENDRA-04).** Dynamic labels: collapsed `N data streams, M stations`; expanded by station scope. Pin count badge: number + blue pin icon only. Documented in Components table and phase-3-dendra.md. | Cursor |
+| Feb 27, 2026 | **Left sidebar right-edge divider (CON-FEB25-05 polish).** Right divider as absolute structural layer (z-10); only hovered category/subcategory/group rows overlay it (hover:z-[20]). Divider visible by default; hovered row border/shadow paints over divider. Files: LeftSidebar, CategoryGroup, ServiceGroup. | Cursor |
+| Feb 26, 2026 | **Left sidebar hierarchy styling (CON-FEB25-05).** Tiered backgrounds (category slate-200, subcategory slate-100, children slate-50); "Service"→"Group" rename for multi-layer feature services; header-only hover (bg+border) scoped to header div; layer row hover border gray-400. Files: CategoryGroup, ServiceGroup, LayerRow. | Cursor |
 | Feb 24, 2026 | **Dendra chart panel sizing & placement (D24-01).** Initial size 560–760×380–500; separate bottom margin (32px) for placement ~1–2rem from map bottom; time slider data shadow restored, spacing tuned. Documented in Components table and phase-3-dendra.md. | Cursor |
 | Feb 19, 2026 | **Dendra chart panel header typography.** Stream name bold; labels (Station:, Category:) regular; values semi-bold. Pipe separator between Station and Category. Documented in Components table and phase-3-dendra.md. | Cursor |
 | Feb 16, 2026 | **Task 34 complete.** Added shared loading primitives (`src/v2/components/shared/loading/`): `loadingTheme.ts`, `LoadingPrimitives.tsx` (EyeSlotLoadingSpinner, InlineLoadingRow, RefreshLoadingRow, MapCenterLoadingOverlay). Wired for iNaturalist, Dendra, ANiML. Single-point styling propagation. | Claude |
