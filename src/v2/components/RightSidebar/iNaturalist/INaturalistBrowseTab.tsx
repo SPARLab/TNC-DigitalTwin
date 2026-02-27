@@ -73,6 +73,11 @@ export function INaturalistBrowseTab() {
   const [isSpeciesFilterOpen, setIsSpeciesFilterOpen] = useState(false);
   const [speciesSearchTerm, setSpeciesSearchTerm] = useState('');
   const [speciesSortMode, setSpeciesSortMode] = useState<'count' | 'alphabetical'>('count');
+  const [isEditFiltersScrolling, setIsEditFiltersScrolling] = useState(false);
+  const [editFiltersThumbHeight, setEditFiltersThumbHeight] = useState(0);
+  const [editFiltersThumbTop, setEditFiltersThumbTop] = useState(0);
+  const editFiltersScrollRef = useRef<HTMLDivElement | null>(null);
+  const editFiltersScrollHideTimerRef = useRef<number | null>(null);
 
   // Auto-open detail view when map marker is clicked (activeLayer.featureId is set)
   useEffect(() => {
@@ -156,6 +161,39 @@ export function INaturalistBrowseTab() {
     return sorted;
   }, [speciesOptions, normalizedSpeciesSearch, speciesSortMode]);
 
+  const updateEditFiltersThumb = useCallback(() => {
+    const scrollEl = editFiltersScrollRef.current;
+    if (!scrollEl) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = scrollEl;
+    if (scrollHeight <= clientHeight + 1) {
+      setEditFiltersThumbHeight(0);
+      setEditFiltersThumbTop(0);
+      return;
+    }
+
+    const thumbHeight = Math.max(24, (clientHeight / scrollHeight) * clientHeight);
+    const maxThumbTop = clientHeight - thumbHeight;
+    const scrollProgress = scrollTop / (scrollHeight - clientHeight);
+    const thumbTop = maxThumbTop * scrollProgress;
+
+    setEditFiltersThumbHeight(thumbHeight);
+    setEditFiltersThumbTop(thumbTop);
+  }, []);
+
+  const handleEditFiltersScroll = useCallback(() => {
+    updateEditFiltersThumb();
+    setIsEditFiltersScrolling(true);
+
+    if (editFiltersScrollHideTimerRef.current !== null) {
+      window.clearTimeout(editFiltersScrollHideTimerRef.current);
+    }
+
+    editFiltersScrollHideTimerRef.current = window.setTimeout(() => {
+      setIsEditFiltersScrolling(false);
+    }, 650);
+  }, [updateEditFiltersThumb]);
+
   const taxonLabelByValue = useMemo(
     () => new Map(TAXON_CATEGORIES.map(t => [t.value, t.label])),
     []
@@ -238,6 +276,21 @@ export function INaturalistBrowseTab() {
     syncINaturalistFilters,
   ]);
 
+  useEffect(() => {
+    updateEditFiltersThumb();
+  }, [isFilterOpen, isSpeciesFilterOpen, speciesSearchTerm, displayedSpeciesOptions.length, updateEditFiltersThumb]);
+
+  useEffect(() => {
+    const handleResize = () => updateEditFiltersThumb();
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (editFiltersScrollHideTimerRef.current !== null) {
+        window.clearTimeout(editFiltersScrollHideTimerRef.current);
+      }
+    };
+  }, [updateEditFiltersThumb]);
+
   // Keep this branch AFTER all hooks to preserve hook ordering.
   if (selectedObs) {
     return (
@@ -252,8 +305,15 @@ export function INaturalistBrowseTab() {
   return (
     <div id="inat-browse-tab" className="h-full min-h-0 flex flex-col gap-3">
       <EditFiltersCard id="inat-edit-filters-card" collapsible defaultExpanded>
-        {/* Filter section (DFT-038) - Compact dropdown */}
-        <div id="inat-filter-section" className="rounded-lg border border-emerald-100 bg-white p-3">
+        <div id="inat-edit-filters-scroll-wrap" className="relative group">
+          <div
+            id="inat-edit-filters-scroll-region"
+            ref={editFiltersScrollRef}
+            onScroll={handleEditFiltersScroll}
+            className="max-h-[52vh] overflow-y-auto space-y-3 pr-2 scroll-area-right-sidebar"
+          >
+          {/* Filter section (DFT-038) - Compact dropdown */}
+          <div id="inat-filter-section" className="rounded-lg border border-emerald-100 bg-white p-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
               Filter Taxa
@@ -320,10 +380,10 @@ export function INaturalistBrowseTab() {
             </div>
           )}
 
-        </div>
+          </div>
 
-        {/* Species filter section */}
-        <div id="inat-species-filter-section" className="rounded-lg border border-emerald-100 bg-white p-3">
+          {/* Species filter section */}
+          <div id="inat-species-filter-section" className="rounded-lg border border-emerald-100 bg-white p-3">
           <div id="inat-species-filter-header" className="flex items-center justify-between">
             <span id="inat-species-filter-title" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
               Filter Species
@@ -479,10 +539,10 @@ export function INaturalistBrowseTab() {
               </div>
             </div>
           )}
-        </div>
+          </div>
 
-        {/* Date range filter */}
-        <div id="inat-date-range-filter" className="rounded-lg border border-emerald-100 bg-white p-3">
+          {/* Date range filter */}
+          <div id="inat-date-range-filter" className="rounded-lg border border-emerald-100 bg-white p-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5" />
@@ -521,9 +581,26 @@ export function INaturalistBrowseTab() {
                          text-gray-700"
             />
           </div>
-        </div>
+          </div>
 
-        <SpatialQuerySection id="inat-spatial-query-section" layerId="inaturalist-obs" />
+            <SpatialQuerySection id="inat-spatial-query-section" layerId="inaturalist-obs" />
+          </div>
+
+          {editFiltersThumbHeight > 0 && (
+            <div
+              id="inat-edit-filters-scrollbar-overlay"
+              className="pointer-events-none absolute inset-y-0 right-0.5 w-2"
+            >
+              <div
+                id="inat-edit-filters-scrollbar-thumb"
+                className={`absolute right-0 w-1.5 rounded-full bg-gray-500/55 transition-opacity duration-200 ${
+                  isEditFiltersScrolling ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                }`}
+                style={{ top: editFiltersThumbTop, height: editFiltersThumbHeight }}
+              />
+            </div>
+          )}
+        </div>
       </EditFiltersCard>
 
       <div id="inat-browse-results-region" className="flex-1 min-h-0 flex flex-col">
