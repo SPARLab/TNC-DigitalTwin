@@ -1,7 +1,7 @@
 # Master Development Plan — V2 Digital Catalog
 
 **Created:** January 23, 2026  
-**Last Updated:** February 27, 2026 (CON-INAT-11 complete)  
+**Last Updated:** February 27, 2026 (CON-INAT-12 complete)  
 **Target Deadline:** February 20, 2026  
 **Status:** 🟡 In Progress
 
@@ -11,8 +11,8 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 165 / 185 complete (**89%**) |
-| **Active remaining** | 21 tasks |
+| **Active scope** | 166 / 185 complete (**90%**) |
+| **Active remaining** | 20 tasks |
 | **Phases complete** | 7 of 15 (0, 1, 2, 10, 11, 12b) |
 
 ```
@@ -56,7 +56,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 164
+- **Complete:** 165
 - **Active remaining (Not Started + In Progress + Blocked):** 21
 - **Backlog (not in active scope):** 3
 - **Deferred:** 5
@@ -68,7 +68,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | Phase | Name | Status | Complete | Active Remaining | Backlog | Deferred | Won't Do | Total Tracked | Branch |
 |-------|------|--------|----------|------------------|---------|----------|----------|---------------|--------|
 | 0 | Foundation | 🟢 Complete | 11 | 1 | 0 | 0 | 0 | 12 | `v2/foundation` |
-| 1 | iNaturalist | 🟡 In Progress | 14 | 2 | 0 | 0 | 1 | 17 | `v2/inaturalist` |
+| 1 | iNaturalist | 🟡 In Progress | 15 | 1 | 0 | 0 | 1 | 17 | `v2/inaturalist` |
 | 2 | ANiML | 🟢 Complete | 7 | 0 | 0 | 0 | 1 | 8 | `v2/animl` |
 | 3 | Dendra | 🟡 In Progress | 11 | 1 | 3 | 0 | 0 | 14 | `v2/dendra` |
 | 4 | DataOne | 🟡 In Progress | 16 | 1 | 0 | 0 | 0 | 17 | `v2/dataone` |
@@ -373,6 +373,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 27, 2026 | Phase 1 | **CON-INAT-12 complete.** Land Cover "Other" subcategory added via back-end Data Catalog; three floaters grouped under Other. No front-end changes. Phase 1: 15/17 complete, 1 remaining. Portfolio: 166/185. | Cursor |
 | Feb 27, 2026 | Phase 1 | **CON-INAT-11 complete.** CalFlora soft-hidden from catalog (EXTERNAL_LAYERS in layerRegistry); custom sidebar/map/adapter logic retained for future re-enable. Added CON-INAT-13 for licensing-safe media filter before reactivation. Phase 1: 14/17 complete, 2 remaining. Portfolio: 165/185. | Cursor |
 | Feb 27, 2026 | Phase 1 | **CON-INAT-10 complete.** iNaturalist Observations and Camera Traps (ANiML) moved from Species to Observations: layerRegistry categoryId 38→63; useCatalogRegistry subcategory injection for Observations (id 63). Phase 1: 13/16 complete, 2 remaining. Portfolio: 164/184. | Cursor |
 | Feb 27, 2026 | Phase 1 | **CON-INAT-09 complete.** Edit Filters scroll region: max-h-[52vh] overflow; auto-hiding overlay scrollbar (scroll-area-right-sidebar pattern) so Filter Species remains accessible when Filter Taxa expanded. Phase 1: 12/16 complete, 3 remaining. Portfolio: 163/184. | Cursor |
