@@ -22,6 +22,8 @@
 | CON-FEB25-04 | 🟢 Complete | Feb 26, 2026 | Dendra layers load too slow — review query patterns | Query alignment, on-demand per-station summaries, loading UI polish, progressive time-series loading. See phase-3-dendra.md. |
 | **— TNC ArcGIS / Left Sidebar —** | | | | |
 | CON-FEB25-05 | 🟢 Complete | Feb 27, 2026 | Visually differentiate category, subcategory, and feature service in left sidebar | Tiered backgrounds, Service→Group rename, header-only hover, layer row hover border. Polish: right-edge divider as structural layer; only hovered rows overlay divider (z-index stacking). |
+| **— ANiML —** | | | | |
+| CON-FEB25-07 | 🟢 Complete | Feb 27, 2026 | ANiML camera trap coordinates misaligned on 3D map | ArcGIS MapServer returns NAD27 (EPSG:4267); client treated as WGS84. Added outSR=4326 to deployment query for server-side reprojection. Fixes ~89m eastward displacement. Remaining per-camera offsets from low-precision GPS in source data (8/47 cameras). |
 | **— Performance —** | | | | |
 | CON-FEB25-06 | ⚪ Not Started | Feb 25, 2026 | Analyze code for performance bottlenecks — low FPS in 3D view with iNaturalist | Scan for performance degradation. User reports decreased frame rate when rendering iNaturalist observations; sometimes tolerable but could be quicker/smoother. |
 
@@ -114,16 +116,36 @@
 
 ---
 
+### CON-FEB25-07 — ANiML Camera Trap Coordinate Desynchronization
+
+**Source:** User feedback (verbal)  
+**Priority:** High  
+**Data Source:** ANiML camera traps (3D map)
+
+**Problem:** Camera trap markers appeared mispositioned on the 3D terrain—e.g., a beach camera drawn in the ocean or on a hillside when the trap photo showed a beach scene.
+
+**Root cause:** ArcGIS MapServer at `dangermondpreserve-spatial.com` stores deployment geometries in **NAD27 (EPSG:4267)**. The client code treated returned `x`/`y` as WGS84 (EPSG:4326), causing a ~89m systematic eastward displacement of all camera markers.
+
+**Fix:** Added `outSR: '4326'` to the deployment query in `animlService.ts` so the server reprojects coordinates to WGS84 before returning them.
+
+**Discovery:** 8 of 47 cameras have low-precision GPS coordinates in the source data (4 or fewer decimal places = ~11m+ accuracy). Remaining per-camera offsets are data-quality limitations, not code bugs.
+
+**Completed (Feb 27, 2026):** See `docs/IMPLEMENTATION/phases/phase-2-animl.md` ANIML-DEV-02.
+
+---
+
 ## Phase Distribution
 
 | Task ID | Phase Doc | Notes |
 |---------|-----------|-------|
 | CON-FEB25-01 | phase-7-polish.md | Cross-cutting map behavior; shared goTo logic |
+| CON-FEB25-07 | phase-2-animl.md | ANiML deployment query outSR fix |
 | CON-FEB25-02 | phase-7-polish.md | Cross-cutting map icon styling |
 | CON-FEB25-03 | phase-7-polish.md | Cross-cutting Edit Filters consistency |
 | CON-FEB25-04 | phase-3-dendra.md | Dendra-specific query optimization |
 | CON-FEB25-05 | phase-6-tnc-arcgis.md | Left sidebar hierarchy styling |
 | CON-FEB25-06 | phase-7-polish.md | Performance audit (extends 7.6) |
+| CON-FEB25-07 | phase-2-animl.md | ANiML deployment query outSR=4326 |
 
 ---
 
@@ -131,6 +153,7 @@
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 27, 2026 | CON-FEB25-07 complete. ANiML camera trap coordinate fix: outSR=4326 in deployment query reprojects NAD27→WGS84, correcting ~89m eastward displacement. | Cursor |
 | Feb 26, 2026 | CON-FEB25-03 complete. Collapsable Edit Filters applied to ANiML, Dendra, DataONE, GBIF, CalFlora. | Cursor |
 | Feb 27, 2026 | CON-FEB25-05 polish: Right-edge divider as absolute layer (z-10); only hovered category/subcategory/group rows overlay it (hover:z-[20]). LeftSidebar, CategoryGroup, ServiceGroup. | Cursor |
 | Feb 26, 2026 | CON-FEB25-05: Left sidebar hierarchy styling complete. Tiered backgrounds, Service→Group rename, header-only hover (bg+border), layer row hover border. | Cursor |

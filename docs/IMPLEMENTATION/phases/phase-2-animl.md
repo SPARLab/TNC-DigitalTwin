@@ -112,6 +112,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
 | ANIML-DEV-01 | 🟢 Complete | Feb 26, 2026 | Auto-hiding overlay scrollbar for ANiML image results | `.scroll-area-animl-images` in `src/index.css`: thumb hidden when idle, reveals on hover/focus-within; transparent track; `scrollbar-gutter: stable`. QA passed. |
+| ANIML-DEV-02 | 🟢 Complete | Feb 27, 2026 | Fix camera trap coordinate desynchronization on 3D map | ArcGIS MapServer returns NAD27 (EPSG:4267); client treated as WGS84. Added `outSR: '4326'` to deployment query in `animlService.ts` for server-side reprojection. Fixes ~89m eastward displacement. CON-FEB25-07. |
 
 ## Task Details
 
@@ -176,6 +177,12 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 |----------|------|-----------|
 | (pending investigation) | | |
 
+### Coordinate / Spatial Reference
+
+| Decision | Date | Rationale |
+|----------|------|-----------|
+| ANiML deployment query must request outSR=4326 | Feb 27, 2026 | ArcGIS MapServer stores geometries in NAD27 (EPSG:4267). Without outSR, client receives NAD27 coordinates but treats them as WGS84, causing ~89m eastward displacement on 3D map. Server-side reprojection via outSR=4326 corrects this. 8/47 cameras have low-precision GPS in source data (data-quality limitation). |
+
 ### Integration Note for Merge
 
 - **Shared Sync Dependency (from iNaturalist):** After merging iNaturalist Task 25/26/27, reference the canonical sync contract in `docs/IMPLEMENTATION/phases/phase-1-inaturalist.md` ("Shared Sync Contract (Canonical)").
@@ -201,6 +208,7 @@ Implement the ANiML camera trap browse experience in the right sidebar. This is 
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 27, 2026 | ANIML-DEV-02 | **Complete.** Camera trap coordinate fix: added outSR=4326 to deployment query in animlService.ts. MapServer returns NAD27; client expected WGS84. Server-side reprojection corrects ~89m eastward displacement. CON-FEB25-07. | Cursor |
 | Feb 26, 2026 | ANIML-DEV-01 | **Session complete.** Left sidebar row spacing polish (phase-0): padding-based indentation, removed right-edge whitespace. Scrollbar overlay opt-out for left/right sidebars to prevent layout regression. | — |
 | Feb 26, 2026 | ANIML-DEV-01 | **Follow-up polish.** Extended auto-hiding overlay scrollbar pattern app-wide via global overflow utility selectors in `src/index.css` so legend/list scroll areas share consistent behavior. | — |
 | Feb 26, 2026 | ANIML-DEV-01 | **Complete.** Auto-hiding overlay scrollbar for ANiML image results. `.scroll-area-animl-images`: thumb hidden idle, reveals on hover/focus-within; transparent track; stable gutter. DFT-050. | — |

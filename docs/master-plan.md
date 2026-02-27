@@ -373,6 +373,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 27, 2026 | Phase 2 | **CON-FEB25-07 / ANIML-DEV-02 complete.** ANiML camera trap coordinate fix: deployment query now requests outSR=4326 so server reprojects NAD27→WGS84. Fixes ~89m eastward displacement of all camera markers on 3D map. | Cursor |
 | Feb 27, 2026 | Phase 1 | **CON-INAT-12 complete.** Land Cover "Other" subcategory added via back-end Data Catalog; three floaters grouped under Other. No front-end changes. Phase 1: 15/17 complete, 1 remaining. Portfolio: 166/185. | Cursor |
 | Feb 27, 2026 | Phase 1 | **CON-INAT-11 complete.** CalFlora soft-hidden from catalog (EXTERNAL_LAYERS in layerRegistry); custom sidebar/map/adapter logic retained for future re-enable. Added CON-INAT-13 for licensing-safe media filter before reactivation. Phase 1: 14/17 complete, 2 remaining. Portfolio: 165/185. | Cursor |
 | Feb 27, 2026 | Phase 1 | **CON-INAT-10 complete.** iNaturalist Observations and Camera Traps (ANiML) moved from Species to Observations: layerRegistry categoryId 38→63; useCatalogRegistry subcategory injection for Observations (id 63). Phase 1: 13/16 complete, 2 remaining. Portfolio: 164/184. | Cursor |

@@ -128,16 +128,18 @@ class AnimlService {
    */
   async queryDeployments(_options: AnimlServiceQueryOptions = {}): Promise<AnimlDeployment[]> {
     try {
-      // Use simple query without spatial filtering
-      const params: AnimlQueryOptions = {
+      // Use simple query without spatial filtering.
+      // outSR=4326 forces the server to reproject from NAD27 (EPSG:4267) to WGS84.
+      const params: Record<string, string> = {
         where: '1=1',
-        outFields: 'id,animl_dp_id,name', // Use 'id' not 'OBJECTID'
-        returnGeometry: true,
+        outFields: 'id,animl_dp_id,name',
+        returnGeometry: 'true',
+        outSR: '4326',
         f: 'json'
       };
 
       const queryUrl = `${this.baseUrl}/${this.deploymentsLayerId}/query`;
-      const fullUrl = `${queryUrl}?${new URLSearchParams(params as any)}`;
+      const fullUrl = `${queryUrl}?${new URLSearchParams(params)}`;
       console.log('🔍 Animl Deployments Query (GET without spatial filter):', fullUrl.substring(0, 200) + '...');
       
       const response = await fetch(fullUrl);
