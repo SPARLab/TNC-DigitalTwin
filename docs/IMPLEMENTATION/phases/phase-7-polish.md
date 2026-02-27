@@ -1,7 +1,7 @@
 # Phase 7: Polish & Consistency
 
 **Status:** 🟡 In Progress  
-**Progress:** 4 / 9 tasks (D20-01, CON-FEB25-01, CON-FEB25-02, CON-FEB25-03 complete)  
+**Progress:** 5 / 10 tasks (D20-01, CON-FEB25-01, CON-FEB25-02, CON-FEB25-03, CON-FEB25-08 complete)  
 **Branch:** `v2/polish`  
 **Depends On:** Phases 0-6 (all complete)  
 **Owner:** TBD
@@ -38,6 +38,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | CON-FEB25-02 | 🟢 Complete | Feb 25, 2026 | Add thin white outline around all map icons (including emoji) | Implemented as a 3D-only toggle (iNaturalist emoji + ANiML camera symbols). Currently disabled by default; 2D unchanged. Source: consolidated-tasks-feb-25-2026.md |
 | CON-FEB25-03 | 🟢 Complete | Feb 26, 2026 | Collapsable Edit Filters component across all layers | ANiML, Dendra, DataONE, GBIF, CalFlora now use `collapsible defaultExpanded` on EditFiltersCard; iNaturalist already had it. |
 | CON-FEB25-06 | ⚪ Not Started | Feb 25, 2026 | Analyze code for performance bottlenecks — low FPS in 3D view with iNaturalist | Scan for degradation; recommend/implement fixes. Extends 7.6. Source: consolidated-tasks-feb-25-2026.md |
+| CON-FEB25-08 | 🟢 Complete | Feb 27, 2026 | Restore right padding for left sidebar layer cards | Layer cards (e.g. Dangermond Preserve, Santa Barbara County Boundary) had regressed to pr-0; restored pr-1 so cards sit a few pixels from sidebar edge. CategoryGroup, ServiceGroup. |
 
 ## Task Status
 
@@ -66,6 +67,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | CON-FEB25-02 | Add thin white outline around all map icons (including emoji) | 🟢 Complete | Codex | 3D-only thin white halo added to iNaturalist emoji markers and ANiML camera symbols as a toggle. Currently disabled by default; 2D unchanged. Source: consolidated-tasks-feb-25-2026.md |
 | CON-FEB25-03 | Collapsable Edit Filters component across all layers | 🟢 Complete | | ANiML, Dendra, DataONE, GBIF, CalFlora now match iNaturalist collapsible pattern. Feb 26, 2026. |
 | CON-FEB25-06 | Analyze code for performance bottlenecks — low FPS in 3D view with iNaturalist | ⚪ Not Started | | Extends 7.6. Source: consolidated-tasks-feb-25-2026.md |
+| CON-FEB25-08 | Restore right padding for left sidebar layer cards | 🟢 Complete | | Layer cards had regressed to pr-0; restored pr-1 in CategoryGroup, ServiceGroup so cards sit a few pixels from sidebar edge. Feb 27, 2026. |
 | (more TBD) | | | | |
 
 **Status Legend:**
@@ -333,4 +335,5 @@ This confirmed hypothesis #1 from the investigation: "A non-click DataONE effect
 | Feb 25, 2026 | CON-FEB25-01 | Resolved DataONE zoom-out edge case: root cause was `useDatasetDetailOrchestrator.ts` overriding smart zoom with hardcoded `zoom: 16`. Replaced with `goToMarkerWithSmartZoom({ defaultZoomLevel: 16 })` | Will + Claude |
 | Feb 25, 2026 | CON-FEB25-02 | Added thin white icon halo in 3D view only so markers are legible against satellite terrain. Applied to iNaturalist emoji symbols and ANiML camera symbols; 2D icon styling unchanged | Codex |
 | Feb 25, 2026 | CON-FEB25-02 | Updated 3D icon halo to be disabled by default while keeping implementation behind a single toggle (`iconHaloConfig.ts`) for quick re-enable | Codex |
+| Feb 27, 2026 | CON-FEB25-08 | Restored right padding (pr-1) for left sidebar layer card containers. Layer cards had regressed to pr-0; CategoryGroup and ServiceGroup wrappers now use pr-1 so cards sit a few pixels from sidebar edge. | Cursor |
 

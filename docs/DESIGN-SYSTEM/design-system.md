@@ -1815,7 +1815,7 @@ Images benefit from continuous browsing (researchers scan visually). "Load More"
 | Layer count badge | `text-xs text-gray-400 ml-auto` |
 | Layer row (inactive) | `py-1.5 px-3 pl-9 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 cursor-pointer rounded-sm` |
 | Layer row (active) | `py-1.5 px-3 pl-9 text-sm font-semibold text-gray-900 bg-emerald-50 border-l-2 border-emerald-600 rounded-sm` |
-| Row container (category) | `pl-1 pr-1` — padding-based indentation; content flush to right edge |
+| Row container (category) | `pl-1 pr-1` — padding-based indentation; pr-1 keeps layer cards a few pixels from sidebar edge |
 | Row container (subcategory) | `pl-3 pr-1` — deeper indent for nested items |
 
 **Behavior:**

@@ -175,7 +175,7 @@ export function ServiceGroup({
         }}
       >
         <div className="overflow-hidden">
-          <div id={`service-group-children-inner-${service.id}`} className="pl-2 pr-0 space-y-1 pt-1 bg-white">
+          <div id={`service-group-children-inner-${service.id}`} className="pl-2 pr-1 space-y-1 pt-1 bg-white">
             {layers.map(layer => (
               <LayerRow
                 key={layer.id}

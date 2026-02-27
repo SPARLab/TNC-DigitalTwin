@@ -653,6 +653,7 @@ interface Bookmark {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 27, 2026 | 0.2 | **Left sidebar layer card right padding restored.** User-reported regression: layer cards (e.g. Dangermond Preserve, Santa Barbara County Boundary) were flush to sidebar edge. Restored pr-1 on CategoryGroup and ServiceGroup layer-card wrappers so cards sit a few pixels from edge. See phase-7-polish CON-FEB25-08. | Cursor |
 | Feb 26, 2026 | 0.2 | **Left sidebar row spacing polish.** Removed right-edge whitespace; switched to padding-based indentation (`pl-1 pr-1` category, `pl-3 pr-1` subcategory) in CategoryGroup, LayerRow, ServiceGroup. Content aligns flush to sidebar edge. | — |
 | Feb 25, 2026 | — | **Archived** completed tasks (CON-GL-01–08, 0.9, D20-01) to `docs/archive/phases/phase-0-foundation-completed.md`. | — |
 | Feb 20, 2026 | D20-01 | Added right sidebar collapse button task from Dan feedback. Default open; manual collapse only; no auto-reopen. Phase-0 is appropriate (app-wide layout). | Will |
