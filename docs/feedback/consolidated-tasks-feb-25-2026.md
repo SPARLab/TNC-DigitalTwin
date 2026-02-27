@@ -21,7 +21,7 @@
 | **— Dendra —** | | | | |
 | CON-FEB25-04 | 🟢 Complete | Feb 26, 2026 | Dendra layers load too slow — review query patterns | Query alignment, on-demand per-station summaries, loading UI polish, progressive time-series loading. See phase-3-dendra.md. |
 | **— TNC ArcGIS / Left Sidebar —** | | | | |
-| CON-FEB25-05 | ⚪ Not Started | Feb 25, 2026 | Visually differentiate category, subcategory, and feature service in left sidebar | Category dropdown styling is same as subcategory or feature service. Need distinct visual treatment for: (1) category, (2) subcategory, (3) feature service group. |
+| CON-FEB25-05 | 🟢 Complete | Feb 27, 2026 | Visually differentiate category, subcategory, and feature service in left sidebar | Tiered backgrounds, Service→Group rename, header-only hover, layer row hover border. Polish: right-edge divider as structural layer; only hovered rows overlay divider (z-index stacking). |
 | **— Performance —** | | | | |
 | CON-FEB25-06 | ⚪ Not Started | Feb 25, 2026 | Analyze code for performance bottlenecks — low FPS in 3D view with iNaturalist | Scan for performance degradation. User reports decreased frame rate when rendering iNaturalist observations; sometimes tolerable but could be quicker/smoother. |
 
@@ -132,6 +132,8 @@
 | Date | Change | By |
 |------|--------|-----|
 | Feb 26, 2026 | CON-FEB25-03 complete. Collapsable Edit Filters applied to ANiML, Dendra, DataONE, GBIF, CalFlora. | Cursor |
+| Feb 27, 2026 | CON-FEB25-05 polish: Right-edge divider as absolute layer (z-10); only hovered category/subcategory/group rows overlay it (hover:z-[20]). LeftSidebar, CategoryGroup, ServiceGroup. | Cursor |
+| Feb 26, 2026 | CON-FEB25-05: Left sidebar hierarchy styling complete. Tiered backgrounds, Service→Group rename, header-only hover (bg+border), layer row hover border. | Cursor |
 | Feb 26, 2026 | CON-FEB25-04: progressive time-series loading (30-day initial, 120-day backfill); top badge shows loading/range status; footer simplified. | Cursor |
 | Feb 25, 2026 | CON-FEB25-04 marked complete. Query alignment, on-demand per-station summaries, loading UI polish. | Cursor |
 | Feb 25, 2026 | Created consolidated feedback document with 6 tasks; distributed to phase docs; master-plan phase counts updated | Will |

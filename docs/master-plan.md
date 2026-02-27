@@ -73,7 +73,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 3 | Dendra | 🟡 In Progress | 11 | 1 | 3 | 0 | 0 | 14 | `v2/dendra` |
 | 4 | DataOne | 🟡 In Progress | 16 | 1 | 0 | 0 | 0 | 17 | `v2/dataone` |
 | 5 | Export Builder | 🟡 In Progress | 10 | 5 | 0 | 0 | 0 | 15 | `v2/export-builder` |
-| 6 | TNC ArcGIS Services | 🟡 In Progress | 44 | 1 | 0 | 0 | 0 | 45 | `v2/tnc-arcgis` |
+| 6 | TNC ArcGIS Services | 🟢 Complete | 45 | 0 | 0 | 0 | 0 | 45 | `v2/tnc-arcgis` |
 | 7 | Polish & Consistency | 🟡 In Progress | 4 | 5 | 0 | 0 | 0 | 9 | `v2/polish` |
 | 8 | Calflora | 🟡 In Progress | 8 | 1 | 0 | 0 | 0 | 9 | `v2/calflora` |
 | 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
@@ -374,6 +374,8 @@ When working on any phase:
 |------|-------|--------|-----|
 | Feb 26, 2026 | Phase 1 | **CON-INAT-08 complete.** iNaturalist threatened/sensitive tracking: taxon API lookup, EN-style conservation badge beside species name, severity-based status mapping, obscured-coordinate warning, metadata spacing. Phase 1: 11 complete, 12 total (1 won't do). | Cursor |
 | Feb 26, 2026 | Phase 7 | **CON-FEB25-03 complete.** Collapsable Edit Filters: applied `collapsible defaultExpanded` to EditFiltersCard in ANiML, Dendra, DataONE, GBIF, CalFlora browse tabs; iNaturalist already had it. Phase 7: 4/9 tasks complete. Portfolio: 162/184. | Cursor |
+| Feb 27, 2026 | Phase 6 | **CON-FEB25-05 polish.** Left sidebar right-edge divider as absolute structural layer (z-10); only hovered category/subcategory/group rows overlay it (hover:z-[20]). Divider visible by default; hovered row border/shadow paints over divider. Files: LeftSidebar, CategoryGroup, ServiceGroup. | Cursor |
+| Feb 26, 2026 | Phase 6 | **CON-FEB25-05 complete.** Left sidebar hierarchy styling: tiered backgrounds (category slate-200, subcategory slate-100, children slate-50); "Service"→"Group" rename for multi-layer feature services; header-only hover (bg+border) scoped to header div; layer row hover border gray-400. Phase 6 complete (45/45). Portfolio: 162/184. | Cursor |
 | Feb 26, 2026 | Phase 3 | **D26-01 complete.** Dendra chart y-axis auto-adjusts when time slider changes zoom range — recalculates min/max from visible data so zoomed sections (excluding anomalies) show proper scale instead of flat lines. Phase 3: 11 complete, 1 active remaining. | Cursor |
 | Feb 25, 2026 | Phase 7 | **CON-FEB25-01 complete.** Map marker click smart zoom: DataONE zoom-out edge case fixed. Root cause: `useDatasetDetailOrchestrator.ts` overrode smart zoom with hardcoded `zoom: 16`; replaced with `goToMarkerWithSmartZoom({ defaultZoomLevel: 16 })`. Phase 7: 2/9 tasks complete. | Cursor |
 | Feb 25, 2026 | Phase 3 | **CON-FEB25-04 complete.** Dendra query alignment, on-demand per-station summaries, loading UI polish. Phase 3: 10 complete, 1 active remaining. Portfolio: 159/184 complete. | Cursor |

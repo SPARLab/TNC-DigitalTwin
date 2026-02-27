@@ -61,10 +61,10 @@ export function ServiceGroup({
 
   const announceExpandState = (expanded: boolean) => {
     if (expanded) {
-      onAnnounce?.(`${service.name} service expanded, ${layers.length} layers`);
+      onAnnounce?.(`${service.name} group expanded, ${layers.length} layers`);
       return;
     }
-    onAnnounce?.(`${service.name} service collapsed`);
+    onAnnounce?.(`${service.name} group collapsed`);
   };
 
   const handleHeaderClick = () => {
@@ -120,13 +120,13 @@ export function ServiceGroup({
     <div id={`service-group-${service.id}`} className="space-y-1">
       <div
         id={`service-group-row-${service.id}`}
-        className={`ml-1 mr-0 min-w-0 flex items-center gap-2 py-1.5 px-1 rounded-lg border transition-colors
+        className={`relative ml-1 mr-0 min-w-0 flex items-center gap-2 py-1.5 px-1 rounded-lg border transition-colors
           ${
             isActiveService
               ? 'border-amber-300 bg-amber-50 shadow-sm'
               : isExpanded
               ? 'border-amber-300 bg-amber-50'
-              : 'border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300'
+              : 'border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 hover:z-[20]'
           }`}
       >
         <button
@@ -158,9 +158,9 @@ export function ServiceGroup({
           <span
             id={`service-group-kind-${service.id}`}
             className="text-[10px] uppercase tracking-wide text-gray-500 rounded border border-gray-200 bg-white px-1.5 py-0.5 flex-shrink-0"
-            title="Feature service container"
+            title="Feature service group"
           >
-            Service
+            Group
           </span>
         </button>
       </div>

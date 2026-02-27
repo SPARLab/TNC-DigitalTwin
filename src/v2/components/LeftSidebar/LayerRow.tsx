@@ -203,10 +203,10 @@ export function LayerRow({
   }, [isDroneDeployOrthomosaicsLayer, isProjectsExpanded, projects, projectsRequestNonce]);
 
   const activeClasses = controlsOnly
-    ? 'bg-white border border-gray-200 hover:border-gray-300 hover:shadow-sm'
+    ? 'bg-white border border-gray-200 hover:border-gray-400 hover:shadow-sm'
     : isActive
       ? 'bg-amber-50 border border-amber-300 font-semibold text-gray-900 shadow-sm'
-      : 'bg-white border border-gray-200 hover:border-gray-300 hover:shadow-sm';
+      : 'bg-white border border-gray-200 hover:border-gray-400 hover:shadow-sm';
 
   const textColor = isPinned && !isVisible && !isActive
     ? 'text-gray-400'
@@ -304,9 +304,9 @@ export function LayerRow({
           <span
             id={`layer-service-container-hint-${layerId}`}
             className="text-[10px] text-gray-500 uppercase tracking-wide"
-            title="Service container; select a child layer to pin"
+            title="Group container; select a child layer to pin"
           >
-            Service
+            Group
           </span>
         )}
       </div>

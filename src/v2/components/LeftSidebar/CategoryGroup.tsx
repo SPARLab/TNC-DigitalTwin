@@ -161,18 +161,24 @@ export function CategoryGroup({
     });
   }, [activeLayer, directLayers, isServiceParent]);
 
-  // Styling varies by depth — category darkest, subcategory medium, for visual hierarchy
-  const headerBgClasses = isSubcategory
-    ? 'bg-slate-200 hover:bg-slate-300'
-    : 'bg-slate-300 hover:bg-slate-400';
-  const borderClasses = isSubcategory ? '' : 'border-b border-slate-400';
+  // Visual styling (bg + border) lives on a dedicated header-row div, not the button and
+  // not the outer wrapper. This prevents hover from bleeding into expanded content,
+  // and avoids the global button:focus { border-color: inherit !important } rule in index.css.
+  // The button itself is transparent so the header div's background shows through with no gap.
+  const headerRowClasses = isSubcategory
+    ? 'relative bg-slate-100 hover:bg-gray-200 border border-transparent hover:border-slate-300 hover:shadow-[1px_0_0_0_rgba(148,163,184,0.95)] hover:z-[20]'
+    : 'relative bg-slate-200 hover:bg-gray-300 border border-transparent hover:border-slate-400 hover:shadow-[1px_0_0_0_rgba(100,116,139,0.95)] hover:z-[20]';
+
+  // Outer wrapper only carries the bottom separator between top-level categories.
+  const outerWrapperClasses = isSubcategory ? '' : 'border-b border-slate-300';
 
   // Keep hook call order stable; conditionally render only after hooks run.
   if (shouldHideForSearch) return null;
 
   return (
-    <div id={`category-${category.id}`} className={borderClasses}>
-      {/* Category header */}
+    <div id={`category-${category.id}`} className={outerWrapperClasses}>
+      {/* Header row — hover visual scoped to this div only */}
+      <div className={`transition-colors ${headerRowClasses}`}>
       <button
         id={`category-toggle-${category.id}`}
         role="treeitem"
@@ -181,7 +187,7 @@ export function CategoryGroup({
         onClick={toggle}
         onKeyDown={handleHeaderKeyDown}
         className={`flex items-center w-full px-3 py-2.5 text-sm font-semibold text-gray-800
-                   ${headerBgClasses} transition-colors cursor-pointer
+                   transition-colors cursor-pointer
                    ${isSubcategory ? 'pl-6 text-xs font-medium' : ''}
                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1`}
         aria-expanded={isExpanded}
@@ -197,6 +203,7 @@ export function CategoryGroup({
           {totalVisible}
         </span>
       </button>
+      </div>
 
       {/* Expandable content — layers + subcategories */}
       <div
@@ -211,7 +218,7 @@ export function CategoryGroup({
         <div className="overflow-hidden">
           {/* Direct layers in this category */}
           {directLayers.length > 0 && (
-            <div className={`bg-slate-100 py-1.5 space-y-1 ${isSubcategory ? 'pl-3 pr-1' : 'pl-1 pr-1'}`}>
+            <div className={`bg-slate-50 py-1.5 space-y-1 ${isSubcategory ? 'pl-3 pr-0' : 'pl-1 pr-0'}`}>
               {directLayers.map(layer => {
                 if (layer.catalogMeta?.parentServiceId) return null;
 
