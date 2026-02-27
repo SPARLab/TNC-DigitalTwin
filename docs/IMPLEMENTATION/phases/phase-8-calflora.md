@@ -1,7 +1,7 @@
 # Phase 8: Calflora Plant Observations
 
 **Status:** 🟡 In Progress  
-**Progress:** 1 active task remaining (8 completed tasks archived)  
+**Progress:** 2 active tasks remaining (8 completed tasks archived)  
 **Branch:** `v2/calflora`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
@@ -14,6 +14,7 @@
 
 | ID | Status | Last Updated (Timestamp) | Task Description | Notes |
 |----|--------|---------------------------|------------------|-------|
+| CON-INAT-13 | ⚪ Not Started | Feb 27, 2026 | Add licensing-safe media filter before re-enabling CalFlora | Ensure CalFlora only displays/exports observations whose media rights are confirmed permissible (e.g., public domain or explicitly licensed for reuse). |
 | 8.9 | ⚪ Not Started | — | Port and validate v1 CalFlora features | Audit v1 CalFloraSidebar/CalFloraDetailsSidebar for any features that need v2 parity |
 
 **Archived completed tasks:** `8.1` through `8.8` moved to `docs/archive/phases/phase-8-calflora-completed.md` on Feb 25, 2026.
