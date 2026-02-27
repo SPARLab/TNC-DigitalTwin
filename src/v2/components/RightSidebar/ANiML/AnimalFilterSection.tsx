@@ -89,7 +89,7 @@ export function AnimalFilterSection({
 
       {!compact && (
         <p className="text-xs text-gray-500 italic">
-          Tip: You can also filter using the legend widget on the map
+          Tip: Species filters here update map camera badges and browse results.
         </p>
       )}
     </div>

@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
-import { TAXON_CONFIG, getTaxonEmoji, getTaxonColor } from '../../Map/layers/taxonConfig';
+import { TAXON_CONFIG, getTaxonEmoji } from '../../Map/layers/taxonConfig';
 import { useINaturalistFilter } from '../../../context/INaturalistFilterContext';
 import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { loadingTheme } from '../../shared/loading/loadingTheme';
@@ -130,10 +130,6 @@ export function INaturalistLegendWidget() {
                   title={`${isSelected ? 'Hide' : 'Show'} ${group.label}`}
                 >
                   <div className="flex items-center gap-2">
-                    <span
-                      className="w-3 h-3 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: getTaxonColor(group.value) }}
-                    />
                     <span className="text-base leading-none">{getTaxonEmoji(group.value)}</span>
                     <span className={`text-sm ${isSelected ? 'text-gray-800 font-medium' : 'text-gray-500'}`}>
                       {group.label}

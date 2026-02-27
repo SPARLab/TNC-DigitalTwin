@@ -23,6 +23,7 @@
 | CON-INAT-11 | ✅ Complete | Feb 27, 2026 | Remove CalFlora layer from catalog for now | Soft-hidden from `EXTERNAL_LAYERS` only; CalFlora custom sidebar/map/adapter logic intentionally retained for future re-enable. |
 | CON-INAT-12 | ✅ Complete | Feb 27, 2026 | Add Land Cover "Other" subcategory for three floaters | Back-end Data Catalog updated: uncategorized/floaters grouped under Land Cover → Other subcategory. |
 | CON-INAT-13 | ⚪ Not Started | Feb 27, 2026 | Add licensing-safe media filter before re-enabling CalFlora | Ensure CalFlora only displays/exports observations whose media rights are confirmed permissible (e.g., public domain or explicitly licensed for reuse). |
+| CON-INAT-14 | ✅ Complete | Feb 27, 2026 | Simplify floating legends for iNaturalist and ANiML | iNaturalist: retained legend, removed colored dots (emoji + label only). ANiML: single camera icon key, card/header styling, larger bolder icon. |
 
 *All completed tasks (TF-01, TF-05, TF-03, TF-04, CON-INAT-01 through CON-INAT-07, TF-06; CON-INAT-04 Won't Do) archived. See `docs/archive/phases/phase-1-inaturalist-completed.md`.*
 
@@ -90,6 +91,7 @@ TBD
 | Select All / Clear All text-only; gray when inactive; styled separator | Feb 24, 2026 | TF-06: Bulk actions in Filter Taxa, Filter Species, and legend use colored text (emerald when actionable, gray when inactive). Gray `|` separator between Select All and Clear All in all three locations. No pill/button backgrounds. | No |
 | Conservation badge (EN/VU/NT) + metadata label-value spacing | Feb 26, 2026 | CON-INAT-08: Red badge for CR/EN, amber for VU/NT beside species name; severity-based status mapping from mixed iNaturalist schemes; MetaRow label column w-24, gap-3 for readability. | No |
 | Edit Filters scroll region + overlay scrollbar | Feb 27, 2026 | CON-INAT-09: Edit Filters content wrapped in max-h-[52vh] scroll region; custom overlay thumb (scroll-area-right-sidebar pattern) so Filter Species remains accessible when Filter Taxa expanded; thumb auto-hides when idle, reappears on hover/scroll. | No |
+| Floating legend cleanup for iNaturalist + ANiML | Feb 27, 2026 | CON-INAT-14: Retained iNaturalist floating legend for map context. Replaced ANiML species/color floating legend with a minimal single camera icon key using the same card/header pattern as iNaturalist. iNaturalist rows: emoji + label only (no colored dots). ANiML camera icon: h-6 w-6, strokeWidth 2.2 for visibility. | No |
 
 ---
 
@@ -106,6 +108,7 @@ TBD
 | Date | Task | Change | By |
 |------|------|--------|-----|
 | Feb 27, 2026 | CON-INAT-12 | **Complete.** Land Cover "Other" subcategory added via back-end Data Catalog: three floaters grouped under Other; no front-end changes required. | — |
+| Feb 27, 2026 | CON-INAT-14 | **Complete.** Floating legend simplification: retained iNaturalist floating legend; removed colored dots from iNaturalist rows (emoji + label + count only). ANiML legend: compact single camera icon key with iNaturalist-style card/header; camera icon enlarged (h-6 w-6) and stroke thickened (2.2). Updated ANiML filter-section helper tip. | — |
 | Feb 27, 2026 | CON-INAT-11 | **Complete.** Temporarily removed CalFlora from left-sidebar catalog by soft-hiding `calflora-observations` in `EXTERNAL_LAYERS` (`layerRegistry`). Kept CalFlora custom right-sidebar/map/adapter code in place for future re-enable. Added follow-up task CON-INAT-13 for licensing-safe media filtering before reactivation. | — |
 | Feb 27, 2026 | CON-INAT-10 | **Complete.** iNaturalist Observations and Camera Traps (ANiML) moved from Species to Observations: `layerRegistry` categoryId 38→63; `useCatalogRegistry` external-layer injection extended to support subcategory targets (Observations id 63 under Species). CalFlora unchanged per CON-INAT-11. | — |
 | Feb 27, 2026 | CON-INAT-09 | **Complete.** Edit Filters scroll region: max-h-[52vh] overflow-y-auto; custom overlay scrollbar (scroll-area-right-sidebar pattern) so Filter Species remains accessible when Filter Taxa expanded; thumb auto-hides when idle, reappears on hover/scroll. | — |

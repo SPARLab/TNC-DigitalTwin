@@ -1,144 +1,44 @@
 // ============================================================================
-// AnimlLegendWidget — Floating legend over map for animal species filtering.
-// Uses locally-cached animal tag counts from AnimlFilterContext.
-// Shows loading shimmer while data is being fetched.
+// AnimlLegendWidget — Floating map key for camera trap markers.
+// Camera traps now use a single map symbol, so this stays intentionally minimal.
 // ============================================================================
 
-import { useState } from 'react';
-import { ChevronDown, ChevronRight, Loader2, PawPrint } from 'lucide-react';
-import { useAnimlFilter } from '../../../context/AnimlFilterContext';
-import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
-import { loadingTheme } from '../../shared/loading/loadingTheme';
-
-// Simple color palette for animal categories (distinct, colorblind-friendly)
-const ANIMAL_COLORS: string[] = [
-  '#2e7d32', '#1565c0', '#c62828', '#f57f17', '#6a1b9a',
-  '#00838f', '#d84315', '#4527a0', '#2e7d32', '#ad1457',
-  '#00695c', '#ef6c00', '#283593', '#558b2f', '#6d4c41',
-];
-
-function getAnimalColor(index: number): string {
-  return ANIMAL_COLORS[index % ANIMAL_COLORS.length];
-}
-
 export function AnimlLegendWidget() {
-  const [isExpanded, setIsExpanded] = useState(true);
-  const {
-    selectedAnimals, toggleAnimal, selectAll, hasFilter,
-    animalTags, loading, dataLoaded, getFilteredCountForSpecies, hasDateFilter,
-  } = useAnimlFilter();
-
-  // Sort by count descending, filter out zero-count.
-  // When date filter is active and scoped counts are not ready yet,
-  // fall back to hiding counts rather than showing misleading all-time totals.
-  const groups = animalTags
-    .map(tag => {
-      const resolvedCount = getFilteredCountForSpecies(tag.label);
-      const displayCount = resolvedCount ?? (hasDateFilter ? null : tag.totalObservations);
-      return { ...tag, displayCount };
-    })
-    .filter(t => (t.displayCount ?? 0) > 0)
-    .sort((a, b) => (b.displayCount ?? 0) - (a.displayCount ?? 0));
-
-  // Loading state — show shimmer while fetching
-  if (!dataLoaded) {
-    return (
-      <div
-        id="animl-legend-widget"
-        className="absolute bottom-6 right-6 bg-white rounded-lg shadow-lg border border-gray-300 z-30 w-72"
-      >
-        <InlineLoadingRow
-          id="animl-legend-loading"
-          message="Loading camera trap data..."
-          containerClassName={loadingTheme.legendRow}
-          spinnerClassName={loadingTheme.inlineSpinner}
-          textClassName={loadingTheme.inlineText}
-        />
-      </div>
-    );
-  }
-
-  const showRefreshSpinner = loading && dataLoaded;
-
-  if (groups.length === 0) return null;
-
-  const allVisible = !hasFilter;
-
   return (
     <div
       id="animl-legend-widget"
       className="absolute bottom-6 right-6 bg-white rounded-lg shadow-lg border border-gray-300 z-30 w-72"
+      aria-label="Camera trap map legend"
     >
-      {/* Header */}
       <div
         id="animl-legend-header"
-        className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg"
+        className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200 rounded-t-lg"
       >
-        <div className="flex items-center gap-2">
-          <button
-            id="animl-legend-expand-toggle"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="p-0.5 hover:bg-gray-200 rounded transition-colors"
-            aria-label={isExpanded ? 'Collapse legend' : 'Expand legend'}
-          >
-            {isExpanded
-              ? <ChevronDown className="w-4 h-4 text-gray-600" />
-              : <ChevronRight className="w-4 h-4 text-gray-600" />}
-          </button>
-          <h3 className="text-sm font-semibold text-gray-900">Filter Species</h3>
-          {showRefreshSpinner && (
-            <Loader2 id="animl-legend-refresh-spinner" className={loadingTheme.legendRefreshSpinner} />
-          )}
-        </div>
-        {!allVisible && (
-          <button
-            id="animl-legend-show-all"
-            onClick={selectAll}
-            className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-          >
-            Show All
-          </button>
-        )}
+        <h3 id="animl-legend-title" className="text-sm font-semibold text-gray-900">
+          Camera Traps
+        </h3>
       </div>
 
-      {/* Species filter list */}
-      {isExpanded && (
-        <div id="animl-legend-content" className="p-2 max-h-[32rem] overflow-y-auto space-y-1">
-          {groups.map((tag, index) => {
-            const isSelected = hasFilter ? selectedAnimals.has(tag.label) : true;
-            const bgColor = isSelected
-              ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200'
-              : 'bg-gray-100 hover:bg-gray-150 border-gray-200 opacity-60';
-
-            return (
-              <button
-                key={tag.label}
-                id={`animl-legend-item-${tag.label.replace(/\s+/g, '-').toLowerCase()}`}
-                onClick={() => toggleAnimal(tag.label)}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded border transition-all ${bgColor}`}
-                title={`${isSelected ? 'Hide' : 'Show'} ${tag.label}`}
-              >
-                <div id={`animl-legend-item-left-${tag.label.replace(/\s+/g, '-').toLowerCase()}`} className="flex items-center gap-2">
-                  <span id={`animl-legend-item-icon-${tag.label.replace(/\s+/g, '-').toLowerCase()}`} className="text-gray-500 flex-shrink-0">
-                    <PawPrint className="w-3.5 h-3.5" />
-                  </span>
-                  <span
-                    id={`animl-legend-item-dot-${tag.label.replace(/\s+/g, '-').toLowerCase()}`}
-                    className="w-3 h-3 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: getAnimalColor(index) }}
-                  />
-                  <span className={`text-sm ${isSelected ? 'text-gray-800 font-medium' : 'text-gray-500'}`}>
-                    {tag.label}
-                  </span>
-                </div>
-                <span className="text-xs text-gray-600">
-                  {tag.displayCount !== null ? tag.displayCount.toLocaleString() : '—'}
-                </span>
-              </button>
-            );
-          })}
+      <div id="animl-legend-content" className="p-2 rounded-b-lg">
+        <div
+          id="animl-legend-item-camera"
+          className="flex items-center gap-2 rounded border border-gray-200 bg-gray-50 px-3 py-2"
+        >
+          <span id="animl-legend-item-camera-icon" className="flex h-7 w-7 items-center justify-center text-gray-800">
+            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
+              <rect x="4" y="6" width="16" height="12" rx="2" ry="2" stroke="currentColor" strokeWidth="2.2" />
+              <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2.2" />
+              <line x1="8" y1="18" x2="6" y2="22" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+              <line x1="12" y1="18" x2="12" y2="22" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+              <line x1="16" y1="18" x2="18" y2="22" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+              <rect x="15" y="7" width="3" height="2" rx="0.5" stroke="currentColor" strokeWidth="2.2" />
+            </svg>
+          </span>
+          <span id="animl-legend-item-camera-label" className="text-sm font-medium text-gray-800">
+            Camera Trap Marker
+          </span>
         </div>
-      )}
+      </div>
     </div>
   );
 }
