@@ -160,10 +160,13 @@ export function useAnimlMapBehavior(
         const geometry = graphicHit.graphic.geometry;
         if (geometry?.type === 'point') {
           const point = geometry as Point;
+          const longitude = Number(point.longitude);
+          const latitude = Number(point.latitude);
+          if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return;
           void goToMarkerWithSmartZoom({
             view,
-            longitude: point.longitude,
-            latitude: point.latitude,
+            longitude,
+            latitude,
             duration: 600,
           });
         }
