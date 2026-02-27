@@ -1,7 +1,7 @@
 # Master Development Plan — V2 Digital Catalog
 
 **Created:** January 23, 2026  
-**Last Updated:** February 27, 2026 (CON-INAT-10 complete)  
+**Last Updated:** February 27, 2026 (CON-INAT-11 complete)  
 **Target Deadline:** February 20, 2026  
 **Status:** 🟡 In Progress
 
@@ -11,8 +11,8 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 164 / 184 complete (**89%**) |
-| **Active remaining** | 20 tasks |
+| **Active scope** | 165 / 185 complete (**89%**) |
+| **Active remaining** | 21 tasks |
 | **Phases complete** | 7 of 15 (0, 1, 2, 10, 11, 12b) |
 
 ```
@@ -56,19 +56,19 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 163
+- **Complete:** 164
 - **Active remaining (Not Started + In Progress + Blocked):** 21
 - **Backlog (not in active scope):** 3
 - **Deferred:** 5
 - **Won't Do:** 2
-- **Total tracked rows:** 194
+- **Total tracked rows:** 195
 
 ### Per-Phase Task Counts
 
 | Phase | Name | Status | Complete | Active Remaining | Backlog | Deferred | Won't Do | Total Tracked | Branch |
 |-------|------|--------|----------|------------------|---------|----------|----------|---------------|--------|
 | 0 | Foundation | 🟢 Complete | 11 | 1 | 0 | 0 | 0 | 12 | `v2/foundation` |
-| 1 | iNaturalist | 🟡 In Progress | 13 | 2 | 0 | 0 | 1 | 16 | `v2/inaturalist` |
+| 1 | iNaturalist | 🟡 In Progress | 14 | 2 | 0 | 0 | 1 | 17 | `v2/inaturalist` |
 | 2 | ANiML | 🟢 Complete | 7 | 0 | 0 | 0 | 1 | 8 | `v2/animl` |
 | 3 | Dendra | 🟡 In Progress | 11 | 1 | 3 | 0 | 0 | 14 | `v2/dendra` |
 | 4 | DataOne | 🟡 In Progress | 16 | 1 | 0 | 0 | 0 | 17 | `v2/dataone` |
@@ -201,6 +201,7 @@ Use these when merging branches that touch shared components.
 | Dynamic layer registry from Data Catalog Service | ✅ Implemented | User + Claude | Feb 12 | `useCatalogRegistry.ts` fetches from Dan's Data Catalog FeatureServer (`Dangermond_Preserve_Data_Catalog`). ~90+ real datasets across 14 categories. Left sidebar populated from catalog. Layers without adapters show generic placeholder in right sidebar. **Task 0.9 complete — parallel branches unblocked.** See phase-0-foundation.md. |
 | 2D/3D view mode toggle | ✅ Implemented | Cursor | Feb 24 | MapContainer conditionally creates MapView or SceneView based on `MapContext.viewMode`. Unified `MapControlRail` (top-right): 2D/3D text toggle, LiDAR visibility (3D only), zoom +/−, compass; all buttons 32×32. All data source layers drape onto terrain in 3D; LiDAR PointCloudLayer loads in 3D only. Camera preserved across toggles (REF-15). REF-16: LiDAR toggle + custom control rail. See `MapContext`, `MapContainer`, `MapControlRail`, `useArcgisViewLifecycle`. |
 | MOTUS journey reconstruction blocked | ✅ Resolved | Cursor | Feb 23 | Resolved via `device_id` linkage: Tag Detections join to Station Deployments via `device_id` (100% populated); time-ordered inferred legs now render for matching detections. Phase 11 complete. See phase-11-motus.md and `docs/archive/phases/phase-11-motus-completed.md`. |
+| CalFlora layer soft-hidden from catalog | ✅ Implemented | Cursor | Feb 27 | CON-INAT-11: CalFlora temporarily removed from left-sidebar catalog (EXTERNAL_LAYERS in layerRegistry) due to licensing ambiguity. Custom sidebar/map/adapter logic retained for future re-enable. CON-INAT-13 tracks licensing-safe media filter before reactivation. See phase-1-inaturalist.md, phase-8-calflora.md. |
 | Cross-layer filtered-view naming contract | ✅ Decided | User + Claude | Feb 13 | Manual rename behavior must persist across all layer types and custom right-sidebar views. Auto-naming is adapter-specific per data source. Shared widget/context rule: if `isNameCustom` is false, auto-name can update on filter sync; if true, never overwrite. Rollout can happen incrementally by branch (not required to block current merge). |
 
 ### Styling Decisions
@@ -372,6 +373,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 27, 2026 | Phase 1 | **CON-INAT-11 complete.** CalFlora soft-hidden from catalog (EXTERNAL_LAYERS in layerRegistry); custom sidebar/map/adapter logic retained for future re-enable. Added CON-INAT-13 for licensing-safe media filter before reactivation. Phase 1: 14/17 complete, 2 remaining. Portfolio: 165/185. | Cursor |
 | Feb 27, 2026 | Phase 1 | **CON-INAT-10 complete.** iNaturalist Observations and Camera Traps (ANiML) moved from Species to Observations: layerRegistry categoryId 38→63; useCatalogRegistry subcategory injection for Observations (id 63). Phase 1: 13/16 complete, 2 remaining. Portfolio: 164/184. | Cursor |
 | Feb 27, 2026 | Phase 1 | **CON-INAT-09 complete.** Edit Filters scroll region: max-h-[52vh] overflow; auto-hiding overlay scrollbar (scroll-area-right-sidebar pattern) so Filter Species remains accessible when Filter Taxa expanded. Phase 1: 12/16 complete, 3 remaining. Portfolio: 163/184. | Cursor |
 | Feb 26, 2026 | Phase 1 | **CON-INAT-08 complete.** iNaturalist threatened/sensitive tracking: taxon API lookup, EN-style conservation badge beside species name, severity-based status mapping, obscured-coordinate warning, metadata spacing. Phase 1: 11 complete, 12 total (1 won't do). | Cursor |

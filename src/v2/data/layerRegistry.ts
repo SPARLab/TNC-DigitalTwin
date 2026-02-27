@@ -82,13 +82,15 @@ export const EXTERNAL_LAYERS: CatalogLayer[] = [
     dataSource: 'dataone',
     icon: 'BookOpen',
   },
-  {
-    id: 'calflora-observations',
-    name: 'CalFlora Observations',
-    categoryId: '38',
-    dataSource: 'calflora',
-    icon: 'Flower2',
-  },
+  // Temporarily hidden from catalog (CON-INAT-11) due to licensing ambiguity.
+  // Keep CalFlora adapter/sidebar/map logic in codebase for future re-enable.
+  // {
+  //   id: 'calflora-observations',
+  //   name: 'CalFlora Observations',
+  //   categoryId: '38',
+  //   dataSource: 'calflora',
+  //   icon: 'Flower2',
+  // },
   // Future external layers (uncomment when adapters are ready):
   // { id: 'ebird-sightings', name: 'eBird Sightings', categoryId: '38', dataSource: 'ebird', icon: 'Bird' },
 ];

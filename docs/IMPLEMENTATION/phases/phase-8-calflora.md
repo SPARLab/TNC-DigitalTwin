@@ -6,6 +6,8 @@
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD
 
+> **Catalog visibility:** CalFlora layer is temporarily hidden from the left-sidebar catalog (CON-INAT-11, Feb 27, 2026) due to licensing ambiguity. Custom sidebar/map/adapter logic remains in codebase. Re-enable by uncommenting `calflora-observations` in `layerRegistry.ts` after implementing CON-INAT-13 (licensing-safe media filter).
+
 ---
 
 ## Task Status
@@ -276,6 +278,7 @@ Append `?f=json` to inspect fields and metadata.
 |----------|------|-----------|
 | CalFlora v2 first pass uses `plant` as primary taxonomy field | Feb 23, 2026 | Service lacks normalized family/native status/Cal-IPC attributes; implementation should avoid fabricating taxonomy fields and instead expose available data reliably. |
 | CalFlora Browse tab includes `search + county + date + has photo` for MVP | Feb 23, 2026 | These are the highest-signal fields available directly from service without brittle client-side inference. |
+| CalFlora layer soft-hidden from catalog (CON-INAT-11) | Feb 27, 2026 | Licensing ambiguity re: displaying raw data and downloadable media. Layer removed from EXTERNAL_LAYERS; all implementation code retained. Re-enable after CON-INAT-13 (Phase 1) implements licensing-safe media filter. |
 
 ### Styling Decisions
 
@@ -298,6 +301,7 @@ Append `?f=json` to inspect fields and metadata.
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 27, 2026 | CON-INAT-11 | CalFlora layer soft-hidden from left-sidebar catalog (Phase 1 task). Implementation code retained; re-enable after CON-INAT-13 (licensing-safe media filter). See phase-1-inaturalist.md. | — |
 | Feb 23, 2026 | 8.4, 8.7 | UX polish: card photo thumbnails; removed list-level "View on map" (card click drives async map pan/zoom); CalFlora map legend widget; ArcGIS popup on marker click; casing-safe objectId extraction for map→detail sync. | Cursor |
 | Feb 23, 2026 | 8.2–8.8 | Marked complete. Full CalFlora vertical slice shipped: sidebar shell, search/filter UI (plant, county, date, has photo), observation cards, detail view, loading sync, map markers, Save View flow. Native status/family/Cal-IPC deferred (service lacks fields). | Cursor |
 | Feb 23, 2026 | 8.8 | Added first-pass CalFlora Save View flow: `syncCalFloraFilters` + `createOrUpdateCalFloraFilteredView` in `LayerContext`; CalFlora Browse hydrates filters from active child view and Save View in detail now creates/selects child views. | Cursor |
