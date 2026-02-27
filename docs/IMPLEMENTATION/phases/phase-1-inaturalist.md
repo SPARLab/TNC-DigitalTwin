@@ -1,7 +1,7 @@
 # Phase 1: iNaturalist Right Sidebar
 
 **Status:** 🟡 In Progress  
-**Progress:** 15 / 18 tasks complete (1 won't do, 2 remaining)  
+**Progress:** 16 / 18 tasks complete (1 won't do, 1 remaining)  
 **Branch:** `v2/inaturalist`  
 **Depends On:** Phase 0 (Foundation)  
 **Owner:** TBD  
@@ -24,7 +24,7 @@
 | CON-INAT-12 | ✅ Complete | Feb 27, 2026 | Add Land Cover "Other" subcategory for three floaters | Back-end Data Catalog updated: uncategorized/floaters grouped under Land Cover → Other subcategory. |
 | CON-INAT-13 | ⚪ Not Started | Feb 27, 2026 | Add licensing-safe media filter before re-enabling CalFlora | Ensure CalFlora only displays/exports observations whose media rights are confirmed permissible (e.g., public domain or explicitly licensed for reuse). |
 | CON-INAT-14 | ✅ Complete | Feb 27, 2026 | Simplify floating legends for iNaturalist and ANiML | iNaturalist: retained legend, removed colored dots (emoji + label only). ANiML: single camera icon key, card/header styling, larger bolder icon. |
-| CON-INAT-15 | ⚪ Not Started | Feb 27, 2026 | Audit iNaturalist observation icon positioning on map | Verify observation markers are drawn at correct coordinates; check for datum/projection issues similar to ANiML (CON-FEB25-07). Ensure icons are not placed far from where they should be. |
+| CON-INAT-15 | ✅ Complete | Feb 27, 2026 | Audit iNaturalist observation icon positioning on map | Code + service audit: iNat layer natively WGS84 (`wkid: 4326`); coordinate flow correct (x/y → lon/lat). No datum/projection mismatch (unlike ANiML NAD27). Sampled preserve-window data in-bounds. No bugs found that would misplace markers. |
 
 *All completed tasks (TF-01, TF-05, TF-03, TF-04, CON-INAT-01 through CON-INAT-07, TF-06; CON-INAT-04 Won't Do) archived. See `docs/archive/phases/phase-1-inaturalist-completed.md`.*
 
@@ -108,6 +108,7 @@ TBD
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 27, 2026 | CON-INAT-15 | **Complete.** Marker positioning audit: iNaturalist layer natively WGS84; coordinate flow correct; no datum/projection mismatch (unlike ANiML). No bugs found that would misplace markers. | Cursor |
 | Feb 27, 2026 | — | **New task added.** CON-INAT-15: Audit iNaturalist observation icon positioning on map; verify no datum/projection issues (similar to ANiML CON-FEB25-07). | — |
 | Feb 27, 2026 | CON-INAT-12 | **Complete.** Land Cover "Other" subcategory added via back-end Data Catalog: three floaters grouped under Other; no front-end changes required. | — |
 | Feb 27, 2026 | CON-INAT-14 | **Complete.** Floating legend simplification: retained iNaturalist floating legend; removed colored dots from iNaturalist rows (emoji + label + count only). ANiML legend: compact single camera icon key with iNaturalist-style card/header; camera icon enlarged (h-6 w-6) and stroke thickened (2.2). Updated ANiML filter-section helper tip. | — |
