@@ -88,6 +88,7 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 | Treat Phase 11 as telemetry, not satellite raster | Feb 20, 2026 | Live service + official Motus docs confirm this is animal tracking data, not MODIS imagery |
 | Use ArcGIS Wildlife Telemetry service as v2 source of truth | Feb 20, 2026 | Existing FeatureServer already hosts relevant layers/tables and volumes are manageable |
 | Mark path lines as inferred unless schema is enriched | Feb 20, 2026 | Motus docs explicitly warn tracks are shortest-path estimates; current table lacks explicit station geometry join key |
+| Use persistent Graphic refs + in-place geometry updates for playback animation | Feb 27, 2026 | Per-frame `removeAll`+re-add caused visible flicker; updating existing graphics in-place avoids the clear→redraw gap |
 
 ### Styling Decisions
 
@@ -112,6 +113,7 @@ Implement the MOTUS wildlife telemetry browse experience in the right sidebar. M
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 27, 2026 | 11.6 (polish) | **Journey playback flicker fix:** Split render into static (stations + completed legs) and dynamic (active leg + direction marker) effects. Dynamic graphics now update `.geometry`/`.symbol` in-place each tick instead of `removeAll`+re-add, eliminating animation blink. Bird marker enabled in 3D; direction marker on separate `GraphicsLayer` with `relative-to-ground` offset to avoid z-fighting. | Cursor |
 | Feb 25, 2026 | — | **Archived** completed tasks (11.1–11.9) to `docs/archive/phases/phase-11-motus-completed.md`. Phase doc trimmed. | — |
 | Feb 23, 2026 | 11.6 | Added Arrow/Bird direction marker toggle for Journey playback: Arrow mode uses rotating triangle (atan2 bearing); Bird mode uses fixed Lucide bird SVG (black stroke). Toggle placed in playback widget header to keep widget compact | Cursor |
 | Feb 23, 2026 | 11.9 | Wired MOTUS Save View flow end-to-end: added `motusFilters` support in `LayerContext`/`PinnedLayer` view models, auto-named MOTUS child views (`{Species} — {Tag or Group} — {Date Window}`), browse-tab hydration from selected Map Layers child view, and detail-panel "Save View to Map Layers" action that pins layer if needed and restores species/tag/date+quality filter state on reselect | Cursor |
