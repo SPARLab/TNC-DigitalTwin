@@ -269,6 +269,7 @@ TNC FeatureService (e.g., "Wetlands")
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 27, 2026 | POL-SELECT-CLEAR | **Legend Select All/Clear All.** TNC ArcGIS legend now uses shared `SelectAllClearAllActions` primitive; styling matches iNaturalist (emerald text, separator, disabled states). File: `TNCArcGISLegendWidget.tsx`. | Cursor |
 | Feb 27, 2026 | CON-FEB25-05 | **Polish.** Right-edge divider as absolute structural layer (z-10); only hovered category/subcategory/group rows overlay it (hover:z-[20]). Divider visible by default; hovered row border/shadow paints over divider. Files: LeftSidebar.tsx, CategoryGroup.tsx, ServiceGroup.tsx. | Cursor |
 | Feb 26, 2026 | CON-FEB25-05 | **Complete.** Left sidebar hierarchy styling: tiered backgrounds (category slate-200, subcategory slate-100, children slate-50); "Service"→"Group" rename for multi-layer feature services; header-only hover (bg+border) scoped to header div (no bleed into expanded content); layer row hover border gray-400. Files: CategoryGroup.tsx, ServiceGroup.tsx, LayerRow.tsx. | Cursor |
 | Feb 25, 2026 | — | **Archived** all completed tasks (6.8–6.20, CON-ARCGIS-01–17, D20-02, D20-02a, D20-10, D20-11, TF-11, TF-13) to `docs/archive/phases/phase-6-tnc-arcgis-completed.md`. Trimmed Task Details from phase doc. | — |

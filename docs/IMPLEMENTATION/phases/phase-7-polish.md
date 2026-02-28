@@ -1,7 +1,7 @@
 # Phase 7: Polish & Consistency
 
 **Status:** 🟡 In Progress  
-**Progress:** 6 / 10 tasks (D20-01, CON-FEB25-01, CON-FEB25-02, CON-FEB25-03, CON-FEB25-08, CON-FEB25-09 complete)  
+**Progress:** 7 / 11 tasks (D20-01, CON-FEB25-01, CON-FEB25-02, CON-FEB25-03, CON-FEB25-08, CON-FEB25-09, POL-SELECT-CLEAR complete)  
 **Branch:** `v2/polish`  
 **Depends On:** Phases 0-6 (all complete)  
 **Owner:** TBD
@@ -40,6 +40,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | CON-FEB25-06 | ⚪ Not Started | Feb 25, 2026 | Analyze code for performance bottlenecks — low FPS in 3D view with iNaturalist | Scan for degradation; recommend/implement fixes. Extends 7.6. Source: consolidated-tasks-feb-25-2026.md |
 | CON-FEB25-08 | 🟢 Complete | Feb 27, 2026 | Restore right padding for left sidebar layer cards | Layer cards (e.g. Dangermond Preserve, Santa Barbara County Boundary) had regressed to pr-0; restored pr-1 so cards sit a few pixels from sidebar edge. CategoryGroup, ServiceGroup. |
 | CON-FEB25-09 | 🟢 Complete | Feb 27, 2026 | Map layer draw order matches Map Layers widget order | Unpinned active layer was rendering underneath pinned layers. Fixed in useMapLayerPresentationSync: unified desired stack = active-unpinned first, then pinned in widget order. |
+| POL-SELECT-CLEAR | 🟢 Complete | Feb 27, 2026 | Shared Select All / Clear All primitive; TNC legend + iNaturalist species filter use identical styling | `SelectAllClearAllActions` in `src/v2/components/shared/`; emerald text + separator; TNCArcGISLegendWidget + INaturalistBrowseTab Filter Species. |
 
 ## Task Status
 
@@ -70,6 +71,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | CON-FEB25-06 | Analyze code for performance bottlenecks — low FPS in 3D view with iNaturalist | ⚪ Not Started | | Extends 7.6. Source: consolidated-tasks-feb-25-2026.md |
 | CON-FEB25-08 | Restore right padding for left sidebar layer cards | 🟢 Complete | | Layer cards had regressed to pr-0; restored pr-1 in CategoryGroup, ServiceGroup so cards sit a few pixels from sidebar edge. Feb 27, 2026. |
 | CON-FEB25-09 | Map layer draw order matches Map Layers widget order | 🟢 Complete | | Unpinned active layer was rendering underneath pinned layers. Fixed in useMapLayerPresentationSync: unified desired stack = active-unpinned first, then pinned in widget order. Feb 27, 2026. |
+| POL-SELECT-CLEAR | Shared Select All / Clear All primitive; TNC legend + iNaturalist species filter | 🟢 Complete | | SelectAllClearAllActions component; TNC ArcGIS legend and iNaturalist Filter Species use identical emerald text + separator styling. Feb 27, 2026. |
 | (more TBD) | | | | |
 
 **Status Legend:**
@@ -327,6 +329,7 @@ This confirmed hypothesis #1 from the investigation: "A non-click DataONE effect
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 27, 2026 | POL-SELECT-CLEAR | **Complete.** Shared `SelectAllClearAllActions` primitive in `src/v2/components/shared/`. TNC ArcGIS legend and iNaturalist Filter Species now use identical emerald text + separator styling. Disabled states for Select All (when all selected) and Clear All (when none selected). | Cursor |
 | Jan 23, 2026 | - | Created phase document | Will + Claude |
 | Feb 26, 2026 | CON-FEB25-03 | Collapsable Edit Filters — applied `collapsible defaultExpanded` to EditFiltersCard in ANiML, Dendra, DataONE, GBIF, CalFlora browse tabs | Cursor |
 | Feb 3, 2026 | 7.1, 7.2 | Added TNC brand integration tasks (fonts + theme variants). Resolved DFT-008, DFT-009 | Will + Claude |

@@ -827,6 +827,16 @@ interface FilterSectionProps {
 
 **Component location:** `src/v2/components/RightSidebar/FilterSection.tsx`
 
+### Select All / Clear All Bulk Actions (Shared Primitive)
+
+**Policy:** Multi-select filter sections (e.g., legend items, species lists) use a shared `SelectAllClearAllActions` component for consistent styling across TNC ArcGIS legend, iNaturalist Filter Taxa, Filter Species, and iNaturalist legend.
+
+**Styling:** Emerald text (`text-emerald-600 hover:text-emerald-700`) when actionable; gray (`text-gray-400 cursor-not-allowed`) when disabled. Gray `|` separator between buttons. No pill/button backgrounds.
+
+**Component location:** `src/v2/components/shared/SelectAllClearAllActions.tsx`
+
+**Usage:** TNCArcGISLegendWidget, INaturalistBrowseTab (Filter Species). INaturalistLegendWidget and Filter Taxa use matching inline styling. Supports `disableSelectAll`, `disableClearAll`, and `stopPropagation` for use inside clickable headers.
+
 ### Per-Data-Source Control Inventory
 
 | Data Source | Level | Header | Controls |

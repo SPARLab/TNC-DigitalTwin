@@ -108,6 +108,7 @@ TBD
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 27, 2026 | POL-SELECT-CLEAR | **Filter Species Select All/Clear All.** INaturalistBrowseTab Filter Species now uses shared `SelectAllClearAllActions` primitive; styling identical to TNC legend and Filter Taxa. File: `INaturalistBrowseTab.tsx`. | Cursor |
 | Feb 27, 2026 | CON-INAT-15 | **Complete.** Marker positioning audit: iNaturalist layer natively WGS84; coordinate flow correct; no datum/projection mismatch (unlike ANiML). No bugs found that would misplace markers. | Cursor |
 | Feb 27, 2026 | — | **New task added.** CON-INAT-15: Audit iNaturalist observation icon positioning on map; verify no datum/projection issues (similar to ANiML CON-FEB25-07). | — |
 | Feb 27, 2026 | CON-INAT-12 | **Complete.** Land Cover "Other" subcategory added via back-end Data Catalog: three floaters grouped under Other; no front-end changes required. | — |

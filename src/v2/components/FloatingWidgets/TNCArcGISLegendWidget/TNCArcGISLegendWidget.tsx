@@ -4,6 +4,7 @@ import { useCatalog } from '../../../context/CatalogContext';
 import { useLayers } from '../../../context/LayerContext';
 import { fetchLayerLegend, type ArcGISLegendItem, type ArcGISLayerLegend } from '../../../services/tncArcgisService';
 import type { CatalogLayer } from '../../../types';
+import { SelectAllClearAllActions } from '../../shared/SelectAllClearAllActions';
 
 function getTargetLayer(activeLayer: CatalogLayer | undefined, selectedSubLayerId: string | undefined): CatalogLayer | null {
   if (!activeLayer) return null;
@@ -118,6 +119,9 @@ export function TNCArcGISLegendWidget() {
     && legendData.filterField
     && filterableLegendItems.length > 0
   );
+  const allLegendValuesSelected = canFilterByLegend
+    && selectedLegendValues.length === filterableLegendItems.length;
+  const noLegendValuesSelected = selectedLegendValues.length === 0;
   const pinned = targetLayer ? isLayerPinned(targetLayer.id) : false;
 
   useEffect(() => {
@@ -207,30 +211,14 @@ export function TNCArcGISLegendWidget() {
           {legendLoading && <Loader2 id="tnc-arcgis-legend-widget-loading-spinner" className="w-4 h-4 animate-spin text-gray-500" />}
         </div>
         {canFilterByLegend && (
-          <div id="tnc-arcgis-legend-widget-filter-actions" className="flex items-center gap-1.5">
-            <button
-              id="tnc-arcgis-legend-widget-select-all-button"
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                selectAllLegendValues();
-              }}
-              className="rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-100"
-            >
-              Select All
-            </button>
-            <button
-              id="tnc-arcgis-legend-widget-clear-all-button"
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                clearLegendValues();
-              }}
-              className="rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-100"
-            >
-              Clear All
-            </button>
-          </div>
+          <SelectAllClearAllActions
+            idPrefix="tnc-arcgis-legend-widget"
+            onSelectAll={selectAllLegendValues}
+            onClearAll={clearLegendValues}
+            disableSelectAll={allLegendValuesSelected}
+            disableClearAll={noLegendValuesSelected}
+            stopPropagation
+          />
         )}
       </div>
 
