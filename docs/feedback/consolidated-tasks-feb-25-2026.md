@@ -28,6 +28,7 @@
 | **— Performance —** | | | | |
 | CON-FEB25-06 | ⚪ Not Started | Feb 25, 2026 | Analyze code for performance bottlenecks — low FPS in 3D view with iNaturalist | Scan for performance degradation. User reports decreased frame rate when rendering iNaturalist observations; sometimes tolerable but could be quicker/smoother. |
 | CON-FEB25-08 | 🟢 Complete | Feb 27, 2026 | Restore right padding for left sidebar layer cards | Regression fix: layer cards had pr-0 and touched sidebar edge; restored pr-1 in CategoryGroup, ServiceGroup so cards sit a few pixels from edge. |
+| CON-FEB25-10 | 🟢 Complete | Feb 27, 2026 | TNC ArcGIS Overview description: See more/See less toggle, paragraph spacing, CSS transition | 5-line clamp when collapsed; split on newlines for consistent single blank-line gap; max-height transition (300ms); fade gradient in collapsed state. TNCArcGISOverviewSections.tsx OverviewDescriptionSection. |
 
 ---
 
@@ -164,6 +165,7 @@
 | CON-FEB25-09 | phase-7-polish.md | Map layer draw order (useMapLayerPresentationSync) |
 | CON-FEB25-07 | phase-2-animl.md | ANiML deployment query outSR=4326 |
 | CON-FEB25-08 | phase-7-polish.md | Left sidebar layer card right padding |
+| CON-FEB25-10 | phase-6-tnc-arcgis.md | TNC ArcGIS Overview description See more/paragraph spacing |
 
 ---
 
@@ -171,6 +173,7 @@
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 27, 2026 | CON-FEB25-10 complete. TNC ArcGIS Overview description: See more/See less toggle (5-line clamp), paragraph spacing (split on newlines, space-y-4), max-height CSS transition (300ms), fade gradient in collapsed state. OverviewDescriptionSection in TNCArcGISOverviewSections.tsx. | Cursor |
 | Feb 27, 2026 | CON-FEB25-09 complete. Map layer draw order now matches Map Layers widget order exactly: unpinned active layer renders on top, then pinned layers in widget top-to-bottom order. Fixed in useMapLayerPresentationSync. | Cursor |
 | Feb 27, 2026 | CON-FEB25-08 complete. Restored right padding (pr-1) for left sidebar layer cards. Regression fix: CategoryGroup and ServiceGroup wrappers had pr-0; cards now sit a few pixels from sidebar edge. | Cursor |
 | Feb 27, 2026 | CON-FEB25-07 complete. ANiML camera trap coordinate fix: outSR=4326 in deployment query reprojects NAD27→WGS84, correcting ~89m eastward displacement. | Cursor |

@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { ExternalLink, Eye, EyeOff, X } from 'lucide-react';
 import type { CatalogLayer } from '../../../types';
@@ -86,15 +87,66 @@ export function OverviewContextCard({
   );
 }
 
+// ~5 lines of text-sm (0.875rem) at leading-relaxed (1.625) ≈ 7.1rem.
+// A touch of extra headroom keeps the last visible line from being clipped.
+const COLLAPSED_MAX_HEIGHT = '7.5rem';
+
 export function OverviewDescriptionSection({ description }: OverviewDescriptionSectionProps) {
+  const [expanded, setExpanded] = useState(false);
+  const [fullHeight, setFullHeight] = useState(0);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Collapse back to preview when the layer changes.
+  useEffect(() => { setExpanded(false); }, [description]);
+
+  // Measure the full scrollHeight while the container can render unrestricted.
+  // We read it once per description change; the DOM is settled by this point.
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    setFullHeight(el.scrollHeight);
+  }, [description]);
+
+  const paragraphs = description.split(/\n+/).map(p => p.trim()).filter(Boolean);
+  const showToggle = description.length > 200;
+
   return (
     <div id="tnc-arcgis-overview-description-block" className="space-y-2">
       <h3 id="tnc-arcgis-overview-title" className="text-sm font-semibold text-gray-900">
         Feature Service Overview
       </h3>
-      <p id="tnc-arcgis-overview-description" className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
-        {description}
-      </p>
+
+      <div id="tnc-arcgis-overview-description-container" className="relative">
+        <div
+          id="tnc-arcgis-overview-description"
+          ref={contentRef}
+          className="overflow-hidden transition-[max-height] duration-300 ease-in-out text-sm text-gray-600 leading-relaxed space-y-4"
+          style={{ maxHeight: expanded ? fullHeight : COLLAPSED_MAX_HEIGHT }}
+        >
+          {paragraphs.map((para, i) => (
+            <p key={i}>{para}</p>
+          ))}
+        </div>
+
+        {/* Fade mask at the bottom of the collapsed state */}
+        {showToggle && !expanded && (
+          <div
+            id="tnc-arcgis-overview-description-fade"
+            className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent"
+          />
+        )}
+      </div>
+
+      {showToggle && (
+        <button
+          id="tnc-arcgis-overview-description-toggle"
+          type="button"
+          onClick={() => setExpanded(prev => !prev)}
+          className="text-xs font-medium text-emerald-700 hover:text-emerald-800 transition-colors"
+        >
+          {expanded ? 'See less ↑' : 'See more ↓'}
+        </button>
+      )}
     </div>
   );
 }
