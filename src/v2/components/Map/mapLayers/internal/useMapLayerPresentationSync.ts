@@ -83,12 +83,23 @@ export function useMapLayerPresentationSync({
 
     const map = view.map;
     const managed = managedLayersRef.current;
-    const pinnedArcLayers = pinnedLayers
-      .map((pinned) => managed.get(pinned.layerId))
+    const isActivePinned = !!concreteActiveLayerId
+      && pinnedLayers.some((pinned) => pinned.layerId === concreteActiveLayerId);
+    const desiredTopToBottomIds: string[] = [];
+
+    if (concreteActiveLayerId && !isActivePinned) {
+      desiredTopToBottomIds.push(concreteActiveLayerId);
+    }
+    desiredTopToBottomIds.push(...pinnedLayers.map((pinned) => pinned.layerId));
+
+    const desiredTopToBottomLayers = desiredTopToBottomIds
+      .map((layerId) => managed.get(layerId))
       .filter((layer): layer is Layer => !!layer);
 
-    for (let i = pinnedArcLayers.length - 1; i >= 0; i -= 1) {
-      map.reorder(pinnedArcLayers[i], map.layers.length - 1);
+    // ArcGIS draws highest-index layers on top. Move bottom->top entries to top
+    // in sequence so final draw order matches the widget's top->bottom order.
+    for (let i = desiredTopToBottomLayers.length - 1; i >= 0; i -= 1) {
+      map.reorder(desiredTopToBottomLayers[i], map.layers.length - 1);
     }
-  }, [pinnedLayers, viewRef, mapReady, managedLayersRef]);
+  }, [pinnedLayers, concreteActiveLayerId, viewRef, mapReady, managedLayersRef]);
 }

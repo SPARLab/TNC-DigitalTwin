@@ -1,7 +1,7 @@
 # Phase 7: Polish & Consistency
 
 **Status:** 🟡 In Progress  
-**Progress:** 5 / 10 tasks (D20-01, CON-FEB25-01, CON-FEB25-02, CON-FEB25-03, CON-FEB25-08 complete)  
+**Progress:** 6 / 10 tasks (D20-01, CON-FEB25-01, CON-FEB25-02, CON-FEB25-03, CON-FEB25-08, CON-FEB25-09 complete)  
 **Branch:** `v2/polish`  
 **Depends On:** Phases 0-6 (all complete)  
 **Owner:** TBD
@@ -39,6 +39,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | CON-FEB25-03 | 🟢 Complete | Feb 26, 2026 | Collapsable Edit Filters component across all layers | ANiML, Dendra, DataONE, GBIF, CalFlora now use `collapsible defaultExpanded` on EditFiltersCard; iNaturalist already had it. |
 | CON-FEB25-06 | ⚪ Not Started | Feb 25, 2026 | Analyze code for performance bottlenecks — low FPS in 3D view with iNaturalist | Scan for degradation; recommend/implement fixes. Extends 7.6. Source: consolidated-tasks-feb-25-2026.md |
 | CON-FEB25-08 | 🟢 Complete | Feb 27, 2026 | Restore right padding for left sidebar layer cards | Layer cards (e.g. Dangermond Preserve, Santa Barbara County Boundary) had regressed to pr-0; restored pr-1 so cards sit a few pixels from sidebar edge. CategoryGroup, ServiceGroup. |
+| CON-FEB25-09 | 🟢 Complete | Feb 27, 2026 | Map layer draw order matches Map Layers widget order | Unpinned active layer was rendering underneath pinned layers. Fixed in useMapLayerPresentationSync: unified desired stack = active-unpinned first, then pinned in widget order. |
 
 ## Task Status
 
@@ -68,6 +69,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | CON-FEB25-03 | Collapsable Edit Filters component across all layers | 🟢 Complete | | ANiML, Dendra, DataONE, GBIF, CalFlora now match iNaturalist collapsible pattern. Feb 26, 2026. |
 | CON-FEB25-06 | Analyze code for performance bottlenecks — low FPS in 3D view with iNaturalist | ⚪ Not Started | | Extends 7.6. Source: consolidated-tasks-feb-25-2026.md |
 | CON-FEB25-08 | Restore right padding for left sidebar layer cards | 🟢 Complete | | Layer cards had regressed to pr-0; restored pr-1 in CategoryGroup, ServiceGroup so cards sit a few pixels from sidebar edge. Feb 27, 2026. |
+| CON-FEB25-09 | Map layer draw order matches Map Layers widget order | 🟢 Complete | | Unpinned active layer was rendering underneath pinned layers. Fixed in useMapLayerPresentationSync: unified desired stack = active-unpinned first, then pinned in widget order. Feb 27, 2026. |
 | (more TBD) | | | | |
 
 **Status Legend:**

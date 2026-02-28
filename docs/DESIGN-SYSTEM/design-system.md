@@ -2059,6 +2059,7 @@ February 5, 2026
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 27, 2026 | **Map layer draw order (CON-FEB25-09).** Map Layers widget order now matches map render order exactly: unpinned active layer on top, pinned layers in widget top-to-bottom order. Fixed in useMapLayerPresentationSync. | Cursor |
 | Feb 25, 2026 | **REF-16: MapControlRail.** Unified right-rail map controls: 2D/3D text toggle, LiDAR visibility (3D only), zoom +/−, compass; all buttons 32×32. Replaces ArcGIS built-in zoom/compass/nav widgets. Documented in Map View Mode Toggle. | Cursor |
 | Feb 24, 2026 | **Map View Mode Toggle (2D/3D).** ViewModeToggle component: bottom-left floating button, action-oriented label ("3D" when in 2D, "2D" when in 3D), Globe/Map icons. MapContainer supports MapView/SceneView; all layers drape on terrain in 3D; LiDAR PointCloudLayer in 3D only. Documented in Layout Specifications. | Cursor |
 | Feb 20, 2026 | **D20-10: ArcGIS Overview description source.** TNC ArcGIS and Dendra Overview tabs fetch description from ArcGIS item metadata (serviceItemId → snippet + description) when available; HTML normalized for line breaks; `whitespace-pre-line` for display. No per-layer descriptions in layer list. | Cursor |

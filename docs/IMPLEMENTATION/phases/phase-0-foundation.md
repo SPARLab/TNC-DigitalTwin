@@ -379,7 +379,7 @@ interface Bookmark {
   - [ ] Dragged row visual: 60% opacity, 95% scale, 2deg rotation, dashed blue border (`#3b82f6`), elevated shadow
   - [ ] Drop target: 4px solid blue line (`#3b82f6`) at top or bottom of target card + subtle background highlight (`rgba(59, 130, 246, 0.05)`)
   - [ ] Drop animation: 400ms settle animation (`ease-out`) with green highlight (`#dcfce7`)
-  - [ ] Map z-order update: Reordering layers updates map rendering order (top of widget = top of map)
+  - [x] Map z-order update: Reordering layers updates map rendering order (top of widget = top of map) — CON-FEB25-09 (Feb 27, 2026): active unpinned layer on top, then pinned in widget order
   - [ ] Toast notification: "Map layer order updated" (2s auto-dismiss, bottom-center position)
   - [ ] Keyboard support (WCAG 2.1.1): Arrow Up/Down moves layer up/down one position, Shift+Home moves to top, Shift+End moves to bottom
   - [ ] ARIA live region announces position changes: "{LayerName} moved to position {N} of {total}"

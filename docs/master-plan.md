@@ -373,6 +373,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Feb 27, 2026 | Phase 7 | **CON-FEB25-09 complete.** Map layer draw order now matches Map Layers widget order exactly: unpinned active layer on top, pinned layers in widget top-to-bottom order. Fixed in useMapLayerPresentationSync. Phase 7: 6/10 tasks complete. | Cursor |
 | Feb 27, 2026 | Phase 7 | **CON-FEB25-08 complete.** Left sidebar layer card right padding restored. Regression fix: layer cards had pr-0 and touched sidebar edge; restored pr-1 in CategoryGroup, ServiceGroup so cards sit a few pixels from edge. Phase 7: 5/10 tasks complete. | Cursor |
 | Feb 27, 2026 | Phase 2 | **CON-FEB25-07 / ANIML-DEV-02 complete.** ANiML camera trap coordinate fix: deployment query now requests outSR=4326 so server reprojects NAD27→WGS84. Fixes ~89m eastward displacement of all camera markers on 3D map. | Cursor |
 | Feb 27, 2026 | Phase 1 | **CON-INAT-12 complete.** Land Cover "Other" subcategory added via back-end Data Catalog; three floaters grouped under Other. No front-end changes. Phase 1: 15/17 complete, 1 remaining. Portfolio: 166/185. | Cursor |

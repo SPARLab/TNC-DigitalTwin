@@ -16,6 +16,7 @@
 |----|--------|---------------------------|------------------|-------|
 | **— Cross-Cutting / Map Behavior —** | | | | |
 | CON-FEB25-01 | 🟢 Complete | Feb 25, 2026 | Map marker click zoom behavior: when zoomed in, pan/center only; when zoomed out, pan and zoom in | Implemented across iNaturalist, ANiML, Dendra, DataONE, CalFlora, GBIF. DataONE zoom-out edge case fixed: `useDatasetDetailOrchestrator.ts` was overriding smart zoom with hardcoded `zoom: 16`; replaced with `goToMarkerWithSmartZoom`. |
+| CON-FEB25-09 | 🟢 Complete | Feb 27, 2026 | Map layer draw order: match Map Layers widget order exactly (active unpinned on top, then pinned top-to-bottom) | Unpinned active layer was rendering underneath pinned layers. Fixed in `useMapLayerPresentationSync`: unified desired stack = active-unpinned first, then pinned in widget order. |
 | CON-FEB25-02 | 🟢 Complete | Feb 25, 2026 | Add thin white outline around all map icons (including emoji map icons) | Implemented as a 3D-only toggle (iNaturalist emoji + ANiML camera symbols). Currently disabled by default; 2D unchanged. |
 | CON-FEB25-03 | ⚪ Not Started | Feb 25, 2026 | Collapsable Edit Filters component across all layers | Cam traps (ANiML) should have collapsible Edit Filters section like iNaturalist. Ensure Edit Filters can be collapsed in all data sources. |
 | **— Dendra —** | | | | |
@@ -105,6 +106,20 @@
 
 ---
 
+### CON-FEB25-09 — Map Layer Draw Order Matches Widget Order
+
+**Source:** User feedback (verbal)  
+**Priority:** Medium  
+**Data Source:** Map Layers widget, all map rendering (V2)
+
+**Problem:** Unpinned active layer was rendering underneath all pinned layers. Map draw order did not match the Map Layers widget visual order.
+
+**Desired behavior:** The order in which layers appear in the Map Layers widget (top to bottom) should exactly match map render order. Active layer (when unpinned) should render on top; pinned layers should render in widget order (first pinned = next below active).
+
+**Completed (Feb 27, 2026):** Fixed in `useMapLayerPresentationSync`. Reorder logic now builds unified desired stack: active-unpinned first (when present), then pinned layers in widget order. ArcGIS layer reorder applies this stack so map draw order matches widget order for all data sources.
+
+---
+
 ### CON-FEB25-06 — Performance Bottleneck Analysis (Low FPS in 3D View)
 
 **Source:** User feedback (verbal)  
@@ -146,6 +161,7 @@
 | CON-FEB25-04 | phase-3-dendra.md | Dendra-specific query optimization |
 | CON-FEB25-05 | phase-6-tnc-arcgis.md | Left sidebar hierarchy styling |
 | CON-FEB25-06 | phase-7-polish.md | Performance audit (extends 7.6) |
+| CON-FEB25-09 | phase-7-polish.md | Map layer draw order (useMapLayerPresentationSync) |
 | CON-FEB25-07 | phase-2-animl.md | ANiML deployment query outSR=4326 |
 | CON-FEB25-08 | phase-7-polish.md | Left sidebar layer card right padding |
 
@@ -155,6 +171,7 @@
 
 | Date | Change | By |
 |------|--------|-----|
+| Feb 27, 2026 | CON-FEB25-09 complete. Map layer draw order now matches Map Layers widget order exactly: unpinned active layer renders on top, then pinned layers in widget top-to-bottom order. Fixed in useMapLayerPresentationSync. | Cursor |
 | Feb 27, 2026 | CON-FEB25-08 complete. Restored right padding (pr-1) for left sidebar layer cards. Regression fix: CategoryGroup and ServiceGroup wrappers had pr-0; cards now sit a few pixels from sidebar edge. | Cursor |
 | Feb 27, 2026 | CON-FEB25-07 complete. ANiML camera trap coordinate fix: outSR=4326 in deployment query reprojects NAD27→WGS84, correcting ~89m eastward displacement. | Cursor |
 | Feb 26, 2026 | CON-FEB25-03 complete. Collapsable Edit Filters applied to ANiML, Dendra, DataONE, GBIF, CalFlora. | Cursor |
