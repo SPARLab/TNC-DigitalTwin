@@ -186,7 +186,7 @@ body {
    - Keeps widget scroll affordance visible on hover/focus.
    ----------------------------------------------------------------------------- */
 .scroll-area-widget {
-  scrollbar-gutter: stable;
+  scrollbar-gutter: auto;
 }
 
 .scroll-area-widget::-webkit-scrollbar {

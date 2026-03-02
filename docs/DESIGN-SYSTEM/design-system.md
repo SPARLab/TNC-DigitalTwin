@@ -1,6 +1,6 @@
 # Design System - TNC Digital Catalog
 
-**Last Updated:** February 27, 2026 (Left sidebar right-edge divider: structural layer, hover-only overlay — CON-FEB25-05 polish)  
+**Last Updated:** March 2, 2026 (Map Layers widget scrollbar-gutter exception — POLISH-MAP-01)  
 **Purpose:** Single source of truth for styling decisions, component patterns, and design policies that affect multiple phases.
 
 ---
@@ -415,7 +415,9 @@ Shared auto-hiding overlay scrollbar pattern used across app scroll regions:
 
 **Global implementation:** CSS in `src/index.css` targets containers using overflow utility classes (`overflow-y-auto`, `overflow-auto`, `overflow-y-scroll`, `overflow-scroll`), so legends and sidebar lists inherit the same behavior by default.
 
-**Named implementations:** `.scroll-area-export-builder` (Export Builder modal), `.scroll-area-animl-images` (ANiML image results), `.scroll-area-widget` (floating widgets).
+**Named implementations:** `.scroll-area-export-builder` (Export Builder modal), `.scroll-area-animl-images` (ANiML image results), `.scroll-area-widget` (floating widgets — Map Layers, Bookmarked Items).
+
+**Exception — Map Layers widget:** `.scroll-area-widget` uses `scrollbar-gutter: auto` (not `stable`) so Active Layer and Pinned Layers sections span the full 320px width. A stable gutter reserved space and caused truncated layer names (e.g., "iNaturalist Observations"). POLISH-MAP-01, Mar 2, 2026.
 
 ### Semantic Naming
 
@@ -2059,6 +2061,7 @@ February 5, 2026
 
 | Date | Change | By |
 |------|--------|-----|
+| Mar 2, 2026 | **Map Layers widget scrollbar-gutter (POLISH-MAP-01).** `.scroll-area-widget` uses `scrollbar-gutter: auto` so Active Layer and Pinned Layers sections span full 320px width. Exception to stable-gutter pattern; documented in Export Builder Scroll Area section. | Cursor |
 | Feb 25, 2026 | **REF-16: MapControlRail.** Unified right-rail map controls: 2D/3D text toggle, LiDAR visibility (3D only), zoom +/−, compass; all buttons 32×32. Replaces ArcGIS built-in zoom/compass/nav widgets. Documented in Map View Mode Toggle. | Cursor |
 | Feb 24, 2026 | **Map View Mode Toggle (2D/3D).** ViewModeToggle component: bottom-left floating button, action-oriented label ("3D" when in 2D, "2D" when in 3D), Globe/Map icons. MapContainer supports MapView/SceneView; all layers drape on terrain in 3D; LiDAR PointCloudLayer in 3D only. Documented in Layout Specifications. | Cursor |
 | Feb 20, 2026 | **D20-10: ArcGIS Overview description source.** TNC ArcGIS and Dendra Overview tabs fetch description from ArcGIS item metadata (serviceItemId → snippet + description) when available; HTML normalized for line breaks; `whitespace-pre-line` for display. No per-layer descriptions in layer list. | Cursor |

@@ -1,7 +1,7 @@
 # Master Development Plan — V2 Digital Catalog
 
 **Created:** January 23, 2026  
-**Last Updated:** February 27, 2026 (CON-INAT-14 complete)  
+**Last Updated:** March 2, 2026 (POLISH-MAP-01 complete)  
 **Target Deadline:** February 20, 2026  
 **Status:** 🟡 In Progress
 
@@ -11,7 +11,7 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 166 / 185 complete (**90%**) |
+| **Active scope** | 166 / 186 complete (**89%**) |
 | **Active remaining** | 20 tasks |
 | **Phases complete** | 7 of 15 (0, 1, 2, 10, 11, 12b) |
 
@@ -56,12 +56,12 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 165
-- **Active remaining (Not Started + In Progress + Blocked):** 21
+- **Complete:** 166
+- **Active remaining (Not Started + In Progress + Blocked):** 20
 - **Backlog (not in active scope):** 3
 - **Deferred:** 5
 - **Won't Do:** 2
-- **Total tracked rows:** 195
+- **Total tracked rows:** 196
 
 ### Per-Phase Task Counts
 
@@ -74,7 +74,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 4 | DataOne | 🟡 In Progress | 16 | 1 | 0 | 0 | 0 | 17 | `v2/dataone` |
 | 5 | Export Builder | 🟡 In Progress | 10 | 5 | 0 | 0 | 0 | 15 | `v2/export-builder` |
 | 6 | TNC ArcGIS Services | 🟢 Complete | 45 | 0 | 0 | 0 | 0 | 45 | `v2/tnc-arcgis` |
-| 7 | Polish & Consistency | 🟡 In Progress | 4 | 5 | 0 | 0 | 0 | 9 | `v2/polish` |
+| 7 | Polish & Consistency | 🟡 In Progress | 5 | 4 | 0 | 0 | 0 | 10 | `v2/polish` |
 | 8 | Calflora | 🟡 In Progress | 8 | 1 | 0 | 0 | 0 | 9 | `v2/calflora` |
 | 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
 | 10 | DroneDeploy | 🟢 Complete | 14 | 0 | 0 | 0 | 0 | 14 | `v2/dronedeploy` |
@@ -373,6 +373,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Mar 2, 2026 | Phase 7 | **POLISH-MAP-01 complete.** Map Layers widget inner content width: `.scroll-area-widget` scrollbar-gutter changed from `stable` to `auto` so Active Layer and Pinned Layers sections span full 320px width. Fixes truncated layer names (e.g., "iNaturalist Observations"). | Cursor |
 | Feb 27, 2026 | Phase 2 | **CON-FEB25-07 / ANIML-DEV-02 complete.** ANiML camera trap coordinate fix: deployment query now requests outSR=4326 so server reprojects NAD27→WGS84. Fixes ~89m eastward displacement of all camera markers on 3D map. | Cursor |
 | Feb 27, 2026 | Phase 1 | **CON-INAT-12 complete.** Land Cover "Other" subcategory added via back-end Data Catalog; three floaters grouped under Other. No front-end changes. Phase 1: 15/17 complete, 1 remaining. Portfolio: 166/185. | Cursor |
 | Feb 27, 2026 | Phase 1 | **CON-INAT-11 complete.** CalFlora soft-hidden from catalog (EXTERNAL_LAYERS in layerRegistry); custom sidebar/map/adapter logic retained for future re-enable. Added CON-INAT-13 for licensing-safe media filter before reactivation. Phase 1: 14/17 complete, 2 remaining. Portfolio: 165/185. | Cursor |

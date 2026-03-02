@@ -1,7 +1,7 @@
 # Phase 7: Polish & Consistency
 
 **Status:** 🟡 In Progress  
-**Progress:** 4 / 9 tasks (D20-01, CON-FEB25-01, CON-FEB25-02, CON-FEB25-03 complete)  
+**Progress:** 5 / 10 tasks (D20-01, CON-FEB25-01, CON-FEB25-02, CON-FEB25-03, POLISH-MAP-01 complete)  
 **Branch:** `v2/polish`  
 **Depends On:** Phases 0-6 (all complete)  
 **Owner:** TBD
@@ -37,6 +37,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | CON-FEB25-01 | 🟢 Complete | Feb 25, 2026 | Map marker click: when zoomed in, pan/center only; when zoomed out, pan and zoom in | Implemented across iNaturalist, ANiML, Dendra, DataONE, CalFlora, and GBIF marker clicks. DataONE zoom-out edge case fixed: root cause was `useDatasetDetailOrchestrator.ts` overriding smart zoom with hardcoded `zoom: 16`. Source: consolidated-tasks-feb-25-2026.md |
 | CON-FEB25-02 | 🟢 Complete | Feb 25, 2026 | Add thin white outline around all map icons (including emoji) | Implemented as a 3D-only toggle (iNaturalist emoji + ANiML camera symbols). Currently disabled by default; 2D unchanged. Source: consolidated-tasks-feb-25-2026.md |
 | CON-FEB25-03 | 🟢 Complete | Feb 26, 2026 | Collapsable Edit Filters component across all layers | ANiML, Dendra, DataONE, GBIF, CalFlora now use `collapsible defaultExpanded` on EditFiltersCard; iNaturalist already had it. |
+| POLISH-MAP-01 | 🟢 Complete | Mar 2, 2026 | Map Layers widget inner content width — content not spanning full widget width | Changed `.scroll-area-widget` from `scrollbar-gutter: stable` to `scrollbar-gutter: auto` in src/index.css so Active Layer and Pinned Layers sections use full 320px width. |
 | CON-FEB25-06 | ⚪ Not Started | Feb 25, 2026 | Analyze code for performance bottlenecks — low FPS in 3D view with iNaturalist | Scan for degradation; recommend/implement fixes. Extends 7.6. Source: consolidated-tasks-feb-25-2026.md |
 
 ## Task Status
@@ -65,6 +66,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | CON-FEB25-01 | Map marker click: when zoomed in, pan/center only; when zoomed out, pan and zoom in | 🟢 Complete | Codex | Shared smart goTo helper wired across all data sources. DataONE zoom-out edge case resolved: `useDatasetDetailOrchestrator.ts` was overriding smart zoom with hardcoded `zoom: 16`; replaced with `goToMarkerWithSmartZoom({ defaultZoomLevel: 16 })`. Source: consolidated-tasks-feb-25-2026.md |
 | CON-FEB25-02 | Add thin white outline around all map icons (including emoji) | 🟢 Complete | Codex | 3D-only thin white halo added to iNaturalist emoji markers and ANiML camera symbols as a toggle. Currently disabled by default; 2D unchanged. Source: consolidated-tasks-feb-25-2026.md |
 | CON-FEB25-03 | Collapsable Edit Filters component across all layers | 🟢 Complete | | ANiML, Dendra, DataONE, GBIF, CalFlora now match iNaturalist collapsible pattern. Feb 26, 2026. |
+| POLISH-MAP-01 | Map Layers widget inner content width | 🟢 Complete | | `.scroll-area-widget` scrollbar-gutter changed from stable to auto so sections span full widget width. Mar 2, 2026. |
 | CON-FEB25-06 | Analyze code for performance bottlenecks — low FPS in 3D view with iNaturalist | ⚪ Not Started | | Extends 7.6. Source: consolidated-tasks-feb-25-2026.md |
 | (more TBD) | | | | |
 
