@@ -24,9 +24,18 @@ const FLYING_BIRD_SVG = [
 ].join('');
 
 const FLYING_BIRD_MARKER_URL = `data:image/svg+xml;utf8,${encodeURIComponent(FLYING_BIRD_SVG)}`;
+
+const DIRECTION_MARKER_OFFSET_METERS = 25;
+
 const createMovementOverlayLayer = () => new GraphicsLayer({
   id: 'v2-motus-inferred-movement-overlay',
   listMode: 'hide',
+});
+
+const createMarkerOverlayLayer = () => new GraphicsLayer({
+  id: 'v2-motus-direction-marker-overlay',
+  listMode: 'hide',
+  elevationInfo: { mode: 'relative-to-ground', offset: DIRECTION_MARKER_OFFSET_METERS },
 });
 
 export function useMotusMapBehavior(
@@ -49,9 +58,19 @@ export function useMotusMapBehavior(
     createLoadingScope,
   } = useMotusFilter();
   const overlayRef = useRef<GraphicsLayer | null>(null);
+  const markerOverlayRef = useRef<GraphicsLayer | null>(null);
   const movementContextRef = useRef<MotusMovementContext | null>(null);
   const wasPlaybackPlayingRef = useRef(false);
   const [movementRenderVersion, setMovementRenderVersion] = useState(0);
+
+  const activeLegGraphicRef = useRef<Graphic | null>(null);
+  const directionMarkerGraphicRef = useRef<Graphic | null>(null);
+  const renderedBaseRef = useRef<{
+    version: number;
+    stepIndex: number;
+    viewMode: string;
+    markerMode: string;
+  } | null>(null);
 
   const hasMotusOnMap = pinnedLayers.some((layer) => layer.layerId.startsWith('service-181') || layer.layerId === 'dataset-181')
     || !!(activeLayer && (activeLayer.layerId.startsWith('service-181') || activeLayer.layerId === 'dataset-181'));
@@ -84,26 +103,27 @@ export function useMotusMapBehavior(
     if (!view?.map) return;
     if (!hasMotusOnMap && !selectedTagId) {
       if (overlayRef.current) overlayRef.current.removeAll();
+      if (markerOverlayRef.current) markerOverlayRef.current.removeAll();
       return;
     }
 
     const map = view.map;
-    if (!overlayRef.current) {
-      overlayRef.current = createMovementOverlayLayer();
-      map.add(overlayRef.current);
-      setMovementRenderVersion((version) => version + 1);
-    } else if (!map.findLayerById(overlayRef.current.id)) {
-      // Recreate overlay when map/view is replaced (2D<->3D). Reusing a stale
-      // GraphicsLayer instance from the previous view can fail SceneView layerview creation.
-      try {
-        overlayRef.current.destroy();
-      } catch {
-        // Best effort cleanup; continue with fresh layer allocation.
+    const ensureLayer = (
+      ref: React.MutableRefObject<GraphicsLayer | null>,
+      factory: () => GraphicsLayer,
+    ) => {
+      if (!ref.current) {
+        ref.current = factory();
+        map.add(ref.current);
+      } else if (!map.findLayerById(ref.current.id)) {
+        try { ref.current.destroy(); } catch { /* best-effort cleanup */ }
+        ref.current = factory();
+        map.add(ref.current);
       }
-      overlayRef.current = createMovementOverlayLayer();
-      map.add(overlayRef.current);
-      setMovementRenderVersion((version) => version + 1);
-    }
+    };
+    ensureLayer(overlayRef, createMovementOverlayLayer);
+    ensureLayer(markerOverlayRef, createMarkerOverlayLayer);
+    setMovementRenderVersion((version) => version + 1);
 
     // Add a stable tagged-animals layer if the managed map flow has not yet instantiated one.
     const selectedTagWhere = selectedTagId != null ? `tag_id = ${selectedTagId}` : '1=0';
@@ -125,223 +145,212 @@ export function useMotusMapBehavior(
     }
   }, [viewRef, hasMotusOnMap, selectedTagId, mapReady]);
 
+  // ---------------------------------------------------------------------------
+  // Helper: build a leg line symbol for the current view mode.
+  // ---------------------------------------------------------------------------
+  const makeLegSymbol = () =>
+    viewMode === '3d'
+      ? {
+          type: 'line-3d' as const,
+          symbolLayers: [{
+            type: 'line' as const,
+            size: 2.6,
+            material: { color: [217, 119, 6, 0.95] as [number, number, number, number] },
+            cap: 'round' as const,
+            join: 'round' as const,
+          }],
+        }
+      : {
+          type: 'simple-line' as const,
+          color: [217, 119, 6, 0.9] as [number, number, number, number],
+          width: 2.4,
+          style: 'solid' as const,
+        };
+
+  // ---------------------------------------------------------------------------
+  // Helper: build a direction-marker symbol.
+  // ---------------------------------------------------------------------------
+  const makeMarkerSymbol = (fromLon: number, fromLat: number, tipLon: number, tipLat: number) => {
+    if (playbackDirectionMarkerMode === 'bird') {
+      return {
+        type: 'picture-marker' as const,
+        url: FLYING_BIRD_MARKER_URL,
+        width: '20px',
+        height: '20px',
+      };
+    }
+    const angle = (Math.atan2(tipLon - fromLon, tipLat - fromLat) * 180) / Math.PI;
+    return {
+      type: 'simple-marker' as const,
+      style: 'triangle' as const,
+      size: 10,
+      angle,
+      color: [217, 119, 6, 0.95] as [number, number, number, number],
+      outline: { color: [255, 255, 255, 0.9] as [number, number, number, number], width: 0.9 },
+    };
+  };
+
+  // ---------------------------------------------------------------------------
+  // Effect 1 — Rebuild STATIC graphics (stations + completed legs) only when
+  // the underlying data, step index, or view mode changes.
+  // ---------------------------------------------------------------------------
   useEffect(() => {
     const overlay = overlayRef.current;
     if (!overlay) return;
-
+    const markerLayer = markerOverlayRef.current;
     const context = movementContextRef.current;
-    overlay.removeAll();
-    if (!context) return;
 
-    for (const station of context.stations) {
-      overlay.add(new Graphic({
-        geometry: {
-          type: 'point',
-          longitude: station.longitude,
-          latitude: station.latitude,
-        },
-        attributes: {
-          stationId: station.stationId,
-          stationName: station.name,
-        },
-        symbol: {
-          type: 'simple-marker',
-          style: 'circle',
-          size: 8,
-          color: [22, 163, 74, 0.9],
-          outline: {
-            color: [255, 255, 255, 0.9],
-            width: 1.1,
-          },
-        },
-        popupTemplate: {
-          title: '{stationName}',
-          content: 'Receiver station context for inferred MOTUS movement.',
-        },
-      }));
+    if (!context) {
+      overlay.removeAll();
+      if (markerLayer) markerLayer.removeAll();
+      activeLegGraphicRef.current = null;
+      directionMarkerGraphicRef.current = null;
+      renderedBaseRef.current = null;
+      return;
     }
 
-    const drawLeg = (
-      fromLongitude: number,
-      fromLatitude: number,
-      toLongitude: number,
-      toLatitude: number,
-      attributes: Record<string, unknown>,
-    ) => {
-      const hasFiniteCoordinates = [fromLongitude, fromLatitude, toLongitude, toLatitude]
-        .every((value) => Number.isFinite(value));
-      if (!hasFiniteCoordinates) return;
-      const hasMovement = Math.abs(toLongitude - fromLongitude) > 0.0000001
-        || Math.abs(toLatitude - fromLatitude) > 0.0000001;
-      if (!hasMovement) return;
-
-      const legOffsetMeters = viewMode === '3d' ? 18 : 12;
-      const legSymbol = viewMode === '3d'
-        ? {
-            type: 'line-3d' as const,
-            symbolLayers: [{
-              type: 'line' as const,
-              size: 2.6,
-              material: {
-                color: [217, 119, 6, 0.95] as [number, number, number, number],
-              },
-              cap: 'round' as const,
-              join: 'round' as const,
-            }],
-          }
-        : {
-            type: 'simple-line' as const,
-            color: [217, 119, 6, 0.9] as [number, number, number, number],
-            width: 2.4,
-            style: 'solid' as const,
-          };
-
-      overlay.add(new Graphic({
-        geometry: {
-          type: 'polyline',
-          paths: [[
-            [fromLongitude, fromLatitude],
-            [toLongitude, toLatitude],
-          ]],
-          spatialReference: { wkid: 4326 },
-        },
-        attributes,
-        elevationInfo: {
-          mode: 'relative-to-ground',
-          offset: legOffsetMeters,
-        },
-        symbol: legSymbol,
-        popupTemplate: {
-          title: 'Inferred movement leg',
-          content: '<div><p>{evidence}</p><p><strong>Step:</strong> {stepIndex}</p><p><strong>Detection window:</strong> {startDate} to {endDate}</p></div>',
-        },
-      } as any));
-    };
-
-    const drawDirectionMarker = (
-      fromLongitude: number,
-      fromLatitude: number,
-      tipLongitude: number,
-      tipLatitude: number,
-      attributes: Record<string, unknown>,
-    ) => {
-      const dx = tipLongitude - fromLongitude;
-      const dy = tipLatitude - fromLatitude;
-      const angle = (Math.atan2(dx, dy) * 180) / Math.PI;
-      const shouldUseBirdMarker = playbackDirectionMarkerMode === 'bird' && viewMode !== '3d';
-      const symbol = shouldUseBirdMarker
-        ? {
-            type: 'picture-marker' as const,
-            url: FLYING_BIRD_MARKER_URL,
-            width: '20px',
-            height: '20px',
-          }
-        : {
-            type: 'simple-marker' as const,
-            style: 'triangle' as const,
-            size: 10,
-            angle,
-            color: [217, 119, 6, 0.95] as [number, number, number, number],
-            outline: {
-              color: [255, 255, 255, 0.9] as [number, number, number, number],
-              width: 0.9,
-            },
-          };
-      overlay.add(new Graphic({
-        geometry: {
-          type: 'point',
-          longitude: tipLongitude,
-          latitude: tipLatitude,
-        },
-        attributes,
-        elevationInfo: {
-          mode: 'relative-to-ground',
-          offset: 16,
-        },
-        symbol,
-      } as any));
-    };
+    const base = renderedBaseRef.current;
+    const needsFullRebuild =
+      !base
+      || base.version !== movementRenderVersion
+      || base.viewMode !== viewMode;
 
     const visibleLegCount = Math.max(0, Math.min(context.legs.length, playbackStepIndex));
-    const completedLegs = context.legs.slice(0, visibleLegCount);
 
-    for (const leg of completedLegs) {
-      drawLeg(
-        leg.from.longitude,
-        leg.from.latitude,
-        leg.to.longitude,
-        leg.to.latitude,
-        {
-          legId: leg.id,
-          legKind: leg.kind,
-          stepIndex: leg.stepIndex,
-          startDate: leg.startDate || 'Unknown',
-          endDate: leg.endDate || 'Unknown',
-          confidence: leg.confidence,
-          evidence: leg.evidence,
-        },
-      );
+    if (needsFullRebuild) {
+      overlay.removeAll();
+      if (markerLayer) markerLayer.removeAll();
+      activeLegGraphicRef.current = null;
+      directionMarkerGraphicRef.current = null;
+
+      for (const station of context.stations) {
+        overlay.add(new Graphic({
+          geometry: { type: 'point', longitude: station.longitude, latitude: station.latitude },
+          attributes: { stationId: station.stationId, stationName: station.name },
+          symbol: {
+            type: 'simple-marker', style: 'circle', size: 8,
+            color: [22, 163, 74, 0.9],
+            outline: { color: [255, 255, 255, 0.9], width: 1.1 },
+          },
+          popupTemplate: { title: '{stationName}', content: 'Receiver station context for inferred MOTUS movement.' },
+        }));
+      }
+
+      const legSym = makeLegSymbol();
+      for (const leg of context.legs.slice(0, visibleLegCount)) {
+        overlay.add(new Graphic({
+          geometry: {
+            type: 'polyline',
+            paths: [[[leg.from.longitude, leg.from.latitude], [leg.to.longitude, leg.to.latitude]]],
+            spatialReference: { wkid: 4326 },
+          },
+          symbol: legSym,
+        } as any));
+      }
+
+      renderedBaseRef.current = {
+        version: movementRenderVersion,
+        stepIndex: playbackStepIndex,
+        viewMode,
+        markerMode: playbackDirectionMarkerMode,
+      };
+    } else if (base.stepIndex !== playbackStepIndex) {
+      // Incremental update — add only newly-completed legs.
+      const prevCount = Math.max(0, Math.min(context.legs.length, base.stepIndex));
+      const legSym = makeLegSymbol();
+      for (const leg of context.legs.slice(prevCount, visibleLegCount)) {
+        overlay.add(new Graphic({
+          geometry: {
+            type: 'polyline',
+            paths: [[[leg.from.longitude, leg.from.latitude], [leg.to.longitude, leg.to.latitude]]],
+            spatialReference: { wkid: 4326 },
+          },
+          symbol: legSym,
+        } as any));
+      }
+      renderedBaseRef.current = { ...base, stepIndex: playbackStepIndex };
     }
+  }, [viewMode, playbackStepIndex, movementRenderVersion, mapReady, playbackDirectionMarkerMode]);
+
+  // ---------------------------------------------------------------------------
+  // Effect 2 — Update DYNAMIC graphics (active partial leg + direction marker)
+  // in-place every animation tick. No removeAll, no flicker.
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    const overlay = overlayRef.current;
+    const markerLayer = markerOverlayRef.current;
+    const context = movementContextRef.current;
+    if (!overlay || !context) return;
 
     const activeLeg = context.legs[playbackStepIndex];
-    const isDrawingPartial = isPlaybackPlaying
-      && !!activeLeg
-      && playbackTransitionProgress > 0
-      && playbackTransitionProgress < 1;
+    const isDrawingPartial =
+      isPlaybackPlaying && !!activeLeg && playbackTransitionProgress > 0 && playbackTransitionProgress < 1;
 
     if (activeLeg && isDrawingPartial) {
-      const partialLongitude = activeLeg.from.longitude
-        + ((activeLeg.to.longitude - activeLeg.from.longitude) * playbackTransitionProgress);
-      const partialLatitude = activeLeg.from.latitude
-        + ((activeLeg.to.latitude - activeLeg.from.latitude) * playbackTransitionProgress);
-      const activeAttributes = {
-        legId: activeLeg.id,
-        legKind: activeLeg.kind,
-        stepIndex: activeLeg.stepIndex,
-        startDate: activeLeg.startDate || 'Unknown',
-        endDate: activeLeg.endDate || 'Unknown',
-        confidence: activeLeg.confidence,
-        evidence: activeLeg.evidence,
+      const tipLon = activeLeg.from.longitude + (activeLeg.to.longitude - activeLeg.from.longitude) * playbackTransitionProgress;
+      const tipLat = activeLeg.from.latitude + (activeLeg.to.latitude - activeLeg.from.latitude) * playbackTransitionProgress;
+
+      const legGeom = {
+        type: 'polyline' as const,
+        paths: [[[activeLeg.from.longitude, activeLeg.from.latitude], [tipLon, tipLat]]],
+        spatialReference: { wkid: 4326 },
       };
-      drawLeg(
-        activeLeg.from.longitude,
-        activeLeg.from.latitude,
-        partialLongitude,
-        partialLatitude,
-        activeAttributes,
-      );
-      drawDirectionMarker(
-        activeLeg.from.longitude,
-        activeLeg.from.latitude,
-        partialLongitude,
-        partialLatitude,
-        activeAttributes,
-      );
-    } else if (completedLegs.length > 0) {
-      const lastLeg = completedLegs[completedLegs.length - 1];
-      drawDirectionMarker(
-        lastLeg.from.longitude,
-        lastLeg.from.latitude,
-        lastLeg.to.longitude,
-        lastLeg.to.latitude,
-        {
-          legId: lastLeg.id,
-          legKind: lastLeg.kind,
-          stepIndex: lastLeg.stepIndex,
-          startDate: lastLeg.startDate || 'Unknown',
-          endDate: lastLeg.endDate || 'Unknown',
-          confidence: lastLeg.confidence,
-          evidence: lastLeg.evidence,
-        },
-      );
+      const markerGeom = { type: 'point' as const, longitude: tipLon, latitude: tipLat };
+      const markerSym = makeMarkerSymbol(activeLeg.from.longitude, activeLeg.from.latitude, tipLon, tipLat);
+
+      // --- active leg line ---
+      if (activeLegGraphicRef.current) {
+        (activeLegGraphicRef.current as any).geometry = legGeom;
+      } else {
+        const g = new Graphic({ geometry: legGeom, symbol: makeLegSymbol() } as any);
+        overlay.add(g);
+        activeLegGraphicRef.current = g;
+      }
+
+      // --- direction marker ---
+      if (directionMarkerGraphicRef.current) {
+        (directionMarkerGraphicRef.current as any).geometry = markerGeom;
+        (directionMarkerGraphicRef.current as any).symbol = markerSym;
+      } else if (markerLayer) {
+        const g = new Graphic({ geometry: markerGeom, symbol: markerSym } as any);
+        markerLayer.add(g);
+        directionMarkerGraphicRef.current = g;
+      }
+    } else {
+      // Not animating — remove the partial leg graphic.
+      if (activeLegGraphicRef.current) {
+        overlay.remove(activeLegGraphicRef.current);
+        activeLegGraphicRef.current = null;
+      }
+
+      // Place the marker at the tip of the last completed leg.
+      const visibleLegCount = Math.max(0, Math.min(context.legs.length, playbackStepIndex));
+      const lastLeg = visibleLegCount > 0 ? context.legs[visibleLegCount - 1] : null;
+
+      if (lastLeg) {
+        const markerGeom = { type: 'point' as const, longitude: lastLeg.to.longitude, latitude: lastLeg.to.latitude };
+        const markerSym = makeMarkerSymbol(lastLeg.from.longitude, lastLeg.from.latitude, lastLeg.to.longitude, lastLeg.to.latitude);
+
+        if (directionMarkerGraphicRef.current) {
+          (directionMarkerGraphicRef.current as any).geometry = markerGeom;
+          (directionMarkerGraphicRef.current as any).symbol = markerSym;
+        } else if (markerLayer) {
+          const g = new Graphic({ geometry: markerGeom, symbol: markerSym } as any);
+          markerLayer.add(g);
+          directionMarkerGraphicRef.current = g;
+        }
+      } else if (directionMarkerGraphicRef.current && markerLayer) {
+        markerLayer.remove(directionMarkerGraphicRef.current);
+        directionMarkerGraphicRef.current = null;
+      }
     }
   }, [
-    viewMode,
     playbackStepIndex,
     playbackTransitionProgress,
     isPlaybackPlaying,
     playbackDirectionMarkerMode,
     movementRenderVersion,
+    viewMode,
     mapReady,
   ]);
 
@@ -409,6 +418,7 @@ export function useMotusMapBehavior(
     if (!hasMotusOnMap) {
       movementContextRef.current = null;
       overlay.removeAll();
+      if (markerOverlayRef.current) markerOverlayRef.current.removeAll();
       setMovementRenderVersion((version) => version + 1);
       setMovementDisclaimer('Choose a preserve-eligible tag to render its full inferred journey across receiver stations.');
       setPlaybackStepLabels(['Journey start']);
@@ -457,6 +467,7 @@ export function useMotusMapBehavior(
         console.error('[MOTUS] Failed to render movement context', error);
         movementContextRef.current = null;
         overlay.removeAll();
+        if (markerOverlayRef.current) markerOverlayRef.current.removeAll();
         setMovementRenderVersion((version) => version + 1);
         setMovementDisclaimer('Unable to render journey for this preserve-eligible tag. Receiver stations remain visible.');
         setPlaybackStepLabels(['Journey start']);

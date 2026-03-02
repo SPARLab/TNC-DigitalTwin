@@ -56,6 +56,8 @@ export function useDendraChartPanels({
     filter: DendraChartFilter,
   ) => {
     if (!panel.station || !panel.summary) return;
+    const station = panel.station;
+    const summary = panel.summary;
 
     const nextVersion = (requestVersionRef.current.get(panelId) ?? 0) + 1;
     requestVersionRef.current.set(panelId, nextVersion);
@@ -76,9 +78,9 @@ export function useDendraChartPanels({
 
     fetchTimeSeries(
       panel.sourceServiceUrl,
-      panel.station.station_id,
-      panel.summary.datastream_name,
-      panel.summary.dendra_ds_id,
+      station.station_id,
+      summary.datastream_name,
+      summary.dendra_ds_id,
       {
         startDate: initialStartDate || undefined,
         endDate: initialEndDate || undefined,
@@ -121,9 +123,9 @@ export function useDendraChartPanels({
             try {
               const chunk = await fetchTimeSeries(
                 panel.sourceServiceUrl,
-                panel.station.station_id,
-                panel.summary.datastream_name,
-                panel.summary.dendra_ds_id,
+                station.station_id,
+                summary.datastream_name,
+                summary.dendra_ds_id,
                 {
                   startDate: chunkStartDate,
                   endDate: chunkEndDate,

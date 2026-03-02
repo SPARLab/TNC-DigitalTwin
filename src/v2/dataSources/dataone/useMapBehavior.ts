@@ -347,19 +347,25 @@ export function useDataOneMapBehavior(
           const aggregateGeometry = graphicHit.graphic.geometry;
           if (aggregateGeometry?.type === 'point') {
             const aggPoint = aggregateGeometry as Point;
+            const longitude = Number(aggPoint.longitude);
+            const latitude = Number(aggPoint.latitude);
+            if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return;
             void goToMarkerWithSmartZoom({
               view,
-              longitude: aggPoint.longitude,
-              latitude: aggPoint.latitude,
+              longitude,
+              latitude,
               duration: 450,
             });
           } else if (aggregateGeometry) {
             const centroid = aggregateGeometry.extent?.center;
             if (centroid) {
+              const longitude = Number(centroid.longitude);
+              const latitude = Number(centroid.latitude);
+              if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return;
               void goToMarkerWithSmartZoom({
                 view,
-                longitude: centroid.longitude,
-                latitude: centroid.latitude,
+                longitude,
+                latitude,
                 duration: 450,
               });
             }
@@ -386,10 +392,13 @@ export function useDataOneMapBehavior(
         const geometry = graphicHit.graphic.geometry;
         if (geometry?.type === 'point') {
           const point = geometry as Point;
+          const longitude = Number(point.longitude);
+          const latitude = Number(point.latitude);
+          if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return;
           void goToMarkerWithSmartZoom({
             view,
-            longitude: point.longitude,
-            latitude: point.latitude,
+            longitude,
+            latitude,
             duration: 600,
           });
           view.openPopup({ features: [graphicHit.graphic], location: point });
@@ -441,10 +450,13 @@ export function useDataOneMapBehavior(
         const geometry = feature.geometry;
         if (geometry?.type === 'point') {
           const point = geometry as Point;
+          const longitude = Number(point.longitude);
+          const latitude = Number(point.latitude);
+          if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return;
           await goToMarkerWithSmartZoom({
             view,
-            longitude: point.longitude,
-            latitude: point.latitude,
+            longitude,
+            latitude,
             duration: 700,
           });
           if (cancelled) return;
@@ -456,10 +468,13 @@ export function useDataOneMapBehavior(
         if (geometry) {
           const centroid = geometry.extent?.center;
           if (centroid) {
+            const longitude = Number(centroid.longitude);
+            const latitude = Number(centroid.latitude);
+            if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return;
             await goToMarkerWithSmartZoom({
               view,
-              longitude: centroid.longitude,
-              latitude: centroid.latitude,
+              longitude,
+              latitude,
               duration: 700,
             });
           }
