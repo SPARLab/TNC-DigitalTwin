@@ -829,6 +829,16 @@ interface FilterSectionProps {
 
 **Component location:** `src/v2/components/RightSidebar/FilterSection.tsx`
 
+### Select All / Clear All Bulk Actions (Shared Primitive)
+
+**Policy:** Multi-select filter sections (e.g., legend items, species lists) use a shared `SelectAllClearAllActions` component for consistent styling across TNC ArcGIS legend, iNaturalist Filter Taxa, Filter Species, and iNaturalist legend.
+
+**Styling:** Emerald text (`text-emerald-600 hover:text-emerald-700`) when actionable; gray (`text-gray-400 cursor-not-allowed`) when disabled. Gray `|` separator between buttons. No pill/button backgrounds.
+
+**Component location:** `src/v2/components/shared/SelectAllClearAllActions.tsx`
+
+**Usage:** TNCArcGISLegendWidget, INaturalistBrowseTab (Filter Species). INaturalistLegendWidget and Filter Taxa use matching inline styling. Supports `disableSelectAll`, `disableClearAll`, and `stopPropagation` for use inside clickable headers.
+
 ### Per-Data-Source Control Inventory
 
 | Data Source | Level | Header | Controls |
@@ -1817,7 +1827,7 @@ Images benefit from continuous browsing (researchers scan visually). "Load More"
 | Layer count badge | `text-xs text-gray-400 ml-auto` |
 | Layer row (inactive) | `py-1.5 px-3 pl-9 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 cursor-pointer rounded-sm` |
 | Layer row (active) | `py-1.5 px-3 pl-9 text-sm font-semibold text-gray-900 bg-emerald-50 border-l-2 border-emerald-600 rounded-sm` |
-| Row container (category) | `pl-1 pr-1` — padding-based indentation; content flush to right edge |
+| Row container (category) | `pl-1 pr-1` — padding-based indentation; pr-1 keeps layer cards a few pixels from sidebar edge |
 | Row container (subcategory) | `pl-3 pr-1` — deeper indent for nested items |
 
 **Behavior:**
@@ -2062,8 +2072,10 @@ February 5, 2026
 | Date | Change | By |
 |------|--------|-----|
 | Mar 2, 2026 | **Map Layers widget scrollbar-gutter (POLISH-MAP-01).** `.scroll-area-widget` uses `scrollbar-gutter: auto` so Active Layer and Pinned Layers sections span full 320px width. Exception to stable-gutter pattern; documented in Export Builder Scroll Area section. | Cursor |
+| Feb 27, 2026 | **Map layer draw order (CON-FEB25-09).** Map Layers widget order now matches map render order exactly: unpinned active layer on top, pinned layers in widget top-to-bottom order. Fixed in useMapLayerPresentationSync. | Cursor |
 | Feb 25, 2026 | **REF-16: MapControlRail.** Unified right-rail map controls: 2D/3D text toggle, LiDAR visibility (3D only), zoom +/−, compass; all buttons 32×32. Replaces ArcGIS built-in zoom/compass/nav widgets. Documented in Map View Mode Toggle. | Cursor |
 | Feb 24, 2026 | **Map View Mode Toggle (2D/3D).** ViewModeToggle component: bottom-left floating button, action-oriented label ("3D" when in 2D, "2D" when in 3D), Globe/Map icons. MapContainer supports MapView/SceneView; all layers drape on terrain in 3D; LiDAR PointCloudLayer in 3D only. Documented in Layout Specifications. | Cursor |
+| Feb 27, 2026 | **CON-FEB25-10: TNC ArcGIS Overview description UX.** See more/See less toggle (5-line clamp when collapsed); split on newlines for consistent single blank-line gap (space-y-4); max-height CSS transition (300ms); fade gradient in collapsed state. OverviewDescriptionSection in TNCArcGISOverviewSections.tsx. | Cursor |
 | Feb 20, 2026 | **D20-10: ArcGIS Overview description source.** TNC ArcGIS and Dendra Overview tabs fetch description from ArcGIS item metadata (serviceItemId → snippet + description) when available; HTML normalized for line breaks; `whitespace-pre-line` for display. No per-layer descriptions in layer list. | Cursor |
 | Feb 19, 2026 | **Dendra Map Layers child labels (CON-DENDRA-04).** Dynamic labels: collapsed `N data streams, M stations`; expanded by station scope. Pin count badge: number + blue pin icon only. Documented in Components table and phase-3-dendra.md. | Cursor |
 | Feb 27, 2026 | **Left sidebar right-edge divider (CON-FEB25-05 polish).** Right divider as absolute structural layer (z-10); only hovered category/subcategory/group rows overlay it (hover:z-[20]). Divider visible by default; hovered row border/shadow paints over divider. Files: LeftSidebar, CategoryGroup, ServiceGroup. | Cursor |

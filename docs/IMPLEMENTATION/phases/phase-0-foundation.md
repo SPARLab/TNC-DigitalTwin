@@ -379,7 +379,7 @@ interface Bookmark {
   - [ ] Dragged row visual: 60% opacity, 95% scale, 2deg rotation, dashed blue border (`#3b82f6`), elevated shadow
   - [ ] Drop target: 4px solid blue line (`#3b82f6`) at top or bottom of target card + subtle background highlight (`rgba(59, 130, 246, 0.05)`)
   - [ ] Drop animation: 400ms settle animation (`ease-out`) with green highlight (`#dcfce7`)
-  - [ ] Map z-order update: Reordering layers updates map rendering order (top of widget = top of map)
+  - [x] Map z-order update: Reordering layers updates map rendering order (top of widget = top of map) — CON-FEB25-09 (Feb 27, 2026): active unpinned layer on top, then pinned in widget order
   - [ ] Toast notification: "Map layer order updated" (2s auto-dismiss, bottom-center position)
   - [ ] Keyboard support (WCAG 2.1.1): Arrow Up/Down moves layer up/down one position, Shift+Home moves to top, Shift+End moves to bottom
   - [ ] ARIA live region announces position changes: "{LayerName} moved to position {N} of {total}"
@@ -653,6 +653,7 @@ interface Bookmark {
 
 | Date | Task | Change | By |
 |------|------|--------|-----|
+| Feb 27, 2026 | 0.2 | **Left sidebar layer card right padding restored.** User-reported regression: layer cards (e.g. Dangermond Preserve, Santa Barbara County Boundary) were flush to sidebar edge. Restored pr-1 on CategoryGroup and ServiceGroup layer-card wrappers so cards sit a few pixels from edge. See phase-7-polish CON-FEB25-08. | Cursor |
 | Feb 26, 2026 | 0.2 | **Left sidebar row spacing polish.** Removed right-edge whitespace; switched to padding-based indentation (`pl-1 pr-1` category, `pl-3 pr-1` subcategory) in CategoryGroup, LayerRow, ServiceGroup. Content aligns flush to sidebar edge. | — |
 | Feb 25, 2026 | — | **Archived** completed tasks (CON-GL-01–08, 0.9, D20-01) to `docs/archive/phases/phase-0-foundation-completed.md`. | — |
 | Feb 20, 2026 | D20-01 | Added right sidebar collapse button task from Dan feedback. Default open; manual collapse only; no auto-reopen. Phase-0 is appropriate (app-wide layout). | Will |

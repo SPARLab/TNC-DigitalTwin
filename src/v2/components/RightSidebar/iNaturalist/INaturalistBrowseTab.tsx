@@ -27,6 +27,7 @@ import { SpatialQuerySection } from '../shared/SpatialQuerySection';
 import { EditFiltersCard } from '../shared/EditFiltersCard';
 import { BrowsePaginationControls } from '../shared/BrowsePaginationControls';
 import { getPinnedFiltersForActiveView, shouldHydrateBrowseFilters } from '../shared/browseFilterSyncGuards';
+import { SelectAllClearAllActions } from '../../shared/SelectAllClearAllActions';
 
 export function INaturalistBrowseTab() {
   const {
@@ -433,33 +434,13 @@ export function INaturalistBrowseTab() {
                       A-Z
                     </button>
                   </div>
-                  <div id="inat-species-bulk-actions" className="flex items-center justify-start gap-2 px-0.5">
-                    <button
-                      id="inat-species-select-all"
-                      onClick={selectAllSpecies}
-                      disabled={isAllSpeciesSelected}
-                      className={`text-xs font-medium transition-colors ${
-                        isAllSpeciesSelected
-                          ? 'text-gray-400 cursor-not-allowed'
-                          : 'text-emerald-600 hover:text-emerald-700'
-                      }`}
-                    >
-                      Select All
-                    </button>
-                    <span id="inat-species-actions-divider" className="text-gray-300 text-xs select-none">|</span>
-                    <button
-                      id="inat-species-clear-all"
-                      onClick={clearAllSpecies}
-                      disabled={isNoSpeciesSelected}
-                      className={`text-xs font-medium transition-colors ${
-                        isNoSpeciesSelected
-                          ? 'text-gray-400 cursor-not-allowed'
-                          : 'text-emerald-600 hover:text-emerald-700'
-                      }`}
-                    >
-                      Clear All
-                    </button>
-                  </div>
+                  <SelectAllClearAllActions
+                    idPrefix="inat-species-bulk"
+                    onSelectAll={selectAllSpecies}
+                    onClearAll={clearAllSpecies}
+                    disableSelectAll={isAllSpeciesSelected}
+                    disableClearAll={isNoSpeciesSelected}
+                  />
                 </div>
 
                 <div id="inat-species-search-wrapper" className="relative">

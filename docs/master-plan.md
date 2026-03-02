@@ -11,7 +11,7 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 166 / 186 complete (**89%**) |
+| **Active scope** | 168 / 188 complete (**89%**) |
 | **Active remaining** | 20 tasks |
 | **Phases complete** | 7 of 15 (0, 1, 2, 10, 11, 12b) |
 
@@ -56,7 +56,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 166
+- **Complete:** 168
 - **Active remaining (Not Started + In Progress + Blocked):** 20
 - **Backlog (not in active scope):** 3
 - **Deferred:** 5
@@ -73,8 +73,8 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 3 | Dendra | 🟡 In Progress | 11 | 1 | 3 | 0 | 0 | 14 | `v2/dendra` |
 | 4 | DataOne | 🟡 In Progress | 16 | 1 | 0 | 0 | 0 | 17 | `v2/dataone` |
 | 5 | Export Builder | 🟡 In Progress | 10 | 5 | 0 | 0 | 0 | 15 | `v2/export-builder` |
-| 6 | TNC ArcGIS Services | 🟢 Complete | 45 | 0 | 0 | 0 | 0 | 45 | `v2/tnc-arcgis` |
-| 7 | Polish & Consistency | 🟡 In Progress | 5 | 4 | 0 | 0 | 0 | 10 | `v2/polish` |
+| 6 | TNC ArcGIS Services | 🟢 Complete | 46 | 0 | 0 | 0 | 0 | 46 | `v2/tnc-arcgis` |
+| 7 | Polish & Consistency | 🟡 In Progress | 8 | 3 | 0 | 0 | 0 | 11 | `v2/polish` |
 | 8 | Calflora | 🟡 In Progress | 8 | 1 | 0 | 0 | 0 | 9 | `v2/calflora` |
 | 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
 | 10 | DroneDeploy | 🟢 Complete | 14 | 0 | 0 | 0 | 0 | 14 | `v2/dronedeploy` |
@@ -374,6 +374,8 @@ When working on any phase:
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
 | Mar 2, 2026 | Phase 7 | **POLISH-MAP-01 complete.** Map Layers widget inner content width: `.scroll-area-widget` scrollbar-gutter changed from `stable` to `auto` so Active Layer and Pinned Layers sections span full 320px width. Fixes truncated layer names (e.g., "iNaturalist Observations"). | Cursor |
+| Feb 27, 2026 | Phase 7 | **CON-FEB25-09 complete.** Map layer draw order now matches Map Layers widget order exactly: unpinned active layer on top, pinned layers in widget top-to-bottom order. Fixed in useMapLayerPresentationSync. | Cursor |
+| Feb 27, 2026 | Phase 7 | **CON-FEB25-08 complete.** Left sidebar layer card right padding restored. Regression fix: layer cards had pr-0 and touched sidebar edge; restored pr-1 in CategoryGroup, ServiceGroup so cards sit a few pixels from edge. | Cursor |
 | Feb 27, 2026 | Phase 2 | **CON-FEB25-07 / ANIML-DEV-02 complete.** ANiML camera trap coordinate fix: deployment query now requests outSR=4326 so server reprojects NAD27→WGS84. Fixes ~89m eastward displacement of all camera markers on 3D map. | Cursor |
 | Feb 27, 2026 | Phase 1 | **CON-INAT-12 complete.** Land Cover "Other" subcategory added via back-end Data Catalog; three floaters grouped under Other. No front-end changes. Phase 1: 15/17 complete, 1 remaining. Portfolio: 166/185. | Cursor |
 | Feb 27, 2026 | Phase 1 | **CON-INAT-11 complete.** CalFlora soft-hidden from catalog (EXTERNAL_LAYERS in layerRegistry); custom sidebar/map/adapter logic retained for future re-enable. Added CON-INAT-13 for licensing-safe media filter before reactivation. Phase 1: 14/17 complete, 2 remaining. Portfolio: 165/185. | Cursor |
@@ -416,6 +418,8 @@ When working on any phase:
 | Feb 24, 2026 | Map | **2D/3D view mode toggle complete.** MapContainer supports MapView/SceneView toggle; ViewModeToggle button bottom-left; all layers drape on terrain in 3D; LiDAR PointCloudLayer in 3D only; camera preserved across toggles. Cross-phase architectural decision documented. | Cursor |
 | Feb 25, 2026 | Map | **REF-16 complete.** Unified `MapControlRail` replaces ArcGIS built-in controls; 2D/3D text toggle, LiDAR visibility (3D only), zoom +/−, compass; all buttons 32×32. User-verified. | Cursor |
 | Feb 24, 2026 | Phase 3 | **D24-01 complete.** Dendra chart panel UX polish: larger initial size, bottom inset (~1–2rem from map edge), time slider data shadow restored, x-axis/slider spacing tuned. Phase 3: 9/12 tasks complete. | Cursor |
+| Feb 27, 2026 | Phase 6 | **CON-FEB25-10 complete.** TNC ArcGIS Overview description: See more/See less toggle (5-line clamp), paragraph spacing (split on newlines, space-y-4), max-height CSS transition (300ms), fade gradient in collapsed state. OverviewDescriptionSection in TNCArcGISOverviewSections.tsx. | Cursor |
+| Feb 27, 2026 | Phase 7 | **POL-SELECT-CLEAR complete.** Shared `SelectAllClearAllActions` primitive; TNC ArcGIS legend and iNaturalist Filter Species use identical emerald text + separator styling. | Cursor |
 | Feb 24, 2026 | Phase 1 | **TF-06 complete.** iNaturalist species filter: taxa selected + all species checked now shows results (removed requiresSpeciesSelection gating). Select All/Clear All text-only styling with gray when inactive; styled `|` separator in Filter Taxa, Filter Species, and legend. Phase 1: 10/11 tasks complete. | Cursor |
 | Feb 23, 2026 | Phase 4 | **DataONE Save View + Map Layers sync refinements.** Save Dataset View auto-pins when unpinned; persists current filters + selected dataset. Map Layers child-view click passes featureId explicitly; sync effect resolves DataONE featureId only when view changes (preserves Back-to-list). Cluster click: removed custom highlight; safe auto-zoom when cluster stays visible. | Assistant |
 | Feb 23, 2026 | Phase 4 | **DataOne doc sync after merge.** Master plan remaining count aligned to phase doc: only D20-B02 backend task remains in Phase 4; CON-DONE-12/13 remain Phase 5 handoff tasks. | Assistant |
