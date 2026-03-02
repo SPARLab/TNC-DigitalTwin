@@ -1,7 +1,7 @@
 # Phase 7: Polish & Consistency
 
 **Status:** 🟡 In Progress  
-**Progress:** 8 / 11 tasks (D20-01, CON-FEB25-01, CON-FEB25-02, CON-FEB25-03, CON-FEB25-08, CON-FEB25-09, POL-SELECT-CLEAR, POLISH-MAP-01 complete)
+**Progress:** 9 / 12 tasks (D20-01, CON-FEB25-01, CON-FEB25-02, CON-FEB25-03, CON-FEB25-08, CON-FEB25-09, POL-SELECT-CLEAR, POLISH-MAP-01, POLISH-LEFT-01 complete)
 **Branch:** `v2/polish`  
 **Depends On:** Phases 0-6 (all complete)  
 **Owner:** TBD
@@ -42,6 +42,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | CON-FEB25-08 | 🟢 Complete | Feb 27, 2026 | Restore right padding for left sidebar layer cards | Layer cards (e.g. Dangermond Preserve, Santa Barbara County Boundary) had regressed to pr-0; restored pr-1 so cards sit a few pixels from sidebar edge. CategoryGroup, ServiceGroup. |
 | CON-FEB25-09 | 🟢 Complete | Feb 27, 2026 | Map layer draw order matches Map Layers widget order | Unpinned active layer was rendering underneath pinned layers. Fixed in useMapLayerPresentationSync: unified desired stack = active-unpinned first, then pinned in widget order. |
 | POL-SELECT-CLEAR | 🟢 Complete | Feb 27, 2026 | Shared Select All / Clear All primitive; TNC legend + iNaturalist species filter use identical styling | `SelectAllClearAllActions` in `src/v2/components/shared/`; emerald text + separator; TNCArcGISLegendWidget + INaturalistBrowseTab Filter Species. |
+| POLISH-LEFT-01 | 🟢 Complete | Mar 2, 2026 | Left sidebar layer row right margin regression — layer buttons flush with sidebar edge | Restored mr-1 on LayerRow and ServiceGroup row wrappers (and DroneDeploy nested panel) so cards sit a few pixels from right edge. Regression fix for CON-FEB25-08. |
 
 ## Task Status
 
@@ -74,6 +75,7 @@ Final consistency pass to ensure all components look and behave consistently. Fi
 | CON-FEB25-08 | Restore right padding for left sidebar layer cards | 🟢 Complete | | Layer cards had regressed to pr-0; restored pr-1 in CategoryGroup, ServiceGroup so cards sit a few pixels from sidebar edge. Feb 27, 2026. |
 | CON-FEB25-09 | Map layer draw order matches Map Layers widget order | 🟢 Complete | | Unpinned active layer was rendering underneath pinned layers. Fixed in useMapLayerPresentationSync: unified desired stack = active-unpinned first, then pinned in widget order. Feb 27, 2026. |
 | POL-SELECT-CLEAR | Shared Select All / Clear All primitive; TNC legend + iNaturalist species filter | 🟢 Complete | | SelectAllClearAllActions component; TNC ArcGIS legend and iNaturalist Filter Species use identical emerald text + separator styling. Feb 27, 2026. |
+| POLISH-LEFT-01 | Left sidebar layer row right margin regression | 🟢 Complete | | mr-1 restored on LayerRow and ServiceGroup wrappers; regression fix for CON-FEB25-08. Mar 2, 2026. |
 | (more TBD) | | | | |
 
 **Status Legend:**

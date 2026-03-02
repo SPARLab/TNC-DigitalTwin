@@ -226,7 +226,7 @@ export function LayerRow({
         onClick={handleClick}
         onKeyDown={handleRowKeyDown}
         className={`group min-w-0 flex items-center gap-1.5 py-2 px-3 cursor-pointer
-                    text-sm rounded-lg transition-all duration-200 ${indented ? 'ml-4 mr-0' : 'ml-1 mr-0'} ${activeClasses}
+                    text-sm rounded-lg transition-all duration-200 ${indented ? 'ml-4 mr-1' : 'ml-1 mr-1'} ${activeClasses}
                     ${controlsOnly ? 'cursor-default' : 'cursor-pointer'}
                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1`}
       >
@@ -314,7 +314,7 @@ export function LayerRow({
       {isDroneDeployOrthomosaicsLayer && (
         <div
           id={`drone-projects-panel-${layerId}`}
-          className={`ml-2 mr-0 border border-slate-200 rounded-lg bg-slate-50/50 overflow-hidden transition-all duration-300 ease-in-out ${
+          className={`ml-2 mr-1 border border-slate-200 rounded-lg bg-slate-50/50 overflow-hidden transition-all duration-300 ease-in-out ${
             isProjectsExpanded
               ? 'max-h-[600px] opacity-100 mb-2'
               : 'max-h-0 opacity-0 mb-0 border-transparent'

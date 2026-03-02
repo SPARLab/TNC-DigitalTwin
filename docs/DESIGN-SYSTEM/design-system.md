@@ -1829,6 +1829,7 @@ Images benefit from continuous browsing (researchers scan visually). "Load More"
 | Layer row (active) | `py-1.5 px-3 pl-9 text-sm font-semibold text-gray-900 bg-emerald-50 border-l-2 border-emerald-600 rounded-sm` |
 | Row container (category) | `pl-1 pr-1` — padding-based indentation; pr-1 keeps layer cards a few pixels from sidebar edge |
 | Row container (subcategory) | `pl-3 pr-1` — deeper indent for nested items |
+| LayerRow / ServiceGroup row wrapper | `mr-1` — margin-right keeps row content (including pin/eye icons) a few pixels from sidebar edge; do not use mr-0 (POLISH-LEFT-01, Mar 2, 2026) |
 
 **Behavior:**
 - Click category header: toggle expand/collapse (chevron rotates)
@@ -2071,6 +2072,7 @@ February 5, 2026
 
 | Date | Change | By |
 |------|--------|-----|
+| Mar 2, 2026 | **Left sidebar layer row right margin (POLISH-LEFT-01).** LayerRow and ServiceGroup row wrappers require mr-1 (not mr-0) so layer buttons sit a few pixels from sidebar edge. Documented in LeftSidebar Category Pattern. | Cursor |
 | Mar 2, 2026 | **Map Layers widget scrollbar-gutter (POLISH-MAP-01).** `.scroll-area-widget` uses `scrollbar-gutter: auto` so Active Layer and Pinned Layers sections span full 320px width. Exception to stable-gutter pattern; documented in Export Builder Scroll Area section. | Cursor |
 | Feb 27, 2026 | **Map layer draw order (CON-FEB25-09).** Map Layers widget order now matches map render order exactly: unpinned active layer on top, pinned layers in widget top-to-bottom order. Fixed in useMapLayerPresentationSync. | Cursor |
 | Feb 25, 2026 | **REF-16: MapControlRail.** Unified right-rail map controls: 2D/3D text toggle, LiDAR visibility (3D only), zoom +/−, compass; all buttons 32×32. Replaces ArcGIS built-in zoom/compass/nav widgets. Documented in Map View Mode Toggle. | Cursor |

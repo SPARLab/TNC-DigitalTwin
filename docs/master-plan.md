@@ -1,7 +1,7 @@
 # Master Development Plan — V2 Digital Catalog
 
 **Created:** January 23, 2026  
-**Last Updated:** March 2, 2026 (POLISH-MAP-01 complete)  
+**Last Updated:** March 2, 2026 (POLISH-LEFT-01 complete)  
 **Target Deadline:** February 20, 2026  
 **Status:** 🟡 In Progress
 
@@ -11,8 +11,8 @@
 
 | Metric | Value |
 |--------|-------|
-| **Active scope** | 168 / 188 complete (**89%**) |
-| **Active remaining** | 20 tasks |
+| **Active scope** | 169 / 189 complete (**89%**) |
+| **Active remaining** | 19 tasks |
 | **Phases complete** | 7 of 15 (0, 1, 2, 10, 11, 12b) |
 
 ```
@@ -56,12 +56,12 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 
 ### Portfolio Totals (Tracked Task Rows Across Phases)
 
-- **Complete:** 168
-- **Active remaining (Not Started + In Progress + Blocked):** 20
+- **Complete:** 169
+- **Active remaining (Not Started + In Progress + Blocked):** 19
 - **Backlog (not in active scope):** 3
 - **Deferred:** 5
 - **Won't Do:** 2
-- **Total tracked rows:** 196
+- **Total tracked rows:** 197
 
 ### Per-Phase Task Counts
 
@@ -74,7 +74,7 @@ This document is the single source of truth for the V2 Digital Catalog paradigm 
 | 4 | DataOne | 🟡 In Progress | 16 | 1 | 0 | 0 | 0 | 17 | `v2/dataone` |
 | 5 | Export Builder | 🟡 In Progress | 10 | 5 | 0 | 0 | 0 | 15 | `v2/export-builder` |
 | 6 | TNC ArcGIS Services | 🟢 Complete | 46 | 0 | 0 | 0 | 0 | 46 | `v2/tnc-arcgis` |
-| 7 | Polish & Consistency | 🟡 In Progress | 8 | 3 | 0 | 0 | 0 | 11 | `v2/polish` |
+| 7 | Polish & Consistency | 🟡 In Progress | 9 | 2 | 0 | 0 | 0 | 12 | `v2/polish` |
 | 8 | Calflora | 🟡 In Progress | 8 | 1 | 0 | 0 | 0 | 9 | `v2/calflora` |
 | 9 | GBIF | 🟡 In Progress | 14 | 3 | 0 | 1 | 0 | 18 | `v2/gbif` |
 | 10 | DroneDeploy | 🟢 Complete | 14 | 0 | 0 | 0 | 0 | 14 | `v2/dronedeploy` |
@@ -373,6 +373,7 @@ When working on any phase:
 
 | Date | Phase | Change | By |
 |------|-------|--------|-----|
+| Mar 2, 2026 | Phase 7 | **POLISH-LEFT-01 complete.** Left sidebar layer row right margin regression: restored mr-1 on LayerRow and ServiceGroup wrappers (and DroneDeploy nested panel) so layer buttons sit a few pixels from sidebar edge. Regression fix for CON-FEB25-08. | Cursor |
 | Mar 2, 2026 | Phase 7 | **POLISH-MAP-01 complete.** Map Layers widget inner content width: `.scroll-area-widget` scrollbar-gutter changed from `stable` to `auto` so Active Layer and Pinned Layers sections span full 320px width. Fixes truncated layer names (e.g., "iNaturalist Observations"). | Cursor |
 | Feb 27, 2026 | Phase 7 | **CON-FEB25-09 complete.** Map layer draw order now matches Map Layers widget order exactly: unpinned active layer on top, pinned layers in widget top-to-bottom order. Fixed in useMapLayerPresentationSync. | Cursor |
 | Feb 27, 2026 | Phase 7 | **CON-FEB25-08 complete.** Left sidebar layer card right padding restored. Regression fix: layer cards had pr-0 and touched sidebar edge; restored pr-1 in CategoryGroup, ServiceGroup so cards sit a few pixels from edge. | Cursor |

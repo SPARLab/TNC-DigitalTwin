@@ -120,7 +120,7 @@ export function ServiceGroup({
     <div id={`service-group-${service.id}`} className="space-y-1">
       <div
         id={`service-group-row-${service.id}`}
-        className={`relative ml-1 mr-0 min-w-0 flex items-center gap-2 py-1.5 px-1 rounded-lg border transition-colors
+        className={`relative ml-1 mr-1 min-w-0 flex items-center gap-2 py-1.5 px-1 rounded-lg border transition-colors
           ${
             isActiveService
               ? 'border-amber-300 bg-amber-50 shadow-sm'
