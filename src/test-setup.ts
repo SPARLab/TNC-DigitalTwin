@@ -21,9 +21,18 @@ vi.mock('@arcgis/core/views/MapView', () => {
       map: null,
       center: [-120.0707, 34.4669],
       zoom: 12,
+      width: 800,
+      height: 600,
+      destroyed: false,
+      container: null,
+      popup: { dockEnabled: false },
+      ui: { add: vi.fn(), remove: vi.fn() },
       when: vi.fn().mockResolvedValue(true),
       goTo: vi.fn().mockResolvedValue(true),
       hitTest: vi.fn().mockResolvedValue({ results: [] }),
+      watch: vi.fn(() => ({ remove: vi.fn() })),
+      on: vi.fn(() => ({ remove: vi.fn() })),
+      destroy: vi.fn(),
       toMap: vi.fn(),
       toScreen: vi.fn()
     }))
@@ -79,6 +88,14 @@ vi.mock('echarts', () => ({
 
 // Mock fetch for API calls
 global.fetch = vi.fn()
+
+// jsdom ships no ResizeObserver, and ArcGIS widget modules touch it at import
+// time, so any component importing a widget fails to load without this.
+global.ResizeObserver = class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
 
 // Stub the blob helpers jsdom does not implement, but keep the native URL
 // constructor intact — react-router and several services rely on `new URL(...)`.

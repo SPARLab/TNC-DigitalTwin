@@ -4,9 +4,9 @@
 //   PlatformShell (nav rail)
 //     ├── /                → LandingPage
 //     ├── /notebooks       → NotebooksPage
+//     ├── /monitoring      → MonitoringPage (owns its own map + wind service)
 //     └── WorkbenchLayout (catalog + data source providers)
 //           ├── /catalog     → CatalogWorkbench
-//           ├── /monitoring  → MonitoringPage
 //           └── /experiences → ExperiencesPage
 // ============================================================================
 
@@ -25,10 +25,10 @@ export function V2AppRoutes() {
       <Route element={<PlatformShell />}>
         <Route index element={<LandingPage />} />
         <Route path="notebooks" element={<NotebooksPage />} />
+        <Route path="monitoring" element={<MonitoringPage />} />
 
         <Route element={<WorkbenchLayout />}>
           <Route path="catalog" element={<CatalogWorkbench />} />
-          <Route path="monitoring" element={<MonitoringPage />} />
           <Route path="experiences" element={<ExperiencesPage />} />
         </Route>
 

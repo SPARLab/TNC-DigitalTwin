@@ -30,6 +30,9 @@ dist-ssr
 .env.test.local
 .env.production.local
 
+# Local verification screenshots
+/artifacts/
+
 # Playwright test artifacts
 /test-results/
 /playwright-report/
