@@ -80,13 +80,10 @@ vi.mock('echarts', () => ({
 // Mock fetch for API calls
 global.fetch = vi.fn()
 
-// Mock window.URL for file downloads
-Object.defineProperty(window, 'URL', {
-  value: {
-    createObjectURL: vi.fn(() => 'mock-url'),
-    revokeObjectURL: vi.fn()
-  }
-})
+// Stub the blob helpers jsdom does not implement, but keep the native URL
+// constructor intact — react-router and several services rely on `new URL(...)`.
+window.URL.createObjectURL = vi.fn(() => 'mock-url')
+window.URL.revokeObjectURL = vi.fn()
 
 // Mock window.open for external links
 Object.defineProperty(window, 'open', {

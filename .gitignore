@@ -45,3 +45,4 @@ dist-ssr
 # Keep test-results-history.csv for tracking
 # But exclude large JSON snapshots
 e2e/checkpoints/*.json
+twin_models/

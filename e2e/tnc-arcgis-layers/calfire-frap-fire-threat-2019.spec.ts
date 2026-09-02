@@ -24,7 +24,7 @@ test.describe('CalFire FRAP Fire Threat 2019', () => {
   
   test.beforeEach(async ({ page }) => {
     // Navigate to the app
-    await page.goto('/');
+    await page.goto(helpers.V1_APP_PATH);
     
     // Wait for app to fully load
     await page.waitForLoadState('networkidle');

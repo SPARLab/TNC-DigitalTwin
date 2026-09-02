@@ -25,7 +25,7 @@ test.describe('CalFire Fire Hazard Severity Zones 2023', () => {
   
   test.beforeEach(async ({ page }) => {
     // Navigate to the app
-    await page.goto('/');
+    await page.goto(helpers.V1_APP_PATH);
     
     // Wait for app to fully load
     await page.waitForLoadState('networkidle');

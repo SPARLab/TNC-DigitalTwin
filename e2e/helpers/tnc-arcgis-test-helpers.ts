@@ -6,6 +6,13 @@ import { PNG } from 'pngjs';
  * These functions are reusable across all layer test files
  */
 
+/**
+ * Entry path for these specs. They assert against the legacy catalog's markup
+ * (`#tnc-items-list`, `#tnc-details-opacity-slider`, `#map-view`), which now
+ * lives behind the `?v1` flag since the v2 platform owns `/`.
+ */
+export const V1_APP_PATH = '/?v1';
+
 // ===== TYPE DEFINITIONS =====
 
 export interface LayerConfig {
