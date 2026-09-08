@@ -21,6 +21,8 @@ export interface BadgePoint {
   t: number;
   /** Short reading shown inside the disc, e.g. "4.1". Keep to ~4 characters. */
   text: string;
+  /** Unit drawn small beneath the reading, inside the disc, e.g. "m/s". */
+  unit?: string;
   /** Station name rendered beneath the disc. */
   caption?: string;
   popupTitle: string;
@@ -81,6 +83,8 @@ export function createValueBadgeLayer(
       }),
     );
 
+    // With a unit the two lines straddle the centre; without one the reading
+    // sits dead centre.
     layer.add(
       new Graphic({
         geometry,
@@ -91,9 +95,26 @@ export function createValueBadgeLayer(
           font: new Font({ size: 11, family: 'sans-serif', weight: 'bold' }),
           horizontalAlignment: 'center',
           verticalAlignment: 'middle',
+          yoffset: point.unit ? 3.5 : 0,
         }),
       }),
     );
+
+    if (point.unit) {
+      layer.add(
+        new Graphic({
+          geometry,
+          symbol: new TextSymbol({
+            text: point.unit,
+            color: textColor,
+            font: new Font({ size: 7.5, family: 'sans-serif' }),
+            horizontalAlignment: 'center',
+            verticalAlignment: 'middle',
+            yoffset: -5.5,
+          }),
+        }),
+      );
+    }
 
     if (point.caption) {
       layer.add(

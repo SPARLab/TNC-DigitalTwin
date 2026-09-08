@@ -6,7 +6,7 @@
 
 ## Step 1: Open the App
 
-Navigate to: `http://localhost:5173/?v2`
+Navigate to: `http://localhost:5180/?v2`
 
 ---
 

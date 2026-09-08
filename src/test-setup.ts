@@ -76,6 +76,27 @@ vi.mock('@arcgis/core/layers/MapImageLayer', () => {
   }
 })
 
+vi.mock('@arcgis/core/layers/GroupLayer', () => {
+  return {
+    default: vi.fn().mockImplementation(() => ({
+      title: '',
+      layers: { find: vi.fn(), add: vi.fn(), remove: vi.fn(), length: 0 },
+    })),
+  }
+})
+
+vi.mock('@arcgis/core/Graphic', () => {
+  return { default: vi.fn().mockImplementation(() => ({})) }
+})
+
+vi.mock('@arcgis/core/widgets/LayerList', () => {
+  return { default: vi.fn().mockImplementation(() => ({ destroy: vi.fn() })) }
+})
+
+vi.mock('@arcgis/core/identity/IdentityManager', () => {
+  return { default: { registerToken: vi.fn() } }
+})
+
 // Mock echarts if used
 vi.mock('echarts', () => ({
   init: vi.fn(() => ({

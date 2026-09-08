@@ -130,7 +130,7 @@ MapLayersWidget
 
 ## How to Test
 
-1. Navigate to `http://localhost:5173/?v2`
+1. Navigate to `http://localhost:5180/?v2`
 2. Look at the Map Layers widget (top-left floating widget)
 3. Click the gear icon (⚙) in the widget header
 4. Select different modes and observe:

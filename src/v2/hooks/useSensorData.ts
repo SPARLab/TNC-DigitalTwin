@@ -11,7 +11,7 @@ import {
   type SensorVariableId,
 } from '../services/sensorService';
 
-const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+export const SENSOR_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
 export interface UseSensorDataResult {
   snapshot: ScalarSnapshot | null;
@@ -75,7 +75,7 @@ export function useSensorData(variableId: SensorVariableId | null): UseSensorDat
 
     const intervalId = window.setInterval(() => {
       void load(variableId, { bypassCache: true });
-    }, REFRESH_INTERVAL_MS);
+    }, SENSOR_REFRESH_INTERVAL_MS);
 
     return () => {
       window.clearInterval(intervalId);

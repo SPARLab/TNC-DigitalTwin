@@ -47,6 +47,8 @@ interface RawDataset {
   display_order: number;
   is_visible: number;
   is_default_on: number;
+  catalog_tag: string | null;
+  live_tag: string | null;
 }
 
 interface RawJunction {
@@ -98,6 +100,22 @@ async function queryTable<T>(tableId: number): Promise<T[]> {
 /** Convert a catalog dataset ID to a stable layer ID string. */
 function toLayerId(datasetId: number): string {
   return `dataset-${datasetId}`;
+}
+
+/**
+ * The catalog stores unset tags as empty strings for some rows and nulls for
+ * others, so blanks are normalized away before anything switches on them.
+ */
+export function normalizeTag(value: string | null | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function tagsFor(d: RawDataset): { catalogTag?: string; liveTag?: string } {
+  return {
+    catalogTag: normalizeTag(d.catalog_tag),
+    liveTag: normalizeTag(d.live_tag),
+  };
 }
 
 /** Convert a service key to a stable service layer ID string. */
@@ -436,6 +454,7 @@ export function useCatalogRegistry(): CatalogRegistryState {
               hasImageServer: d.has_image_server === 1,
               description: d.description ?? undefined,
               layerIdInService: d.layer_id ?? undefined,
+              ...tagsFor(d),
             },
           };
         };
@@ -490,6 +509,7 @@ export function useCatalogRegistry(): CatalogRegistryState {
                     layerIdInService: discoveredLayer.id,
                     isMultiLayerService: true,
                     parentServiceId: serviceId,
+                    ...tagsFor(d),
                   },
                 }));
 
@@ -514,6 +534,7 @@ export function useCatalogRegistry(): CatalogRegistryState {
                     description: d.description ?? undefined,
                     isMultiLayerService: true,
                     siblingLayers: children,
+                    ...tagsFor(d),
                   },
                 };
 
@@ -564,6 +585,7 @@ export function useCatalogRegistry(): CatalogRegistryState {
                 layerIdInService: row.layer_id ?? undefined,
                 isMultiLayerService: true,
                 parentServiceId: serviceId,
+                ...tagsFor(row),
               },
             }));
 
@@ -589,6 +611,7 @@ export function useCatalogRegistry(): CatalogRegistryState {
                 description: serviceRows[0].description ?? undefined,
                 isMultiLayerService: true,
                 siblingLayers: children,
+                ...tagsFor(serviceRows[0]),
               },
             };
 

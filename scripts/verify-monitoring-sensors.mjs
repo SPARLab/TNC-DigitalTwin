@@ -2,7 +2,7 @@
 import { chromium } from 'playwright';
 import { mkdir } from 'node:fs/promises';
 
-const baseUrl = process.argv[2] ?? 'http://localhost:5174';
+const baseUrl = process.argv[2] ?? 'http://localhost:5180';
 const outputDir = 'artifacts/monitoring-sensors';
 
 const errors = [];
@@ -26,11 +26,18 @@ const panelText = async (selector) => {
 
 // Scope sensor toggles to the tree; each detail panel also has a refresh button
 // named after its variable.
+//
+// Names below are catalog `display_title` values, since the tree is built from
+// live_tag rather than a hardcoded list. Editing a title in the management app
+// will change what these have to match.
 const tree = page.locator('#monitoring-sensor-tree');
 const sensor = (name) => tree.getByRole('button', { name: new RegExp(name) });
 
+// Tagging drives membership, so a variable may legitimately be absent.
+const isListed = async (name) => (await sensor(name).count()) > 0;
+
 // ── Wind first, including the restored Labels mode ──
-await sensor('Wind Speed & Direction').click();
+await sensor('Wind').click();
 await page.waitForSelector('#monitoring-wind-panel', { timeout: 60_000 });
 await page.waitForTimeout(4000);
 await page.screenshot({ path: `${outputDir}/1-wind-arrows.png` });
@@ -40,19 +47,26 @@ await page.waitForTimeout(2500);
 await page.screenshot({ path: `${outputDir}/2-wind-labels.png` });
 
 // Turn wind off so the scalar surfaces are unobstructed.
-await sensor('Wind Speed & Direction').click();
+await sensor('Wind').click();
 await page.waitForTimeout(1200);
 
 // ── Each scalar variable as a surface, then as badges ──
 const variables = [
   ['Air Temperature', 'temp'],
-  ['Relative Humidity', 'humidity'],
+  ['Humidity', 'humidity'],
   ['Barometric Pressure', 'pressure'],
-  ['Precipitation', 'precip'],
+  ['Rainfall', 'precip'],
+  ['Solar Radiation', 'solar'],
 ];
 
 for (const [name, slug] of variables) {
   console.log(`\n=== ${name}`);
+
+  if (!(await isListed(name))) {
+    console.log('  NOT LISTED — no live_tag on this dataset, skipping');
+    continue;
+  }
+
   await sensor(name).click();
 
   try {
@@ -87,7 +101,7 @@ const activeCount = await page.locator('#monitoring-scalar-panel').count();
 console.log(`\nscalar panels rendered simultaneously: ${activeCount} (expect 1)`);
 
 // ── Wind + temperature together ──
-await sensor('Wind Speed & Direction').click();
+await sensor('Wind').click();
 await page.waitForSelector('#monitoring-wind-panel', { timeout: 60_000 });
 await page.waitForTimeout(3000);
 await page.screenshot({ path: `${outputDir}/5-wind-over-temperature.png` });

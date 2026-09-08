@@ -18,7 +18,7 @@ This is a design-testing tool to help decide which approach provides the best us
 
 ## How to Use
 
-1. **Open the v2 app**: Navigate to `http://localhost:5173/?v2`
+1. **Open the v2 app**: Navigate to `http://localhost:5180/?v2`
 2. **Locate the settings icon**: In the Map Layers widget header (top-left floating widget), you'll see a gear/settings icon (⚙) next to the undo button
 3. **Click the settings icon**: A dropdown menu will appear with 6 count display modes
 4. **Select a mode**: Click any option to see how counts are displayed

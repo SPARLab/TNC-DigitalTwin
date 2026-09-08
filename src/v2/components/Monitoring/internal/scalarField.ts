@@ -32,6 +32,30 @@ export interface ScalarField {
  */
 const IDW_POWER = 2;
 
+/** Interpolate at one arbitrary location. */
+export function sampleScalarAt(
+  points: ScalarSamplePoint[],
+  longitude: number,
+  latitude: number,
+): { value: number; nearestDistance: number } {
+  let weightSum = 0;
+  let valueSum = 0;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+
+  for (const point of points) {
+    const dx = longitude - point.longitude;
+    const dy = latitude - point.latitude;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    if (distance < nearestDistance) nearestDistance = distance;
+
+    const weight = 1 / Math.pow(distance || 1e-8, IDW_POWER);
+    valueSum += weight * point.value;
+    weightSum += weight;
+  }
+
+  return { value: valueSum / weightSum, nearestDistance };
+}
+
 export function buildScalarField(
   points: ScalarSamplePoint[],
   extent: GeoExtent,
@@ -53,26 +77,13 @@ export function buildScalarField(
     for (let col = 0; col < cols; col++) {
       const longitude = extent.xmin + (col + 0.5) * dxStep;
 
-      let weightSum = 0;
-      let valueSum = 0;
-      let closest = Number.POSITIVE_INFINITY;
-
-      for (const point of points) {
-        const dx = longitude - point.longitude;
-        const dy = latitude - point.latitude;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < closest) closest = distance;
-
-        const weight = 1 / Math.pow(distance || 1e-8, IDW_POWER);
-        valueSum += weight * point.value;
-        weightSum += weight;
-      }
+      const sample = sampleScalarAt(points, longitude, latitude);
 
       const index = row * cols + col;
-      const value = valueSum / weightSum;
+      const value = sample.value;
 
       values[index] = value;
-      nearestDistance[index] = closest;
+      nearestDistance[index] = sample.nearestDistance;
 
       if (value < min) min = value;
       if (value > max) max = value;

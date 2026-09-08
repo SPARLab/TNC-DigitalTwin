@@ -11,8 +11,16 @@ vi.mock('../pages/CatalogWorkbench', () => ({
   CatalogWorkbench: () => <h1>Catalog Workbench</h1>,
 }));
 
+vi.mock('../pages/MonitoringPage', () => ({
+  MonitoringPage: () => <h1>Live Monitoring</h1>,
+}));
+
 vi.mock('./WorkbenchLayout', () => ({
   WorkbenchLayout: () => <Outlet />,
+}));
+
+vi.mock('../components/Experiences/ExperienceMap', () => ({
+  ExperienceMap: () => <div>Experience Map</div>,
 }));
 
 function renderAt(initialPath: string) {
@@ -63,6 +71,18 @@ describe('V2AppRoutes', () => {
     await user.click(screen.getByTitle('Live Monitoring'));
 
     expect(screen.getByRole('heading', { name: 'Live Monitoring' })).toBeInTheDocument();
+  });
+
+  it('opens an experience workspace from a nested experiences route', () => {
+    renderAt('/experiences/suitability');
+
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Suitability Modeler' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Close experience' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Run Suitability Analysis' }),
+    ).toBeInTheDocument();
   });
 
   it('redirects unknown paths back to the landing page', () => {

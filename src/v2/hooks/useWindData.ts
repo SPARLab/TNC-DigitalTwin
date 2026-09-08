@@ -10,7 +10,7 @@ import { fetchLatestWind, type WindSnapshot } from '../services/windService';
  * The service publishes hourly aggregates, so polling faster than this only adds
  * traffic without surfacing new readings.
  */
-const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+export const WIND_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
 export interface UseWindDataResult {
   snapshot: WindSnapshot | null;
@@ -72,7 +72,7 @@ export function useWindData(isEnabled: boolean): UseWindDataResult {
 
     const intervalId = window.setInterval(() => {
       void load({ bypassCache: true });
-    }, REFRESH_INTERVAL_MS);
+    }, WIND_REFRESH_INTERVAL_MS);
 
     return () => {
       window.clearInterval(intervalId);

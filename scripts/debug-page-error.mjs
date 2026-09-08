@@ -1,7 +1,7 @@
 // Capture full stacks for page errors while toggling sensor layers.
 import { chromium } from 'playwright';
 
-const baseUrl = process.argv[2] ?? 'http://localhost:5174';
+const baseUrl = process.argv[2] ?? 'http://localhost:5180';
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });

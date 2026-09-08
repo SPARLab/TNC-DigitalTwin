@@ -2,12 +2,13 @@
 // V2AppRoutes — platform route table.
 //
 //   PlatformShell (nav rail)
-//     ├── /                → LandingPage
-//     ├── /notebooks       → NotebooksPage
-//     ├── /monitoring      → MonitoringPage (owns its own map + wind service)
+//     ├── /                       → LandingPage
+//     ├── /notebooks              → NotebooksPage
+//     ├── /monitoring             → MonitoringPage (owns its own map)
+//     ├── /experiences            → ExperiencesPage gallery
+//     ├── /experiences/:id        → ExperienceWorkspace (map + panel)
 //     └── WorkbenchLayout (catalog + data source providers)
-//           ├── /catalog     → CatalogWorkbench
-//           └── /experiences → ExperiencesPage
+//           └── /catalog          → CatalogWorkbench
 // ============================================================================
 
 import { Navigate, Route, Routes } from 'react-router-dom';
@@ -26,10 +27,11 @@ export function V2AppRoutes() {
         <Route index element={<LandingPage />} />
         <Route path="notebooks" element={<NotebooksPage />} />
         <Route path="monitoring" element={<MonitoringPage />} />
+        <Route path="experiences" element={<ExperiencesPage />} />
+        <Route path="experiences/:experienceId" element={<ExperiencesPage />} />
 
         <Route element={<WorkbenchLayout />}>
           <Route path="catalog" element={<CatalogWorkbench />} />
-          <Route path="experiences" element={<ExperiencesPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

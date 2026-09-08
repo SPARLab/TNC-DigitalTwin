@@ -11,10 +11,11 @@ import Font from '@arcgis/core/symbols/Font';
 import { createValueBadgeLayer, type BadgePoint } from './valueBadgeLayer';
 import { sampleRamp } from './colorRamps';
 import { normalize } from './scalarField';
-import type {
-  ScalarReading,
-  ScalarSnapshot,
-  SensorVariableConfig,
+import {
+  getRampBounds,
+  type ScalarReading,
+  type ScalarSnapshot,
+  type SensorVariableConfig,
 } from '../../../services/sensorService';
 
 function formatObservedAt(epochMs: number): string {
@@ -109,7 +110,7 @@ export function createScalarValueLabelLayer(
       new Graphic({
         geometry,
         symbol: new TextSymbol({
-          text: reading.value.toFixed(config.decimals),
+          text: `${reading.value.toFixed(config.decimals)} ${config.unit}`,
           color: [255, 255, 255, 255],
           // Halo carries the legibility over both the surface and the basemap.
           haloColor: [15, 20, 30, 210],
@@ -131,11 +132,14 @@ export function createScalarBadgeLayer(
   snapshot: ScalarSnapshot,
   config: SensorVariableConfig,
 ): GraphicsLayer {
+  const [rampLow, rampHigh] = getRampBounds(config, snapshot);
+
   const points: BadgePoint[] = snapshot.readings.map((reading) => ({
     longitude: reading.longitude,
     latitude: reading.latitude,
-    t: normalize(reading.value, snapshot.min, snapshot.max),
+    t: normalize(reading.value, rampLow, rampHigh),
     text: reading.value.toFixed(config.decimals),
+    unit: config.unit,
     caption: reading.stationName.replace(/^Dangermond[_ ]/, ''),
     popupTitle: reading.stationName,
     popupContent: `
@@ -148,7 +152,7 @@ export function createScalarBadgeLayer(
   return createValueBadgeLayer(points, {
     title: `${config.label} — Station Readings`,
     colorFor: (t) => sampleRamp(config.ramp, t),
-    // Pressure needs room for four digits.
-    size: config.decimals > 0 && snapshot.max >= 1000 ? 42 : 36,
+    // Pressure needs room for four digits alongside its unit.
+    size: snapshot.max >= 1000 ? 48 : 42,
   });
 }

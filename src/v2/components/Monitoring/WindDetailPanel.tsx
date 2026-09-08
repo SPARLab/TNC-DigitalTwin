@@ -5,6 +5,7 @@
 import { Grid3x3, Navigation, RefreshCw, Signal, Tag, Waves, Wind } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { getSpeedColorCss } from './internal/windField';
+import { WIND_MODES_2D_ONLY } from './internal/useWindVisualization';
 import type { WindVizMode } from './internal/useWindVisualization';
 import type { WindStatistics } from './internal/windStatistics';
 import { getCompassLabel, type WindSnapshot } from '../../services/windService';
@@ -98,6 +99,8 @@ interface WindDetailPanelProps {
   statistics: WindStatistics;
   mode: WindVizMode;
   onModeChange: (mode: WindVizMode) => void;
+  /** Whether the map is a 3D scene, where the particle overlay cannot draw. */
+  is3D: boolean;
   isLoading: boolean;
   fetchedAt: number | null;
   onRefresh: () => void;
@@ -108,6 +111,7 @@ export function WindDetailPanel({
   statistics,
   mode,
   onModeChange,
+  is3D,
   isLoading,
   fetchedAt,
   onRefresh,
@@ -182,16 +186,25 @@ export function WindDetailPanel({
           {VIZ_MODES.map((option) => {
             const OptionIcon = option.icon;
             const isActive = option.id === mode;
+            const isUnavailable = is3D && WIND_MODES_2D_ONLY.includes(option.id);
             return (
               <button
                 key={option.id}
                 type="button"
+                disabled={isUnavailable}
                 onClick={() => onModeChange(option.id)}
                 aria-pressed={isActive}
+                title={
+                  isUnavailable
+                    ? `${option.label} is only available in the 2D map`
+                    : option.description
+                }
                 className={`flex flex-col items-center gap-1 rounded-card border px-2 py-2 text-[11px] font-medium transition-colors ${
-                  isActive
-                    ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
-                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                  isUnavailable
+                    ? 'cursor-not-allowed border-gray-200 bg-white text-gray-300'
+                    : isActive
+                      ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                      : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
                 }`}
               >
                 <OptionIcon className="h-3.5 w-3.5" />

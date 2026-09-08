@@ -8,6 +8,7 @@
 import { useEffect, useRef } from 'react';
 import type GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import type MapView from '@arcgis/core/views/MapView';
+import type SceneView from '@arcgis/core/views/SceneView';
 import {
   createWindArrowLayer,
   createWindBadgeLayer,
@@ -17,6 +18,13 @@ import { WindParticleOverlay } from './WindParticleOverlay';
 import type { WindReading } from '../../../services/windService';
 
 export type WindVizMode = 'arrows' | 'flow' | 'grid' | 'labels';
+
+/**
+ * Flow is the one renderer tied to a 2D view: the particle overlay is a canvas
+ * sized to the viewport, mapping Mercator metres to pixels with an axis-aligned
+ * transform that has no equivalent under a perspective camera.
+ */
+export const WIND_MODES_2D_ONLY: readonly WindVizMode[] = ['flow'];
 
 const LAYER_BUILDERS: Record<
   Exclude<WindVizMode, 'flow'>,
@@ -28,7 +36,7 @@ const LAYER_BUILDERS: Record<
 };
 
 interface UseWindVisualizationParams {
-  view: MapView | null;
+  view: MapView | SceneView | null;
   readings: WindReading[] | null;
   mode: WindVizMode;
   isEnabled: boolean;
@@ -46,11 +54,11 @@ export function useWindVisualization({
   useEffect(() => {
     if (!view || view.destroyed || !isEnabled || !readings?.length) return;
 
-    if (mode === 'flow') {
+    if (mode === 'flow' && view.type === '2d') {
       const overlay = new WindParticleOverlay(view, readings);
       overlay.start();
       overlayRef.current = overlay;
-    } else {
+    } else if (mode !== 'flow') {
       const layer = LAYER_BUILDERS[mode](readings);
       view.map?.add(layer);
       layerRef.current = layer;

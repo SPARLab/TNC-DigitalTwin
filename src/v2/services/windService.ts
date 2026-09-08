@@ -8,8 +8,11 @@
 
 import { CacheTTL, getCachedOrFetch } from '../../services/cacheService';
 
+/** Service directory name, used to match this renderer to its catalog row. */
+export const WIND_SERVICE_PATH = 'Dangermond_Wind_Datastreams';
+
 const WIND_LATEST_URL =
-  'https://dangermondpreserve-spatial.com/server/rest/services/Dangermond_Wind_Datastreams/FeatureServer/0';
+  `https://dangermondpreserve-spatial.com/server/rest/services/${WIND_SERVICE_PATH}/FeatureServer/0`;
 
 /**
  * `windDirectionAvg` follows the meteorological convention: degrees the wind is

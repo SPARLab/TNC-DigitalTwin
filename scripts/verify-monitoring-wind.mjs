@@ -4,7 +4,7 @@
 import { chromium } from 'playwright';
 import { mkdir } from 'node:fs/promises';
 
-const baseUrl = process.argv[2] ?? 'http://localhost:5174';
+const baseUrl = process.argv[2] ?? 'http://localhost:5180';
 const outputDir = 'artifacts/monitoring-wind';
 
 const consoleErrors = [];

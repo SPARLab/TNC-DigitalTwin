@@ -1,8 +1,8 @@
 // ============================================================================
 // Experience registry — models and simulations surfaced on the Experiences page.
-// Ported from the twin_models webapp mockup (tools/registry.js). The mockup's
-// SDM and Suitability geoprocessing panels arrive in a later phase, so every
-// entry is currently marked unavailable.
+// Ported from the twin_models webapp mockup (tools/registry.js). Suitability
+// and Species Distribution Modeling have working control panels; remaining
+// simulations stay marked unavailable until their geoprocessing services exist.
 // ============================================================================
 
 import { Bug, Compass, Droplets, Flame, Layers, Sprout, TreePine } from 'lucide-react';
@@ -27,7 +27,17 @@ export interface ExperienceDefinition {
   usesRealTimeData: boolean;
   /** False once the experience has a working control panel wired up. */
   comingSoon: boolean;
+  /** Card thumbnail. Falls back to the shared model still if omitted. */
+  image: string;
+  /** Workspace map centre, [longitude, latitude]. */
+  mapCenter: [number, number];
+  mapZoom: number;
+  /** Which geoprocessing panel to mount. Unset entries stay coming-soon. */
+  panel?: 'suitability' | 'sdm';
 }
+
+const DEFAULT_THUMBNAIL = '/modelpic.jpg';
+const PRESERVE_CENTER: [number, number] = [-120.45, 34.55];
 
 export const EXPERIENCE_CATEGORIES: ExperienceCategory[] = [
   { id: 'general', label: 'General', icon: Compass },
@@ -47,7 +57,11 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     categoryId: 'general',
     kind: 'model',
     usesRealTimeData: false,
-    comingSoon: true,
+    comingSoon: false,
+    image: DEFAULT_THUMBNAIL,
+    mapCenter: PRESERVE_CENTER,
+    mapZoom: 13,
+    panel: 'suitability',
   },
   {
     id: 'sdm',
@@ -59,7 +73,11 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     categoryId: 'biodiversity',
     kind: 'model',
     usesRealTimeData: false,
-    comingSoon: true,
+    comingSoon: false,
+    image: DEFAULT_THUMBNAIL,
+    mapCenter: PRESERVE_CENTER,
+    mapZoom: 10,
+    panel: 'sdm',
   },
   {
     id: 'ice-plant-control',
@@ -72,6 +90,9 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     kind: 'simulation',
     usesRealTimeData: false,
     comingSoon: true,
+    image: DEFAULT_THUMBNAIL,
+    mapCenter: PRESERVE_CENTER,
+    mapZoom: 10,
   },
   {
     id: 'water-budget',
@@ -84,6 +105,9 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     kind: 'simulation',
     usesRealTimeData: true,
     comingSoon: true,
+    image: DEFAULT_THUMBNAIL,
+    mapCenter: PRESERVE_CENTER,
+    mapZoom: 12,
   },
   {
     id: 'dam-removal',
@@ -96,6 +120,9 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     kind: 'simulation',
     usesRealTimeData: false,
     comingSoon: true,
+    image: DEFAULT_THUMBNAIL,
+    mapCenter: PRESERVE_CENTER,
+    mapZoom: 13,
   },
   {
     id: 'flood',
@@ -108,6 +135,9 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     kind: 'simulation',
     usesRealTimeData: true,
     comingSoon: true,
+    image: DEFAULT_THUMBNAIL,
+    mapCenter: PRESERVE_CENTER,
+    mapZoom: 12,
   },
   {
     id: 'wildfire-spread',
@@ -120,8 +150,15 @@ export const EXPERIENCES: ExperienceDefinition[] = [
     kind: 'simulation',
     usesRealTimeData: true,
     comingSoon: true,
+    image: DEFAULT_THUMBNAIL,
+    mapCenter: PRESERVE_CENTER,
+    mapZoom: 11,
   },
 ];
+
+export function getExperienceById(id: string): ExperienceDefinition | null {
+  return EXPERIENCES.find((experience) => experience.id === id) ?? null;
+}
 
 export function getExperiencesByCategory(categoryId: string): ExperienceDefinition[] {
   return EXPERIENCES.filter((experience) => experience.categoryId === categoryId);

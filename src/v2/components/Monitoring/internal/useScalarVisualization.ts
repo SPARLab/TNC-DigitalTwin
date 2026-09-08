@@ -15,6 +15,7 @@ import MediaLayer from '@arcgis/core/layers/MediaLayer';
 import type GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import type LocalMediaElementSource from '@arcgis/core/layers/support/LocalMediaElementSource';
 import type MapView from '@arcgis/core/views/MapView';
+import type SceneView from '@arcgis/core/views/SceneView';
 import { createScalarSurfaceElement } from './scalarSurfaceLayer';
 import { createScalarBadgeLayer, createScalarValueLabelLayer } from './scalarGraphicsLayers';
 import type { ScalarSnapshot, SensorVariableConfig } from '../../../services/sensorService';
@@ -24,7 +25,12 @@ import type { GeoExtent } from './windField';
 export type ScalarVizMode = 'surface' | 'labels';
 
 interface UseScalarVisualizationParams {
-  view: MapView | null;
+  /**
+   * Either view type. MediaLayer and GraphicsLayer both have 3D layer views, so
+   * the surface drapes over the terrain and the station graphics billboard above
+   * it without either renderer needing to know which view it is in.
+   */
+  view: MapView | SceneView | null;
   snapshot: ScalarSnapshot | null;
   config: SensorVariableConfig | null;
   mode: ScalarVizMode;

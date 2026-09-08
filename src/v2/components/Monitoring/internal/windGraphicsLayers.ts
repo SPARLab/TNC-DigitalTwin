@@ -170,6 +170,7 @@ export function createWindBadgeLayer(readings: WindReading[]): GraphicsLayer {
       latitude: reading.latitude,
       t: reading.windSpeedAvg / maxSpeed,
       text: reading.windSpeedAvg.toFixed(1),
+      unit: 'm/s',
       caption: reading.stationName.replace(/^Dangermond[_ ]/, ''),
       popupTitle: reading.stationName,
       popupContent: `
@@ -184,7 +185,7 @@ export function createWindBadgeLayer(readings: WindReading[]): GraphicsLayer {
     };
   });
 
-  return createValueBadgeLayer(points, { title: 'Wind — Station Readings' });
+  return createValueBadgeLayer(points, { title: 'Wind — Station Readings', size: 40 });
 }
 
 /**
