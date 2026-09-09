@@ -1,9 +1,13 @@
 // ============================================================================
 // LayerPicker — searchable catalog of rasters for the chosen extent/resolution.
+// Pinned Data Catalog datasets with matching rasters appear under Favorites.
 // ============================================================================
 
-import { useEffect, useRef, useState } from 'react';
-import { Check, ChevronDown, Loader2, Plus, Search } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Check, ChevronDown, Loader2, Plus, Search, Star } from 'lucide-react';
+import { useCatalogOptional } from '../../context/CatalogContext';
+import { useLayersOptional } from '../../context/LayerContext';
+import { datasetIdsFromPinnedLayers } from './pinnedRasterDatasets';
 import type { CatalogRaster } from './types';
 
 interface LayerPickerProps {
@@ -42,6 +46,17 @@ export function LayerPicker({
   const [isOpen, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const catalog = useCatalogOptional();
+  const layers = useLayersOptional();
+
+  const favoriteDatasetIds = useMemo(
+    () =>
+      datasetIdsFromPinnedLayers(
+        layers?.pinnedLayers ?? [],
+        catalog?.layerMap ?? new Map(),
+      ),
+    [catalog?.layerMap, layers?.pinnedLayers],
+  );
 
   useEffect(() => {
     if (disabled) setOpen(false);
@@ -63,7 +78,14 @@ export function LayerPicker({
       raster.title.toLowerCase().includes(query) ||
       raster.thematicCategory.toLowerCase().includes(query),
   );
+  const favorites = filtered.filter(
+    (raster) => raster.datasetId != null && favoriteDatasetIds.has(raster.datasetId),
+  );
   const grouped = groupByCategory(filtered);
+  const sections: [string, CatalogRaster[], boolean][] = [
+    ...(favorites.length > 0 ? [['Favorites', favorites, true] as [string, CatalogRaster[], boolean]] : []),
+    ...grouped.map(([category, items]) => [category, items, false] as [string, CatalogRaster[], boolean]),
+  ];
 
   return (
     <div ref={rootRef} className="relative">
@@ -99,17 +121,28 @@ export function LayerPicker({
           )}
 
           <div className="max-h-64 overflow-y-auto">
-            {grouped.length === 0 && !isLoading ? (
+            {sections.length === 0 && !isLoading ? (
               <p className="px-3 py-2 text-[11px] text-gray-500">{emptyMessage}</p>
             ) : (
-              grouped.map(([category, items]) => (
+              sections.map(([category, items, isFavoriteGroup]) => (
                 <div key={category}>
-                  <div className="flex items-center justify-between bg-gray-50 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-500">
-                    {category}
+                  <div
+                    className={`flex items-center justify-between px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide ${
+                      isFavoriteGroup
+                        ? 'bg-amber-50 text-amber-800'
+                        : 'bg-gray-50 text-gray-500'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1">
+                      {isFavoriteGroup && <Star className="h-3 w-3 fill-current" />}
+                      {category}
+                    </span>
                     <span>{items.length}</span>
                   </div>
                   {items.map((raster) => {
                     const isSelected = selectedIds.has(raster.id);
+                    const isFavorite =
+                      raster.datasetId != null && favoriteDatasetIds.has(raster.datasetId);
                     const range =
                       raster.units !== 'category' &&
                       raster.valueMin != null &&
@@ -121,7 +154,7 @@ export function LayerPicker({
 
                     return (
                       <button
-                        key={raster.id}
+                        key={`${category}-${raster.id}`}
                         type="button"
                         onClick={() =>
                           isSelected ? onRemove(raster.id) : onAdd(raster)
@@ -131,8 +164,11 @@ export function LayerPicker({
                         }`}
                       >
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-xs font-medium text-gray-800">
-                            {raster.title}
+                          <p className="flex items-center gap-1 text-xs font-medium text-gray-800">
+                            {isFavorite && (
+                              <Star className="h-3 w-3 flex-shrink-0 fill-amber-500 text-amber-500" />
+                            )}
+                            <span className="truncate">{raster.title}</span>
                           </p>
                           <p className="text-[10px] text-gray-500">
                             {raster.units === 'category' ? 'Categorical' : 'Continuous'}

@@ -22,8 +22,8 @@ export function LandingPage() {
         id="landing-hero-content"
         className="relative flex h-full w-full flex-col items-center justify-center px-8 text-center"
       >
-        <h1 className="whitespace-nowrap text-[clamp(2rem,5vw,4rem)] font-extrabold leading-tight tracking-[-0.03em] text-white [text-shadow:0_2px_16px_rgba(0,0,0,0.5)]">
-          Digital Twin of Nature
+        <h1 className="text-[clamp(2rem,5vw,4rem)] font-extrabold leading-tight tracking-[-0.03em] text-white [text-shadow:0_2px_16px_rgba(0,0,0,0.5)]">
+          Research Digital Twin of Nature
         </h1>
         <p className="mt-1 text-2xl text-white/85 [text-shadow:0_1px_10px_rgba(0,0,0,0.4)]">
           Jack and Laura Dangermond Preserve

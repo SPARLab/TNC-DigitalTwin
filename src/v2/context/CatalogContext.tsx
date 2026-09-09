@@ -35,3 +35,7 @@ export function useCatalog(): CatalogContextValue {
   if (!ctx) throw new Error('useCatalog must be used within CatalogProvider');
   return ctx;
 }
+
+export function useCatalogOptional(): CatalogContextValue | null {
+  return useContext(CatalogContext);
+}

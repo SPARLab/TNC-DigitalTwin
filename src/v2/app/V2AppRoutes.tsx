@@ -1,40 +1,24 @@
 // ============================================================================
 // V2AppRoutes — platform route table.
 //
-//   PlatformShell (nav rail)
-//     ├── /                       → LandingPage
-//     ├── /notebooks              → NotebooksPage
-//     ├── /monitoring             → MonitoringPage (owns its own map)
-//     ├── /experiences            → ExperiencesPage gallery
-//     ├── /experiences/:id        → ExperienceWorkspace (map + panel)
-//     └── WorkbenchLayout (catalog + data source providers)
-//           └── /catalog          → CatalogWorkbench
+//   PlatformShell (nav rail + catalog providers)
+//     └── PersistentPages (visited sections stay mounted)
+//           ├── /                       → LandingPage
+//           ├── /notebooks              → NotebooksPage
+//           ├── /monitoring             → MonitoringPage
+//           ├── /experiences            → ExperiencesPage
+//           └── /catalog                → CatalogWorkbench
 // ============================================================================
 
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { PlatformShell } from './PlatformShell';
-import { WorkbenchLayout } from './WorkbenchLayout';
-import { LandingPage } from '../pages/LandingPage';
-import { CatalogWorkbench } from '../pages/CatalogWorkbench';
-import { MonitoringPage } from '../pages/MonitoringPage';
-import { ExperiencesPage } from '../pages/ExperiencesPage';
-import { NotebooksPage } from '../pages/NotebooksPage';
+import { PersistentPages } from './PersistentPages';
 
 export function V2AppRoutes() {
   return (
     <Routes>
       <Route element={<PlatformShell />}>
-        <Route index element={<LandingPage />} />
-        <Route path="notebooks" element={<NotebooksPage />} />
-        <Route path="monitoring" element={<MonitoringPage />} />
-        <Route path="experiences" element={<ExperiencesPage />} />
-        <Route path="experiences/:experienceId" element={<ExperiencesPage />} />
-
-        <Route element={<WorkbenchLayout />}>
-          <Route path="catalog" element={<CatalogWorkbench />} />
-        </Route>
-
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<PersistentPages />} />
       </Route>
     </Routes>
   );

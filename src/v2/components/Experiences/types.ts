@@ -17,6 +17,8 @@ export interface CatalogRaster {
   resolution: number | null;
   /** Coverage of the raster: preserve, Santa Barbara County, or tri-county. */
   scope: RasterScope | null;
+  /** Original catalog dataset id, used to match pinned Data Catalog layers. */
+  datasetId: number | null;
   thematicCategory: string;
   units: string;
   valueMin: number | null;

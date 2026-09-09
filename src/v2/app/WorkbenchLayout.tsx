@@ -1,16 +1,11 @@
 // ============================================================================
-// WorkbenchLayout — layout route for the map-backed pages. Scopes the catalog
-// and per-data-source providers to the routes that actually need them so the
-// landing and notebooks pages skip the catalog registry fetch entirely.
+// WorkbenchLayout — previously scoped catalog providers to /catalog.
+// Providers now live on PlatformShell so pins survive page changes.
+// Kept as a passthrough in case older tests still wrap with it.
 // ============================================================================
 
 import { Outlet } from 'react-router-dom';
-import { V2AppProviders } from './V2AppProviders';
 
 export function WorkbenchLayout() {
-  return (
-    <V2AppProviders>
-      <Outlet />
-    </V2AppProviders>
-  );
+  return <Outlet />;
 }

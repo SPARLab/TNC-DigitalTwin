@@ -6,7 +6,7 @@
 // ============================================================================
 
 import { useMemo, useState } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useMatch, useNavigate } from 'react-router-dom';
 import { Radio, Search } from 'lucide-react';
 import {
   EXPERIENCES,
@@ -244,22 +244,28 @@ function ExperienceGallery() {
 }
 
 export function ExperiencesPage() {
-  const { experienceId } = useParams();
+  const workspaceMatch = useMatch('/experiences/:experienceId');
+  const experienceId = workspaceMatch?.params.experienceId;
   const navigate = useNavigate();
+  const experience = experienceId ? getExperienceById(experienceId) : undefined;
 
-  if (!experienceId) {
-    return <ExperienceGallery />;
-  }
-
-  const experience = getExperienceById(experienceId);
-  if (!experience) {
+  if (experienceId && !experience) {
     return <Navigate to="/experiences" replace />;
   }
 
   return (
-    <ExperienceWorkspace
-      experience={experience}
-      onClose={() => navigate('/experiences')}
-    />
+    <div id="experiences-section" className="h-full w-full">
+      <div className={experience ? 'hidden h-full' : 'h-full'}>
+        <ExperienceGallery />
+      </div>
+      {experience && (
+        <div className="h-full">
+          <ExperienceWorkspace
+            experience={experience}
+            onClose={() => navigate('/experiences')}
+          />
+        </div>
+      )}
+    </div>
   );
 }

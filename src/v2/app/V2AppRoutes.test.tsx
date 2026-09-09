@@ -1,12 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Outlet } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 import { V2AppRoutes } from './V2AppRoutes';
 
 // The catalog page and the data-source provider tree pull in the ArcGIS SDK and
-// every service client. Routing is the subject here, so both are stubbed and the
-// workbench layout is reduced to a pass-through outlet.
+// every service client. Routing is the subject here, so both are stubbed.
 vi.mock('../pages/CatalogWorkbench', () => ({
   CatalogWorkbench: () => <h1>Catalog Workbench</h1>,
 }));
@@ -15,8 +14,8 @@ vi.mock('../pages/MonitoringPage', () => ({
   MonitoringPage: () => <h1>Live Monitoring</h1>,
 }));
 
-vi.mock('./WorkbenchLayout', () => ({
-  WorkbenchLayout: () => <Outlet />,
+vi.mock('./V2AppProviders', () => ({
+  V2AppProviders: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 vi.mock('../components/Experiences/ExperienceMap', () => ({
@@ -36,7 +35,7 @@ describe('V2AppRoutes', () => {
     renderAt('/');
 
     expect(
-      screen.getByRole('heading', { name: 'Digital Twin of Nature' }),
+      screen.getByRole('heading', { name: 'Research Digital Twin of Nature' }),
     ).toBeInTheDocument();
   });
 
@@ -73,6 +72,24 @@ describe('V2AppRoutes', () => {
     expect(screen.getByRole('heading', { name: 'Live Monitoring' })).toBeInTheDocument();
   });
 
+  it('keeps a visited page mounted after navigating away', async () => {
+    const user = userEvent.setup();
+    renderAt('/catalog');
+
+    expect(screen.getByRole('heading', { name: 'Catalog Workbench' })).toBeInTheDocument();
+
+    await user.click(screen.getByTitle('Live Monitoring'));
+
+    expect(screen.getByRole('heading', { name: 'Live Monitoring' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Catalog Workbench', hidden: true }),
+    ).toBeInTheDocument();
+    expect(document.getElementById('platform-section-catalog')).toHaveAttribute('aria-hidden', 'true');
+    expect(document.getElementById('platform-section-monitoring')?.getAttribute('aria-hidden')).not.toBe(
+      'true',
+    );
+  });
+
   it('opens an experience workspace from a nested experiences route', () => {
     renderAt('/experiences/suitability');
 
@@ -89,7 +106,7 @@ describe('V2AppRoutes', () => {
     renderAt('/does-not-exist');
 
     expect(
-      screen.getByRole('heading', { name: 'Digital Twin of Nature' }),
+      screen.getByRole('heading', { name: 'Research Digital Twin of Nature' }),
     ).toBeInTheDocument();
   });
 });

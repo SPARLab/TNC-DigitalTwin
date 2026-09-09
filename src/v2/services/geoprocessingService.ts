@@ -100,6 +100,7 @@ function mapRasterRows(
         url: row.url as string,
         resolution: row.resolution,
         scope: parseScope(row.scope),
+        datasetId: row.dataset_id,
         thematicCategory: row.thematic_category?.trim() || 'Other',
         units: row.units?.trim() || '',
         valueMin: row.value_min,
