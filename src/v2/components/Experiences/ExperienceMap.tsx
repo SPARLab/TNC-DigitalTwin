@@ -36,18 +36,27 @@ interface ExperienceMapProps {
   analysisExtent?: RasterScope;
 }
 
+function requireMap(view: MapView): ArcGISMap {
+  const map = view.map;
+  if (!map) {
+    throw new Error('MapView is missing a map');
+  }
+  return map;
+}
+
 function findChildLayer(group: GroupLayer, title: string) {
   return group.layers.find((layer) => layer.title === title) ?? null;
 }
 
 function getOrCreateGroup(view: MapView, title: string): GroupLayer {
-  const existing = view.map.layers.find(
+  const map = requireMap(view);
+  const existing = map.layers.find(
     (layer) => layer.type === 'group' && layer.title === title,
   ) as GroupLayer | undefined;
   if (existing) return existing;
 
   const group = new GroupLayer({ title, visibilityMode: 'independent' });
-  view.map.add(group);
+  map.add(group);
   return group;
 }
 
@@ -90,7 +99,7 @@ export function ExperienceMap({
     });
 
     if (!managesAnalysisExtentRef.current) {
-      view.map.add(createPreserveOutlineLayer());
+      requireMap(view).add(createPreserveOutlineLayer());
     }
     viewRef.current = view;
 
@@ -123,11 +132,12 @@ export function ExperienceMap({
     if (!view || !isReady || !analysisExtent) return;
 
     let isCancelled = false;
-    const existing = view.map.findLayerById(ANALYSIS_EXTENT_LAYER_ID);
-    if (existing) view.map.remove(existing);
+    const map = requireMap(view);
+    const existing = map.findLayerById(ANALYSIS_EXTENT_LAYER_ID);
+    if (existing) map.remove(existing);
 
     const layer = createAnalysisExtentOutlineLayer(analysisExtent);
-    view.map.add(layer);
+    map.add(layer);
 
     void (async () => {
       try {
@@ -170,15 +180,16 @@ export function ExperienceMap({
     if (!view || !isReady || !pointsAction) return;
 
     const childTitle = 'Occurrences';
+    const map = requireMap(view);
 
     if (pointsAction.action === 'remove') {
-      const group = view.map.layers.find(
+      const group = map.layers.find(
         (layer) => layer.type === 'group' && layer.title === pointsAction.species,
       ) as GroupLayer | undefined;
       if (!group) return;
       const existing = findChildLayer(group, childTitle);
       if (existing) group.remove(existing);
-      if (group.layers.length === 0) view.map.remove(group);
+      if (group.layers.length === 0) map.remove(group);
       return;
     }
 
@@ -264,11 +275,12 @@ export function ExperienceMap({
     if (!view || !isReady || !previewAction) return;
 
     const key = String(previewAction.rasterId);
+    const map = requireMap(view);
 
     if (previewAction.action === 'remove') {
       const existing = previewLayersRef.current.get(key);
       if (existing) {
-        view.map.remove(existing);
+        map.remove(existing);
         previewLayersRef.current.delete(key);
       }
       return;
@@ -276,7 +288,7 @@ export function ExperienceMap({
 
     const existing = previewLayersRef.current.get(key);
     if (existing) {
-      view.map.remove(existing);
+      map.remove(existing);
       previewLayersRef.current.delete(key);
     }
 
@@ -287,7 +299,7 @@ export function ExperienceMap({
       title: previewAction.title || 'Preview',
       opacity: 0.7,
     });
-    view.map.add(layer);
+    map.add(layer);
     previewLayersRef.current.set(key, layer);
     layer.when(() => {
       if (layer.fullExtent) view.goTo(layer.fullExtent.expand(1.1)).catch(() => {});
