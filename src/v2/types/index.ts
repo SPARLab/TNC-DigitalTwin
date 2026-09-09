@@ -22,6 +22,10 @@ export interface CatalogLayer {
     isMultiLayerService?: boolean;
     parentServiceId?: string;
     siblingLayers?: CatalogLayer[];
+    /** Hints how the Data Catalog should visualize this dataset, e.g. `dendra_format`. */
+    catalogTag?: string;
+    /** Groups this dataset into a Live Monitoring section, e.g. `Weather Conditions`. */
+    liveTag?: string;
   };
 }
 

@@ -23,7 +23,7 @@ test.describe('Earthquake Faults and Folds in the USA', () => {
   const layer = testData.layers.find(l => l.id === 'earthquake-faults-folds-usa')!;
   
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto(helpers.V1_APP_PATH);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
   });

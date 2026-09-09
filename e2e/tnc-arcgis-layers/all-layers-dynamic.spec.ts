@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import allLayersData from '../test-data/all-arcgis-layers.json' with { type: 'json' };
 import { runQualityCheck, matchesExpectedResult } from '../helpers/run-quality-check';
-import type { LayerConfig } from '../helpers/tnc-arcgis-test-helpers';
+import { V1_APP_PATH, type LayerConfig } from '../helpers/tnc-arcgis-test-helpers';
 
 /**
  * Dynamic Test Suite for All ArcGIS Layers
@@ -31,7 +31,7 @@ for (const layer of categorizedLayers) {
   test.describe(`${layer.title} [${layer.id}] ${DYNAMIC_TEST_TAG}`, () => {
     test.beforeEach(async ({ page }) => {
       // Navigate to the app
-      await page.goto('/');
+      await page.goto(V1_APP_PATH);
       
       // Wait for app to fully load
       await page.waitForLoadState('networkidle');

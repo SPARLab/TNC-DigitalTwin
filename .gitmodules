@@ -1,0 +1,3 @@
+[submodule "twin_models"]
+	path = twin_models
+	url = git@github.com:danwillett/twin_models.git

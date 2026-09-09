@@ -1,16 +1,25 @@
-import { V2AppShell } from './V2AppShell';
+// ============================================================================
+// V2AppRoutes — platform route table.
+//
+//   PlatformShell (nav rail + catalog providers)
+//     └── PersistentPages (visited sections stay mounted)
+//           ├── /                       → LandingPage
+//           ├── /notebooks              → NotebooksPage
+//           ├── /monitoring             → MonitoringPage
+//           ├── /experiences            → ExperiencesPage
+//           └── /catalog                → CatalogWorkbench
+// ============================================================================
 
-type V2AppRoutesProps = {
-  isExportBuilderOpen: boolean;
-  onOpenExportBuilder: () => void;
-  onCloseExportBuilder: () => void;
-  isRightSidebarCollapsed: boolean;
-  onToggleRightSidebar: () => void;
-  onCollapseRightSidebar: () => void;
-};
+import { Route, Routes } from 'react-router-dom';
+import { PlatformShell } from './PlatformShell';
+import { PersistentPages } from './PersistentPages';
 
-export function V2AppRoutes(props: V2AppRoutesProps) {
-  // Route composition is intentionally simple today; extracting this boundary
-  // keeps future route additions out of the shell/provider files.
-  return <V2AppShell {...props} />;
+export function V2AppRoutes() {
+  return (
+    <Routes>
+      <Route element={<PlatformShell />}>
+        <Route path="*" element={<PersistentPages />} />
+      </Route>
+    </Routes>
+  );
 }

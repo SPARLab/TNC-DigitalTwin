@@ -7,6 +7,7 @@ import {
   testDownloadLink,
   testLayersLoad,
   testLegendFiltersWork,
+  V1_APP_PATH,
   type LayerConfig,
 } from '../helpers/tnc-arcgis-test-helpers';
 
@@ -21,7 +22,7 @@ test.describe('California Historical Fire Perimeters @manual', () => {
   test.setTimeout(120000); // 2 minutes for multi-layer testing with zoom
   
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto(V1_APP_PATH);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
     await switchToTopoBasemap(page);

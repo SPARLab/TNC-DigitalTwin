@@ -52,7 +52,7 @@ export function V2Header({ onOpenExportBuilder }: V2HeaderProps) {
     sortedAlerts.find((alert) => alert.id === selectedAlertId) ?? sortedAlerts[0] ?? null;
 
   const switchToV1 = () => {
-    window.location.search = '';
+    window.location.search = '?v1';
   };
 
   useEffect(() => {

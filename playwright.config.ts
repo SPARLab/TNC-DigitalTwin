@@ -17,7 +17,7 @@ export default defineConfig({
   reporter: 'html',
   
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:5180',
     trace: 'on-first-retry',
     viewport: { width: 2560, height: 1440 }, // Large monitor size (1440p)
     screenshot: 'only-on-failure',
@@ -34,7 +34,7 @@ export default defineConfig({
   /* Run dev server before starting tests */
   webServer: {
     command: 'npm run dev',
-    url: 'http://localhost:5173',
+    url: 'http://localhost:5180',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000, // 2 minutes for dev server to start
   },

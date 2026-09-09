@@ -426,3 +426,7 @@ export function useLayers() {
   if (!ctx) throw new Error('useLayers must be used within LayerProvider');
   return ctx;
 }
+
+export function useLayersOptional() {
+  return useContext(LayerContext);
+}
