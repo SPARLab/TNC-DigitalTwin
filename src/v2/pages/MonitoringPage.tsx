@@ -22,8 +22,10 @@ import {
   Radio,
   Signal,
   Thermometer,
+  Waves,
   Wind,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { MonitoringMap } from '../components/Monitoring/MonitoringMap';
 import { MonitoringScene, SCENE_CAMERA_TILT } from '../components/Monitoring/MonitoringScene';
 import { ViewModeToggle } from '../components/Monitoring/ViewModeToggle';
@@ -44,12 +46,14 @@ import { getStationsExtent } from '../components/Monitoring/internal/windField';
 import { useWindData, WIND_REFRESH_INTERVAL_MS } from '../hooks/useWindData';
 import { useSensorData, SENSOR_REFRESH_INTERVAL_MS } from '../hooks/useSensorData';
 import { useCameraData, CAMERA_REFRESH_INTERVAL_MS } from '../hooks/useCameraData';
+import { useConditionsSummary, type SummaryMetricId } from '../hooks/useConditionsSummary';
 import { usePreserveBoundary } from '../hooks/usePreserveBoundary';
 import { useMonitoringSections } from '../hooks/useMonitoringSections';
 import type { MonitoringSection, MonitoringSensor } from '../hooks/useMonitoringSections';
 import { ResizablePanel } from '../components/shared/ResizablePanel';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { createPreserveOutlineLayer } from '../components/Monitoring/internal/boundaryOutlineLayer';
+import { formatObservedAt } from '../components/Monitoring/internal/formatObservedAt';
 import { allowsInterpolation, SENSOR_VARIABLES } from '../services/sensorService';
 import type { SensorVariableId } from '../services/sensorService';
 
@@ -67,11 +71,19 @@ function isScalarSensor(sensorId: string): sensorId is SensorVariableId {
   return SCALAR_SENSOR_IDS.has(sensorId);
 }
 
-const SUMMARY_TILES = [
-  { id: 'temperature', label: 'Temperature', icon: Thermometer },
-  { id: 'wind-speed', label: 'Wind Speed', icon: Wind },
+/**
+ * Each tile is a maximum across the reporting stations, which the panel states
+ * once above them rather than every label carrying a "Max" prefix. The air and
+ * creek temperatures are both named, since "Temperature" alone would be
+ * ambiguous once there are two of them.
+ */
+const SUMMARY_TILES: { id: SummaryMetricId; label: string; icon: LucideIcon }[] = [
+  { id: 'temp', label: 'Air Temp', icon: Thermometer },
+  { id: 'wind', label: 'Wind Speed', icon: Wind },
   { id: 'humidity', label: 'Humidity', icon: Droplets },
-  { id: 'soil-moisture', label: 'Soil Moisture', icon: Gauge },
+  { id: 'pressure', label: 'Pressure', icon: Gauge },
+  { id: 'gaugeHeight', label: 'Creek Height', icon: Waves },
+  { id: 'waterTemp', label: 'Creek Temp', icon: Thermometer },
 ];
 
 interface SensorErrorProps {
@@ -371,6 +383,10 @@ export function MonitoringPage() {
   const stationPoints =
     snapshot?.readings ?? scalar.snapshot?.readings ?? cameras.snapshot?.cameras ?? null;
 
+  // The summary tiles give way to the active layer's own readings, so there is no
+  // point polling for them once something is on the map.
+  const summary = useConditionsSummary(!stationPoints?.length);
+
   const frameStations = useCallback(() => {
     if (!view || view.destroyed || !stationPoints?.length) return;
     const extent = getStationsExtent(stationPoints);
@@ -593,24 +609,49 @@ export function MonitoringPage() {
             <p className="mt-2 text-[11px] leading-relaxed text-gray-500">
               {hasAnySensorActive
                 ? 'Loading the latest readings…'
-                : 'Turn on a sensor in the list to see live readings on the map.'}
+                : 'Latest readings, taking the highest where several stations report. Turn on a sensor in the list to map it.'}
             </p>
 
             <div className="mt-3 grid grid-cols-2 gap-2">
               {SUMMARY_TILES.map((tile) => {
                 const TileIcon = tile.icon;
+                const reading = summary.readings[tile.id];
                 return (
                   <div
                     key={tile.id}
+                    // The station is the one piece of provenance there is no room
+                    // for on a tile this size.
+                    title={reading ? `Highest at ${reading.stationName}` : undefined}
                     className="flex flex-col items-center gap-1 rounded-card border border-gray-200 bg-gray-50 px-3 py-4"
                   >
                     <TileIcon className="h-4 w-4 text-gray-400" />
-                    <span className="text-lg font-semibold text-gray-400">--</span>
+                    <div className="flex items-baseline gap-0.5">
+                      <span
+                        className={`text-lg font-semibold ${
+                          reading ? 'text-gray-900' : 'text-gray-400'
+                        }`}
+                      >
+                        {reading ? reading.value.toFixed(reading.decimals) : '--'}
+                      </span>
+                      {reading && (
+                        <span className="text-[10px] font-medium text-gray-500">
+                          {reading.unit}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-[10px] font-medium text-gray-500">{tile.label}</span>
                   </div>
                 );
               })}
             </div>
+
+            {summary.observedAt !== null && (
+              <p className="mt-2 text-[10px] text-gray-400">
+                Observed {formatObservedAt(summary.observedAt)}
+                {summary.failedCount > 0 &&
+                  ` · ${summary.failedCount} of ${SUMMARY_TILES.length} unavailable`}
+              </p>
+            )}
           </section>
         )}
 

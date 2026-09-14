@@ -11,22 +11,13 @@ import Font from '@arcgis/core/symbols/Font';
 import { createValueBadgeLayer, type BadgePoint } from './valueBadgeLayer';
 import { sampleRamp } from './colorRamps';
 import { normalize } from './scalarField';
+import { formatObservedAt } from './formatObservedAt';
 import {
   getRampBounds,
   type ScalarReading,
   type ScalarSnapshot,
   type SensorVariableConfig,
 } from '../../../services/sensorService';
-
-function formatObservedAt(epochMs: number): string {
-  if (!epochMs) return 'Unknown';
-  return new Date(epochMs).toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-}
 
 /** Explain any correction applied, so a surprising number can be traced. */
 function describeDerivation(

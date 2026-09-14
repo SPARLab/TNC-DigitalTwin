@@ -32,9 +32,14 @@ export interface ArcGISLegendItem {
 export interface ArcGISLayerLegend {
   layerId: number;
   layerName: string;
-  rendererType: 'simple' | 'uniqueValue' | 'classBreaks';
+  rendererType: 'simple' | 'uniqueValue' | 'classBreaks' | 'continuous';
   filterField?: string;
   items: ArcGISLegendItem[];
+  /** CSS linear-gradient for continuous color ramps */
+  gradientCss?: string;
+  rampTitle?: string;
+  rampLowLabel?: string;
+  rampHighLabel?: string;
 }
 
 function getPortalCandidatesFromServiceUrl(serviceRootUrl: string): string[] {

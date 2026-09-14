@@ -20,6 +20,7 @@ import {
   type WindReading,
 } from '../../../services/windService';
 import { createValueBadgeLayer, type BadgePoint } from './valueBadgeLayer';
+import { formatObservedAt } from './formatObservedAt';
 
 const GRID_COLS = 20;
 const GRID_ROWS = 15;
@@ -97,15 +98,6 @@ function createArrowSymbol({
   });
 }
 
-function formatObservedAt(epochMs: number): string {
-  if (!epochMs) return 'Unknown';
-  return new Date(epochMs).toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-}
 
 /** One arrow per reporting station, sized and coloured by its average speed. */
 export function createWindArrowLayer(readings: WindReading[]): GraphicsLayer {

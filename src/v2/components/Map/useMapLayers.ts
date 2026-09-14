@@ -23,7 +23,7 @@ import { useMapLayerPresentationSync } from './mapLayers/internal/useMapLayerPre
 
 export function useMapLayers() {
   const { pinnedLayers, activeLayer, getLayerOpacity } = useLayers();
-  const { viewRef, mapReady, showToast } = useMap();
+  const { viewRef, viewMode, mapReady, showToast } = useMap();
   const { layerMap } = useCatalog();
   const managedLayersRef = useRef<Map<string, Layer>>(new Map());
   const warnedLayersRef = useRef<Set<string>>(new Set());
@@ -46,6 +46,7 @@ export function useMapLayers() {
     concreteActiveLayerName,
     getLayerOpacity,
     viewRef,
+    viewMode,
     mapReady,
     showToast,
     managedLayersRef,

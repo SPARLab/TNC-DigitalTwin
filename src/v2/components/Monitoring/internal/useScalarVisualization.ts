@@ -12,7 +12,7 @@
 
 import { useEffect, useRef } from 'react';
 import MediaLayer from '@arcgis/core/layers/MediaLayer';
-import type GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
+import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import type LocalMediaElementSource from '@arcgis/core/layers/support/LocalMediaElementSource';
 import type MapView from '@arcgis/core/views/MapView';
 import type SceneView from '@arcgis/core/views/SceneView';
@@ -118,25 +118,42 @@ export function useScalarVisualization({
     layer.visible = true;
   }, [view, data, config, mode, clip]);
 
-  // Station graphics for either mode: badges on their own, or plain value text
-  // over the surface. Both are graphics layers, safe to add and remove per change,
-  // and both go on top so the surface never covers them.
+  // Mount one graphics carrier per view, for the same reason the surface has one:
+  // adding and removing a layer per change queues layer views the SDK sometimes
+  // fails to build, and it does so reliably once a cached snapshot makes the
+  // add and the remove land close together.
   useEffect(() => {
-    if (!view || view.destroyed || !data || !config) return;
+    if (!view || view.destroyed) return;
 
-    const layer = mode === 'labels'
-      ? createScalarBadgeLayer(data, config)
-      : createScalarValueLabelLayer(data, config);
-
+    const layer = new GraphicsLayer({ title: 'Station Values' });
     view.map?.add(layer);
     badgeLayerRef.current = layer;
 
     return () => {
-      // Removal is the whole teardown. Calling destroy() here nulls the layer
-      // while the view may still have its layer view creation queued, which then
-      // fails reading from the layer it was handed.
       if (!view.destroyed) view.map?.remove(layer);
       badgeLayerRef.current = null;
     };
+  }, [view]);
+
+  // Station graphics for either mode: badges on their own, or plain value text
+  // over the surface.
+  useEffect(() => {
+    const layer = badgeLayerRef.current;
+    if (!layer) return;
+
+    layer.removeAll();
+    if (!view || view.destroyed || !data || !config) return;
+
+    const built = mode === 'labels'
+      ? createScalarBadgeLayer(data, config)
+      : createScalarValueLabelLayer(data, config);
+
+    layer.title = built.title ?? 'Station Values';
+    layer.addMany(built.graphics.toArray());
+
+    // The carrier is mounted when the view is, which is before the boundary
+    // outline, so it has to be lifted back above it once it holds anything.
+    const layers = view.map?.layers;
+    if (layers) view.map?.reorder(layer, layers.length - 1);
   }, [view, data, config, mode]);
 }

@@ -11,6 +11,8 @@ import type SceneView from '@arcgis/core/views/SceneView';
 import type GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import type SketchViewModel from '@arcgis/core/widgets/Sketch/SketchViewModel';
 import type { SpatialPolygon } from '../utils/spatialQuery';
+import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { isBasemapId, resolveBasemap, type BasemapId } from '../config/basemaps';
 import { useLayers } from './LayerContext';
 import { useMapToastState, type MapToast } from './mapContext/internal/useMapToastState';
 import { useDataOnePreviewState, type DataOnePreviewState } from './mapContext/internal/useDataOnePreviewState';
@@ -29,6 +31,10 @@ interface MapContextValue {
   isLidarVisible: boolean;
   /** Toggle LiDAR point cloud layer visibility */
   toggleLidarVisibility: () => void;
+  /** Resolved Esri basemap id for the current view */
+  basemapId: BasemapId;
+  /** Persist a basemap choice across 2D and 3D */
+  setBasemap: (id: BasemapId) => void;
   /** Ref to the highlight graphics layer */
   highlightLayerRef: MutableRefObject<GraphicsLayer | null>;
   /** Increments when the map view is ready (triggers re-render in dependents) */
@@ -82,6 +88,15 @@ export function MapProvider({ children }: { children: ReactNode }) {
   const viewRef = useRef<MapView | SceneView | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('2d');
   const [isLidarVisible, setIsLidarVisible] = useState(true);
+  const [storedBasemap, setStoredBasemap] = useLocalStorage<BasemapId | null>(
+    'v2-catalog-basemap',
+    null,
+  );
+  const basemapPreference = isBasemapId(storedBasemap) ? storedBasemap : null;
+  const basemapId = resolveBasemap(basemapPreference, viewMode);
+  const setBasemap = useCallback((id: BasemapId) => {
+    setStoredBasemap(id);
+  }, [setStoredBasemap]);
   const highlightLayerRef = useRef<GraphicsLayer | null>(null);
   const spatialQueryLayerRef = useRef<GraphicsLayer | null>(null);
   const spatialSketchViewModelRef = useRef<SketchViewModel | null>(null);
@@ -123,7 +138,8 @@ export function MapProvider({ children }: { children: ReactNode }) {
   return (
     <MapContext.Provider
       value={{
-        viewRef, viewMode, toggleViewMode, isLidarVisible, toggleLidarVisibility, highlightLayerRef,
+        viewRef, viewMode, toggleViewMode, isLidarVisible, toggleLidarVisibility,
+        basemapId, setBasemap, highlightLayerRef,
         mapReady, setMapReady,
         highlightPoint, clearHighlight,
         showToast, toasts, dismissToast,

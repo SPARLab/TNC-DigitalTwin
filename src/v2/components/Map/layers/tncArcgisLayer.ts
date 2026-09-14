@@ -4,6 +4,8 @@ import ImageryLayer from '@arcgis/core/layers/ImageryLayer';
 import MapImageLayer from '@arcgis/core/layers/MapImageLayer';
 import type { CatalogLayer } from '../../../types';
 import { buildServiceRootUrl, buildServiceUrl } from '../../../services/tncArcgisService';
+import { createNhdPlusFlowlineRenderer, isNhdPlusFlowlinesLayer } from './nhdPlusFlowlinesStyle';
+import { attachNhdPlusTerrainElevationFallback } from './nhdPlusFlowlinesTerrainFallback';
 
 function sanitizeArcGisBaseUrl(serverBaseUrl: string): string {
   const trimmed = serverBaseUrl.trim().replace(/\/+$/, '');
@@ -110,8 +112,9 @@ export function createTNCArcGISLayer(options: {
   layer: CatalogLayer;
   visible?: boolean;
   whereClause?: string;
+  viewMode?: '2d' | '3d';
 }): Layer | null {
-  const { id, layer, visible = true, whereClause } = options;
+  const { id, layer, visible = true, whereClause, viewMode = '2d' } = options;
   const meta = layer.catalogMeta;
   if (!meta) return null;
 
@@ -120,6 +123,8 @@ export function createTNCArcGISLayer(options: {
   const isGbifLayer =
     layer.id === 'dataset-178' ||
     meta.servicePath.toLowerCase().includes('dangermond_preserve_species_occurrences');
+
+  const isNhdPlusFlowlines = isNhdPlusFlowlinesLayer(layer);
 
   // FeatureServer layers can use FeatureLayer directly with SQL filtering.
   if (meta.hasFeatureServer) {
@@ -130,6 +135,9 @@ export function createTNCArcGISLayer(options: {
       visible,
       outFields: ['*'],
       definitionExpression,
+      // SceneView defaults Z-aware features to absolute-height, which buries
+      // hydrography (and similar) under terrain/LiDAR. MapView ignores this.
+      elevationInfo: { mode: 'on-the-ground' },
       // GBIF has very dense points; use high-contrast symbols and clustering
       // so records are visually obvious at preserve zoom levels.
       // IMPORTANT: Only spread renderer/featureReduction when actually needed.
@@ -165,9 +173,15 @@ export function createTNCArcGISLayer(options: {
             labelPlacement: 'center-center' as const,
           }],
         },
+      } : isNhdPlusFlowlines ? {
+        renderer: createNhdPlusFlowlineRenderer(viewMode),
+        returnZ: true,
       } : {}),
     });
     attachFeatureLayerLoadFallback(featureLayer, featureLayerUrlCandidates, layer.name);
+    if (isNhdPlusFlowlines && viewMode === '3d') {
+      attachNhdPlusTerrainElevationFallback(featureLayer);
+    }
     return featureLayer;
   }
 

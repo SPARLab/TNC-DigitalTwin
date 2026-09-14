@@ -7,6 +7,7 @@ import { Layers, RefreshCw, Signal, Tag } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { rampToCssGradient } from './internal/colorRamps';
 import type { ScalarVizMode } from './internal/useScalarVisualization';
+import { formatObservedAt } from './internal/formatObservedAt';
 import {
   allowsInterpolation,
   getRampBounds,
@@ -26,15 +27,6 @@ const MODES: ModeOption[] = [
   { id: 'labels', label: 'Labels', icon: Tag },
 ];
 
-function formatObservedAt(epochMs: number): string {
-  if (!epochMs) return 'Unknown';
-  return new Date(epochMs).toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-}
 
 interface StatCardProps {
   value: string;

@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { Plus, Minus, Compass } from 'lucide-react';
 import { useMap } from '../../context/MapContext';
 import LidarIcon from '../../../components/icons/LidarIcon';
+import { BasemapPicker } from './BasemapPicker';
 
 const BTN =
   'map-control-btn flex items-center justify-center bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors';
@@ -47,6 +48,8 @@ export function MapControlRail() {
       >
         {is3D ? '2D' : '3D'}
       </button>
+
+      <BasemapPicker />
 
       {/* LiDAR — 3D only */}
       {is3D && (

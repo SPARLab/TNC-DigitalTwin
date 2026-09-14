@@ -63,6 +63,7 @@ export function registerTNCArcGISLayer(layerId: string, layer: CatalogLayer): vo
 export function createMapLayer(layerId: string, options: {
   visible?: boolean;
   whereClause?: string;
+  viewMode?: '2d' | '3d';
 }): Layer | null {
   switch (layerId) {
     case 'inaturalist-obs':
@@ -106,6 +107,7 @@ export function createMapLayer(layerId: string, options: {
           layer,
           visible: options.visible,
           whereClause: options.whereClause,
+          viewMode: options.viewMode,
         });
       }
       return null;

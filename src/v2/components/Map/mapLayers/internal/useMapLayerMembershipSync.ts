@@ -11,6 +11,7 @@ interface UseMapLayerMembershipSyncParams {
   concreteActiveLayerName: string | null;
   getLayerOpacity: (layerId: string) => number;
   viewRef: MutableRefObject<MapView | SceneView | null>;
+  viewMode: '2d' | '3d';
   mapReady: number;
   showToast: (message: string, type?: 'info' | 'warning') => void;
   managedLayersRef: MutableRefObject<Map<string, Layer>>;
@@ -24,6 +25,7 @@ export function useMapLayerMembershipSync({
   concreteActiveLayerName,
   getLayerOpacity,
   viewRef,
+  viewMode,
   mapReady,
   showToast,
   managedLayersRef,
@@ -70,6 +72,7 @@ export function useMapLayerMembershipSync({
       const arcLayer = createMapLayer(layerId, {
         visible,
         whereClause: tncWhereClause,
+        viewMode,
       });
 
       if (!arcLayer) {
@@ -90,6 +93,7 @@ export function useMapLayerMembershipSync({
     concreteActiveLayerName,
     getLayerOpacity,
     viewRef,
+    viewMode,
     mapReady,
     showToast,
     managedLayersRef,
