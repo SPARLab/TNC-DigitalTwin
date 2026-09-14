@@ -136,17 +136,17 @@ export function createNhdPlusFlowlineRenderer(
     type: 'simple',
     symbol,
     visualVariables: [{
-      type: 'color',
+      type: 'color' as const,
       valueExpression: buildNhdPlusElevationValueExpression(sampledMetersByObjectId),
       valueExpressionTitle: 'Midpoint elevation',
       legendOptions: { title: 'Elevation' },
       stops: ELEVATION_COLOR_STOPS.map((stop) => ({
         value: stop.value,
-        color: stop.color,
+        color: [...stop.color],
         label: stop.label,
       })),
     }],
-  } as FeatureLayer['renderer'];
+  } as unknown as FeatureLayer['renderer'];
 }
 
 export function getNhdPlusFlowlineLegend(): ArcGISLayerLegend {

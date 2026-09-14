@@ -13,22 +13,24 @@ const INITIAL_ZOOM = 12;
 const DEFAULT_SCALE = 250000;
 export const V2_LIDAR_LAYER_ID = 'v2-lidar-point-cloud-layer';
 
+const DARK_SCENE_ENVIRONMENT = {
+  atmosphereEnabled: false,
+  starsEnabled: false,
+  background: {
+    type: 'color' as const,
+    color: [6, 10, 16, 1] as [number, number, number, number],
+  },
+  lighting: {
+    type: 'virtual' as const,
+    directShadowsEnabled: false,
+  },
+};
+
 function applyDarkSceneEnvironment(view: SceneView): void {
   // Atmosphere is what paints the bright horizon bloom when the camera tilts.
   // A dark clear sky + virtual lighting keeps 3D readable on Dark/Imagery.
-  view.environment = {
-    atmosphereEnabled: false,
-    starsEnabled: false,
-    background: {
-      type: 'color',
-      color: [6, 10, 16, 1],
-    },
-    lighting: {
-      type: 'virtual',
-      directShadowsEnabled: false,
-      glow: { intensity: 0.55 },
-    },
-  };
+  view.environment = DARK_SCENE_ENVIRONMENT;
+  Object.assign(view.environment.lighting, { glow: { intensity: 0.55 } });
 }
 
 interface SavedViewState {
@@ -193,19 +195,7 @@ export function useArcgisViewLifecycle({
           center: saved.center,
           scale: targetScale,
           qualityProfile: 'high',
-          environment: {
-            atmosphereEnabled: false,
-            starsEnabled: false,
-            background: {
-              type: 'color',
-              color: [6, 10, 16, 1],
-            },
-            lighting: {
-              type: 'virtual',
-              directShadowsEnabled: false,
-              glow: { intensity: 0.55 },
-            },
-          },
+          environment: DARK_SCENE_ENVIRONMENT,
           ui: { components: ['attribution'] },
           padding: { top: 52, right: 0, bottom: 0, left: 0 },
         })

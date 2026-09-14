@@ -41,7 +41,7 @@ describe('isNhdPlusFlowlinesLayer', () => {
 
 describe('NHDPlus flowline style', () => {
   it('builds a continuous midpoint-elevation color ramp and matching legend', () => {
-    const renderer = createNhdPlusFlowlineRenderer() as {
+    const renderer = createNhdPlusFlowlineRenderer() as unknown as {
       type: string;
       visualVariables: Array<{
         type: string;
@@ -60,7 +60,7 @@ describe('NHDPlus flowline style', () => {
     expect(NHDPLUS_MISSING_ELEVATION_WHERE).toContain('minelevsmo');
     expect(buildNhdPlusElevationValueExpression({ '99': 12.5 })).toContain("Dictionary('99', 12.5)");
 
-    const renderer3d = createNhdPlusFlowlineRenderer('3d') as {
+    const renderer3d = createNhdPlusFlowlineRenderer('3d') as unknown as {
       symbol: { type: string; symbolLayers: Array<{ type: string }> };
     };
     expect(renderer3d.symbol.type).toBe('line-3d');
