@@ -7,10 +7,12 @@ import type MapView from '@arcgis/core/views/MapView';
 import type SceneView from '@arcgis/core/views/SceneView';
 import { useLayers } from '../../context/LayerContext';
 import { useMap } from '../../context/MapContext';
+import { useCatalog } from '../../context/CatalogContext';
 import { useDroneDeploy } from '../../context/DroneDeployContext';
+import { registerDroneLayerId, isDroneLayer } from '../../components/Map/layers';
 import type { PinnedLayer, ActiveLayer } from '../../types';
 
-const LAYER_ID = 'dataset-193';
+const LEGACY_DRONE_LAYER_ID = 'dataset-193';
 const PORTAL_URL = 'https://dangermondpreserve-spatial.com/portal';
 
 function extentFromRings(rings?: number[][][]): Extent | null {
@@ -72,12 +74,27 @@ export function useDroneDeployMapBehavior(
     requestFlyToFlight,
   } = useDroneDeploy();
   const { activateLayer } = useLayers();
+  const { layerMap } = useCatalog();
   const { viewRef, showToast } = useMap();
   const loadedArcLayersRef = useRef<Map<number, WMTSLayer>>(new Map());
   const lastParentLayerRef = useRef<GroupLayer | null>(null);
   const failedFlightIdsRef = useRef<Set<number>>(new Set());
   const isHandlingMapReadyRef = useRef(false);
   const lastRequestedFlyToFlightIdRef = useRef<number | null>(null);
+
+  for (const [layerId, layer] of layerMap.entries()) {
+    if (layer.dataSource === 'drone') registerDroneLayerId(layerId);
+  }
+
+  const LAYER_ID = (() => {
+    if (activeLayer && (activeLayer.dataSource === 'drone' || isDroneLayer(activeLayer.layerId))) {
+      return activeLayer.layerId;
+    }
+    const pinned = pinnedLayers.find(
+      (layer) => layerMap.get(layer.layerId)?.dataSource === 'drone' || isDroneLayer(layer.layerId),
+    );
+    return pinned?.layerId ?? LEGACY_DRONE_LAYER_ID;
+  })();
 
   const isPinned = pinnedLayers.some((layer) => layer.layerId === LAYER_ID);
   const isActive = activeLayer?.layerId === LAYER_ID;

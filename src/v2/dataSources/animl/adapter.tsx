@@ -49,4 +49,5 @@ export const animlAdapter: DataSourceAdapter = {
   BrowseTab: AnimlBrowseTab,
   LegendWidget: AnimlLegendWidget,
   CacheProvider: AnimlFilterProvider,
+  supportsPinnedFilters: true,
 };

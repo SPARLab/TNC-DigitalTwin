@@ -31,4 +31,5 @@ export const gbifAdapter: DataSourceAdapter = {
   OverviewTab: GBIFOverviewWithCache,
   BrowseTab: GBIFBrowseTab,
   CacheProvider: GBIFFilterProvider,
+  supportsPinnedFilters: true,
 };

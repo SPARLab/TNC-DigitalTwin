@@ -24,7 +24,7 @@ export interface CatalogLayer {
     siblingLayers?: CatalogLayer[];
     /** Non-spatial tables published with this feature service (for sidebar summary). */
     tableCount?: number;
-    /** Hints how the Data Catalog should visualize this dataset, e.g. `dendra_format`. */
+    /** Hints how the Data Catalog should visualize this dataset (`dendra_format`, `motus_format`, …). */
     catalogTag?: string;
     /** Groups this dataset into a Live Monitoring section, e.g. `Weather Conditions`. */
     liveTag?: string;

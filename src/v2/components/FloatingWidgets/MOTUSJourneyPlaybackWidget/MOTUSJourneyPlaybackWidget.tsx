@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Pause, Play, SkipBack, SkipForward } from 'lucide-react';
 import { useLayers } from '../../../context/LayerContext';
+import { useCatalog } from '../../../context/CatalogContext';
 import { useMotusFilter } from '../../../context/MotusFilterContext';
 
 const PLAYBACK_SPEED_OPTIONS: Array<0.5 | 1 | 2 | 4> = [0.5, 1, 2, 4];
@@ -17,6 +18,7 @@ function formatPlaybackLabel(value: string): string {
 
 export function MOTUSJourneyPlaybackWidget() {
   const { activeLayer, pinnedLayers } = useLayers();
+  const { layerMap } = useCatalog();
   const {
     selectedTagId,
     playbackStepIndex,
@@ -33,8 +35,16 @@ export function MOTUSJourneyPlaybackWidget() {
     setIsPlaybackPlaying,
   } = useMotusFilter();
 
-  const hasMotusOnMap = pinnedLayers.some((layer) => layer.layerId.startsWith('service-181') || layer.layerId === 'dataset-181')
-    || !!(activeLayer && (activeLayer.layerId.startsWith('service-181') || activeLayer.layerId === 'dataset-181'));
+  const hasMotusOnMap = pinnedLayers.some((layer) => {
+    const catalogLayer = layerMap.get(layer.layerId);
+    return catalogLayer?.dataSource === 'motus'
+      || layer.layerId.startsWith('service-181')
+      || layer.layerId === 'dataset-181';
+  }) || !!(activeLayer && (
+    activeLayer.dataSource === 'motus'
+    || activeLayer.layerId.startsWith('service-181')
+    || activeLayer.layerId === 'dataset-181'
+  ));
 
   const maxStepIndex = Math.max(0, playbackStepLabels.length - 1);
   const currentLabel = playbackStepLabels[playbackStepIndex] || 'Journey start';

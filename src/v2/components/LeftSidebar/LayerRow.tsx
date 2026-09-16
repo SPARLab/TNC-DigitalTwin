@@ -72,6 +72,7 @@ export function LayerRow({
   const {
     activeLayer,
     activateLayer,
+    deactivateLayer,
     isLayerPinned,
     isLayerVisible,
     pinLayer,
@@ -89,7 +90,8 @@ export function LayerRow({
     && catalogLayer.catalogMeta?.siblingLayers
     && catalogLayer.catalogMeta.siblingLayers.length > 0
   );
-  const isDroneDeployOrthomosaicsLayer = catalogLayer?.catalogMeta?.datasetId === 193;
+  const isDroneDeployOrthomosaicsLayer = catalogLayer?.dataSource === 'drone'
+    || catalogLayer?.catalogMeta?.catalogTag === 'drone_format';
 
   const isSelectedServiceChild = !controlsOnly
     && !!activeLayer?.isService
@@ -111,6 +113,17 @@ export function LayerRow({
 
   const handleClick = () => {
     if (controlsOnly) return;
+    // Toggle off when already active — unpinned layers leave the map;
+    // pinned layers stay visible via the pin.
+    if (isActive) {
+      deactivateLayer();
+      onAnnounce?.(
+        isPinned
+          ? `${name} deselected (still pinned on map)`
+          : `${name} layer deactivated`,
+      );
+      return;
+    }
     activateLayer(layerId);
     if (isDroneDeployOrthomosaicsLayer) setIsProjectsExpanded(true);
   };

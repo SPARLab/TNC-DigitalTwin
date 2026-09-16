@@ -8,6 +8,7 @@
 // ============================================================================
 
 import type { CatalogLayer } from '../types';
+import { CATALOG_FORMAT_TAGS } from './catalogFormatTags';
 
 /** Which FeatureServer child to prefer when a dataset has several map layers. */
 export type CatalogSublayerPreference = 'latest' | 'locations' | number;
@@ -156,6 +157,6 @@ export function resolveHistoricalCatalogLayer(
 ): CatalogLayer | null {
   const probe = findAnyLayerForDataset(layerMap, datasetId);
   const preference: CatalogSublayerPreference =
-    probe?.catalogMeta?.catalogTag === 'dendra_format' ? 'locations' : liveLayerId;
+    probe?.catalogMeta?.catalogTag === CATALOG_FORMAT_TAGS.dendra ? 'locations' : liveLayerId;
   return resolveCatalogLayerForDataset(layerMap, datasetId, preference);
 }

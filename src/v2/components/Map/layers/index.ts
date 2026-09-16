@@ -32,6 +32,10 @@ export const IMPLEMENTED_LAYERS = new Set([
 
 /** Layer IDs known to be Dendra sensor services (detected dynamically) */
 const dendraLayerIds = new Set<string>();
+/** Layer IDs known to be GBIF occurrence services (detected via catalog_tag) */
+const gbifLayerIds = new Set<string>();
+/** Layer IDs known to be DroneDeploy orthomosaic services (detected via catalog_tag) */
+const droneLayerIds = new Set<string>();
 /** Layer IDs known to be TNC ArcGIS catalog layers (detected dynamically) */
 const tncArcgisLayerIds = new Set<string>();
 /** Catalog metadata for each registered TNC ArcGIS layer */
@@ -46,6 +50,23 @@ export function registerDendraLayerId(layerId: string): void {
 /** Check if a layer ID is a registered Dendra layer */
 export function isDendraLayer(layerId: string): boolean {
   return dendraLayerIds.has(layerId);
+}
+
+/** Register a layer ID as a GBIF occurrence layer. */
+export function registerGBIFLayerId(layerId: string): void {
+  gbifLayerIds.add(layerId);
+  IMPLEMENTED_LAYERS.add(layerId);
+}
+
+/** Register a layer ID as a DroneDeploy orthomosaics layer. */
+export function registerDroneLayerId(layerId: string): void {
+  droneLayerIds.add(layerId);
+  IMPLEMENTED_LAYERS.add(layerId);
+}
+
+/** Check if a layer ID is a registered DroneDeploy layer */
+export function isDroneLayer(layerId: string): boolean {
+  return droneLayerIds.has(layerId);
 }
 
 /** Register a layer ID as a concrete TNC ArcGIS layer. */
@@ -81,22 +102,18 @@ export function createMapLayer(layerId: string, options: {
     case 'calflora-observations':
       return createCalFloraLayer({ id: `v2-${layerId}`, ...options });
 
-    case 'dataset-178':
-      return createGBIFLayer({ id: `v2-${layerId}`, ...options });
-
-    case 'dataset-215':
-      return createGBIFLayer({ id: `v2-${layerId}`, ...options });
-
-    case 'dataset-193':
-      return createDroneDeployLayer({ id: `v2-${layerId}`, ...options });
-
     case MOTUS_TAGGED_ANIMALS_LAYER_ID:
       return createMotusLayer({ id: `v2-${layerId}`, ...options });
 
     default:
-      // Dynamically registered Dendra layers
       if (dendraLayerIds.has(layerId)) {
         return createDendraLayer({ id: `v2-${layerId}`, ...options });
+      }
+      if (gbifLayerIds.has(layerId) || layerId === 'dataset-178' || layerId === 'dataset-215') {
+        return createGBIFLayer({ id: `v2-${layerId}`, ...options });
+      }
+      if (droneLayerIds.has(layerId) || layerId === 'dataset-193') {
+        return createDroneDeployLayer({ id: `v2-${layerId}`, ...options });
       }
       // Dynamically registered TNC ArcGIS catalog layers
       if (tncArcgisLayerIds.has(layerId)) {

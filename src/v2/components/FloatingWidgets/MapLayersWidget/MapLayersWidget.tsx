@@ -8,7 +8,7 @@ import { Layers, Pin } from 'lucide-react';
 import { useLayers } from '../../../context/LayerContext';
 import { useCatalog } from '../../../context/CatalogContext';
 import { useDendra } from '../../../context/DendraContext';
-import { useCacheStatusByDataSource } from '../../../dataSources/registry';
+import { useCacheStatusByDataSource, layerSupportsPinnedFilters } from '../../../dataSources/registry';
 import { formatStationDisplayName } from '../../../services/dendraStationService';
 import { WidgetShell } from '../shared/WidgetShell';
 import { WidgetHeader } from '../shared/WidgetHeader';
@@ -107,6 +107,11 @@ export function MapLayersWidget() {
     return catalogLayer?.dataSource === 'dendra';
   }, [layerMap]);
 
+  const layerHasPinnedFilters = useCallback((layerId: string) => {
+    const catalogLayer = layerMap.get(layerId);
+    return layerSupportsPinnedFilters(layerId, catalogLayer?.dataSource);
+  }, [layerMap]);
+
   const getPinnedStreamStats = useCallback((layerId: string, viewId?: string) => {
     return pinnedStreamStatsBySource.get(`${layerId}::${viewId ?? '__root__'}`) ?? {
       streamCount: 0,
@@ -122,7 +127,8 @@ export function MapLayersWidget() {
   const loadingByLayerId = new Map<string, boolean>(
     pinnedLayers.map((pinnedLayer) => {
       const catalogLayer = layerMap.get(pinnedLayer.layerId);
-      const isDroneDeployLayer = pinnedLayer.layerId === 'dataset-193';
+      const isDroneDeployLayer = layerMap.get(pinnedLayer.layerId)?.dataSource === 'drone'
+        || pinnedLayer.layerId === 'dataset-193';
       const isDataOneLayer = pinnedLayer.layerId === 'dataone-datasets';
       const cacheStatus = isDroneDeployLayer
         ? cacheStatusByDataSource.drone
@@ -138,8 +144,8 @@ export function MapLayersWidget() {
       return [pinnedLayer.layerId, isSourceLoading];
     }),
   );
-  const activeLayerIsDroneDeploy = concreteActiveLayer?.layerId === 'dataset-193'
-    || concreteActiveLayer?.dataSource === 'drone';
+  const activeLayerIsDroneDeploy = concreteActiveLayer?.dataSource === 'drone'
+    || concreteActiveLayer?.layerId === 'dataset-193';
   const activeLayerIsMotus = concreteActiveLayer?.dataSource === 'motus';
   const activeLayerIsDataOne = concreteActiveLayer?.layerId === 'dataone-datasets'
     || concreteActiveLayer?.dataSource === 'dataone';
@@ -267,6 +273,7 @@ export function MapLayersWidget() {
             <PinnedLayersSection
               layers={pinnedLayers}
               isDendraLayer={isDendraLayer}
+              supportsPinnedFilters={layerHasPinnedFilters}
               loadingByLayerId={loadingByLayerId}
               activeLayerId={concreteActiveLayer?.layerId}
               activeViewId={concreteActiveLayer?.viewId}

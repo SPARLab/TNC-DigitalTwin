@@ -64,4 +64,11 @@ export interface DataSourceAdapter {
 
   /** Context provider for caching + filter state. Mounted at app level in V2App. */
   CacheProvider?: ComponentType<{ children: ReactNode }>;
+
+  /**
+   * When true, pinned rows in Map Layers can expand to show filter summary /
+   * Edit Filters / New View. Sources without browse filters should leave this
+   * false so activating a pin only selects the layer.
+   */
+  supportsPinnedFilters?: boolean;
 }

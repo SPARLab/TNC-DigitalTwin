@@ -33,4 +33,5 @@ export const motusAdapter: DataSourceAdapter = {
   LegendWidget: MOTUSLegendWidget,
   FloatingPanel: MOTUSJourneyPlaybackWidget,
   CacheProvider: MotusFilterProvider,
+  supportsPinnedFilters: true,
 };

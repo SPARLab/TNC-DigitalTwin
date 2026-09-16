@@ -46,4 +46,5 @@ export const dendraAdapter: DataSourceAdapter = {
   OverviewTab: DendraOverview,
   BrowseTab: DendraBrowseTab,
   CacheProvider: DendraProvider,
+  supportsPinnedFilters: true,
 };

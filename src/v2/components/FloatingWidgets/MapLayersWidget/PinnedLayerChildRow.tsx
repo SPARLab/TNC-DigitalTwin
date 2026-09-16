@@ -19,6 +19,7 @@ interface PinnedLayerChildRowProps {
   showPinnedStreamCount?: boolean;
   pinnedStreamCount?: number;
   countDisplayMode: CountDisplayMode; // NEW: how to display counts
+  supportsPinnedFilters?: boolean;
   onToggleExpand: () => void; // CHANGED: now calls parent to manage accordion
   onToggleVisibility: () => void;
   onActivate?: () => void;
@@ -38,6 +39,7 @@ export function PinnedLayerChildRow({
   showPinnedStreamCount = false,
   pinnedStreamCount = 0,
   countDisplayMode,
+  supportsPinnedFilters = false,
   onToggleExpand,
   onToggleVisibility,
   onActivate,
@@ -120,17 +122,17 @@ export function PinnedLayerChildRow({
           onClick={() => {
             onActivate?.();
             if (!view.isVisible) onToggleVisibility();
-            onToggleExpand();
+            if (supportsPinnedFilters) onToggleExpand();
           }}
           role="button"
           tabIndex={0}
-          aria-label={`${displayLabel} — ${view.isVisible ? 'visible' : 'hidden'}. ${view.filterCount} filters. Click to view details.`}
-          aria-expanded={isExpanded}
+          aria-label={`${displayLabel} — ${view.isVisible ? 'visible' : 'hidden'}.${supportsPinnedFilters ? ` ${view.filterCount} filters. Click to view details.` : ''}`}
+          aria-expanded={supportsPinnedFilters ? isExpanded : undefined}
           onKeyDown={e => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
               onActivate?.();
-              onToggleExpand();
+              if (supportsPinnedFilters) onToggleExpand();
             }
           }}
         >
@@ -196,7 +198,7 @@ export function PinnedLayerChildRow({
             {countDisplayMode !== 'none' && (
               <div id={`pinned-child-row-filter-result-counts-${view.id}`} className="flex items-center gap-1.5">
               {/* Filter count */}
-              {shouldShowFilterCount && (
+              {supportsPinnedFilters && shouldShowFilterCount && (
                 <FilterIndicator
                   count={view.filterCount}
                   onClick={undefined}
@@ -255,7 +257,8 @@ export function PinnedLayerChildRow({
           </button>
         </div>
 
-        {/* Expanded filter details — inside the same container */}
+        {/* Expanded filter details — filterable sources only */}
+        {supportsPinnedFilters && (
         <div
           className="grid transition-all duration-300 ease-in-out"
           style={{
@@ -338,6 +341,7 @@ export function PinnedLayerChildRow({
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

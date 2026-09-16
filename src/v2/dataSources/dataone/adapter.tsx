@@ -34,4 +34,5 @@ export const dataoneAdapter: DataSourceAdapter = {
   OverviewTab: DataOneOverviewTabWithCache,
   BrowseTab: DataOneBrowseTab,
   CacheProvider: DataOneFilterProvider,
+  supportsPinnedFilters: true,
 };
