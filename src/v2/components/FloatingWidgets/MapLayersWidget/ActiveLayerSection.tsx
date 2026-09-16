@@ -28,7 +28,7 @@ export function ActiveLayerSection({
   if (activeLayer.isPinned) return null;
 
   const isINat = activeLayer.layerId === 'inaturalist-obs';
-  const isAniml = activeLayer.layerId === 'animl-camera-traps';
+  const isAniml = activeLayer.dataSource === 'animl';
   const { selectedTaxa, selectedSpecies, excludeAllSpecies, startDate: inatStartDate, endDate: inatEndDate, hasFilter } = useINaturalistFilter();
   const {
     selectedAnimals,

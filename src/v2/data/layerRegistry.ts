@@ -69,19 +69,13 @@ export const EXTERNAL_LAYERS: CatalogLayer[] = [
     icon: 'Leaf',
   },
   {
-    id: 'animl-camera-traps',
-    name: 'Camera Traps (ANiML)',
-    categoryId: '63',
-    dataSource: 'animl',
-    icon: 'Camera',
-  },
-  {
     id: 'dataone-datasets',
     name: 'DataOne Datasets',
     categoryId: '39',
     dataSource: 'dataone',
     icon: 'BookOpen',
   },
+  // ANiML is catalog-backed (Datasets.catalog_tag = animl_tag) — not injected here.
   // Temporarily hidden from catalog (CON-INAT-11) due to licensing ambiguity.
   // Keep CalFlora adapter/sidebar/map logic in codebase for future re-enable.
   // {

@@ -160,8 +160,9 @@ export function V2Header({ onOpenExportBuilder }: V2HeaderProps) {
       }
     }
 
-    if (alert.type === 'camera_novelty' && layerMap.has('animl-camera-traps')) {
-      return 'animl-camera-traps';
+    if (alert.type === 'camera_novelty') {
+      const animlLayer = [...layerMap.values()].find((layer) => layer.dataSource === 'animl');
+      if (animlLayer) return animlLayer.id;
     }
     if (alert.type === 'inat_range_anomaly' && layerMap.has('inaturalist-obs')) {
       return 'inaturalist-obs';

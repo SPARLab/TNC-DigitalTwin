@@ -44,7 +44,7 @@ export function useAnimlCacheStatus(): CacheStatus {
 
 export const animlAdapter: DataSourceAdapter = {
   id: 'animl',
-  layerIds: ['animl-camera-traps'],
+  layerIds: [], // Dynamic — catalog rows with catalog_tag = animl_tag
   OverviewTab: AnimlOverviewTabWithCache,
   BrowseTab: AnimlBrowseTab,
   LegendWidget: AnimlLegendWidget,

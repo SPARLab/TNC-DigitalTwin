@@ -209,7 +209,7 @@ export function createAnimlLayer(options: {
   visible?: boolean;
 } = {}): GraphicsLayer {
   return new GraphicsLayer({
-    id: options.id ?? 'v2-animl-camera-traps',
+    id: options.id ?? 'v2-dataset-217',
     visible: options.visible ?? true,
   });
 }

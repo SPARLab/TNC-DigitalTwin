@@ -145,12 +145,14 @@ export function RightSidebar() {
       (
         activeLayer?.layerId === 'inaturalist-obs' ||
         activeLayer?.dataSource === 'dendra' ||
-        activeLayer?.layerId === 'animl-camera-traps' ||
+        activeLayer?.dataSource === 'animl' ||
         activeLayer?.layerId === 'dataone-datasets' ||
         activeLayer?.layerId === 'calflora-observations' ||
         activeLayer?.layerId === 'dataset-193' ||
         activeLayer?.layerId === 'dataset-178' ||
-        activeLayer?.layerId === 'dataset-215'
+        activeLayer?.layerId === 'dataset-215' ||
+        activeLayer?.dataSource === 'drone' ||
+        activeLayer?.dataSource === 'gbif'
       ) &&
       activeLayer.featureId != null
     ) {

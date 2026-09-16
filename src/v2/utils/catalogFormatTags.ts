@@ -11,6 +11,7 @@ export const CATALOG_FORMAT_TAGS = {
   motus: 'motus_format',
   drone: 'drone_format',
   gbif: 'gbif_format',
+  animl: 'animl_tag',
 } as const;
 
 export type CatalogFormatTag =
@@ -21,6 +22,7 @@ const TAG_TO_DATA_SOURCE: Record<string, DataSource> = {
   [CATALOG_FORMAT_TAGS.motus]: 'motus',
   [CATALOG_FORMAT_TAGS.drone]: 'drone',
   [CATALOG_FORMAT_TAGS.gbif]: 'gbif',
+  [CATALOG_FORMAT_TAGS.animl]: 'animl',
 };
 
 /** Resolve a DataSource adapter key from a catalog_tag, if recognized. */
