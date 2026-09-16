@@ -12,6 +12,7 @@ export const CATALOG_FORMAT_TAGS = {
   drone: 'drone_format',
   gbif: 'gbif_format',
   animl: 'animl_tag',
+  dataone: 'dataone_format',
 } as const;
 
 export type CatalogFormatTag =
@@ -23,6 +24,9 @@ const TAG_TO_DATA_SOURCE: Record<string, DataSource> = {
   [CATALOG_FORMAT_TAGS.drone]: 'drone',
   [CATALOG_FORMAT_TAGS.gbif]: 'gbif',
   [CATALOG_FORMAT_TAGS.animl]: 'animl',
+  [CATALOG_FORMAT_TAGS.dataone]: 'dataone',
+  // Live catalog currently uses dataone_tag; accept both until renamed.
+  dataone_tag: 'dataone',
 };
 
 /** Resolve a DataSource adapter key from a catalog_tag, if recognized. */

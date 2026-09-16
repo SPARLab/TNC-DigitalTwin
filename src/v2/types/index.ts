@@ -184,6 +184,7 @@ export interface GBIFViewFilters {
   datasetName?: string;
   startDate?: string;
   endDate?: string;
+  speciesLevelOnly?: boolean;
   selectedOccurrenceId?: number;
   selectedOccurrenceLabel?: string;
 }

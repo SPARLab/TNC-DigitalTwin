@@ -136,6 +136,7 @@ export function gbifFiltersEqual(
     (a.datasetName || '') === (b.datasetName || '') &&
     (a.startDate || '') === (b.startDate || '') &&
     (a.endDate || '') === (b.endDate || '') &&
+    Boolean(a.speciesLevelOnly) === Boolean(b.speciesLevelOnly) &&
     (a.selectedOccurrenceId || 0) === (b.selectedOccurrenceId || 0) &&
     (a.selectedOccurrenceLabel || '') === (b.selectedOccurrenceLabel || '')
   );

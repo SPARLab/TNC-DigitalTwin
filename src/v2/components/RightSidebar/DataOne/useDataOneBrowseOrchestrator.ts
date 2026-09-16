@@ -10,6 +10,9 @@ import {
   getPinnedFiltersForActiveView,
   shouldHydrateBrowseFilters,
 } from '../shared/browseFilterSyncGuards';
+import { useCatalog } from '../../../context/CatalogContext';
+import { findDataOneLayerId, isDataOneCatalogLayer } from '../../../utils/dataoneCatalog';
+import { isDataOneLayer } from '../../../components/Map/layers';
 
 const PAGE_SIZE = 20;
 export const MIN_SEARCH_CHARS = 2;
@@ -91,6 +94,23 @@ export function useDataOneBrowseOrchestrator() {
     syncDataOneFilters,
     createOrUpdateDataOneFilteredView,
   } = useLayers();
+  const { layerMap } = useCatalog();
+
+  const dataOneLayerId = (() => {
+    if (activeLayer && (activeLayer.dataSource === 'dataone' || isDataOneLayer(activeLayer.layerId))) {
+      return activeLayer.layerId;
+    }
+    return findDataOneLayerId(layerMap) ?? 'dataset-216';
+  })();
+
+  const isActiveDataOneLayer = Boolean(
+    activeLayer && (
+      activeLayer.dataSource === 'dataone'
+      || isDataOneLayer(activeLayer.layerId)
+      || isDataOneCatalogLayer(layerMap.get(activeLayer.layerId))
+    ),
+  );
+
   const {
     searchInput,
     appliedSearchTerm,
@@ -246,7 +266,7 @@ export function useDataOneBrowseOrchestrator() {
 
   // When featureId is cleared (cluster click, back navigation), return to list view.
   useEffect(() => {
-    if (activeLayer?.layerId !== 'dataone-datasets') return;
+    if (!isActiveDataOneLayer || !activeLayer) return;
     if (activeLayer.featureId != null) return;
     setSelectedDataset(null);
     lastHandledFeatureIdRef.current = null;
@@ -255,7 +275,7 @@ export function useDataOneBrowseOrchestrator() {
   // Map marker clicks set activeLayer.featureId. Ensure detail opens even when
   // the clicked dataset is not in the current paginated result set.
   useEffect(() => {
-    if (activeLayer?.layerId !== 'dataone-datasets' || !activeLayer.featureId) return;
+    if (!isActiveDataOneLayer || !activeLayer?.featureId) return;
     const featureId = String(activeLayer.featureId);
     if (lastHandledFeatureIdRef.current === featureId) return;
     if (selectedDataset?.dataoneId === featureId) return;
@@ -277,7 +297,7 @@ export function useDataOneBrowseOrchestrator() {
 
   // Hydrate DataONE browse controls from the selected pinned child view.
   useEffect(() => {
-    if (activeLayer?.layerId !== 'dataone-datasets') return;
+    if (!isActiveDataOneLayer || !activeLayer) return;
 
     if (
       !shouldHydrateBrowseFilters({
@@ -340,7 +360,7 @@ export function useDataOneBrowseOrchestrator() {
 
   // Keep Map Layers metadata synced to current DataONE filters/detail selection.
   useEffect(() => {
-    if (activeLayer?.layerId !== 'dataone-datasets') return;
+    if (!isActiveDataOneLayer || !activeLayer) return;
     const activeView = getPinnedActiveView(activeLayer, getPinnedByLayerId);
 
     // Saved dataset child views are snapshots and should not be overwritten
@@ -377,13 +397,13 @@ export function useDataOneBrowseOrchestrator() {
   ]);
 
   const currentViewSavedDatasetId = useMemo(() => {
-    if (activeLayer?.layerId !== 'dataone-datasets' || !activeLayer.viewId) return undefined;
-    const pinned = getPinnedByLayerId('dataone-datasets');
+    if (!isActiveDataOneLayer || !activeLayer?.viewId) return undefined;
+    const pinned = getPinnedByLayerId(dataOneLayerId);
     return pinned?.views?.find((v) => v.id === activeLayer.viewId)?.dataoneFilters?.selectedDatasetId;
-  }, [activeLayer?.layerId, activeLayer?.viewId, getPinnedByLayerId]);
+  }, [activeLayer?.layerId, activeLayer?.viewId, dataOneLayerId, getPinnedByLayerId, isActiveDataOneLayer]);
 
   const savedDataoneIds = useMemo(() => {
-    const pinned = getPinnedByLayerId('dataone-datasets');
+    const pinned = getPinnedByLayerId(dataOneLayerId);
     const ids = new Set<string>();
     const rootSelectedDatasetId = pinned?.dataoneFilters?.selectedDatasetId;
     if (rootSelectedDatasetId) ids.add(rootSelectedDatasetId);
@@ -392,7 +412,7 @@ export function useDataOneBrowseOrchestrator() {
       if (selectedDatasetId) ids.add(selectedDatasetId);
     }
     return ids;
-  }, [getPinnedByLayerId]);
+  }, [dataOneLayerId, getPinnedByLayerId]);
 
   const hasStaleResults = datasets.length > 0;
   const showInitialLoading = loading && !hasStaleResults;
@@ -468,13 +488,13 @@ export function useDataOneBrowseOrchestrator() {
       activateLayer,
       setSelectedItem: setSelectedDataset,
       getItemFeatureId: (item) => item.dataoneId,
-      layerId: 'dataone-datasets',
+      layerId: dataOneLayerId,
       lastHandledFeatureIdRef,
     });
   };
 
   const handleSaveDatasetView = (dataset: DataOneDataset): string => {
-    if (activeLayer?.layerId !== 'dataone-datasets') {
+    if (!isActiveDataOneLayer || !activeLayer) {
       return 'Unable to save view: DataONE layer is not active.';
     }
 
@@ -514,7 +534,7 @@ export function useDataOneBrowseOrchestrator() {
   };
 
   const handleUnsaveDatasetView = () => {
-    if (activeLayer?.layerId !== 'dataone-datasets' || !activeLayer.viewId || !selectedDataset) return;
+    if (!isActiveDataOneLayer || !activeLayer?.viewId || !selectedDataset) return;
 
     createOrUpdateDataOneFilteredView(
       activeLayer.layerId,
@@ -539,7 +559,7 @@ export function useDataOneBrowseOrchestrator() {
       activeLayer,
       activateLayer,
       setSelectedItem: setSelectedDataset,
-      layerId: 'dataone-datasets',
+      layerId: dataOneLayerId,
       lastHandledFeatureIdRef,
       clearLastHandledFeatureId: true,
     });
@@ -552,7 +572,7 @@ export function useDataOneBrowseOrchestrator() {
       activateLayer,
       setSelectedItem: setSelectedDataset,
       getItemFeatureId: (item) => item.dataoneId,
-      layerId: 'dataone-datasets',
+      layerId: dataOneLayerId,
       lastHandledFeatureIdRef,
     });
   };
@@ -575,6 +595,7 @@ export function useDataOneBrowseOrchestrator() {
     clearSearch,
     closeDatasetDetail,
     currentViewSavedDatasetId,
+    dataOneLayerId,
     datasets,
     endYear,
     error,

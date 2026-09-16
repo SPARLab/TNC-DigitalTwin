@@ -129,7 +129,8 @@ export function MapLayersWidget() {
       const catalogLayer = layerMap.get(pinnedLayer.layerId);
       const isDroneDeployLayer = layerMap.get(pinnedLayer.layerId)?.dataSource === 'drone'
         || pinnedLayer.layerId === 'dataset-193';
-      const isDataOneLayer = pinnedLayer.layerId === 'dataone-datasets';
+      const isDataOneLayer = catalogLayer?.dataSource === 'dataone'
+        || pinnedLayer.layerId === 'dataone-datasets';
       const cacheStatus = isDroneDeployLayer
         ? cacheStatusByDataSource.drone
         : (catalogLayer ? cacheStatusByDataSource[catalogLayer.dataSource] : null);
@@ -147,8 +148,8 @@ export function MapLayersWidget() {
   const activeLayerIsDroneDeploy = concreteActiveLayer?.dataSource === 'drone'
     || concreteActiveLayer?.layerId === 'dataset-193';
   const activeLayerIsMotus = concreteActiveLayer?.dataSource === 'motus';
-  const activeLayerIsDataOne = concreteActiveLayer?.layerId === 'dataone-datasets'
-    || concreteActiveLayer?.dataSource === 'dataone';
+  const activeLayerIsDataOne = concreteActiveLayer?.dataSource === 'dataone'
+    || concreteActiveLayer?.layerId === 'dataone-datasets';
   const activeLayerCacheStatus = concreteActiveLayer
     ? (activeLayerIsDroneDeploy
       ? cacheStatusByDataSource.drone
@@ -285,7 +286,10 @@ export function MapLayersWidget() {
               onActivateView={(layerId, viewId) => {
                 const pinned = pinnedLayers.find(p => p.layerId === layerId);
                 const view = viewId ? pinned?.views?.find(v => v.id === viewId) : undefined;
-                const featureId = layerId === 'dataone-datasets'
+                const featureId = (
+                  layerMap.get(layerId)?.dataSource === 'dataone'
+                  || layerId === 'dataone-datasets'
+                )
                   ? view?.dataoneFilters?.selectedDatasetId
                   : undefined;
                 activateLayer(layerId, viewId, featureId);

@@ -13,6 +13,7 @@ export interface GBIFBrowseFilters extends GBIFFilters {
   datasetName: string;
   startDate: string;
   endDate: string;
+  speciesLevelOnly: boolean;
 }
 
 interface GBIFFilterOptions {

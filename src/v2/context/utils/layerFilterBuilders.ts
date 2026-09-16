@@ -225,6 +225,9 @@ export function buildGBIFFilterSummary(filters: GBIFViewFilters): string | undef
   if (filters.startDate || filters.endDate) {
     parts.push(`Date: ${filters.startDate || 'Any'} to ${filters.endDate || 'Any'}`);
   }
+  if (filters.speciesLevelOnly) {
+    parts.push('Species-level IDs');
+  }
   return parts.length > 0 ? parts.join(', ') : undefined;
 }
 
@@ -238,6 +241,7 @@ export function getGBIFFilterCount(filters: GBIFViewFilters): number {
   if (filters.basisOfRecord?.trim()) count += 1;
   if (filters.datasetName?.trim()) count += 1;
   if (filters.startDate || filters.endDate) count += 1;
+  if (filters.speciesLevelOnly) count += 1;
   return count;
 }
 
@@ -253,7 +257,8 @@ export function buildGBIFViewName(filters: GBIFViewFilters): string {
   const datePart = (filters.startDate || filters.endDate)
     ? `${filters.startDate || 'Any start'} to ${filters.endDate || 'Any end'}`
     : '';
-  const nonDate = [searchPart, kingdomPart, familyPart, basisPart, datasetPart].filter(Boolean).join(' • ');
+  const speciesPart = filters.speciesLevelOnly ? 'Species-level' : '';
+  const nonDate = [searchPart, kingdomPart, familyPart, basisPart, datasetPart, speciesPart].filter(Boolean).join(' • ');
   if (nonDate && datePart) return `${nonDate} (${datePart})`;
   if (nonDate) return nonDate;
   if (datePart) return `Date: ${datePart}`;

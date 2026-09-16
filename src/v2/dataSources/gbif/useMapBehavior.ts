@@ -117,6 +117,7 @@ export function useGBIFMapBehavior(
       datasetName: browseFilters.datasetName || undefined,
       startDate: browseFilters.startDate || undefined,
       endDate: browseFilters.endDate || undefined,
+      speciesLevelOnly: browseFilters.speciesLevelOnly,
     });
 
     const updateDefinitionExpression = () => {

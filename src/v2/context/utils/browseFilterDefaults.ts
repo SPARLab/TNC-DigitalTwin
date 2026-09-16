@@ -17,8 +17,9 @@ export function createDefaultGBIFBrowseFilters() {
     family: '',
     basisOfRecord: '',
     datasetName: '',
-    startDate: '',
+    startDate: `${new Date().getFullYear() - 10}-01-01`,
     endDate: '',
+    speciesLevelOnly: true,
   };
 }
 

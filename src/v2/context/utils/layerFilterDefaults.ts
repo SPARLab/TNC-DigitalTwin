@@ -80,8 +80,9 @@ export function createDefaultGBIFViewFilters(): GBIFViewFilters {
     family: undefined,
     basisOfRecord: undefined,
     datasetName: undefined,
-    startDate: undefined,
+    startDate: `${new Date().getFullYear() - 10}-01-01`,
     endDate: undefined,
+    speciesLevelOnly: true,
     selectedOccurrenceId: undefined,
     selectedOccurrenceLabel: undefined,
   };

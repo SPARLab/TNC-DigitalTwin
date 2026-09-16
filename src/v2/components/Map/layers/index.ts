@@ -21,7 +21,6 @@ import { createMotusLayer, MOTUS_TAGGED_ANIMALS_LAYER_ID } from './motusLayer';
 export const IMPLEMENTED_LAYERS = new Set([
   'inaturalist-obs',
   'preserve-boundary',
-  'dataone-datasets',
   'calflora-observations',
   'dataset-178',
   'dataset-215',
@@ -37,6 +36,8 @@ const gbifLayerIds = new Set<string>();
 const droneLayerIds = new Set<string>();
 /** Layer IDs known to be ANiML camera-trap services (detected via catalog_tag) */
 const animlLayerIds = new Set<string>();
+/** Layer IDs known to be DataONE dataset services (detected via catalog_tag) */
+const dataoneLayerIds = new Set<string>();
 /** Layer IDs known to be TNC ArcGIS catalog layers (detected dynamically) */
 const tncArcgisLayerIds = new Set<string>();
 /** Catalog metadata for each registered TNC ArcGIS layer */
@@ -81,6 +82,17 @@ export function isAnimlLayer(layerId: string): boolean {
   return animlLayerIds.has(layerId);
 }
 
+/** Register a layer ID as a DataONE datasets layer. */
+export function registerDataOneLayerId(layerId: string): void {
+  dataoneLayerIds.add(layerId);
+  IMPLEMENTED_LAYERS.add(layerId);
+}
+
+/** Check if a layer ID is a registered DataONE layer */
+export function isDataOneLayer(layerId: string): boolean {
+  return dataoneLayerIds.has(layerId) || layerId === 'dataone-datasets';
+}
+
 /** Register a layer ID as a concrete TNC ArcGIS layer. */
 export function registerTNCArcGISLayer(layerId: string, layer: CatalogLayer): void {
   tncArcgisLayerIds.add(layerId);
@@ -105,9 +117,6 @@ export function createMapLayer(layerId: string, options: {
     case 'preserve-boundary':
       return createPreserveBoundaryLayer({ id: `v2-${layerId}`, ...options });
 
-    case 'dataone-datasets':
-      return createDataOneLayer({ id: `v2-${layerId}`, ...options });
-
     case 'calflora-observations':
       return createCalFloraLayer({ id: `v2-${layerId}`, ...options });
 
@@ -120,6 +129,9 @@ export function createMapLayer(layerId: string, options: {
       }
       if (animlLayerIds.has(layerId) || layerId === 'animl-camera-traps') {
         return createAnimlLayer({ id: `v2-${layerId}`, ...options });
+      }
+      if (dataoneLayerIds.has(layerId) || layerId === 'dataone-datasets' || layerId === 'dataset-216') {
+        return createDataOneLayer({ id: `v2-${layerId}`, ...options });
       }
       if (gbifLayerIds.has(layerId) || layerId === 'dataset-178' || layerId === 'dataset-215') {
         return createGBIFLayer({ id: `v2-${layerId}`, ...options });

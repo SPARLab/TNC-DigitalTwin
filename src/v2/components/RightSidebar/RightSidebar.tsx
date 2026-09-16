@@ -78,7 +78,7 @@ export function RightSidebar() {
     // re-opens Browse, clear featureId so Browse starts at the dataset list.
     if (
       tab === 'browse' &&
-      activeLayer?.layerId === 'dataone-datasets' &&
+      activeLayer?.dataSource === 'dataone' &&
       activeLayer.featureId != null
     ) {
       activateLayer(activeLayer.layerId, activeLayer.viewId, undefined);
@@ -146,7 +146,7 @@ export function RightSidebar() {
         activeLayer?.layerId === 'inaturalist-obs' ||
         activeLayer?.dataSource === 'dendra' ||
         activeLayer?.dataSource === 'animl' ||
-        activeLayer?.layerId === 'dataone-datasets' ||
+        activeLayer?.dataSource === 'dataone' ||
         activeLayer?.layerId === 'calflora-observations' ||
         activeLayer?.layerId === 'dataset-193' ||
         activeLayer?.layerId === 'dataset-178' ||

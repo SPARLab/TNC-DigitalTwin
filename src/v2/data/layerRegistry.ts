@@ -68,13 +68,7 @@ export const EXTERNAL_LAYERS: CatalogLayer[] = [
     dataSource: 'inaturalist',
     icon: 'Leaf',
   },
-  {
-    id: 'dataone-datasets',
-    name: 'DataOne Datasets',
-    categoryId: '39',
-    dataSource: 'dataone',
-    icon: 'BookOpen',
-  },
+  // DataONE is catalog-backed (Datasets.catalog_tag = dataone_format / dataone_tag) — not injected here.
   // ANiML is catalog-backed (Datasets.catalog_tag = animl_tag) — not injected here.
   // Temporarily hidden from catalog (CON-INAT-11) due to licensing ambiguity.
   // Keep CalFlora adapter/sidebar/map logic in codebase for future re-enable.

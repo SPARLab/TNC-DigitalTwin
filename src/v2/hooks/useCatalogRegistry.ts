@@ -335,6 +335,7 @@ function detectDataSource(d: RawDataset): DataSource {
   if (d.id === 184) return 'dendra';
   if (d.id === 193) return 'drone';
   if (d.id === 215 || d.id === 178) return 'gbif';
+  if (d.id === 216) return 'dataone';
 
   return 'tnc-arcgis';
 }

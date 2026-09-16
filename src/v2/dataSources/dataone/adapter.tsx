@@ -30,7 +30,7 @@ export function useDataOneCacheStatus(): CacheStatus {
 
 export const dataoneAdapter: DataSourceAdapter = {
   id: 'dataone',
-  layerIds: ['dataone-datasets'],
+  layerIds: [], // Dynamic — catalog rows with catalog_tag = dataone_format / dataone_tag
   OverviewTab: DataOneOverviewTabWithCache,
   BrowseTab: DataOneBrowseTab,
   CacheProvider: DataOneFilterProvider,

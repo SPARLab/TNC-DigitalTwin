@@ -24,6 +24,13 @@ export interface GBIFOccurrence {
   coordinates: [number, number] | null;
 }
 
+/** Taxon ranks treated as species-level (or finer) identifications. */
+export const GBIF_SPECIES_LEVEL_RANKS = ['SPECIES', 'SUBSPECIES', 'VARIETY'] as const;
+
+export function getDefaultGBIFStartDate(): string {
+  return `${new Date().getFullYear() - 10}-01-01`;
+}
+
 export interface GBIFFilters {
   searchText?: string;
   kingdom?: string;
@@ -33,6 +40,8 @@ export interface GBIFFilters {
   datasetName?: string;
   startDate?: string;
   endDate?: string;
+  /** When true, only occurrences identified to species or finer. */
+  speciesLevelOnly?: boolean;
 }
 
 export interface GBIFQueryOptions extends GBIFFilters {
@@ -177,6 +186,11 @@ function buildWhereClause(filters: GBIFFilters): string {
   if (Number.isFinite(startYear)) clauses.push(`year >= ${startYear}`);
   if (Number.isFinite(endYear)) clauses.push(`year <= ${endYear}`);
 
+  if (filters.speciesLevelOnly) {
+    const ranks = GBIF_SPECIES_LEVEL_RANKS.map((rank) => `'${rank}'`).join(', ');
+    clauses.push(`taxon_rank IN (${ranks})`);
+  }
+
   return clauses.join(' AND ');
 }
 
@@ -297,8 +311,12 @@ class GBIFService {
 
   async getOverviewCount(): Promise<number> {
     try {
+      const where = buildWhereClause({
+        startDate: getDefaultGBIFStartDate(),
+        speciesLevelOnly: true,
+      });
       const json = await queryArcgis({
-        where: '1=1',
+        where,
         returnCountOnly: true,
         f: 'json',
       });
