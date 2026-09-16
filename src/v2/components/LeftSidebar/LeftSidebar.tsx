@@ -6,6 +6,7 @@
 
 import { useState, useCallback, useMemo, useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useCatalog } from '../../context/CatalogContext';
+import { useLayers } from '../../context/LayerContext';
 import { SearchBar } from './SearchBar';
 import { CategoryGroup } from './CategoryGroup';
 import { Search } from 'lucide-react';
@@ -28,8 +29,38 @@ function allLayersInCategory(cat: Category): CatalogLayer[] {
   return layers;
 }
 
+function layerMatchesIds(
+  layer: CatalogLayer,
+  layerId: string,
+  selectedSubLayerId?: string,
+): boolean {
+  return layer.id === layerId || (!!selectedSubLayerId && layer.id === selectedSubLayerId);
+}
+
+/** Category ids from root → leaf that contain the active layer (inclusive). */
+function findCategoryPathIds(
+  categories: Category[],
+  layerId: string,
+  selectedSubLayerId?: string,
+): Set<string> | null {
+  for (const cat of categories) {
+    if (cat.layers.some((layer) => layerMatchesIds(layer, layerId, selectedSubLayerId))) {
+      return new Set([cat.id]);
+    }
+    if (cat.subcategories?.length) {
+      const nested = findCategoryPathIds(cat.subcategories, layerId, selectedSubLayerId);
+      if (nested) {
+        nested.add(cat.id);
+        return nested;
+      }
+    }
+  }
+  return null;
+}
+
 export function LeftSidebar() {
   const { categories, loading, error } = useCatalog();
+  const { activeLayer } = useLayers();
   const [searchQuery, setSearchQuery] = useState('');
   const [liveMessage, setLiveMessage] = useState('');
   const [isScrolling, setIsScrolling] = useState(false);
@@ -171,6 +202,16 @@ export function LeftSidebar() {
   const filteredLayerIds = searchState?.filteredLayerIds;
   const hasResults = !filteredLayerIds || filteredLayerIds.size > 0;
 
+  // Open every ancestor category for the active layer (Boundaries → Administrative → …).
+  const forceExpandedCategoryIds = useMemo(() => {
+    if (!activeLayer) return undefined;
+    return findCategoryPathIds(
+      categories,
+      activeLayer.layerId,
+      activeLayer.selectedSubLayerId,
+    ) ?? undefined;
+  }, [activeLayer, categories]);
+
   return (
     <aside
       id="left-sidebar"
@@ -222,6 +263,7 @@ export function LeftSidebar() {
                     filteredLayerIds={filteredLayerIds}
                     searchQuery={searchQuery.length >= 2 ? searchQuery : undefined}
                     searchAutoExpandServiceIds={searchState?.autoExpandServiceIds}
+                    forceExpandedCategoryIds={forceExpandedCategoryIds}
                     onAnnounce={announce}
                   />
                 ))}

@@ -1,5 +1,11 @@
+// ============================================================================
+// ServiceGroup — Multi-layer feature service in the left sidebar.
+// Matches the DroneDeploy Orthomosaics pattern: caret on the right, expandable
+// panel with a layers/tables summary, then selectable child rows.
+// ============================================================================
+
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent } from 'react';
 import type { CatalogLayer } from '../../types';
 import { useLayers } from '../../context/LayerContext';
 import { LayerRow } from './LayerRow';
@@ -45,6 +51,13 @@ function focusFirstVisibleChildRow(childrenGroupId: string) {
   firstVisible?.focus();
 }
 
+function formatServiceSummary(layerCount: number, tableCount: number): string {
+  const layerLabel = `${layerCount} ${layerCount === 1 ? 'layer' : 'layers'}`;
+  if (tableCount <= 0) return layerLabel;
+  const tableLabel = `${tableCount} ${tableCount === 1 ? 'table' : 'tables'}`;
+  return `${layerLabel}, ${tableLabel}`;
+}
+
 export function ServiceGroup({
   service,
   layers,
@@ -58,38 +71,51 @@ export function ServiceGroup({
   const { activeLayer, activateLayer } = useLayers();
   const isActiveService = activeLayer?.layerId === service.id && !!activeLayer.isService;
   const childrenGroupId = `service-group-children-${service.id}`;
+  const tableCount = service.catalogMeta?.tableCount ?? 0;
+  const summaryText = formatServiceSummary(layers.length, tableCount);
 
   const announceExpandState = (expanded: boolean) => {
     if (expanded) {
-      onAnnounce?.(`${service.name} group expanded, ${layers.length} layers`);
+      onAnnounce?.(`${service.name} expanded, ${summaryText}`);
       return;
     }
-    onAnnounce?.(`${service.name} group collapsed`);
+    onAnnounce?.(`${service.name} collapsed`);
   };
 
-  const handleHeaderClick = () => {
-    // Prioritize toggle semantics so repeated clicks always expand/collapse.
-    // Avoid re-activating on collapse, which can trigger auto-expand effects upstream.
+  const activateService = () => {
+    const selectedSubLayerId = (() => {
+      if (isActiveService) return activeLayer?.selectedSubLayerId;
+      const activeLayerIsChildOfService = !!activeLayer && layers.some((layer) => layer.id === activeLayer.layerId);
+      if (activeLayerIsChildOfService) return activeLayer?.layerId;
+      return layers[0]?.id;
+    })();
+    activateLayer(service.id, undefined, undefined, selectedSubLayerId);
+  };
+
+  const handleRowClick = () => {
+    activateService();
+    if (!isExpanded) {
+      onToggleExpand();
+      announceExpandState(true);
+    }
+  };
+
+  const handleExpandToggle = (event: ReactMouseEvent) => {
+    event.stopPropagation();
+    activateService();
     if (isExpanded) {
       onToggleExpand();
       announceExpandState(false);
       return;
     }
-
-    const selectedSubLayerId = (() => {
-      if (isActiveService) return activeLayer?.selectedSubLayerId;
-      const activeLayerIsChildOfService = !!activeLayer && layers.some(layer => layer.id === activeLayer.layerId);
-      if (activeLayerIsChildOfService) return activeLayer?.layerId;
-      return layers[0]?.id;
-    })();
-    activateLayer(service.id, undefined, undefined, selectedSubLayerId);
     onToggleExpand();
     announceExpandState(true);
   };
 
-  const handleHeaderKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+  const handleHeaderKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'ArrowRight' && !isExpanded) {
       event.preventDefault();
+      activateService();
       onToggleExpand();
       announceExpandState(true);
       return;
@@ -112,7 +138,7 @@ export function ServiceGroup({
     }
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      handleHeaderClick();
+      handleRowClick();
     }
   };
 
@@ -120,74 +146,75 @@ export function ServiceGroup({
     <div id={`service-group-${service.id}`} className="space-y-1">
       <div
         id={`service-group-row-${service.id}`}
-        className={`relative ml-1 mr-1 min-w-0 flex items-center gap-2 py-1.5 px-1 rounded-lg border transition-colors
-          ${
-            isActiveService
-              ? 'border-amber-300 bg-amber-50 shadow-sm'
-              : isExpanded
-              ? 'border-amber-300 bg-amber-50'
-              : 'border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 hover:z-[20]'
-          }`}
+        role="treeitem"
+        aria-expanded={isExpanded}
+        aria-controls={childrenGroupId}
+        aria-level={ariaLevel}
+        aria-current={isActiveService ? 'true' : undefined}
+        data-left-sidebar-tree-row="true"
+        tabIndex={0}
+        onClick={handleRowClick}
+        onKeyDown={handleHeaderKeyDown}
+        className={`group min-w-0 flex items-center gap-1.5 py-2 px-3 ml-1 mr-1 cursor-pointer
+                    text-sm rounded-lg transition-all duration-200
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1
+                    ${
+                      isActiveService
+                        ? 'bg-amber-50 border border-amber-300 font-semibold text-gray-900 shadow-sm'
+                        : isExpanded
+                          ? 'bg-amber-50/70 border border-amber-200 text-gray-900'
+                          : 'bg-white border border-gray-200 text-gray-700 hover:border-gray-400 hover:shadow-sm'
+                    }`}
       >
+        <span className={`truncate min-w-0 flex-1 text-left ${isActiveService ? 'font-semibold' : ''}`}>
+          {renderHighlightedText(service.name, highlightQuery)}
+        </span>
+
         <button
-          id={`service-group-header-${service.id}`}
+          id={`service-group-expand-toggle-${service.id}`}
           type="button"
-          role="treeitem"
+          onClick={handleExpandToggle}
+          title={isExpanded ? 'Collapse service layers' : 'Expand service layers'}
+          className="flex-shrink-0 p-0.5 rounded hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
           aria-expanded={isExpanded}
           aria-controls={childrenGroupId}
-          aria-level={ariaLevel}
-          data-left-sidebar-tree-row="true"
-          onClick={handleHeaderClick}
-          onKeyDown={handleHeaderKeyDown}
-          className="w-full min-w-0 flex items-center gap-2 py-1 px-2 text-sm text-gray-800 font-medium rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1"
         >
           {isExpanded ? (
-            <ChevronDown id={`service-group-caret-${service.id}`} className="w-4 h-4 text-gray-600 flex-shrink-0" />
+            <ChevronDown className="w-4 h-4 text-gray-600" />
           ) : (
-            <ChevronRight id={`service-group-caret-${service.id}`} className="w-4 h-4 text-gray-600 flex-shrink-0" />
+            <ChevronRight className="w-4 h-4 text-gray-600" />
           )}
-          <span className="truncate flex-1 min-w-0 text-left">
-            {renderHighlightedText(service.name, highlightQuery)}
-          </span>
-          <span
-            id={`service-group-count-${service.id}`}
-            className="text-xs text-gray-600 bg-white border border-gray-200 rounded-full px-1.5 py-0.5 flex-shrink-0"
-          >
-            {layers.length}
-          </span>
-          <span
-            id={`service-group-kind-${service.id}`}
-            className="text-[10px] uppercase tracking-wide text-gray-500 rounded border border-gray-200 bg-white px-1.5 py-0.5 flex-shrink-0"
-            title="Feature service group"
-          >
-            Group
-          </span>
         </button>
       </div>
 
       <div
         id={childrenGroupId}
         role="group"
-        className="grid transition-all duration-300 ease-out"
-        style={{
-          gridTemplateRows: isExpanded ? '1fr' : '0fr',
-          opacity: isExpanded ? 1 : 0,
-        }}
+        className={`ml-2 mr-1 border border-slate-200 rounded-lg bg-slate-50/50 overflow-hidden transition-all duration-300 ease-in-out ${
+          isExpanded
+            ? 'max-h-[600px] opacity-100 mb-2'
+            : 'max-h-0 opacity-0 mb-0 border-transparent'
+        }`}
       >
-        <div className="overflow-hidden">
-          <div id={`service-group-children-inner-${service.id}`} className="pl-2 pr-1 space-y-1 pt-1 bg-white">
-            {layers.map(layer => (
-              <LayerRow
-                key={layer.id}
-                layerId={layer.id}
-                name={layer.name}
-                indented
-                ariaLevel={ariaLevel + 1}
-                parentTreeItemId={`service-group-header-${service.id}`}
-                onAnnounce={onAnnounce}
-              />
-            ))}
-          </div>
+        <div
+          id={`service-group-summary-${service.id}`}
+          className="px-3 pt-2 pb-1 text-[11px] text-gray-600 border-b border-slate-200"
+        >
+          {summaryText}
+        </div>
+        <div id={`service-group-children-inner-${service.id}`} className="py-1 space-y-1">
+          {layers.map((layer) => (
+            <LayerRow
+              key={layer.id}
+              layerId={layer.id}
+              name={layer.name}
+              indented
+              ariaLevel={ariaLevel + 1}
+              parentTreeItemId={`service-group-row-${service.id}`}
+              onAnnounce={onAnnounce}
+              highlightQuery={highlightQuery}
+            />
+          ))}
         </div>
       </div>
     </div>

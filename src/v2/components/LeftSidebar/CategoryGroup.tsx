@@ -17,6 +17,8 @@ interface CategoryGroupProps {
   filteredLayerIds?: Set<string>;
   searchQuery?: string;
   searchAutoExpandServiceIds?: Set<string>;
+  /** Category ids that must stay open for the active/revealed layer path. */
+  forceExpandedCategoryIds?: Set<string>;
   onAnnounce?: (message: string) => void;
   ariaLevelBase?: number;
   parentTreeItemId?: string;
@@ -73,13 +75,27 @@ export function CategoryGroup({
   filteredLayerIds,
   searchQuery,
   searchAutoExpandServiceIds,
+  forceExpandedCategoryIds,
   onAnnounce,
   ariaLevelBase = 1,
   parentTreeItemId,
   isSubcategory
 }: CategoryGroupProps) {
   const { activeLayer } = useLayers();
-  const [isExpanded, setIsExpanded] = useState(false);
+
+  const containsActiveLayer = useMemo(() => {
+    if (forceExpandedCategoryIds?.has(category.id)) return true;
+    if (!activeLayer) return false;
+    return categoryContainsLayer(
+      category,
+      activeLayer.layerId,
+      activeLayer.selectedSubLayerId,
+    );
+  }, [activeLayer, category, forceExpandedCategoryIds]);
+
+  // Open on mount when the active layer already lives under this node (e.g. parent
+  // expanded first, then this subcategory mounted after bootstrap activation).
+  const [isExpanded, setIsExpanded] = useState(containsActiveLayer);
   const [expandedServiceIds, setExpandedServiceIds] = useState<Set<string>>(new Set());
 
   const totalVisible = countMatchingLayers(category, filteredLayerIds);
@@ -165,15 +181,13 @@ export function CategoryGroup({
   }, [directLayers]);
 
   useEffect(() => {
+    if (!containsActiveLayer) return;
+
+    setIsExpanded(true);
+
     if (!activeLayer) return;
     const activeLayerId = activeLayer.layerId;
     const selectedSubLayerId = activeLayer.selectedSubLayerId;
-
-    // Expand any ancestor whose tree contains the active layer so deep nesting
-    // (category → subcategory → service → layer) opens when activated elsewhere.
-    if (!categoryContainsLayer(category, activeLayerId, selectedSubLayerId)) return;
-
-    setIsExpanded(true);
 
     const matchingDirectLayer = findDirectMatchingLayer(
       directLayers,
@@ -192,7 +206,7 @@ export function CategoryGroup({
       next.add(parentServiceId);
       return next;
     });
-  }, [activeLayer, category, directLayers, isServiceParent]);
+  }, [activeLayer, containsActiveLayer, directLayers, isServiceParent]);
 
   // Visual styling (bg + border) lives on a dedicated header-row div, not the button and
   // not the outer wrapper. This prevents hover from bleeding into expanded content,
@@ -316,6 +330,7 @@ export function CategoryGroup({
               filteredLayerIds={filteredLayerIds}
               searchQuery={searchQuery}
               searchAutoExpandServiceIds={searchAutoExpandServiceIds}
+              forceExpandedCategoryIds={forceExpandedCategoryIds}
               onAnnounce={onAnnounce}
               ariaLevelBase={ariaLevelBase + 1}
               parentTreeItemId={`category-toggle-${category.id}`}

@@ -6,6 +6,8 @@ import type { CatalogLayer } from '../../../types';
 import { buildServiceRootUrl, buildServiceUrl } from '../../../services/tncArcgisService';
 import { createNhdPlusFlowlineRenderer, isNhdPlusFlowlinesLayer } from './nhdPlusFlowlinesStyle';
 import { attachNhdPlusTerrainElevationFallback } from './nhdPlusFlowlinesTerrainFallback';
+import { createPreserveBoundaryRenderer } from '../../Monitoring/internal/boundaryOutlineLayer';
+import { isPreserveBoundaryCatalogLayer } from '../../../utils/findPreserveBoundaryCatalogLayer';
 
 function sanitizeArcGisBaseUrl(serverBaseUrl: string): string {
   const trimmed = serverBaseUrl.trim().replace(/\/+$/, '');
@@ -125,6 +127,7 @@ export function createTNCArcGISLayer(options: {
     meta.servicePath.toLowerCase().includes('dangermond_preserve_species_occurrences');
 
   const isNhdPlusFlowlines = isNhdPlusFlowlinesLayer(layer);
+  const isPreserveBoundary = isPreserveBoundaryCatalogLayer(layer);
 
   // FeatureServer layers can use FeatureLayer directly with SQL filtering.
   if (meta.hasFeatureServer) {
@@ -138,6 +141,7 @@ export function createTNCArcGISLayer(options: {
       // SceneView defaults Z-aware features to absolute-height, which buries
       // hydrography (and similar) under terrain/LiDAR. MapView ignores this.
       elevationInfo: { mode: 'on-the-ground' },
+      popupEnabled: !isPreserveBoundary,
       // GBIF has very dense points; use high-contrast symbols and clustering
       // so records are visually obvious at preserve zoom levels.
       // IMPORTANT: Only spread renderer/featureReduction when actually needed.
@@ -176,6 +180,8 @@ export function createTNCArcGISLayer(options: {
       } : isNhdPlusFlowlines ? {
         renderer: createNhdPlusFlowlineRenderer(viewMode),
         returnZ: true,
+      } : isPreserveBoundary ? {
+        renderer: createPreserveBoundaryRenderer(),
       } : {}),
     });
     attachFeatureLayerLoadFallback(featureLayer, featureLayerUrlCandidates, layer.name);

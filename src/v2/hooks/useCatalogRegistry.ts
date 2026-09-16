@@ -274,6 +274,18 @@ function buildCatalogServiceLayerMap(rawLayers: RawServiceLayerRow[]): Map<numbe
   return byDatasetId;
 }
 
+/** Count catalog table rows (is_table=1) per dataset for sidebar service summaries. */
+function buildCatalogServiceTableCountMap(rawLayers: RawServiceLayerRow[]): Map<number, number> {
+  const counts = new Map<number, number>();
+  for (const row of rawLayers) {
+    if (row.is_visible === 0) continue;
+    if (row.is_table !== 1) continue;
+    if (typeof row.dataset_id !== 'number' || !Number.isFinite(row.dataset_id)) continue;
+    counts.set(row.dataset_id, (counts.get(row.dataset_id) ?? 0) + 1);
+  }
+  return counts;
+}
+
 function logServiceDiscoveryResults(
   candidates: RawDataset[],
   catalogLayersByDatasetId: Map<number, ArcGISServiceLayer[]>,
@@ -385,6 +397,7 @@ export function useCatalogRegistry(): CatalogRegistryState {
         for (const d of rawDatasets) datasetById.set(d.id, d);
         const serviceGroups = detectMultiLayerServices(rawDatasets);
         const catalogLayersByDatasetId = buildCatalogServiceLayerMap(rawServiceLayers);
+        const catalogTableCountByDatasetId = buildCatalogServiceTableCountMap(rawServiceLayers);
 
         // Discover ArcGIS sublayers when catalog rows represent only a service
         // container (single row + missing layer_id). This keeps large services
@@ -534,6 +547,7 @@ export function useCatalogRegistry(): CatalogRegistryState {
                     description: d.description ?? undefined,
                     isMultiLayerService: true,
                     siblingLayers: children,
+                    tableCount: catalogTableCountByDatasetId.get(serviceDatasetId) ?? 0,
                     ...tagsFor(d),
                   },
                 };
@@ -611,6 +625,10 @@ export function useCatalogRegistry(): CatalogRegistryState {
                 description: serviceRows[0].description ?? undefined,
                 isMultiLayerService: true,
                 siblingLayers: children,
+                tableCount: serviceRows.reduce(
+                  (sum, row) => sum + (catalogTableCountByDatasetId.get(row.id) ?? 0),
+                  0,
+                ),
                 ...tagsFor(serviceRows[0]),
               },
             };

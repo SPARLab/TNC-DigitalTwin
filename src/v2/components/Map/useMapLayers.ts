@@ -20,7 +20,6 @@ import { useAllMapBehaviors } from '../../dataSources/registry';
 import { getConcreteActiveLayerId } from './mapLayers/internal/mapLayerSyncHelpers';
 import { useMapLayerMembershipSync } from './mapLayers/internal/useMapLayerMembershipSync';
 import { useMapLayerPresentationSync } from './mapLayers/internal/useMapLayerPresentationSync';
-import { isPreserveBoundaryCatalogLayer } from '../../utils/findPreserveBoundaryCatalogLayer';
 
 export function useMapLayers() {
   const { pinnedLayers, activeLayer, getLayerOpacity } = useLayers();
@@ -46,7 +45,6 @@ export function useMapLayers() {
     concreteActiveLayerId,
     concreteActiveLayerName,
     getLayerOpacity,
-    layerMap,
     viewRef,
     viewMode,
     mapReady,
@@ -70,7 +68,6 @@ export function useMapLayers() {
   useEffect(() => {
     if (!concreteActiveLayerId) return;
     if (IMPLEMENTED_LAYERS.has(concreteActiveLayerId)) return;
-    if (isPreserveBoundaryCatalogLayer(layerMap.get(concreteActiveLayerId))) return;
     // Only toast if not pinned (pinned layers toast in the add-layer effect)
     if (pinnedLayers.some(p => p.layerId === concreteActiveLayerId)) return;
     showToast(`"${concreteActiveLayerName ?? 'Layer'}" — map data not available yet`, 'info');

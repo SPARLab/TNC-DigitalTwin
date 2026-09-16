@@ -258,16 +258,6 @@ export function LayerRow({
           {renderHighlightedText(name, highlightQuery)}
         </span>
 
-        {catalogLayer?.catalogMeta?.parentServiceId && (
-          <span
-            id={`layer-row-kind-${layerId}`}
-            className="text-[10px] uppercase tracking-wide text-gray-500 rounded border border-gray-200 bg-white px-1.5 py-0.5 flex-shrink-0"
-            title="Feature service layer"
-          >
-            Layer
-          </span>
-        )}
-
         {isDroneDeployOrthomosaicsLayer && (
           <button
             id={`drone-parent-expand-toggle-${layerId}`}
@@ -307,15 +297,7 @@ export function LayerRow({
           >
             <Pin className="w-4 h-4 text-gray-300 hover:text-gray-500" />
           </button>
-        ) : (
-          <span
-            id={`layer-service-container-hint-${layerId}`}
-            className="text-[10px] text-gray-500 uppercase tracking-wide"
-            title="Group container; select a child layer to pin"
-          >
-            Group
-          </span>
-        )}
+        ) : null}
       </div>
 
       {isDroneDeployOrthomosaicsLayer && (
