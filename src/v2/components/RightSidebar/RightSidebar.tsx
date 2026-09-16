@@ -1,5 +1,5 @@
 // ============================================================================
-// RightSidebar — 400px fixed width. Shows layer details or empty state.
+// RightSidebar — fills its ResizablePanel. Shows layer details or empty state.
 // Two tabs: Overview | Browse (DFT-041). Overview opens first (DFT-006).
 // Uses data source registry for tab content — no data-source-specific imports.
 // ============================================================================
@@ -180,7 +180,7 @@ export function RightSidebar({ onCollapse }: RightSidebarProps) {
   return (
     <aside
       id="right-sidebar"
-      className="w-[400px] flex-shrink-0 bg-white border-l border-gray-200 flex flex-col h-full overflow-hidden"
+      className="flex h-full w-full flex-shrink-0 flex-col overflow-hidden bg-white"
     >
       {activeLayer ? (
         <>

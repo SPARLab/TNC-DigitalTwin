@@ -1,5 +1,5 @@
 // ============================================================================
-// LeftSidebar — Persistent layer browser (280px fixed width)
+// LeftSidebar — Persistent layer browser (fills its ResizablePanel)
 // Dynamically loaded from the Data Catalog FeatureServer via CatalogContext.
 // Shows hierarchical categories with subcategories and ~90+ real datasets.
 // ============================================================================
@@ -175,14 +175,8 @@ export function LeftSidebar() {
     <aside
       id="left-sidebar"
       aria-label="Layer browser"
-      className="relative w-[280px] flex-shrink-0 bg-white flex flex-col h-full overflow-hidden"
+      className="relative flex h-full w-full flex-shrink-0 flex-col overflow-hidden bg-white"
     >
-      <div
-        id="left-sidebar-right-divider"
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 right-0 w-px bg-gray-200 z-10"
-      />
-
       <div id="left-sidebar-content" className="relative flex h-full flex-col">
         <SearchBar onSearch={handleSearch} />
         <div id="left-sidebar-live-region" className="sr-only" aria-live="polite" aria-atomic="true">
