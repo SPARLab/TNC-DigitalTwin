@@ -2,14 +2,16 @@ import { useEffect, type MutableRefObject } from 'react';
 import type Layer from '@arcgis/core/layers/Layer';
 import type MapView from '@arcgis/core/views/MapView';
 import type SceneView from '@arcgis/core/views/SceneView';
-import type { PinnedLayer } from '../../../../types';
+import type { CatalogLayer, PinnedLayer } from '../../../../types';
 import { createMapLayer } from '../../layers';
+import { isPreserveBoundaryCatalogLayer } from '../../../../utils/findPreserveBoundaryCatalogLayer';
 
 interface UseMapLayerMembershipSyncParams {
   pinnedLayers: PinnedLayer[];
   concreteActiveLayerId: string | null;
   concreteActiveLayerName: string | null;
   getLayerOpacity: (layerId: string) => number;
+  layerMap: Map<string, CatalogLayer>;
   viewRef: MutableRefObject<MapView | SceneView | null>;
   viewMode: '2d' | '3d';
   mapReady: number;
@@ -24,6 +26,7 @@ export function useMapLayerMembershipSync({
   concreteActiveLayerId,
   concreteActiveLayerName,
   getLayerOpacity,
+  layerMap,
   viewRef,
   viewMode,
   mapReady,
@@ -48,11 +51,15 @@ export function useMapLayerMembershipSync({
     const shouldBeOnMap = new Map<string, { name: string; visible: boolean }>();
 
     for (const pinned of pinnedLayers) {
+      // Outline is owned by createPreserveOutlineLayer — skip a second copy.
+      if (isPreserveBoundaryCatalogLayer(layerMap.get(pinned.layerId))) continue;
       shouldBeOnMap.set(pinned.layerId, { name: pinned.name, visible: pinned.isVisible });
     }
 
     if (concreteActiveLayerId && concreteActiveLayerName && !shouldBeOnMap.has(concreteActiveLayerId)) {
-      shouldBeOnMap.set(concreteActiveLayerId, { name: concreteActiveLayerName, visible: true });
+      if (!isPreserveBoundaryCatalogLayer(layerMap.get(concreteActiveLayerId))) {
+        shouldBeOnMap.set(concreteActiveLayerId, { name: concreteActiveLayerName, visible: true });
+      }
     }
 
     for (const [layerId, arcLayer] of managed.entries()) {
@@ -92,6 +99,7 @@ export function useMapLayerMembershipSync({
     concreteActiveLayerId,
     concreteActiveLayerName,
     getLayerOpacity,
+    layerMap,
     viewRef,
     viewMode,
     mapReady,

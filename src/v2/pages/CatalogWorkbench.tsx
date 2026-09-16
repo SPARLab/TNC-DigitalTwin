@@ -13,10 +13,12 @@ import {
   ResizablePanel,
   type ResizablePanelHandle,
 } from '../components/shared/ResizablePanel';
+import { useCatalogPreserveBoundaryBootstrap } from '../hooks/useCatalogPreserveBoundaryBootstrap';
 
 export function CatalogWorkbench() {
   const [isExportBuilderOpen, setIsExportBuilderOpen] = useState(false);
   const rightPanelRef = useRef<ResizablePanelHandle>(null);
+  useCatalogPreserveBoundaryBootstrap();
 
   return (
     <div id="v2-app" className="flex h-full w-full flex-col overflow-hidden">
