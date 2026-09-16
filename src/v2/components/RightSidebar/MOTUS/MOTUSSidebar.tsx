@@ -19,7 +19,7 @@ export function MOTUSSidebar() {
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          Overview
+          Info
         </button>
         <button
           id="motus-sidebar-tab-browse"

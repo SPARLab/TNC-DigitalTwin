@@ -1,10 +1,9 @@
 // ============================================================================
-// SidebarHeader — Data source icon + layer name + source badge + close [x]
+// SidebarHeader — Data source icon + layer name + source badge
 // Yellow/amber header to coordinate with left sidebar active state
 // Flash animation when active layer changes
 // ============================================================================
 
-import { PanelRightClose } from 'lucide-react';
 import type { ActiveLayer } from '../../types';
 import { LucideIcon } from '../shared/LucideIcon';
 import { useCatalog } from '../../context/CatalogContext';
@@ -12,13 +11,11 @@ import { formatCatalogSourceLabel } from '../../utils/catalogSourceLabel';
 
 interface SidebarHeaderProps {
   activeLayer: ActiveLayer;
-  onCollapse: () => void;
   shouldFlash?: boolean;
 }
 
 export function SidebarHeader({
   activeLayer,
-  onCollapse,
   shouldFlash = false,
 }: SidebarHeaderProps) {
   const { layerMap } = useCatalog();
@@ -39,17 +36,6 @@ export function SidebarHeader({
         <h2 className="text-base font-semibold text-gray-900 truncate">{activeLayer.name}</h2>
         <p className="text-xs text-gray-500 mt-0.5">Source: via {sourceLabel}</p>
       </div>
-      <button
-        id="right-sidebar-collapse-button"
-        type="button"
-        onClick={onCollapse}
-        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-amber-300 bg-white px-2.5 text-xs font-semibold text-amber-900 shadow-sm transition-colors hover:bg-amber-100"
-        title="Collapse sidebar"
-        aria-label="Collapse sidebar"
-      >
-        <PanelRightClose className="h-4 w-4" />
-        <span>Collapse</span>
-      </button>
     </div>
   );
 }

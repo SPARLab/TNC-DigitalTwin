@@ -10,7 +10,6 @@ import {
   OverviewInspectAction,
   OverviewMetadataSection,
   OverviewOpacityControl,
-  OverviewSourceCard,
   OverviewSourceOverlay,
   ServiceLayerListSection,
 } from './TNCArcGISOverviewSections';
@@ -106,7 +105,7 @@ export function TNCArcGISOverviewTab({
   const sliderOpacityPercent = targetLayer ? Math.round(getLayerOpacity(targetLayer.id) * 100) : 100;
   const pinnedLayerCount = siblingLayers.filter(layer => isLayerPinned(layer.id)).length;
   const visibleLayerCount = siblingLayers.filter(layer => isLayerVisible(layer.id)).length;
-  const rawServiceUrl = useMemo(() => {
+  const sourceUrl = useMemo(() => {
     if (!targetLayer?.catalogMeta) return '';
     try {
       return buildServiceUrl(targetLayer.catalogMeta);
@@ -114,8 +113,6 @@ export function TNCArcGISOverviewTab({
       return '';
     }
   }, [targetLayer?.catalogMeta]);
-  // Prefer the catalog REST endpoint — Hub search was a guess and often wrong.
-  const sourceUrl = rawServiceUrl;
   const renderStatusLabel = getRenderStatusLabel(loading, isLayerRendering, renderPhase, layerKind);
 
   useEffect(() => {
@@ -193,55 +190,53 @@ export function TNCArcGISOverviewTab({
   };
 
   return (
-    <div id="tnc-arcgis-overview-tab" className="space-y-5">
-      <OverviewContextCard
-        featureServiceName={featureServiceName}
-        currentLayerName={currentLayerName}
-        compactCurrentLayer={!isUnifiedServiceWorkspace}
-      />
-
-      <OverviewDescriptionSection description={description} />
-
-      {isUnifiedServiceWorkspace && (
-        <ServiceLayerListSection
-          siblingLayers={siblingLayers}
-          targetLayerId={targetLayer?.id}
-          pinnedLayerCount={pinnedLayerCount}
-          visibleLayerCount={visibleLayerCount}
-          onLayerSelect={handleLayerListSelect}
-          onInspectLayer={handleInspectLayer}
-          formatLayerLabel={formatLayerLabel}
-          isLayerVisible={isLayerVisible}
+    <div id="tnc-arcgis-overview-tab" className="flex min-h-full flex-col">
+      <div className="flex min-h-0 flex-1 flex-col gap-5">
+        <OverviewContextCard
+          featureServiceName={featureServiceName}
+          currentLayerName={currentLayerName}
+          compactCurrentLayer={!isUnifiedServiceWorkspace}
         />
-      )}
 
-      <OverviewMetadataSection sourceLabel={sourceLabel} renderStatusLabel={renderStatusLabel} />
+        <OverviewDescriptionSection description={description} />
 
-      {targetLayerCanPin && (
-        <OverviewOpacityControl
-          sliderOpacityPercent={sliderOpacityPercent}
-          onChangeOpacity={(nextPercent) => {
-            if (!targetLayer) return;
-            setLayerOpacity(targetLayer.id, nextPercent / 100);
-          }}
+        {isUnifiedServiceWorkspace && (
+          <ServiceLayerListSection
+            siblingLayers={siblingLayers}
+            targetLayerId={targetLayer?.id}
+            pinnedLayerCount={pinnedLayerCount}
+            visibleLayerCount={visibleLayerCount}
+            onLayerSelect={handleLayerListSelect}
+            onInspectLayer={handleInspectLayer}
+            formatLayerLabel={formatLayerLabel}
+            isLayerVisible={isLayerVisible}
+          />
+        )}
+
+        <OverviewMetadataSection
+          sourceLabel={sourceLabel}
+          renderStatusLabel={renderStatusLabel}
+          sourceUrl={sourceUrl}
+          onOpenOverlay={handleOpenSourceOverlay}
         />
-      )}
 
-      <OverviewInspectAction
-        isUnifiedServiceWorkspace={isUnifiedServiceWorkspace}
-        onInspectCurrentLayer={handleInspectCurrentLayer}
-      />
+        {targetLayerCanPin && (
+          <OverviewOpacityControl
+            sliderOpacityPercent={sliderOpacityPercent}
+            onChangeOpacity={(nextPercent) => {
+              if (!targetLayer) return;
+              setLayerOpacity(targetLayer.id, nextPercent / 100);
+            }}
+          />
+        )}
+      </div>
 
-      <OverviewSourceCard
-        sourceUrl={sourceUrl}
-        rawServiceUrl={rawServiceUrl}
-        sourceFallbackText={
-          isUnifiedServiceWorkspace
-            ? 'Select a specific layer to view source URL.'
-            : 'No source URL available.'
-        }
-        onOpenOverlay={handleOpenSourceOverlay}
-      />
+      <div className="sticky bottom-0 z-10 -mx-4 mt-5 border-t border-gray-200 bg-white px-4 pt-3">
+        <OverviewInspectAction
+          isUnifiedServiceWorkspace={isUnifiedServiceWorkspace}
+          onInspectCurrentLayer={handleInspectCurrentLayer}
+        />
+      </div>
 
       {isSourceOverlayOpen && sourceUrl && (
         <OverviewSourceOverlay

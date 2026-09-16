@@ -12,11 +12,7 @@ import { SidebarHeader } from './SidebarHeader';
 import { TabBar } from './TabBar';
 import { getAdapterForActiveLayer } from '../../dataSources/registry';
 
-interface RightSidebarProps {
-  onCollapse: () => void;
-}
-
-export function RightSidebar({ onCollapse }: RightSidebarProps) {
+export function RightSidebar() {
   const { activeLayer, activateLayer, lastEditFiltersRequest, lastBrowseTabRequest } = useLayers();
   const [activeTab, setActiveTab] = useState<SidebarTab>('overview');
   const [lastTabByLayerId, setLastTabByLayerId] = useState<Record<string, SidebarTab>>({});
@@ -186,7 +182,6 @@ export function RightSidebar({ onCollapse }: RightSidebarProps) {
         <>
           <SidebarHeader
             activeLayer={activeLayer}
-            onCollapse={onCollapse}
             shouldFlash={shouldFlash}
           />
           <TabBar

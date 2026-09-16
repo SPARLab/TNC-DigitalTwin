@@ -3,21 +3,17 @@
 // Structure: Header → (LeftSidebar | Map + FloatingWidgets | RightSidebar)
 // ============================================================================
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { V2Header } from '../components/Header/V2Header';
 import { LeftSidebar } from '../components/LeftSidebar/LeftSidebar';
 import { MapContainer } from '../components/Map/MapContainer';
 import { RightSidebar } from '../components/RightSidebar/RightSidebar';
 import { ExportBuilderModal } from '../components/ExportBuilder/ExportBuilderModal';
-import {
-  ResizablePanel,
-  type ResizablePanelHandle,
-} from '../components/shared/ResizablePanel';
+import { ResizablePanel } from '../components/shared/ResizablePanel';
 import { useCatalogPreserveBoundaryBootstrap } from '../hooks/useCatalogPreserveBoundaryBootstrap';
 
 export function CatalogWorkbench() {
   const [isExportBuilderOpen, setIsExportBuilderOpen] = useState(false);
-  const rightPanelRef = useRef<ResizablePanelHandle>(null);
   useCatalogPreserveBoundaryBootstrap();
 
   return (
@@ -40,7 +36,6 @@ export function CatalogWorkbench() {
         </div>
 
         <ResizablePanel
-          ref={rightPanelRef}
           side="right"
           storageKey="v2-catalog-right-panel"
           defaultWidth={400}
@@ -48,7 +43,7 @@ export function CatalogWorkbench() {
           maxWidth={620}
           label="layer details"
         >
-          <RightSidebar onCollapse={() => rightPanelRef.current?.collapse()} />
+          <RightSidebar />
         </ResizablePanel>
       </div>
       <ExportBuilderModal

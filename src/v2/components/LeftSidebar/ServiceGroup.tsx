@@ -93,21 +93,28 @@ export function ServiceGroup({
   };
 
   const handleRowClick = () => {
-    activateService();
-    if (!isExpanded) {
-      onToggleExpand();
-      announceExpandState(true);
-    }
-  };
-
-  const handleExpandToggle = (event: ReactMouseEvent) => {
-    event.stopPropagation();
-    activateService();
+    // Collapse without re-activating — otherwise CategoryGroup's auto-expand
+    // effect immediately opens the group again when a sublayer is selected.
     if (isExpanded) {
       onToggleExpand();
       announceExpandState(false);
       return;
     }
+    activateService();
+    onToggleExpand();
+    announceExpandState(true);
+  };
+
+  const handleExpandToggle = (event: ReactMouseEvent) => {
+    event.stopPropagation();
+    // Allow collapsing even when a sublayer is active. Activating first would
+    // change activeLayer and re-trigger CategoryGroup's auto-expand effect.
+    if (isExpanded) {
+      onToggleExpand();
+      announceExpandState(false);
+      return;
+    }
+    activateService();
     onToggleExpand();
     announceExpandState(true);
   };
@@ -190,10 +197,10 @@ export function ServiceGroup({
       <div
         id={childrenGroupId}
         role="group"
-        className={`ml-2 mr-1 border border-slate-200 rounded-lg bg-slate-50/50 overflow-hidden transition-all duration-300 ease-in-out ${
+        className={`ml-2 mr-1 border border-slate-200 rounded-lg bg-slate-50/50 transition-all duration-300 ease-in-out ${
           isExpanded
-            ? 'max-h-[600px] opacity-100 mb-2'
-            : 'max-h-0 opacity-0 mb-0 border-transparent'
+            ? 'max-h-[min(600px,70vh)] opacity-100 mb-2 overflow-y-auto'
+            : 'max-h-0 opacity-0 mb-0 border-transparent overflow-hidden'
         }`}
       >
         <div

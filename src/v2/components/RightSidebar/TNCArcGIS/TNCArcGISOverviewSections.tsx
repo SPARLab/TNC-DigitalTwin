@@ -31,6 +31,8 @@ interface ServiceLayerListSectionProps {
 interface OverviewMetadataSectionProps {
   sourceLabel: string;
   renderStatusLabel: string;
+  sourceUrl: string;
+  onOpenOverlay: () => void;
 }
 
 interface OverviewOpacityControlProps {
@@ -41,13 +43,6 @@ interface OverviewOpacityControlProps {
 interface OverviewInspectActionProps {
   isUnifiedServiceWorkspace: boolean;
   onInspectCurrentLayer: () => void;
-}
-
-interface OverviewSourceCardProps {
-  sourceUrl: string;
-  rawServiceUrl: string;
-  sourceFallbackText: string;
-  onOpenOverlay: () => void;
 }
 
 interface OverviewSourceOverlayProps {
@@ -258,19 +253,54 @@ export function ServiceLayerListSection({
   );
 }
 
-export function OverviewMetadataSection({ sourceLabel, renderStatusLabel }: OverviewMetadataSectionProps) {
+export function OverviewMetadataSection({
+  sourceLabel,
+  renderStatusLabel,
+  sourceUrl,
+  onOpenOverlay,
+}: OverviewMetadataSectionProps) {
   return (
-    <div id="tnc-arcgis-overview-metadata" className="bg-slate-50 rounded-lg p-4">
+    <div id="tnc-arcgis-overview-metadata" className="rounded-lg border border-slate-200 bg-slate-50 p-4">
       <dl id="tnc-arcgis-overview-metadata-list" className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
         <dt id="tnc-arcgis-overview-source-label" className="text-gray-500">Source</dt>
-        <dd id="tnc-arcgis-overview-source-value" className="text-gray-900 font-medium text-right truncate" title={sourceLabel}>
+        <dd
+          id="tnc-arcgis-overview-source-value"
+          className="truncate text-right font-medium text-gray-900"
+          title={sourceLabel}
+        >
           {sourceLabel}
         </dd>
         <dt id="tnc-arcgis-overview-type-label" className="text-gray-500">Status</dt>
-        <dd id="tnc-arcgis-overview-type-value" className="text-gray-900 font-medium text-right">
+        <dd id="tnc-arcgis-overview-type-value" className="text-right font-medium text-gray-900">
           {renderStatusLabel}
         </dd>
       </dl>
+
+      <div id="tnc-arcgis-overview-source-actions" className="mt-3 grid grid-cols-2 gap-2">
+        <button
+          id="tnc-arcgis-overview-open-overlay-button"
+          type="button"
+          onClick={onOpenOverlay}
+          disabled={!sourceUrl}
+          className="rounded-md border border-gray-300 bg-white px-2 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Open Overlay
+        </button>
+        <a
+          id="tnc-arcgis-overview-open-new-tab-link"
+          href={sourceUrl || '#'}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`flex items-center justify-center gap-1 rounded-md border px-2 py-2 text-xs font-medium ${
+            sourceUrl
+              ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
+              : 'pointer-events-none border-gray-200 bg-gray-100 text-gray-400'
+          }`}
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+          New Tab
+        </a>
+      </div>
     </div>
   );
 }
@@ -322,61 +352,10 @@ export function OverviewInspectAction({
         id={actionButtonId}
         type="button"
         onClick={onInspectCurrentLayer}
-        className="w-full py-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-medium text-center min-h-[44px] hover:bg-emerald-100 transition-colors"
+        className="min-h-[44px] w-full rounded-lg border border-emerald-200 bg-emerald-50 py-3 text-center text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
       >
         Inspect Current Layer
       </button>
-    </div>
-  );
-}
-
-export function OverviewSourceCard({
-  sourceUrl,
-  rawServiceUrl,
-  sourceFallbackText,
-  onOpenOverlay,
-}: OverviewSourceCardProps) {
-  return (
-    <div id="tnc-arcgis-overview-source-card" className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
-      <h4 id="tnc-arcgis-overview-source-title" className="text-xs font-semibold uppercase tracking-wide text-gray-600">
-        Source
-      </h4>
-      <div id="tnc-arcgis-overview-source-url" className="text-xs text-gray-700 break-all">
-        {sourceUrl || sourceFallbackText}
-      </div>
-      {rawServiceUrl && sourceUrl !== rawServiceUrl && (
-        <div id="tnc-arcgis-overview-raw-source-url" className="text-[11px] text-gray-500 break-all">
-          REST endpoint: {rawServiceUrl}
-        </div>
-      )}
-      <div id="tnc-arcgis-overview-source-actions" className="grid grid-cols-2 gap-2">
-        <button
-          id="tnc-arcgis-overview-open-overlay-button"
-          type="button"
-          onClick={onOpenOverlay}
-          disabled={!sourceUrl}
-          className="rounded-md border border-gray-300 bg-white px-2 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Open Overlay
-        </button>
-        <a
-          id="tnc-arcgis-overview-open-new-tab-link"
-          href={sourceUrl || '#'}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`rounded-md border px-2 py-2 text-xs font-medium flex items-center justify-center gap-1 ${
-            sourceUrl
-              ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
-              : 'border-gray-200 bg-gray-100 text-gray-400 pointer-events-none'
-          }`}
-        >
-          <ExternalLink className="w-3.5 h-3.5" />
-          New Tab
-        </a>
-      </div>
-      <p id="tnc-arcgis-overview-source-help" className="text-[11px] text-gray-500">
-        Opens the catalog REST endpoint. Use New Tab if embedding is blocked.
-      </p>
     </div>
   );
 }
