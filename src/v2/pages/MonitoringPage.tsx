@@ -12,14 +12,17 @@ import type MapView from '@arcgis/core/views/MapView';
 import type SceneView from '@arcgis/core/views/SceneView';
 import Extent from '@arcgis/core/geometry/Extent';
 import Point from '@arcgis/core/geometry/Point';
+import { useNavigate } from 'react-router-dom';
 import {
   Activity,
   AlertTriangle,
+  Check,
   ChevronRight,
   Droplets,
   Gauge,
   History as HistoryIcon,
   Loader2,
+  Pin,
   Radio,
   Signal,
   Thermometer,
@@ -27,6 +30,7 @@ import {
   Wind,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import type { CatalogLayer } from '../types';
 import { MonitoringMap } from '../components/Monitoring/MonitoringMap';
 import { MonitoringScene, SCENE_CAMERA_TILT } from '../components/Monitoring/MonitoringScene';
 import { ViewModeToggle } from '../components/Monitoring/ViewModeToggle';
@@ -68,6 +72,9 @@ import { allowsInterpolation, SENSOR_VARIABLES } from '../services/sensorService
 import type { SensorVariableId } from '../services/sensorService';
 import { buildLatestLayerUrl, type LiveAlert } from '../services/liveAlertService';
 import { WIND_SERVICE_PATH } from '../services/windService';
+import { useLayers } from '../context/LayerContext';
+import { useCatalog } from '../context/CatalogContext';
+import { resolveHistoricalCatalogLayer } from '../utils/resolveCatalogLayer';
 
 const WIND_SENSOR_ID = 'wind';
 const CAMERA_SENSOR_ID = 'cameras';
@@ -243,6 +250,15 @@ function SensorSectionGroup({
   );
 }
 
+function isServiceContainerLayer(layer: CatalogLayer): boolean {
+  return !!(
+    layer.catalogMeta?.isMultiLayerService
+    && !layer.catalogMeta.parentServiceId
+    && layer.catalogMeta.siblingLayers
+    && layer.catalogMeta.siblingLayers.length > 0
+  );
+}
+
 export function MonitoringPage() {
   /*
    * The tree is single-select: exactly one layer draws at a time. Holding one
@@ -251,6 +267,10 @@ export function MonitoringPage() {
    * them independent is what previously let wind stay on underneath whatever was
    * toggled next, stacking its arrows and panel on top of the new layer's.
    */
+  const navigate = useNavigate();
+  const { activateLayer, pinLayer, unpinLayer, isLayerPinned, getPinnedByLayerId, requestBrowseTab } =
+    useLayers();
+  const { layerMap, loading: catalogLoading } = useCatalog();
   const [activeSensor, setActiveSensor] = useState<{
     id: string;
     renderer: MonitoringSensor['renderer'];
@@ -309,6 +329,124 @@ export function MonitoringPage() {
   const alertsLayerLabel = isWindActive
     ? 'Wind'
     : scalarConfig?.label ?? null;
+
+  /** Catalog dataset behind the active monitoring sensor, if any. */
+  const activeMonitoringSensor = useMemo(() => {
+    if (!activeSensor) return null;
+    for (const section of sections) {
+      const match = section.sensors.find((sensor) => sensor.id === activeSensor.id);
+      if (match) return match;
+    }
+    return null;
+  }, [activeSensor, sections]);
+
+  const historicalCatalogLayer = useMemo(() => {
+    if (!activeMonitoringSensor) return null;
+    return resolveHistoricalCatalogLayer(
+      layerMap,
+      activeMonitoringSensor.datasetId,
+      activeMonitoringSensor.layerId,
+    );
+  }, [activeMonitoringSensor, layerMap]);
+
+  const historicalTargetLayerId = historicalCatalogLayer?.id ?? null;
+
+  const isHistoricalLayerPinned = historicalTargetLayerId
+    ? isLayerPinned(historicalTargetLayerId)
+    : false;
+
+  const [catalogActionError, setCatalogActionError] = useState<string | null>(null);
+  const [pinFeedback, setPinFeedback] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCatalogActionError(null);
+    setPinFeedback(null);
+  }, [activeMonitoringSensor?.datasetId]);
+
+  const resolveHistoricalTarget = useCallback((): {
+    layerId: string;
+    layerName: string;
+  } | null => {
+    if (!activeMonitoringSensor) {
+      setCatalogActionError('Select a live sensor first.');
+      return null;
+    }
+
+    if (catalogLoading && layerMap.size === 0) {
+      setCatalogActionError('Data Catalog is still loading. Try again in a moment.');
+      return null;
+    }
+
+    const layer = resolveHistoricalCatalogLayer(
+      layerMap,
+      activeMonitoringSensor.datasetId,
+      activeMonitoringSensor.layerId,
+    );
+
+    if (!layer) {
+      setCatalogActionError(
+        `Could not find "${activeMonitoringSensor.name}" in the Data Catalog map layers.`,
+      );
+      return null;
+    }
+
+    // Prefer a concrete child over a service container so pinLayer succeeds.
+    const targetLayerId = isServiceContainerLayer(layer)
+      ? (
+          layer.catalogMeta?.siblingLayers?.find(
+            (sibling) =>
+              sibling.catalogMeta?.layerIdInService === 1
+              || /location|station/i.test(sibling.name),
+          )?.id
+          ?? layer.catalogMeta?.siblingLayers?.[0]?.id
+          ?? layer.id
+        )
+      : layer.id;
+
+    if (!layerMap.get(targetLayerId)) {
+      setCatalogActionError('Could not resolve a map layer for this sensor.');
+      return null;
+    }
+
+    return {
+      layerId: targetLayerId,
+      layerName: layerMap.get(targetLayerId)?.name ?? layer.name,
+    };
+  }, [activeMonitoringSensor, catalogLoading, layerMap]);
+
+  const viewHistoricalData = useCallback(() => {
+    setCatalogActionError(null);
+    setPinFeedback(null);
+    const target = resolveHistoricalTarget();
+    if (!target) return;
+
+    activateLayer(target.layerId);
+    pinLayer(target.layerId);
+    requestBrowseTab();
+    navigate('/catalog');
+  }, [
+    resolveHistoricalTarget,
+    activateLayer,
+    pinLayer,
+    requestBrowseTab,
+    navigate,
+  ]);
+
+  const pinHistoricalDataset = useCallback(() => {
+    setCatalogActionError(null);
+    const target = resolveHistoricalTarget();
+    if (!target) return;
+
+    const existing = getPinnedByLayerId(target.layerId);
+    if (existing) {
+      unpinLayer(existing.id);
+      setPinFeedback(`Removed "${target.layerName}" from Map Layers.`);
+      return;
+    }
+
+    pinLayer(target.layerId);
+    setPinFeedback(`Pinned "${target.layerName}" to Map Layers.`);
+  }, [resolveHistoricalTarget, getPinnedByLayerId, unpinLayer, pinLayer]);
 
   // Well columns need a perspective camera, so they only ever see the scene view.
   const sceneView = view?.type === '3d' ? (view as SceneView) : null;
@@ -746,21 +884,11 @@ export function MonitoringPage() {
           />
         )}
 
-        {alertsLayerLabel && (
-          <AlertsPanel
-            layerLabel={alertsLayerLabel}
-            alerts={liveAlerts.alerts}
-            isLoading={liveAlerts.isLoading}
-            error={liveAlerts.error}
-            onRefresh={liveAlerts.refresh}
-            onSelectAlert={focusAlertStation}
-          />
-        )}
-
         {stationPoints?.length ? (
           <button
             type="button"
             onClick={frameStations}
+            title="Zoom the map to fit every station currently reporting for this sensor"
             className="rounded-card border border-gray-200 bg-white px-3 py-2 text-[11px] font-medium text-gray-600 transition-colors hover:bg-gray-50"
           >
             Zoom to reporting stations
@@ -824,15 +952,75 @@ export function MonitoringPage() {
           </section>
         )}
 
-        <button
-          type="button"
-          disabled
-          title="Not wired up yet"
-          className="flex items-center justify-center gap-2 rounded-card border border-gray-200 bg-white px-3 py-2 text-[11px] font-medium text-gray-400 cursor-not-allowed"
-        >
-          <HistoryIcon className="h-3.5 w-3.5" />
-          View Historical Data
-        </button>
+        <div className="flex flex-col gap-1.5">
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              type="button"
+              onClick={viewHistoricalData}
+              disabled={!activeMonitoringSensor}
+              title={
+                !activeMonitoringSensor
+                  ? 'Select a live sensor first. Opens this dataset on the Data Catalog map and reveals it in the left sidebar.'
+                  : `Open ${historicalCatalogLayer?.name ?? 'this dataset'} on the Data Catalog map (Stations/Locations view for sensor datastreams), pin it to Map Layers, and show its place in the left sidebar.`
+              }
+              className={`flex items-center justify-center gap-1.5 rounded-card border px-2 py-2 text-[11px] font-medium transition-colors ${
+                activeMonitoringSensor
+                  ? 'border-emerald-200 bg-white text-emerald-800 hover:bg-emerald-50'
+                  : 'cursor-not-allowed border-gray-200 bg-white text-gray-400'
+              }`}
+            >
+              <HistoryIcon className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="leading-tight">View Historical Data</span>
+            </button>
+            <button
+              type="button"
+              onClick={pinHistoricalDataset}
+              disabled={!activeMonitoringSensor}
+              title={
+                !activeMonitoringSensor
+                  ? 'Select a live sensor first. Saves the Stations/Locations layer to Map Layers (favorites) without leaving Live Monitoring.'
+                  : isHistoricalLayerPinned
+                    ? `Remove ${historicalCatalogLayer?.name ?? 'this dataset'} from Map Layers / favorites.`
+                    : `Save ${historicalCatalogLayer?.name ?? 'this dataset'} (Stations view) to Map Layers so it appears in favorites without leaving Live Monitoring.`
+              }
+              className={`flex items-center justify-center gap-1.5 rounded-card border px-2 py-2 text-[11px] font-medium transition-colors ${
+                !activeMonitoringSensor
+                  ? 'cursor-not-allowed border-gray-200 bg-white text-gray-400'
+                  : isHistoricalLayerPinned
+                    ? 'border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100'
+                    : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {isHistoricalLayerPinned ? (
+                <Check className="h-3.5 w-3.5 flex-shrink-0" />
+              ) : (
+                <Pin className="h-3.5 w-3.5 flex-shrink-0" />
+              )}
+              <span className="leading-tight">
+                {isHistoricalLayerPinned ? 'Unpin Dataset' : 'Pin Dataset'}
+              </span>
+            </button>
+          </div>
+          {catalogActionError && (
+            <p role="alert" className="text-[10px] leading-relaxed text-red-600">
+              {catalogActionError}
+            </p>
+          )}
+          {!catalogActionError && pinFeedback && (
+            <p className="text-[10px] leading-relaxed text-emerald-700">{pinFeedback}</p>
+          )}
+        </div>
+
+        {alertsLayerLabel && (
+          <AlertsPanel
+            layerLabel={alertsLayerLabel}
+            alerts={liveAlerts.alerts}
+            isLoading={liveAlerts.isLoading}
+            error={liveAlerts.error}
+            onRefresh={liveAlerts.refresh}
+            onSelectAlert={focusAlertStation}
+          />
+        )}
         </div>
       </ResizablePanel>
     </div>

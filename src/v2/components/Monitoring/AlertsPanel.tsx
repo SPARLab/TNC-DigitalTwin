@@ -63,9 +63,10 @@ function groupByCategory(alerts: LiveAlert[]): CategoryGroup[] {
       alerts: [...rows].sort(compareLiveAlerts),
     }))
     .sort((a, b) => {
-      // Categories that hold the highest-severity alert float first.
-      const aRank = a.alerts[0] ? compareLiveAlerts(b.alerts[0], a.alerts[0]) : 0;
-      if (aRank !== 0) return aRank;
+      // Categories with the highest-severity alert come first (critical → … → test).
+      if (a.alerts[0] && b.alerts[0]) {
+        return compareLiveAlerts(a.alerts[0], b.alerts[0]);
+      }
       return a.category.localeCompare(b.category);
     });
 }
@@ -140,14 +141,12 @@ function StationAlertRow({
 
 function CategoryBlock({
   group,
-  defaultExpanded,
   onSelectAlert,
 }: {
   group: CategoryGroup;
-  defaultExpanded: boolean;
   onSelectAlert?: (alert: LiveAlert) => void;
 }) {
-  const [expanded, setExpanded] = useState(defaultExpanded);
+  const [expanded, setExpanded] = useState(false);
   const topSeverity = group.alerts[0]?.severity ?? 'info';
 
   return (
@@ -192,6 +191,7 @@ export function AlertsPanel({
   onSelectAlert,
 }: AlertsPanelProps) {
   const [severityFilter, setSeverityFilter] = useState<string>('all');
+  const [panelExpanded, setPanelExpanded] = useState(true);
 
   const severityOptions = useMemo(() => {
     const seen = new Map<string, number>();
@@ -204,7 +204,8 @@ export function AlertsPanel({
       .sort((a, b) => {
         const sampleA = alerts.find((alert) => alert.severity.toLowerCase() === a.severity)!;
         const sampleB = alerts.find((alert) => alert.severity.toLowerCase() === b.severity)!;
-        return compareLiveAlerts(sampleB, sampleA);
+        // Highest severity first so chips read critical → … → test.
+        return compareLiveAlerts(sampleA, sampleB);
       });
   }, [alerts]);
 
@@ -216,6 +217,10 @@ export function AlertsPanel({
   const categories = useMemo(() => groupByCategory(filteredAlerts), [filteredAlerts]);
   const realCount = alerts.filter((alert) => alert.severity.toLowerCase() !== 'test').length;
   const testCount = alerts.length - realCount;
+  const topAlert = useMemo(
+    () => (alerts.length > 0 ? [...alerts].sort(compareLiveAlerts)[0] : null),
+    [alerts],
+  );
 
   return (
     <section
@@ -223,11 +228,22 @@ export function AlertsPanel({
       className="flex flex-col gap-3 rounded-card border-2 border-amber-300 bg-gradient-to-b from-amber-50 to-white p-3 shadow-md shadow-amber-100/80"
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-500 text-white shadow-sm">
+        <button
+          type="button"
+          onClick={() => setPanelExpanded((current) => !current)}
+          className="flex min-w-0 flex-1 items-start gap-2 rounded-md text-left transition-colors hover:bg-amber-100/60"
+          aria-expanded={panelExpanded}
+          title={panelExpanded ? 'Collapse alerts' : 'Expand alerts'}
+        >
+          {panelExpanded ? (
+            <ChevronDown className="mt-1.5 h-3.5 w-3.5 flex-shrink-0 text-amber-800" />
+          ) : (
+            <ChevronRight className="mt-1.5 h-3.5 w-3.5 flex-shrink-0 text-amber-800" />
+          )}
+          <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-amber-500 text-white shadow-sm">
             <AlertTriangle className="h-3.5 w-3.5" />
           </span>
-          <div>
+          <div className="min-w-0">
             <h3 className="text-xs font-bold uppercase tracking-wide text-amber-900">
               Alerts
             </h3>
@@ -235,9 +251,15 @@ export function AlertsPanel({
               Open conditions for {layerLabel}
               {alerts.length > 0 &&
                 ` · ${realCount} active${testCount > 0 ? `, ${testCount} test` : ''}`}
+              {!panelExpanded && topAlert && (
+                <span className="mt-0.5 block truncate text-amber-900/90">
+                  Highest: {formatSeverityLabel(topAlert.severity)}
+                  {topAlert.category ? ` · ${topAlert.category}` : ''}
+                </span>
+              )}
             </p>
           </div>
-        </div>
+        </button>
         <button
           type="button"
           onClick={onRefresh}
@@ -254,82 +276,85 @@ export function AlertsPanel({
         </button>
       </div>
 
-      {alerts.length > 0 && severityOptions.length > 1 && (
-        <div className="flex flex-wrap gap-1" role="group" aria-label="Filter by severity">
-          <button
-            type="button"
-            onClick={() => setSeverityFilter('all')}
-            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold transition-colors ${
-              severityFilter === 'all'
-                ? 'bg-amber-600 text-white'
-                : 'bg-white text-gray-600 ring-1 ring-amber-200 hover:bg-amber-50'
-            }`}
-          >
-            All ({alerts.length})
-          </button>
-          {severityOptions.map(({ severity, count }) => (
-            <button
-              key={severity}
-              type="button"
-              onClick={() => setSeverityFilter(severity)}
-              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold transition-colors ${
-                severityFilter === severity
-                  ? 'text-white'
-                  : 'bg-white text-gray-600 ring-1 ring-amber-200 hover:bg-amber-50'
-              }`}
-              style={
-                severityFilter === severity
-                  ? { backgroundColor: severityCssColor(severity) }
-                  : undefined
-              }
+      {panelExpanded && (
+        <>
+          {alerts.length > 0 && severityOptions.length > 1 && (
+            <div className="flex flex-wrap gap-1" role="group" aria-label="Filter by severity">
+              <button
+                type="button"
+                onClick={() => setSeverityFilter('all')}
+                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold transition-colors ${
+                  severityFilter === 'all'
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-white text-gray-600 ring-1 ring-amber-200 hover:bg-amber-50'
+                }`}
+              >
+                All ({alerts.length})
+              </button>
+              {severityOptions.map(({ severity, count }) => (
+                <button
+                  key={severity}
+                  type="button"
+                  onClick={() => setSeverityFilter(severity)}
+                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold transition-colors ${
+                    severityFilter === severity
+                      ? 'text-white'
+                      : 'bg-white text-gray-600 ring-1 ring-amber-200 hover:bg-amber-50'
+                  }`}
+                  style={
+                    severityFilter === severity
+                      ? { backgroundColor: severityCssColor(severity) }
+                      : undefined
+                  }
+                >
+                  <span
+                    className="h-1.5 w-1.5 rounded-full"
+                    style={{
+                      backgroundColor:
+                        severityFilter === severity ? '#fff' : severityCssColor(severity),
+                    }}
+                  />
+                  {formatSeverityLabel(severity)} ({count})
+                </button>
+              ))}
+            </div>
+          )}
+
+          {error && (
+            <div
+              role="alert"
+              className="rounded-card border border-red-200 bg-red-50 px-3 py-2 text-[11px] text-red-700"
             >
-              <span
-                className="h-1.5 w-1.5 rounded-full"
-                style={{
-                  backgroundColor:
-                    severityFilter === severity ? '#fff' : severityCssColor(severity),
-                }}
+              {error}
+            </div>
+          )}
+
+          {!error && filteredAlerts.length === 0 && !isLoading && (
+            <p className="rounded-card border border-dashed border-amber-200 bg-white/70 px-3 py-3 text-[11px] leading-relaxed text-gray-500">
+              {alerts.length === 0
+                ? 'No open alerts for this layer right now.'
+                : 'No stations match this severity filter.'}
+            </p>
+          )}
+
+          {!error && alerts.length === 0 && isLoading && (
+            <div className="flex items-center gap-2 px-1 py-2 text-[11px] text-amber-800/80">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Loading alerts…
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2">
+            {categories.map((group) => (
+              <CategoryBlock
+                key={group.category}
+                group={group}
+                onSelectAlert={onSelectAlert}
               />
-              {formatSeverityLabel(severity)} ({count})
-            </button>
-          ))}
-        </div>
+            ))}
+          </div>
+        </>
       )}
-
-      {error && (
-        <div
-          role="alert"
-          className="rounded-card border border-red-200 bg-red-50 px-3 py-2 text-[11px] text-red-700"
-        >
-          {error}
-        </div>
-      )}
-
-      {!error && filteredAlerts.length === 0 && !isLoading && (
-        <p className="rounded-card border border-dashed border-amber-200 bg-white/70 px-3 py-3 text-[11px] leading-relaxed text-gray-500">
-          {alerts.length === 0
-            ? 'No open alerts for this layer right now.'
-            : 'No stations match this severity filter.'}
-        </p>
-      )}
-
-      {!error && alerts.length === 0 && isLoading && (
-        <div className="flex items-center gap-2 px-1 py-2 text-[11px] text-amber-800/80">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          Loading alerts…
-        </div>
-      )}
-
-      <div className="flex flex-col gap-2">
-        {categories.map((group, index) => (
-          <CategoryBlock
-            key={group.category}
-            group={group}
-            defaultExpanded={index === 0 || group.alerts[0]?.severity.toLowerCase() !== 'test'}
-            onSelectAlert={onSelectAlert}
-          />
-        ))}
-      </div>
     </section>
   );
 }

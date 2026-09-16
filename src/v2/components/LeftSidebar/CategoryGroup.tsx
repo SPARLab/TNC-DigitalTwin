@@ -37,6 +37,32 @@ function countMatchingLayers(cat: Category, filter?: Set<string>): number {
   return count;
 }
 
+/** True when this category or any nested subcategory owns the active layer. */
+function categoryContainsLayer(
+  cat: Category,
+  layerId: string,
+  selectedSubLayerId?: string,
+): boolean {
+  const matches = (layer: CatalogLayer) =>
+    layer.id === layerId || (!!selectedSubLayerId && layer.id === selectedSubLayerId);
+
+  if (cat.layers.some(matches)) return true;
+  return cat.subcategories?.some((sub) =>
+    categoryContainsLayer(sub, layerId, selectedSubLayerId),
+  ) ?? false;
+}
+
+/** Find a matching layer in this category's direct layers (not nested subs). */
+function findDirectMatchingLayer(
+  layers: CatalogLayer[],
+  layerId: string,
+  selectedSubLayerId?: string,
+): CatalogLayer | undefined {
+  return layers.find(
+    (layer) => layer.id === layerId || (!!selectedSubLayerId && layer.id === selectedSubLayerId),
+  );
+}
+
 /** Get visible layers for a category (filtered or all). */
 function visibleLayers(layers: CatalogLayer[], filter?: Set<string>): CatalogLayer[] {
   return filter ? layers.filter(l => filter.has(l.id)) : layers;
@@ -142,12 +168,19 @@ export function CategoryGroup({
     if (!activeLayer) return;
     const activeLayerId = activeLayer.layerId;
     const selectedSubLayerId = activeLayer.selectedSubLayerId;
-    const matchingDirectLayer = directLayers.find(
-      layer => layer.id === activeLayerId || (!!selectedSubLayerId && layer.id === selectedSubLayerId),
-    );
-    if (!matchingDirectLayer) return;
+
+    // Expand any ancestor whose tree contains the active layer so deep nesting
+    // (category → subcategory → service → layer) opens when activated elsewhere.
+    if (!categoryContainsLayer(category, activeLayerId, selectedSubLayerId)) return;
 
     setIsExpanded(true);
+
+    const matchingDirectLayer = findDirectMatchingLayer(
+      directLayers,
+      activeLayerId,
+      selectedSubLayerId,
+    );
+    if (!matchingDirectLayer) return;
 
     const parentServiceId = matchingDirectLayer.catalogMeta?.parentServiceId
       ?? (isServiceParent(matchingDirectLayer) ? matchingDirectLayer.id : undefined);
@@ -159,7 +192,7 @@ export function CategoryGroup({
       next.add(parentServiceId);
       return next;
     });
-  }, [activeLayer, directLayers, isServiceParent]);
+  }, [activeLayer, category, directLayers, isServiceParent]);
 
   // Visual styling (bg + border) lives on a dedicated header-row div, not the button and
   // not the outer wrapper. This prevents hover from bleeding into expanded content,

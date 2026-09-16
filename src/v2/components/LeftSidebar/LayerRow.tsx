@@ -102,6 +102,13 @@ export function LayerRow({
     ? activeLayer.featureId
     : undefined;
 
+  // Reveal the row when activated from elsewhere (e.g. Monitoring → historical).
+  useEffect(() => {
+    if (!isActive) return;
+    const row = document.getElementById(`layer-row-${layerId}`);
+    row?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [isActive, layerId]);
+
   const handleClick = () => {
     if (controlsOnly) return;
     activateLayer(layerId);

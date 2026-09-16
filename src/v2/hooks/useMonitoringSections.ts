@@ -30,6 +30,8 @@ export interface MonitoringSensor {
   renderer: MonitoringRenderer | null;
   datasetId: number;
   servicePath: string;
+  /** FeatureServer sublayer used for live readings (usually Latest = 0). */
+  layerId: number;
 }
 
 export interface MonitoringSection {
@@ -72,6 +74,7 @@ function buildSections(datasets: LiveTaggedDataset[]): MonitoringSection[] {
       renderer: binding?.renderer ?? null,
       datasetId: dataset.datasetId,
       servicePath: dataset.servicePath,
+      layerId: dataset.layerId,
     });
 
     byTag.set(dataset.liveTag, section);
