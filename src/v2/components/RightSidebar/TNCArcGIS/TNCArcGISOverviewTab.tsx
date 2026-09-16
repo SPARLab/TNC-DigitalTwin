@@ -3,6 +3,7 @@ import { useCatalog } from '../../../context/CatalogContext';
 import { useLayers } from '../../../context/LayerContext';
 import { buildServiceUrl, fetchServiceDescription } from '../../../services/tncArcgisService';
 import type { CatalogLayer } from '../../../types';
+import { formatCatalogSourcePath } from '../../../utils/catalogSourceLabel';
 import {
   OverviewContextCard,
   OverviewDescriptionSection,
@@ -100,18 +101,11 @@ export function TNCArcGISOverviewTab({
   const description = resolvedDescription || 'No description available yet.';
   const featureServiceName = serviceContextLayer?.name || activeCatalogLayer?.name || 'Unknown service';
   const currentLayerName = targetLayer?.name || activeCatalogLayer?.name || 'Unknown layer';
-  const servicePath = serviceContextLayer?.catalogMeta?.servicePath || 'Unknown service path';
-  const serverBaseUrl = serviceContextLayer?.catalogMeta?.serverBaseUrl || 'Unknown host';
-  const sourceLabel = `${serverBaseUrl}/${servicePath}`;
+  const sourceLabel = formatCatalogSourcePath(serviceContextLayer ?? targetLayer);
   const targetLayerCanPin = !!targetLayer;
   const sliderOpacityPercent = targetLayer ? Math.round(getLayerOpacity(targetLayer.id) * 100) : 100;
   const pinnedLayerCount = siblingLayers.filter(layer => isLayerPinned(layer.id)).length;
   const visibleLayerCount = siblingLayers.filter(layer => isLayerVisible(layer.id)).length;
-  const serviceSearchUrl = useMemo(() => {
-    const searchLabel = serviceContextLayer?.name || targetLayer?.name;
-    if (!searchLabel) return '';
-    return `https://dangermondpreserve-tnc.hub.arcgis.com/search?collection=Dataset&q=${encodeURIComponent(searchLabel)}`;
-  }, [serviceContextLayer?.name, targetLayer?.name]);
   const rawServiceUrl = useMemo(() => {
     if (!targetLayer?.catalogMeta) return '';
     try {
@@ -120,9 +114,8 @@ export function TNCArcGISOverviewTab({
       return '';
     }
   }, [targetLayer?.catalogMeta]);
-  const sourceUrl = useMemo(() => {
-    return serviceSearchUrl || rawServiceUrl;
-  }, [serviceSearchUrl, rawServiceUrl]);
+  // Prefer the catalog REST endpoint — Hub search was a guess and often wrong.
+  const sourceUrl = rawServiceUrl;
   const renderStatusLabel = getRenderStatusLabel(loading, isLayerRendering, renderPhase, layerKind);
 
   useEffect(() => {

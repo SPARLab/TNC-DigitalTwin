@@ -7,6 +7,8 @@ import { useEffect, useState } from 'react';
 import { useCatalog } from '../../../context/CatalogContext';
 import { useLayers } from '../../../context/LayerContext';
 import { fetchServiceDescription } from '../../../services/tncArcgisService';
+import { SafeHtml } from '../../shared/SafeHtml';
+import { looksLikeHtml } from '../../../utils/safeHtml';
 
 interface DendraOverviewTabProps {
   stationCount: number;
@@ -51,17 +53,33 @@ export function DendraOverviewTab({
   return (
     <div id="dendra-overview-tab" className="space-y-5">
       {/* Description */}
-      <p id="dendra-overview-description" className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
-        {resolvedDescription || (
-          <>
-            Real-time and historical sensor data from the Dangermond Preserve.
-            {layerTitle && (
-              <> This layer shows <strong>{layerTitle}</strong> with
-              station locations and associated datastream measurements.</>
-            )}
-          </>
-        )}
-      </p>
+      {resolvedDescription ? (
+        looksLikeHtml(resolvedDescription) ? (
+          <SafeHtml
+            id="dendra-overview-description"
+            html={resolvedDescription}
+            className="text-sm leading-relaxed text-gray-600 [&_a]:font-medium [&_a]:text-emerald-700 [&_a]:underline hover:[&_a]:text-emerald-800 [&_p]:mb-3 [&_p:last-child]:mb-0 [&_strong]:font-semibold"
+          />
+        ) : (
+          <p
+            id="dendra-overview-description"
+            className="whitespace-pre-line text-sm leading-relaxed text-gray-600"
+          >
+            {resolvedDescription}
+          </p>
+        )
+      ) : (
+        <p id="dendra-overview-description" className="text-sm leading-relaxed text-gray-600">
+          Real-time and historical sensor data from the Dangermond Preserve.
+          {layerTitle && (
+            <>
+              {' '}
+              This layer shows <strong>{layerTitle}</strong> with station locations and
+              associated datastream measurements.
+            </>
+          )}
+        </p>
+      )}
 
       {/* Metadata grid */}
       <div id="dendra-overview-metadata" className="bg-slate-50 rounded-lg p-4">

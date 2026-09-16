@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { ExternalLink, Eye, EyeOff, X } from 'lucide-react';
 import type { CatalogLayer } from '../../../types';
+import { SafeHtml } from '../../shared/SafeHtml';
+import { looksLikeHtml } from '../../../utils/safeHtml';
 
 type SourceIframeStatus = 'idle' | 'loading' | 'ready' | 'blocked';
 
@@ -104,11 +106,22 @@ export function OverviewDescriptionSection({ description }: OverviewDescriptionS
   useEffect(() => {
     const el = contentRef.current;
     if (!el) return;
+    // HTML content can settle after sanitize/layout — measure twice.
     setFullHeight(el.scrollHeight);
+    const frame = requestAnimationFrame(() => {
+      if (contentRef.current) setFullHeight(contentRef.current.scrollHeight);
+    });
+    return () => cancelAnimationFrame(frame);
   }, [description]);
 
-  const paragraphs = description.split(/\n+/).map(p => p.trim()).filter(Boolean);
-  const showToggle = description.length > 200;
+  const isHtml = looksLikeHtml(description);
+  const paragraphs = isHtml
+    ? []
+    : description.split(/\n+/).map((p) => p.trim()).filter(Boolean);
+  const plainLength = isHtml
+    ? description.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().length
+    : description.length;
+  const showToggle = plainLength > 200;
 
   return (
     <div id="tnc-arcgis-overview-description-block" className="space-y-2">
@@ -120,12 +133,16 @@ export function OverviewDescriptionSection({ description }: OverviewDescriptionS
         <div
           id="tnc-arcgis-overview-description"
           ref={contentRef}
-          className="overflow-hidden transition-[max-height] duration-300 ease-in-out text-sm text-gray-600 leading-relaxed space-y-4"
+          className="overflow-hidden transition-[max-height] duration-300 ease-in-out text-sm text-gray-600 leading-relaxed space-y-4 [&_a]:font-medium [&_a]:text-emerald-700 [&_a]:underline hover:[&_a]:text-emerald-800 [&_p]:mb-3 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5"
           style={{ maxHeight: expanded ? fullHeight : COLLAPSED_MAX_HEIGHT }}
         >
-          {paragraphs.map((para, i) => (
-            <p key={i}>{para}</p>
-          ))}
+          {isHtml ? (
+            <SafeHtml html={description} />
+          ) : (
+            paragraphs.map((para, i) => (
+              <p key={i}>{para}</p>
+            ))
+          )}
         </div>
 
         {/* Fade mask at the bottom of the collapsed state */}
@@ -141,8 +158,8 @@ export function OverviewDescriptionSection({ description }: OverviewDescriptionS
         <button
           id="tnc-arcgis-overview-description-toggle"
           type="button"
-          onClick={() => setExpanded(prev => !prev)}
-          className="text-xs font-medium text-emerald-700 hover:text-emerald-800 transition-colors"
+          onClick={() => setExpanded((prev) => !prev)}
+          className="text-xs font-medium text-emerald-700 transition-colors hover:text-emerald-800"
         >
           {expanded ? 'See less ↑' : 'See more ↓'}
         </button>
@@ -358,7 +375,7 @@ export function OverviewSourceCard({
         </a>
       </div>
       <p id="tnc-arcgis-overview-source-help" className="text-[11px] text-gray-500">
-        Opens the TNC Hub search page first; use New Tab if embedding is blocked.
+        Opens the catalog REST endpoint. Use New Tab if embedding is blocked.
       </p>
     </div>
   );

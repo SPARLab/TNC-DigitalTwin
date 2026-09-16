@@ -8,23 +8,13 @@ import { PanelRightClose } from 'lucide-react';
 import type { ActiveLayer } from '../../types';
 import { LucideIcon } from '../shared/LucideIcon';
 import { useCatalog } from '../../context/CatalogContext';
+import { formatCatalogSourceLabel } from '../../utils/catalogSourceLabel';
 
 interface SidebarHeaderProps {
   activeLayer: ActiveLayer;
   onCollapse: () => void;
   shouldFlash?: boolean;
 }
-
-const DATA_SOURCE_LABELS: Record<string, string> = {
-  'tnc-arcgis': 'TNC ArcGIS Hub',
-  inaturalist: 'iNaturalist API',
-  animl: 'ANiML API',
-  dendra: 'Dendra API',
-  dataone: 'DataOne API',
-  ebird: 'eBird API',
-  drone: 'Drone Imagery',
-  lidar: 'LiDAR Scans',
-};
 
 export function SidebarHeader({
   activeLayer,
@@ -34,7 +24,7 @@ export function SidebarHeader({
   const { layerMap } = useCatalog();
   const layer = layerMap.get(activeLayer.layerId);
   const iconName = layer?.icon ?? 'HelpCircle';
-  const sourceLabel = DATA_SOURCE_LABELS[activeLayer.dataSource] ?? activeLayer.dataSource;
+  const sourceLabel = formatCatalogSourceLabel(layer, activeLayer.dataSource);
 
   // Yellow/amber background to coordinate with left sidebar active state
   // Flash animation when active layer changes

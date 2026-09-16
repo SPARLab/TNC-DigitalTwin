@@ -1,6 +1,6 @@
 import type { CatalogLayer } from '../types';
 import { fetchArcGisJson, isObject } from './tncArcgis/client';
-import { normalizeArcGisDescription, normalizeArcGisHtmlText } from './tncArcgis/normalizers';
+import { normalizeArcGisDescription, prepareArcGisHtml } from './tncArcgis/normalizers';
 import { runWithFeatureLayerFallback } from './tncArcgis/queries';
 
 export interface LayerSchema {
@@ -64,15 +64,15 @@ async function fetchArcGisItemDescription(serviceRootUrl: string, serviceItemId:
     try {
       const itemUrl = `${portalBase}/sharing/rest/content/items/${serviceItemId}?f=json`;
       const itemJson = await fetchArcGisJson(itemUrl, 'ArcGIS item metadata fetch failed');
-      const snippet = normalizeArcGisHtmlText(itemJson.snippet);
-      const description = normalizeArcGisHtmlText(itemJson.description);
+      const snippet = prepareArcGisHtml(itemJson.snippet);
+      const description = prepareArcGisHtml(itemJson.description);
 
       if (snippet && description) {
-        const normalizedSnippet = snippet.toLowerCase();
-        const normalizedDescription = description.toLowerCase();
-        return normalizedDescription.includes(normalizedSnippet)
+        const normalizedSnippet = snippet.replace(/<[^>]+>/g, ' ').toLowerCase();
+        const normalizedDescription = description.replace(/<[^>]+>/g, ' ').toLowerCase();
+        return normalizedDescription.includes(normalizedSnippet.trim())
           ? description
-          : `${snippet} ${description}`;
+          : `${snippet}\n${description}`;
       }
       if (snippet) return snippet;
       if (description) return description;
@@ -505,7 +505,7 @@ export async function fetchServiceDescription(meta: CatalogLayer['catalogMeta'])
       if (itemDescription) return itemDescription;
     }
 
-    const serviceDescription = normalizeArcGisHtmlText(serviceJson.serviceDescription)
+    const serviceDescription = prepareArcGisHtml(serviceJson.serviceDescription)
       ?? normalizeArcGisDescription(serviceJson.description);
     if (serviceDescription) return serviceDescription;
   } catch {
@@ -515,7 +515,7 @@ export async function fetchServiceDescription(meta: CatalogLayer['catalogMeta'])
   try {
     const layerUrl = buildServiceUrl(meta);
     const layerJson = await fetchArcGisJson(`${layerUrl.replace(/\/+$/, '')}?f=json`, 'Layer metadata fetch failed');
-    return normalizeArcGisHtmlText(layerJson.description);
+    return prepareArcGisHtml(layerJson.description);
   } catch {
     return null;
   }
