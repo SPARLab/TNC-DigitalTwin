@@ -1,30 +1,40 @@
 // ============================================================================
-// Circular value badges.
+// Value badges — one filled disc per station with its reading inside.
 //
-// One filled disc per station with its reading inside and the station name
-// underneath. Written generically because every sensor variable — wind speed,
-// temperature, humidity, pressure, rainfall — wants the same treatment.
+// Stations with an open alert keep the same disc and gain a severity-coloured
+// warning flag overlapping the top of it, so the reading stays comparable to
+// its neighbours.
 // ============================================================================
 
 import Graphic from '@arcgis/core/Graphic';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import Point from '@arcgis/core/geometry/Point';
 import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
+import PictureMarkerSymbol from '@arcgis/core/symbols/PictureMarkerSymbol';
 import TextSymbol from '@arcgis/core/symbols/TextSymbol';
 import Font from '@arcgis/core/symbols/Font';
 import { getSpeedColorArray, type Rgb } from './windField';
+import { severityMarkerColor } from './alertMarkerLayer';
 
 export interface BadgePoint {
   longitude: number;
   latitude: number;
   /** Value normalized 0-1, driving the fill colour. */
   t: number;
-  /** Short reading shown inside the disc, e.g. "4.1". Keep to ~4 characters. */
+  /** Reading shown inside the disc, e.g. "4.1". */
   text: string;
-  /** Unit drawn small beneath the reading, inside the disc, e.g. "m/s". */
+  /** Unit appended on the same line as the reading, e.g. "m/s". */
   unit?: string;
   /** Station name rendered beneath the disc. */
   caption?: string;
+  /**
+   * When set, a severity-coloured warning flag is drawn overlapping the top of
+   * the disc. Fill still follows the value ramp so alerted stations stay
+   * comparable.
+   */
+  severity?: string;
+  stationId?: number;
+  stationName?: string;
   popupTitle: string;
   /** Popup HTML. */
   popupContent: string;
@@ -39,6 +49,43 @@ export interface ValueBadgeLayerOptions {
 }
 
 const DEFAULT_SIZE = 34;
+export const ALERT_FLAG_SIZE_PT = 34;
+
+/** Cache one SVG data-URL per severity so every station reuses the same image. */
+const alertFlagUrlBySeverity = new Map<string, string>();
+
+/**
+ * A real filled circle with a centred "!", as an SVG. Font glyphs cannot colour
+ * or centre reliably the way a drawn shape can.
+ */
+function alertFlagDataUrl(severity: string): string {
+  const key = `${severity.toLowerCase()}:circle-sm-v1`;
+  const cached = alertFlagUrlBySeverity.get(key);
+  if (cached) return cached;
+
+  const [r, g, b] = severityMarkerColor(severity);
+  const fill = `rgb(${r},${g},${b})`;
+  // viewBox 0 0 50 50; smaller disc, same "!" size as before.
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50">
+  <circle cx="25" cy="25" r="15" fill="${fill}" stroke="#ffffff" stroke-width="2.25"/>
+  <text x="25" y="31" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#ffffff">!</text>
+</svg>`.trim();
+
+  const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  alertFlagUrlBySeverity.set(key, url);
+  return url;
+}
+
+/** Severity warning flag used by both Labels discs and Surface value markers. */
+export function createAlertFlagSymbol(severity: string, yoffset: number): PictureMarkerSymbol {
+  return new PictureMarkerSymbol({
+    url: alertFlagDataUrl(severity),
+    width: ALERT_FLAG_SIZE_PT,
+    height: ALERT_FLAG_SIZE_PT,
+    yoffset,
+  });
+}
 
 /**
  * Perceived brightness, used to flip the label between dark and light so the
@@ -70,6 +117,10 @@ export function createValueBadgeLayer(
     layer.add(
       new Graphic({
         geometry,
+        attributes: {
+          stationId: point.stationId ?? null,
+          stationName: point.stationName ?? point.caption ?? null,
+        },
         symbol: new SimpleMarkerSymbol({
           style: 'circle',
           size,
@@ -83,35 +134,31 @@ export function createValueBadgeLayer(
       }),
     );
 
-    // With a unit the two lines straddle the centre; without one the reading
-    // sits dead centre.
+    const label = point.unit ? `${point.text} ${point.unit}` : point.text;
+
     layer.add(
       new Graphic({
         geometry,
         symbol: new TextSymbol({
-          text: point.text,
+          text: label,
           color: textColor,
           // Sits on top of the disc, so a halo would muddy it.
-          font: new Font({ size: 11, family: 'sans-serif', weight: 'bold' }),
+          font: new Font({
+            size: label.length > 8 ? 9.5 : 11,
+            family: 'sans-serif',
+            weight: 'bold',
+          }),
           horizontalAlignment: 'center',
           verticalAlignment: 'middle',
-          yoffset: point.unit ? 3.5 : 0,
         }),
       }),
     );
 
-    if (point.unit) {
+    if (point.severity) {
       layer.add(
         new Graphic({
           geometry,
-          symbol: new TextSymbol({
-            text: point.unit,
-            color: textColor,
-            font: new Font({ size: 7.5, family: 'sans-serif' }),
-            horizontalAlignment: 'center',
-            verticalAlignment: 'middle',
-            yoffset: -5.5,
-          }),
+          symbol: createAlertFlagSymbol(point.severity, size / 2 + 4),
         }),
       );
     }

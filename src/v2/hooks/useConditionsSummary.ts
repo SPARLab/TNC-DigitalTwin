@@ -10,8 +10,8 @@
 //
 // This loads independently of the tree selection, which is the whole point: the
 // panel is what greets someone on first load, when nothing is selected yet. It
-// goes through the same cached fetches the detail panels use, so turning one of
-// these layers on afterwards is served from cache rather than refetched.
+// stays warm while a layer is on so that turning everything off remounts the
+// tiles over numbers that are already here, rather than waiting on a refetch.
 // ============================================================================
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -102,10 +102,12 @@ function summarizeWind(snapshot: WindSnapshot): ConditionsReading | null {
 }
 
 /**
- * @param isEnabled false while a layer's own readings have taken over the panel,
- *   which stops the poll without discarding what was already loaded.
+ * Always keeps the headline numbers warm in the background. The panel that
+ * displays them only mounts when nothing is selected; gating the fetch on that
+ * used to tear the poll down mid-switch and kick a reload the moment
+ * `stationPoints` briefly went empty between layers.
  */
-export function useConditionsSummary(isEnabled: boolean): UseConditionsSummaryResult {
+export function useConditionsSummary(): UseConditionsSummaryResult {
   const [readings, setReadings] = useState<ConditionsReadings>({});
   const [isLoading, setIsLoading] = useState(true);
   const [failedCount, setFailedCount] = useState(0);
@@ -122,15 +124,14 @@ export function useConditionsSummary(isEnabled: boolean): UseConditionsSummaryRe
     }
 
     /*
-     * Only the first fill announces itself. A reload already has numbers on screen,
-     * and re-rendering the page for it is not free: this hook wakes up exactly when
-     * a layer is being torn down, and the extra render lands while the SDK is
-     * mid-teardown, which is when it is prone to failing a queued layer view.
+     * Only the first fill announces itself. A background refresh already has
+     * numbers on screen; flipping isLoading for it would flash the tiles for no
+     * reason every five minutes.
      */
     if (!hasDataRef.current) setIsLoading(true);
 
-    // One metric failing says nothing about the other three, and a summary is
-    // more useful three-quarters filled than withheld entirely.
+    // One metric failing says nothing about the others, and a summary is more
+    // useful three-quarters filled than withheld entirely.
     const settled = await Promise.allSettled([
       ...SUMMARY_VARIABLES.map((id) => fetchSensorSnapshot(id)),
       fetchLatestWind(),
@@ -169,8 +170,6 @@ export function useConditionsSummary(isEnabled: boolean): UseConditionsSummaryRe
   }, []);
 
   useEffect(() => {
-    if (!isEnabled) return;
-
     void load({ bypassCache: false });
 
     const intervalId = window.setInterval(() => {
@@ -181,7 +180,7 @@ export function useConditionsSummary(isEnabled: boolean): UseConditionsSummaryRe
       window.clearInterval(intervalId);
       requestIdRef.current++;
     };
-  }, [isEnabled, load]);
+  }, [load]);
 
   const observed = Object.values(readings).map((reading) => reading.observedAt);
 

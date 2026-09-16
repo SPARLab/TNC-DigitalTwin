@@ -21,6 +21,7 @@ import { createScalarBadgeLayer, createScalarValueLabelLayer } from './scalarGra
 import type { ScalarSnapshot, SensorVariableConfig } from '../../../services/sensorService';
 import type { BoundaryRing } from '../../../services/preserveBoundaryService';
 import type { GeoExtent } from './windField';
+import type { LiveAlert } from '../../../services/liveAlertService';
 
 export type ScalarVizMode = 'surface' | 'labels';
 
@@ -36,6 +37,8 @@ interface UseScalarVisualizationParams {
   mode: ScalarVizMode;
   /** Buffered preserve boundary. Surfaces fall back to a box without it. */
   clip?: { rings: BoundaryRing[]; extent: GeoExtent } | null;
+  /** Open alerts for this variable; Labels and Surface both draw severity flags. */
+  alerts?: LiveAlert[];
 }
 
 export function useScalarVisualization({
@@ -44,6 +47,7 @@ export function useScalarVisualization({
   config,
   mode,
   clip,
+  alerts = [],
 }: UseScalarVisualizationParams) {
   const surfaceLayerRef = useRef<MediaLayer | null>(null);
   const badgeLayerRef = useRef<GraphicsLayer | null>(null);
@@ -145,8 +149,8 @@ export function useScalarVisualization({
     if (!view || view.destroyed || !data || !config) return;
 
     const built = mode === 'labels'
-      ? createScalarBadgeLayer(data, config)
-      : createScalarValueLabelLayer(data, config);
+      ? createScalarBadgeLayer(data, config, alerts)
+      : createScalarValueLabelLayer(data, config, alerts);
 
     layer.title = built.title ?? 'Station Values';
     layer.addMany(built.graphics.toArray());
@@ -155,5 +159,5 @@ export function useScalarVisualization({
     // outline, so it has to be lifted back above it once it holds anything.
     const layers = view.map?.layers;
     if (layers) view.map?.reorder(layer, layers.length - 1);
-  }, [view, data, config, mode]);
+  }, [view, data, config, mode, alerts]);
 }

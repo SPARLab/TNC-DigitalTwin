@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type MapView from '@arcgis/core/views/MapView';
 import type SceneView from '@arcgis/core/views/SceneView';
 import Extent from '@arcgis/core/geometry/Extent';
+import Point from '@arcgis/core/geometry/Point';
 import {
   Activity,
   AlertTriangle,
@@ -43,10 +44,18 @@ import { useWellColumnVisualization } from '../components/Monitoring/internal/us
 import { useCameraVisualization } from '../components/Monitoring/internal/useCameraVisualization';
 import { getWindStatistics } from '../components/Monitoring/internal/windStatistics';
 import { getStationsExtent } from '../components/Monitoring/internal/windField';
+import {
+  buildStationAlertLookup,
+  formatStationAlertPopupHtml,
+  lookupStationAlert,
+} from '../components/Monitoring/internal/alertMarkerLayer';
+import { formatScalarStationPopupContent } from '../components/Monitoring/internal/scalarGraphicsLayers';
+import { formatWindStationPopupContent } from '../components/Monitoring/internal/windGraphicsLayers';
 import { useWindData, WIND_REFRESH_INTERVAL_MS } from '../hooks/useWindData';
 import { useSensorData, SENSOR_REFRESH_INTERVAL_MS } from '../hooks/useSensorData';
 import { useCameraData, CAMERA_REFRESH_INTERVAL_MS } from '../hooks/useCameraData';
 import { useConditionsSummary, type SummaryMetricId } from '../hooks/useConditionsSummary';
+import { useLiveAlerts } from '../hooks/useLiveAlerts';
 import { usePreserveBoundary } from '../hooks/usePreserveBoundary';
 import { useMonitoringSections } from '../hooks/useMonitoringSections';
 import type { MonitoringSection, MonitoringSensor } from '../hooks/useMonitoringSections';
@@ -54,8 +63,11 @@ import { ResizablePanel } from '../components/shared/ResizablePanel';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { createPreserveOutlineLayer } from '../components/Monitoring/internal/boundaryOutlineLayer';
 import { formatObservedAt } from '../components/Monitoring/internal/formatObservedAt';
+import { AlertsPanel } from '../components/Monitoring/AlertsPanel';
 import { allowsInterpolation, SENSOR_VARIABLES } from '../services/sensorService';
 import type { SensorVariableId } from '../services/sensorService';
+import { buildLatestLayerUrl, type LiveAlert } from '../services/liveAlertService';
+import { WIND_SERVICE_PATH } from '../services/windService';
 
 const WIND_SENSOR_ID = 'wind';
 const CAMERA_SENSOR_ID = 'cameras';
@@ -271,6 +283,33 @@ export function MonitoringPage() {
   const scalarConfig = activeScalarId ? SENSOR_VARIABLES[activeScalarId] : null;
   const is3D = viewMode === '3d';
 
+  /**
+   * Alerts publish the Latest FeatureServer URL they evaluated. Matching that URL
+   * (or the service path inside it) is what keeps Wind alerts off the Air Temp
+   * panel and still lets a multi-stream fire-weather alert appear under either
+   * of its sources.
+   */
+  const activeAlertSource = useMemo(() => {
+    if (isWindActive) {
+      return {
+        url: buildLatestLayerUrl(WIND_SERVICE_PATH, 0),
+        servicePath: WIND_SERVICE_PATH,
+      };
+    }
+    if (scalarConfig) {
+      return {
+        url: buildLatestLayerUrl(scalarConfig.servicePath, scalarConfig.layerId ?? 0),
+        servicePath: scalarConfig.servicePath,
+      };
+    }
+    return null;
+  }, [isWindActive, scalarConfig]);
+
+  const liveAlerts = useLiveAlerts(activeAlertSource);
+  const alertsLayerLabel = isWindActive
+    ? 'Wind'
+    : scalarConfig?.label ?? null;
+
   // Well columns need a perspective camera, so they only ever see the scene view.
   const sceneView = view?.type === '3d' ? (view as SceneView) : null;
 
@@ -297,6 +336,7 @@ export function MonitoringPage() {
     readings: snapshot?.readings ?? null,
     mode: vizMode,
     isEnabled: isWindActive,
+    alerts: liveAlerts.alerts,
   });
 
   const boundary = usePreserveBoundary();
@@ -312,6 +352,7 @@ export function MonitoringPage() {
     config: scalarConfig,
     mode: scalarMode,
     clip: scalarClip,
+    alerts: liveAlerts.alerts,
   });
 
   useWellColumnVisualization({
@@ -361,10 +402,17 @@ export function MonitoringPage() {
 
   const handleViewReady = useCallback((readyView: MapView | SceneView) => {
     setView(readyView);
+    if (import.meta.env.DEV) {
+      (window as unknown as { __monitoringView?: MapView | SceneView }).__monitoringView =
+        readyView;
+    }
   }, []);
 
   const handleViewDestroy = useCallback(() => {
     setView(null);
+    if (import.meta.env.DEV) {
+      delete (window as unknown as { __monitoringView?: MapView | SceneView }).__monitoringView;
+    }
   }, []);
 
   const handleToggle = useCallback((sensor: MonitoringSensor) => {
@@ -383,9 +431,9 @@ export function MonitoringPage() {
   const stationPoints =
     snapshot?.readings ?? scalar.snapshot?.readings ?? cameras.snapshot?.cameras ?? null;
 
-  // The summary tiles give way to the active layer's own readings, so there is no
-  // point polling for them once something is on the map.
-  const summary = useConditionsSummary(!stationPoints?.length);
+  // Headline numbers stay warm in the background so turning every layer off does
+  // not wait on a refetch — the panel just remounts over data that is already here.
+  const summary = useConditionsSummary();
 
   const frameStations = useCallback(() => {
     if (!view || view.destroyed || !stationPoints?.length) return;
@@ -413,6 +461,115 @@ export function MonitoringPage() {
         }
       });
   }, [view, stationPoints]);
+
+  /** Zoom to an alerted station and open the same reading popup the map uses. */
+  const focusAlertStation = useCallback(
+    (alert: LiveAlert) => {
+      if (!view || view.destroyed) return;
+
+      const normalizeName = (name: string) =>
+        name.trim().replace(/^Dangermond[_ ]/i, '').toLowerCase();
+      const matchesStation = (row: { stationId: number; stationName: string }) =>
+        alert.stationId != null
+          ? row.stationId === alert.stationId
+          : normalizeName(row.stationName) === normalizeName(alert.stationName);
+
+      const alertLookup = buildStationAlertLookup(liveAlerts.alerts);
+      const conditionLabel = alertsLayerLabel ?? 'this condition';
+      let title = alert.stationName;
+      let content = '';
+      let longitude = alert.longitude;
+      let latitude = alert.latitude;
+
+      if (isWindActive && snapshot?.readings) {
+        const reading = snapshot.readings.find(matchesStation) ?? null;
+        if (reading) {
+          longitude = reading.longitude;
+          latitude = reading.latitude;
+          title = reading.stationName;
+          content = formatWindStationPopupContent(
+            reading,
+            lookupStationAlert(alertLookup, reading),
+          );
+        }
+      } else if (scalarConfig && scalar.snapshot?.readings) {
+        const reading = scalar.snapshot.readings.find(matchesStation) ?? null;
+        if (reading) {
+          longitude = reading.longitude;
+          latitude = reading.latitude;
+          title = reading.stationName;
+          content = formatScalarStationPopupContent(
+            reading,
+            scalarConfig,
+            lookupStationAlert(alertLookup, reading),
+          );
+        }
+      }
+
+      if (
+        longitude == null ||
+        latitude == null ||
+        !Number.isFinite(longitude) ||
+        !Number.isFinite(latitude)
+      ) {
+        return;
+      }
+
+      if (!content) {
+        const cluster =
+          lookupStationAlert(alertLookup, {
+            stationId: alert.stationId ?? -1,
+            stationName: alert.stationName,
+          }) ?? {
+            stationId: alert.stationId,
+            stationName: alert.stationName,
+            longitude,
+            latitude,
+            primary: alert,
+            alerts: [alert],
+          };
+        content = `
+          <p style="margin:0 0 2px;font-size:14px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.04em">
+            ${conditionLabel}
+          </p>
+          <p style="margin:0 0 8px;color:#6b7280;font-size:12px">Reading not loaded yet.</p>
+          ${formatStationAlertPopupHtml(cluster, conditionLabel)}
+        `;
+      }
+
+      const location = new Point({ longitude, latitude });
+      const targetZoom = view.type === '2d' ? Math.max(view.zoom, 12) : undefined;
+
+      void view
+        .goTo(
+          view.type === '3d'
+            ? { target: location, tilt: SCENE_CAMERA_TILT, scale: 20000 }
+            : { center: location, zoom: targetZoom },
+          { duration: 650 },
+        )
+        .then(() => {
+          if (view.destroyed) return;
+          view.openPopup({ title, content, location });
+        })
+        .catch((caught: unknown) => {
+          const name = caught instanceof Error ? caught.name : '';
+          if (name === 'AbortError') return;
+          console.warn('[MonitoringPage] Could not focus alert station:', caught);
+          if (!view.destroyed) {
+            view.openPopup({ title, content, location });
+          }
+        });
+    },
+    [
+      view,
+      liveAlerts.alerts,
+      alertsLayerLabel,
+      isWindActive,
+      snapshot?.readings,
+      scalarConfig,
+      scalar.snapshot?.readings,
+    ],
+  );
 
   /**
    * Frame the stations the first time any data arrives. Without this the default
@@ -589,6 +746,17 @@ export function MonitoringPage() {
           />
         )}
 
+        {alertsLayerLabel && (
+          <AlertsPanel
+            layerLabel={alertsLayerLabel}
+            alerts={liveAlerts.alerts}
+            isLoading={liveAlerts.isLoading}
+            error={liveAlerts.error}
+            onRefresh={liveAlerts.refresh}
+            onSelectAlert={focusAlertStation}
+          />
+        )}
+
         {stationPoints?.length ? (
           <button
             type="button"
@@ -597,6 +765,8 @@ export function MonitoringPage() {
           >
             Zoom to reporting stations
           </button>
+        ) : hasAnySensorActive ? (
+          <p className="text-[11px] leading-relaxed text-gray-500">Loading the latest readings…</p>
         ) : (
           <section>
             <div className="flex items-center gap-2">
@@ -607,9 +777,8 @@ export function MonitoringPage() {
             </div>
 
             <p className="mt-2 text-[11px] leading-relaxed text-gray-500">
-              {hasAnySensorActive
-                ? 'Loading the latest readings…'
-                : 'Latest readings, taking the highest where several stations report. Turn on a sensor in the list to map it.'}
+              Latest readings, taking the highest where several stations report. Turn on a
+              sensor in the list to map it.
             </p>
 
             <div className="mt-3 grid grid-cols-2 gap-2">

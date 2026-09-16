@@ -176,8 +176,8 @@ export function ScalarDetailPanel({
           {isAbsentEverywhere
             ? `No measurable ${config.label.toLowerCase()} at any of the ${readings.length} reporting stations, so no surface is drawn. Station values are still marked on the map.`
             : mode === 'surface'
-              ? `Inverse-distance weighted from ${readings.length} stations, drawn at even opacity with each station's value marked on the map. Anywhere between the markers is an estimate.`
-              : `One disc per station showing its reading in ${config.unit}. Click a disc for provenance.`}
+              ? `Inverse-distance weighted from ${readings.length} stations, drawn at even opacity with each station's value marked on the map. Anywhere between the markers is an estimate. Stations with an open alert also show a severity flag.`
+              : `One disc per station showing its reading in ${config.unit}. Stations with an open alert get a small severity circle with an exclamation above them.`}
         </p>
 
         {config.note && (

@@ -45,7 +45,7 @@ const VIZ_MODES: VizModeOption[] = [
     label: 'Labels',
     icon: Tag,
     description:
-      'Each station as a disc showing its average speed in m/s, shaded by the same ramp. Click a disc for gust and bearing.',
+      'Each station as a disc showing its average speed in m/s, shaded by the same ramp. Stations with an open alert get a small severity circle with an exclamation above them.',
   },
 ];
 

@@ -21,6 +21,14 @@ import {
 } from '../../../services/windService';
 import { createValueBadgeLayer, type BadgePoint } from './valueBadgeLayer';
 import { formatObservedAt } from './formatObservedAt';
+import {
+  buildStationAlertLookup,
+  formatMeasurementPopupHeader,
+  formatStationAlertPopupHtml,
+  lookupStationAlert,
+  type StationAlertCluster,
+} from './alertMarkerLayer';
+import type { LiveAlert } from '../../../services/liveAlertService';
 
 const GRID_COLS = 20;
 const GRID_ROWS = 15;
@@ -98,10 +106,32 @@ function createArrowSymbol({
   });
 }
 
+/** Full station popup body for wind readings (map click and panel focus). */
+export function formatWindStationPopupContent(
+  reading: WindReading,
+  cluster: StationAlertCluster | null,
+): string {
+  const goingBearing = getGoingBearing(reading.windDirectionAvg);
+  return `
+    ${formatMeasurementPopupHeader('Wind', `${reading.windSpeedAvg.toFixed(2)} m/s avg`)}
+    <p style="margin:0 0 4px"><b>Peak gust:</b> ${reading.windSpeedMax.toFixed(2)} m/s</p>
+    <p style="margin:0 0 4px"><b>Blowing from:</b> ${reading.windDirectionAvg.toFixed(0)}°
+      (${getCompassLabel(reading.windDirectionAvg)})</p>
+    <p style="margin:0 0 4px"><b>Blowing toward:</b> ${goingBearing.toFixed(0)}°
+      (${getCompassLabel(goingBearing)})</p>
+    <p style="margin:0;color:#6b7280;font-size:12px"><b>Observed:</b> ${formatObservedAt(reading.observedAt)}</p>
+    ${formatStationAlertPopupHtml(cluster, 'Wind')}
+  `;
+}
+
 
 /** One arrow per reporting station, sized and coloured by its average speed. */
-export function createWindArrowLayer(readings: WindReading[]): GraphicsLayer {
+export function createWindArrowLayer(
+  readings: WindReading[],
+  alerts: LiveAlert[] = [],
+): GraphicsLayer {
   const maxSpeed = Math.max(...readings.map((reading) => reading.windSpeedAvg), 1);
+  const alertLookup = buildStationAlertLookup(alerts);
 
   const layer = new GraphicsLayer({
     title: 'Wind — Latest Hour',
@@ -109,6 +139,7 @@ export function createWindArrowLayer(readings: WindReading[]): GraphicsLayer {
 
   for (const reading of readings) {
     const goingBearing = getGoingBearing(reading.windDirectionAvg);
+    const cluster = lookupStationAlert(alertLookup, reading);
 
     layer.add(
       new Graphic({
@@ -116,6 +147,10 @@ export function createWindArrowLayer(readings: WindReading[]): GraphicsLayer {
           longitude: reading.longitude,
           latitude: reading.latitude,
         }),
+        attributes: {
+          stationId: reading.stationId,
+          stationName: reading.stationName,
+        },
         symbol: createArrowSymbol({
           t: reading.windSpeedAvg / maxSpeed,
           goingBearing,
@@ -125,21 +160,12 @@ export function createWindArrowLayer(readings: WindReading[]): GraphicsLayer {
           strokeAlpha: 180,
           strokeWidth: 0.8,
         }),
-        attributes: { stationName: reading.stationName },
         popupTemplate: {
           title: reading.stationName,
           content: [
             {
               type: 'text',
-              text: `
-                <p><b>Average speed:</b> ${reading.windSpeedAvg.toFixed(2)} m/s</p>
-                <p><b>Peak gust:</b> ${reading.windSpeedMax.toFixed(2)} m/s</p>
-                <p><b>Blowing from:</b> ${reading.windDirectionAvg.toFixed(0)}°
-                  (${getCompassLabel(reading.windDirectionAvg)})</p>
-                <p><b>Blowing toward:</b> ${goingBearing.toFixed(0)}°
-                  (${getCompassLabel(goingBearing)})</p>
-                <p><b>Observed:</b> ${formatObservedAt(reading.observedAt)}</p>
-              `,
+              text: formatWindStationPopupContent(reading, cluster),
             },
           ],
         },
@@ -151,11 +177,15 @@ export function createWindArrowLayer(readings: WindReading[]): GraphicsLayer {
 }
 
 /** Station discs showing each average speed, with the name underneath. */
-export function createWindBadgeLayer(readings: WindReading[]): GraphicsLayer {
+export function createWindBadgeLayer(
+  readings: WindReading[],
+  alerts: LiveAlert[] = [],
+): GraphicsLayer {
   const maxSpeed = Math.max(...readings.map((reading) => reading.windSpeedAvg), 1);
+  const alertLookup = buildStationAlertLookup(alerts);
 
   const points: BadgePoint[] = readings.map((reading) => {
-    const goingBearing = getGoingBearing(reading.windDirectionAvg);
+    const cluster = lookupStationAlert(alertLookup, reading);
 
     return {
       longitude: reading.longitude,
@@ -164,16 +194,11 @@ export function createWindBadgeLayer(readings: WindReading[]): GraphicsLayer {
       text: reading.windSpeedAvg.toFixed(1),
       unit: 'm/s',
       caption: reading.stationName.replace(/^Dangermond[_ ]/, ''),
+      severity: cluster?.primary.severity,
+      stationId: reading.stationId,
+      stationName: reading.stationName,
       popupTitle: reading.stationName,
-      popupContent: `
-        <p><b>Average speed:</b> ${reading.windSpeedAvg.toFixed(2)} m/s</p>
-        <p><b>Peak gust:</b> ${reading.windSpeedMax.toFixed(2)} m/s</p>
-        <p><b>Blowing from:</b> ${reading.windDirectionAvg.toFixed(0)}°
-          (${getCompassLabel(reading.windDirectionAvg)})</p>
-        <p><b>Blowing toward:</b> ${goingBearing.toFixed(0)}°
-          (${getCompassLabel(goingBearing)})</p>
-        <p><b>Observed:</b> ${formatObservedAt(reading.observedAt)}</p>
-      `,
+      popupContent: formatWindStationPopupContent(reading, cluster),
     };
   });
 
