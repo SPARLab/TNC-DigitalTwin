@@ -134,7 +134,12 @@ export function createValueBadgeLayer(
       }),
     );
 
-    const label = point.unit ? `${point.text} ${point.unit}` : point.text;
+    // Long readings (e.g. discharge "0.028 m³/s") spill past the disc on one
+    // line — stack value over unit so both stay inside the circle.
+    const singleLine = point.unit ? `${point.text} ${point.unit}` : point.text;
+    const wrapLabel = Boolean(point.unit) && singleLine.length > 7;
+    const label = wrapLabel ? `${point.text}\n${point.unit}` : singleLine;
+    const fontSize = wrapLabel ? 9 : singleLine.length > 8 ? 9.5 : 11;
 
     layer.add(
       new Graphic({
@@ -144,12 +149,13 @@ export function createValueBadgeLayer(
           color: textColor,
           // Sits on top of the disc, so a halo would muddy it.
           font: new Font({
-            size: label.length > 8 ? 9.5 : 11,
+            size: fontSize,
             family: 'sans-serif',
             weight: 'bold',
           }),
           horizontalAlignment: 'center',
           verticalAlignment: 'middle',
+          ...(wrapLabel ? { lineHeight: 0.95 } : {}),
         }),
       }),
     );

@@ -3,7 +3,8 @@
 //
 // The FeatureServer is polled on a short cadence regardless of selection; filtering
 // by source URL happens client-side so switching Wind → Air Temp is instant and
-// does not wait on another round trip.
+// does not wait on another round trip. The unfiltered list powers the Current
+// Conditions overview panel.
 // ============================================================================
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -25,7 +26,10 @@ export interface ActiveAlertSource {
 }
 
 export interface UseLiveAlertsResult {
+  /** Alerts matching the active monitoring source; empty when no source is selected. */
   alerts: LiveAlert[];
+  /** Every open alert across all sources, highest severity first. */
+  allAlerts: LiveAlert[];
   isLoading: boolean;
   error: string | null;
   fetchedAt: number | null;
@@ -74,16 +78,19 @@ export function useLiveAlerts(activeSource: ActiveAlertSource | null): UseLiveAl
     };
   }, [load]);
 
+  const sortedAllAlerts = useMemo(
+    () => [...allAlerts].sort(compareLiveAlerts),
+    [allAlerts],
+  );
+
   const alerts = useMemo(() => {
     if (!activeSource) return [];
-    return allAlerts
-      .filter((alert) => alertMatchesActiveSource(alert, activeSource))
-      .sort(compareLiveAlerts);
-  }, [allAlerts, activeSource]);
+    return sortedAllAlerts.filter((alert) => alertMatchesActiveSource(alert, activeSource));
+  }, [sortedAllAlerts, activeSource]);
 
   const refresh = useCallback(() => {
     void load({ bypassCache: true });
   }, [load]);
 
-  return { alerts, isLoading, error, fetchedAt, refresh };
+  return { alerts, allAlerts: sortedAllAlerts, isLoading, error, fetchedAt, refresh };
 }

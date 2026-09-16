@@ -10,6 +10,7 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronRight,
+  Info,
   Loader2,
   RefreshCw,
 } from 'lucide-react';
@@ -19,6 +20,7 @@ import {
   severityMarkerColor,
 } from './internal/alertMarkerLayer';
 import { compareLiveAlerts, type LiveAlert } from '../../services/liveAlertService';
+import { AlertRulesModal } from './AlertRulesModal';
 
 interface AlertsPanelProps {
   layerLabel: string;
@@ -116,7 +118,9 @@ function StationAlertRow({
         )}
         <p className="mt-1 text-[10px] text-gray-400">
           {alert.alertType}
-          {alert.triggeredAt ? ` · ${formatObservedAt(alert.triggeredAt)}` : ''}
+          {alert.triggeredAt
+            ? ` · Triggered at ${formatObservedAt(alert.triggeredAt)}`
+            : ''}
         </p>
       </div>
     </>
@@ -192,6 +196,7 @@ export function AlertsPanel({
 }: AlertsPanelProps) {
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [panelExpanded, setPanelExpanded] = useState(true);
+  const [rulesOpen, setRulesOpen] = useState(false);
 
   const severityOptions = useMemo(() => {
     const seen = new Map<string, number>();
@@ -221,36 +226,66 @@ export function AlertsPanel({
     () => (alerts.length > 0 ? [...alerts].sort(compareLiveAlerts)[0] : null),
     [alerts],
   );
+  const hasAlerts = alerts.length > 0;
 
   return (
     <section
       id="monitoring-alerts-panel"
-      className="flex flex-col gap-3 rounded-card border-2 border-amber-300 bg-gradient-to-b from-amber-50 to-white p-3 shadow-md shadow-amber-100/80"
+      className={
+        hasAlerts
+          ? 'flex flex-col gap-3 rounded-card border-2 border-amber-300 bg-gradient-to-b from-amber-50 to-white p-3 shadow-md shadow-amber-100/80'
+          : 'flex flex-col gap-3 rounded-card border border-gray-200 bg-white p-3'
+      }
     >
       <div className="flex items-start justify-between gap-2">
         <button
           type="button"
           onClick={() => setPanelExpanded((current) => !current)}
-          className="flex min-w-0 flex-1 items-start gap-2 rounded-md text-left transition-colors hover:bg-amber-100/60"
+          className={`flex min-w-0 flex-1 items-start gap-2 rounded-md text-left transition-colors ${
+            hasAlerts ? 'hover:bg-amber-100/60' : 'hover:bg-gray-50'
+          }`}
           aria-expanded={panelExpanded}
           title={panelExpanded ? 'Collapse alerts' : 'Expand alerts'}
         >
           {panelExpanded ? (
-            <ChevronDown className="mt-1.5 h-3.5 w-3.5 flex-shrink-0 text-amber-800" />
+            <ChevronDown
+              className={`mt-1.5 h-3.5 w-3.5 flex-shrink-0 ${
+                hasAlerts ? 'text-amber-800' : 'text-gray-400'
+              }`}
+            />
           ) : (
-            <ChevronRight className="mt-1.5 h-3.5 w-3.5 flex-shrink-0 text-amber-800" />
+            <ChevronRight
+              className={`mt-1.5 h-3.5 w-3.5 flex-shrink-0 ${
+                hasAlerts ? 'text-amber-800' : 'text-gray-400'
+              }`}
+            />
           )}
-          <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-amber-500 text-white shadow-sm">
+          <span
+            className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full shadow-sm ${
+              hasAlerts
+                ? 'bg-amber-500 text-white'
+                : 'bg-gray-100 text-gray-400 ring-1 ring-gray-200'
+            }`}
+          >
             <AlertTriangle className="h-3.5 w-3.5" />
           </span>
           <div className="min-w-0">
-            <h3 className="text-xs font-bold uppercase tracking-wide text-amber-900">
+            <h3
+              className={`text-xs font-bold uppercase tracking-wide ${
+                hasAlerts ? 'text-amber-900' : 'text-gray-500'
+              }`}
+            >
               Alerts
             </h3>
-            <p className="mt-0.5 text-[10px] text-amber-800/80">
+            <p
+              className={`mt-0.5 text-[10px] ${
+                hasAlerts ? 'text-amber-800/80' : 'text-gray-400'
+              }`}
+            >
               Open conditions for {layerLabel}
-              {alerts.length > 0 &&
+              {hasAlerts &&
                 ` · ${realCount} active${testCount > 0 ? `, ${testCount} test` : ''}`}
+              {!hasAlerts && ' · none open'}
               {!panelExpanded && topAlert && (
                 <span className="mt-0.5 block truncate text-amber-900/90">
                   Highest: {formatSeverityLabel(topAlert.severity)}
@@ -260,21 +295,42 @@ export function AlertsPanel({
             </p>
           </div>
         </button>
-        <button
-          type="button"
-          onClick={onRefresh}
-          disabled={isLoading}
-          className="rounded p-1 text-amber-700/70 transition-colors hover:bg-amber-100 hover:text-amber-900 disabled:opacity-50"
-          title="Refresh alerts"
-          aria-label="Refresh alerts"
-        >
-          {isLoading ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <RefreshCw className="h-3.5 w-3.5" />
-          )}
-        </button>
+        <div className="flex flex-shrink-0 items-center gap-0.5">
+          <button
+            type="button"
+            onClick={() => setRulesOpen(true)}
+            className={`rounded p-1 transition-colors ${
+              hasAlerts
+                ? 'text-amber-700/70 hover:bg-amber-100 hover:text-amber-900'
+                : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+            }`}
+            title="What triggers these alerts?"
+            aria-label="What triggers these alerts?"
+          >
+            <Info className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={isLoading}
+            className={`rounded p-1 transition-colors disabled:opacity-50 ${
+              hasAlerts
+                ? 'text-amber-700/70 hover:bg-amber-100 hover:text-amber-900'
+                : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+            }`}
+            title="Refresh alerts"
+            aria-label="Refresh alerts"
+          >
+            {isLoading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3.5 w-3.5" />
+            )}
+          </button>
+        </div>
       </div>
+
+      <AlertRulesModal isOpen={rulesOpen} onClose={() => setRulesOpen(false)} />
 
       {panelExpanded && (
         <>
@@ -330,7 +386,7 @@ export function AlertsPanel({
           )}
 
           {!error && filteredAlerts.length === 0 && !isLoading && (
-            <p className="rounded-card border border-dashed border-amber-200 bg-white/70 px-3 py-3 text-[11px] leading-relaxed text-gray-500">
+            <p className="rounded-card border border-dashed border-gray-200 bg-gray-50/50 px-3 py-3 text-[11px] leading-relaxed text-gray-500">
               {alerts.length === 0
                 ? 'No open alerts for this layer right now.'
                 : 'No stations match this severity filter.'}

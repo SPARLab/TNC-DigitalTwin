@@ -1,0 +1,278 @@
+{
+  "_comment": "Declarative live-alert rules. Field names match the Latest layers published from dendra.*_latest_view (see publishing/registered_services/dendra_cat_*.json). On the live FeatureServer, layer 0 = Latest, 1 = Locations, table 2 = Data. Units match the view columns so the same rules port to ArcGIS Velocity.",
+  "feature_server_base": "https://dangermondpreserve-spatial.com/server/rest/services",
+  "default_ttl_minutes": 60,
+  "max_observation_age_minutes": 360,
+  "streams": {
+    "wind": {
+      "service_name": "Dangermond Wind Datastreams",
+      "registered_config": "publishing/registered_services/dendra_cat_wind.json",
+      "view": "dendra.wind_latest_view",
+      "latest_layer_index": 0,
+      "latest_layer_name": "Wind Latest",
+      "fields": {
+        "station_id": "station_id",
+        "station_name": "station_name",
+        "observation_time": "latest_time",
+        "latitude": "latitude",
+        "longitude": "longitude",
+        "primary": "wind_speed_avg"
+      },
+      "units": {
+        "wind_speed_avg": "m/s",
+        "wind_speed_max": "m/s",
+        "wind_speed_min": "m/s"
+      }
+    },
+    "humidity": {
+      "service_name": "Dangermond Humidity Datastreams",
+      "registered_config": "publishing/registered_services/dendra_cat_humidity.json",
+      "view": "dendra.humidity_latest_view",
+      "latest_layer_index": 0,
+      "latest_layer_name": "Humidity Latest",
+      "fields": {
+        "station_id": "station_id",
+        "station_name": "station_name",
+        "observation_time": "latest_time",
+        "latitude": "latitude",
+        "longitude": "longitude",
+        "primary": "relative_humidity_avg"
+      },
+      "units": {
+        "relative_humidity_avg": "%",
+        "relative_humidity_max": "%",
+        "relative_humidity_min": "%"
+      }
+    },
+    "air_temp": {
+      "service_name": "Dangermond Air Temp Datastreams",
+      "registered_config": "publishing/registered_services/dendra_cat_air_temp.json",
+      "view": "dendra.air_temp_latest_view",
+      "latest_layer_index": 0,
+      "latest_layer_name": "Air Temp Latest",
+      "fields": {
+        "station_id": "station_id",
+        "station_name": "station_name",
+        "observation_time": "latest_time",
+        "latitude": "latitude",
+        "longitude": "longitude",
+        "primary": "air_temp_avg"
+      },
+      "units": {
+        "air_temp_avg": "degC",
+        "air_temp_max": "degC",
+        "air_temp_min": "degC"
+      }
+    }
+  },
+  "rules": [
+    {
+      "id": "test_wind_present",
+      "category": "Test",
+      "alert_type": "Wind Reading Present",
+      "severity": "test",
+      "kind": "single",
+      "test": true,
+      "stream": "wind",
+      "field": "wind_speed_avg",
+      "op": ">=",
+      "threshold": 0.0,
+      "unit": "m/s",
+      "message": "SMOKE TEST: station has a wind_speed_avg reading (>= {threshold} {unit}). Safe to remove once real alerts are verified."
+    },
+    {
+      "id": "test_humidity_present",
+      "category": "Test",
+      "alert_type": "Humidity Reading Present",
+      "severity": "test",
+      "kind": "single",
+      "test": true,
+      "stream": "humidity",
+      "field": "relative_humidity_avg",
+      "op": ">=",
+      "threshold": 0.0,
+      "unit": "%",
+      "message": "SMOKE TEST: station has a relative_humidity_avg reading (>= {threshold}{unit}). Safe to remove once real alerts are verified."
+    },
+    {
+      "id": "test_temp_present",
+      "category": "Test",
+      "alert_type": "Air Temp Reading Present",
+      "severity": "test",
+      "kind": "single",
+      "test": true,
+      "stream": "air_temp",
+      "field": "air_temp_avg",
+      "op": ">",
+      "threshold": -50.0,
+      "unit": "degC",
+      "message": "SMOKE TEST: station has an air_temp_avg reading (>{threshold} {unit}). Safe to remove once real alerts are verified."
+    },
+    {
+      "id": "test_fire_combo",
+      "category": "Test",
+      "alert_type": "Fire Weather Streams Joined",
+      "severity": "test",
+      "kind": "multi",
+      "test": true,
+      "message": "SMOKE TEST: humidity + wind Latest rows joined on station_id (RH >= 0% AND wind >= 0 m/s).",
+      "all_of": [
+        {"stream": "humidity", "field": "relative_humidity_avg", "op": ">=", "threshold": 0.0, "unit": "%"},
+        {"stream": "wind", "field": "wind_speed_avg", "op": ">=", "threshold": 0.0, "unit": "m/s"}
+      ]
+    },
+    {
+      "id": "wind_elevated",
+      "category": "Wind",
+      "alert_type": "Elevated Wind",
+      "severity": "elevated",
+      "kind": "single",
+      "stream": "wind",
+      "field": "wind_speed_avg",
+      "op": ">",
+      "threshold": 6.7,
+      "unit": "m/s",
+      "message": "Elevated wind conditions (>{threshold} {unit}). Field safety and fire-danger awareness."
+    },
+    {
+      "id": "wind_high",
+      "category": "Wind",
+      "alert_type": "High Wind",
+      "severity": "high",
+      "kind": "single",
+      "stream": "wind",
+      "field": "wind_speed_avg",
+      "op": ">",
+      "threshold": 8.9,
+      "unit": "m/s",
+      "message": "High wind conditions (>{threshold} {unit}). Field safety, infrastructure impacts, increased fire danger."
+    },
+    {
+      "id": "wind_severe",
+      "category": "Wind",
+      "alert_type": "Severe Wind",
+      "severity": "severe",
+      "kind": "single",
+      "stream": "wind",
+      "field": "wind_speed_avg",
+      "op": ">",
+      "threshold": 11.2,
+      "unit": "m/s",
+      "message": "Severe wind conditions (>{threshold} {unit}). Field safety, infrastructure impacts, increased fire danger."
+    },
+    {
+      "id": "temp_high",
+      "category": "Air Temperature",
+      "alert_type": "High Temperature",
+      "severity": "high",
+      "kind": "single",
+      "stream": "air_temp",
+      "field": "air_temp_avg",
+      "op": ">",
+      "threshold": 32.2,
+      "unit": "degC",
+      "message": "High air temperature (>{threshold} {unit} / 90 F). Heat stress and elevated fire risk."
+    },
+    {
+      "id": "temp_extreme",
+      "category": "Air Temperature",
+      "alert_type": "Extreme Heat",
+      "severity": "critical",
+      "kind": "single",
+      "stream": "air_temp",
+      "field": "air_temp_avg",
+      "op": ">",
+      "threshold": 37.8,
+      "unit": "degC",
+      "message": "Extreme heat (>{threshold} {unit} / 100 F). Significant heat event."
+    },
+    {
+      "id": "temp_freeze",
+      "category": "Air Temperature",
+      "alert_type": "Freeze",
+      "severity": "high",
+      "kind": "single",
+      "stream": "air_temp",
+      "field": "air_temp_avg",
+      "op": "<",
+      "threshold": 0.0,
+      "unit": "degC",
+      "message": "Freezing air temperature (<{threshold} {unit} / 32 F). Potential impacts to vegetation and infrastructure."
+    },
+    {
+      "id": "humidity_low",
+      "category": "Humidity",
+      "alert_type": "Low Humidity",
+      "severity": "elevated",
+      "kind": "single",
+      "stream": "humidity",
+      "field": "relative_humidity_avg",
+      "op": "<",
+      "threshold": 30.0,
+      "unit": "%",
+      "message": "Low relative humidity (<{threshold}{unit}). Elevated fire danger conditions."
+    },
+    {
+      "id": "humidity_very_low",
+      "category": "Humidity",
+      "alert_type": "Very Low Humidity",
+      "severity": "high",
+      "kind": "single",
+      "stream": "humidity",
+      "field": "relative_humidity_avg",
+      "op": "<",
+      "threshold": 20.0,
+      "unit": "%",
+      "message": "Very low relative humidity (<{threshold}{unit}). High fire danger conditions."
+    },
+    {
+      "id": "humidity_critical",
+      "category": "Humidity",
+      "alert_type": "Critical Humidity",
+      "severity": "critical",
+      "kind": "single",
+      "stream": "humidity",
+      "field": "relative_humidity_avg",
+      "op": "<=",
+      "threshold": 15.0,
+      "unit": "%",
+      "message": "Critical relative humidity (<={threshold}{unit}). Critical fire weather conditions."
+    },
+    {
+      "id": "fire_elevated",
+      "category": "Fire Weather",
+      "alert_type": "Elevated Fire Weather",
+      "severity": "elevated",
+      "kind": "multi",
+      "message": "Elevated fire weather: RH < 30% AND wind > 6.7 m/s (15 mph).",
+      "all_of": [
+        {"stream": "humidity", "field": "relative_humidity_avg", "op": "<", "threshold": 30.0, "unit": "%"},
+        {"stream": "wind", "field": "wind_speed_avg", "op": ">", "threshold": 6.7, "unit": "m/s"}
+      ]
+    },
+    {
+      "id": "fire_critical",
+      "category": "Fire Weather",
+      "alert_type": "Critical Fire Weather",
+      "severity": "high",
+      "kind": "multi",
+      "message": "Critical fire weather: RH < 20% AND wind > 8.9 m/s (20 mph).",
+      "all_of": [
+        {"stream": "humidity", "field": "relative_humidity_avg", "op": "<", "threshold": 20.0, "unit": "%"},
+        {"stream": "wind", "field": "wind_speed_avg", "op": ">", "threshold": 8.9, "unit": "m/s"}
+      ]
+    },
+    {
+      "id": "fire_red_flag",
+      "category": "Fire Weather",
+      "alert_type": "Red Flag Conditions",
+      "severity": "critical",
+      "kind": "multi",
+      "message": "Red Flag conditions: RH <= 15% AND wind >= 11.2 m/s (25 mph).",
+      "all_of": [
+        {"stream": "humidity", "field": "relative_humidity_avg", "op": "<=", "threshold": 15.0, "unit": "%"},
+        {"stream": "wind", "field": "wind_speed_avg", "op": ">=", "threshold": 11.2, "unit": "m/s"}
+      ]
+    }
+  ]
+}

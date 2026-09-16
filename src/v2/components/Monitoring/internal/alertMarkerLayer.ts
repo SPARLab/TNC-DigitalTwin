@@ -4,6 +4,7 @@
 // ============================================================================
 
 import { severityRank, type LiveAlert } from '../../../services/liveAlertService';
+import { formatObservedAt } from './formatObservedAt';
 
 /**
  * RGBA for severity chrome (outline + side label). `test` is soft slate so smoke
@@ -142,6 +143,9 @@ export function formatStationAlertPopupHtml(
       const message = alert.message || alert.triggeredValue || 'Open alert';
       const meta = [category, formatSeverityLabel(alert.severity)].filter(Boolean).join(' · ');
       const [r, g, b] = severityMarkerColor(alert.severity);
+      const triggeredLine = alert.triggeredAt
+        ? `Triggered at ${formatObservedAt(alert.triggeredAt)}`
+        : '';
       return `
         <div style="margin-top:8px;display:flex;gap:8px;align-items:flex-start">
           <span
@@ -170,6 +174,11 @@ export function formatStationAlertPopupHtml(
                 : ''
             }
             <p style="margin:2px 0 0;color:#111827">${message}</p>
+            ${
+              triggeredLine
+                ? `<p style="margin:4px 0 0;font-size:11px;color:#6b7280">${triggeredLine}</p>`
+                : ''
+            }
           </div>
         </div>`;
     })

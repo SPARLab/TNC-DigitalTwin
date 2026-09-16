@@ -17,17 +17,23 @@ import {
   Activity,
   AlertTriangle,
   Check,
+  ChevronDown,
+  ChevronLeft,
   ChevronRight,
+  CloudRain,
   Droplets,
   Gauge,
   History as HistoryIcon,
   Loader2,
   Pin,
   Radio,
+  RefreshCw,
   Signal,
+  Sun,
   Thermometer,
   Waves,
   Wind,
+  Zap,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { CatalogLayer } from '../types';
@@ -58,7 +64,11 @@ import { formatWindStationPopupContent } from '../components/Monitoring/internal
 import { useWindData, WIND_REFRESH_INTERVAL_MS } from '../hooks/useWindData';
 import { useSensorData, SENSOR_REFRESH_INTERVAL_MS } from '../hooks/useSensorData';
 import { useCameraData, CAMERA_REFRESH_INTERVAL_MS } from '../hooks/useCameraData';
-import { useConditionsSummary, type SummaryMetricId } from '../hooks/useConditionsSummary';
+import {
+  CONDITIONS_SUMMARY_METRIC_COUNT,
+  useConditionsSummary,
+  type SummaryMetricId,
+} from '../hooks/useConditionsSummary';
 import { useLiveAlerts } from '../hooks/useLiveAlerts';
 import { usePreserveBoundary } from '../hooks/usePreserveBoundary';
 import { useMonitoringSections } from '../hooks/useMonitoringSections';
@@ -90,11 +100,45 @@ function isScalarSensor(sensorId: string): sensorId is SensorVariableId {
   return SCALAR_SENSOR_IDS.has(sensorId);
 }
 
+/** Match an open alert to the monitoring sensor whose service it was evaluated on. */
+function resolveSensorFromAlert(
+  alert: LiveAlert,
+  sections: MonitoringSection[],
+): MonitoringSensor | null {
+  const normalizePath = (path: string) =>
+    path.trim().replace(/^\/+|\/+$/g, '').toLowerCase();
+
+  const candidates = [
+    ...(alert.sourceService ? [normalizePath(alert.sourceService)] : []),
+    ...alert.sourceUrls.map((url) => {
+      const match = url.match(/\/services\/([^/]+)\//i);
+      return match ? normalizePath(match[1]) : '';
+    }),
+  ].filter(Boolean);
+
+  if (candidates.length === 0) return null;
+
+  for (const section of sections) {
+    for (const sensor of section.sensors) {
+      if (!sensor.renderer) continue;
+      const sensorPath = normalizePath(sensor.servicePath);
+      if (candidates.some((candidate) => candidate === sensorPath || candidate.includes(sensorPath))) {
+        return sensor;
+      }
+    }
+  }
+
+  return null;
+}
+
 /**
  * Each tile is a maximum across the reporting stations, which the panel states
  * once above them rather than every label carrying a "Max" prefix. The air and
  * creek temperatures are both named, since "Temperature" alone would be
  * ambiguous once there are two of them.
+ *
+ * Primary tiles stay visible; the rest open behind "Show more". Cameras are
+ * omitted — they have no single headline reading.
  */
 const SUMMARY_TILES: { id: SummaryMetricId; label: string; icon: LucideIcon }[] = [
   { id: 'temp', label: 'Air Temp', icon: Thermometer },
@@ -103,7 +147,17 @@ const SUMMARY_TILES: { id: SummaryMetricId; label: string; icon: LucideIcon }[] 
   { id: 'pressure', label: 'Pressure', icon: Gauge },
   { id: 'gaugeHeight', label: 'Creek Height', icon: Waves },
   { id: 'waterTemp', label: 'Creek Temp', icon: Thermometer },
+  { id: 'precip', label: 'Rainfall', icon: CloudRain },
+  { id: 'solar', label: 'Solar', icon: Sun },
+  { id: 'soilTemp', label: 'Soil Temp', icon: Thermometer },
+  { id: 'soilMoisture', label: 'Soil Moisture', icon: Droplets },
+  { id: 'groundwater', label: 'Groundwater', icon: Droplets },
+  { id: 'streamLevel', label: 'Stream Level', icon: Waves },
+  { id: 'discharge', label: 'Discharge', icon: Waves },
+  { id: 'conductivity', label: 'Conductivity', icon: Zap },
 ];
+
+const PRIMARY_SUMMARY_TILE_COUNT = 6;
 
 interface SensorErrorProps {
   label: string;
@@ -275,6 +329,9 @@ export function MonitoringPage() {
     id: string;
     renderer: MonitoringSensor['renderer'];
   } | null>(null);
+  /** Right panel: overview = Current Conditions home; detail = selected stream. */
+  const [detailPanelView, setDetailPanelView] = useState<'overview' | 'detail'>('overview');
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [selectedCameraId, setSelectedCameraId] = useState<number | null>(null);
   const [vizMode, setVizMode] = useState<WindVizMode>('arrows');
   const [scalarMode, setScalarMode] = useState<ScalarVizMode>('surface');
@@ -559,10 +616,72 @@ export function MonitoringPage() {
     // draw anything and clearing the layer that was working.
     if (sensor.renderer === 'scalar-surface' && !isScalarSensor(sensor.id)) return;
 
-    setActiveSensor((current) =>
-      current?.id === sensor.id ? null : { id: sensor.id, renderer: sensor.renderer },
+    const turningOff = activeSensor?.id === sensor.id;
+    if (turningOff) {
+      setActiveSensor(null);
+      setDetailPanelView('overview');
+      return;
+    }
+
+    setActiveSensor({ id: sensor.id, renderer: sensor.renderer });
+    setDetailPanelView('detail');
+  }, [activeSensor?.id]);
+
+  /** Click a Current Conditions tile to put that stream on the map (or clear it). */
+  const handleSummaryTileClick = useCallback(
+    (metricId: SummaryMetricId) => {
+      if (metricId === 'wind') {
+        if (activeSensor?.id === WIND_SENSOR_ID) {
+          setActiveSensor(null);
+          return;
+        }
+        setActiveSensor({ id: WIND_SENSOR_ID, renderer: 'wind-vector-field' });
+        return;
+      }
+
+      if (!isScalarSensor(metricId)) return;
+
+      if (activeSensor?.id === metricId) {
+        setActiveSensor(null);
+        return;
+      }
+
+      setActiveSensor({ id: metricId, renderer: 'scalar-surface' });
+    },
+    [activeSensor?.id],
+  );
+
+  const isSummaryTileActive = useCallback(
+    (metricId: SummaryMetricId) => {
+      if (metricId === 'wind') return activeSensor?.id === WIND_SENSOR_ID;
+      return activeSensor?.id === metricId;
+    },
+    [activeSensor?.id],
+  );
+
+  const visibleSummaryTiles = summaryExpanded
+    ? SUMMARY_TILES
+    : SUMMARY_TILES.slice(0, PRIMARY_SUMMARY_TILE_COUNT);
+  const hiddenSummaryCount = SUMMARY_TILES.length - PRIMARY_SUMMARY_TILE_COUNT;
+
+  const activeStreamLabel = useMemo(() => {
+    if (!activeSensor) return null;
+    return (
+      activeMonitoringSensor?.name
+      ?? (isWindActive ? 'Wind' : null)
+      ?? (isCamerasActive ? 'Cameras' : null)
+      ?? scalarConfig?.label
+      ?? alertsLayerLabel
+      ?? 'Selected stream'
     );
-  }, []);
+  }, [
+    activeSensor,
+    activeMonitoringSensor?.name,
+    isWindActive,
+    isCamerasActive,
+    scalarConfig?.label,
+    alertsLayerLabel,
+  ]);
 
   // Weather stations win for framing when they are on; cameras are a tight pair
   // at one site and would otherwise zoom the map into a postage stamp.
@@ -612,8 +731,8 @@ export function MonitoringPage() {
           ? row.stationId === alert.stationId
           : normalizeName(row.stationName) === normalizeName(alert.stationName);
 
-      const alertLookup = buildStationAlertLookup(liveAlerts.alerts);
-      const conditionLabel = alertsLayerLabel ?? 'this condition';
+      const alertLookup = buildStationAlertLookup(liveAlerts.allAlerts);
+      const conditionLabel = alertsLayerLabel ?? (alert.category.trim() || 'Alert');
       let title = alert.stationName;
       let content = '';
       let longitude = alert.longitude;
@@ -700,13 +819,32 @@ export function MonitoringPage() {
     },
     [
       view,
-      liveAlerts.alerts,
+      liveAlerts.allAlerts,
       alertsLayerLabel,
       isWindActive,
       snapshot?.readings,
       scalarConfig,
       scalar.snapshot?.readings,
     ],
+  );
+
+  /**
+   * Overview alerts span every stream — activate the matching datastream first so
+   * the map has something under the station popup.
+   */
+  const handleOverviewAlertSelect = useCallback(
+    (alert: LiveAlert) => {
+      const sensor = resolveSensorFromAlert(alert, sections);
+      if (sensor?.renderer) {
+        setActiveSensor({ id: sensor.id, renderer: sensor.renderer });
+      }
+      // Defer focus so the newly selected layer's visualization can mount; the
+      // popup still opens from alert coordinates if readings are not ready yet.
+      window.setTimeout(() => {
+        focusAlertStation(alert);
+      }, 350);
+    },
+    [sections, focusAlertStation],
   );
 
   /**
@@ -838,188 +976,331 @@ export function MonitoringPage() {
       >
         <div
           id="monitoring-detail-panel"
-          className="flex h-full flex-col gap-4 overflow-y-auto p-4"
+          className="flex h-full flex-col overflow-hidden p-4"
         >
-        <SensorError label="wind" message={error} onRetry={refresh} />
-        <SensorError
-          label={scalarConfig?.label.toLowerCase() ?? 'sensor'}
-          message={scalar.error}
-          onRetry={scalar.refresh}
-        />
-        <SensorError label="cameras" message={cameras.error} onRetry={cameras.refresh} />
+        {detailPanelView === 'overview' ? (
+          <>
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+            <section>
+              <div className="flex items-center gap-2">
+                <Activity className="h-3.5 w-3.5 text-gray-500" />
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  Current Conditions
+                </h3>
+              </div>
 
-        {scalarConfig && scalar.snapshot && (
-          <ScalarDetailPanel
-            config={scalarConfig}
-            snapshot={scalar.snapshot}
-            mode={scalarMode}
-            onModeChange={setScalarMode}
-            is3D={is3D}
-            isLoading={scalar.isLoading}
-            onRefresh={scalar.refresh}
-          />
-        )}
+              <p className="mt-2 text-[11px] leading-relaxed text-gray-500">
+                Highest reading across reporting stations. Click a card to map that
+                stream.
+              </p>
 
-        {isWindActive && snapshot && statistics && (
-          <WindDetailPanel
-            snapshot={snapshot}
-            statistics={statistics}
-            mode={vizMode}
-            onModeChange={setVizMode}
-            is3D={is3D}
-            isLoading={isLoading}
-            fetchedAt={fetchedAt}
-            onRefresh={refresh}
-          />
-        )}
-
-        {isCamerasActive && cameras.snapshot && (
-          <CameraDetailPanel
-            snapshot={cameras.snapshot}
-            selectedObjectId={selectedCameraId}
-            onSelect={setSelectedCameraId}
-            isLoading={cameras.isLoading}
-            fetchedAt={cameras.fetchedAt}
-            onRefresh={cameras.refresh}
-          />
-        )}
-
-        {stationPoints?.length ? (
-          <button
-            type="button"
-            onClick={frameStations}
-            title="Zoom the map to fit every station currently reporting for this sensor"
-            className="rounded-card border border-gray-200 bg-white px-3 py-2 text-[11px] font-medium text-gray-600 transition-colors hover:bg-gray-50"
-          >
-            Zoom to reporting stations
-          </button>
-        ) : hasAnySensorActive ? (
-          <p className="text-[11px] leading-relaxed text-gray-500">Loading the latest readings…</p>
-        ) : (
-          <section>
-            <div className="flex items-center gap-2">
-              <Activity className="h-3.5 w-3.5 text-gray-500" />
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-600">
-                Current Conditions
-              </h3>
-            </div>
-
-            <p className="mt-2 text-[11px] leading-relaxed text-gray-500">
-              Latest readings, taking the highest where several stations report. Turn on a
-              sensor in the list to map it.
-            </p>
-
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              {SUMMARY_TILES.map((tile) => {
-                const TileIcon = tile.icon;
-                const reading = summary.readings[tile.id];
-                return (
-                  <div
-                    key={tile.id}
-                    // The station is the one piece of provenance there is no room
-                    // for on a tile this size.
-                    title={reading ? `Highest at ${reading.stationName}` : undefined}
-                    className="flex flex-col items-center gap-1 rounded-card border border-gray-200 bg-gray-50 px-3 py-4"
-                  >
-                    <TileIcon className="h-4 w-4 text-gray-400" />
-                    <div className="flex items-baseline gap-0.5">
-                      <span
-                        className={`text-lg font-semibold ${
-                          reading ? 'text-gray-900' : 'text-gray-400'
+              <div className="mt-3 flex flex-col gap-2">
+                <div className="grid grid-cols-2 gap-2">
+                  {visibleSummaryTiles.map((tile) => {
+                    const TileIcon = tile.icon;
+                    const metric = summary.metrics[tile.id];
+                    const reading = metric?.reading ?? null;
+                    const status = metric?.status ?? 'loading';
+                    const isActive = isSummaryTileActive(tile.id);
+                    return (
+                      <div
+                        key={tile.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => handleSummaryTileClick(tile.id)}
+                        onKeyDown={(event) => {
+                          if (event.key !== 'Enter' && event.key !== ' ') return;
+                          event.preventDefault();
+                          handleSummaryTileClick(tile.id);
+                        }}
+                        title={
+                          reading
+                            ? `Map ${tile.label} · highest at ${reading.stationName}`
+                            : status === 'error'
+                              ? `${tile.label} failed to load`
+                              : `Map ${tile.label}`
+                        }
+                        aria-pressed={isActive}
+                        className={`flex cursor-pointer flex-col items-center gap-1 rounded-card border px-3 py-4 text-center transition-colors ${
+                          isActive
+                            ? 'border-emerald-400 bg-emerald-50 ring-2 ring-emerald-200'
+                            : 'border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-white'
                         }`}
                       >
-                        {reading ? reading.value.toFixed(reading.decimals) : '--'}
-                      </span>
-                      {reading && (
-                        <span className="text-[10px] font-medium text-gray-500">
-                          {reading.unit}
+                        <TileIcon
+                          className={`h-4 w-4 ${
+                            isActive ? 'text-emerald-700' : 'text-gray-400'
+                          }`}
+                        />
+                        <span
+                          className={`text-[10px] font-medium ${
+                            isActive ? 'text-emerald-800' : 'text-gray-500'
+                          }`}
+                        >
+                          {tile.label}
                         </span>
-                      )}
-                    </div>
-                    <span className="text-[10px] font-medium text-gray-500">{tile.label}</span>
-                  </div>
-                );
-              })}
+
+                        {status === 'loading' && (
+                          <div className="flex h-8 items-center justify-center">
+                            <Loader2
+                              className={`h-4 w-4 animate-spin ${
+                                isActive ? 'text-emerald-600' : 'text-gray-400'
+                              }`}
+                              aria-label={`Loading ${tile.label}`}
+                            />
+                          </div>
+                        )}
+
+                        {status === 'ready' && reading && (
+                          <div className="flex h-8 items-baseline gap-0.5">
+                            <span
+                              className={`text-lg font-semibold ${
+                                isActive ? 'text-emerald-950' : 'text-gray-900'
+                              }`}
+                            >
+                              {reading.value.toFixed(reading.decimals)}
+                            </span>
+                            <span
+                              className={`text-[10px] font-medium ${
+                                isActive ? 'text-emerald-800/80' : 'text-gray-500'
+                              }`}
+                            >
+                              {reading.unit}
+                            </span>
+                          </div>
+                        )}
+
+                        {status === 'error' && (
+                          <div className="flex h-8 flex-col items-center justify-center gap-0.5">
+                            <span className="text-[10px] text-red-600">Unavailable</span>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                summary.refreshMetric(tile.id);
+                              }}
+                              className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-gray-600 underline hover:text-gray-900"
+                              title={metric?.error ?? `Retry ${tile.label}`}
+                            >
+                              <RefreshCw className="h-2.5 w-2.5" />
+                              Retry
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {hiddenSummaryCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSummaryExpanded((current) => !current)}
+                    className="flex w-full items-center justify-center gap-1 rounded-md py-1.5 text-[11px] font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                    aria-expanded={summaryExpanded}
+                  >
+                    {summaryExpanded ? (
+                      <>
+                        <ChevronDown className="h-3.5 w-3.5" />
+                        Show fewer
+                      </>
+                    ) : (
+                      <>
+                        <ChevronRight className="h-3.5 w-3.5" />
+                        Show {hiddenSummaryCount} more
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {(summary.observedAt !== null || summary.failedCount > 0) && (
+                <p className="mt-2 text-[10px] text-gray-400">
+                  {summary.observedAt !== null && (
+                    <>Observed {formatObservedAt(summary.observedAt)}</>
+                  )}
+                  {summary.failedCount > 0 && (
+                    <>
+                      {summary.observedAt !== null ? ' · ' : ''}
+                      {summary.failedCount} of {CONDITIONS_SUMMARY_METRIC_COUNT} unavailable
+                    </>
+                  )}
+                </p>
+              )}
+            </section>
+
+            <AlertsPanel
+              layerLabel="all streams"
+              alerts={liveAlerts.allAlerts}
+              isLoading={liveAlerts.isLoading}
+              error={liveAlerts.error}
+              onRefresh={liveAlerts.refresh}
+              onSelectAlert={handleOverviewAlertSelect}
+            />
             </div>
 
-            {summary.observedAt !== null && (
-              <p className="mt-2 text-[10px] text-gray-400">
-                Observed {formatObservedAt(summary.observedAt)}
-                {summary.failedCount > 0 &&
-                  ` · ${summary.failedCount} of ${SUMMARY_TILES.length} unavailable`}
+            {activeStreamLabel && (
+              <div className="flex-shrink-0 border-t border-gray-200 bg-white pt-3">
+                <button
+                  type="button"
+                  onClick={() => setDetailPanelView('detail')}
+                  title={`Open the detailed ${activeStreamLabel} panel`}
+                  className="flex w-full items-center justify-center gap-2 rounded-card bg-emerald-600 px-3 py-3 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
+                >
+                  View {activeStreamLabel} conditions
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+            <div className="flex items-center">
+              <button
+                type="button"
+                onClick={() => setDetailPanelView('overview')}
+                title="Back to all conditions"
+                aria-label="Back to all conditions"
+                className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
+              >
+                <ChevronLeft className="h-4 w-4 flex-shrink-0" />
+                All Conditions
+              </button>
+            </div>
+
+            <SensorError label="wind" message={error} onRetry={refresh} />
+            <SensorError
+              label={scalarConfig?.label.toLowerCase() ?? 'sensor'}
+              message={scalar.error}
+              onRetry={scalar.refresh}
+            />
+            <SensorError label="cameras" message={cameras.error} onRetry={cameras.refresh} />
+
+            {scalarConfig && scalar.snapshot && (
+              <ScalarDetailPanel
+                config={scalarConfig}
+                snapshot={scalar.snapshot}
+                mode={scalarMode}
+                onModeChange={setScalarMode}
+                is3D={is3D}
+                isLoading={scalar.isLoading}
+                onRefresh={scalar.refresh}
+              />
+            )}
+
+            {isWindActive && snapshot && statistics && (
+              <WindDetailPanel
+                snapshot={snapshot}
+                statistics={statistics}
+                mode={vizMode}
+                onModeChange={setVizMode}
+                is3D={is3D}
+                isLoading={isLoading}
+                fetchedAt={fetchedAt}
+                onRefresh={refresh}
+              />
+            )}
+
+            {isCamerasActive && cameras.snapshot && (
+              <CameraDetailPanel
+                snapshot={cameras.snapshot}
+                selectedObjectId={selectedCameraId}
+                onSelect={setSelectedCameraId}
+                isLoading={cameras.isLoading}
+                fetchedAt={cameras.fetchedAt}
+                onRefresh={cameras.refresh}
+              />
+            )}
+
+            {stationPoints?.length ? (
+              <button
+                type="button"
+                onClick={frameStations}
+                title="Zoom the map to fit every station currently reporting for this sensor"
+                className="rounded-card border border-gray-200 bg-white px-3 py-2 text-[11px] font-medium text-gray-600 transition-colors hover:bg-gray-50"
+              >
+                Zoom to reporting stations
+              </button>
+            ) : hasAnySensorActive ? (
+              <p className="text-[11px] leading-relaxed text-gray-500">
+                Loading the latest readings…
+              </p>
+            ) : (
+              <p className="text-[11px] leading-relaxed text-gray-500">
+                Select a sensor in the list to see its detailed conditions.
               </p>
             )}
-          </section>
-        )}
 
-        <div className="flex flex-col gap-1.5">
-          <div className="grid grid-cols-2 gap-1.5">
-            <button
-              type="button"
-              onClick={viewHistoricalData}
-              disabled={!activeMonitoringSensor}
-              title={
-                !activeMonitoringSensor
-                  ? 'Select a live sensor first. Opens this dataset on the Data Catalog map and reveals it in the left sidebar.'
-                  : `Open ${historicalCatalogLayer?.name ?? 'this dataset'} on the Data Catalog map (Stations/Locations view for sensor datastreams), pin it to Map Layers, and show its place in the left sidebar.`
-              }
-              className={`flex items-center justify-center gap-1.5 rounded-card border px-2 py-2 text-[11px] font-medium transition-colors ${
-                activeMonitoringSensor
-                  ? 'border-emerald-200 bg-white text-emerald-800 hover:bg-emerald-50'
-                  : 'cursor-not-allowed border-gray-200 bg-white text-gray-400'
-              }`}
-            >
-              <HistoryIcon className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="leading-tight">View Historical Data</span>
-            </button>
-            <button
-              type="button"
-              onClick={pinHistoricalDataset}
-              disabled={!activeMonitoringSensor}
-              title={
-                !activeMonitoringSensor
-                  ? 'Select a live sensor first. Saves the Stations/Locations layer to Map Layers (favorites) without leaving Live Monitoring.'
-                  : isHistoricalLayerPinned
-                    ? `Remove ${historicalCatalogLayer?.name ?? 'this dataset'} from Map Layers / favorites.`
-                    : `Save ${historicalCatalogLayer?.name ?? 'this dataset'} (Stations view) to Map Layers so it appears in favorites without leaving Live Monitoring.`
-              }
-              className={`flex items-center justify-center gap-1.5 rounded-card border px-2 py-2 text-[11px] font-medium transition-colors ${
-                !activeMonitoringSensor
-                  ? 'cursor-not-allowed border-gray-200 bg-white text-gray-400'
-                  : isHistoricalLayerPinned
-                    ? 'border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100'
-                    : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              {isHistoricalLayerPinned ? (
-                <Check className="h-3.5 w-3.5 flex-shrink-0" />
-              ) : (
-                <Pin className="h-3.5 w-3.5 flex-shrink-0" />
+            <div className="flex flex-col gap-1.5">
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={viewHistoricalData}
+                  disabled={!activeMonitoringSensor}
+                  title={
+                    !activeMonitoringSensor
+                      ? 'Select a live sensor first. Opens this dataset on the Data Catalog map and reveals it in the left sidebar.'
+                      : `Open ${historicalCatalogLayer?.name ?? 'this dataset'} on the Data Catalog map (Stations/Locations view for sensor datastreams), pin it to Map Layers, and show its place in the left sidebar.`
+                  }
+                  className={`flex items-center justify-center gap-1.5 rounded-card border px-2 py-2 text-[11px] font-medium transition-colors ${
+                    activeMonitoringSensor
+                      ? 'border-emerald-200 bg-white text-emerald-800 hover:bg-emerald-50'
+                      : 'cursor-not-allowed border-gray-200 bg-white text-gray-400'
+                  }`}
+                >
+                  <HistoryIcon className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span className="leading-tight">View Historical Data</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={pinHistoricalDataset}
+                  disabled={!activeMonitoringSensor}
+                  title={
+                    !activeMonitoringSensor
+                      ? 'Select a live sensor first. Saves the Stations/Locations layer to Map Layers (favorites) without leaving Live Monitoring.'
+                      : isHistoricalLayerPinned
+                        ? `Remove ${historicalCatalogLayer?.name ?? 'this dataset'} from Map Layers / favorites.`
+                        : `Save ${historicalCatalogLayer?.name ?? 'this dataset'} (Stations view) to Map Layers so it appears in favorites without leaving Live Monitoring.`
+                  }
+                  className={`flex items-center justify-center gap-1.5 rounded-card border px-2 py-2 text-[11px] font-medium transition-colors ${
+                    !activeMonitoringSensor
+                      ? 'cursor-not-allowed border-gray-200 bg-white text-gray-400'
+                      : isHistoricalLayerPinned
+                        ? 'border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100'
+                        : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {isHistoricalLayerPinned ? (
+                    <Check className="h-3.5 w-3.5 flex-shrink-0" />
+                  ) : (
+                    <Pin className="h-3.5 w-3.5 flex-shrink-0" />
+                  )}
+                  <span className="leading-tight">
+                    {isHistoricalLayerPinned ? 'Unpin Dataset' : 'Pin Dataset'}
+                  </span>
+                </button>
+              </div>
+              {catalogActionError && (
+                <p role="alert" className="text-[10px] leading-relaxed text-red-600">
+                  {catalogActionError}
+                </p>
               )}
-              <span className="leading-tight">
-                {isHistoricalLayerPinned ? 'Unpin Dataset' : 'Pin Dataset'}
-              </span>
-            </button>
-          </div>
-          {catalogActionError && (
-            <p role="alert" className="text-[10px] leading-relaxed text-red-600">
-              {catalogActionError}
-            </p>
-          )}
-          {!catalogActionError && pinFeedback && (
-            <p className="text-[10px] leading-relaxed text-emerald-700">{pinFeedback}</p>
-          )}
-        </div>
+              {!catalogActionError && pinFeedback && (
+                <p className="text-[10px] leading-relaxed text-emerald-700">{pinFeedback}</p>
+              )}
+            </div>
 
-        {alertsLayerLabel && (
-          <AlertsPanel
-            layerLabel={alertsLayerLabel}
-            alerts={liveAlerts.alerts}
-            isLoading={liveAlerts.isLoading}
-            error={liveAlerts.error}
-            onRefresh={liveAlerts.refresh}
-            onSelectAlert={focusAlertStation}
-          />
+            {alertsLayerLabel && (
+              <AlertsPanel
+                layerLabel={alertsLayerLabel}
+                alerts={liveAlerts.alerts}
+                isLoading={liveAlerts.isLoading}
+                error={liveAlerts.error}
+                onRefresh={liveAlerts.refresh}
+                onSelectAlert={focusAlertStation}
+              />
+            )}
+          </div>
         )}
         </div>
       </ResizablePanel>
