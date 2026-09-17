@@ -112,7 +112,10 @@ export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServic
     const startTime = performance.now();
     console.log(`[Dendra Cache] 📡 Fetching summaries for station ${stationId}...`);
 
-    fetchSummariesForStation(url, stationId)
+    const stationMeta = entry?.stations.find((station) => station.station_id === stationId);
+    fetchSummariesForStation(url, stationId, {
+      categoryHint: stationMeta?.category ?? stationMeta?.sensor_name ?? null,
+    })
       .then((summaries) => {
         const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
         console.log(`[Dendra Cache] ✅ ${summaries.length} summaries for station ${stationId} in ${elapsed}s`);

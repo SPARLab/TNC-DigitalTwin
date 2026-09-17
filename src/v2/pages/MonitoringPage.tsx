@@ -69,7 +69,6 @@ import {
   useConditionsSummary,
   type SummaryMetricId,
 } from '../hooks/useConditionsSummary';
-import { useLiveAlerts } from '../hooks/useLiveAlerts';
 import { usePreserveBoundary } from '../hooks/usePreserveBoundary';
 import { useMonitoringSections } from '../hooks/useMonitoringSections';
 import type { MonitoringSection, MonitoringSensor } from '../hooks/useMonitoringSections';
@@ -80,11 +79,22 @@ import { formatObservedAt } from '../components/Monitoring/internal/formatObserv
 import { AlertsPanel } from '../components/Monitoring/AlertsPanel';
 import { allowsInterpolation, SENSOR_VARIABLES } from '../services/sensorService';
 import type { SensorVariableId } from '../services/sensorService';
-import { buildLatestLayerUrl, type LiveAlert } from '../services/liveAlertService';
+import {
+  alertMatchesActiveSource,
+  buildLatestLayerUrl,
+  type LiveAlert,
+} from '../services/liveAlertService';
 import { WIND_SERVICE_PATH } from '../services/windService';
 import { useLayers } from '../context/LayerContext';
 import { useCatalog } from '../context/CatalogContext';
+import { useLiveAlertsContext } from '../context/LiveAlertsContext';
 import { resolveHistoricalCatalogLayer } from '../utils/resolveCatalogLayer';
+import {
+  clearMonitoringAlertFocus,
+  getLatestMonitoringAlertFocus,
+  MONITORING_ALERT_FOCUS_EVENT,
+  type MonitoringAlertFocusIntent,
+} from '../alerts/monitoringAlertIntent';
 
 const WIND_SENSOR_ID = 'wind';
 const CAMERA_SENSOR_ID = 'cameras';
@@ -101,18 +111,24 @@ function isScalarSensor(sensorId: string): sensorId is SensorVariableId {
 }
 
 /** Match an open alert to the monitoring sensor whose service it was evaluated on. */
+function normalizeMonitoringServicePath(path: string): string {
+  return path
+    .trim()
+    .replace(/^\/+|\/+$/g, '')
+    .replace(/^hosted\//i, '')
+    .replace(/\/featureserver(?:\/\d+)?$/i, '')
+    .toLowerCase();
+}
+
 function resolveSensorFromAlert(
   alert: LiveAlert,
   sections: MonitoringSection[],
 ): MonitoringSensor | null {
-  const normalizePath = (path: string) =>
-    path.trim().replace(/^\/+|\/+$/g, '').toLowerCase();
-
   const candidates = [
-    ...(alert.sourceService ? [normalizePath(alert.sourceService)] : []),
+    ...(alert.sourceService ? [normalizeMonitoringServicePath(alert.sourceService)] : []),
     ...alert.sourceUrls.map((url) => {
-      const match = url.match(/\/services\/([^/]+)\//i);
-      return match ? normalizePath(match[1]) : '';
+      const match = url.match(/\/services\/([^/?#]+)/i);
+      return match ? normalizeMonitoringServicePath(match[1]) : '';
     }),
   ].filter(Boolean);
 
@@ -121,8 +137,15 @@ function resolveSensorFromAlert(
   for (const section of sections) {
     for (const sensor of section.sensors) {
       if (!sensor.renderer) continue;
-      const sensorPath = normalizePath(sensor.servicePath);
-      if (candidates.some((candidate) => candidate === sensorPath || candidate.includes(sensorPath))) {
+      const sensorPath = normalizeMonitoringServicePath(sensor.servicePath);
+      if (
+        candidates.some(
+          (candidate) =>
+            candidate === sensorPath
+            || candidate.includes(sensorPath)
+            || sensorPath.includes(candidate),
+        )
+      ) {
         return sensor;
       }
     }
@@ -340,6 +363,9 @@ export function MonitoringPage() {
     'v2-monitoring-view-mode',
     '2d',
   );
+  const pendingCatalogAlertFocusRef = useRef<LiveAlert | null>(null);
+  const deferredFocusAlertRef = useRef<LiveAlert | null>(null);
+  const [pendingFocusVersion, setPendingFocusVersion] = useState(0);
 
   const isWindActive = activeSensor?.renderer === 'wind-vector-field';
   const isCamerasActive = activeSensor?.renderer === 'camera-feed';
@@ -382,7 +408,24 @@ export function MonitoringPage() {
     return null;
   }, [isWindActive, scalarConfig]);
 
-  const liveAlerts = useLiveAlerts(activeAlertSource);
+  const sharedLiveAlerts = useLiveAlertsContext();
+  const filteredAlerts = useMemo(() => {
+    if (!activeAlertSource) return [];
+    return sharedLiveAlerts.allAlerts.filter((alert) =>
+      alertMatchesActiveSource(alert, activeAlertSource),
+    );
+  }, [sharedLiveAlerts.allAlerts, activeAlertSource]);
+  const liveAlerts = useMemo(
+    () => ({
+      alerts: filteredAlerts,
+      allAlerts: sharedLiveAlerts.allAlerts,
+      isLoading: sharedLiveAlerts.isLoading,
+      error: sharedLiveAlerts.error,
+      fetchedAt: sharedLiveAlerts.fetchedAt,
+      refresh: sharedLiveAlerts.refresh,
+    }),
+    [filteredAlerts, sharedLiveAlerts],
+  );
   const alertsLayerLabel = isWindActive
     ? 'Wind'
     : scalarConfig?.label ?? null;
@@ -836,16 +879,74 @@ export function MonitoringPage() {
     (alert: LiveAlert) => {
       const sensor = resolveSensorFromAlert(alert, sections);
       if (sensor?.renderer) {
-        setActiveSensor({ id: sensor.id, renderer: sensor.renderer });
+        if (sensor.renderer === 'scalar-surface' && !isScalarSensor(sensor.id)) {
+          console.warn('[MonitoringPage] Alert matched an unimplemented scalar sensor:', sensor.id);
+        } else {
+          setActiveSensor({ id: sensor.id, renderer: sensor.renderer });
+          setDetailPanelView('detail');
+        }
+      } else if (import.meta.env.DEV) {
+        console.warn('[MonitoringPage] No monitoring sensor matched alert sources', {
+          sourceService: alert.sourceService,
+          sourceUrls: alert.sourceUrls,
+          sectionCount: sections.length,
+        });
       }
       // Defer focus so the newly selected layer's visualization can mount; the
       // popup still opens from alert coordinates if readings are not ready yet.
-      window.setTimeout(() => {
-        focusAlertStation(alert);
-      }, 350);
+      if (!view || view.destroyed) {
+        deferredFocusAlertRef.current = alert;
+      } else {
+        window.setTimeout(() => {
+          focusAlertStation(alert);
+        }, 450);
+      }
     },
-    [sections, focusAlertStation],
+    [sections, focusAlertStation, view],
   );
+
+  // Catalog bell → Live Monitoring handoff.
+  // Queue the alert and wait for the sensor tree before activating a layer —
+  // first visit otherwise resolves against empty sections and draws nothing.
+  useEffect(() => {
+    const queueFocus = (intent: MonitoringAlertFocusIntent | null) => {
+      if (!intent) return;
+      clearMonitoringAlertFocus();
+      pendingCatalogAlertFocusRef.current = intent.alert;
+      setPendingFocusVersion((version) => version + 1);
+    };
+
+    queueFocus(getLatestMonitoringAlertFocus());
+
+    const onFocusEvent = (event: Event) => {
+      const custom = event as CustomEvent<MonitoringAlertFocusIntent>;
+      queueFocus(custom.detail ?? getLatestMonitoringAlertFocus());
+    };
+
+    window.addEventListener(MONITORING_ALERT_FOCUS_EVENT, onFocusEvent);
+    return () => window.removeEventListener(MONITORING_ALERT_FOCUS_EVENT, onFocusEvent);
+  }, []);
+
+  // Apply a pending catalog-bell alert once monitoring sections are ready.
+  useEffect(() => {
+    if (pendingFocusVersion === 0) return;
+    const pending = pendingCatalogAlertFocusRef.current;
+    if (!pending) return;
+    if (isSectionsLoading || sections.length === 0) return;
+
+    pendingCatalogAlertFocusRef.current = null;
+    handleOverviewAlertSelect(pending);
+  }, [pendingFocusVersion, isSectionsLoading, sections, handleOverviewAlertSelect]);
+
+  // If the map view wasn't ready on the first focus attempt, retry once it is.
+  useEffect(() => {
+    if (!view || view.destroyed) return;
+    const deferred = deferredFocusAlertRef.current;
+    if (!deferred) return;
+    deferredFocusAlertRef.current = null;
+    const timer = window.setTimeout(() => focusAlertStation(deferred), 400);
+    return () => window.clearTimeout(timer);
+  }, [view, focusAlertStation]);
 
   /**
    * Frame the stations the first time any data arrives. Without this the default

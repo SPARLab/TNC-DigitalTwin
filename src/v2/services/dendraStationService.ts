@@ -1,13 +1,13 @@
 // ============================================================================
 // Dendra Station Service — Queries per-type sensor feature services.
 //
-// Dan's Data Catalog has 10 Dendra sensor services, each with:
-//   Layer 0: Station Locations (point features)
-//   Table 1: Sensor Data (time series readings — deferred to task 3.5)
-//   Table 2: Sensor Summary (pre-computed per-datastream stats)
+// Catalog `dendra_format` services (e.g. Dangermond_*_Datastreams) expose:
+//   Layer 0: * Latest     (live readings — used by Live Monitoring)
+//   Layer 1: * Locations  (station points — used by catalog browse/map)
+//   Table 2: * Data       (time-series readings)
 //
-// All 10 services share identical schema. This service takes a base URL
-// and fetches from the appropriate table/layer.
+// Station browse always targets the Locations layer. Datastream lists and chart
+// points bridge through the legacy Dendra_Stations FeatureServer.
 // ============================================================================
 
 // ── Types (matching the new per-type service schema) ─────────────────────────
@@ -22,9 +22,11 @@ export interface DendraStation {
   elevation: number | null;
   time_zone: string;
   is_active: number; // 1 = active
-  sensor_id: number;
-  sensor_name: string;
+  /** Present on older schemas; new Locations layers expose `category` instead. */
+  sensor_id: number | null;
+  sensor_name: string | null;
   sensor_thing_type_id: string | null;
+  category: string | null;
   datastream_count: number;
 }
 
@@ -74,6 +76,43 @@ export function buildServiceUrl(serverBaseUrl: string, servicePath: string): str
   return url;
 }
 
+interface FeatureServerIndex {
+  stationsLayerId: number;
+}
+
+const serviceIndexCache = new Map<string, FeatureServerIndex>();
+
+/**
+ * New `_Datastreams` services expose:
+ *   Layer 0: * Latest   (live readings — wrong for station browse)
+ *   Layer 1: * Locations (stations — correct)
+ *   Table 2: * Data     (time series)
+ * Older per-type services used Layer 0 for stations. Resolve by name first.
+ */
+async function resolveStationsLayerId(serviceUrl: string): Promise<number> {
+  const cached = serviceIndexCache.get(serviceUrl);
+  if (cached) return cached.stationsLayerId;
+
+  const res = await fetch(`${serviceUrl}?f=json`);
+  if (!res.ok) {
+    throw new Error(`Dendra service metadata failed: HTTP ${res.status}`);
+  }
+  const json = await res.json();
+  if (json.error) {
+    throw new Error(`Dendra service metadata error: ${json.error.message}`);
+  }
+
+  const layers: Array<{ id: number; name?: string }> = json.layers ?? [];
+  const byName = layers.find((layer) => /location|station/i.test(layer.name ?? ''));
+  const stationsLayerId = byName?.id ?? layers[0]?.id ?? 0;
+  serviceIndexCache.set(serviceUrl, { stationsLayerId });
+  console.log(
+    `[Dendra] Resolved stations layer for ${serviceUrl} → ${stationsLayerId}` +
+      (byName?.name ? ` ("${byName.name}")` : ''),
+  );
+  return stationsLayerId;
+}
+
 /** Generic ArcGIS table/layer query */
 async function queryTable<T>(
   serviceUrl: string,
@@ -82,6 +121,7 @@ async function queryTable<T>(
     where?: string;
     outFields?: string[];
     returnGeometry?: boolean;
+    resultRecordCount?: number;
   },
 ): Promise<T[]> {
   const params = new URLSearchParams({
@@ -91,6 +131,9 @@ async function queryTable<T>(
   });
   if (typeof options?.returnGeometry === 'boolean') {
     params.set('returnGeometry', String(options.returnGeometry));
+  }
+  if (typeof options?.resultRecordCount === 'number') {
+    params.set('resultRecordCount', String(options.resultRecordCount));
   }
 
   const url = `${serviceUrl}/${tableIndex}/query?${params.toString()}`;
@@ -109,68 +152,132 @@ async function queryTable<T>(
   return (json.features ?? []).map(f => f.attributes);
 }
 
-// ── Public API ───────────────────────────────────────────────────────────────
-
-/** Fetch stations (Layer 0) from a Dendra sensor service */
-export async function fetchStations(serviceUrl: string): Promise<DendraStation[]> {
-  return queryTable<DendraStation>(serviceUrl, 0, {
-    outFields: [
-      'station_id',
-      'dendra_st_id',
-      'station_name',
-      'station_description',
-      'latitude',
-      'longitude',
-      'elevation',
-      'time_zone',
-      'is_active',
-      'sensor_id',
-      'sensor_name',
-      'sensor_thing_type_id',
-      'datastream_count',
-    ],
-    returnGeometry: false,
-  });
+function readNullableString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
-const SUMMARY_OUT_FIELDS = [
-  'datastream_id',
-  'dendra_ds_id',
-  'datastream_name',
-  'variable',
-  'unit',
+function readNullableNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function normalizeStation(raw: Record<string, unknown>): DendraStation | null {
+  const stationId = readNullableNumber(raw.station_id);
+  const stationName = readNullableString(raw.station_name);
+  const latitude = readNullableNumber(raw.latitude);
+  const longitude = readNullableNumber(raw.longitude);
+  if (stationId == null || !stationName || latitude == null || longitude == null) return null;
+
+  const category = readNullableString(raw.category);
+  return {
+    station_id: stationId,
+    dendra_st_id: readNullableString(raw.dendra_st_id) ?? '',
+    station_name: stationName,
+    station_description: readNullableString(raw.station_description),
+    latitude,
+    longitude,
+    elevation: readNullableNumber(raw.elevation),
+    time_zone: readNullableString(raw.time_zone) ?? '',
+    is_active: readNullableNumber(raw.is_active) ?? 0,
+    sensor_id: readNullableNumber(raw.sensor_id),
+    sensor_name: readNullableString(raw.sensor_name) ?? category,
+    sensor_thing_type_id: readNullableString(raw.sensor_thing_type_id),
+    category,
+    datastream_count: readNullableNumber(raw.datastream_count) ?? 0,
+  };
+}
+
+/** Fields present on Locations layers in the new `_Datastreams` services. */
+const STATION_OUT_FIELDS = [
   'station_id',
+  'dendra_st_id',
   'station_name',
-  'total_records',
-  'first_reading_time',
-  'last_reading_time',
-  'min_value',
-  'max_value',
-  'avg_value',
+  'station_description',
+  'latitude',
+  'longitude',
+  'elevation',
+  'time_zone',
+  'is_active',
+  'category',
+  'datastream_count',
 ];
 
-/** Fetch summaries for a single station (on-demand drill-down query) */
-export async function fetchSummariesForStation(
-  serviceUrl: string,
-  stationId: number,
-): Promise<DendraSummary[]> {
-  return queryTable<DendraSummary>(serviceUrl, 2, {
-    where: `station_id=${stationId}`,
-    outFields: SUMMARY_OUT_FIELDS,
+// ── Public API ───────────────────────────────────────────────────────────────
+
+/** Fetch stations (Locations layer) from a Dendra sensor service */
+export async function fetchStations(serviceUrl: string): Promise<DendraStation[]> {
+  const stationsLayerId = await resolveStationsLayerId(serviceUrl);
+  const rows = await queryTable<Record<string, unknown>>(serviceUrl, stationsLayerId, {
+    outFields: STATION_OUT_FIELDS,
     returnGeometry: false,
   });
+  return rows.map(normalizeStation).filter((row): row is DendraStation => row != null);
+}
+
+// Legacy monolithic service — datastream catalog + datapoints for charts.
+const V0_BASE = 'https://dangermondpreserve-spatial.com/server/rest/services/Dendra_Stations/FeatureServer';
+
+/**
+ * Fetch datastream summaries for a station.
+ *
+ * New `_Datastreams` FeatureServers no longer publish a Summary table — Table 2
+ * is raw time-series Data. List datastreams from the legacy Dendra_Stations
+ * service (same bridge used for chart points), optionally narrowed by category.
+ */
+export async function fetchSummariesForStation(
+  _serviceUrl: string,
+  stationId: number,
+  options?: { categoryHint?: string | null },
+): Promise<DendraSummary[]> {
+  const rows = await queryTable<{
+    id: number;
+    dendra_ds_id: string;
+    station_id: number;
+    name: string;
+    variable: string | null;
+    unit: string | null;
+  }>(V0_BASE, 3, {
+    where: `station_id=${stationId}`,
+    outFields: ['id', 'dendra_ds_id', 'station_id', 'name', 'variable', 'unit'],
+    returnGeometry: false,
+    resultRecordCount: 500,
+  });
+
+  const hint = options?.categoryHint?.trim().toLowerCase();
+  const filtered = hint
+    ? rows.filter((row) => {
+        const haystack = `${row.name ?? ''} ${row.variable ?? ''}`.toLowerCase();
+        // "Humidity" → humid; "Air Temperature" → air/temp; "Wind" → wind
+        const tokens = hint.split(/[^a-z0-9]+/).filter((token) => token.length >= 3);
+        return tokens.some((token) => haystack.includes(token));
+      })
+    : rows;
+
+  const sourceRows = filtered.length > 0 ? filtered : rows;
+
+  return sourceRows.map((row) => ({
+    datastream_id: row.id,
+    dendra_ds_id: row.dendra_ds_id,
+    datastream_name: row.name,
+    variable: row.variable ?? '',
+    unit: row.unit ?? '',
+    station_id: row.station_id,
+    station_name: '',
+    total_records: 0,
+    first_reading_time: null,
+    last_reading_time: null,
+    min_value: null,
+    max_value: null,
+    avg_value: null,
+  }));
 }
 
 // ── Time Series (via legacy v0 service) ──────────────────────────────────────
 //
-// Per-type service Table 1 is not yet populated. Time series data lives in
-// the legacy monolithic Dendra_Stations service:
-//   Table 3: Datastreams  → has dendra_ds_id (matches v2 Summary.dendra_ds_id)
+// Chart data bridges through Dendra_Stations:
+//   Table 3: Datastreams  → has dendra_ds_id (matches Summary.dendra_ds_id)
 //   Table 4: Datapoints   → has datastream_id, timestamp_utc, value
 //
-// Bridge: v2 Summary.dendra_ds_id → v0 Table 3 → get id → v0 Table 4 data.
-
-const V0_BASE = 'https://dangermondpreserve-spatial.com/server/rest/services/Dendra_Stations/FeatureServer';
+// Bridge: Summary.dendra_ds_id → v0 Table 3 → get id → v0 Table 4 data.
 
 /** Cache: dendra_ds_id → v0 numeric datastream id */
 const dsIdCache = new Map<string, number>();

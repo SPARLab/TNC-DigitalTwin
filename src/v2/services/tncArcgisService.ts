@@ -48,6 +48,7 @@ function getPortalCandidatesFromServiceUrl(serviceRootUrl: string): string[] {
 
   try {
     const serviceOrigin = new URL(serviceRootUrl).origin;
+    candidates.add(`${serviceOrigin}/portal`);
     candidates.add(serviceOrigin);
   } catch {
     // ignore invalid URL
