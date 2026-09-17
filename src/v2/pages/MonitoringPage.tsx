@@ -95,6 +95,12 @@ import {
   MONITORING_ALERT_FOCUS_EVENT,
   type MonitoringAlertFocusIntent,
 } from '../alerts/monitoringAlertIntent';
+import {
+  clearMonitoringSensorFocus,
+  getLatestMonitoringSensorFocus,
+  MONITORING_SENSOR_FOCUS_EVENT,
+  type MonitoringSensorFocusIntent,
+} from '../alerts/monitoringSensorIntent';
 
 const WIND_SENSOR_ID = 'wind';
 const CAMERA_SENSOR_ID = 'cameras';
@@ -365,7 +371,9 @@ export function MonitoringPage() {
   );
   const pendingCatalogAlertFocusRef = useRef<LiveAlert | null>(null);
   const deferredFocusAlertRef = useRef<LiveAlert | null>(null);
+  const pendingSensorFocusRef = useRef<MonitoringSensorFocusIntent | null>(null);
   const [pendingFocusVersion, setPendingFocusVersion] = useState(0);
+  const [pendingSensorFocusVersion, setPendingSensorFocusVersion] = useState(0);
 
   const isWindActive = activeSensor?.renderer === 'wind-vector-field';
   const isCamerasActive = activeSensor?.renderer === 'camera-feed';
@@ -937,6 +945,67 @@ export function MonitoringPage() {
     pendingCatalogAlertFocusRef.current = null;
     handleOverviewAlertSelect(pending);
   }, [pendingFocusVersion, isSectionsLoading, sections, handleOverviewAlertSelect]);
+
+  // Catalog Overview → Live Monitoring: open the matching dataset/sensor.
+  useEffect(() => {
+    const queueSensor = (intent: MonitoringSensorFocusIntent | null) => {
+      if (!intent) return;
+      clearMonitoringSensorFocus();
+      pendingSensorFocusRef.current = intent;
+      setPendingSensorFocusVersion((version) => version + 1);
+    };
+
+    queueSensor(getLatestMonitoringSensorFocus());
+
+    const onFocusEvent = (event: Event) => {
+      const custom = event as CustomEvent<MonitoringSensorFocusIntent>;
+      queueSensor(custom.detail ?? getLatestMonitoringSensorFocus());
+    };
+
+    window.addEventListener(MONITORING_SENSOR_FOCUS_EVENT, onFocusEvent);
+    return () => window.removeEventListener(MONITORING_SENSOR_FOCUS_EVENT, onFocusEvent);
+  }, []);
+
+  useEffect(() => {
+    if (pendingSensorFocusVersion === 0) return;
+    const pending = pendingSensorFocusRef.current;
+    if (!pending) return;
+    if (isSectionsLoading || sections.length === 0) return;
+
+    pendingSensorFocusRef.current = null;
+
+    const normalizedPath = pending.servicePath
+      ? normalizeMonitoringServicePath(pending.servicePath)
+      : '';
+
+    let match: MonitoringSensor | undefined;
+    for (const section of sections) {
+      match = section.sensors.find((sensor) => {
+        if (pending.sensorId && sensor.id === pending.sensorId) return true;
+        if (pending.datasetId != null && sensor.datasetId === pending.datasetId) return true;
+        if (normalizedPath && normalizeMonitoringServicePath(sensor.servicePath) === normalizedPath) {
+          return true;
+        }
+        return false;
+      });
+      if (match) break;
+    }
+
+    if (!match?.renderer) {
+      if (import.meta.env.DEV) {
+        console.warn('[MonitoringPage] No monitoring sensor matched catalog focus', pending);
+      }
+      return;
+    }
+
+    if (match.renderer === 'scalar-surface' && !isScalarSensor(match.id)) {
+      console.warn('[MonitoringPage] Catalog focus matched unimplemented scalar:', match.id);
+      return;
+    }
+
+    setActiveSensor({ id: match.id, renderer: match.renderer });
+    setDetailPanelView('detail');
+  }, [pendingSensorFocusVersion, isSectionsLoading, sections]);
 
   // If the map view wasn't ready on the first focus attempt, retry once it is.
   useEffect(() => {

@@ -10,6 +10,7 @@ import type {
 } from '../../types';
 import type { DroneImageryMetadata } from '../../../types/droneImagery';
 import { TAXON_CONFIG } from '../../components/Map/layers/taxonConfig';
+import { formatImageryDimensionLabel } from '../../utils/imagerySliceUtils';
 
 export function buildINaturalistFilterSummary(filters: INaturalistViewFilters): string | undefined {
   const parts: string[] = [];
@@ -417,12 +418,24 @@ export function buildDroneViewName(flight: DroneImageryMetadata): string {
 }
 
 export function buildTNCArcGISFilterSummary(filters: TNCArcGISViewFilters): string | undefined {
+  const parts: string[] = [];
   const clause = filters.whereClause.trim();
-  if (!clause || clause === '1=1') return undefined;
-  return clause.length > 110 ? `${clause.slice(0, 107)}...` : clause;
+  if (clause && clause !== '1=1') {
+    parts.push(clause.length > 80 ? `${clause.slice(0, 77)}...` : clause);
+  }
+  if (filters.imageryVariable) {
+    const dimLabel = typeof filters.imageryDimensionValue === 'number'
+      ? formatImageryDimensionLabel(filters.imageryDimensionValue, filters.imageryDimensionName)
+      : null;
+    parts.push(dimLabel ? `${filters.imageryVariable} · ${dimLabel}` : filters.imageryVariable);
+  }
+  if (parts.length === 0) return undefined;
+  const summary = parts.join(' · ');
+  return summary.length > 110 ? `${summary.slice(0, 107)}...` : summary;
 }
 
 export function getTNCArcGISFilterCount(filters: TNCArcGISViewFilters): number {
+  // Imagery slice selection is presentation state, not an attribute filter.
   return (filters.fields ?? []).filter(filter => {
     const hasField = filter.field.trim().length > 0;
     const hasOperator = filter.operator.trim().length > 0;

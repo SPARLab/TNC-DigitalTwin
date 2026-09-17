@@ -12,12 +12,14 @@ import MapView from '@arcgis/core/views/MapView';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import GroupLayer from '@arcgis/core/layers/GroupLayer';
 import ImageryLayer from '@arcgis/core/layers/ImageryLayer';
+import ImageryTileLayer from '@arcgis/core/layers/ImageryTileLayer';
 import MapImageLayer from '@arcgis/core/layers/MapImageLayer';
 import Graphic from '@arcgis/core/Graphic';
 import LayerList from '@arcgis/core/widgets/LayerList';
 import IdentityManager from '@arcgis/core/identity/IdentityManager';
 import { Loader2 } from 'lucide-react';
 import { ARCGIS_SERVER_URL } from '../../config/geoprocessing';
+import { isTiledImageServerUrl } from '../Map/layers/tncArcgisLayer';
 import { createPreserveOutlineLayer } from '../Monitoring/internal/boundaryOutlineLayer';
 import {
   ANALYSIS_EXTENT_LAYER_ID,
@@ -72,7 +74,7 @@ export function ExperienceMap({
   const mapDivRef = useRef<HTMLDivElement | null>(null);
   const layerListRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<MapView | null>(null);
-  const previewLayersRef = useRef(new Map<string, ImageryLayer>());
+  const previewLayersRef = useRef(new Map<string, ImageryLayer | ImageryTileLayer>());
   const tokenRegisteredRef = useRef(false);
   const managesAnalysisExtentRef = useRef(analysisExtent != null);
   const [isReady, setIsReady] = useState(false);
@@ -294,11 +296,14 @@ export function ExperienceMap({
 
     if (!previewAction.url) return;
 
-    const layer = new ImageryLayer({
+    const layerOptions = {
       url: previewAction.url,
       title: previewAction.title || 'Preview',
       opacity: 0.7,
-    });
+    };
+    const layer = isTiledImageServerUrl(previewAction.url)
+      ? new ImageryTileLayer(layerOptions)
+      : new ImageryLayer(layerOptions);
     map.add(layer);
     previewLayersRef.current.set(key, layer);
     layer.when(() => {

@@ -3,14 +3,19 @@ import type { ActiveLayer, CatalogLayer } from '../../../types';
 import {
   fetchStations,
   fetchSummariesForStation,
+  fetchDatastreamTypeCatalog,
   buildServiceUrl,
   type DendraStation,
   type DendraSummary,
+  type DendraDatastreamType,
 } from '../../../services/dendraStationService';
+import { resolveDendraServiceTitle } from '../../../utils/resolveDendraServiceTitle';
 
 interface StationCacheEntry {
   stations: DendraStation[];
   summariesByStation: Map<number, DendraSummary[]>;
+  datastreamTypes: DendraDatastreamType[];
+  datastreamTypesLoaded: boolean;
 }
 
 interface UseDendraServiceCacheParams {
@@ -22,8 +27,11 @@ export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServic
   const cacheRef = useRef<Map<string, StationCacheEntry>>(new Map());
   const fetchingRef = useRef<Set<string>>(new Set());
   const summaryFetchingRef = useRef<Set<string>>(new Set());
+  const typeFetchingRef = useRef<Set<string>>(new Set());
   const [stations, setStations] = useState<DendraStation[]>([]);
   const [summariesByStation, setSummariesByStation] = useState<Map<number, DendraSummary[]>>(new Map());
+  const [datastreamTypes, setDatastreamTypes] = useState<DendraDatastreamType[]>([]);
+  const [datastreamTypesLoaded, setDatastreamTypesLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -36,7 +44,7 @@ export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServic
     const { serverBaseUrl, servicePath } = layer.catalogMeta;
     return {
       url: buildServiceUrl(serverBaseUrl, servicePath),
-      title: layer.name,
+      title: resolveDendraServiceTitle(layerMap, activeLayer.layerId) ?? layer.name,
     };
   }, [activeLayer, layerMap]);
 
@@ -46,27 +54,69 @@ export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServic
       setDataLoaded(false);
       setStations([]);
       setSummariesByStation(new Map());
+      setDatastreamTypes([]);
+      setDatastreamTypesLoaded(false);
       return;
     }
     const cached = cacheRef.current.get(serviceInfo.url);
     if (cached) {
       setStations(cached.stations);
       setSummariesByStation(new Map(cached.summariesByStation));
+      setDatastreamTypes(cached.datastreamTypes);
+      setDatastreamTypesLoaded(cached.datastreamTypesLoaded);
       setDataLoaded(true);
       setError(null);
     } else {
       setDataLoaded(false);
       setStations([]);
       setSummariesByStation(new Map());
+      setDatastreamTypes([]);
+      setDatastreamTypesLoaded(false);
     }
   }, [serviceInfo]);
+
+  const loadDatastreamTypes = useCallback((url: string, stationList: DendraStation[]) => {
+    if (typeFetchingRef.current.has(url)) return;
+    const cached = cacheRef.current.get(url);
+    if (cached?.datastreamTypesLoaded) {
+      setDatastreamTypes(cached.datastreamTypes);
+      setDatastreamTypesLoaded(true);
+      return;
+    }
+
+    typeFetchingRef.current.add(url);
+    const sampleIds = stationList.map((station) => station.station_id);
+    fetchDatastreamTypeCatalog(url, sampleIds)
+      .then((types) => {
+        typeFetchingRef.current.delete(url);
+        const current = cacheRef.current.get(url);
+        if (current) {
+          current.datastreamTypes = types;
+          current.datastreamTypesLoaded = true;
+        }
+        setDatastreamTypes(types);
+        setDatastreamTypesLoaded(true);
+        console.log(`[Dendra Cache] ✅ ${types.length} Latest-column datastream types`);
+      })
+      .catch((err) => {
+        typeFetchingRef.current.delete(url);
+        const current = cacheRef.current.get(url);
+        if (current) current.datastreamTypesLoaded = true;
+        setDatastreamTypesLoaded(true);
+        console.warn('[Dendra Cache] ⚠️ Datastream type catalog failed:', err);
+      });
+  }, []);
 
   // Warm cache: fetch stations only — map markers render immediately.
   const warmCache = useCallback(() => {
     if (!serviceInfo) return;
     const { url } = serviceInfo;
 
-    if (cacheRef.current.has(url) || fetchingRef.current.has(url)) return;
+    if (cacheRef.current.has(url) || fetchingRef.current.has(url)) {
+      const cached = cacheRef.current.get(url);
+      if (cached) loadDatastreamTypes(url, cached.stations);
+      return;
+    }
 
     fetchingRef.current.add(url);
     setLoading(true);
@@ -80,11 +130,17 @@ export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServic
         const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
         console.log(`[Dendra Cache] ✅ ${loadedStations.length} stations in ${elapsed}s`);
 
-        cacheRef.current.set(url, { stations: loadedStations, summariesByStation: new Map() });
+        cacheRef.current.set(url, {
+          stations: loadedStations,
+          summariesByStation: new Map(),
+          datastreamTypes: [],
+          datastreamTypesLoaded: false,
+        });
         fetchingRef.current.delete(url);
         setStations(loadedStations);
         setDataLoaded(true);
         setLoading(false);
+        loadDatastreamTypes(url, loadedStations);
       })
       .catch((err) => {
         console.error('[Dendra Cache] ❌ Station fetch failed:', err);
@@ -92,7 +148,7 @@ export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServic
         setError(err instanceof Error ? err.message : 'Failed to load Dendra stations');
         setLoading(false);
       });
-  }, [serviceInfo]);
+  }, [serviceInfo, loadDatastreamTypes]);
 
   // On-demand: fetch summaries for a single station when user drills in.
   const loadStationSummaries = useCallback((stationId: number) => {
@@ -113,8 +169,10 @@ export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServic
     console.log(`[Dendra Cache] 📡 Fetching summaries for station ${stationId}...`);
 
     const stationMeta = entry?.stations.find((station) => station.station_id === stationId);
+    const latestValueFields = (entry?.datastreamTypes ?? datastreamTypes).map((type) => type.fieldKey);
     fetchSummariesForStation(url, stationId, {
       categoryHint: stationMeta?.category ?? stationMeta?.sensor_name ?? null,
+      latestValueFields: latestValueFields.length > 0 ? latestValueFields : null,
     })
       .then((summaries) => {
         const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
@@ -137,7 +195,7 @@ export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServic
         summaryFetchingRef.current.delete(cacheKey);
         setStationSummaryLoading((prev) => (prev === stationId ? null : prev));
       });
-  }, [serviceInfo]);
+  }, [serviceInfo, datastreamTypes]);
 
   // Flatten summariesByStation into a single array for backward compat with useSummariesByStation()
   const allSummaries = useMemo(() => {
@@ -152,6 +210,8 @@ export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServic
     stations,
     allSummaries,
     summariesByStation,
+    datastreamTypes,
+    datastreamTypesLoaded,
     loading,
     error,
     dataLoaded,

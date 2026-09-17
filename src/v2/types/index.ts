@@ -148,6 +148,23 @@ export interface TNCArcGISViewFilters {
     operator: string;
     value: string;
   }>;
+  /** Multidimensional ImageServer variable (e.g. SSP126) */
+  imageryVariable?: string;
+  /** Dimension name (usually StdTime) */
+  imageryDimensionName?: string;
+  /** Selected dimension value (epoch ms for StdTime) */
+  imageryDimensionValue?: number;
+}
+
+/** Active multidimensional slice selection for an ImageServer layer */
+export interface ImagerySliceSelection {
+  layerId: string;
+  variableName: string;
+  dimensionName: string;
+  dimensionValue: number;
+  /** Optional stretch stats for raster rendering */
+  min?: number;
+  max?: number;
 }
 
 /** DataONE filter + detail state stored per pinned layer/view */

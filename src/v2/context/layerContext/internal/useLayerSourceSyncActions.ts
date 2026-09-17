@@ -291,6 +291,9 @@ export function useLayerSourceSyncActions(setPinnedLayers: SetPinnedLayers) {
               operator: filter.operator,
               value: filter.value,
             })),
+            imageryVariable: filters.imageryVariable,
+            imageryDimensionName: filters.imageryDimensionName,
+            imageryDimensionValue: filters.imageryDimensionValue,
           };
           const nextFilterCount = getTNCArcGISFilterCount(normalizedFilters);
           const nextFilterSummary = buildTNCArcGISFilterSummary(normalizedFilters);

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import * as reactiveUtils from '@arcgis/core/core/reactiveUtils';
-import type { CatalogLayer } from '../types';
+import type { CatalogLayer, ImagerySliceSelection } from '../types';
 import { useCatalog } from './CatalogContext';
 import { useLayers } from './LayerContext';
 import { useMap } from './MapContext';
@@ -22,6 +22,8 @@ interface TNCArcGISContextValue {
   isTableOverlayOpen: boolean;
   openTableOverlay: (layerId: string) => void;
   closeTableOverlay: () => void;
+  imagerySliceSelection: ImagerySliceSelection | null;
+  setImagerySliceSelection: (selection: ImagerySliceSelection | null) => void;
 }
 
 const TNCArcGISContext = createContext<TNCArcGISContextValue | null>(null);
@@ -53,6 +55,7 @@ export function TNCArcGISProvider({ children }: { children: ReactNode }) {
   const [isTableOverlayOpen, setIsTableOverlayOpen] = useState(false);
   const [isLayerRendering, setIsLayerRendering] = useState(false);
   const [renderPhase, setRenderPhase] = useState<'idle' | 'fetching-data' | 'rendering-features' | 'updating-view'>('idle');
+  const [imagerySliceSelection, setImagerySliceSelection] = useState<ImagerySliceSelection | null>(null);
 
   const activeLayerId = activeLayer?.dataSource === 'tnc-arcgis' ? activeLayer.layerId : null;
   const targetLayer = useMemo(
@@ -289,6 +292,8 @@ export function TNCArcGISProvider({ children }: { children: ReactNode }) {
     isTableOverlayOpen,
     openTableOverlay,
     closeTableOverlay,
+    imagerySliceSelection,
+    setImagerySliceSelection,
   }), [
     schemas,
     loadingByLayerId,
@@ -303,6 +308,7 @@ export function TNCArcGISProvider({ children }: { children: ReactNode }) {
     isTableOverlayOpen,
     openTableOverlay,
     closeTableOverlay,
+    imagerySliceSelection,
   ]);
 
   return (

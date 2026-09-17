@@ -1,6 +1,7 @@
 import type Layer from '@arcgis/core/layers/Layer';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import ImageryLayer from '@arcgis/core/layers/ImageryLayer';
+import ImageryTileLayer from '@arcgis/core/layers/ImageryTileLayer';
 import MapImageLayer from '@arcgis/core/layers/MapImageLayer';
 import type { CatalogLayer } from '../../../types';
 import { buildServiceRootUrl, buildServiceUrl } from '../../../services/tncArcgisService';
@@ -24,6 +25,14 @@ function buildImageServerServiceUrl(meta: NonNullable<CatalogLayer['catalogMeta'
   const base = sanitizeArcGisBaseUrl(meta.serverBaseUrl);
   const path = meta.servicePath.trim().replace(/^\/+/, '').replace(/\/+$/, '');
   return `${base}/${path}/ImageServer`;
+}
+
+/**
+ * Living Atlas / AGOL tiled ImageServers (e.g. CHELSA on tiledimageservices*)
+ * must use ImageryTileLayer — ImageryLayer cannot read their fused tile cache.
+ */
+export function isTiledImageServerUrl(url: string): boolean {
+  return /tiledimageservices/i.test(url);
 }
 
 function getFeatureLayerUrlCandidates(meta: NonNullable<CatalogLayer['catalogMeta']>): string[] {
@@ -208,11 +217,19 @@ export function createTNCArcGISLayer(options: {
     });
   }
 
-  // ImageServer layers render through ImageryLayer.
+  // ImageServer: tiled AGOL/Living Atlas → ImageryTileLayer; otherwise ImageryLayer.
   if (meta.hasImageServer) {
+    const url = buildImageServerServiceUrl(meta);
+    if (isTiledImageServerUrl(url) || isTiledImageServerUrl(meta.serverBaseUrl)) {
+      return new ImageryTileLayer({
+        id,
+        url,
+        visible,
+      });
+    }
     return new ImageryLayer({
       id,
-      url: buildImageServerServiceUrl(meta),
+      url,
       visible,
     });
   }

@@ -150,20 +150,24 @@ export function PinnedLayersSection({
   // Detect newly pinned layers and trigger slide-down animation
   useEffect(() => {
     const currentIds = new Set(layers.map(l => l.id));
-    
+
     // Find new layer IDs (present in current but not in previous)
     const newIds = layers.filter(l => !prevLayerIds.has(l.id)).map(l => l.id);
-    
+
     if (newIds.length > 0) {
       // New layer(s) were added - trigger animation for the first one
       const newId = newIds[0];
       setJustPinnedId(newId);
       setTimeout(() => setJustPinnedId(null), 400); // Match animation duration
+      setPrevLayerIds(currentIds);
+      return;
     }
-    
-    // Update previous IDs for next comparison
-    setPrevLayerIds(currentIds);
-  }, [layers]); // Remove prevLayerIds from dependencies to prevent infinite loop
+
+    // Only update prev IDs when membership actually changed (avoid Set identity churn).
+    if (currentIds.size !== prevLayerIds.size || [...currentIds].some((id) => !prevLayerIds.has(id))) {
+      setPrevLayerIds(currentIds);
+    }
+  }, [layers, prevLayerIds]);
 
   // Configure drag sensors
   const sensors = useSensors(

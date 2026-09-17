@@ -62,6 +62,9 @@ export function tncArcgisFiltersEqual(
   if (a === b) return true;
   if (!a || !b) return false;
   if (a.whereClause !== b.whereClause) return false;
+  if ((a.imageryVariable || '') !== (b.imageryVariable || '')) return false;
+  if ((a.imageryDimensionName || '') !== (b.imageryDimensionName || '')) return false;
+  if ((a.imageryDimensionValue ?? null) !== (b.imageryDimensionValue ?? null)) return false;
   const aFields = a.fields ?? [];
   const bFields = b.fields ?? [];
   if (aFields.length !== bFields.length) return false;

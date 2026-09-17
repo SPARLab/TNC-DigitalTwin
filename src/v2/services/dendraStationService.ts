@@ -46,6 +46,16 @@ export interface DendraSummary {
   avg_value: number | null;
 }
 
+/** A chartable value column discovered from the service Latest layer. */
+export interface DendraDatastreamType {
+  /** Latest-layer field name, e.g. `rainfall_cumulative`. */
+  fieldKey: string;
+  /** Human label, e.g. `Rainfall Cumulative`. */
+  label: string;
+  /** Cadence tag when known, e.g. `10 min` / `Daily`. */
+  frequencyLabel: string | null;
+}
+
 /** A single time-series reading: timestamp + value */
 export interface DendraTimeSeriesPoint {
   timestamp: number; // epoch ms
@@ -78,6 +88,7 @@ export function buildServiceUrl(serverBaseUrl: string, servicePath: string): str
 
 interface FeatureServerIndex {
   stationsLayerId: number;
+  latestLayerId: number | null;
 }
 
 const serviceIndexCache = new Map<string, FeatureServerIndex>();
@@ -89,9 +100,9 @@ const serviceIndexCache = new Map<string, FeatureServerIndex>();
  *   Table 2: * Data     (time series)
  * Older per-type services used Layer 0 for stations. Resolve by name first.
  */
-async function resolveStationsLayerId(serviceUrl: string): Promise<number> {
+async function resolveServiceIndex(serviceUrl: string): Promise<FeatureServerIndex> {
   const cached = serviceIndexCache.get(serviceUrl);
-  if (cached) return cached.stationsLayerId;
+  if (cached) return cached;
 
   const res = await fetch(`${serviceUrl}?f=json`);
   if (!res.ok) {
@@ -103,14 +114,29 @@ async function resolveStationsLayerId(serviceUrl: string): Promise<number> {
   }
 
   const layers: Array<{ id: number; name?: string }> = json.layers ?? [];
-  const byName = layers.find((layer) => /location|station/i.test(layer.name ?? ''));
-  const stationsLayerId = byName?.id ?? layers[0]?.id ?? 0;
-  serviceIndexCache.set(serviceUrl, { stationsLayerId });
+  const locations = layers.find((layer) => /location|station/i.test(layer.name ?? ''));
+  const latest = layers.find((layer) => /latest/i.test(layer.name ?? ''));
+  const stationsLayerId = locations?.id ?? layers[0]?.id ?? 0;
+  const index: FeatureServerIndex = {
+    stationsLayerId,
+    latestLayerId: latest?.id ?? null,
+  };
+  serviceIndexCache.set(serviceUrl, index);
   console.log(
-    `[Dendra] Resolved stations layer for ${serviceUrl} → ${stationsLayerId}` +
-      (byName?.name ? ` ("${byName.name}")` : ''),
+    `[Dendra] Resolved layers for ${serviceUrl} → stations=${stationsLayerId}` +
+      (locations?.name ? ` ("${locations.name}")` : '') +
+      `, latest=${index.latestLayerId ?? 'none'}` +
+      (latest?.name ? ` ("${latest.name}")` : ''),
   );
-  return stationsLayerId;
+  return index;
+}
+
+async function resolveStationsLayerId(serviceUrl: string): Promise<number> {
+  return (await resolveServiceIndex(serviceUrl)).stationsLayerId;
+}
+
+async function resolveLatestLayerId(serviceUrl: string): Promise<number | null> {
+  return (await resolveServiceIndex(serviceUrl)).latestLayerId;
 }
 
 /** Generic ArcGIS table/layer query */
@@ -216,17 +242,220 @@ export async function fetchStations(serviceUrl: string): Promise<DendraStation[]
 // Legacy monolithic service — datastream catalog + datapoints for charts.
 const V0_BASE = 'https://dangermondpreserve-spatial.com/server/rest/services/Dendra_Stations/FeatureServer';
 
+const LATEST_METADATA_FIELDS = new Set([
+  'objectid',
+  'station_id',
+  'station_name',
+  'latitude',
+  'longitude',
+  'elevation',
+  'category',
+  'latest_time',
+  'observed_at',
+  'shape',
+  'globalid',
+  'fid',
+  'id',
+  'sensor_id',
+  'unit',
+  'datastream_count',
+]);
+
+/** Snake_case key comparable to Latest layer value columns. */
+export function toLatestFieldKey(datastreamName: string): string {
+  return datastreamName
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
+/** Whether a legacy datastream name maps to a Latest value column. */
+export function datastreamMatchesLatestField(
+  datastreamName: string,
+  fieldKey: string,
+  allFieldKeys: string[] = [],
+): boolean {
+  const resolved = resolveLatestFieldForDatastream(
+    datastreamName,
+    allFieldKeys.length > 0 ? allFieldKeys : [fieldKey],
+  );
+  return resolved != null && resolved.toLowerCase() === fieldKey.trim().toLowerCase();
+}
+
+/**
+ * Map a datastream display name onto the best (longest) Latest column.
+ * e.g. "Ranchbot Cumulative Daily Rainfall" → cumulative_daily_rainfall
+ *      "Rainfall" → rainfall (not rainfall_cumulative)
+ */
+export function resolveLatestFieldForDatastream(
+  datastreamName: string,
+  fieldKeys: string[],
+): string | null {
+  const column = toLatestFieldKey(datastreamName);
+  if (!column) return null;
+  const sorted = [...fieldKeys]
+    .map((field) => field.trim().toLowerCase())
+    .filter(Boolean)
+    .sort((a, b) => b.length - a.length);
+
+  for (const field of sorted) {
+    if (column === field) return field;
+    if (column.endsWith(`_${field}`)) return field;
+  }
+  return null;
+}
+
+/** Title-case a Latest field for UI labels. */
+export function prettifyLatestField(fieldKey: string): string {
+  return fieldKey
+    .split('_')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function inferFrequencyFromText(...parts: Array<string | null | undefined>): string | null {
+  const text = parts.filter(Boolean).join(' ').toLowerCase();
+  if (!text) return null;
+  if (/\bdaily\b/.test(text)) return 'Daily';
+  if (/\bhourly\b/.test(text)) return 'Hourly';
+  if (/\b15[\s-]?min/.test(text)) return '15 min';
+  if (/\b10[\s-]?min/.test(text)) return '10 min';
+  if (/\b5[\s-]?min/.test(text)) return '5 min';
+  if (/\b30[\s-]?min/.test(text)) return '30 min';
+  return null;
+}
+
+function formatIntervalMinutes(medianMin: number): string {
+  if (medianMin >= 1300 && medianMin <= 1560) return 'Daily';
+  if (medianMin >= 50 && medianMin <= 70) return 'Hourly';
+  if (medianMin < 90) return `${Math.max(1, Math.round(medianMin))} min`;
+  if (medianMin < 1440) {
+    const hours = Math.round(medianMin / 60);
+    return hours === 1 ? 'Hourly' : `${hours} hr`;
+  }
+  const days = Math.round(medianMin / 1440);
+  return days === 1 ? 'Daily' : `${days} day`;
+}
+
+async function estimateFrequencyFromDatapoints(datastreamId: number): Promise<string | null> {
+  try {
+    const url =
+      `${V0_BASE}/4/query?where=${encodeURIComponent(`datastream_id=${datastreamId}`)}` +
+      '&outFields=timestamp_utc&orderByFields=timestamp_utc%20DESC&resultRecordCount=6&returnGeometry=false&f=json';
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const json = await res.json();
+    const times = (json.features ?? [])
+      .map((feature: { attributes?: { timestamp_utc?: number } }) => feature.attributes?.timestamp_utc)
+      .filter((value: unknown): value is number => typeof value === 'number' && Number.isFinite(value));
+    if (times.length < 2) return null;
+    const deltasMin: number[] = [];
+    for (let i = 0; i < times.length - 1; i += 1) {
+      const delta = (times[i]! - times[i + 1]!) / 60_000;
+      if (delta > 0 && delta < 60 * 24 * 40) deltasMin.push(delta);
+    }
+    if (deltasMin.length === 0) return null;
+    deltasMin.sort((a, b) => a - b);
+    const median = deltasMin[Math.floor(deltasMin.length / 2)]!;
+    return formatIntervalMinutes(median);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Discover chartable datastream types from the service's Latest layer columns,
+ * then enrich with cadence by matching legacy Datastreams rows.
+ */
+export async function fetchDatastreamTypeCatalog(
+  serviceUrl: string,
+  sampleStationIds: number[] = [],
+): Promise<DendraDatastreamType[]> {
+  const latestLayerId = await resolveLatestLayerId(serviceUrl);
+  if (latestLayerId == null) return [];
+
+  const metaRes = await fetch(`${serviceUrl}/${latestLayerId}?f=json`);
+  if (!metaRes.ok) {
+    throw new Error(`Latest layer metadata failed: HTTP ${metaRes.status}`);
+  }
+  const meta = await metaRes.json();
+  if (meta.error) {
+    throw new Error(`Latest layer metadata error: ${meta.error.message}`);
+  }
+
+  const fields: Array<{ name?: string; type?: string }> = meta.fields ?? [];
+  const fieldKeys = fields
+    .filter((field) => {
+      const name = (field.name ?? '').trim();
+      if (!name || LATEST_METADATA_FIELDS.has(name.toLowerCase())) return false;
+      return /esriFieldType(Double|Single|Integer|SmallInteger)/i.test(field.type ?? '');
+    })
+    .map((field) => (field.name ?? '').trim())
+    .filter(Boolean);
+
+  if (fieldKeys.length === 0) return [];
+
+  type CatalogRow = {
+    id: number;
+    name: string;
+    description: string | null;
+  };
+  const sampleIds = sampleStationIds.filter((id) => Number.isFinite(id)).slice(0, 8);
+  const catalogRows: CatalogRow[] = [];
+  for (const stationId of sampleIds) {
+    const rows = await queryTable<{
+      id: number;
+      name: string;
+      description: string | null;
+    }>(V0_BASE, 3, {
+      where: `station_id=${stationId}`,
+      outFields: ['id', 'name', 'description'],
+      returnGeometry: false,
+      resultRecordCount: 500,
+    });
+    catalogRows.push(...rows);
+  }
+
+  const types: DendraDatastreamType[] = [];
+  for (const fieldKey of fieldKeys) {
+    const matches = catalogRows.filter((row) =>
+      datastreamMatchesLatestField(row.name, fieldKey, fieldKeys),
+    );
+    const representative = matches[0];
+    let frequencyLabel = inferFrequencyFromText(
+      representative?.name,
+      representative?.description,
+    );
+    if (!frequencyLabel && representative?.id != null) {
+      frequencyLabel = await estimateFrequencyFromDatapoints(representative.id);
+    }
+    types.push({
+      fieldKey,
+      label: prettifyLatestField(fieldKey),
+      frequencyLabel,
+    });
+  }
+
+  return types.sort((a, b) => a.label.localeCompare(b.label));
+}
+
 /**
  * Fetch datastream summaries for a station.
  *
  * New `_Datastreams` FeatureServers no longer publish a Summary table — Table 2
  * is raw time-series Data. List datastreams from the legacy Dendra_Stations
- * service (same bridge used for chart points), optionally narrowed by category.
+ * service (same bridge used for chart points), optionally narrowed to Latest
+ * value columns (preferred) or a category token hint.
  */
 export async function fetchSummariesForStation(
   _serviceUrl: string,
   stationId: number,
-  options?: { categoryHint?: string | null },
+  options?: {
+    categoryHint?: string | null;
+    latestValueFields?: string[] | null;
+  },
 ): Promise<DendraSummary[]> {
   const rows = await queryTable<{
     id: number;
@@ -242,17 +471,40 @@ export async function fetchSummariesForStation(
     resultRecordCount: 500,
   });
 
-  const hint = options?.categoryHint?.trim().toLowerCase();
-  const filtered = hint
-    ? rows.filter((row) => {
-        const haystack = `${row.name ?? ''} ${row.variable ?? ''}`.toLowerCase();
-        // "Humidity" → humid; "Air Temperature" → air/temp; "Wind" → wind
-        const tokens = hint.split(/[^a-z0-9]+/).filter((token) => token.length >= 3);
-        return tokens.some((token) => haystack.includes(token));
-      })
-    : rows;
+  const valueFields = (options?.latestValueFields ?? [])
+    .map((field) => field.trim().toLowerCase())
+    .filter(Boolean);
 
-  const sourceRows = filtered.length > 0 ? filtered : rows;
+  let sourceRows = rows;
+  if (valueFields.length > 0) {
+    const matched = rows.filter((row) =>
+      valueFields.some((field) => datastreamMatchesLatestField(row.name, field, valueFields)),
+    );
+    if (matched.length > 0) {
+      sourceRows = matched;
+    } else {
+      // Fall back to category token filter when Latest fields don't match names.
+      const hint = options?.categoryHint?.trim().toLowerCase();
+      if (hint) {
+        const tokens = hint.split(/[^a-z0-9]+/).filter((token) => token.length >= 3);
+        const byHint = rows.filter((row) => {
+          const haystack = `${row.name ?? ''} ${row.variable ?? ''}`.toLowerCase();
+          return tokens.some((token) => haystack.includes(token));
+        });
+        if (byHint.length > 0) sourceRows = byHint;
+      }
+    }
+  } else {
+    const hint = options?.categoryHint?.trim().toLowerCase();
+    if (hint) {
+      const tokens = hint.split(/[^a-z0-9]+/).filter((token) => token.length >= 3);
+      const filtered = rows.filter((row) => {
+        const haystack = `${row.name ?? ''} ${row.variable ?? ''}`.toLowerCase();
+        return tokens.some((token) => haystack.includes(token));
+      });
+      if (filtered.length > 0) sourceRows = filtered;
+    }
+  }
 
   return sourceRows.map((row) => ({
     datastream_id: row.id,
@@ -412,10 +664,24 @@ export async function fetchTimeSeries(
 
 /** Derive the Table 1 column name from a datastream name (e.g., "Air Temp Avg" → "air_temp_avg") */
 export function toColumnName(datastreamName: string): string {
-  return datastreamName.trim().toLowerCase().replace(/\s+/g, '_');
+  return normalizeDatastreamTypeName(datastreamName).toLowerCase().replace(/\s+/g, '_');
 }
 
 // ── Formatting ───────────────────────────────────────────────────────────────
+
+/**
+ * Collapse whitespace in datastream names for type pickers / matching.
+ * Source data sometimes publishes near-duplicates like "Rainfall Cumulative"
+ * vs "Rainfall  Cumulative" (double space).
+ */
+export function normalizeDatastreamTypeName(name: string | null | undefined): string {
+  return (name ?? '').trim().replace(/\s+/g, ' ');
+}
+
+/** Case-insensitive key for comparing datastream type names. */
+export function datastreamTypeKey(name: string | null | undefined): string {
+  return normalizeDatastreamTypeName(name).toLowerCase();
+}
 
 /** Normalize station names for display (e.g., "dangermond_Oaks" -> "Oaks"). */
 export function formatStationDisplayName(stationName: string | null | undefined): string {

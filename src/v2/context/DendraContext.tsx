@@ -22,7 +22,7 @@ import {
 } from 'react';
 import { useLayers } from './LayerContext';
 import { useCatalog } from './CatalogContext';
-import type { DendraStation, DendraSummary } from '../services/dendraStationService';
+import type { DendraStation, DendraSummary, DendraDatastreamType } from '../services/dendraStationService';
 import { useDendraServiceCache } from './dendraContext/internal/useDendraServiceCache';
 import { useDendraStationFilters } from './dendraContext/internal/useDendraStationFilters';
 import { useDendraChartPanels } from './dendraContext/internal/useDendraChartPanels';
@@ -37,6 +37,8 @@ export type {
 interface DendraContextValue {
   stations: DendraStation[];
   summaries: DendraSummary[];
+  datastreamTypes: DendraDatastreamType[];
+  datastreamTypesLoaded: boolean;
   stationCount: number;
   activeLayerTitle: string | null;
   activeServiceUrl: string | null;
@@ -77,6 +79,8 @@ export function DendraProvider({ children }: { children: ReactNode }) {
   const {
     stations,
     allSummaries,
+    datastreamTypes,
+    datastreamTypesLoaded,
     loading,
     error,
     dataLoaded,
@@ -111,6 +115,8 @@ export function DendraProvider({ children }: { children: ReactNode }) {
   const value = useMemo<DendraContextValue>(() => ({
     stations,
     summaries: allSummaries,
+    datastreamTypes,
+    datastreamTypesLoaded,
     stationCount: stations.length,
     activeLayerTitle: serviceInfo?.title ?? null,
     activeServiceUrl: serviceInfo?.url ?? null,
@@ -135,6 +141,8 @@ export function DendraProvider({ children }: { children: ReactNode }) {
   }), [
     stations,
     allSummaries,
+    datastreamTypes,
+    datastreamTypesLoaded,
     serviceInfo,
     loading,
     error,

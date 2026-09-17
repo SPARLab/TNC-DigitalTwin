@@ -6,6 +6,7 @@ import { fetchLayerLegend, type ArcGISLegendItem, type ArcGISLayerLegend } from 
 import type { CatalogLayer } from '../../../types';
 import { SelectAllClearAllActions } from '../../shared/SelectAllClearAllActions';
 import { getNhdPlusFlowlineLegend, isNhdPlusFlowlinesLayer } from '../../Map/layers/nhdPlusFlowlinesStyle';
+import { useTNCArcGIS } from '../../../context/TNCArcGISContext';
 
 function getTargetLayer(activeLayer: CatalogLayer | undefined, selectedSubLayerId: string | undefined): CatalogLayer | null {
   if (!activeLayer) return null;
@@ -66,13 +67,19 @@ export function TNCArcGISLegendWidget() {
   const [legendData, setLegendData] = useState<ArcGISLayerLegend | null>(null);
   const [selectedLegendValues, setSelectedLegendValues] = useState<Array<string | number>>([]);
 
-  const { activeLayer, syncTNCArcGISFilters, isLayerPinned, pinLayer } = useLayers();
+  const { activeLayer, syncTNCArcGISFilters, isLayerPinned, pinLayer, getPinnedByLayerId } = useLayers();
   const { layerMap } = useCatalog();
+  const { imagerySliceSelection } = useTNCArcGIS();
   const activeCatalogLayer = activeLayer ? layerMap.get(activeLayer.layerId) : undefined;
   const targetLayer = useMemo(
     () => getTargetLayer(activeCatalogLayer, activeLayer?.selectedSubLayerId),
     [activeCatalogLayer, activeLayer?.selectedSubLayerId],
   );
+  const imageryVariable = (
+    imagerySliceSelection?.layerId === targetLayer?.id
+      ? imagerySliceSelection.variableName
+      : getPinnedByLayerId(targetLayer?.id ?? '')?.tncArcgisFilters?.imageryVariable
+  ) || undefined;
 
   useEffect(() => {
     let cancelled = false;
@@ -87,7 +94,7 @@ export function TNCArcGISLegendWidget() {
       try {
         const legend = isNhdPlusFlowlinesLayer(targetLayer)
           ? getNhdPlusFlowlineLegend()
-          : await fetchLayerLegend(targetLayer.catalogMeta);
+          : await fetchLayerLegend(targetLayer.catalogMeta, { variableName: imageryVariable });
         if (cancelled) return;
         setLegendData(legend);
         if (!legend || legend.items.length === 0) {
@@ -103,7 +110,7 @@ export function TNCArcGISLegendWidget() {
     }
     void loadLegend();
     return () => { cancelled = true; };
-  }, [targetLayer]);
+  }, [targetLayer, imageryVariable]);
 
   useEffect(() => {
     setSelectedLegendValues([]);
@@ -130,9 +137,16 @@ export function TNCArcGISLegendWidget() {
   useEffect(() => {
     if (!targetLayer || !canFilterByLegend || !legendData?.filterField) return;
     const whereClause = buildLegendWhereClause(legendData.filterField, selectedLegendValues);
+    const existing = getPinnedByLayerId(targetLayer.id)?.tncArcgisFilters;
     syncTNCArcGISFilters(
       targetLayer.id,
-      { whereClause, fields: [] },
+      {
+        whereClause,
+        fields: [],
+        imageryVariable: existing?.imageryVariable,
+        imageryDimensionName: existing?.imageryDimensionName,
+        imageryDimensionValue: existing?.imageryDimensionValue,
+      },
       undefined,
       // Legend filtering is a map-level interaction, so keep the root
       // TNC ArcGIS filter state in sync (map layer definitionExpression reads root).
@@ -145,6 +159,7 @@ export function TNCArcGISLegendWidget() {
     selectedLegendValues,
     syncTNCArcGISFilters,
     targetLayer,
+    getPinnedByLayerId,
   ]);
 
   if (!activeLayer || activeLayer.dataSource !== 'tnc-arcgis' || !targetLayer) return null;

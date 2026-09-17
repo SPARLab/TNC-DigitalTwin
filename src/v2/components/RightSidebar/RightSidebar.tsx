@@ -16,6 +16,7 @@ export function RightSidebar() {
   const { activeLayer, activateLayer, lastEditFiltersRequest, lastBrowseTabRequest } = useLayers();
   const [activeTab, setActiveTab] = useState<SidebarTab>('overview');
   const [lastTabByLayerId, setLastTabByLayerId] = useState<Record<string, SidebarTab>>({});
+  const [browseMountedByLayer, setBrowseMountedByLayer] = useState<Record<string, boolean>>({});
   const [isInspectBrowseFlow, setIsInspectBrowseFlow] = useState(false);
   const consumedRequestRef = useRef(0);
   const consumedBrowseRef = useRef(0);
@@ -32,6 +33,15 @@ export function RightSidebar() {
   // Look up the adapter for the active layer's data source
   const adapter = getAdapterForActiveLayer(activeLayer);
   const showBrowseTab = true;
+  const browseMounted = Boolean(activeLayer && browseMountedByLayer[activeLayer.layerId]);
+
+  useEffect(() => {
+    if (activeTab !== 'browse' || !activeLayer) return;
+    setBrowseMountedByLayer((prev) => {
+      if (prev[activeLayer.layerId]) return prev;
+      return { ...prev, [activeLayer.layerId]: true };
+    });
+  }, [activeTab, activeLayer]);
 
   const updateScrollThumb = useCallback(() => {
     const scrollEl = scrollAreaRef.current;
@@ -66,12 +76,22 @@ export function RightSidebar() {
     }, 650);
   }, [updateScrollThumb]);
 
+  const markBrowseMounted = useCallback((layerId: string | undefined) => {
+    if (!layerId) return;
+    setBrowseMountedByLayer((prev) => {
+      if (prev[layerId]) return prev;
+      return { ...prev, [layerId]: true };
+    });
+  }, []);
+
   const handleSystemTabChange = useCallback((tab: SidebarTab) => {
     if (tab !== 'browse') {
       setIsInspectBrowseFlow(false);
+    } else {
+      markBrowseMounted(activeLayer?.layerId);
     }
     setActiveTab(tab);
-  }, []);
+  }, [activeLayer?.layerId, markBrowseMounted]);
 
   const handleUserTabChange = useCallback((tab: SidebarTab) => {
     // DataONE map clicks set featureId to open detail. If the user manually
@@ -83,19 +103,22 @@ export function RightSidebar() {
     ) {
       activateLayer(activeLayer.layerId, activeLayer.viewId, undefined);
     }
+    if (tab === 'browse') markBrowseMounted(activeLayer?.layerId);
     setIsInspectBrowseFlow(false);
     setActiveTab(tab);
-  }, [activeLayer, activateLayer]);
+  }, [activeLayer, activateLayer, markBrowseMounted]);
 
   const handleOverviewBrowseClick = useCallback(() => {
     setIsInspectBrowseFlow(false);
+    markBrowseMounted(activeLayer?.layerId);
     setActiveTab('browse');
-  }, []);
+  }, [activeLayer?.layerId, markBrowseMounted]);
 
   const handleOverviewInspectBrowseClick = useCallback(() => {
     setIsInspectBrowseFlow(true);
+    markBrowseMounted(activeLayer?.layerId);
     setActiveTab('browse');
-  }, []);
+  }, [activeLayer?.layerId, markBrowseMounted]);
 
   // Task 22: Restore last active tab per layer on reactivation.
   // First visit still defaults to Overview (DFT-006).
@@ -107,6 +130,11 @@ export function RightSidebar() {
     if (!currentLayerId) return;
 
     const restoredTab = lastTabByLayerId[currentLayerId] ?? 'overview';
+    if (restoredTab === 'browse') {
+      setBrowseMountedByLayer((prev) => (
+        prev[currentLayerId] ? prev : { ...prev, [currentLayerId]: true }
+      ));
+    }
     setActiveTab(restoredTab);
     setShouldFlash(true);
     const timer = window.setTimeout(() => setShouldFlash(false), 600);
@@ -202,22 +230,32 @@ export function RightSidebar() {
               role="tabpanel"
             >
               {adapter ? (
-                activeTab === 'overview' ? (
-                  <adapter.OverviewTab
-                    onBrowseClick={handleOverviewBrowseClick}
-                    onInspectBrowseClick={handleOverviewInspectBrowseClick}
-                  />
-                ) : showBrowseTab ? (
-                  <adapter.BrowseTab
-                    showBackToOverview={activeLayer.dataSource === 'tnc-arcgis' || isInspectBrowseFlow}
-                    onBackToOverview={() => handleSystemTabChange('overview')}
-                  />
-                ) : (
-                  <adapter.OverviewTab
-                    onBrowseClick={handleOverviewBrowseClick}
-                    onInspectBrowseClick={handleOverviewInspectBrowseClick}
-                  />
-                )
+                <>
+                  <div
+                    id="right-sidebar-overview-panel"
+                    className={activeTab === 'overview' || !showBrowseTab ? 'block' : 'hidden'}
+                    aria-hidden={activeTab !== 'overview' && showBrowseTab}
+                  >
+                    <adapter.OverviewTab
+                      key={`overview-${activeLayer.layerId}`}
+                      onBrowseClick={handleOverviewBrowseClick}
+                      onInspectBrowseClick={handleOverviewInspectBrowseClick}
+                    />
+                  </div>
+                  {showBrowseTab && browseMounted && (
+                    <div
+                      id="right-sidebar-browse-panel"
+                      className={activeTab === 'browse' ? 'block' : 'hidden'}
+                      aria-hidden={activeTab !== 'browse'}
+                    >
+                      <adapter.BrowseTab
+                        key={`browse-${activeLayer.layerId}`}
+                        showBackToOverview={activeLayer.dataSource === 'tnc-arcgis' || isInspectBrowseFlow}
+                        onBackToOverview={() => handleSystemTabChange('overview')}
+                      />
+                    </div>
+                  )}
+                </>
               ) : (
                 /* Generic placeholder for unimplemented data sources */
                 activeTab === 'overview' ? (
