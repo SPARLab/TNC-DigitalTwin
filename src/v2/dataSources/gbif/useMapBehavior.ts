@@ -5,12 +5,18 @@ import * as webMercatorUtils from '@arcgis/core/geometry/support/webMercatorUtil
 import type { ActiveLayer, PinnedLayer } from '../../types';
 import { useGBIFFilter } from '../../context/GBIFFilterContext';
 import { useLayers } from '../../context/LayerContext';
+import { useCatalog } from '../../context/CatalogContext';
 import { gbifService } from '../../../services/gbifService';
 import { useMap } from '../../context/MapContext';
 import { buildGBIFFeatureReductionForScale, getGBIFBinningLevelForScale } from '../../components/Map/layers/gbifLayer';
+import { registerGBIFLayerId } from '../../components/Map/layers';
 import { goToMarkerWithSmartZoom } from '../../utils/mapMarkerNavigation';
 
-const GBIF_LAYER_IDS = new Set(['dataset-178', 'dataset-215']);
+function isGBIFLayerId(layerId: string, layerMap: Map<string, { dataSource: string }>): boolean {
+  return layerMap.get(layerId)?.dataSource === 'gbif'
+    || layerId === 'dataset-178'
+    || layerId === 'dataset-215';
+}
 
 function getSamplingModuloForScale(scale: number): number {
   // Coarser sampling when zoomed out keeps cluster rendering responsive at 300k+ records.
@@ -78,12 +84,17 @@ export function useGBIFMapBehavior(
 ) {
   const { browseFilters, aggregationMode, warmCache } = useGBIFFilter();
   const { activateLayer } = useLayers();
+  const { layerMap } = useCatalog();
   const { viewRef } = useMap();
 
-  const activeGbifLayerId = activeLayer && GBIF_LAYER_IDS.has(activeLayer.layerId)
+  for (const [layerId, layer] of layerMap.entries()) {
+    if (layer.dataSource === 'gbif') registerGBIFLayerId(layerId);
+  }
+
+  const activeGbifLayerId = activeLayer && isGBIFLayerId(activeLayer.layerId, layerMap)
     ? activeLayer.layerId
     : null;
-  const pinnedGbifLayerId = pinnedLayers.find((layer) => GBIF_LAYER_IDS.has(layer.layerId))?.layerId ?? null;
+  const pinnedGbifLayerId = pinnedLayers.find((layer) => isGBIFLayerId(layer.layerId, layerMap))?.layerId ?? null;
   const targetLayerId = activeGbifLayerId ?? pinnedGbifLayerId;
   const isOnMap = !!targetLayerId;
 
@@ -106,6 +117,7 @@ export function useGBIFMapBehavior(
       datasetName: browseFilters.datasetName || undefined,
       startDate: browseFilters.startDate || undefined,
       endDate: browseFilters.endDate || undefined,
+      speciesLevelOnly: browseFilters.speciesLevelOnly,
     });
 
     const updateDefinitionExpression = () => {
@@ -176,15 +188,15 @@ export function useGBIFMapBehavior(
           (result) =>
             result.type === 'graphic'
             && typeof result.graphic.layer?.id === 'string'
-            && GBIF_LAYER_IDS.has(result.graphic.layer.id.replace(/^v2-/, '')),
+            && isGBIFLayerId(result.graphic.layer.id.replace(/^v2-/, ''), layerMap),
         );
         if (!graphicHit || graphicHit.type !== 'graphic') return;
 
         const occurrenceId = graphicHit.graphic.attributes?.id as number | undefined;
         if (!occurrenceId) return;
         const layerId = String(graphicHit.graphic.layer?.id ?? '').replace(/^v2-/, '');
-        const gbifLayerId = GBIF_LAYER_IDS.has(layerId) ? layerId : 'dataset-215';
-        const nextViewId = activeLayer && GBIF_LAYER_IDS.has(activeLayer.layerId)
+        const gbifLayerId = isGBIFLayerId(layerId, layerMap) ? layerId : 'dataset-215';
+        const nextViewId = activeLayer && isGBIFLayerId(activeLayer.layerId, layerMap)
           ? activeLayer.viewId
           : undefined;
         activateLayer(gbifLayerId, nextViewId, occurrenceId);
@@ -208,5 +220,5 @@ export function useGBIFMapBehavior(
     });
 
     return () => handler.remove();
-  }, [isOnMap, viewRef, activateLayer, activeLayer, mapReady]);
+  }, [isOnMap, viewRef, activateLayer, activeLayer, mapReady, layerMap]);
 }

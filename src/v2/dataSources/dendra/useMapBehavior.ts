@@ -3,7 +3,8 @@
 // sensor services. Unlike iNaturalist (single layer), Dendra has 10 possible
 // layers. This hook handles any combination of pinned + active Dendra layers.
 //
-// Called unconditionally by useAllMapBehaviors (React hooks rules).
+// Locations sublayers: green/gray station dots.
+// Latest sublayers: monitoring-style value label badges.
 // ============================================================================
 
 import { useEffect, useRef } from 'react';
@@ -14,9 +15,16 @@ import { useCatalog } from '../../context/CatalogContext';
 import { useLayers } from '../../context/LayerContext';
 import { useMap } from '../../context/MapContext';
 import { populateDendraLayer, filterDendraLayer } from '../../components/Map/layers/dendraLayer';
+import { populateDendraLatestLabels } from '../../components/Map/layers/dendraLatestLabels';
 import { registerDendraLayerId, isDendraLayer } from '../../components/Map/layers';
 import type { PinnedLayer, ActiveLayer } from '../../types';
 import { goToMarkerWithSmartZoom } from '../../utils/mapMarkerNavigation';
+import {
+  isDendraLatestCatalogLayer,
+  resolveDendraServiceTitle,
+} from '../../utils/resolveDendraServiceTitle';
+import { buildServiceUrl } from '../../services/dendraStationService';
+import { getConcreteActiveLayerId } from '../../components/Map/mapLayers/internal/mapLayerSyncHelpers';
 
 export function useDendraMapBehavior(
   getManagedLayer: (layerId: string) => Layer | undefined,
@@ -24,7 +32,7 @@ export function useDendraMapBehavior(
   activeLayer: ActiveLayer | null,
   mapReady: number,
 ) {
-  const { stations, dataLoaded, warmCache, showActiveOnly } = useDendra();
+  const { stations, dataLoaded, warmCache, showActiveOnly, activeServiceUrl } = useDendra();
   const { activateLayer } = useLayers();
   const {
     getSpatialPolygonForLayer,
@@ -35,6 +43,7 @@ export function useDendraMapBehavior(
   } = useMap();
   const { layerMap } = useCatalog();
   const populatedRef = useRef<Set<string>>(new Set());
+  const latestRequestRef = useRef(0);
 
   // Register all Dendra layer IDs from the catalog SYNCHRONOUSLY during render.
   // This must happen before useMapLayers' core effects check IMPLEMENTED_LAYERS
@@ -56,6 +65,12 @@ export function useDendraMapBehavior(
     : null;
 
   const hasAnyDendraOnMap = dendraLayerIds.size > 0;
+  const activeCatalogLayer = (() => {
+    if (activeLayer?.dataSource !== 'dendra') return undefined;
+    const concreteId = getConcreteActiveLayerId(activeLayer, layerMap) ?? activeLayer.layerId;
+    return layerMap.get(concreteId);
+  })();
+  const activeIsLatest = isDendraLatestCatalogLayer(activeCatalogLayer);
 
   // Warm cache when any Dendra layer appears on map
   useEffect(() => {
@@ -67,31 +82,94 @@ export function useDendraMapBehavior(
   // only returns data for the ACTIVE layer. So we can ONLY populate the active
   // layer, not pinned ones (they would get stale/wrong data).
   useEffect(() => {
-    if (!dataLoaded || !activeLayer || !isDendraLayer(activeLayer.layerId)) return;
+    if (!activeLayer || activeLayer.dataSource !== 'dendra') return;
+    if (!isDendraLayer(activeLayer.layerId) && !activeLayer.isService) return;
 
-    const activeLayerId = activeLayer.layerId;
-    const arcLayer = getManagedLayer(activeLayerId);
+    const concreteLayerId = getConcreteActiveLayerId(activeLayer, layerMap) ?? activeLayer.layerId;
+    if (!isDendraLayer(concreteLayerId)) return;
+
+    const arcLayer = getManagedLayer(concreteLayerId);
     if (!arcLayer || !(arcLayer instanceof GraphicsLayer)) return;
 
-    // Always repopulate when data changes (handles layer switching)
-    const spatialPolygon = getSpatialPolygonForLayer(activeLayerId);
+    const catalogLayer = layerMap.get(concreteLayerId);
+    const spatialPolygon = getSpatialPolygonForLayer(concreteLayerId);
+
+    if (isDendraLatestCatalogLayer(catalogLayer)) {
+      const meta = catalogLayer?.catalogMeta;
+      if (!meta?.servicePath || meta.layerIdInService == null) return;
+
+      const serviceUrl = activeServiceUrl
+        ?? (meta.serverBaseUrl
+          ? buildServiceUrl(meta.serverBaseUrl, meta.servicePath)
+          : null);
+      if (!serviceUrl) return;
+
+      const requestId = ++latestRequestRef.current;
+      const title = resolveDendraServiceTitle(layerMap, concreteLayerId) ?? catalogLayer?.name ?? 'Latest';
+
+      void populateDendraLatestLabels(arcLayer, {
+        serviceUrl,
+        servicePath: meta.servicePath,
+        latestLayerId: meta.layerIdInService,
+        title,
+      })
+        .then(() => {
+          if (latestRequestRef.current !== requestId) return;
+          populatedRef.current.add(concreteLayerId);
+        })
+        .catch((error) => {
+          console.warn('[Dendra Map] Latest labels failed; falling back to stations', error);
+          if (latestRequestRef.current !== requestId) return;
+          if (dataLoaded) {
+            populateDendraLayer(arcLayer, stations);
+            filterDendraLayer(arcLayer, showActiveOnly, spatialPolygon);
+            populatedRef.current.add(concreteLayerId);
+          }
+        });
+      return;
+    }
+
+    if (!dataLoaded) return;
     populateDendraLayer(arcLayer, stations);
     filterDendraLayer(arcLayer, showActiveOnly, spatialPolygon);
-    populatedRef.current.add(activeLayerId);
-  }, [dataLoaded, stations, showActiveOnly, getSpatialPolygonForLayer, getManagedLayer, mapReady, activeLayer, activeLayerSpatialPolygon]); // eslint-disable-line react-hooks/exhaustive-deps
+    populatedRef.current.add(concreteLayerId);
+  }, [
+    dataLoaded,
+    stations,
+    showActiveOnly,
+    getSpatialPolygonForLayer,
+    getManagedLayer,
+    mapReady,
+    activeLayer,
+    activeLayerSpatialPolygon,
+    layerMap,
+    activeServiceUrl,
+    activeIsLatest,
+  ]);
 
-  // Update filter when showActiveOnly changes
+  // Update filter when showActiveOnly changes (Locations dots only)
   useEffect(() => {
+    if (activeIsLatest) return;
     for (const layerId of populatedRef.current) {
       const arcLayer = getManagedLayer(layerId);
       if (!arcLayer || !(arcLayer instanceof GraphicsLayer)) continue;
+      const catalogLayer = layerMap.get(layerId);
+      if (isDendraLatestCatalogLayer(catalogLayer)) continue;
       const spatialPolygon = getSpatialPolygonForLayer(layerId);
       filterDendraLayer(arcLayer, showActiveOnly, spatialPolygon);
     }
-  }, [showActiveOnly, getSpatialPolygonForLayer, getManagedLayer, activeLayer?.layerId, activeLayerSpatialPolygon]);
+  }, [
+    showActiveOnly,
+    getSpatialPolygonForLayer,
+    getManagedLayer,
+    activeLayer?.layerId,
+    activeLayerSpatialPolygon,
+    activeIsLatest,
+    layerMap,
+  ]);
 
   // Map click handler: clicking a Dendra station marker activates its layer
-  // and opens the station detail flow in the right sidebar.
+  // and opens the station selection flow in the right sidebar.
   useEffect(() => {
     if (!hasAnyDendraOnMap || !dataLoaded) return;
     const view = viewRef.current;
@@ -110,16 +188,17 @@ export function useDendraMapBehavior(
         );
         if (!graphicHit || graphicHit.type !== 'graphic') return;
 
-        const stationId = graphicHit.graphic.attributes?.station_id as number | undefined;
-        if (stationId == null) return;
+        const attrs = graphicHit.graphic.attributes ?? {};
+        const stationIdRaw = attrs.station_id ?? attrs.stationId;
+        const stationId = typeof stationIdRaw === 'number' ? stationIdRaw : Number(stationIdRaw);
+        if (!Number.isFinite(stationId)) return;
         const layerId = graphicHit.graphic.layer?.id;
         if (typeof layerId !== 'string') return;
         const clickedLayerId = layerId.slice(3);
         const clickedLayer = layerMap.get(clickedLayerId);
         if (clickedLayer?.dataSource !== 'dendra') return;
 
-        // Activate immediately so sidebar switches to Browse/detail in parallel
-        // with camera movement instead of waiting for goTo to finish.
+        // Activate immediately so sidebar switches in parallel with camera movement.
         activateLayer(clickedLayerId, undefined, stationId);
 
         const geometry = graphicHit.graphic.geometry;

@@ -46,6 +46,7 @@ const ADAPTER_MAP: Record<string, DataSourceAdapter> = {
   dataone: dataoneAdapter,
   calflora: calfloraAdapter,
   drone: dronedeployAdapter,
+  gbif: gbifAdapter,
 };
 
 /** Look up a data source adapter by its dataSource key */
@@ -54,12 +55,34 @@ export function getAdapter(dataSource: string | undefined): DataSourceAdapter | 
   return ADAPTER_MAP[dataSource] ?? null;
 }
 
-/** Layer-specific adapter overrides for catalog datasets that map to custom UIs */
+/**
+ * Resolve the adapter for the active layer.
+ * Catalog-backed custom UIs are selected via Datasets.catalog_tag → dataSource
+ * (see detectDataSource / catalogFormatTags).
+ */
 export function getAdapterForActiveLayer(activeLayer: ActiveLayer | null): DataSourceAdapter | null {
   if (!activeLayer) return null;
-  if (activeLayer.layerId === 'dataset-193') return dronedeployAdapter;
-  if (activeLayer.layerId === 'dataset-178' || activeLayer.layerId === 'dataset-215') return gbifAdapter;
   return getAdapter(activeLayer.dataSource);
+}
+
+/** Whether Map Layers should show the pinned filter expand / Edit Filters UI. */
+export function layerSupportsPinnedFilters(layerId: string, dataSource?: string): boolean {
+  const adapter = getAdapterForActiveLayer({
+    id: layerId,
+    layerId,
+    name: '',
+    dataSource: (dataSource ?? '') as ActiveLayer['dataSource'],
+    isPinned: false,
+  });
+  if (adapter) return adapter.supportsPinnedFilters === true;
+
+  // Fallback: match by registered layerIds when dataSource is missing/mismatched
+  for (const candidate of Object.values(ADAPTER_MAP)) {
+    if (candidate.layerIds.includes(layerId)) {
+      return candidate.supportsPinnedFilters === true;
+    }
+  }
+  return false;
 }
 
 // ── Composite hooks (always called unconditionally — React rules) ────────────

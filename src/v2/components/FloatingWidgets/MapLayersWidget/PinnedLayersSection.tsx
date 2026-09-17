@@ -25,6 +25,7 @@ import { PinnedLayerRow } from './PinnedLayerRow';
 interface PinnedLayersSectionProps {
   layers: PinnedLayer[];
   isDendraLayer?: (layerId: string) => boolean;
+  supportsPinnedFilters?: (layerId: string) => boolean;
   loadingByLayerId: Map<string, boolean>;
   activeLayerId?: string; // NEW: which layer is currently active
   activeViewId?: string; // NEW: which child view is currently active (for nested layers)
@@ -50,6 +51,7 @@ interface PinnedLayersSectionProps {
 export function PinnedLayersSection({
   layers,
   isDendraLayer,
+  supportsPinnedFilters,
   loadingByLayerId,
   activeLayerId,
   activeViewId,
@@ -105,13 +107,18 @@ export function PinnedLayersSection({
     }, EXIT_DURATION_MS);
   };
 
-  // Auto-expand when active layer changes (but only on first activation)
+  // Auto-expand when active layer changes (filterable sources / nested views only)
   useEffect(() => {
     if (activeLayerId && activeLayerId !== lastActiveLayerId) {
       // Active layer changed to a new layer
       setLastActiveLayerId(activeLayerId);
       const activePinned = layers.find(l => l.layerId === activeLayerId);
       if (activePinned) {
+        const hasNestedViews = !!(activePinned.views && activePinned.views.length > 0);
+        const canExpand =
+          hasNestedViews || (supportsPinnedFilters?.(activePinned.layerId) ?? false);
+        if (!canExpand) return;
+
         // Active layer IS pinned → expand it without collapsing other rows
         setExpandedIds(prev => {
           if (prev.has(activePinned.id)) return prev;
@@ -121,7 +128,7 @@ export function PinnedLayersSection({
         });
       }
     }
-  }, [activeLayerId, lastActiveLayerId, layers]);
+  }, [activeLayerId, lastActiveLayerId, layers, supportsPinnedFilters]);
 
   // Keep expansion state aligned with currently pinned rows
   useEffect(() => {
@@ -143,20 +150,24 @@ export function PinnedLayersSection({
   // Detect newly pinned layers and trigger slide-down animation
   useEffect(() => {
     const currentIds = new Set(layers.map(l => l.id));
-    
+
     // Find new layer IDs (present in current but not in previous)
     const newIds = layers.filter(l => !prevLayerIds.has(l.id)).map(l => l.id);
-    
+
     if (newIds.length > 0) {
       // New layer(s) were added - trigger animation for the first one
       const newId = newIds[0];
       setJustPinnedId(newId);
       setTimeout(() => setJustPinnedId(null), 400); // Match animation duration
+      setPrevLayerIds(currentIds);
+      return;
     }
-    
-    // Update previous IDs for next comparison
-    setPrevLayerIds(currentIds);
-  }, [layers]); // Remove prevLayerIds from dependencies to prevent infinite loop
+
+    // Only update prev IDs when membership actually changed (avoid Set identity churn).
+    if (currentIds.size !== prevLayerIds.size || [...currentIds].some((id) => !prevLayerIds.has(id))) {
+      setPrevLayerIds(currentIds);
+    }
+  }, [layers, prevLayerIds]);
 
   // Configure drag sensors
   const sensors = useSensors(
@@ -228,6 +239,7 @@ export function PinnedLayersSection({
                     key={layer.id}
                     layer={layer}
                     isDendraLayer={isDendraLayer?.(layer.layerId) ?? false}
+                    supportsPinnedFilters={supportsPinnedFilters?.(layer.layerId) ?? false}
                     isDataSourceLoading={loadingByLayerId.get(layer.layerId) ?? false}
                     isExpanded={expandedIds.has(layer.id)}
                     showDragHandle={showDragHandles}

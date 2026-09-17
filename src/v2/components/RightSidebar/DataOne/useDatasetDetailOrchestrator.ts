@@ -11,9 +11,9 @@ import {
   type DataOneVersionEntry,
 } from '../../../../services/dataOneService';
 import { useMap } from '../../../context/MapContext';
+import { useCatalog } from '../../../context/CatalogContext';
+import { findDataOneLayerId } from '../../../utils/dataoneCatalog';
 import { goToMarkerWithSmartZoom } from '../../../utils/mapMarkerNavigation';
-
-const MAP_LAYER_ID = 'v2-dataone-datasets';
 
 /**
  * Query the DataONE map layer for a feature matching `dataoneId` and open the
@@ -22,8 +22,9 @@ const MAP_LAYER_ID = 'v2-dataone-datasets';
 async function openPopupForDataoneFeature(
   view: MapView | SceneView,
   dataoneId: string,
+  mapLayerId: string,
 ): Promise<void> {
-  const mapLayer = view.map?.findLayerById(MAP_LAYER_ID) as FeatureLayer | undefined;
+  const mapLayer = view.map?.findLayerById(mapLayerId) as FeatureLayer | undefined;
   if (!mapLayer) return;
 
   const escapedId = dataoneId.replace(/'/g, "''");
@@ -97,6 +98,8 @@ export function useDatasetDetailOrchestrator({
   const [loadingVersionId, setLoadingVersionId] = useState<string | null>(null);
 
   const { viewRef, showToast, openDataOnePreview } = useMap();
+  const { layerMap } = useCatalog();
+  const mapLayerId = `v2-${findDataOneLayerId(layerMap) ?? 'dataset-216'}`;
   const lastPannedDatasetIdRef = useRef<string | null>(null);
 
   // Auto-pan/zoom when opening dataset detail (CON-DONE-02)
@@ -120,7 +123,7 @@ export function useDatasetDetailOrchestrator({
         defaultZoomLevel: 16,
       })
         .then(() => {
-          if (!cancelled) return openPopupForDataoneFeature(view, dataset.dataoneId);
+          if (!cancelled) return openPopupForDataoneFeature(view, dataset.dataoneId, mapLayerId);
           return undefined;
         })
         .catch(() => {});
@@ -140,7 +143,7 @@ export function useDatasetDetailOrchestrator({
       void view
         .goTo(extent.expand(1.2), { duration: 800 })
         .then(() => {
-          if (!cancelled) return openPopupForDataoneFeature(view, dataset.dataoneId);
+          if (!cancelled) return openPopupForDataoneFeature(view, dataset.dataoneId, mapLayerId);
           return undefined;
         })
         .catch(() => {});
@@ -149,7 +152,7 @@ export function useDatasetDetailOrchestrator({
     return () => {
       cancelled = true;
     };
-  }, [dataset.dataoneId, dataset.centerLon, dataset.centerLat, details, viewRef]);
+  }, [dataset.dataoneId, dataset.centerLon, dataset.centerLat, details, viewRef, mapLayerId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -277,7 +280,7 @@ export function useDatasetDetailOrchestrator({
           duration: 800,
           defaultZoomLevel: 16,
         });
-        await openPopupForDataoneFeature(view, dataset.dataoneId);
+        await openPopupForDataoneFeature(view, dataset.dataoneId, mapLayerId);
         showToast('Centered map on dataset location', 'info');
       } catch {
         showToast('Could not focus map on dataset', 'warning');
@@ -296,7 +299,7 @@ export function useDatasetDetailOrchestrator({
           spatialReference: { wkid: 4326 },
         });
         await view.goTo(extent.expand(1.2), { duration: 800 });
-        await openPopupForDataoneFeature(view, dataset.dataoneId);
+        await openPopupForDataoneFeature(view, dataset.dataoneId, mapLayerId);
         showToast('Centered map on dataset spatial extent', 'info');
       } catch {
         showToast('Could not focus map on dataset extent', 'warning');

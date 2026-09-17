@@ -1,5 +1,5 @@
 // ============================================================================
-// RightSidebar — 400px fixed width. Shows layer details or empty state.
+// RightSidebar — fills its ResizablePanel. Shows layer details or empty state.
 // Two tabs: Overview | Browse (DFT-041). Overview opens first (DFT-006).
 // Uses data source registry for tab content — no data-source-specific imports.
 // ============================================================================
@@ -12,14 +12,11 @@ import { SidebarHeader } from './SidebarHeader';
 import { TabBar } from './TabBar';
 import { getAdapterForActiveLayer } from '../../dataSources/registry';
 
-interface RightSidebarProps {
-  onCollapse: () => void;
-}
-
-export function RightSidebar({ onCollapse }: RightSidebarProps) {
+export function RightSidebar() {
   const { activeLayer, activateLayer, lastEditFiltersRequest, lastBrowseTabRequest } = useLayers();
   const [activeTab, setActiveTab] = useState<SidebarTab>('overview');
   const [lastTabByLayerId, setLastTabByLayerId] = useState<Record<string, SidebarTab>>({});
+  const [browseMountedByLayer, setBrowseMountedByLayer] = useState<Record<string, boolean>>({});
   const [isInspectBrowseFlow, setIsInspectBrowseFlow] = useState(false);
   const consumedRequestRef = useRef(0);
   const consumedBrowseRef = useRef(0);
@@ -36,6 +33,15 @@ export function RightSidebar({ onCollapse }: RightSidebarProps) {
   // Look up the adapter for the active layer's data source
   const adapter = getAdapterForActiveLayer(activeLayer);
   const showBrowseTab = true;
+  const browseMounted = Boolean(activeLayer && browseMountedByLayer[activeLayer.layerId]);
+
+  useEffect(() => {
+    if (activeTab !== 'browse' || !activeLayer) return;
+    setBrowseMountedByLayer((prev) => {
+      if (prev[activeLayer.layerId]) return prev;
+      return { ...prev, [activeLayer.layerId]: true };
+    });
+  }, [activeTab, activeLayer]);
 
   const updateScrollThumb = useCallback(() => {
     const scrollEl = scrollAreaRef.current;
@@ -70,36 +76,49 @@ export function RightSidebar({ onCollapse }: RightSidebarProps) {
     }, 650);
   }, [updateScrollThumb]);
 
+  const markBrowseMounted = useCallback((layerId: string | undefined) => {
+    if (!layerId) return;
+    setBrowseMountedByLayer((prev) => {
+      if (prev[layerId]) return prev;
+      return { ...prev, [layerId]: true };
+    });
+  }, []);
+
   const handleSystemTabChange = useCallback((tab: SidebarTab) => {
     if (tab !== 'browse') {
       setIsInspectBrowseFlow(false);
+    } else {
+      markBrowseMounted(activeLayer?.layerId);
     }
     setActiveTab(tab);
-  }, []);
+  }, [activeLayer?.layerId, markBrowseMounted]);
 
   const handleUserTabChange = useCallback((tab: SidebarTab) => {
     // DataONE map clicks set featureId to open detail. If the user manually
     // re-opens Browse, clear featureId so Browse starts at the dataset list.
     if (
       tab === 'browse' &&
-      activeLayer?.layerId === 'dataone-datasets' &&
+      activeLayer?.dataSource === 'dataone' &&
       activeLayer.featureId != null
     ) {
       activateLayer(activeLayer.layerId, activeLayer.viewId, undefined);
     }
+    if (tab === 'browse') markBrowseMounted(activeLayer?.layerId);
     setIsInspectBrowseFlow(false);
     setActiveTab(tab);
-  }, [activeLayer, activateLayer]);
+  }, [activeLayer, activateLayer, markBrowseMounted]);
 
   const handleOverviewBrowseClick = useCallback(() => {
     setIsInspectBrowseFlow(false);
+    markBrowseMounted(activeLayer?.layerId);
     setActiveTab('browse');
-  }, []);
+  }, [activeLayer?.layerId, markBrowseMounted]);
 
   const handleOverviewInspectBrowseClick = useCallback(() => {
     setIsInspectBrowseFlow(true);
+    markBrowseMounted(activeLayer?.layerId);
     setActiveTab('browse');
-  }, []);
+  }, [activeLayer?.layerId, markBrowseMounted]);
 
   // Task 22: Restore last active tab per layer on reactivation.
   // First visit still defaults to Overview (DFT-006).
@@ -111,6 +130,11 @@ export function RightSidebar({ onCollapse }: RightSidebarProps) {
     if (!currentLayerId) return;
 
     const restoredTab = lastTabByLayerId[currentLayerId] ?? 'overview';
+    if (restoredTab === 'browse') {
+      setBrowseMountedByLayer((prev) => (
+        prev[currentLayerId] ? prev : { ...prev, [currentLayerId]: true }
+      ));
+    }
     setActiveTab(restoredTab);
     setShouldFlash(true);
     const timer = window.setTimeout(() => setShouldFlash(false), 600);
@@ -149,12 +173,14 @@ export function RightSidebar({ onCollapse }: RightSidebarProps) {
       (
         activeLayer?.layerId === 'inaturalist-obs' ||
         activeLayer?.dataSource === 'dendra' ||
-        activeLayer?.layerId === 'animl-camera-traps' ||
-        activeLayer?.layerId === 'dataone-datasets' ||
+        activeLayer?.dataSource === 'animl' ||
+        activeLayer?.dataSource === 'dataone' ||
         activeLayer?.layerId === 'calflora-observations' ||
         activeLayer?.layerId === 'dataset-193' ||
         activeLayer?.layerId === 'dataset-178' ||
-        activeLayer?.layerId === 'dataset-215'
+        activeLayer?.layerId === 'dataset-215' ||
+        activeLayer?.dataSource === 'drone' ||
+        activeLayer?.dataSource === 'gbif'
       ) &&
       activeLayer.featureId != null
     ) {
@@ -180,13 +206,12 @@ export function RightSidebar({ onCollapse }: RightSidebarProps) {
   return (
     <aside
       id="right-sidebar"
-      className="w-[400px] flex-shrink-0 bg-white border-l border-gray-200 flex flex-col h-full overflow-hidden"
+      className="flex h-full w-full flex-shrink-0 flex-col overflow-hidden bg-white"
     >
       {activeLayer ? (
         <>
           <SidebarHeader
             activeLayer={activeLayer}
-            onCollapse={onCollapse}
             shouldFlash={shouldFlash}
           />
           <TabBar
@@ -205,22 +230,32 @@ export function RightSidebar({ onCollapse }: RightSidebarProps) {
               role="tabpanel"
             >
               {adapter ? (
-                activeTab === 'overview' ? (
-                  <adapter.OverviewTab
-                    onBrowseClick={handleOverviewBrowseClick}
-                    onInspectBrowseClick={handleOverviewInspectBrowseClick}
-                  />
-                ) : showBrowseTab ? (
-                  <adapter.BrowseTab
-                    showBackToOverview={activeLayer.dataSource === 'tnc-arcgis' || isInspectBrowseFlow}
-                    onBackToOverview={() => handleSystemTabChange('overview')}
-                  />
-                ) : (
-                  <adapter.OverviewTab
-                    onBrowseClick={handleOverviewBrowseClick}
-                    onInspectBrowseClick={handleOverviewInspectBrowseClick}
-                  />
-                )
+                <>
+                  <div
+                    id="right-sidebar-overview-panel"
+                    className={activeTab === 'overview' || !showBrowseTab ? 'block' : 'hidden'}
+                    aria-hidden={activeTab !== 'overview' && showBrowseTab}
+                  >
+                    <adapter.OverviewTab
+                      key={`overview-${activeLayer.layerId}`}
+                      onBrowseClick={handleOverviewBrowseClick}
+                      onInspectBrowseClick={handleOverviewInspectBrowseClick}
+                    />
+                  </div>
+                  {showBrowseTab && browseMounted && (
+                    <div
+                      id="right-sidebar-browse-panel"
+                      className={activeTab === 'browse' ? 'block' : 'hidden'}
+                      aria-hidden={activeTab !== 'browse'}
+                    >
+                      <adapter.BrowseTab
+                        key={`browse-${activeLayer.layerId}`}
+                        showBackToOverview={activeLayer.dataSource === 'tnc-arcgis' || isInspectBrowseFlow}
+                        onBackToOverview={() => handleSystemTabChange('overview')}
+                      />
+                    </div>
+                  )}
+                </>
               ) : (
                 /* Generic placeholder for unimplemented data sources */
                 activeTab === 'overview' ? (

@@ -12,6 +12,7 @@ import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import type Layer from '@arcgis/core/layers/Layer';
 import Point from '@arcgis/core/geometry/Point';
 import { useAnimlFilter } from '../../context/AnimlFilterContext';
+import { useCatalog } from '../../context/CatalogContext';
 import { useLayers } from '../../context/LayerContext';
 import { useMap } from '../../context/MapContext';
 import {
@@ -20,11 +21,10 @@ import {
   updateAnimlCameraBadges,
   getAnimlCameraGraphicByDeploymentId,
 } from '../../components/Map/layers/animlLayer';
+import { registerAnimlLayerId, isAnimlLayer } from '../../components/Map/layers';
+import { findAnimlLayerId } from '../../utils/animlCatalog';
 import type { PinnedLayer, ActiveLayer } from '../../types';
 import { goToMarkerWithSmartZoom } from '../../utils/mapMarkerNavigation';
-
-const LAYER_ID = 'animl-camera-traps';
-const MAP_LAYER_ID = 'v2-animl-camera-traps';
 
 export function useAnimlMapBehavior(
   getManagedLayer: (layerId: string) => Layer | undefined,
@@ -43,12 +43,28 @@ export function useAnimlMapBehavior(
     warmCache,
     focusedDeploymentId,
   } = useAnimlFilter();
+  const { layerMap } = useCatalog();
   const { activateLayer } = useLayers();
   const { viewRef, viewMode, getSpatialPolygonForLayer } = useMap();
-  const spatialPolygon = getSpatialPolygonForLayer(LAYER_ID);
   const populatedRef = useRef(false);
   const populatedLayerRef = useRef<GraphicsLayer | null>(null);
   const highlightHandleRef = useRef<__esri.Handle | null>(null);
+
+  for (const [layerId, layer] of layerMap.entries()) {
+    if (layer.dataSource === 'animl') registerAnimlLayerId(layerId);
+  }
+
+  const LAYER_ID = (() => {
+    if (activeLayer && (activeLayer.dataSource === 'animl' || isAnimlLayer(activeLayer.layerId))) {
+      return activeLayer.layerId;
+    }
+    const pinned = pinnedLayers.find(
+      (layer) => layerMap.get(layer.layerId)?.dataSource === 'animl' || isAnimlLayer(layer.layerId),
+    );
+    return pinned?.layerId ?? findAnimlLayerId(layerMap) ?? 'dataset-217';
+  })();
+  const MAP_LAYER_ID = `v2-${LAYER_ID}`;
+  const spatialPolygon = getSpatialPolygonForLayer(LAYER_ID);
   const shouldShowBadges = hasAnyFilter && !(!!spatialPolygon && selectedAnimals.size === 0);
 
   const isPinned = pinnedLayers.some(p => p.layerId === LAYER_ID);
@@ -105,6 +121,7 @@ export function useAnimlMapBehavior(
     getManagedLayer,
     mapReady,
     viewMode,
+    LAYER_ID,
   ]);
 
   // Update filter when selectedAnimals changes (instant local visibility toggle)
@@ -113,7 +130,7 @@ export function useAnimlMapBehavior(
     const arcLayer = getManagedLayer(LAYER_ID);
     if (!arcLayer || !(arcLayer instanceof GraphicsLayer)) return;
     filterAnimlLayer(arcLayer, selectedAnimals, undefined, spatialPolygon);
-  }, [selectedAnimals, spatialPolygon, getManagedLayer]);
+  }, [selectedAnimals, spatialPolygon, getManagedLayer, LAYER_ID]);
 
   // Update map badges whenever filter state changes.
   useEffect(() => {
@@ -136,6 +153,7 @@ export function useAnimlMapBehavior(
     getFilteredCountForDeployment,
     getManagedLayer,
     viewMode,
+    LAYER_ID,
   ]);
 
   // Map click handler: clicking a camera marker opens ANiML browse for that camera.
@@ -176,7 +194,7 @@ export function useAnimlMapBehavior(
     });
 
     return () => handler.remove();
-  }, [isOnMap, dataLoaded, viewRef, activateLayer, mapReady]);
+  }, [isOnMap, dataLoaded, viewRef, activateLayer, mapReady, LAYER_ID, MAP_LAYER_ID]);
 
   // Native ArcGIS highlight for camera selected from image interactions.
   useEffect(() => {
@@ -205,5 +223,5 @@ export function useAnimlMapBehavior(
     return () => {
       cancelled = true;
     };
-  }, [focusedDeploymentId, isOnMap, getManagedLayer, viewRef, mapReady]);
+  }, [focusedDeploymentId, isOnMap, getManagedLayer, viewRef, mapReady, LAYER_ID]);
 }

@@ -218,7 +218,8 @@ export function LayerConfigCard({
             <button
               type="button"
               onClick={() => {
-                const lastMax = config.bins.at(-1)?.max ?? 0;
+    const last = config.bins[config.bins.length - 1];
+                const lastMax = last?.max ?? 0;
                 onConfigChange({
                   ...config,
                   bins: [...config.bins, { min: lastMax, max: lastMax + 10, score: 3 }],

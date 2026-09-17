@@ -62,7 +62,7 @@ export const buildCameraNoveltyAlert = ({
       cameraLabel,
       lastSeenDaysAgo,
       navigationTarget: {
-        layerId: 'animl-camera-traps',
+        layerId: 'dataset-217',
         featureId: deploymentId,
         longitude: longitude ?? -120.1272,
         latitude: latitude ?? 34.7017,

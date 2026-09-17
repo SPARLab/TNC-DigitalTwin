@@ -1,6 +1,6 @@
 import type { CatalogLayer } from '../types';
 import { fetchArcGisJson, isObject } from './tncArcgis/client';
-import { normalizeArcGisDescription, normalizeArcGisHtmlText } from './tncArcgis/normalizers';
+import { normalizeArcGisDescription, prepareArcGisHtml } from './tncArcgis/normalizers';
 import { runWithFeatureLayerFallback } from './tncArcgis/queries';
 
 export interface LayerSchema {
@@ -32,9 +32,38 @@ export interface ArcGISLegendItem {
 export interface ArcGISLayerLegend {
   layerId: number;
   layerName: string;
-  rendererType: 'simple' | 'uniqueValue' | 'classBreaks';
+  rendererType: 'simple' | 'uniqueValue' | 'classBreaks' | 'continuous';
   filterField?: string;
   items: ArcGISLegendItem[];
+  /** CSS linear-gradient for continuous color ramps */
+  gradientCss?: string;
+  rampTitle?: string;
+  rampLowLabel?: string;
+  rampHighLabel?: string;
+}
+
+export interface ImageServerDimension {
+  name: string;
+  description?: string;
+  values: number[];
+  intervalUnit?: string;
+}
+
+export interface ImageServerVariable {
+  name: string;
+  description?: string;
+  unit?: string;
+  min?: number;
+  max?: number;
+  dimensions: ImageServerDimension[];
+}
+
+export interface ImageServerMultidimensionalInfo {
+  variables: ImageServerVariable[];
+}
+
+export interface FetchLayerLegendOptions {
+  variableName?: string;
 }
 
 function getPortalCandidatesFromServiceUrl(serviceRootUrl: string): string[] {
@@ -43,6 +72,7 @@ function getPortalCandidatesFromServiceUrl(serviceRootUrl: string): string[] {
 
   try {
     const serviceOrigin = new URL(serviceRootUrl).origin;
+    candidates.add(`${serviceOrigin}/portal`);
     candidates.add(serviceOrigin);
   } catch {
     // ignore invalid URL
@@ -59,15 +89,15 @@ async function fetchArcGisItemDescription(serviceRootUrl: string, serviceItemId:
     try {
       const itemUrl = `${portalBase}/sharing/rest/content/items/${serviceItemId}?f=json`;
       const itemJson = await fetchArcGisJson(itemUrl, 'ArcGIS item metadata fetch failed');
-      const snippet = normalizeArcGisHtmlText(itemJson.snippet);
-      const description = normalizeArcGisHtmlText(itemJson.description);
+      const snippet = prepareArcGisHtml(itemJson.snippet);
+      const description = prepareArcGisHtml(itemJson.description);
 
       if (snippet && description) {
-        const normalizedSnippet = snippet.toLowerCase();
-        const normalizedDescription = description.toLowerCase();
-        return normalizedDescription.includes(normalizedSnippet)
+        const normalizedSnippet = snippet.replace(/<[^>]+>/g, ' ').toLowerCase();
+        const normalizedDescription = description.replace(/<[^>]+>/g, ' ').toLowerCase();
+        return normalizedDescription.includes(normalizedSnippet.trim())
           ? description
-          : `${snippet} ${description}`;
+          : `${snippet}\n${description}`;
       }
       if (snippet) return snippet;
       if (description) return description;
@@ -454,7 +484,10 @@ function parseRendererLegend(
 }
 
 /** Fetch legend entries for the selected ArcGIS layer. */
-export async function fetchLayerLegend(meta: CatalogLayer['catalogMeta']): Promise<ArcGISLayerLegend | null> {
+export async function fetchLayerLegend(
+  meta: CatalogLayer['catalogMeta'],
+  options?: FetchLayerLegendOptions,
+): Promise<ArcGISLayerLegend | null> {
   if (!meta) return null;
   const targetLayerId = meta.isMultiLayerService
     ? (typeof meta.layerIdInService === 'number' && Number.isFinite(meta.layerIdInService)
@@ -464,26 +497,194 @@ export async function fetchLayerLegend(meta: CatalogLayer['catalogMeta']): Promi
   const serviceRootUrl = buildServiceRootUrl(meta);
 
   // Strategy 1: Try /legend endpoint at the service root.
+  // Tiled ImageServers (TilesOnly) often return Invalid URL here — fall through.
   try {
     const legendUrl = `${serviceRootUrl}/legend?f=json`;
     const legendJson = await fetchArcGisJson(legendUrl, 'Legend fetch failed');
     const parsedLayers = parseLegendEndpointLayers(legendJson, `${serviceRootUrl}/legend`);
     if (parsedLayers.length > 0) {
-      return parsedLayers.find(layer => layer.layerId === targetLayerId) ?? parsedLayers[0];
+      const matched = parsedLayers.find(layer => layer.layerId === targetLayerId) ?? parsedLayers[0];
+      if (matched.items.length > 0) return matched;
     }
   } catch {
-    // Fall through to renderer-based parsing.
+    // Fall through to renderer / imagery metadata parsing.
   }
 
-  // Strategy 2: Fallback to layer metadata renderer (V1 behavior).
-  const initialLayerResourceUrl = buildServiceUrl(meta).replace(/\/+$/, '');
-  let resolvedLayerResourceUrl = initialLayerResourceUrl;
-  const layerJson = await runWithFeatureLayerFallback(initialLayerResourceUrl, async (resolvedUrl) => {
+  // Strategy 2: Fallback to layer metadata renderer (FeatureServer / MapServer).
+  if (meta.hasFeatureServer || meta.hasMapServer) {
+    const initialLayerResourceUrl = buildServiceUrl(meta).replace(/\/+$/, '');
+    let resolvedLayerResourceUrl = initialLayerResourceUrl;
+    const layerJson = await runWithFeatureLayerFallback(initialLayerResourceUrl, async (resolvedUrl) => {
       resolvedLayerResourceUrl = resolvedUrl.replace(/\/+$/, '');
       const layerUrl = `${resolvedLayerResourceUrl}?f=json`;
       return fetchArcGisJson(layerUrl, 'Layer metadata fetch failed');
     });
-  return parseRendererLegend(layerJson, targetLayerId, resolvedLayerResourceUrl);
+    const rendererLegend = parseRendererLegend(layerJson, targetLayerId, resolvedLayerResourceUrl);
+    if (rendererLegend) return rendererLegend;
+  }
+
+  // Strategy 3: ImageServer continuous ramp from multidimensional stats or service min/max.
+  if (meta.hasImageServer) {
+    const imageryLegend = await buildImageServerLegend(meta, options?.variableName);
+    if (imageryLegend) return imageryLegend;
+  }
+
+  return null;
+}
+
+function formatRampNumber(value: number): string {
+  if (!Number.isFinite(value)) return '—';
+  const abs = Math.abs(value);
+  if (abs !== 0 && (abs < 0.01 || abs >= 1000)) return value.toExponential(2);
+  return value.toLocaleString(undefined, { maximumFractionDigits: 3 });
+}
+
+function buildContinuousRampLegend(options: {
+  layerId: number;
+  layerName: string;
+  rampTitle: string;
+  min: number;
+  max: number;
+  unit?: string;
+}): ArcGISLayerLegend {
+  const unitSuffix = options.unit?.trim() ? ` ${options.unit.trim()}` : '';
+  return {
+    layerId: options.layerId,
+    layerName: options.layerName,
+    rendererType: 'continuous',
+    rampTitle: options.rampTitle,
+    gradientCss: 'linear-gradient(to right, #440154, #31688e, #35b779, #fde725)',
+    rampLowLabel: `${formatRampNumber(options.min)}${unitSuffix}`,
+    rampHighLabel: `${formatRampNumber(options.max)}${unitSuffix}`,
+    items: [{
+      label: options.rampTitle,
+      minValue: options.min,
+      maxValue: options.max,
+      swatchColor: '#35b779',
+    }],
+  };
+}
+
+function parseMultidimensionalInfoPayload(payload: Record<string, unknown>): ImageServerMultidimensionalInfo | null {
+  const root = isObject(payload.multidimensionalInfo) ? payload.multidimensionalInfo : payload;
+  const rawVariables = Array.isArray(root.variables) ? root.variables : [];
+  const variables: ImageServerVariable[] = [];
+
+  for (const rawVariable of rawVariables) {
+    if (!isObject(rawVariable)) continue;
+    const name = typeof rawVariable.name === 'string' ? rawVariable.name.trim() : '';
+    if (!name) continue;
+
+    const stats = Array.isArray(rawVariable.statistics) ? rawVariable.statistics[0] : null;
+    const min = isObject(stats) && typeof stats.min === 'number' ? stats.min : undefined;
+    const max = isObject(stats) && typeof stats.max === 'number' ? stats.max : undefined;
+
+    const dimensions: ImageServerDimension[] = [];
+    const rawDimensions = Array.isArray(rawVariable.dimensions) ? rawVariable.dimensions : [];
+    for (const rawDimension of rawDimensions) {
+      if (!isObject(rawDimension)) continue;
+      const dimName = typeof rawDimension.name === 'string' ? rawDimension.name.trim() : '';
+      if (!dimName) continue;
+      const values = Array.isArray(rawDimension.values)
+        ? rawDimension.values.filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
+        : [];
+      if (values.length === 0) continue;
+      dimensions.push({
+        name: dimName,
+        description: typeof rawDimension.description === 'string' ? rawDimension.description : undefined,
+        values,
+        intervalUnit: typeof rawDimension.intervalUnit === 'string' ? rawDimension.intervalUnit : undefined,
+      });
+    }
+
+    variables.push({
+      name,
+      description: typeof rawVariable.description === 'string' ? rawVariable.description : undefined,
+      unit: typeof rawVariable.unit === 'string' ? rawVariable.unit : undefined,
+      min,
+      max,
+      dimensions,
+    });
+  }
+
+  return variables.length > 0 ? { variables } : null;
+}
+
+/** Fetch multidimensional variables/dimensions for an ImageServer. */
+export async function fetchImageServerMultidimensionalInfo(
+  meta: CatalogLayer['catalogMeta'],
+): Promise<ImageServerMultidimensionalInfo | null> {
+  if (!meta?.hasImageServer) return null;
+  const serviceRootUrl = buildServiceRootUrl(meta).replace(/\/+$/, '');
+  try {
+    const payload = await fetchArcGisJson(
+      `${serviceRootUrl}/multidimensionalInfo?f=json`,
+      'Multidimensional info fetch failed',
+    );
+    return parseMultidimensionalInfoPayload(payload);
+  } catch {
+    return null;
+  }
+}
+
+async function buildImageServerLegend(
+  meta: NonNullable<CatalogLayer['catalogMeta']>,
+  preferredVariableName?: string,
+): Promise<ArcGISLayerLegend | null> {
+  const serviceRootUrl = buildServiceRootUrl(meta).replace(/\/+$/, '');
+  const layerName = meta.servicePath.split('/').filter(Boolean).pop() || 'Imagery';
+
+  const multidimensional = await fetchImageServerMultidimensionalInfo(meta);
+  if (multidimensional) {
+    const variable = multidimensional.variables.find((entry) => entry.name === preferredVariableName)
+      ?? multidimensional.variables[0];
+    if (
+      variable
+      && typeof variable.min === 'number'
+      && typeof variable.max === 'number'
+      && Number.isFinite(variable.min)
+      && Number.isFinite(variable.max)
+    ) {
+      return buildContinuousRampLegend({
+        layerId: 0,
+        layerName,
+        rampTitle: variable.description?.trim() || variable.name,
+        min: variable.min,
+        max: variable.max,
+        unit: variable.unit,
+      });
+    }
+  }
+
+  try {
+    const serviceJson = await fetchArcGisJson(`${serviceRootUrl}?f=json`, 'ImageServer metadata fetch failed');
+    const minValues = Array.isArray(serviceJson.minValues) ? serviceJson.minValues : [];
+    const maxValues = Array.isArray(serviceJson.maxValues) ? serviceJson.maxValues : [];
+    const min = typeof minValues[0] === 'number' ? minValues[0] : undefined;
+    const max = typeof maxValues[0] === 'number' ? maxValues[0] : undefined;
+    if (
+      typeof min === 'number'
+      && typeof max === 'number'
+      && Number.isFinite(min)
+      && Number.isFinite(max)
+    ) {
+      const units = typeof serviceJson.units === 'string' ? serviceJson.units : undefined;
+      return buildContinuousRampLegend({
+        layerId: 0,
+        layerName: typeof serviceJson.name === 'string' && serviceJson.name.trim()
+          ? serviceJson.name.trim()
+          : layerName,
+        rampTitle: 'Value',
+        min,
+        max,
+        unit: units,
+      });
+    }
+  } catch {
+    // No usable imagery legend metadata.
+  }
+
+  return null;
 }
 
 /** Fetch best-available service description from ArcGIS metadata endpoints. */
@@ -500,7 +701,7 @@ export async function fetchServiceDescription(meta: CatalogLayer['catalogMeta'])
       if (itemDescription) return itemDescription;
     }
 
-    const serviceDescription = normalizeArcGisHtmlText(serviceJson.serviceDescription)
+    const serviceDescription = prepareArcGisHtml(serviceJson.serviceDescription)
       ?? normalizeArcGisDescription(serviceJson.description);
     if (serviceDescription) return serviceDescription;
   } catch {
@@ -510,7 +711,7 @@ export async function fetchServiceDescription(meta: CatalogLayer['catalogMeta'])
   try {
     const layerUrl = buildServiceUrl(meta);
     const layerJson = await fetchArcGisJson(`${layerUrl.replace(/\/+$/, '')}?f=json`, 'Layer metadata fetch failed');
-    return normalizeArcGisHtmlText(layerJson.description);
+    return prepareArcGisHtml(layerJson.description);
   } catch {
     return null;
   }

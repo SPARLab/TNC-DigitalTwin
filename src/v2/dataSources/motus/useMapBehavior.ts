@@ -72,8 +72,16 @@ export function useMotusMapBehavior(
     markerMode: string;
   } | null>(null);
 
-  const hasMotusOnMap = pinnedLayers.some((layer) => layer.layerId.startsWith('service-181') || layer.layerId === 'dataset-181')
-    || !!(activeLayer && (activeLayer.layerId.startsWith('service-181') || activeLayer.layerId === 'dataset-181'));
+  const hasMotusOnMap = pinnedLayers.some((layer) => {
+    const catalogLayer = layerMap.get(layer.layerId);
+    return catalogLayer?.dataSource === 'motus'
+      || layer.layerId.startsWith('service-181')
+      || layer.layerId === 'dataset-181';
+  }) || !!(activeLayer && (
+    activeLayer.dataSource === 'motus'
+    || activeLayer.layerId.startsWith('service-181')
+    || activeLayer.layerId === 'dataset-181'
+  ));
 
   // Register concrete MOTUS ArcGIS layers during render so createMapLayer resolves in the same cycle.
   for (const [layerId, layer] of layerMap.entries()) {

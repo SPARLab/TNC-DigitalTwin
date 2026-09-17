@@ -3,8 +3,18 @@ import { TNCArcGISOverviewTab } from '../../components/RightSidebar/TNCArcGIS/TN
 import { TNCArcGISBrowseTab } from '../../components/RightSidebar/TNCArcGIS/TNCArcGISBrowseTab';
 import { TNCArcGISLegendWidget } from '../../components/FloatingWidgets/TNCArcGISLegendWidget/TNCArcGISLegendWidget';
 import { TNCArcGISTableOverlay } from '../../components/FloatingWidgets/TNCArcGISTableOverlay/TNCArcGISTableOverlay';
+import { TNCArcGISImagerySlicePicker } from '../../components/FloatingWidgets/TNCArcGISImagerySlicePicker/TNCArcGISImagerySlicePicker';
 import { TNCArcGISProvider, useTNCArcGIS } from '../../context/TNCArcGISContext';
 import type { CacheStatus, DataSourceAdapter, OverviewTabProps } from '../types';
+
+function TNCArcGISFloatingPanels() {
+  return (
+    <>
+      <TNCArcGISTableOverlay />
+      <TNCArcGISImagerySlicePicker />
+    </>
+  );
+}
 
 function getTNCArcGISLoadingMessage(
   layerKind: 'feature' | 'map-image' | 'imagery' | null,
@@ -54,6 +64,6 @@ export const tncArcgisAdapter: DataSourceAdapter = {
   OverviewTab: TNCArcGISOverviewWithCache,
   BrowseTab: TNCArcGISBrowseTab,
   LegendWidget: TNCArcGISLegendWidget,
-  FloatingPanel: TNCArcGISTableOverlay,
+  FloatingPanel: TNCArcGISFloatingPanels,
   CacheProvider: TNCArcGISProvider,
 };

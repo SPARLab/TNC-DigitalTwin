@@ -72,6 +72,7 @@ export function LayerRow({
   const {
     activeLayer,
     activateLayer,
+    deactivateLayer,
     isLayerPinned,
     isLayerVisible,
     pinLayer,
@@ -89,7 +90,8 @@ export function LayerRow({
     && catalogLayer.catalogMeta?.siblingLayers
     && catalogLayer.catalogMeta.siblingLayers.length > 0
   );
-  const isDroneDeployOrthomosaicsLayer = catalogLayer?.catalogMeta?.datasetId === 193;
+  const isDroneDeployOrthomosaicsLayer = catalogLayer?.dataSource === 'drone'
+    || catalogLayer?.catalogMeta?.catalogTag === 'drone_format';
 
   const isSelectedServiceChild = !controlsOnly
     && !!activeLayer?.isService
@@ -102,8 +104,26 @@ export function LayerRow({
     ? activeLayer.featureId
     : undefined;
 
+  // Reveal the row when activated from elsewhere (e.g. Monitoring → historical).
+  useEffect(() => {
+    if (!isActive) return;
+    const row = document.getElementById(`layer-row-${layerId}`);
+    row?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [isActive, layerId]);
+
   const handleClick = () => {
     if (controlsOnly) return;
+    // Toggle off when already active — unpinned layers leave the map;
+    // pinned layers stay visible via the pin.
+    if (isActive) {
+      deactivateLayer();
+      onAnnounce?.(
+        isPinned
+          ? `${name} deselected (still pinned on map)`
+          : `${name} layer deactivated`,
+      );
+      return;
+    }
     activateLayer(layerId);
     if (isDroneDeployOrthomosaicsLayer) setIsProjectsExpanded(true);
   };
@@ -251,16 +271,6 @@ export function LayerRow({
           {renderHighlightedText(name, highlightQuery)}
         </span>
 
-        {catalogLayer?.catalogMeta?.parentServiceId && (
-          <span
-            id={`layer-row-kind-${layerId}`}
-            className="text-[10px] uppercase tracking-wide text-gray-500 rounded border border-gray-200 bg-white px-1.5 py-0.5 flex-shrink-0"
-            title="Feature service layer"
-          >
-            Layer
-          </span>
-        )}
-
         {isDroneDeployOrthomosaicsLayer && (
           <button
             id={`drone-parent-expand-toggle-${layerId}`}
@@ -300,15 +310,7 @@ export function LayerRow({
           >
             <Pin className="w-4 h-4 text-gray-300 hover:text-gray-500" />
           </button>
-        ) : (
-          <span
-            id={`layer-service-container-hint-${layerId}`}
-            className="text-[10px] text-gray-500 uppercase tracking-wide"
-            title="Group container; select a child layer to pin"
-          >
-            Group
-          </span>
-        )}
+        ) : null}
       </div>
 
       {isDroneDeployOrthomosaicsLayer && (

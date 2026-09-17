@@ -17,6 +17,8 @@ interface CategoryGroupProps {
   filteredLayerIds?: Set<string>;
   searchQuery?: string;
   searchAutoExpandServiceIds?: Set<string>;
+  /** Category ids that must stay open for the active/revealed layer path. */
+  forceExpandedCategoryIds?: Set<string>;
   onAnnounce?: (message: string) => void;
   ariaLevelBase?: number;
   parentTreeItemId?: string;
@@ -37,6 +39,32 @@ function countMatchingLayers(cat: Category, filter?: Set<string>): number {
   return count;
 }
 
+/** True when this category or any nested subcategory owns the active layer. */
+function categoryContainsLayer(
+  cat: Category,
+  layerId: string,
+  selectedSubLayerId?: string,
+): boolean {
+  const matches = (layer: CatalogLayer) =>
+    layer.id === layerId || (!!selectedSubLayerId && layer.id === selectedSubLayerId);
+
+  if (cat.layers.some(matches)) return true;
+  return cat.subcategories?.some((sub) =>
+    categoryContainsLayer(sub, layerId, selectedSubLayerId),
+  ) ?? false;
+}
+
+/** Find a matching layer in this category's direct layers (not nested subs). */
+function findDirectMatchingLayer(
+  layers: CatalogLayer[],
+  layerId: string,
+  selectedSubLayerId?: string,
+): CatalogLayer | undefined {
+  return layers.find(
+    (layer) => layer.id === layerId || (!!selectedSubLayerId && layer.id === selectedSubLayerId),
+  );
+}
+
 /** Get visible layers for a category (filtered or all). */
 function visibleLayers(layers: CatalogLayer[], filter?: Set<string>): CatalogLayer[] {
   return filter ? layers.filter(l => filter.has(l.id)) : layers;
@@ -47,13 +75,27 @@ export function CategoryGroup({
   filteredLayerIds,
   searchQuery,
   searchAutoExpandServiceIds,
+  forceExpandedCategoryIds,
   onAnnounce,
   ariaLevelBase = 1,
   parentTreeItemId,
   isSubcategory
 }: CategoryGroupProps) {
   const { activeLayer } = useLayers();
-  const [isExpanded, setIsExpanded] = useState(false);
+
+  const containsActiveLayer = useMemo(() => {
+    if (forceExpandedCategoryIds?.has(category.id)) return true;
+    if (!activeLayer) return false;
+    return categoryContainsLayer(
+      category,
+      activeLayer.layerId,
+      activeLayer.selectedSubLayerId,
+    );
+  }, [activeLayer, category, forceExpandedCategoryIds]);
+
+  // Open on mount when the active layer already lives under this node (e.g. parent
+  // expanded first, then this subcategory mounted after bootstrap activation).
+  const [isExpanded, setIsExpanded] = useState(containsActiveLayer);
   const [expandedServiceIds, setExpandedServiceIds] = useState<Set<string>>(new Set());
 
   const totalVisible = countMatchingLayers(category, filteredLayerIds);
@@ -139,15 +181,20 @@ export function CategoryGroup({
   }, [directLayers]);
 
   useEffect(() => {
+    if (!containsActiveLayer) return;
+
+    setIsExpanded(true);
+
     if (!activeLayer) return;
     const activeLayerId = activeLayer.layerId;
     const selectedSubLayerId = activeLayer.selectedSubLayerId;
-    const matchingDirectLayer = directLayers.find(
-      layer => layer.id === activeLayerId || (!!selectedSubLayerId && layer.id === selectedSubLayerId),
+
+    const matchingDirectLayer = findDirectMatchingLayer(
+      directLayers,
+      activeLayerId,
+      selectedSubLayerId,
     );
     if (!matchingDirectLayer) return;
-
-    setIsExpanded(true);
 
     const parentServiceId = matchingDirectLayer.catalogMeta?.parentServiceId
       ?? (isServiceParent(matchingDirectLayer) ? matchingDirectLayer.id : undefined);
@@ -159,7 +206,7 @@ export function CategoryGroup({
       next.add(parentServiceId);
       return next;
     });
-  }, [activeLayer, directLayers, isServiceParent]);
+  }, [activeLayer, containsActiveLayer, directLayers, isServiceParent]);
 
   // Visual styling (bg + border) lives on a dedicated header-row div, not the button and
   // not the outer wrapper. This prevents hover from bleeding into expanded content,
@@ -283,6 +330,7 @@ export function CategoryGroup({
               filteredLayerIds={filteredLayerIds}
               searchQuery={searchQuery}
               searchAutoExpandServiceIds={searchAutoExpandServiceIds}
+              forceExpandedCategoryIds={forceExpandedCategoryIds}
               onAnnounce={onAnnounce}
               ariaLevelBase={ariaLevelBase + 1}
               parentTreeItemId={`category-toggle-${category.id}`}

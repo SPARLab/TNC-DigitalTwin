@@ -12,6 +12,8 @@ import { PawPrint, Camera, AlertCircle, RotateCcw, X } from 'lucide-react';
 import { useAnimlFilter } from '../../../context/AnimlFilterContext';
 import { useLayers } from '../../../context/LayerContext';
 import { useMap } from '../../../context/MapContext';
+import { useCatalog } from '../../../context/CatalogContext';
+import { findAnimlLayerId } from '../../../utils/animlCatalog';
 import { animlService, type AnimlImageLabel } from '../../../../services/animlService';
 import { FilterSection, type FilterSectionItem } from './FilterSection';
 import { DateFilterSection } from './DateFilterSection';
@@ -62,6 +64,11 @@ export function AnimlBrowseTab() {
   } = useAnimlFilter();
   const { activeLayer, lastEditFiltersRequest, getPinnedByLayerId, syncAnimlFilters } = useLayers();
   const { getSpatialPolygonForLayer, viewRef, highlightPoint } = useMap();
+  const { layerMap } = useCatalog();
+  const catalogAnimlLayerId = findAnimlLayerId(layerMap);
+  const animlLayerId = activeLayer?.dataSource === 'animl'
+    ? activeLayer.layerId
+    : catalogAnimlLayerId;
 
   // Image fetch state (local to browse tab)
   const [images, setImages] = useState<AnimlImageLabel[]>([]);
@@ -81,7 +88,7 @@ export function AnimlBrowseTab() {
   const lastAppliedSpatialPolygonIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (activeLayer?.layerId !== 'animl-camera-traps') return;
+    if (activeLayer?.dataSource !== 'animl') return;
 
     const viewChanged = activeLayer.viewId !== prevHydrateViewIdRef.current;
     const editRequested = lastEditFiltersRequest > lastConsumedHydrateRef.current;
@@ -101,31 +108,39 @@ export function AnimlBrowseTab() {
     setSelectedAnimals(new Set(sourceFilters.selectedAnimals));
     setSelectedCameras(new Set(sourceFilters.selectedCameras));
     setDateRange(sourceFilters.startDate || null, sourceFilters.endDate || null);
-  }, [activeLayer?.layerId, activeLayer?.viewId, lastEditFiltersRequest, getPinnedByLayerId, setSelectedAnimals, setSelectedCameras, setDateRange]);
+  }, [activeLayer?.layerId, activeLayer?.dataSource, activeLayer?.viewId, lastEditFiltersRequest, getPinnedByLayerId, setSelectedAnimals, setSelectedCameras, setDateRange]);
 
   useEffect(() => {
+    const isAnimlIntent = (targetLayerId: string | undefined) => {
+      if (!targetLayerId) return false;
+      if (targetLayerId === 'animl-camera-traps') return true; // legacy synthetic id
+      if (catalogAnimlLayerId && targetLayerId === catalogAnimlLayerId) return true;
+      if (activeLayer?.dataSource === 'animl' && targetLayerId === activeLayer.layerId) return true;
+      return false;
+    };
+
     const handleIntent = (event: Event) => {
       const customEvent = event as CustomEvent<AlertNavigationIntent>;
       const detail = customEvent.detail;
-      if (!detail || detail.targetLayerId !== 'animl-camera-traps') return;
+      if (!detail || !isAnimlIntent(detail.targetLayerId)) return;
       setPendingAlertIntent(detail);
     };
 
     window.addEventListener(ALERT_NAVIGATION_INTENT_EVENT, handleIntent as EventListener);
     const latestIntent = getLatestAlertNavigationIntent();
-    if (latestIntent && latestIntent.targetLayerId === 'animl-camera-traps') {
+    if (latestIntent && isAnimlIntent(latestIntent.targetLayerId)) {
       setPendingAlertIntent(latestIntent);
     }
 
     return () => {
       window.removeEventListener(ALERT_NAVIGATION_INTENT_EVENT, handleIntent as EventListener);
     };
-  }, []);
+  }, [activeLayer?.layerId, activeLayer?.dataSource, catalogAnimlLayerId]);
 
   // Map-click flow: selecting a camera marker sets Browse to that camera and
   // immediately triggers image loading for map-first interaction.
   useEffect(() => {
-    if (activeLayer?.layerId !== 'animl-camera-traps') return;
+    if (activeLayer?.dataSource !== 'animl') return;
     if (activeLayer.featureId == null) {
       lastHandledMapFeatureIdRef.current = null;
       return;
@@ -140,11 +155,11 @@ export function AnimlBrowseTab() {
     lastHandledMapFeatureIdRef.current = featureKey;
     setSelectedCameras(new Set([deploymentId]));
     focusDeployment(deploymentId);
-  }, [activeLayer?.layerId, activeLayer?.featureId, setSelectedCameras, focusDeployment]);
+  }, [activeLayer?.layerId, activeLayer?.dataSource, activeLayer?.featureId, setSelectedCameras, focusDeployment]);
 
   useEffect(() => {
     if (!pendingAlertIntent) return;
-    if (activeLayer?.layerId !== 'animl-camera-traps') return;
+    if (activeLayer?.dataSource !== 'animl') return;
     if (!dataLoaded || deployments.length === 0) return;
 
     const normalizedCameraHint = pendingAlertIntent.cameraLabelHint?.trim().toLowerCase() ?? '';
@@ -201,7 +216,7 @@ export function AnimlBrowseTab() {
 
   // ── Build filter section items ──────────────────────────────────────────
 
-  const spatialPolygon = getSpatialPolygonForLayer('animl-camera-traps');
+  const spatialPolygon = animlLayerId ? getSpatialPolygonForLayer(animlLayerId) : null;
   const hasSpatialPolygon = !!spatialPolygon;
 
   const camerasInsideSpatialPolygon = useMemo(() => {
@@ -417,11 +432,11 @@ export function AnimlBrowseTab() {
 
   // Keep Map Layers widget metadata in sync with the active ANiML view.
   useEffect(() => {
-    if (activeLayer?.layerId !== 'animl-camera-traps') return;
+    if (!animlLayerId || activeLayer?.dataSource !== 'animl') return;
     if (filteredImageCount === null) return;
 
     syncAnimlFilters(
-      activeLayer.layerId,
+      animlLayerId,
       {
         selectedAnimals: Array.from(selectedAnimals).sort((a, b) => a.localeCompare(b)),
         selectedCameras: Array.from(selectedCameras).sort((a, b) => a - b),
@@ -432,6 +447,8 @@ export function AnimlBrowseTab() {
       activeLayer.viewId
     );
   }, [
+    animlLayerId,
+    activeLayer?.dataSource,
     activeLayer?.layerId,
     activeLayer?.viewId,
     activeLayer?.isPinned,
@@ -483,7 +500,10 @@ export function AnimlBrowseTab() {
           onClear={clearDateRange}
         />
 
-        <SpatialQuerySection id="animl-spatial-query-section" layerId="animl-camera-traps" />
+        <SpatialQuerySection
+          id="animl-spatial-query-section"
+          layerId={animlLayerId ?? catalogAnimlLayerId ?? 'dataset-217'}
+        />
 
         {/* Species filter section — expanded by default */}
         <FilterSection

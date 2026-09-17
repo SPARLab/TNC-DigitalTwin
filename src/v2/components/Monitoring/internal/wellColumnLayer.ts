@@ -17,6 +17,7 @@ import PointSymbol3D from '@arcgis/core/symbols/PointSymbol3D';
 import { sampleRamp } from './colorRamps';
 import { normalize } from './scalarField';
 import type { ScalarSnapshot, SensorVariableConfig } from '../../../services/sensorService';
+import { formatObservedAt } from './formatObservedAt';
 
 /**
  * Cylinder diameter in metres. The well network spans roughly 10 km, so this is
@@ -59,15 +60,6 @@ function ringOffset(
   };
 }
 
-function formatObservedAt(epochMs: number): string {
-  if (!epochMs) return 'Unknown';
-  return new Date(epochMs).toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-}
 
 /**
  * Build the column layer for a derived-head snapshot.

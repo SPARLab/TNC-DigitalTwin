@@ -108,19 +108,17 @@ export interface AnimlCountLookups {
 }
 
 class AnimlService {
-  // NEW MapServer endpoints (Dec 2025)
-  private readonly baseUrl = 'https://dangermondpreserve-spatial.com/server/rest/services/Animl/MapServer';
-  private readonly deploymentsLayerId = 0; // twin.animl.deployment (Point layer with cameras)
-  
-  // Table IDs for image labels
-  // Layer 3: Deduplicated view - one row per image, labels_text has comma-separated labels
-  // Layer 4: Flattened view - one row per (image, label) combination
-  // private readonly deduplicatedTableId = 3; // twin.animl.image_labels_deduplicated_view (unused)
-  private readonly flattenedTableId = 4;    // twin.animl.image_labels_flattened_view
-  
-  // Full URLs for convenience
-  private readonly deduplicatedServiceUrl = 'https://dangermondpreserve-spatial.com/server/rest/services/Animl/MapServer/3';
-  private readonly flattenedServiceUrl = 'https://dangermondpreserve-spatial.com/server/rest/services/Animl/MapServer/4';
+  // Catalog-backed FeatureServer (Datasets.catalog_tag = animl_tag).
+  // L0 = deployments, T1 = deduplicated images, T2 = flattened by label.
+  private readonly baseUrl =
+    'https://dangermondpreserve-spatial.com/server/rest/services/Dangermond_Preserve_Camera_Trap_Data/FeatureServer';
+  private readonly deploymentsLayerId = 0;
+  private readonly flattenedTableId = 2;
+
+  private readonly deduplicatedServiceUrl =
+    'https://dangermondpreserve-spatial.com/server/rest/services/Dangermond_Preserve_Camera_Trap_Data/FeatureServer/1';
+  private readonly flattenedServiceUrl =
+    'https://dangermondpreserve-spatial.com/server/rest/services/Dangermond_Preserve_Camera_Trap_Data/FeatureServer/2';
 
   /**
    * Query deployments (camera traps) from the FeatureServer

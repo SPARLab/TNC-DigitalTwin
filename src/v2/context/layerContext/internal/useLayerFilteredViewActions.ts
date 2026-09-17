@@ -405,6 +405,7 @@ export function useLayerFilteredViewActions({
         datasetName: filters.datasetName?.trim() || undefined,
         startDate: filters.startDate || undefined,
         endDate: filters.endDate || undefined,
+        speciesLevelOnly: filters.speciesLevelOnly ?? undefined,
         selectedOccurrenceId: filters.selectedOccurrenceId || undefined,
         selectedOccurrenceLabel: filters.selectedOccurrenceLabel?.trim() || undefined,
       };

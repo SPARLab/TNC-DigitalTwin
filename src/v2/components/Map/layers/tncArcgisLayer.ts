@@ -1,9 +1,14 @@
 import type Layer from '@arcgis/core/layers/Layer';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import ImageryLayer from '@arcgis/core/layers/ImageryLayer';
+import ImageryTileLayer from '@arcgis/core/layers/ImageryTileLayer';
 import MapImageLayer from '@arcgis/core/layers/MapImageLayer';
 import type { CatalogLayer } from '../../../types';
 import { buildServiceRootUrl, buildServiceUrl } from '../../../services/tncArcgisService';
+import { createNhdPlusFlowlineRenderer, isNhdPlusFlowlinesLayer } from './nhdPlusFlowlinesStyle';
+import { attachNhdPlusTerrainElevationFallback } from './nhdPlusFlowlinesTerrainFallback';
+import { createPreserveBoundaryRenderer } from '../../Monitoring/internal/boundaryOutlineLayer';
+import { isPreserveBoundaryCatalogLayer } from '../../../utils/findPreserveBoundaryCatalogLayer';
 
 function sanitizeArcGisBaseUrl(serverBaseUrl: string): string {
   const trimmed = serverBaseUrl.trim().replace(/\/+$/, '');
@@ -20,6 +25,14 @@ function buildImageServerServiceUrl(meta: NonNullable<CatalogLayer['catalogMeta'
   const base = sanitizeArcGisBaseUrl(meta.serverBaseUrl);
   const path = meta.servicePath.trim().replace(/^\/+/, '').replace(/\/+$/, '');
   return `${base}/${path}/ImageServer`;
+}
+
+/**
+ * Living Atlas / AGOL tiled ImageServers (e.g. CHELSA on tiledimageservices*)
+ * must use ImageryTileLayer — ImageryLayer cannot read their fused tile cache.
+ */
+export function isTiledImageServerUrl(url: string): boolean {
+  return /tiledimageservices/i.test(url);
 }
 
 function getFeatureLayerUrlCandidates(meta: NonNullable<CatalogLayer['catalogMeta']>): string[] {
@@ -110,8 +123,9 @@ export function createTNCArcGISLayer(options: {
   layer: CatalogLayer;
   visible?: boolean;
   whereClause?: string;
+  viewMode?: '2d' | '3d';
 }): Layer | null {
-  const { id, layer, visible = true, whereClause } = options;
+  const { id, layer, visible = true, whereClause, viewMode = '2d' } = options;
   const meta = layer.catalogMeta;
   if (!meta) return null;
 
@@ -120,6 +134,9 @@ export function createTNCArcGISLayer(options: {
   const isGbifLayer =
     layer.id === 'dataset-178' ||
     meta.servicePath.toLowerCase().includes('dangermond_preserve_species_occurrences');
+
+  const isNhdPlusFlowlines = isNhdPlusFlowlinesLayer(layer);
+  const isPreserveBoundary = isPreserveBoundaryCatalogLayer(layer);
 
   // FeatureServer layers can use FeatureLayer directly with SQL filtering.
   if (meta.hasFeatureServer) {
@@ -130,6 +147,10 @@ export function createTNCArcGISLayer(options: {
       visible,
       outFields: ['*'],
       definitionExpression,
+      // SceneView defaults Z-aware features to absolute-height, which buries
+      // hydrography (and similar) under terrain/LiDAR. MapView ignores this.
+      elevationInfo: { mode: 'on-the-ground' },
+      popupEnabled: !isPreserveBoundary,
       // GBIF has very dense points; use high-contrast symbols and clustering
       // so records are visually obvious at preserve zoom levels.
       // IMPORTANT: Only spread renderer/featureReduction when actually needed.
@@ -165,9 +186,17 @@ export function createTNCArcGISLayer(options: {
             labelPlacement: 'center-center' as const,
           }],
         },
+      } : isNhdPlusFlowlines ? {
+        renderer: createNhdPlusFlowlineRenderer(viewMode),
+        returnZ: true,
+      } : isPreserveBoundary ? {
+        renderer: createPreserveBoundaryRenderer(),
       } : {}),
     });
     attachFeatureLayerLoadFallback(featureLayer, featureLayerUrlCandidates, layer.name);
+    if (isNhdPlusFlowlines && viewMode === '3d') {
+      attachNhdPlusTerrainElevationFallback(featureLayer);
+    }
     return featureLayer;
   }
 
@@ -188,11 +217,19 @@ export function createTNCArcGISLayer(options: {
     });
   }
 
-  // ImageServer layers render through ImageryLayer.
+  // ImageServer: tiled AGOL/Living Atlas → ImageryTileLayer; otherwise ImageryLayer.
   if (meta.hasImageServer) {
+    const url = buildImageServerServiceUrl(meta);
+    if (isTiledImageServerUrl(url) || isTiledImageServerUrl(meta.serverBaseUrl)) {
+      return new ImageryTileLayer({
+        id,
+        url,
+        visible,
+      });
+    }
     return new ImageryLayer({
       id,
-      url: buildImageServerServiceUrl(meta),
+      url,
       visible,
     });
   }

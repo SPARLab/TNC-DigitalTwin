@@ -291,6 +291,9 @@ export function useLayerSourceSyncActions(setPinnedLayers: SetPinnedLayers) {
               operator: filter.operator,
               value: filter.value,
             })),
+            imageryVariable: filters.imageryVariable,
+            imageryDimensionName: filters.imageryDimensionName,
+            imageryDimensionValue: filters.imageryDimensionValue,
           };
           const nextFilterCount = getTNCArcGISFilterCount(normalizedFilters);
           const nextFilterSummary = buildTNCArcGISFilterSummary(normalizedFilters);
@@ -518,6 +521,7 @@ export function useLayerSourceSyncActions(setPinnedLayers: SetPinnedLayers) {
             datasetName: filters.datasetName?.trim() || undefined,
             startDate: filters.startDate || undefined,
             endDate: filters.endDate || undefined,
+            speciesLevelOnly: filters.speciesLevelOnly ?? undefined,
             selectedOccurrenceId: filters.selectedOccurrenceId || undefined,
             selectedOccurrenceLabel: filters.selectedOccurrenceLabel?.trim() || undefined,
           };

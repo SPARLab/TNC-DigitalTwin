@@ -11,12 +11,14 @@ export function GBIFOverviewTab({ totalCount, loading, onBrowseClick }: GBIFOver
     <div id="gbif-overview-tab" className="space-y-5">
       <p id="gbif-overview-description" className="text-sm text-gray-600 leading-relaxed">
         GBIF species occurrence records from the Dangermond Preserve footprint and adjacent area.
+        Defaults to the last 10 years with species-level (or finer) identification.
         Includes observations and specimen records with taxonomy, collection context, and source attribution.
       </p>
 
       <div id="gbif-overview-metadata" className="bg-slate-50 rounded-lg p-4">
         <dl id="gbif-overview-metadata-list" className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
-          <MetaRow label="Total occurrences" value={countDisplay} />
+          <MetaRow label="Matching occurrences" value={countDisplay} />
+          <MetaRow label="Default view" value="Last 10 years · species-level" />
           <MetaRow label="Coverage" value="Dangermond region" />
           <MetaRow label="Source" value="TNC ArcGIS FeatureServer" />
           <MetaRow label="Record types" value="Observation + specimen" />

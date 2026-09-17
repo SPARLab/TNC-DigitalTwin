@@ -20,9 +20,7 @@ import { createMotusLayer, MOTUS_TAGGED_ANIMALS_LAYER_ID } from './motusLayer';
 /** Set of catalog layer IDs that have real map layer implementations */
 export const IMPLEMENTED_LAYERS = new Set([
   'inaturalist-obs',
-  'animl-camera-traps',
   'preserve-boundary',
-  'dataone-datasets',
   'calflora-observations',
   'dataset-178',
   'dataset-215',
@@ -32,6 +30,14 @@ export const IMPLEMENTED_LAYERS = new Set([
 
 /** Layer IDs known to be Dendra sensor services (detected dynamically) */
 const dendraLayerIds = new Set<string>();
+/** Layer IDs known to be GBIF occurrence services (detected via catalog_tag) */
+const gbifLayerIds = new Set<string>();
+/** Layer IDs known to be DroneDeploy orthomosaic services (detected via catalog_tag) */
+const droneLayerIds = new Set<string>();
+/** Layer IDs known to be ANiML camera-trap services (detected via catalog_tag) */
+const animlLayerIds = new Set<string>();
+/** Layer IDs known to be DataONE dataset services (detected via catalog_tag) */
+const dataoneLayerIds = new Set<string>();
 /** Layer IDs known to be TNC ArcGIS catalog layers (detected dynamically) */
 const tncArcgisLayerIds = new Set<string>();
 /** Catalog metadata for each registered TNC ArcGIS layer */
@@ -46,6 +52,45 @@ export function registerDendraLayerId(layerId: string): void {
 /** Check if a layer ID is a registered Dendra layer */
 export function isDendraLayer(layerId: string): boolean {
   return dendraLayerIds.has(layerId);
+}
+
+/** Register a layer ID as a GBIF occurrence layer. */
+export function registerGBIFLayerId(layerId: string): void {
+  gbifLayerIds.add(layerId);
+  IMPLEMENTED_LAYERS.add(layerId);
+}
+
+/** Register a layer ID as a DroneDeploy orthomosaics layer. */
+export function registerDroneLayerId(layerId: string): void {
+  droneLayerIds.add(layerId);
+  IMPLEMENTED_LAYERS.add(layerId);
+}
+
+/** Check if a layer ID is a registered DroneDeploy layer */
+export function isDroneLayer(layerId: string): boolean {
+  return droneLayerIds.has(layerId);
+}
+
+/** Register a layer ID as an ANiML camera-trap layer. */
+export function registerAnimlLayerId(layerId: string): void {
+  animlLayerIds.add(layerId);
+  IMPLEMENTED_LAYERS.add(layerId);
+}
+
+/** Check if a layer ID is a registered ANiML layer */
+export function isAnimlLayer(layerId: string): boolean {
+  return animlLayerIds.has(layerId);
+}
+
+/** Register a layer ID as a DataONE datasets layer. */
+export function registerDataOneLayerId(layerId: string): void {
+  dataoneLayerIds.add(layerId);
+  IMPLEMENTED_LAYERS.add(layerId);
+}
+
+/** Check if a layer ID is a registered DataONE layer */
+export function isDataOneLayer(layerId: string): boolean {
+  return dataoneLayerIds.has(layerId) || layerId === 'dataone-datasets';
 }
 
 /** Register a layer ID as a concrete TNC ArcGIS layer. */
@@ -63,39 +108,36 @@ export function registerTNCArcGISLayer(layerId: string, layer: CatalogLayer): vo
 export function createMapLayer(layerId: string, options: {
   visible?: boolean;
   whereClause?: string;
+  viewMode?: '2d' | '3d';
 }): Layer | null {
   switch (layerId) {
     case 'inaturalist-obs':
       return createINaturalistLayer({ id: `v2-${layerId}`, ...options });
 
-    case 'animl-camera-traps':
-      return createAnimlLayer({ id: `v2-${layerId}`, ...options });
-
     case 'preserve-boundary':
       return createPreserveBoundaryLayer({ id: `v2-${layerId}`, ...options });
 
-    case 'dataone-datasets':
-      return createDataOneLayer({ id: `v2-${layerId}`, ...options });
-
     case 'calflora-observations':
       return createCalFloraLayer({ id: `v2-${layerId}`, ...options });
-
-    case 'dataset-178':
-      return createGBIFLayer({ id: `v2-${layerId}`, ...options });
-
-    case 'dataset-215':
-      return createGBIFLayer({ id: `v2-${layerId}`, ...options });
-
-    case 'dataset-193':
-      return createDroneDeployLayer({ id: `v2-${layerId}`, ...options });
 
     case MOTUS_TAGGED_ANIMALS_LAYER_ID:
       return createMotusLayer({ id: `v2-${layerId}`, ...options });
 
     default:
-      // Dynamically registered Dendra layers
       if (dendraLayerIds.has(layerId)) {
         return createDendraLayer({ id: `v2-${layerId}`, ...options });
+      }
+      if (animlLayerIds.has(layerId) || layerId === 'animl-camera-traps') {
+        return createAnimlLayer({ id: `v2-${layerId}`, ...options });
+      }
+      if (dataoneLayerIds.has(layerId) || layerId === 'dataone-datasets' || layerId === 'dataset-216') {
+        return createDataOneLayer({ id: `v2-${layerId}`, ...options });
+      }
+      if (gbifLayerIds.has(layerId) || layerId === 'dataset-178' || layerId === 'dataset-215') {
+        return createGBIFLayer({ id: `v2-${layerId}`, ...options });
+      }
+      if (droneLayerIds.has(layerId) || layerId === 'dataset-193') {
+        return createDroneDeployLayer({ id: `v2-${layerId}`, ...options });
       }
       // Dynamically registered TNC ArcGIS catalog layers
       if (tncArcgisLayerIds.has(layerId)) {
@@ -106,6 +148,7 @@ export function createMapLayer(layerId: string, options: {
           layer,
           visible: options.visible,
           whereClause: options.whereClause,
+          viewMode: options.viewMode,
         });
       }
       return null;

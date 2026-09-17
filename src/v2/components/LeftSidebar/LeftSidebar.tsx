@@ -1,11 +1,12 @@
 // ============================================================================
-// LeftSidebar — Persistent layer browser (280px fixed width)
+// LeftSidebar — Persistent layer browser (fills its ResizablePanel)
 // Dynamically loaded from the Data Catalog FeatureServer via CatalogContext.
 // Shows hierarchical categories with subcategories and ~90+ real datasets.
 // ============================================================================
 
 import { useState, useCallback, useMemo, useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useCatalog } from '../../context/CatalogContext';
+import { useLayers } from '../../context/LayerContext';
 import { SearchBar } from './SearchBar';
 import { CategoryGroup } from './CategoryGroup';
 import { Search } from 'lucide-react';
@@ -28,8 +29,38 @@ function allLayersInCategory(cat: Category): CatalogLayer[] {
   return layers;
 }
 
+function layerMatchesIds(
+  layer: CatalogLayer,
+  layerId: string,
+  selectedSubLayerId?: string,
+): boolean {
+  return layer.id === layerId || (!!selectedSubLayerId && layer.id === selectedSubLayerId);
+}
+
+/** Category ids from root → leaf that contain the active layer (inclusive). */
+function findCategoryPathIds(
+  categories: Category[],
+  layerId: string,
+  selectedSubLayerId?: string,
+): Set<string> | null {
+  for (const cat of categories) {
+    if (cat.layers.some((layer) => layerMatchesIds(layer, layerId, selectedSubLayerId))) {
+      return new Set([cat.id]);
+    }
+    if (cat.subcategories?.length) {
+      const nested = findCategoryPathIds(cat.subcategories, layerId, selectedSubLayerId);
+      if (nested) {
+        nested.add(cat.id);
+        return nested;
+      }
+    }
+  }
+  return null;
+}
+
 export function LeftSidebar() {
   const { categories, loading, error } = useCatalog();
+  const { activeLayer } = useLayers();
   const [searchQuery, setSearchQuery] = useState('');
   const [liveMessage, setLiveMessage] = useState('');
   const [isScrolling, setIsScrolling] = useState(false);
@@ -171,18 +202,22 @@ export function LeftSidebar() {
   const filteredLayerIds = searchState?.filteredLayerIds;
   const hasResults = !filteredLayerIds || filteredLayerIds.size > 0;
 
+  // Open every ancestor category for the active layer (Boundaries → Administrative → …).
+  const forceExpandedCategoryIds = useMemo(() => {
+    if (!activeLayer) return undefined;
+    return findCategoryPathIds(
+      categories,
+      activeLayer.layerId,
+      activeLayer.selectedSubLayerId,
+    ) ?? undefined;
+  }, [activeLayer, categories]);
+
   return (
     <aside
       id="left-sidebar"
       aria-label="Layer browser"
-      className="relative w-[280px] flex-shrink-0 bg-white flex flex-col h-full overflow-hidden"
+      className="relative flex h-full w-full flex-shrink-0 flex-col overflow-hidden bg-white"
     >
-      <div
-        id="left-sidebar-right-divider"
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 right-0 w-px bg-gray-200 z-10"
-      />
-
       <div id="left-sidebar-content" className="relative flex h-full flex-col">
         <SearchBar onSearch={handleSearch} />
         <div id="left-sidebar-live-region" className="sr-only" aria-live="polite" aria-atomic="true">
@@ -228,6 +263,7 @@ export function LeftSidebar() {
                     filteredLayerIds={filteredLayerIds}
                     searchQuery={searchQuery.length >= 2 ? searchQuery : undefined}
                     searchAutoExpandServiceIds={searchState?.autoExpandServiceIds}
+                    forceExpandedCategoryIds={forceExpandedCategoryIds}
                     onAnnounce={announce}
                   />
                 ))}

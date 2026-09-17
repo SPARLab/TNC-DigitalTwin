@@ -17,6 +17,7 @@
 import { useState, useEffect } from 'react';
 import type { Category, CatalogLayer, DataSource } from '../types';
 import { CATEGORY_DISPLAY_NAME_OVERRIDE, CATEGORY_ICON_MAP, EXTERNAL_LAYERS } from '../data/layerRegistry';
+import { dataSourceFromCatalogTag } from '../utils/catalogFormatTags';
 
 const BASE =
   'https://dangermondpreserve-spatial.com/server/rest/services/Dangermond_Preserve_Data_Catalog/FeatureServer';
@@ -274,6 +275,18 @@ function buildCatalogServiceLayerMap(rawLayers: RawServiceLayerRow[]): Map<numbe
   return byDatasetId;
 }
 
+/** Count catalog table rows (is_table=1) per dataset for sidebar service summaries. */
+function buildCatalogServiceTableCountMap(rawLayers: RawServiceLayerRow[]): Map<number, number> {
+  const counts = new Map<number, number>();
+  for (const row of rawLayers) {
+    if (row.is_visible === 0) continue;
+    if (row.is_table !== 1) continue;
+    if (typeof row.dataset_id !== 'number' || !Number.isFinite(row.dataset_id)) continue;
+    counts.set(row.dataset_id, (counts.get(row.dataset_id) ?? 0) + 1);
+  }
+  return counts;
+}
+
 function logServiceDiscoveryResults(
   candidates: RawDataset[],
   catalogLayersByDatasetId: Map<number, ArcGISServiceLayer[]>,
@@ -308,27 +321,22 @@ function logServiceDiscoveryResults(
   );
 }
 
-/** Detect the data source adapter key from service URL patterns. */
+/**
+ * Resolve which custom visualization adapter a catalog dataset should use.
+ * Prefer Datasets.catalog_tag; fall back to a short allowlist of known IDs
+ * that still need tagging in the catalog.
+ */
 function detectDataSource(d: RawDataset): DataSource {
-  const path = d.service_path ?? '';
-  const base = d.server_base_url ?? '';
-  const pathLower = path.toLowerCase();
+  const fromTag = dataSourceFromCatalogTag(d.catalog_tag);
+  if (fromTag) return fromTag;
 
-  // Dendra per-type sensor services on preserve server
-  if (base.includes('dangermondpreserve-spatial.com') && path.includes('_Sensor')) {
-    return 'dendra';
-  }
-  // Dendra pressure level sensors (no "_Sensor" suffix but same schema)
-  if (base.includes('dangermondpreserve-spatial.com') && path.includes('Pressure_Level')) {
-    return 'dendra';
-  }
+  // Temporary ID fallbacks until these rows get catalog_tag values:
+  //   184 → dendra_format, 193 → drone_format, 215 → gbif_format
+  if (d.id === 184) return 'dendra';
+  if (d.id === 193) return 'drone';
+  if (d.id === 215 || d.id === 178) return 'gbif';
+  if (d.id === 216) return 'dataone';
 
-  // MOTUS wildlife telemetry service on preserve server
-  if (base.includes('dangermondpreserve-spatial.com') && pathLower.includes('wildlife_telemetry')) {
-    return 'motus';
-  }
-
-  // Default: TNC ArcGIS hosted or external ArcGIS service
   return 'tnc-arcgis';
 }
 
@@ -340,6 +348,8 @@ function datasetIcon(ds: DataSource): string {
     case 'inaturalist': return 'Leaf';
     case 'animl': return 'Camera';
     case 'dataone': return 'BookOpen';
+    case 'drone': return 'Plane';
+    case 'gbif': return 'Globe';
     default: return 'Map';
   }
 }
@@ -385,13 +395,16 @@ export function useCatalogRegistry(): CatalogRegistryState {
         for (const d of rawDatasets) datasetById.set(d.id, d);
         const serviceGroups = detectMultiLayerServices(rawDatasets);
         const catalogLayersByDatasetId = buildCatalogServiceLayerMap(rawServiceLayers);
+        const catalogTableCountByDatasetId = buildCatalogServiceTableCountMap(rawServiceLayers);
 
         // Discover ArcGIS sublayers when catalog rows represent only a service
         // container (single row + missing layer_id). This keeps large services
         // like Coastal_and_Marine usable without requiring immediate catalog backfill.
+        // Also runs for catalog-tagged multi-layer sources (dendra_format, motus_format).
         const serviceDiscoveryCandidates = rawDatasets.filter((d) => {
           if (d.is_visible === 0) return false;
-          if (detectDataSource(d) !== 'tnc-arcgis') return false;
+          const ds = detectDataSource(d);
+          if (ds !== 'tnc-arcgis' && ds !== 'dendra' && ds !== 'motus') return false;
           if (d.has_feature_server !== 1) return false;
           const serviceKey = serviceKeyForDataset(d);
           if (!serviceKey) return false;
@@ -470,9 +483,12 @@ export function useCatalogRegistry(): CatalogRegistryState {
           for (const d of visibleDatasets) {
             const ds = detectDataSource(d);
             const serviceKey = serviceKeyForDataset(d);
+            const canGroupAsMultiLayerService =
+              !!serviceKey
+              && (ds === 'tnc-arcgis' || ds === 'dendra' || ds === 'motus');
 
-            // Only group TNC ArcGIS layers with a valid service key.
-            if (ds !== 'tnc-arcgis' || !serviceKey) {
+            // Flat rows for non-service sources (drone, gbif, external APIs, …).
+            if (!canGroupAsMultiLayerService) {
               const layer = layerFromDataset(d, categoryId);
               layers.push(layer);
               allLayers.set(layer.id, layer);
@@ -483,7 +499,7 @@ export function useCatalogRegistry(): CatalogRegistryState {
             seenServiceKeys.add(serviceKey);
 
             const serviceRows = (serviceGroups.get(serviceKey) ?? [])
-              .filter(row => row.is_visible !== 0 && detectDataSource(row) === 'tnc-arcgis')
+              .filter(row => row.is_visible !== 0 && detectDataSource(row) === ds)
               .sort((a, b) => a.display_order - b.display_order);
 
             if (serviceRows.length <= 1) {
@@ -496,8 +512,8 @@ export function useCatalogRegistry(): CatalogRegistryState {
                   id: `${serviceId}-layer-${discoveredLayer.id}`,
                   name: discoveredLayer.name,
                   categoryId,
-                  dataSource: 'tnc-arcgis',
-                  icon: datasetIcon('tnc-arcgis'),
+                  dataSource: ds,
+                  icon: datasetIcon(ds),
                   catalogMeta: {
                     datasetId: d.id,
                     serverBaseUrl: d.server_base_url ?? '',
@@ -522,8 +538,8 @@ export function useCatalogRegistry(): CatalogRegistryState {
                   id: serviceId,
                   name: d.service_name || d.display_title || `Service ${serviceDatasetId}`,
                   categoryId,
-                  dataSource: 'tnc-arcgis',
-                  icon: datasetIcon('tnc-arcgis'),
+                  dataSource: ds,
+                  icon: datasetIcon(ds),
                   catalogMeta: {
                     datasetId: serviceDatasetId,
                     serverBaseUrl: d.server_base_url ?? '',
@@ -534,6 +550,7 @@ export function useCatalogRegistry(): CatalogRegistryState {
                     description: d.description ?? undefined,
                     isMultiLayerService: true,
                     siblingLayers: children,
+                    tableCount: catalogTableCountByDatasetId.get(serviceDatasetId) ?? 0,
                     ...tagsFor(d),
                   },
                 };
@@ -572,8 +589,8 @@ export function useCatalogRegistry(): CatalogRegistryState {
               id: toLayerId(row.id),
               name: row.display_title || row.service_name || `Dataset ${row.id}`,
               categoryId,
-              dataSource: 'tnc-arcgis',
-              icon: datasetIcon('tnc-arcgis'),
+              dataSource: ds,
+              icon: datasetIcon(ds),
               catalogMeta: {
                 datasetId: row.id,
                 serverBaseUrl: row.server_base_url ?? '',
@@ -599,8 +616,8 @@ export function useCatalogRegistry(): CatalogRegistryState {
               id: serviceId,
               name: serviceRows[0].service_name || serviceRows[0].display_title || `Service ${serviceDatasetId}`,
               categoryId,
-              dataSource: 'tnc-arcgis',
-              icon: datasetIcon('tnc-arcgis'),
+              dataSource: ds,
+              icon: datasetIcon(ds),
               catalogMeta: {
                 datasetId: serviceDatasetId,
                 serverBaseUrl: serviceRows[0].server_base_url ?? '',
@@ -611,6 +628,10 @@ export function useCatalogRegistry(): CatalogRegistryState {
                 description: serviceRows[0].description ?? undefined,
                 isMultiLayerService: true,
                 siblingLayers: children,
+                tableCount: serviceRows.reduce(
+                  (sum, row) => sum + (catalogTableCountByDatasetId.get(row.id) ?? 0),
+                  0,
+                ),
                 ...tagsFor(serviceRows[0]),
               },
             };

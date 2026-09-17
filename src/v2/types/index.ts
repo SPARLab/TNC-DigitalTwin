@@ -22,7 +22,9 @@ export interface CatalogLayer {
     isMultiLayerService?: boolean;
     parentServiceId?: string;
     siblingLayers?: CatalogLayer[];
-    /** Hints how the Data Catalog should visualize this dataset, e.g. `dendra_format`. */
+    /** Non-spatial tables published with this feature service (for sidebar summary). */
+    tableCount?: number;
+    /** Hints how the Data Catalog should visualize this dataset (`dendra_format`, `motus_format`, …). */
     catalogTag?: string;
     /** Groups this dataset into a Live Monitoring section, e.g. `Weather Conditions`. */
     liveTag?: string;
@@ -146,6 +148,23 @@ export interface TNCArcGISViewFilters {
     operator: string;
     value: string;
   }>;
+  /** Multidimensional ImageServer variable (e.g. SSP126) */
+  imageryVariable?: string;
+  /** Dimension name (usually StdTime) */
+  imageryDimensionName?: string;
+  /** Selected dimension value (epoch ms for StdTime) */
+  imageryDimensionValue?: number;
+}
+
+/** Active multidimensional slice selection for an ImageServer layer */
+export interface ImagerySliceSelection {
+  layerId: string;
+  variableName: string;
+  dimensionName: string;
+  dimensionValue: number;
+  /** Optional stretch stats for raster rendering */
+  min?: number;
+  max?: number;
 }
 
 /** DataONE filter + detail state stored per pinned layer/view */
@@ -182,6 +201,7 @@ export interface GBIFViewFilters {
   datasetName?: string;
   startDate?: string;
   endDate?: string;
+  speciesLevelOnly?: boolean;
   selectedOccurrenceId?: number;
   selectedOccurrenceLabel?: string;
 }

@@ -16,6 +16,7 @@ import {
 } from './windGraphicsLayers';
 import { WindParticleOverlay } from './WindParticleOverlay';
 import type { WindReading } from '../../../services/windService';
+import type { LiveAlert } from '../../../services/liveAlertService';
 
 export type WindVizMode = 'arrows' | 'flow' | 'grid' | 'labels';
 
@@ -26,20 +27,13 @@ export type WindVizMode = 'arrows' | 'flow' | 'grid' | 'labels';
  */
 export const WIND_MODES_2D_ONLY: readonly WindVizMode[] = ['flow'];
 
-const LAYER_BUILDERS: Record<
-  Exclude<WindVizMode, 'flow'>,
-  (readings: WindReading[]) => GraphicsLayer
-> = {
-  arrows: createWindArrowLayer,
-  grid: createWindGridLayer,
-  labels: createWindBadgeLayer,
-};
-
 interface UseWindVisualizationParams {
   view: MapView | SceneView | null;
   readings: WindReading[] | null;
   mode: WindVizMode;
   isEnabled: boolean;
+  /** Open alerts for the wind service; labels mode turns matching badges into triangles. */
+  alerts?: LiveAlert[];
 }
 
 export function useWindVisualization({
@@ -47,6 +41,7 @@ export function useWindVisualization({
   readings,
   mode,
   isEnabled,
+  alerts = [],
 }: UseWindVisualizationParams) {
   const layerRef = useRef<GraphicsLayer | null>(null);
   const overlayRef = useRef<WindParticleOverlay | null>(null);
@@ -58,8 +53,16 @@ export function useWindVisualization({
       const overlay = new WindParticleOverlay(view, readings);
       overlay.start();
       overlayRef.current = overlay;
-    } else if (mode !== 'flow') {
-      const layer = LAYER_BUILDERS[mode](readings);
+    } else if (mode === 'labels') {
+      const layer = createWindBadgeLayer(readings, alerts);
+      view.map?.add(layer);
+      layerRef.current = layer;
+    } else if (mode === 'arrows') {
+      const layer = createWindArrowLayer(readings, alerts);
+      view.map?.add(layer);
+      layerRef.current = layer;
+    } else if (mode === 'grid') {
+      const layer = createWindGridLayer(readings);
       view.map?.add(layer);
       layerRef.current = layer;
     }
@@ -77,5 +80,5 @@ export function useWindVisualization({
         layerRef.current = null;
       }
     };
-  }, [view, readings, mode, isEnabled]);
+  }, [view, readings, mode, isEnabled, alerts]);
 }

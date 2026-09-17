@@ -48,4 +48,5 @@ export const inaturalistAdapter: DataSourceAdapter = {
   BrowseTab: INaturalistBrowseTab,
   LegendWidget: INaturalistLegendWidget,
   CacheProvider: INaturalistFilterProvider,
+  supportsPinnedFilters: true,
 };

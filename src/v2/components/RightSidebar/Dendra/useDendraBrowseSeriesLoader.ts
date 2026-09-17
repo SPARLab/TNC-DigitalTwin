@@ -1,0 +1,311 @@
+// ============================================================================
+// Progressive multi-station time-series loader for the Dendra browse chart modal.
+// Mirrors floating-panel backfill: recent window first, then older chunks.
+// ============================================================================
+
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  datastreamMatchesLatestField,
+  fetchTimeSeries,
+  formatStationDisplayName,
+  normalizeDatastreamTypeName,
+  type DendraStation,
+  type DendraSummary,
+  type DendraTimeSeriesPoint,
+} from '../../../services/dendraStationService';
+import { DENDRA_SERIES_COLORS } from './DendraMultiSeriesChart';
+
+const INITIAL_RENDER_DAYS = 30;
+const BACKFILL_CHUNK_DAYS = 120;
+const FETCH_CONCURRENCY = 3;
+
+export interface DendraBrowseQuery {
+  serviceUrl: string;
+  startDate: string;
+  endDate: string;
+  /** Selected Latest-layer field keys (e.g. rainfall_cumulative) */
+  streamNames: string[];
+  /** Full Latest-column catalog for unambiguous name→field resolution */
+  allStreamFieldKeys: string[];
+  stations: DendraStation[];
+  summariesByStation: Map<number, DendraSummary[]>;
+}
+
+export interface DendraBrowseSeries {
+  id: string;
+  stationId: number;
+  stationLabel: string;
+  streamName: string;
+  unit: string;
+  color: string;
+  points: DendraTimeSeriesPoint[];
+  loading: boolean;
+  progressiveLoading: boolean;
+  error: string | null;
+  visible: boolean;
+}
+
+function parseDateUtc(date: string): number | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  return Date.parse(`${date}T00:00:00.000Z`);
+}
+
+function toDateUtc(epochMs: number): string {
+  return new Date(epochMs).toISOString().slice(0, 10);
+}
+
+function mergePoints(
+  base: DendraTimeSeriesPoint[],
+  extra: DendraTimeSeriesPoint[],
+): DendraTimeSeriesPoint[] {
+  if (extra.length === 0) return base;
+  const map = new Map<number, number>();
+  for (const point of base) map.set(point.timestamp, point.value);
+  for (const point of extra) map.set(point.timestamp, point.value);
+  return Array.from(map.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([timestamp, value]) => ({ timestamp, value }));
+}
+
+function seriesId(stationId: number, dendraDsId: string): string {
+  return `${stationId}::${dendraDsId}`;
+}
+
+function resolveTargets(query: DendraBrowseQuery): Array<{
+  id: string;
+  station: DendraStation;
+  summary: DendraSummary;
+  color: string;
+  stationLabel: string;
+}> {
+  const selectedFields = query.streamNames
+    .map((name) => name.trim().toLowerCase())
+    .filter(Boolean);
+  const fieldUniverse = (
+    query.allStreamFieldKeys.length > 0
+      ? query.allStreamFieldKeys
+      : selectedFields
+  ).map((field) => field.trim().toLowerCase()).filter(Boolean);
+  const targets: Array<{
+    id: string;
+    station: DendraStation;
+    summary: DendraSummary;
+    color: string;
+    stationLabel: string;
+  }> = [];
+  let colorIndex = 0;
+
+  for (const station of query.stations) {
+    const summaries = query.summariesByStation.get(station.station_id) ?? [];
+    for (const summary of summaries) {
+      const matches = selectedFields.some((field) =>
+        datastreamMatchesLatestField(summary.datastream_name, field, fieldUniverse),
+      );
+      if (!matches) continue;
+      if (!summary.dendra_ds_id) continue;
+      targets.push({
+        id: seriesId(station.station_id, summary.dendra_ds_id),
+        station,
+        summary: {
+          ...summary,
+          datastream_name: normalizeDatastreamTypeName(summary.datastream_name)
+            || summary.datastream_name,
+        },
+        color: DENDRA_SERIES_COLORS[colorIndex % DENDRA_SERIES_COLORS.length],
+        stationLabel: formatStationDisplayName(station.station_name),
+      });
+      colorIndex += 1;
+    }
+  }
+  return targets;
+}
+
+async function runPool<T>(items: T[], concurrency: number, worker: (item: T) => Promise<void>) {
+  let index = 0;
+  const runners = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (index < items.length) {
+      const current = items[index];
+      index += 1;
+      await worker(current);
+    }
+  });
+  await Promise.all(runners);
+}
+
+export function useDendraBrowseSeriesLoader() {
+  const [series, setSeries] = useState<DendraBrowseSeries[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [progressiveLoading, setProgressiveLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const requestVersionRef = useRef(0);
+
+  const toggleSeriesVisible = useCallback((id: string) => {
+    setSeries((prev) => prev.map((entry) => (
+      entry.id === id ? { ...entry, visible: !entry.visible } : entry
+    )));
+  }, []);
+
+  const setSeriesVisible = useCallback((id: string, visible: boolean) => {
+    setSeries((prev) => prev.map((entry) => (
+      entry.id === id ? { ...entry, visible } : entry
+    )));
+  }, []);
+
+  const clearSeries = useCallback(() => {
+    requestVersionRef.current += 1;
+    setSeries([]);
+    setLoading(false);
+    setProgressiveLoading(false);
+    setError(null);
+  }, []);
+
+  const loadQuery = useCallback(async (query: DendraBrowseQuery) => {
+    const version = ++requestVersionRef.current;
+    const targets = resolveTargets(query);
+
+    if (targets.length === 0) {
+      setSeries([]);
+      setLoading(false);
+      setProgressiveLoading(false);
+      setError('No matching station/datastream combinations to chart.');
+      return;
+    }
+
+    const multiStream = query.streamNames.length > 1;
+    const initial: DendraBrowseSeries[] = targets.map((target) => ({
+      id: target.id,
+      stationId: target.station.station_id,
+      stationLabel: target.stationLabel,
+      streamName: target.summary.datastream_name,
+      unit: target.summary.unit?.trim() || '',
+      color: target.color,
+      points: [],
+      loading: true,
+      progressiveLoading: false,
+      error: null,
+      visible: true,
+    }));
+
+    setSeries(initial);
+    setLoading(true);
+    setProgressiveLoading(false);
+    setError(null);
+
+    const rangeStartMs = parseDateUtc(query.startDate);
+    const rangeEndMs = parseDateUtc(query.endDate);
+    const canBackfill = rangeStartMs != null && rangeEndMs != null && rangeEndMs >= rangeStartMs;
+    const initialStartMs = canBackfill && rangeStartMs != null && rangeEndMs != null
+      ? Math.max(rangeStartMs, rangeEndMs - (INITIAL_RENDER_DAYS - 1) * 24 * 60 * 60 * 1000)
+      : rangeStartMs;
+    const initialStartDate = initialStartMs != null ? toDateUtc(initialStartMs) : query.startDate;
+
+    await runPool(targets, FETCH_CONCURRENCY, async (target) => {
+      if (requestVersionRef.current !== version) return;
+      try {
+        const result = await fetchTimeSeries(
+          query.serviceUrl,
+          target.station.station_id,
+          target.summary.datastream_name,
+          target.summary.dendra_ds_id,
+          { startDate: initialStartDate, endDate: query.endDate },
+        );
+        if (requestVersionRef.current !== version) return;
+
+        const shouldBackfill =
+          canBackfill
+          && initialStartMs != null
+          && rangeStartMs != null
+          && initialStartMs > rangeStartMs;
+
+        setSeries((prev) => prev.map((entry) => (
+          entry.id === target.id
+            ? {
+              ...entry,
+              points: result.points,
+              loading: false,
+              progressiveLoading: shouldBackfill,
+              error: result.points.length === 0 ? 'No readings in range' : null,
+              // Label used by chart via stationLabel + optional stream
+              stationLabel: multiStream
+                ? `${target.stationLabel} · ${target.summary.datastream_name}`
+                : target.stationLabel,
+            }
+            : entry
+        )));
+
+        if (!shouldBackfill || initialStartMs == null || rangeStartMs == null) return;
+
+        let cursorEndMs = initialStartMs - 24 * 60 * 60 * 1000;
+        while (cursorEndMs >= rangeStartMs) {
+          if (requestVersionRef.current !== version) return;
+          const chunkStartMs = Math.max(
+            rangeStartMs,
+            cursorEndMs - (BACKFILL_CHUNK_DAYS - 1) * 24 * 60 * 60 * 1000,
+          );
+          try {
+            const chunk = await fetchTimeSeries(
+              query.serviceUrl,
+              target.station.station_id,
+              target.summary.datastream_name,
+              target.summary.dendra_ds_id,
+              {
+                startDate: toDateUtc(chunkStartMs),
+                endDate: toDateUtc(cursorEndMs),
+              },
+            );
+            if (requestVersionRef.current !== version) return;
+            setSeries((prev) => prev.map((entry) => (
+              entry.id === target.id
+                ? {
+                  ...entry,
+                  points: mergePoints(entry.points, chunk.points),
+                  progressiveLoading: true,
+                  error: null,
+                }
+                : entry
+            )));
+          } catch {
+            break;
+          }
+          cursorEndMs = chunkStartMs - 24 * 60 * 60 * 1000;
+        }
+
+        if (requestVersionRef.current !== version) return;
+        setSeries((prev) => prev.map((entry) => (
+          entry.id === target.id ? { ...entry, progressiveLoading: false } : entry
+        )));
+      } catch (err) {
+        if (requestVersionRef.current !== version) return;
+        setSeries((prev) => prev.map((entry) => (
+          entry.id === target.id
+            ? {
+              ...entry,
+              loading: false,
+              progressiveLoading: false,
+              error: err instanceof Error ? err.message : 'Failed to load series',
+            }
+            : entry
+        )));
+      }
+    });
+
+    if (requestVersionRef.current !== version) return;
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const anyProgressive = series.some((entry) => entry.progressiveLoading);
+    setProgressiveLoading(anyProgressive);
+  }, [series]);
+
+  return {
+    series,
+    loading,
+    progressiveLoading,
+    error,
+    loadQuery,
+    clearSeries,
+    toggleSeriesVisible,
+    setSeriesVisible,
+  };
+}

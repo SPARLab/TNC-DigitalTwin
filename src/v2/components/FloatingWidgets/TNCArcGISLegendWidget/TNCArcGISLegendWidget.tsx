@@ -5,6 +5,8 @@ import { useLayers } from '../../../context/LayerContext';
 import { fetchLayerLegend, type ArcGISLegendItem, type ArcGISLayerLegend } from '../../../services/tncArcgisService';
 import type { CatalogLayer } from '../../../types';
 import { SelectAllClearAllActions } from '../../shared/SelectAllClearAllActions';
+import { getNhdPlusFlowlineLegend, isNhdPlusFlowlinesLayer } from '../../Map/layers/nhdPlusFlowlinesStyle';
+import { useTNCArcGIS } from '../../../context/TNCArcGISContext';
 
 function getTargetLayer(activeLayer: CatalogLayer | undefined, selectedSubLayerId: string | undefined): CatalogLayer | null {
   if (!activeLayer) return null;
@@ -42,7 +44,7 @@ function LegendSwatch({ item, index }: { item: ArcGISLegendItem; index: number }
   return (
     <span
       id={`tnc-arcgis-legend-widget-swatch-fallback-${index}`}
-      className="w-3 h-3 rounded-full"
+      className="w-5 h-1 rounded-full"
       style={{ backgroundColor: item.swatchColor || '#9ca3af' }}
     />
   );
@@ -65,13 +67,20 @@ export function TNCArcGISLegendWidget() {
   const [legendData, setLegendData] = useState<ArcGISLayerLegend | null>(null);
   const [selectedLegendValues, setSelectedLegendValues] = useState<Array<string | number>>([]);
 
-  const { activeLayer, syncTNCArcGISFilters, isLayerPinned, pinLayer } = useLayers();
+  const { activeLayer, syncTNCArcGISFilters, isLayerPinned, pinLayer, getPinnedByLayerId } = useLayers();
   const { layerMap } = useCatalog();
+  const { imagerySliceSelection } = useTNCArcGIS();
   const activeCatalogLayer = activeLayer ? layerMap.get(activeLayer.layerId) : undefined;
   const targetLayer = useMemo(
     () => getTargetLayer(activeCatalogLayer, activeLayer?.selectedSubLayerId),
     [activeCatalogLayer, activeLayer?.selectedSubLayerId],
   );
+  const imageryVariable = (
+    imagerySliceSelection
+    && imagerySliceSelection.layerId === targetLayer?.id
+      ? imagerySliceSelection.variableName
+      : getPinnedByLayerId(targetLayer?.id ?? '')?.tncArcgisFilters?.imageryVariable
+  ) || undefined;
 
   useEffect(() => {
     let cancelled = false;
@@ -84,7 +93,9 @@ export function TNCArcGISLegendWidget() {
       setLegendLoading(true);
       setLegendError(null);
       try {
-        const legend = await fetchLayerLegend(targetLayer.catalogMeta);
+        const legend = isNhdPlusFlowlinesLayer(targetLayer)
+          ? getNhdPlusFlowlineLegend()
+          : await fetchLayerLegend(targetLayer.catalogMeta, { variableName: imageryVariable });
         if (cancelled) return;
         setLegendData(legend);
         if (!legend || legend.items.length === 0) {
@@ -100,7 +111,7 @@ export function TNCArcGISLegendWidget() {
     }
     void loadLegend();
     return () => { cancelled = true; };
-  }, [targetLayer]);
+  }, [targetLayer, imageryVariable]);
 
   useEffect(() => {
     setSelectedLegendValues([]);
@@ -127,9 +138,16 @@ export function TNCArcGISLegendWidget() {
   useEffect(() => {
     if (!targetLayer || !canFilterByLegend || !legendData?.filterField) return;
     const whereClause = buildLegendWhereClause(legendData.filterField, selectedLegendValues);
+    const existing = getPinnedByLayerId(targetLayer.id)?.tncArcgisFilters;
     syncTNCArcGISFilters(
       targetLayer.id,
-      { whereClause, fields: [] },
+      {
+        whereClause,
+        fields: [],
+        imageryVariable: existing?.imageryVariable,
+        imageryDimensionName: existing?.imageryDimensionName,
+        imageryDimensionValue: existing?.imageryDimensionValue,
+      },
       undefined,
       // Legend filtering is a map-level interaction, so keep the root
       // TNC ArcGIS filter state in sync (map layer definitionExpression reads root).
@@ -142,6 +160,7 @@ export function TNCArcGISLegendWidget() {
     selectedLegendValues,
     syncTNCArcGISFilters,
     targetLayer,
+    getPinnedByLayerId,
   ]);
 
   if (!activeLayer || activeLayer.dataSource !== 'tnc-arcgis' || !targetLayer) return null;
@@ -235,6 +254,32 @@ export function TNCArcGISLegendWidget() {
           {legendError ? (
             <div id="tnc-arcgis-legend-widget-error" className="px-2 py-2 text-sm text-amber-700">
               {legendError}
+            </div>
+          ) : legendData?.rendererType === 'continuous' && legendData.gradientCss ? (
+            <div id="tnc-arcgis-legend-widget-ramp" className="px-1 py-1 space-y-2">
+              <p className="text-[11px] text-gray-500">{legendData.rampTitle ?? 'Value'}</p>
+              <div
+                id="tnc-arcgis-legend-widget-gradient"
+                className="h-3 w-full rounded-full border border-gray-200"
+                style={{ background: legendData.gradientCss }}
+              />
+              <div className="flex justify-between text-[11px] text-gray-600">
+                <span>{legendData.rampLowLabel ?? 'Low'}</span>
+                <span>{legendData.rampHighLabel ?? 'High'}</span>
+              </div>
+              {legendData.items.filter(item => item.label.toLowerCase().includes('no ')).map((item, index) => (
+                <div
+                  id={`tnc-arcgis-legend-widget-nodata-${index}`}
+                  key={`nodata-${index}`}
+                  className="flex items-center gap-2 pt-1"
+                >
+                  <span
+                    className="w-5 h-0.5 rounded-full"
+                    style={{ backgroundColor: item.swatchColor || '#9ca3af' }}
+                  />
+                  <span className="text-xs text-gray-600">{item.label}</span>
+                </div>
+              ))}
             </div>
           ) : (
             <div id="tnc-arcgis-legend-widget-items" className="space-y-1 max-h-[26rem] overflow-y-auto">

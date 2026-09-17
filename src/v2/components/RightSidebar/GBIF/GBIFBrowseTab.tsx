@@ -63,6 +63,7 @@ export function GBIFBrowseTab() {
   const [datasetName, setDatasetName] = useState(browseFilters.datasetName || '');
   const [startDate, setStartDate] = useState(browseFilters.startDate || '');
   const [endDate, setEndDate] = useState(browseFilters.endDate || '');
+  const [speciesLevelOnly, setSpeciesLevelOnly] = useState(browseFilters.speciesLevelOnly);
   const [occurrences, setOccurrences] = useState<GBIFOccurrence[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(0);
@@ -80,7 +81,7 @@ export function GBIFBrowseTab() {
 
   useEffect(() => {
     setPage(0);
-  }, [appliedSearchTerm, kingdom, family, basisOfRecord, datasetName, startDate, endDate]);
+  }, [appliedSearchTerm, kingdom, family, basisOfRecord, datasetName, startDate, endDate, speciesLevelOnly]);
 
   // Keep map-query filters synchronized with browse controls.
   useEffect(() => {
@@ -93,8 +94,9 @@ export function GBIFBrowseTab() {
       datasetName,
       startDate,
       endDate,
+      speciesLevelOnly,
     });
-  }, [appliedSearchTerm, kingdom, family, basisOfRecord, datasetName, startDate, endDate, setBrowseFilters]);
+  }, [appliedSearchTerm, kingdom, family, basisOfRecord, datasetName, startDate, endDate, speciesLevelOnly, setBrowseFilters]);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -114,6 +116,7 @@ export function GBIFBrowseTab() {
           datasetName: datasetName || undefined,
           startDate: startDate || undefined,
           endDate: endDate || undefined,
+          speciesLevelOnly,
           signal: abortController.signal,
         });
         if (abortController.signal.aborted) return;
@@ -141,7 +144,7 @@ export function GBIFBrowseTab() {
       abortController.abort();
       closeLoadingScope();
     };
-  }, [appliedSearchTerm, kingdom, family, basisOfRecord, datasetName, startDate, endDate, page, createBrowseLoadingScope]);
+  }, [appliedSearchTerm, kingdom, family, basisOfRecord, datasetName, startDate, endDate, speciesLevelOnly, page, createBrowseLoadingScope]);
 
   useEffect(() => {
     if (!activeLayer || !GBIF_LAYER_IDS.has(activeLayer.layerId) || activeLayer.featureId == null) return;
@@ -205,6 +208,7 @@ export function GBIFBrowseTab() {
     setDatasetName(sourceFilters.datasetName || '');
     setStartDate(sourceFilters.startDate || '');
     setEndDate(sourceFilters.endDate || '');
+    setSpeciesLevelOnly(sourceFilters.speciesLevelOnly ?? true);
     setPage(0);
 
     if (sourceFilters.selectedOccurrenceId) {
@@ -250,6 +254,7 @@ export function GBIFBrowseTab() {
         datasetName: datasetName || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
+        speciesLevelOnly: speciesLevelOnly,
         selectedOccurrenceId: selectedOccurrence?.id,
         selectedOccurrenceLabel: selectedOccurrence
           ? (selectedOccurrence.species || selectedOccurrence.scientificName || undefined)
@@ -269,6 +274,7 @@ export function GBIFBrowseTab() {
     datasetName,
     startDate,
     endDate,
+    speciesLevelOnly,
     selectedOccurrence?.id,
     selectedOccurrence?.species,
     selectedOccurrence?.scientificName,
@@ -282,19 +288,19 @@ export function GBIFBrowseTab() {
   const showInitialLoading = loading && !hasStaleResults;
   const showRefreshLoading = loading && hasStaleResults;
 
-  const hasAnyFilter = useMemo(
-    () =>
-      Boolean(
-        appliedSearchTerm ||
-          kingdom ||
-          family ||
-          basisOfRecord ||
-          datasetName ||
-          startDate ||
-          endDate,
-      ),
-    [appliedSearchTerm, kingdom, family, basisOfRecord, datasetName, startDate, endDate],
-  );
+  const hasAnyFilter = useMemo(() => {
+    const defaults = createDefaultGBIFBrowseFilters();
+    return (
+      appliedSearchTerm !== defaults.searchText ||
+      kingdom !== defaults.kingdom ||
+      family !== defaults.family ||
+      basisOfRecord !== defaults.basisOfRecord ||
+      datasetName !== defaults.datasetName ||
+      startDate !== defaults.startDate ||
+      endDate !== defaults.endDate ||
+      speciesLevelOnly !== defaults.speciesLevelOnly
+    );
+  }, [appliedSearchTerm, kingdom, family, basisOfRecord, datasetName, startDate, endDate, speciesLevelOnly]);
 
   const viewOccurrenceOnMap = (occurrence: GBIFOccurrence) => {
     if (!occurrence.coordinates) return;
@@ -326,6 +332,7 @@ export function GBIFBrowseTab() {
     setDatasetName(defaults.datasetName);
     setStartDate(defaults.startDate);
     setEndDate(defaults.endDate);
+    setSpeciesLevelOnly(defaults.speciesLevelOnly);
     setPage(0);
   };
 
@@ -458,6 +465,20 @@ export function GBIFBrowseTab() {
                        focus:outline-none focus:border-gray-300 focus:shadow-[0_0_0_1px_rgba(107,114,128,0.3)]"
           />
         </div>
+
+        <label
+          id="gbif-species-level-filter"
+          className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-sm text-gray-700 cursor-pointer"
+        >
+          <input
+            id="gbif-species-level-checkbox"
+            type="checkbox"
+            checked={speciesLevelOnly}
+            onChange={(event) => setSpeciesLevelOnly(event.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-emerald-700 focus:ring-emerald-600"
+          />
+          Species-level identification only
+        </label>
 
         <div id="gbif-result-summary-row" className="flex items-center justify-between text-xs">
           <p id="gbif-result-summary" className="text-gray-600">

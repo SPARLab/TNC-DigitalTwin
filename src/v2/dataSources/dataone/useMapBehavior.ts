@@ -33,20 +33,25 @@ import {
 } from '../../components/Map/layers/dataoneLayer';
 import type { PinnedLayer, ActiveLayer } from '../../types';
 import { isPointInsideSpatialPolygon } from '../../utils/spatialQuery';
+import { useCatalog } from '../../context/CatalogContext';
+import { registerDataOneLayerId, isDataOneLayer } from '../../components/Map/layers';
+import { findDataOneLayerId } from '../../utils/dataoneCatalog';
 
-const LAYER_ID = 'dataone-datasets';
 const MAX_MAP_SELECTION_IDS = 2000;
 
 /**
  * Identify DataONE graphic hits — works on both the FeatureLayer (2D clusters)
  * and the GraphicsLayer overlay (3D individual dots).
  */
-function isDataOneGraphicHit(result: __esri.MapViewViewHit): result is __esri.MapViewGraphicHit {
+function isDataOneGraphicHit(
+  result: __esri.MapViewViewHit,
+  layerId: string,
+): result is __esri.MapViewGraphicHit {
   if (result.type !== 'graphic') return false;
   const g = result.graphic;
   if (typeof g.attributes?.dataoneId === 'string') return true;
-  const layerId = String(g.layer?.id ?? '').replace(/^v2-/, '');
-  return layerId === LAYER_ID;
+  const hitLayerId = String(g.layer?.id ?? '').replace(/^v2-/, '');
+  return hitLayerId === layerId || isDataOneLayer(hitLayerId);
 }
 
 function getAggregateCount(graphic: __esri.Graphic): number {
@@ -143,7 +148,23 @@ export function useDataOneMapBehavior(
     createMapLoadingScope,
   } = useDataOneFilter();
   const { activateLayer, requestBrowseTab, getPinnedByLayerId } = useLayers();
+  const { layerMap } = useCatalog();
   const { viewRef, getSpatialPolygonForLayer } = useMap();
+
+  for (const [layerId, layer] of layerMap.entries()) {
+    if (layer.dataSource === 'dataone') registerDataOneLayerId(layerId);
+  }
+
+  const LAYER_ID = (() => {
+    if (activeLayer && (activeLayer.dataSource === 'dataone' || isDataOneLayer(activeLayer.layerId))) {
+      return activeLayer.layerId;
+    }
+    const pinned = pinnedLayers.find(
+      (layer) => layerMap.get(layer.layerId)?.dataSource === 'dataone' || isDataOneLayer(layer.layerId),
+    );
+    return pinned?.layerId ?? findDataOneLayerId(layerMap) ?? 'dataset-216';
+  })();
+
   const spatialPolygon = getSpatialPolygonForLayer(LAYER_ID);
   const mapDatasetsByIdRef = useRef<Map<string, DataOneDataset>>(new Map());
   const populateVersionRef = useRef(0);
@@ -309,7 +330,7 @@ export function useDataOneMapBehavior(
         const overlay = overlayRef.current;
         const hitTarget = (view.type === '3d' && overlay) ? overlay : dataOneLayer;
         const response = await view.hitTest(event, { include: [hitTarget] });
-        const graphicHit = response.results.find(isDataOneGraphicHit);
+        const graphicHit = response.results.find((result) => isDataOneGraphicHit(result, LAYER_ID));
         if (!graphicHit || graphicHit.type !== 'graphic') return;
 
         const aggregateCount = getAggregateCount(graphicHit.graphic);

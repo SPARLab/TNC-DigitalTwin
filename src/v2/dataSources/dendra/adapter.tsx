@@ -11,6 +11,7 @@ import { useEffect } from 'react';
 import { DendraProvider, useDendra } from '../../context/DendraContext';
 import { DendraOverviewTab } from '../../components/RightSidebar/Dendra/DendraOverviewTab';
 import { DendraBrowseTab } from '../../components/RightSidebar/Dendra/DendraBrowseTab';
+import { TNCArcGISTableOverlay } from '../../components/FloatingWidgets/TNCArcGISTableOverlay/TNCArcGISTableOverlay';
 import type { DataSourceAdapter, OverviewTabProps, CacheStatus } from '../types';
 
 // ── Overview tab wrapper (warms cache on activation) ─────────────────────────
@@ -31,6 +32,11 @@ function DendraOverview({ onBrowseClick }: OverviewTabProps) {
   );
 }
 
+function DendraFloatingPanels() {
+  // Reuse the ArcGIS FeatureTable overlay — it builds a FeatureLayer from catalogMeta.
+  return <TNCArcGISTableOverlay />;
+}
+
 // ── Cache status hook (used by useActiveCacheStatus in registry) ─────────────
 
 export function useDendraCacheStatus(): CacheStatus {
@@ -45,5 +51,7 @@ export const dendraAdapter: DataSourceAdapter = {
   layerIds: [], // Dynamic — registered at runtime via registerDendraLayerId
   OverviewTab: DendraOverview,
   BrowseTab: DendraBrowseTab,
+  FloatingPanel: DendraFloatingPanels,
   CacheProvider: DendraProvider,
+  supportsPinnedFilters: true,
 };

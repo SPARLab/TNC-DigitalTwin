@@ -33,4 +33,5 @@ export const calfloraAdapter: DataSourceAdapter = {
   BrowseTab: CalFloraBrowseTab,
   LegendWidget: CalFloraLegendWidget,
   CacheProvider: CalFloraFilterProvider,
+  supportsPinnedFilters: true,
 };

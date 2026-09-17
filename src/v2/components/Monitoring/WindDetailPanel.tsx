@@ -9,6 +9,7 @@ import { WIND_MODES_2D_ONLY } from './internal/useWindVisualization';
 import type { WindVizMode } from './internal/useWindVisualization';
 import type { WindStatistics } from './internal/windStatistics';
 import { getCompassLabel, type WindSnapshot } from '../../services/windService';
+import { formatObservedAt } from './internal/formatObservedAt';
 
 interface VizModeOption {
   id: WindVizMode;
@@ -44,7 +45,7 @@ const VIZ_MODES: VizModeOption[] = [
     label: 'Labels',
     icon: Tag,
     description:
-      'Each station as a disc showing its average speed in m/s, shaded by the same ramp. Click a disc for gust and bearing.',
+      'Each station as a disc showing its average speed in m/s, shaded by the same ramp. Stations with an open alert get a small severity circle with an exclamation above them.',
   },
 ];
 
@@ -53,15 +54,6 @@ const GRADIENT_CSS = `linear-gradient(to right, ${[0, 0.25, 0.5, 0.75, 1]
   .map((stop) => getSpeedColorCss(stop))
   .join(', ')})`;
 
-function formatObservedAt(epochMs: number): string {
-  if (!epochMs) return 'Unknown';
-  return new Date(epochMs).toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-}
 
 function formatRelativeTime(epochMs: number): string {
   const seconds = Math.round((Date.now() - epochMs) / 1000);

@@ -24,6 +24,7 @@ export function MapContainer() {
   const {
     viewRef,
     viewMode,
+    basemapId,
     highlightLayerRef,
     spatialQueryLayerRef,
     spatialSketchViewModelRef,
@@ -61,6 +62,7 @@ export function MapContainer() {
     mapDivRef,
     viewRef,
     viewMode,
+    basemapId,
     highlightLayerRef,
     spatialQueryLayerRef,
     spatialSketchViewModelRef,

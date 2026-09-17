@@ -21,6 +21,7 @@ interface PinnedLayerRowProps {
   isDendraLayer?: boolean;
   isDataSourceLoading: boolean;
   isExpanded: boolean;
+  supportsPinnedFilters?: boolean;
   showDragHandle: boolean;
   justDropped?: boolean;
   justPinned?: boolean;
@@ -52,6 +53,7 @@ export function PinnedLayerRow({
   isDendraLayer = false,
   isDataSourceLoading,
   isExpanded,
+  supportsPinnedFilters = false,
   showDragHandle,
   justDropped = false,
   justPinned = false,
@@ -75,6 +77,9 @@ export function PinnedLayerRow({
   getPinnedStreamStats,
 }: PinnedLayerRowProps) {
   const isNested = layer.views && layer.views.length > 0;
+  // Nested pins still expand to reveal child views; flat pins only expand when
+  // the source actually supports browse filters (ANiML, iNat, etc.).
+  const canExpandPanel = supportsPinnedFilters || !!isNested;
   const isDroneViewGroup = isNested && layer.views!.every((view) => typeof view.droneView?.flightId === 'number');
   const displayName = !isNested && layer.distinguisher
     ? `${layer.name} (${layer.distinguisher})`
@@ -180,23 +185,18 @@ export function PinnedLayerRow({
         <div 
           className="flex items-center gap-1.5 px-3 py-2"
           onClick={() => {
-            // Clicking the row activates this layer (shows in right sidebar)
-            // AND expands/collapses the panel to show filters/options
-            
+            // Activate the layer; only expand filter / child panels when useful.
             if (isNested) {
-              // For nested: activate visible child and toggle expand to show/hide children
               const visibleChild = layer.views!.find(v => v.isVisible);
               if (visibleChild) {
                 onActivateChildView?.(visibleChild.id);
               } else {
                 onActivate?.();
               }
-              // Toggle expand to show/hide children
               onToggleExpand();
             } else {
-              // For flat: activate and toggle expand panel
               onActivate?.();
-              onToggleExpand();
+              if (canExpandPanel) onToggleExpand();
             }
           }}
         >
@@ -256,7 +256,7 @@ export function PinnedLayerRow({
               )}
 
               {/* Filter count */}
-              {countDisplayMode !== 'none' && shouldShowFilterCount && (
+              {supportsPinnedFilters && countDisplayMode !== 'none' && shouldShowFilterCount && (
                 <FilterIndicator 
                   count={parentFilterCount} 
                   onClick={e => { e?.stopPropagation(); onEditFilters?.(); }} 
@@ -283,8 +283,8 @@ export function PinnedLayerRow({
           </button>
         </div>
 
-        {/* Expanded panel for flat rows — inside the same container */}
-        {!isNested && (
+        {/* Expanded panel for flat rows — filter sources only */}
+        {!isNested && supportsPinnedFilters && (
           <div 
             className="grid transition-all duration-300 ease-in-out"
             style={{
@@ -420,11 +420,14 @@ export function PinnedLayerRow({
                   onRename={(name: string) => onRenameChildView?.(view.id, name)}
                   onEditFilters={() => onEditFiltersForChild?.(view.id)}
                   onClearFilters={() => onClearFiltersForChild?.(view.id)}
+                  supportsPinnedFilters={supportsPinnedFilters}
                 />
                   );
                 })()
               ))}
-              {!isDroneViewGroup && <NewViewButton onClick={() => onCreateNewView?.()} />}
+              {!isDroneViewGroup && supportsPinnedFilters && (
+                <NewViewButton onClick={() => onCreateNewView?.()} />
+              )}
             </div>
           </div>
         </div>

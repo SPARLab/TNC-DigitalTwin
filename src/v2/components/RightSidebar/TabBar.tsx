@@ -11,7 +11,7 @@ interface TabBarProps {
 }
 
 const TABS: { id: SidebarTab; label: string }[] = [
-  { id: 'overview', label: 'Overview' },
+  { id: 'overview', label: 'Info' },
   { id: 'browse', label: 'Browse' },
 ];
 

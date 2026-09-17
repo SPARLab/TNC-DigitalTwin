@@ -8,25 +8,27 @@ import Point from '@arcgis/core/geometry/Point';
 import SimpleMarkerSymbol from '@arcgis/core/symbols/SimpleMarkerSymbol';
 import TextSymbol from '@arcgis/core/symbols/TextSymbol';
 import Font from '@arcgis/core/symbols/Font';
-import { createValueBadgeLayer, type BadgePoint } from './valueBadgeLayer';
+import { createValueBadgeLayer, createAlertFlagSymbol, type BadgePoint } from './valueBadgeLayer';
 import { sampleRamp } from './colorRamps';
 import { normalize } from './scalarField';
+import { formatObservedAt } from './formatObservedAt';
+import {
+  buildStationAlertLookup,
+  formatMeasurementPopupHeader,
+  formatStationAlertPopupHtml,
+  lookupStationAlert,
+  type StationAlertCluster,
+} from './alertMarkerLayer';
 import {
   getRampBounds,
   type ScalarReading,
   type ScalarSnapshot,
   type SensorVariableConfig,
 } from '../../../services/sensorService';
+import type { LiveAlert } from '../../../services/liveAlertService';
 
-function formatObservedAt(epochMs: number): string {
-  if (!epochMs) return 'Unknown';
-  return new Date(epochMs).toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-}
+/** Same diameter as Labels discs — used as a near-invisible hit target on Surface. */
+const SURFACE_HIT_TARGET_SIZE = 42;
 
 /** Explain any correction applied, so a surprising number can be traced. */
 function describeDerivation(
@@ -53,56 +55,75 @@ function describeDerivation(
     notes.push(`Reported directly as <code>${reading.sourceField}</code>.`);
   }
 
-  return notes.map((note) => `<p>${note}</p>`).join('');
+  return notes.map((note) => `<p style="margin:4px 0 0;color:#6b7280;font-size:12px">${note}</p>`).join('');
 }
 
-/** Build the popup shown for a station in either graphics mode. */
-function buildPopupTemplate(reading: ScalarReading, config: SensorVariableConfig) {
-  return {
-    title: reading.stationName,
-    content: [
-      {
-        type: 'text' as const,
-        text: `
-          <p><b>${config.label}:</b> ${reading.value.toFixed(config.decimals)} ${config.unit}</p>
-          <p><b>Observed:</b> ${formatObservedAt(reading.observedAt)}</p>
-          ${describeDerivation(reading, config)}
-        `,
-      },
-    ],
-  };
+/** Full station popup body for scalar readings (map click and panel focus). */
+export function formatScalarStationPopupContent(
+  reading: ScalarReading,
+  config: SensorVariableConfig,
+  cluster: StationAlertCluster | null,
+): string {
+  return `
+    ${formatMeasurementPopupHeader(
+      config.label,
+      `${reading.value.toFixed(config.decimals)} ${config.unit}`,
+    )}
+    <p style="margin:0;color:#6b7280;font-size:12px"><b>Observed:</b> ${formatObservedAt(reading.observedAt)}</p>
+    ${describeDerivation(reading, config)}
+    ${formatStationAlertPopupHtml(cluster, config.label)}
+  `;
 }
 
 /**
  * Measured values as text over the interpolated surface.
  *
- * The surface only shows where a value sits on the ramp; these anchor it to the
- * readings it was built from, so the estimate can be checked against the
- * measurements at the points where they were actually taken. Deliberately just a
- * dot and a number — the badge mode is the heavier treatment.
+ * Each station gets a Labels-sized, near-transparent disc as a hit target so the
+ * surface colour stays readable while the popup is easy to open. Alert flags use
+ * the same severity marker as Labels mode.
  */
 export function createScalarValueLabelLayer(
   snapshot: ScalarSnapshot,
   config: SensorVariableConfig,
+  alerts: LiveAlert[] = [],
 ): GraphicsLayer {
   const layer = new GraphicsLayer({ title: `${config.label} — Station Values` });
+  const alertLookup = buildStationAlertLookup(alerts);
 
   for (const reading of snapshot.readings) {
     const geometry = new Point({
       longitude: reading.longitude,
       latitude: reading.latitude,
     });
+    const cluster = lookupStationAlert(alertLookup, reading);
+    const popupTemplate = {
+      title: reading.stationName,
+      content: [
+        {
+          type: 'text' as const,
+          text: formatScalarStationPopupContent(reading, config, cluster),
+        },
+      ],
+    };
 
+    // Large, nearly transparent disc — same footprint as Labels badges so the
+    // surface colour stays readable while giving a generous click target.
     layer.add(
       new Graphic({
         geometry,
+        attributes: {
+          stationId: reading.stationId,
+          stationName: reading.stationName,
+        },
         symbol: new SimpleMarkerSymbol({
           style: 'circle',
-          size: 5.5,
-          color: [255, 255, 255, 245],
-          outline: { color: [25, 30, 40, 210], width: 1 },
+          size: SURFACE_HIT_TARGET_SIZE,
+          // Fully clear fill so the interpolated surface shows through; a faint
+          // ring keeps the clickable area discoverable without a white wash.
+          color: [255, 255, 255, 0],
+          outline: { color: [255, 255, 255, 55], width: 1.25 },
         }),
-        popupTemplate: buildPopupTemplate(reading, config),
+        popupTemplate,
       }),
     );
 
@@ -117,12 +138,22 @@ export function createScalarValueLabelLayer(
           haloSize: 1.8,
           font: new Font({ size: 11, family: 'sans-serif', weight: 'bold' }),
           horizontalAlignment: 'center',
-          verticalAlignment: 'bottom',
-          // Clear the dot so the number never sits on top of it.
-          yoffset: 6,
+          verticalAlignment: 'middle',
         }),
       }),
     );
+
+    if (cluster) {
+      layer.add(
+        new Graphic({
+          geometry,
+          symbol: createAlertFlagSymbol(
+            cluster.primary.severity,
+            SURFACE_HIT_TARGET_SIZE / 2 + 4,
+          ),
+        }),
+      );
+    }
   }
 
   return layer;
@@ -131,23 +162,28 @@ export function createScalarValueLabelLayer(
 export function createScalarBadgeLayer(
   snapshot: ScalarSnapshot,
   config: SensorVariableConfig,
+  alerts: LiveAlert[] = [],
 ): GraphicsLayer {
   const [rampLow, rampHigh] = getRampBounds(config, snapshot);
+  const alertLookup = buildStationAlertLookup(alerts);
 
-  const points: BadgePoint[] = snapshot.readings.map((reading) => ({
-    longitude: reading.longitude,
-    latitude: reading.latitude,
-    t: normalize(reading.value, rampLow, rampHigh),
-    text: reading.value.toFixed(config.decimals),
-    unit: config.unit,
-    caption: reading.stationName.replace(/^Dangermond[_ ]/, ''),
-    popupTitle: reading.stationName,
-    popupContent: `
-      <p><b>${config.label}:</b> ${reading.value.toFixed(config.decimals)} ${config.unit}</p>
-      <p><b>Observed:</b> ${formatObservedAt(reading.observedAt)}</p>
-      ${describeDerivation(reading, config)}
-    `,
-  }));
+  const points: BadgePoint[] = snapshot.readings.map((reading) => {
+    const cluster = lookupStationAlert(alertLookup, reading);
+
+    return {
+      longitude: reading.longitude,
+      latitude: reading.latitude,
+      t: normalize(reading.value, rampLow, rampHigh),
+      text: reading.value.toFixed(config.decimals),
+      unit: config.unit,
+      caption: reading.stationName.replace(/^Dangermond[_ ]/, ''),
+      severity: cluster?.primary.severity,
+      stationId: reading.stationId,
+      stationName: reading.stationName,
+      popupTitle: reading.stationName,
+      popupContent: formatScalarStationPopupContent(reading, config, cluster),
+    };
+  });
 
   return createValueBadgeLayer(points, {
     title: `${config.label} — Station Readings`,

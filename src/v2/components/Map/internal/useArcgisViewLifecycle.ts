@@ -13,6 +13,26 @@ const INITIAL_ZOOM = 12;
 const DEFAULT_SCALE = 250000;
 export const V2_LIDAR_LAYER_ID = 'v2-lidar-point-cloud-layer';
 
+const DARK_SCENE_ENVIRONMENT = {
+  atmosphereEnabled: false,
+  starsEnabled: false,
+  background: {
+    type: 'color' as const,
+    color: [6, 10, 16, 1] as [number, number, number, number],
+  },
+  lighting: {
+    type: 'virtual' as const,
+    directShadowsEnabled: false,
+  },
+};
+
+function applyDarkSceneEnvironment(view: SceneView): void {
+  // Atmosphere is what paints the bright horizon bloom when the camera tilts.
+  // A dark clear sky + virtual lighting keeps 3D readable on Dark/Imagery.
+  view.environment = DARK_SCENE_ENVIRONMENT;
+  Object.assign(view.environment.lighting, { glow: { intensity: 0.55 } });
+}
+
 interface SavedViewState {
   center: [number, number];
   scale: number;
@@ -26,6 +46,7 @@ interface UseArcgisViewLifecycleParams {
   mapDivRef: RefObject<HTMLDivElement | null>;
   viewRef: MutableRefObject<MapView | SceneView | null>;
   viewMode: ViewMode;
+  basemapId: string;
   highlightLayerRef: MutableRefObject<GraphicsLayer | null>;
   spatialQueryLayerRef: MutableRefObject<GraphicsLayer | null>;
   spatialSketchViewModelRef: MutableRefObject<SketchViewModel | null>;
@@ -37,6 +58,7 @@ export function useArcgisViewLifecycle({
   mapDivRef,
   viewRef,
   viewMode,
+  basemapId,
   highlightLayerRef,
   spatialQueryLayerRef,
   spatialSketchViewModelRef,
@@ -119,6 +141,8 @@ export function useArcgisViewLifecycle({
     heading: 0,
     sourceMode: '2d',
   });
+  const basemapIdRef = useRef(basemapId);
+  basemapIdRef.current = basemapId;
 
   useEffect(() => {
     if (!mapDivRef.current) return;
@@ -133,7 +157,7 @@ export function useArcgisViewLifecycle({
     const targetMode: ViewMode = is3D ? '3d' : '2d';
     const targetScale = getScaleForTargetMode(saved, targetMode);
     const map = new Map({
-      basemap: is3D ? 'satellite' : 'topo-vector',
+      basemap: basemapIdRef.current,
       ...(is3D && { ground: 'world-elevation' }),
     });
 
@@ -171,10 +195,7 @@ export function useArcgisViewLifecycle({
           center: saved.center,
           scale: targetScale,
           qualityProfile: 'high',
-          environment: {
-            atmosphereEnabled: true,
-            lighting: { date: new Date(), directShadowsEnabled: true },
-          },
+          environment: DARK_SCENE_ENVIRONMENT,
           ui: { components: ['attribution'] },
           padding: { top: 52, right: 0, bottom: 0, left: 0 },
         })
@@ -209,6 +230,9 @@ export function useArcgisViewLifecycle({
       if (view.popup) {
         view.popup.dockEnabled = false;
       }
+      if (view.type === '3d') {
+        applyDarkSceneEnvironment(view);
+      }
       setMapReady();
     });
 
@@ -234,4 +258,14 @@ export function useArcgisViewLifecycle({
     if (!lidarLayer) return;
     lidarLayer.visible = isLidarVisible;
   }, [isLidarVisible, viewMode, viewRef]);
+
+  useEffect(() => {
+    const view = viewRef.current;
+    const map = view?.map;
+    if (!map) return;
+    map.basemap = basemapId;
+    if (view?.type === '3d') {
+      applyDarkSceneEnvironment(view);
+    }
+  }, [basemapId, viewRef]);
 }
