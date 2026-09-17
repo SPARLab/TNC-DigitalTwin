@@ -7,7 +7,7 @@ import RasterStretchRenderer from '@arcgis/core/renderers/RasterStretchRenderer'
 import MultipartColorRamp from '@arcgis/core/rest/support/MultipartColorRamp';
 import AlgorithmicColorRamp from '@arcgis/core/rest/support/AlgorithmicColorRamp';
 import Color from '@arcgis/core/Color';
-import type { ImagerySliceSelection, TNCArcGISViewFilters } from '../../types';
+import type { ImagerySliceSelection, TNCArcGISViewFilters } from '../types';
 
 export type ImagerySliceLayer = Layer & {
   multidimensionalDefinition?: Array<{

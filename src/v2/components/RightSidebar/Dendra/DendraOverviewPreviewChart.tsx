@@ -17,7 +17,6 @@ import {
   DENDRA_SERIES_COLORS,
   DendraMultiSeriesChart,
 } from './DendraMultiSeriesChart';
-import { DendraRawDataCaution } from './DendraRawDataCaution';
 
 const PREVIEW_STATION_COUNT = 3;
 const CANDIDATE_STATION_LIMIT = 10;

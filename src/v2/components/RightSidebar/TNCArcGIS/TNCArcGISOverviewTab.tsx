@@ -100,7 +100,7 @@ export function TNCArcGISOverviewTab({
   const description = resolvedDescription || 'No description available yet.';
   const featureServiceName = serviceContextLayer?.name || activeCatalogLayer?.name || 'Unknown service';
   const currentLayerName = targetLayer?.name || activeCatalogLayer?.name || 'Unknown layer';
-  const sourceLabel = formatCatalogSourcePath(serviceContextLayer ?? targetLayer);
+  const sourceLabel = formatCatalogSourcePath(serviceContextLayer ?? targetLayer ?? undefined);
   const targetLayerCanPin = !!targetLayer;
   const sliderOpacityPercent = targetLayer ? Math.round(getLayerOpacity(targetLayer.id) * 100) : 100;
   const pinnedLayerCount = siblingLayers.filter(layer => isLayerPinned(layer.id)).length;

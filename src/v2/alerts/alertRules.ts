@@ -72,8 +72,8 @@ export function interpolateRuleMessage(message: string, rule: AlertRule): string
   const threshold = rule.threshold;
   const unit = rule.unit ? formatUnit(rule.unit) : '';
   return message
-    .replaceAll('{threshold}', threshold === undefined ? '' : String(threshold))
-    .replaceAll('{unit}', unit);
+    .replace(/\{threshold\}/g, threshold === undefined ? '' : String(threshold))
+    .replace(/\{unit\}/g, unit);
 }
 
 export function formatCondition(condition: AlertRuleCondition): string {

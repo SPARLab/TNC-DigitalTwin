@@ -76,7 +76,8 @@ export function TNCArcGISLegendWidget() {
     [activeCatalogLayer, activeLayer?.selectedSubLayerId],
   );
   const imageryVariable = (
-    imagerySliceSelection?.layerId === targetLayer?.id
+    imagerySliceSelection
+    && imagerySliceSelection.layerId === targetLayer?.id
       ? imagerySliceSelection.variableName
       : getPinnedByLayerId(targetLayer?.id ?? '')?.tncArcgisFilters?.imageryVariable
   ) || undefined;

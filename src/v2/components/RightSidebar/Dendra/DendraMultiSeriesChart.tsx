@@ -422,7 +422,7 @@ export function DendraMultiSeriesChart({
     }
   };
 
-  const handleWheel = (event: MouseEvent<SVGSVGElement> & { deltaY?: number }) => {
+  const handleWheel = (_event: MouseEvent<SVGSVGElement> & { deltaY?: number }) => {
     // Handled via native wheel listener below for preventDefault.
   };
 

@@ -280,7 +280,7 @@ export function useDatasetDetailOrchestrator({
           duration: 800,
           defaultZoomLevel: 16,
         });
-        await openPopupForDataoneFeature(view, dataset.dataoneId);
+        await openPopupForDataoneFeature(view, dataset.dataoneId, mapLayerId);
         showToast('Centered map on dataset location', 'info');
       } catch {
         showToast('Could not focus map on dataset', 'warning');
@@ -299,7 +299,7 @@ export function useDatasetDetailOrchestrator({
           spatialReference: { wkid: 4326 },
         });
         await view.goTo(extent.expand(1.2), { duration: 800 });
-        await openPopupForDataoneFeature(view, dataset.dataoneId);
+        await openPopupForDataoneFeature(view, dataset.dataoneId, mapLayerId);
         showToast('Centered map on dataset spatial extent', 'info');
       } catch {
         showToast('Could not focus map on dataset extent', 'warning');

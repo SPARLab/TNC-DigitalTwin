@@ -32,7 +32,7 @@ function getTargetLayer(
   return siblings.find((layer) => layer.id === selectedSubLayerId) ?? siblings[0] ?? null;
 }
 
-function pickDefaultDimension(variable: ImageServerVariable): { name: string; values: number[] } | null {
+function pickDefaultDimension(variable: ImageServerVariable): ImageServerVariable['dimensions'][number] | null {
   const preferred = variable.dimensions.find((dimension) => dimension.name === 'StdTime')
     ?? variable.dimensions[0];
   if (!preferred || preferred.values.length === 0) return null;
@@ -111,7 +111,7 @@ export function TNCArcGISImagerySlicePicker() {
   useEffect(() => {
     if (!targetLayer || !isImageServer) {
       initializedLayerIdRef.current = null;
-      setImagerySliceSelection((prev) => (prev ? null : prev));
+      if (imagerySliceSelection) setImagerySliceSelection(null);
       return;
     }
     if (!multidimensionalInfo || multidimensionalInfo.variables.length === 0) {
@@ -141,12 +141,15 @@ export function TNCArcGISImagerySlicePicker() {
       : dimension.values[0];
     const next = selectionWithStats(targetLayer.id, variable, dimension.name, dimensionValue);
     initializedLayerIdRef.current = targetLayer.id;
-    setImagerySliceSelection((prev) => (selectionsEqual(prev, next) ? prev : next));
+    if (!selectionsEqual(imagerySliceSelection, next)) {
+      setImagerySliceSelection(next);
+    }
   }, [
     targetLayer,
     isImageServer,
     multidimensionalInfo,
     getPinnedByLayerId,
+    imagerySliceSelection,
     setImagerySliceSelection,
   ]);
 
