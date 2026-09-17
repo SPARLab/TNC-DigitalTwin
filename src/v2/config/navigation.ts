@@ -4,6 +4,7 @@
 
 import { Database, FlaskConical, Home, NotebookPen, Radio } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { FEEDBACK_PREVIEW_MODE } from './feedbackPreview';
 
 export interface PlatformNavItem {
   /** Route path this item navigates to. */
@@ -13,6 +14,8 @@ export interface PlatformNavItem {
   /** Abbreviated label shown beneath the icon in the collapsed rail. */
   shortLabel: string;
   icon: LucideIcon;
+  /** Greyed out / non-navigable (feedback preview). */
+  comingSoon?: boolean;
 }
 
 export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
@@ -39,12 +42,14 @@ export const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
     label: 'Experiences',
     shortLabel: 'Exp.',
     icon: FlaskConical,
+    comingSoon: FEEDBACK_PREVIEW_MODE,
   },
   {
     path: '/notebooks',
     label: 'Notebooks',
     shortLabel: 'Note',
     icon: NotebookPen,
+    comingSoon: FEEDBACK_PREVIEW_MODE,
   },
 ];
 

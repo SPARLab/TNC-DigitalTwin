@@ -5,7 +5,7 @@
 import type { CatalogLayer } from '../types';
 import type { LiveAlert, LiveAlertSeverity } from '../services/liveAlertService';
 import { CATALOG_FORMAT_TAGS } from '../utils/catalogFormatTags';
-import { resolveHistoricalCatalogLayer } from '../utils/resolveCatalogLayer';
+import { resolveCatalogLayerForDataset } from '../utils/resolveCatalogLayer';
 import type { AlertSeverity } from './types';
 
 const READ_IDS_STORAGE_KEY = 'v2-live-alert-read-ids';
@@ -50,7 +50,7 @@ export function formatLiveAlertSource(alert: LiveAlert): string {
 }
 
 /**
- * Prefer a concrete catalog child (stations/locations for dendra) that matches
+ * Prefer a concrete catalog child (Latest for dendra live readings) that matches
  * the alert's source service path.
  */
 export function resolveCatalogLayerForLiveAlert(
@@ -79,29 +79,29 @@ export function resolveCatalogLayerForLiveAlert(
 
   if (matches.length === 0) return null;
 
-  // Prefer a historical/stations child when available (same as monitoring → catalog).
+  // Prefer the Latest child so catalog opens on live readings, not Locations.
   for (const match of matches) {
     const datasetId = match.catalogMeta?.datasetId;
     if (datasetId == null) continue;
-    const historical = resolveHistoricalCatalogLayer(
+    const latest = resolveCatalogLayerForDataset(
       layerMap,
       datasetId,
-      match.catalogMeta?.layerIdInService ?? 0,
+      'latest',
     );
-    if (historical) {
+    if (latest) {
       if (
-        historical.catalogMeta?.isMultiLayerService
-        && !historical.catalogMeta.parentServiceId
-        && historical.catalogMeta.siblingLayers?.length
+        latest.catalogMeta?.isMultiLayerService
+        && !latest.catalogMeta.parentServiceId
+        && latest.catalogMeta.siblingLayers?.length
       ) {
-        const locationsChild = historical.catalogMeta.siblingLayers.find(
+        const latestChild = latest.catalogMeta.siblingLayers.find(
           (sibling) =>
-            sibling.catalogMeta?.layerIdInService === 1
-            || /location|station/i.test(sibling.name),
+            sibling.catalogMeta?.layerIdInService === 0
+            || /latest/i.test(sibling.name),
         );
-        return locationsChild ?? historical.catalogMeta.siblingLayers[0] ?? historical;
+        return latestChild ?? latest.catalogMeta.siblingLayers[0] ?? latest;
       }
-      return historical;
+      return latest;
     }
   }
 

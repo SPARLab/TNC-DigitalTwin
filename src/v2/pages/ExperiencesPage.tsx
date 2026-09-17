@@ -16,6 +16,8 @@ import {
 } from '../config/experienceRegistry';
 import type { ExperienceDefinition } from '../config/experienceRegistry';
 import { ExperienceWorkspace } from '../components/Experiences/ExperienceWorkspace';
+import { UnderConstructionPanel } from '../components/shared/UnderConstructionPanel';
+import { FEEDBACK_PREVIEW_MODE } from '../config/feedbackPreview';
 
 const KIND_OPTIONS = [
   { value: '', label: 'All Types' },
@@ -248,6 +250,16 @@ export function ExperiencesPage() {
   const experienceId = workspaceMatch?.params.experienceId;
   const navigate = useNavigate();
   const experience = experienceId ? getExperienceById(experienceId) : undefined;
+
+  if (FEEDBACK_PREVIEW_MODE) {
+    return (
+      <UnderConstructionPanel
+        id="experiences-under-construction"
+        title="Experiences"
+        description="Models and simulation workspaces are under construction. Check back in a future release."
+      />
+    );
+  }
 
   if (experienceId && !experience) {
     return <Navigate to="/experiences" replace />;
