@@ -6,6 +6,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Leaf, LogIn, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useLocalStorage } from '../../../hooks/useLocalStorage';
+import { FEEDBACK_PREVIEW_MODE } from '../../config/feedbackPreview';
 import { PLATFORM_NAV_ITEMS, isNavItemActive } from '../../config/navigation';
 
 const EXPANDED_STORAGE_KEY = 'v2-nav-rail-expanded';
@@ -79,24 +80,32 @@ export function NavRail() {
       >
         {PLATFORM_NAV_ITEMS.map((item) => {
           const Icon = item.icon;
-          const isActive = isNavItemActive(item.path, location.pathname);
+          const isComingSoon = !!item.comingSoon;
+          const isActive = !isComingSoon && isNavItemActive(item.path, location.pathname);
 
           return (
             <li key={item.path} className={isExpanded ? 'w-full' : ''}>
               <button
                 id={`nav-rail-item-${item.path === '/' ? 'home' : item.path.slice(1)}`}
                 type="button"
-                onClick={() => navigate(item.path)}
-                title={item.label}
+                onClick={() => {
+                  if (isComingSoon) return;
+                  navigate(item.path);
+                }}
+                disabled={isComingSoon}
+                title={isComingSoon ? `${item.label} — under construction` : item.label}
                 aria-current={isActive ? 'page' : undefined}
+                aria-disabled={isComingSoon || undefined}
                 className={`relative flex items-center rounded-md transition-colors ${
                   isExpanded
                     ? 'w-full gap-2.5 px-2.5 py-2'
                     : 'h-12 w-12 flex-col justify-center gap-0.5'
                 } ${
-                  isActive
-                    ? 'bg-white/15 text-white'
-                    : 'text-emerald-200/70 hover:bg-white/10 hover:text-white'
+                  isComingSoon
+                    ? 'cursor-not-allowed text-emerald-200/30'
+                    : isActive
+                      ? 'bg-white/15 text-white'
+                      : 'text-emerald-200/70 hover:bg-white/10 hover:text-white'
                 }`}
               >
                 {isActive && (
@@ -105,12 +114,19 @@ export function NavRail() {
                     className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r bg-emerald-300"
                   />
                 )}
-                <Icon className="h-5 w-5 flex-shrink-0" />
+                <Icon className={`h-5 w-5 flex-shrink-0 ${isComingSoon ? 'opacity-50' : ''}`} />
                 {isExpanded ? (
-                  <span className="truncate text-xs font-medium">{item.label}</span>
+                  <span className="flex min-w-0 flex-1 items-center gap-2">
+                    <span className="truncate text-xs font-medium">{item.label}</span>
+                    {isComingSoon && (
+                      <span className="shrink-0 rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-emerald-100/50">
+                        Soon
+                      </span>
+                    )}
+                  </span>
                 ) : (
                   <span className="text-[9px] font-semibold uppercase tracking-wide">
-                    {item.shortLabel}
+                    {isComingSoon ? 'Soon' : item.shortLabel}
                   </span>
                 )}
               </button>
@@ -119,27 +135,30 @@ export function NavRail() {
         })}
       </ul>
 
-      <div
-        id="nav-rail-footer"
-        className="flex flex-shrink-0 flex-col items-center gap-2 border-t border-white/10 px-2 py-3"
-      >
-        <button
-          id="nav-rail-sign-in-button"
-          type="button"
-          disabled
-          title="Sign-in is not available yet"
-          className={`flex cursor-not-allowed items-center justify-center rounded-md text-emerald-200/40 ${
-            isExpanded ? 'w-full gap-2 px-2.5 py-2' : 'h-10 w-10 flex-col gap-0.5'
-          }`}
+      {/* TEMP: login hidden while FEEDBACK_PREVIEW_MODE is on */}
+      {!FEEDBACK_PREVIEW_MODE && (
+        <div
+          id="nav-rail-footer"
+          className="flex flex-shrink-0 flex-col items-center gap-2 border-t border-white/10 px-2 py-3"
         >
-          <LogIn className="h-4 w-4 flex-shrink-0" />
-          {isExpanded ? (
-            <span className="truncate text-xs font-medium">Sign in (soon)</span>
-          ) : (
-            <span className="text-[9px] font-semibold uppercase tracking-wide">Login</span>
-          )}
-        </button>
-      </div>
+          <button
+            id="nav-rail-sign-in-button"
+            type="button"
+            disabled
+            title="Sign-in is not available yet"
+            className={`flex cursor-not-allowed items-center justify-center rounded-md text-emerald-200/40 ${
+              isExpanded ? 'w-full gap-2 px-2.5 py-2' : 'h-10 w-10 flex-col gap-0.5'
+            }`}
+          >
+            <LogIn className="h-4 w-4 flex-shrink-0" />
+            {isExpanded ? (
+              <span className="truncate text-xs font-medium">Sign in (soon)</span>
+            ) : (
+              <span className="text-[9px] font-semibold uppercase tracking-wide">Login</span>
+            )}
+          </button>
+        </div>
+      )}
     </nav>
   );
 }

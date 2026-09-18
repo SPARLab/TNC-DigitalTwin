@@ -57,10 +57,17 @@ describe('V2AppRoutes', () => {
   });
 
   it('marks the nav rail item for the active route as the current page', () => {
-    renderAt('/experiences');
+    renderAt('/catalog');
 
-    expect(screen.getByTitle('Experiences')).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByTitle('Data Catalog')).not.toHaveAttribute('aria-current');
+    expect(screen.getByTitle('Data Catalog')).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByTitle('Live Monitoring')).not.toHaveAttribute('aria-current');
+  });
+
+  it('greys out Experiences and Notebooks while feedback preview mode is on', () => {
+    renderAt('/');
+
+    expect(screen.getByTitle('Experiences — under construction')).toBeDisabled();
+    expect(screen.getByTitle('Notebooks — under construction')).toBeDisabled();
   });
 
   it('navigates when a nav rail item is clicked', async () => {
@@ -90,16 +97,11 @@ describe('V2AppRoutes', () => {
     );
   });
 
-  it('opens an experience workspace from a nested experiences route', () => {
+  it('shows under construction for experience routes during feedback preview', () => {
     renderAt('/experiences/suitability');
 
-    expect(
-      screen.getByRole('heading', { level: 2, name: 'Suitability Modeler' }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Close experience' })).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Run Suitability Analysis' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Experiences' })).toBeInTheDocument();
+    expect(screen.getByText('Under construction')).toBeInTheDocument();
   });
 
   it('redirects unknown paths back to the landing page', () => {

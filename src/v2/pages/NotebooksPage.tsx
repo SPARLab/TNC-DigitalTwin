@@ -8,6 +8,8 @@ import { useMemo, useState } from 'react';
 import { FileCode, Search } from 'lucide-react';
 import { NOTEBOOK_TEMPLATES } from '../config/notebookTemplates';
 import { ScaffoldNotice } from '../components/shared/ScaffoldNotice';
+import { UnderConstructionPanel } from '../components/shared/UnderConstructionPanel';
+import { FEEDBACK_PREVIEW_MODE } from '../config/feedbackPreview';
 
 export function NotebooksPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -23,6 +25,16 @@ export function NotebooksPage() {
         template.tags.some((tag) => tag.toLowerCase().includes(query)),
     );
   }, [searchQuery]);
+
+  if (FEEDBACK_PREVIEW_MODE) {
+    return (
+      <UnderConstructionPanel
+        id="notebooks-under-construction"
+        title="Notebooks"
+        description="Analysis notebook templates are under construction. Check back in a future release."
+      />
+    );
+  }
 
   return (
     <div id="notebooks-page" className="h-full w-full overflow-y-auto bg-gray-50">
