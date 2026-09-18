@@ -3,11 +3,8 @@ import ReactDOM from 'react-dom/client'
 import ErrorBoundary from './components/ErrorBoundary.tsx'
 import './index.css'
 
-// The v2 platform is the default app. ?v1 in the URL falls back to the legacy catalog.
-const isV1 = new URLSearchParams(window.location.search).has('v1');
-
-// Lazy-load whichever version we need
-const App = lazy(() => isV1 ? import('./App.tsx') : import('./v2/V2App.tsx'));
+// Legacy catalog remains in src/App.tsx, but it is no longer reachable from the URL.
+const App = lazy(() => import('./v2/V2App.tsx'));
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

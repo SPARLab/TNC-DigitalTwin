@@ -243,8 +243,7 @@ export function LeftSidebar() {
             {/* Error state */}
             {error && !loading && (
               <div id="catalog-error" className="flex flex-col items-center justify-center text-center px-6 py-12">
-                <p className="text-sm font-medium text-red-600">Failed to load catalog</p>
-                <p className="text-xs text-gray-500 mt-1">{error}</p>
+                <p className="text-sm font-medium text-gray-700">{error}</p>
               </div>
             )}
 

@@ -48,9 +48,7 @@ export function V2Header({ onOpenExportBuilder }: V2HeaderProps) {
     [sortedAlerts, readAlertIds],
   );
 
-  const switchToV1 = () => {
-    window.location.search = '?v1';
-  };
+  // The header no longer offers a switch to the legacy catalog. src/App.tsx is still in the repo.
 
   useEffect(() => {
     if (!isAlertsOpen) return undefined;
@@ -362,13 +360,6 @@ export function V2Header({ onOpenExportBuilder }: V2HeaderProps) {
               {cartCount > 99 ? '99+' : cartCount}
             </span>
           )}
-        </button>
-
-        <button
-          onClick={switchToV1}
-          className="text-xs text-emerald-200 hover:text-white transition-colors"
-        >
-          Switch to v1
         </button>
       </div>
     </header>
