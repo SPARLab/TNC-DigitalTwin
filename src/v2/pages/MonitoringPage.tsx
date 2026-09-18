@@ -77,6 +77,7 @@ import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { createPreserveOutlineLayer } from '../components/Monitoring/internal/boundaryOutlineLayer';
 import { formatObservedAt } from '../components/Monitoring/internal/formatObservedAt';
 import { AlertsPanel } from '../components/Monitoring/AlertsPanel';
+import { BetaNoticeBanner } from '../components/shared/BetaNoticeBanner';
 import { allowsInterpolation, SENSOR_VARIABLES } from '../services/sensorService';
 import type { SensorVariableId } from '../services/sensorService';
 import {
@@ -1067,7 +1068,9 @@ export function MonitoringPage() {
   }, [isLoading, cameras.isLoading, isCamerasActive, scalar.isLoading, activeScalarId]);
 
   return (
-    <div id="monitoring-page" className="flex h-full w-full overflow-hidden bg-gray-50">
+    <div className="flex h-full w-full flex-col overflow-hidden">
+      <BetaNoticeBanner />
+    <div id="monitoring-page" className="flex min-h-0 flex-1 overflow-hidden bg-gray-50">
       <ResizablePanel
         side="left"
         storageKey="v2-monitoring-sidebar-panel"
@@ -1093,9 +1096,8 @@ export function MonitoringPage() {
           )}
 
           {sectionsError && (
-            <div role="alert" className="m-3 rounded-card border border-red-200 bg-red-50 px-3 py-2">
-              <p className="text-xs font-medium text-red-800">Could not load the sensor list</p>
-              <p className="mt-0.5 text-[11px] leading-relaxed text-red-700">{sectionsError}</p>
+            <div role="alert" className="m-3 rounded-card border border-amber-200 bg-amber-50 px-3 py-2">
+              <p className="text-[11px] leading-relaxed text-amber-950">{sectionsError}</p>
             </div>
           )}
 
@@ -1474,6 +1476,7 @@ export function MonitoringPage() {
         )}
         </div>
       </ResizablePanel>
+    </div>
     </div>
   );
 }

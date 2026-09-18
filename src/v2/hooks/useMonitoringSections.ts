@@ -121,31 +121,48 @@ export function useMonitoringSections(): UseMonitoringSectionsResult {
 
   useEffect(() => {
     let cancelled = false;
+    const maxAttempts = 3;
 
-    async function load() {
-      try {
-        const result = await fetchLiveTaggedDatasets();
-        if (cancelled) return;
+    async function loadOnce() {
+      const result = await fetchLiveTaggedDatasets();
+      if (cancelled) return;
 
-        if (!hasWarnedRef.current) {
-          hasWarnedRef.current = true;
-          warnAboutTaggingGaps(result);
+      if (!hasWarnedRef.current) {
+        hasWarnedRef.current = true;
+        warnAboutTaggingGaps(result);
+      }
+
+      setDatasets(result);
+      setError(null);
+      setIsLoading(false);
+    }
+
+    async function loadWithRetries() {
+      for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+        try {
+          await loadOnce();
+          return;
+        } catch (caught) {
+          if (cancelled) return;
+          console.warn(
+            `[MonitoringSections] Sensor list attempt ${attempt}/${maxAttempts} failed:`,
+            caught,
+          );
+          if (attempt === maxAttempts) {
+            console.error('[MonitoringSections] Could not load the tagged dataset list:', caught);
+            setError('Data layers are currently unavailable. Please wait a few minutes and try refreshing again.');
+            setDatasets(null);
+            setIsLoading(false);
+            return;
+          }
+          await new Promise((resolve) => {
+            window.setTimeout(resolve, 1200 * attempt);
+          });
         }
-
-        setDatasets(result);
-        setError(null);
-      } catch (caught) {
-        if (cancelled) return;
-        const message = caught instanceof Error ? caught.message : 'Failed to load sensor list.';
-        console.error('[MonitoringSections] Could not load the tagged dataset list:', caught);
-        setError(message);
-        setDatasets(null);
-      } finally {
-        if (!cancelled) setIsLoading(false);
       }
     }
 
-    void load();
+    void loadWithRetries();
     return () => {
       cancelled = true;
     };

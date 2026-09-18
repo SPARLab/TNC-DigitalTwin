@@ -11,6 +11,7 @@ import { RightSidebar } from '../components/RightSidebar/RightSidebar';
 import { ExportBuilderModal } from '../components/ExportBuilder/ExportBuilderModal';
 import { ResizablePanel } from '../components/shared/ResizablePanel';
 import { useCatalogPreserveBoundaryBootstrap } from '../hooks/useCatalogPreserveBoundaryBootstrap';
+import { BetaNoticeBanner } from '../components/shared/BetaNoticeBanner';
 
 export function CatalogWorkbench() {
   const [isExportBuilderOpen, setIsExportBuilderOpen] = useState(false);
@@ -18,6 +19,7 @@ export function CatalogWorkbench() {
 
   return (
     <div id="v2-app" className="flex h-full w-full flex-col overflow-hidden">
+      <BetaNoticeBanner />
       <V2Header onOpenExportBuilder={() => setIsExportBuilderOpen(true)} />
       <div id="v2-main-layout" className="relative flex flex-1 overflow-hidden">
         <ResizablePanel

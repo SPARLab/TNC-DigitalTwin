@@ -366,9 +366,9 @@ export function useCatalogRegistry(): CatalogRegistryState {
 
   useEffect(() => {
     let cancelled = false;
+    const maxAttempts = 3;
 
     async function load() {
-      try {
         // Fetch all three tables in parallel
         const [rawCats, rawDatasets, rawJunctions] = await Promise.all([
           queryTable<RawCategory>(0),
@@ -732,18 +732,36 @@ export function useCatalogRegistry(): CatalogRegistryState {
           loading: false,
           error: null,
         });
-      } catch (err) {
-        if (cancelled) return;
-        console.error('[CatalogRegistry] Failed to load catalog:', err);
-        setState(prev => ({
-          ...prev,
-          loading: false,
-          error: err instanceof Error ? err.message : 'Failed to load data catalog',
-        }));
+    }
+
+    async function loadWithRetries() {
+      for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+        try {
+          await load();
+          return;
+        } catch (err) {
+          if (cancelled) return;
+          console.warn(
+            `[CatalogRegistry] Catalog load attempt ${attempt}/${maxAttempts} failed:`,
+            err,
+          );
+          if (attempt === maxAttempts) {
+            console.error('[CatalogRegistry] Failed to load catalog:', err);
+            setState((prev) => ({
+              ...prev,
+              loading: false,
+              error: 'Data layers are currently unavailable. Please wait a few minutes and try refreshing again.',
+            }));
+            return;
+          }
+          await new Promise((resolve) => {
+            window.setTimeout(resolve, 1200 * attempt);
+          });
+        }
       }
     }
 
-    load();
+    void loadWithRetries();
     return () => { cancelled = true; };
   }, []);
 
