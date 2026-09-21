@@ -500,12 +500,17 @@ export function MonitoringPage() {
     }
 
     // Prefer a concrete child over a service container so pinLayer succeeds.
+    // Match Locations by name first — creek gauges publish Locations at id 0,
+    // while classic `_Datastreams` services put Locations at id 1.
     const targetLayerId = isServiceContainerLayer(layer)
       ? (
           layer.catalogMeta?.siblingLayers?.find(
+            (sibling) => /location|station/i.test(sibling.name),
+          )?.id
+          ?? layer.catalogMeta?.siblingLayers?.find(
             (sibling) =>
               sibling.catalogMeta?.layerIdInService === 1
-              || /location|station/i.test(sibling.name),
+              && !/latest/i.test(sibling.name),
           )?.id
           ?? layer.catalogMeta?.siblingLayers?.[0]?.id
           ?? layer.id

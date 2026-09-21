@@ -5,6 +5,11 @@
 // Single-layer rows are keyed `dataset-{id}`. Multi-layer FeatureServers (common
 // for live datastreams: Latest + Locations) are keyed `service-{id}` with
 // children `service-{id}-layer-{n}`, so a naive dataset- id lookup misses them.
+//
+// Layer order is NOT stable across services:
+//   Classic `_Datastreams`: Latest = 0, Locations = 1
+//   Creek gauges:          Locations = 0, Latest = 1
+// Prefer sublayer *names* over numeric ids when resolving Latest vs Locations.
 // ============================================================================
 
 import type { CatalogLayer } from '../types';
@@ -22,7 +27,20 @@ function isServiceContainer(layer: CatalogLayer): boolean {
   );
 }
 
-function matchesPreference(
+function isLatestNamed(name: string | undefined): boolean {
+  return /latest/i.test(name ?? '');
+}
+
+function isLocationsNamed(name: string | undefined): boolean {
+  return /location|station/i.test(name ?? '');
+}
+
+/**
+ * Match a child layer to a Latest / Locations preference.
+ * Names win over conventional layer ids so creek-style (Locations=0) services
+ * resolve correctly alongside classic `_Datastreams` (Latest=0) services.
+ */
+export function matchesPreference(
   layer: CatalogLayer,
   preference: CatalogSublayerPreference,
 ): boolean {
@@ -34,11 +52,16 @@ function matchesPreference(
   }
 
   if (preference === 'latest') {
-    return layerId === 0 || /latest/i.test(name);
+    if (isLatestNamed(name)) return true;
+    if (isLocationsNamed(name)) return false;
+    // Legacy fallback when names are opaque: Latest was published as layer 0.
+    return layerId === 0;
   }
 
-  // Stations / locations view used for historical browsing of live datastreams.
-  return layerId === 1 || /location|station/i.test(name);
+  if (isLocationsNamed(name)) return true;
+  if (isLatestNamed(name)) return false;
+  // Legacy fallback: Locations was published as layer 1.
+  return layerId === 1;
 }
 
 function resolveFromMap(
@@ -90,16 +113,9 @@ export function resolveCatalogLayerForDataset(
   datasetId: number,
   preference: CatalogSublayerPreference = 'latest',
 ): CatalogLayer | null {
-  const preferredKey =
-    typeof preference === 'number'
-      ? `service-${datasetId}-layer-${preference}`
-      : preference === 'latest'
-        ? `service-${datasetId}-layer-0`
-        : `service-${datasetId}-layer-1`;
-
-  const preferredChild = layerMap.get(preferredKey);
-  if (preferredChild && matchesPreference(preferredChild, preference)) {
-    return preferredChild;
+  if (typeof preference === 'number') {
+    const byId = layerMap.get(`service-${datasetId}-layer-${preference}`);
+    if (byId) return byId;
   }
 
   const service = layerMap.get(`service-${datasetId}`);
@@ -108,7 +124,15 @@ export function resolveCatalogLayerForDataset(
     return pickPreferredSibling(siblings, preference, layerMap) ?? service ?? null;
   }
 
-  if (preferredChild) return preferredChild;
+  // Direct key guesses for classic ordering — only accept when the name agrees.
+  if (preference === 'latest' || preference === 'locations') {
+    for (const layerIndex of [0, 1]) {
+      const candidate = layerMap.get(`service-${datasetId}-layer-${layerIndex}`);
+      if (candidate && matchesPreference(candidate, preference)) {
+        return candidate;
+      }
+    }
+  }
 
   const direct = layerMap.get(`dataset-${datasetId}`);
   if (direct && !isServiceContainer(direct)) return direct;

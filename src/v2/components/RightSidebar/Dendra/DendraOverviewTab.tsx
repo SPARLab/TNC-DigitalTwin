@@ -234,33 +234,38 @@ export function DendraOverviewTab({
         )}
 
         {/* Description */}
-        {resolvedDescription ? (
-          looksLikeHtml(resolvedDescription) ? (
-            <SafeHtml
-              id="dendra-overview-description"
-              html={resolvedDescription}
-              className="text-sm leading-relaxed text-gray-600 [&_a]:font-medium [&_a]:text-emerald-700 [&_a]:underline hover:[&_a]:text-emerald-800 [&_p]:mb-3 [&_p:last-child]:mb-0 [&_strong]:font-semibold"
-            />
+        <div id="dendra-overview-description-block" className="space-y-2">
+          <h3 id="dendra-overview-title" className="text-sm font-semibold text-gray-900">
+            Feature Service Overview
+          </h3>
+          {resolvedDescription ? (
+            looksLikeHtml(resolvedDescription) ? (
+              <SafeHtml
+                id="dendra-overview-description"
+                html={resolvedDescription}
+                className="text-sm leading-relaxed text-gray-600 [&_a]:font-medium [&_a]:text-emerald-700 [&_a]:underline hover:[&_a]:text-emerald-800 [&_p]:mb-3 [&_p:last-child]:mb-0 [&_strong]:font-semibold"
+              />
+            ) : (
+              <p
+                id="dendra-overview-description"
+                className="whitespace-pre-line text-sm leading-relaxed text-gray-600"
+              >
+                {resolvedDescription}
+              </p>
+            )
           ) : (
-            <p
-              id="dendra-overview-description"
-              className="whitespace-pre-line text-sm leading-relaxed text-gray-600"
-            >
-              {resolvedDescription}
+            <p id="dendra-overview-description" className="text-sm leading-relaxed text-gray-600">
+              Real-time and historical sensor data from the Dangermond Preserve.
+              {serviceTitle && (
+                <>
+                  {' '}
+                  This layer shows <strong>{serviceTitle}</strong> with station locations and
+                  associated datastream measurements.
+                </>
+              )}
             </p>
-          )
-        ) : (
-          <p id="dendra-overview-description" className="text-sm leading-relaxed text-gray-600">
-            Real-time and historical sensor data from the Dangermond Preserve.
-            {serviceTitle && (
-              <>
-                {' '}
-                This layer shows <strong>{serviceTitle}</strong> with station locations and
-                associated datastream measurements.
-              </>
-            )}
-          </p>
-        )}
+          )}
+        </div>
 
         {/* Metadata + REST / table actions (ArcGIS-style) */}
         <div id="dendra-overview-metadata" className="rounded-lg border border-slate-200 bg-slate-50 p-3">

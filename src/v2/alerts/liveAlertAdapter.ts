@@ -95,9 +95,11 @@ export function resolveCatalogLayerForLiveAlert(
         && latest.catalogMeta.siblingLayers?.length
       ) {
         const latestChild = latest.catalogMeta.siblingLayers.find(
-          (sibling) =>
-            sibling.catalogMeta?.layerIdInService === 0
-            || /latest/i.test(sibling.name),
+          (sibling) => /latest/i.test(sibling.name),
+        ) ?? latest.catalogMeta.siblingLayers.find(
+          // Classic `_Datastreams` convention when names are opaque.
+          (sibling) => sibling.catalogMeta?.layerIdInService === 0
+            && !/location|station/i.test(sibling.name),
         );
         return latestChild ?? latest.catalogMeta.siblingLayers[0] ?? latest;
       }

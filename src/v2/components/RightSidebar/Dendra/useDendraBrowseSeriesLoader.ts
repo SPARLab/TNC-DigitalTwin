@@ -98,16 +98,19 @@ function resolveTargets(query: DendraBrowseQuery): Array<{
   for (const station of query.stations) {
     const summaries = query.summariesByStation.get(station.station_id) ?? [];
     for (const summary of summaries) {
+      const fieldKey = (summary.dendra_ds_id || summary.variable || '').trim().toLowerCase();
+      if (!fieldKey) continue;
       const matches = selectedFields.some((field) =>
-        datastreamMatchesLatestField(summary.datastream_name, field, fieldUniverse),
+        field === fieldKey
+        || datastreamMatchesLatestField(summary.datastream_name, field, fieldUniverse),
       );
       if (!matches) continue;
-      if (!summary.dendra_ds_id) continue;
       targets.push({
-        id: seriesId(station.station_id, summary.dendra_ds_id),
+        id: seriesId(station.station_id, fieldKey),
         station,
         summary: {
           ...summary,
+          dendra_ds_id: summary.dendra_ds_id || fieldKey,
           datastream_name: normalizeDatastreamTypeName(summary.datastream_name)
             || summary.datastream_name,
         },

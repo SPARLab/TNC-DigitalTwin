@@ -39,9 +39,7 @@ function pickDefaultFlightIdForProject(
       if (flight.wmts.itemId.trim().length > 0) return flight.id;
     }
   }
-  const fallback = projects[0]?.imageryLayers.find((flight) => !failedFlightIds?.has(flight.id))
-    ?? projects[0]?.imageryLayers[0]
-    ?? projects[0]?.imageryLayers[projects[0].imageryLayers.length - 1];
+  const fallback = projects[0]?.imageryLayers.find((flight) => !failedFlightIds?.has(flight.id));
   return fallback?.id ?? null;
 }
 
@@ -120,6 +118,11 @@ export function useDroneDeployMapBehavior(
       return;
     }
     if (activeFlightId != null) {
+      if (failedFlightIdsRef.current.has(activeFlightId)) {
+        setFlightLoaded(activeFlightId, false);
+        setFlightLoading(activeFlightId, false);
+        return;
+      }
       setSelectedFlightId(activeFlightId);
       for (const loadedFlightId of loadedFlightIds) {
         if (loadedFlightId !== activeFlightId) {
@@ -178,6 +181,7 @@ export function useDroneDeployMapBehavior(
     activeLayer?.viewId,
     activateLayer,
     setFlightLoaded,
+    setFlightLoading,
     requestFlyToFlight,
   ]);
 
@@ -214,6 +218,7 @@ export function useDroneDeployMapBehavior(
     }
 
     for (const flightId of desired) {
+      if (failedFlightIdsRef.current.has(flightId)) continue;
       if (byFlightId.has(flightId)) {
         const layer = byFlightId.get(flightId);
         if (layer) {
@@ -251,11 +256,14 @@ export function useDroneDeployMapBehavior(
           clearFlyToRequest();
         }
       }).catch((error) => {
-        parent.remove(wmtsLayer);
+        const alreadyFailed = failedFlightIdsRef.current.has(flight.id);
+        failedFlightIdsRef.current.add(flight.id);
+        wmtsLayer.cancelLoad();
+        if (parent.findLayerById(wmtsLayer.id)) parent.remove(wmtsLayer);
         byFlightId.delete(flight.id);
         setFlightLoading(flight.id, false);
         setFlightLoaded(flight.id, false);
-        failedFlightIdsRef.current.add(flight.id);
+        if (alreadyFailed) return;
         console.error('[DroneDeploy Map] Failed to load WMTS layer', error);
         const failedFlightProject = getProjectByFlightId(flight.id);
         const fallbackFlight = failedFlightProject?.imageryLayers.find(

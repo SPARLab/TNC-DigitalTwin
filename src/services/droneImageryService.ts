@@ -2,7 +2,6 @@ import type {
   DroneImageryRecord,
   DroneImageryMetadata,
   DroneImageryProject,
-  DroneImageryQueryResponse,
 } from '../types/droneImagery';
 
 // Re-export types for consumers
@@ -11,6 +10,15 @@ export type { DroneImageryMetadata, DroneImageryProject };
 // v2 API includes project_bounds and plan_geometry fields
 const DRONE_IMAGERY_METADATA_URL =
   'https://dangermondpreserve-spatial.com/server/rest/services/Hosted/DroneDeploy_Metadata_v2/FeatureServer/0';
+
+const QUERY_ATTEMPTS = 3;
+const QUERY_RETRY_DELAY_MS = 1200;
+
+interface DroneImageryQueryBody {
+  features?: Array<{ attributes?: DroneImageryRecord }>;
+  exceededTransferLimit?: boolean;
+  error?: { message?: string; details?: string[] };
+}
 
 
 /**
@@ -78,49 +86,85 @@ function recordToMetadata(record: DroneImageryRecord): DroneImageryMetadata {
   return metadata;
 }
 
+function queryErrorMessage(data: DroneImageryQueryBody, fallback: string): string {
+  const details = data.error?.details?.filter(Boolean).join(' ');
+  return data.error?.message || details || fallback;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+async function fetchQueryWithRetries(params: URLSearchParams): Promise<DroneImageryQueryBody> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= QUERY_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetch(`${DRONE_IMAGERY_METADATA_URL}/query?${params}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch drone imagery metadata: ${response.status} ${response.statusText}`);
+      }
+
+      const data = (await response.json()) as DroneImageryQueryBody;
+      if (data.error || !Array.isArray(data.features)) {
+        throw new Error(queryErrorMessage(data, 'Drone imagery query returned no features.'));
+      }
+      return data;
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error('Failed to fetch drone imagery metadata');
+      if (attempt < QUERY_ATTEMPTS) {
+        await sleep(QUERY_RETRY_DELAY_MS * attempt);
+      }
+    }
+  }
+
+  throw lastError ?? new Error('Failed to fetch drone imagery metadata');
+}
+
+async function queryDroneImageryRecords(
+  where: string,
+  orderByFields?: string,
+): Promise<DroneImageryRecord[]> {
+  const records: DroneImageryRecord[] = [];
+  let resultOffset = 0;
+
+  for (let page = 0; page < 20; page += 1) {
+    const params = new URLSearchParams({
+      where,
+      outFields: '*',
+      returnGeometry: 'false',
+      f: 'json',
+      resultOffset: String(resultOffset),
+    });
+    if (orderByFields) params.set('orderByFields', orderByFields);
+
+    const data = await fetchQueryWithRetries(params);
+    const features = data.features ?? [];
+    records.push(
+      ...features.flatMap((feature) => (feature.attributes ? [feature.attributes] : [])),
+    );
+    if (!data.exceededTransferLimit || features.length === 0) break;
+    resultOffset += features.length;
+  }
+
+  return records;
+}
+
 /**
  * Fetch all drone imagery metadata records
  */
 export async function fetchDroneImageryMetadata(): Promise<DroneImageryMetadata[]> {
-  const params = new URLSearchParams({
-    where: '1=1',
-    outFields: '*',
-    returnGeometry: 'false',
-    f: 'json',
-  });
-
-  const url = `${DRONE_IMAGERY_METADATA_URL}/query?${params}`;
-  const response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch drone imagery metadata: ${response.statusText}`);
-  }
-
-  const data: DroneImageryQueryResponse = await response.json();
-
-  return data.features.map((feature) => recordToMetadata(feature.attributes));
+  const records = await queryDroneImageryRecords('1=1');
+  return records.map((record) => recordToMetadata(record));
 }
 
 /**
  * Fetch all drone imagery raw records (for extracting project_bounds)
  */
 async function fetchDroneImageryRawRecords(): Promise<DroneImageryRecord[]> {
-  const params = new URLSearchParams({
-    where: '1=1',
-    outFields: '*',
-    returnGeometry: 'false',
-    f: 'json',
-  });
-
-  const url = `${DRONE_IMAGERY_METADATA_URL}/query?${params}`;
-  const response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch drone imagery raw records: ${response.statusText}`);
-  }
-
-  const data: DroneImageryQueryResponse = await response.json();
-  return data.features.map((feature) => feature.attributes);
+  return queryDroneImageryRecords('1=1');
 }
 
 /**
@@ -184,26 +228,12 @@ export async function fetchDroneImageryByProject(): Promise<DroneImageryProject[
 export async function fetchDroneImageryForProject(
   projectName: string
 ): Promise<DroneImageryMetadata[]> {
-  const params = new URLSearchParams({
-    where: `project_name='${projectName}'`,
-    outFields: '*',
-    returnGeometry: 'false',
-    orderByFields: 'date_captured ASC',
-    f: 'json',
-  });
-
-  const url = `${DRONE_IMAGERY_METADATA_URL}/query?${params}`;
-  const response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch drone imagery for project ${projectName}: ${response.statusText}`
-    );
-  }
-
-  const data: DroneImageryQueryResponse = await response.json();
-
-  return data.features.map((feature) => recordToMetadata(feature.attributes));
+  const escapedName = projectName.replace(/'/g, "''");
+  const records = await queryDroneImageryRecords(
+    `project_name='${escapedName}'`,
+    'date_captured ASC',
+  );
+  return records.map((record) => recordToMetadata(record));
 }
 
 /**

@@ -163,11 +163,13 @@ export function DendraBrowseTab() {
     return stationsInSpatial.filter((station) => {
       const summaries = summariesByStation.get(station.station_id);
       if (!summaries) return false;
-      return summaries.some((summary) =>
-        selected.some((field) =>
-          datastreamMatchesLatestField(summary.datastream_name, field, availableStreamKeys),
-        ),
-      );
+      return summaries.some((summary) => {
+        const fieldKey = (summary.dendra_ds_id || summary.variable || '').trim().toLowerCase();
+        return selected.some((field) =>
+          field === fieldKey
+          || datastreamMatchesLatestField(summary.datastream_name, field, availableStreamKeys),
+        );
+      });
     });
   }, [stationsInSpatial, selectedStreamNames, summariesByStation, availableStreamKeys]);
 

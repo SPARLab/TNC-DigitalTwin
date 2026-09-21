@@ -172,9 +172,6 @@ export function V2Header({ onOpenExportBuilder }: V2HeaderProps) {
         <h1 className="text-sm font-semibold text-white">
           Dangermond Preserve Data Catalog
         </h1>
-        <span className="text-[10px] font-medium text-emerald-100 bg-white/15 border border-white/25 px-1.5 py-0.5 rounded">
-          v2.0
-        </span>
       </div>
 
       <div className="flex items-center gap-3">

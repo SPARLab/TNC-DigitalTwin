@@ -48,7 +48,7 @@ function toChartSeries(entries: StationSeries[]) {
 }
 
 export function DendraOverviewPreviewChart() {
-  const { stations, activeServiceUrl, dataLoaded, loadStationSummaries } = useDendra();
+  const { stations, activeServiceUrl, dataLoaded, datastreamTypesLoaded, loadStationSummaries } = useDendra();
   const summariesByStation = useSummariesByStation();
 
   const candidateStations = useMemo(() => pickCandidateStations(stations), [stations]);
@@ -59,11 +59,11 @@ export function DendraOverviewPreviewChart() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    if (!dataLoaded) return;
+    if (!dataLoaded || !datastreamTypesLoaded) return;
     for (const station of candidateStations) {
       loadStationSummaries(station.station_id);
     }
-  }, [candidateStations, dataLoaded, loadStationSummaries]);
+  }, [candidateStations, dataLoaded, datastreamTypesLoaded, loadStationSummaries]);
 
   const candidateStreamKey = useMemo(
     () => candidateStations

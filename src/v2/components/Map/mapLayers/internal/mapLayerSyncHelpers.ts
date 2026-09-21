@@ -29,5 +29,11 @@ export function getConcreteActiveLayerId(activeLayer: ActiveLayer | null, layerM
   if (activeLayer.selectedSubLayerId && siblingLayers.some(sibling => sibling.id === activeLayer.selectedSubLayerId)) {
     return activeLayer.selectedSubLayerId;
   }
+  // Dendra service parents: prefer Locations (station dots) by name. Creek
+  // gauges publish Locations at layer 0; classic `_Datastreams` put Latest at 0.
+  if (serviceLayer?.dataSource === 'dendra') {
+    const locations = siblingLayers.find((sibling) => /location|station/i.test(sibling.name));
+    if (locations) return locations.id;
+  }
   return siblingLayers[0]?.id ?? null;
 }

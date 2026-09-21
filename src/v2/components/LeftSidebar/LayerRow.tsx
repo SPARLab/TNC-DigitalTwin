@@ -8,7 +8,7 @@ import { ChevronDown, ChevronRight, Eye, EyeOff, Pin } from 'lucide-react';
 import { useLayers } from '../../context/LayerContext';
 import { useCatalog } from '../../context/CatalogContext';
 import { useDroneDeploy } from '../../context/DroneDeployContext';
-import { fetchDroneImageryByProject, type DroneImageryProject } from '../../../services/droneImageryService';
+import type { DroneImageryProject } from '../../../services/droneImageryService';
 
 interface LayerRowProps {
   layerId: string;
@@ -64,9 +64,6 @@ export function LayerRow({
   onAnnounce,
 }: LayerRowProps) {
   const [isProjectsExpanded, setIsProjectsExpanded] = useState(false);
-  const [projects, setProjects] = useState<DroneImageryProject[] | null>(null);
-  const [projectsLoading, setProjectsLoading] = useState(false);
-  const [projectsError, setProjectsError] = useState<string | null>(null);
   const [projectsRequestNonce, setProjectsRequestNonce] = useState(0);
 
   const {
@@ -81,7 +78,16 @@ export function LayerRow({
     getPinnedByLayerId,
   } = useLayers();
   const { layerMap } = useCatalog();
-  const { setFlightLoaded, setSelectedFlightId, requestFlyToFlight } = useDroneDeploy();
+  const {
+    setFlightLoaded,
+    setSelectedFlightId,
+    requestFlyToFlight,
+    projects: cachedProjects,
+    dataLoaded: projectsLoaded,
+    error: metadataError,
+    metadataLoading,
+    warmCache,
+  } = useDroneDeploy();
 
   const catalogLayer = layerMap.get(layerId);
   const isServiceContainer = !!(
@@ -92,6 +98,17 @@ export function LayerRow({
   );
   const isDroneDeployOrthomosaicsLayer = catalogLayer?.dataSource === 'drone'
     || catalogLayer?.catalogMeta?.catalogTag === 'drone_format';
+  const projects = projectsLoaded ? cachedProjects : null;
+  const projectsLoading = isDroneDeployOrthomosaicsLayer
+    && isProjectsExpanded
+    && !projectsLoaded
+    && !metadataError;
+  const projectsError = isDroneDeployOrthomosaicsLayer
+    && isProjectsExpanded
+    && !projectsLoaded
+    && !metadataLoading
+    ? metadataError
+    : null;
 
   const isSelectedServiceChild = !controlsOnly
     && !!activeLayer?.isService
@@ -103,13 +120,6 @@ export function LayerRow({
   const activeDroneFlightId = typeof activeLayer?.featureId === 'number'
     ? activeLayer.featureId
     : undefined;
-
-  // Reveal the row when activated from elsewhere (e.g. Monitoring → historical).
-  useEffect(() => {
-    if (!isActive) return;
-    const row = document.getElementById(`layer-row-${layerId}`);
-    row?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }, [isActive, layerId]);
 
   const handleClick = () => {
     if (controlsOnly) return;
@@ -190,37 +200,13 @@ export function LayerRow({
 
   const handleProjectsRetry = (e: ReactMouseEvent) => {
     e.stopPropagation();
-    setProjects(null);
-    setProjectsError(null);
     setProjectsRequestNonce(prev => prev + 1);
   };
 
   useEffect(() => {
-    if (!isDroneDeployOrthomosaicsLayer || !isProjectsExpanded || projects) return;
-
-    let cancelled = false;
-    setProjectsLoading(true);
-    setProjectsError(null);
-
-    fetchDroneImageryByProject()
-      .then(fetchedProjects => {
-        if (cancelled) return;
-        setProjects(fetchedProjects);
-      })
-      .catch(err => {
-        if (cancelled) return;
-        const message = err instanceof Error ? err.message : 'Failed to fetch DroneDeploy projects.';
-        setProjectsError(message);
-      })
-      .finally(() => {
-        if (cancelled) return;
-        setProjectsLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isDroneDeployOrthomosaicsLayer, isProjectsExpanded, projects, projectsRequestNonce]);
+    if (!isDroneDeployOrthomosaicsLayer || !isProjectsExpanded) return;
+    warmCache();
+  }, [isDroneDeployOrthomosaicsLayer, isProjectsExpanded, warmCache, projectsRequestNonce]);
 
   const activeClasses = controlsOnly
     ? 'bg-white border border-gray-200 hover:border-gray-400 hover:shadow-sm'
