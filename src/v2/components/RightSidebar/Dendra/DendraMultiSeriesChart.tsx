@@ -32,6 +32,8 @@ interface DendraMultiSeriesChartProps {
   enableZoom?: boolean;
   /** Show raw / unscrubbed sensor data caution under the chart. */
   showRawDataCaution?: boolean;
+  /** Stretch plot to fill parent height; stats/caution stay visible below. */
+  fillContainer?: boolean;
 }
 
 interface ChartStats {
@@ -107,23 +109,51 @@ function filterSeriesToWindow(
   }));
 }
 
+const MAX_Y_AXIS_DECIMALS = 3;
+/** Treat ranges smaller than this as flat (all zeros / sensor noise). */
+const FLAT_VALUE_EPSILON = 1e-9;
+
 /** Pick Y-axis decimals from the data magnitude so tiny values (e.g. 0.02 mm) stay readable. */
 export function inferYAxisDecimals(values: number[]): number {
   const extent = extentOf(values);
-  if (!extent) return 2;
+  if (!extent) return 1;
   const { min, max } = extent;
   const range = Math.abs(max - min);
-  const scale = Math.max(Math.abs(min), Math.abs(max), range, Number.EPSILON);
+  const scale = Math.max(Math.abs(min), Math.abs(max), range);
+  // Flat / all-zero series: whole numbers only (avoids 0.000000 / -0.000000 ticks).
+  if (scale < FLAT_VALUE_EPSILON) return 0;
   if (scale >= 100) return 0;
   if (scale >= 10) return 1;
   if (scale >= 1) return 2;
   const decimals = Math.ceil(-Math.log10(scale)) + 1;
-  return Math.min(Math.max(decimals, 2), 6);
+  return Math.min(Math.max(decimals, 1), MAX_Y_AXIS_DECIMALS);
 }
 
 export function formatAxisNumber(value: number, decimals: number): string {
   if (!Number.isFinite(value)) return '—';
-  return value.toFixed(decimals);
+  const rounded = Number(value.toFixed(decimals));
+  // Collapse -0 / -0.000 from float padding around a flat zero series.
+  if (Object.is(rounded, -0) || rounded === 0) return '0';
+  return rounded.toFixed(decimals);
+}
+
+/** Expand a flat or near-zero value band into a readable Y domain. */
+export function resolveYAxisDomain(rawMin: number, rawMax: number): { yMin: number; yMax: number } {
+  const span = Math.abs(rawMax - rawMin);
+  const magnitude = Math.max(Math.abs(rawMin), Math.abs(rawMax));
+
+  if (span < FLAT_VALUE_EPSILON && magnitude < FLAT_VALUE_EPSILON) {
+    // No rain / all zeros: keep 0 at the baseline with a small positive headroom.
+    return { yMin: 0, yMax: 1 };
+  }
+
+  if (span < FLAT_VALUE_EPSILON) {
+    const pad = Math.max(magnitude * 0.1, 1);
+    return { yMin: rawMin - pad, yMax: rawMax + pad };
+  }
+
+  const pad = span * 0.08;
+  return { yMin: rawMin - pad, yMax: rawMax + pad };
 }
 
 function buildPolyline(
@@ -159,9 +189,12 @@ export function DendraMultiSeriesChart({
   showStats = false,
   enableZoom = false,
   showRawDataCaution = false,
+  fillContainer = false,
 }: DendraMultiSeriesChartProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const plotAreaRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [measuredPlotHeight, setMeasuredPlotHeight] = useState(height);
   const [hover, setHover] = useState<{
     left: number;
     top: number;
@@ -176,20 +209,26 @@ export function DendraMultiSeriesChart({
   const fullRangeRef = useRef<ZoomWindow | null>(null);
 
   useEffect(() => {
-    const node = containerRef.current;
+    const node = fillContainer ? plotAreaRef.current : containerRef.current;
     if (!node) return;
 
-    const updateWidth = () => {
-      const next = Math.round(node.getBoundingClientRect().width);
-      setContainerWidth((prev) => (prev === next ? prev : next));
+    const updateSize = () => {
+      const rect = node.getBoundingClientRect();
+      const nextWidth = Math.round(rect.width);
+      setContainerWidth((prev) => (prev === nextWidth ? prev : nextWidth));
+      if (fillContainer) {
+        const nextHeight = Math.max(120, Math.round(rect.height));
+        setMeasuredPlotHeight((prev) => (prev === nextHeight ? prev : nextHeight));
+      }
     };
 
-    updateWidth();
-    const observer = new ResizeObserver(updateWidth);
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
     observer.observe(node);
     return () => observer.disconnect();
-  }, []);
+  }, [fillContainer]);
 
+  const resolvedHeight = fillContainer ? measuredPlotHeight : height;
   // Keep full range in sync with loaded points. Only reset the zoom window when
   // the set of series changes (new query), not on progressive backfill chunks.
   useEffect(() => {
@@ -274,12 +313,11 @@ export function DendraMultiSeriesChart({
 
     const rawMin = valueMin;
     const rawMax = valueMax;
-    const range = Math.abs(rawMax - rawMin) || Math.max(Math.abs(rawMax), Math.abs(rawMin), Number.EPSILON);
-    const yMin = rawMin - range * 0.08;
-    const yMax = rawMax + range * 0.08;
+    const { yMin, yMax } = resolveYAxisDomain(rawMin, rawMax);
     const xMin = timeMin;
     const xMax = timeMax;
-    const decimals = inferYAxisDecimals([rawMin, rawMax]);
+    // Use the rendered domain so expanded flat/zero axes get readable tick precision.
+    const decimals = inferYAxisDecimals([yMin, yMax]);
 
     // Extra bottom room so date labels are not clipped.
     const pad = {
@@ -290,7 +328,7 @@ export function DendraMultiSeriesChart({
     };
     const width = Math.max(containerWidth || 640, pad.left + pad.right + 80);
     const plotWidth = width - pad.left - pad.right;
-    const plotHeight = height - pad.top - pad.bottom;
+    const plotHeight = resolvedHeight - pad.top - pad.bottom;
 
     const yTicks = 4;
     const yTickValues = Array.from({ length: yTicks + 1 }, (_, index) => {
@@ -311,7 +349,7 @@ export function DendraMultiSeriesChart({
 
     return {
       width,
-      height,
+      height: resolvedHeight,
       pad,
       plotWidth,
       plotHeight,
@@ -324,15 +362,17 @@ export function DendraMultiSeriesChart({
       xTickValues,
       renderSeries,
     };
-  }, [visibleSeries, height, unit, showLegend, containerWidth, zoom, enableZoom]);
+  }, [visibleSeries, resolvedHeight, unit, showLegend, containerWidth, zoom, enableZoom]);
 
   const plotToTimestamp = (plotX: number, xMin: number, xMax: number, plotWidth: number) => (
     xMin + (clamp(plotX, 0, plotWidth) / plotWidth) * (xMax - xMin)
   );
 
   const clientToPlotX = (clientX: number) => {
-    if (!layout || !containerRef.current) return null;
-    const rect = containerRef.current.getBoundingClientRect();
+    if (!layout) return null;
+    const node = fillContainer ? plotAreaRef.current : containerRef.current;
+    if (!node) return null;
+    const rect = node.getBoundingClientRect();
     return clientX - rect.left - layout.pad.left;
   };
 
@@ -494,8 +534,15 @@ export function DendraMultiSeriesChart({
   const unitSuffix = unit ? ` ${unit}` : '';
 
   return (
-    <div ref={containerRef} className={`relative flex w-full flex-col ${className}`}>
-      <div className="relative" style={{ height }}>
+    <div
+      ref={containerRef}
+      className={`relative flex w-full flex-col ${fillContainer ? 'h-full min-h-0' : ''} ${className}`}
+    >
+      <div
+        ref={plotAreaRef}
+        className={`relative ${fillContainer ? 'min-h-0 flex-1' : ''}`}
+        style={fillContainer ? undefined : { height: resolvedHeight }}
+      >
         {showLegend && (
           <div className="absolute left-0 right-0 top-0 z-[1] flex flex-wrap gap-x-3 gap-y-1 px-1">
             {series.map((entry, index) => (
@@ -530,8 +577,8 @@ export function DendraMultiSeriesChart({
 
         <svg
           width={width}
-          height={height}
-          viewBox={`0 0 ${width} ${height}`}
+          height={resolvedHeight}
+          viewBox={`0 0 ${width} ${resolvedHeight}`}
           className={`block h-full w-full overflow-visible ${enableZoom ? 'cursor-crosshair' : ''}`}
           role="img"
           aria-label="Time series chart"
@@ -592,7 +639,11 @@ export function DendraMultiSeriesChart({
                   fill="#64748b"
                   fontSize={11}
                 >
-                  {new Date(timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  {new Date(timestamp).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
                 </text>
               );
             })}
@@ -653,6 +704,7 @@ export function DendraMultiSeriesChart({
               {new Date(hover.timestamp).toLocaleString('en-US', {
                 month: 'short',
                 day: 'numeric',
+                year: 'numeric',
                 hour: 'numeric',
                 minute: '2-digit',
               })}
@@ -670,7 +722,7 @@ export function DendraMultiSeriesChart({
       {showStats && stats && (
         <div
           id="dendra-chart-stats"
-          className="mt-3 grid grid-cols-3 gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5"
+          className="mt-2 shrink-0 grid grid-cols-3 gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2"
         >
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Highest</p>
@@ -704,7 +756,7 @@ export function DendraMultiSeriesChart({
         <DendraRawDataCaution
           id="dendra-chart-raw-data-caution"
           variant="compact"
-          className="mt-2"
+          className="mt-2 shrink-0"
         />
       )}
     </div>

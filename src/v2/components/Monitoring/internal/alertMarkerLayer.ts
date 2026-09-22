@@ -5,6 +5,7 @@
 
 import { severityRank, type LiveAlert } from '../../../services/liveAlertService';
 import { formatObservedAt } from './formatObservedAt';
+import { formatStationDisplayName } from '../../../services/dendraStationService';
 
 /**
  * RGBA for severity chrome (outline + side label). `test` is soft slate so smoke
@@ -48,7 +49,7 @@ export interface StationAlertCluster {
 }
 
 function normalizeStationName(name: string): string {
-  return name.trim().replace(/^Dangermond[_ ]/i, '').toLowerCase();
+  return formatStationDisplayName(name).toLowerCase();
 }
 
 /** One cluster per station, highest severity wins. */

@@ -20,6 +20,7 @@ import {
   severityMarkerColor,
 } from './internal/alertMarkerLayer';
 import { compareLiveAlerts, type LiveAlert } from '../../services/liveAlertService';
+import { formatStationDisplayName } from '../../services/dendraStationService';
 import { AlertRulesModal } from './AlertRulesModal';
 
 interface AlertsPanelProps {
@@ -38,7 +39,7 @@ interface CategoryGroup {
 }
 
 function stationLabel(name: string): string {
-  return name.replace(/^Dangermond[_ ]/i, '');
+  return formatStationDisplayName(name);
 }
 
 function severityCssColor(severity: string): string {

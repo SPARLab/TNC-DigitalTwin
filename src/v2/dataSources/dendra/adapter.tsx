@@ -12,6 +12,7 @@ import { DendraProvider, useDendra } from '../../context/DendraContext';
 import { DendraOverviewTab } from '../../components/RightSidebar/Dendra/DendraOverviewTab';
 import { DendraBrowseTab } from '../../components/RightSidebar/Dendra/DendraBrowseTab';
 import { TNCArcGISTableOverlay } from '../../components/FloatingWidgets/TNCArcGISTableOverlay/TNCArcGISTableOverlay';
+import { DendraLegendWidget } from '../../components/FloatingWidgets/DendraLegendWidget/DendraLegendWidget';
 import type { DataSourceAdapter, OverviewTabProps, CacheStatus } from '../types';
 
 // ── Overview tab wrapper (warms cache on activation) ─────────────────────────
@@ -52,6 +53,7 @@ export const dendraAdapter: DataSourceAdapter = {
   OverviewTab: DendraOverview,
   BrowseTab: DendraBrowseTab,
   FloatingPanel: DendraFloatingPanels,
+  LegendWidget: DendraLegendWidget,
   CacheProvider: DendraProvider,
   supportsPinnedFilters: true,
 };

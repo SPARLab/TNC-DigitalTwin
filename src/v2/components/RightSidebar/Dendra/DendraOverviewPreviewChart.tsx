@@ -4,11 +4,14 @@
 // ============================================================================
 
 import { useEffect, useMemo, useState } from 'react';
-import { Loader2, X } from 'lucide-react';
-import { useDendra, useSummariesByStation } from '../../../context/DendraContext';
+import { Loader2, Pin, X } from 'lucide-react';
+import { useDendra, useSummariesByStation, buildPinnedChartQueryKey } from '../../../context/DendraContext';
+import { useCatalog } from '../../../context/CatalogContext';
+import { useLayers } from '../../../context/LayerContext';
 import {
   fetchTimeSeries,
   formatStationDisplayName,
+  prettifyLatestField,
   type DendraStation,
   type DendraSummary,
   type DendraTimeSeriesPoint,
@@ -38,6 +41,19 @@ function pickCandidateStations(stations: DendraStation[]): DendraStation[] {
   return pool.slice(0, CANDIDATE_STATION_LIMIT);
 }
 
+function pickSummaryForField(
+  summaries: DendraSummary[] | undefined,
+  valueField: string | null,
+): DendraSummary | undefined {
+  if (!summaries || summaries.length === 0) return undefined;
+  if (!valueField) return summaries[0];
+  const needle = valueField.trim().toLowerCase();
+  return summaries.find((summary) => {
+    const key = (summary.dendra_ds_id || summary.variable || '').trim().toLowerCase();
+    return key === needle;
+  }) ?? summaries[0];
+}
+
 function toChartSeries(entries: StationSeries[]) {
   return entries.map((entry, index) => ({
     id: String(entry.station.station_id),
@@ -48,8 +64,34 @@ function toChartSeries(entries: StationSeries[]) {
 }
 
 export function DendraOverviewPreviewChart() {
-  const { stations, activeServiceUrl, dataLoaded, datastreamTypesLoaded, loadStationSummaries } = useDendra();
+  const {
+    stations,
+    activeServiceUrl,
+    dataLoaded,
+    datastreamTypesLoaded,
+    loadStationSummaries,
+    pinMultiChart,
+    updatePinnedMultiChart,
+    closePinnedMultiChart,
+    pinnedMultiCharts,
+    expandPinnedMultiChartRequest,
+    clearExpandPinnedMultiChartRequest,
+  } = useDendra();
   const summariesByStation = useSummariesByStation();
+  const { activeLayer } = useLayers();
+  const { layerMap } = useCatalog();
+  const [pinFeedback, setPinFeedback] = useState<string | null>(null);
+  const [linkedPinnedChartId, setLinkedPinnedChartId] = useState<string | null>(null);
+  const activeValueField = useMemo(() => {
+    if (activeLayer?.dataSource !== 'dendra') return null;
+    const field = layerMap.get(activeLayer.layerId)?.catalogMeta?.valueField?.trim();
+    return field || null;
+  }, [activeLayer?.dataSource, activeLayer?.layerId, layerMap]);
+
+  const activeMeasureIsInactive = useMemo(() => {
+    if (activeLayer?.dataSource !== 'dendra') return false;
+    return !!layerMap.get(activeLayer.layerId)?.catalogMeta?.isInactive;
+  }, [activeLayer?.dataSource, activeLayer?.layerId, layerMap]);
 
   const candidateStations = useMemo(() => pickCandidateStations(stations), [stations]);
   const [availableSeries, setAvailableSeries] = useState<StationSeries[]>([]);
@@ -68,11 +110,14 @@ export function DendraOverviewPreviewChart() {
   const candidateStreamKey = useMemo(
     () => candidateStations
       .map((station) => {
-        const summary = summariesByStation.get(station.station_id)?.[0];
+        const summary = pickSummaryForField(
+          summariesByStation.get(station.station_id),
+          activeValueField,
+        );
         return `${station.station_id}:${summary?.dendra_ds_id ?? ''}`;
       })
       .join('|'),
-    [candidateStations, summariesByStation],
+    [candidateStations, summariesByStation, activeValueField],
   );
 
   const candidatesReady = useMemo(() => {
@@ -91,6 +136,15 @@ export function DendraOverviewPreviewChart() {
         return;
       }
 
+      // Inactive measures have no recent Latest readings — keep the week chart empty.
+      if (activeMeasureIsInactive) {
+        setAvailableSeries([]);
+        setSelectedStationIds([]);
+        setError(null);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
       const end = new Date();
@@ -101,8 +155,10 @@ export function DendraOverviewPreviewChart() {
       try {
         const fetched = await Promise.all(
           candidateStations.map(async (station) => {
-            const summaries = summariesByStation.get(station.station_id) ?? [];
-            const summary = summaries[0];
+            const summary = pickSummaryForField(
+              summariesByStation.get(station.station_id),
+              activeValueField,
+            );
             if (!summary?.dendra_ds_id) return null;
             try {
               const result = await fetchTimeSeries(
@@ -150,7 +206,7 @@ export function DendraOverviewPreviewChart() {
     void loadTopStations();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeServiceUrl, candidatesReady, candidateStreamKey]);
+  }, [activeServiceUrl, candidatesReady, candidateStreamKey, activeValueField, activeMeasureIsInactive]);
 
   useEffect(() => {
     if (!isModalOpen) return undefined;
@@ -161,13 +217,103 @@ export function DendraOverviewPreviewChart() {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [isModalOpen]);
 
+  // Expand from a pinned overview chart → open modal with linked pin state.
+  useEffect(() => {
+    const request = expandPinnedMultiChartRequest;
+    if (!request || request.origin !== 'overview') return;
+    if (activeLayer?.dataSource === 'dendra' && request.sourceLayerId !== activeLayer.layerId) {
+      return;
+    }
+    if (availableSeries.length === 0) return;
+    setSelectedStationIds(
+      request.selectedStationIds.length > 0
+        ? request.selectedStationIds
+        : availableSeries.slice(0, PREVIEW_STATION_COUNT).map((entry) => entry.station.station_id),
+    );
+    setLinkedPinnedChartId(request.panelId);
+    setPinFeedback(null);
+    setIsModalOpen(true);
+    clearExpandPinnedMultiChartRequest();
+  }, [
+    expandPinnedMultiChartRequest,
+    clearExpandPinnedMultiChartRequest,
+    activeLayer?.dataSource,
+    activeLayer?.layerId,
+    availableSeries,
+  ]);
+
+  const previewSeries = useMemo(
+    () => availableSeries.slice(0, PREVIEW_STATION_COUNT),
+    [availableSeries],
+  );
+  const previewStationIds = useMemo(
+    () => previewSeries.map((entry) => entry.station.station_id),
+    [previewSeries],
+  );
+  const weekRange = useMemo(() => {
+    const endDate = toYmd(new Date());
+    const startDate = toYmd(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+    return { startDate, endDate };
+  }, []);
+
+  const previewQueryKey = useMemo(() => buildPinnedChartQueryKey({
+    origin: 'overview',
+    startDate: weekRange.startDate,
+    endDate: weekRange.endDate,
+    selectedStreamNames: activeValueField ? [activeValueField] : [],
+    selectedStationIds: previewStationIds,
+  }), [activeValueField, previewStationIds, weekRange.endDate, weekRange.startDate]);
+
+  const overviewQueryKey = useMemo(() => buildPinnedChartQueryKey({
+    origin: 'overview',
+    startDate: weekRange.startDate,
+    endDate: weekRange.endDate,
+    selectedStreamNames: activeValueField ? [activeValueField] : [],
+    selectedStationIds,
+  }), [activeValueField, selectedStationIds, weekRange.endDate, weekRange.startDate]);
+
+  const matchingPreviewPin = useMemo(() => {
+    if (!activeLayer || activeLayer.dataSource !== 'dendra' || previewStationIds.length === 0) {
+      return null;
+    }
+    return pinnedMultiCharts.find((panel) => (
+      panel.origin === 'overview'
+      && panel.sourceLayerId === activeLayer.layerId
+      && panel.queryKey === previewQueryKey
+    )) ?? null;
+  }, [activeLayer, pinnedMultiCharts, previewQueryKey, previewStationIds.length]);
+
+  const matchingModalPin = useMemo(() => {
+    if (!activeLayer || activeLayer.dataSource !== 'dendra' || selectedStationIds.length === 0) {
+      return null;
+    }
+    return pinnedMultiCharts.find((panel) => (
+      panel.origin === 'overview'
+      && panel.sourceLayerId === activeLayer.layerId
+      && panel.queryKey === overviewQueryKey
+    )) ?? null;
+  }, [activeLayer, overviewQueryKey, pinnedMultiCharts, selectedStationIds.length]);
+
+  // Keep modal link in sync with an existing same-query pin, without
+  // overwriting a dirty linked pin while the user is editing stations.
+  useEffect(() => {
+    if (linkedPinnedChartId) {
+      if (!pinnedMultiCharts.some((panel) => panel.id === linkedPinnedChartId)) {
+        setLinkedPinnedChartId(null);
+      }
+      return;
+    }
+    const match = matchingModalPin ?? matchingPreviewPin;
+    if (match) setLinkedPinnedChartId(match.id);
+  }, [matchingModalPin, matchingPreviewPin, linkedPinnedChartId, pinnedMultiCharts]);
+
   if (!dataLoaded || stations.length === 0) return null;
 
-  const previewSeries = availableSeries.slice(0, PREVIEW_STATION_COUNT);
   const modalSeries = availableSeries.filter((entry) =>
     selectedStationIds.includes(entry.station.station_id),
   );
-  const streamLabel = availableSeries[0]?.summary.datastream_name || 'Datastream';
+  const streamLabel = availableSeries[0]?.summary.datastream_name
+    || (activeValueField ? prettifyLatestField(activeValueField) : 'Datastream');
   const unitLabel = availableSeries[0]?.summary.unit?.trim() || '';
   const stationSubtitle = previewSeries.length > 0
     ? `Top ${previewSeries.length} by week max`
@@ -180,6 +326,129 @@ export function DendraOverviewPreviewChart() {
       }
       return [...previous, stationId];
     });
+    setPinFeedback(null);
+  };
+
+  const start = weekRange.startDate;
+  const end = weekRange.endDate;
+
+  const linkedPanel = linkedPinnedChartId
+    ? pinnedMultiCharts.find((panel) => panel.id === linkedPinnedChartId) ?? null
+    : null;
+  const pinIsDirty = Boolean(linkedPanel && linkedPanel.queryKey !== overviewQueryKey);
+  const previewIsPinned = Boolean(matchingPreviewPin);
+
+  const buildOverviewPinPayload = () => {
+    if (!activeLayer || activeLayer.dataSource !== 'dendra' || modalSeries.length === 0) return null;
+    return {
+      title: streamLabel,
+      subtitle: 'Last 7 days',
+      unit: unitLabel,
+      startDate: start,
+      endDate: end,
+      sourceLayerId: activeLayer.layerId,
+      origin: 'overview' as const,
+      selectedStreamNames: activeValueField ? [activeValueField] : [],
+      selectedStationIds,
+      series: modalSeries.map((entry) => {
+        const colorIndex = availableSeries.findIndex(
+          (candidate) => candidate.station.station_id === entry.station.station_id,
+        );
+        return {
+          id: String(entry.station.station_id),
+          label: formatStationDisplayName(entry.station.station_name),
+          color: DENDRA_SERIES_COLORS[
+            (colorIndex >= 0 ? colorIndex : 0) % DENDRA_SERIES_COLORS.length
+          ],
+          points: entry.points,
+        };
+      }),
+    };
+  };
+
+  const handlePinToMap = (seriesSource: 'preview' | 'modal' = 'modal') => {
+    const stationIds = seriesSource === 'preview'
+      ? previewSeries.map((entry) => entry.station.station_id)
+      : selectedStationIds;
+    const seriesEntries = seriesSource === 'preview' ? previewSeries : modalSeries;
+    if (!activeLayer || activeLayer.dataSource !== 'dendra' || seriesEntries.length === 0) {
+      setPinFeedback('Nothing to pin yet.');
+      return;
+    }
+
+    const nextQueryKey = buildPinnedChartQueryKey({
+      origin: 'overview',
+      startDate: start,
+      endDate: end,
+      selectedStreamNames: activeValueField ? [activeValueField] : [],
+      selectedStationIds: stationIds,
+    });
+    const existing = pinnedMultiCharts.find((panel) => (
+      panel.origin === 'overview'
+      && panel.sourceLayerId === activeLayer.layerId
+      && panel.queryKey === nextQueryKey
+    ));
+    if (existing) {
+      setLinkedPinnedChartId(existing.id);
+      setPinFeedback('Already pinned — shown on the map.');
+      return;
+    }
+
+    const id = pinMultiChart({
+      title: streamLabel,
+      subtitle: 'Last 7 days',
+      unit: unitLabel,
+      startDate: start,
+      endDate: end,
+      sourceLayerId: activeLayer.layerId,
+      origin: 'overview',
+      selectedStreamNames: activeValueField ? [activeValueField] : [],
+      selectedStationIds: stationIds,
+      series: seriesEntries.map((entry) => {
+        const colorIndex = availableSeries.findIndex(
+          (candidate) => candidate.station.station_id === entry.station.station_id,
+        );
+        return {
+          id: String(entry.station.station_id),
+          label: formatStationDisplayName(entry.station.station_name),
+          color: DENDRA_SERIES_COLORS[
+            (colorIndex >= 0 ? colorIndex : 0) % DENDRA_SERIES_COLORS.length
+          ],
+          points: entry.points,
+        };
+      }),
+    });
+    if (id) {
+      setLinkedPinnedChartId(id);
+      setPinFeedback('Pinned to map — drag, minimize, or close anytime.');
+    } else {
+      setPinFeedback('Nothing to pin.');
+    }
+  };
+
+  const handleUnpin = (panelId?: string) => {
+    const id = panelId ?? linkedPanel?.id ?? matchingPreviewPin?.id;
+    if (!id) return;
+    closePinnedMultiChart(id);
+    setLinkedPinnedChartId((current) => (current === id ? null : current));
+    setPinFeedback('Unpinned from the map.');
+  };
+
+  const handleUpdatePin = () => {
+    if (!linkedPanel) return;
+    const payload = buildOverviewPinPayload();
+    if (!payload) return;
+    if (updatePinnedMultiChart(linkedPanel.id, payload)) {
+      setPinFeedback('Updated the pinned chart on the map.');
+    }
+  };
+
+  const handlePreviewPinClick = () => {
+    if (matchingPreviewPin) {
+      handleUnpin(matchingPreviewPin.id);
+      return;
+    }
+    handlePinToMap('preview');
   };
 
   return (
@@ -199,14 +468,35 @@ export function DendraOverviewPreviewChart() {
             <p className="truncate text-xs text-gray-500">{stationSubtitle}</p>
           </div>
           {previewSeries.length > 0 && (
-            <button
-              id="dendra-overview-preview-open-chart"
-              type="button"
-              onClick={() => setIsModalOpen(true)}
-              className="shrink-0 rounded-md px-2 py-1 text-[11px] font-medium text-teal-700 hover:bg-teal-50"
-            >
-              Expand
-            </button>
+            <div className="flex shrink-0 items-center gap-1">
+              <button
+                id="dendra-overview-preview-pin"
+                type="button"
+                onClick={handlePreviewPinClick}
+                className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium ${
+                  previewIsPinned
+                    ? 'bg-teal-100 text-teal-800 hover:bg-teal-200'
+                    : 'text-teal-700 hover:bg-teal-50'
+                }`}
+                title={previewIsPinned ? 'Unpin preview chart from the map' : 'Pin preview chart to the map'}
+                aria-pressed={previewIsPinned}
+              >
+                <Pin className={`h-3 w-3 ${previewIsPinned ? 'fill-current' : ''}`} />
+                {previewIsPinned ? 'Pinned' : 'Pin'}
+              </button>
+              <button
+                id="dendra-overview-preview-open-chart"
+                type="button"
+                onClick={() => {
+                  if (matchingPreviewPin) setLinkedPinnedChartId(matchingPreviewPin.id);
+                  setPinFeedback(null);
+                  setIsModalOpen(true);
+                }}
+                className="rounded-md px-2 py-1 text-[11px] font-medium text-teal-700 hover:bg-teal-50"
+              >
+                Expand
+              </button>
+            </div>
           )}
         </div>
 
@@ -233,7 +523,9 @@ export function DendraOverviewPreviewChart() {
               id="dendra-overview-preview-empty"
               className="absolute inset-0 z-10 flex items-center justify-center bg-white px-2 text-center text-xs text-gray-500"
             >
-              No readings in the last 7 days for this datastream.
+              {activeMeasureIsInactive
+                ? 'There are no recent readings.'
+                : 'No readings in the last 7 days for this datastream.'}
             </div>
           )}
           {previewSeries.length > 0 && (
@@ -276,16 +568,87 @@ export function DendraOverviewPreviewChart() {
                   Showing {modalSeries.length} of {availableSeries.length} stations
                 </p>
               </div>
-              <button
-                id="dendra-overview-chart-modal-close"
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-                aria-label="Close chart"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <div className="flex shrink-0 items-center gap-1">
+                {linkedPanel && !pinIsDirty && (
+                  <button
+                    id="dendra-overview-chart-modal-unpin"
+                    type="button"
+                    onClick={() => handleUnpin(linkedPanel.id)}
+                    className="inline-flex items-center gap-1 rounded-md bg-teal-100 px-2.5 py-1.5 text-xs font-semibold text-teal-800 hover:bg-teal-200"
+                    title="Unpin from the map"
+                    aria-pressed="true"
+                  >
+                    <Pin className="h-3.5 w-3.5 fill-current" />
+                    Pinned
+                  </button>
+                )}
+                {linkedPanel && pinIsDirty && (
+                  <>
+                    <button
+                      id="dendra-overview-chart-modal-update-pin"
+                      type="button"
+                      onClick={handleUpdatePin}
+                      disabled={modalSeries.length === 0}
+                      className="inline-flex items-center gap-1.5 rounded-md bg-teal-700 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-teal-800 disabled:opacity-40"
+                    >
+                      <Pin className="h-3.5 w-3.5" />
+                      Update pin
+                    </button>
+                    <button
+                      id="dendra-overview-chart-modal-pin-as-new"
+                      type="button"
+                      onClick={() => handlePinToMap('modal')}
+                      disabled={modalSeries.length === 0}
+                      className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-teal-700 hover:bg-teal-50 disabled:opacity-40"
+                    >
+                      Pin as new
+                    </button>
+                    <button
+                      id="dendra-overview-chart-modal-unpin-dirty"
+                      type="button"
+                      onClick={() => handleUnpin(linkedPanel.id)}
+                      className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100"
+                    >
+                      Unpin
+                    </button>
+                  </>
+                )}
+                {!linkedPanel && (
+                  <button
+                    id="dendra-overview-chart-modal-pin"
+                    type="button"
+                    onClick={() => handlePinToMap('modal')}
+                    disabled={modalSeries.length === 0}
+                    className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-teal-700 hover:bg-teal-50 disabled:opacity-40"
+                    title="Pin this chart to the map"
+                  >
+                    <Pin className="h-3.5 w-3.5" />
+                    Pin to map
+                  </button>
+                )}
+                <button
+                  id="dendra-overview-chart-modal-close"
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                  aria-label="Close chart"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
+
+            {pinIsDirty && linkedPanel && (
+              <p className="border-b border-amber-100 bg-amber-50 px-4 py-2 text-[11px] text-amber-800">
+                Station selection differs from your pinned chart. Update the pin or save as a new one.
+              </p>
+            )}
+
+            {pinFeedback && (
+              <p id="dendra-overview-chart-modal-pin-feedback" className="border-b border-slate-100 px-4 py-2 text-xs text-teal-700">
+                {pinFeedback}
+              </p>
+            )}
 
             <div className="border-b border-slate-100 px-4 py-3">
               <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">

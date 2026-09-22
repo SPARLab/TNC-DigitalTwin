@@ -4,13 +4,21 @@
 // ============================================================================
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Download, Loader2, RefreshCw, X } from 'lucide-react';
+import { Download, Loader2, Pin, RefreshCw, X } from 'lucide-react';
 import {
   formatStationDisplayName,
   type DendraDatastreamType,
   type DendraStation,
   type DendraSummary,
 } from '../../../services/dendraStationService';
+import { useDendra, buildPinnedChartQueryKey } from '../../../context/DendraContext';
+import { useLayers } from '../../../context/LayerContext';
+import {
+  START_AFTER_END_MESSAGE,
+  clampDateToToday,
+  isStartAfterEnd,
+  todayYmdLocal,
+} from '../../../utils/dendraDateGuards';
 import { DendraMultiSeriesChart } from './DendraMultiSeriesChart';
 import {
   useDendraBrowseSeriesLoader,
@@ -34,6 +42,9 @@ interface DendraBrowseChartModalProps {
   summariesByStation: Map<number, DendraSummary[]>;
   initialFilters: DendraBrowseFilterState;
   onFiltersChange?: (filters: DendraBrowseFilterState) => void;
+  /** Existing map pin this modal is editing (from Expand or after Pin). */
+  linkedPinnedChartId?: string | null;
+  onLinkedPinnedChartIdChange?: (id: string | null) => void;
 }
 
 function buildQuery(
@@ -65,9 +76,16 @@ export function DendraBrowseChartModal({
   summariesByStation,
   initialFilters,
   onFiltersChange,
+  linkedPinnedChartId = null,
+  onLinkedPinnedChartIdChange,
 }: DendraBrowseChartModalProps) {
   const [filters, setFilters] = useState<DendraBrowseFilterState>(initialFilters);
+  const [pinFeedback, setPinFeedback] = useState<string | null>(null);
+  const [appliedQueryKey, setAppliedQueryKey] = useState('');
   const wasOpenRef = useRef(false);
+  const todayMax = todayYmdLocal();
+  const { pinMultiChart, updatePinnedMultiChart, closePinnedMultiChart, pinnedMultiCharts } = useDendra();
+  const { activeLayer } = useLayers();
   const {
     series,
     loading,
@@ -77,6 +95,14 @@ export function DendraBrowseChartModal({
     clearSeries,
     toggleSeriesVisible,
   } = useDendraBrowseSeriesLoader();
+
+  const queryKeyFor = (next: DendraBrowseFilterState) => buildPinnedChartQueryKey({
+    origin: 'browse',
+    startDate: next.startDate,
+    endDate: next.endDate,
+    selectedStreamNames: next.selectedStreamNames,
+    selectedStationIds: next.selectedStationIds,
+  });
 
   useEffect(() => {
     if (!open) {
@@ -91,6 +117,17 @@ export function DendraBrowseChartModal({
     if (!wasOpenRef.current) {
       wasOpenRef.current = true;
       setFilters(initialFilters);
+      const nextKey = queryKeyFor(initialFilters);
+      setAppliedQueryKey(nextKey);
+      setPinFeedback(null);
+      if (!linkedPinnedChartId && activeLayer?.dataSource === 'dendra') {
+        const existing = pinnedMultiCharts.find((panel) => (
+          panel.origin === 'browse'
+          && panel.sourceLayerId === activeLayer.layerId
+          && panel.queryKey === nextKey
+        ));
+        if (existing) onLinkedPinnedChartIdChange?.(existing.id);
+      }
       void loadQuery(buildQuery(
         serviceUrl,
         initialFilters,
@@ -116,8 +153,16 @@ export function DendraBrowseChartModal({
   }, [open, onClose, onFiltersChange, filters]);
 
   const updateFilters = (patch: Partial<DendraBrowseFilterState>) => {
-    setFilters((prev) => ({ ...prev, ...patch }));
+    setFilters((prev) => {
+      const next = { ...prev, ...patch };
+      if (patch.startDate !== undefined) next.startDate = clampDateToToday(patch.startDate, todayMax);
+      if (patch.endDate !== undefined) next.endDate = clampDateToToday(patch.endDate, todayMax);
+      return next;
+    });
+    setPinFeedback(null);
   };
+
+  const dateRangeInvalid = isStartAfterEnd(filters.startDate, filters.endDate);
 
   const toggleStream = (streamName: string) => {
     updateFilters({
@@ -136,7 +181,9 @@ export function DendraBrowseChartModal({
   };
 
   const handleApply = () => {
+    if (dateRangeInvalid) return;
     onFiltersChange?.(filters);
+    setAppliedQueryKey(queryKeyFor(filters));
     void loadQuery(buildQuery(
       serviceUrl,
       filters,
@@ -172,6 +219,104 @@ export function DendraBrowseChartModal({
     return '';
   }, [series]);
 
+  const linkedPanel = useMemo(
+    () => (linkedPinnedChartId
+      ? pinnedMultiCharts.find((panel) => panel.id === linkedPinnedChartId) ?? null
+      : null),
+    [linkedPinnedChartId, pinnedMultiCharts],
+  );
+  const pinIsDirty = Boolean(linkedPanel && appliedQueryKey && linkedPanel.queryKey !== appliedQueryKey);
+
+  const buildPinPayload = () => {
+    if (!activeLayer || activeLayer.dataSource !== 'dendra') return null;
+    return {
+      title,
+      subtitle: filters.selectedStreamNames.join(', ') || undefined,
+      unit: unitLabel,
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+      sourceLayerId: activeLayer.layerId,
+      origin: 'browse' as const,
+      selectedStreamNames: filters.selectedStreamNames,
+      selectedStationIds: filters.selectedStationIds,
+      series: chartSeries.map((entry) => ({
+        id: entry.id,
+        label: entry.label,
+        color: entry.color ?? '#0d9488',
+        points: entry.points,
+      })),
+    };
+  };
+
+  const handlePinToMap = () => {
+    if (chartSeries.length === 0) {
+      setPinFeedback('Load chart data before pinning to the map.');
+      return;
+    }
+    const payload = buildPinPayload();
+    if (!payload) {
+      setPinFeedback('Activate a Dendra layer before pinning.');
+      return;
+    }
+
+    // Reuse an existing pin for the same query instead of duplicating.
+    const existing = pinnedMultiCharts.find((panel) => (
+      panel.origin === 'browse'
+      && panel.sourceLayerId === payload.sourceLayerId
+      && panel.queryKey === queryKeyFor(filters)
+    ));
+    if (existing) {
+      onLinkedPinnedChartIdChange?.(existing.id);
+      setAppliedQueryKey(queryKeyFor(filters));
+      setPinFeedback('Already pinned — shown on the map.');
+      return;
+    }
+
+    const id = pinMultiChart(payload);
+    if (id) {
+      onLinkedPinnedChartIdChange?.(id);
+      setAppliedQueryKey(queryKeyFor(filters));
+      setPinFeedback('Pinned to map — drag, minimize, or close anytime.');
+    } else {
+      setPinFeedback('Nothing to pin.');
+    }
+  };
+
+  const handleUnpin = () => {
+    if (!linkedPanel) return;
+    closePinnedMultiChart(linkedPanel.id);
+    onLinkedPinnedChartIdChange?.(null);
+    setPinFeedback('Unpinned from the map.');
+  };
+
+  const handleUpdatePin = () => {
+    if (!linkedPanel || chartSeries.length === 0) return;
+    const payload = buildPinPayload();
+    if (!payload) return;
+    const ok = updatePinnedMultiChart(linkedPanel.id, payload);
+    if (ok) {
+      setAppliedQueryKey(queryKeyFor(filters));
+      setPinFeedback('Updated the pinned chart on the map.');
+    }
+  };
+
+  const handlePinAsNew = () => {
+    if (chartSeries.length === 0) {
+      setPinFeedback('Load chart data before pinning to the map.');
+      return;
+    }
+    const payload = buildPinPayload();
+    if (!payload) {
+      setPinFeedback('Activate a Dendra layer before pinning.');
+      return;
+    }
+    const id = pinMultiChart(payload);
+    if (id) {
+      onLinkedPinnedChartIdChange?.(id);
+      setAppliedQueryKey(queryKeyFor(filters));
+      setPinFeedback('Pinned as a new chart on the map.');
+    }
+  };
   const handleExportCsv = () => {
     const visible = series.filter((entry) => entry.visible && entry.points.length > 0);
     if (visible.length === 0) return;
@@ -209,7 +354,8 @@ export function DendraBrowseChartModal({
     filters.selectedStreamNames.length > 0
     && filters.selectedStationIds.length > 0
     && Boolean(filters.startDate)
-    && Boolean(filters.endDate);
+    && Boolean(filters.endDate)
+    && !dateRangeInvalid;
 
   return (
     <div
@@ -248,6 +394,66 @@ export function DendraBrowseChartModal({
             </p>
           </div>
           <div className="flex items-center gap-1">
+            {linkedPanel && !pinIsDirty && (
+              <button
+                id="dendra-browse-chart-modal-unpin"
+                type="button"
+                onClick={handleUnpin}
+                className="inline-flex items-center gap-1 rounded-md bg-teal-100 px-2.5 py-1.5 text-xs font-semibold text-teal-800 hover:bg-teal-200"
+                title="Unpin from the map"
+                aria-pressed="true"
+              >
+                <Pin className="h-3.5 w-3.5 fill-current" />
+                Pinned
+              </button>
+            )}
+            {linkedPanel && pinIsDirty && (
+              <>
+                <button
+                  id="dendra-browse-chart-modal-update-pin"
+                  type="button"
+                  onClick={handleUpdatePin}
+                  disabled={chartSeries.length === 0}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-teal-700 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-teal-800 disabled:opacity-40"
+                  title="Replace the pinned map chart with this view"
+                >
+                  <Pin className="h-3.5 w-3.5" />
+                  Update pin
+                </button>
+                <button
+                  id="dendra-browse-chart-modal-pin-as-new"
+                  type="button"
+                  onClick={handlePinAsNew}
+                  disabled={chartSeries.length === 0}
+                  className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-teal-700 hover:bg-teal-50 disabled:opacity-40"
+                  title="Keep the old pin and save this as another chart"
+                >
+                  Pin as new
+                </button>
+                <button
+                  id="dendra-browse-chart-modal-unpin-dirty"
+                  type="button"
+                  onClick={handleUnpin}
+                  className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100"
+                  title="Unpin the current map chart"
+                >
+                  Unpin
+                </button>
+              </>
+            )}
+            {!linkedPanel && (
+              <button
+                id="dendra-browse-chart-modal-pin"
+                type="button"
+                onClick={handlePinToMap}
+                disabled={chartSeries.length === 0}
+                className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-teal-700 hover:bg-teal-50 disabled:opacity-40"
+                title="Pin this chart to the map"
+              >
+                <Pin className="h-3.5 w-3.5" />
+                Pin to map
+              </button>
+            )}
             <button
               id="dendra-browse-chart-modal-export"
               type="button"
@@ -343,6 +549,7 @@ export function DendraBrowseChartModal({
                 <input
                   type="date"
                   value={filters.startDate}
+                  max={todayMax}
                   onChange={(event) => updateFilters({ startDate: event.target.value })}
                   className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
                 />
@@ -352,10 +559,16 @@ export function DendraBrowseChartModal({
                 <input
                   type="date"
                   value={filters.endDate}
+                  max={todayMax}
                   onChange={(event) => updateFilters({ endDate: event.target.value })}
                   className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
                 />
               </label>
+              {dateRangeInvalid && (
+                <p id="dendra-browse-chart-modal-date-error" className="text-xs text-red-600">
+                  {START_AFTER_END_MESSAGE}
+                </p>
+              )}
             </section>
 
             <button
@@ -369,6 +582,17 @@ export function DendraBrowseChartModal({
               Update chart
             </button>
 
+            {pinIsDirty && linkedPanel && (
+              <p id="dendra-browse-chart-modal-pin-dirty" className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-800">
+                Filters differ from your pinned chart. Update the pin or save as a new one.
+              </p>
+            )}
+
+            {pinFeedback && (
+              <p id="dendra-browse-chart-modal-pin-feedback" className="text-xs text-teal-700">
+                {pinFeedback}
+              </p>
+            )}
             {series.length > 0 && (
               <section>
                 <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">

@@ -11,6 +11,7 @@ import { formatStationDisplayName } from '../../../services/dendraStationService
 import { useDendra } from '../../../context/DendraContext';
 import { useLayers } from '../../../context/LayerContext';
 import { createDefaultDendraViewFilters } from '../../../context/utils/layerFilterDefaults';
+import { START_AFTER_END_MESSAGE, isStartAfterEnd } from '../../../utils/dendraDateGuards';
 import { useStationDetailState } from './useStationDetailState';
 import { StationCrossStationToolsSection } from './StationCrossStationToolsSection';
 import { StationHeaderCard } from './StationHeaderCard';
@@ -176,6 +177,13 @@ export function StationDetailView({
       setSaveMessage('Unable to save: no active layer.');
       return;
     }
+    if (
+      selectedChartPanel
+      && isStartAfterEnd(selectedChartPanel.filter.startDate, selectedChartPanel.filter.endDate)
+    ) {
+      setSaveMessage(START_AFTER_END_MESSAGE);
+      return;
+    }
     ensurePinnedLayer();
 
     const filters = {
@@ -199,6 +207,10 @@ export function StationDetailView({
     }
     if (!selectedChartPanel || selectedChartPanel.loading) {
       setSaveMessage('Open chart data for this datastream before saving a new filtered view.');
+      return;
+    }
+    if (isStartAfterEnd(selectedChartPanel.filter.startDate, selectedChartPanel.filter.endDate)) {
+      setSaveMessage(START_AFTER_END_MESSAGE);
       return;
     }
 
@@ -276,11 +288,19 @@ export function StationDetailView({
           saveMessage={saveMessage}
           onStartDateChange={(value) => {
             if (!selectedChartPanel) return;
+            if (isStartAfterEnd(value, selectedChartPanel.filter.endDate)) {
+              setSaveMessage(START_AFTER_END_MESSAGE);
+              return;
+            }
             setChartFilter(selectedChartPanel.id, { startDate: value });
             setSaveMessage(null);
           }}
           onEndDateChange={(value) => {
             if (!selectedChartPanel) return;
+            if (isStartAfterEnd(selectedChartPanel.filter.startDate, value)) {
+              setSaveMessage(START_AFTER_END_MESSAGE);
+              return;
+            }
             setChartFilter(selectedChartPanel.id, { endDate: value });
             setSaveMessage(null);
           }}

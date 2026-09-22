@@ -39,22 +39,33 @@ export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServic
   const [dataLoaded, setDataLoaded] = useState(false);
   const [stationSummaryLoading, setStationSummaryLoading] = useState<number | null>(null);
 
-  const serviceInfo = useMemo(() => {
+  // Derive URL/title as primitives so Latest ↔ Locations (same FeatureServer)
+  // keeps a stable `serviceInfo` object and does not re-sync / recreate loaders.
+  const serviceUrl = useMemo(() => {
     if (!activeLayer || activeLayer.dataSource !== 'dendra') return null;
     const layer = layerMap.get(activeLayer.layerId);
     if (!layer?.catalogMeta) return null;
     const { serverBaseUrl, servicePath } = layer.catalogMeta;
-    return {
-      url: buildServiceUrl(serverBaseUrl, servicePath),
-      title: resolveDendraServiceTitle(layerMap, activeLayer.layerId) ?? layer.name,
-    };
-  }, [activeLayer, layerMap]);
+    return buildServiceUrl(serverBaseUrl, servicePath);
+  }, [activeLayer?.dataSource, activeLayer?.layerId, layerMap]);
+
+  const serviceTitle = useMemo(() => {
+    if (!activeLayer || activeLayer.dataSource !== 'dendra') return null;
+    const layer = layerMap.get(activeLayer.layerId);
+    if (!layer) return null;
+    return resolveDendraServiceTitle(layerMap, activeLayer.layerId) ?? layer.name;
+  }, [activeLayer?.dataSource, activeLayer?.layerId, layerMap]);
+
+  const serviceInfo = useMemo(() => {
+    if (!serviceUrl || !serviceTitle) return null;
+    return { url: serviceUrl, title: serviceTitle };
+  }, [serviceUrl, serviceTitle]);
 
   activeUrlRef.current = serviceInfo?.url ?? null;
 
-  // Sync state from cache when active service changes
+  // Sync state from cache when active service URL changes (not sibling layer toggles).
   useEffect(() => {
-    if (!serviceInfo) {
+    if (!serviceUrl) {
       setDataLoaded(false);
       setStations([]);
       setSummariesByStation(new Map());
@@ -62,7 +73,7 @@ export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServic
       setDatastreamTypesLoaded(false);
       return;
     }
-    const cached = cacheRef.current.get(serviceInfo.url);
+    const cached = cacheRef.current.get(serviceUrl);
     if (cached) {
       setStations(cached.stations);
       setSummariesByStation(new Map(cached.summariesByStation));
@@ -77,7 +88,7 @@ export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServic
       setDatastreamTypes([]);
       setDatastreamTypesLoaded(false);
     }
-  }, [serviceInfo]);
+  }, [serviceUrl]);
 
   const loadDatastreamTypes = useCallback((url: string, stationList: DendraStation[]) => {
     if (typeFetchingRef.current.has(url)) return;

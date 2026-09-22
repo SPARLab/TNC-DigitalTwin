@@ -7,8 +7,8 @@
 //   Table 2: * Data       (time-series readings)
 //
 // Station browse targets Locations (outFields=* so schema variants still load).
-// Chartable types come from Latest value columns. Time series read the service
-// Data table (wide columns keyed by those same field names).
+// Chartable types come from Latest ∪ Data value columns. Time series read the
+// service Data table (wide columns keyed by those same field names).
 // ============================================================================
 
 // ── Types (matching the new per-type service schema) ─────────────────────────
@@ -271,6 +271,13 @@ const LATEST_METADATA_FIELDS = new Set([
   'geometry',
 ]);
 
+/** Extra non-measure columns on the wide Data table. */
+const DATA_METADATA_FIELDS = new Set([
+  ...LATEST_METADATA_FIELDS,
+  'timestamp_utc',
+  'observed_at',
+]);
+
 /** Stable numeric id for a Latest/Data value column (panel pinning keys). */
 function stableFieldId(fieldKey: string): number {
   let hash = 0;
@@ -316,6 +323,57 @@ async function discoverLatestValueFields(serviceUrl: string): Promise<string[]> 
     })
     .map((field) => (field.name ?? '').trim())
     .filter(Boolean);
+}
+
+/** Discover chartable measure columns from the Data table schema. */
+async function discoverDataValueFields(serviceUrl: string): Promise<string[]> {
+  const dataTableId = await resolveDataTableId(serviceUrl);
+  if (dataTableId == null) return [];
+
+  const metaRes = await fetch(`${serviceUrl}/${dataTableId}?f=json`);
+  if (!metaRes.ok) {
+    throw new Error(`Data table metadata failed: HTTP ${metaRes.status}`);
+  }
+  const meta = await metaRes.json();
+  if (meta.error) {
+    throw new Error(`Data table metadata error: ${meta.error.message}`);
+  }
+
+  const fields: Array<{ name?: string; type?: string }> = meta.fields ?? [];
+  return fields
+    .filter((field) => {
+      const name = (field.name ?? '').trim();
+      if (!name || DATA_METADATA_FIELDS.has(name.toLowerCase())) return false;
+      return isNumericEsriField(field.type);
+    })
+    .map((field) => (field.name ?? '').trim())
+    .filter(Boolean);
+}
+
+/**
+ * Chartable fields = Latest ∪ Data numeric measure columns.
+ * Covers merges where historical columns land on Data before Latest.
+ */
+async function discoverChartableValueFields(serviceUrl: string): Promise<string[]> {
+  const [latestFields, dataFields] = await Promise.all([
+    discoverLatestValueFields(serviceUrl).catch((err) => {
+      console.warn('[Dendra] Latest field discovery failed:', err);
+      return [] as string[];
+    }),
+    discoverDataValueFields(serviceUrl).catch((err) => {
+      console.warn('[Dendra] Data field discovery failed:', err);
+      return [] as string[];
+    }),
+  ]);
+  const seen = new Set<string>();
+  const merged: string[] = [];
+  for (const field of [...latestFields, ...dataFields]) {
+    const key = field.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(field);
+  }
+  return merged;
 }
 
 async function readStationUnit(
@@ -460,14 +518,14 @@ async function estimateFrequencyFromDataColumn(
 }
 
 /**
- * Discover chartable datastream types from the service's Latest layer columns,
+ * Discover chartable datastream types from Latest ∪ Data measure columns,
  * then enrich cadence from the service Data table (or field-name hints).
  */
 export async function fetchDatastreamTypeCatalog(
   serviceUrl: string,
   sampleStationIds: number[] = [],
 ): Promise<DendraDatastreamType[]> {
-  const fieldKeys = await discoverLatestValueFields(serviceUrl);
+  const fieldKeys = await discoverChartableValueFields(serviceUrl);
   if (fieldKeys.length === 0) return [];
 
   const dataTableId = await resolveDataTableId(serviceUrl);
@@ -513,7 +571,7 @@ export async function fetchSummariesForStation(
     .filter(Boolean);
 
   if (fieldKeys.length === 0) {
-    fieldKeys = await discoverLatestValueFields(serviceUrl);
+    fieldKeys = await discoverChartableValueFields(serviceUrl);
   }
 
   if (fieldKeys.length === 0) return [];
@@ -548,9 +606,139 @@ export interface DendraTimeSeriesQueryOptions {
   endDate?: string;
 }
 
+export interface TimeSeriesDateWindow {
+  startDate: string;
+  endDate: string;
+}
+
+export interface TimeSeriesExtent {
+  minTs: number;
+  maxTs: number;
+}
+
+/** Progressive load plan: recent window first, then one older backfill fetch. */
+export interface ProgressiveTimeSeriesPlan {
+  window: TimeSeriesDateWindow | null;
+  initial: TimeSeriesDateWindow | null;
+  backfill: TimeSeriesDateWindow | null;
+}
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const DEFAULT_INITIAL_RENDER_DAYS = 30;
+
+function parseDateUtc(date: string): number | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  return Date.parse(`${date}T00:00:00.000Z`);
+}
+
+function toDateUtc(epochMs: number): string {
+  return new Date(epochMs).toISOString().slice(0, 10);
+}
+
 function toArcGisDateLiteral(date: string, useDayEnd: boolean): string | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
   return `${date} ${useDayEnd ? '23:59:59' : '00:00:00'}`;
+}
+
+function buildTimeSeriesWhere(
+  stationId: number,
+  field: string,
+  options?: DendraTimeSeriesQueryOptions,
+): string {
+  const whereParts = [`station_id=${stationId}`, `${field} IS NOT NULL`];
+  const startLiteral = options?.startDate ? toArcGisDateLiteral(options.startDate, false) : null;
+  const endLiteral = options?.endDate ? toArcGisDateLiteral(options.endDate, true) : null;
+  if (startLiteral) whereParts.push(`timestamp_utc >= DATE '${startLiteral}'`);
+  if (endLiteral) whereParts.push(`timestamp_utc <= DATE '${endLiteral}'`);
+  return whereParts.join(' AND ');
+}
+
+/**
+ * Cheap min/max timestamp probe for a station + measure column.
+ * Used to clamp long requested ranges onto years that actually have data.
+ */
+export async function fetchTimeSeriesExtent(
+  serviceUrl: string,
+  stationId: number,
+  valueField: string,
+  options?: DendraTimeSeriesQueryOptions,
+): Promise<TimeSeriesExtent | null> {
+  const dataTableId = await resolveDataTableId(serviceUrl);
+  if (dataTableId == null) return null;
+
+  const field = assertSafeFieldName(valueField);
+  const where = buildTimeSeriesWhere(stationId, field, options);
+  const outStatistics = JSON.stringify([
+    { statisticType: 'min', onStatisticField: 'timestamp_utc', outStatisticFieldName: 'min_ts' },
+    { statisticType: 'max', onStatisticField: 'timestamp_utc', outStatisticFieldName: 'max_ts' },
+  ]);
+  const url =
+    `${serviceUrl}/${dataTableId}/query?where=${encodeURIComponent(where)}` +
+    `&outStatistics=${encodeURIComponent(outStatistics)}` +
+    `&f=json`;
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Dendra time series extent failed: HTTP ${res.status}`);
+  }
+  const json = await res.json();
+  if (json.error) {
+    throw new Error(`Dendra time series extent error: ${json.error.message}`);
+  }
+
+  const attrs = json.features?.[0]?.attributes as { min_ts?: unknown; max_ts?: unknown } | undefined;
+  const minTs = Number(attrs?.min_ts);
+  const maxTs = Number(attrs?.max_ts);
+  if (!Number.isFinite(minTs) || !Number.isFinite(maxTs)) return null;
+  return { minTs, maxTs };
+}
+
+/**
+ * Clamp the requested range to actual data, then split into a recent paint
+ * window plus a single older backfill (ArcGIS still pages at 2000 rows).
+ */
+export async function planProgressiveTimeSeries(
+  serviceUrl: string,
+  stationId: number,
+  valueField: string,
+  requested: TimeSeriesDateWindow,
+  initialDays = DEFAULT_INITIAL_RENDER_DAYS,
+): Promise<ProgressiveTimeSeriesPlan> {
+  const empty: ProgressiveTimeSeriesPlan = { window: null, initial: null, backfill: null };
+  const userStart = parseDateUtc(requested.startDate);
+  const userEnd = parseDateUtc(requested.endDate);
+  if (userStart == null || userEnd == null || userEnd < userStart) return empty;
+
+  const extent = await fetchTimeSeriesExtent(serviceUrl, stationId, valueField, requested);
+  if (!extent) return empty;
+
+  const extentStart = toDateUtc(extent.minTs);
+  const extentEnd = toDateUtc(extent.maxTs);
+  const startDate = requested.startDate > extentStart ? requested.startDate : extentStart;
+  const endDate = requested.endDate < extentEnd ? requested.endDate : extentEnd;
+  if (startDate > endDate) return empty;
+
+  const startMs = parseDateUtc(startDate);
+  const endMs = parseDateUtc(endDate);
+  if (startMs == null || endMs == null) return empty;
+
+  const initialStartMs = Math.max(startMs, endMs - (initialDays - 1) * MS_PER_DAY);
+  const initial: TimeSeriesDateWindow = {
+    startDate: toDateUtc(initialStartMs),
+    endDate,
+  };
+  const backfill: TimeSeriesDateWindow | null = initialStartMs > startMs
+    ? {
+      startDate,
+      endDate: toDateUtc(initialStartMs - MS_PER_DAY),
+    }
+    : null;
+
+  return {
+    window: { startDate, endDate },
+    initial,
+    backfill,
+  };
 }
 
 /**
@@ -574,18 +762,9 @@ export async function fetchTimeSeries(
   }
 
   const field = assertSafeFieldName(valueField);
-  console.log(
-    `[Dendra TimeSeries] ${serviceUrl} table=${dataTableId} station=${stationId} field=${field}`,
-  );
+  const where = buildTimeSeriesWhere(stationId, field, options);
+  const hasServerDateBounds = Boolean(options?.startDate || options?.endDate);
 
-  const whereParts = [`station_id=${stationId}`, `${field} IS NOT NULL`];
-  const startLiteral = options?.startDate ? toArcGisDateLiteral(options.startDate, false) : null;
-  const endLiteral = options?.endDate ? toArcGisDateLiteral(options.endDate, true) : null;
-  if (startLiteral) whereParts.push(`timestamp_utc >= DATE '${startLiteral}'`);
-  if (endLiteral) whereParts.push(`timestamp_utc <= DATE '${endLiteral}'`);
-  const where = whereParts.join(' AND ');
-
-  const hasServerDateBounds = Boolean(startLiteral || endLiteral);
   const parsePoints = (features: { attributes: Record<string, unknown> }[]) =>
     features
       .map((feature) => ({
@@ -637,7 +816,14 @@ export async function fetchTimeSeries(
     points = batches;
   }
 
-  console.log(`[Dendra TimeSeries] Got ${points.length} points for "${datastreamName}" (${field})`);
+  if (points.length > 0) {
+    console.log(
+      `[Dendra TimeSeries] ${points.length} pts · station=${stationId} · ${field}` +
+        (options?.startDate || options?.endDate
+          ? ` · ${options.startDate ?? '…'}→${options.endDate ?? '…'}`
+          : ''),
+    );
+  }
   return { points, datastreamName };
 }
 
@@ -662,10 +848,13 @@ export function datastreamTypeKey(name: string | null | undefined): string {
   return normalizeDatastreamTypeName(name).toLowerCase();
 }
 
-/** Normalize station names for display (e.g., "dangermond_Oaks" -> "Oaks"). */
+/** Normalize station names for display (e.g., "Dangermond_Oaks" / "Dangermond Oaks" → "Oaks"). */
 export function formatStationDisplayName(stationName: string | null | undefined): string {
   if (!stationName) return 'Unknown';
-  return stationName.replace(/^dangermond_/i, '').replace(/_/g, ' ').trim() || 'Unknown';
+  const trimmed = stationName.trim();
+  // Strip a leading preserve prefix when it is a separate token (space, underscore, or hyphen).
+  const withoutPrefix = trimmed.replace(/^dangermond(?=[_\s-]|$)/i, '').replace(/^[_\s-]+/, '');
+  return withoutPrefix.replace(/_/g, ' ').replace(/\s+/g, ' ').trim() || 'Unknown';
 }
 
 /** Format an epoch timestamp to a readable date string */

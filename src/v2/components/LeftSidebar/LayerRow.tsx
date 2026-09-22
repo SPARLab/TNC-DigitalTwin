@@ -90,6 +90,10 @@ export function LayerRow({
   } = useDroneDeploy();
 
   const catalogLayer = layerMap.get(layerId);
+  const isMeasureRow = catalogLayer?.catalogMeta?.dendraRole === 'measure'
+    || !!catalogLayer?.catalogMeta?.valueField;
+  const isInactiveMeasure = !!catalogLayer?.catalogMeta?.isInactive;
+  const isLiveMeasure = isMeasureRow && !isInactiveMeasure;
   const isServiceContainer = !!(
     catalogLayer?.catalogMeta?.isMultiLayerService
     && !catalogLayer.catalogMeta?.parentServiceId
@@ -212,13 +216,17 @@ export function LayerRow({
     ? 'bg-white border border-gray-200 hover:border-gray-400 hover:shadow-sm'
     : isActive
       ? 'bg-amber-50 border border-amber-300 font-semibold text-gray-900 shadow-sm'
-      : 'bg-white border border-gray-200 hover:border-gray-400 hover:shadow-sm';
+      : isInactiveMeasure
+        ? 'bg-slate-50 border border-slate-200 hover:border-slate-300'
+        : 'bg-white border border-gray-200 hover:border-gray-400 hover:shadow-sm';
 
-  const textColor = isPinned && !isVisible && !isActive
-    ? 'text-gray-400'
-    : isActive
-      ? 'text-gray-900'
-      : 'text-gray-700';
+  const textColor = isInactiveMeasure && !isActive
+    ? 'text-slate-500'
+    : isPinned && !isVisible && !isActive
+      ? 'text-gray-400'
+      : isActive
+        ? 'text-gray-900'
+        : 'text-gray-700';
 
   return (
     <div id={`layer-row-wrapper-${layerId}`} className="space-y-1">
@@ -227,6 +235,7 @@ export function LayerRow({
         role="treeitem"
         aria-level={ariaLevel}
         aria-current={isActive ? 'true' : undefined}
+        title={isInactiveMeasure ? 'No readings in the last 7 days — shows historical stations' : undefined}
         data-left-sidebar-tree-row="true"
         tabIndex={controlsOnly ? -1 : 0}
         onClick={handleClick}
@@ -253,8 +262,26 @@ export function LayerRow({
           </button>
         )}
 
-        <span className={`truncate min-w-0 flex-1 ${textColor} ${isActive ? 'font-semibold' : ''}`}>
-          {renderHighlightedText(name, highlightQuery)}
+        <span className="min-w-0 flex-1 flex flex-col gap-0.5 overflow-hidden">
+          <span className={`truncate ${textColor} ${isActive ? 'font-semibold' : ''}`}>
+            {renderHighlightedText(name, highlightQuery)}
+          </span>
+          {isLiveMeasure && (
+            <span
+              id={`layer-live-tag-${layerId}`}
+              className="text-[10px] leading-none font-normal text-emerald-600/80"
+            >
+              live
+            </span>
+          )}
+          {isInactiveMeasure && (
+            <span
+              id={`layer-inactive-tag-${layerId}`}
+              className="text-[10px] leading-none font-normal text-slate-400"
+            >
+              inactive
+            </span>
+          )}
         </span>
 
         {isDroneDeployOrthomosaicsLayer && (

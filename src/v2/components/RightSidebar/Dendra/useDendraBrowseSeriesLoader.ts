@@ -1,6 +1,6 @@
 // ============================================================================
 // Progressive multi-station time-series loader for the Dendra browse chart modal.
-// Mirrors floating-panel backfill: recent window first, then older chunks.
+// Recent window first (after extent clamp), then a single older backfill fetch.
 // ============================================================================
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -9,14 +9,13 @@ import {
   fetchTimeSeries,
   formatStationDisplayName,
   normalizeDatastreamTypeName,
+  planProgressiveTimeSeries,
   type DendraStation,
   type DendraSummary,
   type DendraTimeSeriesPoint,
 } from '../../../services/dendraStationService';
 import { DENDRA_SERIES_COLORS } from './DendraMultiSeriesChart';
 
-const INITIAL_RENDER_DAYS = 30;
-const BACKFILL_CHUNK_DAYS = 120;
 const FETCH_CONCURRENCY = 3;
 
 export interface DendraBrowseQuery {
@@ -43,15 +42,6 @@ export interface DendraBrowseSeries {
   progressiveLoading: boolean;
   error: string | null;
   visible: boolean;
-}
-
-function parseDateUtc(date: string): number | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
-  return Date.parse(`${date}T00:00:00.000Z`);
-}
-
-function toDateUtc(epochMs: number): string {
-  return new Date(epochMs).toISOString().slice(0, 10);
 }
 
 function mergePoints(
@@ -194,32 +184,45 @@ export function useDendraBrowseSeriesLoader() {
     setProgressiveLoading(false);
     setError(null);
 
-    const rangeStartMs = parseDateUtc(query.startDate);
-    const rangeEndMs = parseDateUtc(query.endDate);
-    const canBackfill = rangeStartMs != null && rangeEndMs != null && rangeEndMs >= rangeStartMs;
-    const initialStartMs = canBackfill && rangeStartMs != null && rangeEndMs != null
-      ? Math.max(rangeStartMs, rangeEndMs - (INITIAL_RENDER_DAYS - 1) * 24 * 60 * 60 * 1000)
-      : rangeStartMs;
-    const initialStartDate = initialStartMs != null ? toDateUtc(initialStartMs) : query.startDate;
-
     await runPool(targets, FETCH_CONCURRENCY, async (target) => {
       if (requestVersionRef.current !== version) return;
       try {
+        const plan = await planProgressiveTimeSeries(
+          query.serviceUrl,
+          target.station.station_id,
+          target.summary.dendra_ds_id,
+          { startDate: query.startDate, endDate: query.endDate },
+        );
+        if (requestVersionRef.current !== version) return;
+
+        if (!plan.initial) {
+          setSeries((prev) => prev.map((entry) => (
+            entry.id === target.id
+              ? {
+                ...entry,
+                points: [],
+                loading: false,
+                progressiveLoading: false,
+                error: 'No readings in range',
+                stationLabel: multiStream
+                  ? `${target.stationLabel} · ${target.summary.datastream_name}`
+                  : target.stationLabel,
+              }
+              : entry
+          )));
+          return;
+        }
+
         const result = await fetchTimeSeries(
           query.serviceUrl,
           target.station.station_id,
           target.summary.datastream_name,
           target.summary.dendra_ds_id,
-          { startDate: initialStartDate, endDate: query.endDate },
+          plan.initial,
         );
         if (requestVersionRef.current !== version) return;
 
-        const shouldBackfill =
-          canBackfill
-          && initialStartMs != null
-          && rangeStartMs != null
-          && initialStartMs > rangeStartMs;
-
+        const shouldBackfill = plan.backfill != null;
         setSeries((prev) => prev.map((entry) => (
           entry.id === target.id
             ? {
@@ -227,8 +230,9 @@ export function useDendraBrowseSeriesLoader() {
               points: result.points,
               loading: false,
               progressiveLoading: shouldBackfill,
-              error: result.points.length === 0 ? 'No readings in range' : null,
-              // Label used by chart via stationLabel + optional stream
+              error: result.points.length === 0 && !shouldBackfill
+                ? 'No readings in range'
+                : null,
               stationLabel: multiStream
                 ? `${target.stationLabel} · ${target.summary.datastream_name}`
                 : target.stationLabel,
@@ -236,47 +240,33 @@ export function useDendraBrowseSeriesLoader() {
             : entry
         )));
 
-        if (!shouldBackfill || initialStartMs == null || rangeStartMs == null) return;
+        if (!plan.backfill) return;
 
-        let cursorEndMs = initialStartMs - 24 * 60 * 60 * 1000;
-        while (cursorEndMs >= rangeStartMs) {
-          if (requestVersionRef.current !== version) return;
-          const chunkStartMs = Math.max(
-            rangeStartMs,
-            cursorEndMs - (BACKFILL_CHUNK_DAYS - 1) * 24 * 60 * 60 * 1000,
+        try {
+          const chunk = await fetchTimeSeries(
+            query.serviceUrl,
+            target.station.station_id,
+            target.summary.datastream_name,
+            target.summary.dendra_ds_id,
+            plan.backfill,
           );
-          try {
-            const chunk = await fetchTimeSeries(
-              query.serviceUrl,
-              target.station.station_id,
-              target.summary.datastream_name,
-              target.summary.dendra_ds_id,
-              {
-                startDate: toDateUtc(chunkStartMs),
-                endDate: toDateUtc(cursorEndMs),
-              },
-            );
-            if (requestVersionRef.current !== version) return;
-            setSeries((prev) => prev.map((entry) => (
-              entry.id === target.id
-                ? {
-                  ...entry,
-                  points: mergePoints(entry.points, chunk.points),
-                  progressiveLoading: true,
-                  error: null,
-                }
-                : entry
-            )));
-          } catch {
-            break;
-          }
-          cursorEndMs = chunkStartMs - 24 * 60 * 60 * 1000;
+          if (requestVersionRef.current !== version) return;
+          setSeries((prev) => prev.map((entry) => {
+            if (entry.id !== target.id) return entry;
+            const merged = mergePoints(entry.points, chunk.points);
+            return {
+              ...entry,
+              points: merged,
+              progressiveLoading: false,
+              error: merged.length === 0 ? 'No readings in range' : null,
+            };
+          }));
+        } catch {
+          if (requestVersionRef.current !== version) return;
+          setSeries((prev) => prev.map((entry) => (
+            entry.id === target.id ? { ...entry, progressiveLoading: false } : entry
+          )));
         }
-
-        if (requestVersionRef.current !== version) return;
-        setSeries((prev) => prev.map((entry) => (
-          entry.id === target.id ? { ...entry, progressiveLoading: false } : entry
-        )));
       } catch (err) {
         if (requestVersionRef.current !== version) return;
         setSeries((prev) => prev.map((entry) => (

@@ -17,7 +17,14 @@
 import { useState, useEffect } from 'react';
 import type { Category, CatalogLayer, DataSource } from '../types';
 import { CATEGORY_DISPLAY_NAME_OVERRIDE, CATEGORY_ICON_MAP, EXTERNAL_LAYERS } from '../data/layerRegistry';
-import { dataSourceFromCatalogTag } from '../utils/catalogFormatTags';
+import { CATALOG_FORMAT_TAGS, dataSourceFromCatalogTag } from '../utils/catalogFormatTags';
+import {
+  expandDendraFormatChildren,
+  fetchRecentActiveMeasureFields,
+  findDendraLatestChild,
+  findDendraLocationsChild,
+  measureFieldsFromLatestMeta,
+} from '../utils/dendraCatalogExpand';
 
 const BASE =
   'https://dangermondpreserve-spatial.com/server/rest/services/Dangermond_Preserve_Data_Catalog/FeatureServer';
@@ -155,6 +162,61 @@ function buildFeatureServiceMetadataUrl(d: RawDataset): string | null {
   const path = d.service_path.trim().replace(/^\/+/, '').replace(/\/+$/, '');
   if (!base || !path) return null;
   return `${base}/${path}/FeatureServer?f=json`;
+}
+
+async function fetchLatestMeasureFields(
+  d: RawDataset,
+  layers: ArcGISServiceLayer[],
+): Promise<string[]> {
+  const latest = layers.find((layer) => /latest/i.test(layer.name ?? ''));
+  if (!latest) return [];
+  const base = sanitizeArcGisBaseUrl(d.server_base_url ?? '');
+  const path = (d.service_path ?? '').trim().replace(/^\/+/, '').replace(/\/+$/, '');
+  if (!base || !path) return [];
+  try {
+    const res = await fetch(`${base}/${path}/FeatureServer/${latest.id}?f=json`);
+    if (!res.ok) return [];
+    const json = await res.json();
+    if (json?.error) return [];
+    return measureFieldsFromLatestMeta(json);
+  } catch {
+    return [];
+  }
+}
+
+/** Wire siblingLayers, or expand dendra_format into Stations + measure rows. */
+function finalizeServiceChildren(
+  parentId: string,
+  children: CatalogLayer[],
+  options: {
+    catalogTag?: string;
+    measureFields?: string[];
+    activeMeasureFields?: Set<string> | null;
+  },
+): CatalogLayer[] {
+  const shouldExpand =
+    options.catalogTag === CATALOG_FORMAT_TAGS.dendra
+    && children.some((child) => child.dataSource === 'dendra');
+
+  if (shouldExpand) {
+    const locations = findDendraLocationsChild(children);
+    const latest = findDendraLatestChild(children);
+    if (locations && latest) {
+      return expandDendraFormatChildren({
+        parentId,
+        locations,
+        latest,
+        measureFields: options.measureFields ?? [],
+        activeMeasureFields: options.activeMeasureFields ?? null,
+      });
+    }
+  }
+
+  for (const child of children) {
+    if (!child.catalogMeta) continue;
+    child.catalogMeta.siblingLayers = children.filter((sibling) => sibling.id !== child.id);
+  }
+  return children;
 }
 
 function shouldRunBlockingDiscovery(d: RawDataset): boolean {
@@ -445,6 +507,56 @@ export function useCatalogRegistry(): CatalogRegistryState {
           discoveredLayersByServiceKey,
         );
 
+        // Prefetch Latest measure columns for dendra_format services so the
+        // sidebar can list Stations + one row per datastream.
+        const measureFieldsByServiceKey = new Map<string, string[]>();
+        const activeMeasureFieldsByServiceKey = new Map<string, Set<string> | null>();
+        const measureFieldJobs: Array<{ serviceKey: string; dataset: RawDataset; layers: ArcGISServiceLayer[] }> = [];
+        for (const d of rawDatasets) {
+          if (d.is_visible === 0) continue;
+          if (detectDataSource(d) !== 'dendra') continue;
+          if (tagsFor(d).catalogTag !== CATALOG_FORMAT_TAGS.dendra) continue;
+          const serviceKey = serviceKeyForDataset(d);
+          if (!serviceKey || measureFieldsByServiceKey.has(serviceKey)) continue;
+
+          const grouped = (serviceGroups.get(serviceKey) ?? []).filter((row) => row.is_visible !== 0);
+          const fromCatalog = catalogLayersByDatasetId.get(d.id) ?? [];
+          const fromDiscovery = discoveredLayersByServiceKey.get(serviceKey) ?? [];
+          let layers = fromCatalog.length >= 2
+            ? fromCatalog
+            : fromDiscovery.length >= 2
+              ? fromDiscovery
+              : grouped
+                .filter((row) => row.layer_id != null)
+                .map((row) => ({
+                  id: row.layer_id as number,
+                  name: row.display_title || row.service_name || `Layer ${row.layer_id}`,
+                }));
+          if (layers.length < 2) continue;
+
+          measureFieldsByServiceKey.set(serviceKey, []);
+          activeMeasureFieldsByServiceKey.set(serviceKey, null);
+          measureFieldJobs.push({ serviceKey, dataset: d, layers });
+        }
+        await Promise.all(measureFieldJobs.map(async (job) => {
+          const fields = await fetchLatestMeasureFields(job.dataset, job.layers);
+          measureFieldsByServiceKey.set(job.serviceKey, fields);
+          const latest = job.layers.find((layer) => /latest/i.test(layer.name ?? ''));
+          const featureServerUrl = buildFeatureServiceMetadataUrl(job.dataset)?.replace(/\?f=json$/i, '');
+          if (!latest || !featureServerUrl || fields.length === 0) {
+            activeMeasureFieldsByServiceKey.set(job.serviceKey, null);
+            return;
+          }
+          try {
+            const active = await fetchRecentActiveMeasureFields(featureServerUrl, latest.id, fields);
+            activeMeasureFieldsByServiceKey.set(job.serviceKey, active);
+          } catch (err) {
+            console.warn('[Catalog] Dendra Latest activity probe failed:', err);
+            activeMeasureFieldsByServiceKey.set(job.serviceKey, null);
+          }
+        }));
+        if (cancelled) return;
+
         // ── Create CatalogLayer for every visible dataset ────────────────
         const allLayers = new Map<string, CatalogLayer>();
 
@@ -508,7 +620,7 @@ export function useCatalogRegistry(): CatalogRegistryState {
                 const serviceDatasetId = d.id;
                 const serviceId = toServiceLayerId(serviceDatasetId);
 
-                const children = discoveredLayers.map((discoveredLayer): CatalogLayer => ({
+                const rawChildren = discoveredLayers.map((discoveredLayer): CatalogLayer => ({
                   id: `${serviceId}-layer-${discoveredLayer.id}`,
                   name: discoveredLayer.name,
                   categoryId,
@@ -529,10 +641,11 @@ export function useCatalogRegistry(): CatalogRegistryState {
                   },
                 }));
 
-                for (const child of children) {
-                  if (!child.catalogMeta) continue;
-                  child.catalogMeta.siblingLayers = children.filter(sibling => sibling.id !== child.id);
-                }
+                const children = finalizeServiceChildren(serviceId, rawChildren, {
+                  catalogTag: tagsFor(d).catalogTag,
+                  measureFields: measureFieldsByServiceKey.get(serviceKey) ?? [],
+                  activeMeasureFields: activeMeasureFieldsByServiceKey.get(serviceKey) ?? null,
+                });
 
                 const parent: CatalogLayer = {
                   id: serviceId,
@@ -585,7 +698,7 @@ export function useCatalogRegistry(): CatalogRegistryState {
             const serviceDatasetId = serviceRows[0].id;
             const serviceId = toServiceLayerId(serviceDatasetId);
 
-            const children = serviceRows.map((row): CatalogLayer => ({
+            const rawChildren = serviceRows.map((row): CatalogLayer => ({
               id: toLayerId(row.id),
               name: row.display_title || row.service_name || `Dataset ${row.id}`,
               categoryId,
@@ -606,11 +719,11 @@ export function useCatalogRegistry(): CatalogRegistryState {
               },
             }));
 
-            // Attach sibling references after all children exist.
-            for (const child of children) {
-              if (!child.catalogMeta) continue;
-              child.catalogMeta.siblingLayers = children.filter(sibling => sibling.id !== child.id);
-            }
+            const children = finalizeServiceChildren(serviceId, rawChildren, {
+              catalogTag: tagsFor(serviceRows[0]).catalogTag,
+              measureFields: measureFieldsByServiceKey.get(serviceKey) ?? [],
+              activeMeasureFields: activeMeasureFieldsByServiceKey.get(serviceKey) ?? null,
+            });
 
             const parent: CatalogLayer = {
               id: serviceId,

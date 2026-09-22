@@ -80,6 +80,7 @@ import { AlertsPanel } from '../components/Monitoring/AlertsPanel';
 import { BetaNoticeBanner } from '../components/shared/BetaNoticeBanner';
 import { allowsInterpolation, SENSOR_VARIABLES } from '../services/sensorService';
 import type { SensorVariableId } from '../services/sensorService';
+import { formatStationDisplayName } from '../services/dendraStationService';
 import {
   alertMatchesActiveSource,
   buildLatestLayerUrl,
@@ -782,7 +783,7 @@ export function MonitoringPage() {
       if (!view || view.destroyed) return;
 
       const normalizeName = (name: string) =>
-        name.trim().replace(/^Dangermond[_ ]/i, '').toLowerCase();
+        formatStationDisplayName(name).toLowerCase();
       const matchesStation = (row: { stationId: number; stationName: string }) =>
         alert.stationId != null
           ? row.stationId === alert.stationId
@@ -790,7 +791,7 @@ export function MonitoringPage() {
 
       const alertLookup = buildStationAlertLookup(liveAlerts.allAlerts);
       const conditionLabel = alertsLayerLabel ?? (alert.category.trim() || 'Alert');
-      let title = alert.stationName;
+      let title = formatStationDisplayName(alert.stationName);
       let content = '';
       let longitude = alert.longitude;
       let latitude = alert.latitude;
@@ -800,7 +801,7 @@ export function MonitoringPage() {
         if (reading) {
           longitude = reading.longitude;
           latitude = reading.latitude;
-          title = reading.stationName;
+          title = formatStationDisplayName(reading.stationName);
           content = formatWindStationPopupContent(
             reading,
             lookupStationAlert(alertLookup, reading),
@@ -811,7 +812,7 @@ export function MonitoringPage() {
         if (reading) {
           longitude = reading.longitude;
           latitude = reading.latitude;
-          title = reading.stationName;
+          title = formatStationDisplayName(reading.stationName);
           content = formatScalarStationPopupContent(
             reading,
             scalarConfig,

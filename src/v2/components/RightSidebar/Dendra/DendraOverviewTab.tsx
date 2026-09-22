@@ -100,13 +100,18 @@ export function DendraOverviewTab({
     ?? activeCatalogLayer?.name
     ?? serviceTitle
     ?? '—';
-  const catalogDescription = serviceContextLayer?.catalogMeta?.description?.trim()
-    || activeCatalogLayer?.catalogMeta?.description?.trim()
-    || '';
+  // Prefer parent-service description so Latest ↔ Locations does not swap copy.
+  const catalogDescription = serviceContextLayer?.catalogMeta?.description?.trim() || '';
   const [resolvedDescription, setResolvedDescription] = useState(catalogDescription);
   const [isSourceOverlayOpen, setIsSourceOverlayOpen] = useState(false);
   const [sourceIframeStatus, setSourceIframeStatus] = useState<SourceIframeStatus>('idle');
   const [liveMonitoringExpanded, setLiveMonitoringExpanded] = useState(false);
+
+  const serviceDescriptionKey = useMemo(() => {
+    const meta = serviceContextLayer?.catalogMeta;
+    if (!meta?.serverBaseUrl || !meta.servicePath) return null;
+    return `${meta.serverBaseUrl}|${meta.servicePath}`;
+  }, [serviceContextLayer?.catalogMeta?.serverBaseUrl, serviceContextLayer?.catalogMeta?.servicePath]);
 
   const sourceUrl = useMemo(() => {
     if (!tableTargetLayer?.catalogMeta) return '';
@@ -133,12 +138,17 @@ export function DendraOverviewTab({
     };
   }, [serviceContextLayer, activeCatalogLayer, serviceTitle]);
 
+  // Only (re)fetch when the FeatureServer identity changes — not when toggling
+  // Latest ↔ Locations children of the same dendra_format service (avoids a
+  // catalog→service description flash that jumps the sidebar layout).
   useEffect(() => {
     let cancelled = false;
     setResolvedDescription(catalogDescription);
 
-    const serviceMeta = serviceContextLayer?.catalogMeta ?? activeCatalogLayer?.catalogMeta;
-    if (!serviceMeta?.hasFeatureServer) return () => { cancelled = true; };
+    const serviceMeta = serviceContextLayer?.catalogMeta;
+    if (!serviceDescriptionKey || !serviceMeta?.hasFeatureServer) {
+      return () => { cancelled = true; };
+    }
 
     fetchServiceDescription(serviceMeta)
       .then((serviceDescription) => {
@@ -152,7 +162,7 @@ export function DendraOverviewTab({
     return () => {
       cancelled = true;
     };
-  }, [serviceContextLayer, activeCatalogLayer, catalogDescription]);
+  }, [serviceDescriptionKey, serviceContextLayer?.catalogMeta, catalogDescription]);
 
   useEffect(() => {
     if (!isSourceOverlayOpen || !sourceUrl || sourceIframeStatus !== 'loading') return undefined;

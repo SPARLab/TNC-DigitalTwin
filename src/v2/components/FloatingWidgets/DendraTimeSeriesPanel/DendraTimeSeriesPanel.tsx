@@ -285,7 +285,11 @@ function ChartPanel({ panelId }: { panelId: string }) {
         type: 'category', data: timestamps,
         axisLine: { lineStyle: { color: '#94a3b8' } },
         axisLabel: {
-          formatter: (v: string) => new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          formatter: (v: string) => new Date(v).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          }),
           rotate: 0, margin: 6, fontSize: 11, color: '#475569',
         },
       },

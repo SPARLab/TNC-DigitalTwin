@@ -10,6 +10,7 @@ import {
   withImageCacheBust,
   type CameraSnapshot,
 } from '../../services/cameraService';
+import { formatStationDisplayName } from '../../services/dendraStationService';
 
 function formatRelativeTime(epochMs: number): string {
   const seconds = Math.round((Date.now() - epochMs) / 1000);
@@ -80,7 +81,7 @@ export function CameraDetailPanel({
             <img
               key={imageUrl}
               src={imageUrl}
-              alt={`Latest frame from ${selected.cameraName}`}
+              alt={`Latest frame from ${formatStationDisplayName(selected.cameraName)}`}
               className="max-h-56 w-full object-cover"
               onError={() => setImageFailed(true)}
             />
@@ -91,7 +92,9 @@ export function CameraDetailPanel({
           )}
 
           <div className="border-t border-gray-800 bg-gray-950 px-3 py-2">
-            <p className="truncate text-xs font-semibold text-white">{selected.cameraName}</p>
+            <p className="truncate text-xs font-semibold text-white">
+              {formatStationDisplayName(selected.cameraName)}
+            </p>
             <p className="mt-0.5 text-[11px] text-gray-400">
               {selected.isOnline ? 'Online' : 'Offline'} · {describeCameraTime(selected)}
             </p>
@@ -142,7 +145,7 @@ export function CameraDetailPanel({
                       isActive ? 'font-semibold text-emerald-900' : 'font-medium text-gray-800'
                     }`}
                   >
-                    {camera.cameraName}
+                    {formatStationDisplayName(camera.cameraName)}
                   </span>
                   <span className="block truncate text-[10px] text-gray-500">
                     {describeCameraTime(camera)}

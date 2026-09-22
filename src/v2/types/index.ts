@@ -28,6 +28,19 @@ export interface CatalogLayer {
     catalogTag?: string;
     /** Groups this dataset into a Live Monitoring section, e.g. `Weather Conditions`. */
     liveTag?: string;
+    /**
+     * dendra_format catalog role:
+     * - `stations` — Locations layer (station dots)
+     * - `measure` — Latest layer rendered for one value column
+     */
+    dendraRole?: 'stations' | 'measure';
+    /** Latest/Data measure column for `dendraRole: 'measure'` rows (e.g. depth_to_groundwater). */
+    valueField?: string;
+    /**
+     * True when a dendra measure has no Latest readings with `latest_time`
+     * in the last 7 days (sidebar: greyed out / not map-activatable).
+     */
+    isInactive?: boolean;
   };
 }
 

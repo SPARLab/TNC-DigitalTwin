@@ -21,6 +21,7 @@ import {
   type CameraViewshed,
 } from '../../../services/cameraService';
 import { groupCamerasByProximity, type ScreenPoint } from './cameraClustering';
+import { formatStationDisplayName } from '../../../services/dendraStationService';
 
 const ONLINE_FILL: [number, number, number, number] = [5, 150, 105, 230];
 const OFFLINE_FILL: [number, number, number, number] = [156, 163, 175, 220];
@@ -141,6 +142,8 @@ export function createCameraMarkerLayer(
     const camera = cluster.cameras[0];
     const isSelected = camera.objectId === selectedObjectId;
 
+    const displayName = formatStationDisplayName(camera.cameraName);
+
     layer.add(
       new Graphic({
         geometry,
@@ -149,10 +152,10 @@ export function createCameraMarkerLayer(
           objectId: camera.objectId,
           objectIds: String(camera.objectId),
           clusterCount: 1,
-          cameraName: camera.cameraName,
+          cameraName: displayName,
         },
         popupTemplate: {
-          title: camera.cameraName,
+          title: displayName,
           content: popupContent(camera, cacheKey),
         },
       }),
@@ -161,7 +164,7 @@ export function createCameraMarkerLayer(
     const label = new Graphic({
       geometry,
       symbol: new TextSymbol({
-        text: camera.cameraName,
+        text: displayName,
         color: [255, 255, 255, 240],
         haloColor: [0, 0, 0, 190],
         haloSize: 1.6,
@@ -174,7 +177,7 @@ export function createCameraMarkerLayer(
         objectId: camera.objectId,
         objectIds: String(camera.objectId),
         clusterCount: 1,
-        cameraName: camera.cameraName,
+        cameraName: displayName,
       },
     });
     layer.add(label);

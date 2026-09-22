@@ -29,6 +29,7 @@ import {
   type StationAlertCluster,
 } from './alertMarkerLayer';
 import type { LiveAlert } from '../../../services/liveAlertService';
+import { formatStationDisplayName } from '../../../services/dendraStationService';
 
 const GRID_COLS = 20;
 const GRID_ROWS = 15;
@@ -161,7 +162,7 @@ export function createWindArrowLayer(
           strokeWidth: 0.8,
         }),
         popupTemplate: {
-          title: reading.stationName,
+          title: formatStationDisplayName(reading.stationName),
           content: [
             {
               type: 'text',
@@ -193,11 +194,11 @@ export function createWindBadgeLayer(
       t: reading.windSpeedAvg / maxSpeed,
       text: reading.windSpeedAvg.toFixed(1),
       unit: 'm/s',
-      caption: reading.stationName.replace(/^Dangermond[_ ]/, ''),
+      caption: formatStationDisplayName(reading.stationName),
       severity: cluster?.primary.severity,
       stationId: reading.stationId,
       stationName: reading.stationName,
-      popupTitle: reading.stationName,
+      popupTitle: formatStationDisplayName(reading.stationName),
       popupContent: formatWindStationPopupContent(reading, cluster),
     };
   });

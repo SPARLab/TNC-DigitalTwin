@@ -26,6 +26,7 @@ import {
   type SensorVariableConfig,
 } from '../../../services/sensorService';
 import type { LiveAlert } from '../../../services/liveAlertService';
+import { formatStationDisplayName } from '../../../services/dendraStationService';
 
 /** Same diameter as Labels discs — used as a near-invisible hit target on Surface. */
 const SURFACE_HIT_TARGET_SIZE = 42;
@@ -97,7 +98,7 @@ export function createScalarValueLabelLayer(
     });
     const cluster = lookupStationAlert(alertLookup, reading);
     const popupTemplate = {
-      title: reading.stationName,
+      title: formatStationDisplayName(reading.stationName),
       content: [
         {
           type: 'text' as const,
@@ -176,11 +177,11 @@ export function createScalarBadgeLayer(
       t: normalize(reading.value, rampLow, rampHigh),
       text: reading.value.toFixed(config.decimals),
       unit: config.unit,
-      caption: reading.stationName.replace(/^Dangermond[_ ]/, ''),
+      caption: formatStationDisplayName(reading.stationName),
       severity: cluster?.primary.severity,
       stationId: reading.stationId,
       stationName: reading.stationName,
-      popupTitle: reading.stationName,
+      popupTitle: formatStationDisplayName(reading.stationName),
       popupContent: formatScalarStationPopupContent(reading, config, cluster),
     };
   });

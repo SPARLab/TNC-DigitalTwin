@@ -52,12 +52,16 @@ export function matchesPreference(
   }
 
   if (preference === 'latest') {
+    if (layer.catalogMeta?.dendraRole === 'measure' || layer.catalogMeta?.valueField) return true;
+    if (layer.catalogMeta?.dendraRole === 'stations') return false;
     if (isLatestNamed(name)) return true;
     if (isLocationsNamed(name)) return false;
     // Legacy fallback when names are opaque: Latest was published as layer 0.
     return layerId === 0;
   }
 
+  if (layer.catalogMeta?.dendraRole === 'stations') return true;
+  if (layer.catalogMeta?.dendraRole === 'measure' || layer.catalogMeta?.valueField) return false;
   if (isLocationsNamed(name)) return true;
   if (isLatestNamed(name)) return false;
   // Legacy fallback: Locations was published as layer 1.
