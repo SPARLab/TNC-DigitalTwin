@@ -14,6 +14,12 @@ import {
   type DendraStation,
 } from '../../../services/dendraStationService';
 import { isPointInsideSpatialPolygon } from '../../../utils/spatialQuery';
+import {
+  START_AFTER_END_MESSAGE,
+  clampDateToToday,
+  isStartAfterEnd,
+  todayYmdLocal,
+} from '../../../utils/dendraDateGuards';
 import { InlineLoadingRow } from '../../shared/loading/LoadingPrimitives';
 import { SpatialQuerySection } from '../shared/SpatialQuerySection';
 import {
@@ -51,6 +57,9 @@ export function DendraBrowseTab() {
     activeLayerTitle,
     datastreamTypes,
     datastreamTypesLoaded,
+    expandPinnedMultiChartRequest,
+    clearExpandPinnedMultiChartRequest,
+    pinnedMultiCharts,
   } = useDendra();
   const { activeLayer, activateLayer, lastEditFiltersRequest, getPinnedByLayerId } = useLayers();
   const summariesByStation = useSummariesByStation();
@@ -62,6 +71,7 @@ export function DendraBrowseTab() {
   } = useMap();
 
   const weekDefaults = useMemo(() => defaultWeekRange(), []);
+  const todayMax = todayYmdLocal();
   const [selectedStreamNames, setSelectedStreamNames] = useState<string[]>([]);
   const [selectedStationIds, setSelectedStationIds] = useState<number[]>([]);
   /** When false (default), all eligible stations are included. */
@@ -69,6 +79,7 @@ export function DendraBrowseTab() {
   const [startDate, setStartDate] = useState(weekDefaults.startDate);
   const [endDate, setEndDate] = useState(weekDefaults.endDate);
   const [isChartOpen, setIsChartOpen] = useState(false);
+  const [linkedPinnedChartId, setLinkedPinnedChartId] = useState<string | null>(null);
   const [pendingAlertIntent, setPendingAlertIntent] = useState<AlertNavigationIntent | null>(null);
   const [stationListQuery, setStationListQuery] = useState('');
 
@@ -112,6 +123,29 @@ export function DendraBrowseTab() {
     setShowActiveOnly,
   ]);
 
+  // Expand from a pinned browse chart on the map → restore filters + open modal.
+  useEffect(() => {
+    const request = expandPinnedMultiChartRequest;
+    if (!request || request.origin !== 'browse') return;
+    if (activeLayer?.dataSource === 'dendra' && request.sourceLayerId !== activeLayer.layerId) {
+      return;
+    }
+    setSelectedStreamNames(request.selectedStreamNames);
+    setSelectedStationIds(request.selectedStationIds);
+    setFilterStations(true);
+    setStartDate(clampDateToToday(request.startDate, todayMax));
+    setEndDate(clampDateToToday(request.endDate, todayMax));
+    setLinkedPinnedChartId(request.panelId);
+    setIsChartOpen(true);
+    clearExpandPinnedMultiChartRequest();
+  }, [
+    expandPinnedMultiChartRequest,
+    clearExpandPinnedMultiChartRequest,
+    activeLayer?.dataSource,
+    activeLayer?.layerId,
+    todayMax,
+  ]);
+
   // Prefetch summaries once Latest-column types are known (filters summaries correctly).
   useEffect(() => {
     if (!dataLoaded || !datastreamTypesLoaded) return;
@@ -119,6 +153,14 @@ export function DendraBrowseTab() {
       loadStationSummaries(station.station_id);
     }
   }, [dataLoaded, datastreamTypesLoaded, filteredStations, loadStationSummaries]);
+
+  // Drop link if the pinned chart was closed from the map.
+  useEffect(() => {
+    if (!linkedPinnedChartId) return;
+    if (!pinnedMultiCharts.some((panel) => panel.id === linkedPinnedChartId)) {
+      setLinkedPinnedChartId(null);
+    }
+  }, [linkedPinnedChartId, pinnedMultiCharts]);
 
   useEffect(() => {
     const handleIntent = (event: Event) => {
@@ -163,11 +205,13 @@ export function DendraBrowseTab() {
     return stationsInSpatial.filter((station) => {
       const summaries = summariesByStation.get(station.station_id);
       if (!summaries) return false;
-      return summaries.some((summary) =>
-        selected.some((field) =>
-          datastreamMatchesLatestField(summary.datastream_name, field, availableStreamKeys),
-        ),
-      );
+      return summaries.some((summary) => {
+        const fieldKey = (summary.dendra_ds_id || summary.variable || '').trim().toLowerCase();
+        return selected.some((field) =>
+          field === fieldKey
+          || datastreamMatchesLatestField(summary.datastream_name, field, availableStreamKeys),
+        );
+      });
     });
   }, [stationsInSpatial, selectedStreamNames, summariesByStation, availableStreamKeys]);
 
@@ -363,13 +407,14 @@ export function DendraBrowseTab() {
   }, [highlightPoint, clearHighlight, viewRef]);
 
   const datasetTitle = activeLayerTitle?.trim() || 'this dataset';
+  const dateRangeInvalid = isStartAfterEnd(startDate, endDate);
   const canGenerate =
     Boolean(activeServiceUrl)
     && selectedStreamNames.length > 0
     && effectiveStationIds.length > 0
     && Boolean(startDate)
     && Boolean(endDate)
-    && startDate <= endDate;
+    && !dateRangeInvalid;
 
   const modalFilters: DendraBrowseFilterState = {
     selectedStreamNames,
@@ -629,8 +674,8 @@ export function DendraBrowseTab() {
                   <input
                     type="date"
                     value={startDate}
-                    max={endDate}
-                    onChange={(event) => setStartDate(event.target.value)}
+                    max={todayMax}
+                    onChange={(event) => setStartDate(clampDateToToday(event.target.value, todayMax))}
                     className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
                   />
                 </label>
@@ -639,19 +684,27 @@ export function DendraBrowseTab() {
                   <input
                     type="date"
                     value={endDate}
-                    min={startDate}
-                    onChange={(event) => setEndDate(event.target.value)}
+                    max={todayMax}
+                    onChange={(event) => setEndDate(clampDateToToday(event.target.value, todayMax))}
                     className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
                   />
                 </label>
               </div>
+              {dateRangeInvalid && (
+                <p id="dendra-browse-date-range-error" className="text-xs text-red-600">
+                  {START_AFTER_END_MESSAGE}
+                </p>
+              )}
             </section>
 
             <button
               id="dendra-browse-generate-chart"
               type="button"
               disabled={!canGenerate}
-              onClick={() => setIsChartOpen(true)}
+              onClick={() => {
+                setLinkedPinnedChartId(null);
+                setIsChartOpen(true);
+              }}
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <LineChart className="h-4 w-4" />
@@ -660,10 +713,13 @@ export function DendraBrowseTab() {
 
             {!canGenerate && dataLoaded && (
               <p className="text-center text-[11px] text-slate-400">
-                Select at least one datastream type to continue.
+                {dateRangeInvalid
+                  ? START_AFTER_END_MESSAGE
+                  : selectedStreamNames.length === 0
+                    ? 'Select at least one datastream type to continue.'
+                    : 'Select stations and a valid date range to continue.'}
               </p>
             )}
-
             <p className="text-center text-[11px] text-slate-400">
               {activeCount.toLocaleString()} active of {stationCount.toLocaleString()} stations in this dataset
             </p>
@@ -681,12 +737,14 @@ export function DendraBrowseTab() {
           stations={stationsInSpatial}
           summariesByStation={summariesByStation}
           initialFilters={modalFilters}
+          linkedPinnedChartId={linkedPinnedChartId}
+          onLinkedPinnedChartIdChange={setLinkedPinnedChartId}
           onFiltersChange={(next) => {
             setSelectedStreamNames(next.selectedStreamNames);
             setSelectedStationIds(next.selectedStationIds);
             setFilterStations(true);
-            setStartDate(next.startDate);
-            setEndDate(next.endDate);
+            setStartDate(clampDateToToday(next.startDate, todayMax));
+            setEndDate(clampDateToToday(next.endDate, todayMax));
           }}
         />
       )}

@@ -16,6 +16,7 @@ import { getAdapterForActiveLayer, useActiveCacheStatus } from '../../dataSource
 import { MapToasts } from './MapToasts';
 import { MapCenterLoadingOverlay, MapRefreshPill } from '../shared/loading/LoadingPrimitives';
 import { DendraTimeSeriesPanel } from '../FloatingWidgets/DendraTimeSeriesPanel/DendraTimeSeriesPanel';
+import { DendraPinnedMultiSeriesPanel } from '../FloatingWidgets/DendraPinnedMultiSeriesPanel/DendraPinnedMultiSeriesPanel';
 import { useArcgisViewLifecycle } from './internal/useArcgisViewLifecycle';
 import { useDataOnePreviewStatus } from './internal/useDataOnePreviewStatus';
 
@@ -175,6 +176,7 @@ export function MapContainer() {
 
       {/* Dendra charts persist independently of active layer adapter */}
       <DendraTimeSeriesPanel />
+      <DendraPinnedMultiSeriesPanel />
 
       {/* Full overlay — first load only (data not yet cached) */}
       {showLoadingOverlay && (

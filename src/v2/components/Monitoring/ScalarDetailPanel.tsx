@@ -15,6 +15,7 @@ import {
   type ScalarSnapshot,
   type SensorVariableConfig,
 } from '../../services/sensorService';
+import { formatStationDisplayName } from '../../services/dendraStationService';
 
 interface ModeOption {
   id: ScalarVizMode;
@@ -121,8 +122,8 @@ export function ScalarDetailPanel({
         <div className="grid grid-cols-1 gap-2">
           <StatCard
             value={format(readings[0].value)}
-            label={`Current (${config.unit}) — ${readings[0].stationName}`}
-            hint={readings[0].stationName}
+            label={`Current (${config.unit}) — ${formatStationDisplayName(readings[0].stationName)}`}
+            hint={formatStationDisplayName(readings[0].stationName)}
           />
         </div>
       ) : (

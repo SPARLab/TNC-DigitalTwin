@@ -29,5 +29,13 @@ export function getConcreteActiveLayerId(activeLayer: ActiveLayer | null, layerM
   if (activeLayer.selectedSubLayerId && siblingLayers.some(sibling => sibling.id === activeLayer.selectedSubLayerId)) {
     return activeLayer.selectedSubLayerId;
   }
+  // Dendra service parents: prefer Stations / Locations (station dots).
+  if (serviceLayer?.dataSource === 'dendra') {
+    const stations = siblingLayers.find((sibling) =>
+      sibling.catalogMeta?.dendraRole === 'stations'
+      || /location|station/i.test(sibling.name),
+    );
+    if (stations) return stations.id;
+  }
   return siblingLayers[0]?.id ?? null;
 }

@@ -6,11 +6,16 @@
 export function LandingPage() {
   return (
     <div id="landing-page" className="relative h-full w-full overflow-hidden">
-      <img
-        id="landing-hero-image"
-        src="/landing.jpg"
-        alt="Aerial view of the Dangermond Preserve coastline"
+      <video
+        id="landing-hero-video"
         className="absolute inset-0 h-full w-full object-cover object-center"
+        src="/dangermond_footage_2.mp4"
+        poster="/landing.jpg"
+        autoPlay
+        muted
+        loop
+        playsInline
+        aria-label="Drone footage of the ocean, beaches, and ecosystems of the Jack and Laura Dangermond Preserve. Video by Kelly Easterday."
       />
       <div
         id="landing-hero-overlay"
@@ -34,21 +39,28 @@ export function LandingPage() {
         </p>
       </div>
 
+      <p
+        id="landing-hero-video-credit"
+        className="pointer-events-none absolute inset-x-0 bottom-3 text-center text-[11px] leading-snug text-white/65 [text-shadow:0_1px_6px_rgba(0,0,0,0.45)]"
+      >
+        Footage credit: Kelly Easterday
+      </p>
+
       {/* Both marks are white-on-transparent, so they sit over the darker base of
-          the photo and rely on a drop shadow rather than a backing panel. */}
+          the footage and rely on a drop shadow rather than a backing panel. */}
       <div
         id="landing-hero-logos"
-        className="pointer-events-none absolute inset-x-6 bottom-5 flex items-end justify-between"
+        className="pointer-events-none absolute inset-x-8 bottom-5 flex items-end justify-between sm:inset-x-10 sm:bottom-6"
       >
         <img
           src="/tnc.png"
           alt="The Nature Conservancy"
-          className="pointer-events-auto h-12 w-auto object-contain [filter:drop-shadow(0_1px_4px_rgba(0,0,0,0.4))]"
+          className="pointer-events-auto h-14 w-auto object-contain sm:h-16 [filter:drop-shadow(0_1px_4px_rgba(0,0,0,0.4))]"
         />
         <img
           src="/spatial.png"
           alt="UCSB Spatial Center"
-          className="pointer-events-auto h-12 w-auto object-contain [filter:drop-shadow(0_1px_4px_rgba(0,0,0,0.4))]"
+          className="pointer-events-auto h-14 w-auto object-contain sm:h-16 [filter:drop-shadow(0_1px_4px_rgba(0,0,0,0.4))]"
         />
       </div>
     </div>

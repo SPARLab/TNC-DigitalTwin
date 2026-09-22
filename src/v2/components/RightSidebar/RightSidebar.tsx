@@ -4,23 +4,26 @@
 // Uses data source registry for tab content — no data-source-specific imports.
 // ============================================================================
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Layers } from 'lucide-react';
 import { useLayers } from '../../context/LayerContext';
+import { useCatalog } from '../../context/CatalogContext';
 import type { SidebarTab } from '../../types';
 import { SidebarHeader } from './SidebarHeader';
 import { TabBar } from './TabBar';
 import { getAdapterForActiveLayer } from '../../dataSources/registry';
+import { resolveDendraSidebarPanelKey } from '../../utils/resolveDendraServiceTitle';
 
 export function RightSidebar() {
   const { activeLayer, activateLayer, lastEditFiltersRequest, lastBrowseTabRequest } = useLayers();
+  const { layerMap } = useCatalog();
   const [activeTab, setActiveTab] = useState<SidebarTab>('overview');
-  const [lastTabByLayerId, setLastTabByLayerId] = useState<Record<string, SidebarTab>>({});
-  const [browseMountedByLayer, setBrowseMountedByLayer] = useState<Record<string, boolean>>({});
+  const [lastTabByPanelKey, setLastTabByPanelKey] = useState<Record<string, SidebarTab>>({});
+  const [browseMountedByPanelKey, setBrowseMountedByPanelKey] = useState<Record<string, boolean>>({});
   const [isInspectBrowseFlow, setIsInspectBrowseFlow] = useState(false);
   const consumedRequestRef = useRef(0);
   const consumedBrowseRef = useRef(0);
-  const prevLayerIdRef = useRef<string | null>(null);
+  const prevPanelKeyRef = useRef<string | null>(null);
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollHideTimerRef = useRef<number | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
@@ -30,18 +33,27 @@ export function RightSidebar() {
   // Track layer changes for flash animation
   const [shouldFlash, setShouldFlash] = useState(false);
 
+  // Dendra Latest ↔ Locations share one panel identity so charts don't remount.
+  const panelKey = useMemo(() => {
+    if (!activeLayer) return null;
+    if (activeLayer.dataSource === 'dendra') {
+      return resolveDendraSidebarPanelKey(layerMap, activeLayer.layerId) ?? activeLayer.layerId;
+    }
+    return activeLayer.layerId;
+  }, [activeLayer, layerMap]);
+
   // Look up the adapter for the active layer's data source
   const adapter = getAdapterForActiveLayer(activeLayer);
   const showBrowseTab = true;
-  const browseMounted = Boolean(activeLayer && browseMountedByLayer[activeLayer.layerId]);
+  const browseMounted = Boolean(panelKey && browseMountedByPanelKey[panelKey]);
 
   useEffect(() => {
-    if (activeTab !== 'browse' || !activeLayer) return;
-    setBrowseMountedByLayer((prev) => {
-      if (prev[activeLayer.layerId]) return prev;
-      return { ...prev, [activeLayer.layerId]: true };
+    if (activeTab !== 'browse' || !panelKey) return;
+    setBrowseMountedByPanelKey((prev) => {
+      if (prev[panelKey]) return prev;
+      return { ...prev, [panelKey]: true };
     });
-  }, [activeTab, activeLayer]);
+  }, [activeTab, panelKey]);
 
   const updateScrollThumb = useCallback(() => {
     const scrollEl = scrollAreaRef.current;
@@ -76,11 +88,11 @@ export function RightSidebar() {
     }, 650);
   }, [updateScrollThumb]);
 
-  const markBrowseMounted = useCallback((layerId: string | undefined) => {
-    if (!layerId) return;
-    setBrowseMountedByLayer((prev) => {
-      if (prev[layerId]) return prev;
-      return { ...prev, [layerId]: true };
+  const markBrowseMounted = useCallback((key: string | null | undefined) => {
+    if (!key) return;
+    setBrowseMountedByPanelKey((prev) => {
+      if (prev[key]) return prev;
+      return { ...prev, [key]: true };
     });
   }, []);
 
@@ -88,10 +100,10 @@ export function RightSidebar() {
     if (tab !== 'browse') {
       setIsInspectBrowseFlow(false);
     } else {
-      markBrowseMounted(activeLayer?.layerId);
+      markBrowseMounted(panelKey);
     }
     setActiveTab(tab);
-  }, [activeLayer?.layerId, markBrowseMounted]);
+  }, [panelKey, markBrowseMounted]);
 
   const handleUserTabChange = useCallback((tab: SidebarTab) => {
     // DataONE map clicks set featureId to open detail. If the user manually
@@ -103,52 +115,52 @@ export function RightSidebar() {
     ) {
       activateLayer(activeLayer.layerId, activeLayer.viewId, undefined);
     }
-    if (tab === 'browse') markBrowseMounted(activeLayer?.layerId);
+    if (tab === 'browse') markBrowseMounted(panelKey);
     setIsInspectBrowseFlow(false);
     setActiveTab(tab);
-  }, [activeLayer, activateLayer, markBrowseMounted]);
+  }, [activeLayer, activateLayer, markBrowseMounted, panelKey]);
 
   const handleOverviewBrowseClick = useCallback(() => {
     setIsInspectBrowseFlow(false);
-    markBrowseMounted(activeLayer?.layerId);
+    markBrowseMounted(panelKey);
     setActiveTab('browse');
-  }, [activeLayer?.layerId, markBrowseMounted]);
+  }, [panelKey, markBrowseMounted]);
 
   const handleOverviewInspectBrowseClick = useCallback(() => {
     setIsInspectBrowseFlow(true);
-    markBrowseMounted(activeLayer?.layerId);
+    markBrowseMounted(panelKey);
     setActiveTab('browse');
-  }, [activeLayer?.layerId, markBrowseMounted]);
+  }, [panelKey, markBrowseMounted]);
 
-  // Task 22: Restore last active tab per layer on reactivation.
+  // Task 22: Restore last active tab per panel on reactivation.
   // First visit still defaults to Overview (DFT-006).
+  // Dendra Latest ↔ Locations share panelKey so toggling does not reset/flash.
   useEffect(() => {
-    const currentLayerId = activeLayer?.layerId ?? null;
-    if (currentLayerId === prevLayerIdRef.current) return;
+    if (panelKey === prevPanelKeyRef.current) return;
 
-    prevLayerIdRef.current = currentLayerId;
-    if (!currentLayerId) return;
+    prevPanelKeyRef.current = panelKey;
+    if (!panelKey) return;
 
-    const restoredTab = lastTabByLayerId[currentLayerId] ?? 'overview';
+    const restoredTab = lastTabByPanelKey[panelKey] ?? 'overview';
     if (restoredTab === 'browse') {
-      setBrowseMountedByLayer((prev) => (
-        prev[currentLayerId] ? prev : { ...prev, [currentLayerId]: true }
+      setBrowseMountedByPanelKey((prev) => (
+        prev[panelKey] ? prev : { ...prev, [panelKey]: true }
       ));
     }
     setActiveTab(restoredTab);
     setShouldFlash(true);
     const timer = window.setTimeout(() => setShouldFlash(false), 600);
     return () => window.clearTimeout(timer);
-  }, [activeLayer?.layerId, lastTabByLayerId]);
+  }, [panelKey, lastTabByPanelKey]);
 
-  // Persist current tab for the active layer.
+  // Persist current tab for the active panel identity.
   useEffect(() => {
-    if (!activeLayer) return;
-    setLastTabByLayerId(prev => {
-      if (prev[activeLayer.layerId] === activeTab) return prev;
-      return { ...prev, [activeLayer.layerId]: activeTab };
+    if (!panelKey) return;
+    setLastTabByPanelKey((prev) => {
+      if (prev[panelKey] === activeTab) return prev;
+      return { ...prev, [panelKey]: activeTab };
     });
-  }, [activeLayer, activeTab]);
+  }, [panelKey, activeTab]);
 
   // DFT-019: Edit Filters → open Browse tab
   useEffect(() => {
@@ -190,7 +202,7 @@ export function RightSidebar() {
 
   useEffect(() => {
     updateScrollThumb();
-  }, [activeLayer?.layerId, activeTab, updateScrollThumb]);
+  }, [panelKey, activeTab, updateScrollThumb]);
 
   useEffect(() => {
     const handleResize = () => updateScrollThumb();
@@ -237,7 +249,7 @@ export function RightSidebar() {
                     aria-hidden={activeTab !== 'overview' && showBrowseTab}
                   >
                     <adapter.OverviewTab
-                      key={`overview-${activeLayer.layerId}`}
+                      key={`overview-${panelKey}`}
                       onBrowseClick={handleOverviewBrowseClick}
                       onInspectBrowseClick={handleOverviewInspectBrowseClick}
                     />
@@ -249,7 +261,7 @@ export function RightSidebar() {
                       aria-hidden={activeTab !== 'browse'}
                     >
                       <adapter.BrowseTab
-                        key={`browse-${activeLayer.layerId}`}
+                        key={`browse-${panelKey}`}
                         showBackToOverview={activeLayer.dataSource === 'tnc-arcgis' || isInspectBrowseFlow}
                         onBackToOverview={() => handleSystemTabChange('overview')}
                       />

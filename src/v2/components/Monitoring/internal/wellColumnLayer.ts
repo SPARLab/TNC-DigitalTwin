@@ -18,6 +18,7 @@ import { sampleRamp } from './colorRamps';
 import { normalize } from './scalarField';
 import type { ScalarSnapshot, SensorVariableConfig } from '../../../services/sensorService';
 import { formatObservedAt } from './formatObservedAt';
+import { formatStationDisplayName } from '../../../services/dendraStationService';
 
 /**
  * Cylinder diameter in metres. The well network spans roughly 10 km, so this is
@@ -131,7 +132,7 @@ export function createWellColumnLayer(
             ],
           }),
           attributes: {
-            stationName: reading.stationName,
+            stationName: formatStationDisplayName(reading.stationName),
             depth: depthMetres.toFixed(1),
             head: reading.value.toFixed(config.decimals),
             ground: groundMetres.toFixed(1),

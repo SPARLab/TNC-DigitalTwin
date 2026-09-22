@@ -26,8 +26,33 @@ export function resolveDendraServiceTitle(
   return layer.name?.trim() || null;
 }
 
-/** True when this catalog row is the live "Latest" readings sublayer. */
+/** True when this catalog row should show Latest value badges on the map. */
 export function isDendraLatestCatalogLayer(layer: CatalogLayer | undefined | null): boolean {
   if (!layer || layer.dataSource !== 'dendra') return false;
+  if (layer.catalogMeta?.dendraRole === 'measure' || layer.catalogMeta?.valueField) return true;
+  if (layer.catalogMeta?.dendraRole === 'stations') return false;
   return /latest/i.test(layer.name);
+}
+
+/** True when this catalog row is the Stations / Locations map mode. */
+export function isDendraStationsCatalogLayer(layer: CatalogLayer | undefined | null): boolean {
+  if (!layer || layer.dataSource !== 'dendra') return false;
+  if (layer.catalogMeta?.dendraRole === 'stations') return true;
+  if (layer.catalogMeta?.dendraRole === 'measure' || layer.catalogMeta?.valueField) return false;
+  return /location|station/i.test(layer.name);
+}
+
+/**
+ * Stable right-sidebar identity for a Dendra layer.
+ * Latest / Locations children of the same FeatureServer share one key so
+ * Overview/Browse do not remount (and re-fetch the same chart data) when toggling.
+ */
+export function resolveDendraSidebarPanelKey(
+  layerMap: Map<string, CatalogLayer>,
+  layerId: string | null | undefined,
+): string | null {
+  if (!layerId) return null;
+  const layer = layerMap.get(layerId);
+  if (!layer || layer.dataSource !== 'dendra') return null;
+  return layer.catalogMeta?.parentServiceId ?? layerId;
 }

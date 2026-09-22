@@ -28,6 +28,8 @@ export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServic
   const fetchingRef = useRef<Set<string>>(new Set());
   const summaryFetchingRef = useRef<Set<string>>(new Set());
   const typeFetchingRef = useRef<Set<string>>(new Set());
+  /** Tracks the service URL the UI is currently bound to (avoids cross-service races). */
+  const activeUrlRef = useRef<string | null>(null);
   const [stations, setStations] = useState<DendraStation[]>([]);
   const [summariesByStation, setSummariesByStation] = useState<Map<number, DendraSummary[]>>(new Map());
   const [datastreamTypes, setDatastreamTypes] = useState<DendraDatastreamType[]>([]);
@@ -37,20 +39,33 @@ export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServic
   const [dataLoaded, setDataLoaded] = useState(false);
   const [stationSummaryLoading, setStationSummaryLoading] = useState<number | null>(null);
 
-  const serviceInfo = useMemo(() => {
+  // Derive URL/title as primitives so Latest ↔ Locations (same FeatureServer)
+  // keeps a stable `serviceInfo` object and does not re-sync / recreate loaders.
+  const serviceUrl = useMemo(() => {
     if (!activeLayer || activeLayer.dataSource !== 'dendra') return null;
     const layer = layerMap.get(activeLayer.layerId);
     if (!layer?.catalogMeta) return null;
     const { serverBaseUrl, servicePath } = layer.catalogMeta;
-    return {
-      url: buildServiceUrl(serverBaseUrl, servicePath),
-      title: resolveDendraServiceTitle(layerMap, activeLayer.layerId) ?? layer.name,
-    };
-  }, [activeLayer, layerMap]);
+    return buildServiceUrl(serverBaseUrl, servicePath);
+  }, [activeLayer?.dataSource, activeLayer?.layerId, layerMap]);
 
-  // Sync state from cache when active service changes
+  const serviceTitle = useMemo(() => {
+    if (!activeLayer || activeLayer.dataSource !== 'dendra') return null;
+    const layer = layerMap.get(activeLayer.layerId);
+    if (!layer) return null;
+    return resolveDendraServiceTitle(layerMap, activeLayer.layerId) ?? layer.name;
+  }, [activeLayer?.dataSource, activeLayer?.layerId, layerMap]);
+
+  const serviceInfo = useMemo(() => {
+    if (!serviceUrl || !serviceTitle) return null;
+    return { url: serviceUrl, title: serviceTitle };
+  }, [serviceUrl, serviceTitle]);
+
+  activeUrlRef.current = serviceInfo?.url ?? null;
+
+  // Sync state from cache when active service URL changes (not sibling layer toggles).
   useEffect(() => {
-    if (!serviceInfo) {
+    if (!serviceUrl) {
       setDataLoaded(false);
       setStations([]);
       setSummariesByStation(new Map());
@@ -58,7 +73,7 @@ export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServic
       setDatastreamTypesLoaded(false);
       return;
     }
-    const cached = cacheRef.current.get(serviceInfo.url);
+    const cached = cacheRef.current.get(serviceUrl);
     if (cached) {
       setStations(cached.stations);
       setSummariesByStation(new Map(cached.summariesByStation));
@@ -73,14 +88,16 @@ export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServic
       setDatastreamTypes([]);
       setDatastreamTypesLoaded(false);
     }
-  }, [serviceInfo]);
+  }, [serviceUrl]);
 
   const loadDatastreamTypes = useCallback((url: string, stationList: DendraStation[]) => {
     if (typeFetchingRef.current.has(url)) return;
     const cached = cacheRef.current.get(url);
     if (cached?.datastreamTypesLoaded) {
-      setDatastreamTypes(cached.datastreamTypes);
-      setDatastreamTypesLoaded(true);
+      if (activeUrlRef.current === url) {
+        setDatastreamTypes(cached.datastreamTypes);
+        setDatastreamTypesLoaded(true);
+      }
       return;
     }
 
@@ -93,15 +110,21 @@ export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServic
         if (current) {
           current.datastreamTypes = types;
           current.datastreamTypesLoaded = true;
+          // Drop any summaries built before this service's columns were known.
+          current.summariesByStation.clear();
         }
+        // Ignore stale responses after the user switched services.
+        if (activeUrlRef.current !== url) return;
         setDatastreamTypes(types);
         setDatastreamTypesLoaded(true);
+        setSummariesByStation(new Map());
         console.log(`[Dendra Cache] ✅ ${types.length} Latest-column datastream types`);
       })
       .catch((err) => {
         typeFetchingRef.current.delete(url);
         const current = cacheRef.current.get(url);
         if (current) current.datastreamTypesLoaded = true;
+        if (activeUrlRef.current !== url) return;
         setDatastreamTypesLoaded(true);
         console.warn('[Dendra Cache] ⚠️ Datastream type catalog failed:', err);
       });
@@ -137,39 +160,50 @@ export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServic
           datastreamTypesLoaded: false,
         });
         fetchingRef.current.delete(url);
-        setStations(loadedStations);
-        setDataLoaded(true);
-        setLoading(false);
+        if (activeUrlRef.current === url) {
+          setStations(loadedStations);
+          setDataLoaded(true);
+          setLoading(false);
+        }
         loadDatastreamTypes(url, loadedStations);
       })
       .catch((err) => {
         console.error('[Dendra Cache] ❌ Station fetch failed:', err);
         fetchingRef.current.delete(url);
+        if (activeUrlRef.current !== url) return;
         setError(err instanceof Error ? err.message : 'Failed to load Dendra stations');
         setLoading(false);
       });
   }, [serviceInfo, loadDatastreamTypes]);
 
-  // On-demand: fetch summaries for a single station when user drills in.
+  /**
+   * Fetch summaries for a station.
+   *
+   * Only uses Latest-column keys from *this* service's cache entry — never the
+   * React `datastreamTypes` state, which can briefly belong to a previous service
+   * when switching creek gauges (and would chart `water_temp` against Discharge).
+   */
   const loadStationSummaries = useCallback((stationId: number) => {
     if (!serviceInfo) return;
     const { url } = serviceInfo;
     const cacheKey = `${url}::${stationId}`;
 
-    // Already cached?
     const entry = cacheRef.current.get(url);
-    if (entry?.summariesByStation.has(stationId)) return;
-
-    // Already fetching?
+    if (!entry) return;
+    // Wait until this service's Latest columns are known so we don't synthesize
+    // summaries from another service's field keys (or an empty premature list).
+    if (!entry.datastreamTypesLoaded) return;
+    if (entry.summariesByStation.has(stationId)) return;
     if (summaryFetchingRef.current.has(cacheKey)) return;
+
     summaryFetchingRef.current.add(cacheKey);
     setStationSummaryLoading(stationId);
 
     const startTime = performance.now();
     console.log(`[Dendra Cache] 📡 Fetching summaries for station ${stationId}...`);
 
-    const stationMeta = entry?.stations.find((station) => station.station_id === stationId);
-    const latestValueFields = (entry?.datastreamTypes ?? datastreamTypes).map((type) => type.fieldKey);
+    const stationMeta = entry.stations.find((station) => station.station_id === stationId);
+    const latestValueFields = entry.datastreamTypes.map((type) => type.fieldKey);
     fetchSummariesForStation(url, stationId, {
       categoryHint: stationMeta?.category ?? stationMeta?.sensor_name ?? null,
       latestValueFields: latestValueFields.length > 0 ? latestValueFields : null,
@@ -183,6 +217,7 @@ export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServic
         if (current) {
           current.summariesByStation.set(stationId, summaries);
         }
+        if (activeUrlRef.current !== url) return;
         setSummariesByStation((prev) => {
           const next = new Map(prev);
           next.set(stationId, summaries);
@@ -193,9 +228,10 @@ export function useDendraServiceCache({ activeLayer, layerMap }: UseDendraServic
       .catch((err) => {
         console.warn(`[Dendra Cache] ⚠️ Summaries fetch failed for station ${stationId}:`, err);
         summaryFetchingRef.current.delete(cacheKey);
+        if (activeUrlRef.current !== url) return;
         setStationSummaryLoading((prev) => (prev === stationId ? null : prev));
       });
-  }, [serviceInfo, datastreamTypes]);
+  }, [serviceInfo]);
 
   // Flatten summariesByStation into a single array for backward compat with useSummariesByStation()
   const allSummaries = useMemo(() => {

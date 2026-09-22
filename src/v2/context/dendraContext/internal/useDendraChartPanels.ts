@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ActiveLayer, PinnedLayer } from '../../../types';
 import {
   fetchTimeSeries,
+  planProgressiveTimeSeries,
   type DendraStation,
   type DendraSummary,
 } from '../../../services/dendraStationService';
@@ -12,7 +13,7 @@ import {
   DEFAULT_CHART_FILTER,
   toDateInputValue,
 } from './chartDataTransforms';
-
+import { START_AFTER_END_MESSAGE, isStartAfterEnd } from '../../../utils/dendraDateGuards';
 interface UseDendraChartPanelsParams {
   activeLayer: ActiveLayer | null;
   pinnedLayers: PinnedLayer[];
@@ -27,15 +28,6 @@ export function useDendraChartPanels({
   const [chartPanels, setChartPanels] = useState<DendraChartPanelState[]>([]);
   const nextChartZIndexRef = useRef(20);
   const requestVersionRef = useRef<Map<string, number>>(new Map());
-  const INITIAL_RENDER_DAYS = 30;
-  const BACKFILL_CHUNK_DAYS = 120;
-
-  const parseDateUtc = (date: string): number | null => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
-    return Date.parse(`${date}T00:00:00.000Z`);
-  };
-
-  const toDateUtc = (epochMs: number): string => new Date(epochMs).toISOString().slice(0, 10);
 
   const mergePoints = (
     base: DendraChartPanelState['rawData'],
@@ -67,33 +59,66 @@ export function useDendraChartPanels({
         : candidate
     )));
 
-    const rangeStartMs = filter.startDate ? parseDateUtc(filter.startDate) : null;
-    const rangeEndMs = filter.endDate ? parseDateUtc(filter.endDate) : null;
-    const canProgressivelyBackfill = rangeStartMs != null && rangeEndMs != null && rangeEndMs >= rangeStartMs;
-    const initialStartMs = canProgressivelyBackfill
-      ? Math.max(rangeStartMs, rangeEndMs - (INITIAL_RENDER_DAYS - 1) * 24 * 60 * 60 * 1000)
-      : null;
-    const initialStartDate = initialStartMs != null ? toDateUtc(initialStartMs) : filter.startDate;
-    const initialEndDate = filter.endDate;
+    void (async () => {
+      try {
+        // Summaries often lack first/last times — fall back to recent unbounded window.
+        if (!filter.startDate || !filter.endDate) {
+          const result = await fetchTimeSeries(
+            panel.sourceServiceUrl,
+            station.station_id,
+            summary.datastream_name,
+            summary.dendra_ds_id,
+          );
+          if (requestVersionRef.current.get(panelId) !== nextVersion) return;
+          setChartPanels((prev) => prev.map((candidate) => (
+            candidate.id === panelId
+              ? {
+                ...candidate,
+                rawData: result.points,
+                data: applyChartFilter(result.points, filter),
+                loading: false,
+                progressiveLoading: false,
+                error: null,
+              }
+              : candidate
+          )));
+          return;
+        }
 
-    fetchTimeSeries(
-      panel.sourceServiceUrl,
-      station.station_id,
-      summary.datastream_name,
-      summary.dendra_ds_id,
-      {
-        startDate: initialStartDate || undefined,
-        endDate: initialEndDate || undefined,
-      },
-    )
-      .then((result) => {
+        const plan = await planProgressiveTimeSeries(
+          panel.sourceServiceUrl,
+          station.station_id,
+          summary.dendra_ds_id,
+          { startDate: filter.startDate, endDate: filter.endDate },
+        );
         if (requestVersionRef.current.get(panelId) !== nextVersion) return;
-        const shouldBackfill =
-          canProgressivelyBackfill
-          && initialStartMs != null
-          && rangeStartMs != null
-          && initialStartMs > rangeStartMs;
 
+        if (!plan.initial) {
+          setChartPanels((prev) => prev.map((candidate) => (
+            candidate.id === panelId
+              ? {
+                ...candidate,
+                rawData: [],
+                data: [],
+                loading: false,
+                progressiveLoading: false,
+                error: null,
+              }
+              : candidate
+          )));
+          return;
+        }
+
+        const result = await fetchTimeSeries(
+          panel.sourceServiceUrl,
+          station.station_id,
+          summary.datastream_name,
+          summary.dendra_ds_id,
+          plan.initial,
+        );
+        if (requestVersionRef.current.get(panelId) !== nextVersion) return;
+
+        const shouldBackfill = plan.backfill != null;
         setChartPanels((prev) => prev.map((candidate) => (
           candidate.id === panelId
             ? {
@@ -107,61 +132,37 @@ export function useDendraChartPanels({
             : candidate
         )));
 
-        if (!shouldBackfill || initialStartMs == null || rangeStartMs == null) return;
+        if (!plan.backfill) return;
 
-        let cursorEndMs = initialStartMs - 24 * 60 * 60 * 1000;
-        const backfill = async () => {
-          while (cursorEndMs >= rangeStartMs) {
-            if (requestVersionRef.current.get(panelId) !== nextVersion) return;
-            const chunkStartMs = Math.max(
-              rangeStartMs,
-              cursorEndMs - (BACKFILL_CHUNK_DAYS - 1) * 24 * 60 * 60 * 1000,
-            );
-            const chunkStartDate = toDateUtc(chunkStartMs);
-            const chunkEndDate = toDateUtc(cursorEndMs);
-
-            try {
-              const chunk = await fetchTimeSeries(
-                panel.sourceServiceUrl,
-                station.station_id,
-                summary.datastream_name,
-                summary.dendra_ds_id,
-                {
-                  startDate: chunkStartDate,
-                  endDate: chunkEndDate,
-                },
-              );
-              if (requestVersionRef.current.get(panelId) !== nextVersion) return;
-              setChartPanels((prev) => prev.map((candidate) => {
-                if (candidate.id !== panelId) return candidate;
-                const mergedRaw = mergePoints(candidate.rawData, chunk.points);
-                return {
-                  ...candidate,
-                  rawData: mergedRaw,
-                  data: applyChartFilter(mergedRaw, candidate.filter),
-                  progressiveLoading: true,
-                };
-              }));
-            } catch (err) {
-              if (requestVersionRef.current.get(panelId) !== nextVersion) return;
-              console.warn('[Dendra Chart] ⚠️ Progressive backfill chunk failed:', err);
-              break;
-            }
-
-            cursorEndMs = chunkStartMs - 24 * 60 * 60 * 1000;
-          }
-
+        try {
+          const chunk = await fetchTimeSeries(
+            panel.sourceServiceUrl,
+            station.station_id,
+            summary.datastream_name,
+            summary.dendra_ds_id,
+            plan.backfill,
+          );
           if (requestVersionRef.current.get(panelId) !== nextVersion) return;
+          setChartPanels((prev) => prev.map((candidate) => {
+            if (candidate.id !== panelId) return candidate;
+            const mergedRaw = mergePoints(candidate.rawData, chunk.points);
+            return {
+              ...candidate,
+              rawData: mergedRaw,
+              data: applyChartFilter(mergedRaw, candidate.filter),
+              progressiveLoading: false,
+            };
+          }));
+        } catch (err) {
+          if (requestVersionRef.current.get(panelId) !== nextVersion) return;
+          console.warn('[Dendra Chart] ⚠️ Progressive backfill failed:', err);
           setChartPanels((prev) => prev.map((candidate) => (
             candidate.id === panelId
               ? { ...candidate, progressiveLoading: false }
               : candidate
           )));
-        };
-
-        void backfill();
-      })
-      .catch((err) => {
+        }
+      } catch (err) {
         if (requestVersionRef.current.get(panelId) !== nextVersion) return;
         console.error('[Dendra Chart] ❌ Time series fetch failed:', err);
         setChartPanels((prev) => prev.map((candidate) => (
@@ -174,7 +175,8 @@ export function useDendraChartPanels({
             }
             : candidate
         )));
-      });
+      }
+    })();
   }, []);
 
   const openChart = useCallback((station: DendraStation, summary: DendraSummary) => {
@@ -249,6 +251,15 @@ export function useDendraChartPanels({
     if (!panel) return;
 
     const nextFilter: DendraChartFilter = { ...panel.filter, ...partial };
+    if (isStartAfterEnd(nextFilter.startDate, nextFilter.endDate)) {
+      setChartPanels((prev) => prev.map((candidate) => (
+        candidate.id === panelId
+          ? { ...candidate, error: START_AFTER_END_MESSAGE }
+          : candidate
+      )));
+      return;
+    }
+
     const hasDatePatch = Object.prototype.hasOwnProperty.call(partial, 'startDate')
       || Object.prototype.hasOwnProperty.call(partial, 'endDate');
     const startChanged = partial.startDate !== undefined && partial.startDate !== panel.filter.startDate;

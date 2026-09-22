@@ -26,13 +26,23 @@ import type { DendraStation, DendraSummary, DendraDatastreamType } from '../serv
 import { useDendraServiceCache } from './dendraContext/internal/useDendraServiceCache';
 import { useDendraStationFilters } from './dendraContext/internal/useDendraStationFilters';
 import { useDendraChartPanels } from './dendraContext/internal/useDendraChartPanels';
-import type { DendraChartFilter, DendraChartPanelState } from './dendraContext/internal/types';
+import { useDendraPinnedMultiCharts } from './dendraContext/internal/useDendraPinnedMultiCharts';
+import type {
+  DendraChartFilter,
+  DendraChartPanelState,
+  DendraPinnedExpandRequest,
+  DendraPinnedMultiChartState,
+} from './dendraContext/internal/types';
+import type { PinMultiChartInput } from './dendraContext/internal/useDendraPinnedMultiCharts';
 
 export type {
   DendraAggregation,
   DendraChartFilter,
   DendraChartPanelState,
+  DendraPinnedExpandRequest,
+  DendraPinnedMultiChartState,
 } from './dendraContext/internal/types';
+export { buildPinnedChartQueryKey } from './dendraContext/internal/types';
 
 interface DendraContextValue {
   stations: DendraStation[];
@@ -68,6 +78,19 @@ interface DendraContextValue {
     rect: Partial<Pick<DendraChartPanelState, 'x' | 'y' | 'width' | 'height'>>,
   ) => void;
   bringChartToFront: (panelId: string) => void;
+  pinnedMultiCharts: DendraPinnedMultiChartState[];
+  expandPinnedMultiChartRequest: DendraPinnedExpandRequest | null;
+  pinMultiChart: (input: PinMultiChartInput) => string | null;
+  updatePinnedMultiChart: (panelId: string, input: PinMultiChartInput) => boolean;
+  closePinnedMultiChart: (panelId: string) => void;
+  toggleMinimizePinnedMultiChart: (panelId: string) => void;
+  setPinnedMultiChartRect: (
+    panelId: string,
+    rect: Partial<Pick<DendraPinnedMultiChartState, 'x' | 'y' | 'width' | 'height'>>,
+  ) => void;
+  bringPinnedMultiChartToFront: (panelId: string) => void;
+  requestExpandPinnedMultiChart: (panelId: string) => void;
+  clearExpandPinnedMultiChartRequest: () => void;
 }
 
 const DendraCtx = createContext<DendraContextValue | null>(null);
@@ -112,6 +135,19 @@ export function DendraProvider({ children }: { children: ReactNode }) {
     activeServiceUrl: serviceInfo?.url ?? null,
   });
 
+  const {
+    pinnedMultiCharts,
+    expandPinnedMultiChartRequest,
+    pinMultiChart,
+    updatePinnedMultiChart,
+    closePinnedMultiChart,
+    toggleMinimizePinnedMultiChart,
+    setPinnedMultiChartRect,
+    bringPinnedMultiChartToFront,
+    requestExpandPinnedMultiChart,
+    clearExpandPinnedMultiChartRequest,
+  } = useDendraPinnedMultiCharts();
+
   const value = useMemo<DendraContextValue>(() => ({
     stations,
     summaries: allSummaries,
@@ -138,6 +174,16 @@ export function DendraProvider({ children }: { children: ReactNode }) {
     toggleMinimizeChart,
     setChartPanelRect,
     bringChartToFront,
+    pinnedMultiCharts,
+    expandPinnedMultiChartRequest,
+    pinMultiChart,
+    updatePinnedMultiChart,
+    closePinnedMultiChart,
+    toggleMinimizePinnedMultiChart,
+    setPinnedMultiChartRect,
+    bringPinnedMultiChartToFront,
+    requestExpandPinnedMultiChart,
+    clearExpandPinnedMultiChartRequest,
   }), [
     stations,
     allSummaries,
@@ -162,6 +208,16 @@ export function DendraProvider({ children }: { children: ReactNode }) {
     toggleMinimizeChart,
     setChartPanelRect,
     bringChartToFront,
+    pinnedMultiCharts,
+    expandPinnedMultiChartRequest,
+    pinMultiChart,
+    updatePinnedMultiChart,
+    closePinnedMultiChart,
+    toggleMinimizePinnedMultiChart,
+    setPinnedMultiChartRect,
+    bringPinnedMultiChartToFront,
+    requestExpandPinnedMultiChart,
+    clearExpandPinnedMultiChartRequest,
   ]);
 
   return <DendraCtx.Provider value={value}>{children}</DendraCtx.Provider>;

@@ -1,5 +1,11 @@
 import { Save } from 'lucide-react';
 import type { DendraSummary } from '../../../services/dendraStationService';
+import {
+  START_AFTER_END_MESSAGE,
+  clampDateToToday,
+  isStartAfterEnd,
+  todayYmdLocal,
+} from '../../../utils/dendraDateGuards';
 
 interface DatastreamFilterSectionProps {
   selectedSummary: DendraSummary;
@@ -37,6 +43,9 @@ export function DatastreamFilterSection({
   onSaveAsNewView,
 }: DatastreamFilterSectionProps) {
   const disableInputs = !chartMatchesSelectedDatastream || chartLoading;
+  const todayMax = todayYmdLocal();
+  const effectiveMax = chartMaxDate && chartMaxDate < todayMax ? chartMaxDate : todayMax;
+  const dateRangeInvalid = isStartAfterEnd(startDate, endDate);
 
   return (
     <div id="dendra-datastream-filter-section" className="bg-slate-50 rounded-lg p-3 space-y-3">
@@ -57,9 +66,9 @@ export function DatastreamFilterSection({
             type="date"
             value={startDate}
             min={chartMinDate}
-            max={chartMaxDate}
+            max={effectiveMax}
             disabled={disableInputs}
-            onChange={(event) => onStartDateChange(event.target.value)}
+            onChange={(event) => onStartDateChange(clampDateToToday(event.target.value, todayMax))}
             className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm
                        focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500
                        disabled:bg-gray-100 disabled:text-gray-400"
@@ -73,14 +82,20 @@ export function DatastreamFilterSection({
             type="date"
             value={endDate}
             min={chartMinDate}
-            max={chartMaxDate}
+            max={effectiveMax}
             disabled={disableInputs}
-            onChange={(event) => onEndDateChange(event.target.value)}
+            onChange={(event) => onEndDateChange(clampDateToToday(event.target.value, todayMax))}
             className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm
                        focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500
                        disabled:bg-gray-100 disabled:text-gray-400"
           />
         </label>
+
+        {dateRangeInvalid && (
+          <p id="dendra-filter-date-range-error" className="col-span-2 text-xs text-red-600">
+            {START_AFTER_END_MESSAGE}
+          </p>
+        )}
 
         <label id="dendra-filter-aggregation-label" className="text-xs text-gray-600 col-span-2">
           Aggregation
@@ -116,8 +131,10 @@ export function DatastreamFilterSection({
           id="dendra-save-view"
           type="button"
           onClick={onSaveCurrentView}
+          disabled={dateRangeInvalid}
           className="rounded-md border border-gray-300 bg-white text-gray-700 text-sm font-medium py-2
-                     hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5"
+                     hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5
+                     disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Save className="w-3.5 h-3.5" />
           Update View
@@ -126,7 +143,7 @@ export function DatastreamFilterSection({
           id="dendra-save-with-filters"
           type="button"
           onClick={onSaveAsNewView}
-          disabled={disableInputs}
+          disabled={disableInputs || dateRangeInvalid}
           className="rounded-md bg-emerald-600 text-white text-sm font-medium py-2
                      hover:bg-emerald-700 transition-colors disabled:bg-emerald-300
                      flex items-center justify-center gap-1.5"

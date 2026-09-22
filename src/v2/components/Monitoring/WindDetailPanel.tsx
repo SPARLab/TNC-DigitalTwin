@@ -10,6 +10,7 @@ import type { WindVizMode } from './internal/useWindVisualization';
 import type { WindStatistics } from './internal/windStatistics';
 import { getCompassLabel, type WindSnapshot } from '../../services/windService';
 import { formatObservedAt } from './internal/formatObservedAt';
+import { formatStationDisplayName } from '../../services/dendraStationService';
 
 interface VizModeOption {
   id: WindVizMode;
@@ -151,7 +152,7 @@ export function WindDetailPanel({
           icon={Wind}
           value={statistics.peakGust.toFixed(1)}
           label="Peak Gust (m/s)"
-          hint={`Highest gust reported by ${statistics.peakGustStationName}`}
+          hint={`Highest gust reported by ${formatStationDisplayName(statistics.peakGustStationName)}`}
         />
         <StatCard
           icon={Navigation}
