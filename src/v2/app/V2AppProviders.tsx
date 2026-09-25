@@ -12,6 +12,7 @@ import { CalFloraFilterProvider } from '../context/CalFloraFilterContext';
 import { DroneDeployProvider } from '../context/DroneDeployContext';
 import { GBIFFilterProvider } from '../context/GBIFFilterContext';
 import { MotusFilterProvider } from '../context/MotusFilterContext';
+import { PhenoCamProvider } from '../context/PhenoCamContext';
 
 type V2AppProvidersProps = {
   children: ReactNode;
@@ -31,7 +32,9 @@ export function V2AppProviders({ children }: V2AppProvidersProps) {
                       <CalFloraFilterProvider>
                         <GBIFFilterProvider>
                           <MotusFilterProvider>
-                            <DroneDeployProvider>{children}</DroneDeployProvider>
+                            <PhenoCamProvider>
+                              <DroneDeployProvider>{children}</DroneDeployProvider>
+                            </PhenoCamProvider>
                           </MotusFilterProvider>
                         </GBIFFilterProvider>
                       </CalFloraFilterProvider>

@@ -183,6 +183,7 @@ const SUMMARY_TILES: { id: SummaryMetricId; label: string; icon: LucideIcon }[] 
   { id: 'soilTemp', label: 'Soil Temp', icon: Thermometer },
   { id: 'soilMoisture', label: 'Soil Moisture', icon: Droplets },
   { id: 'groundwater', label: 'Groundwater', icon: Droplets },
+  { id: 'groundwaterTemp', label: 'GW Temp', icon: Thermometer },
   { id: 'streamLevel', label: 'Stream Level', icon: Waves },
   { id: 'discharge', label: 'Discharge', icon: Waves },
   { id: 'conductivity', label: 'Conductivity', icon: Zap },
@@ -456,6 +457,7 @@ export function MonitoringPage() {
       layerMap,
       activeMonitoringSensor.datasetId,
       activeMonitoringSensor.layerId,
+      activeMonitoringSensor.valueField,
     );
   }, [activeMonitoringSensor, layerMap]);
 
@@ -471,7 +473,7 @@ export function MonitoringPage() {
   useEffect(() => {
     setCatalogActionError(null);
     setPinFeedback(null);
-  }, [activeMonitoringSensor?.datasetId]);
+  }, [activeMonitoringSensor?.datasetId, activeMonitoringSensor?.valueField]);
 
   const resolveHistoricalTarget = useCallback((): {
     layerId: string;
@@ -491,6 +493,7 @@ export function MonitoringPage() {
       layerMap,
       activeMonitoringSensor.datasetId,
       activeMonitoringSensor.layerId,
+      activeMonitoringSensor.valueField,
     );
 
     if (!layer) {
@@ -501,19 +504,27 @@ export function MonitoringPage() {
     }
 
     // Prefer a concrete child over a service container so pinLayer succeeds.
-    // Match Locations by name first — creek gauges publish Locations at id 0,
-    // while classic `_Datastreams` services put Locations at id 1.
+    // Match the live measure first; only fall back to Stations when no measure
+    // row exists yet (catalog still expanding / single Locations layer).
+    const siblings = layer.catalogMeta?.siblingLayers ?? [];
+    const valueField = activeMonitoringSensor.valueField?.trim();
     const targetLayerId = isServiceContainerLayer(layer)
       ? (
-          layer.catalogMeta?.siblingLayers?.find(
-            (sibling) => /location|station/i.test(sibling.name),
-          )?.id
-          ?? layer.catalogMeta?.siblingLayers?.find(
+          (valueField
+            ? siblings.find((sibling) => sibling.catalogMeta?.valueField === valueField)?.id
+            : undefined)
+          ?? siblings.find(
             (sibling) =>
-              sibling.catalogMeta?.layerIdInService === 1
-              && !/latest/i.test(sibling.name),
+              sibling.catalogMeta?.dendraRole === 'measure'
+              || !!sibling.catalogMeta?.valueField
+              || /latest/i.test(sibling.name),
           )?.id
-          ?? layer.catalogMeta?.siblingLayers?.[0]?.id
+          ?? siblings.find(
+            (sibling) =>
+              sibling.catalogMeta?.dendraRole === 'stations'
+              || /location|station/i.test(sibling.name),
+          )?.id
+          ?? siblings[0]?.id
           ?? layer.id
         )
       : layer.id;
@@ -989,9 +1000,29 @@ export function MonitoringPage() {
     for (const section of sections) {
       match = section.sensors.find((sensor) => {
         if (pending.sensorId && sensor.id === pending.sensorId) return true;
-        if (pending.datasetId != null && sensor.datasetId === pending.datasetId) return true;
-        if (normalizedPath && normalizeMonitoringServicePath(sensor.servicePath) === normalizedPath) {
+        if (
+          pending.valueField
+          && sensor.valueField === pending.valueField
+          && (
+            pending.datasetId == null
+            || sensor.datasetId === pending.datasetId
+            || (
+              normalizedPath
+              && normalizeMonitoringServicePath(sensor.servicePath) === normalizedPath
+            )
+          )
+        ) {
           return true;
+        }
+        if (pending.datasetId != null && sensor.datasetId === pending.datasetId) {
+          // Without a measure preference, the first expanded row for this dataset wins.
+          return !pending.valueField && !pending.sensorId;
+        }
+        if (
+          normalizedPath
+          && normalizeMonitoringServicePath(sensor.servicePath) === normalizedPath
+        ) {
+          return !pending.valueField && !pending.sensorId;
         }
         return false;
       });
@@ -1418,7 +1449,7 @@ export function MonitoringPage() {
                   title={
                     !activeMonitoringSensor
                       ? 'Select a live sensor first. Opens this dataset on the Data Catalog map and reveals it in the left sidebar.'
-                      : `Open ${historicalCatalogLayer?.name ?? 'this dataset'} on the Data Catalog map (Stations/Locations view for sensor datastreams), pin it to Map Layers, and show its place in the left sidebar.`
+                      : `Open ${historicalCatalogLayer?.name ?? activeMonitoringSensor.name} on the Data Catalog map (matching datastream), pin it to Map Layers, and show its place in the left sidebar.`
                   }
                   className={`flex items-center justify-center gap-1.5 rounded-card border px-2 py-2 text-[11px] font-medium transition-colors ${
                     activeMonitoringSensor
@@ -1435,10 +1466,10 @@ export function MonitoringPage() {
                   disabled={!activeMonitoringSensor}
                   title={
                     !activeMonitoringSensor
-                      ? 'Select a live sensor first. Saves the Stations/Locations layer to Map Layers (favorites) without leaving Live Monitoring.'
+                      ? 'Select a live sensor first. Saves this datastream to Map Layers (favorites) without leaving Live Monitoring.'
                       : isHistoricalLayerPinned
                         ? `Remove ${historicalCatalogLayer?.name ?? 'this dataset'} from Map Layers / favorites.`
-                        : `Save ${historicalCatalogLayer?.name ?? 'this dataset'} (Stations view) to Map Layers so it appears in favorites without leaving Live Monitoring.`
+                        : `Save ${historicalCatalogLayer?.name ?? activeMonitoringSensor.name} to Map Layers so it appears in favorites without leaving Live Monitoring.`
                   }
                   className={`flex items-center justify-center gap-1.5 rounded-card border px-2 py-2 text-[11px] font-medium transition-colors ${
                     !activeMonitoringSensor

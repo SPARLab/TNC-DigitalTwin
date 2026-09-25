@@ -10,12 +10,16 @@
 //
 // Matching is by service path rather than display title, because the title is
 // editable in the management app and the service path is not.
+//
+// Multi-measure services (Creek Gauges, Groundwater) register several bindings
+// on the same path — one per SENSOR_VARIABLES entry — so the monitoring tree can
+// expose each datastream the way the catalog expands measure rows.
 // ============================================================================
 
 import { Activity, Camera, Droplets, Gauge, Thermometer, Waves } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { CAMERA_SERVICE_PATH } from '../services/cameraService';
-import { SENSOR_VARIABLES } from '../services/sensorService';
+import { SENSOR_VARIABLES, type SensorVariableId } from '../services/sensorService';
 import { WIND_SERVICE_PATH } from '../services/windService';
 
 /** Each value corresponds to a renderer implemented under components/Monitoring. */
@@ -26,30 +30,76 @@ export interface RendererBinding {
   /** Stable key for UI state; for scalars this is the SENSOR_VARIABLES key. */
   variableKey: string;
   unit: string;
+  /** Primary Latest column this binding visualizes (multi-measure services). */
+  valueField?: string;
+  /** Human label for the monitoring tree when one service expands to many rows. */
+  label?: string;
+}
+
+const BINDINGS_BY_PATH = new Map<string, RendererBinding[]>();
+
+function addBinding(servicePath: string, binding: RendererBinding): void {
+  const existing = BINDINGS_BY_PATH.get(servicePath) ?? [];
+  existing.push(binding);
+  BINDINGS_BY_PATH.set(servicePath, existing);
 }
 
 // Wind combines three fields into a vector field, so it gets its own renderer.
-// Everything else is a single interpolated value and shares the scalar surface.
-const BINDINGS = new Map<string, RendererBinding>([
-  [WIND_SERVICE_PATH, { renderer: 'wind-vector-field', variableKey: 'wind', unit: 'm/s' }],
-  [CAMERA_SERVICE_PATH, { renderer: 'camera-feed', variableKey: 'cameras', unit: '' }],
-]);
+addBinding(WIND_SERVICE_PATH, {
+  renderer: 'wind-vector-field',
+  variableKey: 'wind',
+  unit: 'm/s',
+  label: 'Wind',
+});
+addBinding(CAMERA_SERVICE_PATH, {
+  renderer: 'camera-feed',
+  variableKey: 'cameras',
+  unit: '',
+  label: 'Cameras',
+});
 
 for (const config of Object.values(SENSOR_VARIABLES)) {
-  BINDINGS.set(config.servicePath, {
+  addBinding(config.servicePath, {
     renderer: 'scalar-surface',
     variableKey: config.id,
     unit: config.unit,
+    valueField: config.valueFields[0],
+    label: config.label,
   });
 }
 
-export function resolveRendererBinding(servicePath: string): RendererBinding | null {
-  return BINDINGS.get(servicePath) ?? null;
+/** Every renderer binding registered for a FeatureServer path (0–N measures). */
+export function resolveRendererBindings(servicePath: string): RendererBinding[] {
+  return BINDINGS_BY_PATH.get(servicePath) ?? [];
+}
+
+/**
+ * Resolve a single binding for a service path.
+ * When `valueField` is set, only return the measure that owns that Latest column
+ * (no silent fallback to a sibling stream).
+ */
+export function resolveRendererBinding(
+  servicePath: string,
+  valueField?: string | null,
+): RendererBinding | null {
+  const bindings = resolveRendererBindings(servicePath);
+  if (bindings.length === 0) return null;
+
+  const preferred = valueField?.trim();
+  if (preferred) {
+    return bindings.find((binding) => {
+      if (binding.valueField === preferred) return true;
+      const config = SENSOR_VARIABLES[binding.variableKey as SensorVariableId];
+      return config?.valueFields.includes(preferred) ?? false;
+    }) ?? null;
+  }
+
+  return bindings[0] ?? null;
 }
 
 /** Every service path this app can currently draw, for tagging-gap diagnostics. */
 export function listBoundServicePaths(): string[] {
-  return [...BINDINGS.keys()];
+  return [...BINDINGS_BY_PATH.keys()];
 }
 
 /** Icons for the section headings `live_tag` can produce. */

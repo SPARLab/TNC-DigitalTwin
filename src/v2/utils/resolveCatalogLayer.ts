@@ -175,16 +175,57 @@ export function resolveCatalogLayerForDataset(
 }
 
 /**
- * Historical browsing from Live Monitoring: dendra-format datastreams open on
- * their Stations/Locations layer; everything else keeps the live sublayer id.
+ * Find the expanded catalog measure row for a Latest column on a dataset.
+ * Ids are `service-{datasetId}-measure-{valueField}` after dendra expand.
+ */
+export function resolveCatalogMeasureLayer(
+  layerMap: Map<string, CatalogLayer>,
+  datasetId: number,
+  valueField: string,
+): CatalogLayer | null {
+  const preferred = valueField.trim();
+  if (!preferred) return null;
+
+  const byId = layerMap.get(`service-${datasetId}-measure-${preferred}`);
+  if (byId) return byId;
+
+  for (const layer of layerMap.values()) {
+    if (layer.catalogMeta?.datasetId !== datasetId) continue;
+    if (layer.catalogMeta?.valueField === preferred) return layer;
+  }
+
+  const service = layerMap.get(`service-${datasetId}`);
+  const fromSiblings = service?.catalogMeta?.siblingLayers?.find(
+    (sibling) => sibling.catalogMeta?.valueField === preferred,
+  );
+  return fromSiblings ? resolveFromMap(layerMap, fromSiblings) : null;
+}
+
+/**
+ * Historical browsing from Live Monitoring.
+ *
+ * When `valueField` is set (multi-measure creek/groundwater, or any bound
+ * datastream), open that catalog measure row so Browse matches the live sensor.
+ * Otherwise dendra-format services fall back to Stations/Locations; non-dendra
+ * keeps the live sublayer id.
  */
 export function resolveHistoricalCatalogLayer(
   layerMap: Map<string, CatalogLayer>,
   datasetId: number,
   liveLayerId = 0,
+  valueField?: string | null,
 ): CatalogLayer | null {
+  if (valueField) {
+    const measure = resolveCatalogMeasureLayer(layerMap, datasetId, valueField);
+    if (measure) return measure;
+  }
+
   const probe = findAnyLayerForDataset(layerMap, datasetId);
-  const preference: CatalogSublayerPreference =
-    probe?.catalogMeta?.catalogTag === CATALOG_FORMAT_TAGS.dendra ? 'locations' : liveLayerId;
+  const isDendra = probe?.catalogMeta?.catalogTag === CATALOG_FORMAT_TAGS.dendra;
+  // Measure was requested but expand hasn't landed yet — prefer Latest/measure
+  // over Stations so we don't bounce users to the stations row.
+  const preference: CatalogSublayerPreference = isDendra
+    ? (valueField ? 'latest' : 'locations')
+    : liveLayerId;
   return resolveCatalogLayerForDataset(layerMap, datasetId, preference);
 }

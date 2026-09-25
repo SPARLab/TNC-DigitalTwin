@@ -12,6 +12,8 @@ export interface MonitoringSensorFocusIntent {
   servicePath?: string;
   /** Monitoring sensor id (variable key) when known */
   sensorId?: string;
+  /** Latest measure column when focusing a multi-datastream service */
+  valueField?: string;
   createdAt: number;
 }
 

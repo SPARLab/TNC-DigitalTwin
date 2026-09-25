@@ -36,6 +36,7 @@ export type SensorVariableId =
   | 'pressure'
   | 'solar'
   | 'groundwater'
+  | 'groundwaterTemp'
   | 'discharge'
   | 'streamLevel'
   | 'gaugeHeight'
@@ -60,8 +61,9 @@ export interface SensorVariableConfig {
   /**
    * Sublayer holding the one-row-per-station "Latest" view.
    *
-   * The weather services put it first; the creek services put Locations there
-   * and Latest at 1, so it cannot be assumed.
+   * Prefer resolving by name when possible. Weather services usually put Latest
+   * at 0; some older creek services put Locations at 0 and Latest at 1.
+   * Consolidated services (Creek Gauges) put Latest back at 0.
    */
   layerId?: number;
   /** SI unit as stored by the service. */
@@ -267,12 +269,24 @@ export const SENSOR_VARIABLES: Record<SensorVariableId, SensorVariableConfig> = 
     decimals: 1,
     supportsInterpolation: false,
   },
+  groundwaterTemp: {
+    id: 'groundwaterTemp',
+    label: 'Groundwater Temperature',
+    servicePath: 'Dangermond_Groundwater_Datastreams',
+    unit: '°C',
+    valueFields: ['groundwater_temp'],
+    plausibleRange: [-5, 45],
+    ramp: TEMPERATURE_RAMP,
+    decimals: 1,
+    supportsInterpolation: false,
+    displayRange: [5, 30],
+  },
   discharge: {
     id: 'discharge',
     label: 'Jalama Creek Discharge',
-    servicePath: 'Dangermond_Creek_Discharge',
-    // Locations sits at 0 on this service; Latest is the second layer.
-    layerId: 1,
+    // Consolidated USGS creek service (Latest = 0, Locations = 1).
+    servicePath: 'Dangermond_Creek_Gauges',
+    layerId: 0,
     unit: 'm³/s',
     valueFields: ['discharge'],
     // Published as ft³/s by the USGS gage.
@@ -292,8 +306,8 @@ export const SENSOR_VARIABLES: Record<SensorVariableId, SensorVariableConfig> = 
   streamLevel: {
     id: 'streamLevel',
     label: 'Jalama Creek Stream Level',
-    servicePath: 'Dangermond_Creek_Stream_Level',
-    layerId: 1,
+    servicePath: 'Dangermond_Creek_Gauges',
+    layerId: 0,
     unit: 'm',
     valueFields: ['stream_level'],
     // Published in feet, as USGS parameter 63160.
@@ -313,8 +327,8 @@ export const SENSOR_VARIABLES: Record<SensorVariableId, SensorVariableConfig> = 
   gaugeHeight: {
     id: 'gaugeHeight',
     label: 'Jalama Creek Gauge Height',
-    servicePath: 'Dangermond_Creek_Gauge_Height',
-    layerId: 1,
+    servicePath: 'Dangermond_Creek_Gauges',
+    layerId: 0,
     unit: 'm',
     valueFields: ['gauge_height'],
     // Published in feet, as USGS parameter 00065.
@@ -330,8 +344,8 @@ export const SENSOR_VARIABLES: Record<SensorVariableId, SensorVariableConfig> = 
   waterTemp: {
     id: 'waterTemp',
     label: 'Jalama Creek Water Temperature',
-    servicePath: 'Dangermond_Creek_Water_Temperature',
-    layerId: 1,
+    servicePath: 'Dangermond_Creek_Gauges',
+    layerId: 0,
     unit: '°C',
     valueFields: ['water_temp'],
     plausibleRange: [-5, 45],

@@ -71,4 +71,7 @@ export interface DataSourceAdapter {
    * false so activating a pin only selects the layer.
    */
   supportsPinnedFilters?: boolean;
+
+  /** Optional Browse tab label (defaults to "Browse"). */
+  browseTabLabel?: string;
 }

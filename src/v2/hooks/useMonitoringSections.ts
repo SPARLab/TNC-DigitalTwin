@@ -6,6 +6,9 @@
 // a sensor to the page is a tagging change rather than a code change. Sensors
 // whose renderer is not implemented yet come back with `renderer: null` and are
 // rendered disabled.
+//
+// Multi-measure FeatureServers (Creek Gauges, Groundwater) expand into one tree
+// row per bound datastream — the same idea as catalog measure children.
 // ============================================================================
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -17,8 +20,10 @@ import {
 import {
   listBoundServicePaths,
   resolveRendererBinding,
+  resolveRendererBindings,
   sectionIcon,
   type MonitoringRenderer,
+  type RendererBinding,
 } from '../config/monitoringRenderers';
 
 export interface MonitoringSensor {
@@ -32,6 +37,8 @@ export interface MonitoringSensor {
   servicePath: string;
   /** FeatureServer sublayer used for live readings (usually Latest = 0). */
   layerId: number;
+  /** Latest column for multi-measure services, when known. */
+  valueField?: string;
 }
 
 export interface MonitoringSection {
@@ -52,12 +59,32 @@ function toSlug(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
+function sensorFromBinding(
+  dataset: LiveTaggedDataset,
+  binding: RendererBinding,
+  expandLabels: boolean,
+): MonitoringSensor {
+  return {
+    id: binding.variableKey,
+    // Multi-measure services use the variable label so Discharge / Gauge Height
+    // stay distinct under one tagged "Creek Gauges" catalog row.
+    name: expandLabels
+      ? (binding.label ?? dataset.displayTitle)
+      : dataset.displayTitle,
+    unit: binding.unit,
+    renderer: binding.renderer,
+    datasetId: dataset.datasetId,
+    servicePath: dataset.servicePath,
+    layerId: dataset.layerId,
+    valueField: binding.valueField,
+  };
+}
+
 function buildSections(datasets: LiveTaggedDataset[]): MonitoringSection[] {
   const byTag = new Map<string, MonitoringSection>();
 
   for (const dataset of datasets) {
-    const binding = resolveRendererBinding(dataset.servicePath);
-
+    const bindings = resolveRendererBindings(dataset.servicePath);
     const section = byTag.get(dataset.liveTag) ?? {
       id: toSlug(dataset.liveTag),
       name: dataset.liveTag,
@@ -65,17 +92,22 @@ function buildSections(datasets: LiveTaggedDataset[]): MonitoringSection[] {
       sensors: [],
     };
 
-    section.sensors.push({
-      // Falling back to the dataset id keeps unimplemented rows uniquely
-      // keyable without inventing a variable name for them.
-      id: binding?.variableKey ?? `dataset-${dataset.datasetId}`,
-      name: dataset.displayTitle,
-      unit: binding?.unit ?? '',
-      renderer: binding?.renderer ?? null,
-      datasetId: dataset.datasetId,
-      servicePath: dataset.servicePath,
-      layerId: dataset.layerId,
-    });
+    if (bindings.length === 0) {
+      section.sensors.push({
+        id: `dataset-${dataset.datasetId}`,
+        name: dataset.displayTitle,
+        unit: '',
+        renderer: null,
+        datasetId: dataset.datasetId,
+        servicePath: dataset.servicePath,
+        layerId: dataset.layerId,
+      });
+    } else {
+      const expandLabels = bindings.length > 1;
+      for (const binding of bindings) {
+        section.sensors.push(sensorFromBinding(dataset, binding, expandLabels));
+      }
+    }
 
     byTag.set(dataset.liveTag, section);
   }

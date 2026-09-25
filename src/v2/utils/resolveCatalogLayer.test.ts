@@ -3,6 +3,7 @@ import type { CatalogLayer } from '../types';
 import {
   matchesPreference,
   resolveCatalogLayerForDataset,
+  resolveCatalogMeasureLayer,
   resolveHistoricalCatalogLayer,
 } from './resolveCatalogLayer';
 
@@ -11,6 +12,7 @@ function child(
   layerIdInService: number,
   name: string,
   parentServiceId: string,
+  extras?: Partial<NonNullable<CatalogLayer['catalogMeta']>>,
 ): CatalogLayer {
   return {
     id: `service-${datasetId}-layer-${layerIdInService}`,
@@ -29,6 +31,7 @@ function child(
       isMultiLayerService: true,
       parentServiceId,
       catalogTag: 'dendra_format',
+      ...extras,
     },
   };
 }
@@ -60,7 +63,82 @@ function buildService(datasetId: number, layers: Array<{ id: number; name: strin
   const layerMap = new Map<string, CatalogLayer>();
   layerMap.set(parent.id, parent);
   for (const sibling of siblings) layerMap.set(sibling.id, sibling);
-  return { layerMap, siblings };
+  return { layerMap, siblings, parent };
+}
+
+/** Stations + measure rows as produced by expandDendraFormatChildren. */
+function buildExpandedService(
+  datasetId: number,
+  measures: Array<{ field: string; label: string }>,
+) {
+  const parentId = `service-${datasetId}`;
+  const stations: CatalogLayer = {
+    id: `${parentId}-stations`,
+    name: 'Stations',
+    categoryId: 'cat',
+    dataSource: 'dendra',
+    icon: 'Thermometer',
+    catalogMeta: {
+      datasetId,
+      serverBaseUrl: 'https://example.com/server/rest/services',
+      servicePath: `Service_${datasetId}`,
+      hasFeatureServer: true,
+      hasMapServer: false,
+      hasImageServer: false,
+      layerIdInService: 0,
+      isMultiLayerService: true,
+      parentServiceId: parentId,
+      catalogTag: 'dendra_format',
+      dendraRole: 'stations',
+    },
+  };
+  const measureLayers = measures.map((measure) => ({
+    id: `${parentId}-measure-${measure.field}`,
+    name: measure.label,
+    categoryId: 'cat',
+    dataSource: 'dendra' as const,
+    icon: 'Thermometer',
+    catalogMeta: {
+      datasetId,
+      serverBaseUrl: 'https://example.com/server/rest/services',
+      servicePath: `Service_${datasetId}`,
+      hasFeatureServer: true,
+      hasMapServer: false,
+      hasImageServer: false,
+      layerIdInService: 1,
+      isMultiLayerService: true,
+      parentServiceId: parentId,
+      catalogTag: 'dendra_format' as const,
+      dendraRole: 'measure' as const,
+      valueField: measure.field,
+    },
+  }));
+  const siblings = [stations, ...measureLayers];
+  for (const sibling of siblings) {
+    sibling.catalogMeta!.siblingLayers = siblings.filter((entry) => entry.id !== sibling.id);
+  }
+  const parent: CatalogLayer = {
+    id: parentId,
+    name: `Service ${datasetId}`,
+    categoryId: 'cat',
+    dataSource: 'dendra',
+    icon: 'Thermometer',
+    catalogMeta: {
+      datasetId,
+      serverBaseUrl: 'https://example.com/server/rest/services',
+      servicePath: `Service_${datasetId}`,
+      hasFeatureServer: true,
+      hasMapServer: false,
+      hasImageServer: false,
+      isMultiLayerService: true,
+      siblingLayers: siblings,
+      catalogTag: 'dendra_format',
+    },
+  };
+  const layerMap = new Map<string, CatalogLayer>();
+  layerMap.set(parent.id, parent);
+  for (const sibling of siblings) layerMap.set(sibling.id, sibling);
+  return { layerMap, stations, measureLayers };
 }
 
 describe('resolveCatalogLayer preference matching', () => {
@@ -94,5 +172,23 @@ describe('resolveCatalogLayer preference matching', () => {
     expect(resolveCatalogLayerForDataset(layerMap, 184, 'latest')?.id).toBe(siblings[0].id);
     expect(resolveCatalogLayerForDataset(layerMap, 184, 'locations')?.id).toBe(siblings[1].id);
     expect(resolveHistoricalCatalogLayer(layerMap, 184)?.id).toBe(siblings[1].id);
+  });
+
+  it('opens the matching measure row when valueField is provided', () => {
+    const { layerMap, stations, measureLayers } = buildExpandedService(286, [
+      { field: 'discharge', label: 'Discharge' },
+      { field: 'gauge_height', label: 'Gauge Height' },
+      { field: 'water_temp', label: 'Water Temperature' },
+    ]);
+
+    expect(resolveCatalogMeasureLayer(layerMap, 286, 'gauge_height')?.id).toBe(
+      measureLayers[1].id,
+    );
+    expect(resolveHistoricalCatalogLayer(layerMap, 286, 0, 'gauge_height')?.id).toBe(
+      measureLayers[1].id,
+    );
+    expect(resolveHistoricalCatalogLayer(layerMap, 286, 0, 'discharge')?.name).toBe('Discharge');
+    // No valueField → Stations (legacy historical default).
+    expect(resolveHistoricalCatalogLayer(layerMap, 286)?.id).toBe(stations.id);
   });
 });

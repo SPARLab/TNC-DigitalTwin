@@ -32,6 +32,7 @@ const SUMMARY_VARIABLES = [
   'soilTemp',
   'soilMoisture',
   'groundwater',
+  'groundwaterTemp',
   'gaugeHeight',
   'waterTemp',
   'streamLevel',

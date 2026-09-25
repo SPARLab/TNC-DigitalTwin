@@ -56,7 +56,8 @@ export type DataSource =
   | 'gbif'
   | 'ebird'
   | 'drone'
-  | 'lidar';
+  | 'lidar'
+  | 'phenocam';
 
 /** A domain category in the left sidebar */
 export interface Category {

@@ -206,7 +206,7 @@ export async function populateDendraLatestLabels(
   },
 ): Promise<void> {
   const { serviceUrl, servicePath, latestLayerId, title, valueField } = options;
-  const binding = valueField ? null : resolveRendererBinding(servicePath);
+  const binding = resolveRendererBinding(servicePath, valueField);
 
   if (binding?.renderer === 'scalar-surface' && isScalarId(binding.variableKey)) {
     const snapshot = await fetchSensorSnapshot(binding.variableKey);

@@ -34,6 +34,8 @@ import { gbifAdapter, useGBIFCacheStatus } from './gbif/adapter';
 import { useGBIFMapBehavior } from './gbif/useMapBehavior';
 import { motusAdapter, useMotusCacheStatus } from './motus/adapter';
 import { useMotusMapBehavior } from './motus/useMapBehavior';
+import { phenocamAdapter, usePhenoCamCacheStatus } from './phenocam/adapter';
+import { usePhenoCamMapBehavior } from './phenocam/useMapBehavior';
 
 // ── Adapter registry ─────────────────────────────────────────────────────────
 
@@ -47,6 +49,7 @@ const ADAPTER_MAP: Record<string, DataSourceAdapter> = {
   calflora: calfloraAdapter,
   drone: dronedeployAdapter,
   gbif: gbifAdapter,
+  phenocam: phenocamAdapter,
 };
 
 /** Look up a data source adapter by its dataSource key */
@@ -107,6 +110,7 @@ export function useAllMapBehaviors(
   useCalFloraMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
   useDroneDeployMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
   useGBIFMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
+  usePhenoCamMapBehavior(getManagedLayer, pinnedLayers, activeLayer, mapReady);
 }
 
 /**
@@ -124,6 +128,7 @@ export function useActiveCacheStatus(dataSource: string | undefined): CacheStatu
   const calflora = useCalFloraCacheStatus();
   const dronedeploy = useDroneDeployCacheStatus();
   const gbif = useGBIFCacheStatus();
+  const phenocam = usePhenoCamCacheStatus();
 
   switch (dataSource) {
     case 'inaturalist': return inat;
@@ -135,6 +140,7 @@ export function useActiveCacheStatus(dataSource: string | undefined): CacheStatu
     case 'calflora': return calflora;
     case 'drone': return dronedeploy;
     case 'gbif': return gbif;
+    case 'phenocam': return phenocam;
     default: return null;
   }
 }
@@ -153,6 +159,7 @@ export function useCacheStatusByDataSource(): Record<string, CacheStatus> {
   const calflora = useCalFloraCacheStatus();
   const dronedeploy = useDroneDeployCacheStatus();
   const gbif = useGBIFCacheStatus();
+  const phenocam = usePhenoCamCacheStatus();
 
   return {
     inaturalist: inat,
@@ -164,5 +171,6 @@ export function useCacheStatusByDataSource(): Record<string, CacheStatus> {
     calflora,
     drone: dronedeploy,
     gbif,
+    phenocam,
   };
 }

@@ -82,7 +82,7 @@ export function DendraLegendWidget() {
     if (!servicePath) {
       return { kind: 'generic' as const, unit: '', ramp: null as ColorRamp | null, label: measureLabel ?? 'Latest reading' };
     }
-    const binding = resolveRendererBinding(servicePath);
+    const binding = resolveRendererBinding(servicePath, catalogLayer.catalogMeta?.valueField);
     if (!binding) {
       return { kind: 'generic' as const, unit: '', ramp: null as ColorRamp | null, label: measureLabel ?? 'Latest reading' };
     }

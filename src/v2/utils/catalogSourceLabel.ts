@@ -18,6 +18,7 @@ const DATA_SOURCE_FALLBACK_LABELS: Record<DataSource, string> = {
   ebird: 'eBird API',
   drone: 'Drone Imagery',
   lidar: 'LiDAR Scans',
+  phenocam: 'PhenoCam Network',
 };
 
 /** Friendly names for known catalog hosts. */

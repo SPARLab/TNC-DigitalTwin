@@ -409,6 +409,7 @@ function datasetIcon(ds: DataSource): string {
     case 'motus': return 'Radio';
     case 'inaturalist': return 'Leaf';
     case 'animl': return 'Camera';
+    case 'phenocam': return 'Camera';
     case 'dataone': return 'BookOpen';
     case 'drone': return 'Plane';
     case 'gbif': return 'Globe';
